@@ -79,9 +79,8 @@ weva/
 │
 ├── README.md                            Top-level index (short)
 ├── PLAN.md                              Architecture + roadmap
-├── CONFORMANCE.md                       Spec-vs-impl deltas (read before
-│                                        adding anything that "looks like CSS")
-└── CHANGELOG.md                         Append-only history of additions
+└── CONFORMANCE.md                       Spec-vs-impl deltas (read before
+                                         adding anything that "looks like CSS")
 ```
 
 The whole engine is **headless-testable**. `Tests/Runtime/` doesn't touch

@@ -27,7 +27,6 @@ This repo also contains the demo project (`Assets/`), the headless tooling
 * **[`PLAN.md`](./PLAN.md)** — locked architectural decisions and roadmap.
 * **[`CONFORMANCE.md`](./CONFORMANCE.md)** — spec-vs-impl deltas, property by
   property.
-* **[`CHANGELOG.md`](./CHANGELOG.md)** — feature-additive history.
 
 ## Target environment
 
@@ -43,7 +42,6 @@ weva/
 ├── AGENTS.md                    AI-tool contract
 ├── PLAN.md                      Design + roadmap
 ├── CONFORMANCE.md               Spec deltas
-├── CHANGELOG.md                 Append-only history
 ├── Assets/                      Demo project + sample assets
 │   ├── UI/                      randhtml.html / .css — the dev demo
 │   ├── Scripts/                 Demo controllers
