@@ -1,0 +1,23 @@
+body { margin: 0; padding: 0; font-size: 16px; line-height: 1; }
+#wrap { width: 400px; }
+
+/* Classic numbered headings: reset on wrapper, increment+::before on items.
+   Generated text "1. ", "2. ", "3. " widens each heading's inline extent,
+   so the Chrome-diff verifies the counter VALUES affect inline widths. */
+#wrap   { counter-reset: sec; }
+.heading { counter-increment: sec; }
+.heading::before { content: counter(sec) ". "; }
+
+/* Nested counters() case.
+   .chapter: resets "ch" (initial 0) and increments it to 1.
+   .section: resets "ch" (new scope at 0) and increments to 1.
+     → leaf1::before = counters(ch, ".") = "1.1"
+   .section2: resets "ch" (new scope) and increments by 2.
+     → leaf2::before = counters(ch, ".") = "1.2"
+   The two distinct values "1.1" / "1.2" ensure the diff catches
+   both counter values and the separator character. */
+.chapter  { counter-reset: ch; counter-increment: ch; }
+.section  { counter-reset: ch; counter-increment: ch; }
+.section2 { counter-reset: ch; counter-increment: ch 2; }
+.leaf::before  { content: counters(ch, "."); }
+.leaf2::before { content: counters(ch, "."); }

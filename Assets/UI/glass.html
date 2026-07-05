@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Lumina — Glass UI</title>
+<link rel="stylesheet" href="glass.css" />
+</head>
+<body>
+
+<!-- ───── VIVID BACKDROP (blurred by the glass panels) ───── -->
+<div class="scene">
+  <div class="blob blob-a"></div>
+  <div class="blob blob-b"></div>
+  <div class="blob blob-c"></div>
+  <div class="blob blob-d"></div>
+  <div class="grain"></div>
+</div>
+
+<!-- ───── TOP NAV ───── -->
+<nav class="topbar glass">
+  <div class="brand">
+    <span class="brand-mark">◍</span>
+    <span class="brand-name">Lumina</span>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link nav-link-on">Home</a>
+    <a class="nav-link">Library</a>
+    <a class="nav-link">Explore</a>
+    <a class="nav-link">Studio</a>
+  </div>
+  <div class="topbar-right">
+    <div class="search glass-thin">
+      <span class="search-icon">⌕</span>
+      <span class="search-hint">Search anything…</span>
+      <span class="search-key">⌘K</span>
+    </div>
+    <div class="avatar">S</div>
+  </div>
+</nav>
+
+<!-- ───── MAIN GRID ───── -->
+<main class="board">
+
+  <!-- Music player — hero glass card -->
+  <section class="player glass">
+    <div class="art">
+      <div class="art-sheen"></div>
+      <span class="art-note">♪</span>
+    </div>
+    <div class="player-info">
+      <span class="player-eyebrow">Now playing</span>
+      <h2 class="player-title">Midnight Prism</h2>
+      <p class="player-artist">Aurora Fields · Refraction EP</p>
+      <div class="player-progress">
+        <div class="player-track"><div class="player-fill"></div><div class="player-knob"></div></div>
+        <div class="player-times"><span>1:42</span><span>4:07</span></div>
+      </div>
+      <div class="player-controls">
+        <button class="pbtn glass-thin">⇄</button>
+        <button class="pbtn glass-thin">⏮</button>
+        <button class="pbtn pbtn-play">⏸</button>
+        <button class="pbtn glass-thin">⏭</button>
+        <button class="pbtn glass-thin">∞</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Control tiles -->
+  <section class="tiles">
+    <div class="tile glass tile-on">
+      <span class="tile-icon">⌁</span>
+      <span class="tile-name">Wi-Fi</span>
+      <span class="tile-state">Aurora-5G</span>
+    </div>
+    <div class="tile glass tile-on tile-on-violet">
+      <span class="tile-icon">◗</span>
+      <span class="tile-name">Bluetooth</span>
+      <span class="tile-state">2 devices</span>
+    </div>
+    <div class="tile glass">
+      <span class="tile-icon">☾</span>
+      <span class="tile-name">Focus</span>
+      <span class="tile-state">Off</span>
+    </div>
+    <div class="tile glass">
+      <span class="tile-icon">✈</span>
+      <span class="tile-name">Airdrop</span>
+      <span class="tile-state">Contacts</span>
+    </div>
+
+    <div class="slider-card glass">
+      <div class="slider-row">
+        <span class="slider-icon">☀</span>
+        <div class="slider"><div class="slider-fill" style="width: 72%"></div></div>
+      </div>
+      <div class="slider-row">
+        <span class="slider-icon">♬</span>
+        <div class="slider"><div class="slider-fill slider-fill-violet" style="width: 45%"></div></div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat glass-thin">
+        <span class="stat-value">24°</span>
+        <span class="stat-label">Clear sky</span>
+      </div>
+      <div class="stat glass-thin">
+        <span class="stat-value">87%</span>
+        <span class="stat-label">Battery</span>
+      </div>
+      <div class="stat glass-thin">
+        <span class="stat-value">3.2k</span>
+        <span class="stat-label">Steps</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Notification stack -->
+  <aside class="notes">
+    <h3 class="notes-title">Notifications</h3>
+
+    <article class="note glass">
+      <div class="note-badge note-badge-mint">✓</div>
+      <div class="note-body">
+        <header class="note-head"><span class="note-app">Sync</span><span class="note-when">now</span></header>
+        <p class="note-text">Workspace backed up to the cloud.</p>
+      </div>
+    </article>
+
+    <article class="note glass">
+      <div class="note-badge note-badge-violet">✉</div>
+      <div class="note-body">
+        <header class="note-head"><span class="note-app">Mail</span><span class="note-when">2m</span></header>
+        <p class="note-text">Ava shared “Refraction master v3”.</p>
+      </div>
+    </article>
+
+    <article class="note glass">
+      <div class="note-badge note-badge-amber">★</div>
+      <div class="note-body">
+        <header class="note-head"><span class="note-app">Studio</span><span class="note-when">14m</span></header>
+        <p class="note-text">Render finished — 4 warnings to review.</p>
+      </div>
+    </article>
+
+    <article class="note glass note-dim">
+      <div class="note-badge">◔</div>
+      <div class="note-body">
+        <header class="note-head"><span class="note-app">Calendar</span><span class="note-when">1h</span></header>
+        <p class="note-text">Stand-up moved to 10:30.</p>
+      </div>
+    </article>
+  </aside>
+
+</main>
+
+<!-- ───── DOCK ───── -->
+<footer class="dock glass">
+  <span class="dock-app dock-app-active">◍</span>
+  <span class="dock-app">✉</span>
+  <span class="dock-app">♪</span>
+  <span class="dock-app">✎</span>
+  <span class="dock-app">⌗</span>
+  <span class="dock-sep"></span>
+  <span class="dock-app dock-app-trash">◌</span>
+</footer>
+
+</body>
+</html>

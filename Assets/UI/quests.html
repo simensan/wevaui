@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Halcyon — Quest Log</title>
+<link rel="stylesheet" href="quests.css" />
+</head>
+<body>
+
+<main class="log">
+
+  <!-- ───── HEADER ───── -->
+  <header class="head">
+    <div class="head-left">
+      <h1 class="head-title">Quest Log</h1>
+      <p class="head-sub">12 active · 47 completed · 3 abandoned</p>
+    </div>
+    <div class="perf-readout">
+      <span class="perf-chip"><span class="perf-value">{{ FrameMs }}</span><span class="perf-unit">ms</span></span>
+      <span class="perf-chip"><span class="perf-value">{{ Fps }}</span><span class="perf-unit">FPS</span></span>
+    </div>
+    <nav class="filters">
+      <button class="filter filter-on">Active</button>
+      <button class="filter">Completed</button>
+      <button class="filter">Failed</button>
+      <button class="filter">All</button>
+    </nav>
+  </header>
+
+  <!-- ───── QUEST LIST ───── -->
+  <section class="quests">
+
+    <article class="quest quest-main">
+      <div class="quest-marker quest-marker-main">★</div>
+      <div class="quest-body">
+        <header class="quest-head">
+          <h3 class="quest-title">Whispers in the Vault</h3>
+          <span class="quest-tier">Story</span>
+        </header>
+        <p class="quest-desc">Track the missing watchmen of the Brass Gate before the seneschal can bury the story.</p>
+        <div class="quest-progress">
+          <div class="progress-bar"><div class="progress-fill" style="width: 42%;"></div></div>
+          <span class="progress-label">Step 3 of 7</span>
+        </div>
+        <ul class="quest-objectives">
+          <li class="obj obj-done">Speak with Captain Ren</li>
+          <li class="obj obj-done">Retrieve the soulglass lantern</li>
+          <li class="obj obj-active">Investigate the lower archive</li>
+          <li class="obj">Find the missing watchmen</li>
+          <li class="obj obj-locked">Confront the seneschal</li>
+        </ul>
+      </div>
+      <div class="quest-side">
+        <div class="reward">
+          <span class="reward-icon">¤</span>
+          <span class="reward-val">1,200</span>
+        </div>
+        <div class="reward">
+          <span class="reward-icon">✦</span>
+          <span class="reward-val">450 XP</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="quest quest-side-q">
+      <div class="quest-marker">◆</div>
+      <div class="quest-body">
+        <header class="quest-head">
+          <h3 class="quest-title">A Bottle of Crowsblood</h3>
+          <span class="quest-tier">Side · Brackwater</span>
+        </header>
+        <p class="quest-desc">The brewer at the Brass Coin needs a sealed bottle from the old vintner's cellar in Ashfall.</p>
+        <div class="quest-progress">
+          <div class="progress-bar"><div class="progress-fill" style="width: 66%;"></div></div>
+          <span class="progress-label">2 / 3 obj.</span>
+        </div>
+      </div>
+      <div class="quest-side">
+        <div class="reward">
+          <span class="reward-icon">¤</span>
+          <span class="reward-val">340</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="quest quest-side-q">
+      <div class="quest-marker">◆</div>
+      <div class="quest-body">
+        <header class="quest-head">
+          <h3 class="quest-title">The Stalker's Bond</h3>
+          <span class="quest-tier">Side · Ironhold</span>
+        </header>
+        <p class="quest-desc">Hunt the shadow-stag prowling the gorse moor. Bring back its antler.</p>
+        <div class="quest-progress">
+          <div class="progress-bar"><div class="progress-fill" style="width: 15%;"></div></div>
+          <span class="progress-label">1 / 5 obj.</span>
+        </div>
+      </div>
+      <div class="quest-side">
+        <div class="reward">
+          <span class="reward-icon">¤</span>
+          <span class="reward-val">560</span>
+        </div>
+        <div class="reward">
+          <span class="reward-icon">⚔</span>
+          <span class="reward-val">Rare</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="quest quest-bounty">
+      <div class="quest-marker quest-marker-bounty">‽</div>
+      <div class="quest-body">
+        <header class="quest-head">
+          <h3 class="quest-title">Bounty: The Marsh Warden</h3>
+          <span class="quest-tier">Bounty · Time-limited</span>
+        </header>
+        <p class="quest-desc">A wraith-touched warden patrols the western marsh. Active for 2d 4h.</p>
+        <div class="quest-progress">
+          <div class="progress-bar"><div class="progress-fill progress-bounty" style="width: 8%;"></div></div>
+          <span class="progress-label">Time remaining</span>
+        </div>
+      </div>
+      <div class="quest-side">
+        <div class="reward">
+          <span class="reward-icon">¤</span>
+          <span class="reward-val">2,800</span>
+        </div>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ───── FOOTER ───── -->
+  <footer class="foot">
+    <span class="foot-hint">Press <kbd>J</kbd> to toggle log · <kbd>F</kbd> to track quest</span>
+    <button class="foot-cta">Track Selected</button>
+  </footer>
+
+</main>
+
+</body>
+</html>

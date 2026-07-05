@@ -1,0 +1,11 @@
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 80px); gap: 8px; width: 360px; padding-top: 24px; padding-left: 24px; }
+.cell { background-color: #6366f1; }
+.c1 { background-color: #ef4444; }
+.c2 { background-color: #f59e0b; }
+.c3 { background-color: #10b981; }
+.c4 { background-color: #3b82f6; }
+.c5 { background-color: #8b5cf6; }
+.c6 { background-color: #ec4899; }
+.c7 { background-color: #14b8a6; }
+.c8 { background-color: #f43f5e; }
+.c9 { background-color: #84cc16; }

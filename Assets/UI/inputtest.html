@@ -1,0 +1,52 @@
+<!--
+  inputtest — a focus/gamepad navigation test bench. All buttons are natively
+  focusable (no tabindex needed; tabindex added only where explicit order
+  matters). Keyboard Tab / Shift+Tab moves focus out of the box (engine routes
+  it through FocusManager.NextFocusable); InputTestController adds gamepad
+  d-pad / left-stick directional nav, A/Enter/Space to activate, B/Esc to
+  close the menu. The bright :focus ring shows which control is focused.
+-->
+<link rel="stylesheet" href="inputtest.css" />
+<main class="screen">
+  <header class="bar">
+    <div class="title">Input&nbsp;Test</div>
+    <div class="hint">Tab / D-pad / Stick to move &nbsp;·&nbsp; A / Enter / Space to activate &nbsp;·&nbsp; B / Esc closes menu</div>
+  </header>
+
+  <!-- toolbar row -->
+  <section class="toolbar">
+    <button class="btn" id="b-profile">Profile</button>
+    <button class="btn" id="b-inventory">Inventory</button>
+    <button class="btn" id="b-map">Map</button>
+    <button class="btn primary" id="btn-open">Open Menu ▸</button>
+    <button class="btn" id="b-settings">Settings</button>
+  </section>
+
+  <!-- focusable tile grid -->
+  <section class="grid">
+    <button class="tile" id="t1"><span class="t-ic a"></span>Quests</button>
+    <button class="tile" id="t2"><span class="t-ic b"></span>Skills</button>
+    <button class="tile" id="t3"><span class="t-ic c"></span>Crafting</button>
+    <button class="tile" id="t4"><span class="t-ic d"></span>Party</button>
+    <button class="tile" id="t5"><span class="t-ic e"></span>Store</button>
+    <button class="tile" id="t6"><span class="t-ic f"></span>Mail</button>
+  </section>
+
+  <footer class="foot">
+    <span class="dot south">A</span> Activate
+    <span class="dot east">B</span> Back
+    <span class="kbd">Tab</span> Next
+    <span class="kbd">Shift+Tab</span> Prev
+  </footer>
+
+  <!-- pause menu overlay — hidden until .open is toggled by the controller -->
+  <div class="menu" id="menu">
+    <div class="panel">
+      <h2 class="panel-title">Pause Menu</h2>
+      <button class="mi" id="m-resume">Resume</button>
+      <button class="mi" id="m-options">Options</button>
+      <button class="mi" id="m-save">Save Game</button>
+      <button class="mi danger" id="btn-close">Close ✕</button>
+    </div>
+  </div>
+</main>

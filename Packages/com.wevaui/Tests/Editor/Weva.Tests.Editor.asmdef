@@ -1,0 +1,32 @@
+{
+    "name": "Weva.Tests.Editor",
+    "rootNamespace": "Weva.Tests.EditorTests",
+    "references": [
+        "Weva.Runtime",
+        "Weva.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
+            "define": "WEVA_TMP"
+        }
+    ],
+    "noEngineReferences": false
+}

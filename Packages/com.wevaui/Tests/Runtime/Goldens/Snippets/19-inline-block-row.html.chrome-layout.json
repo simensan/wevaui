@@ -1,0 +1,50 @@
+{
+  "source": "19-inline-block-row.html",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 0,
+      "y": 20,
+      "w": 800,
+      "h": 64,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "span",
+      "id": "",
+      "cls": "atom",
+      "x": 99.2,
+      "y": 56,
+      "w": 60,
+      "h": 24,
+      "display": "inline-block",
+      "position": "static",
+      "text": "atom"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "span",
+      "id": "",
+      "cls": "atom2",
+      "x": 233.81,
+      "y": 52,
+      "w": 46.61,
+      "h": 32,
+      "display": "inline-block",
+      "position": "static",
+      "text": "btn"
+    }
+  ]
+}

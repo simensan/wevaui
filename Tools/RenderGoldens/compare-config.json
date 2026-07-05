@@ -1,0 +1,83 @@
+{
+  "_doc": "Per-sample knobs for compare.py. 'animated': report-only (animation phase can't pixel-match between Unity's settle-frame capture and Chrome's t=0 freeze). 'maxDiffPct': per-sample threshold override \u2014 text-heavy samples carry ~3-8% glyph-AA noise (Unity SDF vs Chrome ClearType; the leaderboard heat map shows divergence ONLY on glyph pixels). Ratchet thresholds DOWN as the engine converges; never widen silently.",
+  "glass": {
+    "animated": true
+  },
+  "match3": {
+    "animated": true
+  },
+  "match3-endgame": {
+    "animated": true
+  },
+  "particles": {
+    "animated": true
+  },
+  "hud": {
+    "animated": true
+  },
+  "combat-hud": {
+    "animated": true
+  },
+  "map": {
+    "animated": true
+  },
+  "story-bubble": {
+    "animated": true
+  },
+  "level-select": {
+    "animated": true
+  },
+  "episode-stats": {
+    "animated": true
+  },
+  "leaderboard": {
+    "maxDiffPct": 8.0
+  },
+  "stock-dashboard": {
+    "maxDiffPct": 10.0
+  },
+  "advanced-dashboard": {
+    "maxDiffPct": 10.0
+  },
+  "weva-landing": {
+    "maxDiffPct": 13.0,
+    "_why": "11.09% baseline: same generic-family face split as menu."
+  },
+  "settings": {
+    "maxDiffPct": 8.0
+  },
+  "menu": {
+    "maxDiffPct": 14.0,
+    "_why": "12.11% baseline: doubled-text heat = uniform y-shift from generic-family resolution (Chrome sans-serif=Arial 1.15 vs engine bundled Inter 1.21). Calibrated, not hidden; ratchet down if sample stacks move to Inter-first."
+  },
+  "todo": {
+    "maxDiffPct": 8.0
+  },
+  "vendor": {
+    "maxDiffPct": 8.0
+  },
+  "dialogue": {
+    "maxDiffPct": 8.0
+  },
+  "nook-dialogue": {
+    "maxDiffPct": 8.0
+  },
+  "quests": {
+    "skip": "backdrop-filter samples the Unity scene behind the canvas; Chrome has no equivalent backdrop"
+  },
+  "9slice-demo": {
+    "skip": "panels/buttons reference Unity sprite-registry addresses (UI/PanelFrame, UI/Sprites/*) that Chrome cannot load -- harness limitation, engine 9-slice is pinned by NineSliceSeamTests + the B-9SLICE-SNAP tracker"
+  },
+  "flex-playground": {
+    "maxDiffPct": 7.0,
+    "_why": "5.63% baseline: text-heavy stress page, generic-family face split."
+  },
+  "grid-playground": {
+    "maxDiffPct": 7.0,
+    "_why": "5.20% baseline: same; includes the documented .as auto-placement Chrome quirk."
+  },
+  "stats": {
+    "maxDiffPct": 7.5,
+    "_why": "6.34% baseline since the s6.6 bare-fr floor (was 4.54): the gear-grid is the documented deferred aspect-ratio<->row-height case (SAMPLE_AUDIT) \u2014 the floor moves slot tracks TOWARD Chrome's 167px overflow without reaching it. Ratchet down when that case lands."
+  }
+}

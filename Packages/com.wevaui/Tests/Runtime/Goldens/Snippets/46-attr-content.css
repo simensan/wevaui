@@ -1,0 +1,20 @@
+body { margin: 0; padding: 0; font-size: 16px; line-height: 1; }
+#wrap { width: 400px; }
+
+/* content: attr(data-label) — resolved to the attribute string value.
+   The generated prefix widens the element's line box, so the Chrome-diff
+   verifies attr() resolution feeds into the layout geometry. */
+.labeled::before { content: attr(data-label) ": "; }
+
+/* content: attr() with fallback — the attribute is absent, so the
+   fallback literal string "?" is used as the generated content. */
+.labeled-fallback::before { content: attr(data-missing, "?"); }
+
+/* Typed attr() in a non-content property.
+   CSS Values L5: `attr(<name> <type>)` resolves the attribute as the
+   given type. width: attr(data-w px) interprets data-w="120" as 120px.
+   Stable Chrome 133+ ships this; older stable Chrome treats it as invalid
+   (width computes to auto). The chrome-layout.json shows which path
+   stable Chrome took: if #a4.w == 120 then typed attr is live; if
+   #a4.w == 400 (full container) then stable Chrome does not apply it. */
+.typed-width { width: attr(data-w px); }

@@ -1,0 +1,64 @@
+{
+  "source": "20-flex-baseline.html",
+  "width": 800,
+  "height": 600,
+  "count": 4,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "row",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 100,
+      "display": "flex",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "small",
+      "x": 32,
+      "y": 70,
+      "w": 39.2,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": "small"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "medium",
+      "x": 95.2,
+      "y": 55,
+      "w": 120.98,
+      "h": 39,
+      "display": "block",
+      "position": "static",
+      "text": "medium"
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "large",
+      "x": 240.19,
+      "y": 32,
+      "w": 132.16,
+      "h": 68,
+      "display": "block",
+      "position": "static",
+      "text": "large"
+    }
+  ]
+}

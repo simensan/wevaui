@@ -1,0 +1,78 @@
+{
+  "source": "25-backdrop-modal-dialog.html",
+  "width": 800,
+  "height": 600,
+  "count": 5,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "page",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 105,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "h1",
+      "id": "",
+      "cls": "",
+      "x": 24,
+      "y": 24,
+      "w": 752,
+      "h": 29,
+      "display": "block",
+      "position": "static",
+      "text": "Below the modal"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 24,
+      "y": 61,
+      "w": 752,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": "Lorem ipsum content sitting under the dialog."
+    },
+    {
+      "i": 3,
+      "depth": 0,
+      "tag": "dialog",
+      "id": "",
+      "cls": "",
+      "x": 303,
+      "y": 80,
+      "w": 274,
+      "h": 86,
+      "display": "block",
+      "position": "fixed",
+      "text": ""
+    },
+    {
+      "i": 4,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 320,
+      "y": 113,
+      "w": 240,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": "Confirm action?"
+    }
+  ]
+}

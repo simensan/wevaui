@@ -1,0 +1,78 @@
+{
+  "source": "31-centered-modal.html",
+  "width": 800,
+  "height": 600,
+  "count": 5,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "page",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 100,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 24,
+      "y": 40,
+      "w": 752,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": "Content behind the modal overlay."
+    },
+    {
+      "i": 2,
+      "depth": 0,
+      "tag": "div",
+      "id": "overlay",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 600,
+      "display": "flex",
+      "position": "fixed",
+      "text": ""
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "modal",
+      "cls": "",
+      "x": 200,
+      "y": 150,
+      "w": 400,
+      "h": 300,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 4,
+      "depth": 2,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 224,
+      "y": 174,
+      "w": 352,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": "Confirm action?"
+    }
+  ]
+}

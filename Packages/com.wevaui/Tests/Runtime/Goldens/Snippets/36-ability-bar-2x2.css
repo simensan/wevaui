@@ -1,0 +1,4 @@
+body { margin: 0; padding: 0; background-color: #0f172a; }
+#bar { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; padding: 16px; box-sizing: border-box; width: 360px; height: 200px; }
+.ability { background-color: #1e293b; border: 2px solid #334155; border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-bottom-left-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.ability span { color: #94a3b8; font-size: 18px; }

@@ -1,0 +1,36 @@
+{
+  "source": "24-text-overflow-ellipsis.html",
+  "width": 800,
+  "height": 600,
+  "count": 2,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "card",
+      "x": 24,
+      "y": 24,
+      "w": 232,
+      "h": 73,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "ellipsis",
+      "x": 40,
+      "y": 53,
+      "w": 200,
+      "h": 15,
+      "display": "block",
+      "position": "static",
+      "text": "This-is-a-long-string-that-overflows-its-container."
+    }
+  ]
+}

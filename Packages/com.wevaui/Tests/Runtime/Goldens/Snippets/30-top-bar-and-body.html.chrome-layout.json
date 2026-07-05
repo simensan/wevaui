@@ -1,0 +1,64 @@
+{
+  "source": "30-top-bar-and-body.html",
+  "width": 800,
+  "height": 600,
+  "count": 4,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "shell",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 600,
+      "display": "flex",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "topbar",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 60,
+      "display": "flex",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 2,
+      "tag": "span",
+      "id": "",
+      "cls": "",
+      "x": 20,
+      "y": 19.5,
+      "w": 91.59,
+      "h": 21,
+      "display": "block",
+      "position": "static",
+      "text": "Game Title"
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "body",
+      "cls": "",
+      "x": 0,
+      "y": 60,
+      "w": 800,
+      "h": 540,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

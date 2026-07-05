@@ -1,0 +1,57 @@
+{
+  "id": "10:0",
+  "name": "Hero Card",
+  "type": "FRAME",
+  "layoutMode": "VERTICAL",
+  "primaryAxisAlignItems": "MIN",
+  "counterAxisAlignItems": "CENTER",
+  "itemSpacing": 12,
+  "paddingLeft": 20, "paddingRight": 20, "paddingTop": 20, "paddingBottom": 20,
+  "absoluteBoundingBox": { "x": 0, "y": 0, "width": 280, "height": 180 },
+  "cornerRadius": 16,
+  "fills": [{ "type": "SOLID", "color": { "r": 0.11, "g": 0.14, "b": 0.21, "a": 1 } }],
+  "children": [
+    {
+      "id": "10:1",
+      "name": "Title {{ HeroName }}",
+      "type": "TEXT",
+      "characters": "Aptus",
+      "layoutSizingHorizontal": "HUG", "layoutSizingVertical": "HUG",
+      "style": { "fontFamily": "Inter", "fontSize": 24, "fontWeight": 700, "textAlignHorizontal": "CENTER" },
+      "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }]
+    },
+    {
+      "id": "10:2",
+      "name": "Subtitle",
+      "type": "TEXT",
+      "characters": "Solar Warden",
+      "layoutSizingHorizontal": "HUG", "layoutSizingVertical": "HUG",
+      "style": { "fontFamily": "Inter", "fontSize": 13, "textCase": "UPPER", "letterSpacing": 1 },
+      "fills": [{ "type": "SOLID", "color": { "r": 0.6, "g": 0.64, "b": 0.7, "a": 1 } }]
+    },
+    {
+      "id": "10:3",
+      "name": "Play <button> @click=OnPlay #play",
+      "type": "FRAME",
+      "layoutMode": "HORIZONTAL",
+      "primaryAxisAlignItems": "CENTER",
+      "counterAxisAlignItems": "CENTER",
+      "paddingLeft": 24, "paddingRight": 24, "paddingTop": 10, "paddingBottom": 10,
+      "layoutSizingHorizontal": "FILL", "layoutSizingVertical": "HUG",
+      "cornerRadius": 8,
+      "absoluteBoundingBox": { "x": 20, "y": 120, "width": 240, "height": 40 },
+      "fills": [{ "type": "SOLID", "color": { "r": 0.13, "g": 0.77, "b": 0.37, "a": 1 } }],
+      "children": [
+        {
+          "id": "10:4",
+          "name": "Label",
+          "type": "TEXT",
+          "characters": "PLAY",
+          "layoutSizingHorizontal": "HUG", "layoutSizingVertical": "HUG",
+          "style": { "fontFamily": "Inter", "fontSize": 16, "fontWeight": 900, "letterSpacing": 2 },
+          "fills": [{ "type": "SOLID", "color": { "r": 1, "g": 1, "b": 1, "a": 1 } }]
+        }
+      ]
+    }
+  ]
+}

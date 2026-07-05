@@ -1,0 +1,78 @@
+{
+  "source": "27-text-shadow-blur.html",
+  "width": 800,
+  "height": 600,
+  "count": 5,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "stack",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 222,
+      "display": "flex",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "row crisp",
+      "x": 32,
+      "y": 32,
+      "w": 736,
+      "h": 26,
+      "display": "block",
+      "position": "static",
+      "text": "SCORE 1337"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "row blur2",
+      "x": 32,
+      "y": 76,
+      "w": 736,
+      "h": 26,
+      "display": "block",
+      "position": "static",
+      "text": "SOFT BLUR 2"
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "row blur6",
+      "x": 32,
+      "y": 120,
+      "w": 736,
+      "h": 26,
+      "display": "block",
+      "position": "static",
+      "text": "MEDIUM BLUR 6"
+    },
+    {
+      "i": 4,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "row blur12",
+      "x": 32,
+      "y": 164,
+      "w": 736,
+      "h": 26,
+      "display": "block",
+      "position": "static",
+      "text": "WIDE BLUR 12"
+    }
+  ]
+}

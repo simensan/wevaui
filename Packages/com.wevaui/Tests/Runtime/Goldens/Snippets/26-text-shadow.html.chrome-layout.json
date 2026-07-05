@@ -1,0 +1,64 @@
+{
+  "source": "26-text-shadow.html",
+  "width": 800,
+  "height": 600,
+  "count": 4,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "hud",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 157,
+      "display": "flex",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "label score",
+      "x": 32,
+      "y": 32,
+      "w": 736,
+      "h": 23,
+      "display": "block",
+      "position": "static",
+      "text": "SCORE 1337"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "label health",
+      "x": 32,
+      "y": 67,
+      "w": 736,
+      "h": 23,
+      "display": "block",
+      "position": "static",
+      "text": "HP 87/100"
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "label glow",
+      "x": 32,
+      "y": 102,
+      "w": 736,
+      "h": 23,
+      "display": "block",
+      "position": "static",
+      "text": "CRITICAL"
+    }
+  ]
+}

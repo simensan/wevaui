@@ -1,0 +1,268 @@
+/* ════════════════════════════════════════════════════════════
+   Volt Runner — simple portrait neon game HUD over a blurry
+   rainy neon-street backdrop. Designed for a phone-aspect
+   (9:16) viewport.
+   Exercises: layered text-shadow neon glow, filter:blur bokeh,
+   per-element fall animations (rain), repeating-linear-gradient
+   scanlines, keyframe animations (heart beat, sheen sweep,
+   neon hum).
+   ══════════════════════════════════════════════════════════ */
+
+:root {
+  --pink:  #ff2d95;
+  --cyan:  #00e5ff;
+  --amber: #ffd319;
+
+  --pink-dim:  rgba(255, 45, 149, 0.45);
+  --cyan-dim:  rgba(0, 229, 255, 0.45);
+  --amber-dim: rgba(255, 211, 25, 0.45);
+
+  --ink:     #f3ecff;
+  --ink-dim: rgba(243, 236, 255, 0.55);
+}
+
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+
+body {
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: linear-gradient(180deg, #05030f 0%, #0c0626 58%, #070313 100%);
+  overflow: hidden;
+}
+
+/* ────────────────────────────────────────────────────────────
+   WORLD — blurry rainy neon street (bokeh blobs + rain)
+   ──────────────────────────────────────────────────────────── */
+.scene {
+  position: absolute; left: -2vw; top: -2vh; width: 104vw; height: 104vh;
+  overflow: hidden;
+  /* gentle whole-scene warble — the "looking through wet glass" distortion.
+     Oversized by 2vw/2vh on each side so the skew never exposes the body bg. */
+  animation: scene-warble 9s ease-in-out infinite alternate;
+}
+@keyframes scene-warble {
+  from { transform: skewX(-0.7deg) scale(1); }
+  to   { transform: skewX(0.7deg)  scale(1.02); }
+}
+
+/* out-of-focus neon lights — big soft color blobs, slowly drifting */
+.blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(46px);
+}
+.b1 { left: -16vw; top: 12vh;  width: 56vw; height: 42vh; background: rgba(255, 45, 149, 0.55);
+      animation: drift-a 13s ease-in-out infinite alternate; }
+.b2 { right: -14vw; top: 24vh; width: 50vw; height: 38vh; background: rgba(0, 229, 255, 0.4);
+      animation: drift-b 17s ease-in-out infinite alternate; }
+.b3 { left: 22vw;  top: 46vh;  width: 56vw; height: 30vh; background: rgba(180, 107, 255, 0.42);
+      animation: drift-c 21s ease-in-out infinite alternate; }
+.b4 { right: 4vw;  top: 6vh;   width: 26vw; height: 14vh; background: rgba(255, 211, 25, 0.32);
+      animation: drift-b 11s ease-in-out infinite alternate; }
+.b5 { left: -8vw;  bottom: 4vh; width: 44vw; height: 26vh; background: rgba(225, 20, 184, 0.38);
+      animation: drift-a 19s ease-in-out infinite alternate; }
+.b6 { left: 40vw;  top: 28vh;  width: 24vw; height: 16vh; background: rgba(125, 249, 255, 0.3);
+      animation: drift-c 15s ease-in-out infinite alternate; }
+@keyframes drift-a { from { transform: translate(0, 0) scale(1); }      to { transform: translate(5vw, 3vh)  scale(1.18); } }
+@keyframes drift-b { from { transform: translate(0, 0) scale(1.12); }   to { transform: translate(-4vw, 4vh) scale(0.94); } }
+@keyframes drift-c { from { transform: translate(0, 0) scale(0.96); }   to { transform: translate(3vw, -4vh) scale(1.15); } }
+
+/* small bokeh lamps — brighter, only slightly out of focus */
+.bokeh {
+  position: absolute; border-radius: 50%;
+  filter: blur(3px);
+  animation: bokeh-breathe 4s ease-in-out infinite alternate;
+}
+.k1 { left: 16%; top: 22%; width: 22px; height: 22px; background: rgba(255, 173, 214, 0.85); }
+.k2 { left: 74%; top: 16%; width: 14px; height: 14px; background: rgba(184, 248, 255, 0.8); }
+.k3 { left: 58%; top: 38%; width: 26px; height: 26px; background: rgba(255, 230, 150, 0.7); }
+.k4 { left: 30%; top: 52%; width: 12px; height: 12px; background: rgba(222, 188, 255, 0.8); }
+.k5 { left: 84%; top: 47%; width: 18px; height: 18px; background: rgba(255, 158, 207, 0.75); }
+@keyframes bokeh-breathe { from { opacity: 0.55; } to { opacity: 1; } }
+
+/* wet street — neon smears reflecting off the ground */
+.smear {
+  position: absolute; bottom: 0;
+  width: 30px; height: 24vh;
+  filter: blur(9px);
+  opacity: 0.55;
+}
+.s1 { left: 18%; background: linear-gradient(180deg, rgba(255, 45, 149, 0.7) 0%, rgba(255, 45, 149, 0) 90%); }
+.s2 { left: 49%; background: linear-gradient(180deg, rgba(0, 229, 255, 0.6) 0%, rgba(0, 229, 255, 0) 90%); height: 19vh; }
+.s3 { left: 76%; background: linear-gradient(180deg, rgba(255, 211, 25, 0.5) 0%, rgba(255, 211, 25, 0) 90%); height: 15vh; }
+.wet {
+  position: absolute; left: 0; bottom: 0; width: 100%; height: 30vh;
+  background: linear-gradient(180deg, rgba(4, 2, 12, 0) 0%, rgba(4, 2, 12, 0.7) 100%);
+}
+
+/* rain — slanted container, each drop falls on its own clock.
+   Start heights + durations are staggered per drop so no delay
+   is needed to break the formation up. */
+.rain {
+  position: absolute; left: -10vw; top: -20vh;
+  width: 120vw; height: 140vh;
+  transform: rotate(7deg);
+}
+.drop {
+  position: absolute;
+  width: 2px; height: 11vh;
+  background: linear-gradient(180deg, rgba(190, 235, 255, 0) 0%, rgba(190, 235, 255, 0.5) 100%);
+  animation: drop-fall 1.3s linear infinite;
+}
+@keyframes drop-fall {
+  from { transform: translateY(-30vh); }
+  to   { transform: translateY(150vh); }
+}
+.d1  { left: 4%;  top: 0;     animation-duration: 1.15s; opacity: 0.7; }
+.d2  { left: 13%; top: -9vh;  animation-duration: 1.6s;  opacity: 0.4; height: 8vh; }
+.d3  { left: 22%; top: -4vh;  animation-duration: 1.05s; opacity: 0.8; }
+.d4  { left: 31%; top: -12vh; animation-duration: 1.45s; opacity: 0.5; height: 9vh; }
+.d5  { left: 40%; top: -2vh;  animation-duration: 1.25s; opacity: 0.65; }
+.d6  { left: 49%; top: -8vh;  animation-duration: 1.7s;  opacity: 0.35; height: 7vh; }
+.d7  { left: 58%; top: -5vh;  animation-duration: 1.1s;  opacity: 0.75; }
+.d8  { left: 66%; top: -11vh; animation-duration: 1.5s;  opacity: 0.45; height: 9vh; }
+.d9  { left: 74%; top: -3vh;  animation-duration: 1.2s;  opacity: 0.7; }
+.d10 { left: 82%; top: -7vh;  animation-duration: 1.65s; opacity: 0.4; height: 8vh; }
+.d11 { left: 90%; top: -1vh;  animation-duration: 1.08s; opacity: 0.8; }
+.d12 { left: 97%; top: -10vh; animation-duration: 1.4s;  opacity: 0.55; height: 9vh; }
+
+/* close-to-camera drops: fatter, blurred out of focus, falling faster */
+.rain-blur { transform: rotate(9deg); }
+.rain-blur .drop {
+  width: 6px;
+  filter: blur(5px);
+  background: linear-gradient(180deg, rgba(210, 244, 255, 0) 0%, rgba(210, 244, 255, 0.8) 100%);
+}
+.db1 { left: 9%;  top: -6vh;  animation-duration: 0.85s; opacity: 0.85; height: 16vh; }
+.db2 { left: 27%; top: -14vh; animation-duration: 1.0s;  opacity: 0.6;  height: 13vh; }
+.db3 { left: 45%; top: -2vh;  animation-duration: 0.78s; opacity: 0.9;  height: 17vh; }
+.db4 { left: 62%; top: -10vh; animation-duration: 0.95s; opacity: 0.65; height: 14vh; }
+.db5 { left: 79%; top: -5vh;  animation-duration: 0.82s; opacity: 0.8;  height: 16vh; }
+.db6 { left: 93%; top: -12vh; animation-duration: 1.05s; opacity: 0.55; height: 12vh; }
+
+/* ────────────────────────────────────────────────────────────
+   TOP SIGN — lives · level · score, framed like a neon tube
+   ──────────────────────────────────────────────────────────── */
+.hud-top {
+  position: absolute; left: 12px; right: 12px; top: 12px; height: 104px;
+  box-sizing: border-box;
+  padding: 0 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(6, 1, 18, 0.82);
+  border: 2px solid var(--pink);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  animation: hum-pink 3s ease-in-out infinite;
+}
+/* neon tubes never sit still — slow glow "hum" on both sign boards */
+@keyframes hum-pink {
+  0%, 100% { box-shadow: 0 0 14px var(--pink-dim), 0 0 44px var(--pink-dim), inset 0 0 16px rgba(255, 45, 149, 0.14); }
+  50%      { box-shadow: 0 0 22px var(--pink),     0 0 64px var(--pink-dim), inset 0 0 22px rgba(255, 45, 149, 0.22); }
+}
+
+.lives { display: flex; align-items: center; gap: 8px; }
+.heart {
+  font-size: 36px;
+  color: #ffd7ea;
+  text-shadow:
+    0 0 4px  #ffffff,
+    0 0 12px var(--pink),
+    0 0 28px var(--pink);
+  animation: heart-beat 1.1s ease-in-out infinite;
+}
+.heart.lost {
+  color: rgba(243, 236, 255, 0.14);
+  text-shadow: none;
+  animation: none;
+}
+@keyframes heart-beat {
+  0%, 100% { transform: scale(1); }
+  12%      { transform: scale(1.18); }
+  24%      { transform: scale(1); }
+}
+
+.level-chip {
+  padding: 9px 20px;
+  white-space: nowrap;
+  font-size: 20px; font-weight: 800; letter-spacing: 0.16em; padding-left: calc(20px + 0.16em);
+  color: #dffbff;
+  text-shadow: 0 0 4px #ffffff, 0 0 14px var(--cyan);
+  border: 2px solid var(--cyan);
+  border-radius: 999px;
+  box-shadow: 0 0 14px var(--cyan-dim), inset 0 0 12px rgba(0, 229, 255, 0.16);
+}
+
+.score {
+  text-align: right;
+  white-space: nowrap;
+  font-size: 33px; font-weight: 800; letter-spacing: 0.03em;
+  color: #fff3cb;
+  text-shadow:
+    0 0 4px  #ffffff,
+    0 0 14px var(--amber),
+    0 0 34px var(--amber-dim);
+}
+
+/* ────────────────────────────────────────────────────────────
+   BOTTOM SIGN — boost meter in a matching cyan tube frame
+   ──────────────────────────────────────────────────────────── */
+.hud-bottom {
+  position: absolute; left: 12px; right: 12px; bottom: 12px;
+  box-sizing: border-box;
+  padding: 18px 26px 24px;
+  /* flex column (not block flow): children must track the inset-resolved
+     width — see CSS_OPEN_GAPS.md, abspos left+right block-child width */
+  display: flex; flex-direction: column; gap: 12px;
+  background: rgba(6, 1, 18, 0.82);
+  border: 2px solid var(--cyan);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  animation: hum-cyan 3s ease-in-out infinite;
+}
+@keyframes hum-cyan {
+  0%, 100% { box-shadow: 0 0 14px var(--cyan-dim), 0 0 44px var(--cyan-dim), inset 0 0 16px rgba(0, 229, 255, 0.12); }
+  50%      { box-shadow: 0 0 22px var(--cyan),     0 0 64px var(--cyan-dim), inset 0 0 22px rgba(0, 229, 255, 0.2); }
+}
+
+.meter-label {
+  display: flex; justify-content: space-between;
+  font-size: 19px; font-weight: 800; letter-spacing: 0.3em; color: #dffbff;
+  text-shadow: 0 0 10px var(--cyan-dim);
+}
+.meter-track {
+  height: 26px; border-radius: 999px;
+  background: rgba(6, 1, 18, 0.7);
+  border: 1px solid rgba(243, 236, 255, 0.16);
+  overflow: hidden;
+}
+.meter-fill {
+  position: relative;
+  width: 72%; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #b46bff, var(--pink));
+  box-shadow: 0 0 14px var(--pink);
+  overflow: hidden;
+}
+/* highlight sweeping along the charged bar */
+.meter-sheen {
+  position: absolute; left: 0; top: 0;
+  width: 48px; height: 100%;
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0) 100%);
+  animation: sheen-slide 1.8s linear infinite;
+}
+@keyframes sheen-slide {
+  from { transform: translateX(-48px); }
+  to   { transform: translateX(100vw); }
+}
+
+/* ────────────────────────────────────────────────────────────
+   CRT SCANLINES — decor only, never hit-tested
+   ──────────────────────────────────────────────────────────── */
+.scanlines {
+  position: absolute; left: 0; top: 0; width: 100vw; height: 100vh;
+  background: repeating-linear-gradient(180deg,
+    rgba(0, 0, 0, 0.22) 0px, rgba(0, 0, 0, 0.22) 1px,
+    rgba(0, 0, 0, 0) 1px, rgba(0, 0, 0, 0) 4px);
+  opacity: 0.5;
+  pointer-events: none;
+}

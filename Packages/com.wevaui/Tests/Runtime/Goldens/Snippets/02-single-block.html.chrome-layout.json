@@ -1,0 +1,22 @@
+{
+  "source": "02-single-block.html",
+  "width": 800,
+  "height": 600,
+  "count": 1,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "box",
+      "x": 0,
+      "y": 0,
+      "w": 200,
+      "h": 120,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

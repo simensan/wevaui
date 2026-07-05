@@ -1,0 +1,78 @@
+{
+  "source": "43-quotes-pseudo.html",
+  "width": 800,
+  "height": 600,
+  "count": 5,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "wrap",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 64,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "q",
+      "id": "bq",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 48,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 2,
+      "tag": "div",
+      "id": "mid",
+      "cls": "",
+      "x": 0,
+      "y": 16,
+      "w": 400,
+      "h": 16,
+      "display": "block",
+      "position": "static",
+      "text": "mid"
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "p",
+      "id": "para",
+      "cls": "",
+      "x": 0,
+      "y": 48,
+      "w": 400,
+      "h": 16,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 4,
+      "depth": 2,
+      "tag": "q",
+      "id": "iq",
+      "cls": "",
+      "x": 0,
+      "y": 46,
+      "w": 97.09,
+      "h": 20,
+      "display": "inline",
+      "position": "static",
+      "text": "Hello world"
+    }
+  ]
+}

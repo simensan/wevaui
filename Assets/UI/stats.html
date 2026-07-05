@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Halcyon — Character Sheet</title>
+<link rel="stylesheet" href="stats.css" />
+</head>
+<body>
+
+<main class="sheet">
+
+  <!-- ───── HEADER STRIP ───── -->
+  <header class="banner">
+    <div class="avatar">
+      <span class="avatar-glyph">⚔</span>
+    </div>
+    <div class="banner-meta">
+      <h1 class="char-name">Selene of the Ashfall</h1>
+      <p class="char-sub">Level 27 · Skirmisher · House Brackwater</p>
+      <ul class="tag-row">
+        <li class="tag tag-active">Battle-Ready</li>
+        <li class="tag tag-buff">+18% Crit</li>
+        <li class="tag tag-debuff">Bleeding</li>
+      </ul>
+    </div>
+    <div class="banner-xp">
+      <div class="xp-label"><span>EXP</span><span class="xp-val">42,180 / 60,000</span></div>
+      <div class="xp-bar"><div class="xp-fill"></div></div>
+    </div>
+  </header>
+
+  <!-- ───── LEFT COLUMN — ATTRIBUTES ───── -->
+  <section class="card attrs">
+    <h2 class="card-title">Attributes</h2>
+    <ul class="attr-list">
+      <li class="attr">
+        <span class="attr-name">Strength</span>
+        <span class="attr-val">24</span>
+        <div class="attr-bar"><div class="attr-fill" style="width: 80%;"></div></div>
+      </li>
+      <li class="attr">
+        <span class="attr-name">Dexterity</span>
+        <span class="attr-val">31</span>
+        <div class="attr-bar"><div class="attr-fill" style="width: 95%;"></div></div>
+      </li>
+      <li class="attr">
+        <span class="attr-name">Intellect</span>
+        <span class="attr-val">14</span>
+        <div class="attr-bar"><div class="attr-fill" style="width: 45%;"></div></div>
+      </li>
+      <li class="attr">
+        <span class="attr-name">Resolve</span>
+        <span class="attr-val">19</span>
+        <div class="attr-bar"><div class="attr-fill" style="width: 62%;"></div></div>
+      </li>
+      <li class="attr">
+        <span class="attr-name">Stealth</span>
+        <span class="attr-val">28</span>
+        <div class="attr-bar"><div class="attr-fill" style="width: 88%;"></div></div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ───── MIDDLE COLUMN — EQUIPMENT ───── -->
+  <section class="card gear">
+    <h2 class="card-title">Equipment</h2>
+    <div class="gear-grid">
+      <div class="slot slot-helm"><span class="slot-glyph">🪖</span><span class="slot-label">Helm</span></div>
+      <div class="slot slot-chest filled"><span class="slot-glyph">🛡</span><span class="slot-label">Cuirass of Embers</span></div>
+      <div class="slot slot-amulet"><span class="slot-glyph">📿</span><span class="slot-label">Amulet</span></div>
+      <div class="slot slot-ring filled"><span class="slot-glyph">💍</span><span class="slot-label">Ring of Sparks</span></div>
+      <div class="slot slot-mh filled"><span class="slot-glyph">⚔</span><span class="slot-label">Sundered Sabre</span></div>
+      <div class="slot slot-oh"><span class="slot-glyph">🛡</span><span class="slot-label">Off-hand</span></div>
+      <div class="slot slot-boots filled"><span class="slot-glyph">🥾</span><span class="slot-label">Stalker Boots</span></div>
+      <div class="slot slot-belt"><span class="slot-glyph">🎒</span><span class="slot-label">Belt</span></div>
+    </div>
+  </section>
+
+  <!-- ───── RIGHT COLUMN — RESISTANCES ───── -->
+  <section class="card resists">
+    <h2 class="card-title">Resistances</h2>
+    <ul class="res-list">
+      <li class="res res-fire"><span class="res-icon">🔥</span><span class="res-name">Fire</span><span class="res-val">+18%</span></li>
+      <li class="res res-frost"><span class="res-icon">❄</span><span class="res-name">Frost</span><span class="res-val">+4%</span></li>
+      <li class="res res-shock"><span class="res-icon">⚡</span><span class="res-name">Shock</span><span class="res-val">-12%</span></li>
+      <li class="res res-toxin"><span class="res-icon">☠</span><span class="res-name">Toxin</span><span class="res-val">+0%</span></li>
+      <li class="res res-arcane"><span class="res-icon">✦</span><span class="res-name">Arcane</span><span class="res-val">+22%</span></li>
+    </ul>
+  </section>
+
+  <!-- ───── BOTTOM ROW — SKILLS ───── -->
+  <section class="card skills">
+    <h2 class="card-title">Skills <span class="card-aside">5 ranks available</span></h2>
+    <div class="skill-row">
+      <div class="skill">
+        <div class="skill-head">
+          <span class="skill-name">Riposte</span>
+          <span class="skill-rank">III</span>
+        </div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 75%;"></div></div>
+        <p class="skill-desc">Counter-strike when an enemy misses you.</p>
+      </div>
+      <div class="skill">
+        <div class="skill-head">
+          <span class="skill-name">Shadow Step</span>
+          <span class="skill-rank">II</span>
+        </div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 50%;"></div></div>
+        <p class="skill-desc">Vanish briefly to reposition.</p>
+      </div>
+      <div class="skill">
+        <div class="skill-head">
+          <span class="skill-name">Embered Edge</span>
+          <span class="skill-rank">I</span>
+        </div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 25%;"></div></div>
+        <p class="skill-desc">Set your weapon ablaze for 8s.</p>
+      </div>
+      <div class="skill skill-locked">
+        <div class="skill-head">
+          <span class="skill-name">Final Stand</span>
+          <span class="skill-rank">—</span>
+        </div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 0%;"></div></div>
+        <p class="skill-desc">Locked. Requires Level 30.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

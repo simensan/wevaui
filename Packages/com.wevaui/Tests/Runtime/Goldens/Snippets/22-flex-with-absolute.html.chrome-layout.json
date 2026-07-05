@@ -1,0 +1,78 @@
+{
+  "source": "22-flex-with-absolute.html",
+  "width": 800,
+  "height": 600,
+  "count": 5,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "row",
+      "x": 0,
+      "y": 0,
+      "w": 500,
+      "h": 120,
+      "display": "flex",
+      "position": "relative",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 24,
+      "y": 24,
+      "w": 142.66,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "badge",
+      "x": 456,
+      "y": 8,
+      "w": 36,
+      "h": 24,
+      "display": "block",
+      "position": "absolute",
+      "text": ""
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 178.66,
+      "y": 24,
+      "w": 142.67,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 4,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 333.33,
+      "y": 24,
+      "w": 142.67,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

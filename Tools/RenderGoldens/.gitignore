@@ -1,0 +1,8 @@
+# Captures and reports are machine-generated artifacts — the harness scripts
+# and config are the versioned surface. Chrome refs regenerate per machine
+# (font rendering differs); Unity captures regenerate per run.
+unity/
+chrome/
+diff/
+report.json
+manifest.json

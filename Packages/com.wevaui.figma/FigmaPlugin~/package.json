@@ -1,0 +1,14 @@
+{
+  "name": "weva-figma-export",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Figma plugin that exports a frame to Weva-bridge JSON (tokenless).",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.100.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,83 @@
+<!--
+  level-select — a Mini Metro-style city picker carousel. Clean light theme:
+  a horizontal row of city cards (the centre one "featured": larger, tinted,
+  with mode badges), CSS-drawn circular transit-map previews (rounded-bar
+  lines + station dots clipped to a circle), a back chevron, and a big yellow
+  Play button. Exercises: flex carousel with a scaled-up featured item,
+  overflow-clipped peeking edge cards, transform scale, border-radius circles
+  + overflow clipping, clip-path glyphs, layered light shadows.
+-->
+<link rel="stylesheet" href="level-select.css" />
+<main class="screen">
+
+  <button class="back" aria-label="Back"><span class="chev"></span></button>
+
+  <ul class="carousel">
+
+    <!-- peeking left edge -->
+    <li class="city edge">
+      <div class="map" style="--bg:#cfe0c6;"><span class="line" style="--c:#7aa35a;--r:30deg;"></span><span class="stop" style="--x:42%;--y:46%;"></span></div>
+      <div class="info"><h2>Naples</h2><div class="best">Best: 2</div></div>
+    </li>
+
+    <li class="city">
+      <div class="map" style="--bg:#bfe0e6;">
+        <span class="line" style="--c:#3f8ea3;--r:25deg;"></span>
+        <span class="line" style="--c:#d98f3f;--r:-40deg;--t:58%;"></span>
+        <span class="stop sq" style="--x:38%;--y:40%;"></span>
+        <span class="stop" style="--x:60%;--y:56%;"></span>
+        <span class="stop" style="--x:50%;--y:66%;"></span>
+      </div>
+      <div class="info">
+        <h2>Beijing</h2>
+        <div class="best">Best: 0</div>
+        <p class="desc">Build the roads that get Beijing's millions of commuters to work on time.</p>
+      </div>
+    </li>
+
+    <!-- featured centre card -->
+    <li class="city featured">
+      <div class="map" style="--bg:#fbfbfb;">
+        <span class="line" style="--c:#e0547a;--r:18deg;"></span>
+        <span class="line" style="--c:#4f74c4;--r:-32deg;--t:60%;"></span>
+        <span class="line" style="--c:#46b07a;--r:78deg;--t:50%;--l:55%;"></span>
+        <span class="stop sq" style="--x:34%;--y:36%;"></span>
+        <span class="stop" style="--x:58%;--y:44%;"></span>
+        <span class="stop" style="--x:46%;--y:60%;"></span>
+        <span class="stop tri" style="--x:66%;--y:64%;"></span>
+      </div>
+      <div class="medals"><span class="medal m1"></span><span class="medal m2"></span><span class="medal m3"></span></div>
+      <div class="info">
+        <h2>Tokyo</h2>
+        <div class="best">Best: 0</div>
+        <div class="modes"><span class="mode bar"></span><span class="mode ribbon"></span></div>
+        <p class="desc">Connect the 23 wards of Tokyo, the world's biggest metropolis.</p>
+      </div>
+    </li>
+
+    <li class="city">
+      <div class="map" style="--bg:#cfe6c6;">
+        <span class="line" style="--c:#5aa35a;--r:-22deg;"></span>
+        <span class="line" style="--c:#caa23f;--r:48deg;--t:54%;"></span>
+        <span class="stop" style="--x:40%;--y:42%;"></span>
+        <span class="stop sq" style="--x:62%;--y:52%;"></span>
+        <span class="stop" style="--x:48%;--y:64%;"></span>
+      </div>
+      <div class="info">
+        <h2>Dar es Salaam</h2>
+        <div class="best">Best: 0</div>
+        <p class="desc">Expand your network to keep up with Dar es Salaam's rapid growth.</p>
+      </div>
+    </li>
+
+    <!-- peeking locked right edge -->
+    <li class="city edge locked">
+      <div class="map" style="--bg:#dadde1;"><span class="lock"></span></div>
+      <div class="info"><h2>Montreal</h2><div class="best">Locked</div></div>
+    </li>
+
+  </ul>
+
+  <button class="play">Play</button>
+
+</main>

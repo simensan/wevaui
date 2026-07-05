@@ -1,0 +1,56 @@
+[
+  {
+    "Name": "EndToEnd.FullPipeline",
+    "Scale": "100f / 229 elem",
+    "MedianMs": 1.32565,
+    "P95Ms": 1.855975,
+    "P99Ms": 2.0591510000000013,
+    "BytesPerCall": -1,
+    "Notes": "Cascade -\u003E Layout -\u003E Paint, full re-run per frame"
+  },
+  {
+    "Name": "EndToEnd.HoverToggle",
+    "Scale": "1000f / 1001 elem",
+    "MedianMs": 0.5601,
+    "P95Ms": 0.9620199999999995,
+    "P99Ms": 1.2345089999999996,
+    "BytesPerCall": -1,
+    "Notes": "toggle :hover on one button per frame; layout skipped 1000/1000 frames via IncrementalLayoutGate"
+  },
+  {
+    "Name": "EndToEnd.StableFlexTextUpdate",
+    "Scale": "1000f / 1507 elem",
+    "MedianMs": 1.378,
+    "P95Ms": 5.118549999999999,
+    "P99Ms": 14.026518999999999,
+    "BytesPerCall": -1,
+    "Notes": "two-digit text update inside fixed-size flex chip; subtree-skipped 999/1000"
+  },
+  {
+    "Name": "EndToEnd.ViewportResizeStableMedia",
+    "Scale": "500f / 1503 elem",
+    "MedianMs": 10.5846,
+    "P95Ms": 57.07771999999995,
+    "P99Ms": 105.954018,
+    "BytesPerCall": -1,
+    "Notes": "resize above a stable @media breakpoint; cascade recomputed 0/500; layout 5,053ms, paint 5,367ms; avg stages build/block/analyze/flex/pos/repair/reconcile 1,29/6,69/0,45/0,68/0,00/0,23/0,54ms"
+  },
+  {
+    "Name": "EndToEnd.ViewportResizeQuests",
+    "Scale": "500f / 101 elem",
+    "MedianMs": 0.88705,
+    "P95Ms": 1.3692749999999998,
+    "P99Ms": 2.4002459999999997,
+    "BytesPerCall": -1,
+    "Notes": "Assets/UI/quests resize; cascade recomputed 0/500; layout 0,749ms, paint 0,135ms"
+  },
+  {
+    "Name": "EndToEnd.HoverWithLayoutProp",
+    "Scale": "1000f / 1251 elem",
+    "MedianMs": 1.2796500000000002,
+    "P95Ms": 1.876735,
+    "P99Ms": 2.4503049999999984,
+    "BytesPerCall": -1,
+    "Notes": "toggle :hover on one .btn per frame with border-width change; subtree-skipped 0/1000, gate-skipped 1/1000"
+  }
+]

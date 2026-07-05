@@ -1,0 +1,392 @@
+/* ════════════════════════════════════════════════════════════
+   Halcyon — Character sheet. Banner across the top, three
+   columns of cards (attributes / equipment / resistances),
+   and a wide skills row beneath.
+   ══════════════════════════════════════════════════════════ */
+
+:root {
+  --bg-0:        #0a0712;
+  --bg-1:        #161028;
+  --bg-2:        #221a3d;
+  --panel:       rgba(20, 14, 38, 0.92);
+  --panel-soft:  rgba(255, 255, 255, 0.04);
+  --edge:        rgba(255, 255, 255, 0.10);
+  --edge-strong: rgba(255, 255, 255, 0.20);
+  --ink:         #f0ecff;
+  --ink-muted:   #aaa1cc;
+  --ink-dim:     #6e6691;
+  --accent:      #b388ff;
+  --gold:        #fbbf24;
+  --crit:        #ff5fa2;
+  --warn:        #f97316;
+  --bad:         #ef4444;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+}
+
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+
+body {
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-0) 100%);
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+}
+
+.sheet {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "banner banner banner"
+    "attrs  gear   resists"
+    "skills skills skills";
+  gap: var(--s-4);
+  padding: var(--s-5);
+  box-sizing: border-box;
+}
+
+/* ────────────────────────────────────────────────────────────
+   BANNER
+   ──────────────────────────────────────────────────────────── */
+.banner {
+  grid-area: banner;
+  display: grid;
+  grid-template-columns: 96px 1fr 280px;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--bg-1));
+  border: 2px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+
+.avatar-glyph {
+  font-size: 48px;
+  color: var(--gold);
+}
+
+.banner-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.char-name {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--gold);
+}
+
+.char-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+  letter-spacing: 0.06em;
+}
+
+.tag-row {
+  list-style: none;
+  margin: var(--s-2) 0 0 0;
+  padding: 0;
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding: 2px var(--s-2);
+  border-radius: var(--r-sm);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--edge);
+}
+
+.tag-active { background: rgba(179, 136, 255, 0.18); color: var(--accent); border-color: var(--accent); }
+.tag-buff   { background: rgba(251, 191, 36, 0.18);  color: var(--gold); }
+.tag-debuff { background: rgba(239, 68, 68, 0.18);   color: var(--bad); }
+
+.banner-xp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.xp-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--ink-muted);
+  letter-spacing: 0.08em;
+}
+
+.xp-val { color: var(--gold); font-weight: 700; }
+
+.xp-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.xp-fill {
+  height: 100%;
+  width: 70%;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+  box-shadow: 0 0 8px rgba(179, 136, 255, 0.6);
+}
+
+/* ────────────────────────────────────────────────────────────
+   CARD SHELL
+   ──────────────────────────────────────────────────────────── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-height: 0;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-bottom: 1px solid var(--edge);
+  padding-bottom: var(--s-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.card-aside {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+/* ────────────────────────────────────────────────────────────
+   ATTRIBUTES
+   ──────────────────────────────────────────────────────────── */
+.attrs { grid-area: attrs; }
+
+.attr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.attr {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 2px var(--s-2);
+}
+
+.attr-name {
+  grid-column: 1;
+  grid-row: 1;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.attr-val {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.attr-bar {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.attr-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+}
+
+/* ────────────────────────────────────────────────────────────
+   EQUIPMENT GRID
+   ──────────────────────────────────────────────────────────── */
+.gear { grid-area: gear; }
+
+.gear-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-2);
+  flex: 1;
+}
+
+.slot {
+  aspect-ratio: 1 / 1;
+  border: 1px dashed var(--edge);
+  border-radius: var(--r-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
+  background: var(--panel-soft);
+}
+
+.slot.filled {
+  background: rgba(179, 136, 255, 0.08);
+  border-style: solid;
+  border-color: var(--accent);
+}
+
+.slot-glyph {
+  font-size: 28px;
+  color: var(--ink);
+}
+
+.slot-label {
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.slot.filled .slot-label { color: var(--ink); }
+
+/* ────────────────────────────────────────────────────────────
+   RESISTANCES
+   ──────────────────────────────────────────────────────────── */
+.resists { grid-area: resists; }
+
+.res-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.res {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2);
+  background: var(--panel-soft);
+  border-radius: var(--r-sm);
+}
+
+.res-icon { font-size: 16px; }
+.res-name { font-size: 13px; color: var(--ink); }
+.res-val  { font-size: 13px; font-weight: 700; color: var(--ink); }
+
+.res-fire .res-val   { color: var(--warn); }
+.res-frost .res-val  { color: #60a5fa; }
+.res-shock .res-val  { color: var(--bad); }
+.res-toxin .res-val  { color: var(--ink-muted); }
+.res-arcane .res-val { color: var(--accent); }
+
+/* ────────────────────────────────────────────────────────────
+   SKILLS
+   ──────────────────────────────────────────────────────────── */
+.skills { grid-area: skills; }
+
+.skill-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-3);
+}
+
+.skill {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--panel-soft);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-md);
+}
+
+.skill-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.skill-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.skill-rank {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+}
+
+.skill-bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.skill-fill {
+  height: 100%;
+  background: var(--accent);
+}
+
+.skill-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.skill-locked { opacity: 0.4; }
+.skill-locked .skill-rank { color: var(--ink-dim); }
+.skill-locked .skill-fill { background: var(--ink-dim); }

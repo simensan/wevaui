@@ -1,0 +1,32 @@
+{
+  "name": "com.wevaui",
+  "version": "0.1.0",
+  "displayName": "Weva",
+  "description": "HTML/CSS-compatible UI layer for Unity. Standard HTML elements, real CSS cascade, flexbox + grid + inline layout, no Unity-specific renames.",
+  "unity": "6000.4",
+  "unityRelease": "1f1",
+  "license": "MIT",
+  "keywords": [
+    "ui",
+    "html",
+    "css",
+    "layout",
+    "urp"
+  ],
+  "author": {
+    "name": "Weva contributors"
+  },
+  "dependencies": {
+    "com.unity.render-pipelines.universal": "17.0.0",
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.burst": "1.8.0"
+  },
+  "samples": [
+    {
+      "displayName": "Phase One Demo",
+      "description": "Minimal scene exercising the full pipeline: HTML parse, CSS cascade, layout, paint, controller binding, hot reload. See README inside the sample for setup steps.",
+      "path": "Samples~/PhaseOneDemo"
+    }
+  ]
+}

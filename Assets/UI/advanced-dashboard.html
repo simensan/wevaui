@@ -1,0 +1,149 @@
+<!-- Advanced dashboard exercising a wide CSS surface for engine audit
+     against Chrome. Each section is annotated with the spec features
+     it stresses; the goal is to surface divergences in a single page
+     rather than via narrow unit-test probes. -->
+<link rel="stylesheet" href="advanced-dashboard.css">
+
+<div class="dashboard">
+
+  <!-- ── Header: avatar, identity, currencies, notifications ──────────
+       Stresses: custom properties, color-mix(), conic-gradient ring,
+                 backdrop-filter on chips, ::before counter badge,
+                 :has() parent styling, position: sticky inside scroller. -->
+  <header class="hdr">
+    <div class="hdr-avatar">
+      <div class="hdr-avatar-ring"></div>
+      <img class="hdr-avatar-img" src="" alt="avatar"/>
+      <span class="hdr-avatar-level">42</span>
+    </div>
+    <div class="hdr-identity">
+      <h1 class="hdr-name">Captain Aptus</h1>
+      <p class="hdr-rank">Vanguard Initiate · <span class="hdr-rank-pct">68%</span> to Rank V</p>
+      <div class="hdr-progress"><div class="hdr-progress-fill" style="--p: 68"></div></div>
+    </div>
+    <div class="hdr-chips">
+      <button class="chip chip-gold"><span class="chip-icon"></span>1,420</button>
+      <button class="chip chip-blue"><span class="chip-icon"></span>320</button>
+      <button class="chip chip-violet has-badge" data-badge="3"><span class="chip-icon"></span>Mail</button>
+    </div>
+  </header>
+
+  <!-- ── Main grid: stats | activity | achievements ─────────────────── -->
+  <main class="grid">
+
+    <!-- Stats column: aspect-ratio cards, counter-reset, clip-path -->
+    <section class="stats" aria-label="Core stats">
+      <h2 class="section-title">Stats overview</h2>
+      <ol class="stat-cards">
+        <li class="stat-card stat-up">
+          <span class="stat-label">Win rate</span>
+          <span class="stat-value">62<small>%</small></span>
+          <span class="stat-trend">+4.2</span>
+        </li>
+        <li class="stat-card stat-down">
+          <span class="stat-label">Deaths</span>
+          <span class="stat-value">19</span>
+          <span class="stat-trend">-1.3</span>
+        </li>
+        <li class="stat-card stat-up">
+          <span class="stat-label">Kills</span>
+          <span class="stat-value">214</span>
+          <span class="stat-trend">+12</span>
+        </li>
+        <li class="stat-card stat-neutral">
+          <span class="stat-label">Hours</span>
+          <span class="stat-value">88<small>h</small></span>
+          <span class="stat-trend">~</span>
+        </li>
+      </ol>
+
+      <h2 class="section-title">Ring progress</h2>
+      <div class="ring" style="--pct: 72"><span class="ring-num">72%</span></div>
+    </section>
+
+    <!-- Activity column: timeline using ::before connectors -->
+    <section class="activity" aria-label="Recent activity">
+      <h2 class="section-title sticky-title">Recent activity</h2>
+      <ul class="timeline">
+        <li class="t-item t-win">
+          <div class="t-marker"></div>
+          <div class="t-content">
+            <strong>Cleared Stage 8</strong>
+            <span class="t-time">2 min ago</span>
+          </div>
+        </li>
+        <li class="t-item t-quest">
+          <div class="t-marker"></div>
+          <div class="t-content">
+            <strong>Daily quest complete</strong>
+            <span class="t-time">14 min ago</span>
+          </div>
+        </li>
+        <li class="t-item t-friend">
+          <div class="t-marker"></div>
+          <div class="t-content">
+            <strong>Aeon sent a hero gift</strong>
+            <span class="t-time">1 hour ago</span>
+          </div>
+        </li>
+        <li class="t-item t-loss">
+          <div class="t-marker"></div>
+          <div class="t-content">
+            <strong>Defeated on Stage 11</strong>
+            <span class="t-time">2 hours ago</span>
+          </div>
+        </li>
+        <li class="t-item t-upgrade">
+          <div class="t-marker"></div>
+          <div class="t-content">
+            <strong>Upgraded Spear Lv 4 → 5</strong>
+            <span class="t-time">yesterday</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Achievements column: container query layout + masked tiles -->
+    <section class="achievements" aria-label="Achievements">
+      <h2 class="section-title">Achievements</h2>
+      <div class="ach-grid">
+        <article class="ach unlocked">
+          <div class="ach-medal" style="--c: gold;"></div>
+          <h3>Champion</h3>
+          <p>10 stages</p>
+        </article>
+        <article class="ach unlocked">
+          <div class="ach-medal" style="--c: silver;"></div>
+          <h3>Survivor</h3>
+          <p>20 quests</p>
+        </article>
+        <article class="ach unlocked">
+          <div class="ach-medal" style="--c: #cd7f32;"></div>
+          <h3>Bronze</h3>
+          <p>50 wins</p>
+        </article>
+        <article class="ach locked">
+          <div class="ach-medal" style="--c: #4a5566;"></div>
+          <h3>Mystery</h3>
+          <p>???</p>
+        </article>
+        <article class="ach unlocked">
+          <div class="ach-medal" style="--c: gold;"></div>
+          <h3>Speedrun</h3>
+          <p>Under 10m</p>
+        </article>
+        <article class="ach locked">
+          <div class="ach-medal" style="--c: #4a5566;"></div>
+          <h3>Mystery</h3>
+          <p>???</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── Footer: multi-line caption, text-shadow + letter-spacing ──── -->
+  <footer class="ftr">
+    <p class="ftr-tagline">Weva &mdash; advanced dashboard probe</p>
+  </footer>
+
+</div>

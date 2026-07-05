@@ -1,0 +1,22 @@
+{
+  "source": "14-dashed-border.html",
+  "width": 800,
+  "height": 600,
+  "count": 1,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "card",
+      "x": 64,
+      "y": 64,
+      "w": 248,
+      "h": 168,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

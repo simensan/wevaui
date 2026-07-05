@@ -1,0 +1,9 @@
+body { margin: 0; padding: 0; font-size: 16px; line-height: 1; }
+/* quotes value for the outermost level: ASCII brackets */
+#wrap { width: 400px; quotes: "[" "]"; }
+/* block <q>: forces mixed inline+block → anonymous block wrapping */
+#bq { display: block; background-color: #dbeafe; }
+/* inline <q>: default display:inline from UA; width must include brackets */
+#iq { background-color: #fef3c7; }
+/* paragraph container — clear margin so measurements are predictable */
+p { margin: 0; }

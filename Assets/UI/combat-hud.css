@@ -1,0 +1,489 @@
+/* Combat HUD — exercises CSS modules not stressed by the dashboard:
+   clip-path polygons, keyframe animations, mask-image fades,
+   mix-blend-mode, text-stroke, conic-gradient sweeps as cooldowns.
+
+   Layout: full-viewport "arena" with absolutely-positioned regions
+   (target frame top, hero+bars bottom-left, ability bar bottom-
+   centre, minimap bottom-right, buff tray top-left). */
+
+:root {
+  --bg:        #0d1320;
+  --panel:    rgba(15, 23, 42, 0.85);
+  --line:     rgba(255, 255, 255, 0.08);
+  --hp:        #ef4444;
+  --hp-edge:  #b91c1c;
+  --mp:        #3b82f6;
+  --mp-edge:  #1d4ed8;
+  --xp:        #facc15;
+  --crit:      #fde047;
+  --heal:      #4ade80;
+  --miss:      #94a3b8;
+  --text:      #e5e7eb;
+  --text-dim:  #94a3b8;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; background: #050810; color: var(--text);
+       font-family: sans-serif; }
+
+/* ── Arena (full viewport positioning host) ───────────────────── */
+.arena {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background:
+    radial-gradient(ellipse at center, #1f2937 0%, #050810 80%);
+  overflow: hidden;
+}
+
+/* ── Target frame (top centre) ──────────────────────────────────
+   Stresses: absolute + transform centering, mask-image fade,
+             multi-layer box-shadow, status-effect filter glow. */
+.target-frame {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-align: center;
+  /* Mask-image fade-out on horizontal edges per CSS Masking L1 §5.4.
+     Forces the engine through the linear-gradient mask path. */
+  mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+.target-name { font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+.target-name small { font-weight: 500; color: var(--text-dim); margin-left: 4px; }
+.target-meter {
+  position: relative;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.target-meter-fill {
+  height: 100%;
+  width: calc(var(--pct, 0) * 1%);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--hp) 100%, transparent),
+      var(--hp-edge));
+  border-right: 1px solid var(--hp-edge);
+}
+.target-meter-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.7);
+}
+.status-effects {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.se {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--line);
+  font-size: 14px;
+}
+.se-burn  { filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8)); }
+.se-slow  { filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.8)); }
+.se-stun  { filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.8)); }
+.se-stack {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--hp);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Hero frame (bottom-left) ──────────────────────────────────
+   Stresses: portrait clip-path circle, low-HP @keyframes pulse,
+             multi-bar stacking. */
+.hero-frame {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-width: 280px;
+}
+.hero-portrait {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+.hero-portrait-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899, #f59e0b);
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
+}
+.hero-level {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  color: #1f2937;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #050810;
+}
+.hero-bars {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.bar {
+  position: relative;
+  height: 12px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.bar-fill {
+  height: 100%;
+  width: calc(var(--pct, 0) * 1%);
+  transition: width 0.3s ease;
+}
+.bar-hp .bar-fill { background: linear-gradient(180deg, #ef4444, #991b1b); }
+.bar-mp .bar-fill { background: linear-gradient(180deg, #3b82f6, #1e40af); }
+.bar-xp { height: 4px; }
+.bar-xp .bar-fill { background: linear-gradient(90deg, #facc15, #fde047); }
+.bar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 700;
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.6);
+}
+
+/* CSS Animations L1 §5 — low-HP pulse via keyframes. Hp bar with
+   .low-hp class flashes red glow. */
+@keyframes pulse-low-hp {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50%      { box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.7); }
+}
+.low-hp { animation: pulse-low-hp 1.2s ease-in-out infinite; }
+
+/* ── Ability bar (bottom centre) — hex slots ──────────────────
+   Stresses: clip-path: polygon for hex shape, conic-gradient
+             cooldown sweep, mix-blend-mode for overlay tint,
+             pseudo-element hotkey ribbon. */
+.ability-bar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  counter-reset: slot;
+}
+.ability {
+  position: relative;
+  width: 64px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* CSS Masking L1 §3.1 — clip-path: polygon. Regular hexagon. */
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: linear-gradient(180deg, #1f2937, #0f172a);
+  border: 0;
+  counter-increment: slot;
+}
+.ability-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--text);
+}
+/* ::before — render the icon char via CSS variable + content. */
+.ability-icon::before {
+  content: var(--icon);
+}
+/* Cooldown sweep overlay: conic-gradient from the top. Stops
+   precisely at `--cd%` of the 360° turn — exercises the same
+   calc(N × 1%) path that the A21 fix landed. */
+.ability-sweep {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    rgba(0, 0, 0, 0.7) calc(var(--cd, 0) * 1%),
+    rgba(0, 0, 0, 0) 0);
+  pointer-events: none;
+}
+.ability-key {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--crit);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.8);
+}
+.ability-cd-text {
+  position: absolute;
+  bottom: 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.7);
+}
+.ability.ready { box-shadow: 0 0 12px rgba(250, 204, 21, 0.35); }
+.ability.disabled { opacity: 0.4; filter: grayscale(1); }
+.ability.ultimate {
+  background: linear-gradient(180deg, #facc15, #92400e);
+  /* CSS Animations: continuous glow for the ultimate slot. */
+  animation: ultimate-glow 2s ease-in-out infinite;
+}
+@keyframes ultimate-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(250, 204, 21, 0.4); }
+  50%      { box-shadow: 0 0 20px rgba(250, 204, 21, 0.9); }
+}
+
+/* ── Minimap (bottom-right) ────────────────────────────────────
+   Stresses: border-radius:50% clip, transform:rotate keyframe,
+             absolute dots, conic-gradient radar sweep,
+             mix-blend-mode for the sweep overlay. */
+.minimap {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: #1e293b;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+.minimap-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 40%, #334155, #0f172a 70%),
+    linear-gradient(135deg, #1e293b, #0f172a);
+  background-blend-mode: overlay;
+}
+.minimap-sweep {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 0deg,
+    rgba(74, 222, 128, 0.5),
+    rgba(74, 222, 128, 0) 30%);
+  mix-blend-mode: screen;
+  animation: radar-sweep 4s linear infinite;
+}
+@keyframes radar-sweep {
+  to { transform: rotate(360deg); }
+}
+.minimap-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 4px currentColor;
+}
+.dot-enemy     { background: #ef4444; color: #ef4444; }
+.dot-ally      { background: #3b82f6; color: #3b82f6; }
+.dot-objective { background: #facc15; color: #facc15; }
+.minimap-player {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  /* Triangle via border tricks — CSS 2.1 §8.5. */
+  border-left:  6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid #fff;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+}
+.minimap-coord {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text);
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.7);
+}
+
+/* ── Buff tray (top-left) ──────────────────────────────────────
+   Stresses: conic-gradient timer ring per buff, currentColor
+             propagation, container query layout. */
+.buff-tray {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  container-type: inline-size;
+}
+.buff-tray h2 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.buffs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 8px;
+}
+.buff {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      var(--tint) calc(var(--pct, 0) * 1%),
+      rgba(255, 255, 255, 0.06) 0);
+  color: var(--tint);
+}
+.buff::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #050810;
+}
+.buff-icon {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: currentColor;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.buff-time {
+  position: absolute;
+  z-index: 1;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+@container (max-width: 180px) {
+  .buffs { flex-wrap: wrap; }
+}
+
+/* ── Floating damage / heal numbers ────────────────────────────
+   Stresses: -webkit-text-stroke, text-shadow stack,
+             absolute + transform centering, opacity keyframe,
+             multi-step pseudo-element rendering. */
+.dmg {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  font-weight: 900;
+  font-family: "Trebuchet MS", sans-serif;
+  text-align: center;
+  /* CSS Animations L1 — keyframe drift up + fade out. */
+  animation: float-up 1.6s ease-out forwards;
+}
+@keyframes float-up {
+  0%   { transform: translate(-50%, -50%); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(-50%, -180%); opacity: 0; }
+}
+.dmg-value {
+  display: block;
+  font-size: 32px;
+  -webkit-text-stroke: 2px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+.dmg-flag {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.9);
+}
+.dmg-crit .dmg-value { color: var(--crit); }
+.dmg-crit .dmg-flag  { color: var(--crit); }
+.dmg-heal .dmg-value { color: var(--heal); }
+.dmg-miss .dmg-value { color: var(--miss); font-size: 22px; }

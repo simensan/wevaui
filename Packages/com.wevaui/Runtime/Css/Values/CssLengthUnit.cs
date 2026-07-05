@@ -1,0 +1,29 @@
+namespace Weva.Css.Values {
+    public enum CssLengthUnit {
+        Px,
+        Em,
+        Rem,
+        Percent,
+        Vh,
+        Vw,
+        Vmin,
+        Vmax,
+        Pt,
+        Pc,
+        In,
+        Cm,
+        Mm,
+        Ch,
+        Ex,
+        Cap,
+        Ic,
+        Lh,
+        Rlh,
+        Svw,
+        Lvw,
+        Dvw,
+        Svh,
+        Lvh,
+        Dvh
+    }
+}

@@ -1,0 +1,22 @@
+{
+  "source": "10-gradient-background.html",
+  "width": 800,
+  "height": 600,
+  "count": 1,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "grad",
+      "x": 32,
+      "y": 32,
+      "w": 320,
+      "h": 200,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

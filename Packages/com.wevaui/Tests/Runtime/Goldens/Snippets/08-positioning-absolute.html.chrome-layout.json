@@ -1,0 +1,50 @@
+{
+  "source": "08-positioning-absolute.html",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "container",
+      "x": 32,
+      "y": 32,
+      "w": 400,
+      "h": 300,
+      "display": "block",
+      "position": "relative",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "base",
+      "x": 48,
+      "y": 32,
+      "w": 240,
+      "h": 160,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "overlay",
+      "x": 232,
+      "y": 72,
+      "w": 120,
+      "h": 120,
+      "display": "block",
+      "position": "absolute",
+      "text": ""
+    }
+  ]
+}

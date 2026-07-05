@@ -1,0 +1,28 @@
+/* Exercises the four corners of the CSS Text Decoration §6 `text-shadow`
+   blur range with body-sized text:
+     - 0px  : crisp duplicate (zero-blur shadow path)
+     - 2px  : small blur — Path A SDF dilation produces a clean halo
+     - 6px  : the value used by the match3 demo's `.alert` shadow
+     - 12px : tests the "chunky soft outline" upper end of Path A's range
+
+   Re-baseline with WEVA_REGENERATE_GOLDENS=1 the first time this test
+   runs after the blur-radius plumbing lands; the existing 26-text-shadow
+   golden uses zero-blur shadows and continues to baseline against the
+   sharp-shadow path. */
+body { margin: 0; padding: 0; background-color: #1f2937; }
+.stack {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.row {
+  font-family: monospace;
+  font-size: 22px;
+  font-weight: bold;
+  color: #f9fafb;
+}
+.crisp  { text-shadow: 1px 1px 0   #000000; }
+.blur2  { text-shadow: 0   1px 2px rgba(0, 0, 0, 0.7); }
+.blur6  { text-shadow: 0   1px 6px rgba(0, 0, 0, 0.7); }
+.blur12 { text-shadow: 0   2px 12px rgba(0, 0, 0, 0.7); }

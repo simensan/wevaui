@@ -1,0 +1,36 @@
+{
+  "source": "21-word-break.html",
+  "width": 800,
+  "height": 600,
+  "count": 2,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "box",
+      "x": 24,
+      "y": 24,
+      "w": 232,
+      "h": 120,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 40,
+      "y": 60,
+      "w": 200,
+      "h": 48,
+      "display": "block",
+      "position": "static",
+      "text": "supercalifragilisticexpialidocious"
+    }
+  ]
+}

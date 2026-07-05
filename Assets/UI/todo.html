@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Todo</title>
+<link rel="stylesheet" href="todo.css" />
+</head>
+<body>
+
+<main class="app">
+  <header class="head">
+    <h1>Todo</h1>
+    <p class="lead">{{ ItemCount }} item(s) — add or remove from the list below.</p>
+  </header>
+
+  <section class="composer">
+    <input id="new-item" type="text" placeholder="What needs doing?" />
+    <button class="primary" on-click="AddFromInput">Add</button>
+    <button class="ghost" on-click="AddRandom">+ random</button>
+  </section>
+
+  <ul id="todo-list" class="list">
+    <li class="item">
+      <span class="text">Try editing todo.css — hot reload picks it up</span>
+      <button class="remove" on-click="RemoveItem">✕</button>
+    </li>
+    <li class="item">
+      <span class="text">Press the buttons to add or remove rows</span>
+      <button class="remove" on-click="RemoveItem">✕</button>
+    </li>
+    <li class="item">
+      <span class="text">Click ✕ to delete a single row</span>
+      <button class="remove" on-click="RemoveItem">✕</button>
+    </li>
+  </ul>
+
+  <footer class="foot">
+    <button class="ghost" on-click="ClearAll">Clear all</button>
+  </footer>
+</main>
+
+</body>
+</html>

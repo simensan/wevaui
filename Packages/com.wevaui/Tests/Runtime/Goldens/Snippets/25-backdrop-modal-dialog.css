@@ -1,0 +1,20 @@
+body { margin: 0; padding: 0; background-color: #ffffff; }
+.page { padding: 24px; color: #111827; }
+.page h1 { font-size: 24px; margin: 0 0 8px 0; }
+.page p { margin: 0; }
+
+dialog {
+  display: block;
+  position: fixed;
+  top: 80px;
+  left: 80px;
+  width: 240px;
+  padding: 16px;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #111827;
+}
+::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}

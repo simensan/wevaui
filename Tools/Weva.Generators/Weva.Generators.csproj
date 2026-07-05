@@ -1,0 +1,85 @@
+<!--
+  Weva Roslyn Source Generator
+  ================================
+  Implements the IL2CPP-friendly binding fast path described in PLAN.md
+  Section 9 row 5 ("Data binding uses C# source generators").
+
+  TARGET FRAMEWORK: netstandard2.0 is required by Unity for Roslyn analyzers
+  and source generators. Do not change.
+
+  ROSLYN VERSION: 4.4.0. Unity 6 / 6000.4 ships with Roslyn 4.5+ so a 4.4-
+  compiled analyzer loads cleanly. Older Unity LTS streams (2022.3 and prior)
+  bundle Roslyn 4.1 and will refuse to load this analyzer; the runtime
+  reflection fallback in BindingResolver still works there.
+
+  BUILD INSTRUCTIONS (orchestrator / CI):
+    pwsh Tools/Weva.Generators/build-and-publish.ps1
+        -or-
+    bash Tools/Weva.Generators/build-and-publish.sh
+        -or-
+    dotnet build Tools/Weva.Generators/Weva.Generators.csproj -c Release
+        (post-build target auto-publishes to Packages/com.wevaui/Runtime/Generators/)
+
+  Unity loads the .dll (NOT the .csproj) at edit time. The post-build
+  target copies the artifact into Packages/com.wevaui/Runtime/Generators/
+  and Unity's Asset Pipeline picks it up via the RoslynAnalyzer label set
+  on the .dll.meta. The .meta file with the RoslynAnalyzer label MUST be
+  checked in alongside the .dll.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <RootNamespace>Weva.Generators</RootNamespace>
+    <AssemblyName>Weva.Generators</AssemblyName>
+    <Deterministic>true</Deterministic>
+    <!-- No PDB / debug directory so the shipped .dll embeds no build-machine
+         path. Without this the PE's RSDS debug entry leaked the absolute build
+         path (C:\Users\<user>\...\Weva.Generators.pdb) into the shipped binary. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <NoWarn>$(NoWarn);RS1036;RS1032;RS2008</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Exclude Unity's compiled output and any nested project debris from analyzer compilation. -->
+  <ItemGroup>
+    <Compile Remove="bin/**" />
+    <Compile Remove="obj/**" />
+  </ItemGroup>
+
+  <!--
+    Post-build publish: drop the freshly built DLL into the package's
+    Runtime/Generators/ folder so Unity (which loads .dll, not .csproj)
+    picks it up via the RoslynAnalyzer label on the .meta. Idempotent —
+    we compare hashes via the helper script. Disable via
+    /p:WevaPublishGenerator=false.
+  -->
+  <PropertyGroup>
+    <WevaPublishGenerator Condition="'$(WevaPublishGenerator)' == ''">true</WevaPublishGenerator>
+    <WevaPublishDir>$(MSBuildThisFileDirectory)..\..\Packages\com.wevaui\Runtime\Generators\</WevaPublishDir>
+    <WevaPublishedDll>$(WevaPublishDir)Weva.Generators.dll</WevaPublishedDll>
+  </PropertyGroup>
+
+  <Target Name="WevaPublishGenerator"
+          AfterTargets="Build"
+          Condition="'$(WevaPublishGenerator)' == 'true' and '$(Configuration)' == 'Release'"
+          Inputs="$(TargetPath)"
+          Outputs="$(WevaPublishedDll)">
+    <MakeDir Directories="$(WevaPublishDir)" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFiles="$(WevaPublishedDll)"
+          SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="[weva] published $(TargetPath) -> $(WevaPublishedDll)" />
+  </Target>
+</Project>

@@ -1,0 +1,4 @@
+{
+  "absPx": 10.0,
+  "_note": "W1 inc 3+6: Chrome applies a monospace-without-size font-size quirk (~13px vs engine's 16px body default), producing a ~3.3px shorter line-height per row. The card height accumulates this: 9.29px delta on card.h at default 2px tolerance. With InterFontMetrics the X-axis drift is now eliminated; this sidecar covers the Chrome-monospace-13px-quirk residual only."
+}

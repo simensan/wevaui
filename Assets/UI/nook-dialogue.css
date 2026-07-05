@@ -1,0 +1,124 @@
+/* ── Cozy interior: warm gradient (no art) ──────────────────────────────── */
+.room {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: "Sniglet", "Baloo 2", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 244, 214, 0.30), rgba(255, 244, 214, 0) 55%),
+    linear-gradient(180deg,
+      #3f6f60 0%,
+      #4f7159 26%,
+      #8f8a5f 52%,
+      #a98a55 72%,
+      #7c5733 100%);
+}
+
+/* ── Bells counter, top-right ───────────────────────────────────────────── */
+.bells {
+  position: absolute;
+  top: 26px;
+  right: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px 8px 12px;
+  background: linear-gradient(180deg, #fbe79a, #f2cf63);
+  border: 3px solid #b9923c;
+  border-radius: 999px;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.30);
+}
+.bells .coin {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 38% 34%, #ffe9a8, #e0a52e 70%);
+  border: 2px solid #b07d22;
+}
+.bells .amount {
+  font-size: 26px;
+  font-weight: 800;
+  color: #5e4a2c;
+}
+
+/* ── Choice bubble, right side ──────────────────────────────────────────── */
+.choices {
+  position: absolute;
+  right: 40px;
+  top: 34%;
+  width: 340px;
+  padding: 16px 18px;
+  background: linear-gradient(180deg, #fdeaa3, #f7dd86);
+  border-radius: 34px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+}
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 25px;
+  font-weight: 700;
+  color: #6a5230;
+}
+.choice.selected {
+  background: linear-gradient(180deg, #ffd34d, #f7bf2e);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+  color: #4f3d1f;
+}
+/* little pointing cursor before the selected option */
+.choice .pointer {
+  width: 0;
+  height: 0;
+  flex: none;
+  margin-left: -4px;
+}
+.choice.selected .pointer {
+  width: 16px;
+  height: 16px;
+  background: #5b4524;
+  clip-path: polygon(0% 0%, 100% 50%, 0% 100%, 30% 50%);
+}
+
+/* ── Main dialogue blob, bottom ─────────────────────────────────────────── */
+.dialog {
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  bottom: 26px;
+  min-height: 186px;
+  padding: 34px 52px 30px 52px;
+  background: linear-gradient(180deg, #fffdf4, #fdf6e2);
+  border-radius: 52px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.30);
+}
+
+/* orange name pill straddling the top-left edge */
+.namepill {
+  position: absolute;
+  top: -20px;
+  left: 46px;
+  padding: 6px 26px;
+  background: linear-gradient(180deg, #f7ad44, #ef9522);
+  color: #6b4a1c;
+  font-size: 23px;
+  font-weight: 800;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.say {
+  margin: 0 0 6px;
+  font-size: 35px;
+  font-weight: 800;
+  line-height: 1.28;
+  color: #1f1f1f;
+}
+/* highlighted player name */
+.say .hl {
+  color: #57b23a;
+  font-weight: 800;
+}

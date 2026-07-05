@@ -1,0 +1,50 @@
+{
+  "source": "18-margin-collapse.html",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "a",
+      "x": 0,
+      "y": 0,
+      "w": 200,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "b",
+      "x": 0,
+      "y": 90,
+      "w": 200,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "c",
+      "x": 0,
+      "y": 175,
+      "w": 200,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

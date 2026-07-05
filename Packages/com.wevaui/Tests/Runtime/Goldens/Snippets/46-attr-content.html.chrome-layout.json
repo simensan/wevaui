@@ -1,0 +1,78 @@
+{
+  "source": "46-attr-content.html",
+  "width": 800,
+  "height": 600,
+  "count": 5,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "wrap",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 64,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "a1",
+      "cls": "labeled",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 16,
+      "display": "block",
+      "position": "static",
+      "text": "Alpha"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "a2",
+      "cls": "labeled",
+      "x": 0,
+      "y": 16,
+      "w": 400,
+      "h": 16,
+      "display": "block",
+      "position": "static",
+      "text": "Beta"
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "a3",
+      "cls": "labeled-fallback",
+      "x": 0,
+      "y": 32,
+      "w": 400,
+      "h": 16,
+      "display": "block",
+      "position": "static",
+      "text": "Gamma"
+    },
+    {
+      "i": 4,
+      "depth": 1,
+      "tag": "div",
+      "id": "a4",
+      "cls": "typed-width",
+      "x": 0,
+      "y": 48,
+      "w": 120,
+      "h": 16,
+      "display": "block",
+      "position": "static",
+      "text": "Width from attr"
+    }
+  ]
+}

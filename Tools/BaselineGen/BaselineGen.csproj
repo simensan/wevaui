@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>Weva.BaselineGen</RootNamespace>
+    <AssemblyName>BaselineGen</AssemblyName>
+    <NoWarn>CS0618;CS0436;CS0168;CS8632;CS0414;CS0162;CS0219;CS0067;CS0649</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile only the headless portion of the runtime: skip Unity-API-bound files. -->
+    <Compile Include="..\..\Packages\com.wevaui\Runtime\**\*.cs"
+             Exclude="
+               ..\..\Packages\com.wevaui\Runtime\UIDocument.cs;
+               ..\..\Packages\com.wevaui\Runtime\Document\UnityClock.cs;
+               ..\..\Packages\com.wevaui\Runtime\DevTools\**\*.cs;
+               ..\..\Packages\com.wevaui\Runtime\Rendering\**\*.cs;
+               ..\..\Packages\com.wevaui\Runtime\Text\**\*.cs;
+               ..\..\Packages\com.wevaui\Runtime\Forms\Bridge\**\*.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="TestSelfCheck.cs" />
+    <Compile Include="GoldenAssertCheck.cs" />
+    <Compile Include="LayoutAllocCheck.cs" />
+    <Compile Include="LayoutDump.cs" />
+    <Compile Include="InlineSplittingCheck.cs" />
+    <Compile Include="LayoutBuildBench.cs" />
+    <Compile Include="ReactivePaintCheck.cs" />
+  </ItemGroup>
+</Project>

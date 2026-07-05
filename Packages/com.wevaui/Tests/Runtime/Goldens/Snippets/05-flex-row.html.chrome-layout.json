@@ -1,0 +1,64 @@
+{
+  "source": "05-flex-row.html",
+  "width": 800,
+  "height": 600,
+  "count": 4,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "row",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 104,
+      "display": "flex",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 24,
+      "y": 24,
+      "w": 100,
+      "h": 80,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 136,
+      "y": 24,
+      "w": 100,
+      "h": 80,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 248,
+      "y": 24,
+      "w": 100,
+      "h": 80,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "source": "06-flex-column.html",
+  "width": 800,
+  "height": 600,
+  "count": 4,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "col",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 212,
+      "display": "flex",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 16,
+      "y": 16,
+      "w": 240,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 16,
+      "y": 84,
+      "w": 240,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "cell",
+      "x": 16,
+      "y": 152,
+      "w": 240,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# IDE / tooling
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+
+# Unity package tarballs
+*.tgz
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code workspace (runtime lock files etc.)
+.claude/
+
+# Golden image diff outputs (regenerated each test run)
+Packages/com.wevaui/Tests/Runtime/Goldens/Out/
+
+# Headless tool project build artifacts (BaselineGen, Weva.Generators, etc.)
+Tools/*/bin/
+Tools/*/obj/
+
+# Force-track .csproj inside Tools/ despite the global *.csproj rule above
+!Tools/**/*.csproj
+
+# Node tooling (puppeteer / chrome-coords scripts) — never ship.
+# IMPORTANT: scope the package.json ignore to the Node tool roots only. A bare
+# `package.json` also matches the Unity package manifests under Packages/
+# (com.wevaui/package.json, com.wevaui.figma/package.json, ...), which MUST be
+# tracked or the packages won't install for anyone who clones / adds by URL.
+node_modules/
+package-lock.json
+/package.json
+/Tools/Layout/package.json
+
+# Screenshot dumps — regenerated each session
+Assets/Screenshots/
+screenshot_*.png
+
+# Unity PlayMode transient scenes (created when entering Play with no active
+# scene; named with a per-session GUID and discarded on Exit). Never commit.
+Assets/InitTestScene*.unity
+Assets/InitTestScene*.unity.meta
+
+# Test / dump output
+unity_coords*.json
+chrome_coords*.json
+compare_report.json
+test_output.txt
+TestResults*.xml
+
+# MCP workspace
+.mcp.json
+summarize.js
+/.utmp
+/weva_BurstDebugInformation_DoNotShip
+build.apk
+/.codex
+ProjectSettings/Packages/com.unity.ai.assistant/Settings.json
+/Tools/TestVerifyAll/Tools/TestVerifyAll/bin
+# Unity auto-recovery scenes (transient editor crash-recovery artifacts)
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+
+# Proprietary Microsoft Segoe fonts — kept locally for the uitest scene only,
+# never tracked or redistributed (the shipped package bundles OFL fonts: Inter,
+# Noto Color Emoji, Noto Sans Symbols 2). SegoeUIFontMetrics.cs (a metric table,
+# not the font) stays tracked in the package.
+Assets/UI/Fonts/SegoeUI*
+Assets/UI/Fonts/Source/SegoeUI.ttf
+Assets/UI/Fonts/Source/SegoeUI.ttf.meta
+
+# Local-only artifacts — kept on disk, never published. The other planning /
+# audit / reference docs ARE tracked: the codebase and public docs cross-
+# reference them (CSS_FEATURE_AUDIT, CSS_OPEN_GAPS, CODE_AUDIT_FINDINGS, etc.),
+# so untracking them would orphan those links. Only these two are safe to keep
+# local — nothing references them and headless_layout.sh hardcodes a per-machine
+# Unity path.
+/TECH_AUDIT_2026-06.md
+/TECH_AUDIT_2026-07.md
+/headless_layout.sh

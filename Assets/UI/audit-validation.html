@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Audit fix validation — 2026-07</title>
+<link rel="stylesheet" href="audit-validation.css" />
+</head>
+<body>
+<!-- 2026-07 audit fix validation page. Load via Window > Weva > Sample Cycler.
+     Each section is self-describing: the caption says what to do and what PASS
+     looks like. Companion stylesheet: audit-validation.css (contains ONE
+     deliberately broken rule for the parser-recovery check - see section 10). -->
+<div class="page">
+  <h1>Audit fix validation — 2026-07</h1>
+
+  <section class="check" id="c1">
+    <h2>1 · Hover invalidation (CX1 / CX5)</h2>
+    <p class="how">Hover each box below.</p>
+    <div class="hp-parent">Hover me (parent) <span class="hp-child">child turns RED while parent hovered</span></div>
+    <div class="row">
+      <div class="sib-a">Hover me (A)</div>
+      <div class="sib-b">B turns BLUE while A hovered</div>
+    </div>
+    <div class="tip">Hover me — a tooltip bubble must appear via ::after</div>
+    <p class="pass">PASS: all three react on hover and revert on un-hover. Pre-fix: none reacted, ever.</p>
+  </section>
+
+  <section class="check" id="c2">
+    <h2>2 · Zebra striping + sibling combinator (CX2)</h2>
+    <ul class="zebra">
+      <li>row 1 — dark</li>
+      <li>row 2 — light</li>
+      <li>row 3 — dark</li>
+      <li>row 4 — light</li>
+      <li>row 5 — dark</li>
+    </ul>
+    <div class="pp"><p>first p — plain</p><p>second p — BLUE (p + p)</p></div>
+    <p class="pass">PASS: rows alternate; only the second paragraph is blue. Pre-fix: all rows one color, neither p blue.</p>
+  </section>
+
+  <section class="check" id="c3">
+    <h2>3 · :has() mutation (CX3)</h2>
+    <div class="has-card">
+      <label><input type="checkbox"> check me</label>
+      <span>card gets a GREEN border + tint while the box is checked</span>
+    </div>
+    <p class="pass">PASS: border/tint toggles with the checkbox. Pre-fix: never updated after load.</p>
+  </section>
+
+  <section class="check" id="c4">
+    <h2>4 · @media resize (CX4)</h2>
+    <div class="mq-banner">Game view ≥ 900px wide: indigo banner. Drag the view narrower than 900px: banner turns ORANGE and says so via ::after.</div>
+    <p class="pass">PASS: flips BOTH ways while dragging the Game view width across 900px. Pre-fix: stuck at the load-time state.</p>
+  </section>
+
+  <section class="check" id="c5">
+    <h2>5 · Warm flips vs abs-pos flex (LY2) — animated</h2>
+    <div class="warm-wrap">
+      <div class="bar"><div class="fill"></div></div>
+      <div class="play-action">
+        <button class="play-btn">
+          <span class="play-label">PLAY</span>
+          <span class="play-sub">PRESS TO START</span>
+        </button>
+      </div>
+    </div>
+    <p class="pass">PASS: while the progress bar animates forever, the two button labels stay centered. Pre-fix: they block-stacked to the top-left on the first animation frame.</p>
+  </section>
+
+  <section class="check" id="c6">
+    <h2>6 · Scroll-graft integrity (LY3-LY6) — animated</h2>
+    <div class="graft-row">
+      <div class="graft-anim">this box animates height forever</div>
+      <div class="graft-scroll">
+        <div class="g-top">top item</div>
+        <div class="g-abs">ABS</div>
+        <div class="g-after">after the abs badge</div>
+        <div class="g-rel">relative +10px — must NOT creep downward</div>
+        <div class="g-fill">filler</div>
+        <div class="g-fill">filler</div>
+        <div class="g-fill">filler</div>
+        <div class="g-fill">filler</div>
+      </div>
+    </div>
+    <p class="pass">PASS: scroll-list content is rock still (badge pinned top-right, "relative" line static, text lines intact) while the left box animates. Pre-fix: the relative line crept ~10px per frame and text could shred into overlap.</p>
+  </section>
+
+  <section class="check" id="c7">
+    <h2>7 · Text input: caret + selection (FM2 / TX4 / FM7)</h2>
+    <input class="in-basic" type="text" value="click drag and shift-click inside me">
+    <ul class="how">
+      <li>Click → collapsed caret at the click point (NOT select-all).</li>
+      <li>Drag → sweeps a selection; drag past the edges keeps selecting.</li>
+      <li>Shift-click → extends from the caret.</li>
+      <li>Tab away and Tab back → select-all (keyboard focus only).</li>
+      <li>Type past the right edge → text scrolls left, caret stays visible at the edge, nothing paints outside the box.</li>
+    </ul>
+  </section>
+
+  <section class="check" id="c8">
+    <h2>8 · Styled caret fidelity (TX3)</h2>
+    <input class="in-bold" type="text" value="MMMMMMMMMM">
+    <p class="pass">PASS: click between any two bold Ms — the caret sits exactly on the glyph boundary, at the END too. Pre-fix it drifted left of the boundary, worse toward the end.</p>
+  </section>
+
+  <section class="check" id="c9">
+    <h2>9 · Password + maxlength + textarea (FM1 / FM6)</h2>
+    <input class="in-pass" type="password" value="secret">
+    <input class="in-max" type="text" maxlength="5" placeholder="max 5 chars">
+    <textarea class="ta" rows="3">click anywhere in here - the caret must land on that line and column
+drag across these two lines to sweep a selection
+triple-click selects this whole line</textarea>
+    <p class="pass">PASS: password shows bullets and caret math follows the bullets; the max-5 field hard-stops; the textarea has a real multiline caret now — click places it at the clicked line/column, drag sweeps a cross-line highlight, double-click selects a word, triple-click a line, and Ctrl+C/V/Z work everywhere.</p>
+  </section>
+
+  <section class="check" id="c10">
+    <h2>10 · ::selection + parser recovery (SL / PH3)</h2>
+    <input class="in-sel" type="text" value="select me - highlight must be AMBER">
+    <div class="ph3-after">This block must be GREEN. The stylesheet contains a deliberately broken rule (unterminated string) right before this block's rule — if this is green and the whole page rendered, lenient recovery works. Pre-fix: ONE bad token blanked the entire document.</div>
+  </section>
+
+  <section class="check" id="c11">
+    <h2>11 · Glass / shared-backdrop eviction (RD1 / RD5) — profile</h2>
+    <div class="glass-strip">
+      <div class="detail-bars"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+      <div class="glass">glass A — blur(4px), shared path</div>
+      <div class="glass">glass B — blur(4px), shared path</div>
+      <div class="glass g8">glass E — blur(8px): shared + downsample (the F1 regime)</div>
+    </div>
+    <div class="glass-strip strip2">
+      <div class="detail-bars"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+      <div class="glass">glass C — per-panel (post-capture strip)</div>
+      <div class="glass overlap">glass D — overlaps C, per-panel</div>
+    </div>
+    <p class="pass">PASS: every panel shows a blurred version of the bars/gradient DIRECTLY BEHIND it, at rest AND on hover, and hover ramps smoothly. BISECT: A/B/E ride the shared whole-screen blur (E adds the radius&gt;5px downsample regime — the term that made both flip signs fail); C/D ride the per-panel path (C's strip paints after the shared capture, D overlaps C). If E shows foreign content while A/B are fine, the downsample parity term regressed. Hovering any panel legitimately demotes it to per-panel (the 3σ halo overlaps a neighbour) — that switch must be seamless. Profiler check: hover on/off ~20 times — VRAM / RenderTexture count returns to baseline (RD1); resize the view a few times (RD5: no RT object creep).</p>
+  </section>
+
+  <p class="footer">All sections green? Update TECH_AUDIT_2026-07.md: mark the in-editor validation pass done.</p>
+</div>
+</body>
+</html>

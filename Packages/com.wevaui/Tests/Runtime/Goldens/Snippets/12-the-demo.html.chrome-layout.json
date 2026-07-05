@@ -1,0 +1,78 @@
+{
+  "source": "12-the-demo.html",
+  "width": 800,
+  "height": 600,
+  "count": 5,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "main",
+      "id": "",
+      "cls": "menu",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 248.88,
+      "display": "flex",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "h1",
+      "id": "",
+      "cls": "",
+      "x": 24,
+      "y": 45.44,
+      "w": 752,
+      "h": 39,
+      "display": "block",
+      "position": "static",
+      "text": "My Game"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 24,
+      "y": 137.88,
+      "w": 752,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 3,
+      "depth": 2,
+      "tag": "span",
+      "id": "",
+      "cls": "",
+      "x": 76.17,
+      "y": 137.88,
+      "w": 10.09,
+      "h": 20,
+      "display": "inline",
+      "position": "static",
+      "text": "0"
+    },
+    {
+      "i": 4,
+      "depth": 1,
+      "tag": "button",
+      "id": "start-button",
+      "cls": "",
+      "x": 24,
+      "y": 189.88,
+      "w": 752,
+      "h": 35,
+      "display": "block",
+      "position": "static",
+      "text": "Start"
+    }
+  ]
+}

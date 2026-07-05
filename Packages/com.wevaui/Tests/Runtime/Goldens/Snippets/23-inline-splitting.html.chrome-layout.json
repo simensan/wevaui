@@ -1,0 +1,92 @@
+{
+  "source": "23-inline-splitting.html",
+  "width": 800,
+  "height": 600,
+  "count": 6,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "frame",
+      "x": 24,
+      "y": 24,
+      "w": 352,
+      "h": 164,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 40,
+      "y": 56,
+      "w": 320,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 2,
+      "tag": "a",
+      "id": "",
+      "cls": "",
+      "x": 77.36,
+      "y": 56,
+      "w": 0,
+      "h": 20,
+      "display": "inline",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "block-link",
+      "x": 40,
+      "y": 92,
+      "w": 320,
+      "h": 36,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 4,
+      "depth": 2,
+      "tag": "a",
+      "id": "",
+      "cls": "",
+      "x": 48,
+      "y": 100,
+      "w": 33.88,
+      "h": 20,
+      "display": "inline",
+      "position": "static",
+      "text": "here"
+    },
+    {
+      "i": 5,
+      "depth": 1,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 40,
+      "y": 172,
+      "w": 320,
+      "h": 0,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    }
+  ]
+}

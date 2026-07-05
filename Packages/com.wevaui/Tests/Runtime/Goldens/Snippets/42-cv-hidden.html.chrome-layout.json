@@ -1,0 +1,92 @@
+{
+  "source": "42-cv-hidden.html",
+  "width": 800,
+  "height": 600,
+  "count": 6,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "wrap",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 60,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "before",
+      "cls": "sibling",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 30,
+      "display": "block",
+      "position": "static",
+      "text": "Before hidden"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "cv",
+      "cls": "cv-hidden",
+      "x": 0,
+      "y": 30,
+      "w": 400,
+      "h": 0,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 3,
+      "depth": 2,
+      "tag": "div",
+      "id": "",
+      "cls": "tall-child",
+      "x": 0,
+      "y": 30,
+      "w": 400,
+      "h": 100,
+      "display": "block",
+      "position": "static",
+      "text": "tall hidden content"
+    },
+    {
+      "i": 4,
+      "depth": 2,
+      "tag": "div",
+      "id": "",
+      "cls": "tall-child",
+      "x": 0,
+      "y": 130,
+      "w": 400,
+      "h": 100,
+      "display": "block",
+      "position": "static",
+      "text": "more hidden content"
+    },
+    {
+      "i": 5,
+      "depth": 1,
+      "tag": "div",
+      "id": "after",
+      "cls": "sibling",
+      "x": 0,
+      "y": 30,
+      "w": 400,
+      "h": 30,
+      "display": "block",
+      "position": "static",
+      "text": "After hidden"
+    }
+  ]
+}

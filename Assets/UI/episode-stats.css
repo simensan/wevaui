@@ -1,0 +1,234 @@
+/* episode-stats — interactive-narrative choices recap.
+   Palette: slate-navy backdrop, cyan accent (#4fd8ec), violet remainder
+   (#9b5cf6), warm white text. */
+
+.screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 38px 48px 0;
+  display: flex;
+  flex-direction: column;
+  font-family: Inter, "Segoe UI", sans-serif;
+  color: #eef2f7;
+  background:
+    /* faint diagonal banding, like brushed metal */
+    repeating-linear-gradient(118deg,
+      rgba(255, 255, 255, 0.022) 0 2px,
+      rgba(255, 255, 255, 0) 2px 116px),
+    /* broad sheen sweeping across the upper half */
+    linear-gradient(118deg, rgba(120, 150, 190, 0.10) 0%, rgba(120, 150, 190, 0) 46%),
+    /* base vertical wash */
+    linear-gradient(180deg, #313c4c 0%, #29333f 52%, #222b35 100%);
+}
+
+/* ── Episode tab strip ─────────────────────────────────────────────────── */
+.episodes {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  height: 52px;
+}
+.ep {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(150, 170, 195, 0.30);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(74, 88, 107, 0.55), rgba(48, 58, 72, 0.55));
+  color: #dfe6ee;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+/* Already-played episode: plain, fully lit. */
+.ep.visited {
+  background: linear-gradient(180deg, rgba(58, 70, 87, 0.55), rgba(40, 50, 63, 0.55));
+}
+/* The current episode: cyan rim + outer glow + lifted fill. */
+.ep.selected {
+  border-color: #6fd9ee;
+  background: linear-gradient(180deg, rgba(86, 120, 140, 0.55), rgba(54, 78, 95, 0.55));
+  color: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(111, 217, 238, 0.85),
+    0 0 18px rgba(79, 216, 236, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+/* Locked future episodes dim progressively. */
+.ep.locked {
+  color: #7a8696;
+  background: linear-gradient(180deg, rgba(52, 62, 76, 0.45), rgba(38, 46, 58, 0.45));
+  border-color: rgba(150, 170, 195, 0.16);
+}
+.ep.l1 { opacity: 0.92; }
+.ep.l2 { opacity: 0.80; }
+.ep.l3 { opacity: 0.68; }
+.ep.l4 { opacity: 0.57; }
+.ep.l5 { opacity: 0.47; }
+
+/* Key-hint chips (Q / E / A / D / ESC). */
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 9px;
+  align-self: center;
+  border: 1px solid rgba(165, 182, 203, 0.55);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #d6dee8;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.key.wide { min-width: 52px; }
+.episodes .key { height: 40px; }
+
+/* ── Choice stat cards ─────────────────────────────────────────────────── */
+.cards {
+  list-style: none;
+  /* auto margins on a flex-column item centre it both ways in the
+     remaining space between the tab strip and the screen bottom. */
+  margin: auto;
+  padding: 0;
+  width: 880px;
+  max-width: 72%;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+.card {
+  display: flex;
+  gap: 0;
+  height: 188px;
+  border: 1px solid rgba(150, 172, 198, 0.28);
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(60, 72, 90, 0.66), rgba(40, 50, 63, 0.72));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.thumb {
+  flex: 0 0 300px;
+  align-self: stretch;
+  margin: 14px;
+  border-radius: 11px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 -20px 40px rgba(0, 0, 0, 0.35);
+}
+/* Gradient stand-ins for the cinematic stills. */
+.thumb.t1 {
+  background:
+    radial-gradient(circle at 62% 46%, rgba(240, 130, 175, 0.95) 0 12%, rgba(220, 90, 140, 0) 30%),
+    radial-gradient(ellipse 60% 40% at 30% 80%, rgba(90, 70, 60, 0.6), rgba(40, 30, 26, 0) 70%),
+    linear-gradient(150deg, #44362c 0%, #2a211c 55%, #181210 100%);
+}
+.thumb.t2 {
+  background:
+    radial-gradient(ellipse 70% 55% at 60% 28%, rgba(255, 198, 130, 0.55), rgba(255, 198, 130, 0) 70%),
+    linear-gradient(165deg, #f3a45f 0%, #c25f7e 38%, #5a5f8e 70%, #2e3550 100%);
+}
+.thumb.t3 {
+  background:
+    radial-gradient(ellipse 60% 50% at 45% 35%, rgba(255, 180, 120, 0.5), rgba(255, 180, 120, 0) 70%),
+    linear-gradient(160deg, #e8895a 0%, #b24f6c 45%, #3c3f63 78%, #262d49 100%);
+}
+
+.stat {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 22px;
+  padding: 22px 40px 26px;
+  text-align: center;
+}
+.choice {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.32;
+  color: #e9eef4;
+}
+.choice strong { font-weight: 800; color: #ffffff; }
+
+/* Two-tone meter: violet track, cyan fill = the player's-share percentage. */
+.meter {
+  width: 86%;
+  height: 17px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #8a4fe6, #7a3ad6);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.meter .fill {
+  display: block;
+  width: calc(var(--pct) * 1%);
+  height: 100%;
+  border-radius: 9px 0 0 9px;
+  background: linear-gradient(180deg, #6fe6f6 0%, #36c2dd 100%);
+  box-shadow: 0 0 10px rgba(79, 216, 236, 0.6);
+}
+
+/* ── Pager ─────────────────────────────────────────────────────────────── */
+.pager {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.arrow {
+  width: 22px;
+  height: 26px;
+  background: #cfd8e2;
+}
+.arrow.prev { clip-path: polygon(100% 0, 100% 100%, 0 50%); }
+.arrow.next { clip-path: polygon(0 0, 0 100%, 100% 50%); }
+.dots {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.dots li {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #5d6a7b;
+}
+.dots li.on {
+  background: #4fd8ec;
+  box-shadow: 0 0 9px rgba(79, 216, 236, 0.9);
+}
+
+/* ── Return ───────────────────────────────────────────────────────────── */
+.return {
+  position: absolute;
+  left: 32px;
+  bottom: 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 22px 12px 14px;
+  border: 1px solid rgba(150, 170, 195, 0.28);
+  border-radius: 11px;
+  background: linear-gradient(180deg, rgba(58, 70, 87, 0.5), rgba(40, 50, 63, 0.5));
+}
+.return-label {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #e6ecf3;
+}

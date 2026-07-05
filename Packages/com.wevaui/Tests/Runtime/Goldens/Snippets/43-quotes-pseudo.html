@@ -1,0 +1,15 @@
+<div id="wrap">
+  <!-- Case 1: block <q> with a block child.
+       CSS 2.1 §9.2.1.1: mixed inline+block siblings force anonymous-block
+       wrapping. The block <q> should produce three anonymous blocks:
+         anon1 = ::before ("[") + text "Hi"
+         block  = the <div>mid</div>
+         anon2  = ::after ("]")
+       Chrome: h = 3 lines × 16px = 48px total for #bq. -->
+  <q id="bq">Hi<div id="mid" style="display:block">mid</div></q>
+  <!-- Case 2: inline <q> on its own line.
+       Chrome's getBoundingClientRect for an inline element includes the
+       ::before and ::after generated content. The width of #iq should
+       span "[Hello world]", not just "Hello world". -->
+  <p id="para"><q id="iq">Hello world</q></p>
+</div>

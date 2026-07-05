@@ -1,0 +1,237 @@
+/* level-select — Mini Metro-style city picker. Flat, light, generous
+   whitespace. Accent yellow #f3c63f; ink #3a4048. */
+
+.screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: Inter, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 38%, #f3f4f6 0%, #e7e9ec 70%, #e1e3e7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Back chevron (top-left) ───────────────────────────────────────────── */
+.back {
+  position: absolute;
+  top: 30px;
+  left: 34px;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+}
+.chev {
+  width: 18px;
+  height: 18px;
+  border-left: 3px solid #6b7280;
+  border-bottom: 3px solid #6b7280;
+  transform: rotate(45deg);
+  margin-left: 6px;
+}
+
+/* ── Carousel ──────────────────────────────────────────────────────────── */
+.carousel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+}
+
+.city {
+  flex: 0 0 auto;
+  width: 234px;
+  box-sizing: border-box;
+  padding: 20px 20px 26px;
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 10px 26px rgba(40, 50, 70, 0.10), 0 2px 6px rgba(40, 50, 70, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* The centre card is larger, tinted, and lifted. */
+.city.featured {
+  width: 270px;
+  padding: 26px 24px 30px;
+  background: #f6a8b0;
+  border-radius: 26px;
+  box-shadow: 0 18px 40px rgba(214, 90, 110, 0.30), 0 4px 10px rgba(40, 50, 70, 0.10);
+  z-index: 2;
+}
+
+/* Edge cards peek in, dimmed. */
+.city.edge {
+  opacity: 0.55;
+}
+
+/* ── Circular transit-map preview ──────────────────────────────────────── */
+.map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg, #d8e6ef);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+/* metro lines: rounded bars rotated across the circle */
+.line {
+  position: absolute;
+  left: var(--l, 50%);
+  top: var(--t, 50%);
+  width: 150%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--c, #888);
+  transform: translate(-50%, -50%) rotate(var(--r, 0deg));
+}
+.featured .line { height: 9px; border-radius: 5px; }
+/* station dots: circle (interchange), square, triangle */
+.stop {
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #4a5460;
+  transform: translate(-50%, -50%);
+}
+.stop.sq { border-radius: 3px; }
+.stop.tri {
+  border: none;
+  background: #4a5460;
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* locked city: a padlock drawn from two rounded rects */
+.lock {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 30px;
+  height: 26px;
+  border-radius: 5px;
+  background: #9aa1ab;
+  transform: translate(-50%, -50%);
+}
+.lock::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -13px;
+  width: 18px;
+  height: 20px;
+  border: 5px solid #9aa1ab;
+  border-bottom: none;
+  border-radius: 11px 11px 0 0;
+  transform: translateX(-50%);
+}
+
+/* mode-completion medals under the featured map */
+.medals {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.medal {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 0 0 2px rgba(120, 50, 60, 0.35);
+}
+.medal.m1 { background: #d65a6e; box-shadow: none; }
+.medal.m2 { background: #3a4048; box-shadow: none; }
+
+/* ── Card text ─────────────────────────────────────────────────────────── */
+.info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 16px;
+  width: 100%;
+}
+.info h2 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #2f343c;
+}
+.featured .info h2 { color: #ffffff; }
+.best {
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #9aa1ab;
+}
+.featured .best { color: rgba(255, 255, 255, 0.85); }
+.desc {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.42;
+  color: #7c828c;
+}
+.featured .desc { color: #ffffff; }
+
+/* mode badges (bar-chart + ribbon) on the featured card */
+.modes { display: flex; gap: 12px; margin-top: 12px; }
+.mode {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+}
+.mode.bar::before {
+  content: "";
+  position: absolute;
+  left: 7px; bottom: 8px;
+  width: 4px; height: 8px;
+  border-radius: 1px;
+  background: #d65a6e;
+  box-shadow: 6px 0 0 #d65a6e, 12px -4px 0 #d65a6e;
+}
+.mode.ribbon::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 7px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #d65a6e;
+  transform: translateX(-50%);
+}
+
+/* ── Play button ───────────────────────────────────────────────────────── */
+.play {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: none;
+  padding: 16px 54px;
+  border-radius: 14px;
+  background: #f3c63f;
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 0 #d9ab27, 0 12px 20px rgba(217, 171, 39, 0.35);
+}

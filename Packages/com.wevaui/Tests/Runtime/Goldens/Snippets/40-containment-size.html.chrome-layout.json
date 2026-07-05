@@ -1,0 +1,92 @@
+{
+  "source": "40-containment-size.html",
+  "width": 800,
+  "height": 600,
+  "count": 6,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "wrap",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 100,
+      "display": "block",
+      "position": "static",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "before",
+      "cls": "sibling",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": "before"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "cs",
+      "cls": "size-contained",
+      "x": 0,
+      "y": 20,
+      "w": 400,
+      "h": 0,
+      "display": "block",
+      "position": "static",
+      "text": "tall child content"
+    },
+    {
+      "i": 3,
+      "depth": 1,
+      "tag": "div",
+      "id": "after-cs",
+      "cls": "sibling",
+      "x": 0,
+      "y": 20,
+      "w": 400,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": "after size"
+    },
+    {
+      "i": 4,
+      "depth": 1,
+      "tag": "div",
+      "id": "ci",
+      "cls": "intrinsic-hinted",
+      "x": 0,
+      "y": 40,
+      "w": 400,
+      "h": 40,
+      "display": "block",
+      "position": "static",
+      "text": "hinted content"
+    },
+    {
+      "i": 5,
+      "depth": 1,
+      "tag": "div",
+      "id": "after-ci",
+      "cls": "sibling",
+      "x": 0,
+      "y": 80,
+      "w": 400,
+      "h": 20,
+      "display": "block",
+      "position": "static",
+      "text": "after intrinsic"
+    }
+  ]
+}

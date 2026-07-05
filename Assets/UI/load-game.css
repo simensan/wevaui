@@ -1,0 +1,220 @@
+/* ── Watercolour deep-water background ───────────────────────────────────────
+   Layered gradients fake a painted wave: a teal mid-water glow, a darker
+   vignette top + bottom, white "foam" smudges up top, and a cool base wash. */
+.screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: "Patrick Hand", "Segoe Print", cursive, sans-serif;
+  background:
+    /* foam highlights top-left */
+    radial-gradient(ellipse 40% 18% at 22% 8%, rgba(225, 240, 245, 0.30), rgba(225, 240, 245, 0) 70%),
+    radial-gradient(ellipse 22% 12% at 60% 4%, rgba(210, 232, 238, 0.22), rgba(210, 232, 238, 0) 70%),
+    /* teal mid-water glow behind the slots */
+    radial-gradient(ellipse 60% 45% at 50% 42%, rgba(34, 86, 104, 0.55), rgba(34, 86, 104, 0) 72%),
+    /* a paler painted wave sweeping across the top third */
+    radial-gradient(ellipse 90% 40% at 45% 0%, rgba(40, 92, 110, 0.65), rgba(20, 48, 62, 0) 60%),
+    /* bottom shadow */
+    radial-gradient(ellipse 80% 50% at 50% 108%, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 60%),
+    /* base wash */
+    linear-gradient(160deg, #0a1c26 0%, #0c2230 38%, #0a1a26 70%, #060f16 100%);
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+.title {
+  margin: 0;
+  padding-top: 88px;
+  text-align: center;
+  font-family: "Sniglet", "Patrick Hand", sans-serif;
+  font-weight: 800;
+  font-size: 46px;
+  letter-spacing: 0.10em;
+  color: #f4f1e9;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.55);
+}
+/* tapered brush stroke under the title — a centred block (margin auto), NOT an
+   absolute child of the centred <h1> (that pattern trips an engine bug where a
+   block's text-align:center is lost when it has an out-of-flow child). */
+.brush {
+  width: 360px;
+  height: 7px;
+  margin: 10px auto 0;
+  background: linear-gradient(90deg, rgba(244,241,233,0) 0%, #ece7da 18%, #f4f1e9 50%, #ece7da 82%, rgba(244,241,233,0) 100%);
+  border-radius: 50%;
+  transform: rotate(-0.6deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Slot list ───────────────────────────────────────────────────────────── */
+.slots {
+  list-style: none;
+  margin: 64px auto 0;
+  padding: 0;
+  width: 720px;
+  max-width: 78%;
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+
+/* Each slot is an organic "torn paper" blob: a dark translucent fill with a
+   faint teal-lit top edge. Asymmetric border-radius gives the hand-painted,
+   slightly-wonky silhouette instead of a mechanical rounded rect. */
+.slot {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(18, 44, 56, 0.62) 0%, rgba(7, 19, 27, 0.86) 60%, rgba(5, 13, 20, 0.92) 100%);
+  border: 1px solid rgba(120, 170, 185, 0.10);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(160, 205, 220, 0.10);
+}
+
+/* Filled slot: taller, holds name + time + stat pills, with a thumbnail that
+   bleeds off the right edge like a torn map clipping. */
+.slot.filled {
+  min-height: 138px;
+  padding: 26px 34px;
+  border-radius: 80px 120px 90px 70px / 60px 70px 80px 90px;
+}
+
+/* Empty slots: long rounded "stadium" blobs with slightly uneven ends. */
+.slot.empty {
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 70px 60px 64px 72px / 48px 46px 50px 46px;
+}
+.slot.empty span {
+  font-family: "Sniglet", "Patrick Hand", sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 0.08em;
+  color: #5d7682;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Filled-slot text ────────────────────────────────────────────────────── */
+.meta { position: relative; z-index: 2; }
+.name {
+  font-family: "Sniglet", "Patrick Hand", sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 0.04em;
+  /* warm gold */
+  color: #eebb4c;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+.time {
+  margin-top: 6px;
+  font-size: 21px;
+  letter-spacing: 0.04em;
+  color: #dfe8ec;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+/* ── Resource stat pills ─────────────────────────────────────────────────── */
+.stats {
+  margin-top: 18px;
+  display: flex;
+  gap: 18px;
+}
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 16px 4px 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(6, 14, 20, 0.92), rgba(3, 8, 12, 0.96));
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(120, 160, 175, 0.12);
+  color: #f1f4f5;
+  font-family: "Sniglet", "Patrick Hand", sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: 0.02em;
+}
+.ico { width: 26px; height: 26px; flex: 0 0 auto; }
+
+/* gem: a faceted red diamond (8-pt polygon, now AA'd) with a lit top facet */
+.ico.gem {
+  background: linear-gradient(150deg, #ff6b6b 0%, #e0322f 45%, #9c1414 100%);
+  clip-path: polygon(50% 0%, 82% 22%, 100% 55%, 70% 100%, 30% 100%, 0% 55%, 18% 22%);
+  box-shadow: inset 0 2px 2px rgba(255, 200, 200, 0.5);
+}
+/* heart / honey drop: rounded-blob via asymmetric radius + a notch on top */
+.ico.heart {
+  background: radial-gradient(circle at 35% 30%, #ffe08a, #f1b23a 70%);
+  border-radius: 50% 50% 50% 50% / 62% 62% 40% 40%;
+  clip-path: polygon(50% 8%, 72% 0%, 100% 30%, 78% 70%, 50% 100%, 22% 70%, 0% 30%, 28% 0%);
+}
+/* film reel: dark disc with light rim + center hub */
+.ico.reel {
+  background:
+    radial-gradient(circle at 50% 50%, #2a3338 0 22%, rgba(0,0,0,0) 23%),
+    radial-gradient(circle at 50% 18%, #d6dde0 0 14%, rgba(0,0,0,0) 15%),
+    radial-gradient(circle at 82% 50%, #d6dde0 0 14%, rgba(0,0,0,0) 15%),
+    radial-gradient(circle at 50% 82%, #d6dde0 0 14%, rgba(0,0,0,0) 15%),
+    radial-gradient(circle at 18% 50%, #d6dde0 0 14%, rgba(0,0,0,0) 15%),
+    linear-gradient(180deg, #c2cace, #9aa4a9);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(40, 50, 55, 0.6);
+}
+
+/* ── Thumbnail (torn map clipping of a pink cottage village) ─────────────── */
+.thumb {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  width: 300px;
+  height: 132px;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 14px 70px 60px 24px / 40px 30px 46px 50px;
+  background:
+    radial-gradient(ellipse 60% 50% at 70% 80%, rgba(120, 180, 90, 0.9), rgba(80, 140, 60, 0) 70%),
+    linear-gradient(180deg, #2b5566 0%, #3c6f5a 55%, #4f7d3a 100%);
+  box-shadow: inset 0 0 0 2px rgba(170, 210, 220, 0.18), inset 0 8px 18px rgba(0, 0, 0, 0.4);
+}
+.thumb .roof {
+  position: absolute;
+  width: 56px; height: 40px;
+  clip-path: polygon(50% 0%, 100% 55%, 100% 100%, 0% 100%, 0% 55%);
+}
+.thumb .r1 { left: 30px;  top: 44px; background: linear-gradient(180deg, #f2a6c4, #d56a99); }
+.thumb .r2 { left: 92px;  top: 34px; width: 64px; height: 48px; background: linear-gradient(180deg, #e98fb4, #c25586); }
+.thumb .r3 { left: 168px; top: 46px; background: linear-gradient(180deg, #f4b2cd, #d877a3); }
+.thumb .path {
+  position: absolute;
+  left: 120px; bottom: -6px;
+  width: 90px; height: 40px;
+  background: radial-gradient(ellipse at 50% 0%, #caa86a, rgba(202,168,106,0) 72%);
+}
+
+/* ── Controller hints ────────────────────────────────────────────────────── */
+.hints {
+  position: absolute;
+  bottom: 30px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 56px;
+  font-size: 24px;
+  color: #eef3f4;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.6);
+}
+.hint { display: flex; align-items: center; gap: 12px; }
+.btn {
+  width: 34px; height: 34px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Sniglet", "Patrick Hand", sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 2px 3px rgba(255, 255, 255, 0.28);
+}
+.btn.x { background: radial-gradient(circle at 38% 30%, #5b8be0, #2f5fc0); }
+.btn.a { background: radial-gradient(circle at 38% 30%, #6fce6a, #3d9c42); }
+.btn.b { background: radial-gradient(circle at 38% 30%, #e4675a, #c2362b); }

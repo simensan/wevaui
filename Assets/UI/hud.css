@@ -1,0 +1,708 @@
+/* ════════════════════════════════════════════════════════════
+   Halcyon — fantasy-RPG game HUD that reflows between
+   landscape (wide cinematic) and portrait (tall mobile).
+   The same HTML drives both layouts; only this stylesheet's
+   @media (orientation: …) blocks differ.
+   ══════════════════════════════════════════════════════════ */
+
+:root {
+  /* palette */
+  --bg-0:        #07060f;
+  --bg-1:        #110a23;
+  --bg-2:        #1e0f3d;
+  --panel:       rgba(15, 11, 32, 0.72);
+  --panel-hi:    rgba(28, 20, 52, 0.78);
+  --edge:        rgba(255, 255, 255, 0.08);
+  --edge-strong: rgba(255, 255, 255, 0.16);
+  --ink:         #f0ecff;
+  --ink-muted:   #a89fc7;
+  --ink-dim:     #6f6691;
+  --accent:      #b388ff;
+  --accent-hi:   #d4b6ff;
+  --gold:        #fbbf24;
+  --hp:          #ef476f;
+  --hp-glow:     rgba(239, 71, 111, 0.45);
+  --mp:          #4cc9f0;
+  --mp-glow:     rgba(76, 201, 240, 0.40);
+
+  /* rhythm */
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 28px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+}
+
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+
+body {
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  color: var(--ink);
+  background-color: var(--bg-0);
+  background-image:
+    radial-gradient(ellipse at 18% 12%, rgba(179, 136, 255, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 82% 88%, rgba(76, 201, 240, 0.18) 0%, transparent 55%),
+    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 60%, var(--bg-2) 100%);
+  overflow: hidden;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+/* slow drifting aurora behind the panels — keeps the screen alive
+   in idle states like a pause menu */
+.bg-aurora {
+  position: fixed;
+  inset: -15%;
+  background:
+    radial-gradient(circle at 70% 20%, rgba(179, 136, 255, 0.30), transparent 38%),
+    radial-gradient(circle at 30% 80%, rgba(76, 201, 240, 0.22), transparent 42%);
+  filter: blur(60px);
+  z-index: 0;
+  pointer-events: none;
+  animation: aurora-drift 18s ease-in-out infinite;
+}
+
+@keyframes aurora-drift {
+  0%, 100% { transform: translate(0,    0)    scale(1); }
+  50%      { transform: translate(-40px, 30px) scale(1.08); }
+}
+
+/* ────────────────────────────────────────────────────────────
+   MAIN GRID — landscape layout (default).
+   Five named regions:
+     topbar   - status across the top
+     character - portrait + identity, left side
+     effects  - buffs + gear strip, center
+     actions  - ability bar + primary, right side
+     minimap  - bottom-right corner
+   ──────────────────────────────────────────────────────────── */
+.hud {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: var(--s-4);
+  display: grid;
+  gap: var(--s-3);
+  grid-template-columns: 320px 1fr 360px;
+  grid-template-rows: auto 1fr 160px;
+  grid-template-areas:
+    "topbar    topbar    topbar"
+    "character effects   actions"
+    "character minimap   actions";
+}
+
+/* ────────────────────────────────────────────────────────────
+   TOP STATUS BAR
+   ──────────────────────────────────────────────────────────── */
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-2) var(--s-4);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(8px);
+}
+
+.level {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-shrink: 0;
+}
+
+.level-ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), transparent 60%),
+    conic-gradient(from -90deg, var(--accent) 270deg, rgba(255,255,255,0.06) 270deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow:
+    inset 0 0 0 3px rgba(0,0,0,0.4),
+    0 0 24px rgba(179, 136, 255, 0.35);
+}
+
+.level-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+.level-meta { display: flex; flex-direction: column; gap: 2px; }
+.level-meta .name  { font-weight: 600; font-size: 16px; }
+.level-meta .class { font-size: 12px; color: var(--ink-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* vitals (HP / MP bars) */
+.vitals {
+  flex: 1;
+  display: flex;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.bar-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+  width: 24px;
+}
+
+.bar-track {
+  flex: 1;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
+  border: 1px solid var(--edge);
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  position: relative;
+}
+
+.bar-hp .bar-fill {
+  background: linear-gradient(90deg, #ff7a8a, var(--hp));
+  box-shadow: 0 0 16px var(--hp-glow);
+  animation: pulse-hp 2.4s ease-in-out infinite;
+}
+
+.bar-mp .bar-fill {
+  background: linear-gradient(90deg, #74dcff, var(--mp));
+  box-shadow: 0 0 14px var(--mp-glow);
+}
+
+@keyframes pulse-hp {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.15); }
+}
+
+.bar-value {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+  min-width: 60px;
+  text-align: right;
+}
+
+/* gold + clock counters */
+.counters {
+  display: flex;
+  gap: var(--s-3);
+  flex-shrink: 0;
+}
+
+.counter {
+  padding: 6px var(--s-3);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-md);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.counter-gold  { color: var(--gold); }
+.counter-clock { color: var(--ink-muted); font-feature-settings: "tnum"; }
+
+/* ────────────────────────────────────────────────────────────
+   CHARACTER PANEL (left)
+   ──────────────────────────────────────────────────────────── */
+.character {
+  grid-area: character;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(8px);
+  min-height: 0;
+}
+
+.portrait {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.portrait-frame {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(179, 136, 255, 0.35), transparent 60%),
+    linear-gradient(180deg, #2a1c52 0%, #110a23 100%);
+  border: 1px solid var(--edge-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 8px 24px rgba(0,0,0,0.4);
+}
+
+.portrait-frame::before {
+  /* corner-tick frame decoration */
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--r-sm);
+  pointer-events: none;
+}
+
+.portrait-glyph {
+  font-size: 96px;
+  color: var(--accent-hi);
+  text-shadow:
+    0 0 24px var(--accent),
+    0 0 48px rgba(179, 136, 255, 0.4);
+  animation: glyph-pulse 4s ease-in-out infinite;
+}
+
+@keyframes glyph-pulse {
+  0%, 100% { transform: scale(1);    opacity: 0.95; }
+  50%      { transform: scale(1.04); opacity: 1;    }
+}
+
+.portrait-rank {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, var(--gold), #ff9e5e);
+  color: #2a1500;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  border-radius: var(--r-sm);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+.ident { display: flex; flex-direction: column; gap: var(--s-2); }
+.ident h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.tagline {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.stat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.stat-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px var(--s-3);
+  background: rgba(0, 0, 0, 0.30);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-sm);
+}
+
+.stat-name {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+.stat-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ────────────────────────────────────────────────────────────
+   EFFECTS PANEL (center)
+   ──────────────────────────────────────────────────────────── */
+.effects {
+  grid-area: effects;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(8px);
+}
+
+.effects-row { display: flex; align-items: center; gap: var(--s-3); }
+
+.effects-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  width: 56px;
+  font-weight: 700;
+}
+
+.chip-strip {
+  display: flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.chip {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--edge-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.chip:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.chip-buff { color: var(--accent-hi); }
+.chip-gear { color: var(--gold); }
+
+/* ────────────────────────────────────────────────────────────
+   ACTION PANEL (right) — ability bar + primary attack/block
+   ──────────────────────────────────────────────────────────── */
+.actions {
+  grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(8px);
+}
+
+.abilities {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.ability {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-2);
+  background: rgba(0, 0, 0, 0.40);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 140ms ease, transform 120ms ease;
+}
+
+.ability:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.ability:active { transform: translateY(0); }
+
+.ability-icon {
+  font-size: 26px;
+  color: var(--accent-hi);
+  text-shadow: 0 0 12px rgba(179, 136, 255, 0.6);
+}
+
+.ability-name {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.ability-key {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+  padding: 2px 5px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 4px;
+}
+
+/* Cooldown radial overlay: conic-gradient sweeps from --cooldown back
+   to 0. Authors set --cooldown: 0..1 to indicate remaining fraction. */
+.ability.cooling::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    conic-gradient(rgba(0, 0, 0, 0.65) calc(var(--cooldown, 0) * 360deg),
+                   transparent calc(var(--cooldown, 0) * 360deg));
+  pointer-events: none;
+}
+
+.ability.cooling .ability-icon { opacity: 0.4; }
+.ability.cooling { cursor: not-allowed; }
+.ability.cooling:hover { transform: none; border-color: var(--edge-strong); }
+
+/* Primary attack + block row */
+.primary-row {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: auto;
+}
+
+.primary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+
+.primary-attack {
+  background: linear-gradient(180deg, #d63956 0%, #9c1f37 100%);
+  box-shadow: 0 6px 18px rgba(214, 57, 86, 0.40), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+.primary-block {
+  background: linear-gradient(180deg, #3f4f8a 0%, #1f2a52 100%);
+  box-shadow: 0 6px 18px rgba(63, 79, 138, 0.35), inset 0 1px 0 rgba(255,255,255,0.14);
+}
+
+.primary:hover  { filter: brightness(1.12); transform: translateY(-2px); }
+.primary:active { filter: brightness(0.95); transform: translateY(0);    }
+
+.primary-glyph { font-size: 24px; }
+.primary-label { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* ────────────────────────────────────────────────────────────
+   MINIMAP
+   ──────────────────────────────────────────────────────────── */
+.minimap {
+  grid-area: minimap;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(8px);
+  min-height: 0;
+}
+
+.minimap-frame {
+  flex: 1;
+  position: relative;
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(179, 136, 255, 0.18), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0 8px, transparent 8px 16px),
+    linear-gradient(180deg, #1a1234 0%, #0c0820 100%);
+  border: 1px solid var(--edge-strong);
+  overflow: hidden;
+}
+
+.minimap-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.dot-self {
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: var(--accent-hi);
+  color: var(--accent);
+  animation: dot-pulse 1.6s ease-in-out infinite;
+}
+
+.dot-foe   { background: var(--hp);   color: var(--hp);   }
+.dot-ally  { background: var(--mp);   color: var(--mp);   }
+.dot-quest { background: var(--gold); color: var(--gold); }
+
+@keyframes dot-pulse {
+  0%, 100% { box-shadow: 0 0 6px currentColor; }
+  50%      { box-shadow: 0 0 18px currentColor; }
+}
+
+.minimap-label {
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ════════════════════════════════════════════════════════════
+   PORTRAIT ORIENTATION — vertical mobile-style stack.
+   Same regions, different grid: topbar, character, effects,
+   minimap, actions in a single column. Action bar pinned to
+   bottom as the typical "thumb zone".
+   ══════════════════════════════════════════════════════════ */
+@media (orientation: portrait) {
+  body { font-size: 14px; }
+
+  .hud {
+    padding: var(--s-3);
+    gap: var(--s-2);
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto 1fr;
+    grid-template-areas:
+      "topbar"
+      "character"
+      "effects"
+      "minimap"
+      "actions";
+  }
+
+  /* Topbar collapses the level meta and stacks vitals under the chrome */
+  .topbar {
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    padding: var(--s-2) var(--s-3);
+  }
+
+  .level-ring { width: 44px; height: 44px; }
+  .level-num  { font-size: 18px; }
+  .level-meta .name  { font-size: 14px; }
+  .level-meta .class { font-size: 10px; }
+
+  .vitals {
+    order: 99;            /* under the level row, taking the full new line */
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+  .bar-value { min-width: 56px; }
+
+  .counters { margin-left: auto; }
+  .counter  { padding: 4px var(--s-2); font-size: 12px; }
+
+  /* Character panel becomes a horizontal split: portrait left, stats right */
+  .character {
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--s-3);
+    padding: var(--s-3);
+  }
+  .portrait {
+    flex-basis: 38%;
+    flex-shrink: 0;
+  }
+  .portrait-frame { aspect-ratio: 1 / 1; }
+  .portrait-glyph { font-size: 64px; }
+  .ident { flex: 1; justify-content: center; gap: var(--s-1); }
+  .ident h1 { font-size: 18px; }
+  .tagline { font-size: 12px; }
+  .stat-list { gap: var(--s-1); }
+  .stat-list li { padding: 4px var(--s-2); }
+
+  /* Effects: compact horizontal strips */
+  .effects { padding: var(--s-3); gap: var(--s-2); }
+  .effects-label { width: 44px; font-size: 10px; }
+  .chip { width: 38px; height: 38px; font-size: 18px; }
+
+  /* Minimap shrinks to a strip — content over chrome */
+  .minimap {
+    flex-direction: row;
+    align-items: center;
+    padding: var(--s-2) var(--s-3);
+    gap: var(--s-3);
+    min-height: 64px;
+  }
+  .minimap-frame { flex: 1; aspect-ratio: 16 / 4; }
+  .minimap-label { text-align: left; }
+
+  /* Action panel grows to fill the remaining space and pins to the
+     bottom thumb zone. Abilities expand to 4 columns. */
+  .actions { padding: var(--s-3); gap: var(--s-3); }
+  .abilities { grid-template-columns: repeat(4, 1fr); }
+  .ability { padding: var(--s-2) var(--s-1); }
+  .ability-icon { font-size: 22px; }
+  .ability-name { font-size: 10px; }
+  .primary-row { gap: var(--s-3); }
+  .primary { padding: var(--s-4); }
+  .primary-glyph { font-size: 28px; }
+  .primary-label { font-size: 13px; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   VERY-NARROW guard (portrait + small phone) — collapse the
+   character row into a single column so the stat list doesn't
+   crowd the portrait at <400px wide.
+   ══════════════════════════════════════════════════════════ */
+@media (orientation: portrait) and (max-width: 400px) {
+  .character { flex-direction: column; }
+  .portrait { flex-basis: auto; }
+  .portrait-frame { aspect-ratio: 3 / 4; max-height: 240px; }
+  .portrait-glyph { font-size: 80px; }
+}
+
+/* hot-reload trigger */

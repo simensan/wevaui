@@ -1,0 +1,4 @@
+body { margin: 0; padding: 0; background-color: #111827; }
+#list { display: flex; flex-direction: column; gap: 8px; padding: 12px; width: 400px; height: 500px; overflow-y: auto; box-sizing: border-box; background-color: #1f2937; }
+.item { height: 60px; flex-shrink: 0; background-color: #374151; border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; display: flex; align-items: center; padding-left: 16px; }
+.item span { color: #d1d5db; font-size: 14px; }

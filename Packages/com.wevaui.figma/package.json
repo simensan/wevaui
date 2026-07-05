@@ -1,0 +1,30 @@
+{
+  "name": "com.wevaui.figma",
+  "version": "0.1.0",
+  "displayName": "Weva Figma Bridge",
+  "description": "Turns Figma designs into Weva-conformant HTML/CSS. Maps Auto Layout to flex, Figma Variables to CSS custom properties, components/variants to <template> + classes, and lints a design against the Weva subset before export. Self-contained and optional: depends on com.wevaui but nothing in com.wevaui depends on it, so it can be removed by deleting this folder.",
+  "unity": "6000.4",
+  "unityRelease": "1f1",
+  "license": "MIT",
+  "keywords": [
+    "ui",
+    "html",
+    "css",
+    "figma",
+    "design-tokens",
+    "import"
+  ],
+  "author": {
+    "name": "Weva contributors"
+  },
+  "dependencies": {
+    "com.wevaui": "0.1.0"
+  },
+  "samples": [
+    {
+      "displayName": "Figma Import Demo",
+      "description": "A sample Figma export (hero card). Import via Assets > Weva > Import Figma JSON to generate a Weva HTML+CSS document.",
+      "path": "Samples~/FigmaImportDemo"
+    }
+  ]
+}

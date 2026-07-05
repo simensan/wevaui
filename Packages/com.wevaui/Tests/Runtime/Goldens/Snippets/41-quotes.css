@@ -1,0 +1,8 @@
+body { margin: 0; padding: 0; font-size: 16px; line-height: 1; }
+#wrap { width: 200px; quotes: "[" "]" "(" ")"; }
+.sibling { height: 10px; background-color: #e5e7eb; }
+/* Render <q> as block: width = 200px (CB), height = 1 line (short text).
+   UA q::before { content: open-quote } / q::after { content: close-quote }
+   insert the depth-appropriate ASCII pair from the #wrap `quotes` value.
+   q1 at depth 0: [Hi], q2 at depth 0: [Ok] (each resets after close-quote). */
+.bq { display: block; background-color: #dbeafe; }

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  IL2CPP / managed-stripping preservation list. Unity's static analyzer can't
+  see through:
+   - Reflection (AtgGlyphAtlasAdapter binds TextLib + friends by name).
+   - Interface dispatch through static fields set after bootstrap
+     (SdfTextRendering.Atlas, BatchedRendererBackendRegistry.Active).
+   - Shader.Find("Hidden/Weva/Quad") + Resources.Load paths.
+
+  Without this file, "Managed Stripping Level: Low" (the IL2CPP default) can
+  drop large parts of the package on a release build — manifesting as silent
+  runtime failures (white screen, missing text, no events). Listing the whole
+  assembly is conservative; tighter rules can land later if package size
+  becomes a concern, but the package today is small enough that the savings
+  wouldn't be visible to authors.
+-->
+<linker>
+  <assembly fullname="Weva.Runtime" preserve="all"/>
+  <!-- The ATG text path (AtgGlyphAtlasAdapter) binds TextCore's TextGenerator /
+       TextInfo / FontAsset by reflection; without preserving this module IL2CPP
+       can strip it and the high-quality small-text path silently degrades to the
+       SDF fallback. -->
+  <assembly fullname="UnityEngine.TextCoreTextEngineModule" preserve="all"/>
+</linker>

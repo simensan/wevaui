@@ -1,0 +1,29 @@
+<div id="wrap">
+  <!-- Ordered list: decimal ordinals. list-style-position:inside is used
+       so the marker box is in-flow (Chrome and the engine agree on the
+       element walk — outside markers create a ::marker pseudo-element that
+       Chrome's getBoundingClientRect omits, causing structural divergence
+       with the engine's inline-block injection). -->
+  <ol id="ol" class="inside-list">
+    <li id="li1">First item</li>
+    <li id="li2">Second item</li>
+    <li id="li3">Third item</li>
+  </ol>
+  <!-- Unordered list: disc bullets, list-style-position:inside. -->
+  <ul id="ul" class="inside-list">
+    <li id="ul1">Disc one</li>
+    <li id="ul2">Disc two</li>
+  </ul>
+  <!-- Nested list: outer is decimal, inner is disc.
+       Nesting verifies ordinal independence (outer items continue their
+       counter; inner items start a fresh counter from 1). -->
+  <ol id="nested-ol" class="inside-list">
+    <li id="n1">Outer A
+      <ul id="nested-ul" class="inside-list">
+        <li id="n1a">Inner A1</li>
+        <li id="n1b">Inner A2</li>
+      </ul>
+    </li>
+    <li id="n2">Outer B</li>
+  </ol>
+</div>

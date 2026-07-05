@@ -1,0 +1,239 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>
+            9-Slice Demo — &lt;img&gt; auto-slice and CSS border-image
+        </title>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: #0a0e16;
+                color: #f3f4f6;
+                font-family: sans-serif;
+                font-size: 14px;
+                padding: 32px;
+            }
+            h1 {
+                font-size: 18px;
+                font-weight: 700;
+                margin-bottom: 24px;
+                color: #fbbf24;
+            }
+            h2 {
+                font-size: 12px;
+                font-weight: 800;
+                letter-spacing: 1.5px;
+                color: #6b7280;
+                text-transform: uppercase;
+                margin-bottom: 12px;
+                margin-top: 24px;
+            }
+            p {
+                font-size: 12px;
+                color: #9ca3af;
+                margin-bottom: 16px;
+                line-height: 1.5;
+            }
+            code {
+                font-family: monospace;
+                background: #1c2435;
+                padding: 2px 6px;
+                border-radius: 3px;
+                color: #fbbf24;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+                margin-bottom: 32px;
+            }
+
+            .demo {
+                padding: 20px;
+                background: #11151f;
+                border-radius: 6px;
+            }
+            .demo-label {
+                font-size: 11px;
+                font-weight: 600;
+                color: #6b7280;
+                margin-bottom: 12px;
+            }
+
+            /*
+  ── Method A: <img> with auto 9-slice ──
+
+  When the image source carries native 9-slice metadata (Unity sprites
+  configured with border values in the importer), <img> automatically
+  paints as 9 sub-quads. Corners stay at source-pixel size, edges and
+  center stretch to fill. No CSS required.
+
+  Replace src="UI/PanelFrame" with any sprite in your project that has
+  borders set in the Sprite Editor.
+*/
+            .frame-img {
+                display: block;
+                width: 100%;
+                height: 120px;
+            }
+            .frame-img-large {
+                width: 100%;
+                height: 200px;
+            }
+
+            /*
+  ── Method B: CSS border-image ──
+
+  The CSS-standard way to do 9-slice. Works on any element (not just
+  <img>). Note: the element needs an explicit border-width — border-
+  image uses those widths as the edge thickness.
+
+  When border-image-slice is omitted (or just `fill`), the sprite's
+  native border is used. Otherwise you can specify it in source pixels:
+    border-image-slice: 16 fill;        // square 16px insets, center on
+    border-image-slice: 8 16 fill;      // 8 top/bottom, 16 left/right
+*/
+            .frame-css {
+                height: 120px;
+                border: 16px solid transparent;
+                border-image-source: url(Settings_Flyout_9slice.png);
+                border-image-repeat: stretch;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #f3f4f6;
+                font-weight: 700;
+            }
+
+            .frame-css-tight {
+                height: 60px;
+                border: 8px solid transparent;
+                border-image-source: url(UI/Sprites/PanelFrame.png);
+            }
+
+            /*
+  ── Method C: nested content inside a 9-sliced background ──
+
+  Same as Method B but with content inside.
+*/
+            .button {
+                display: inline-block;
+                padding: 16px 32px;
+                border: 12px solid transparent;
+                border-image-source: url(UI/Sprites/ButtonFrame);
+                border-image-repeat: stretch;
+                color: #fbbf24;
+                font-weight: 900;
+                cursor: pointer;
+            }
+            .button:hover {
+                border-image-source: url(UI/Sprites/ButtonFrameHover);
+            }
+
+            .row {
+                display: flex;
+                gap: 16px;
+                align-items: center;
+                margin-bottom: 16px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>9-Slice Demo</h1>
+
+        <p>
+            Three ways to use 9-slice images in Weva. The same source asset
+            (a sprite with borders configured in the Unity Sprite Editor) drives
+            all three.
+        </p>
+
+        <p>
+            <b>Asset setup:</b> import a frame PNG, set
+            <code>Sprite Mode = Single</code>, open the Sprite Editor, drag the
+            green border handles to mark the slice insets, save. Register it in
+            your <code>InMemoryImageRegistry</code> with
+            <code
+                >registry.Register("UI/PanelFrame", new
+                SpriteImageSource(sprite))</code
+            >. The engine reads <code>sprite.border</code> automatically.
+        </p>
+
+        <p>
+            <b>Where to get free 9-sliceable frames:</b> Kenney's UI Pack
+            (kenney.nl/assets/ui-pack — CC0), OpenGameArt 9-patch frames.
+        </p>
+
+        <h2>Method A — &lt;img&gt; with native 9-slice</h2>
+        <p>
+            Just an <code>&lt;img&gt;</code>. The engine detects the sprite's
+            border and paints 9 parts. No CSS needed.
+        </p>
+        <div class="grid">
+            <div class="demo">
+                <div class="demo-label">Small (corners ~ source size)</div>
+                <img
+                    src="UI/PanelFrame"
+                    class="frame-img"
+                    style="height: 80px"
+                />
+            </div>
+            <div class="demo">
+                <div class="demo-label">Medium</div>
+                <img src="UI/PanelFrame" class="frame-img" />
+            </div>
+            <div class="demo">
+                <div class="demo-label">Large (corners unchanged)</div>
+                <img src="UI/PanelFrame" class="frame-img-large" />
+            </div>
+        </div>
+
+        <h2>Method B — CSS <code>border-image</code></h2>
+        <p>
+            Use on any element. <code>border-image-slice</code> is optional when
+            the sprite has its own borders.
+        </p>
+        <div class="grid">
+            <div class="demo">
+                <div class="demo-label">Default (sprite borders + fill)</div>
+                <div class="frame-css">PANEL</div>
+            </div>
+            <div class="demo">
+                <div class="demo-label">Explicit slice: 12 fill</div>
+                <div class="frame-css" style="border-image-slice: 12 fill">
+                    PANEL
+                </div>
+            </div>
+            <div class="demo">
+                <div class="demo-label">Repeat keyword: round</div>
+                <div class="frame-css" style="border-image-repeat: round">
+                    PANEL
+                </div>
+            </div>
+        </div>
+
+        <h2>Method C — Buttons with 9-sliced backgrounds</h2>
+        <p>Content sits inside the border-box; the 9-slice paints behind it.</p>
+        <div class="row">
+            <div class="button">BUY</div>
+            <div class="button">UPGRADE</div>
+            <div class="button">CONTINUE</div>
+        </div>
+
+        <h2>Verification</h2>
+        <p>
+            All three methods produce <b>9 FillRect paint commands</b> (4
+            corners, 4 edges, 1 center) when the source has nine-slice metadata.
+            Open the DevTools overlay to inspect the paint command list, or run
+            <code
+                >ImgPaintTests.Img_with_native_9slice_source_emits_9_parts</code
+            >
+            for the unit-test version.
+        </p>
+    </body>
+</html>

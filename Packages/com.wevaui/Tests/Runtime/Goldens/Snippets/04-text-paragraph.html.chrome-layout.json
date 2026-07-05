@@ -1,0 +1,22 @@
+{
+  "source": "04-text-paragraph.html",
+  "width": 800,
+  "height": 600,
+  "count": 1,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 0,
+      "y": 24,
+      "w": 800,
+      "h": 29,
+      "display": "block",
+      "position": "static",
+      "text": "Hello world"
+    }
+  ]
+}

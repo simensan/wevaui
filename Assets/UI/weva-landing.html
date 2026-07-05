@@ -1,0 +1,153 @@
+<!--
+  weva-landing — a marketing landing page for Weva, authored in the very
+  HTML/CSS the engine renders. Hero, feature grid, stats, a "what you write"
+  code panel, and a closing CTA. Scrolls as a normal page.
+-->
+<link rel="stylesheet" href="weva-landing.css" />
+
+<div class="page">
+
+  <!-- ── top nav ───────────────────────────────────────────────────────── -->
+  <header class="nav">
+    <div class="brand"><span class="logo"></span> Weva</div>
+    <nav class="links">
+      <span class="lnk active">Features</span>
+      <span class="lnk">Layout</span>
+      <span class="lnk">Figma</span>
+      <span class="lnk">Docs</span>
+    </nav>
+    <div class="nav-cta">
+      <button class="btn ghost">GitHub</button>
+      <button class="btn primary">Get started</button>
+    </div>
+  </header>
+
+  <!-- ── hero ──────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow"><span class="pulse"></span> UI engine for Unity 6 · URP</div>
+      <h1 class="headline">Real <span class="grad">HTML &amp; CSS</span>,<br/>native to Unity.</h1>
+      <p class="sub">
+        Author game UI the way the web does — flexbox, grid, gradients, crisp
+        SDF text — rendered straight through your render pipeline. No UI Toolkit
+        lock-in, no retained-mode boilerplate.
+      </p>
+      <div class="hero-actions">
+        <button class="btn primary lg">Start building ▸</button>
+        <button class="btn ghost lg">Watch the demo</button>
+      </div>
+      <div class="hero-meta">
+        <span class="chip"><b>1767</b> layout tests</span>
+        <span class="chip"><b>0&nbsp;B</b> steady-state alloc</span>
+        <span class="chip">Chrome-audited</span>
+      </div>
+    </div>
+    <div class="hero-art">
+      <div class="art-card">
+        <div class="art-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="art-title">main-menu.html</span></div>
+        <div class="art-body">
+          <div class="art-row"><span class="art-pill">flex</span><span class="art-pill">grid</span><span class="art-pill alt">SDF text</span></div>
+          <div class="art-grid">
+            <span class="t t1"></span><span class="t t2"></span>
+            <span class="t t3"></span><span class="t t4"></span>
+          </div>
+          <div class="art-line w80"></div>
+          <div class="art-line w60"></div>
+          <div class="art-cta">Play ▸</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── feature grid ──────────────────────────────────────────────────── -->
+  <section class="features">
+    <div class="sec-head">
+      <div class="kicker">Why Weva</div>
+      <h2>Everything you'd reach for on the web — in your game.</h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="ficon i1"></div>
+        <h3>Real CSS layout</h3>
+        <p>Flexbox, Grid, positioning, the full cascade — implemented to spec and continuously audited against Chrome.</p>
+      </div>
+      <div class="feat">
+        <div class="ficon i2"></div>
+        <h3>Crisp SDF text</h3>
+        <p>TextMeshPro-quality glyphs at any size and weight, with kerning, fallback chains, and emoji.</p>
+      </div>
+      <div class="feat">
+        <div class="ficon i3"></div>
+        <h3>Figma → Weva</h3>
+        <p>Pull frames straight from Figma into live HTML/CSS with a fidelity checker that diffs the render.</p>
+      </div>
+      <div class="feat">
+        <div class="ficon i4"></div>
+        <h3>URP-native render</h3>
+        <p>Gradients, rounded corners, shadows, and backdrop blur composited through your own render pipeline.</p>
+      </div>
+      <div class="feat">
+        <div class="ficon i5"></div>
+        <h3>Zero-alloc steady state</h3>
+        <p>Pooled boxes and cached cascade keep per-frame allocation at zero. 60fps UI that doesn't stutter the GC.</p>
+      </div>
+      <div class="feat">
+        <div class="ficon i6"></div>
+        <h3>Data binding &amp; input</h3>
+        <p>Bind C# straight to the DOM, with keyboard, pointer, and gamepad focus navigation out of the box.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── stats strip ───────────────────────────────────────────────────── -->
+  <section class="stats">
+    <div class="stat"><div class="num grad">1767</div><div class="lbl">layout tests, all green</div></div>
+    <div class="stat"><div class="num grad">0&nbsp;B</div><div class="lbl">GC alloc per frame</div></div>
+    <div class="stat"><div class="num grad">100%</div><div class="lbl">C#, no native plugins</div></div>
+    <div class="stat"><div class="num grad">URP</div><div class="lbl">first-class render path</div></div>
+  </section>
+
+  <!-- ── code panel ────────────────────────────────────────────────────── -->
+  <section class="code">
+    <div class="code-copy">
+      <div class="kicker">Author it like the web</div>
+      <h2>Write HTML &amp; CSS. Ship a game UI.</h2>
+      <p>The same markup and stylesheet you'd write for a website drive a fully
+         interactive, GPU-rendered Unity interface — no scene-graph wiring.</p>
+      <ul class="ticks">
+        <li>Hot-reload your <code>.html</code> / <code>.css</code></li>
+        <li>One <code>WevaDocument</code> component per screen</li>
+        <li>Strip the package for ship builds you don't use</li>
+      </ul>
+    </div>
+    <div class="code-panel">
+      <div class="code-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> hud.css</div>
+      <pre class="code-body"><span class="c-sel">.hud</span> <span class="c-brace">{</span>
+  <span class="c-prop">display</span>: <span class="c-val">grid</span>;
+  <span class="c-prop">grid-template-columns</span>: <span class="c-val">1fr auto 1fr</span>;
+  <span class="c-prop">gap</span>: <span class="c-val">16px</span>;
+<span class="c-brace">}</span>
+<span class="c-sel">.health</span> <span class="c-brace">{</span>
+  <span class="c-prop">background</span>: <span class="c-val">linear-gradient(90deg,#16c784,#36e0ff)</span>;
+  <span class="c-prop">border-radius</span>: <span class="c-val">999px</span>;
+<span class="c-brace">}</span></pre>
+    </div>
+  </section>
+
+  <!-- ── closing CTA ───────────────────────────────────────────────────── -->
+  <section class="cta-band">
+    <h2>Build your game's UI the way you build the web.</h2>
+    <p>Drop in the package, point a <code>WevaDocument</code> at your HTML, hit Play.</p>
+    <div class="hero-actions center">
+      <button class="btn primary lg">Get started ▸</button>
+      <button class="btn ghost lg">Read the docs</button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="brand sm"><span class="logo"></span> Weva</div>
+    <span class="foot-note">HTML/CSS UI for Unity · rendered through URP</span>
+    <span class="foot-links">Docs · GitHub · Figma plugin</span>
+  </footer>
+
+</div>

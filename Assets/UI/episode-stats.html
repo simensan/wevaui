@@ -1,0 +1,80 @@
+<!--
+  episode-stats — an interactive-narrative "your choices" recap screen
+  (Telltale / Supermassive style). Exercises: a stateful tab strip
+  (visited / selected-with-glow / available / progressively-locked),
+  image+text stat cards, two-tone progress meters (cyan choice vs purple
+  remainder), CSS-drawn key-hint chips and clip-path arrow glyphs, and a
+  diagonal-banded backdrop. Each block notes the CSS module it stresses.
+-->
+<link rel="stylesheet" href="episode-stats.css" />
+<main class="screen">
+
+  <!-- ── Episode tab strip ───────────────────────────────────────────────
+       Stresses: flex gap, per-state border/box-shadow glow, opacity ramp
+       for the locked tabs, key-hint chips at each end. -->
+  <nav class="episodes" aria-label="Episodes">
+    <span class="key">Q</span>
+    <button class="ep visited">EPISODE 1</button>
+    <button class="ep selected">EPISODE 2</button>
+    <button class="ep">EPISODE 3</button>
+    <button class="ep locked l1">EPISODE 4</button>
+    <button class="ep locked l2">EPISODE 5</button>
+    <button class="ep locked l3">EPISODE 6</button>
+    <button class="ep locked l4">EPISODE 7</button>
+    <button class="ep locked l5">EPISODE 8</button>
+    <span class="key">E</span>
+  </nav>
+
+  <!-- ── Choice stat cards ───────────────────────────────────────────────
+       Stresses: nested flex (row card → column stat), rounded thumbnails
+       from layered gradients, <strong> bold runs in flowing text, and the
+       two-tone meter (cyan fill width = --pct over a purple track). -->
+  <ul class="cards">
+    <li class="card">
+      <div class="thumb t1" aria-hidden="true"></div>
+      <div class="stat">
+        <p class="choice">You and <strong>33%</strong> of players prefer
+          <strong>jelly filled</strong> donuts.</p>
+        <div class="meter"><span class="fill" style="--pct: 33"></span></div>
+      </div>
+    </li>
+
+    <li class="card">
+      <div class="thumb t2" aria-hidden="true"></div>
+      <div class="stat">
+        <p class="choice">You and <strong>72%</strong> of players
+          <strong>decided not to ask Blazer out</strong>.</p>
+        <div class="meter"><span class="fill" style="--pct: 72"></span></div>
+      </div>
+    </li>
+
+    <li class="card">
+      <div class="thumb t3" aria-hidden="true"></div>
+      <div class="stat">
+        <p class="choice">You and <strong>89%</strong> of players said
+          <strong>no to dinner</strong> with Phenomaman and Blazer.</p>
+        <div class="meter"><span class="fill" style="--pct: 89"></span></div>
+      </div>
+    </li>
+  </ul>
+
+  <!-- ── Pager ───────────────────────────────────────────────────────────
+       Stresses: clip-path triangle glyphs (vertically symmetric → safe),
+       active-dot glow, key chips. -->
+  <nav class="pager" aria-label="Pages">
+    <span class="key">A</span>
+    <span class="arrow prev" aria-hidden="true"></span>
+    <ul class="dots">
+      <li></li><li></li><li class="on"></li><li></li><li></li>
+    </ul>
+    <span class="arrow next" aria-hidden="true"></span>
+    <span class="key">D</span>
+  </nav>
+
+  <!-- ── Return ──────────────────────────────────────────────────────── -->
+  <div class="return">
+    <span class="key wide">ESC</span>
+    <span class="return-label">RETURN</span>
+  </div>
+
+</main>

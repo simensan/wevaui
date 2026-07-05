@@ -1,0 +1,4 @@
+{
+  "absPx": 3.0,
+  "_note": "W1 inc 3+6: Chrome rounds monospace line-height to integer pixels (ceil(22px*1.143)=26) while the engine keeps sub-pixel precision (25.15px). Over 4 rows with 18px gaps the y positions accumulate ~2.56px drift by the last row. absPx=3 covers this rounding accumulation. Tightened from 4.0 (old MonoFontMetrics calibration) — the font-advance X drift was eliminated by InterFontMetrics."
+}

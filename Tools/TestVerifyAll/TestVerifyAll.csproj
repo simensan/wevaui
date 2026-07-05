@@ -1,0 +1,82 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <!-- Match Unity's compiler (C# 9): 'latest' let a parameterless struct
+         ctor through headless that then broke the Unity compile (e83d1cd6). -->
+    <LangVersion>9.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>CS0618;CS0436;CS0168;CS8632;CS0414;CS0162;CS0219;CS0067;CS0649;NU1701</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <!-- Enables UILayoutDiagnostics output when running under the headless
+         test runner. UNITY_EDITOR / DEVELOPMENT_BUILD aren't defined here,
+         so without this symbol every Trace/TraceFor call no-ops and tests
+         that need diagnostic output (e.g. PlayActionAbsoluteShrinkTests
+         vertical-centring trace) get no signal. -->
+    <DefineConstants>$(DefineConstants);TESTVERIFY</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Packages\com.wevaui\Runtime\**\*.cs"
+             Exclude="
+               ..\..\Packages\com.wevaui\Runtime\UIDocument.cs;
+               ..\..\Packages\com.wevaui\Runtime\WevaDocument.cs;
+               ..\..\Packages\com.wevaui\Runtime\Document\UnityClock.cs;
+               ..\..\Packages\com.wevaui\Runtime\Rendering\**\*.cs;
+               ..\..\Packages\com.wevaui\Runtime\Text\**\*.cs;
+               ..\..\Packages\com.wevaui\Runtime\Forms\Bridge\**\*.cs;
+               ..\..\Packages\com.wevaui\Runtime\DevTools\DevToolsOverlay.cs" />
+    <!-- Rendering\** is excluded above (URP/Unity graphics), but the paint
+         source interface is Unity-clean and SelectionHighlightSource (tested
+         headlessly) implements it. -->
+    <Compile Include="..\..\Packages\com.wevaui\Runtime\Rendering\Backend\IUIPaintSource.cs" />
+    <!-- Forms\Bridge\** is excluded above (Unity Input System types), but the
+         auto-repeat clock is pure C# and its cadence is pinned headlessly. -->
+    <Compile Include="..\..\Packages\com.wevaui\Runtime\Forms\Bridge\KeyAutoRepeat.cs" />
+    <!-- Clipboard abstraction: the interface + InMemory stub are pure C#
+         (UnityClipboardBridge is #if-gated to editor/desktop and drops out
+         headlessly); InputController's Ctrl+C/X/V tests pin the semantics. -->
+    <Compile Include="..\..\Packages\com.wevaui\Runtime\Forms\Bridge\UnityClipboardBridge.cs" />
+    <!-- AR2 (2026-07 audit): INVERTED to glob + exclude. The old hand-list
+         silently ran 0 tests for any file nobody remembered to add (~1,100
+         tests dark, incl. the 205-test Conformance suite). New test files are
+         now opt-OUT: add to the Exclude list ONLY if the file needs Unity
+         APIs beyond UnityEngineStub.cs. -->
+    <Compile Include="..\..\Packages\com.wevaui\Tests\Runtime\**\*.cs"
+             Exclude="
+               ..\..\Packages\com.wevaui\Tests\Runtime\Rendering\**\*.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Text\**\*.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Forms\Bridge\**\*.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\DevTools\DevToolsOverlayTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Document\UIDocumentReactivityTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\SmokeTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Goldens\**\*.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Layout\DocumentLevelGapsTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Css\Cascade\CascadeAllocStableTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Css\Cascade\CascadeAllocationTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Css\Cascade\SnapshotCascadeTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Paint\Conversion\ColorResolverDiagnosticsTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Paint\Conversion\BoxToPaintConverterDD5ParseOriginAxisSliceDiagnosticTests.cs;
+               ..\..\Packages\com.wevaui\Tests\Runtime\Css\Selectors\SelectorMatcherTests.cs" />
+    <!-- Goldens\** is excluded above (image IO / GPU paths), but these two are
+         pure C# and were already running pre-inversion. -->
+    <Compile Include="..\..\Packages\com.wevaui\Tests\Runtime\Goldens\GoldenSuiteTests.cs" />
+    <Compile Include="..\..\Packages\com.wevaui\Tests\Runtime\Goldens\LayoutDiffTests.cs" />
+    <Compile Include="..\Weva.Generators\UIBindGenerator.cs" Link="Generator\UIBindGenerator.cs" />
+    <Compile Include="GeneratorSmokeTests.cs" />
+    <Compile Include="CascadeWarmAllocProbe.cs" />
+    <Compile Include="Runner.cs" />
+    <Compile Include="Debug.cs" />
+    <Compile Include="DebugDash.cs" />
+    <Compile Include="FontResolverStub.cs" />
+    <Compile Include="UnityEngineStub.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

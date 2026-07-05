@@ -1,0 +1,16 @@
+# Files excluded from the distributed UPM tarball (npm pack).
+# NOTE: .meta files are intentionally NOT ignored — Unity requires them.
+
+# NUnit test suite + golden-image fixtures (~14 MB). Not needed to consume the
+# library; consumers exercise the package via Samples~/PhaseOneDemo.
+Tests/
+Tests.meta
+
+# IDE / OS / editor junk
+.idea/
+.vs/
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.user
