@@ -9,7 +9,7 @@ matters); when a claim and the code disagree, the code wins — tell the user.
 > Audience split — don't confuse them:
 > - **Use the library / author UI** (HTML/CSS, controllers, forms) → this doc for the overview, then [`Packages/com.wevaui/Documentation~/AuthoringGuide.md`](Packages/com.wevaui/Documentation~/AuthoringGuide.md) for the manual.
 > - **Change the engine** (add a property, a paint command, fix layout) → [`AGENTS.md`](AGENTS.md) (the engineering contract) + [`PLAN.md`](PLAN.md) (architecture/roadmap) + [`CONFORMANCE.md`](CONFORMANCE.md) (spec deltas).
-> - **Pick the next fix / check if something is a known gap** → [`CSS_OPEN_GAPS.md`](CSS_OPEN_GAPS.md) (curated open list) + [`CSS_FEATURE_AUDIT.md`](CSS_FEATURE_AUDIT.md) (full capability map) + [`CSS_COMPLIANCE_ISSUES.md`](CSS_COMPLIANCE_ISSUES.md) (historical fix tracker).
+> - **Check if something is a known gap** → [`CSS_FEATURE_AUDIT.md`](CSS_FEATURE_AUDIT.md) (full capability map) + [`CONFORMANCE.md`](CONFORMANCE.md) (per-feature spec deltas).
 
 _Last verified: 2026-06-02._
 
@@ -155,9 +155,8 @@ Treat this as the headline list; the authoritative per-feature matrix is
 
 Two classes: **(A) parses-but-no-effect / partial** (author CSS stays valid, but
 pin the listed value if you depend on spec behavior), and **(B) GPU/render
-limits** where the C# side is correct but pixels don't match. The full open list
-is [`CSS_OPEN_GAPS.md`](CSS_OPEN_GAPS.md); AuthoringGuide §17 lists the
-author-facing "intentionally not implemented" set.
+limits** where the C# side is correct but pixels don't match. AuthoringGuide §17
+lists the author-facing "intentionally not implemented" set.
 
 ### A. Intentionally out of v1 scope / partial (CSS-side)
 
@@ -332,8 +331,6 @@ into a StructuredBuffer of instances, chunking at `MaxInstancesPerDraw` (1024).
 | Architecture + roadmap rationale | `PLAN.md` |
 | Per-feature spec deviations | `CONFORMANCE.md` |
 | Full CSS capability matrix | `CSS_FEATURE_AUDIT.md` |
-| Curated open gaps (pick next fix) | `CSS_OPEN_GAPS.md` |
-| Historical fix tracker | `CSS_COMPLIANCE_ISSUES.md` |
 | Package overview + perf numbers | `Packages/com.wevaui/README.md` |
 | End-to-end demo scene | `Packages/com.wevaui/Samples~/PhaseOneDemo/` |
 | Dev demo + golden/perf calibration doc | `Assets/UI/randhtml.html` + `.css` |

@@ -87,12 +87,19 @@ Assets/UI/Fonts/SegoeUI*
 Assets/UI/Fonts/Source/SegoeUI.ttf
 Assets/UI/Fonts/Source/SegoeUI.ttf.meta
 
-# Local-only artifacts — kept on disk, never published. The other planning /
-# audit / reference docs ARE tracked: the codebase and public docs cross-
-# reference them (CSS_FEATURE_AUDIT, CSS_OPEN_GAPS, CODE_AUDIT_FINDINGS, etc.),
-# so untracking them would orphan those links. Only these two are safe to keep
-# local — nothing references them and headless_layout.sh hardcodes a per-machine
-# Unity path.
-/TECH_AUDIT_2026-06.md
-/TECH_AUDIT_2026-07.md
+# Internal working docs / scratch tooling — never published. Removed from the
+# repo 2026-07-05 (archived in ../unityui-internal-docs); patterns kept so a
+# regenerated copy can't slip back into the public repo. CSS_FEATURE_AUDIT.md
+# stays tracked — CONFORMANCE.md and PLAN.md cite it as the authoritative
+# capability matrix.
+/TECH_AUDIT_*.md
+/CODE_AUDIT_FINDINGS.md
+/CSS_COMPLIANCE_ISSUES.md
+/CSS_OPEN_GAPS.md
+/GAME_UI_COVERAGE_PLAN.md
+/SAMPLE_AUDIT.md
+/WEVA_EDITOR_PLAN.md
+/WEVA_INPLACE_EDITOR_SCOPE.md
+/compare_coords.js
+/dump_coords.js
 /headless_layout.sh

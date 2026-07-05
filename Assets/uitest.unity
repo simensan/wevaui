@@ -337,7 +337,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9a25ff793241612448f0840efbcaf064, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Weva.Runtime::Weva.UIDocument
-  documentAsset: {fileID: 4900000, guid: 69d7a0de8be30ec4d8bcfcf6461bae04, type: 3}
+  documentAsset: {fileID: 4900000, guid: 0d8292c030ac0fd4594afdaa7984a2bf, type: 3}
   stylesheetAssets: []
   sortingOrder: 0
   viewportOverride: {x: 0, y: 0}

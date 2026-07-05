@@ -153,8 +153,8 @@ touching anything cache-adjacent will save you hours.
   display says so. Read `BlockLayout.cs` for the orchestration entry point.
 * Flex implementation is hand-rolled (no Yoga). Stay consistent.
 * When you change shrink-to-fit / inline-block measurement, run
-  `RandhtmlLayoutDumpTest` headlessly and `compare_coords.js` against a
-  Chrome dump to see the regression.
+  `RandhtmlLayoutDumpTest` headlessly and diff the dumped coordinates
+  against a Chrome dump of the same page to see the regression.
 
 ### Paint / rendering
 
@@ -258,12 +258,12 @@ touching anything cache-adjacent will save you hours.
 cd Tools/BaselineGen
 dotnet run -c Release -- "C:/path/to/snippet.html" "C:/path/to/snippet.css" \
     --viewport 1434x781 --out unity_coords.json
-node compare_coords.js chrome_coords.json unity_coords.json
 ```
 
 Use `RandhtmlLayoutDumpTest.DumpRandhtmlCoords` from the editor to dump the
 demo's box tree to JSON without entering play mode. Compare against a Chrome
-dump (`Tools/coord_dump.js` injected via DevTools) to find the divergence.
+dump of the same page (`getBoundingClientRect` over the DOM via a DevTools
+snippet) to find the divergence.
 
 ## 6. Testing
 
