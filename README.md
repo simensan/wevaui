@@ -8,6 +8,32 @@ The actual package lives in [`Packages/com.wevaui/`](./Packages/com.wevaui/).
 This repo also contains the demo project (`Assets/`), the headless tooling
 (`Tools/`), and the design / spec docs at the root.
 
+## Install
+
+Add via **Package Manager ▸ + ▸ Add package from git URL…**:
+
+```
+https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.0
+```
+
+or add it to `Packages/manifest.json` directly:
+
+```json
+{
+  "dependencies": {
+    "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.0"
+  }
+}
+```
+
+Drop the `#v0.1.0` suffix to track `main` instead of a pinned release
+(releases are tagged `v*`). The optional Figma bridge installs the same way —
+**after** `com.wevaui`, since it depends on it:
+
+```
+https://github.com/simensan/wevaui.git?path=Packages/com.wevaui.figma#v0.1.0
+```
+
 ## Where to start
 
 * **[Package README](./Packages/com.wevaui/README.md)** — install

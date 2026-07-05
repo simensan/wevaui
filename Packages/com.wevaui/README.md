@@ -30,10 +30,12 @@ and fails in surprising ways.
      "Install package from tarball…" → select the `.tgz`. Unity copies it under
      `Packages/`. (The tarball ships Runtime + Editor + the Phase One Demo
      sample; the NUnit test suite is omitted.)
-   - **From Git:** add to `Packages/manifest.json`:
+   - **From Git** (recommended): add to `Packages/manifest.json`:
      ```json
-     "com.wevaui": "https://github.com/<owner>/weva.git?path=Packages/com.wevaui"
+     "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.0"
      ```
+     or Package Manager → **+** → "Add package from git URL…" with the same
+     URL. Pin a release with the `#v*` tag suffix, or drop it to track `main`.
    - **From disk:** clone the repo and add via Package Manager → "Add package
      from disk" → pick `Packages/com.wevaui/package.json`.
 
