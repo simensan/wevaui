@@ -228,14 +228,6 @@
         "com.unity.burst": "1.8.0"
       }
     },
-    "com.wevaui.figma": {
-      "version": "file:com.wevaui.figma",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {
-        "com.wevaui": "0.1.0"
-      }
-    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

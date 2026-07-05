@@ -43,7 +43,7 @@ Tools/*/obj/
 # Node tooling (puppeteer / chrome-coords scripts) — never ship.
 # IMPORTANT: scope the package.json ignore to the Node tool roots only. A bare
 # `package.json` also matches the Unity package manifests under Packages/
-# (com.wevaui/package.json, com.wevaui.figma/package.json, ...), which MUST be
+# (com.wevaui/package.json, ...), which MUST be
 # tracked or the packages won't install for anyone who clones / adds by URL.
 node_modules/
 package-lock.json

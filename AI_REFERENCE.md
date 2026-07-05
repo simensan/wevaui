@@ -31,8 +31,8 @@ divergent behavior is considered worse than a missing one.
 - Headless-testable end to end (the parser/cascade/layout/paint stages do not
   touch `UnityEngine`); ~6,500 NUnit tests.
 
-The strippable companion package `com.wevaui.figma` imports Figma frames into
-Weva HTML/CSS (see [`Packages/com.wevaui.figma/`](Packages/com.wevaui.figma/) and the project memory note on the Figma bridge).
+A companion package (`com.wevaui.figma`, separate repository) imports Figma
+frames into Weva HTML/CSS.
 
 ---
 
@@ -334,4 +334,3 @@ into a StructuredBuffer of instances, chunking at `MaxInstancesPerDraw` (1024).
 | Package overview + perf numbers | `Packages/com.wevaui/README.md` |
 | End-to-end demo scene | `Packages/com.wevaui/Samples~/PhaseOneDemo/` |
 | Dev demo + golden/perf calibration doc | `Assets/UI/randhtml.html` + `.css` |
-| Figma → Weva bridge | `Packages/com.wevaui.figma/` |
