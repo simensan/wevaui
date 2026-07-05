@@ -40,7 +40,9 @@ and fails in surprising ways.
      from disk" → pick `Packages/com.wevaui/package.json`.
 
 2. **Author.** Drop `.html` and `.css` into `Assets/UI/` — they import as
-   `TextAsset`s.
+   `TextAsset`s. Or skip straight to the point of Weva: tell your AI model of
+   choice *"Create a main menu UI using Weva — standard HTML and CSS"* and use
+   what it gives you.
    ```html
    <link rel="stylesheet" href="menu.css" />
    <main class="menu">

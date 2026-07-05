@@ -7,8 +7,7 @@ document on screen.
 
 ## Requirements
 
-- Unity **6000.4** (the package manifest pins `unity: "6000.4"`,
-  `unityRelease: "1f1"`).
+- Unity **6000.3** or newer (the package manifest pins `unity: "6000.3"`).
 - **URP** for the production render path. The package compiles without URP —
   the URP code is gated behind a `WEVA_URP` `versionDefines` token — but the
   full renderer only activates when URP is present. Without it, the IMGUI
@@ -21,15 +20,32 @@ document on screen.
 Add the package to `Packages/manifest.json`:
 
 ```json
-"com.wevaui": "https://github.com/<owner>/weva.git?path=Packages/com.wevaui"
+"com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.1"
 ```
 
+(Pin a release with the `#v*` tag suffix, or drop it to track `main`.)
 Or import locally: clone the repo, then Package Manager → **Add package from
 disk** → pick `Packages/com.wevaui/package.json`.
 
 The **Phase One Demo** sample (Package Manager → Weva → Samples) is a complete
 scene that exercises the whole pipeline end-to-end; import it to confirm the
 package works before authoring your own UI.
+
+## Author with AI
+
+Weva's whole premise is that AI models already know web HTML/CSS — there is no
+Unity dialect to teach them. So the fastest way to a first screen is to tell
+your AI model of choice:
+
+> **"Create a main menu UI using Weva — standard HTML and CSS, no framework,
+> one `.html` and one `.css` file."**
+
+Drop whatever it produces into `Assets/UI/` and mount it (next two sections).
+Anything the model writes for a browser is either supported or fails loudly —
+that's the design rule. For an AI coding agent working inside your project
+(Claude Code, Cursor, Copilot), point it at the repo's
+[`AI_REFERENCE.md`](https://github.com/simensan/wevaui/blob/main/AI_REFERENCE.md)
+so it knows the exact capability envelope and integration API.
 
 ## Author the HTML/CSS
 
