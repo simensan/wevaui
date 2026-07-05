@@ -1,4 +1,5 @@
-#if WEVA_URP
+// Dev-project-only example panel (lives in Assets/Editor, not the package):
+// the WEVA_URP guard is dropped because the dev project always has URP.
 using UnityEditor;
 
 namespace Weva.EditorTools.Panels {
@@ -11,12 +12,12 @@ namespace Weva.EditorTools.Panels {
     // pulls current values; selectionChanged triggers a Repaint so the panel reflects the new
     // selection immediately rather than waiting for the next input/animation tick.
     //
-    // Window ▸ Weva ▸ Selection Panel
+    // Window ▸ Weva Dev ▸ Selection Panel
     //
     // STATUS: shares the WevaEditorPanel render path, which is NOT yet visually verified in a
     // live editor (color space / orientation / DPI — see WevaEditorPanel header).
     public sealed class WevaSelectionPanel : WevaEditorPanel {
-        [MenuItem("Window/Weva/Selection Panel")]
+        [MenuItem("Window/Weva Dev/Selection Panel")]
         static void Open() => GetWindow<WevaSelectionPanel>("Weva Selection");
 
         SelectionModel model;
@@ -72,4 +73,3 @@ namespace Weva.EditorTools.Panels {
         }
     }
 }
-#endif

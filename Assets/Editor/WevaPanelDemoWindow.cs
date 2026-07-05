@@ -1,4 +1,6 @@
-#if WEVA_URP
+// Dev-project-only smoke-test panel (lives in Assets/Editor, not the
+// package): the WEVA_URP guard is dropped because the dev project always
+// has URP.
 using UnityEditor;
 
 namespace Weva.EditorTools.Panels {
@@ -8,9 +10,9 @@ namespace Weva.EditorTools.Panels {
     // confirm interactivity: hovering the cards should change their color (a :hover rule), which
     // exercises Event.current → EventDispatcher → cascade → re-render.
     //
-    // Window ▸ Weva ▸ Panel Demo
+    // Window ▸ Weva Dev ▸ Panel Demo
     public sealed class WevaPanelDemoWindow : WevaEditorPanel {
-        [MenuItem("Window/Weva/Panel Demo")]
+        [MenuItem("Window/Weva Dev/Panel Demo")]
         static void Open() => GetWindow<WevaPanelDemoWindow>("Weva Panel");
 
         // A <style> block (supported by UIDocumentBuilder.AppendInlineStyleBlocks) so we can use
@@ -44,4 +46,3 @@ namespace Weva.EditorTools.Panels {
 </div>";
     }
 }
-#endif

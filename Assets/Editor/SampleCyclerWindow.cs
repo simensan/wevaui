@@ -29,7 +29,7 @@ public sealed class SampleCyclerWindow : EditorWindow {
     int currentIndex = -1;      // index into `samples` of the live document
     double lastRefreshTime;
 
-    [MenuItem("Window/Weva/Sample Cycler %&u")]
+    [MenuItem("Window/Weva Dev/Sample Cycler %&u")]
     static void Open() {
         var w = GetWindow<SampleCyclerWindow>("UI Samples");
         w.minSize = new Vector2(260, 200);

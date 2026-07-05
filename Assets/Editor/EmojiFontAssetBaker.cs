@@ -56,7 +56,7 @@ namespace Weva.EditorTools {
             (0x1FA00, 0x1FAFF), // Symbols & pictographs ext-A
         };
 
-        [MenuItem("Weva/Bake Emoji Font Asset")]
+        [MenuItem("Tools/Weva Dev/Bake Emoji Font Asset")]
         public static void Bake() {
             BakeImpl();
         }
@@ -67,7 +67,7 @@ namespace Weva.EditorTools {
         // instead of doing an SDF coverage-threshold like the SDFAA path.
         // Output is `Assets/UI/Fonts/SegoeUIEmoji COLOR.asset` so the SDFAA
         // asset stays available as a fallback authoring option.
-        [MenuItem("Weva/Bake Emoji Font Asset (Color)")]
+        [MenuItem("Tools/Weva Dev/Bake Emoji Font Asset (Color)")]
         public static void BakeColor() {
             BakeColorImpl();
         }

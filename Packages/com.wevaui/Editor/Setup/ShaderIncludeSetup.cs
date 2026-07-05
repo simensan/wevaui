@@ -19,7 +19,7 @@ namespace Weva.EditorTools.Setup {
     // Adds to whatever is currently in the list; never removes the user's
     // other shaders.
     public static class ShaderIncludeSetup {
-        const string MenuPath = "Tools/Weva/Setup/Add Shaders to Always Included";
+        const string MenuPath = "Window/Weva/Setup/Add Shaders to Always Included";
 
         // The full set of Weva shaders the runtime loads by Shader.Find.
         // Keep in sync with new shader files added to Runtime/Rendering/Shaders/.
@@ -50,7 +50,7 @@ namespace Weva.EditorTools.Setup {
                 if (added > 0) {
                     Debug.Log($"[Weva] Added {added} shader(s) to Always Included Shaders so they " +
                               "survive player-build stripping (Project Settings ▸ Graphics). " +
-                              "Run Tools ▸ Weva ▸ Setup to re-apply manually.");
+                              "Run Window ▸ Weva ▸ Setup to re-apply manually.");
                 }
             };
         }

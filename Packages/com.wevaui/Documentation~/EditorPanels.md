@@ -75,21 +75,21 @@ every frame by `UIDocumentLifecycle.Update`, so live getters reflect editor
 state. Trigger `Repaint()` when external state changes so the panel updates
 promptly.
 
-See **`WevaSelectionPanel`** (`Window ▸ Weva ▸ Selection Panel`) for a worked
-example bound to the current `Selection`.
-
-### Built-in demos
-
-- `Window ▸ Weva ▸ Panel Demo` — static layout + `:hover` cards (exercises the
-  render path and the pointer input bridge).
-- `Window ▸ Weva ▸ Selection Panel` — `{{ }}` bindings to live `Selection`.
+A worked example bound to the current `Selection` (`{{ Count }}` /
+`{{ ActiveName }}` bindings against a plain controller whose getters read
+`Selection` live, plus a `selectionChanged → Repaint()` hook) lives in the
+engine repository's dev project (`Assets/Editor/WevaSelectionPanel.cs`),
+together with a static `:hover`-cards smoke-test panel
+(`Assets/Editor/WevaPanelDemoWindow.cs`). Neither ships with the package —
+they are ~60-line subclasses you can recreate from the snippets above.
 
 ---
 
 ## Validation checklist
 
 These need a real editor render to confirm (the host is written but unproven).
-Open `Window ▸ Weva ▸ Panel Demo` and check, in order:
+Open a minimal `WevaEditorPanel` subclass (e.g. the demo panel from the
+engine repository's dev project) and check, in order:
 
 1. **It draws at all.** If the panel is blank, check the Console for
    *"Hidden/Weva/Quad shader not found"* — add it to **Project Settings ▸

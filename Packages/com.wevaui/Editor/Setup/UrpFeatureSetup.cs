@@ -14,7 +14,9 @@ namespace Weva.EditorTools.Setup {
     // skipped). This window walks the user through the setup; the menu
     // entry runs the same logic non-interactively for scripted projects.
     public static class UrpFeatureSetup {
-        const string MenuPath = "Tools/Weva/Setup/Add URP Renderer Feature";
+        // All shipped Weva menu items live under Window/Weva so end users
+        // find everything in one place (the Tools/Weva split confused people).
+        const string MenuPath = "Window/Weva/Setup/Add URP Renderer Feature";
 
         [MenuItem(MenuPath)]
         public static void RunFromMenu() {

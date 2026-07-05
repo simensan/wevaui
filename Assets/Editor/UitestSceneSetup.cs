@@ -3,11 +3,12 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-#if WEVA_URP
+// Dev-project-only tool (lives in Assets/Editor, not the package): the
+// WEVA_URP guards are dropped because the dev project always has URP —
+// Assembly-CSharp-Editor never gets the asmdef version-define anyway.
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Weva.Rendering;
-#endif
 
 namespace Weva.EditorTools.Setup {
     public static class UitestSceneSetup {
@@ -20,7 +21,7 @@ namespace Weva.EditorTools.Setup {
         const string PipelineAssetPath = "Assets/Settings/Weva_URPAsset.asset";
         const string RendererAssetPath = "Assets/Settings/Weva_Renderer.asset";
 
-        [MenuItem("Tools/Weva/Set Up uitest Scene", priority = 100)]
+        [MenuItem("Tools/Weva Dev/Set Up uitest Scene", priority = 100)]
         public static void Run() {
             if (!File.Exists(MenuHtmlPath) || !File.Exists(MenuCssPath)) {
                 Debug.LogError($"Weva: missing {MenuHtmlPath} or {MenuCssPath}. Cannot set up scene.");
@@ -28,11 +29,7 @@ namespace Weva.EditorTools.Setup {
             }
 
             ConfigureInput();
-#if WEVA_URP
             ConfigureUrp();
-#else
-            Debug.LogWarning("Weva: URP not detected. Install com.unity.render-pipelines.universal first; Tools/Weva/Set Up uitest Scene will then auto-create the renderer.");
-#endif
 
             var html = AssetDatabase.LoadAssetAtPath<TextAsset>(MenuHtmlPath);
             var css  = AssetDatabase.LoadAssetAtPath<TextAsset>(MenuCssPath);
@@ -126,7 +123,6 @@ namespace Weva.EditorTools.Setup {
 #endif
         }
 
-#if WEVA_URP
         static void ConfigureUrp() {
             if (!AssetDatabase.IsValidFolder(SettingsFolder)) {
                 AssetDatabase.CreateFolder("Assets", "Settings");
@@ -177,6 +173,5 @@ namespace Weva.EditorTools.Setup {
 
             Debug.Log($"Weva: URP configured at {PipelineAssetPath} with UIRendererFeature.");
         }
-#endif
     }
 }
