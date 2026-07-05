@@ -13,7 +13,7 @@ This repo also contains the demo project (`Assets/`), the headless tooling
 Add via **Package Manager ▸ + ▸ Add package from git URL…**:
 
 ```
-https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.0
+https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.1
 ```
 
 or add it to `Packages/manifest.json` directly:
@@ -21,12 +21,12 @@ or add it to `Packages/manifest.json` directly:
 ```json
 {
   "dependencies": {
-    "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.0"
+    "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.1"
   }
 }
 ```
 
-Drop the `#v0.1.0` suffix to track `main` instead of a pinned release
+Drop the `#v0.1.1` suffix to track `main` instead of a pinned release
 (releases are tagged `v*`).
 
 ## Where to start
@@ -51,7 +51,7 @@ Drop the `#v0.1.0` suffix to track `main` instead of a pinned release
 
 ## Target environment
 
-* Unity **6000.4** (LTS-stream) or newer
+* Unity **6000.3** or newer
 * **URP** render pipeline, **Linear** color space
 * **IL2CPP** scripting backend (Mono also supported)
 * **Input System** package (`com.unity.inputsystem`)

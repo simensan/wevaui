@@ -18,7 +18,7 @@ and fails in surprising ways.
 
 ## Requirements
 
-- Unity **6000.4**
+- Unity **6000.3** or newer
 - Universal RP **17.0.0** and Input System **1.7.0** (pulled in automatically as
   package dependencies)
 
@@ -32,7 +32,7 @@ and fails in surprising ways.
      sample; the NUnit test suite is omitted.)
    - **From Git** (recommended): add to `Packages/manifest.json`:
      ```json
-     "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.0"
+     "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.1"
      ```
      or Package Manager → **+** → "Add package from git URL…" with the same
      URL. Pin a release with the `#v*` tag suffix, or drop it to track `main`.

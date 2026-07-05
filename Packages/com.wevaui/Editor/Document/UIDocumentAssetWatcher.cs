@@ -29,7 +29,10 @@ namespace Weva.EditorTools.Documents {
             string[] movedAssets,
             string[] movedFromAssetPaths) {
             if (!HasRelevantChange(importedAssets, movedAssets)) return;
-            var docs = GameObject.FindObjectsByType<WevaDocument>(FindObjectsInactive.Include);
+            // Both args spelled out: the (FindObjectsInactive)-only overload
+            // does not exist before Unity 6000.4, and this package supports
+            // 6000.3 consumers.
+            var docs = GameObject.FindObjectsByType<WevaDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             if (docs == null || docs.Length == 0) return;
             for (int i = 0; i < docs.Length; i++) {
                 var doc = docs[i];

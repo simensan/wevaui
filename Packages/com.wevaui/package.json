@@ -1,10 +1,9 @@
 {
   "name": "com.wevaui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "Weva",
   "description": "HTML/CSS-compatible UI layer for Unity. Standard HTML elements, real CSS cascade, flexbox + grid + inline layout, no Unity-specific renames.",
-  "unity": "6000.4",
-  "unityRelease": "1f1",
+  "unity": "6000.3",
   "license": "MIT",
   "keywords": [
     "ui",
