@@ -28,6 +28,10 @@ void test_match_cache();
 void test_env();
 void test_attr();
 void test_env_attr_in_cascade();
+void test_logical_axes();
+void test_logical_in_cascade();
+void test_logical_vs_physical_order();
+void test_logical_before_substitution();
 int main() {
     test_arena();
     test_intern();
@@ -58,6 +62,10 @@ int main() {
     test_env();
     test_attr();
     test_env_attr_in_cascade();
+    test_logical_axes();
+    test_logical_in_cascade();
+    test_logical_vs_physical_order();
+    test_logical_before_substitution();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

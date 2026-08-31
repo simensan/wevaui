@@ -2,6 +2,7 @@
 
 #include "weva/css_value.h"
 #include "weva/env_attr.h"
+#include "weva/logical.h"
 #include "weva/dom.h"
 #include "weva/variable_resolver.h"
 
@@ -28,16 +29,33 @@ void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
 
 } // namespace
 
+CascadeKey CascadeKey::of(const MatchedDeclaration& m, uint64_t generation) {
+    CascadeKey k;
+    k.specificity = m.specificity;
+    k.source_index = m.source_index;
+    k.in_rule_index = m.in_rule_index;
+    k.layer_ordinal = m.layer_ordinal;
+    k.origin = m.origin;
+    k.is_inline = m.is_inline;
+    k.important = m.declaration && m.declaration->important;
+    k.generation = generation;
+    return k;
+}
+
 int compare_for_cascade(const MatchedDeclaration& x, const MatchedDeclaration& y) {
+    return compare_for_cascade(CascadeKey::of(x, 0), CascadeKey::of(y, 0));
+}
+
+int compare_for_cascade(const CascadeKey& x, const CascadeKey& y) {
     // Earlier in the sorted list = lower precedence; the LAST entry wins.
 
     // Importance is the dominant axis.
-    if (x.declaration->important != y.declaration->important) {
-        return x.declaration->important ? 1 : -1;
+    if (x.important != y.important) {
+        return x.important ? 1 : -1;
     }
 
     // Within an importance class the origin ordering flips.
-    if (x.declaration->important) {
+    if (x.important) {
         if (int o = compare_important_origin(x.origin, y.origin); o != 0) return o;
     } else {
         if (int o = compare_normal_origin(x.origin, y.origin); o != 0) return o;
@@ -51,7 +69,7 @@ int compare_for_cascade(const MatchedDeclaration& x, const MatchedDeclaration& y
     //   important: REVERSED — an EARLIER layer wins, and unlayered (including
     //              inline !important) LOSES to any layered !important. So the
     //              layer comparison must run even when one side is inline.
-    if (x.declaration->important) {
+    if (x.important) {
         if (x.layer_ordinal != y.layer_ordinal) {
             return cmp_int(y.layer_ordinal, x.layer_ordinal);
         }
@@ -356,11 +374,22 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     auto& reg = CssPropertyRegistry::instance();
 
     // 1. Declarations from stylesheets, in cascade order — later wins.
+    //
+    // `winner` records, per property id, the cascade key of whichever
+    // declaration currently owns the slot. Only the logical-property aliasing
+    // in step 3 needs it: a logical alias has to be compared against the
+    // physical winner rather than assumed to lose, so the key must survive the
+    // stamping loop that would otherwise discard it.
+    const uint64_t gen = ++cascade_generation_;
+    winner_keys_.resize(static_cast<size_t>(reg.count()));
     std::vector<MatchedDeclaration> matches = collect_matches(e, state);
     for (const MatchedDeclaration& m : matches) {
         out->set(m.declaration->property, m.declaration->value_text);
         int id = reg.id_of(m.declaration->property);
-        if (id != kCustomPropertyId) out->set_important(id, m.declaration->important);
+        if (id != kCustomPropertyId) {
+            out->set_important(id, m.declaration->important);
+            winner_keys_[static_cast<size_t>(id)] = CascadeKey::of(m, gen);
+        }
     }
 
     // 2. Inline styles. Parsed here rather than in collect_matches so the
@@ -370,23 +399,43 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         CssParseError perr;
         if (parse_inline_declarations(e.get_attribute("style"), /*strict=*/false,
                                       &inline_decls, &perr)) {
+            int in_rule = 0;
             for (const Declaration& d : inline_decls) {
                 int id = reg.id_of(d.property);
+                const int idx = in_rule++;
                 // An inline normal declaration loses to an existing !important
                 // one; an inline !important beats a normal one.
                 if (id != kCustomPropertyId && out->is_important(id) && !d.important) continue;
                 out->set(d.property, d.value_text);
-                if (id != kCustomPropertyId) out->set_important(id, d.important);
+                if (id != kCustomPropertyId) {
+                    out->set_important(id, d.important);
+                    CascadeKey k;
+                    k.origin = DeclarationOrigin::Author;
+                    k.source_index = static_cast<int>(rules_.size());
+                    k.is_inline = true;
+                    k.in_rule_index = idx;
+                    k.important = d.important;
+                    k.generation = gen;
+                    winner_keys_[static_cast<size_t>(id)] = k;
+                }
             }
         }
     }
 
-    // 3. Link the inherit chain, then resolve attr(), env() and var().
+    // 3. Link the inherit chain, then map logical properties onto physical
+    // ones, then resolve attr(), env() and var().
     //
     // The link must come FIRST: var() reads custom properties through it, so
     // `color: var(--ink)` sees an ancestor's --ink without this style having
     // to copy every ancestor custom property into itself.
     out->set_inherit_parent(parent);
+
+    // Logical properties are mapped BEFORE substitution, so `margin-inline-start:
+    // var(--gap)` becomes `margin-left: var(--gap)` and is resolved once, as the
+    // physical property it will be laid out as. The mapping itself reads
+    // `direction` and `writing-mode` through the inherit chain, which is why the
+    // parent link has to be in place first.
+    apply_logical_properties(out, winner_keys_.data(), reg.count(), gen);
 
     // attr() and env() run BEFORE var(), so a custom property whose value is
     // `attr(data-x)` or `env(safe-area-inset-top)` is already substituted by

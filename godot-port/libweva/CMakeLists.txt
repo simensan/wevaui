@@ -20,6 +20,7 @@ add_library(weva STATIC
     src/variable_resolver.cpp
     src/media.cpp
     src/env_attr.cpp
+    src/logical.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

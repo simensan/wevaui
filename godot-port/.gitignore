@@ -1,2 +1,4 @@
+# CMake build trees, one per toolchain. build-clang was committed by
+# accident before this pattern covered it.
 build/
-build-san/
+build-*/

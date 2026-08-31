@@ -19,6 +19,7 @@ add_executable(weva_tests
     test_pseudo.cpp
     test_cache.cpp
     test_env_attr.cpp
+    test_logical.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)

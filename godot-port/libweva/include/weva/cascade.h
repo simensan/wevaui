@@ -4,6 +4,7 @@
 #include "weva/media.h"
 #include "weva/selector.h"
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -37,10 +38,31 @@ struct MatchedDeclaration {
     std::string selector_text;
 };
 
+// The ordering fields of a MatchedDeclaration without the borrowed Declaration
+// pointer or the selector text — trivially copyable, so a per-property winner
+// table costs no allocation and no string construction.
+//
+// `generation` is what makes such a table reusable: the engine bumps a counter
+// per compute() call and a slot counts as set only when its stamp matches, so
+// 334 slots never have to be cleared between elements.
+struct CascadeKey {
+    Specificity specificity;
+    int source_index = 0;
+    int in_rule_index = 0;
+    int layer_ordinal = kUnlayeredOrdinal;
+    DeclarationOrigin origin = DeclarationOrigin::Author;
+    bool is_inline = false;
+    bool important = false;
+    uint64_t generation = 0;
+
+    static CascadeKey of(const MatchedDeclaration& m, uint64_t generation);
+};
+
 // True when x should lose to y — i.e. x sorts EARLIER (lower precedence).
 // Exposed for tests because every axis here is a place a port can silently
 // invert an outcome.
 int compare_for_cascade(const MatchedDeclaration& x, const MatchedDeclaration& y);
+int compare_for_cascade(const CascadeKey& x, const CascadeKey& y);
 
 struct OriginatedStylesheet {
     const Stylesheet* sheet = nullptr;
@@ -125,6 +147,11 @@ private:
     // Ids whose declaration was invalid at computed-value time in the current
     // compute() call, so the inherit/initial pass knows to refill them.
     mutable std::vector<int> dropped_;
+    // Per-property winning cascade key, used only by the logical-property
+    // mapping. Sized once and reused across elements; `cascade_generation_`
+    // distinguishes this call's entries from the previous element's.
+    mutable std::vector<CascadeKey> winner_keys_;
+    mutable uint64_t cascade_generation_ = 0;
 };
 
 } // namespace weva

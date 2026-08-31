@@ -519,6 +519,60 @@ Two bugs of mine, both caught by test:
   is genuinely shorter. A plausible-looking shortcut that silently corrupts
   every attr-derived dimension.
 
+**Logical properties done** (`CascadeEngine.Logical.cs`). 1171 checks green
+across gcc 13, clang 18 and ASan+UBSan+LSan. `margin-inline-start` is not a
+property layout ever sees: the cascade maps it onto whichever of
+`margin-left/right/top/bottom` the element's `direction` and `writing-mode` put
+at the inline start, so everything downstream deals only in physical sides.
+
+Three things here are easy to get wrong, and all three are tested:
+
+* **A logical alias is not a fixed loser to the physical property.** The obvious
+  reading — "if `margin-left` is set, leave it alone" — is wrong. The C#
+  synthesises a declaration carrying the *logical* winner's
+  origin/layer/specificity/source order and runs the ordinary cascade
+  comparison, so `{ margin-left: 1px; margin-inline-start: 2px }` computes to
+  `2px` and the reverse order computes to `1px`. I wrote the wrong version
+  first; it passes every test that only ever declares one of the two.
+* **Vertical writing modes rotate *both* axes.** `inline-size` becomes a
+  *height*, and the block axis runs left/right — so `border-start-end-radius`
+  under `vertical-rl` is the **bottom-right** corner. The physical corner name
+  cannot be assembled by concatenating the two side names in argument order.
+* **`sideways-lr` flips the inline direction relative to `vertical-lr`** even
+  though the two share a block axis, because the glyphs rotate the other way.
+
+The mapping runs **before** `var()`/`env()`/`attr()`, matching the C#: the alias
+copies raw declaration text, so `margin-inline-start: var(--gap)` becomes
+`margin-left: var(--gap)` and is substituted once, as the property it will be
+laid out as. A logical declaration that is invalid at computed-value time
+therefore drops the physical slot too.
+
+Not applied to pseudo-elements — the C# aliases only on the element path.
+Diverging would silently move a `::before` margin to the other side.
+
+### The measurement that caught a 35% cascade regression
+
+The first working version was 35% slower per element than the cascade without
+it (60 ms vs 43 ms for the demo's 358 elements), and my first guess at the cause
+was wrong for the second time this phase. I assumed the per-property winner
+table — 334 `MatchedDeclaration`s built per element so the alias could compare
+cascade keys. Replacing it with a generation-stamped table of trivially
+copyable keys, reused across elements with no clearing, recovered **3 ms of the
+17**.
+
+The actual cost was the mapping itself: ~60 string concatenations
+(`"border-" + side + "-" + component`) and ~120 registry name lookups, per
+element. The C# has pre-interned name tables for exactly this, with a comment
+calling it the second-largest source of GC pressure during animated repaint —
+and I ported the code without porting the reason it exists. The mapping depends
+only on the resolved axes, of which ten are reachable, so each table is now
+built once as property-id pairs and the per-element work is a loop over ~60
+integer pairs. Back to 44-46 ms, within noise of the baseline.
+
+Both mistakes have the same shape as the earlier match-cache one: I named a
+plausible culprit instead of measuring, and the plausible culprit was a real but
+minor cost sitting next to the dominant one.
+
 ### The demo's stylesheet opts out of the cache entirely
 
 Worth knowing before anyone benchmarks against it: `randhtml.css` contains three
