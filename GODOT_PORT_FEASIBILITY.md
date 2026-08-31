@@ -542,7 +542,97 @@ are being rewritten anyway:
 
 Doing the port without fixing these ports the mistakes too.
 
-## 10. Recommendation
+## 10. Which option maximises performance and CSS quality?
+
+### CSS quality — Weva, clearly, with one honest caveat
+
+Ranked on fidelity alone:
+
+1. **Webview / Ultralight** — actual Chromium and WebKit. Nothing else comes
+   close and it is dishonest to pretend otherwise. Disqualified on integration
+   (separate surface, no scene-tree compositing), footprint, platform reach, and
+   in Ultralight's case $3k/yr/app above $100k revenue.
+2. **Weva** — real HTML/CSS, Grid and subgrid, container queries, anchor
+   positioning, multicol, `order`, `flex-basis: content`, and ~10,500 tests plus
+   Chrome-diffed baselines backing the claim.
+3. **RmlUi** — genuinely solid: CSS2 plus flex, floats, the full table family,
+   transforms, transitions, filters, `backdrop-filter`, box-shadow. But a
+   dialect (RML/RCSS), no Grid, no container queries, decorators instead of
+   `background-image`.
+4. **GTML** — flexbox approximated over Control nodes.
+
+Among *natively-integrated* options this is not close. Grid and container
+queries are not things you add later to a design system.
+
+### Performance — the measured answer points the same way, for a reason worth reading
+
+Weva's own numbers (`Tools/PerfBench/`, M1-tier laptop, `PLAN.md` §perf):
+
+| | median | p95 |
+|---|---:|---:|
+| Cascade.ComputeAll, 1001 elements (forms) | 8.3 ms | 29.1 ms |
+| Cascade.IncrementalApply, `:hover` flip | **0.08 ms** | 0.13 ms |
+| Cascade.IncrementalApply, attribute change | 0.21 ms | 0.28 ms |
+| Layout.LayoutAll, 1001 elements (forms) | 10.8 ms | 12.8 ms |
+| Paint.Convert, 1000 boxes | 0.99 ms | 1.38 ms |
+
+**The incremental path is excellent** — a `:hover` flip is 100× cheaper than a
+full cascade, because cache keys are input versions and a state flip invalidates
+only the element that flipped (7.5 ms → 0.083 ms across v0.4→v0.5). That is the
+number that governs steady-state UI, and it is Weva's real performance
+architecture. Add the batched über-shader (one draw call per batch) and the
+render side is aggressive too.
+
+**The weakness is allocation, and it is a C# problem.** From `PLAN.md`:
+
+| | allocs/call | target |
+|---|---:|---:|
+| Layout.LayoutAll, 1001 elements | 1.42 MB | 50 KB |
+| Paint.Convert, 500 boxes | 1.10 MB | 0 |
+| Paint.Convert, 1000 boxes | 2.19 MB | 0 |
+
+The stated design goal is "**zero** per-frame allocations in steady state". The
+project has fought for this across several versions — `BoxPool`, `PaintListPool`,
+`ArrayPool` rentals, and a `CssValuePool` with interned constants that cut layout
+from 7.79 MB/call to 1.42 MB (5.5×) and dropped the 1000-forms median 2.4×
+(18 ms → 7.6 ms). Allocation was costing *throughput*, not just GC pauses.
+
+And it is still 28× above target — with the remainder attributed to "DomSnapshot
+rebuild + PaintList".
+
+Note what that pooling actually is: `CssValuePool` carries the contract *"rented
+values must NOT outlive the pool scope."* That is manual memory management,
+hand-written in C#, to work around the GC. **The project is already paying C++'s
+costs without receiving C++'s benefits.**
+
+In C++ this entire category of work disappears: bump-allocate the pass into an
+arena, reset the arena at the end. The 1.42 MB and 2.19 MB figures don't get
+optimised, they stop existing — along with the lifetime contracts written to
+approximate them.
+
+### Verdict
+
+**Porting Weva to C++ (Option C) is the answer that maximises both** — and
+uniquely, the port is not merely a distribution change: it is the fix for the one
+performance gap the project has measured and not been able to close in C#. You
+keep the incremental invalidation architecture and the batching, delete the GC
+pressure, and keep Grid and container queries.
+
+Three caveats, stated plainly:
+
+1. **This is only true if it ships.** A half-finished port performs worse than
+   shipped RmlUi at everything. Twelve to twenty-four person-months is the price
+   of the verdict, not an aside to it.
+2. **I have no measured RmlUi numbers.** The comparison above is Weva's
+   benchmarks against RmlUi's architecture and documentation, not a head-to-head.
+   Do not quote it as one. If this decision hinges on performance, benchmark
+   Godot-RmlUi against a Weva scene before committing.
+3. **Backend quality will dominate either choice.** A naive Godot backend loses
+   to a good RmlUi GL3 backend regardless of whose layout engine is better —
+   which is another argument for re-cutting `IRenderBackend` per §9.1 before
+   writing it.
+
+## 11. Recommendation
 
 Feasible, correct choice of technology for the stated goal, but go in knowing it
 is a 12–24 person-month core translation, not a backend swap — and that §8's
