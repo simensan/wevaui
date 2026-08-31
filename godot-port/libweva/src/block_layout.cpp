@@ -3,6 +3,8 @@
 #include "weva/css_properties.h"
 #include "weva/inline_layout.h"
 
+#include <algorithm>
+
 #include <cmath>
 #include <string>
 #include <vector>
@@ -449,21 +451,10 @@ double FloatContext::max_bottom() const {
 void BlockLayout::layout_float_box(BoxId id, double containing_block_width) {
     const BoxId parent = (*tree_)[id].parent;
     const ComputedStyle* parent_style = parent == kNoBox ? nullptr : (*tree_)[parent].style;
-    const double fs = apply_box_model(tree_, id, containing_block_width, parent_style, ctx_);
-
-    const std::string_view raw_width = get((*tree_)[id].style, "width");
-    const bool width_is_auto =
-        resolve_length(raw_width, ctx_, fs, containing_block_width).kind == LengthKind::Auto;
-
-    // A float with `width: auto` shrinks to fit: min(max-content,
-    // max(min-content, available)). Both intrinsic probes need to measure text,
-    // so they wait on the inline formatting context. Until then the float keeps
-    // the available width apply_box_model gave it — which makes an auto-width
-    // float fill its line rather than hug its content. Pinned by test so this
-    // reads as a known limitation and not as float placement being broken.
-    (void)width_is_auto;
-
-    layout_content(id, fs, containing_block_width, parent_style);
+    // §9.5.1: a float with `width: auto` shrinks to fit. Letting it take the
+    // containing block's width would make it fill the line and defeat the
+    // point of floating it.
+    shrink_to_fit(id, containing_block_width, parent_style);
 }
 
 void BlockLayout::place_float(BoxId container, BoxId float_box, double top_y,
@@ -511,6 +502,111 @@ void BlockLayout::place_float(BoxId container, BoxId float_box, double top_y,
         e.bottom = e.top + margin_box_h;
         current_floats_->add(e);
     }
+}
+
+
+void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_width,
+                             const ComputedStyle* parent_style) {
+    for (InlineItem& it : *items) {
+        if (!it.is_atom()) continue;
+        shrink_to_fit(it.atom_box, available_width, parent_style);
+        const Box& a = (*tree_)[it.atom_box];
+        it.atom_outer_width = a.margin_left + a.width + a.margin_right;
+        // CSS 2.1 §10.8.1: an inline-block's baseline is the baseline of its
+        // last line box, or — when it has none, or its overflow is not visible
+        // — its bottom MARGIN edge. Only the second case is handled here; the
+        // first needs the atom's own line boxes to be inspected, which is a
+        // later slice.
+        it.atom_baseline = a.margin_top + a.height + a.margin_bottom;
+    }
+}
+
+double BlockLayout::shrink_to_fit(BoxId id, double available_width,
+                                  const ComputedStyle* parent_style) {
+    const double fs = apply_box_model(tree_, id, available_width, parent_style, ctx_);
+    const ComputedStyle* style = (*tree_)[id].style;
+    const ResolvedLength w =
+        resolve_length(get(style, "width"), ctx_, fs, available_width);
+    if (w.kind != LengthKind::Auto) {
+        // An explicit width needs no probing: apply_box_model already resolved
+        // it, so just lay the contents out inside it.
+        layout_content(id, fs, available_width, parent_style);
+        return fs;
+    }
+
+    // CSS 2.1 §10.3.5 shrink-to-fit:
+    //     min(max-content, max(min-content, available))
+    // Both intrinsic sizes are measured by laying the content out at an extreme
+    // width and reading back what it wanted. A huge probe makes every line as
+    // long as it can be (max-content); a probe of 1 forces a break at every
+    // opportunity, so the widest line is the longest unbreakable run
+    // (min-content).
+    const Box& b = (*tree_)[id];
+    const double frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
+    const double margin_x = b.margin_left + b.margin_right;
+    double avail = available_width - margin_x;
+    if (avail < 0) avail = 0;
+
+    relayout_content_at(id, 1e6, fs, parent_style);
+    double max_content = max_content_width(*tree_, id) + frame;
+    relayout_content_at(id, 1, fs, parent_style);
+    double min_content = max_content_width(*tree_, id) + frame;
+    if (max_content < frame) max_content = frame;
+    if (min_content < frame) min_content = frame;
+
+    double fitted = std::min(max_content, std::max(min_content, avail));
+    if (fitted > avail) fitted = avail;
+    if (fitted < 0) fitted = 0;
+
+    // §10.3.5: the shrink-to-fit result is still clamped by min- and max-width,
+    // which share width's box-sizing basis.
+    const bool border_box = is_border_box(style);
+    const ResolvedLength min_r =
+        resolve_length(get(style, "min-width"), ctx_, fs, available_width);
+    const ResolvedLength max_r =
+        resolve_length(get(style, "max-width"), ctx_, fs, available_width);
+    const auto to_border_box = [&](const ResolvedLength& r) {
+        double px = r.kind == LengthKind::Percent ? available_width * r.percent * 0.01
+                                                  : r.pixels;
+        if (!border_box) px += frame;
+        return px;
+    };
+    if (max_r.kind == LengthKind::Length || max_r.kind == LengthKind::Percent) {
+        const double px = to_border_box(max_r);
+        if (fitted > px) fitted = px;
+    }
+    if (min_r.kind == LengthKind::Length || min_r.kind == LengthKind::Percent) {
+        const double px = to_border_box(min_r);
+        if (fitted < px) fitted = px;
+    }
+
+    relayout_content_at(id, fitted, fs, parent_style);
+    return fs;
+}
+
+void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
+                                      const ComputedStyle* parent_style) {
+    (*tree_)[id].width = width;
+    // The first inline pass replaced the container's children with line boxes,
+    // so the source runs can no longer be walked. The collected items are
+    // cached per container for the duration of the pass and reused, which is
+    // both cheaper and simpler than snapshotting and restoring the child list.
+    if ((*tree_)[id].contains_inlines) {
+        if (metrics_) {
+            auto it = inline_items_.find(id);
+            if (it == inline_items_.end()) {
+                std::vector<InlineItem> items = collect_inline_items(*tree_, id, ctx_);
+                size_atoms(&items, width, parent_style);
+                it = inline_items_.emplace(id, std::move(items)).first;
+            }
+            const double h = layout_inline_items(tree_, id, it->second,
+                                                 (*tree_)[id].content_width(), ctx_, *metrics_);
+            finalize_block_size(id, font_size, (*tree_)[id].padding_top +
+                                                   (*tree_)[id].border_top + h);
+        }
+        return;
+    }
+    layout_content(id, font_size, width, parent_style);
 }
 
 void BlockLayout::layout_root(BoxId root, double viewport_width, double viewport_height) {
@@ -567,8 +663,12 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     if ((*tree_)[id].contains_inlines) {
         // Without a font backend nothing can be measured, so the box reports
         // zero content height rather than a number derived from guessing.
-        const double inline_h =
-            metrics_ ? layout_inline(tree_, id, content_w, ctx_, *metrics_) : 0.0;
+        double inline_h = 0;
+        if (metrics_) {
+            std::vector<InlineItem> items = collect_inline_items(*tree_, id, ctx_);
+            size_atoms(&items, content_w, own_style);
+            inline_h = layout_inline_items(tree_, id, items, content_w, ctx_, *metrics_);
+        }
         finalize_block_size(id, font_size, top_inner + inline_h);
         return;
     }

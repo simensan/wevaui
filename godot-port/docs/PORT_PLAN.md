@@ -1189,10 +1189,8 @@ chain, `padding: 1lh` expanding to nothing, clearance-plus-margin, and the
 float-only self-collapsing box. Each is pinned by a test that names it, so none
 can be silently "fixed" into a mismatch.
 
-**Deferred:** shrink-to-fit for an auto-width float, which needs min-content and
-max-content probes and therefore the inline formatting context. Until then an
-auto-width float fills its containing block instead of hugging its content —
-pinned by a test that should fail when inline layout lands.
+~~**Deferred:** shrink-to-fit for an auto-width float~~ — **done**, once inline
+layout could measure. See below.
 
 **Inline layout: first working slice** (the core of `InlineLayout.cs` /
 `LineBreaker.cs`, plus `IFontMetrics` and `MonoFontMetrics`). 1910 checks green
@@ -1244,6 +1242,52 @@ and `word-spacing`, justification, ellipsis, `vertical-align` beyond baseline,
 and inline-level atoms — an inline-block is skipped rather than placed, so the
 text around it still measures correctly but the atom does not appear on the
 line. That last one also still blocks float shrink-to-fit.
+
+**Shrink-to-fit and inline atoms done.** 1950 checks green across gcc 13, clang
+18, ASan+UBSan+LSan and Release. An auto-width float now hugs its content, and
+an inline-block is placed on a line instead of being skipped.
+
+**The two intrinsic widths are measured, not estimated.** Laying the content out
+at a huge width makes every line as long as it can be — that is max-content.
+Laying it out at width 1 forces a break at every opportunity, so the widest
+resulting line is the longest unbreakable run — that is min-content. The
+shrink-to-fit width is then `min(max-content, max(min-content, available))`,
+clamped by min- and max-width.
+
+That means a container is laid out **three times**, and the first pass replaces
+its children with line boxes — after which the source runs cannot be walked
+again. The reference snapshots and restores the child list; this port caches the
+collected inline items per container instead, which is both cheaper and harder
+to get wrong.
+
+**An inline-block is an atom**: placed whole, never split, and reparented onto
+its line box — so its coordinates become line-relative and the line carries the
+page offset. Its baseline is its bottom margin edge, which is why a tall atom
+pushes the line's baseline down and the text beside it follows.
+
+### A real bug the atoms found: `append_child` did not unlink
+
+Moving an atom onto its line box left it linked into its block container as
+well. The container's chain then ran *through* a box living under the line box,
+so clearing the container's children walked into the line box's list and removed
+the run after the atom — the `y` in `x<span>ab</span>y` silently vanished.
+
+`replace_child` already unlinked first, and its test carried a comment about
+exactly this hazard; `append_child` and `insert_child_first` did not. Fixed in
+all three, with a test that reparents a middle child and checks both chains from
+both directions.
+
+### A fifth candidate divergence: shrink-to-fit below min-content
+
+CSS 2.1 §10.3.5 gives `min(preferred, max(preferred-minimum, available))`. For a
+20px container holding a 40px word that is 40 — the float overflows its
+container rather than squeezing below its own min-content width. The reference
+adds a final `if (fitted > avail) fitted = avail`, which contradicts the formula
+and clamps to 20, so the word overflows the FLOAT instead.
+
+Pinned, not fixed. That is five now: the two-level `em` chain, `padding: 1lh`
+expanding to nothing, clearance-plus-margin, the float-only self-collapsing box,
+and this.
 
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 

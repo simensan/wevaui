@@ -72,10 +72,18 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline || b.kind == BoxKind::AnonymousInline) {
             collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited, out);
+        } else if (b.kind == BoxKind::Block && b.is_inline_block) {
+            // An atom: placed whole, never broken. It is recorded here but not
+            // sized — sizing it needs the block layout engine, so the caller
+            // fills in the width and baseline before layout runs.
+            InlineItem item;
+            item.atom_box = c;
+            item.inline_parent = inline_parent;
+            item.style = b.style ? b.style : inherited;
+            item.font_size = font_size_px(item.style, nullptr, ctx);
+            item.line_height = line_height_px(item.style, item.font_size, ctx);
+            out->push_back(item);
         }
-        // An inline-level block (inline-block and friends) is an atom that is
-        // placed whole rather than broken. Atoms are a later slice; skipping
-        // them keeps the line geometry of the text around them correct.
     }
 }
 
@@ -99,7 +107,14 @@ std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId containe
 
 double layout_inline(BoxTree* tree, BoxId container, double available_width,
                      const LayoutContext& ctx, const FontMetrics& metrics) {
-    const std::vector<InlineItem> items = collect_inline_items(*tree, container, ctx);
+    return layout_inline_items(tree, container, collect_inline_items(*tree, container, ctx),
+                               available_width, ctx, metrics);
+}
+
+double layout_inline_items(BoxTree* tree, BoxId container,
+                           const std::vector<InlineItem>& items, double available_width,
+                           const LayoutContext& ctx, const FontMetrics& metrics) {
+    (void)ctx;
     const Box& cbox = (*tree)[container];
     const double top_inner = cbox.padding_top + cbox.border_top;
     const double left_inner = cbox.padding_left + cbox.border_left;
@@ -113,6 +128,8 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
         double x;
         double width;
     };
+    // An atom contributes above- and below-baseline extents like a glyph does,
+    // so the line grows around it instead of clipping it.
     std::vector<Fragment> line;
     std::vector<BoxId> line_boxes;
 
@@ -167,6 +184,15 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
         (*tree)[lb].applied_text_align_delta = dx;
 
         for (const Fragment& f : line) {
+            if (f.item->is_atom()) {
+                // The atom keeps its own box; only its position on the line is
+                // decided here. Its baseline sits on the line's.
+                Box& a = (*tree)[f.item->atom_box];
+                a.x = f.x + dx + a.margin_left;
+                a.y = baseline - f.item->atom_baseline + a.margin_top;
+                tree->append_child(lb, f.item->atom_box);
+                continue;
+            }
             const BoxId run = tree->create(BoxKind::Text, (*tree)[f.item->source_run].element,
                                            f.item->style);
             Box& r = (*tree)[run];
@@ -191,12 +217,32 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
     };
 
     const auto grow_line_metrics = [&](const InlineItem& it) {
+        if (it.is_atom()) {
+            // The atom's own box sets the line's extents: everything above its
+            // baseline counts as ascent, everything below as descent.
+            const Box& a = (*tree)[it.atom_box];
+            const double outer_h = a.margin_top + a.height + a.margin_bottom;
+            max_ascent = std::max(max_ascent, it.atom_baseline);
+            max_descent = std::max(max_descent, outer_h - it.atom_baseline);
+            return;
+        }
         max_ascent = std::max(max_ascent, metrics.ascent(it.font_size));
         max_descent = std::max(max_descent, metrics.descent(it.font_size));
         max_leading = std::max(max_leading, it.line_height);
     };
 
     for (const InlineItem& it : items) {
+        if (it.is_atom()) {
+            // An atom wraps as a unit: it moves to the next line when it does
+            // not fit, but is never split.
+            if (!line.empty() && pen + it.atom_outer_width > available_width) {
+                flush_line(false);
+            }
+            grow_line_metrics(it);
+            line.push_back({&it, {}, false, pen, it.atom_outer_width});
+            pen += it.atom_outer_width;
+            continue;
+        }
         if (!it.collapse_whitespace) {
             // Preserved whitespace is a later slice; the text is placed as one
             // unbreakable fragment so its width is still accounted for.
@@ -237,6 +283,33 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
     for (BoxId lb : line_boxes) tree->append_child(container, lb);
 
     return y - top_inner;
+}
+
+double max_content_width(const BoxTree& tree, BoxId id) {
+    double max = 0;
+    for (BoxId c : tree.children(id)) {
+        const Box& b = tree[c];
+        if (b.position == PositionType::Absolute || b.position == PositionType::Fixed) continue;
+        // CSS 2.1 §10.3.5: a float is out of flow for intrinsic sizing — its
+        // containing block flows around it and it contributes nothing.
+        if (b.is_float()) continue;
+
+        if (b.kind == BoxKind::Line) {
+            // The line's own width is post-alignment; summing the raw run
+            // widths gives the natural text advance instead.
+            double sum = 0;
+            for (BoxId r : tree.children(c)) sum += tree[r].width;
+            if (sum > max) max = sum;
+            continue;
+        }
+        if (b.kind == BoxKind::Block && b.is_inline_block) {
+            if (b.width > max) max = b.width;
+            continue;
+        }
+        const double inner = max_content_width(tree, c);
+        if (inner > max) max = inner;
+    }
+    return max;
 }
 
 } // namespace weva

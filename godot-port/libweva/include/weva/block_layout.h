@@ -2,6 +2,9 @@
 #include "weva/box.h"
 #include "weva/computed_style.h"
 #include "weva/font_metrics.h"
+#include "weva/inline_layout.h"
+
+#include <map>
 #include "weva/style_resolver.h"
 
 #include <string_view>
@@ -149,11 +152,22 @@ private:
                         const ComputedStyle* parent_style);
     void finalize_block_size(BoxId id, double font_size, double content_bottom_y);
     void layout_float_box(BoxId id, double containing_block_width);
+    // CSS 2.1 §10.3.5. Used by floats and inline-block atoms, both of which
+    // hug their content rather than filling their containing block.
+    double shrink_to_fit(BoxId id, double available_width, const ComputedStyle* parent_style);
+    void relayout_content_at(BoxId id, double width, double font_size,
+                             const ComputedStyle* parent_style);
+    void size_atoms(std::vector<InlineItem>* items, double available_width,
+                    const ComputedStyle* parent_style);
     void place_float(BoxId container, BoxId float_box, double top_y, double content_w);
 
     BoxTree* tree_;
     LayoutContext ctx_;
     const FontMetrics* metrics_ = nullptr;
+    // Inline items per container, collected once. A shrink-to-fit probe lays
+    // the same container out three times, and the first pass replaces its
+    // children with line boxes — so the source runs must not be re-walked.
+    std::map<BoxId, std::vector<InlineItem>> inline_items_;
     // The float context of the BFC currently being laid out, and where that
     // BFC's origin sits in the coordinates of the box being laid out. Both are
     // saved and restored around each BFC boundary.

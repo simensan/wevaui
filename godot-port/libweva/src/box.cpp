@@ -17,6 +17,12 @@ BoxId BoxTree::create(BoxKind kind, const Element* element, const ComputedStyle*
 
 void BoxTree::append_child(BoxId parent, BoxId child) {
     if (!valid(parent) || !valid(child) || parent == child) return;
+    // A child that is still attached somewhere else must be unlinked first, or
+    // its old parent's chain runs through a box that now lives under a
+    // different one — and clearing either chain then walks into the other.
+    // Inline layout moves an inline-block atom from its block container onto a
+    // line box exactly this way.
+    if (boxes_[static_cast<size_t>(child)].parent != kNoBox) remove_child(child);
     Box& p = boxes_[static_cast<size_t>(parent)];
     Box& c = boxes_[static_cast<size_t>(child)];
     c.parent = parent;
@@ -32,6 +38,7 @@ void BoxTree::append_child(BoxId parent, BoxId child) {
 
 void BoxTree::insert_child_first(BoxId parent, BoxId child) {
     if (!valid(parent) || !valid(child) || parent == child) return;
+    if (boxes_[static_cast<size_t>(child)].parent != kNoBox) remove_child(child);
     Box& p = boxes_[static_cast<size_t>(parent)];
     Box& c = boxes_[static_cast<size_t>(child)];
     c.parent = parent;
@@ -75,8 +82,7 @@ void BoxTree::replace_child(BoxId existing, BoxId replacement) {
     const BoxId next = old.next_sibling;
 
     Box& rep = boxes_[static_cast<size_t>(replacement)];
-    // The replacement may already be attached somewhere; unlink it first, or
-    // its old parent keeps a link to a box that now lives elsewhere.
+    // As in append_child: unlink an already-attached replacement first.
     if (rep.parent != kNoBox) remove_child(replacement);
 
     rep.parent = parent;

@@ -306,13 +306,13 @@ void test_float_bfc_scoping() {
         CHECK(near(f.box("outside").y, 0));
     }
     {
-        // An auto-width float currently fills its containing block rather than
-        // shrinking to fit, because shrink-to-fit needs intrinsic sizing and
-        // that needs the inline formatting context. Pinned as a known
-        // limitation; this should fail when inline layout lands.
+        // An auto-width float shrinks to fit its content rather than filling
+        // the line. This fixture has no font metrics, so an empty float
+        // collapses to its frame — the measured case is in test_shrink_to_fit.
         Fixture f;
-        CHECK(f.css("#w { display: block } #fl { float: left; height: 40px }"));
+        CHECK(f.css("#w { display: block } #fl { float: left; height: 40px;"
+                    "     padding-left: 7px; padding-right: 3px }"));
         CHECK(f.layout("<body><div id=w><div id=fl></div></div></body>"));
-        CHECK(near(f.box("fl").width, 1000));
+        CHECK(near(f.box("fl").width, 10));
     }
 }

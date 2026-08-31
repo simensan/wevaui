@@ -32,6 +32,19 @@ struct InlineItem {
     // collapses but forbids them; `pre` preserves both.
     bool collapse_whitespace = true;
     bool allow_wrap = true;
+
+    // An inline-level block (inline-block, inline-flex, ...) embedded in the
+    // line. An atom is placed whole: never split, broken, or tokenised. The
+    // caller sizes it and fills these in before layout, because sizing it needs
+    // the block layout engine.
+    BoxId atom_box = kNoBox;
+    double atom_outer_width = 0;   // border box plus horizontal margins
+    // Distance from the atom's top edge up to the line baseline. Per spec an
+    // inline-block's baseline is the bottom of its content, which for a box
+    // with no inline content of its own is its bottom margin edge.
+    double atom_baseline = 0;
+
+    bool is_atom() const { return atom_box != kNoBox; }
 };
 
 // Lays out `container`'s inline content into line boxes, replacing its children.
@@ -41,6 +54,21 @@ struct InlineItem {
 // `metrics`, which is the only part of this that needs a font backend.
 double layout_inline(BoxTree* tree, BoxId container, double available_width,
                      const LayoutContext& ctx, const FontMetrics& metrics);
+
+// Same, over an already-collected item list. Splitting the two is what lets the
+// caller size the atoms in between — and what lets a shrink-to-fit probe run
+// the layout twice, since the first run replaces the container's children with
+// line boxes and the source runs can no longer be walked.
+double layout_inline_items(BoxTree* tree, BoxId container,
+                           const std::vector<InlineItem>& items, double available_width,
+                           const LayoutContext& ctx, const FontMetrics& metrics);
+
+// CSS Sizing L3: the widest the content wants to be, given unlimited width.
+// Floats and out-of-flow boxes are excluded — the containing block flows around
+// them, so they do not contribute to its intrinsic inline size.
+//
+// Returns a CONTENT width: the caller adds the frame to reach a border box.
+double max_content_width(const BoxTree& tree, BoxId id);
 
 // Collects the flattened inline sequence, exposed for tests: getting the
 // whitespace handling right is most of the work, and it is far easier to check

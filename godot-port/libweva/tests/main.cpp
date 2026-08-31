@@ -44,6 +44,7 @@ void test_box_tree_removal();
 void test_box_tree_replace();
 void test_box_geometry();
 void test_box_id_stability();
+void test_box_reparenting();
 void test_box_builder_display();
 void test_box_builder_blockification();
 void test_anonymous_block_wrapping();
@@ -86,6 +87,8 @@ void test_inline_item_collection();
 void test_line_breaking();
 void test_whitespace_collapsing();
 void test_line_metrics_and_align();
+void test_shrink_to_fit();
+void test_inline_atoms();
 int main() {
     test_arena();
     test_intern();
@@ -132,6 +135,7 @@ int main() {
     test_box_tree_replace();
     test_box_geometry();
     test_box_id_stability();
+    test_box_reparenting();
     test_box_builder_display();
     test_box_builder_blockification();
     test_anonymous_block_wrapping();
@@ -174,6 +178,8 @@ int main() {
     test_line_breaking();
     test_whitespace_collapsing();
     test_line_metrics_and_align();
+    test_shrink_to_fit();
+    test_inline_atoms();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

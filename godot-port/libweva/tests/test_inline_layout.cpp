@@ -307,3 +307,104 @@ void test_line_metrics_and_align() {
         CHECK(resolve_text_align(nullptr) == "left");
     }
 }
+
+void test_shrink_to_fit() {
+    {
+        // CSS 2.1 §10.3.5: min(max-content, max(min-content, available)).
+        // "hello world" is 88px at 8px/char; the float hugs it instead of
+        // filling the 1000px line.
+        Fixture f;
+        CHECK(f.css("#w { display: block; font-size: 16px }"
+                    "#fl { float: left }"));
+        CHECK(f.layout("<body><div id=w><div id=fl>hello world</div></div></body>"));
+        CHECK(near(f.box("fl").width, 88));
+    }
+    {
+        // When max-content exceeds the available width the float takes the
+        // available width and wraps inside it.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 60px; font-size: 16px }"
+                    "#fl { float: left }"));
+        CHECK(f.layout("<body><div id=w><div id=fl>hello world</div></div></body>"));
+        CHECK(near(f.box("fl").width, 60));
+    }
+    {
+        // CANDIDATE DIVERGENCE. CSS 2.1 §10.3.5 computes
+        // min(preferred, max(preferred-minimum, available)), which for a 20px
+        // container and a 40px longest word gives 40 — the float overflows
+        // rather than squeezing below its min-content width. The reference
+        // adds a final `if (fitted > avail) fitted = avail`, which contradicts
+        // the formula and clamps to 20, so the word overflows the FLOAT rather
+        // than the float overflowing its container. Ported as the reference has
+        // it and pinned.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 20px; font-size: 16px }"
+                    "#fl { float: left }"));
+        CHECK(f.layout("<body><div id=w><div id=fl>hello world</div></div></body>"));
+        CHECK(near(f.box("fl").width, 20));
+    }
+    {
+        // The frame is added to the intrinsic content width, and min-/max-width
+        // still clamp the result.
+        Fixture f;
+        CHECK(f.css("#w { display: block; font-size: 16px }"
+                    "#pad { float: left; padding-left: 5px; padding-right: 5px }"
+                    "#max { float: left; max-width: 10px }"
+                    "#min { float: left; min-width: 200px }"));
+        CHECK(f.layout("<body><div id=w><div id=pad>ab</div><div id=max>ab</div>"
+                       "<div id=min>ab</div></div></body>"));
+        CHECK(near(f.box("pad").width, 16 + 10));
+        // max-width clamps DOWN; it never widens a box that already fits.
+        CHECK(near(f.box("max").width, 10));
+        CHECK(near(f.box("min").width, 200));
+    }
+}
+
+void test_inline_atoms() {
+    {
+        // An inline-block is an atom: sized by shrink-to-fit, then placed whole
+        // on the line with its baseline on the line's.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#a { display: inline-block; height: 30px }"));
+        CHECK(f.layout("<body><div id=w>x<span id=a>ab</span>y</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 1);
+        // The atom hugs its two characters.
+        CHECK(near(f.box("a").width, 16));
+        // Line: "x" 8px, atom 16px, "y" 8px.
+        CHECK(near(f.tree[f.tree.child_at(ls[0], 0)].x, 0));
+        CHECK(near(f.box("a").x, 8));
+        CHECK(near(f.tree[f.tree.child_at(ls[0], 2)].x, 24));
+    }
+    {
+        // The atom's baseline is its bottom margin edge, so a tall atom pushes
+        // the line's baseline down and the text beside it sits on that line.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#a { display: inline-block; width: 10px; height: 50px }"));
+        CHECK(f.layout("<body><div id=w>x<span id=a></span></div></body>"));
+        const BoxId l = f.lines("w")[0];
+        CHECK(near(f.tree[l].baseline, 50));
+        CHECK(near(f.box("a").y, 0));
+        // The text sits on the same baseline, 12.8px of ascent above it.
+        CHECK(near(f.tree[f.tree.child_at(l, 0)].y, 50 - 12.8));
+        // The line is tall enough for the atom plus the text's descent.
+        CHECK(near(f.tree[l].height, 50 + 6.4));
+    }
+    {
+        // An atom wraps as a unit: it moves to the next line when it does not
+        // fit, and is never split.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 60px; font-size: 16px }"
+                    "#a { display: inline-block; width: 50px; height: 10px }"));
+        CHECK(f.layout("<body><div id=w>hello<span id=a></span></div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        // The atom is REPARENTED onto its line box, so its y is line-relative
+        // and the line carries the offset down the page.
+        CHECK(f.tree[f.find("a")].parent == ls[1]);
+        CHECK(near(f.tree[ls[1]].y, 19.2));
+        CHECK(near(f.box("a").y, 0));
+    }
+}

@@ -222,3 +222,35 @@ void test_box_id_stability() {
     for (int i = 0; i < allocated; ++i) t.create(BoxKind::Block);
     CHECK(t.size() == allocated);
 }
+
+void test_box_reparenting() {
+    // Attaching a box that already has a parent must unlink it first. Without
+    // that, the old parent's chain runs through a box living under a new one,
+    // and clearing either chain walks into the other — which is exactly how
+    // inline layout moves an inline-block atom onto a line box.
+    BoxTree t;
+    const BoxId p1 = t.create(BoxKind::Block);
+    const BoxId p2 = t.create(BoxKind::Block);
+    const BoxId a = t.create(BoxKind::Block);
+    const BoxId b = t.create(BoxKind::Block);
+    const BoxId c = t.create(BoxKind::Block);
+    t.append_child(p1, a);
+    t.append_child(p1, b);
+    t.append_child(p1, c);
+
+    t.append_child(p2, b);
+    CHECK(links_consistent(t, p1) && links_consistent(t, p2));
+    CHECK(forward(t, p1) == std::vector<BoxId>({a, c}));
+    CHECK(forward(t, p2) == std::vector<BoxId>({b}));
+
+    // Clearing the new parent must not reach back into the old one.
+    t.clear_children(p2);
+    CHECK(links_consistent(t, p1) && t.child_count(p1) == 2);
+
+    // insert_child_first has the same contract.
+    t.append_child(p2, a);
+    t.insert_child_first(p1, a);
+    CHECK(links_consistent(t, p1) && links_consistent(t, p2));
+    CHECK(forward(t, p1) == std::vector<BoxId>({a, c}));
+    CHECK(t.child_count(p2) == 0);
+}
