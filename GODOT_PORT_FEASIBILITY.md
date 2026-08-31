@@ -1,226 +1,261 @@
 # Godot port feasibility
 
-**Question:** could Weva be converted to Godot?
+**Target:** pure C++ GDExtension, usable from any Godot project and callable
+from GDScript. No C#, no .NET dependency.
 
-**Answer:** yes, and it is unusually well-positioned for it. ~82% of the runtime
-is already engine-neutral C# that compiles and runs outside Unity today. The port
-is not a rewrite — it is writing a new backend layer of roughly 24k LOC against
-interfaces that already exist.
+**Answer:** feasible, and GDExtension is the only route that actually meets that
+goal — but it is a different and much larger project than a C# port. Roughly
+**4–8× the effort**, because nothing recompiles: the ~108k LOC engine-neutral
+core has to be translated by hand, and the ~183k LOC test suite that currently
+guards it does not come with it.
 
-The reason this is cheap is not luck. The engine was built headless-first
-(`AGENTS.md`: "The whole engine is **headless-testable**"), and three plain
-`net8.0` console projects — `Tools/BaselineGen`, `Tools/PerfBench`,
-`Tools/TestVerifyAll` — already compile the core with zero Unity assemblies.
-Godot 4's .NET builds run C# on .NET 8, so that same core is a straight
-recompile.
+The good news is that this codebase is about as C++-portable as idiomatic C#
+ever gets, and there is a clean way to keep the existing tests useful as an
+oracle rather than throwing them away.
 
 ---
 
-## 1. Where the Unity coupling actually is
+## 1. Why GDExtension is the right call
 
-Measured over `Packages/com.wevaui/Runtime` (682 files, 132,467 LOC):
+C# in Godot only runs in .NET builds of the engine, isn't available to GDScript
+users without friction, and — as noted in the earlier C# analysis — has no web
+export. A C++ GDExtension:
+
+- loads into **every** Godot build, including the standard non-.NET one;
+- exposes classes to GDScript automatically via `GDCLASS` + `_bind_methods()`,
+  so `WevaDocument` becomes an ordinary node in the scene tree;
+- **does** support web export (GDExtension web builds landed in Godot 4.3, with
+  the usual threading caveats) — strictly better than the C# path here;
+- ships as a per-platform shared library plus a `.gdextension` file, dropped
+  into `addons/`.
+
+The costs are the usual native ones: a build matrix (Linux/Windows/macOS/Android/
+iOS/web, ×arch, ×debug/release), godot-cpp ABI tracking across Godot minor
+versions, and no exceptions across the extension boundary.
+
+## 2. How C++-friendly is the existing core?
+
+Measured over the 595 files / 108,151 LOC that already compile without Unity
+(`Tools/BaselineGen`, `PerfBench`, `TestVerifyAll`):
+
+**Almost everything that makes C# hard to translate is absent.**
+
+| Feature | Files using it | Verdict |
+|---|---:|---|
+| LINQ | **0** | The single biggest win. Nothing to unwind. |
+| `dynamic` keyword | **0** | All 6 grep hits are the word in comments. |
+| Generic type declarations | **4** | Nearly no template work. |
+| `System.Reflection` | 5, all in `Runtime/Binding/` | See §4. |
+| `Regex` | 2 | `SelectorMatcher`, `CssImportFlattener`. |
+| `async`/`Task` | 6 | Image loading + `@import`. Maps to callbacks. |
+| `Span<T>` | 8 | → `std::span` / `string_view`. |
+| `unsafe` / `stackalloc` | 4 / 1 | Already pointer code. |
+| `Marshal`/`GCHandle` | 0 | No interop assumptions to unpick. |
+
+The shape of the work is therefore *volume*, not *difficulty*. What you're
+translating:
+
+```
+563 classes   142 structs   24 interfaces   121 enums     (~850 types)
+1249 List<    332 Dictionary<   126 HashSet<   101 Stack<
+169 Func<     76 event         36 Action<      33 delegate
+```
+
+Those map onto `std::vector`, `unordered_map`, `unordered_set`, `vector`-backed
+stacks, and `std::function` / small interface vtables with no cleverness
+required. The 121 enums and much of the CSS property machinery are tables —
+mechanical translation.
+
+### The four things that genuinely need design decisions
+
+1. **509 `throw new` sites.** Throwing across a GDExtension boundary is
+   undefined; Godot's own code is exception-averse. These become an error-return
+   discipline (`bool Try...(out)` is already the dominant idiom here — 813
+   `TryParse`-family call sites — so the codebase leans that way already) plus
+   `ERR_FAIL_*` macros at the boundary. Mechanical but pervasive; decide the
+   convention on day one.
+
+2. **Ownership.** C# leans on the GC for the DOM tree, the box tree, paint
+   lists, and the caches between them. C++ needs an explicit model. The codebase
+   already points at the answer: `ElementToBoxIndex` and `PaintListPool` show
+   the design is index/pool-oriented rather than pointer-chasing. Arena + stable
+   indices for the box and paint trees, intrusive refcount (`Ref<>`) only for
+   the DOM nodes GDScript can hold.
+
+3. **String handling.** 1,189 `string.*` calls and 268 `Substring` calls,
+   concentrated in the CSS/HTML parsers. `std::string_view` is faster than the
+   C# original *and* a lifetime hazard — slices must not outlive the source
+   buffer. Pin the input-buffer ownership rule before porting the parsers.
+   Number parsing must use `std::from_chars`, never `strtod` (locale).
+
+4. **`double` everywhere.** The layout engine computes in `double` and the
+   goldens depend on exact rounding (`Math.Round`, `MidpointRounding.AwayFromZero`).
+   C++ `std::round` matches that, but `printf`/`from_chars` round-tripping and
+   any `-ffast-math` will not. Compile the layout core without fast-math and
+   assert bit-identical dumps against the C# oracle (§5).
+
+## 3. Scope
+
+| Component | LOC | Notes |
+|---|---:|---|
+| Engine-neutral core → C++ | 108,151 | Hand translation. The bulk. |
+| Renderer backend | — | Written fresh for Godot regardless of language |
+| Text stack | — | Written fresh; now can use FreeType/HarfBuzz directly |
+| Input / clipboard / IME / images | — | Godot `Input`, `DisplayServer`, `Image` |
+| Host node + GDScript bindings | new | See §4 |
+| Shaders | 3,904 | HLSL → Godot shading language, unchanged from the C# plan |
+| Editor tooling | 5,910 | Rewrite as a Godot `EditorPlugin` |
+
+Note that the ~24k LOC of Unity-bound backend code identified in the C# analysis
+was *always* going to be rewritten. Choosing C++ doesn't add that cost — it adds
+the 108k LOC core that C# would have gotten for free.
+
+The largest single files give a sense of the density:
+`BoxToPaintConverter.cs` 4,302 · `FlexLayout.cs` 3,261 · `CascadeEngine.cs`
+2,576 · `PositioningPass.cs` 2,038 · `InlineLayout.cs` 1,973 · `CssValueParser.cs`
+1,866 · `GridLayout.cs` 1,801. These are spec-implementation files where the
+value is in the accumulated edge cases, not the structure. Translation is
+line-by-line and the bugs you introduce are subtle.
+
+**Honest effort estimate:** sustained mechanical translation of intricate,
+spec-driven code runs maybe 500–1,500 LOC/day including debugging. That puts the
+core alone at ~100–200 person-days, and the differential-debugging tail on a
+layout engine is historically where the schedule goes — call it **12–24
+person-months to parity**, renderer and text stack on top. Transpilation tools
+exist but will not produce a codebase you can keep developing in; don't.
+
+## 4. What GDScript actually sees
+
+Do **not** bind all 637 public types. The GDScript-facing surface is small:
+
+- `WevaDocument` (a `Control`/`Node2D`) with exported properties mirroring
+  today's: `document`, `stylesheets`, `sorting_order`, `viewport_override`,
+  `prefers_dark_color_scheme`, plus `rebuild()`.
+- `Document`, `Element`, `Node`, `TextNode` from `Runtime/Dom/` — query,
+  attribute get/set, class list, text.
+- Signals for the event system (`pressed`, `input_changed`, …) replacing the
+  76 C# `event` declarations at the boundary.
+- One `set_style_property` / `get_computed_style` pair.
+
+Everything else stays internal C++.
+
+**The `[UIBind]` data-binding system does not port — and shouldn't.** All the
+reflection in the codebase lives in `Runtime/Binding/` (5 files) and exists to
+read C# object graphs. In a GDScript world that whole feature is replaced by
+Godot's native introspection: `Object::get()`/`set()` over `Variant`, plus
+`Object::connect` for events. This is a *better* fit than the current design,
+and it deletes the reflection problem outright. Note the codebase already has
+the reflection-free shape sketched out in
+`Runtime/Binding/Generated/IBindingAccessor.cs` — same idea, different host.
+
+## 5. The real risk: the test suite does not come with you
+
+This is the part worth thinking hardest about.
+
+`Tests/` is **183,194 LOC across ~10,500 NUnit tests** — 60k LOC on layout
+alone, 52k on CSS, 23k on paint. Only ~143 data fixtures (47 HTML, 46 CSS, 50
+JSON) are data-driven; the rest are hand-written asserts in C#. They do not
+translate cheaply, and a layout engine without them is not trustworthy.
+
+**Mitigation — use the C# implementation as a differential oracle.**
+`Tools/BaselineGen/LayoutDump.cs` already emits a stable JSON dump of every box
+(`tag/id/cls/x/y/w/h/depth`) for a given HTML+CSS at a given viewport. That is
+exactly the right oracle format. So:
+
+1. Harvest every HTML/CSS snippet the C# tests exercise into a corpus, and
+   generate one more from fuzzing property combinations.
+2. Run the C# engine over the corpus → reference JSON dumps.
+3. Run the C++ engine over the same corpus → diff.
+
+That converts an untranslatable 183k LOC into an automated, growing regression
+net, and it lets you port bottom-up with a green signal at every step:
+**CSS tokenizer/parser → values → cascade/selectors → block → inline/text →
+flex → grid → positioning → paint conversion.** Each stage is validated against
+the oracle before the next begins. Do not start the renderer until layout dumps
+match.
+
+The paint layer has a second oracle: `SoftwareRasterizer` (1,592 LOC, zero
+Unity refs) plus 38 baseline PNGs — port it early as the first C++ backend and
+diff images.
+
+## 6. The strategic question: one core or two?
+
+A C++ port creates a fork. Every CSS fix would otherwise land twice, forever —
+and with 858 lines of `CONFORMANCE.md` tracking spec deltas, that divergence
+gets expensive fast.
+
+There is a way out that is worth deciding **before** starting, because it
+changes the design: **Unity can P/Invoke a native library.** So the end state
+doesn't have to be "C# engine + C++ engine". It can be:
+
+```
+            ┌─────────────────────────────┐
+            │  libweva  (C++ core)        │
+            │  parse · cascade · layout   │
+            │  paint display list         │
+            └───────┬─────────────┬───────┘
+                    │             │
+        GDExtension │             │ P/Invoke + C ABI
+                    │             │
+              Godot host     Unity host (thin C# shim)
+```
+
+One implementation, two host bindings, one place to fix a spec bug. It costs
+more up front — a stable C ABI and marshalling for the Unity side, and the
+existing C# package becomes a shim — but it is the difference between a port
+and a permanent second codebase. If the C++ port happens, this is the version
+worth doing.
+
+If the Unity package is instead going to be frozen or retired, ignore this and
+port straight to GDExtension.
+
+## 7. Recommendation
+
+Feasible, correct choice of technology for the stated goal, but go in knowing it
+is a 12–24 person-month core translation, not a backend swap.
+
+If it proceeds:
+
+1. **Decide §6 first** — single C ABI core, or accept the fork. It shapes every
+   interface.
+2. **Build the differential harness before writing engine C++.** Corpus +
+   BaselineGen dumps + a diff runner. This is the whole safety net.
+3. **Set conventions on day one**: no exceptions across the boundary, error
+   returns, arena+index ownership, `string_view` lifetime rule, no fast-math.
+4. **Port bottom-up** in the order in §5, oracle-green at each stage.
+5. **`SoftwareRasterizer` first** as the C++ backend — pixels on screen early,
+   and it diffs against the 38 existing baseline PNGs.
+6. Text stack (FreeType/HarfBuzz directly, or Godot's `TextServer`), then the
+   batched GPU backend + shaders, then the editor plugin.
+
+A cheaper intermediate, if the goal is to *validate demand* rather than ship:
+do the C# port first (~24k LOC, mostly backend work you'd need anyway), prove
+people want HTML/CSS UI in Godot, then fund the C++ rewrite. The C# version
+can't reach GDScript users or non-.NET builds — but it answers the market
+question for a fraction of the cost.
+
+---
+
+## Appendix: Unity coupling measurement
+
+Retained from the C# analysis, because it's what makes the core translatable at
+all — the 108k LOC is genuinely standalone, not Unity code with the serial
+numbers filed off.
+
+Over `Packages/com.wevaui/Runtime` (682 files, 132,467 LOC):
 
 | | files | LOC |
 |---|---:|---:|
-| Reference `UnityEngine` at all | 47 | 18,716 |
+| Reference `UnityEngine` | 47 | 18,716 |
 | Do not | 635 | 113,751 |
 
-Excluding the directories the headless csproj files already exclude, the
-engine-neutral core is **108,151 LOC (82%)**.
+Only 9 files touch `MonoBehaviour`/`ScriptableObject`. Burst appears in one
+method. No `NativeArray`, no Jobs, no `Unity.Mathematics` — paint carries its own
+`Rect`, `Transform2D`, `LinearColor`. The entire Unity API surface the core
+needs is covered by `Tools/TestVerifyAll/UnityEngineStub.cs` — **104 lines**.
 
-The whole Unity API surface the core needs is stubbed by
-`Tools/TestVerifyAll/UnityEngineStub.cs` — **104 lines**. It provides
-`[SerializeField]`, `[Tooltip]`, `Debug.Log*`, `Profiler.Begin/EndSample`,
-`Application.isPlaying` and a couple of enums. That file is the honest measure
-of how deep Unity reaches into layout, cascade, paint, events, and forms:
-barely at all.
-
-Coupling by directory:
-
-```
-Runtime/Rendering/URP        12 files    Runtime/Text/Tmp              2
-Runtime/Paint/Images          7          Runtime/Rendering             2
-Runtime/Forms/Bridge          7          Runtime/Paint/Conversion      2
-Runtime/Text/TextCore         6          ...and 10 dirs with 1 each
-Runtime/Rendering/Backend     6             (mostly Debug.LogWarning
-Runtime/Text/Sdf              5              or a comment mentioning Unity)
-```
-
-Only **9 files** in the entire runtime touch `MonoBehaviour`/`ScriptableObject`.
-Burst is used in exactly one method, behind `WEVA_BURST`. There is no
-`NativeArray`, no Jobs, no `Unity.Mathematics` in the core — paint carries its
-own `Rect`, `Transform2D`, `LinearColor`.
-
-## 2. What ports for free
-
-Everything the three headless projects already compile:
-
-- HTML/CSS parsing, the cascade, selectors, media/container queries
-- The entire layout engine — flex, grid, subgrid, floats, tables, multicol,
-  positioning, anchor positioning, scrolling, inline/text layout, incremental
-  relayout
-- Paint: the `PaintCommand` display list, `BoxToPaintConverter`, gradients,
-  filters, clip paths, masks, blend modes
-- DOM, events + manipulators, forms logic, components, binding, reactivity,
-  animations, view transitions, hot-reload coordination, the designer model
-- **The tests.** 183,194 LOC of NUnit already run outside Unity via
-  `TestVerifyAll`. They are the port's safety net and they come along unchanged.
-
-There is also already a second, fully engine-independent `IRenderBackend`
-implementation — `Runtime/Testing/Goldens/SoftwareRasterizer.cs`, 1,592 LOC with
-zero Unity references. It is deliberately low-fidelity (glyphs are solid blocks,
-gradients collapse to their first stop), so it is not shippable output, but it
-proves the paint-command contract is genuinely engine-neutral and gives a Godot
-port something that draws pixels on day one.
-
-## 3. What has to be rewritten
-
-~24,300 LOC, all of it behind interfaces that already exist:
-
-| Area | LOC | Difficulty | Notes |
-|---|---:|---|---|
-| `Runtime/Rendering` (URP backend, batcher, render passes) | 11,465 | **Hard** | The main job |
-| `Runtime/Text` (font load, glyph raster, SDF atlas) | 8,773 | **Hardest** | See §3.2 |
-| `Runtime/DevTools` | 2,340 | Easy | Pure logic + an overlay renderer |
-| `Runtime/WevaDocument.cs` | 890 | Easy | Thin `MonoBehaviour` over headless `UIDocumentState` |
-| `Runtime/Forms/Bridge` | 832 | Easy | Implements `IUIPointerSource` etc. |
-| `Runtime/Paint/Images/*.Unity.cs` | ~600 | Easy | Implements `IImageSource`/`IImageRegistry` |
-| `Runtime/Document/UnityClock.cs` | 16 | Trivial | |
-| Shaders (7 `.shader` + 1 `.hlsl`) | 3,904 | **Hard** | HLSL → Godot shading language |
-| `Editor/` tooling | 5,910 | Medium | Rewrite as a Godot `EditorPlugin` |
-
-The seams are already named and used: `IRenderBackend`, `IUICommandBuffer`,
-`IUIPaintSource`, `IImageSource`, `IImageRegistry`, `IRawPixelImageSource`,
-`IFontMetrics`, `IGlyphMetrics`, `ITextCoreBackend`, `FontLoader.IFaceLoader`,
-`IUIPointerSource`, `IUIClock`, plus the `*.Unity.cs` file-suffix convention for
-platform-bound partials. A Godot port writes `*.Godot.cs` siblings.
-
-### 3.1 Rendering — hard but tractable
-
-`BatchedURPRenderBackend` uploads a fat per-instance record
-(`UIQuadInstance`, ~57 `float4` slots: rect, per-corner radii, color, brush
-params, per-edge border widths/colors/styles, a 2×3 transform, a clip rect,
-gradient stops, clip-path shape params, and four mask layers) and expands it in
-the vertex shader from a `StructuredBuffer<float4>`.
-
-Godot's shading language has no `StructuredBuffer`. Two routes:
-
-1. **`MultiMeshInstance2D` + a data texture.** Pack the instance array into an
-   `RGBAF` `ImageTexture` and `texelFetch` it in the vertex shader off
-   `INSTANCE_ID`. This is the standard Godot workaround, keeps the
-   one-draw-call-per-batch property, and is the pragmatic first target.
-2. **`RenderingDevice` with GLSL.** Real SSBOs, a genuinely custom pipeline —
-   the closest structural match to the URP `ScriptableRendererFeature`. More
-   power, more plumbing to composite back into the 2D canvas.
-
-Two things make this easier than it looks:
-
-- **Clipping already left stencil behind.** The batched backend clips via a
-  per-instance `clipRect` in slot `[13]` and clip-path SDF shapes in
-  `[16..20]` — the comment in `UIQuadInstance.cs` records that this "replac[ed]
-  the fragile FF-stencil path". `StencilClipManager` is no longer wired into
-  `BatchedURPRenderBackend`. Godot 2D exposes no stencil for canvas items, so
-  the codebase already sidestepped the feature it would have been blocked on.
-- The shaders are self-contained SDF math (rounded-rect coverage, gradient
-  brushes, blur). HLSL → Godot shading language is transliteration, not
-  redesign. Budget it as real work — 3,904 lines — but not research.
-
-Backdrop filters and `mix-blend-mode`, which need the page backdrop as a
-texture, will be the fiddliest part; Godot's `BackBufferCopy` covers the
-2D case.
-
-### 3.2 Text — the one genuine risk
-
-`SdfGlyphRasterizer` binds `FontEngine.TryRenderGlyphsToTexture` and
-`TryAddGlyphToTexture` **by reflection into `UnityEngine.TextCoreTextEngineModule.dll`** —
-undocumented Unity internals. `FontLoader.Unity.cs` similarly resolves faces
-through `Font` + `FontEngine.LoadFontFace`, and there is a TextMeshPro adapter
-alongside.
-
-Godot has no equivalent that hands you a raw rasterized glyph bitmap for your
-own atlas. The options, in order of preference:
-
-1. **Godot `TextServer` + `FontFile`.** HarfBuzz + ICU + FreeType, and
-   `FontFile` supports MSDF natively. Best fidelity and shaping; the work is
-   adapting Weva's atlas ownership model to one where Godot owns the atlas —
-   `IGlyphMetrics.TryGetGlyphRect` would need to source UVs from
-   `TextServer`'s cache.
-2. **A managed rasterizer** (FreeTypeSharp, SixLabors.Fonts) — Weva keeps
-   owning its atlas exactly as it does now, and `SdfGlyphAtlasAdapter` /
-   `GlyphAtlasPacker` port with minimal change. Costs a dependency and gives up
-   Godot's shaping.
-
-Note the existing seam quality: `FontLoader.cs` (neutral cache + warmup) is
-already split from `FontLoader.Unity.cs` (face creation), and `GlyphAtlas.cs`
-from `GlyphAtlas.Unity.cs`. The split is in the right place. Expect this to be
-the largest single chunk of design work regardless.
-
-### 3.3 Everything else is mechanical
-
-- **Input**: `Godot.Input`/`InputEvent` behind the existing `IUIPointerSource`.
-- **Clipboard / IME**: `DisplayServer.ClipboardGet/Set`,
-  `DisplayServer.WindowSetImeActive/Position` — direct analogues of
-  `GUIUtility.systemCopyBuffer` and `Input.imeCompositionMode`.
-- **Images**: `Image`/`ImageTexture` with built-in PNG/JPG/WebP decode, behind
-  `IImageSource`. Addressables has no Godot equivalent; `ResourceLoader` +
-  `res://` paths replace it.
-- **Host node**: `WevaDocument : MonoBehaviour` becomes
-  `WevaDocument : Control` (or `Node2D`). It is 890 lines of lifecycle over the
-  headless `UIDocumentState`; the property surface (`DocumentAsset`,
-  `SortingOrder`, `ViewportOverride`, `Rebuild()`, `GetController<T>()`) maps
-  onto `[Export]` almost one-for-one.
-
-## 4. Platform caveats worth deciding up front
-
-These are Godot-side constraints, not codebase problems — verify against the
-Godot release you would target:
-
-- **Godot's .NET builds do not support web export.** If HTML5 is on the roadmap,
-  a Godot C# port does not get you there; you would be looking at GDExtension or
-  a language port, which changes the entire calculus.
-- Mobile support in Godot .NET is newer and less battle-tested than Unity's
-  IL2CPP path. If Android/iOS matter, prototype export early.
-- `TestVerifyAll` pins `LangVersion 9.0` to match Unity's compiler. Godot's .NET 8
-  allows much newer C#; that constraint relaxes, but keep it if the Unity package
-  is to stay buildable from the same sources.
-
-## 5. Recommended shape
-
-If this is worth doing, do it as a **third backend, not a fork**. The repo
-already supports multiple `IRenderBackend`s (`NullBackend`, `RecordingBackend`,
-`SoftwareRasterizer`, `SoftwarePainter`, `IMGUIDocumentRenderer`,
-`URPRenderBackend`, `BatchedURPRenderBackend`). One shared core, two host
-packages.
-
-Suggested order:
-
-1. **Compile the core under Godot.** Add a `Weva.Core` csproj mirroring
-   `BaselineGen`'s include/exclude lists and reference it from a Godot .NET
-   project. Low risk, and it immediately tells you whether anything has drifted
-   Unity-ward since those excludes were written. *(Note: `BaselineGen.csproj`
-   and `PerfBench.csproj` still exclude a stale `Runtime/UIDocument.cs`; the file
-   is now `WevaDocument.cs`, which only `TestVerifyAll.csproj` excludes. Worth
-   fixing regardless of any port.)*
-2. **Run `TestVerifyAll` against it.** ~180k LOC of tests green before a single
-   pixel is drawn.
-3. **`GodotSoftwareBackend`.** Blit `SoftwareRasterizer` output into an
-   `ImageTexture`. Ugly, slow, but end-to-end: HTML in, pixels on screen.
-4. **`GodotTextBackend`.** The real decision from §3.2. Do it before the GPU
-   backend — glyph atlas ownership determines the text path in the shader.
-5. **`GodotBatchedBackend` + ported shaders.** MultiMesh2D + data texture first;
-   `RenderingDevice` only if profiling demands it.
-6. **Editor plugin.** Preview panel, DOM/style inspector, importers.
-
-## 6. Bottom line
-
-| | |
-|---|---|
-| Reusable as-is | ~108k LOC runtime + ~183k LOC tests |
-| To rewrite | ~24k LOC C# + ~4k lines shaders + ~6k LOC editor tooling |
-| Hardest problem | Glyph rasterization / atlas ownership |
-| Second hardest | Instance-data upload without `StructuredBuffer` |
-| Biggest external risk | No web export from Godot .NET |
-
-The architecture was clearly designed with backend substitution in mind, and the
-headless tooling means that design is continuously verified rather than
-aspirational. A Godot port is a backend project, not a rewrite.
+*(Unrelated bug spotted while measuring: `BaselineGen.csproj` and
+`PerfBench.csproj` still exclude a stale `Runtime/UIDocument.cs`; the file is now
+`WevaDocument.cs`, which only `TestVerifyAll.csproj` excludes. Those two headless
+builds are likely pulling in the `MonoBehaviour`. Worth fixing regardless — and
+especially before BaselineGen becomes the port's oracle.)*
