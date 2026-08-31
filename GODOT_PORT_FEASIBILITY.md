@@ -247,12 +247,24 @@ draw commands for you to render. There is a
 11 stars / 19 commits it is explicitly WIP — its own TODO still lists GDScript
 element modification, the font system, and editor rendering.
 
-**But RmlUi is a dialect, not the web.** It implements RML and RCSS, states it
-supports "most of CSS2 with some CSS3 features", and explicitly disclaims
-compliance: *"We do not aim to be fully compliant with CSS or HTML, in
-particular when it conflicts with lightness and performance."* Its feature list
-covers flexbox and media queries. It does **not** do CSS Grid, floats, tables,
-multicol, or container queries.
+**RmlUi is more capable than its README summary suggests.** Reading the actual
+[RCSS property index](https://mikke89.github.io/RmlUiDoc/pages/rcss/property_index.html),
+it supports `block`/`inline`/`inline-block`/`flow-root`/`flex`/`inline-flex` plus
+the full `table` display family, `float`, all four `position` values, transforms,
+transitions, `filter` **and** `backdrop-filter`, and `box-shadow`. That is a
+serious layout engine, not a toy.
+
+What it does **not** have: **CSS Grid** (and therefore subgrid), **container
+queries** / `@container`, `aspect-ratio`, and multicol.
+
+**And it is a dialect, not the web.** It implements RML and RCSS, describes
+itself as based on "XHTML1 and CSS2 with features from HTML5 and CSS3", and
+explicitly disclaims compliance: *"We do not aim to be fully compliant with CSS
+or HTML, in particular when it conflicts with lightness and performance."* The
+deviations are structural, not cosmetic — `background` "excludes images, use
+decorators instead", `border` "excludes border style", and there are RCSS-only
+properties (`drag`, `focus`, `tab-index`, `scrollbar-margin`, `image-color`,
+`fill-image`).
 
 [**GTML**](https://github.com/Niekvdm/godot-plugins-gtml) — a GDScript plugin
 (88 stars) that maps HTML/CSS onto native Control nodes with Vue-style
@@ -264,16 +276,16 @@ look like CSS), and flexbox-only.
 
 ### Where that leaves Weva
 
-The gap is specific and real. Nothing in the Godot ecosystem is
-**native + MIT + actual HTML/CSS + grid-capable**:
+The gap is narrower than it first looks, but it is real. Nothing in the Godot
+ecosystem is **native + MIT + actual HTML/CSS + grid-capable**:
 
-| | Real HTML/CSS | Grid / floats / tables / multicol | Container queries | Native (no browser) | License |
-|---|---|---|---|---|---|
-| Godot WRY / godot-webview | yes | yes | yes | **no** | MIT / LGPL |
-| Godot-HTML (Ultralight) | yes | yes | yes | yes | **$3k/yr >$100k rev** |
-| RmlUi | **no** (RML/RCSS) | **no** | **no** | yes | MIT |
-| GTML | partial | **no** (flexbox only) | **no** | yes (GDScript) | open source |
-| Weva | yes | **yes** | **yes** | yes | MIT |
+| | Real HTML/CSS | Flex / float / table | Grid + subgrid | Container queries | Native | License |
+|---|---|---|---|---|---|---|
+| Godot WRY / godot-webview | yes | yes | yes | yes | **no** | MIT / LGPL |
+| Godot-HTML (Ultralight) | yes | yes | yes | yes | yes | **$3k/yr >$100k rev** |
+| RmlUi | **no** (RML/RCSS) | **yes** | **no** | **no** | yes | MIT |
+| GTML | partial | flex only | **no** | **no** | yes (GDScript) | open source |
+| Weva | yes | yes | **yes** | **yes** | yes | MIT |
 
 Weva additionally carries the conformance work none of these have: ~10,500
 tests, `CONFORMANCE.md` tracking spec deltas property by property, and
@@ -293,10 +305,111 @@ plumbing the port needs — draw commands onto CanvasItem layers, input via
 commits is small enough to read in an afternoon and it de-risks the backend
 layer. Read it before writing any of §3.
 
-## 8. Recommendation
+## 8. Should we build on RmlUi instead?
+
+Tempting, and worth taking seriously — RmlUi is MIT, mature (4.4k stars, ~2,740
+commits), already emits vertices and draw commands for a host renderer, and has
+a WIP Godot binding. But "build on top of it" resolves into three quite
+different projects, and the middle one — the one that sounds like the shortcut —
+is the worst of them.
+
+### What Weva would be discarding
+
+| Subsystem | LOC | RmlUi equivalent? |
+|---|---:|---|
+| `Runtime/Layout` | 34,029 | Mostly yes — block, inline, flex, float, table, position |
+| ├ `Layout/Grid` | 4,848 | **No** |
+| ├ `Layout/AnchorPositioning` | 1,018 | **No** |
+| ├ `Layout/Multicol` | 472 | **No** |
+| `Runtime/Css` (cascade, selectors, values, container queries) | 30,236 | Partly — RCSS, no `@container` |
+| `Runtime/Paint` | 17,757 | Different model (decorators) |
+| `Runtime/Forms` | 6,609 | Partly |
+
+Building on RmlUi means throwing away ~64k LOC of layout + CSS and adopting a
+different one. That is the whole point of the option — but it is also the whole
+cost, because that 64k LOC *is* the product.
+
+### Option A — Finish Godot-RmlUi, ship RmlUi-based UI
+
+Cheapest by a wide margin: months, not years. Implement the four interfaces
+(`RenderInterface`, `SystemInterface`, `FontEngineInterface`, `FileInterface`)
+against Godot, finish what Godot-RmlUi's TODO lists, polish, ship.
+
+You get a good Godot UI addon. You do **not** get Weva: authors write RML/RCSS,
+there is no grid, no container queries, `background-image` becomes decorators.
+Weva's engine is not involved. This is a legitimate choice — it is just a
+different product that happens to be built by the same people.
+
+### Option B — Fork RmlUi and add grid + real HTML/CSS on top
+
+This is the option that sounds like "best of both" and isn't. To get Weva's
+differentiators you would have to:
+
+1. **Implement CSS Grid inside someone else's layout engine.** Grid is the
+   hardest layout algorithm in CSS — 4,848 LOC in Weva, written by whoever knows
+   Weva's box model. Calibration: RmlUi's *flexbox* support "has been in the
+   works for a few months" and shipped alongside "a big rewrite of the layout
+   engine... to ensure improved CSS conformance and much better
+   maintainability" — and that was the maintainer working in his own code.
+   Grid is harder, and you would be the outsider.
+2. **Add container queries**, which touch the cascade, not just layout.
+3. **Replace RML/RCSS parsing with real HTML/CSS**, including reconciling the
+   structural deviations (decorators vs `background-image`, `border` excluding
+   style, the RCSS-only properties).
+4. **Maintain a permanent fork** of a 2,740-commit library. Upstream will not
+   take this work: the maintainer has stated non-compliance is a deliberate
+   design position, so "full CSS conformance" contributions are against the
+   project's stated goals, not merely unreviewed.
+5. **Still write the Godot backend** — the four interfaces don't come free.
+
+And you lose Weva's ~10,500-test conformance suite, because those tests assert
+against Weva's APIs, not RmlUi's. You would be doing the hardest part of the
+work (grid, container queries, real CSS parsing) in unfamiliar code, with no
+test net, on a fork you own forever. That is strictly worse than doing it in
+code you wrote, where the tests already exist.
+
+### Option C — Port Weva, borrow RmlUi's integration design
+
+RmlUi is MIT, so the parts genuinely worth taking are free to take:
+
+- Its **interface decomposition** (`RenderInterface` / `SystemInterface` /
+  `FontEngineInterface` / `FileInterface`) is a proven factoring of exactly the
+  seam Weva needs, and maps closely onto Weva's existing `IRenderBackend` /
+  `IImageSource` / `IUIClock` / `FontLoader.IFaceLoader`.
+- Its **backends concept** (RmlUi 5.0 refactored samples into renderer+platform
+  backend pairs) is a good model for shipping Godot and Unity hosts off one core.
+- **Godot-RmlUi's plumbing** — draw commands onto CanvasItem layers, input via
+  `_gui_input`, textures via Godot resources, filesystem integration — is a
+  working reference for the exact backend layer §3 requires, at 19 commits.
+
+This is the §1–6 plan with a few months of unknowns removed from the backend.
+
+### The decisive question
+
+RmlUi is a dialect. Weva's stated reason to exist, from its own README, is
+*"HTML and CSS that LLMs have already learned from the web — no UXML dialect."*
+
+Building on RmlUi means adopting RCSS, which is exactly the problem Weva was
+built to solve. You would be reintroducing the dialect to avoid the port.
+
+So the question is not really "RmlUi or port?" It is: **is real HTML/CSS
+fidelity — grid, container queries, Chrome-matching layout, and a syntax LLMs
+already emit correctly — actually the point of this project?**
+
+- **Yes** → RmlUi cannot host that without being rewritten into Weva. Port
+  Weva (Option C), and take RmlUi's integration design for free.
+- **No** → then RmlUi already won, it shipped years ago, and porting 108k LOC to
+  compete with it on features it mostly has is hard to justify. Do Option A.
+
+There is no coherent middle. Option B pays the full cost of both.
+
+## 9. Recommendation
 
 Feasible, correct choice of technology for the stated goal, but go in knowing it
-is a 12–24 person-month core translation, not a backend swap.
+is a 12–24 person-month core translation, not a backend swap — and that §8's
+question comes first. Do not start until "is real CSS fidelity the point?" has a
+firm answer, because a "no" makes RmlUi the better project and a "maybe" makes
+Option B look attractive when it is the most expensive path available.
 
 If it proceeds:
 
