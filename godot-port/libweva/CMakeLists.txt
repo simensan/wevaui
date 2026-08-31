@@ -6,6 +6,7 @@ add_library(weva STATIC
     src/dom.cpp
     src/html_tables.cpp
     src/html_tokenizer.cpp
+    src/html_parser.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

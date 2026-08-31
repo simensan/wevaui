@@ -1,5 +1,6 @@
 #pragma once
 #include "weva/intern.h"
+#include "weva/ref.h"
 #include "weva/status.h"
 
 #include <cstdint>
@@ -113,6 +114,19 @@ bool is_void(std::string_view tag);
 bool is_optional_close(std::string_view tag);
 bool should_implicitly_close(std::string_view current_open, std::string_view new_start);
 } // namespace html_elements
+
+struct ParseOptions {
+    // C#'s ParseOptions.ThrowOnError, renamed: nothing throws here. When set,
+    // a malformed construct fails the parse and fills HtmlParseError; when
+    // clear, the parser absorbs it the way a browser would.
+    bool strict = true;
+};
+
+class Document;
+
+// Ports Runtime/Parsing/HtmlParser.cs. Returns null on failure in strict mode.
+Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
+                         const ParseOptions& options, HtmlParseError* error);
 
 namespace html_entities {
 // Resolves a named entity ("amp") to its replacement text.

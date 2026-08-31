@@ -121,6 +121,38 @@ Also worth noting: the C# comment terminator bound is `pos + 2 < length`, not
 unterminated. Reproduced rather than fixed — the oracle compares against C#
 behaviour, and a unilateral fix here is a divergence.
 
+**Tree builder done** (`HtmlParser.cs`, 645 LOC): fragment normalization, the
+optional-tag implicit closes, optional-close scope guards, and the AAA-lite
+active-formatting-list reconstruction. 193 checks green across gcc / clang /
+ASan+UBSan+LSan; the 17KB dev demo parses clean in **strict** mode into 358
+elements and 458 text nodes.
+
+### Two places where the C# comments claim behaviour the code does not deliver
+
+Both are reproduced as-written, because the oracle compares against the C#
+engine and a unilateral "fix" registers as divergence. Both need settling
+against Chrome once BaselineGen runs — **fix in both engines, or neither.**
+
+1. **A body-only fragment gets no `<head>`.** The comment says browsers
+   "always produce a `Document > <html> > <head> + <body>` shape", but
+   `EnsureHead()` is only reachable from a head-content element, and
+   `EnsureBody() -> CloseHead()` returns immediately when `inHead` is false.
+   So `<main>hi</main>` yields `html(body(main))`, not `html(head body(main))`.
+
+2. **The adoption-agency fixup does not match Chrome.** The comment cites
+   `<p>Click <a><div>here</div></a> to start</p>` as "matching the Chrome /
+   Firefox DOM shape". Chrome produces
+   `<p>Click <a></a></p> <a><div>here</div></a> <a> to start</a> <p></p>`.
+   The C# algorithm instead nests the reconstructed `<a>` *inside* the `<div>`
+   and leaves `" to start"` unwrapped, because `</a>` clears the active
+   formatting list before the trailing text arrives.
+
+**Process note.** Eight of the first parser tests failed, and every one was a
+wrong expectation on my side — written from memory of Chrome rather than from
+the C# source. The port was faithful. That is the failure mode this phase
+should expect: for a differential port, "what does the reference actually do"
+is a question to answer by reading or running it, never by recall.
+
 ## Phase 3 — Cascade and selectors (~12k LOC)
 
 `Runtime/Css/Cascade` (12,340) plus selectors, media and container queries. Port
