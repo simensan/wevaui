@@ -846,6 +846,70 @@ the rest belonging to `LayoutEngine.Incremental.cs`. The paint-side caches
 (`PaintCache`, `WrapperCache`, `SubtreeHas*`) are decided by ARCHITECTURE.md's
 lower render interface and are not a mechanical port.
 
+**Box builder done** (`BoxBuilder.cs` core + `BoxFinalize.cs`). 1460 checks
+green across gcc 13, clang 18, ASan+UBSan+LSan and Release. DOM plus computed
+style in, box tree out.
+
+`display` becomes a **field**, not a subclass. The C# encodes it as a tower —
+`FlexBox`, `GridBox`, `TableBox`, `MulticolBox`, `TableRowGroupBox` — which the
+single-struct box cannot have. A `DisplayKind` field carries the same
+information and lets a box change formatting context without being reallocated.
+An unrecognised value computes to `inline`, the initial value, so an author typo
+degrades like an omitted declaration rather than deleting content.
+
+**Blockification is three separate rules that all produce a block box**, and
+conflating them would be easy:
+
+* CSS 2.1 §9.7 — a floated or out-of-flow element with an inline outer display
+  becomes block-level. Authors write `<span style="float:left">` and expect
+  block-flow semantics; without this the box is an inline box and block layout
+  never sees it as a float.
+* CSS Flexbox §4 / Grid §6 — every in-flow child of a flex or grid container is
+  blockified, `inline-block` → `block`, `inline-flex` → `flex`, and so on.
+* The §9.7 rule is **skipped** inside a flex or grid container, because flex and
+  grid items cannot float (Flexbox §3, Grid §6.4). The child is blockified
+  anyway as an item, so the box kind is the same — but for a different reason,
+  and the port keeps the distinction rather than merging the branches.
+
+The reason the second rule matters is in the C# as a comment about a real bug:
+without it the anonymous-block pass sees the `is_inline_block` flag and sweeps a
+whole row of flex items into ONE anonymous wrapper, so per-item sizing is never
+applied to any of them.
+
+### The anonymous-block pass, and the whitespace rule that carries it
+
+CSS 2.1 §9.2.1.1: a block container holds either only inline-level boxes or only
+block-level ones. Where an author mixes them, each RUN of consecutive inline
+children is wrapped in one anonymous block — not one wrapper per child — so
+every layout pass below may assume one case or the other.
+
+The load-bearing detail is that **a run consisting entirely of whitespace text
+generates no box at all.** The newlines between block siblings in formatted HTML
+are real text nodes (verified: `<div>\n  <div/>\n  <div/>\n</div>` gives the
+outer div five children, three of them whitespace text). Without the rule, every
+pair of block siblings in every hand-written document would be separated by an
+empty anonymous block.
+
+Two classification details worth stating because they are not obvious from the
+spec text:
+
+* An **anonymous block is invisible to the classification** — it is a product of
+  this pass, never an input to it.
+* An **inline-block counts as inline** here, so it joins the anonymous wrapper
+  beside a text run rather than standing alone as a block sibling.
+
+Raw text directly inside a flex or grid container gets the same anonymous
+wrapper, for a different reason: element children were blockified on the way in,
+text bypasses that branch, and an unwrapped text child leaves the container with
+zero items and collapsed to its padding.
+
+**Deferred, listed rather than dropped:** `::before`/`::after`/`::marker`
+injection and list-item markers (they need the counter context, which is the
+other unported half of `CascadeEngine`), `::backdrop` synthesis, `<img>`
+intrinsic sizing and `field-sizing: content` (both need registries this port has
+no equivalent of yet), the anonymous-table insertion pass, and the
+body → html background propagation, which is paint's concern.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

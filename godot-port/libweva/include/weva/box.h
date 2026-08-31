@@ -38,6 +38,44 @@ enum class BoxKind : uint8_t {
     Text,             // a run of text with a single style
 };
 
+// The resolved `display` value. The C# encodes this as a subclass tower
+// (FlexBox, GridBox, TableBox, MulticolBox, TableRowGroupBox, ...); with one
+// box struct it has to be a field, which is also what lets a box change
+// formatting context without being reallocated.
+enum class DisplayKind : uint8_t {
+    None,
+    Contents,
+    Inline,
+    Block,
+    FlowRoot,
+    ListItem,
+    Flex,
+    Grid,
+    Table,
+    TableRowGroup,
+    TableHeaderGroup,
+    TableFooterGroup,
+    TableRow,
+    TableCell,
+    TableCaption,
+    TableColumn,
+    TableColumnGroup,
+    InlineBlock,
+    InlineFlex,
+    InlineGrid,
+    InlineTable,
+};
+
+// Unrecognised values compute to `inline`, which is also the initial value —
+// so an author typo degrades the way an omitted declaration would.
+DisplayKind parse_display(std::string_view value);
+const char* display_name(DisplayKind d);
+
+// CSS 2.1 §17.4: table-internal displays are block-level for the purpose of
+// child classification, so the anonymous-block pass does not sweep them in
+// beside inline siblings.
+bool is_table_display(DisplayKind d);
+
 enum class PositionType : uint8_t { Static, Relative, Absolute, Fixed, Sticky };
 enum class FloatType : uint8_t { None, Left, Right };
 enum class ClearType : uint8_t { None, Left, Right, Both };
@@ -78,6 +116,14 @@ struct Box {
     double sticky_offset_x = 0, sticky_offset_y = 0;
 
     // ---- Block ----------------------------------------------------------
+    // The resolved display, which decides the formatting context this box
+    // establishes. Distinct from `is_inline_block`, which is about how the box
+    // participates in its PARENT's formatting context.
+    DisplayKind display = DisplayKind::Block;
+    // CSS Multi-column L1 §2: a block container with a non-auto column-count or
+    // column-width. Flex, grid and table containers ignore the column
+    // properties, so this is only ever set on a block container.
+    bool is_multicol = false;
     bool contains_inlines = false;
     // display: inline-block / inline-flex / inline-grid. The inner formatting
     // context is unchanged; only participation in the parent IFC differs, and

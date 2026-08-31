@@ -123,4 +123,90 @@ BoxId BoxTree::child_at(BoxId parent, int index) const {
     return kNoBox;
 }
 
+
+namespace {
+
+// Sorted by first character to keep the common cases (block, inline, flex,
+// grid, none) at the front of their chains; the whole thing is a handful of
+// compares either way.
+struct DisplayEntry { const char* name; DisplayKind kind; };
+constexpr DisplayEntry kDisplays[] = {
+    {"none", DisplayKind::None},
+    {"contents", DisplayKind::Contents},
+    {"inline", DisplayKind::Inline},
+    {"block", DisplayKind::Block},
+    {"flow-root", DisplayKind::FlowRoot},
+    {"list-item", DisplayKind::ListItem},
+    {"flex", DisplayKind::Flex},
+    {"grid", DisplayKind::Grid},
+    {"table", DisplayKind::Table},
+    {"table-row-group", DisplayKind::TableRowGroup},
+    {"table-header-group", DisplayKind::TableHeaderGroup},
+    {"table-footer-group", DisplayKind::TableFooterGroup},
+    {"table-row", DisplayKind::TableRow},
+    {"table-cell", DisplayKind::TableCell},
+    {"table-caption", DisplayKind::TableCaption},
+    {"table-column", DisplayKind::TableColumn},
+    {"table-column-group", DisplayKind::TableColumnGroup},
+    {"inline-block", DisplayKind::InlineBlock},
+    {"inline-flex", DisplayKind::InlineFlex},
+    {"inline-grid", DisplayKind::InlineGrid},
+    {"inline-table", DisplayKind::InlineTable},
+};
+
+} // namespace
+
+DisplayKind parse_display(std::string_view value) {
+    // Trim and lowercase in place rather than allocating: this runs once per
+    // element per build.
+    const auto ws = [](char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
+    };
+    size_t b = 0, e = value.size();
+    while (b < e && ws(value[b])) ++b;
+    while (e > b && ws(value[e - 1])) --e;
+    value = value.substr(b, e - b);
+    if (value.empty()) return DisplayKind::Inline;
+
+    for (const DisplayEntry& d : kDisplays) {
+        const std::string_view name(d.name);
+        if (name.size() != value.size()) continue;
+        bool eq = true;
+        for (size_t i = 0; i < name.size(); ++i) {
+            char c = value[i];
+            if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+            if (c != name[i]) { eq = false; break; }
+        }
+        if (eq) return d.kind;
+    }
+    // An unrecognised display behaves as the initial value rather than
+    // suppressing the box — a typo should not delete content.
+    return DisplayKind::Inline;
+}
+
+const char* display_name(DisplayKind d) {
+    for (const DisplayEntry& e : kDisplays) {
+        if (e.kind == d) return e.name;
+    }
+    return "inline";
+}
+
+bool is_table_display(DisplayKind d) {
+    switch (d) {
+        case DisplayKind::Table:
+        case DisplayKind::InlineTable:
+        case DisplayKind::TableRowGroup:
+        case DisplayKind::TableHeaderGroup:
+        case DisplayKind::TableFooterGroup:
+        case DisplayKind::TableRow:
+        case DisplayKind::TableCell:
+        case DisplayKind::TableCaption:
+        case DisplayKind::TableColumn:
+        case DisplayKind::TableColumnGroup:
+            return true;
+        default:
+            return false;
+    }
+}
+
 } // namespace weva
