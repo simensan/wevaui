@@ -1,6 +1,7 @@
 #include "weva/cascade.h"
 
 #include "weva/css_value.h"
+#include "weva/env_attr.h"
 #include "weva/dom.h"
 #include "weva/variable_resolver.h"
 
@@ -380,12 +381,38 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         }
     }
 
-    // 3. Link the inherit chain, then resolve var().
+    // 3. Link the inherit chain, then resolve attr(), env() and var().
     //
     // The link must come FIRST: var() reads custom properties through it, so
     // `color: var(--ink)` sees an ancestor's --ink without this style having
     // to copy every ancestor custom property into itself.
     out->set_inherit_parent(parent);
+
+    // attr() and env() run BEFORE var(), so a custom property whose value is
+    // `attr(data-x)` or `env(safe-area-inset-top)` is already substituted by
+    // the time a var() reference reads it.
+    {
+        std::vector<std::pair<int, std::string>> rewrites;
+        std::vector<int> env_drops;
+        for (int id : out->set_ids()) {
+            std::string raw(out->get(id));
+            bool changed = false;
+            if (raw.find("attr(") != std::string::npos || raw.find("ATTR(") != std::string::npos) {
+                raw = resolve_attr(raw, e);
+                changed = true;
+            }
+            if (raw.find("env(") != std::string::npos || raw.find("ENV(") != std::string::npos) {
+                std::string resolved;
+                if (!resolve_env(raw, &resolved)) { env_drops.push_back(id); continue; }
+                raw = std::move(resolved);
+                changed = true;
+            }
+            if (changed) rewrites.emplace_back(id, std::move(raw));
+        }
+        for (auto& r : rewrites) out->set(r.first, r.second);
+        // An env() with no usable fallback taints its declaration, same as var().
+        for (int id : env_drops) out->unset(id);
+    }
     {
         std::vector<std::pair<int, std::string>> rewrites;
         std::vector<int> drops;

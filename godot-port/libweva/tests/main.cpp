@@ -25,6 +25,9 @@ void test_supports();
 void test_conditional_rules_in_cascade();
 void test_pseudo_elements();
 void test_match_cache();
+void test_env();
+void test_attr();
+void test_env_attr_in_cascade();
 int main() {
     test_arena();
     test_intern();
@@ -52,6 +55,9 @@ int main() {
     test_conditional_rules_in_cascade();
     test_pseudo_elements();
     test_match_cache();
+    test_env();
+    test_attr();
+    test_env_attr_in_cascade();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

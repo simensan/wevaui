@@ -486,6 +486,39 @@ outlives its walk must not keep the pointer. Recorded in the header.
 **Still no full performance claim.** The 0.08 ms `:hover` figure belongs to
 incremental invalidation, which is not done — this is a cold-pass number.
 
+**`env()` and `attr()` done.** 1098 checks green. Both run *before* `var()`, so a
+custom property whose value is `attr(data-x)` or `env(safe-area-inset-top)` is
+already substituted by the time a `var()` reference reads it.
+
+The three resolvers deliberately do **not** share failure semantics, and the
+difference is load-bearing:
+
+| | unresolvable, no fallback |
+|---|---|
+| `var()` | invalid at computed-value time → declaration dropped |
+| `env()` | same — taints the declaration |
+| `attr()` | **falls back to the empty string** |
+
+`attr()`'s leniency is the older CSS 2.1 behaviour the C# implements, not the
+Values L5 rules. Reproduced rather than "fixed", and tested explicitly so the
+asymmetry is visible rather than looking like an oversight.
+
+`safe-area-inset-{top,right,bottom,left}` are pre-seeded to `0px`, so
+`padding-top: env(safe-area-inset-top)` works on a host with no notch instead
+of being unresolvable and dropping the declaration.
+
+Two bugs of mine, both caught by test:
+
+* **Nested `env()` fallbacks kept the separator's whitespace** —
+  `env(a, env(b))` yielded `" 44px"`. The C# trims at the same point.
+* **`%g` at low precision emits scientific notation.** My shortest-round-trip
+  search tried increasing precision and accepted the first form that
+  round-tripped — but `%.1g` turns `10` into `"1e+01"`, which *does* round-trip.
+  So `attr(data-len length)` produced `1e+01px`. Replaced with `std::to_chars`,
+  which gives the shortest round-trip form and only uses an exponent when that
+  is genuinely shorter. A plausible-looking shortcut that silently corrupts
+  every attr-derived dimension.
+
 ### The demo's stylesheet opts out of the cache entirely
 
 Worth knowing before anyone benchmarks against it: `randhtml.css` contains three
@@ -505,7 +538,7 @@ either; it comes from PerfBench's own scenes. **Comparing the two engines on
   needs per-element container sizes that only the layout engine can supply;
   applying is the less-wrong default for a UI toolkit, and it is recorded here
   rather than left to be discovered.
-* ~~`var()` is unresolved~~ — **done**, see below. `env()` and `attr()` remain.
+* ~~`var()` is unresolved~~ — **done**. `env()` and `attr()` **also done**.
 * `@property`'s `inherits: false` is not honoured; custom properties inherit
   unconditionally.
 
