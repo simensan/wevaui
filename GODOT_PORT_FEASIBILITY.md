@@ -209,7 +209,91 @@ worth doing.
 If the Unity package is instead going to be frozen or retired, ignore this and
 port straight to GDExtension.
 
-## 7. Recommendation
+## 7. Prior art: what already exists for Godot
+
+Checked August 2026. There is no shortage of "HTML/CSS UI in Godot" projects,
+but they fall into three groups and none of them occupy Weva's position.
+
+### Group 1 — Webview wrappers (real HTML/CSS, not really UI)
+
+[**Godot WRY**](https://github.com/doceazedo/godot_wry) (MIT, native system
+webview) and [**godot-webview**](https://godotwebview.com/) (Chromium/Qt,
+LGPL-3.0, now free under an indie license) embed a browser and show a web page.
+
+Full CSS fidelity, obviously — it *is* a browser. But it is a separate rendering
+surface: it does not composite with game content, does not live in the scene
+tree as Control nodes, carries a browser's memory footprint, has input/focus
+friction, and is desktop-only (Windows/Mac/Linux — no consoles, no meaningful
+mobile). Fine for a launcher, a settings panel, or a tool. Not an in-game HUD.
+
+### Group 2 — Ultralight wrapper
+
+[**Godot-HTML**](https://github.com/Decapitated/Godot-HTML) (LGPL-3.0, 125
+stars, Godot 4.3+) wraps [Ultralight](https://ultralig.ht/), a WebKit-derived
+renderer. Real CSS and JS, much lighter than Chromium.
+
+The blocker is commercial: Ultralight is free under $100K annual revenue, then
+**$3,000/year per application**, and the standard tier is PC-only (consoles need
+enterprise licensing). The Godot binding additionally lists no GPU-accelerated
+rendering, no WebP, and no HTML5 video/audio.
+
+### Group 3 — Native reimplementations (Weva's actual category)
+
+[**RmlUi**](https://github.com/mikke89/RmlUi) — MIT, 4.4k stars, ~2,740 commits.
+The serious one, and the closest thing to prior art for exactly what §1–6
+proposes: a mature C++ HTML/CSS-like UI library that emits vertices, indices and
+draw commands for you to render. There is a
+[**Godot-RmlUi**](https://github.com/ashifolfi/Godot-RmlUi) GDExtension, but at
+11 stars / 19 commits it is explicitly WIP — its own TODO still lists GDScript
+element modification, the font system, and editor rendering.
+
+**But RmlUi is a dialect, not the web.** It implements RML and RCSS, states it
+supports "most of CSS2 with some CSS3 features", and explicitly disclaims
+compliance: *"We do not aim to be fully compliant with CSS or HTML, in
+particular when it conflicts with lightness and performance."* Its feature list
+covers flexbox and media queries. It does **not** do CSS Grid, floats, tables,
+multicol, or container queries.
+
+[**GTML**](https://github.com/Niekvdm/godot-plugins-gtml) — a GDScript plugin
+(88 stars) that maps HTML/CSS onto native Control nodes with Vue-style
+reactivity. Advertises 20+ elements, 80+ CSS properties, flexbox, transitions,
+`:hover`/`:focus`, gradients, SVG, `v-if`/`v-for`/`v-model`. Genuinely nice
+ergonomics, and the reactivity story is ahead of Weva's. But it is GDScript
+(performance ceiling), Control-node-based (layout is Godot's, approximated to
+look like CSS), and flexbox-only.
+
+### Where that leaves Weva
+
+The gap is specific and real. Nothing in the Godot ecosystem is
+**native + MIT + actual HTML/CSS + grid-capable**:
+
+| | Real HTML/CSS | Grid / floats / tables / multicol | Container queries | Native (no browser) | License |
+|---|---|---|---|---|---|
+| Godot WRY / godot-webview | yes | yes | yes | **no** | MIT / LGPL |
+| Godot-HTML (Ultralight) | yes | yes | yes | yes | **$3k/yr >$100k rev** |
+| RmlUi | **no** (RML/RCSS) | **no** | **no** | yes | MIT |
+| GTML | partial | **no** (flexbox only) | **no** | yes (GDScript) | open source |
+| Weva | yes | **yes** | **yes** | yes | MIT |
+
+Weva additionally carries the conformance work none of these have: ~10,500
+tests, `CONFORMANCE.md` tracking spec deltas property by property, and
+Chrome-diffed layout baselines. And the README's core pitch — HTML/CSS *that
+LLMs already know*, no dialect to learn — is precisely what RmlUi's RML/RCSS
+gives up.
+
+**Read the competitive signal both ways, though.** RmlUi at 4.4k stars proves
+there is real demand for HTML/CSS-style game UI. It also proves that a
+*dialect with no grid* satisfies most of that demand. The people who need real
+CSS Grid, subgrid, container queries and Chrome-matching layout are a subset —
+and the AI-authoring angle is the argument that the subset is growing.
+
+**One concrete tactical win:** Godot-RmlUi is MIT and does exactly the Godot-side
+plumbing the port needs — draw commands onto CanvasItem layers, input via
+`_gui_input`, textures via Godot resources, filesystem integration. Nineteen
+commits is small enough to read in an afternoon and it de-risks the backend
+layer. Read it before writing any of §3.
+
+## 8. Recommendation
 
 Feasible, correct choice of technology for the stated goal, but go in knowing it
 is a 12–24 person-month core translation, not a backend swap.
@@ -228,11 +312,14 @@ If it proceeds:
 6. Text stack (FreeType/HarfBuzz directly, or Godot's `TextServer`), then the
    batched GPU backend + shaders, then the editor plugin.
 
-A cheaper intermediate, if the goal is to *validate demand* rather than ship:
-do the C# port first (~24k LOC, mostly backend work you'd need anyway), prove
-people want HTML/CSS UI in Godot, then fund the C++ rewrite. The C# version
-can't reach GDScript users or non-.NET builds — but it answers the market
-question for a fraction of the cost.
+§7 changes the framing of the cheap-intermediate option. RmlUi's 4.4k stars
+already answer "do Godot users want HTML/CSS UI?" — yes. The open question is
+narrower: *do enough of them need real CSS (grid, container queries,
+Chrome-matching layout) to justify 12–24 person-months over an existing MIT
+dialect that ships today?* A C# port doesn't answer that question either, since
+it can't reach GDScript or non-.NET users. Better probes: put a Weva-vs-RmlUi
+feature comparison in front of the Godot UI community, or ship a small
+grid-and-container-query demo, before funding the translation.
 
 ---
 
