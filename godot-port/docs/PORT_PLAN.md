@@ -932,12 +932,12 @@ test, because the pair is exactly the kind of thing a port silently unifies.
 **A border-width that fails to parse is 0, not the initial `medium`.** A border
 that could not be understood should not appear.
 
-**The box shorthand is a fallback, not an override.** `padding` is consulted
-only when all four longhands are still at their initial value — so
-`{ padding: 5px; padding-left: 20px }` gives left 20px and the other three
-**0**, not 5px. That follows from shorthand expansion not happening at cascade
-time, and it is a real divergence from a browser, pinned by test. The split is
-paren-depth aware so `padding: calc(1px + 2px) 8px` stays two tokens.
+**The box shorthand is a fallback, not an override** — in this function. I
+recorded here that the resulting behaviour matched the reference. **It does
+not**, and the correction is in the block-layout section below: the C# cascade
+expands shorthands, so `BoxSides`'s fallback is nearly dead code there. The
+split itself is paren-depth aware, so `padding: calc(1px + 2px) 8px` stays two
+tokens.
 
 ### An `em` chain that stops compounding after two levels
 
@@ -958,6 +958,71 @@ whether it reaches the same numbers end-to-end depends on the cascade storing
 specified rather than computed values for inherited properties, which it does.
 It is the first candidate divergence found in Phase 4 and the first one where
 the right answer might be to change *both* engines.
+
+**Box model done** (the `ApplyBoxModel` half of `BlockLayout.cs`). 1602 checks
+green across gcc 13, clang 18, ASan+UBSan+LSan and Release. Padding, border and
+margin edges, the used width, and a definite height where one exists — the first
+slice that produces real geometry.
+
+The details that carry it:
+
+* **`box.width` and `box.height` are always BORDER-box**, because paint and hit
+  testing treat them as the outer rect. Under the default `content-box` sizing
+  the frame is added before stamping, and min-/max-width share width's basis, so
+  a content-box bound also needs the frame added before it is compared.
+* **Percentage padding and margin resolve against the containing block's WIDTH
+  on every edge** — `margin-top: 10%` of a 400px-wide block is 40px, not a
+  fraction of its height.
+* **`min` beats `max` when they conflict** (CSS Sizing L3 §5.2), which falls out
+  of applying max first and min second rather than needing a special case.
+* **A border edge whose style is `none` or `hidden` is zero wide** whatever
+  border-width says. Since `none` is the initial border-style, setting only
+  border-width gives no border — correct, and a frequent surprise.
+* **Auto-margin centring needs free space to distribute.** A still-filling auto
+  width does not centre; an auto width that a max-width clamp shrank below its
+  fill width does, which is the `width:auto; max-width:X; margin:0 auto`
+  pattern. Floats, inline-blocks and out-of-flow boxes are excluded — the C#
+  carries a note that without the out-of-flow exclusion, `position:absolute;
+  left:50%; margin:0 auto` gets the in-flow centring margin added to its offset
+  and lands far off centre.
+* **`aspect-ratio` derives the width as a BORDER-box value directly**, with no
+  frame added, measured against the authored (content) height. That is not what
+  `box-sizing` would suggest, and it is pinned by test as the reference's
+  behaviour rather than tidied.
+
+### The gap Phase 4 exposed in Phase 3: shorthand expansion
+
+The C# cascade expands every shorthand into its longhands — 26 expanders,
+~2,600 LOC under `Css/Cascade/Shorthands/` — inside `compute()`, and **drops the
+shorthand declaration**. Each emitted longhand carries the shorthand's full
+cascade key (origin, specificity, source index, in-rule index, layer), so
+ordinary source order settles conflicts between a shorthand and a longhand.
+
+This port has none of it, and I did not know that until the box model needed
+`border-top-width` and got nothing. Three consequences:
+
+* `{ padding: 5px; padding-left: 20px }` gives 5/5/5/20 in the C# and in a
+  browser. Here it gives **0/0/0/20**, because one non-initial longhand
+  suppresses the whole `BoxSides` fallback.
+* `border: solid 5px` sets **nothing**, because nothing writes
+  `border-*-style`, and a zero border-style zeroes the edge.
+* `StyleResolver.BoxSides`, which I ported last tick as the mechanism for
+  shorthands, is in the C# only the path taken when expansion *fails*.
+
+**The correction that matters most is to my own record.** Last tick I wrote here
+that `BoxSides`'s longhand-suppresses-shorthand behaviour was "a real divergence
+from a browser" — implying the reference shared it. It does not; the reference
+behaves like a browser, and the divergence is mine. That entry is now corrected
+in place.
+
+`test_shorthand_expansion_gap` pins the current behaviour in the suite, with the
+browser/C# answer written next to each assertion, so the gap is visible where
+the work happens and not only in this document. Those assertions are meant to
+fail when expansion lands.
+
+**Shorthand expansion is now the top-priority slice** — ahead of the rest of
+block layout. Every box-model number depends on it, and any oracle run before it
+lands would report a flood of differences with one cause.
 
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 

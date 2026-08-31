@@ -55,6 +55,12 @@ void test_font_size_em_chain_limit();
 void test_line_height_resolution();
 void test_box_sides();
 void test_aspect_ratio_and_direction();
+void test_box_model_edges();
+void test_box_model_width();
+void test_box_model_min_max();
+void test_box_model_height_and_position();
+void test_auto_margin_centering();
+void test_shorthand_expansion_gap();
 int main() {
     test_arena();
     test_intern();
@@ -112,6 +118,12 @@ int main() {
     test_line_height_resolution();
     test_box_sides();
     test_aspect_ratio_and_direction();
+    test_box_model_edges();
+    test_box_model_width();
+    test_box_model_min_max();
+    test_box_model_height_and_position();
+    test_auto_margin_centering();
+    test_shorthand_expansion_gap();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }
