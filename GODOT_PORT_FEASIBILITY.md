@@ -274,6 +274,28 @@ ergonomics, and the reactivity story is ahead of Weva's. But it is GDScript
 (performance ceiling), Control-node-based (layout is Godot's, approximated to
 look like CSS), and flexbox-only.
 
+### Aside: RmlUi's flexbox is good, and that matters
+
+Worth stating plainly, because it narrows the differentiation story. RmlUi's
+[documented flexbox deviations](https://mikke89.github.io/RmlUiDoc/pages/rcss/flexboxes.html)
+and Weva's own (`CONFORMANCE.md` §"Layout (flex)") are close to the same list:
+
+| Deviation | RmlUi | Weva |
+|---|---|---|
+| Text in a flex container doesn't become an anonymous flex item | yes | **yes** — "falls into normal anonymous-block flow" |
+| Stretched/resized items not re-formatted internally | yes | **yes** — "the box is resized but its interior is not re-flowed" |
+| Automatic minimum sizing simplified | column-mode only | single-pass, no clamp loop |
+| Baseline alignment | "only approximate" | real baselines in row-flex; synthesised in column |
+| `order` | **not supported** | supported |
+| `flex-basis: content` | **not supported** | supported |
+
+So flexbox is roughly a wash — Weva is somewhat ahead on `order`, `flex-basis:
+content` and baselines, and has 278+ flex tests behind it, but this is not the
+axis on which the two projects differ. **The differentiators are narrower than
+"better CSS": real HTML/CSS instead of a dialect, Grid and subgrid, container
+queries, and the conformance corpus.** Argue the case on those, not on general
+CSS quality.
+
 ### Where that leaves Weva
 
 The gap is narrower than it first looks, but it is real. Nothing in the Godot
@@ -347,11 +369,12 @@ differentiators you would have to:
 
 1. **Implement CSS Grid inside someone else's layout engine.** Grid is the
    hardest layout algorithm in CSS — 4,848 LOC in Weva, written by whoever knows
-   Weva's box model. Calibration: RmlUi's *flexbox* support "has been in the
-   works for a few months" and shipped alongside "a big rewrite of the layout
-   engine... to ensure improved CSS conformance and much better
-   maintainability" — and that was the maintainer working in his own code.
-   Grid is harder, and you would be the outsider.
+   Weva's box model. Calibration on *effort, not quality*: RmlUi's flexbox
+   support "has been in the works for a few months" and shipped alongside "a big
+   rewrite of the layout engine... to ensure improved CSS conformance and much
+   better maintainability" — and that was the maintainer working in his own
+   code. Grid is a harder algorithm and you would be the outsider. (On quality,
+   see the flexbox comparison in §7 — RmlUi's is good.)
 2. **Add container queries**, which touch the cascade, not just layout.
 3. **Replace RML/RCSS parsing with real HTML/CSS**, including reconciling the
    structural deviations (decorators vs `background-image`, `border` excluding
