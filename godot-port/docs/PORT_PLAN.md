@@ -198,6 +198,40 @@ rather than from the reference. Three worth keeping:
 For a differential port, "what does the reference actually do" is a question to
 answer by reading or running it, never by recall.
 
+**CSS parser core done** (`CssParser.cs`, the style-rule / declaration path).
+349 checks green across gcc / clang / ASan+UBSan+LSan; the demo stylesheet
+parses clean in strict mode into 126 top-level rules, 128 style rules,
+4 at-rules and 485 declarations.
+
+Declaration values are **reconstructed from tokens**, not sliced from source
+(`css_token_source`), so any drift there changes every value the cascade sees —
+it is tested directly. `!important` uses the last top-level `!`, because the C#
+loop overwrites its candidate rather than breaking, so `1px !x !important`
+keeps `!x` in the value.
+
+Deferred, not lost: the specialised at-rules (`@font-face`, `@property`,
+`@scope`, `@layer`, `@keyframes`, `@import`) land as `GenericAtRule` with
+prelude and body preserved, so they can be promoted to real types without
+re-parsing. `NestingExpander` is also not yet ported — the nested-rule tree is
+kept as parsed.
+
+### A third C#/Chrome divergence, same handling
+
+**An empty declaration value swallows the following declaration.**
+`TryParseDeclaration` consumes the terminating `;` *before* it checks
+`sawNonWs`, so when it then returns false the caller's `SkipDeclaration` starts
+after that semicolon and runs to the next one. `a{color:;margin:0}` therefore
+drops **both** declarations; Chrome keeps `margin:0`. An empty value at the end
+of a block loses only itself, which is why this is easy to miss.
+
+Reproduced rather than fixed, per the standing rule. Add to the same review as
+the adoption-agency divergence.
+
+**Tally: 12 wrong test expectations, 0 port bugs.** One of them segfaulted the
+suite — a `CHECK` on `declarations.size() == 1` recorded a failure without
+short-circuiting, and the next line indexed the empty vector. The test helpers
+are now bounds-checked and return null rather than indexing off the end.
+
 ## Phase 3 — Cascade and selectors (~12k LOC)
 
 `Runtime/Css/Cascade` (12,340) plus selectors, media and container queries. Port
