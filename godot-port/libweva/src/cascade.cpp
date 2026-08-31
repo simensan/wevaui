@@ -22,6 +22,9 @@ int compare_important_origin(DeclarationOrigin a, DeclarationOrigin b) {
 }
 int cmp_int(int a, int b) { return a < b ? -1 : (a > b ? 1 : 0); }
 
+void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
+                       bool* has_has, bool* folds_index);
+
 } // namespace
 
 int compare_for_cascade(const MatchedDeclaration& x, const MatchedDeclaration& y) {
@@ -66,6 +69,181 @@ int compare_for_cascade(const MatchedDeclaration& x, const MatchedDeclaration& y
 void CascadeEngine::clear() {
     rules_.clear();
     pseudo_rules_.clear();
+    shape_cache_.clear();
+    cache_unsafe_sibling_composition_ = false;
+    cache_unsafe_has_ = false;
+    shape_key_folds_sibling_index_ = false;
+}
+
+namespace {
+
+constexpr uint64_t kFnvOffset = 14695981039346656037ULL;
+constexpr uint64_t kFnvPrime = 1099511628211ULL;
+
+uint64_t hash_str(std::string_view s) {
+    uint64_t h = kFnvOffset;
+    for (char c : s) {
+        h ^= static_cast<unsigned char>(c);
+        h *= kFnvPrime;
+    }
+    return h;
+}
+
+// Commutative XOR so the order tokens appear in the class attribute cannot
+// shift the hash — `class="a b"` and `class="b a"` must share a key.
+uint64_t hash_class_tokens(std::string_view classes) {
+    uint64_t acc = 0;
+    std::size_t i = 0;
+    auto ws = [](char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
+    };
+    while (i < classes.size()) {
+        while (i < classes.size() && ws(classes[i])) ++i;
+        std::size_t start = i;
+        while (i < classes.size() && !ws(classes[i])) ++i;
+        if (i > start) acc ^= hash_str(classes.substr(start, i - start));
+    }
+    return acc;
+}
+
+// Walks a compound sequence looking for constructs that make a per-element
+// shape key unsound or incomplete.
+void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
+                       bool* has_has, bool* folds_index);
+
+void classify_compound(const CompoundSelector& c, bool* unsafe_sibling,
+                       bool* has_has, bool* folds_index) {
+    for (const auto& part : c.parts) {
+        if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+        const auto& pc = static_cast<const PseudoClassSelector&>(*part);
+        switch (pc.kind) {
+            // Index-positional: the key must additionally fold sibling index
+            // and count, or `li:nth-child(odd)` serves the first row's match
+            // set to every identical sibling and zebra striping paints every
+            // row.
+            case PseudoClassKind::NthChild:
+            case PseudoClassKind::NthLastChild:
+            case PseudoClassKind::FirstChild:
+            case PseudoClassKind::LastChild:
+            case PseudoClassKind::OnlyChild:
+            case PseudoClassKind::Empty:
+                *folds_index = true;
+                break;
+            // Of-type pseudos depend on which TAGS precede the element, which
+            // no per-element key can represent.
+            case PseudoClassKind::FirstOfType:
+            case PseudoClassKind::LastOfType:
+            case PseudoClassKind::OnlyOfType:
+            case PseudoClassKind::NthOfType:
+            case PseudoClassKind::NthLastOfType:
+                *unsafe_sibling = true;
+                break;
+            // :has() depends on DESCENDANT content the key cannot represent,
+            // and a descendant mutation cannot invalidate an ancestor entry —
+            // the key is a hash with no reverse index.
+            case PseudoClassKind::Has:
+                *has_has = true;
+                break;
+            default:
+                break;
+        }
+        for (const auto& inner : pc.inner_list) {
+            classify_selector(*inner, unsafe_sibling, has_has, folds_index);
+        }
+        for (const auto& inner : pc.nth_of_filter) {
+            classify_selector(*inner, unsafe_sibling, has_has, folds_index);
+        }
+    }
+}
+
+void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
+                       bool* has_has, bool* folds_index) {
+    for (Combinator cb : seq.combinators) {
+        // `p + p` / `p ~ p`: the match depends on preceding-sibling
+        // composition, not just this element's own shape.
+        if (cb == Combinator::AdjacentSibling || cb == Combinator::GeneralSibling) {
+            *unsafe_sibling = true;
+        }
+    }
+    for (const auto& c : seq.compounds) {
+        classify_compound(c, unsafe_sibling, has_has, folds_index);
+    }
+}
+
+const Element* parent_el(const Element& e) {
+    const Node* p = e.parent();
+    return (p && p->is_element()) ? static_cast<const Element*>(p) : nullptr;
+}
+
+} // namespace
+
+uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
+                                              const ElementStateProvider& state) const {
+    // 0 means "do not cache". Every opt-out below exists because sharing would
+    // otherwise serve one element's match set to a genuinely different element.
+
+    // Inline style is per-element and invisible to a tag/class/attribute key.
+    if (e.has_attribute("style")) return 0;
+    // Sibling composition and :has() are unrepresentable in a per-element key.
+    if (cache_unsafe_sibling_composition_) return 0;
+    if (cache_unsafe_has_) return 0;
+
+    uint64_t h = kFnvOffset;
+    h ^= hash_str(e.tag_name()); h *= kFnvPrime;
+    h ^= hash_str(e.id());       h *= kFnvPrime;
+    h ^= hash_class_tokens(e.class_name()); h *= kFnvPrime;
+
+    // Attributes fold NAME AND VALUE: [data-state="open"] and
+    // [data-state="closed"] must not share a key. class/id are folded above.
+    uint64_t attr_hash = 0;
+    const AttributeMap& attrs = e.attributes();
+    for (std::size_t i = 0; i < attrs.size(); ++i) {
+        std::string_view n = attrs.name_at(i);
+        if (n == "class" || n == "id") continue;
+        attr_hash ^= hash_str(n) * 2654435761ULL;
+        attr_hash ^= hash_str(attrs.value_at(i)) * kFnvOffset;
+    }
+    h ^= attr_hash; h *= kFnvPrime;
+
+    // Index-positional pseudos need sibling position folded in.
+    if (shape_key_folds_sibling_index_) {
+        const Node* p = e.parent();
+        int index = 0, count = 0;
+        if (p) {
+            for (const auto& c : p->children()) {
+                if (!c->is_element()) continue;
+                ++count;
+                if (c.get() == &e) index = count;
+            }
+        }
+        h ^= static_cast<uint64_t>(index) * 2654435761ULL; h *= kFnvPrime;
+        h ^= static_cast<uint64_t>(count) * 40503ULL;      h *= kFnvPrime;
+        h ^= static_cast<uint64_t>(e.children().size()) * 2246822519ULL;
+        h *= kFnvPrime;
+    }
+
+    // The FULL ancestor chain, plus ancestor state bits.
+    //
+    // The parent's own match set is not enough: a rule like `.parent #c`
+    // matches only the descendant, so flipping the ancestor between `.parent`
+    // and `.other` leaves the ancestor's own matches unchanged while changing
+    // the child's. Likewise `div:hover span` puts the state on the LEFT of a
+    // combinator, so the span's own state is irrelevant but the parent's is not.
+    for (const Element* a = parent_el(e); a; a = parent_el(*a)) {
+        uint64_t anc = 0;
+        anc ^= hash_str(a->tag_name());
+        anc ^= hash_str(a->id()) * 257ULL;
+        anc ^= hash_class_tokens(a->class_name());
+        anc ^= static_cast<uint64_t>(state.state_of(*a)) * 2654435761ULL;
+        h ^= anc;
+        h *= kFnvPrime;
+    }
+
+    // The element's own state bits.
+    h ^= static_cast<uint64_t>(state.state_of(e)) * 40503ULL;
+    h *= kFnvPrime;
+
+    return h == 0 ? 1 : h;   // never collide with the "do not cache" sentinel
 }
 
 void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
@@ -79,6 +257,11 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 // A selector that fails to parse drops its rule rather than the
                 // sheet, matching the C#'s per-rule error containment.
                 if (!parse_selector(sel_text, &cs, &err)) continue;
+                // Classify BEFORE moving: the shape cache's soundness depends
+                // on spotting sibling-composition and :has() selectors anywhere
+                // in the sheet.
+                classify_selector(cs.sequence, &cache_unsafe_sibling_composition_,
+                                  &cache_unsafe_has_, &shape_key_folds_sibling_index_);
                 const std::string* pseudo = cs.sequence.pseudo_element();
                 std::string pseudo_name = pseudo ? *pseudo : std::string();
                 CompiledRule cr;
@@ -124,6 +307,18 @@ void CascadeEngine::add_stylesheet(const Stylesheet* sheet, DeclarationOrigin or
 
 std::vector<MatchedDeclaration> CascadeEngine::collect_matches(
     const Element& e, const ElementStateProvider& state) const {
+    const uint64_t key = try_compute_shape_key(e, state);
+    if (key != 0) {
+        auto it = shape_cache_.find(key);
+        if (it != shape_cache_.end()) {
+            ++stats_.hits;
+            return it->second;
+        }
+        ++stats_.misses;
+    } else {
+        ++stats_.skipped;
+    }
+
     std::vector<MatchedDeclaration> out;
     for (const CompiledRule& cr : rules_) {
         if (!selector_matches(cr.selector, e, state)) continue;
@@ -150,6 +345,7 @@ std::vector<MatchedDeclaration> CascadeEngine::collect_matches(
                      [](const MatchedDeclaration& a, const MatchedDeclaration& b) {
                          return compare_for_cascade(a, b) < 0;
                      });
+    if (key != 0) shape_cache_.emplace(key, out);
     return out;
 }
 

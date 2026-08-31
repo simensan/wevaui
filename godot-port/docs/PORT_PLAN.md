@@ -423,16 +423,50 @@ ways that are easy to lose in translation:
 Origin ordering flips the same way: UA < User < Author normally, Author < User <
 UA for `!important`.
 
-### Honest performance note
+### Performance: the match cache landed, and it was the wrong suspect
 
-Cascading the 358-element demo takes **136 ms**. That is roughly 45× slower per
-element than the C# reference (8.3 ms for 1001 elements), and it is **not** a
-translation problem — it is a missing optimisation. `compute()` currently does a
-linear scan of every compiled rule for every element, and the C#'s shape-keyed
-match cache (`CascadeEngine.IncrementalState.cs`, 604 LOC) is not ported yet.
-Until it is, **no performance claim should be made from this build.** The
-zero-alloc arena target and the 0.08 ms `:hover` figure both belong to that
-later slice.
+The shape-keyed match cache is ported and works — on a 1,004-element document
+with repeating shapes it takes **998 of 1,004 lookups from cache**. Total time
+moved from 296 ms to 277 ms.
+
+**Matching was never the bottleneck.** Isolating the one remaining per-element
+step gives the answer:
+
+```
+initial-value fill alone: 1004 elements x 334 properties = 342 ms
+```
+
+That is the entire runtime. `compute()` writes all 334 registered initial values
+into a fresh `ComputedStyle` for every element — ~335,000 `std::string`
+assignments per pass — and every other cost is noise beside it.
+
+Two consequences worth stating plainly:
+
+1. **My earlier diagnosis was wrong.** I attributed the 136 ms to the missing
+   match cache. It wasn't; the cache was a real gap but not this one. The number
+   that mattered was never measured until now.
+2. **The fix is the arena, not a cleverer cache.** The C# avoids this with a
+   pooled `ComputedStyle` plus a bitset-driven inherit walk
+   (`parent & ~child & inheritedMask`) instead of iterating all 334 ids. In C++
+   the arena makes it cheaper still — the initial-value table is immutable and
+   shared, so an unset slot can point at it rather than copying a string per
+   element per property. That is the §10 "the port is the fix" claim finally
+   becoming actionable.
+
+**Still no performance claim from this build.** The 0.08 ms `:hover` figure
+belongs to the incremental-invalidation work, which is not done.
+
+### The demo's stylesheet opts out of the cache entirely
+
+Worth knowing before anyone benchmarks against it: `randhtml.css` contains three
+general-sibling selectors (`#t-inv:checked ~ #panel-inventory` and two siblings
+of it). Sibling composition cannot be represented in a per-element key, so the
+C# disables sharing **sheet-wide** for such a stylesheet — and so does this
+port. All 358 elements report `skipped`.
+
+That means the C#'s 8.3 ms/1001-element figure cannot have come from this demo
+either; it comes from PerfBench's own scenes. **Comparing the two engines on
+`randhtml` would compare two uncached paths.**
 
 ### Known-incomplete, called out rather than left implicit
 
@@ -509,6 +543,27 @@ Three semantics worth recording, each a place a port can be quietly wrong:
 Pseudo rules live in their own buckets keyed by pseudo name, so they are never
 scanned and rejected once per element — and a test pins that they cannot leak
 into ordinary element matching.
+
+**Shape-keyed match cache done.** 1045 checks green. The key folds tag, id,
+classes (commutative XOR, so token order cannot shift it), attribute names *and*
+values, the full ancestor chain including ancestor state bits, and — when the
+sheet uses index-positional pseudos — sibling index and count.
+
+The opt-outs are where the correctness lives, because a wrong cache does not
+fail loudly, it silently serves one element's styles to another. Ported
+faithfully, each with a test:
+
+* **`style=""`** — inline declarations are invisible to a tag/class/attribute key.
+* **Sibling combinators and of-type pseudos** — the match depends on which tags
+  *precede* the element, which no per-element key can represent. Disables
+  sharing sheet-wide.
+* **`:has()`** — depends on descendant content the key cannot see, and a
+  descendant mutation cannot invalidate an ancestor entry (the key is a hash
+  with no reverse index).
+* **Index-positional pseudos** fold sibling index/count into the key rather than
+  opting out. The C# comment records what happens otherwise: `li:nth-child(odd)`
+  serves row 1's match set to every identical sibling and **zebra striping
+  paints every row**. That exact case is now a regression test.
 
 ## Phase 4 — Block and inline layout + software paint (~15k LOC)
 

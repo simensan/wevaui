@@ -58,6 +58,12 @@ public:
     void add_stylesheet(const Stylesheet* sheet, DeclarationOrigin origin);
     void clear();
 
+    // Match-cache statistics, for tests and profiling.
+    struct CacheStats { int64_t hits = 0; int64_t misses = 0; int64_t skipped = 0; };
+    const CacheStats& cache_stats() const { return stats_; }
+    void reset_cache_stats() { stats_ = CacheStats{}; }
+    void invalidate_cache() { shape_cache_.clear(); }
+
     // Collects every declaration matching `e`, already sorted so the last
     // entry wins. Exposed for DevTools-style cascade traces and for tests.
     std::vector<MatchedDeclaration> collect_matches(
@@ -98,7 +104,19 @@ private:
     void compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
                        int* source_index, int layer_ordinal);
 
+    // Shape-keyed match cache. Two elements whose tag/id/classes/attributes
+    // AND whose whole ancestor chain hash identically must match the same rule
+    // set, so the match list can be shared. Getting the key wrong does not
+    // fail loudly — it silently serves one element's styles to another.
+    uint64_t try_compute_shape_key(const Element& e, const ElementStateProvider& state) const;
+
     std::vector<CompiledRule> rules_;
+    mutable std::map<uint64_t, std::vector<MatchedDeclaration>> shape_cache_;
+    mutable CacheStats stats_;
+    // Sheet-wide opt-outs, computed once at rule-compile time.
+    bool cache_unsafe_sibling_composition_ = false;  // `p + p`, :nth-of-type, ...
+    bool cache_unsafe_has_ = false;                  // :has() depends on descendants
+    bool shape_key_folds_sibling_index_ = false;     // :nth-child, :first-child, :empty
     // Pseudo-element rules never match a real element, so they live in their
     // own buckets keyed by pseudo name rather than being scanned and rejected
     // once per element.
