@@ -9,6 +9,7 @@ void test_css_tokenizer();
 void test_css_parser();
 void test_css_value();
 void test_css_color();
+void test_css_calc();
 int main() {
     test_arena();
     test_intern();
@@ -20,6 +21,7 @@ int main() {
     test_css_parser();
     test_css_value();
     test_css_color();
+    test_css_calc();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

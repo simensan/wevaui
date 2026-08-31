@@ -276,10 +276,29 @@ because it looks exactly like an off-by-one someone would "fix".
 Also reproduced: C#'s `FromRgb` takes a single `rgbPercent` flag for all three
 channels, so a mixed `rgb(255, 50%, 0)` follows whatever the *first* channel is.
 
-Still deferred: `calc()` evaluation and `color-mix()` / `oklab()` argument
-interpretation.
+**`calc()` done** (node model, type classification, `+ - * /`, `min`/`max`/
+`clamp`, and the expression parser). 550 checks green.
 
-**Tally: 13 wrong test expectations, 0 port bugs.** One of them segfaulted the
+The subtle rule here is CSS Values 4 §10.1: **`+` and `-` must be surrounded by
+whitespace**, because the tokenizer folds a leading sign into the number. So
+`calc(1px+2px)` arrives as `Dimension("1px")` then `Dimension("+2px")`, and
+`calc(1px -2px)` as two dimensions separated by whitespace — both are errors,
+not additions. `*` and `/` have no such rule. All four cases are pinned.
+
+Also worth noting: `clamp(MIN, VAL, MAX)` is `max(MIN, min(VAL, MAX))`, which is
+**not symmetric** when `MIN > MAX` — the spec makes MIN win, and the operand
+order reproduces that.
+
+Unsupported math functions (`round`, `mod`, `rem`, `pow`, `sqrt`, `log`, `exp`,
+`sign`, `hypot`, trig) are **rejected at parse time** rather than kept as opaque
+values. Silently mis-evaluating `round()` or `sin()` would be far worse than
+refusing the declaration, and the oracle would not catch it — both engines would
+simply be wrong in different ways.
+
+Still deferred: `var()` inside calc (needs the cascade), relative-colour channel
+idents (need the colour parser), and `color-mix()` / `oklab()`.
+
+**Tally: 13 wrong test expectations, 0 port bugs**, plus two stale assertions of my own making: tests written when `rgb()` and `calc()` still round-tripped as generic function calls, which started downcasting to the wrong type once those functions began evaluating. UBSan caught both as bad downcasts rather than letting them read garbage. One of them segfaulted the
 suite — a `CHECK` on `declarations.size() == 1` recorded a failure without
 short-circuiting, and the next line indexed the empty vector. The test helpers
 are now bounds-checked and return null rather than indexing off the end.

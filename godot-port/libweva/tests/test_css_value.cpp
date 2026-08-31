@@ -130,11 +130,10 @@ void test_css_value() {
         CHECK(f->name == "translate" && f->arguments.size() == 2);
         CHECK(near(static_cast<CssLength*>(f->arguments[1].get())->value, 2));
 
+        // calc() is recognised case-insensitively and becomes CssCalc, not a
+        // generic call — see test_css_calc.
         CHECK(v.run("CALC(1px + 2em)"));
-        f = static_cast<CssFunctionCall*>(v.v.get());
-        CHECK(f->name == "calc");                   // name lowercased
-        CHECK(f->arguments.size() == 1);            // one space-separated group
-        CHECK(f->arguments[0]->kind() == CssValueKind::List);
+        CHECK(v.v->kind() == CssValueKind::Calc);
 
         CHECK(v.run("var(--x, 4px)"));
         f = static_cast<CssFunctionCall*>(v.v.get());

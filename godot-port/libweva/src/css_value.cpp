@@ -1,3 +1,4 @@
+#include "weva/css_calc.h"
 #include "weva/css_value.h"
 
 #include <algorithm>
@@ -193,6 +194,7 @@ struct Reader {
     void skip_ws() {
         while (peek().kind == CssTokenKind::Whitespace && i + 1 < toks->size()) ++i;
     }
+    bool ws_ahead() const { return peek().kind == CssTokenKind::Whitespace; }
     std::nullptr_t fail(std::string_view msg, const CssToken& at) {
         failed = true;
         if (error) *error = CssParseError{std::string(msg), at.line, at.column};
@@ -201,6 +203,7 @@ struct Reader {
 };
 
 CssValuePtr parse_single(Reader& r);
+CalcNodePtr parse_calc_expression(Reader& r, int depth);
 
 // Reads a colour-function argument as a number. Percentages report themselves
 // so rgb() can switch to its 0-100 channel scale, and angles are normalised to
@@ -263,8 +266,189 @@ CssValuePtr eval_colour_function(const CssFunctionCall& call) {
     return out;
 }
 
+
+// --- calc() -------------------------------------------------------------------
+
+// Real sheets nest a couple of levels; the cap stops hostile input from
+// recursing the parser off the stack, matching the C#'s MaxCalcDepth.
+constexpr int kMaxCalcDepth = 64;
+
+CalcNodePtr calc_from_value(const CssValue& v) {
+    switch (v.kind()) {
+        case CssValueKind::Length: {
+            auto n = std::make_unique<CalcLengthNode>();
+            n->value = static_cast<const CssLength&>(v).value;
+            n->unit = static_cast<const CssLength&>(v).unit;
+            return n;
+        }
+        case CssValueKind::Number: {
+            auto n = std::make_unique<CalcNumberNode>();
+            n->value = static_cast<const CssNumber&>(v).value;
+            return n;
+        }
+        case CssValueKind::Percentage: {
+            auto n = std::make_unique<CalcPercentageNode>();
+            n->value = static_cast<const CssPercentage&>(v).value;
+            return n;
+        }
+        case CssValueKind::Angle: {
+            auto n = std::make_unique<CalcAngleNode>();
+            n->degrees = static_cast<const CssAngle&>(v).to_degrees();
+            return n;
+        }
+        default:
+            return nullptr;
+    }
+}
+
+CalcNodePtr parse_calc_factor(Reader& r, int depth) {
+    r.skip_ws();
+    const CssToken t = r.peek();
+
+    if (t.kind == CssTokenKind::LParen) {
+        r.advance();
+        CalcNodePtr inner = parse_calc_expression(r, depth + 1);
+        if (!inner) return nullptr;
+        r.skip_ws();
+        if (r.peek().kind == CssTokenKind::RParen) r.advance();
+        return inner;
+    }
+
+    if (t.kind == CssTokenKind::Function) {
+        std::string fn = ascii_lower(t.text);
+        if (fn == "calc") {
+            r.advance();
+            CalcNodePtr inner = parse_calc_expression(r, depth + 1);
+            if (!inner) return nullptr;
+            r.skip_ws();
+            if (r.peek().kind == CssTokenKind::RParen) r.advance();
+            return inner;
+        }
+        CalcMathFn mf;
+        if (fn == "min") mf = CalcMathFn::Min;
+        else if (fn == "max") mf = CalcMathFn::Max;
+        else if (fn == "clamp") mf = CalcMathFn::Clamp;
+        else {
+            // Deferred math functions are REJECTED rather than treated as an
+            // opaque value: silently mis-evaluating round() or sin() would be
+            // far worse than refusing the declaration.
+            r.fail("calc() function '" + fn + "' is not supported yet", t);
+            return nullptr;
+        }
+        r.advance();
+        auto m = std::make_unique<CalcMathNode>();
+        m->fn = mf;
+        r.skip_ws();
+        while (!r.at_end() && r.peek().kind != CssTokenKind::RParen) {
+            CalcNodePtr a = parse_calc_expression(r, depth + 1);
+            if (!a) return nullptr;
+            m->args.push_back(std::move(a));
+            r.skip_ws();
+            if (r.peek().kind == CssTokenKind::Comma) { r.advance(); r.skip_ws(); }
+        }
+        if (r.peek().kind == CssTokenKind::RParen) r.advance();
+        if (m->args.empty()) {
+            r.fail("calc() math function needs at least one argument", t);
+            return nullptr;
+        }
+        return m;
+    }
+
+    CssValuePtr v = parse_single(r);
+    if (!v) return nullptr;
+    CalcNodePtr n = calc_from_value(*v);
+    if (!n) {
+        r.fail("calc() operand must be a number, length, percentage or angle", t);
+        return nullptr;
+    }
+    return n;
+}
+
+CalcNodePtr parse_calc_term(Reader& r, int depth) {
+    CalcNodePtr left = parse_calc_factor(r, depth);
+    if (!left) return nullptr;
+    for (;;) {
+        std::size_t saved = r.i;
+        r.skip_ws();
+        const CssToken t = r.peek();
+        if (t.kind != CssTokenKind::Delim || (t.text != "*" && t.text != "/")) {
+            r.i = saved;
+            break;
+        }
+        r.advance();
+        CalcNodePtr right = parse_calc_factor(r, depth);
+        if (!right) return nullptr;
+        auto b = std::make_unique<CalcBinaryNode>();
+        b->op = (t.text == "*") ? CalcOp::Mul : CalcOp::Div;
+        b->left = std::move(left);
+        b->right = std::move(right);
+        left = std::move(b);
+    }
+    return left;
+}
+
+CalcNodePtr parse_calc_expression(Reader& r, int depth) {
+    if (depth > kMaxCalcDepth) {
+        r.fail("calc() nesting too deep", r.peek());
+        return nullptr;
+    }
+    CalcNodePtr left = parse_calc_term(r, depth);
+    if (!left) return nullptr;
+
+    for (;;) {
+        bool ws_before = r.ws_ahead();
+        r.skip_ws();
+        if (r.at_end()) break;
+        const CssToken t = r.peek();
+
+        // CSS Values 4 §10.1: '+' and '-' MUST be surrounded by whitespace,
+        // because the tokenizer folds a leading sign into the number. So
+        // `calc(1px+2px)` arrives as Dimension("1px") then Dimension("+2px"),
+        // and `calc(1px -2px)` as Dimension("1px"), ws, Dimension("-2px") —
+        // both are errors, not additions.
+        if (t.kind == CssTokenKind::Dimension || t.kind == CssTokenKind::Number ||
+            t.kind == CssTokenKind::Percentage) {
+            if (!t.text.empty() && (t.text[0] == '+' || t.text[0] == '-')) {
+                r.fail(std::string("calc() requires whitespace around '") + t.text[0] + "'", t);
+                return nullptr;
+            }
+            break;
+        }
+        if (t.kind != CssTokenKind::Delim) break;
+        if (t.text != "+" && t.text != "-") break;
+        if (!ws_before) {
+            r.fail("calc() requires whitespace around '" + t.text + "'", t);
+            return nullptr;
+        }
+        r.advance();
+        if (!r.ws_ahead()) {
+            r.fail("calc() requires whitespace around '" + t.text + "'", t);
+            return nullptr;
+        }
+        CalcNodePtr right = parse_calc_term(r, depth);
+        if (!right) return nullptr;
+        auto b = std::make_unique<CalcBinaryNode>();
+        b->op = (t.text == "+") ? CalcOp::Add : CalcOp::Sub;
+        b->left = std::move(left);
+        b->right = std::move(right);
+        left = std::move(b);
+    }
+    return left;
+}
+
 CssValuePtr parse_function(Reader& r) {
     const CssToken fn = r.peek();
+    if (ascii_lower(fn.text) == "calc") {
+        r.advance();
+        CalcNodePtr node = parse_calc_expression(r, 0);
+        if (!node) return nullptr;
+        r.skip_ws();
+        if (r.peek().kind == CssTokenKind::RParen) r.advance();
+        auto c = std::make_unique<CssCalc>();
+        c->expression = std::move(node);
+        c->raw = fn.text + "(";
+        return c;
+    }
     r.advance();
     auto call = std::make_unique<CssFunctionCall>();
     call->name = ascii_lower(fn.text);
