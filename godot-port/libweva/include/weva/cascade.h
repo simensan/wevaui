@@ -72,6 +72,9 @@ private:
                        int* source_index, int layer_ordinal);
 
     std::vector<CompiledRule> rules_;
+    // Ids whose declaration was invalid at computed-value time in the current
+    // compute() call, so the inherit/initial pass knows to refill them.
+    mutable std::vector<int> dropped_;
 };
 
 } // namespace weva

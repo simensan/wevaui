@@ -17,6 +17,7 @@ add_library(weva STATIC
     src/css_properties.cpp
     src/computed_style.cpp
     src/cascade.cpp
+    src/variable_resolver.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

@@ -1,6 +1,7 @@
 #include "weva/cascade.h"
 
 #include "weva/dom.h"
+#include "weva/variable_resolver.h"
 
 #include <algorithm>
 
@@ -163,9 +164,53 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         }
     }
 
-    // 3. Inheritance, then initial values for anything still unset.
+    // 3. Resolve var() in non-custom declarations.
+    //
+    // Order matters: custom properties must already be in `out` (they were set
+    // in steps 1-2) and inherited ones must be visible too, so this runs after
+    // custom-property inheritance is folded in below... except inheritance
+    // happens in step 4. Resolve against the parent's customs explicitly here
+    // so `color: var(--ink)` works when --ink comes from an ancestor.
+    if (parent) {
+        for (const auto& kv : parent->custom_properties()) {
+            if (!out->contains(kv.first)) out->set(kv.first, kv.second);
+        }
+    }
+    {
+        std::vector<std::pair<int, std::string>> rewrites;
+        std::vector<int> drops;
+        for (int id : out->set_ids()) {
+            std::string_view raw = out->get(id);
+            if (raw.find("var(") == std::string_view::npos &&
+                raw.find("VAR(") == std::string_view::npos) {
+                continue;
+            }
+            std::string resolved;
+            if (resolve_variables(raw, *out, &resolved)) {
+                rewrites.emplace_back(id, std::move(resolved));
+            } else {
+                // §3: invalid at computed-value time. The declaration is
+                // dropped so the property falls back to its inherited or
+                // initial value in step 4 — NOT left as the literal text.
+                drops.push_back(id);
+            }
+        }
+        for (auto& r : rewrites) out->set(r.first, r.second);
+        for (int id : drops) out->set(id, "");
+        // A dropped declaration must not keep its slot, or step 4 would see it
+        // as "already set" and skip the inherit/initial fill.
+        for (int id : drops) out->set_important(id, false);
+        dropped_ = drops;
+    }
+
+    // 4. Inheritance, then initial values for anything still unset.
+    const bool has_drops = !dropped_.empty();
+    auto was_dropped = [&](int id) {
+        if (!has_drops) return false;
+        return std::find(dropped_.begin(), dropped_.end(), id) != dropped_.end();
+    };
     for (int id = 0; id < reg.count(); ++id) {
-        if (out->contains(id)) continue;
+        if (out->contains(id) && !was_dropped(id)) continue;
         if (parent && reg.is_inherited(id) && parent->contains(id)) {
             out->set(id, parent->get(id));
         } else {
@@ -174,13 +219,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         }
     }
 
-    // 4. Custom properties inherit unconditionally (no @property registry yet,
-    // so `inherits: false` is not honoured — noted rather than silently wrong).
-    if (parent) {
-        for (const auto& kv : parent->custom_properties()) {
-            if (!out->contains(kv.first)) out->set(kv.first, kv.second);
-        }
-    }
+    dropped_.clear();
 }
 
 } // namespace weva

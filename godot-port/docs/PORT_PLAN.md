@@ -440,10 +440,29 @@ later slice.
   `@container` bodies are compiled unconditionally, so a *non-matching* `@media`
   block currently **does** apply. This is the most likely source of wrong output
   in the demo right now.
-* `var()`, `env()` and `attr()` are unresolved, so `color: var(--ink)` stays
-  literal at computed-value time.
+* ~~`var()` is unresolved~~ — **done**, see below. `env()` and `attr()` remain.
 * `@property`'s `inherits: false` is not honoured; custom properties inherit
   unconditionally.
+
+**`var()` resolution done** (`VariableResolver.cs`). 884 checks green. On the
+demo, `body { color: var(--ink) }` now resolves to `#e8ecf2` through `:root`'s
+inheritance, and **0 of 119,572 computed values still contain an unresolved
+`var()`.**
+
+The rule that shapes the API: CSS Custom Properties L1 §3 says a var() that
+cannot resolve and has no usable fallback makes the **entire declaration**
+invalid at computed-value time. So the resolver returns a bool rather than a
+best-effort string — substituting an empty string would leave a syntactically
+broken declaration in place, and the cascade must instead *drop* it so the
+property falls back to its inherited or initial value. The C# encodes this with
+a reference-equal sentinel string; a bool cannot leak to a caller as a real
+value.
+
+§3.1's cycle handling has one genuinely subtle rule, and it is tested: **a
+fallback must not rescue a cycle member.** Given `--a: var(--b)` and
+`--b: var(--a, safe)`, the `safe` fallback would otherwise resolve through the
+still-open stack frame and paper over the cycle. Once a name is known to be in a
+cycle, every later reference to it is invalid regardless of its own fallback.
 
 ## Phase 4 — Block and inline layout + software paint (~15k LOC)
 
