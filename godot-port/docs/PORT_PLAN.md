@@ -22,6 +22,28 @@ They are *scope indicators*, not schedule estimates — see "Effort" at the end.
 **Exit:** an empty C++ engine produces an empty dump, the diff runner reports
 "412 elements expected, 0 produced" against a real corpus entry, and CI runs it.
 
+**Status: done, with one item unverified.** CMake skeleton builds clean under
+gcc 13 and clang 18; `Arena` / `SymbolTable` / `Status` land with 17 checks
+green, also under ASan+UBSan; `weva_dump` emits BaselineGen's format exactly;
+`diff.py` self-tests against identical, off-by-0.01, and wrong-identity inputs;
+`harvest.py` pulls **3,879 corpus entries** partitioned by feature (block 1563,
+cascade 967, flex 450, grid 269, scrolling 169, positioning 159, inline 121,
+text 113, multicol 46, tables 22).
+
+Two things worth carrying forward:
+
+* The csproj exclude fix is **applied but unverified** — this container has no
+  .NET SDK, so `BaselineGen` has not actually been built. Phase 1 must not
+  start until someone runs `dotnet build` on it. There is no oracle until then,
+  and `run.sh` exits 2 rather than reporting a vacuous pass over zero entries.
+* Two bugs were caught during the phase and are worth remembering as a class.
+  `SymbolTable` originally stored `std::vector<std::string>`, whose reallocation
+  moves SSO character data and dangles every `string_view` key in the index —
+  precisely the lifetime hazard CONVENTIONS.md warns about, hit on the first
+  file that could hit it. And `weva_dump` initially formatted with `%.2f`,
+  which rounds half-to-even in glibc where C#'s `Round2` rounds away from zero;
+  0.125, 2.675 and 16.005 all diverge. Both are now covered by tests.
+
 ## Phase 1 — Core infrastructure (~5k LOC)
 
 Arena allocator, string interning, `Status`, the value types Weva's paint layer

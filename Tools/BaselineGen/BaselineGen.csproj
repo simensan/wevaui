@@ -15,7 +15,7 @@
     <!-- Compile only the headless portion of the runtime: skip Unity-API-bound files. -->
     <Compile Include="..\..\Packages\com.wevaui\Runtime\**\*.cs"
              Exclude="
-               ..\..\Packages\com.wevaui\Runtime\UIDocument.cs;
+               ..\..\Packages\com.wevaui\Runtime\WevaDocument.cs;
                ..\..\Packages\com.wevaui\Runtime\Document\UnityClock.cs;
                ..\..\Packages\com.wevaui\Runtime\DevTools\**\*.cs;
                ..\..\Packages\com.wevaui\Runtime\Rendering\**\*.cs;

@@ -1,0 +1,36 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure (asan+ubsan)
+        run: >
+          cmake -S . -B build-san -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-sanitize-recover=all"
+      - run: cmake --build build-san
+      - run: ctest --test-dir build-san --output-on-failure
+
+  # Phase 0 has no reference dumps (BaselineGen needs the .NET SDK and the
+  # corpus is generated). Enable once Phase 2 produces its first green subset.
+  # oracle:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-dotnet@v4
+  #       with: { dotnet-version: '8.0.x' }
+  #     - run: cmake -S . -B build -G Ninja && cmake --build build
+  #     - run: tools/oracle/run.sh
