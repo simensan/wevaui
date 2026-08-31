@@ -1,5 +1,6 @@
 #include "weva/cascade.h"
 
+#include "weva/css_value.h"
 #include "weva/dom.h"
 #include "weva/variable_resolver.h"
 
@@ -62,7 +63,10 @@ int compare_for_cascade(const MatchedDeclaration& x, const MatchedDeclaration& y
     return cmp_int(x.in_rule_index, y.in_rule_index);
 }
 
-void CascadeEngine::clear() { rules_.clear(); }
+void CascadeEngine::clear() {
+    rules_.clear();
+    pseudo_rules_.clear();
+}
 
 void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
                                   int* source_index, int layer_ordinal) {
@@ -75,13 +79,19 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 // A selector that fails to parse drops its rule rather than the
                 // sheet, matching the C#'s per-rule error containment.
                 if (!parse_selector(sel_text, &cs, &err)) continue;
+                const std::string* pseudo = cs.sequence.pseudo_element();
+                std::string pseudo_name = pseudo ? *pseudo : std::string();
                 CompiledRule cr;
                 cr.selector = std::move(cs);
                 cr.rule = sr;
                 cr.origin = origin;
                 cr.source_index = (*source_index)++;
                 cr.layer_ordinal = layer_ordinal;
-                rules_.push_back(std::move(cr));
+                if (!pseudo_name.empty()) {
+                    pseudo_rules_[pseudo_name].push_back(std::move(cr));
+                } else {
+                    rules_.push_back(std::move(cr));
+                }
             }
             compile_rules(sr->nested_rules, origin, source_index, layer_ordinal);
         } else {
@@ -230,6 +240,114 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     }
 
     dropped_.clear();
+}
+
+bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view pseudo_name,
+                                           const ElementStateProvider& state,
+                                           const ComputedStyle& host_style,
+                                           ComputedStyle* out) const {
+    auto it = pseudo_rules_.find(std::string(pseudo_name));
+    if (it == pseudo_rules_.end() || it->second.empty()) return false;
+
+    // Match on the ORIGINATING element, ignoring the pseudo-element marker on
+    // the rightmost compound — selector_matches deliberately refuses those, so
+    // the sequence is matched directly here.
+    std::vector<MatchedDeclaration> matches;
+    for (const CompiledRule& cr : it->second) {
+        if (!selector_matches_sequence_ignoring_pseudo(cr.selector.sequence, host, state)) {
+            continue;
+        }
+        const Specificity spec = cr.selector.specificity();
+        int in_rule = 0;
+        for (const Declaration& d : cr.rule->declarations) {
+            MatchedDeclaration m;
+            m.declaration = &d;
+            m.origin = cr.origin;
+            m.specificity = spec;
+            m.source_index = cr.source_index;
+            m.in_rule_index = in_rule++;
+            m.layer_ordinal = cr.layer_ordinal;
+            m.selector_text = cr.selector.source_text;
+            matches.push_back(std::move(m));
+        }
+    }
+    // No matching rule means the author wrote no such pseudo for this host.
+    // That is "no box", not "an empty box" — hence false rather than an empty
+    // ComputedStyle.
+    if (matches.empty()) return false;
+
+    std::stable_sort(matches.begin(), matches.end(),
+                     [](const MatchedDeclaration& a, const MatchedDeclaration& b) {
+                         return compare_for_cascade(a, b) < 0;
+                     });
+
+    out->clear();
+    auto& reg = CssPropertyRegistry::instance();
+    for (const MatchedDeclaration& m : matches) {
+        out->set(m.declaration->property, m.declaration->value_text);
+        int id = reg.id_of(m.declaration->property);
+        if (id != kCustomPropertyId) out->set_important(id, m.declaration->important);
+    }
+
+    // A pseudo participates in the host's var() namespace, so authors can
+    // reference --tokens declared on the originating element.
+    for (const auto& kv : host_style.custom_properties()) {
+        if (!out->contains(kv.first)) out->set(kv.first, kv.second);
+    }
+    {
+        std::vector<std::pair<int, std::string>> rewrites;
+        std::vector<int> drops;
+        for (int id : out->set_ids()) {
+            std::string_view raw = out->get(id);
+            if (raw.find("var(") == std::string_view::npos &&
+                raw.find("VAR(") == std::string_view::npos) {
+                continue;
+            }
+            std::string resolved;
+            if (resolve_variables(raw, *out, &resolved)) rewrites.emplace_back(id, std::move(resolved));
+            else drops.push_back(id);
+        }
+        for (auto& r : rewrites) out->set(r.first, r.second);
+        for (int id : drops) out->set(id, "");
+        dropped_ = drops;
+    }
+
+    // Inheritance source is the ORIGINATING element, not the host's parent.
+    const bool has_drops = !dropped_.empty();
+    auto was_dropped = [&](int id) {
+        return has_drops && std::find(dropped_.begin(), dropped_.end(), id) != dropped_.end();
+    };
+    for (int id = 0; id < reg.count(); ++id) {
+        if (out->contains(id) && !was_dropped(id)) continue;
+        if (reg.is_inherited(id) && host_style.contains(id)) {
+            out->set(id, host_style.get(id));
+        } else {
+            std::string_view initial = reg.initial_value(id);
+            if (!initial.empty()) out->set(id, initial);
+        }
+    }
+    dropped_.clear();
+    return true;
+}
+
+bool CascadeEngine::resolve_pseudo_content(const ComputedStyle& pseudo_style,
+                                           std::string* text) {
+    std::string_view raw = pseudo_style.get("content");
+    if (raw.empty()) return false;
+    // `none` and `normal` both suppress the box.
+    if (raw == "none" || raw == "normal") return false;
+
+    CssParseError err;
+    CssValuePtr v = parse_css_value(raw, &err);
+    if (!v) return false;
+    if (v->kind() == CssValueKind::String) {
+        *text = static_cast<const CssString&>(*v).text;
+        return true;   // `content: ""` still generates a box, with empty text
+    }
+    // attr(), counter(), url() and image content are not handled in v1; the
+    // caller treats false as "no pseudo box" rather than rendering the literal
+    // function text.
+    return false;
 }
 
 } // namespace weva

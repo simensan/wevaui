@@ -142,9 +142,11 @@ bool is_hyperlink(const Element& e) {
 }
 
 bool match_compound(const CompoundSelector& c, const Element& e,
-                    const ElementStateProvider& st, const Element* scope);
+                    const ElementStateProvider& st, const Element* scope,
+                    bool allow_pseudo_element = false);
 bool match_sequence(const CompoundSequence& seq, const Element& e,
-                    const ElementStateProvider& st, const Element* scope);
+                    const ElementStateProvider& st, const Element* scope,
+                    bool allow_pseudo_on_subject = false);
 bool match_has(const std::vector<std::unique_ptr<CompoundSequence>>& list,
                const Element& subject, const ElementStateProvider& st, const Element* scope);
 
@@ -345,10 +347,13 @@ bool match_simple(const SimpleSelector& part, const Element& e,
 }
 
 bool match_compound(const CompoundSelector& c, const Element& e,
-                    const ElementStateProvider& st, const Element* scope) {
+                    const ElementStateProvider& st, const Element* scope,
+                    bool allow_pseudo_element) {
     // A compound carrying a pseudo-element never matches a real element; the
-    // cascade routes those through a separate pseudo-element path.
-    if (c.has_pseudo_element) return false;
+    // cascade routes those through a separate pseudo-element path. The
+    // pseudo-element cascade sets allow_pseudo_element for the SUBJECT
+    // compound only — ancestors still reject one.
+    if (c.has_pseudo_element && !allow_pseudo_element) return false;
     for (const auto& p : c.parts) {
         if (!match_simple(*p, e, st, scope)) return false;
     }
@@ -358,10 +363,11 @@ bool match_compound(const CompoundSelector& c, const Element& e,
 // Right-to-left walk: the rightmost compound is the subject, then each
 // combinator steps outward through parents / previous siblings.
 bool match_sequence(const CompoundSequence& seq, const Element& e,
-                    const ElementStateProvider& st, const Element* scope) {
+                    const ElementStateProvider& st, const Element* scope,
+                    bool allow_pseudo_on_subject) {
     if (seq.compounds.empty()) return false;
     std::size_t i = seq.compounds.size() - 1;
-    if (!match_compound(seq.compounds[i], e, st, scope)) return false;
+    if (!match_compound(seq.compounds[i], e, st, scope, allow_pseudo_on_subject)) return false;
 
     const Element* current = &e;
     while (i > 0) {
@@ -494,6 +500,16 @@ bool match_has(const std::vector<std::unique_ptr<CompoundSequence>>& list,
 bool selector_matches_sequence(const CompoundSequence& seq, const Element& e,
                                const ElementStateProvider& state, const Element* scope_root) {
     return match_sequence(seq, e, state, scope_root);
+}
+
+bool selector_matches_sequence_ignoring_pseudo(const CompoundSequence& seq, const Element& e,
+                                               const ElementStateProvider& state,
+                                               const Element* scope_root) {
+    // Only the rightmost compound may carry the pseudo-element marker; the
+    // ancestor walk is otherwise identical, so this is a flag rather than a
+    // second traversal. (Slicing the sequence would mean copying
+    // CompoundSelector, which owns unique_ptrs and is deliberately move-only.)
+    return match_sequence(seq, e, state, scope_root, /*allow_pseudo_on_subject=*/true);
 }
 
 bool selector_matches(const CompiledSelector& sel, const Element& e,

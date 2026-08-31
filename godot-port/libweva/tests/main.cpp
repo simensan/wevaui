@@ -22,6 +22,7 @@ void test_variables_in_cascade();
 void test_media_queries();
 void test_supports();
 void test_conditional_rules_in_cascade();
+void test_pseudo_elements();
 int main() {
     test_arena();
     test_intern();
@@ -46,6 +47,7 @@ int main() {
     test_media_queries();
     test_supports();
     test_conditional_rules_in_cascade();
+    test_pseudo_elements();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

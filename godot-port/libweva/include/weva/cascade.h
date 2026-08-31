@@ -4,6 +4,7 @@
 #include "weva/media.h"
 #include "weva/selector.h"
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -67,6 +68,25 @@ public:
     void compute(const Element& e, const ElementStateProvider& state,
                  const ComputedStyle* parent, ComputedStyle* out) const;
 
+    // Computes a pseudo-element's style on `host` (name without the colons:
+    // "before", "after", "marker", ...).
+    //
+    // Returns FALSE when no author rule targets that pseudo on that host —
+    // which is the signal for "generate no box at all", not "generate an
+    // empty one". A pseudo-element inherits from its ORIGINATING element, not
+    // from the host's parent, so `host_style` is the inheritance source.
+    bool compute_pseudo_element(const Element& host, std::string_view pseudo_name,
+                                const ElementStateProvider& state,
+                                const ComputedStyle& host_style,
+                                ComputedStyle* out) const;
+
+    // CSS 2.1 §12.2: a ::before/::after box exists only when `content`
+    // resolves to something other than `none`/`normal`. v1 handles string
+    // content; anything else (attr(), counter(), url()) reports false, which
+    // the box builder treats as "no pseudo box".
+    static bool resolve_pseudo_content(const ComputedStyle& pseudo_style,
+                                       std::string* text);
+
 private:
     struct CompiledRule {
         CompiledSelector selector;
@@ -79,6 +99,10 @@ private:
                        int* source_index, int layer_ordinal);
 
     std::vector<CompiledRule> rules_;
+    // Pseudo-element rules never match a real element, so they live in their
+    // own buckets keyed by pseudo name rather than being scanned and rejected
+    // once per element.
+    std::map<std::string, std::vector<CompiledRule>> pseudo_rules_;
     MediaContext media_;
     // Ids whose declaration was invalid at computed-value time in the current
     // compute() call, so the inherit/initial pass knows to refill them.

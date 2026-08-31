@@ -187,6 +187,14 @@ bool selector_matches_sequence(const CompoundSequence& seq, const Element& e,
                                const ElementStateProvider& state,
                                const Element* scope_root = nullptr);
 
+// Like the above, but the RIGHTMOST compound may carry a pseudo-element marker
+// (which normal matching rejects). Used by the pseudo-element cascade, which
+// has already established the pseudo name and now needs the structural match
+// against the originating element. Non-rightmost compounds still reject one.
+bool selector_matches_sequence_ignoring_pseudo(const CompoundSequence& seq, const Element& e,
+                                               const ElementStateProvider& state,
+                                               const Element* scope_root = nullptr);
+
 // Parses one complex selector. Returns false on trailing garbage or syntax error.
 bool parse_selector(std::string_view text, CompiledSelector* out, SelectorParseError* error);
 // Parses a comma-separated selector list.

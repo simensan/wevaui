@@ -486,6 +486,30 @@ unrecognised condition must hide its block rather than apply unconditionally —
 the opposite default would make every future CSS feature a silent styling bug.
 Same for `@supports`: a malformed condition is unsupported, not vacuously true.
 
+**Pseudo-element cascade done** (`CascadeEngine.PseudoElements.cs`). 996 checks
+green. On the demo, the seven `::before`/`::after` rules that previously
+produced nothing now generate **4 `::before` and 1 `::after` box, 3 with
+non-empty text.**
+
+Three semantics worth recording, each a place a port can be quietly wrong:
+
+* **"No matching rule" means no box, not an empty box.** `compute_pseudo_element`
+  returns `false` rather than an empty `ComputedStyle`, so the box builder can
+  distinguish "the author styled nothing here" from "the author styled an empty
+  thing". The C# returns null for the same reason.
+* **A pseudo inherits from its ORIGINATING element, not the host's parent.**
+  `#outer { color: blue } #a { color: green }` gives `#a::before` green.
+  Non-inherited properties still fall to their initial, so a host `width: 100px`
+  does not leak into the pseudo.
+* **`content: none`/`normal` suppress the box, but `content: ""` does not** —
+  an empty string still generates a box. `attr()`, `counter()` and `url()`
+  report "no box" rather than rendering their literal function text, matching
+  the C#'s v1 scope.
+
+Pseudo rules live in their own buckets keyed by pseudo name, so they are never
+scanned and rejected once per element — and a test pins that they cannot leak
+into ordinary element matching.
+
 ## Phase 4 — Block and inline layout + software paint (~15k LOC)
 
 Layout root files (11,775) minus the specialised modes, `Layout/Boxes` (590),
