@@ -126,6 +126,16 @@ private:
         DeclarationOrigin origin = DeclarationOrigin::Author;
         int source_index = 0;
         int layer_ordinal = kUnlayeredOrdinal;
+        // The rule's declarations with every shorthand replaced by its
+        // longhands. Owned here rather than borrowed from the stylesheet
+        // because expansion synthesises declarations that exist nowhere in the
+        // source.
+        //
+        // A MatchedDeclaration points into this vector's heap buffer, which
+        // survives `rules_` growing: moving a vector transfers the buffer, it
+        // does not copy it. The vector must therefore never be modified after
+        // compilation.
+        std::vector<Declaration> declarations;
     };
     void compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
                        int* source_index, int layer_ordinal);

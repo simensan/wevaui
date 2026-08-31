@@ -27,6 +27,7 @@ add_library(weva STATIC
     src/box_builder.cpp
     src/style_resolver.cpp
     src/block_layout.cpp
+    src/shorthand.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

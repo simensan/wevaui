@@ -108,9 +108,10 @@ void test_box_model_edges() {
                 "#pct { padding: 10%; margin-top: 10% }"
                 "#nostyle { border-top-width: 6px; border-left-width: 6px }"
                 "#em { padding: 2em; font-size: 20px }"
-                "#lh { padding: 1lh; font-size: 20px; line-height: 2 }"));
+                "#lh { padding: 1lh; font-size: 20px; line-height: 2 }"
+                "#lhlong { padding-top: 1lh; font-size: 20px; line-height: 2 }"));
     CHECK(f.build("<div id=a></div><div id=pct></div><div id=nostyle></div>"
-                  "<div id=em></div><div id=lh></div>"));
+                  "<div id=em></div><div id=lh></div><div id=lhlong></div>"));
 
     f.apply("a", 1000);
     const Box& a = f.box("a");
@@ -132,11 +133,18 @@ void test_box_model_edges() {
     f.apply("nostyle", 1000);
     CHECK(near(f.box("nostyle").border_top, 0) && near(f.box("nostyle").border_left, 0));
 
-    // em binds to the element's own font size; lh to its cascaded line-height.
+    // em binds to the element's own font size.
     f.apply("em", 1000);
     CHECK(near(f.box("em").padding_top, 40));
+    // `padding: 1lh` gives NO padding. The shorthand expander's <length>
+    // validator predates `lh` and rejects the token, so the shorthand expands
+    // to nothing — and an unexpandable shorthand is still dropped, taking the
+    // declaration with it. Authored as a longhand (`padding-top: 1lh`) it
+    // resolves to 40px. Reference behaviour, pinned rather than tidied.
     f.apply("lh", 1000);
-    CHECK(near(f.box("lh").padding_top, 40));
+    CHECK(near(f.box("lh").padding_top, 0));
+    f.apply("lhlong", 1000);
+    CHECK(near(f.box("lhlong").padding_top, 40));
 }
 
 void test_box_model_width() {
@@ -299,33 +307,32 @@ void test_auto_margin_centering() {
 }
 
 void test_shorthand_expansion_gap() {
-    // KNOWN GAP, pinned so it is visible in the suite rather than only in
-    // PORT_PLAN.md. The C# cascade expands every shorthand into its longhands
-    // (26 expanders, ~2.6k LOC) and DROPS the shorthand declaration, so each
-    // longhand carries the shorthand's cascade key and ordinary source order
-    // settles conflicts. This port has no expansion yet, so:
-    //
-    //   - `padding: 5px` reaches layout only through box_sides()'s raw-text
-    //     fallback, which the C# reaches only when expansion fails;
-    //   - a longhand beside a shorthand suppresses the shorthand ENTIRELY,
-    //     where both the C# and a browser would give the other three sides the
-    //     shorthand's value;
-    //   - `border: solid 5px` sets nothing at all, because nothing writes
-    //     border-*-style.
-    //
-    // These assertions record current behaviour. They should FAIL and be
-    // rewritten when shorthand expansion lands.
+    // Formerly a pinned gap: the cascade now expands shorthands, so a
+    // shorthand and a longhand resolve by ordinary source order, matching both
+    // the C# and a browser.
     Fixture f;
     CHECK(f.css("#mix { padding: 5px; padding-left: 20px }"
-                "#bord { border: solid 5px }"));
-    CHECK(f.build("<div id=mix></div><div id=bord></div>"));
+                "#rev { padding-left: 20px; padding: 5px }"
+                "#bord { border: solid 5px }"
+                "#reset { border-width: 9px; border: solid }"));
+    CHECK(f.build("<div id=mix></div><div id=rev></div><div id=bord></div>"
+                  "<div id=reset></div>"));
 
     f.apply("mix", 1000);
-    // A browser and the C# both give 5px here.
-    CHECK(near(f.box("mix").padding_top, 0));
+    CHECK(near(f.box("mix").padding_top, 5));
     CHECK(near(f.box("mix").padding_left, 20));
 
+    // Reversed, the shorthand is later and wins every side.
+    f.apply("rev", 1000);
+    CHECK(near(f.box("rev").padding_left, 5));
+
     f.apply("bord", 1000);
-    // A browser and the C# both give 5px here.
-    CHECK(near(f.box("bord").border_left, 0));
+    CHECK(near(f.box("bord").border_left, 5));
+    CHECK(near(f.box("bord").border_top, 5));
+
+    // A component the author omitted resets to its INITIAL value rather than
+    // being left alone, so a later `border: solid` clears the earlier width
+    // back to `medium` (3px) instead of keeping 9px.
+    f.apply("reset", 1000);
+    CHECK(near(f.box("reset").border_top, 3));
 }

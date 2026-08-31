@@ -218,10 +218,13 @@ void test_box_sides() {
         s = box_sides(f.style("four"), "padding");
         CHECK(s.top == "1px" && s.right == "2px" && s.bottom == "3px" && s.left == "4px");
 
-        // One non-initial longhand suppresses the shorthand ENTIRELY — the
-        // other three fall back to the initial value, not to the shorthand.
+        // With cascade-time expansion the shorthand is gone by the time this
+        // runs: all four longhands are set, the later `padding-left` wins its
+        // own slot, and the other three keep the shorthand's value. This
+        // function's shorthand branch is now reached only for a value the
+        // expander refused, which in practice means one containing var().
         s = box_sides(f.style("mixed"), "padding");
-        CHECK(s.left == "20px" && s.top == "0" && s.right == "0" && s.bottom == "0");
+        CHECK(s.left == "20px" && s.top == "5px" && s.right == "5px" && s.bottom == "5px");
         s = box_sides(f.style("long"), "padding");
         CHECK(s.top == "7px" && s.right == "0");
 

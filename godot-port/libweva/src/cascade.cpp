@@ -3,6 +3,7 @@
 #include "weva/css_value.h"
 #include "weva/env_attr.h"
 #include "weva/keyword_resolver.h"
+#include "weva/shorthand.h"
 #include "weva/logical.h"
 #include "weva/dom.h"
 #include "weva/variable_resolver.h"
@@ -51,6 +52,54 @@ bool iequals_ascii(std::string_view a, std::string_view b) {
         if (x != y) return false;
     }
     return true;
+}
+
+
+// Replaces every shorthand declaration with its longhands, in place, keeping
+// the surrounding order. The shorthand itself is DROPPED — that is what makes
+// `{ padding: 5px; padding-left: 20px }` resolve by ordinary source order
+// rather than by a shorthand-versus-longhand precedence rule.
+//
+// A shorthand whose value still contains var() or attr() is left alone: the
+// expander cannot tokenise an unresolved reference, and the reference engine
+// never revisits it either, so it stays a shorthand for good.
+//
+// Done once per rule at compile time rather than once per element per pass.
+std::vector<Declaration> expand_declarations(const std::vector<Declaration>& source) {
+    bool any = false;
+    for (const Declaration& d : source) {
+        if (is_shorthand(d.property) && !contains_substitution(d.value_text)) {
+            any = true;
+            break;
+        }
+    }
+    if (!any) return source;
+
+    std::vector<Declaration> out;
+    out.reserve(source.size() + 8);
+    std::vector<ShorthandLonghand> longhands;
+    for (const Declaration& d : source) {
+        if (contains_substitution(d.value_text)) {
+            out.push_back(d);
+            continue;
+        }
+        longhands.clear();
+        if (!expand_shorthand(d.property, d.value_text, &longhands)) {
+            out.push_back(d);
+            continue;
+        }
+        // A malformed shorthand emits nothing AND is still dropped: the
+        // declaration is invalid, so the affected longhands keep whatever an
+        // earlier declaration gave them.
+        for (const ShorthandLonghand& lh : longhands) {
+            Declaration sub;
+            sub.property = std::string(lh.property);
+            sub.value_text = lh.value;
+            sub.important = d.important;
+            out.push_back(std::move(sub));
+        }
+    }
+    return out;
 }
 
 } // namespace
@@ -316,6 +365,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 cr.origin = origin;
                 cr.source_index = (*source_index)++;
                 cr.layer_ordinal = layer_ordinal;
+                cr.declarations = expand_declarations(sr->declarations);
                 if (!pseudo_name.empty()) {
                     pseudo_rules_[pseudo_name].push_back(std::move(cr));
                 } else {
@@ -381,7 +431,7 @@ std::vector<MatchedDeclaration> CascadeEngine::collect_matches(
         if (!selector_matches(cr.selector, e, state)) continue;
         const Specificity spec = cr.selector.specificity();
         int in_rule = 0;
-        for (const Declaration& d : cr.rule->declarations) {
+        for (const Declaration& d : cr.declarations) {
             MatchedDeclaration m;
             m.declaration = &d;
             m.origin = cr.origin;
@@ -643,7 +693,7 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
         }
         const Specificity spec = cr.selector.specificity();
         int in_rule = 0;
-        for (const Declaration& d : cr.rule->declarations) {
+        for (const Declaration& d : cr.declarations) {
             MatchedDeclaration m;
             m.declaration = &d;
             m.origin = cr.origin;

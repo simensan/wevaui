@@ -144,7 +144,9 @@ void test_conditional_rules_in_cascade() {
     eng.compute(*doc->get_element_by_id("a"), st, nullptr, &cs);
     CHECK(cs.get("color") == "red");              // the 3000px block was skipped
     CHECK(cs.get("background-color") == "blue");  // the 600px block applied
-    CHECK(cs.get("border-color") == "teal");      // supported @supports applied
+    // `border-color` is a shorthand, so the cascade expands it and drops the
+    // shorthand itself — the value has to be read off a longhand.
+    CHECK(cs.get("border-top-color") == "teal");  // supported @supports applied
 
     // ---- a narrow viewport flips which block applies
     Stylesheet sheet2;

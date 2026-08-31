@@ -26,6 +26,7 @@ add_executable(weva_tests
     test_box_builder.cpp
     test_style_resolver.cpp
     test_block_layout.cpp
+    test_shorthand.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)

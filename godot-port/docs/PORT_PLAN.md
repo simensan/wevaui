@@ -1020,9 +1020,56 @@ browser/C# answer written next to each assertion, so the gap is visible where
 the work happens and not only in this document. Those assertions are meant to
 fail when expansion lands.
 
-**Shorthand expansion is now the top-priority slice** — ahead of the rest of
-block layout. Every box-model number depends on it, and any oracle run before it
-lands would report a flood of differences with one cause.
+**Shorthand expansion landed in the next commit** — see below.
+
+**Shorthand expansion done** (the box-model half of `Css/Cascade/Shorthands/`).
+1684 checks green across gcc 13, clang 18, ASan+UBSan+LSan and Release. The gap
+recorded last tick is closed, and its pinned assertions were rewritten to the
+values a browser gives.
+
+**Expansion happens at rule-compile time, not per element.** The C# expands the
+match list inside `compute()`, once per element per pass; the same work done
+once per rule gives identical results because the expansion depends only on the
+declaration's own text. Each emitted longhand still carries the shorthand's
+cascade key, which is what makes source order — not a shorthand-versus-longhand
+precedence rule — settle the conflict.
+
+Three behaviours that are easy to get wrong and are pinned by test:
+
+* **An omitted component resets to its INITIAL value**, it is not left alone.
+  `{ border-width: 9px; border: solid }` gives a 3px border, because `border`
+  writes `medium` into the width it did not mention.
+* **A malformed shorthand is still dropped.** It emits nothing AND removes
+  itself, so the affected longhands keep whatever an earlier declaration gave
+  them. The declaration is invalid, not partially applied.
+* **`border-radius` fills corners TL, TR, BR, BL** — not the
+  top/right/bottom/left of the edge shorthands — and a `/` splits horizontal
+  from vertical radii. `place-*` is align-then-justify, the reverse of the
+  x-then-y order every other two-value shorthand uses.
+
+### `padding: 1lh` produces no padding
+
+The shorthand `<length>` validator has its own unit list, and it predates `lh`,
+`cap`, `ic`, `cq*` and the `sv*`/`lv*`/`dv*` family. A token it does not
+recognise fails validation, the shorthand expands to nothing, and — by the rule
+above — the declaration is dropped entirely. So `padding: 1lh` yields **zero**
+padding while `padding-top: 1lh` yields 40px on a 2×20px line-height.
+
+Ported exactly, including the omissions, and pinned by two tests that say what
+they are. Widening the list would change which declarations reach the longhands
+at all, which is not a change to make blind — it is a second candidate
+divergence for the oracle, alongside the `em` chain.
+
+**Deferred, and listed:** `background`, `mask`, `border-image`, `font`,
+`transition`, `animation` (all comma-separated multi-layer parsers), `all`, the
+logical border family, `flex`, `flex-flow`, `columns`, `column-rule`,
+`list-style`, `text-decoration` and `-webkit-text-stroke`. The box model needs
+none of them; each is its own small parser.
+
+**Cost:** the demo cascade goes from 4.16 ms to 4.62 ms for 358 elements
+(Release, minimum of 24 passes). That is real work, not overhead — `border: 1px
+solid black` is twelve declarations to stamp where it used to be one that
+nothing read.
 
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
