@@ -810,6 +810,42 @@ Port `SoftwareRasterizer` here as the first backend.
 match. The software backend should land in the low hundreds of lines, not 1,592
 — if it doesn't, the render interface was not lowered enough.
 
+**Box tree done** (`Layout/Boxes`, 590 LOC). 1382 checks green across gcc 13,
+clang 18 and ASan+UBSan+LSan. This is the data model everything in Phases 4-8
+writes into, so its shape is worth stating precisely — it departs from the C# in
+three ways, all of them required by CONVENTIONS.md rather than chosen.
+
+**One struct with a kind tag, not a class hierarchy.** The C# has
+`Box -> BlockBox -> AnonymousBlockBox` plus three sibling subclasses. RTTI is off
+here, the tree is walked constantly, and arena storage needs a uniform element
+size — a tag is the only option that satisfies all three.
+
+**Stable indices, not pointers.** Boxes live in one contiguous vector reset (not
+freed) between passes, so any pointer into it is invalidated by the next
+allocation. `BoxId` survives. This is the structural difference most able to
+corrupt the tree silently, so there is a test that grows the arena to 5,000
+boxes and re-checks an id taken before the growth.
+
+**An intrusive sibling chain, not a `List<Box>` per box.** The C# allocates one
+list per box per frame; the zero-allocation-per-frame gate does not allow it.
+Append, insert-first, remove and replace are all O(1) on the chain.
+
+Every structural test walks the children forwards AND backwards. A half-updated
+doubly-linked list still iterates correctly in one direction, and the failure
+surfaces much later, somewhere else. `replace_child` is the case that needs it:
+the replacement may already be attached elsewhere, and without unlinking it
+first both parents keep a link through it.
+
+**Deferred fields, listed rather than silently dropped.** `BlockBox` carries
+shrink-to-fit caches, `GridStretched*` / `FlexCrossStretched*` flags and a
+grid-area containing block; those belong to Phases 6 and 7 and are not modelled
+yet. Neither is the incremental-layout machinery (`CachedDigest`, `Version`,
+`ReuseContent`, `PoolGeneration`, `InFreeList`, `ResetForPool`, the `Recycled`
+callback) — most of which is pool bookkeeping that the arena replaces outright,
+the rest belonging to `LayoutEngine.Incremental.cs`. The paint-side caches
+(`PaintCache`, `WrapperCache`, `SubtreeHas*`) are decided by ARCHITECTURE.md's
+lower render interface and are not a mechanical port.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

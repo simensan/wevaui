@@ -39,6 +39,11 @@ void test_css_wide_keywords();
 void test_revert();
 void test_revert_layer_rollback();
 void test_custom_property_keywords();
+void test_box_tree();
+void test_box_tree_removal();
+void test_box_tree_replace();
+void test_box_geometry();
+void test_box_id_stability();
 int main() {
     test_arena();
     test_intern();
@@ -80,6 +85,11 @@ int main() {
     test_revert();
     test_revert_layer_rollback();
     test_custom_property_keywords();
+    test_box_tree();
+    test_box_tree_removal();
+    test_box_tree_replace();
+    test_box_geometry();
+    test_box_id_stability();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

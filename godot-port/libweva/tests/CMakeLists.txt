@@ -22,6 +22,7 @@ add_executable(weva_tests
     test_logical.cpp
     test_at_property.cpp
     test_keywords.cpp
+    test_box.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)
