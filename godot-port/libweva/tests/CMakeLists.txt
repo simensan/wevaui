@@ -11,6 +11,7 @@ add_executable(weva_tests
     test_css_value.cpp
     test_css_calc.cpp
     test_selector.cpp
+    test_selector_match.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)

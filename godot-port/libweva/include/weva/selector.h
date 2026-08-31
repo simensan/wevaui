@@ -164,6 +164,29 @@ struct SelectorParseError {
     int column = 0;
 };
 
+// Supplies interaction state (:hover, :focus, ...) for an element. Hosts
+// implement this; the headless default reports None for everything.
+class Element;
+struct ElementStateProvider {
+    virtual ~ElementStateProvider() = default;
+    virtual ElementState state_of(const Element& e) const = 0;
+    // Bumped whenever state_of would return something different for any
+    // element, so the cascade can key its caches on it.
+    virtual int64_t version() const { return 0; }
+};
+
+struct NullStateProvider : ElementStateProvider {
+    ElementState state_of(const Element&) const override { return ElementState::None; }
+};
+
+// Ports SelectorMatcher.Matches. `scope_root` resolves :scope; null means
+// :scope falls back to the root element.
+bool selector_matches(const CompiledSelector& sel, const Element& e,
+                      const ElementStateProvider& state, const Element* scope_root = nullptr);
+bool selector_matches_sequence(const CompoundSequence& seq, const Element& e,
+                               const ElementStateProvider& state,
+                               const Element* scope_root = nullptr);
+
 // Parses one complex selector. Returns false on trailing garbage or syntax error.
 bool parse_selector(std::string_view text, CompiledSelector* out, SelectorParseError* error);
 // Parses a comma-separated selector list.

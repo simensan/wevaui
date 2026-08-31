@@ -343,6 +343,37 @@ Specificity carries the rules the cascade depends on: `:where()` contributes
 zero, `:is()`/`:not()`/`:has()` take the max of their list, and
 `:nth-child(An+B of S)` is `(0,1,0)` **plus** the max of `S`.
 
+**Matcher done** (`SelectorMatcher.cs`, 1,069 LOC). 726 checks green — first
+run, no failures. This is the first code that joins the CSS side to the DOM
+from Phase 1.
+
+**End-to-end on the real demo:** all 131 selectors parse and match against the
+real 358-element document, producing **864 total matches**. 118 selectors match
+at least one element; the other 13 are all accounted for — 7 are `::before` /
+`::after` (a selector ending in a pseudo-element correctly never matches an
+element; the cascade routes those separately), 5 are `:hover` / `:active` /
+`:checked` under a null state provider, and `.col` is genuinely unused in the
+demo HTML. Zero unexplained.
+
+Two things the C# is careful about and the port keeps:
+
+* **Attribute comparisons are code-point (ordinal), not culture-sensitive.**
+  C# pins `StringComparison.Ordinal` precisely because the default overloads
+  fold Turkish dotted/dotless i and German ß↔SS per locale — a selector would
+  otherwise behave differently depending on the machine's locale.
+* **`:has()` walks forward only.** Per §17.4 the inner traversal is anchored at
+  the subject and moves outward (down for descendant, right for siblings); it
+  must never walk up through parents, which would escape the relative scope. It
+  therefore cannot delegate to the main right-to-left `match_sequence`, and has
+  its own forward chain walker. `#l1:has(ul)` must NOT match when the `<ul>` is
+  an ancestor — that is a test.
+
+Deferred and reported as **non-matching rather than guessed**: the form-state
+pseudo-classes (`:valid`, `:invalid`, `:in-range`, `:required`, `:read-only`,
+`:default`, …) and `:popover-open` / `:modal`, all of which need the Forms
+layer. False is the honest answer; true would silently apply styles that should
+not apply.
+
 ## Phase 4 — Block and inline layout + software paint (~15k LOC)
 
 Layout root files (11,775) minus the specialised modes, `Layout/Boxes` (590),
