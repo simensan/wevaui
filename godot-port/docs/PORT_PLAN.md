@@ -1071,6 +1071,77 @@ none of them; each is its own small parser.
 solid black` is twelve declarations to stamp where it used to be one that
 nothing read.
 
+**Block flow and margin collapsing done** (`MarginCollapsing.cs` and the
+in-flow half of `LayoutContent` / `FinalizeBlockSize`). 1768 checks green across
+gcc 13, clang 18, ASan+UBSan+LSan and Release. Blocks stack, margins collapse,
+and auto height follows content.
+
+**The collapse chain is not a pairwise fold.** Across a chain of N adjoining
+margins the result is `max(positives) + min(negatives)`, and folding pairwise
+gives the wrong answer for a mixed-sign chain longer than two: `{+20, -15, +10,
+-25}` folds to −15 where the spec gives −5. So the running max and min are
+tracked and combined once, when the chain closes. `collapse_margins(a, b)` still
+exists for the two-margin case and is tested separately, including that a NaN
+input is treated as ABSENT rather than propagated — one bad `calc()` would
+otherwise corrupt every block below it.
+
+Three asymmetries pinned by test because each is easy to get backwards:
+
+* **An explicit height blocks BOTTOM collapsing but not TOP.** Only padding,
+  border or a BFC closes the top edge. The reference records having had this
+  wrong once, which is a good reason to pin it.
+* **A leading chain attaches to the PARENT'S margin-top** when the parent's top
+  is open — the child then sits flush against the inner edge and the margin
+  lives outside the parent entirely.
+* **Floats, inline-blocks and out-of-flow boxes are barriers**, each for its own
+  reason: a float's margins collapse with nothing, an inline-block's apply
+  verbatim on both sides, and an out-of-flow box is placed without advancing the
+  cursor at all.
+
+### The second Phase 3 gap Phase 4 exposed: no UA stylesheet
+
+The first block-flow test laid out nothing, because `html` was an **inline**
+box. The initial value of `display` is `inline`, and this port had no user-agent
+stylesheet — so every element in every document was inline and block layout had
+no input.
+
+`UserAgentStylesheet.cs` is 156 lines of plain CSS behind a string constant.
+Ported verbatim (54 rules, parses in strict mode) and loaded at
+`DeclarationOrigin::UserAgent`, which the cascade already ordered correctly.
+
+Worth knowing that it is **not** the browser default, and the reference's own
+comments say why: a Unity runtime always paints into a fixed viewport, so
+`html, body` fill it with `margin: 0` and `overflow: hidden`, where a browser
+gives body an 8px margin and lets it size to content. An author writing
+`height: 100%` gets the viewport instead of zero. The same choice will need
+re-examining for Godot, but changing it would be a divergence, so it is recorded
+rather than adjusted.
+
+### Inline content reports zero height, explicitly
+
+A container of inline content returns before the block loop and reports zero
+content height, because the inline formatting context is Phase 4's next slice.
+That branch is written explicitly rather than left to fall out of the block
+algorithm — and finding out why matters:
+
+An inline-block between two blocks is wrapped in an anonymous block by the
+box builder. Walking that wrapper with the block algorithm, it reached
+`is_self_collapsing`, whose "any in-flow child disqualifies it" test SKIPS
+inline-block children — so the wrapper looked self-collapsing and contributed
+no height. The number was right by accident. The explicit branch makes the
+limitation visible, and the test that pins it says it should fail loudly when
+inline layout lands.
+
+It also settles a question the reference leaves open: the block loop's
+inline-block branch is unreachable, in both engines, because the
+anonymous-block pass classifies an inline-block as inline and always wraps it.
+It is defensive code.
+
+**Deferred within block layout, and listed:** floats and `clear` (the whole
+`FloatContext`), out-of-flow positioning (`PositioningPass`), `fit-content`
+block sizing, the flex / grid / table / multicol modes, scroll-boundary content
+reuse, and `contain: layout`/`paint` as BFC triggers.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

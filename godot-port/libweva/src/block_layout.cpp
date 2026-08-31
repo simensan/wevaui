@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <string>
+#include <vector>
 
 namespace weva {
 
@@ -244,6 +245,396 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
         }
     }
     return fs;
+}
+
+
+// ---- Margin collapsing ---------------------------------------------------
+
+double collapse_margins(double a, double b) {
+    // A NaN margin (a bad calc(), a NaN-producing animated length) fails both
+    // sign tests and would fall through to `a + b`, which is also NaN — and
+    // that NaN then propagates through the whole chain, corrupting every block
+    // below. Treat it as absent instead. Finite inputs never reach these two
+    // branches.
+    if (std::isnan(a)) return std::isnan(b) ? 0.0 : b;
+    if (std::isnan(b)) return a;
+    if (a >= 0 && b >= 0) return a > b ? a : b;
+    if (a <= 0 && b <= 0) return a < b ? a : b;
+    return a + b;
+}
+
+bool is_out_of_flow(const Box& b) {
+    return b.position == PositionType::Absolute || b.position == PositionType::Fixed;
+}
+
+bool participates_in_flow(const Box& b) {
+    if (b.is_inline_block) return false;
+    // CSS 2.1 §8.3.1 rule 5: a float's margins collapse with nothing. They
+    // apply verbatim and the float is not part of a sibling's chain.
+    if (b.is_float()) return false;
+    return !is_out_of_flow(b);
+}
+
+bool establishes_new_bfc(const Box& b) {
+    if (!b.style) return false;
+    // The `overflow` shorthand expands to overflow-x / overflow-y, so the
+    // `overflow` slot itself normally holds its initial value even when the
+    // author wrote `overflow: hidden`. Both axis longhands have to be checked.
+    const std::string_view ox = get(b.style, "overflow-x");
+    if (!ox.empty() && ox != "visible") return true;
+    const std::string_view oy = get(b.style, "overflow-y");
+    if (!oy.empty() && oy != "visible") return true;
+
+    switch (b.display) {
+        case DisplayKind::FlowRoot:
+        case DisplayKind::Flex:
+        case DisplayKind::InlineFlex:
+        case DisplayKind::Grid:
+        case DisplayKind::InlineGrid:
+        case DisplayKind::InlineBlock:
+        case DisplayKind::Table:
+        case DisplayKind::InlineTable:
+        case DisplayKind::TableCell:
+        case DisplayKind::TableCaption:
+            return true;
+        default:
+            break;
+    }
+    if (b.position == PositionType::Absolute || b.position == PositionType::Fixed) return true;
+    const std::string_view f = get(b.style, "float");
+    return f == "left" || f == "right" || f == "inline-start" || f == "inline-end";
+}
+
+bool parent_top_open(const Box& b) {
+    if (establishes_new_bfc(b)) return false;
+    // Only padding, border or a BFC closes the top. An explicit height does
+    // NOT — it blocks bottom collapsing only, which is a distinction easy to
+    // lose and one the reference records having got wrong once.
+    return b.padding_top <= 0 && b.border_top <= 0;
+}
+
+bool parent_bottom_open(const Box& b) {
+    if (establishes_new_bfc(b)) return false;
+    return b.padding_bottom <= 0 && b.border_bottom <= 0;
+}
+
+bool parent_height_auto(const Box& b, const LayoutContext& ctx, double font_size) {
+    if (!b.style) return true;
+    const auto blocks = [&](std::string_view property, bool percent_must_be_positive) {
+        const std::string_view raw = get(b.style, property);
+        if (raw.empty() || raw == "auto") return false;
+        const ResolvedLength r = resolve_length(raw, ctx, font_size, std::nullopt);
+        if (r.kind == LengthKind::Length && r.pixels > 0) return true;
+        if (r.kind == LengthKind::Percent && (!percent_must_be_positive || r.percent > 0)) {
+            return true;
+        }
+        return false;
+    };
+    if (blocks("height", false)) return false;
+    if (blocks("min-height", true)) return false;
+    return true;
+}
+
+bool is_self_collapsing(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
+                        double font_size) {
+    const Box& b = tree[id];
+    if (b.padding_top > 0 || b.padding_bottom > 0) return false;
+    if (b.border_top > 0 || b.border_bottom > 0) return false;
+    if (b.style) {
+        const auto has_size = [&](std::string_view property) {
+            const std::string_view raw = get(b.style, property);
+            if (raw.empty() || raw == "auto" || raw == "0") return false;
+            const ResolvedLength r = resolve_length(raw, ctx, font_size, std::nullopt);
+            if (r.kind == LengthKind::Length && r.pixels > 0) return true;
+            return r.kind == LengthKind::Percent && r.percent > 0;
+        };
+        if (has_size("height") || has_size("min-height")) return false;
+    }
+    // Any in-flow child at all disqualifies it. A child that does not
+    // participate in flow (float, out-of-flow) is skipped, so a box holding
+    // only floats still self-collapses.
+    for (BoxId c : tree.children(id)) {
+        if (tree[c].kind == BoxKind::Block && !participates_in_flow(tree[c])) continue;
+        return false;
+    }
+    return true;
+}
+
+// ---- Block flow ----------------------------------------------------------
+
+void BlockLayout::layout_root(BoxId root, double viewport_width, double viewport_height) {
+    Box& b = (*tree_)[root];
+    b.x = 0;
+    b.y = 0;
+    b.width = viewport_width;
+    // Seeding the height is what makes `html, body { height: 100% }` work: a
+    // percentage height resolves only against a DEFINITE basis, so without this
+    // the chain has no starting point and body falls through to content height.
+    // finalize_block_size collapses the root back to its content afterwards.
+    b.height = viewport_height;
+    layout_content(root, ctx_.root_font_size_px, viewport_width, nullptr);
+}
+
+void BlockLayout::layout_block(BoxId id, double available_width,
+                               const ComputedStyle* parent_style) {
+    double fs;
+    if ((*tree_)[id].style) {
+        fs = apply_box_model(tree_, id, available_width, parent_style, ctx_);
+    } else {
+        (*tree_)[id].width = available_width;
+        fs = ctx_.root_font_size_px;
+    }
+    const Box& b = (*tree_)[id];
+    if (b.first_child == kNoBox) {
+        finalize_block_size(id, fs, b.padding_top + b.border_top);
+        return;
+    }
+    layout_content(id, fs, available_width, parent_style);
+}
+
+void BlockLayout::layout_content(BoxId id, double font_size, double containing_block_width,
+                                 const ComputedStyle* parent_style) {
+    // Both are the CALLER's context; children resolve against this box's own
+    // style and content width instead. Kept in the signature to mirror the
+    // reference, where the float and inline paths still need them.
+    (void)containing_block_width;
+    (void)parent_style;
+    const double top_inner = (*tree_)[id].padding_top + (*tree_)[id].border_top;
+    const double content_w = (*tree_)[id].content_width();
+    const ComputedStyle* own_style = (*tree_)[id].style;
+
+    // A container of inline content is laid out by the inline formatting
+    // context, which is a later slice. Branching here rather than letting the
+    // block loop walk inline children keeps the limitation explicit: such a box
+    // reports ZERO content height until inline layout lands, instead of a
+    // number derived from the wrong algorithm.
+    //
+    // It also keeps the block loop's inline-block branch honest. The
+    // anonymous-block pass classifies an inline-block as inline, so it is
+    // always wrapped — meaning that branch is unreachable from here, in this
+    // port and in the reference alike, and exists defensively.
+    if ((*tree_)[id].contains_inlines) {
+        finalize_block_size(id, font_size, top_inner);
+        return;
+    }
+
+    // Children are laid out first so their heights are known before any of
+    // them is placed.
+    std::vector<BoxId> inflow;
+    for (BoxId c : tree_->children(id)) {
+        // Only block-level children reach here: a container holding inline
+        // content returned above.
+        if (tree_->operator[](c).kind != BoxKind::Block &&
+            tree_->operator[](c).kind != BoxKind::AnonymousBlock) {
+            continue;
+        }
+        layout_block(c, content_w, own_style);
+        inflow.push_back(c);
+    }
+
+    // The synthetic root has no style and no margins of its own: it is the
+    // viewport edge, and nothing collapses through it.
+    const bool parent_participates = own_style && participates_in_flow((*tree_)[id]);
+    const bool top_open = parent_participates && parent_top_open((*tree_)[id]);
+    const bool bottom_open = parent_participates && parent_bottom_open((*tree_)[id]) &&
+                             parent_height_auto((*tree_)[id], ctx_, font_size);
+
+    double cursor = top_inner;
+
+    // CSS 2.1 §8.3.1: across a chain of N adjoining margins the result is
+    // max(positives) + min(negatives). Folding pairwise with collapse_margins()
+    // is associative for a same-sign chain but WRONG for a mixed-sign chain
+    // longer than two — {+20, -15, +10, -25} folds left to -10 where the spec
+    // gives -5. So the running max and min are tracked and combined once, when
+    // the chain closes.
+    double chain_max_pos = 0;
+    double chain_min_neg = 0;
+    // A leading chain attaches to the parent's own margin-top when the parent's
+    // top is open; otherwise it is a literal gap before the first child.
+    bool chain_attaches_to_parent_top = top_open;
+    if (top_open) {
+        const double mt = (*tree_)[id].margin_top;
+        if (mt > 0) chain_max_pos = mt;
+        else if (mt < 0) chain_min_neg = mt;
+    }
+    bool any_collapsible_seen = false;
+
+    for (BoxId cid : inflow) {
+        Box& c = (*tree_)[cid];
+        const double left_inner = (*tree_)[id].padding_left + (*tree_)[id].border_left;
+
+        // A float is placed by the float context and does not advance the
+        // cursor, but it also does not join the chain: the chain continues
+        // through to the next in-flow box as if the float were not there.
+        if (c.is_float()) {
+            any_collapsible_seen = true;
+            continue;
+        }
+        // An out-of-flow box's margins apply verbatim and never collapse.
+        if (is_out_of_flow(c)) {
+            c.x = left_inner + c.margin_left;
+            c.y = cursor + c.margin_top;
+            continue;
+        }
+        // An inline-block participates in the flow but its margins do NOT
+        // collapse — they apply as written on both sides.
+        if (c.is_inline_block) {
+            double gap = chain_max_pos + chain_min_neg;
+            if (chain_attaches_to_parent_top) {
+                (*tree_)[id].margin_top = gap;
+                gap = 0;
+                chain_attaches_to_parent_top = false;
+            }
+            c.x = left_inner + c.margin_left;
+            c.y = cursor + gap + c.margin_top;
+            cursor = c.y + c.height + c.margin_bottom;
+            chain_max_pos = 0;
+            chain_min_neg = 0;
+            any_collapsible_seen = true;
+            continue;
+        }
+
+        const double child_top = c.margin_top;
+        const double child_bottom = c.margin_bottom;
+        if (child_top > chain_max_pos) chain_max_pos = child_top;
+        if (child_top < chain_min_neg) chain_min_neg = child_top;
+
+        // A self-collapsing block adds BOTH its margins to the active chain and
+        // contributes no height, so the chain passes straight through it.
+        if (is_self_collapsing(*tree_, cid, ctx_, font_size)) {
+            if (child_bottom > chain_max_pos) chain_max_pos = child_bottom;
+            if (child_bottom < chain_min_neg) chain_min_neg = child_bottom;
+            c.x = left_inner + c.margin_left;
+            c.y = chain_attaches_to_parent_top ? cursor : cursor + chain_max_pos + chain_min_neg;
+            any_collapsible_seen = true;
+            continue;
+        }
+
+        // The chain closes here: realise the collapsed gap and place the child.
+        const double gap = chain_max_pos + chain_min_neg;
+        if (chain_attaches_to_parent_top) {
+            // The combined margin lives OUTSIDE the parent, on its margin-top,
+            // and the child sits flush against the inner edge.
+            (*tree_)[id].margin_top = gap;
+            c.y = cursor;
+            chain_attaches_to_parent_top = false;
+        } else {
+            c.y = cursor + gap;
+        }
+        c.x = left_inner + c.margin_left;
+        cursor = c.y + c.height;
+        // The next chain starts with this child's bottom margin.
+        chain_max_pos = child_bottom > 0 ? child_bottom : 0;
+        chain_min_neg = child_bottom < 0 ? child_bottom : 0;
+        any_collapsible_seen = true;
+    }
+
+    // Whatever is left of the chain either collapses into the parent's own
+    // bottom margin, or sits as a literal gap that pushes the content bottom
+    // down.
+    const double trailing = chain_max_pos + chain_min_neg;
+    double content_bottom;
+    if (bottom_open && any_collapsible_seen) {
+        Box& p = (*tree_)[id];
+        if (chain_attaches_to_parent_top) {
+            // Every in-flow child self-collapsed and the parent's top was open,
+            // so one chain spans the parent top to bottom: the parent's own two
+            // margins collapse together with it.
+            if (p.margin_bottom > chain_max_pos) chain_max_pos = p.margin_bottom;
+            if (p.margin_bottom < chain_min_neg) chain_min_neg = p.margin_bottom;
+            p.margin_top = chain_max_pos + chain_min_neg;
+            p.margin_bottom = 0;
+        } else {
+            if (p.margin_bottom > 0 && p.margin_bottom > chain_max_pos) {
+                chain_max_pos = p.margin_bottom;
+            }
+            if (p.margin_bottom < 0 && p.margin_bottom < chain_min_neg) {
+                chain_min_neg = p.margin_bottom;
+            }
+            p.margin_bottom = chain_max_pos + chain_min_neg;
+        }
+        content_bottom = cursor;
+    } else if (chain_attaches_to_parent_top) {
+        // The top chain never closed — there were no placed children — so it
+        // becomes the parent's margin-top and the cursor stays at the inner
+        // edge.
+        (*tree_)[id].margin_top = trailing;
+        content_bottom = cursor;
+    } else {
+        content_bottom = cursor + trailing;
+    }
+
+    finalize_block_size(id, font_size, content_bottom);
+}
+
+void BlockLayout::finalize_block_size(BoxId id, double font_size, double content_bottom_y) {
+    Box& box = (*tree_)[id];
+    if (!box.style) {
+        // The synthetic root was seeded with the viewport height so percentage
+        // heights had a basis; now that its children are placed it must
+        // collapse back to their actual bottom, or a two-div page would report
+        // the full viewport height. An anonymous wrapper keeps a height that
+        // was already stamped for it.
+        if (box.parent == kNoBox || box.height == 0) {
+            box.height = content_bottom_y + box.padding_bottom + box.border_bottom;
+        }
+        return;
+    }
+
+    // CSS 2.1 §10.5: a percentage height resolves only against a containing
+    // block with a DEFINITE height; an indefinite parent makes it compute to
+    // auto. An out-of-flow box's containing block is not known here at all, so
+    // it gets no basis rather than the wrong one.
+    const std::optional<double> basis =
+        is_out_of_flow(box) ? std::nullopt : definite_content_height(*tree_, box.parent);
+    const ResolvedLength height_r =
+        resolve_length(get(box.style, "height"), ctx_, font_size, basis);
+
+    const bool border_box = is_border_box(box.style);
+    const double frame =
+        box.padding_top + box.padding_bottom + box.border_top + box.border_bottom;
+
+    double computed;
+    double aspect_ratio = 0;
+    if (height_r.kind == LengthKind::Length) {
+        computed = border_box ? height_r.pixels : height_r.pixels + frame;
+    } else if (try_resolve_aspect_ratio(box.style, &aspect_ratio) && aspect_ratio > 0 &&
+               box.width > 0) {
+        // Width set, height auto: the ratio derives the height. As on the width
+        // side, box-sizing is ignored for the derivation.
+        computed = box.width / aspect_ratio;
+    } else {
+        computed = content_bottom_y + box.padding_bottom + box.border_bottom;
+    }
+
+    // min-/max-height share height's box-sizing basis, so a content-box bound
+    // needs the frame added before it is compared with the border-box value.
+    const ResolvedLength min_r =
+        resolve_length(get(box.style, "min-height"), ctx_, font_size, std::nullopt);
+    const ResolvedLength max_r =
+        resolve_length(get(box.style, "max-height"), ctx_, font_size, std::nullopt);
+    if (min_r.kind == LengthKind::Length) {
+        const double px = border_box ? min_r.pixels : min_r.pixels + frame;
+        if (computed < px) computed = px;
+    }
+    if (max_r.kind == LengthKind::Length) {
+        const double px = border_box ? max_r.pixels : max_r.pixels + frame;
+        if (computed > px) computed = px;
+    }
+    box.height = computed;
+
+    // A <button> vertically centres a single line of content inside an explicit
+    // height, matching Chrome. A button with an author `display: flex/grid` is
+    // laid out elsewhere, so this only ever sees the default display; and for an
+    // auto-height button the delta is zero, making it a no-op.
+    if (box.element && box.element->tag_name() == "button" && box.first_child != kNoBox) {
+        const double content_box_h = computed - frame;
+        const double natural_h = content_bottom_y - (box.padding_top + box.border_top);
+        const double delta = (content_box_h - natural_h) * 0.5;
+        if (delta > 0.5) {
+            for (BoxId c : tree_->children(id)) (*tree_)[c].y += delta;
+        }
+    }
 }
 
 } // namespace weva
