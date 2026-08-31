@@ -131,7 +131,28 @@ purpose so a backend that wants linear is not fighting it.
 GDScript cannot pass the null the ABI reads as "remove", and an empty string
 still satisfies a presence selector like `[data-hide]`.
 
+## Fonts
+
+`GodotFontBackend` fills the core's C font table over Godot's `TextServer`, so
+text is measured and shaped by the same HarfBuzz the engine drives for every
+other control. It adopts the theme's fallback face as a `TextServer` RID
+directly rather than loading a font file, which means a document renders in the
+project's own font by default and the host ships no font of its own.
+
+`use_engine_font` turns it off and falls back to the core's built-in 5x7 face.
+That is not a curiosity: the reference rasteriser has no access to the engine's
+fonts, so `compare_render.py` sets it to hold the font fixed. Without that, the
+two sides render different text and every glyph counts as a difference — which
+is exactly what the comparison reported the first time the real font landed.
+
+Two things the seam gets right and are easy to get wrong. Godot's glyph offset
+is the quad's top-left below the baseline with y growing down, while the core's
+`bearing_y` measures up to that edge — the sign flips. And `face_metrics`
+reports a zero line gap, because `TextServer` exposes none and its own line
+height is ascent + descent; inventing one would make `line-height: normal`
+taller here than in any Godot control using the same face.
+
 Not yet wired: input events, the animation tick, and registering Godot's
-`RenderingServer` and `TextServer` as the core's backends through the
-function-pointer tables. The node currently uses the core's built-in stub font,
-so text renders with the 5x7 built-in face rather than a real one.
+`RenderingServer` as the core's render backend through the function-pointer
+table — drawing currently goes through the collected draw list rather than
+straight into the engine.

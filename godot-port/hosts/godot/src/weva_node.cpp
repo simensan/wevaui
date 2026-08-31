@@ -1,7 +1,9 @@
 #include "weva_node.h"
 
+#include <godot_cpp/classes/font.hpp>
 #include <godot_cpp/classes/image.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/classes/theme_db.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
@@ -31,6 +33,43 @@ WevaDocument::WevaDocument() {
     doc_ = weva_document_create(&cfg);
 }
 
+void WevaDocument::set_use_engine_font(bool use) {
+    if (use == use_engine_font_) return;
+    use_engine_font_ = use;
+    if (!use && doc_ && font_face_ != 0) {
+        // A null table is what the ABI reads as "back to the built-in".
+        weva_document_set_font_backend(doc_, nullptr, 0);
+        font_face_ = 0;
+    }
+    dirty_ = true;
+    queue_redraw();
+}
+
+void WevaDocument::ensure_font_backend() {
+    // Deliberately lazy rather than done in the constructor: ThemeDB may not be
+    // up that early, and use_engine_font has to be settable before the first
+    // update, which is the last moment the ABI allows a backend to be
+    // registered.
+    if (!doc_ || font_face_ != 0 || !use_engine_font_) return;
+
+    // The engine's own fallback font, adopted directly as a TextServer RID.
+    // Loading a font file would work too, but this way the document renders in
+    // the same face as every other control in the project by default, and the
+    // host ships no font of its own.
+    ThemeDB* theme = ThemeDB::get_singleton();
+    if (!theme) return;
+    const Ref<Font> fallback = theme->get_fallback_font();
+    if (fallback.is_null()) return;
+    const TypedArray<RID> rids = fallback->get_rids();
+    if (rids.is_empty()) return;
+
+    font_face_ = font_backend_.adopt(rids[0]);
+    if (font_face_ == 0) return;
+    font_backend_.fill(&font_table_);
+    weva_document_set_font_backend(doc_, &font_table_, font_face_);
+    dirty_ = true;
+}
+
 WevaDocument::~WevaDocument() {
     if (doc_) weva_document_destroy(doc_);
 }
@@ -49,6 +88,10 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::set_element_attribute);
     ClassDB::bind_method(D_METHOD("remove_element_attribute", "selector", "name"),
                          &WevaDocument::remove_element_attribute);
+    ClassDB::bind_method(D_METHOD("set_use_engine_font", "use"),
+                         &WevaDocument::set_use_engine_font);
+    ClassDB::bind_method(D_METHOD("get_use_engine_font"), &WevaDocument::get_use_engine_font);
+    ClassDB::bind_method(D_METHOD("has_engine_font"), &WevaDocument::has_engine_font);
     ClassDB::bind_method(D_METHOD("get_draw_count"), &WevaDocument::get_draw_count);
     ClassDB::bind_method(D_METHOD("get_triangle_count"), &WevaDocument::get_triangle_count);
 
@@ -60,9 +103,12 @@ void WevaDocument::_bind_methods() {
                  "get_css");
     ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "document_size"), "set_document_size",
                  "get_document_size");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_engine_font"), "set_use_engine_font",
+                 "get_use_engine_font");
 }
 
 void WevaDocument::_ready() {
+
     // The glyph atlas is shelf-packed with no gutter, and the core emits UVs
     // that address texels exactly. Godot's canvas default is linear filtering,
     // which both softens glyph edges the core drew crisply and samples across
@@ -106,6 +152,7 @@ void WevaDocument::set_document_size(const Vector2& size) {
 
 void WevaDocument::ensure_updated() {
     if (!doc_ || !dirty_) return;
+    ensure_font_backend();
     // Not an error to update an empty document: a scene may set css before
     // html, and the next update picks both up.
     weva_document_update(doc_, 0.0);

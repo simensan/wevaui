@@ -25,6 +25,7 @@ set(WEVA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../.. ${CMAKE_CURRENT_BINARY_DIR}/weva-core)
 
 add_library(weva_godot SHARED
+    src/godot_font.cpp
     src/register_types.cpp
     src/weva_node.cpp
 )

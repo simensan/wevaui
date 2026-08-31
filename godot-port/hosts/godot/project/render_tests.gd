@@ -34,6 +34,7 @@ func _make_doc(html: String, css: String, size := Vector2(400, 200)) -> WevaDocu
 func _ready() -> void:
 	_test_geometry_crosses_the_boundary()
 	_test_layout_matches_queries()
+	_test_engine_font_is_adopted()
 	_test_text_produces_textured_geometry()
 	_test_restyle_round_trips()
 	_test_empty_and_malformed_input()
@@ -63,6 +64,29 @@ func _test_layout_matches_queries() -> void:
 	_check(_approx(b.size.x, 40.0) and _approx(b.size.y, 30.0), "the box takes its declared size")
 	# A miss returns an empty rect rather than something a caller might use.
 	_check(doc.query_bounds("#nope") == Rect2(), "an unmatched selector returns an empty rect")
+	doc.queue_free()
+
+func _test_engine_font_is_adopted() -> void:
+	# Falling back to the core's 5x7 stub is silent by design — text still lays
+	# out and still renders — so without this check a broken font backend looks
+	# like a font choice.
+	# inline-block, not block: a block fills its containing block whatever the
+	# font, so its width would report the same either way and the measurement
+	# check below would pass without measuring anything.
+	var doc := _make_doc(
+		"<body><div id='a'>Hello</div></body>",
+		"#a { display: inline-block; font-size: 16px }")
+	_check(doc.has_engine_font(), "the engine's fallback font was adopted")
+
+	# The engine face must actually be what gets measured, not just what gets
+	# drawn: a backend wired into paint but not into metrics lays text out to
+	# one face and draws it with another.
+	var engine_width := doc.query_bounds("#a").size.x
+	doc.use_engine_font = false
+	doc.update_document()
+	_check(not doc.has_engine_font(), "turning the engine font off falls back to the stub")
+	_check(doc.query_bounds("#a").size.x != engine_width,
+		"the two faces measure the text differently")
 	doc.queue_free()
 
 func _test_text_produces_textured_geometry() -> void:

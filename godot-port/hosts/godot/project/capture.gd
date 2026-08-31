@@ -43,6 +43,10 @@ func _ready() -> void:
 	var h := int(parts[1]) if parts.size() > 1 else w
 
 	var doc := WevaDocument.new()
+	# The backend comparison only means something with the font held fixed:
+	# rendering one side with the engine's face and the other with the core's
+	# stub compares two different documents, not two rasterisers.
+	doc.use_engine_font = not _args.has("stub-font")
 	doc.document_size = Vector2(w, h)
 	doc.css = _read(_args.get("css", ""))
 	doc.html = _read(_args.get("html", ""))

@@ -1617,6 +1617,41 @@ Phases 2–4 remains static analysis plus my own tests. `BaselineGen` needs
 `dotnet build`, and there is no .NET SDK in this container. It stays the
 highest-value work outside this loop.
 
+### Real fonts: `TextServer` behind the C font table
+
+`GodotFontBackend` fills `weva_font_backend` over Godot's `TextServer`, so a
+document is measured and shaped by the same HarfBuzz every other control in the
+engine uses. It adopts the theme's fallback face as a RID rather than loading a
+font file, so a document renders in the project's own font and the host ships
+none. 23 checks green in the Godot project.
+
+Two sign-and-convention traps, both silent if got wrong. Godot's glyph offset is
+the quad's top-left *below* the baseline with y growing down; the core's
+`bearing_y` measures *up* to that same edge. And `face_metrics` reports a zero
+line gap, because `TextServer` exposes none and its own line height is
+ascent + descent — inventing one would make `line-height: normal` taller here
+than in any Godot control using the same face.
+
+**The backend comparison caught the consequence immediately**: with Godot on a
+real face and `weva_render` still on the stub, agreement went from 0 differing
+pixels to 14.72%. Nothing was broken — the two sides were rendering different
+text. `use_engine_font` now holds the font fixed for the comparison, and it is
+back to pixel-identical. Worth recording because the failure mode of a
+differential harness is exactly this: a real difference that means nothing,
+which if waved through teaches you to wave through the next one.
+
+The render test for this asserts more than "a font was adopted": it checks that
+the two faces *measure* differently, which is what catches a backend wired into
+paint but not into metrics. The first version of that check used a `display:
+block` element, whose width is its containing block's whatever the font — it
+passed without measuring anything. `inline-block` shrink-to-fits and actually
+tests it.
+
+And the comparator's own gate was wrong in a way worth naming: "ink" was defined
+as *not white*, which on a dark document makes every pixel ink and reports
+perfect agreement while measuring nothing. It now takes each image's modal pixel
+as the page colour, and fails outright when the two disagree on it.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

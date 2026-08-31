@@ -6,6 +6,7 @@
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 
+#include "godot_font.h"
 #include "weva_c.h"
 
 // The Godot host: a Node2D that owns a weva document and draws its geometry.
@@ -42,6 +43,13 @@ public:
     // Runs cascade, layout and paint now, rather than waiting for the frame.
     void update_document();
 
+    // Whether to draw with the engine's own font. Turning it off falls back to
+    // the core's built-in 5x7 face, which is what the backend comparison needs:
+    // holding the font fixed is the only way a pixel difference between this
+    // host and the reference rasteriser means anything.
+    void set_use_engine_font(bool use);
+    bool get_use_engine_font() const { return use_engine_font_; }
+
     // The border box of the first element matching `selector`, in document
     // coordinates. A zero-size rect means no match — Godot has no natural
     // "absent rect", and a caller checking `size == 0` is the same test they
@@ -60,9 +68,21 @@ public:
     // Diagnostics the render tests assert on.
     int get_draw_count() const;
     int get_triangle_count() const;
+    // False when the engine gave us no usable face and the core's stub font is
+    // still in play — worth being able to assert on, since text that renders
+    // with the 5x7 stub looks like a font choice rather than a failure.
+    bool has_engine_font() const { return font_face_ != 0; }
 
 protected:
     static void _bind_methods();
+
+private:
+    // Idempotent: adopts the engine's fallback face the first time it can, and
+    // is called from both the constructor and _ready because ThemeDB is not
+    // guaranteed to be up at construction.
+    void ensure_font_backend();
+
+protected:
 
 private:
     void ensure_updated();
@@ -75,6 +95,12 @@ private:
     // The atlas texture, rebuilt when the document publishes a new one. Held
     // so it outlives the draw call that references it.
     godot::Ref<godot::ImageTexture> atlas_;
+    // The font backend must outlive the document: the core holds the table by
+    // pointer and calls into it on every update.
+    GodotFontBackend font_backend_;
+    weva_font_backend font_table_{};
+    uint64_t font_face_ = 0;
+    bool use_engine_font_ = true;
     uint64_t atlas_id_ = 0;
 };
 

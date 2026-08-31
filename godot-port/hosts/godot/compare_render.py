@@ -55,6 +55,23 @@ def read_ppm(path):
     return width, height, pixels
 
 
+def modal_pixel(buf, total):
+    """The most common pixel value, taken as the page colour behind the content."""
+    counts = {}
+    for p in range(total):
+        i = p * 3
+        key = buf[i] << 16 | buf[i + 1] << 8 | buf[i + 2]
+        counts[key] = counts.get(key, 0) + 1
+    key = max(counts, key=counts.get)
+    return (key >> 16, (key >> 8) & 0xFF, key & 0xFF)
+
+
+def differs(buf, i, page, tolerance):
+    return (abs(buf[i] - page[0]) > tolerance
+            or abs(buf[i + 1] - page[1]) > tolerance
+            or abs(buf[i + 2] - page[2]) > tolerance)
+
+
 def compare(a_path, b_path, tolerance, coverage_tolerance):
     aw, ah, a = read_ppm(a_path)
     bw, bh, b = read_ppm(b_path)
@@ -62,11 +79,18 @@ def compare(a_path, b_path, tolerance, coverage_tolerance):
         print(f"FAIL  size {aw}x{ah} vs {bw}x{bh}")
         return False
 
-    # "Ink" is any pixel not left at the white page. Comparing ink coverage
-    # separately from channel error is what distinguishes a box drawn in the
-    # wrong place (catastrophic, and what this is for) from anti-aliasing along
-    # its edges (expected, and uninteresting).
+    # "Ink" is any pixel that differs from the page behind it. The first version
+    # of this defined ink as "not white", which is vacuous on a dark document —
+    # every pixel counts, and the gate reports perfect agreement while measuring
+    # nothing. The page colour is taken as each image's own modal pixel, so the
+    # two are compared on the same footing whatever the design.
+    #
+    # Comparing ink coverage separately from channel error is what distinguishes
+    # a box drawn in the wrong place (catastrophic, and what this is for) from
+    # anti-aliasing along its edges (expected, and uninteresting).
     total = aw * ah
+    a_page = modal_pixel(a, total)
+    b_page = modal_pixel(b, total)
     differing = 0
     worst = 0
     error_sum = 0
@@ -81,8 +105,8 @@ def compare(a_path, b_path, tolerance, coverage_tolerance):
             worst, worst_at = d, (p % aw, p // aw)
         if d > tolerance:
             differing += 1
-        a_on = a[i] < 250 or a[i + 1] < 250 or a[i + 2] < 250
-        b_on = b[i] < 250 or b[i + 1] < 250 or b[i + 2] < 250
+        a_on = differs(a, i, a_page, tolerance)
+        b_on = differs(b, i, b_page, tolerance)
         a_ink += a_on
         b_ink += b_on
         ink_agree += a_on == b_on
@@ -95,8 +119,17 @@ def compare(a_path, b_path, tolerance, coverage_tolerance):
     print(f"  mean channel Δ  {mean:.2f}/255")
     print(f"  worst channel Δ {worst}/255 at {worst_at}")
     print(f"  over tolerance  {differing} px ({differing_pct:.2f}%), tolerance {tolerance}")
+    print(f"  page colour     software #{a_page[0]:02x}{a_page[1]:02x}{a_page[2]:02x}, "
+          f"godot #{b_page[0]:02x}{b_page[1]:02x}{b_page[2]:02x}")
     print(f"  ink coverage    software {a_ink} px, godot {b_ink} px")
     print(f"  ink disagrees   {total - ink_agree} px ({ink_pct:.2f}%)")
+
+    # A page colour the two disagree on means the clear colour or the whole
+    # composite differs, and every derived number below is then measuring the
+    # wrong thing — worth failing on its own rather than explaining away.
+    if a_page != b_page:
+        print("FAIL  the two images do not even share a page colour")
+        return False
 
     # Only the coverage check gates. Channel error inside shared ink is a
     # rasteriser difference; ink in the wrong place is a bug.
@@ -119,6 +152,9 @@ def main():
     ap.add_argument("--out-dir", default=None, help="keep the images here instead of a temp dir")
     ap.add_argument("--tolerance", type=int, default=8,
                     help="per-channel difference treated as rasteriser noise")
+    ap.add_argument("--engine-font", action="store_true",
+                    help="let Godot use its own font; the two sides then render "
+                         "different text and only the non-text geometry is comparable")
     ap.add_argument("--coverage-tolerance", type=float, default=2.0,
                     help="percentage of pixels allowed to disagree on ink at all")
     args = ap.parse_args()
@@ -141,7 +177,11 @@ def main():
         [args.godot, "--path", args.project, "--rendering-driver", "opengl3",
          "--scene", "res://capture.tscn", "--",
          "--html", os.path.abspath(args.html), "--css", css_arg,
-         "--size", f"{width}x{height}", "--out", godot, "--png", png],
+         "--size", f"{width}x{height}", "--out", godot, "--png", png]
+        # The reference rasteriser has no access to the engine's fonts, so the
+        # comparison holds the font fixed on the core's built-in face. Without
+        # this the two sides render different text and every glyph differs.
+        + ([] if args.engine_font else ["--stub-font", "1"]),
         capture_output=True, text=True)
     # Godot logs audio and vsync failures on a headless machine that have
     # nothing to do with rendering, so only the capture's own line is echoed.
