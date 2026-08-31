@@ -164,11 +164,39 @@ Both were found by porting. Decisions taken:
    exactly for now; revisit once the corpus is green, then fix both engines
    together with the oracle watching.
 
-**Process note.** Eight of the first parser tests failed, and every one was a
-wrong expectation on my side — written from memory of Chrome rather than from
-the C# source. The port was faithful. That is the failure mode this phase
-should expect: for a differential port, "what does the reference actually do"
-is a question to answer by reading or running it, never by recall.
+**CSS tokenizer done** (`CssTokenizer.cs`, 452 LOC). 274 checks green across
+gcc / clang / ASan+UBSan+LSan; the demo stylesheet tokenizes clean in strict
+mode into 5,452 tokens (983 ident, 348 dimension, 180 function, 43 hash).
+
+* **`std::from_chars` refuses a leading `+`** — it only recognises one in an
+  exponent — where C#'s `NumberStyles.Float` accepts it. The tokenizer feeds it
+  raw source text, so unhandled this would silently turn `margin: +5px` into
+  `margin: 0`. `css_parse_double` strips the sign first and is tested directly,
+  including the failure cases (`.`, `-`, `+`, empty) that must yield 0 to match
+  `TryParse`'s out-param default.
+* **This file needs no UTF-8 decoding, and that is a decision.** CSS Syntax
+  §4.2 makes every non-ASCII code point a name-start code point (`c >= 0x80` in
+  the C#), and every UTF-8 continuation byte is also `>= 0x80` — so byte-wise
+  scanning produces identical identifiers. Unlike the HTML tokenizer, which
+  genuinely needed code points.
+* **CSS whitespace is ASCII-only**, deliberately narrower than the HTML
+  tokenizer's `char.IsWhiteSpace`. The two must not be unified.
+
+**Process note, now with a pattern.** Across the HTML parser and CSS tokenizer,
+**11 test expectations were wrong and zero port bugs were found.** Every failure
+was me asserting from recall — Chrome's DOM shape, or what "looked right" — 
+rather than from the reference. Three worth keeping:
+
+* `c-->d` tokenizes as `Ident("c--") Delim(">") Ident("d")`, not a CDC: `-` is
+  a name code point, so the ident absorbs both dashes. CDC only applies at a
+  token boundary.
+* A skipped CDC emits nothing, so the whitespace either side survives as **two
+  adjacent Whitespace tokens**. Downstream consumers must tolerate that.
+* The single whitespace after an escape's hex digits is the escape terminator
+  and is consumed; a second space is literal content.
+
+For a differential port, "what does the reference actually do" is a question to
+answer by reading or running it, never by recall.
 
 ## Phase 3 — Cascade and selectors (~12k LOC)
 
