@@ -112,6 +112,11 @@ void test_stub_shaping();
 void test_glyph_atlas();
 void test_text_geometry();
 void test_text_end_to_end();
+void test_abi_version_and_lifecycle();
+void test_abi_load_and_update();
+void test_abi_query_and_bounds();
+void test_abi_attributes_and_text();
+void test_abi_viewport_and_restyle();
 int main() {
     test_arena();
     test_intern();
@@ -226,6 +231,11 @@ int main() {
     test_glyph_atlas();
     test_text_geometry();
     test_text_end_to_end();
+    test_abi_version_and_lifecycle();
+    test_abi_load_and_update();
+    test_abi_query_and_bounds();
+    test_abi_attributes_and_text();
+    test_abi_viewport_and_restyle();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

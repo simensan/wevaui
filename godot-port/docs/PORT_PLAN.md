@@ -1461,6 +1461,45 @@ and has no reason to match the face ascent either.
 kerning and ligatures, bidi, and atlas eviction — the atlas grows until full and
 then refuses, which is right for a document but not for a long-running app.
 
+**The C ABI is in.** 7105 checks green across gcc 13, clang 18, ASan+UBSan+LSan
+and Release. `include/weva_c.h` is the seam a Godot GDExtension binds through,
+and the one a Unity host would bind through later — which was the architecture
+decision made at the very start of this work.
+
+Its tests are written the way a host writes code: through `weva_c.h` alone, with
+no libweva C++ type in sight. **If that file ever needs a core header, the seam
+has leaked**, and the test file failing to compile is the signal.
+
+The contract, and why each part is shaped as it is:
+
+* **Handles are indices, not pointers.** The DOM is refcounted and may move; a
+  stale index is detectable where a stale pointer is undefined behaviour. Every
+  lookup rejects an out-of-range handle.
+* **Lengths are explicit.** No entry point requires a null-terminated buffer,
+  and the bytes are copied, so a host may free them on return.
+* **Every entry point tolerates a null document.** A host that failed to create
+  one must not take the process down with it.
+* **`weva_element_text` returns the length it WOULD have written**, so a host
+  sizes with one call and fills with a second — and truncates safely if it
+  guesses.
+* **The draw list is borrowed, not owned.** This is the one place the
+  "explicit free" rule is relaxed, in exchange for a documented lifetime: the
+  buffers are valid until the next update. A per-frame copy of the whole
+  display list is exactly the allocation this port exists to remove, so
+  handing one back would undo the point.
+* **A viewport change takes effect on the NEXT update.** A host resizing
+  mid-frame must not see a half-updated document.
+
+What crosses the boundary is triangles: a collecting backend gathers the draw
+list rather than rasterizing it, so the core still does all the tessellation and
+the host's own renderer issues the draws. The translation is baked into the
+vertices there rather than passed through, because the ABI should hand over
+geometry that is ready to upload.
+
+**Deferred:** host-supplied render and font backends through function-pointer
+tables — the ABI currently uses the built-in stubs — plus event delivery, the
+animation tick (`dt_seconds` is accepted and ignored), and multi-element query.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

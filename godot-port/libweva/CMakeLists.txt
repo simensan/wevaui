@@ -37,6 +37,7 @@ add_library(weva STATIC
     src/software_renderer.cpp
     src/font_interface.cpp
     src/glyph_atlas.cpp
+    src/weva_c.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)
