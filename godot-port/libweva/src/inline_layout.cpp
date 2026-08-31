@@ -1,5 +1,7 @@
 #include "weva/inline_layout.h"
 
+#include <optional>
+
 #include "weva/css_properties.h"
 
 #include <algorithm>
@@ -116,11 +118,34 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
 double layout_inline_items(BoxTree* tree, BoxId container,
                            const std::vector<InlineItem>& items, double available_width,
                            const LayoutContext& ctx, const FontMetrics& metrics) {
-    (void)ctx;
     const Box& cbox = (*tree)[container];
     const double top_inner = cbox.padding_top + cbox.border_top;
     const double left_inner = cbox.padding_left + cbox.border_left;
     const std::string_view align = resolve_text_align(cbox.style);
+
+    // CSS 2.1 §10.8.1: half-leading is SIGNED. A line-height smaller than the
+    // font's own ascent+descent gives a negative half-leading and a line box
+    // shorter than its content, with the glyphs overflowing it — it does not
+    // clamp back up to the metric height.
+    //
+    // Taking max(content, leading) instead made `line-height: 1` on a 16px font
+    // indistinguishable from `normal`, which the oracle caught across most of
+    // the corpus. The C# fixed the same bug once and left a comment saying so.
+    //
+    // The override is keyed on the CONTAINER declaring line-height, not on the
+    // per-item values, because that is what the reference does: it lays lines
+    // out at their natural metric height and then overrides them in a pass over
+    // the container's children.
+    std::optional<double> declared_line_height;
+    if (cbox.style) {
+        const std::string_view raw = get(cbox.style, "line-height");
+        if (!raw.empty() && !iequals(raw, "normal")) {
+            const double container_fs =
+                font_size_px(cbox.style, cbox.parent != kNoBox ? (*tree)[cbox.parent].style
+                                                               : nullptr, ctx);
+            declared_line_height = line_height_px(cbox.style, container_fs, ctx, &metrics);
+        }
+    }
 
     // One fragment of text placed on the line being built.
     struct Fragment {
@@ -165,11 +190,13 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // deepest ascent — so a taller span pushes the whole line down rather
         // than overlapping the one above.
         const double content_height = max_ascent + max_descent;
-        const double line_height = std::max(content_height, max_leading);
+        const double natural_height = std::max(content_height, max_leading);
         // Half-leading is split evenly above and below, which is what keeps a
-        // line-height larger than the text centred on it.
-        const double half_leading = (line_height - content_height) * 0.5;
-        const double baseline = half_leading + max_ascent;
+        // line-height larger than the text centred on it — and, when the
+        // declared line-height is smaller than the content, pulls it up.
+        const double natural_baseline = (natural_height - content_height) * 0.5 + max_ascent;
+        const double line_height = declared_line_height.value_or(natural_height);
+        const double baseline = natural_baseline + (line_height - natural_height) * 0.5;
 
         double dx = 0;
         if (iequals(align, "right")) dx = available_width - pen;

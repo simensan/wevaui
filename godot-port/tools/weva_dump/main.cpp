@@ -5,13 +5,28 @@
 //
 //     weva_dump <html> <width> <height> [out] [css]
 //
-// Phase 0: there is no engine behind this yet, so it emits an empty element
-// list. That is the intended Phase 0 exit state — the harness must correctly
-// report "N elements expected, 0 produced" before any engine code exists.
+// The walk mirrors LayoutDump.Walk exactly, and the ways it is allowed to
+// differ are none: `html` and `body` are skipped as wrappers but recursed into
+// without incrementing depth, anonymous and line boxes are skipped entirely,
+// and only the FIRST box for an element is emitted, because a box that
+// fragments produces several and the C# keys on the principal one.
 
-#include "weva/arena.h"
+#include "weva/block_layout.h"
+#include "weva/box.h"
+#include "weva/box_builder.h"
+#include "weva/cascade.h"
+#include "weva/css_rule.h"
+#include "weva/dom.h"
+#include "weva/font_metrics.h"
+#include "weva/html.h"
 #include "weva/intern.h"
-#include "weva/status.h"
+#include "weva/positioning.h"
+#include "weva/style_resolver.h"
+#include "weva/user_agent_stylesheet.h"
+
+#include <map>
+#include <memory>
+#include <set>
 
 #include <cmath>
 #include <cstdio>
@@ -115,6 +130,68 @@ bool read_file(const std::string& path, std::string* out) {
     return true;
 }
 
+// The same cascade walk weva_c.cpp performs, kept here rather than shared
+// because the ABI's copy is behind an opaque handle and this tool needs the box
+// tree itself.
+struct StyleMap : weva::StyleProvider {
+    weva::CascadeEngine& engine;
+    weva::NullStateProvider state;
+    std::vector<std::unique_ptr<weva::ComputedStyle>> owned;
+    std::map<const weva::Element*, weva::ComputedStyle*> by_element;
+
+    explicit StyleMap(weva::CascadeEngine& e) : engine(e) {}
+
+    void walk(const weva::Element& e, const weva::ComputedStyle* parent) {
+        auto cs = std::make_unique<weva::ComputedStyle>();
+        engine.compute(e, state, parent, cs.get());
+        weva::ComputedStyle* raw = cs.get();
+        owned.push_back(std::move(cs));
+        by_element[&e] = raw;
+        for (const weva::Ref<weva::Node>& c : e.children()) {
+            if (c->node_type() == weva::NodeType::Element) {
+                walk(static_cast<const weva::Element&>(*c), raw);
+            }
+        }
+    }
+    const weva::ComputedStyle* style_of(const weva::Element& e) override {
+        auto it = by_element.find(&e);
+        return it == by_element.end() ? nullptr : it->second;
+    }
+};
+
+void walk(const weva::BoxTree& tree, weva::BoxId id, double parent_x, double parent_y,
+          int depth, std::vector<ElementRect>* out, std::set<const weva::Element*>* seen) {
+    if (id == weva::kNoBox) return;
+    const weva::Box& b = tree[id];
+    const double x = parent_x + b.x;
+    const double y = parent_y + b.y;
+
+    // `html` and `body` do not appear in the dump but do not consume a level
+    // either, so a top-level div is depth 1 on both sides.
+    const bool is_wrapper =
+        b.element && (b.element->tag_name() == "html" || b.element->tag_name() == "body");
+    const bool is_principal = b.element && !is_wrapper && b.kind != weva::BoxKind::Line &&
+                              b.kind != weva::BoxKind::AnonymousBlock &&
+                              b.kind != weva::BoxKind::AnonymousInline &&
+                              b.kind != weva::BoxKind::Text && seen->insert(b.element).second;
+    if (is_principal) {
+        ElementRect r;
+        r.depth = depth;
+        r.tag = b.element->tag_name();
+        r.id = std::string(b.element->id());
+        r.cls = std::string(b.element->class_name());
+        r.x = x;
+        r.y = y;
+        r.w = b.width;
+        r.h = b.height;
+        out->push_back(r);
+    }
+
+    for (weva::BoxId c : tree.children(id)) {
+        walk(tree, c, x, y, is_wrapper ? depth : depth + 1, out, seen);
+    }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -147,14 +224,74 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    weva::Arena arena;
     weva::SymbolTable symbols;
     std::vector<ElementRect> boxes;
 
-    // ---- Phase 1+ : parse -> cascade -> layout fills `boxes` here. ----
-    (void)arena; (void)symbols; (void)html; (void)css;
+    weva::ParseOptions html_options;
+    html_options.strict = false;
+    weva::HtmlParseError html_error;
+    weva::Ref<weva::Document> document =
+        weva::parse_html(html, &symbols, html_options, &html_error);
+    if (!document) {
+        std::fprintf(stderr, "weva_dump: html did not parse\n");
+        return 1;
+    }
 
-    write_json(out_path, html_path, width, height, boxes);
+    // The UA sheet first, then the author sheet, in the same order and with the
+    // same origins the C# uses — origin ordering is half of the cascade, so a
+    // difference here would show up as a divergence in every rule.
+    weva::CascadeEngine cascade;
+    weva::Stylesheet ua_sheet;
+    weva::CssParseError css_error;
+    if (weva::parse_stylesheet(weva::user_agent_stylesheet_source(), false, &ua_sheet,
+                               &css_error)) {
+        cascade.add_stylesheet(&ua_sheet, weva::DeclarationOrigin::UserAgent);
+    }
+    weva::Stylesheet author_sheet;
+    if (!css.empty()) {
+        if (!weva::parse_stylesheet(css, false, &author_sheet, &css_error)) {
+            std::fprintf(stderr, "weva_dump: css did not parse\n");
+            return 1;
+        }
+        cascade.add_stylesheet(&author_sheet, weva::DeclarationOrigin::Author);
+    }
+
+    StyleMap styles{cascade};
+    for (const weva::Ref<weva::Node>& child : document->children()) {
+        if (child->node_type() == weva::NodeType::Element) {
+            styles.walk(static_cast<const weva::Element&>(*child), nullptr);
+        }
+    }
+
+    // ChromeSansSerif, matching BaselineGen. The C ABI default-constructs
+    // MonoFontMetrics instead, which is a different face — the dump has to
+    // match the oracle, not the ABI, or every text measurement diverges for a
+    // reason that has nothing to do with the engine.
+    const weva::MonoFontMetrics metrics = weva::MonoFontMetrics::chrome_sans_serif();
+    weva::LayoutContext ctx;
+    ctx.viewport_width_px = width;
+    ctx.viewport_height_px = height;
+
+    weva::BoxTree tree;
+    weva::BoxBuilder builder(&tree, &styles);
+    const weva::BoxId root = builder.build_document(*document);
+    if (root == weva::kNoBox) {
+        std::fprintf(stderr, "weva_dump: no box tree\n");
+        return 1;
+    }
+    weva::BlockLayout block(&tree, ctx, &metrics);
+    block.layout_root(root, ctx.viewport_width_px, ctx.viewport_height_px);
+    weva::run_positioning(&tree, root, ctx, &block);
+
+    std::set<const weva::Element*> seen;
+    walk(tree, root, 0, 0, 0, &boxes, &seen);
+
+    // The basename, not the path: BaselineGen writes Path.GetFileName, and a
+    // whole-file diff of the two dumps has to compare equal.
+    const std::size_t slash = html_path.find_last_of("/\\");
+    const std::string source_name =
+        slash == std::string::npos ? html_path : html_path.substr(slash + 1);
+    write_json(out_path, source_name, width, height, boxes);
     std::printf("Wrote %zu elements -> %s\n", boxes.size(), out_path.c_str());
     return 0;
 }

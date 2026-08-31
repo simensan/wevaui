@@ -19,8 +19,10 @@
                ..\..\Packages\com.wevaui\Runtime\Document\UnityClock.cs;
                ..\..\Packages\com.wevaui\Runtime\DevTools\**\*.cs;
                ..\..\Packages\com.wevaui\Runtime\Rendering\**\*.cs;
-               ..\..\Packages\com.wevaui\Runtime\Text\**\*.cs;
-               ..\..\Packages\com.wevaui\Runtime\Forms\Bridge\**\*.cs" />
+               ..\..\Packages\com.wevaui\Runtime\Forms\Bridge\LegacyInputPointerSource.cs;
+               ..\..\Packages\com.wevaui\Runtime\Forms\Bridge\UnityInputController.cs;
+               ..\..\Packages\com.wevaui\Runtime\Text\Unity\UnityGUIFontMetrics.cs" />
+    <Compile Include="HeadlessUnityShims.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="TestSelfCheck.cs" />
     <Compile Include="GoldenAssertCheck.cs" />

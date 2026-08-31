@@ -1652,6 +1652,86 @@ as *not white*, which on a dark document makes every pixel ink and reports
 perfect agreement while measuring nothing. It now takes each image's modal pixel
 as the page colour, and fails outright when the two disagree on it.
 
+### The oracle runs. 17/47.
+
+I had been recording the oracle as blocked on a missing .NET SDK for the whole
+port. **It was not blocked; I had never tried.** `dotnet-install.sh` installs
+the 8.0 SDK into the container in about a minute. Everything below came out of
+the hour after that, and none of it was reachable from static analysis.
+
+Three small things stood between the SDK and a running reference, all bit-rot
+rather than design: `BaselineGen.csproj` excluded whole directories as
+"Unity-bound" when only **three files** in them actually fail outside Unity —
+the rest gate their Unity code behind `#if UNITY_*`, which a plain `dotnet
+build` compiles out. What remained was profiler instrumentation threaded
+through the layout path, covered by a no-op shim (`HeadlessUnityShims.cs`);
+anything with behaviour there would be behaviour the oracle has and Unity does
+not, which is the one thing a reference must never have.
+
+`weva_dump` is no longer the Phase 0 stub. Its walk mirrors `LayoutDump.Walk`
+exactly: `html` and `body` skipped as wrappers but recursed into without
+consuming a depth level, anonymous and line boxes skipped, first box per element
+only. It uses `MonoFontMetrics::chrome_sans_serif()` because that is what
+BaselineGen uses — the C ABI default-constructs a *different* face, and matching
+the ABI instead of the oracle would have diverged every text measurement for a
+reason unrelated to the engine.
+
+`tools/oracle/run_oracle.py` runs both sides over a corpus and diffs. Tolerance
+is zero, per ORACLE.md.
+
+**First run: 15 of 47 agreed.** Not the "parity" every prior phase claimed.
+
+#### What it found immediately: `line-height: 1` did nothing
+
+The dominant failure was `h 16 vs 18.29` across most of the corpus — 18.29 is
+16 × 1.143, the metric line height, so the port was ignoring the declared
+`line-height` and falling back to `normal`. Bisecting the value showed the
+shape: `1.5`, `2`, `3` and `20px` were all correct, while `1`, `1.0`, `0.5` were
+not. Every failing value was one that asks for a line box SHORTER than the
+font's own ascent + descent.
+
+The cause was `std::max(content_height, max_leading)` in `flush_line`. CSS 2.1
+§10.8.1 makes half-leading **signed**: a tight line-height gives a negative
+half-leading and a line box shorter than its content, with the glyphs
+overflowing it. Clamping made `line-height: 1` indistinguishable from `normal`.
+
+The C# has a comment at exactly that spot recording that the negative branch was
+once suppressed there too, and naming the same symptom. Two implementations, the
+same mistake, found the same way.
+
+The reference's model is also not the per-item spec model, and guessing would
+have got it wrong: it lays lines out at their natural metric height, then
+overrides them in a pass over the container's children **keyed on the container
+declaring `line-height`**, not on the per-item values. Confirmed by asking the
+oracle for a multi-line case rather than reading more code. Now matched:
+`line-height: 1`, `2` and `normal` agree exactly on both height and stacking.
+
+**17/47 after the fix.**
+
+#### What is left, honestly
+
+Most of the remaining 30 are features that are genuinely not ported: flex, grid,
+multicol, counters, list markers, quotes, `<br>`, containment. Those are Phases
+6–8 and their failures are expected.
+
+But several are in slices this plan already called done, and they are real:
+
+* **Floats do not shorten line boxes.** `28-floats`: text beside a float
+  reports one line where the reference gives two. Floats and inline layout were
+  each signed off; their *interaction* was never built.
+* **`word-break` does not break.** `21-word-break`: one line against the
+  reference's two.
+* **A `span` lays out as a block** in `30-top-bar-and-body` — full container
+  width instead of its text width.
+* **An absolutely positioned box is not centred** in `31-centered-modal`
+  (x 200 vs 0, y 150 vs 0).
+* **Inline-block baseline alignment is off** by ~6px in `19-inline-block-row`.
+
+None of these were visible to the 7,147 self-written checks, which is the whole
+argument for the oracle and the reason ORACLE.md says to build it first. I did
+not, and four phases of "parity" turned out to mean "agrees with tests I wrote
+from the same misunderstanding".
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)
