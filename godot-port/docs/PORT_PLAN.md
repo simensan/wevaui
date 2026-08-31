@@ -93,6 +93,34 @@ gets its first real test.
 **Exit:** property round-trip dumps diff clean. Every value type the C# parser
 accepts parses identically, including the `from_chars` locale behaviour.
 
+**Status: HTML tokenizer done; HTML tree builder and all CSS parsing remain.**
+152 checks green under gcc 13, clang 18 and ASan+UBSan+LSan. Tokenizes the
+17KB dev demo (`Assets/UI/randhtml.html`) into 1,177 tokens / 27 interned names.
+
+**The encoding change is the substance of this phase.** C# tokenizes UTF-16
+`char`s; C++ tokenizes UTF-8 bytes. Three consequences, each deliberate:
+
+* **Whitespace classification is Unicode, not ASCII.** `char.IsWhiteSpace`
+  decides where an unquoted attribute value ends, so `is_unicode_whitespace`
+  reproduces its BMP set exactly. Narrowing it to ASCII would silently swallow
+  a U+00A0 separator into the value — there is a test with a real U+00A0 in it.
+  Note U+200B is *not* whitespace to `char.IsWhiteSpace`, and isn't here either.
+* **Line/column count code points, C# counts UTF-16 units.** An astral
+  character reports one column less. Columns appear only in diagnostics, never
+  in a layout dump, so the oracle is unaffected.
+* **Surrogate numeric entities are rejected as literal text** (`&#xD800;`).
+  C# calls `char.ConvertFromUtf32`, which *throws* — an unhandled
+  `ArgumentOutOfRangeException` escaping the tokenizer. This is a deliberate
+  deviation, matching browsers and almost certainly what the C# meant.
+
+Tag and attribute names are interned (`Symbol`) rather than held as strings.
+Selector matching and the void/optional-close tables compare them constantly.
+
+Also worth noting: the C# comment terminator bound is `pos + 2 < length`, not
+`<=`, so a comment ending at the final byte of the buffer reads as
+unterminated. Reproduced rather than fixed — the oracle compares against C#
+behaviour, and a unilateral fix here is a divergence.
+
 ## Phase 3 — Cascade and selectors (~12k LOC)
 
 `Runtime/Css/Cascade` (12,340) plus selectors, media and container queries. Port

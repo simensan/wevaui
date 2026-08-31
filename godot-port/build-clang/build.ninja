@@ -95,8 +95,6 @@ build libweva/CMakeFiles/weva.dir/src/arena.cpp.o: CXX_COMPILER__weva_unscanned_
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
-  TARGET_COMPILE_PDB = libweva/CMakeFiles/weva.dir/weva.pdb
-  TARGET_PDB = libweva/libweva.pdb
 
 build libweva/CMakeFiles/weva.dir/src/intern.cpp.o: CXX_COMPILER__weva_unscanned_Release /home/user/wevaui/godot-port/libweva/src/intern.cpp || cmake_object_order_depends_target_weva
   DEP_FILE = libweva/CMakeFiles/weva.dir/src/intern.cpp.o.d
@@ -104,8 +102,6 @@ build libweva/CMakeFiles/weva.dir/src/intern.cpp.o: CXX_COMPILER__weva_unscanned
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
-  TARGET_COMPILE_PDB = libweva/CMakeFiles/weva.dir/weva.pdb
-  TARGET_PDB = libweva/libweva.pdb
 
 build libweva/CMakeFiles/weva.dir/src/geometry.cpp.o: CXX_COMPILER__weva_unscanned_Release /home/user/wevaui/godot-port/libweva/src/geometry.cpp || cmake_object_order_depends_target_weva
   DEP_FILE = libweva/CMakeFiles/weva.dir/src/geometry.cpp.o.d
@@ -113,8 +109,6 @@ build libweva/CMakeFiles/weva.dir/src/geometry.cpp.o: CXX_COMPILER__weva_unscann
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
-  TARGET_COMPILE_PDB = libweva/CMakeFiles/weva.dir/weva.pdb
-  TARGET_PDB = libweva/libweva.pdb
 
 build libweva/CMakeFiles/weva.dir/src/color.cpp.o: CXX_COMPILER__weva_unscanned_Release /home/user/wevaui/godot-port/libweva/src/color.cpp || cmake_object_order_depends_target_weva
   DEP_FILE = libweva/CMakeFiles/weva.dir/src/color.cpp.o.d
@@ -122,8 +116,6 @@ build libweva/CMakeFiles/weva.dir/src/color.cpp.o: CXX_COMPILER__weva_unscanned_
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
-  TARGET_COMPILE_PDB = libweva/CMakeFiles/weva.dir/weva.pdb
-  TARGET_PDB = libweva/libweva.pdb
 
 build libweva/CMakeFiles/weva.dir/src/dom.cpp.o: CXX_COMPILER__weva_unscanned_Release /home/user/wevaui/godot-port/libweva/src/dom.cpp || cmake_object_order_depends_target_weva
   DEP_FILE = libweva/CMakeFiles/weva.dir/src/dom.cpp.o.d
@@ -131,8 +123,20 @@ build libweva/CMakeFiles/weva.dir/src/dom.cpp.o: CXX_COMPILER__weva_unscanned_Re
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
-  TARGET_COMPILE_PDB = libweva/CMakeFiles/weva.dir/weva.pdb
-  TARGET_PDB = libweva/libweva.pdb
+
+build libweva/CMakeFiles/weva.dir/src/html_tables.cpp.o: CXX_COMPILER__weva_unscanned_Release /home/user/wevaui/godot-port/libweva/src/html_tables.cpp || cmake_object_order_depends_target_weva
+  DEP_FILE = libweva/CMakeFiles/weva.dir/src/html_tables.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=c++17 -fno-exceptions -Wall -Wextra -Wpedantic
+  INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
+  OBJECT_DIR = libweva/CMakeFiles/weva.dir
+  OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
+
+build libweva/CMakeFiles/weva.dir/src/html_tokenizer.cpp.o: CXX_COMPILER__weva_unscanned_Release /home/user/wevaui/godot-port/libweva/src/html_tokenizer.cpp || cmake_object_order_depends_target_weva
+  DEP_FILE = libweva/CMakeFiles/weva.dir/src/html_tokenizer.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=c++17 -fno-exceptions -Wall -Wextra -Wpedantic
+  INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
+  OBJECT_DIR = libweva/CMakeFiles/weva.dir
+  OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
 
 
 # =============================================================================
@@ -142,14 +146,13 @@ build libweva/CMakeFiles/weva.dir/src/dom.cpp.o: CXX_COMPILER__weva_unscanned_Re
 #############################################
 # Link the static library libweva/libweva.a
 
-build libweva/libweva.a: CXX_STATIC_LIBRARY_LINKER__weva_Release libweva/CMakeFiles/weva.dir/src/arena.cpp.o libweva/CMakeFiles/weva.dir/src/intern.cpp.o libweva/CMakeFiles/weva.dir/src/geometry.cpp.o libweva/CMakeFiles/weva.dir/src/color.cpp.o libweva/CMakeFiles/weva.dir/src/dom.cpp.o
+build libweva/libweva.a: CXX_STATIC_LIBRARY_LINKER__weva_Release libweva/CMakeFiles/weva.dir/src/arena.cpp.o libweva/CMakeFiles/weva.dir/src/intern.cpp.o libweva/CMakeFiles/weva.dir/src/geometry.cpp.o libweva/CMakeFiles/weva.dir/src/color.cpp.o libweva/CMakeFiles/weva.dir/src/dom.cpp.o libweva/CMakeFiles/weva.dir/src/html_tables.cpp.o libweva/CMakeFiles/weva.dir/src/html_tokenizer.cpp.o
   LANGUAGE_COMPILE_FLAGS = -O3 -DNDEBUG
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_COMPILE_PDB = libweva/CMakeFiles/weva.dir/weva.pdb
   TARGET_FILE = libweva/libweva.a
-  TARGET_PDB = libweva/libweva.pdb
+  TARGET_PDB = weva.a.dbg
 
 
 #############################################
@@ -206,8 +209,6 @@ build tools/weva_dump/CMakeFiles/weva_dump.dir/main.cpp.o: CXX_COMPILER__weva_du
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = tools/weva_dump/CMakeFiles/weva_dump.dir
   OBJECT_FILE_DIR = tools/weva_dump/CMakeFiles/weva_dump.dir
-  TARGET_COMPILE_PDB = tools/weva_dump/CMakeFiles/weva_dump.dir/
-  TARGET_PDB = tools/weva_dump/weva_dump.pdb
 
 
 # =============================================================================
@@ -223,9 +224,8 @@ build tools/weva_dump/weva_dump: CXX_EXECUTABLE_LINKER__weva_dump_Release tools/
   OBJECT_DIR = tools/weva_dump/CMakeFiles/weva_dump.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_COMPILE_PDB = tools/weva_dump/CMakeFiles/weva_dump.dir/
   TARGET_FILE = tools/weva_dump/weva_dump
-  TARGET_PDB = tools/weva_dump/weva_dump.pdb
+  TARGET_PDB = weva_dump.dbg
 
 
 #############################################
@@ -282,8 +282,6 @@ build libweva/tests/CMakeFiles/weva_tests.dir/main.cpp.o: CXX_COMPILER__weva_tes
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
   OBJECT_FILE_DIR = libweva/tests/CMakeFiles/weva_tests.dir
-  TARGET_COMPILE_PDB = libweva/tests/CMakeFiles/weva_tests.dir/
-  TARGET_PDB = libweva/tests/weva_tests.pdb
 
 build libweva/tests/CMakeFiles/weva_tests.dir/test_arena.cpp.o: CXX_COMPILER__weva_tests_unscanned_Release /home/user/wevaui/godot-port/libweva/tests/test_arena.cpp || cmake_object_order_depends_target_weva_tests
   DEP_FILE = libweva/tests/CMakeFiles/weva_tests.dir/test_arena.cpp.o.d
@@ -291,8 +289,6 @@ build libweva/tests/CMakeFiles/weva_tests.dir/test_arena.cpp.o: CXX_COMPILER__we
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
   OBJECT_FILE_DIR = libweva/tests/CMakeFiles/weva_tests.dir
-  TARGET_COMPILE_PDB = libweva/tests/CMakeFiles/weva_tests.dir/
-  TARGET_PDB = libweva/tests/weva_tests.pdb
 
 build libweva/tests/CMakeFiles/weva_tests.dir/test_intern.cpp.o: CXX_COMPILER__weva_tests_unscanned_Release /home/user/wevaui/godot-port/libweva/tests/test_intern.cpp || cmake_object_order_depends_target_weva_tests
   DEP_FILE = libweva/tests/CMakeFiles/weva_tests.dir/test_intern.cpp.o.d
@@ -300,8 +296,6 @@ build libweva/tests/CMakeFiles/weva_tests.dir/test_intern.cpp.o: CXX_COMPILER__w
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
   OBJECT_FILE_DIR = libweva/tests/CMakeFiles/weva_tests.dir
-  TARGET_COMPILE_PDB = libweva/tests/CMakeFiles/weva_tests.dir/
-  TARGET_PDB = libweva/tests/weva_tests.pdb
 
 build libweva/tests/CMakeFiles/weva_tests.dir/test_geometry.cpp.o: CXX_COMPILER__weva_tests_unscanned_Release /home/user/wevaui/godot-port/libweva/tests/test_geometry.cpp || cmake_object_order_depends_target_weva_tests
   DEP_FILE = libweva/tests/CMakeFiles/weva_tests.dir/test_geometry.cpp.o.d
@@ -309,8 +303,6 @@ build libweva/tests/CMakeFiles/weva_tests.dir/test_geometry.cpp.o: CXX_COMPILER_
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
   OBJECT_FILE_DIR = libweva/tests/CMakeFiles/weva_tests.dir
-  TARGET_COMPILE_PDB = libweva/tests/CMakeFiles/weva_tests.dir/
-  TARGET_PDB = libweva/tests/weva_tests.pdb
 
 build libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o: CXX_COMPILER__weva_tests_unscanned_Release /home/user/wevaui/godot-port/libweva/tests/test_dom.cpp || cmake_object_order_depends_target_weva_tests
   DEP_FILE = libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o.d
@@ -318,8 +310,13 @@ build libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o: CXX_COMPILER__weva
   INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
   OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
   OBJECT_FILE_DIR = libweva/tests/CMakeFiles/weva_tests.dir
-  TARGET_COMPILE_PDB = libweva/tests/CMakeFiles/weva_tests.dir/
-  TARGET_PDB = libweva/tests/weva_tests.pdb
+
+build libweva/tests/CMakeFiles/weva_tests.dir/test_html.cpp.o: CXX_COMPILER__weva_tests_unscanned_Release /home/user/wevaui/godot-port/libweva/tests/test_html.cpp || cmake_object_order_depends_target_weva_tests
+  DEP_FILE = libweva/tests/CMakeFiles/weva_tests.dir/test_html.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=c++17 -fno-exceptions -Wall -Wextra -Wpedantic
+  INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
+  OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
+  OBJECT_FILE_DIR = libweva/tests/CMakeFiles/weva_tests.dir
 
 
 # =============================================================================
@@ -329,15 +326,14 @@ build libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o: CXX_COMPILER__weva
 #############################################
 # Link the executable libweva/tests/weva_tests
 
-build libweva/tests/weva_tests: CXX_EXECUTABLE_LINKER__weva_tests_Release libweva/tests/CMakeFiles/weva_tests.dir/main.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_arena.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_intern.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_geometry.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o | libweva/libweva.a || libweva/libweva.a
+build libweva/tests/weva_tests: CXX_EXECUTABLE_LINKER__weva_tests_Release libweva/tests/CMakeFiles/weva_tests.dir/main.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_arena.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_intern.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_geometry.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_html.cpp.o | libweva/libweva.a || libweva/libweva.a
   FLAGS = -O3 -DNDEBUG
   LINK_LIBRARIES = libweva/libweva.a
   OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_COMPILE_PDB = libweva/tests/CMakeFiles/weva_tests.dir/
   TARGET_FILE = libweva/tests/weva_tests
-  TARGET_PDB = libweva/tests/weva_tests.pdb
+  TARGET_PDB = weva_tests.dbg
 
 
 #############################################
@@ -423,14 +419,14 @@ build tools/weva_dump/all: phony tools/weva_dump/weva_dump
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/user/wevaui/godot-port/CMakeLists.txt /home/user/wevaui/godot-port/libweva/CMakeLists.txt /home/user/wevaui/godot-port/libweva/tests/CMakeLists.txt /home/user/wevaui/godot-port/tools/weva_dump/CMakeLists.txt /usr/share/cmake-3.28/Modules/CMakeCXXCompiler.cmake.in /usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp /usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.28/Modules/CMakeCompilerIdDetection.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCompileFeatures.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCompiler.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake /usr/share/cmake-3.28/Modules/CMakeFindBinUtils.cmake /usr/share/cmake-3.28/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.28/Modules/CMakeNinjaFindMake.cmake /usr/share/cmake-3.28/Modules/CMakeParseImplicitIncludeInfo.cmake /usr/share/cmake-3.28/Modules/CMakeParseImplicitLinkInfo.cmake /usr/share/cmake-3.28/Modules/CMakeParseLibraryArchitecture.cmake /usr/share/cmake-3.28/Modules/CMakeSystem.cmake.in /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake /usr/share/cmake-3.28/Modules/CMakeTestCompilerCommon.cmake /usr/share/cmake-3.28/Modules/Compiler/ADSP-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/ARMCC-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/ARMClang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/AppleClang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Borland-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-DetermineCompilerInternal.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-FindBinUtils.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang.cmake /usr/share/cmake-3.28/Modules/Compiler/Comeau-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Cray-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/CrayClang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Embarcadero-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Fujitsu-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/GHS-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU.cmake /usr/share/cmake-3.28/Modules/Compiler/HP-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/IAR-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake /usr/share/cmake-3.28/Modules/Compiler/IBMClang-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Intel-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/LCC-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/MSVC-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/NVHPC-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/NVIDIA-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/OrangeC-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/PGI-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/PathScale-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/SCO-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/TI-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Tasking-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Watcom-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/XL-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Internal/FeatureTesting.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Determine-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.28/Modules/Platform/Linux.cmake /usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /home/user/wevaui/godot-port/CMakeLists.txt /home/user/wevaui/godot-port/libweva/CMakeLists.txt /home/user/wevaui/godot-port/libweva/tests/CMakeLists.txt /home/user/wevaui/godot-port/tools/weva_dump/CMakeLists.txt /usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.28/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.28/Modules/Platform/Linux.cmake /usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/user/wevaui/godot-port/CMakeLists.txt /home/user/wevaui/godot-port/libweva/CMakeLists.txt /home/user/wevaui/godot-port/libweva/tests/CMakeLists.txt /home/user/wevaui/godot-port/tools/weva_dump/CMakeLists.txt /usr/share/cmake-3.28/Modules/CMakeCXXCompiler.cmake.in /usr/share/cmake-3.28/Modules/CMakeCXXCompilerABI.cpp /usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.28/Modules/CMakeCompilerIdDetection.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCXXCompiler.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCompileFeatures.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCompiler.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCompilerABI.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineCompilerId.cmake /usr/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake /usr/share/cmake-3.28/Modules/CMakeFindBinUtils.cmake /usr/share/cmake-3.28/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.28/Modules/CMakeNinjaFindMake.cmake /usr/share/cmake-3.28/Modules/CMakeParseImplicitIncludeInfo.cmake /usr/share/cmake-3.28/Modules/CMakeParseImplicitLinkInfo.cmake /usr/share/cmake-3.28/Modules/CMakeParseLibraryArchitecture.cmake /usr/share/cmake-3.28/Modules/CMakeSystem.cmake.in /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.28/Modules/CMakeTestCXXCompiler.cmake /usr/share/cmake-3.28/Modules/CMakeTestCompilerCommon.cmake /usr/share/cmake-3.28/Modules/Compiler/ADSP-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/ARMCC-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/ARMClang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/AppleClang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Borland-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-DetermineCompilerInternal.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-FindBinUtils.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang.cmake /usr/share/cmake-3.28/Modules/Compiler/Comeau-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Compaq-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Cray-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/CrayClang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Embarcadero-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Fujitsu-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/FujitsuClang-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/GHS-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU.cmake /usr/share/cmake-3.28/Modules/Compiler/HP-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/IAR-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/IBMCPP-CXX-DetermineVersionInternal.cmake /usr/share/cmake-3.28/Modules/Compiler/IBMClang-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Intel-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/IntelLLVM-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/LCC-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/MSVC-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/NVHPC-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/NVIDIA-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/OpenWatcom-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/OrangeC-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/PGI-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/PathScale-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/SCO-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/SunPro-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/TI-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Tasking-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/VisualAge-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/Watcom-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/XL-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/XLClang-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Compiler/zOS-CXX-DetermineCompiler.cmake /usr/share/cmake-3.28/Modules/Internal/FeatureTesting.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Determine-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.28/Modules/Platform/Linux.cmake /usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake: phony
+build /home/user/wevaui/godot-port/CMakeLists.txt /home/user/wevaui/godot-port/libweva/CMakeLists.txt /home/user/wevaui/godot-port/libweva/tests/CMakeLists.txt /home/user/wevaui/godot-port/tools/weva_dump/CMakeLists.txt /usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.28/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-3.28/Modules/Compiler/Clang.cmake /usr/share/cmake-3.28/Modules/Compiler/GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.28/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.28/Modules/Platform/Linux.cmake /usr/share/cmake-3.28/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.28.3/CMakeCXXCompiler.cmake CMakeFiles/3.28.3/CMakeSystem.cmake: phony
 
 
 #############################################
