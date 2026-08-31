@@ -119,14 +119,16 @@ void test_css_value() {
         CHECK(l->items[0]->kind() == CssValueKind::List);
     }
 
-    // ---- functions round-trip with parsed arguments
+    // ---- functions round-trip with parsed arguments.
+    // (rgb()/hsl()/hwb() are the exception — they collapse to CssColor during
+    // parsing; see test_css_color.)
     {
         V v;
-        CHECK(v.run("rgb(255, 128, 0)"));
+        CHECK(v.run("translate(1px, 2px)"));
         CHECK(v.v->kind() == CssValueKind::FunctionCall);
         auto* f = static_cast<CssFunctionCall*>(v.v.get());
-        CHECK(f->name == "rgb" && f->arguments.size() == 3);
-        CHECK(near(static_cast<CssNumber*>(f->arguments[1].get())->value, 128));
+        CHECK(f->name == "translate" && f->arguments.size() == 2);
+        CHECK(near(static_cast<CssLength*>(f->arguments[1].get())->value, 2));
 
         CHECK(v.run("CALC(1px + 2em)"));
         f = static_cast<CssFunctionCall*>(v.v.get());
@@ -217,5 +219,142 @@ void test_css_value() {
         // CssLengthUnit::Percent is only reachable by direct construction.
         CHECK(!css_length_unit_from_string("%", &u));
         CHECK(std::string(css_length_unit_suffix(CssLengthUnit::Percent)) == "%");
+    }
+}
+
+void test_css_color() {
+    // ---- named colours, case-insensitive, including system colours whose
+    // table entries carry authored casing ("AccentColor").
+    {
+        CssColor c;
+        CHECK(css_color_from_name("red", &c) && c.r == 255 && c.g == 0 && c.b == 0);
+        CHECK(css_color_from_name("RED", &c) && c.r == 255);
+        CHECK(css_color_from_name("rebeccapurple", &c) && c.r == 102 && c.g == 51 && c.b == 153);
+        CHECK(css_color_from_name("AccentColor", &c) && c.r == 0 && c.g == 102 && c.b == 204);
+        CHECK(css_color_from_name("accentcolor", &c) && c.b == 204);
+        // `transparent` is the one entry with a non-1 alpha.
+        CHECK(css_color_from_name("transparent", &c) && c.a == 0.0f);
+        // aqua and cyan are aliases.
+        CssColor aqua, cyan;
+        CHECK(css_color_from_name("aqua", &aqua) && css_color_from_name("cyan", &cyan));
+        CHECK(aqua.r == cyan.r && aqua.g == cyan.g && aqua.b == cyan.b);
+        CHECK(!css_color_from_name("notacolour", &c));
+    }
+
+    // ---- channel rounding is HALF-TO-EVEN, matching C#'s parameterless
+    // Math.Round. std::round would give 1/2/3 here instead of 0/2/2, putting
+    // every midpoint channel one off. This is the OPPOSITE convention to the
+    // layout dump's away-from-zero Round2 — both live in the same C# codebase.
+    {
+        CssColor c;
+        css_color_from_rgb(0.5, 1.5, 2.5, 1.0, false, &c);
+        CHECK(c.r == 0);
+        CHECK(c.g == 2);
+        CHECK(c.b == 2);
+    }
+
+    // ---- channels clamp rather than wrap
+    {
+        CssColor c;
+        css_color_from_rgb(-20, 300, 128, 5.0, false, &c);
+        CHECK(c.r == 0 && c.g == 255 && c.b == 128);
+        CHECK(c.a == 1.0f);              // alpha clamps to 0..1
+        css_color_from_rgb(0, 0, 0, -1, false, &c);
+        CHECK(c.a == 0.0f);
+    }
+
+    // ---- percentage channels scale by 2.55
+    {
+        CssColor c;
+        css_color_from_rgb(100, 50, 0, 1.0, true, &c);
+        CHECK(c.r == 255);
+        // 50 * 2.55 is 127.49999999999998, NOT 127.5 — 2.55 has no exact double
+        // representation, so this is below the midpoint and rounds down under
+        // either mode. C# does the identical multiply and also yields 127.
+        // Do not "correct" this to 128.
+        CHECK(c.g == 127);
+        CHECK(c.b == 0);
+    }
+
+    // ---- and a genuine midpoint, to actually exercise half-to-even
+    {
+        CssColor c;
+        css_color_from_rgb(127.5, 128.5, 0.5, 1.0, false, &c);
+        CHECK(c.r == 128);   // 127.5 -> even -> 128
+        CHECK(c.g == 128);   // 128.5 -> even -> 128 (away-from-zero would give 129)
+        CHECK(c.b == 0);     // 0.5   -> even -> 0
+    }
+
+    // ---- hsl basics and hue wrapping
+    {
+        CssColor c;
+        css_color_from_hsl(0, 100, 50, 1.0, &c);
+        CHECK(c.r == 255 && c.g == 0 && c.b == 0);
+        css_color_from_hsl(120, 100, 50, 1.0, &c);
+        CHECK(c.r == 0 && c.g == 255 && c.b == 0);
+        css_color_from_hsl(-240, 100, 50, 1.0, &c);   // wraps to 120
+        CHECK(c.r == 0 && c.g == 255 && c.b == 0);
+        css_color_from_hsl(480, 100, 50, 1.0, &c);    // wraps to 120
+        CHECK(c.g == 255);
+        css_color_from_hsl(0, 0, 50, 1.0, &c);        // achromatic
+        CHECK(c.r == c.g && c.g == c.b);
+    }
+
+    // ---- hwb, including the w+b >= 1 grey collapse (CSS Color 4 10)
+    {
+        CssColor c;
+        css_color_from_hwb(0, 0, 0, 1.0, &c);
+        CHECK(c.r == 255 && c.g == 0 && c.b == 0);
+        css_color_from_hwb(0, 60, 60, 1.0, &c);       // w+b > 1 -> grey at w/(w+b)
+        CHECK(c.r == c.g && c.g == c.b);
+        CHECK(c.r == 128);                            // 0.5*255 = 127.5 -> even -> 128
+    }
+
+    // ---- colour functions collapse to CssColor during parsing
+    {
+        V v;
+        CHECK(v.run("rgb(255, 128, 0)"));
+        CHECK(v.v->kind() == CssValueKind::Color);
+        auto* c = static_cast<CssColor*>(v.v.get());
+        CHECK(c->r == 255 && c->g == 128 && c->b == 0 && c->a == 1.0f);
+
+        CHECK(v.run("rgba(0, 0, 0, 0.5)"));
+        CHECK(std::fabs(static_cast<CssColor*>(v.v.get())->a - 0.5f) < 1e-6);
+
+        CHECK(v.run("hsl(120, 100%, 50%)"));
+        c = static_cast<CssColor*>(v.v.get());
+        CHECK(c->r == 0 && c->g == 255 && c->b == 0);
+
+        // An alpha PERCENTAGE is 0-100 where a number is 0-1.
+        CHECK(v.run("rgba(0,0,0,50%)"));
+        CHECK(std::fabs(static_cast<CssColor*>(v.v.get())->a - 0.5f) < 1e-6);
+
+        // A hue given as an angle is normalised to degrees.
+        CHECK(v.run("hsl(0.5turn, 100%, 50%)"));
+        c = static_cast<CssColor*>(v.v.get());
+        CHECK(c->r == 0 && c->g == 255 && c->b == 255);   // 180deg = cyan
+    }
+
+    // ---- a bare ident that names a colour becomes a colour, not a keyword
+    {
+        V v;
+        CHECK(v.run("red"));
+        CHECK(v.v->kind() == CssValueKind::Color);
+        // ...but currentcolor stays a keyword: it resolves in the cascade.
+        CHECK(v.run("currentcolor"));
+        CHECK(v.v->kind() == CssValueKind::Keyword);
+        CHECK(v.run("auto"));
+        CHECK(v.v->kind() == CssValueKind::Keyword);
+    }
+
+    // ---- a colour function whose arguments can't be evaluated stays a call
+    {
+        V v;
+        CHECK(v.run("rgb(var(--r), 0, 0)"));
+        CHECK(v.v->kind() == CssValueKind::FunctionCall);
+        CHECK(v.run("rgb(1,2)"));                      // wrong arity
+        CHECK(v.v->kind() == CssValueKind::FunctionCall);
+        CHECK(v.run("color-mix(in srgb, red, blue)")); // not a colour function here
+        CHECK(v.v->kind() == CssValueKind::FunctionCall);
     }
 }

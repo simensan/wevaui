@@ -141,6 +141,20 @@ const char* css_length_unit_suffix(CssLengthUnit u);
 // Mirrors CssColor.FromHex: accepts 3, 4, 6 or 8 hex digits (no leading '#').
 bool css_color_from_hex(std::string_view body, CssColor* out);
 
+// Mirrors CssNamedColors.TryGet — case-insensitive, 168 entries including
+// `transparent` (0,0,0,0).
+bool css_color_from_name(std::string_view name, CssColor* out);
+
+// Mirrors CssColor.FromRgb / FromHsl / FromHwb. Channel values are clamped and
+// rounded HALF-TO-EVEN, matching C#'s parameterless Math.Round — note this is
+// the opposite of the away-from-zero rule used for layout dumps.
+void css_color_from_rgb(double r, double g, double b, double alpha,
+                        bool channels_are_percent, CssColor* out);
+void css_color_from_hsl(double hue_deg, double sat_pct, double light_pct,
+                        double alpha, CssColor* out);
+void css_color_from_hwb(double hue_deg, double white_pct, double black_pct,
+                        double alpha, CssColor* out);
+
 // Mirrors CssValueParser.Parse. Returns null and fills `error` on failure —
 // C# throws CssValueParseException.
 CssValuePtr parse_css_value(std::string_view text, CssParseError* error);

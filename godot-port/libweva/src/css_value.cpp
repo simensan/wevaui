@@ -202,6 +202,67 @@ struct Reader {
 
 CssValuePtr parse_single(Reader& r);
 
+// Reads a colour-function argument as a number. Percentages report themselves
+// so rgb() can switch to its 0-100 channel scale, and angles are normalised to
+// degrees for the hue slot.
+bool arg_number(const CssValue& v, double* out, bool* is_percent) {
+    *is_percent = false;
+    switch (v.kind()) {
+        case CssValueKind::Number:
+            *out = static_cast<const CssNumber&>(v).value;
+            return true;
+        case CssValueKind::Percentage:
+            *out = static_cast<const CssPercentage&>(v).value;
+            *is_percent = true;
+            return true;
+        case CssValueKind::Angle:
+            *out = static_cast<const CssAngle&>(v).to_degrees();
+            return true;
+        default:
+            return false;
+    }
+}
+
+// rgb()/rgba()/hsl()/hsla()/hwb() collapse to a CssColor. Anything else — and
+// any of these whose arguments don't evaluate (a var() or calc() inside) —
+// stays a CssFunctionCall for a later pass to resolve.
+CssValuePtr eval_colour_function(const CssFunctionCall& call) {
+    const std::string& n = call.name;
+    bool is_rgb = (n == "rgb" || n == "rgba");
+    bool is_hsl = (n == "hsl" || n == "hsla");
+    bool is_hwb = (n == "hwb");
+    if (!is_rgb && !is_hsl && !is_hwb) return nullptr;
+    if (call.arguments.size() < 3 || call.arguments.size() > 4) return nullptr;
+
+    double c[3];
+    bool pct[3];
+    for (int i = 0; i < 3; ++i) {
+        if (!arg_number(*call.arguments[static_cast<std::size_t>(i)], &c[i], &pct[i])) {
+            return nullptr;
+        }
+    }
+    double alpha = 1.0;
+    if (call.arguments.size() == 4) {
+        bool apct = false;
+        if (!arg_number(*call.arguments[3], &alpha, &apct)) return nullptr;
+        // CSS Color 4: an alpha percentage is 0-100, a number is 0-1.
+        if (apct) alpha /= 100.0;
+    }
+
+    auto out = std::make_unique<CssColor>();
+    if (is_rgb) {
+        // C#'s FromRgb takes ONE rgbPercent flag for all three channels, so a
+        // mixed `rgb(255, 50%, 0)` follows the first channel. Reproduced.
+        css_color_from_rgb(c[0], c[1], c[2], alpha, pct[0], out.get());
+    } else if (is_hsl) {
+        css_color_from_hsl(c[0], c[1], c[2], alpha, out.get());
+    } else {
+        css_color_from_hwb(c[0], c[1], c[2], alpha, out.get());
+    }
+    out->raw = call.raw;
+    return out;
+}
+
 CssValuePtr parse_function(Reader& r) {
     const CssToken fn = r.peek();
     r.advance();
@@ -240,6 +301,8 @@ CssValuePtr parse_function(Reader& r) {
     }
     flush();
     if (!r.at_end() && r.peek().kind == CssTokenKind::RParen) r.advance();
+
+    if (CssValuePtr colour = eval_colour_function(*call)) return colour;
     return call;
 }
 
@@ -265,9 +328,16 @@ CssValuePtr parse_single(Reader& r) {
     switch (t.kind) {
         case CssTokenKind::Ident: {
             r.advance();
-            // Named colours are not ported yet, so every ident stays a keyword.
-            // `currentcolor` is a keyword in the C# too, so that case already
-            // matches; the rest will move to CssColor with the named table.
+            std::string lower = ascii_lower(t.text);
+            // `currentcolor` stays a keyword — it resolves against the cascade,
+            // not here.
+            if (lower != "currentcolor") {
+                auto c = std::make_unique<CssColor>();
+                if (css_color_from_name(lower, c.get())) {
+                    c->raw = t.text;
+                    return c;
+                }
+            }
             auto k = std::make_unique<CssKeyword>();
             k->name = t.text;
             k->raw = t.text;

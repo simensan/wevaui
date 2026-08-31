@@ -166,6 +166,13 @@ build libweva/CMakeFiles/weva.dir/src/css_value.cpp.o: CXX_COMPILER__weva_unscan
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
 
+build libweva/CMakeFiles/weva.dir/src/css_color.cpp.o: CXX_COMPILER__weva_unscanned_Release /home/user/wevaui/godot-port/libweva/src/css_color.cpp || cmake_object_order_depends_target_weva
+  DEP_FILE = libweva/CMakeFiles/weva.dir/src/css_color.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=c++17 -fno-exceptions -Wall -Wextra -Wpedantic
+  INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
+  OBJECT_DIR = libweva/CMakeFiles/weva.dir
+  OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
+
 
 # =============================================================================
 # Link build statements for STATIC_LIBRARY target weva
@@ -174,7 +181,7 @@ build libweva/CMakeFiles/weva.dir/src/css_value.cpp.o: CXX_COMPILER__weva_unscan
 #############################################
 # Link the static library libweva/libweva.a
 
-build libweva/libweva.a: CXX_STATIC_LIBRARY_LINKER__weva_Release libweva/CMakeFiles/weva.dir/src/arena.cpp.o libweva/CMakeFiles/weva.dir/src/intern.cpp.o libweva/CMakeFiles/weva.dir/src/geometry.cpp.o libweva/CMakeFiles/weva.dir/src/color.cpp.o libweva/CMakeFiles/weva.dir/src/dom.cpp.o libweva/CMakeFiles/weva.dir/src/html_tables.cpp.o libweva/CMakeFiles/weva.dir/src/html_tokenizer.cpp.o libweva/CMakeFiles/weva.dir/src/html_parser.cpp.o libweva/CMakeFiles/weva.dir/src/css_tokenizer.cpp.o libweva/CMakeFiles/weva.dir/src/css_parser.cpp.o libweva/CMakeFiles/weva.dir/src/css_value.cpp.o
+build libweva/libweva.a: CXX_STATIC_LIBRARY_LINKER__weva_Release libweva/CMakeFiles/weva.dir/src/arena.cpp.o libweva/CMakeFiles/weva.dir/src/intern.cpp.o libweva/CMakeFiles/weva.dir/src/geometry.cpp.o libweva/CMakeFiles/weva.dir/src/color.cpp.o libweva/CMakeFiles/weva.dir/src/dom.cpp.o libweva/CMakeFiles/weva.dir/src/html_tables.cpp.o libweva/CMakeFiles/weva.dir/src/html_tokenizer.cpp.o libweva/CMakeFiles/weva.dir/src/html_parser.cpp.o libweva/CMakeFiles/weva.dir/src/css_tokenizer.cpp.o libweva/CMakeFiles/weva.dir/src/css_parser.cpp.o libweva/CMakeFiles/weva.dir/src/css_value.cpp.o libweva/CMakeFiles/weva.dir/src/css_color.cpp.o
   LANGUAGE_COMPILE_FLAGS = -O3 -DNDEBUG
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   POST_BUILD = :

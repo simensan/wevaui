@@ -249,12 +249,37 @@ Reproduced rather than corrected: `ch`/`ex`/`cap`/`ic` are font-size
 approximations in the C# (0.5x, 0.5x, 0.7x, 1.0x) rather than real font
 metrics. Revisit when the text stack can supply true values — in both engines.
 
-Still deferred in this file: the 148-entry named-colour table, `calc()`
-evaluation, and `rgb()`/`hsl()`/`color-mix()` argument interpretation.
-Functions round-trip as `CssFunctionCall` with arguments parsed, so nothing is
-lost.
+**Colours done.** 498 checks green. The named table has **168 entries**
+(not the ~148 I assumed) including the CSS system colours, and was extracted
+mechanically from `CssNamedColors.cs` rather than retyped — a transcription slip
+in a colour table is invisible until someone notices the wrong shade on screen.
+`rgb()`/`rgba()`/`hsl()`/`hsla()`/`hwb()` collapse to `CssColor` during parsing;
+anything whose arguments don't evaluate (a `var()` inside, wrong arity) stays a
+`CssFunctionCall` for a later pass.
 
-**Tally: 12 wrong test expectations, 0 port bugs.** One of them segfaulted the
+**Two rounding traps, in opposite directions, in the same C# codebase:**
+
+* `CssColor.ChannelByte` uses **parameterless `Math.Round`**, which is banker's
+  rounding (`ToEven`). `std::round` is away-from-zero and would put every
+  midpoint channel one off — so this uses `std::nearbyint`.
+* `BaselineGen`'s `Round2` is explicitly **`MidpointRounding.AwayFromZero`**,
+  which is why `weva_dump` needed the opposite fix in Phase 0.
+
+Picking the wrong one is silent in both directions. Worth checking the mode at
+every `Math.Round` call site for the rest of the port.
+
+A third, subtler one: `50% -> 50 * 2.55` is `127.49999999999998`, **not**
+`127.5`, because 2.55 has no exact double representation. It rounds down under
+either mode, and C# does the identical multiply. The test says so explicitly,
+because it looks exactly like an off-by-one someone would "fix".
+
+Also reproduced: C#'s `FromRgb` takes a single `rgbPercent` flag for all three
+channels, so a mixed `rgb(255, 50%, 0)` follows whatever the *first* channel is.
+
+Still deferred: `calc()` evaluation and `color-mix()` / `oklab()` argument
+interpretation.
+
+**Tally: 13 wrong test expectations, 0 port bugs.** One of them segfaulted the
 suite — a `CHECK` on `declarations.size() == 1` recorded a failure without
 short-circuiting, and the next line indexed the empty vector. The test helpers
 are now bounds-checked and return null rather than indexing off the end.
