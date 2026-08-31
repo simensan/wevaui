@@ -550,31 +550,42 @@ therefore drops the physical slot too.
 Not applied to pseudo-elements — the C# aliases only on the element path.
 Diverging would silently move a `::before` margin to the other side.
 
-### The measurement that caught a 35% cascade regression
+### Three optimisations, and the reason not to trust their numbers
 
-The first working version was 35% slower per element than the cascade without
-it (60 ms vs 43 ms for the demo's 358 elements), and my first guess at the cause
-was wrong for the second time this phase. I assumed the per-property winner
-table — 334 `MatchedDeclaration`s built per element so the alias could compare
-cascade keys. Replacing it with a generation-stamped table of trivially
-copyable keys, reused across elements with no clearing, recovered **3 ms of the
-17**.
+Two costs were found and removed while porting the mapping, and both are real
+code improvements regardless of what the clock said:
 
-The actual cost was the mapping itself: ~60 string concatenations
-(`"border-" + side + "-" + component`) and ~120 registry name lookups, per
-element. The C# has pre-interned name tables for exactly this, with a comment
-calling it the second-largest source of GC pressure during animated repaint —
-and I ported the code without porting the reason it exists. The mapping depends
-only on the resolved axes, of which ten are reachable, so each table is now
-built once as property-id pairs and the per-element work is a loop over ~60
-integer pairs. That got it to 44-46 ms — still ~8% over baseline, not "within
-noise" as I first wrote it here. What closed the gap was noticing that the
-remaining cost is paid by every element whether or not it declares a logical
-property: two inherit-chain walks for `direction`/`writing-mode`, two string
-allocations, and ~60 slot probes. Every logical property id is known, so a
-static bitmask ANDed against the style's occupied bits answers "any logical
-declaration here?" in six words. Most elements and most stylesheets have none.
-With the guard the demo measures 42.3-46.9 ms against a 41.4-46.3 ms baseline.
+1. **The per-property winner table.** The alias needs the physical property's
+   cascade key to compare against, and the first version built 334
+   `MatchedDeclaration`s per element to hold them — each with a `std::string`
+   for the selector text. Replaced with a generation-stamped table of trivially
+   copyable keys, reused across elements with no clearing between them.
+2. **The mapping itself.** ~60 string concatenations
+   (`"border-" + side + "-" + component`) and ~120 registry name lookups, per
+   element. The C# has pre-interned name tables for exactly this, with a
+   comment calling it the second-largest source of GC pressure during animated
+   repaint — I ported the code without porting the reason it exists. The
+   mapping depends only on the resolved axes, of which ten are reachable, so
+   each is built once as property-id pairs.
+3. **A guard for the common case.** Even so, every element paid two
+   inherit-chain walks for `direction`/`writing-mode`, two string allocations
+   and ~60 slot probes whether or not it declared a logical property. Every
+   logical property id is known, so a static bitmask ANDed against the style's
+   occupied bits answers "any here?" in six words.
+
+**The numbers that motivated all three were measured against a Debug build**,
+which I discovered two commits later — the benchmark linked `build/`, and
+`build/` is `CMAKE_BUILD_TYPE=Debug`. So were the earlier figures in this
+document: the lazy-inheritance "296 → 50 ms cold, 277 → 24 ms warm", the
+"35% cascade regression" this section originally claimed, and every "ms" quoted
+in Phase 3 before this point. Treat all of them as **Debug-relative**, useful
+only for comparing two Debug builds of the same code, and not comparable to the
+C# figures at all.
+
+Re-measured under `-O3`, minimum of 36 passes over the demo's 358 elements:
+**3.91 ms** before logical properties, **4.16 ms** after logical properties,
+`@property` and CSS-wide keywords together — about **6%** for three cascade
+features. `build-release/` now exists so this is not repeated.
 
 Both mistakes have the same shape as the earlier match-cache one: I named a
 plausible culprit instead of measuring, and the plausible culprit was a real but
@@ -638,6 +649,52 @@ unit `in` — validated as a length because its `10m` prefix "parsed". Fixed at
 the source rather than in the validator, since every future caller would
 inherit the same trap.
 
+**CSS-wide keywords done** (`KeywordResolver.cs`). 1315 checks green across gcc
+13, clang 18 and ASan+UBSan+LSan. `inherit`, `initial`, `unset`, `revert` and
+`revert-layer` now resolve for registered properties and for custom properties.
+
+Resolution runs **last**, after var()/env()/attr(), which is what makes
+`inherit` mean the parent's *substituted* computed value rather than the literal
+text `var(--x)`. Lazy inheritance simplifies it: the C# reads `inherit` off a
+materialised parent style, and here `parent->get(id)` walks the parent's own
+chain to the same answer.
+
+`revert` and `revert-layer` are not keywords the resolver can answer on its own
+— they need the element's full match list. So a rollback pass runs first and
+substitutes the value text of the appropriate lower-priority match, and only
+when there is no such match does the keyword survive to the resolver, which
+collapses it to `initial`. Rolled-back text is resolved in turn, so a UA rule
+saying `inherit`, reached through an author `revert`, still inherits; the chain
+is capped at four hops.
+
+Two axis details that are easy to invert:
+
+* **`revert` drops the whole ORIGIN, `revert-layer` drops one LAYER.** The
+  former scans for the highest-priority match at any origin strictly below the
+  winner's; the latter finds the *nearest* lower layer at the same origin, then
+  the latest match within that layer, and falls through to `revert` when the
+  origin has no lower layer.
+* **Custom properties have an empty initial value, even when registered.** The
+  C# builds a synthesised descriptor that knows nothing of the `@property`
+  registry, so `--sz: initial` resolves to `""`, which then fails the typed
+  syntax check and lands on the descriptor's initial-value. Under `syntax: "*"`
+  the empty string is valid and really does clear the property. Ported by the
+  same two-step route, because a shortcut straight to the descriptor's value
+  would diverge for the universal syntax.
+
+`@layer` is parsed but not yet compiled into ordinals, so no stylesheet can
+currently produce a layered match and `revert-layer` always degrades to
+`revert` end-to-end. The two-pass layer logic is unit-tested directly against
+synthetic match lists rather than left unverified until `@layer` lands.
+
+### A cache-staleness trap, found by a test that looked like it was wrong
+
+`add_stylesheet` did not invalidate the shape-keyed match cache. A sheet added
+after the first `compute()` therefore applied only to elements that happened to
+miss the cache — which reads as a selector bug, not a staleness bug. It cost
+some minutes of suspecting the keyword resolver before the pattern (only the
+*second* sheet's rules missing, only on cached elements) gave it away.
+
 ### Known-incomplete, called out rather than left implicit
 
 * ~~Conditional at-rules are not evaluated~~ — **`@media` and `@supports` now
@@ -648,13 +705,11 @@ inherit the same trap.
 * ~~`var()` is unresolved~~ — **done**. `env()` and `attr()` **also done**.
 * ~~`@property`'s `inherits: false` is not honoured~~ — **done**, along with
   typed initial values and syntax validation.
-* **CSS-wide keywords are not resolved on custom properties.** `--x: inherit`
-  stays the literal text `inherit`; `KeywordResolver.cs` (145 LOC, plus the
-  `revert`/`revert-layer` rollback that needs the full match list) is its own
-  slice. The one case the `@property` work needed — `unset` on a non-inheriting
-  registered property — is handled, and syntax validation deliberately skips
-  values that are CSS-wide keywords so it cannot replace an unresolved
-  `inherit` with the initial value.
+* ~~CSS-wide keywords are not resolved~~ — **done** for registered and custom
+  properties alike, including `revert`/`revert-layer` rollback.
+* **`@layer` is parsed but not compiled into layer ordinals.** Every rule is
+  unlayered, so the cascade's layer axis and `revert-layer` are exercised only
+  by unit tests, not by any stylesheet.
 
 **`var()` resolution done** (`VariableResolver.cs`). 884 checks green. On the
 demo, `body { color: var(--ink) }` now resolves to `#e8ecf2` through `:root`'s

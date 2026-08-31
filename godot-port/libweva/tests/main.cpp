@@ -35,6 +35,10 @@ void test_logical_before_substitution();
 void test_at_property_descriptor();
 void test_at_property_validate();
 void test_at_property_in_cascade();
+void test_css_wide_keywords();
+void test_revert();
+void test_revert_layer_rollback();
+void test_custom_property_keywords();
 int main() {
     test_arena();
     test_intern();
@@ -72,6 +76,10 @@ int main() {
     test_at_property_descriptor();
     test_at_property_validate();
     test_at_property_in_cascade();
+    test_css_wide_keywords();
+    test_revert();
+    test_revert_layer_rollback();
+    test_custom_property_keywords();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

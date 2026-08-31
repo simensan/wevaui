@@ -22,6 +22,7 @@ add_library(weva STATIC
     src/env_attr.cpp
     src/logical.cpp
     src/at_property.cpp
+    src/keyword_resolver.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

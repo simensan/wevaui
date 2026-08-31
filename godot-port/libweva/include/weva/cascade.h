@@ -129,9 +129,9 @@ private:
     };
     void compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
                        int* source_index, int layer_ordinal);
-    // Applies the `@property` descriptors to one element's custom properties:
-    // syntax validation, the `unset` intercept, and initial-value seeding.
-    void apply_at_property_descriptors(ComputedStyle* out) const;
+    // Resolves one element's custom properties: CSS-wide keywords, `@property`
+    // syntax validation, and initial-value seeding. Runs before substitution.
+    void resolve_custom_properties(ComputedStyle* out, const ComputedStyle* parent) const;
 
     // Shape-keyed match cache. Two elements whose tag/id/classes/attributes
     // AND whose whole ancestor chain hash identically must match the same rule
