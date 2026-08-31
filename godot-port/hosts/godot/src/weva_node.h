@@ -52,6 +52,10 @@ public:
     // failed lookup from a successful no-op.
     bool set_element_attribute(const godot::String& selector, const godot::String& name,
                                const godot::String& value);
+    // Removal is a distinct operation, not `set` with an empty value: an empty
+    // string still satisfies a presence selector like [data-hide], so without
+    // this there is no way from GDScript to make such a selector stop matching.
+    bool remove_element_attribute(const godot::String& selector, const godot::String& name);
 
     // Diagnostics the render tests assert on.
     int get_draw_count() const;

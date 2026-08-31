@@ -29,20 +29,37 @@ add_library(weva_godot SHARED
     src/weva_node.cpp
 )
 
+# godot-cpp's bindings are generated at build time, so half its headers live in
+# the source tree and half under whichever directory it was built in. SCons
+# writes them to <src>/gen/include; the CMake build writes them to
+# <build>/gen/include. Both are offered rather than guessing which was used.
+if(NOT DEFINED GODOT_CPP_BUILD_DIR)
+    set(GODOT_CPP_BUILD_DIR "${GODOT_CPP_DIR}/build")
+endif()
+
 target_include_directories(weva_godot PRIVATE
     ${GODOT_CPP_DIR}/include
     ${GODOT_CPP_DIR}/gen/include
+    ${GODOT_CPP_BUILD_DIR}/gen/include
     ${GODOT_CPP_DIR}/gdextension
 )
 
-find_library(GODOT_CPP_LIB
-    NAMES godot-cpp libgodot-cpp
-    PATHS ${GODOT_CPP_DIR}/build ${GODOT_CPP_DIR}/bin
-    NO_DEFAULT_PATH
+# The artifact name carries platform, configuration and word size
+# (libgodot-cpp.linux.release.64.a), and the directory differs between the SCons
+# and CMake builds, so neither a fixed name nor a fixed path finds it. Glob the
+# two known output directories instead and take what is there.
+file(GLOB GODOT_CPP_CANDIDATES
+    "${GODOT_CPP_BUILD_DIR}/bin/libgodot-cpp*.a"
+    "${GODOT_CPP_BUILD_DIR}/libgodot-cpp*.a"
+    "${GODOT_CPP_DIR}/bin/libgodot-cpp*.a"
 )
+list(GET GODOT_CPP_CANDIDATES 0 GODOT_CPP_LIB)
 if(NOT GODOT_CPP_LIB)
-    message(FATAL_ERROR "godot-cpp library not found under ${GODOT_CPP_DIR}. Build it first.")
+    message(FATAL_ERROR
+        "godot-cpp library not found under ${GODOT_CPP_DIR} or ${GODOT_CPP_BUILD_DIR}. "
+        "Build it first, or pass -DGODOT_CPP_BUILD_DIR=<its build directory>.")
 endif()
+message(STATUS "godot-cpp: ${GODOT_CPP_LIB}")
 
 target_link_libraries(weva_godot PRIVATE weva ${GODOT_CPP_LIB})
 

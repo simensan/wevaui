@@ -2,3 +2,15 @@
 # accident before this pattern covered it.
 build/
 build-*/
+
+__pycache__/
+
+# The built GDExtension. It lands inside the demo project because that is where
+# weva.gdextension looks for it, not because it belongs in the repository.
+hosts/godot/project/addons/weva/bin/
+
+# Godot's import cache, with one exception: extension_list.cfg is what tells the
+# engine to load the extension at all, and a headless run without it fails with
+# nothing more helpful than an unknown type.
+hosts/godot/project/.godot/*
+!hosts/godot/project/.godot/extension_list.cfg

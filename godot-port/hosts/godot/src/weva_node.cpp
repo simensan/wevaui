@@ -1,8 +1,10 @@
 #include "weva_node.h"
 
 #include <godot_cpp/classes/image.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
+#include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <cstring>
@@ -45,6 +47,8 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("query_text", "selector"), &WevaDocument::query_text);
     ClassDB::bind_method(D_METHOD("set_element_attribute", "selector", "name", "value"),
                          &WevaDocument::set_element_attribute);
+    ClassDB::bind_method(D_METHOD("remove_element_attribute", "selector", "name"),
+                         &WevaDocument::remove_element_attribute);
     ClassDB::bind_method(D_METHOD("get_draw_count"), &WevaDocument::get_draw_count);
     ClassDB::bind_method(D_METHOD("get_triangle_count"), &WevaDocument::get_triangle_count);
 
@@ -59,6 +63,12 @@ void WevaDocument::_bind_methods() {
 }
 
 void WevaDocument::_ready() {
+    // The glyph atlas is shelf-packed with no gutter, and the core emits UVs
+    // that address texels exactly. Godot's canvas default is linear filtering,
+    // which both softens glyph edges the core drew crisply and samples across
+    // shelf boundaries into whatever glyph was packed next door.
+    set_texture_filter(TEXTURE_FILTER_NEAREST);
+
     if (size_ == Vector2(0, 0)) {
         // No explicit size: take the viewport's, so a document dropped into a
         // scene fills it rather than laying out against a default nobody chose.
@@ -133,20 +143,23 @@ void WevaDocument::_draw() {
         const weva_draw& d = draws[i];
         if (d.vertex_count == 0 || d.index_count == 0) continue;
 
-        // Godot's draw_mesh path wants flat arrays, so the indexed triangles
-        // are expanded here. The core keeps them indexed because a GPU backend
-        // wants them that way; this host is the one that does not.
+        // draw_polygon takes a polygon OUTLINE and triangulates it, so feeding
+        // it a triangle soup produces garbage where it does not fail outright
+        // ("Invalid polygon data, triangulation failed"). canvas_item_add_
+        // triangle_array takes the index buffer directly, which is exactly the
+        // shape the core already produces — no expansion, and no triangulator
+        // second-guessing geometry that is already triangles.
         PackedVector2Array points;
         PackedColorArray colors;
         PackedVector2Array uvs;
-        points.resize(static_cast<int64_t>(d.index_count));
-        colors.resize(static_cast<int64_t>(d.index_count));
-        uvs.resize(static_cast<int64_t>(d.index_count));
+        points.resize(static_cast<int64_t>(d.vertex_count));
+        colors.resize(static_cast<int64_t>(d.vertex_count));
+        uvs.resize(static_cast<int64_t>(d.vertex_count));
         Vector2* pw = points.ptrw();
         Color* cw = colors.ptrw();
         Vector2* uw = uvs.ptrw();
-        for (size_t k = 0; k < d.index_count; ++k) {
-            const weva_vertex& v = d.vertices[d.indices[k]];
+        for (size_t k = 0; k < d.vertex_count; ++k) {
+            const weva_vertex& v = d.vertices[k];
             pw[k] = Vector2(v.x, v.y);
             // The core works in linear space; Godot's canvas expects sRGB, so
             // the conversion happens here rather than in the core, where it
@@ -154,11 +167,19 @@ void WevaDocument::_draw() {
             cw[k] = Color(v.r, v.g, v.b, v.a).linear_to_srgb();
             uw[k] = Vector2(v.u, v.v);
         }
-        if (d.texture_id != 0 && atlas_.is_valid()) {
-            draw_polygon(points, colors, uvs, atlas_);
-        } else {
-            draw_polygon(points, colors);
+
+        PackedInt32Array indices;
+        indices.resize(static_cast<int64_t>(d.index_count));
+        int32_t* iw = indices.ptrw();
+        for (size_t k = 0; k < d.index_count; ++k) {
+            iw[k] = static_cast<int32_t>(d.indices[k]);
         }
+
+        const RID texture =
+            (d.texture_id != 0 && atlas_.is_valid()) ? atlas_->get_rid() : RID();
+        RenderingServer::get_singleton()->canvas_item_add_triangle_array(
+            get_canvas_item(), indices, points, colors, uvs, PackedInt32Array(),
+            PackedFloat32Array(), texture);
     }
 }
 
@@ -197,6 +218,21 @@ bool WevaDocument::set_element_attribute(const String& selector, const String& n
     const CharString n = name.utf8();
     const CharString v = value.utf8();
     if (weva_element_set_attribute(doc_, e, n.get_data(), v.get_data()) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::remove_element_attribute(const String& selector, const String& name) {
+    if (!doc_) return false;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return false;
+    const CharString n = name.utf8();
+    // A null value is what the ABI reads as "remove"; GDScript has no way to
+    // express one, which is why this is its own method.
+    if (weva_element_set_attribute(doc_, e, n.get_data(), nullptr) != WEVA_OK) return false;
     dirty_ = true;
     queue_redraw();
     return true;

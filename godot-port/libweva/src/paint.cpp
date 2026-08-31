@@ -4,6 +4,7 @@
 #include "weva/css_value.h"
 
 #include <cmath>
+#include <vector>
 
 namespace weva {
 
@@ -57,8 +58,29 @@ void draw_mesh(const Mesh& mesh, RenderInterface* backend, TextureHandle tex) {
     backend->release_geometry(g);
 }
 
+// Packs every glyph the document will draw, without emitting any geometry.
+//
+// This exists so the atlas is uploaded exactly once per frame. Uploading it
+// lazily at the first text draw looks equivalent and is not: a later run that
+// adds a glyph makes the atlas dirty again, and the upload releases the texture
+// the earlier draw already referenced. The published draw list then names a
+// texture that no longer exists, which a host that maps ids faithfully renders
+// untextured — and which, under a real GPU backend, frees a texture a queued
+// draw is still using. Shaping twice is cheap next to that.
+void prepare_glyphs(const BoxTree& tree, BoxId id, const PaintContext& paint) {
+    const Box& b = tree[id];
+    if (b.kind == BoxKind::Text && !b.text.empty() && paint.font && paint.atlas) {
+        std::vector<ShapedGlyph> glyphs;
+        paint.font->shape(paint.face, b.text, b.font_size, &glyphs);
+        for (const ShapedGlyph& g : glyphs) {
+            paint.atlas->get(paint.font, paint.face, g.glyph, b.font_size);
+        }
+    }
+    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, paint);
+}
+
 void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, double origin_x,
-                     double origin_y, const PaintContext& paint) {
+                     double origin_y, const PaintContext& paint, TextureHandle atlas_texture) {
     const Box& b = tree[id];
     const double x = origin_x + b.x;
     const double y = origin_y + b.y;
@@ -77,10 +99,14 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         Mesh text;
         build_text_geometry(b.text, x, baseline, b.font_size, resolve_color(b.style, "color"),
                             paint, &text);
-        draw_mesh(text, paint.backend, paint.atlas->texture(paint.backend));
+        // The handle from the single up-front upload, never a fresh one: see
+        // prepare_glyphs.
+        draw_mesh(text, paint.backend, atlas_texture);
     }
 
-    for (BoxId c : tree.children(id)) paint_recursive(tree, c, ctx, x, y, paint);
+    for (BoxId c : tree.children(id)) {
+        paint_recursive(tree, c, ctx, x, y, paint, atlas_texture);
+    }
 }
 
 } // namespace
@@ -182,7 +208,13 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
                 const PaintContext& paint) {
     if (!paint.backend || root == kNoBox) return;
-    paint_recursive(tree, root, ctx, 0, 0, paint);
+
+    TextureHandle atlas_texture{};
+    if (paint.atlas && paint.font) {
+        prepare_glyphs(tree, root, paint);
+        atlas_texture = paint.atlas->texture(paint.backend);
+    }
+    paint_recursive(tree, root, ctx, 0, 0, paint, atlas_texture);
 }
 
 } // namespace weva

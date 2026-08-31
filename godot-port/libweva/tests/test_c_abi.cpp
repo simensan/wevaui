@@ -303,6 +303,50 @@ size_t host_shape(void* ud, uint64_t, const char* utf8, size_t len, double px, u
 
 } // namespace
 
+// Every texture a draw names must be in the published texture list.
+//
+// This is the contract weva_c.h states ("a texture the host must create before
+// issuing the draws that reference it"), and it was quietly violated: the glyph
+// atlas uploaded lazily at the first text run, so a second run that added a
+// glyph re-uploaded it and released the texture the first run's draw still
+// pointed at. A host that maps ids faithfully drew that run untextured — solid
+// quads where the text should be — and a GPU backend would have freed a
+// texture with a queued draw still referencing it. Found by comparing the
+// software backend against Godot's, which is the whole reason that comparison
+// exists.
+void test_abi_texture_ids_are_all_published() {
+    weva_config cfg = default_config(300, 200);
+    weva_document_t d = weva_document_create(&cfg);
+    // Two words, so inline layout makes two text boxes and thus two draws, and
+    // the second introduces glyphs the first did not use.
+    CHECK(load(d, "<body><div id=a>Hello Weva</div></body>") == WEVA_OK);
+    CHECK(add_css(d, "#a { display: block; font-size: 16px; color: #202020 }") == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+
+    size_t texture_count = 0;
+    const weva_texture* textures = weva_document_textures(d, &texture_count);
+    size_t draw_count = 0;
+    const weva_draw* draws = weva_document_draws(d, &draw_count);
+
+    // The document has to actually produce textured draws, or this passes for
+    // the wrong reason.
+    int textured = 0;
+    for (size_t i = 0; i < draw_count; ++i) {
+        if (draws[i].texture_id == 0) continue;
+        ++textured;
+        bool published = false;
+        for (size_t t = 0; t < texture_count; ++t) {
+            if (textures[t].id == draws[i].texture_id) { published = true; break; }
+        }
+        CHECK(published);
+    }
+    CHECK(textured >= 2);
+    // And one atlas upload per frame, not one per run.
+    CHECK(texture_count == 1);
+
+    weva_document_destroy(d);
+}
+
 void test_abi_host_render_backend() {
     weva_config cfg = default_config();
     weva_document_t d = weva_document_create(&cfg);

@@ -27,6 +27,7 @@ add_subdirectory(libweva)
 
 if(WEVA_BUILD_TESTS)
     add_subdirectory(tools/weva_dump)
+    add_subdirectory(tools/weva_render)
     enable_testing()
     add_subdirectory(libweva/tests)
 endif()

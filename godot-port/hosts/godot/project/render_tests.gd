@@ -75,9 +75,13 @@ func _test_text_produces_textured_geometry() -> void:
 	doc.queue_free()
 
 func _test_restyle_round_trips() -> void:
+	# The hiding rule is #a[data-hide], not [data-hide]: an id selector is
+	# (1,0,0) and an attribute selector (0,1,0), so a bare [data-hide] loses the
+	# cascade to the #a rule and display stays `block`. Getting this wrong is
+	# what the first version of this test did, and the engine was right.
 	var doc := _make_doc(
 		"<body><div id='a'>x</div></body>",
-		"#a { display: block; width: 10px; height: 10px } [data-hide] { display: none }")
+		"#a { display: block; width: 10px; height: 10px } #a[data-hide] { display: none }")
 	_check(doc.query_bounds("#a").size.x > 0.0, "the box exists before the attribute is set")
 
 	_check(doc.set_element_attribute("#a", "data-hide", "1"), "setting an attribute succeeds")
@@ -85,8 +89,18 @@ func _test_restyle_round_trips() -> void:
 	# `display: none` generates no box at all, so the query finds nothing.
 	_check(doc.query_bounds("#a") == Rect2(), "the restyle removed the box")
 
+	# And back: a restyle that only ever hid things would pass the check above
+	# for the wrong reason.
+	# Removal, not set-to-empty: [data-hide] is a presence selector, so an empty
+	# value would still match and the box would stay hidden.
+	_check(doc.remove_element_attribute("#a", "data-hide"), "removing an attribute succeeds")
+	doc.update_document()
+	_check(_approx(doc.query_bounds("#a").size.x, 10.0), "removing the attribute restores the box")
+
 	_check(not doc.set_element_attribute("#nope", "x", "y"),
 		"setting an attribute on a missing element reports failure")
+	_check(not doc.remove_element_attribute("#nope", "x"),
+		"removing an attribute from a missing element reports failure")
 	doc.queue_free()
 
 func _test_empty_and_malformed_input() -> void:

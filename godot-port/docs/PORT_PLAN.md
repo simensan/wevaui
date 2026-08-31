@@ -1534,6 +1534,89 @@ through `IFontMetrics.LineHeight`. Fixed — a host's face now governs its own
 line height, and the constant remains only as the no-face fallback. It was
 invisible until now because the stub's metrics happen to sum to exactly 1.2.
 
+### The Godot host actually runs — and the first thing it did was find bugs
+
+The extension builds against `godot-cpp` and loads in **Godot 4.7.2**, with 20
+end-to-end checks green in `project/render_tests.gd`. `godot-cpp` publishes no
+4.7 branch; `master` bundles the 4.7 API description, and an engine can always
+dump its own (`--dump-extension-api`), so version coupling is manageable rather
+than a wall. An extension built against 4.3 loaded under 4.7.2 unchanged.
+
+Two things had to be true before any of this ran, and neither was obvious:
+`.godot/extension_list.cfg` must exist or the engine loads no GDExtension at all
+and reports only `Could not find type "WevaDocument"`; and headless still
+validates every canvas command, which is what made the first failure visible.
+
+**`draw_polygon` was the wrong call.** It takes a polygon *outline* and
+triangulates it, so feeding it the expanded triangle soup produced garbage where
+it did not fail outright ("Invalid polygon data, triangulation failed"). The
+right call is `canvas_item_add_triangle_array`, which takes the index buffer
+directly — the shape the core already produces. The host got *simpler*: the
+per-index expansion is gone entirely. Worth noting as evidence for §1: the
+render interface being at triangle altitude meant the fix was to stop
+translating, not to translate better.
+
+**One render test was wrong and the engine was right.** `[data-hide]` is
+(0,1,0) and `#a` is (1,0,0), so the hiding rule lost the cascade and `display`
+correctly stayed `block`. Reproduced in 30 lines of C against the ABI before
+touching anything — which is the only reason it was not "fixed" into a
+divergence. The rule is now `#a[data-hide]`.
+
+That test also exposed a real host gap: **attribute removal was unreachable from
+GDScript.** The ABI reads a null value as "remove", GDScript cannot express one,
+and an empty string still satisfies a presence selector. Added
+`remove_element_attribute`, and the test now round-trips both ways rather than
+only hiding.
+
+### Two backends, one draw list: the §1 exit test, half of it now met
+
+`tools/weva_render` rasterises a document through the software backend and
+`hosts/godot/compare_render.py` renders the same document through Godot and
+compares the images. Both consume the **identical** `weva_draw` list from the
+same build, so any difference is a difference between the backends with cascade,
+layout and tessellation held fixed.
+
+Blocks, borders, rounded corners and text now come out **pixel-identical** —
+zero differing pixels, on a document with 5 draws and 66 triangles. Only ink
+coverage gates; channel error is reported, because two rasterisers are entitled
+to disagree at edges and pretending otherwise makes the check noise.
+
+It found two things immediately:
+
+**Godot's default linear texture filtering is wrong for this atlas.** The core
+emits UVs addressing texels exactly, and the atlas is shelf-packed with no
+gutter — so linear sampling both softens glyphs the core drew crisply and reads
+across shelf boundaries into whatever glyph was packed next door. The host now
+sets `TEXTURE_FILTER_NEAREST`.
+
+**A real core bug: the draw list named a texture that no longer existed.** The
+glyph atlas uploaded lazily at each text run. A second run that added a glyph
+made it dirty again, and the upload released the texture the first run's draw
+still referenced. `weva_document_textures` then published only the final one, so
+a host that maps ids faithfully drew the first run **untextured** — solid blocks
+where the text should be. Godot looked correct only by accident, because it
+binds its single atlas whenever `texture_id != 0`.
+
+Under a host GPU backend this is worse than a cosmetic bug: `release_texture`
+would free a texture a queued draw still points at.
+
+Fixed by packing every glyph in a pre-pass, then uploading once, so all text
+draws share one handle. Pinned by
+`test_abi_texture_ids_are_all_published`, which was checked against the
+reintroduced bug rather than assumed to catch it: it fails on `published`
+without the fix.
+
+This is the clearest argument yet for the comparison existing at all. The core's
+own 7,147 checks passed throughout — the bug was in the *contract between* the
+core and a host, and only a second real host consuming the same list could see
+it. 7,147 checks now green across gcc 13, clang 18, ASan+UBSan+LSan and Release.
+
+Still outstanding on the §1 exit test: the corpus of golden PNGs, which needs
+the oracle. And **the oracle has still never run** — every parity claim across
+Phases 2–4 remains static analysis plus my own tests. `BaselineGen` needs
+`dotnet build`, and there is no .NET SDK in this container. It stays the
+highest-value work outside this loop.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)
