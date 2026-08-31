@@ -426,7 +426,123 @@ already emit correctly — actually the point of this project?**
 
 There is no coherent middle. Option B pays the full cost of both.
 
-## 9. Recommendation
+## 9. Where RmlUi is architecturally better than Weva
+
+Worth being honest about, because two of these directly inflate the cost of §3,
+and the port is the moment to fix them.
+
+### 9.1 The renderer abstraction is at the right altitude — Weva's is not
+
+This is the big one.
+
+RmlUi decomposes *everything* — border-radius, gradients, box-shadow, filters —
+into **indexed triangles** plus optional layer/filter/shader operations. The
+required `RenderInterface` is 8 methods: `CompileGeometry`, `RenderGeometry`,
+`ReleaseGeometry`, `LoadTexture`, `GenerateTexture`, `ReleaseTexture`,
+`EnableScissorRegion`, `SetScissorRegion`. Everything else — clip masks,
+transforms, layers, filters, shaders — is optional and degrades gracefully.
+
+Weva's `IRenderBackend` has **12 required methods at a semantic altitude**:
+`FillRect`, `StrokeBorder`, `DrawText`, `DrawShadow`, `PushClip`/`Pop`,
+`PushOpacity`/`Pop`, `PushTransform`/`Pop`, `PushFilter`/`Pop` (12 more are
+optional with default bodies). Each backend must itself implement rounded-rect
+SDF coverage, gradient evaluation, shadow blur, and per-edge border styles.
+There are shared helpers (`RoundRectSdf` 130, `MeshBuilder` 188, `FilterPipeline`
+502, `ColorMatrices` 210), but they don't remove the burden.
+
+The cost shows up in the numbers:
+
+| Backend | LOC | Fidelity |
+|---|---:|---|
+| `SoftwareRasterizer` | 1,592 | low — flat gradients, glyphs as blocks |
+| `IMGUIDocumentRenderer` | 308 | debug-grade |
+| `SoftwarePainter` (editor) | 226 | preview-grade |
+| URP batched | 9,082 + 3,904 shader lines | production |
+
+**RmlUi ships 6 renderers (GL2, GL3, DX11, DX12, Vulkan, SDL GPU) × 6 platforms
+(Win32, X11, Wayland, GLFW, SDL, SFML).** Weva has exactly one production
+backend. An abstraction with a single real consumer has not been tested as an
+abstraction — it has been tested as an indirection.
+
+This is not a mistake so much as a different bet: Weva traded backend
+portability for a single very fast target (one draw call per batch, a 57-float4
+über-shader instance, per-instance clip rects). That bet pays inside Unity. It
+is exactly the bet that makes a Godot backend expensive.
+
+### 9.2 The font engine is a real interface, not a reflection hack
+
+RmlUi's `FontEngineInterface` is a first-class, swappable interface with a
+default FreeType implementation.
+
+Weva has `IFontMetrics` / `IGlyphMetrics` / `ITextCoreBackend` / 
+`FontLoader.IFaceLoader` — the right shape — but the actual rasterization path
+binds Unity's `FontEngine.TryRenderGlyphsToTexture` **by reflection into
+undocumented internals of `UnityEngine.TextCoreTextEngineModule.dll`**, with a
+fallback ladder through TextMeshPro. §3.2 calls the text stack the port's
+hardest problem; it is hardest because of an architectural choice RmlUi got
+right and Weva didn't.
+
+### 9.3 Data binding is host-language agnostic
+
+RmlUi registers data models explicitly from C++ and drives views from `data-*`
+attributes in markup — no reflection, and the design survives any host language.
+
+Weva's binding is C# reflection over C# object graphs (`Runtime/Binding`,
+5 files). §4 concludes it should simply be deleted and replaced with Godot's
+introspection. That is the correct call, but it is a feature that does not
+survive the port because it was designed against the host language rather than
+against the markup.
+
+### 9.4 Zero engine coupling by construction, not by discipline
+
+Weva's 82%-neutral core with a 104-line Unity stub is a genuinely impressive
+result. But it is a *maintained property* — `.Unity.cs` partials, asmdef
+references, csproj exclude lists that have already drifted once (the stale
+`UIDocument.cs` in the appendix). RmlUi never had a host engine to decouple
+from. Structural beats disciplined.
+
+### Where Weva is architecturally ahead
+
+To be even-handed:
+
+- **Incremental invalidation.** Version-keyed caching at every pipeline stage
+  (`Reactive/InvalidationTracker`; cache keys are input versions, not heuristic
+  dirty bits; clean subtrees skip every stage), plus `Layout/Snapshot` (934) and
+  `Compiled` (1,458). AGENTS.md treats the cache invariants as a documented
+  contract. RmlUi's own docs advise authors to avoid content-based sizing to
+  prevent "multiple formatting cycles of flex items", which hints at less
+  machinery here — though I have not read its source, so treat that as a weak
+  signal rather than a finding.
+- **Conformance infrastructure as architecture.** ~10,500 tests,
+  `CONFORMANCE.md` property-by-property deltas, `BaselineGen` with Chrome
+  diffing, golden PNGs. This is what makes layout changes safe to land. RmlUi
+  doesn't aim at conformance so it needs less of this — but it also cannot make
+  the fidelity claim.
+- **A real cascade.** 12,340 LOC of cascade engine, container queries, full
+  selector matching. RCSS is a deliberately smaller model.
+- **Batching.** The single-draw-call über-shader is a more aggressive
+  performance architecture than triangle soup — which is the other side of §9.1's
+  trade, not a free win.
+
+### The actionable part
+
+The two projects made opposite bets at the same fork: RmlUi optimized for *any
+renderer, cheap to integrate*, and accepted a dialect and a simpler layout
+model. Weva optimized for *real CSS on one very fast target*, and accepted an
+expensive backend contract and an engine-coupled text stack.
+
+**A Godot port is the moment to buy back §9.1 and §9.2**, because both layers
+are being rewritten anyway:
+
+1. Lower `IRenderBackend` toward geometry + effect ops, closer to RmlUi's
+   factoring, so backends three and four are cheap. Keep the batched über-shader
+   as *one* backend, not as the shape of the interface.
+2. Rebuild the text stack behind a genuinely pluggable font interface
+   (FreeType/HarfBuzz directly, or Godot's `TextServer`) — never reflection.
+
+Doing the port without fixing these ports the mistakes too.
+
+## 10. Recommendation
 
 Feasible, correct choice of technology for the stated goal, but go in knowing it
 is a 12–24 person-month core translation, not a backend swap — and that §8's
@@ -443,10 +559,13 @@ If it proceeds:
 3. **Set conventions on day one**: no exceptions across the boundary, error
    returns, arena+index ownership, `string_view` lifetime rule, no fast-math.
 4. **Port bottom-up** in the order in §5, oracle-green at each stage.
-5. **`SoftwareRasterizer` first** as the C++ backend — pixels on screen early,
-   and it diffs against the 38 existing baseline PNGs.
-6. Text stack (FreeType/HarfBuzz directly, or Godot's `TextServer`), then the
-   batched GPU backend + shaders, then the editor plugin.
+5. **Re-cut `IRenderBackend` before writing any backend** (§9.1) — lower it
+   toward geometry + effect ops so backends three and four are cheap. Then
+   `SoftwareRasterizer` first as the C++ backend: pixels on screen early, and it
+   diffs against the 38 existing baseline PNGs.
+6. Text stack behind a genuinely pluggable font interface (§9.2) —
+   FreeType/HarfBuzz directly, or Godot's `TextServer`, never reflection. Then
+   the batched GPU backend + shaders, then the editor plugin.
 
 §7 changes the framing of the cheap-intermediate option. RmlUi's 4.4k stars
 already answer "do Godot users want HTML/CSS UI?" — yes. The open question is
