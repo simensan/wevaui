@@ -567,7 +567,14 @@ calling it the second-largest source of GC pressure during animated repaint —
 and I ported the code without porting the reason it exists. The mapping depends
 only on the resolved axes, of which ten are reachable, so each table is now
 built once as property-id pairs and the per-element work is a loop over ~60
-integer pairs. Back to 44-46 ms, within noise of the baseline.
+integer pairs. That got it to 44-46 ms — still ~8% over baseline, not "within
+noise" as I first wrote it here. What closed the gap was noticing that the
+remaining cost is paid by every element whether or not it declares a logical
+property: two inherit-chain walks for `direction`/`writing-mode`, two string
+allocations, and ~60 slot probes. Every logical property id is known, so a
+static bitmask ANDed against the style's occupied bits answers "any logical
+declaration here?" in six words. Most elements and most stylesheets have none.
+With the guard the demo measures 42.3-46.9 ms against a 41.4-46.3 ms baseline.
 
 Both mistakes have the same shape as the earlier match-cache one: I named a
 plausible culprit instead of measuring, and the plausible culprit was a real but
@@ -585,6 +592,52 @@ That means the C#'s 8.3 ms/1001-element figure cannot have come from this demo
 either; it comes from PerfBench's own scenes. **Comparing the two engines on
 `randhtml` would compare two uncached paths.**
 
+**`@property` done** (`AtPropertyRegistry.cs`). 1253 checks green across gcc 13,
+clang 18 and ASan+UBSan+LSan. A stylesheet can now declare a typed custom
+property, and the cascade honours all three descriptors: `inherits: false`,
+the typed `initial-value`, and syntax validation of authored values.
+
+`inherits: false` is the interesting one, because this port resolves custom
+properties **lazily** — `ComputedStyle::get` on an unset `--name` walks to the
+parent — where the C# materialises the parent's customs into every child. There
+is no registry pointer to consult mid-walk. It turns out not to need one: the
+C# also stamps each descriptor's initial value onto every element where the
+property is unset, so seeding a non-inheriting property locally means the lazy
+walk never reaches an ancestor. Same observable result, no plumbing.
+
+Three details worth keeping:
+
+* **A missing descriptor is not an empty one.** `initial-value: ;` is valid
+  under `syntax: "*"`; a missing `initial-value` invalidates the rule. Modelled
+  as `std::optional<std::string>` rather than the empty string.
+* **`unset` on a non-inheriting property is `initial`, not `inherit`.** Every
+  custom property looks inherited to a keyword resolver, so only the registry
+  can tell these apart — the C# calls this out as ATPROP-1 and intercepts
+  before its resolver runs. Ported at the same point.
+* **The syntax validators reproduce the reference's looseness.** `<color>`
+  checks only the *length* of a hex value, so `#zzzz` validates. Tightening it
+  would reject values the reference engine accepts, which is the wrong
+  direction for a differential port; the test says so explicitly.
+
+Structurally, validation moved: the C# validates inside `CssParser` and never
+constructs the rule object, while this port lets the generic at-rule survive
+parsing and validates during rule compilation, so the parser stays free of
+cascade-layer types. An `@property` rule has no other effect on a sheet, so the
+two are equivalent from the cascade's side.
+
+### A latent number-parsing bug, surfaced by a validator test
+
+`css_parse_double` checked `from_chars` for an error but never that it had
+consumed the whole string, so `"10m"` parsed as `10`. C#'s `double.TryParse`
+requires the entire string to be the number.
+
+It had been harmless: the only caller was the CSS tokenizer, which hands it an
+exact numeric slice it just scanned. The `@property` `<length>` validator is the
+first caller to pass arbitrary author text, and `10min` — which ends with the
+unit `in` — validated as a length because its `10m` prefix "parsed". Fixed at
+the source rather than in the validator, since every future caller would
+inherit the same trap.
+
 ### Known-incomplete, called out rather than left implicit
 
 * ~~Conditional at-rules are not evaluated~~ — **`@media` and `@supports` now
@@ -593,8 +646,15 @@ either; it comes from PerfBench's own scenes. **Comparing the two engines on
   applying is the less-wrong default for a UI toolkit, and it is recorded here
   rather than left to be discovered.
 * ~~`var()` is unresolved~~ — **done**. `env()` and `attr()` **also done**.
-* `@property`'s `inherits: false` is not honoured; custom properties inherit
-  unconditionally.
+* ~~`@property`'s `inherits: false` is not honoured~~ — **done**, along with
+  typed initial values and syntax validation.
+* **CSS-wide keywords are not resolved on custom properties.** `--x: inherit`
+  stays the literal text `inherit`; `KeywordResolver.cs` (145 LOC, plus the
+  `revert`/`revert-layer` rollback that needs the full match list) is its own
+  slice. The one case the `@property` work needed — `unset` on a non-inheriting
+  registered property — is handled, and syntax validation deliberately skips
+  values that are CSS-wide keywords so it cannot replace an unresolved
+  `inherit` with the initial value.
 
 **`var()` resolution done** (`VariableResolver.cs`). 884 checks green. On the
 demo, `body { color: var(--ink) }` now resolves to `#e8ecf2` through `:root`'s

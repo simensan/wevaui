@@ -1,4 +1,5 @@
 #pragma once
+#include "weva/at_property.h"
 #include "weva/computed_style.h"
 #include "weva/css_rule.h"
 #include "weva/media.h"
@@ -80,6 +81,9 @@ public:
     void add_stylesheet(const Stylesheet* sheet, DeclarationOrigin origin);
     void clear();
 
+    // Typed custom properties declared by `@property` in the compiled sheets.
+    const AtPropertyRegistry& property_registry() const { return property_registry_; }
+
     // Match-cache statistics, for tests and profiling.
     struct CacheStats { int64_t hits = 0; int64_t misses = 0; int64_t skipped = 0; };
     const CacheStats& cache_stats() const { return stats_; }
@@ -125,6 +129,9 @@ private:
     };
     void compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
                        int* source_index, int layer_ordinal);
+    // Applies the `@property` descriptors to one element's custom properties:
+    // syntax validation, the `unset` intercept, and initial-value seeding.
+    void apply_at_property_descriptors(ComputedStyle* out) const;
 
     // Shape-keyed match cache. Two elements whose tag/id/classes/attributes
     // AND whose whole ancestor chain hash identically must match the same rule
@@ -144,6 +151,7 @@ private:
     // once per element.
     std::map<std::string, std::vector<CompiledRule>> pseudo_rules_;
     MediaContext media_;
+    AtPropertyRegistry property_registry_;
     // Ids whose declaration was invalid at computed-value time in the current
     // compute() call, so the inherit/initial pass knows to refill them.
     mutable std::vector<int> dropped_;

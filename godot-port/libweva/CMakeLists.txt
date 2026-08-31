@@ -21,6 +21,7 @@ add_library(weva STATIC
     src/media.cpp
     src/env_attr.cpp
     src/logical.cpp
+    src/at_property.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

@@ -27,6 +27,37 @@ int cmp_int(int a, int b) { return a < b ? -1 : (a > b ? 1 : 0); }
 void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
                        bool* has_has, bool* folds_index);
 
+
+// ASCII-only whitespace trim and case-insensitive compare, used by the
+// @property pass. Kept local rather than shared: the value semantics here are
+// CSS keyword matching, not general text handling.
+std::string_view trim_ws(std::string_view s) {
+    size_t b = 0, e = s.size();
+    const auto ws = [](char c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
+    };
+    while (b < e && ws(s[b])) ++b;
+    while (e > b && ws(s[e - 1])) --e;
+    return s.substr(b, e - b);
+}
+
+bool iequals_ascii(std::string_view a, std::string_view b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        char x = a[i], y = b[i];
+        if (x >= 'A' && x <= 'Z') x = static_cast<char>(x - 'A' + 'a');
+        if (y >= 'A' && y <= 'Z') y = static_cast<char>(y - 'A' + 'a');
+        if (x != y) return false;
+    }
+    return true;
+}
+
+bool is_css_wide_keyword(std::string_view v) {
+    return iequals_ascii(v, "inherit") || iequals_ascii(v, "initial") ||
+           iequals_ascii(v, "unset") || iequals_ascii(v, "revert") ||
+           iequals_ascii(v, "revert-layer");
+}
+
 } // namespace
 
 CascadeKey CascadeKey::of(const MatchedDeclaration& m, uint64_t generation) {
@@ -87,6 +118,7 @@ int compare_for_cascade(const CascadeKey& x, const CascadeKey& y) {
 
 void CascadeEngine::clear() {
     rules_.clear();
+    property_registry_.clear();
     pseudo_rules_.clear();
     shape_cache_.clear();
     cache_unsafe_sibling_composition_ = false;
@@ -305,6 +337,12 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 if (!evaluate_media_query(ar->prelude, media_)) continue;
             } else if (ar->name == "supports") {
                 if (!evaluate_supports(ar->prelude)) continue;
+            } else if (ar->name == "property") {
+                // CSS Properties & Values L1. An invalid rule contributes no
+                // descriptor and is otherwise inert, so it is dropped here
+                // rather than at parse time.
+                if (auto d = parse_at_property_rule(*ar)) property_registry_.register_descriptor(*d);
+                continue;
             } else if (ar->name == "container") {
                 // @container needs per-element container sizes, which the
                 // layout engine has not been ported to supply. Skipping the
@@ -437,6 +475,10 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     // parent link has to be in place first.
     apply_logical_properties(out, winner_keys_.data(), reg.count(), gen);
 
+    // CSS Properties & Values L1: typed custom properties. Seeding runs before
+    // substitution so a var() reference sees the descriptor's initial value.
+    apply_at_property_descriptors(out);
+
     // attr() and env() run BEFORE var(), so a custom property whose value is
     // `attr(data-x)` or `env(safe-area-inset-top)` is already substituted by
     // the time a var() reference reads it.
@@ -501,6 +543,42 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     // stamped with rather than falling through to inherited/initial.
     for (int id : dropped_) out->unset(id);
     dropped_.clear();
+}
+
+void CascadeEngine::apply_at_property_descriptors(ComputedStyle* out) const {
+    if (property_registry_.count() == 0) return;
+
+    for (const auto& kv : property_registry_.all()) {
+        const PropertyDescriptor& d = kv.second;
+        if (out->contains_own(d.name)) {
+            const std::string value(out->get(d.name));
+            const std::string_view t = trim_ws(value);
+            // CSS Cascade L5 §7.3: `unset` is `inherit` for an inherited
+            // property and `initial` otherwise. Every custom property is
+            // inherited by default, so only a registered non-inheriting one
+            // takes the `initial` branch — this is the case a generic keyword
+            // resolver, which has no view of the registry, would get wrong.
+            if (!d.inherits && iequals_ascii(t, "unset")) {
+                out->set(d.name, d.initial_value);
+            } else if (!is_css_wide_keyword(t) &&
+                       !PropertyDescriptor::validate(d.syntax, value)) {
+                // A value that violates the declared syntax is invalid at
+                // computed-value time and falls back to the initial value.
+                //
+                // The other CSS-wide keywords are exempt because this port has
+                // not yet resolved them for custom properties (see
+                // PORT_PLAN.md); validating the literal `inherit` against
+                // `<length>` would replace an inherited value with the initial
+                // one, which is worse than leaving the keyword in place.
+                out->set(d.name, d.initial_value);
+            }
+            continue;
+        }
+        // Not authored on this element. A non-inheriting property always takes
+        // its initial value; an inheriting one only when no ancestor has it,
+        // which is the root case.
+        if (!d.inherits || !out->contains(d.name)) out->set(d.name, d.initial_value);
+    }
 }
 
 bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view pseudo_name,

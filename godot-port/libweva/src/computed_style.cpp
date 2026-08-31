@@ -72,7 +72,10 @@ std::string_view ComputedStyle::get(std::string_view property) const {
     if (id != kCustomPropertyId) return get(id);
     auto it = custom_.find(std::string(property));
     if (it != custom_.end()) return it->second;
-    // Custom properties always inherit (no @property registry yet).
+    // Custom properties inherit by default (CSS Custom Properties L1 §2).
+    // `@property inherits: false` is honoured by the cascade stamping the
+    // descriptor's initial value directly onto every element, so this walk
+    // never reaches an ancestor for such a property.
     if (parent_) return parent_->get(property);
     return {};
 }
@@ -85,6 +88,12 @@ void ComputedStyle::set(std::string_view property, std::string_view value) {
     if (it != custom_.end() && it->second == value) return;   // no-op, no bump
     custom_[key] = std::string(value);
     version_ = next_version();
+}
+
+bool ComputedStyle::contains_own(std::string_view property) const {
+    int id = CssPropertyRegistry::instance().id_of(property);
+    if (id != kCustomPropertyId) return contains(id);
+    return custom_.find(std::string(property)) != custom_.end();
 }
 
 bool ComputedStyle::contains(std::string_view property) const {

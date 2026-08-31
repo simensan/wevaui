@@ -68,6 +68,11 @@ bool css_parse_double(std::string_view text, double* out) {
     auto* last = text.data() + text.size();
     auto res = std::from_chars(first, last, v);
     if (res.ec != std::errc()) return false;   // e.g. a lone "." or "-"
+    // C#'s double.TryParse requires the WHOLE string to be the number, while
+    // std::from_chars is happy to stop at the first character it cannot use.
+    // Without this, "10m" parses as 10 — which turned "10min" into a valid
+    // <length> in the @property syntax validator.
+    if (res.ptr != last) return false;
     *out = v;
     return true;
 }

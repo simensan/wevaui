@@ -58,6 +58,12 @@ public:
     void set(std::string_view property, std::string_view value);
     bool contains(std::string_view property) const;
 
+    // True only when the property is set DIRECTLY here, without consulting the
+    // inherit chain. `@property inherits: false` needs the distinction: a
+    // custom property an ancestor sets must still take its initial value here,
+    // which contains() alone cannot express.
+    bool contains_own(std::string_view property) const;
+
     // !important tracking, consulted when a later declaration tries to
     // overwrite an earlier important one.
     bool is_important(int property_id) const;

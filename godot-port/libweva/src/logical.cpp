@@ -2,6 +2,7 @@
 
 #include "weva/css_properties.h"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -151,6 +152,35 @@ std::vector<AliasPair> build_alias_table(const LogicalAxes& ax) {
     return t;
 }
 
+// Bitmask of every logical property id, matched against a style's occupied
+// bits. Most elements declare no logical property at all, and most stylesheets
+// contain none — testing six words up front skips the axis resolution (two
+// inherit-chain walks and two string allocations) and the ~60 slot probes for
+// all of them. The set of LOGICAL ids is the same in every axis configuration;
+// only the physical targets move.
+const std::vector<uint64_t>& logical_id_mask() {
+    static const std::vector<uint64_t> mask = [] {
+        std::vector<uint64_t> m;
+        for (const AliasPair& p : build_alias_table(LogicalAxes{})) {
+            const size_t w = static_cast<size_t>(p.logical_id) / 64;
+            if (m.size() <= w) m.resize(w + 1, 0);
+            m[w] |= uint64_t{1} << (static_cast<size_t>(p.logical_id) % 64);
+        }
+        return m;
+    }();
+    return mask;
+}
+
+bool declares_any_logical_property(const ComputedStyle& style) {
+    const std::vector<uint64_t>& occ = style.occupied_bits();
+    const std::vector<uint64_t>& mask = logical_id_mask();
+    const size_t n = occ.size() < mask.size() ? occ.size() : mask.size();
+    for (size_t i = 0; i < n; ++i) {
+        if (occ[i] & mask[i]) return true;
+    }
+    return false;
+}
+
 const std::vector<AliasPair>& alias_table_for(const LogicalAxes& ax) {
     struct Entry { int key; std::vector<AliasPair> table; };
     static std::vector<Entry> cache;
@@ -206,6 +236,7 @@ LogicalAxes LogicalAxes::from(std::string_view direction, std::string_view writi
 void apply_logical_properties(ComputedStyle* style, CascadeKey* winners, int count,
                               uint64_t generation) {
     if (!style || !winners || count <= 0) return;
+    if (!declares_any_logical_property(*style)) return;
     Table w{winners, count, generation};
 
     const LogicalAxes ax = LogicalAxes::from(axis_keyword(*style, "direction"),
