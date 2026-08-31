@@ -32,6 +32,7 @@ add_executable(weva_tests
     test_inline_layout.cpp
     test_positioning.cpp
     test_paint.cpp
+    test_software_renderer.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)

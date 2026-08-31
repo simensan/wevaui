@@ -810,6 +810,10 @@ Port `SoftwareRasterizer` here as the first backend.
 match. The software backend should land in the low hundreds of lines, not 1,592
 — if it doesn't, the render interface was not lowered enough.
 
+> **The size half of that exit test is met: 273 lines including its header, and
+> it draws gradients.** See "The software backend" below. The corpus and golden
+> comparisons still wait on the oracle and on text rendering.
+
 **Box tree done** (`Layout/Boxes`, 590 LOC). 1382 checks green across gcc 13,
 clang 18 and ASan+UBSan+LSan. This is the data model everything in Phases 4-8
 writes into, so its shape is worth stating precisely — it departs from the C# in
@@ -1379,6 +1383,42 @@ contexts — boxes paint in tree order today, so a positive `z-index` does not y
 lift a box above a later sibling. Also deferred is the per-box paint cache; the
 current code compiles and releases geometry per box per frame, which a batching
 backend will want changed.
+
+**The software backend: 273 lines, and it renders gradients.** 2224 checks green
+across gcc 13, clang 18, ASan+UBSan+LSan and Release. The whole pipeline now
+runs end to end — HTML and CSS in, pixels out.
+
+This is the measurable half of ARCHITECTURE.md §1's exit test. The C#
+`SoftwareRasterizer` is **1,592 lines** and still draws glyphs as blocks and
+gradients as flat fills. This one is **273 lines including its header** and
+draws gradients correctly, because with the interface at triangle altitude a
+gradient is just per-vertex colour interpolation — it costs nothing extra.
+
+The rasterizer's own details, each pinned:
+
+* **Pixels are sampled at their centre.** A rect from 2 to 7 covers columns
+  2..6 — five, not six.
+* **A shared edge is drawn exactly once**, by the standard top-left fill rule.
+  Drawn twice it is visible wherever the colour is translucent, and the core's
+  meshes share edges everywhere: a quad, a fan and a ring are all built from
+  them. The test fills a translucent rect and checks every pixel reads 0.5
+  rather than 0.75 along the diagonal.
+* **Both windings are accepted**, normalised by flipping two vertices, because
+  the tessellator emits both and carrying the sign through every comparison
+  would be worse.
+* **A texture modulates the vertex colour** rather than replacing it, which is
+  what lets one path serve both a glyph mask and a tinted image.
+* **Malformed input degrades, it does not fault.** An out-of-range index skips
+  its triangle, an unknown handle draws nothing, a zero-area triangle returns
+  before dividing, and an unsupported image path returns the null handle so the
+  draw falls back to vertex colours.
+* **The framebuffer is linear and converts on output.** A mid-grey linear value
+  leaves as sRGB 188, not 128 — which is the entire reason for keeping it
+  linear.
+
+**Still deferred for the backend:** image decoding (`load_texture` returns null
+by design), layers, filters and blend modes, and antialiasing — coverage is
+currently a hard in/out test at the pixel centre.
 
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 

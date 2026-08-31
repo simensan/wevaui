@@ -34,6 +34,7 @@ add_library(weva STATIC
     src/positioning.cpp
     src/tessellate.cpp
     src/paint.cpp
+    src/software_renderer.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

@@ -100,6 +100,13 @@ void test_radii_clamping();
 void test_tessellate_border();
 void test_paint_decorations();
 void test_paint_tree_calls();
+void test_software_raster_coverage();
+void test_software_fill_rule();
+void test_software_gradient();
+void test_software_blending_and_scissor();
+void test_software_texture_and_robustness();
+void test_software_translation_and_output();
+void test_end_to_end_render();
 int main() {
     test_arena();
     test_intern();
@@ -202,6 +209,13 @@ int main() {
     test_tessellate_border();
     test_paint_decorations();
     test_paint_tree_calls();
+    test_software_raster_coverage();
+    test_software_fill_rule();
+    test_software_gradient();
+    test_software_blending_and_scissor();
+    test_software_texture_and_robustness();
+    test_software_translation_and_output();
+    test_end_to_end_render();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }
