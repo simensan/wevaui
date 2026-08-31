@@ -53,6 +53,37 @@ already owns host-agnostically (`Rect`, `Transform2D`, `LinearColor`,
 **Exit:** DOM construction from a hardcoded tree; unit tests on arenas and
 interning; zero leaks under ASan.
 
+**Status: done.** 88 checks green under gcc 13, clang 18 (Release, `-Wall
+-Wextra -Wpedantic`, no warnings) and ASan+UBSan with LeakSanitizer verified
+active. Landed: `Rect` / `Transform2D` / `CornerRadius` / `BorderRadii`
+(`Paint/*.cs`), `LinearColor` + the sRGB curve, `RefCounted`/`Ref`, and the DOM
+(`Node`, `Element`, `TextNode`, `Document`, `AttributeMap`).
+
+Fidelity notes worth keeping:
+
+* **Field widths were copied, not normalised.** `Rect` is double; `Transform2D`
+  holds floats with a double `apply()`. Tidying either to a uniform type would
+  surface later as unexplained sub-pixel divergence in the oracle.
+* **`srgb_byte_to_linear` matches C#'s exponent exactly.** C# writes
+  `Math.Pow(x, 2.4f)`; `Math.Pow` has no float overload, so the literal widens
+  to `(double)2.4f` = 2.400000095367431640625, not 2.4. A bare `2.4` here gives
+  a scatter of one-ULP color differences that read as a cascade bug. Same class
+  of trap as Phase 0's `%.2f` rounding.
+* **No RTTI.** `dynamic_cast` in the tree walks was replaced with an explicit
+  `NodeType` tag, per CONVENTIONS.md — cheaper on a hot traversal and keeps the
+  core RTTI-free.
+* **Ownership.** Parent holds `Ref` to children, child holds a raw parent
+  pointer, so a well-formed tree has no cycles. `append_child` and
+  `remove_child` retain across the unlink, because erasing drops the parent's
+  only reference and observers still need a live target.
+
+C# semantics preserved deliberately, each with a test: re-appending the current
+last child is a no-op *including the version counter*; `remove_child` fires its
+mutation **before** unlinking so the parent chain is intact for bubbling;
+detached subtrees report a null owner document; mutations bubble to every
+ancestor with `target` always the originally mutated node; no-op attribute
+writes bump nothing.
+
 ## Phase 2 — HTML + CSS parsing (~7k LOC)
 
 `Runtime/Parsing` (1,100) + `Runtime/Css/Parsing` (~2k) + `Runtime/Css/Values`

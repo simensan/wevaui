@@ -1,0 +1,15 @@
+# ninja log v5
+2	372	1788182939291976144	libweva/CMakeFiles/weva.dir/src/geometry.cpp.o	a4155b7fee84a1d5
+2	372	1788182939295976145	libweva/CMakeFiles/weva.dir/src/color.cpp.o	a94b10027bac37
+1	390	1788182939311976146	libweva/CMakeFiles/weva.dir/src/arena.cpp.o	8d0ddb70c01d982
+372	444	1788182939363976149	libweva/tests/CMakeFiles/weva_tests.dir/main.cpp.o	ba715bcc8943c392
+2	557	1788182939479976156	libweva/CMakeFiles/weva.dir/src/intern.cpp.o	629d0d84503b3e42
+445	704	1788182939627976164	libweva/tests/CMakeFiles/weva_tests.dir/test_geometry.cpp.o	97405cc96cb83bec
+372	711	1788182939631976165	libweva/tests/CMakeFiles/weva_tests.dir/test_arena.cpp.o	6b9a0d8a17e8d375
+2	794	1788182939715976170	tools/weva_dump/CMakeFiles/weva_dump.dir/main.cpp.o	c0209a7153aeff47
+390	954	1788182939875976179	libweva/tests/CMakeFiles/weva_tests.dir/test_intern.cpp.o	4533e4082c1b9652
+557	1082	1788182940003976187	libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o	b127ae025d4bd39a
+2	1185	1788182940107976193	libweva/CMakeFiles/weva.dir/src/dom.cpp.o	104406b6cbcb9014
+1185	1286	1788182940202778214	libweva/libweva.a	1f485a9d0d187efd
+1286	1356	1788182940283392468	tools/weva_dump/weva_dump	82f2d59a38664338
+1287	1359	1788182940286580655	libweva/tests/weva_tests	39353b004d2779b8
