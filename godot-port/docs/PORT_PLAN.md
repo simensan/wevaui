@@ -1,0 +1,163 @@
+# Port plan
+
+Bottom-up, oracle-gated. Each phase ends with a diff-clean corpus subset; no
+phase starts before the previous one is green.
+
+Sizes are the C# source being translated, from the feasibility measurements.
+They are *scope indicators*, not schedule estimates — see "Effort" at the end.
+
+---
+
+## Phase 0 — Foundations (no engine code)
+
+* Fix and verify the stale csproj excludes; confirm `BaselineGen` builds and
+  runs headlessly (`dotnet build`, then a dump of `randhtml.html`). **The oracle
+  must work before anything depends on it.**
+* CMake skeleton: `libweva` (static), `weva_dump` (CLI), `hosts/godot` stub
+  loading in Godot and printing its ABI version.
+* Lock CONVENTIONS.md: `-fno-exceptions`, no fast-math, arena allocator,
+  interning table, `Status` enum.
+* Build `tools/oracle/` — corpus harvester, diff runner, CI wiring.
+
+**Exit:** an empty C++ engine produces an empty dump, the diff runner reports
+"412 elements expected, 0 produced" against a real corpus entry, and CI runs it.
+
+## Phase 1 — Core infrastructure (~5k LOC)
+
+Arena allocator, string interning, `Status`, the value types Weva's paint layer
+already owns host-agnostically (`Rect`, `Transform2D`, `LinearColor`,
+`BorderRadii`), and the DOM (`Runtime/Dom`, 420 LOC — small and self-contained).
+
+**Exit:** DOM construction from a hardcoded tree; unit tests on arenas and
+interning; zero leaks under ASan.
+
+## Phase 2 — HTML + CSS parsing (~7k LOC)
+
+`Runtime/Parsing` (1,100) + `Runtime/Css/Parsing` (~2k) + `Runtime/Css/Values`
+(`CssValueParser` alone is 1,866). This is where the `string_view` lifetime rule
+gets its first real test.
+
+**Exit:** property round-trip dumps diff clean. Every value type the C# parser
+accepts parses identically, including the `from_chars` locale behaviour.
+
+## Phase 3 — Cascade and selectors (~12k LOC)
+
+`Runtime/Css/Cascade` (12,340) plus selectors, media and container queries. Port
+the version-keyed invalidation contract *as designed* — do not simplify it and
+plan to add it back.
+
+**Exit:** computed-style dumps diff clean across the corpus. Incremental
+invalidation benchmarked: a `:hover` flip must not re-cascade the document.
+(C# reference: 0.08 ms vs 8.3 ms full.)
+
+## Phase 4 — Block and inline layout + software paint (~15k LOC)
+
+Layout root files (11,775) minus the specialised modes, `Layout/Boxes` (590),
+plus `Runtime/Paint` command types and `BoxToPaintConverter` (4,302) at the
+altitude decided in ARCHITECTURE.md — the core now tessellates, so this is
+larger than the C# original by design.
+
+Port `SoftwareRasterizer` here as the first backend.
+
+**Exit:** `corpus/block/` and `corpus/inline/` diff clean; the 38 golden PNGs
+match. The software backend should land in the low hundreds of lines, not 1,592
+— if it doesn't, the render interface was not lowered enough.
+
+## Phase 5 — Text (~9k LOC, highest uncertainty)
+
+Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)
+**at the start of this phase, not before** — Phase 4 will have clarified how
+much atlas control the paint layer needs.
+
+`Runtime/Layout/Text` (1,501) + the shaping/atlas layer. Note the C# original is
+not the reference here: its rasterizer reaches into Unity internals by
+reflection and is being replaced, not translated.
+
+**Exit:** `corpus/text/` green on line-break positions, line counts and line-box
+heights (tolerance per ORACLE.md); surrounding box geometry stays zero-tolerance.
+
+## Phase 6 — Flex (~4k LOC)
+
+`Layout/Flex` (3,975). Port the documented deviations deliberately — including
+the two RmlUi independently arrived at (bare text does not form anonymous flex
+items; stretched items are not re-flowed internally) — rather than silently
+fixing them, so the oracle stays meaningful. Fix them later, in both engines, as
+a conformance change.
+
+**Exit:** `corpus/flex/` diff clean.
+
+## Phase 7 — Grid and subgrid (~5k LOC)
+
+`Layout/Grid` (4,848). The hardest algorithm in the port and the single largest
+differentiator — RmlUi has no grid, GTML has no grid, and it is why this project
+exists rather than adopting one of them.
+
+**Exit:** `corpus/grid/` diff clean, including `repeat()`, `minmax()`,
+`fit-content()`, `auto-fill`/`auto-fit`, named lines and subgrid.
+
+## Phase 8 — Remaining layout (~8k LOC)
+
+`Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
+`AnchorPositioning` (1,018), `Multicol` (472), `Floats` (216), `Containment`.
+
+**Exit:** the full corpus diffs clean. **At this point the engine is at parity**
+and everything after is host and performance work.
+
+## Phase 9 — Godot host
+
+GDExtension: `WevaDocument` as a `Control`, the ~20 bound types from §4 of the
+feasibility doc (`Document`, `Element`, `Node`, `TextNode`, signals), input via
+`Input`/`InputEvent`, clipboard and IME via `DisplayServer`, images via
+`Image`/`ImageTexture`, resources via `ResourceLoader`.
+
+Read [Godot-RmlUi](https://github.com/ashifolfi/Godot-RmlUi) first — MIT, 19
+commits, and it implements exactly this plumbing.
+
+**Exit:** the demo runs in Godot from GDScript with no C# anywhere.
+
+## Phase 10 — GPU backend and shaders
+
+Port the batched renderer as *one* backend: `MultiMeshInstance2D` + an RGBAF
+data texture read via `texelFetch` (Godot's shading language has no
+`StructuredBuffer`), or `RenderingDevice`/GLSL if profiling demands it. HLSL →
+Godot shading language for the 7 shaders + `UIShaderLib.hlsl` (3,904 lines).
+
+Clipping ports cleanly: the batched backend already abandoned stencil for
+per-instance `clipRect` (slot 13) and clip-path SDF shapes (slots 16–20), and
+Godot 2D exposes no canvas stencil — the codebase sidestepped its own blocker.
+
+**Exit:** perf parity or better against the C# figures, with the allocation
+target that C# could not reach: **zero heap allocations per frame in steady
+state** (C# baseline: 1.42 MB/call layout, 1.10–2.19 MB/call paint).
+
+## Phase 11 — C ABI and editor plugin
+
+Freeze `weva_c.h`, version it, and only then consider the Unity P/Invoke shim.
+Editor plugin (preview panel, DOM/style inspector, importers) — ~5,910 LOC of
+C# editor tooling to re-express as a Godot `EditorPlugin`.
+
+---
+
+## Effort
+
+The core (Phases 1–8) is ~65k LOC of translation. Sustained mechanical
+translation of intricate, spec-driven code runs perhaps 500–1,500 LOC/day
+including debugging, which puts the core alone at ~100–200 person-days — and on
+a layout engine the differential-debugging tail is historically where schedules
+go. **12–24 person-months to parity**, with the host, GPU backend and editor
+plugin on top.
+
+Treat any estimate below that with suspicion, including one that arrives after
+Phase 4 goes surprisingly well. Phases 5 and 7 are where the variance lives.
+
+## Kill criteria
+
+Worth agreeing in advance, because sunk cost is the real risk on a port this
+size:
+
+* **Phase 4 exit slips badly.** Block and inline are the best-understood part of
+  the engine. If they are hard, grid will be worse.
+* **The oracle proves unmaintainable** — if corpus divergence is routinely
+  "expected", the safety net is gone and the remaining phases are unguarded.
+* **The differentiator stops mattering.** If RmlUi ships grid or container
+  queries, re-run the §8 decision honestly rather than finishing out of momentum.
