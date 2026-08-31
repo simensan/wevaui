@@ -15,6 +15,8 @@ void test_selector_has();
 void test_selector_match();
 void test_property_registry();
 void test_computed_style();
+void test_cascade_order();
+void test_cascade_compute();
 int main() {
     test_arena();
     test_intern();
@@ -32,6 +34,8 @@ int main() {
     test_selector_match();
     test_property_registry();
     test_computed_style();
+    test_cascade_order();
+    test_cascade_compute();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

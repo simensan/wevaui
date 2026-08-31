@@ -208,6 +208,13 @@ build libweva/CMakeFiles/weva.dir/src/computed_style.cpp.o: CXX_COMPILER__weva_u
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
 
+build libweva/CMakeFiles/weva.dir/src/cascade.cpp.o: CXX_COMPILER__weva_unscanned_Release /home/user/wevaui/godot-port/libweva/src/cascade.cpp || cmake_object_order_depends_target_weva
+  DEP_FILE = libweva/CMakeFiles/weva.dir/src/cascade.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=c++17 -fno-exceptions -Wall -Wextra -Wpedantic
+  INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
+  OBJECT_DIR = libweva/CMakeFiles/weva.dir
+  OBJECT_FILE_DIR = libweva/CMakeFiles/weva.dir/src
+
 
 # =============================================================================
 # Link build statements for STATIC_LIBRARY target weva
@@ -216,7 +223,7 @@ build libweva/CMakeFiles/weva.dir/src/computed_style.cpp.o: CXX_COMPILER__weva_u
 #############################################
 # Link the static library libweva/libweva.a
 
-build libweva/libweva.a: CXX_STATIC_LIBRARY_LINKER__weva_Release libweva/CMakeFiles/weva.dir/src/arena.cpp.o libweva/CMakeFiles/weva.dir/src/intern.cpp.o libweva/CMakeFiles/weva.dir/src/geometry.cpp.o libweva/CMakeFiles/weva.dir/src/color.cpp.o libweva/CMakeFiles/weva.dir/src/dom.cpp.o libweva/CMakeFiles/weva.dir/src/html_tables.cpp.o libweva/CMakeFiles/weva.dir/src/html_tokenizer.cpp.o libweva/CMakeFiles/weva.dir/src/html_parser.cpp.o libweva/CMakeFiles/weva.dir/src/css_tokenizer.cpp.o libweva/CMakeFiles/weva.dir/src/css_parser.cpp.o libweva/CMakeFiles/weva.dir/src/css_value.cpp.o libweva/CMakeFiles/weva.dir/src/css_color.cpp.o libweva/CMakeFiles/weva.dir/src/css_calc.cpp.o libweva/CMakeFiles/weva.dir/src/selector_parser.cpp.o libweva/CMakeFiles/weva.dir/src/selector_matcher.cpp.o libweva/CMakeFiles/weva.dir/src/css_properties.cpp.o libweva/CMakeFiles/weva.dir/src/computed_style.cpp.o
+build libweva/libweva.a: CXX_STATIC_LIBRARY_LINKER__weva_Release libweva/CMakeFiles/weva.dir/src/arena.cpp.o libweva/CMakeFiles/weva.dir/src/intern.cpp.o libweva/CMakeFiles/weva.dir/src/geometry.cpp.o libweva/CMakeFiles/weva.dir/src/color.cpp.o libweva/CMakeFiles/weva.dir/src/dom.cpp.o libweva/CMakeFiles/weva.dir/src/html_tables.cpp.o libweva/CMakeFiles/weva.dir/src/html_tokenizer.cpp.o libweva/CMakeFiles/weva.dir/src/html_parser.cpp.o libweva/CMakeFiles/weva.dir/src/css_tokenizer.cpp.o libweva/CMakeFiles/weva.dir/src/css_parser.cpp.o libweva/CMakeFiles/weva.dir/src/css_value.cpp.o libweva/CMakeFiles/weva.dir/src/css_color.cpp.o libweva/CMakeFiles/weva.dir/src/css_calc.cpp.o libweva/CMakeFiles/weva.dir/src/selector_parser.cpp.o libweva/CMakeFiles/weva.dir/src/selector_matcher.cpp.o libweva/CMakeFiles/weva.dir/src/css_properties.cpp.o libweva/CMakeFiles/weva.dir/src/computed_style.cpp.o libweva/CMakeFiles/weva.dir/src/cascade.cpp.o
   LANGUAGE_COMPILE_FLAGS = -O3 -DNDEBUG
   OBJECT_DIR = libweva/CMakeFiles/weva.dir
   POST_BUILD = :
@@ -444,6 +451,13 @@ build libweva/tests/CMakeFiles/weva_tests.dir/test_cascade_store.cpp.o: CXX_COMP
   OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
   OBJECT_FILE_DIR = libweva/tests/CMakeFiles/weva_tests.dir
 
+build libweva/tests/CMakeFiles/weva_tests.dir/test_cascade.cpp.o: CXX_COMPILER__weva_tests_unscanned_Release /home/user/wevaui/godot-port/libweva/tests/test_cascade.cpp || cmake_object_order_depends_target_weva_tests
+  DEP_FILE = libweva/tests/CMakeFiles/weva_tests.dir/test_cascade.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=c++17 -fno-exceptions -Wall -Wextra -Wpedantic
+  INCLUDES = -I/home/user/wevaui/godot-port/libweva/include
+  OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir
+  OBJECT_FILE_DIR = libweva/tests/CMakeFiles/weva_tests.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target weva_tests
@@ -452,7 +466,7 @@ build libweva/tests/CMakeFiles/weva_tests.dir/test_cascade_store.cpp.o: CXX_COMP
 #############################################
 # Link the executable libweva/tests/weva_tests
 
-build libweva/tests/weva_tests: CXX_EXECUTABLE_LINKER__weva_tests_Release libweva/tests/CMakeFiles/weva_tests.dir/main.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_arena.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_intern.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_geometry.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_html.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_html_parser.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_css_tokenizer.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_css_parser.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_css_value.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_css_calc.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_selector.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_selector_match.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_cascade_store.cpp.o | libweva/libweva.a || libweva/libweva.a
+build libweva/tests/weva_tests: CXX_EXECUTABLE_LINKER__weva_tests_Release libweva/tests/CMakeFiles/weva_tests.dir/main.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_arena.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_intern.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_geometry.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_dom.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_html.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_html_parser.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_css_tokenizer.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_css_parser.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_css_value.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_css_calc.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_selector.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_selector_match.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_cascade_store.cpp.o libweva/tests/CMakeFiles/weva_tests.dir/test_cascade.cpp.o | libweva/libweva.a || libweva/libweva.a
   FLAGS = -O3 -DNDEBUG
   LINK_LIBRARIES = libweva/libweva.a
   OBJECT_DIR = libweva/tests/CMakeFiles/weva_tests.dir

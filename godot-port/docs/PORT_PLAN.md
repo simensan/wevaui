@@ -405,6 +405,46 @@ Not ported: the per-slot parsed-`CssValue` cache. It is a memo rather than
 semantics, and it interacts with the arena lifetime rules — revisit once the
 cascade runs and there is something real to measure.
 
+**Cascade resolution done** — match collection, the CSS Cascade 5 §6.4.1
+ordering, inline styles, and inheritance. 855 checks green. **The full pipeline
+now runs end to end on the demo: HTML → DOM → CSS → matched rules → computed
+styles for all 358 elements.**
+
+The comparator is the delicate part, and its layer axis is asymmetric in two
+ways that are easy to lose in translation:
+
+* **Normal:** a *later* layer wins, and unlayered beats every layered rule.
+  Inline bypasses the layer axis entirely.
+* **`!important`:** *reversed* — an *earlier* layer wins, and unlayered
+  (including inline `!important`) **loses** to any layered `!important`. So the
+  layer comparison must run **even when one side is inline**, unlike the normal
+  case. Both directions are pinned by test.
+
+Origin ordering flips the same way: UA < User < Author normally, Author < User <
+UA for `!important`.
+
+### Honest performance note
+
+Cascading the 358-element demo takes **136 ms**. That is roughly 45× slower per
+element than the C# reference (8.3 ms for 1001 elements), and it is **not** a
+translation problem — it is a missing optimisation. `compute()` currently does a
+linear scan of every compiled rule for every element, and the C#'s shape-keyed
+match cache (`CascadeEngine.IncrementalState.cs`, 604 LOC) is not ported yet.
+Until it is, **no performance claim should be made from this build.** The
+zero-alloc arena target and the 0.08 ms `:hover` figure both belong to that
+later slice.
+
+### Known-incomplete, called out rather than left implicit
+
+* **Conditional at-rules are not evaluated.** `@media`, `@supports` and
+  `@container` bodies are compiled unconditionally, so a *non-matching* `@media`
+  block currently **does** apply. This is the most likely source of wrong output
+  in the demo right now.
+* `var()`, `env()` and `attr()` are unresolved, so `color: var(--ink)` stays
+  literal at computed-value time.
+* `@property`'s `inherits: false` is not honoured; custom properties inherit
+  unconditionally.
+
 ## Phase 4 — Block and inline layout + software paint (~15k LOC)
 
 Layout root files (11,775) minus the specialised modes, `Layout/Boxes` (590),
