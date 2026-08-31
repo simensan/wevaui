@@ -32,6 +32,8 @@ add_library(weva STATIC
     src/font_metrics.cpp
     src/inline_layout.cpp
     src/positioning.cpp
+    src/tessellate.cpp
+    src/paint.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

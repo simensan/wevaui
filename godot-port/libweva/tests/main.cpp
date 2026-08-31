@@ -94,6 +94,12 @@ void test_absolute_containing_block();
 void test_absolute_placement();
 void test_offsets_and_zindex();
 void test_out_of_flow_relayout();
+void test_tessellate_rect();
+void test_tessellate_rounded();
+void test_radii_clamping();
+void test_tessellate_border();
+void test_paint_decorations();
+void test_paint_tree_calls();
 int main() {
     test_arena();
     test_intern();
@@ -190,6 +196,12 @@ int main() {
     test_absolute_placement();
     test_offsets_and_zindex();
     test_out_of_flow_relayout();
+    test_tessellate_rect();
+    test_tessellate_rounded();
+    test_radii_clamping();
+    test_tessellate_border();
+    test_paint_decorations();
+    test_paint_tree_calls();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

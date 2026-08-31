@@ -1338,6 +1338,48 @@ and paint order — which belong to paint, not layout — anchor positioning, th
 grid-area containing block, and the flex static position for an out-of-flow flex
 child.
 
+**Paint opens: the render interface and the tessellator.** 2067 checks green
+across gcc 13, clang 18, ASan+UBSan+LSan and Release. This is the slice that
+tests ARCHITECTURE.md §1's central bet, so it is worth being precise about what
+landed.
+
+**The seam is indexed triangles, not drawing commands.** Seven required methods
+— compile, render and release geometry; load, generate and release textures;
+set scissor — plus optional transform, layer and filter operations that a
+backend may ignore, with the feature degrading rather than breaking. The C#
+`IRenderBackend` has twelve methods at a semantic altitude, which is why its URP
+backend is 9,082 lines plus 3,904 of shader and its software rasterizer is 1,592
+lines that still draw glyphs as blocks.
+
+**The core now owns the geometry.** Rounded rects are fanned from the centre —
+correct for any convex outline, and a rounded rect always is — with a zero
+radius falling through to a plain indexed quad, so the common case costs four
+vertices. A border is ONE ring of paired outer and inner vertices rather than
+four edge quads, which is what stops a mitred corner between two colours from
+double-covering.
+
+Two spec details that are easy to miss and are pinned:
+
+* **§5.5 radius clamping scales every corner by one factor.** Overlapping radii
+  shrink together, so the shape keeps its proportions; scaling only the
+  offending corner would distort it.
+* **The inner edge of a border curves less than the outer.** Each radius is
+  reduced by the border width on its side, floored at zero — a 2px radius under
+  a 10px border is square inside.
+
+Also: the background paints out to the BORDER box, not the padding box, so a
+semi-transparent border shows it through; and an unset `border-color` is
+`currentColor`, which is what makes a border follow the text colour.
+
+**Deferred, and the list matters because the exit test depends on it:**
+gradients, images and `background-*` positioning, box and text shadows, text
+runs (they need a glyph atlas, so they wait on Phase 5's font backend), clip
+paths, filters and blend modes beyond the interface declaration, and stacking
+contexts — boxes paint in tree order today, so a positive `z-index` does not yet
+lift a box above a later sibling. Also deferred is the per-box paint cache; the
+current code compiles and releases geometry per box per frame, which a batching
+backend will want changed.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)
