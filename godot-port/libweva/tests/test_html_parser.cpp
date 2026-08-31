@@ -41,19 +41,35 @@ std::string shape(Node* n) {
 } // namespace
 
 void test_html_parser() {
-    // ---- a bare fragment is wrapped in <html><body>.
+    // ---- a bare fragment gets the full browser shape: html > head + body.
     //
-    // NOTE: no <head>. HtmlParser.cs's comment says browsers "always produce a
-    // Document > <html> > <head> + <body> shape", but EnsureHead() is only
-    // reached from a head-content element, and EnsureBody() -> CloseHead()
-    // returns immediately when inHead is false. A body-only fragment therefore
-    // gets no <head> at all. Asserted as-is: the oracle compares against the C#
-    // engine, so this is the behaviour to reproduce, not the comment's claim.
-    // Flagged in PORT_PLAN.md for the oracle to settle against Chrome.
+    // The empty <head> is load-bearing for structural selectors: without it
+    // <body> is :nth-child(1) rather than :nth-child(2). Fixed in both engines
+    // (HtmlParser.cs EnsureBody now calls EnsureHead).
     {
         P p;
         CHECK(p.run("<main class=\"hud\">hi</main>"));
-        CHECK(shape(p.doc.get()) == "html(body(main('hi')))");
+        CHECK(shape(p.doc.get()) == "html(head body(main('hi')))");
+    }
+
+    // ---- the empty <head> exists so <body> is the SECOND child. This is the
+    // whole reason for the fix; a shape assertion alone would not catch a
+    // regression that emitted <head> after <body>.
+    {
+        P p;
+        CHECK(p.run("<div>x</div>"));
+        auto* html = static_cast<Element*>(p.doc->children()[0].get());
+        CHECK(html->tag_name() == "html");
+        CHECK(html->children().size() == 2);
+        CHECK(static_cast<Element*>(html->children()[0].get())->tag_name() == "head");
+        CHECK(static_cast<Element*>(html->children()[1].get())->tag_name() == "body");
+    }
+
+    // ---- head content still routes correctly now that head is unconditional
+    {
+        P p;
+        CHECK(p.run("<link rel=stylesheet href=a.css><div>x</div>"));
+        CHECK(shape(p.doc.get()) == "html(head(link) body(div('x')))");
     }
 
     // ---- an explicit <html> is trusted verbatim, no synthesis
@@ -92,28 +108,28 @@ void test_html_parser() {
     {
         P p;
         CHECK(p.run("<template>x</template>"));
-        CHECK(shape(p.doc.get()) == "html(body(template('x')))");
+        CHECK(shape(p.doc.get()) == "html(head body(template('x')))");
     }
 
     // ---- implicit close: <p>One<p>Two are siblings, not nested
     {
         P p;
         CHECK(p.run("<p>One<p>Two"));
-        CHECK(shape(p.doc.get()) == "html(body(p('One') p('Two')))");
+        CHECK(shape(p.doc.get()) == "html(head body(p('One') p('Two')))");
     }
 
     // ---- void elements never open a scope
     {
         P p;
         CHECK(p.run("<div><br><img src=a.png>after</div>"));
-        CHECK(shape(p.doc.get()) == "html(body(div(br img 'after')))");
+        CHECK(shape(p.doc.get()) == "html(head body(div(br img 'after')))");
     }
 
     // ---- <li> closes on <li>; the <ul> scope is not crossed
     {
         P p;
         CHECK(p.run("<ul><li>a<li>b</ul>"));
-        CHECK(shape(p.doc.get()) == "html(body(ul(li('a') li('b'))))");
+        CHECK(shape(p.doc.get()) == "html(head body(ul(li('a') li('b'))))");
     }
 
     // ---- optional-close scope guard. Without it the </li> is mis-attributed
@@ -141,7 +157,7 @@ void test_html_parser() {
         P p;
         CHECK(p.run("<p>Click <a href=\"#\"><div>here</div></a> to start</p>"));
         CHECK(shape(p.doc.get()) ==
-              "html(body(p('Click ' a) div(a('here')) ' to start' p))");
+              "html(head body(p('Click ' a) div(a('here')) ' to start' p))");
     }
 
     // ---- a reconstructed formatting element clones its attributes

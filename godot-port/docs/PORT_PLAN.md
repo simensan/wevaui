@@ -127,25 +127,42 @@ active-formatting-list reconstruction. 193 checks green across gcc / clang /
 ASan+UBSan+LSan; the 17KB dev demo parses clean in **strict** mode into 358
 elements and 458 text nodes.
 
-### Two places where the C# comments claim behaviour the code does not deliver
+### Two places where the C# comments claimed behaviour the code did not deliver
 
-Both are reproduced as-written, because the oracle compares against the C#
-engine and a unilateral "fix" registers as divergence. Both need settling
-against Chrome once BaselineGen runs — **fix in both engines, or neither.**
+Both were found by porting. Decisions taken:
 
-1. **A body-only fragment gets no `<head>`.** The comment says browsers
-   "always produce a `Document > <html> > <head> + <body>` shape", but
-   `EnsureHead()` is only reachable from a head-content element, and
-   `EnsureBody() -> CloseHead()` returns immediately when `inHead` is false.
-   So `<main>hi</main>` yields `html(body(main))`, not `html(head body(main))`.
+1. **A body-only fragment got no `<head>` — FIXED in both engines.**
+   `EnsureHead()` was only reachable from a head-content element, and
+   `EnsureBody() -> CloseHead()` returned immediately when `inHead` was false,
+   so `<main>hi</main>` produced `html(body(main))`. Layout was unaffected
+   (both stated reasons for wrapper synthesis — `:root` matching and
+   html/body background propagation — work either way), but **structural
+   selectors diverged from Chrome**: `<body>` was `:nth-child(1)` instead of
+   `:nth-child(2)`, breaking `body:nth-child(2)`, `html > *:first-child` and
+   top-level sibling combinators.
 
-2. **The adoption-agency fixup does not match Chrome.** The comment cites
-   `<p>Click <a><div>here</div></a> to start</p>` as "matching the Chrome /
-   Firefox DOM shape". Chrome produces
+   `HtmlParser.cs`'s `EnsureBody()` now calls `EnsureHead()` first, and the C++
+   mirrors it. `HtmlFragmentWrapperTests` already tolerated both shapes
+   ("head is empty so we allow either [body] or [head, body]"), so no C# test
+   needed changing — **though the C# side is unverified here: no .NET SDK.**
+   The C++ regression test asserts child *positions*, not just the shape, since
+   a shape assertion alone would not catch `<head>` being emitted after
+   `<body>`.
+
+2. **The adoption-agency fixup does not match Chrome — DEFERRED, deliberately.**
+   The comment cites `<p>Click <a><div>here</div></a> to start</p>` as
+   "matching the Chrome / Firefox DOM shape". Chrome produces
    `<p>Click <a></a></p> <a><div>here</div></a> <a> to start</a> <p></p>`.
-   The C# algorithm instead nests the reconstructed `<a>` *inside* the `<div>`
-   and leaves `" to start"` unwrapped, because `</a>` clears the active
-   formatting list before the trailing text arrives.
+   The C# instead nests the reconstructed `<a>` *inside* the `<div>` and leaves
+   `" to start"` unwrapped, because `</a>` clears the active formatting list
+   before the trailing text arrives. That is layout-visible — the trailing text
+   loses its link styling.
+
+   Fixing it means implementing real HTML5 §13.2.6 adoption agency, which is a
+   project rather than a patch, and doing it mid-port would blind the
+   differential signal across every formatting-element corpus entry. Reproduced
+   exactly for now; revisit once the corpus is green, then fix both engines
+   together with the oracle watching.
 
 **Process note.** Eight of the first parser tests failed, and every one was a
 wrong expectation on my side — written from memory of Chrome rather than from

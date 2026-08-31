@@ -149,6 +149,12 @@ std::vector<HtmlToken> normalize_fragment(const std::vector<HtmlToken>& tokens,
     };
     auto ensure_body = [&] {
         if (emitted_body) return;
+        // Browsers always produce `<html><head></head><body>`, even with no head
+        // content. Without this, `<main>hi</main>` yields `<html><body>` and
+        // <body> is :nth-child(1) rather than :nth-child(2), diverging from
+        // Chrome for body:nth-child(2), html > *:first-child and top-level
+        // sibling combinators. Fixed in both engines together.
+        ensure_head();
         close_head();
         if (!body_explicit) out.push_back(synth(HtmlTokenKind::StartTag, n.body));
         emitted_body = true;
