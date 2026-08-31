@@ -19,8 +19,14 @@ target_compile_options(weva_flags INTERFACE
     $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
 )
 
-add_subdirectory(libweva)
-add_subdirectory(tools/weva_dump)
+# A host embeds the core with add_subdirectory and wants neither the tests nor
+# the dump tool. Defaulting ON keeps a bare `cmake -S .` building everything.
+option(WEVA_BUILD_TESTS "Build the libweva test suite and tools" ON)
 
-enable_testing()
-add_subdirectory(libweva/tests)
+add_subdirectory(libweva)
+
+if(WEVA_BUILD_TESTS)
+    add_subdirectory(tools/weva_dump)
+    enable_testing()
+    add_subdirectory(libweva/tests)
+endif()

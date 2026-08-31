@@ -1,0 +1,13 @@
+[configuration]
+
+entry_symbol = "weva_library_init"
+compatibility_minimum = "4.2"
+
+[libraries]
+
+linux.debug.x86_64 = "res://addons/weva/bin/libweva_godot.so"
+linux.release.x86_64 = "res://addons/weva/bin/libweva_godot.so"
+macos.debug = "res://addons/weva/bin/libweva_godot.dylib"
+macos.release = "res://addons/weva/bin/libweva_godot.dylib"
+windows.debug.x86_64 = "res://addons/weva/bin/weva_godot.dll"
+windows.release.x86_64 = "res://addons/weva/bin/weva_godot.dll"

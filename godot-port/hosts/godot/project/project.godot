@@ -1,0 +1,15 @@
+; Minimal project for exercising the Weva GDExtension. Kept in the repository
+; because the render tests below are the only end-to-end check that the ABI,
+; the extension and the engine actually agree.
+
+config_version=5
+
+[application]
+
+config/name="Weva Godot Host"
+run/main_scene="res://test_scene.tscn"
+config/features=PackedStringArray("4.2")
+
+[rendering]
+
+renderer/rendering_method="mobile"
