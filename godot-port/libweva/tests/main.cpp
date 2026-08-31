@@ -75,6 +75,12 @@ void test_self_collapsing_block();
 void test_barriers_do_not_collapse();
 void test_percent_height_chain();
 void test_auto_height_clamps();
+void test_float_keywords();
+void test_float_context_queries();
+void test_float_placement();
+void test_float_does_not_advance_flow();
+void test_clear();
+void test_float_bfc_scoping();
 int main() {
     test_arena();
     test_intern();
@@ -152,6 +158,12 @@ int main() {
     test_barriers_do_not_collapse();
     test_percent_height_chain();
     test_auto_height_clamps();
+    test_float_keywords();
+    test_float_context_queries();
+    test_float_placement();
+    test_float_does_not_advance_flow();
+    test_clear();
+    test_float_bfc_scoping();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

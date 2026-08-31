@@ -362,6 +362,156 @@ bool is_self_collapsing(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
 
 // ---- Block flow ----------------------------------------------------------
 
+
+// ---- Floats --------------------------------------------------------------
+
+FloatType parse_float_type(std::string_view raw) {
+    if (iequals(raw, "left") || iequals(raw, "inline-start")) return FloatType::Left;
+    if (iequals(raw, "right") || iequals(raw, "inline-end")) return FloatType::Right;
+    return FloatType::None;
+}
+
+ClearType parse_clear_type(std::string_view raw) {
+    if (iequals(raw, "left") || iequals(raw, "inline-start")) return ClearType::Left;
+    if (iequals(raw, "right") || iequals(raw, "inline-end")) return ClearType::Right;
+    if (iequals(raw, "both")) return ClearType::Both;
+    return ClearType::None;
+}
+
+double FloatContext::left_extent_at(double y) const {
+    double max = 0;
+    for (const Entry& f : floats_) {
+        if (f.side != FloatType::Left) continue;
+        // Half-open in y: a float ending exactly at `y` no longer intrudes.
+        if (y < f.top || y >= f.bottom) continue;
+        if (f.right > max) max = f.right;
+    }
+    return max;
+}
+
+double FloatContext::right_extent_at(double y, double cb_width) const {
+    double max = 0;
+    for (const Entry& f : floats_) {
+        if (f.side != FloatType::Right) continue;
+        if (y < f.top || y >= f.bottom) continue;
+        const double inward = cb_width - f.left;
+        if (inward > max) max = inward;
+    }
+    return max;
+}
+
+double FloatContext::find_placement_y(double y, double width, FloatType side,
+                                      double cb_width) const {
+    (void)side;   // both sides compete for the same free horizontal band
+    if (width <= 0) return y;
+    double current = y;
+    for (;;) {
+        const double avail = cb_width - left_extent_at(current) - right_extent_at(current, cb_width);
+        if (avail >= width) return current;
+        // Step down to the next row where an intruding float ends, since that
+        // is the only place free space can increase.
+        double next = 0;
+        bool found = false;
+        for (const Entry& f : floats_) {
+            if (f.bottom > current && (!found || f.bottom < next)) {
+                next = f.bottom;
+                found = true;
+            }
+        }
+        // Nothing left to wait for: the float overflows at the last row tried,
+        // which is what the spec asks for rather than an error.
+        if (!found) return current;
+        current = next;
+    }
+}
+
+double FloatContext::clear_bottom(ClearType c) const {
+    if (c == ClearType::None) return 0;
+    double max = 0;
+    for (const Entry& f : floats_) {
+        const bool match = c == ClearType::Both ||
+                           (c == ClearType::Left && f.side == FloatType::Left) ||
+                           (c == ClearType::Right && f.side == FloatType::Right);
+        if (match && f.bottom > max) max = f.bottom;
+    }
+    return max;
+}
+
+double FloatContext::max_bottom() const {
+    double max = 0;
+    for (const Entry& f : floats_) {
+        if (f.bottom > max) max = f.bottom;
+    }
+    return max;
+}
+
+void BlockLayout::layout_float_box(BoxId id, double containing_block_width) {
+    const BoxId parent = (*tree_)[id].parent;
+    const ComputedStyle* parent_style = parent == kNoBox ? nullptr : (*tree_)[parent].style;
+    const double fs = apply_box_model(tree_, id, containing_block_width, parent_style, ctx_);
+
+    const std::string_view raw_width = get((*tree_)[id].style, "width");
+    const bool width_is_auto =
+        resolve_length(raw_width, ctx_, fs, containing_block_width).kind == LengthKind::Auto;
+
+    // A float with `width: auto` shrinks to fit: min(max-content,
+    // max(min-content, available)). Both intrinsic probes need to measure text,
+    // so they wait on the inline formatting context. Until then the float keeps
+    // the available width apply_box_model gave it — which makes an auto-width
+    // float fill its line rather than hug its content. Pinned by test so this
+    // reads as a known limitation and not as float placement being broken.
+    (void)width_is_auto;
+
+    layout_content(id, fs, containing_block_width, parent_style);
+}
+
+void BlockLayout::place_float(BoxId container, BoxId float_box, double top_y,
+                              double content_w) {
+    Box& f = (*tree_)[float_box];
+    const Box& c = (*tree_)[container];
+
+    // A float honours `clear` too: its top margin edge sits below any matching
+    // float already in this BFC.
+    if (current_floats_) {
+        const double clear_local = current_floats_->clear_bottom(f.clear) - bfc_origin_y_;
+        if (clear_local > top_y) top_y = clear_local;
+    }
+
+    const double bfc_content_left = bfc_origin_x_ + c.padding_left + c.border_left;
+    const double margin_box_w = f.margin_left + f.width + f.margin_right;
+    const double margin_box_h = f.margin_top + f.height + f.margin_bottom;
+    double bfc_top = bfc_origin_y_ + top_y;
+
+    if (current_floats_) {
+        bfc_top = current_floats_->find_placement_y(bfc_top, margin_box_w, f.float_type,
+                                                    content_w);
+    }
+    const double left_in = current_floats_ ? current_floats_->left_extent_at(bfc_top) : 0;
+    const double right_in =
+        current_floats_ ? current_floats_->right_extent_at(bfc_top, content_w) : 0;
+
+    const double bfc_x = f.float_type == FloatType::Left
+                             ? bfc_content_left + left_in + f.margin_left
+                             : bfc_content_left + content_w - right_in - margin_box_w +
+                                   f.margin_left;
+
+    // Written back in coordinates local to the container, which is what every
+    // other box in the tree uses.
+    f.x = bfc_x - bfc_origin_x_;
+    f.y = bfc_top - bfc_origin_y_ + f.margin_top;
+
+    if (current_floats_) {
+        FloatContext::Entry e;
+        e.box = float_box;
+        e.side = f.float_type;
+        e.left = bfc_x - f.margin_left;
+        e.right = e.left + margin_box_w;
+        e.top = bfc_top;
+        e.bottom = e.top + margin_box_h;
+        current_floats_->add(e);
+    }
+}
+
 void BlockLayout::layout_root(BoxId root, double viewport_width, double viewport_height) {
     Box& b = (*tree_)[root];
     b.x = 0;
@@ -417,10 +567,40 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         finalize_block_size(id, font_size, top_inner);
         return;
     }
+    // Nothing below this point may return early without restoring the float
+    // context — the single exit at the end of the function is what guarantees
+    // it, so keep it that way.
+
+    // A new block formatting context gets its own float context; otherwise this
+    // box's children join the ancestor BFC's, so a float placed here is still
+    // avoided by content further down that BFC.
+    const bool establishes_bfc =
+        !own_style || establishes_new_bfc((*tree_)[id]) || (*tree_)[id].is_float() ||
+        (*tree_)[id].is_inline_block;
+    FloatContext* const prev_floats = current_floats_;
+    const double prev_bfc_x = bfc_origin_x_;
+    const double prev_bfc_y = bfc_origin_y_;
+    FloatContext own_floats;
+    if (establishes_bfc) {
+        current_floats_ = &own_floats;
+        bfc_origin_x_ = 0;
+        bfc_origin_y_ = 0;
+    } else {
+        // Where this box sits inside the BFC, so a float it records lands in
+        // the BFC's frame rather than its own.
+        bfc_origin_x_ = prev_bfc_x + (*tree_)[id].x;
+        bfc_origin_y_ = prev_bfc_y + (*tree_)[id].y;
+    }
 
     // Children are laid out first so their heights are known before any of
-    // them is placed.
+    // them is placed. Floats are also PLACED here, against a running estimate
+    // of the cursor, so the float context is populated before a later sibling
+    // lays out content that has to flow around them. The estimate ignores
+    // margin collapsing, which the placement loop below applies exactly; the
+    // cost of a mismatch is at most one float row, and the reference accepts
+    // the same trade.
     std::vector<BoxId> inflow;
+    double approx_cursor = top_inner;
     for (BoxId c : tree_->children(id)) {
         // Only block-level children reach here: a container holding inline
         // content returned above.
@@ -428,7 +608,26 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
             tree_->operator[](c).kind != BoxKind::AnonymousBlock) {
             continue;
         }
-        layout_block(c, content_w, own_style);
+        // Stamped before layout: the placement loop reads them, and
+        // apply_box_model consults is_float() to skip auto-margin centring.
+        {
+            Box& cb = (*tree_)[c];
+            cb.float_type = parse_float_type(get(cb.style, "float"));
+            cb.clear = parse_clear_type(get(cb.style, "clear"));
+        }
+        if ((*tree_)[c].is_float()) {
+            layout_float_box(c, content_w);
+            if (current_floats_) place_float(id, c, approx_cursor, content_w);
+        } else {
+            // Descendants may query the float context during their own layout
+            // and need a meaningful BFC-local y, so the estimate is stamped
+            // before recursing. The placement loop replaces it with the exact
+            // value.
+            (*tree_)[c].y = approx_cursor + (*tree_)[c].margin_top;
+            layout_block(c, content_w, own_style);
+            const Box& cb = (*tree_)[c];
+            approx_cursor += cb.margin_top + cb.height + cb.margin_bottom;
+        }
         inflow.push_back(c);
     }
 
@@ -463,12 +662,29 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         Box& c = (*tree_)[cid];
         const double left_inner = (*tree_)[id].padding_left + (*tree_)[id].border_left;
 
-        // A float is placed by the float context and does not advance the
-        // cursor, but it also does not join the chain: the chain continues
-        // through to the next in-flow box as if the float were not there.
+        // A float was placed above. It does not advance the cursor, and it does
+        // not join the collapse chain either — the chain continues through to
+        // the next in-flow box as if the float were not there (§8.3.1 rule 5).
         if (c.is_float()) {
             any_collapsible_seen = true;
             continue;
+        }
+        // §9.5.2: `clear` pushes the box's TOP MARGIN edge below the bottom of
+        // any matching float, even where margin collapsing would place it
+        // higher. The chain that has accumulated so far is spent on the move
+        // rather than added to it, so it resets.
+        if (c.clear != ClearType::None && current_floats_) {
+            const double clear_local = current_floats_->clear_bottom(c.clear) - bfc_origin_y_;
+            const double would_be_top = cursor + chain_max_pos + chain_min_neg;
+            if (clear_local > would_be_top) {
+                if (chain_attaches_to_parent_top) {
+                    (*tree_)[id].margin_top = chain_max_pos + chain_min_neg;
+                    chain_attaches_to_parent_top = false;
+                }
+                cursor = clear_local;
+                chain_max_pos = 0;
+                chain_min_neg = 0;
+            }
         }
         // An out-of-flow box's margins apply verbatim and never collapse.
         if (is_out_of_flow(c)) {
@@ -564,7 +780,18 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         content_bottom = cursor + trailing;
     }
 
+    // §10.6.7: a BFC root grows to enclose the floats inside it. Since the root
+    // of this BFC is this box, BFC-local y and box-local y coincide.
+    if (establishes_bfc && current_floats_) {
+        const double fb = current_floats_->max_bottom();
+        if (fb > content_bottom) content_bottom = fb;
+    }
+
     finalize_block_size(id, font_size, content_bottom);
+
+    current_floats_ = prev_floats;
+    bfc_origin_x_ = prev_bfc_x;
+    bfc_origin_y_ = prev_bfc_y;
 }
 
 void BlockLayout::finalize_block_size(BoxId id, double font_size, double content_bottom_y) {

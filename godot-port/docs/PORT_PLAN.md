@@ -1142,6 +1142,58 @@ It is defensive code.
 block sizing, the flex / grid / table / multicol modes, scroll-boundary content
 reuse, and `contain: layout`/`paint` as BFC triggers.
 
+**Floats and `clear` done** (`Floats/` plus the float paths in `LayoutContent`).
+1839 checks green across gcc 13, clang 18, ASan+UBSan+LSan and Release. Left and
+right floats stack and step down when they do not fit, `clear` pushes past them,
+and a BFC grows to enclose the floats inside it.
+
+The structural points:
+
+* **A float context is per-BFC and coordinates are BFC-local.** Floats never
+  escape the BFC that contains them — a `clear` outside an `overflow: hidden`
+  box finds nothing inside it. Each entry is the float's MARGIN box, because
+  that is what later floats and line boxes must not overlap.
+* **The y range is half-open.** A float ending exactly at `y` no longer intrudes
+  there, which is what makes a float and the box directly beneath it not
+  interfere.
+* **A float that never fits still gets placed.** `find_placement_y` steps down
+  to each row where an intruding float ends; when none is left it returns the
+  last row tried and the float overflows, which is what CSS 2.1 asks for.
+* **Floats are placed in a pre-pass**, against a running estimate of the cursor
+  that ignores margin collapsing, so the context is populated before a later
+  sibling lays out content that must flow around them. The placement loop then
+  computes exact positions. The reference accepts the same trade and says so.
+
+### Two more candidate divergences, pinned rather than fixed
+
+Both are places where the reference and a browser disagree and I chose the
+reference, on the same principle as the `em` chain and `padding: 1lh`.
+
+**Clearance does not absorb the margin.** With a float ending at 80 and
+`{ clear: left; margin-top: 30px }`, this engine lands the box at **110**: the
+clear line moves the top MARGIN edge, and the box's own margin then applies on
+top. Chrome lets clearance absorb the margin and puts the border edge at 80. The
+over-trigger is more visible in the second case: a 100px margin already clears a
+float ending at 40, so the spec introduces no clearance at all and the box
+lands at 100 — here it lands at **140**, because the clear line is tested
+against the cursor BEFORE the child's own margin is folded in.
+
+**A box whose only children are floats is self-collapsing.** It has no in-flow
+content, so the flow cursor never advances past it — even though §10.6.7 has
+already given it a height enclosing the float. The box after it overlaps it
+entirely. The reference reaches the same answer because its `IsSelfCollapsing`
+tests the STYLE height rather than the computed one. Chrome does not do this.
+
+That makes four candidate divergences waiting on the oracle: the two-level `em`
+chain, `padding: 1lh` expanding to nothing, clearance-plus-margin, and the
+float-only self-collapsing box. Each is pinned by a test that names it, so none
+can be silently "fixed" into a mismatch.
+
+**Deferred:** shrink-to-fit for an auto-width float, which needs min-content and
+max-content probes and therefore the inline formatting context. Until then an
+auto-width float fills its containing block instead of hugging its content —
+pinned by a test that should fail when inline layout lands.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

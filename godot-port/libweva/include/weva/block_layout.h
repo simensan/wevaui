@@ -4,6 +4,7 @@
 #include "weva/style_resolver.h"
 
 #include <string_view>
+#include <vector>
 
 // Ports the box-model half of Runtime/Layout/BlockLayout.cs — resolving an
 // element's padding, border, margin and width against its containing block.
@@ -77,6 +78,50 @@ bool parent_height_auto(const Box& b, const LayoutContext& ctx, double font_size
 bool is_self_collapsing(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
                         double font_size);
 
+// ---- Floats (CSS 2.1 §9.5) -----------------------------------------------
+
+// `inline-start` / `inline-end` alias to left / right, which is correct only in
+// horizontal-tb LTR — the only writing mode the float code handles.
+FloatType parse_float_type(std::string_view raw);
+ClearType parse_clear_type(std::string_view raw);
+
+// One instance per block formatting context: floats are scoped to the BFC that
+// contains them and never escape it. Coordinates are BFC-local, and each entry
+// is the float's MARGIN box, since that is what later floats and line boxes
+// must not overlap (§9.5.1 rule 1).
+class FloatContext {
+public:
+    struct Entry {
+        BoxId box = kNoBox;
+        FloatType side = FloatType::None;
+        double top = 0, bottom = 0, left = 0, right = 0;
+    };
+
+    void add(const Entry& e) { floats_.push_back(e); }
+    int count() const { return static_cast<int>(floats_.size()); }
+
+    // How far a left float intrudes from the BFC's left content edge at `y`,
+    // and how far a right float intrudes from the RIGHT edge. Both return the
+    // inward distance, which is what line-box narrowing needs.
+    double left_extent_at(double y) const;
+    double right_extent_at(double y, double cb_width) const;
+
+    // The lowest y at or below `y` where `width` of horizontal space is free.
+    // A float that does not fit steps down to the first row where it does; if
+    // no row ever fits it, it stays at the lowest examined y and overflows,
+    // which is what CSS 2.1 specifies.
+    double find_placement_y(double y, double width, FloatType side, double cb_width) const;
+
+    // §9.5.2: the highest bottom edge among floats matching `clear`. A cleared
+    // box's top MARGIN edge is pushed below this.
+    double clear_bottom(ClearType c) const;
+    // §10.6.7: a BFC grows to enclose the floats it contains.
+    double max_bottom() const;
+
+private:
+    std::vector<Entry> floats_;
+};
+
 // ---- Block flow ----------------------------------------------------------
 
 // Lays out a block container and its in-flow block descendants.
@@ -99,9 +144,17 @@ private:
     void layout_content(BoxId id, double font_size, double containing_block_width,
                         const ComputedStyle* parent_style);
     void finalize_block_size(BoxId id, double font_size, double content_bottom_y);
+    void layout_float_box(BoxId id, double containing_block_width);
+    void place_float(BoxId container, BoxId float_box, double top_y, double content_w);
 
     BoxTree* tree_;
     LayoutContext ctx_;
+    // The float context of the BFC currently being laid out, and where that
+    // BFC's origin sits in the coordinates of the box being laid out. Both are
+    // saved and restored around each BFC boundary.
+    FloatContext* current_floats_ = nullptr;
+    double bfc_origin_x_ = 0;
+    double bfc_origin_y_ = 0;
 };
 
 } // namespace weva
