@@ -72,7 +72,11 @@ void test_computed_style() {
     ComputedStyle s;
     CHECK(s.set_count() == 0);
     CHECK(!s.contains(display));
-    CHECK(s.get(display).empty());
+    // get() resolves through inherit-then-initial, so an unset slot yields the
+    // registered initial rather than the empty string. contains() is the way to
+    // ask whether THIS style set it directly.
+    CHECK(s.get(display) == "inline");
+    CHECK(s.get(reg.id_of("position")) == "static");
 
     s.set(display, "flex");
     CHECK(s.contains(display));
@@ -82,7 +86,7 @@ void test_computed_style() {
     // ---- "set to empty" is distinguishable from "never set"
     s.set(color, "");
     CHECK(s.contains(color));
-    CHECK(s.get(color).empty());
+    CHECK(s.get(color).empty());          // explicitly empty, not the initial
     CHECK(s.set_count() == 2);
     CHECK(!s.contains(width));
 
@@ -143,4 +147,49 @@ void test_computed_style() {
     CHECK(s.set_count() == 0);
     CHECK(!s.contains(display));
     CHECK(s.custom_properties().empty());
+}
+
+void test_lazy_inheritance() {
+    auto& reg = CssPropertyRegistry::instance();
+    const int color = reg.id_of("color");
+    const int width = reg.id_of("width");
+
+    ComputedStyle root, mid, leaf;
+    root.set(color, "red");
+    mid.set_inherit_parent(&root);
+    leaf.set_inherit_parent(&mid);
+
+    // ---- an inherited property resolves up the chain WITHOUT being copied
+    CHECK(leaf.get(color) == "red");
+    CHECK(!leaf.contains(color));         // nothing was materialised here
+    CHECK(!mid.contains(color));
+    CHECK(leaf.set_count() == 0);
+
+    // ---- a non-inherited property falls to its initial, not the ancestor's
+    root.set(width, "100px");
+    CHECK(root.get(width) == "100px");
+    CHECK(leaf.get(width) == "auto");
+
+    // ---- an explicit value shadows the inherited one
+    mid.set(color, "blue");
+    CHECK(leaf.get(color) == "blue");
+    CHECK(mid.get(color) == "blue");
+    CHECK(root.get(color) == "red");
+
+    // ---- unset() restores the fall-through
+    mid.unset(color);
+    CHECK(!mid.contains(color));
+    CHECK(leaf.get(color) == "red");
+    CHECK(mid.set_count() == 0);
+
+    // ---- custom properties inherit through the chain too
+    root.set("--brand", "#f00");
+    CHECK(leaf.get("--brand") == "#f00");
+    CHECK(leaf.contains("--brand"));      // reachable, though not local
+    CHECK(leaf.custom_properties().empty());
+
+    // ---- clear() drops the link, so reads fall back to initials only
+    leaf.clear();
+    CHECK(leaf.inherit_parent() == nullptr);
+    CHECK(leaf.get(color) == "black");     // color's registered initial
 }

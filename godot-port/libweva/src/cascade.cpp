@@ -380,18 +380,12 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         }
     }
 
-    // 3. Resolve var() in non-custom declarations.
+    // 3. Link the inherit chain, then resolve var().
     //
-    // Order matters: custom properties must already be in `out` (they were set
-    // in steps 1-2) and inherited ones must be visible too, so this runs after
-    // custom-property inheritance is folded in below... except inheritance
-    // happens in step 4. Resolve against the parent's customs explicitly here
-    // so `color: var(--ink)` works when --ink comes from an ancestor.
-    if (parent) {
-        for (const auto& kv : parent->custom_properties()) {
-            if (!out->contains(kv.first)) out->set(kv.first, kv.second);
-        }
-    }
+    // The link must come FIRST: var() reads custom properties through it, so
+    // `color: var(--ink)` sees an ancestor's --ink without this style having
+    // to copy every ancestor custom property into itself.
+    out->set_inherit_parent(parent);
     {
         std::vector<std::pair<int, std::string>> rewrites;
         std::vector<int> drops;
@@ -419,22 +413,17 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         dropped_ = drops;
     }
 
-    // 4. Inheritance, then initial values for anything still unset.
-    const bool has_drops = !dropped_.empty();
-    auto was_dropped = [&](int id) {
-        if (!has_drops) return false;
-        return std::find(dropped_.begin(), dropped_.end(), id) != dropped_.end();
-    };
-    for (int id = 0; id < reg.count(); ++id) {
-        if (out->contains(id) && !was_dropped(id)) continue;
-        if (parent && reg.is_inherited(id) && parent->contains(id)) {
-            out->set(id, parent->get(id));
-        } else {
-            std::string_view initial = reg.initial_value(id);
-            if (!initial.empty()) out->set(id, initial);
-        }
-    }
-
+    // 4. Inheritance and initial values are resolved LAZILY on read — see
+    // ComputedStyle::set_inherit_parent. Materialising all 334 registered
+    // initial values here measured at 342 ms for 1004 elements, which was the
+    // whole cascade runtime; the table is immutable and shared, so an unset
+    // slot can defer to it instead of copying a string per element per
+    // property.
+    //
+    // A declaration dropped as invalid-at-computed-value-time must lose its
+    // slot entirely, or the lazy read would return the empty string it was
+    // stamped with rather than falling through to inherited/initial.
+    for (int id : dropped_) out->unset(id);
     dropped_.clear();
 }
 

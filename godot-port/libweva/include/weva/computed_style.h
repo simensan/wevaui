@@ -29,8 +29,25 @@ class ComputedStyle {
 public:
     ComputedStyle() = default;
 
-    // Raw string access by id. Returns the empty string when unset; use
-    // contains() to distinguish "unset" from "set to empty".
+    // Inheritance and initial values are resolved LAZILY on read rather than
+    // materialised per element.
+    //
+    // Writing all 334 registered initial values into every element's style
+    // measured at 342 ms for 1004 elements — ~335,000 string assignments per
+    // pass — which was the entire cascade runtime. Since the initial-value
+    // table is immutable and shared, an unset slot can simply defer to it, and
+    // an unset INHERITED slot can defer to the parent. Nothing is copied.
+    //
+    // Lifetime: `parent` must outlive this style. In a tree walk the parent's
+    // style lives in the caller's frame above the child's, which satisfies
+    // that naturally — but a style that outlives its walk must not keep the
+    // pointer.
+    void set_inherit_parent(const ComputedStyle* parent) { parent_ = parent; }
+    const ComputedStyle* inherit_parent() const { return parent_; }
+
+    // Raw string access by id. Resolves through the inherit chain and then the
+    // registry's initial value, so an unset slot still yields the correct
+    // computed value. Use contains() to ask whether THIS style set it directly.
     std::string_view get(int property_id) const;
     bool try_get(int property_id, std::string* out) const;
     bool contains(int property_id) const;
@@ -46,6 +63,10 @@ public:
     bool is_important(int property_id) const;
     void set_important(int property_id, bool important);
 
+    // Removes a directly-set slot so reads fall through to inherit/initial
+    // again. Used when a declaration turns out to be invalid at
+    // computed-value time.
+    void unset(int property_id);
     void clear();
     int set_count() const { return set_count_; }
     int64_t version() const { return version_; }
@@ -53,7 +74,7 @@ public:
     const std::vector<uint64_t>& occupied_bits() const { return occupied_bits_; }
     const std::map<std::string, std::string>& custom_properties() const { return custom_; }
 
-    // Ids currently set, ascending. Allocates; for tests and diagnostics.
+    // Ids set DIRECTLY on this style (not inherited, not initial), ascending.
     std::vector<int> set_ids() const;
 
 private:
@@ -64,6 +85,7 @@ private:
     std::vector<uint64_t> occupied_bits_;
     std::vector<bool> important_;
     std::map<std::string, std::string> custom_;
+    const ComputedStyle* parent_ = nullptr;
     int set_count_ = 0;
     int64_t version_ = 0;
 };

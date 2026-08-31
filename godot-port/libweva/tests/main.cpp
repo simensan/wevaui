@@ -15,6 +15,7 @@ void test_selector_has();
 void test_selector_match();
 void test_property_registry();
 void test_computed_style();
+void test_lazy_inheritance();
 void test_cascade_order();
 void test_cascade_compute();
 void test_variables();
@@ -41,6 +42,7 @@ int main() {
     test_selector_match();
     test_property_registry();
     test_computed_style();
+    test_lazy_inheritance();
     test_cascade_order();
     test_cascade_compute();
     test_variables();

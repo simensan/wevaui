@@ -450,11 +450,41 @@ Two consequences worth stating plainly:
    (`parent & ~child & inheritedMask`) instead of iterating all 334 ids. In C++
    the arena makes it cheaper still — the initial-value table is immutable and
    shared, so an unset slot can point at it rather than copying a string per
-   element per property. That is the §10 "the port is the fix" claim finally
-   becoming actionable.
+   element per property.
 
-**Still no performance claim from this build.** The 0.08 ms `:hover` figure
-belongs to the incremental-invalidation work, which is not done.
+### Acting on it: lazy inheritance
+
+`ComputedStyle` now resolves inheritance and initial values **on read** instead
+of materialising them. An unset slot defers to the parent (for inherited
+properties) and then to the registry's shared initial value. Nothing is copied,
+and `compute()` writes only what actually cascades.
+
+| | before | after |
+|---|---:|---:|
+| 1004 elements, cold cache | 296 ms | **50 ms** |
+| 1004 elements, warm cache | 277 ms | **24 ms** |
+| demo, 358 elements | 118 ms | **35 ms** |
+
+**~11× on the warm path**, and correctness is unchanged: the demo still
+resolves `body { color: #e8ecf2 }` through `:root`, with 0 unresolved `var()`.
+
+Note the second row is what the shape cache was always *for* — with the eager
+fill dominating, its 998 hits were invisible. Fixing the real bottleneck is what
+made the cache's contribution measurable (50 ms → 24 ms).
+
+The contract change is deliberate and tested: `get()` resolves through
+inherit-then-initial, so an unset slot yields the registered initial rather than
+an empty string; `contains()` remains the way to ask whether **this** style set
+a property directly. A declaration dropped as invalid-at-computed-value-time is
+now `unset()` rather than stamped empty, or the lazy read would return that
+empty string instead of falling through.
+
+Lifetime: the parent style must outlive the child. In a tree walk the parent's
+frame sits above the child's, which satisfies it naturally — a style that
+outlives its walk must not keep the pointer. Recorded in the header.
+
+**Still no full performance claim.** The 0.08 ms `:hover` figure belongs to
+incremental invalidation, which is not done — this is a cold-pass number.
 
 ### The demo's stylesheet opts out of the cache entirely
 

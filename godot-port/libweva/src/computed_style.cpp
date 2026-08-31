@@ -25,8 +25,12 @@ bool ComputedStyle::contains(int id) const {
 }
 
 std::string_view ComputedStyle::get(int id) const {
-    if (!contains(id)) return {};
-    return values_[static_cast<std::size_t>(id)];
+    if (contains(id)) return values_[static_cast<std::size_t>(id)];
+    // Not set here: walk the inherit chain for inherited properties, then fall
+    // back to the registry's shared initial value. Neither path copies.
+    const auto& reg = CssPropertyRegistry::instance();
+    if (parent_ && reg.is_inherited(id)) return parent_->get(id);
+    return reg.initial_value(id);
 }
 
 bool ComputedStyle::try_get(int id, std::string* out) const {
@@ -67,7 +71,10 @@ std::string_view ComputedStyle::get(std::string_view property) const {
     int id = CssPropertyRegistry::instance().id_of(property);
     if (id != kCustomPropertyId) return get(id);
     auto it = custom_.find(std::string(property));
-    return it == custom_.end() ? std::string_view() : std::string_view(it->second);
+    if (it != custom_.end()) return it->second;
+    // Custom properties always inherit (no @property registry yet).
+    if (parent_) return parent_->get(property);
+    return {};
 }
 
 void ComputedStyle::set(std::string_view property, std::string_view value) {
@@ -83,10 +90,23 @@ void ComputedStyle::set(std::string_view property, std::string_view value) {
 bool ComputedStyle::contains(std::string_view property) const {
     int id = CssPropertyRegistry::instance().id_of(property);
     if (id != kCustomPropertyId) return contains(id);
-    return custom_.find(std::string(property)) != custom_.end();
+    if (custom_.find(std::string(property)) != custom_.end()) return true;
+    return parent_ && parent_->contains(property);
+}
+
+void ComputedStyle::unset(int id) {
+    if (!contains(id)) return;
+    auto i = static_cast<std::size_t>(id);
+    occupied_[i] = false;
+    occupied_bits_[i >> 6] &= ~(1ULL << (i & 63));
+    values_[i].clear();
+    important_[i] = false;
+    --set_count_;
+    version_ = next_version();
 }
 
 void ComputedStyle::clear() {
+    parent_ = nullptr;
     values_.clear();
     occupied_.clear();
     occupied_bits_.clear();
