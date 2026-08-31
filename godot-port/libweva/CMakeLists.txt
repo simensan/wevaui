@@ -9,6 +9,7 @@ add_library(weva STATIC
     src/html_parser.cpp
     src/css_tokenizer.cpp
     src/css_parser.cpp
+    src/css_value.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

@@ -227,6 +227,33 @@ of a block loses only itself, which is why this is easy to miss.
 Reproduced rather than fixed, per the standing rule. Add to the same review as
 the adoption-agency divergence.
 
+**CSS value model done** (`CssValue`, `CssLength`, `CssAngle`, hex `CssColor`,
+`LengthContext`, and the `ParseTopLevel`/`ParseSingle` path). 446 checks green
+across gcc / clang / ASan+UBSan+LSan. **477 of the 485 declaration values in the
+demo stylesheet parse**; the 8 failures are `fr` and `s` units, which
+`CssLength.TryParseUnit` genuinely does not accept in the C# either —
+CONFORMANCE.md records that `fr` "is accepted only inside grid track lists", and
+durations are read by the animation code from raw text. Faithful, not a gap.
+
+**A whole cluster of C# machinery is deliberately not ported**, and it is the
+clearest example so far of the port paying for itself: `CssValue`'s process-
+lifetime parse cache, its negative-result cache, `CssValuePool`, and
+`CssValueStableCopy`. The last of those exists *only* because pool-rented
+leaves would otherwise be mutated underneath the cache — "the same `300px` key
+would later return a `CssLength` carrying whatever number the pool re-used the
+slot for". With arena allocation the values are bump-allocated per pass and
+dropped wholesale, so the cache, the pool, the stable-copy pass and the
+lifetime hazard all disappear together.
+
+Reproduced rather than corrected: `ch`/`ex`/`cap`/`ic` are font-size
+approximations in the C# (0.5x, 0.5x, 0.7x, 1.0x) rather than real font
+metrics. Revisit when the text stack can supply true values — in both engines.
+
+Still deferred in this file: the 148-entry named-colour table, `calc()`
+evaluation, and `rgb()`/`hsl()`/`color-mix()` argument interpretation.
+Functions round-trip as `CssFunctionCall` with arguments parsed, so nothing is
+lost.
+
 **Tally: 12 wrong test expectations, 0 port bugs.** One of them segfaulted the
 suite — a `CHECK` on `declarations.size() == 1` recorded a failure without
 short-circuiting, and the next line indexed the empty vector. The test helpers

@@ -8,6 +8,7 @@ add_executable(weva_tests
     test_html_parser.cpp
     test_css_tokenizer.cpp
     test_css_parser.cpp
+    test_css_value.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)
