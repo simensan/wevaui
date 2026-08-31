@@ -10,6 +10,8 @@ void test_css_parser();
 void test_css_value();
 void test_css_color();
 void test_css_calc();
+void test_selector();
+void test_selector_has();
 int main() {
     test_arena();
     test_intern();
@@ -22,6 +24,8 @@ int main() {
     test_css_value();
     test_css_color();
     test_css_calc();
+    test_selector();
+    test_selector_has();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

@@ -298,7 +298,7 @@ simply be wrong in different ways.
 Still deferred: `var()` inside calc (needs the cascade), relative-colour channel
 idents (need the colour parser), and `color-mix()` / `oklab()`.
 
-**Tally: 13 wrong test expectations, 0 port bugs**, plus two stale assertions of my own making: tests written when `rgb()` and `calc()` still round-tripped as generic function calls, which started downcasting to the wrong type once those functions began evaluating. UBSan caught both as bad downcasts rather than letting them read garbage. One of them segfaulted the
+**Tally: 13 wrong test expectations, 2 port bugs** (both in the selector parser, both found by test), plus two stale assertions of my own making: tests written when `rgb()` and `calc()` still round-tripped as generic function calls, which started downcasting to the wrong type once those functions began evaluating. UBSan caught both as bad downcasts rather than letting them read garbage. One of them segfaulted the
 suite — a `CHECK` on `declarations.size() == 1` recorded a failure without
 short-circuiting, and the next line indexed the empty vector. The test helpers
 are now bounds-checked and return null rather than indexing off the end.
@@ -312,6 +312,36 @@ plan to add it back.
 **Exit:** computed-style dumps diff clean across the corpus. Incremental
 invalidation benchmarked: a `:hover` flip must not re-cascade the document.
 (C# reference: 0.08 ms vs 8.3 ms full.)
+
+**Selector model and parser done** (`SimpleSelector`, `CompoundSelector`,
+`Specificity`, `NthExpression`, `ElementState`, `SelectorParser`). 654 checks
+green; **all 131 selectors in the demo stylesheet parse.** `SelectorMatcher.cs`
+(1,069 LOC) is next.
+
+Note the C# selector parser works on **raw characters, not CSS tokens** — it is
+handed text already sliced out of the rule prelude. Ported the same way rather
+than routed through `CssTokenizer`, so escape and whitespace handling stay
+identical.
+
+**First two real port bugs of the phase**, both caught by tests rather than by
+reading:
+
+1. **`parse_sequence` was missing its leading `skip_ws()`.** The C#
+   `ParseSequence` opens with `SkipWhitespace()`; I dropped it, so any selector
+   with leading whitespace failed outright. Rule preludes are trimmed before
+   they reach here, which is exactly why this would have survived a long time
+   before surfacing somewhere awkward.
+2. **`:has()` takes a *relative* selector list, not an ordinary one.** Its items
+   may lead with a combinator (`:has(> .child)`), which a normal sequence
+   rejects. The C# encodes the leading relation by prepending a synthetic
+   universal "anchor" compound, which the matcher then strips — so the anchor is
+   load-bearing for the matcher, not cosmetic. Also ported the guard that
+   `:has()` may not nest inside `:has()`, since the matcher has no base case for
+   a self-referential subject.
+
+Specificity carries the rules the cascade depends on: `:where()` contributes
+zero, `:is()`/`:not()`/`:has()` take the max of their list, and
+`:nth-child(An+B of S)` is `(0,1,0)` **plus** the max of `S`.
 
 ## Phase 4 — Block and inline layout + software paint (~15k LOC)
 
