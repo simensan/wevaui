@@ -14,6 +14,8 @@ add_library(weva STATIC
     src/css_calc.cpp
     src/selector_parser.cpp
     src/selector_matcher.cpp
+    src/css_properties.cpp
+    src/computed_style.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

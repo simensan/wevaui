@@ -13,6 +13,8 @@ void test_css_calc();
 void test_selector();
 void test_selector_has();
 void test_selector_match();
+void test_property_registry();
+void test_computed_style();
 int main() {
     test_arena();
     test_intern();
@@ -28,6 +30,8 @@ int main() {
     test_selector();
     test_selector_has();
     test_selector_match();
+    test_property_registry();
+    test_computed_style();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

@@ -374,6 +374,37 @@ pseudo-classes (`:valid`, `:invalid`, `:in-range`, `:required`, `:read-only`,
 layer. False is the honest answer; true would silently apply styles that should
 not apply.
 
+**Property registry and ComputedStyle done** — the storage the whole cascade
+writes into. 792 checks green.
+
+The registry carries **334 properties, 68 of them inherited**, both counts
+cross-checked against the C# source rather than eyeballed. Extracted
+mechanically like the colour table, and for a sharper reason: **registration
+order is load-bearing.** Ids are assigned sequentially and hot paths cache them
+at startup, so reordering the table silently repoints every cached id — a bug
+with no error message and no obvious symptom. The generated file says so at the
+top.
+
+Re-registration deliberately keeps the existing id. `@property` can redefine a
+registered custom property's initial value while the document is live; if that
+reassigned the id, every cached id would repoint mid-frame. Pinned by test.
+
+`ComputedStyle` keeps the C#'s dual occupancy representation — a `bool` vector
+for single-load hot readers and a parallel 64-bit bitset so the inherit step can
+walk `(parent & ~child & inheritedMask)` in O(words) instead of scanning all 334
+ids. That is not redundancy, it is two different access patterns.
+
+**The no-op-write rule is the hinge the performance story hangs on.** Setting a
+property to the value it already holds must not bump the version, because the
+whole invalidation architecture keys caches on version numbers — a spurious bump
+re-cascades everything downstream. That is the difference between the 0.08 ms
+`:hover` flip and the 8.3 ms full pass. Tested for both the indexed path and the
+custom-property path.
+
+Not ported: the per-slot parsed-`CssValue` cache. It is a memo rather than
+semantics, and it interacts with the arena lifetime rules — revisit once the
+cascade runs and there is something real to measure.
+
 ## Phase 4 — Block and inline layout + software paint (~15k LOC)
 
 Layout root files (11,775) minus the specialised modes, `Layout/Boxes` (590),
