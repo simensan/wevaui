@@ -25,6 +25,7 @@ add_library(weva STATIC
     src/keyword_resolver.cpp
     src/box.cpp
     src/box_builder.cpp
+    src/style_resolver.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

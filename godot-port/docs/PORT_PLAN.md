@@ -910,6 +910,55 @@ intrinsic sizing and `field-sizing: content` (both need registries this port has
 no equivalent of yet), the anonymous-table insertion pass, and the
 body → html background propagation, which is paint's concern.
 
+**Style resolver done** (the length and font half of `StyleResolver.cs`).
+1545 checks green across gcc 13, clang 18, ASan+UBSan+LSan and Release. This is
+the layer between the cascade's strings and layout's pixels: `LayoutContext`,
+`ResolvedLength`, font-size and line-height resolution, border widths, and the
+box-shorthand split.
+
+**`ResolvedLength` is five kinds, and collapsing any two would be a bug.**
+`auto` and `none` are distinct and neither is zero. A percentage with no basis
+surfaces as `Percent` rather than resolving against zero, so the caller keeps
+its own fallback. `fit-content(<length>)` surfaces the resolved argument for the
+caller to clamp against min- and max-content, while the bare `fit-content`
+keyword degrades to `auto` until intrinsic sizing exists. A value that fails to
+parse is `auto`, not zero.
+
+**The same syntax means different things in the two font properties.** A
+unitless `font-size: 20` is read as pixels; a unitless `line-height: 1.5` is a
+multiplier. Both are ported as the reference has them and both are pinned by
+test, because the pair is exactly the kind of thing a port silently unifies.
+
+**A border-width that fails to parse is 0, not the initial `medium`.** A border
+that could not be understood should not appear.
+
+**The box shorthand is a fallback, not an override.** `padding` is consulted
+only when all four longhands are still at their initial value — so
+`{ padding: 5px; padding-left: 20px }` gives left 20px and the other three
+**0**, not 5px. That follows from shorthand expansion not happening at cascade
+time, and it is a real divergence from a browser, pinned by test. The split is
+paren-depth aware so `padding: calc(1px + 2px) 8px` stays two tokens.
+
+### An `em` chain that stops compounding after two levels
+
+`FontSizePx(style, parentStyle, ctx)` resolves the parent's own font-size with a
+**null grandparent** — that is, against the root. Every call site passes
+`box.Parent?.Style`, so the shape is deliberate and not an artefact of one
+caller.
+
+The consequence: with `#a{font-size:2em} #b{font-size:2em} #c{font-size:2em}`
+nested, `a` is 32px and `b` is 64px, both correct. But `c` resolves its `2em`
+against `b` re-derived as 32px rather than its real 64px, giving **64px where a
+browser gives 128px**. The port reproduces this exactly and pins it by test —
+differential parity is the goal, and "fixing" it here would guarantee a
+divergence from the reference on every three-deep `em` chain.
+
+Flagged for the oracle rather than acted on: this is read off the C# source, and
+whether it reaches the same numbers end-to-end depends on the cascade storing
+specified rather than computed values for inherited properties, which it does.
+It is the first candidate divergence found in Phase 4 and the first one where
+the right answer might be to change *both* engines.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)
