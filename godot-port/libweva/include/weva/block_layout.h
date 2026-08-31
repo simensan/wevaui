@@ -1,6 +1,7 @@
 #pragma once
 #include "weva/box.h"
 #include "weva/computed_style.h"
+#include "weva/font_metrics.h"
 #include "weva/style_resolver.h"
 
 #include <string_view>
@@ -132,7 +133,10 @@ private:
 // formatting, and the flex / grid / table / multicol modes.
 class BlockLayout {
 public:
-    BlockLayout(BoxTree* tree, const LayoutContext& ctx) : tree_(tree), ctx_(ctx) {}
+    // `metrics` may be null, in which case a container of inline content
+    // reports zero height — layout still runs, it just cannot measure text.
+    BlockLayout(BoxTree* tree, const LayoutContext& ctx, const FontMetrics* metrics = nullptr)
+        : tree_(tree), ctx_(ctx), metrics_(metrics) {}
 
     // Seeds the synthetic root with the viewport box. The height seed matters:
     // it is what lets `html, body { height: 100% }` chain down, since a
@@ -149,6 +153,7 @@ private:
 
     BoxTree* tree_;
     LayoutContext ctx_;
+    const FontMetrics* metrics_ = nullptr;
     // The float context of the BFC currently being laid out, and where that
     // BFC's origin sits in the coordinates of the box being laid out. Both are
     // saved and restored around each BFC boundary.

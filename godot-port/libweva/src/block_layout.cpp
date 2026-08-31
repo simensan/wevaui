@@ -1,6 +1,7 @@
 #include "weva/block_layout.h"
 
 #include "weva/css_properties.h"
+#include "weva/inline_layout.h"
 
 #include <cmath>
 #include <string>
@@ -564,7 +565,11 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     // always wrapped — meaning that branch is unreachable from here, in this
     // port and in the reference alike, and exists defensively.
     if ((*tree_)[id].contains_inlines) {
-        finalize_block_size(id, font_size, top_inner);
+        // Without a font backend nothing can be measured, so the box reports
+        // zero content height rather than a number derived from guessing.
+        const double inline_h =
+            metrics_ ? layout_inline(tree_, id, content_w, ctx_, *metrics_) : 0.0;
+        finalize_block_size(id, font_size, top_inner + inline_h);
         return;
     }
     // Nothing below this point may return early without restoring the float

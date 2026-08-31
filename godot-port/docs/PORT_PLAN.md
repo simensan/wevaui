@@ -1194,6 +1194,57 @@ max-content probes and therefore the inline formatting context. Until then an
 auto-width float fills its containing block instead of hugging its content —
 pinned by a test that should fail when inline layout lands.
 
+**Inline layout: first working slice** (the core of `InlineLayout.cs` /
+`LineBreaker.cs`, plus `IFontMetrics` and `MonoFontMetrics`). 1910 checks green
+across gcc 13, clang 18, ASan+UBSan+LSan and Release. Text now measures, wraps
+and lands on line boxes with real baselines.
+
+**The font seam is four methods**: `line_height`, `ascent`, `descent`, and a
+`measure` that takes a view. That is the entire surface a Godot `TextServer` or
+a FreeType+HarfBuzz backend has to implement, and Phase 5 can choose between
+them without touching layout — which was the point of pinning it down now
+rather than later.
+
+`MonoFontMetrics` is the deterministic stand-in: every value is a multiple of
+the font size, so results are identical on every machine. The parameterless
+shape (0.5 / 1.2 / 0.8 / 0.4) is what the reference's own arithmetic is pinned
+against — "5 chars x 16px = 40px" — so it stays fixed.
+
+**It decodes UTF-8 rather than counting bytes.** An accented letter is one
+glyph, not two; an emoji is one WIDE glyph at ~1.3em, not four Latin advances.
+Browsers render emoji from a separate face, and charging them the Latin advance
+underestimates a line by roughly 17px each. The BMP allowlist is deliberate:
+neighbouring ranges (Miscellaneous Technical, most Miscellaneous Symbols, Math)
+are text-presented and keep the Latin advance.
+
+**The line box is the output shape, not a detail.** The container's children are
+replaced by `Line` boxes, each holding the runs that landed on it. Three things
+this pins:
+
+* **The line's height is its tallest content and its baseline the deepest
+  ascent.** A 32px span on a line of 16px text makes the line 38.4px tall and
+  pushes the 16px run DOWN so both sit on one baseline — rather than each run
+  sitting at the line's top edge and overlapping the line above.
+* **Half-leading splits evenly.** A `line-height` larger than the text puts half
+  the extra above and half below, which is what centres text in its line.
+* **A trailing collapsed space is trimmed at the line end** and a leading one is
+  dropped. Without the first, every centred or right-aligned line is off by a
+  space width; without the second, every wrapped line is indented by one.
+
+`text-align` records its shift on the line as well as applying it, so a later
+pass — a flex item re-running its inline content once its width settles — can
+undo the previous offset instead of stamping a new one on top. The reference
+carries a note about exactly that bug.
+
+**Deferred, and this is the large half:** bidi and the Unicode line-breaking
+classes, CJK kinsoku, hyphenation, `overflow-wrap` / `word-break` (a word wider
+than its line currently overflows rather than splitting), preserved whitespace
+beyond treating a `pre` run as one unbreakable fragment, tabs, `letter-spacing`
+and `word-spacing`, justification, ellipsis, `vertical-align` beyond baseline,
+and inline-level atoms — an inline-block is skipped rather than placed, so the
+text around it still measures correctly but the atom does not appear on the
+line. That last one also still blocks float shrink-to-fit.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

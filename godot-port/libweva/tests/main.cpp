@@ -81,6 +81,11 @@ void test_float_placement();
 void test_float_does_not_advance_flow();
 void test_clear();
 void test_float_bfc_scoping();
+void test_font_metrics();
+void test_inline_item_collection();
+void test_line_breaking();
+void test_whitespace_collapsing();
+void test_line_metrics_and_align();
 int main() {
     test_arena();
     test_intern();
@@ -164,6 +169,11 @@ int main() {
     test_float_does_not_advance_flow();
     test_clear();
     test_float_bfc_scoping();
+    test_font_metrics();
+    test_inline_item_collection();
+    test_line_breaking();
+    test_whitespace_collapsing();
+    test_line_metrics_and_align();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

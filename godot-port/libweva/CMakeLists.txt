@@ -29,6 +29,8 @@ add_library(weva STATIC
     src/block_layout.cpp
     src/shorthand.cpp
     src/user_agent_stylesheet.cpp
+    src/font_metrics.cpp
+    src/inline_layout.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)
