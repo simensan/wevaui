@@ -107,6 +107,11 @@ void test_software_blending_and_scissor();
 void test_software_texture_and_robustness();
 void test_software_translation_and_output();
 void test_end_to_end_render();
+void test_stub_font();
+void test_stub_shaping();
+void test_glyph_atlas();
+void test_text_geometry();
+void test_text_end_to_end();
 int main() {
     test_arena();
     test_intern();
@@ -216,6 +221,11 @@ int main() {
     test_software_texture_and_robustness();
     test_software_translation_and_output();
     test_end_to_end_render();
+    test_stub_font();
+    test_stub_shaping();
+    test_glyph_atlas();
+    test_text_geometry();
+    test_text_end_to_end();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

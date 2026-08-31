@@ -1420,6 +1420,47 @@ The rasterizer's own details, each pinned:
 by design), layers, filters and blend modes, and antialiasing — coverage is
 currently a hard in/out test at the pixel centre.
 
+**Text renders.** 7004 checks green across gcc 13, clang 18, ASan+UBSan+LSan and
+Release. Cascade, layout, shape, pack, rasterize — glyphs on screen.
+
+**The `FontInterface` is exactly ARCHITECTURE.md §2's shape**, so Phase 5's
+choice between FreeType+HarfBuzz and Godot's `TextServer` stays open. The C#
+bound `FontEngine.TryRenderGlyphsToTexture` by REFLECTION into undocumented
+Unity internals with a TextMeshPro fallback ladder; the interfaces above it were
+right, the implementation underneath never was.
+
+`StubFont` is a built-in 5x7 ASCII face — the same role `MonoFontMetrics` plays
+for measurement. It is not a stand-in for a real face: no hinting, no kerning,
+one glyph per code point in order. What it gives is a rendering path that can be
+asserted pixel by pixel on any machine, which is what the golden tests need
+before a real backend exists. Its em box matches `MonoFontMetrics` exactly, so
+measurement and rendering agree — a mismatch would show as text drifting off the
+line boxes laid out for it.
+
+**The atlas packs once and uploads once.** Shelf packing with a pixel of padding
+so a filtering backend cannot bleed a neighbouring glyph in; sizes quantised to
+whole pixels, so a fractional font-size from a percentage does not re-pack an
+identical raster; and the coverage byte written into all four channels, so white
+RGB lets the vertex colour pass through and one atlas serves text of any colour.
+
+### Two bugs the tests caught, both about blank glyphs and the baseline
+
+**A space was getting an atlas slot.** `glyph_metrics` reported a non-zero size
+for any glyph other than the missing one, so a space rasterized to an all-zero
+bitmap of real dimensions and the packer dutifully stored it — one wasted
+rectangle per space in the document. A blank cell now reports no bitmap at all,
+which is what a real face does.
+
+**Glyph quads dipped below the baseline.** The bitmap is a whole number of
+pixels tall (13 at 16px) but the bearing was the exact ascent (12.8), so every
+quad's bottom edge sat 0.2px low. The bearing is now the rounded height, and the
+bottom edge rests exactly ON the baseline. A real face's bearing is per-glyph
+and has no reason to match the face ascent either.
+
+**Deferred:** a real face backend (Phase 5's decision), SDF rasterization,
+kerning and ligatures, bidi, and atlas eviction — the atlas grows until full and
+then refuses, which is right for a document but not for a long-running app.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

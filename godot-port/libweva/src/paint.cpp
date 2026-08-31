@@ -47,24 +47,40 @@ CornerRadius corner(const ComputedStyle* style, std::string_view property,
                         radius_component(raw.substr(split + 1), ctx, font_size, height));
 }
 
+void draw_mesh(const Mesh& mesh, RenderInterface* backend, TextureHandle tex) {
+    if (mesh.empty()) return;
+    // Compiled and released per draw for now. A backend that batches will want
+    // geometry to outlive a frame; that needs the paint cache, keyed on style
+    // and layout versions, which is a later slice.
+    const GeometryHandle g = backend->compile_geometry(mesh.vertices, mesh.indices);
+    backend->render_geometry(g, {0, 0}, tex);
+    backend->release_geometry(g);
+}
+
 void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, double origin_x,
-                     double origin_y, RenderInterface* backend) {
+                     double origin_y, const PaintContext& paint) {
     const Box& b = tree[id];
     const double x = origin_x + b.x;
     const double y = origin_y + b.y;
 
     Mesh mesh;
     paint_box_decorations(tree, id, ctx, x, y, &mesh);
-    if (!mesh.empty()) {
-        // Compiled and released per box for now. A backend that batches will
-        // want geometry to outlive a frame; that needs the paint cache, which
-        // is keyed on style and layout versions and is a later slice.
-        const GeometryHandle g = backend->compile_geometry(mesh.vertices, mesh.indices);
-        backend->render_geometry(g, {0, 0}, {});
-        backend->release_geometry(g);
+    draw_mesh(mesh, paint.backend, {});
+
+    // A text run's own y is its top; the baseline is where the glyphs sit, and
+    // the line box put it there.
+    if (b.kind == BoxKind::Text && !b.text.empty() && paint.font && paint.atlas) {
+        const BoxId line = b.parent;
+        const double baseline =
+            line != kNoBox && tree[line].kind == BoxKind::Line ? origin_y + tree[line].baseline
+                                                               : y + b.height;
+        Mesh text;
+        build_text_geometry(b.text, x, baseline, b.font_size, resolve_color(b.style, "color"),
+                            paint, &text);
+        draw_mesh(text, paint.backend, paint.atlas->texture(paint.backend));
     }
 
-    for (BoxId c : tree.children(id)) paint_recursive(tree, c, ctx, x, y, backend);
+    for (BoxId c : tree.children(id)) paint_recursive(tree, c, ctx, x, y, paint);
 }
 
 } // namespace
@@ -121,10 +137,52 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
     }
 }
 
+void build_text_geometry(std::string_view text, double x, double baseline_y, double font_size,
+                         const LinearColor& color, const PaintContext& paint, Mesh* out) {
+    if (!paint.font || !paint.atlas || text.empty()) return;
+    std::vector<ShapedGlyph> glyphs;
+    paint.font->shape(paint.face, text, font_size, &glyphs);
+
+    double pen = x;
+    for (const ShapedGlyph& g : glyphs) {
+        const GlyphSlot* slot = paint.atlas->get(paint.font, paint.face, g.glyph, font_size);
+        // A glyph with no bitmap — a space, or one the face does not have —
+        // still advances the pen. Skipping the advance would close the gaps
+        // between words.
+        if (slot) {
+            const double gx = pen + g.x_offset + slot->bearing_x;
+            // bearing_y measures UP from the baseline, so the quad's top edge
+            // is above it.
+            const double gy = baseline_y - g.y_offset - slot->bearing_y;
+            const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+            const auto v = [&](double px, double py, float u, float w) {
+                Vertex vt;
+                vt.position = {static_cast<float>(px), static_cast<float>(py)};
+                vt.color = color;
+                vt.tex_coord = {u, w};
+                return vt;
+            };
+            out->vertices.push_back(v(gx, gy, slot->u0, slot->v0));
+            out->vertices.push_back(v(gx + slot->width, gy, slot->u1, slot->v0));
+            out->vertices.push_back(v(gx + slot->width, gy + slot->height, slot->u1, slot->v1));
+            out->vertices.push_back(v(gx, gy + slot->height, slot->u0, slot->v1));
+            for (uint32_t i : {0u, 1u, 2u, 0u, 2u, 3u}) out->indices.push_back(base + i);
+        }
+        pen += g.x_advance;
+    }
+}
+
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
                 RenderInterface* backend) {
-    if (!backend || root == kNoBox) return;
-    paint_recursive(tree, root, ctx, 0, 0, backend);
+    PaintContext p;
+    p.backend = backend;
+    paint_tree(tree, root, ctx, p);
+}
+
+void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
+                const PaintContext& paint) {
+    if (!paint.backend || root == kNoBox) return;
+    paint_recursive(tree, root, ctx, 0, 0, paint);
 }
 
 } // namespace weva
