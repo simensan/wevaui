@@ -516,7 +516,7 @@ double BlockLayout::layout_inline_content(BoxId id, double content_width,
     // are re-derived on every pass.
     auto it = inline_items_.find(id);
     if (it == inline_items_.end()) {
-        it = inline_items_.emplace(id, collect_inline_items(*tree_, id, ctx_)).first;
+        it = inline_items_.emplace(id, collect_inline_items(*tree_, id, ctx_, metrics_)).first;
     }
     size_atoms(&it->second, content_width, parent_style);
     return layout_inline_items(tree_, id, it->second, content_width, ctx_, *metrics_);

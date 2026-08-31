@@ -91,6 +91,79 @@ typedef struct weva_texture {
     int32_t width, height;
 } weva_texture;
 
+/* ---- Host-supplied backends -------------------------------------------
+ *
+ * A host implements one or both of these tables and registers it before the
+ * first update. Each mirrors the corresponding C++ interface, with `user_data`
+ * carried through every call so a host can hold its own state without a global.
+ *
+ * A null table, or a null function within one, falls back to the built-in
+ * stub for that operation — so a host can adopt these incrementally and a
+ * partially implemented backend degrades rather than crashes.
+ */
+
+typedef struct weva_render_backend {
+    void* user_data;
+
+    /* Required for anything to appear. Returns a handle the host chooses; zero
+     * is reserved for "no geometry". */
+    uint64_t (*compile_geometry)(void* user_data, const weva_vertex* vertices,
+                                 size_t vertex_count, const uint32_t* indices,
+                                 size_t index_count);
+    void (*render_geometry)(void* user_data, uint64_t geometry, float translate_x,
+                            float translate_y, uint64_t texture);
+    void (*release_geometry)(void* user_data, uint64_t geometry);
+
+    /* Textures. `generate_texture` receives 8-bit RGBA. */
+    uint64_t (*generate_texture)(void* user_data, const uint8_t* rgba, int32_t width,
+                                 int32_t height);
+    void (*release_texture)(void* user_data, uint64_t texture);
+    /* Returns zero when the path cannot be loaded; the draw then falls back to
+     * its vertex colours rather than vanishing. */
+    uint64_t (*load_texture)(void* user_data, const char* path, int32_t* out_width,
+                             int32_t* out_height);
+
+    /* `enable` of zero disables clipping and the rect is ignored. */
+    void (*set_scissor)(void* user_data, int32_t enable, int32_t x, int32_t y, int32_t width,
+                        int32_t height);
+} weva_render_backend;
+
+typedef struct weva_glyph_bitmap {
+    /* One byte of coverage per pixel. Owned by the host; copied before the
+     * call returns. */
+    const uint8_t* alpha;
+    int32_t width, height;
+} weva_glyph_bitmap;
+
+typedef struct weva_font_backend {
+    void* user_data;
+
+    /* Returns zero on failure. `index` selects a face within a collection. */
+    uint64_t (*load_face)(void* user_data, const uint8_t* data, size_t length, int32_t index);
+    /* All of these return non-zero on success. */
+    int32_t (*face_metrics)(void* user_data, uint64_t face, double px, double* out_ascent,
+                            double* out_descent, double* out_line_gap);
+    int32_t (*glyph_index)(void* user_data, uint64_t face, uint32_t codepoint,
+                           uint32_t* out_glyph);
+    int32_t (*glyph_metrics)(void* user_data, uint64_t face, uint32_t glyph, double px,
+                             double* out_advance, double* out_bearing_x, double* out_bearing_y,
+                             int32_t* out_width, int32_t* out_height);
+    int32_t (*rasterize)(void* user_data, uint64_t face, uint32_t glyph, double px,
+                         weva_glyph_bitmap* out);
+    /* Writes at most `capacity` glyphs and returns how many the text produced,
+     * so a host sizes with one call and fills with a second. */
+    size_t (*shape)(void* user_data, uint64_t face, const char* utf8, size_t length, double px,
+                    uint32_t* out_glyphs, double* out_advances, uint32_t* out_clusters,
+                    size_t capacity);
+} weva_font_backend;
+
+/* Both copy the table, so the caller may free it on return. Passing null
+ * restores the built-in stub. Registering after a document has been updated
+ * takes effect on the NEXT update. */
+void weva_document_set_render_backend(weva_document_t doc, const weva_render_backend* backend);
+void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend* backend,
+                                    uint64_t face);
+
 weva_document_t weva_document_create(const weva_config* config);
 void weva_document_destroy(weva_document_t doc);
 

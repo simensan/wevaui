@@ -1,5 +1,8 @@
 #pragma once
+#include "weva/font_interface.h"
+
 #include <string_view>
+#include <vector>
 
 // Ports Runtime/Layout/Text/{IFontMetrics,MonoFontMetrics}.cs — the seam
 // between layout and whatever actually measures glyphs.
@@ -57,6 +60,27 @@ private:
     double line_height_em_ = 1.2;
     double ascent_em_ = 0.8;
     double descent_em_ = 0.4;
+};
+
+// Drives FontMetrics from a FontInterface, so ONE backend serves both
+// measurement and rendering.
+//
+// The two are separate seams because layout runs without a rasterizer and a
+// rasterizer runs without layout — but a host that supplies a face must have
+// them agree, or text is laid out to one face's advances and drawn with
+// another's. Wiring them together is the caller's job, and this is the wire.
+class FontInterfaceMetrics : public FontMetrics {
+public:
+    FontInterfaceMetrics(FontInterface* font, FaceHandle face) : font_(font), face_(face) {}
+
+    double line_height(double fs) const override;
+    double ascent(double fs) const override;
+    double descent(double fs) const override;
+    double measure(std::string_view text, double fs) const override;
+
+private:
+    FontInterface* font_;
+    FaceHandle face_;
 };
 
 } // namespace weva

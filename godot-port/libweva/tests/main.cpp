@@ -117,6 +117,9 @@ void test_abi_load_and_update();
 void test_abi_query_and_bounds();
 void test_abi_attributes_and_text();
 void test_abi_viewport_and_restyle();
+void test_abi_host_render_backend();
+void test_abi_partial_backend_degrades();
+void test_abi_host_font_backend();
 int main() {
     test_arena();
     test_intern();
@@ -236,6 +239,9 @@ int main() {
     test_abi_query_and_bounds();
     test_abi_attributes_and_text();
     test_abi_viewport_and_restyle();
+    test_abi_host_render_backend();
+    test_abi_partial_backend_degrades();
+    test_abi_host_font_backend();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

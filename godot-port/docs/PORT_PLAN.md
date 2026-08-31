@@ -1496,9 +1496,43 @@ the host's own renderer issues the draws. The translation is baked into the
 vertices there rather than passed through, because the ABI should hand over
 geometry that is ready to upload.
 
-**Deferred:** host-supplied render and font backends through function-pointer
-tables — the ABI currently uses the built-in stubs — plus event delivery, the
-animation tick (`dt_seconds` is accepted and ignored), and multi-element query.
+~~**Deferred:** host-supplied render and font backends~~ — **done**, see below.
+Still deferred: event delivery, the animation tick (`dt_seconds` is accepted and
+ignored), and multi-element query.
+
+**Host backends: a Godot host can now supply its own renderer and font.** 7140
+checks green across gcc 13, clang 18, ASan+UBSan+LSan and Release. Two C
+function-pointer tables mirror the C++ interfaces, with `user_data` carried
+through every call so a host needs no global.
+
+**A partially filled table degrades rather than crashing.** Every null function
+falls back to the built-in, which is what lets a host adopt the tables one call
+at a time — the same contract the optional methods on the C++ interface already
+have. Tested with a table carrying only `render_geometry`, and with an entirely
+empty one.
+
+**The vertex layout is part of the ABI.** `Vertex` and `weva_vertex` are the
+same eight floats in the same order, asserted with a `static_assert`, so a host
+reads the compiled buffer with no conversion pass.
+
+### The trap this closed: two font seams that could disagree
+
+`FontMetrics` (what layout measures with) and `FontInterface` (what paint draws
+with) are separate seams, because layout runs without a rasterizer and a
+rasterizer runs without layout. But a host that registers a face needs them to
+AGREE — otherwise text is laid out to one face's advances and drawn with
+another's, and drifts off the line boxes made for it.
+
+Registering a font backend now also drives measurement, through a
+`FontInterfaceMetrics` adapter that shapes the text and sums the advances rather
+than adding up per-glyph widths — a shaper may substitute a ligature or apply
+kerning, and the width layout uses has to be the width the same call will draw.
+
+Finding that also surfaced a real gap: **`line-height: normal` was resolving to
+a hard-coded 1.2 factor**, ignoring font metrics entirely. The C# routes it
+through `IFontMetrics.LineHeight`. Fixed — a host's face now governs its own
+line height, and the constant remains only as the no-face fallback. It was
+invisible until now because the stub's metrics happen to sum to exactly 1.2.
 
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 

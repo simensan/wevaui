@@ -74,7 +74,8 @@ double max_content_width(const BoxTree& tree, BoxId id);
 // whitespace handling right is most of the work, and it is far easier to check
 // on the sequence than through the resulting geometry.
 std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId container,
-                                             const LayoutContext& ctx);
+                                             const LayoutContext& ctx,
+                                             const FontMetrics* metrics = nullptr);
 
 // CSS Text §7: resolves `start`/`end` against the direction, so layout only
 // ever deals with left/right/center/justify.

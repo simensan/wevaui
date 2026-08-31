@@ -1,6 +1,7 @@
 #pragma once
 #include "weva/computed_style.h"
 #include "weva/css_value.h"
+#include "weva/font_metrics.h"
 
 #include <optional>
 #include <string_view>
@@ -82,10 +83,12 @@ struct ResolvedLength {
 double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_style,
                     const LayoutContext& ctx);
 
-// `normal` resolves to kDefaultLineHeightFactor × font_size. The C# routes that
-// case through font metrics when they are available; this port has no font
-// layer yet, so the constant is always used.
-double line_height_px(const ComputedStyle* style, double font_size, const LayoutContext& ctx);
+// `normal` resolves through the FONT's own metrics when a backend is supplied,
+// and falls back to kDefaultLineHeightFactor x font_size when it is not. That
+// distinction is load-bearing: a host that registers a face expects its line
+// height to follow that face, not a constant.
+double line_height_px(const ComputedStyle* style, double font_size, const LayoutContext& ctx,
+                      const FontMetrics* metrics = nullptr);
 
 // `basis_px` is the percentage basis. Without one, a percentage surfaces as
 // LengthKind::Percent rather than resolving, so the caller can decide.

@@ -184,9 +184,13 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
     }
 }
 
-double line_height_px(const ComputedStyle* style, double font_size, const LayoutContext& ctx) {
+double line_height_px(const ComputedStyle* style, double font_size, const LayoutContext& ctx,
+                      const FontMetrics* metrics) {
     const std::string_view raw = get(style, "line-height");
-    const double fallback = font_size * kDefaultLineHeightFactor;
+    // `normal` is a UA-chosen value: the face's own line height when there is a
+    // face, and the conventional 1.2 factor when there is not.
+    const double fallback =
+        metrics ? metrics->line_height(font_size) : font_size * kDefaultLineHeightFactor;
     if (raw.empty()) return fallback;
 
     CssParseError err;

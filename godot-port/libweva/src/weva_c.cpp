@@ -12,6 +12,7 @@
 #include "weva/selector.h"
 #include "weva/user_agent_stylesheet.h"
 
+#include <algorithm>
 #include <cstring>
 #include <map>
 #include <memory>
@@ -119,6 +120,143 @@ struct StyleMap : StyleProvider {
     }
 };
 
+
+// ---- Host backend adapters ----------------------------------------------
+//
+// Each forwards to a C function-pointer table, and each falls back to the
+// built-in behaviour when the host left a function null. That is what lets a
+// host adopt the tables incrementally: a partially filled table degrades
+// rather than crashing, which is the same contract the optional methods on the
+// C++ interface already have.
+
+class HostRenderBackend : public RenderInterface {
+public:
+    HostRenderBackend(const weva_render_backend& table, RenderInterface* fallback)
+        : t_(table), fallback_(fallback) {}
+
+    GeometryHandle compile_geometry(const std::vector<Vertex>& v,
+                                    const std::vector<uint32_t>& i) override {
+        if (!t_.compile_geometry) return fallback_->compile_geometry(v, i);
+        // Vertex and weva_vertex are the same eight floats in the same order,
+        // which is what lets the host read the buffer with no conversion pass.
+        static_assert(sizeof(Vertex) == sizeof(weva_vertex), "vertex layout must match the ABI");
+        return GeometryHandle{t_.compile_geometry(t_.user_data,
+                                                  reinterpret_cast<const weva_vertex*>(v.data()),
+                                                  v.size(), i.data(), i.size())};
+    }
+    void render_geometry(GeometryHandle g, Vec2 tr, TextureHandle tex) override {
+        if (!t_.render_geometry) { fallback_->render_geometry(g, tr, tex); return; }
+        t_.render_geometry(t_.user_data, g.id, tr.x, tr.y, tex.id);
+    }
+    void release_geometry(GeometryHandle g) override {
+        if (!t_.release_geometry) { fallback_->release_geometry(g); return; }
+        t_.release_geometry(t_.user_data, g.id);
+    }
+    TextureHandle load_texture(std::string_view path, Vec2i* out_size) override {
+        if (!t_.load_texture) return fallback_->load_texture(path, out_size);
+        const std::string p(path);
+        int32_t w = 0, h = 0;
+        const uint64_t id = t_.load_texture(t_.user_data, p.c_str(), &w, &h);
+        if (out_size) *out_size = {w, h};
+        return TextureHandle{id};
+    }
+    TextureHandle generate_texture(const std::vector<uint8_t>& rgba, Vec2i size) override {
+        if (!t_.generate_texture) return fallback_->generate_texture(rgba, size);
+        return TextureHandle{t_.generate_texture(t_.user_data, rgba.data(), size.x, size.y)};
+    }
+    void release_texture(TextureHandle t) override {
+        if (!t_.release_texture) { fallback_->release_texture(t); return; }
+        t_.release_texture(t_.user_data, t.id);
+    }
+    void set_scissor(const Recti* r) override {
+        if (!t_.set_scissor) { fallback_->set_scissor(r); return; }
+        if (r) t_.set_scissor(t_.user_data, 1, r->x, r->y, r->width, r->height);
+        else t_.set_scissor(t_.user_data, 0, 0, 0, 0, 0);
+    }
+
+private:
+    weva_render_backend t_;
+    RenderInterface* fallback_;
+};
+
+class HostFontBackend : public FontInterface {
+public:
+    HostFontBackend(const weva_font_backend& table, FontInterface* fallback)
+        : t_(table), fallback_(fallback) {}
+
+    FaceHandle load_face(const std::vector<uint8_t>& ttf, int index) override {
+        if (!t_.load_face) return fallback_->load_face(ttf, index);
+        return FaceHandle{t_.load_face(t_.user_data, ttf.data(), ttf.size(), index)};
+    }
+    bool face_metrics(FaceHandle face, double px, FaceMetrics* out) override {
+        if (!t_.face_metrics) return fallback_->face_metrics(face, px, out);
+        if (!out) return false;
+        *out = {};
+        const int32_t ok = t_.face_metrics(t_.user_data, face.id, px, &out->ascent,
+                                           &out->descent, &out->line_gap);
+        out->units_per_em = px;
+        return ok != 0;
+    }
+    bool glyph_index(FaceHandle face, uint32_t cp, uint32_t* out) override {
+        if (!t_.glyph_index) return fallback_->glyph_index(face, cp, out);
+        return t_.glyph_index(t_.user_data, face.id, cp, out) != 0;
+    }
+    bool glyph_metrics(FaceHandle face, uint32_t glyph, double px, GlyphMetrics* out) override {
+        if (!t_.glyph_metrics) return fallback_->glyph_metrics(face, glyph, px, out);
+        if (!out) return false;
+        *out = {};
+        return t_.glyph_metrics(t_.user_data, face.id, glyph, px, &out->advance,
+                                &out->bearing_x, &out->bearing_y, &out->width,
+                                &out->height) != 0;
+    }
+    bool rasterize(FaceHandle face, uint32_t glyph, double px, RenderMode mode,
+                   Bitmap* out) override {
+        if (!t_.rasterize) return fallback_->rasterize(face, glyph, px, mode, out);
+        // The table has no SDF entry point; a host wanting SDF supplies it
+        // through the alpha path with its own convention, so asking for SDF
+        // here is refused rather than silently answered with coverage.
+        if (mode != RenderMode::Alpha8 || !out) return false;
+        weva_glyph_bitmap bmp{};
+        if (!t_.rasterize(t_.user_data, face.id, glyph, px, &bmp)) return false;
+        out->width = bmp.width;
+        out->height = bmp.height;
+        const size_t n = static_cast<size_t>(std::max(0, bmp.width)) *
+                         static_cast<size_t>(std::max(0, bmp.height));
+        // Copied here, so the host's buffer need only live for the call.
+        out->data.assign(bmp.alpha, bmp.alpha ? bmp.alpha + n : bmp.alpha);
+        if (!bmp.alpha) out->data.assign(n, 0);
+        return true;
+    }
+    void shape(FaceHandle face, std::string_view utf8, double px,
+               std::vector<ShapedGlyph>* out) override {
+        if (!t_.shape) { fallback_->shape(face, utf8, px, out); return; }
+        if (!out) return;
+        out->clear();
+        // Sized with one call, filled with a second — the same two-call shape
+        // the text accessor uses, so a host implements one pattern.
+        const size_t n = t_.shape(t_.user_data, face.id, utf8.data(), utf8.size(), px, nullptr,
+                                  nullptr, nullptr, 0);
+        if (n == 0) return;
+        std::vector<uint32_t> glyphs(n), clusters(n);
+        std::vector<double> advances(n);
+        const size_t got = t_.shape(t_.user_data, face.id, utf8.data(), utf8.size(), px,
+                                    glyphs.data(), advances.data(), clusters.data(), n);
+        const size_t count = got < n ? got : n;
+        out->reserve(count);
+        for (size_t i = 0; i < count; ++i) {
+            ShapedGlyph g;
+            g.glyph = glyphs[i];
+            g.x_advance = advances[i];
+            g.cluster = clusters[i];
+            out->push_back(g);
+        }
+    }
+
+private:
+    weva_font_backend t_;
+    FontInterface* fallback_;
+};
+
 } // namespace
 
 // The one type the opaque handle points at.
@@ -134,7 +272,26 @@ struct weva_document {
     StubFont font;
     GlyphAtlas atlas;
     CollectingBackend backend;
+    // Set when a host registered its own; the built-ins above stay as the
+    // fallback each adapter defers to for any function the host left null.
+    std::unique_ptr<HostRenderBackend> host_render;
+    std::unique_ptr<HostFontBackend> host_font;
+    // Measurement follows the host's face too. Without this, layout would
+    // measure with the stub's advances while paint drew the host's glyphs, and
+    // the text would drift off the line boxes laid out for it.
+    std::unique_ptr<FontInterfaceMetrics> host_metrics;
+    FaceHandle face = StubFont::builtin();
     BoxId root = kNoBox;
+
+    RenderInterface* render_backend() {
+        return host_render ? static_cast<RenderInterface*>(host_render.get()) : &backend;
+    }
+    FontInterface* font_backend() {
+        return host_font ? static_cast<FontInterface*>(host_font.get()) : &font;
+    }
+    const FontMetrics& metrics_backend() const {
+        return host_metrics ? static_cast<const FontMetrics&>(*host_metrics) : metrics;
+    }
 
     // Element handles are indices into this, rebuilt on every load. A stale
     // handle indexes out of range and is rejected; a stale pointer would be
@@ -163,6 +320,28 @@ extern "C" {
 
 uint32_t weva_abi_version(void) {
     return (static_cast<uint32_t>(WEVA_ABI_VERSION_MAJOR) << 16) | WEVA_ABI_VERSION_MINOR;
+}
+
+void weva_document_set_render_backend(weva_document_t doc, const weva_render_backend* backend) {
+    if (!doc) return;
+    if (!backend) { doc->host_render.reset(); return; }
+    doc->host_render = std::make_unique<HostRenderBackend>(*backend, &doc->backend);
+}
+
+void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend* backend,
+                                    uint64_t face) {
+    if (!doc) return;
+    if (!backend) {
+        doc->host_font.reset();
+        doc->host_metrics.reset();
+        doc->face = StubFont::builtin();
+        return;
+    }
+    doc->host_font = std::make_unique<HostFontBackend>(*backend, &doc->font);
+    // A zero face means "use whatever the backend's load_face returned", which
+    // a host that has only one face can leave alone.
+    doc->face = face ? FaceHandle{face} : StubFont::builtin();
+    doc->host_metrics = std::make_unique<FontInterfaceMetrics>(doc->host_font.get(), doc->face);
 }
 
 weva_document_t weva_document_create(const weva_config* config) {
@@ -242,18 +421,21 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     doc->root = builder.build_document(*doc->doc);
     if (doc->root == kNoBox) return WEVA_ERR_INTERNAL;
 
-    BlockLayout block(&doc->tree, doc->ctx, &doc->metrics);
+    BlockLayout block(&doc->tree, doc->ctx, &doc->metrics_backend());
     block.layout_root(doc->root, doc->ctx.viewport_width_px, doc->ctx.viewport_height_px);
     run_positioning(&doc->tree, doc->root, doc->ctx, &block);
 
     doc->backend.begin_frame();
     PaintContext paint;
-    paint.backend = &doc->backend;
-    paint.font = &doc->font;
+    paint.backend = doc->render_backend();
+    paint.font = doc->font_backend();
     paint.atlas = &doc->atlas;
-    paint.face = StubFont::builtin();
+    paint.face = doc->face;
     paint_tree(doc->tree, doc->root, doc->ctx, paint);
 
+    // With a host backend registered the host issued its own draws, so there
+    // is no collected list to publish and the accessors correctly report none.
+    //
     // The POD views point straight at the collected buffers: nothing is copied
     // across the boundary, which is what the documented lifetime buys.
     doc->draw_views.clear();

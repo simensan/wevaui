@@ -51,7 +51,7 @@ std::vector<Token> tokenize_collapsing(std::string_view text) {
 
 void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
                        const LayoutContext& ctx, const ComputedStyle* inherited,
-                       std::vector<InlineItem>* out) {
+                       const FontMetrics* metrics, std::vector<InlineItem>* out) {
     for (BoxId c : tree.children(node)) {
         const Box& b = tree[c];
         if (b.kind == BoxKind::Text) {
@@ -61,7 +61,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.text = b.text;
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, nullptr, ctx);
-            item.line_height = line_height_px(item.style, item.font_size, ctx);
+            item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
             const std::string_view ws = get(item.style, "white-space");
             // `pre` and `pre-wrap` preserve whitespace; `nowrap` and `pre`
             // forbid wrapping. Only the two axes matter to layout, so they are
@@ -71,7 +71,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.allow_wrap = !(iequals(ws, "nowrap") || iequals(ws, "pre"));
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline || b.kind == BoxKind::AnonymousInline) {
-            collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited, out);
+            collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited, metrics, out);
         } else if (b.kind == BoxKind::Block && b.is_inline_block) {
             // An atom: placed whole, never broken. It is recorded here but not
             // sized — sizing it needs the block layout engine, so the caller
@@ -81,7 +81,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.inline_parent = inline_parent;
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, nullptr, ctx);
-            item.line_height = line_height_px(item.style, item.font_size, ctx);
+            item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
             out->push_back(item);
         }
     }
@@ -99,15 +99,17 @@ std::string_view resolve_text_align(const ComputedStyle* style) {
 }
 
 std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId container,
-                                             const LayoutContext& ctx) {
+                                             const LayoutContext& ctx,
+                                             const FontMetrics* metrics) {
     std::vector<InlineItem> out;
-    collect_recursive(tree, container, kNoBox, ctx, tree[container].style, &out);
+    collect_recursive(tree, container, kNoBox, ctx, tree[container].style, metrics, &out);
     return out;
 }
 
 double layout_inline(BoxTree* tree, BoxId container, double available_width,
                      const LayoutContext& ctx, const FontMetrics& metrics) {
-    return layout_inline_items(tree, container, collect_inline_items(*tree, container, ctx),
+    return layout_inline_items(tree, container,
+                               collect_inline_items(*tree, container, ctx, &metrics),
                                available_width, ctx, metrics);
 }
 

@@ -52,4 +52,34 @@ double MonoFontMetrics::measure(std::string_view text, double fs) const {
     return total;
 }
 
+double FontInterfaceMetrics::line_height(double fs) const {
+    FaceMetrics fm;
+    if (!font_ || !font_->face_metrics(face_, fs, &fm)) return fs * 1.2;
+    return fm.ascent + fm.descent + fm.line_gap;
+}
+
+double FontInterfaceMetrics::ascent(double fs) const {
+    FaceMetrics fm;
+    if (!font_ || !font_->face_metrics(face_, fs, &fm)) return fs * 0.8;
+    return fm.ascent;
+}
+
+double FontInterfaceMetrics::descent(double fs) const {
+    FaceMetrics fm;
+    if (!font_ || !font_->face_metrics(face_, fs, &fm)) return fs * 0.4;
+    return fm.descent;
+}
+
+double FontInterfaceMetrics::measure(std::string_view text, double fs) const {
+    if (!font_ || text.empty()) return 0;
+    // Measured by SHAPING, not by summing per-glyph advances: a shaper may
+    // substitute a ligature or apply kerning, and the width layout uses has to
+    // be the width the same call will draw.
+    std::vector<ShapedGlyph> glyphs;
+    font_->shape(face_, text, fs, &glyphs);
+    double total = 0;
+    for (const ShapedGlyph& g : glyphs) total += g.x_advance;
+    return total;
+}
+
 } // namespace weva
