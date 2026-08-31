@@ -147,6 +147,12 @@ public:
     void layout_root(BoxId root, double viewport_width, double viewport_height);
     void layout_block(BoxId id, double available_width, const ComputedStyle* parent_style);
 
+    // Re-lays a box's content at a new width, keeping its own outer geometry.
+    // The positioning pass needs it: an out-of-flow box's width is only known
+    // after block layout has run, and its children were sized against the
+    // provisional one.
+    void relayout_at(BoxId id, double width);
+
 private:
     void layout_content(BoxId id, double font_size, double containing_block_width,
                         const ComputedStyle* parent_style);
@@ -159,6 +165,10 @@ private:
                              const ComputedStyle* parent_style);
     void size_atoms(std::vector<InlineItem>* items, double available_width,
                     const ComputedStyle* parent_style);
+    // The one entry point for laying out a container's inline content, so the
+    // item cache is written and read by the same path.
+    double layout_inline_content(BoxId id, double content_width,
+                                 const ComputedStyle* parent_style);
     void place_float(BoxId container, BoxId float_box, double top_y, double content_w);
 
     BoxTree* tree_;

@@ -1289,6 +1289,55 @@ Pinned, not fixed. That is five now: the two-level `em` chain, `padding: 1lh`
 expanding to nothing, clearance-plus-margin, the float-only self-collapsing box,
 and this.
 
+**Positioned layout done** (`ContainingBlockResolver` and the placement core of
+`PositioningPass.cs`). 2005 checks green across gcc 13, clang 18,
+ASan+UBSan+LSan and Release. `relative`, `absolute` and `fixed` all place, and
+the pass runs after block layout because an out-of-flow box resolves against its
+containing block's FINAL geometry.
+
+**The containing block is the padding box, not the border box.** `inset: 0` on a
+child of a 5px-bordered ancestor lands 5px in on each side, and a percentage
+offset resolves against that inner rect.
+
+**A static ancestor can still capture an absolute box.** Being positioned is one
+trigger; a `transform`, `filter`, `perspective`, a `will-change` naming one of
+those, or layout/paint containment is another. Missing the second group is how
+an `inset: 0` child of `transform: scale(1)` ends up filling the viewport
+instead of its parent — the reference records that exact bug. The same set
+captures `position: fixed`, which otherwise ignores positioned ancestors
+entirely: a transform changes how viewport coordinates map to local ones, so a
+transformed ancestor is the containing block for both.
+
+**`auto` is absent, not zero**, and the distinction decides placement. With
+neither edge of an axis given the box keeps its STATIC position — where it would
+have been in flow — rather than snapping to the containing block's origin. With
+both given and no explicit size it stretches between them; with both given, a
+definite size and both margins `auto`, the slack splits evenly and the box
+centres, which is the `inset: 0; margin: auto` dialog pattern.
+
+`position: relative` offsets from the in-flow position without disturbing the
+flow, and is over-constrained by design: with both edges of an axis given, the
+start edge wins in LTR and the other is ignored (§9.4.3).
+
+### A cache written by one path and read by another
+
+A pinned box's children were sized against the containing block's PROVISIONAL
+width during block layout, so the pin has to re-lay its content or the content
+keeps the wider measure and overflows. The relayout produced an EMPTY box: the
+inline-item cache was populated only by the relayout path, never by the original
+layout, so the second pass collected from a container whose children were
+already line boxes and found nothing.
+
+Both paths now go through one `layout_inline_content` entry point. The
+collection is cached (it cannot be redone once line boxes replace the source
+runs); atom sizes are re-derived every pass, because those genuinely depend on
+the width.
+
+**Deferred:** `position: sticky` (needs a scroll position), stacking contexts
+and paint order — which belong to paint, not layout — anchor positioning, the
+grid-area containing block, and the flex static position for an out-of-flow flex
+child.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

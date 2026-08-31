@@ -31,6 +31,7 @@ add_library(weva STATIC
     src/user_agent_stylesheet.cpp
     src/font_metrics.cpp
     src/inline_layout.cpp
+    src/positioning.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)

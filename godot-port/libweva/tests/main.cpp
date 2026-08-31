@@ -89,6 +89,11 @@ void test_whitespace_collapsing();
 void test_line_metrics_and_align();
 void test_shrink_to_fit();
 void test_inline_atoms();
+void test_relative_positioning();
+void test_absolute_containing_block();
+void test_absolute_placement();
+void test_offsets_and_zindex();
+void test_out_of_flow_relayout();
 int main() {
     test_arena();
     test_intern();
@@ -180,6 +185,11 @@ int main() {
     test_line_metrics_and_align();
     test_shrink_to_fit();
     test_inline_atoms();
+    test_relative_positioning();
+    test_absolute_containing_block();
+    test_absolute_placement();
+    test_offsets_and_zindex();
+    test_out_of_flow_relayout();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

@@ -505,6 +505,23 @@ void BlockLayout::place_float(BoxId container, BoxId float_box, double top_y,
 }
 
 
+
+double BlockLayout::layout_inline_content(BoxId id, double content_width,
+                                          const ComputedStyle* parent_style) {
+    if (!metrics_) return 0;
+    // The items are collected ONCE per container and cached: a shrink-to-fit
+    // probe lays the same container out three times, and the first pass
+    // replaces its children with line boxes, so a second collect would walk
+    // line boxes and find nothing. Atom sizes DO depend on the width, so they
+    // are re-derived on every pass.
+    auto it = inline_items_.find(id);
+    if (it == inline_items_.end()) {
+        it = inline_items_.emplace(id, collect_inline_items(*tree_, id, ctx_)).first;
+    }
+    size_atoms(&it->second, content_width, parent_style);
+    return layout_inline_items(tree_, id, it->second, content_width, ctx_, *metrics_);
+}
+
 void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_width,
                              const ComputedStyle* parent_style) {
     for (InlineItem& it : *items) {
@@ -584,6 +601,13 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     return fs;
 }
 
+void BlockLayout::relayout_at(BoxId id, double width) {
+    const BoxId parent = (*tree_)[id].parent;
+    const ComputedStyle* parent_style = parent == kNoBox ? nullptr : (*tree_)[parent].style;
+    const double fs = font_size_px((*tree_)[id].style, parent_style, ctx_);
+    relayout_content_at(id, width, fs, parent_style);
+}
+
 void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
                                       const ComputedStyle* parent_style) {
     (*tree_)[id].width = width;
@@ -592,18 +616,9 @@ void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
     // cached per container for the duration of the pass and reused, which is
     // both cheaper and simpler than snapshotting and restoring the child list.
     if ((*tree_)[id].contains_inlines) {
-        if (metrics_) {
-            auto it = inline_items_.find(id);
-            if (it == inline_items_.end()) {
-                std::vector<InlineItem> items = collect_inline_items(*tree_, id, ctx_);
-                size_atoms(&items, width, parent_style);
-                it = inline_items_.emplace(id, std::move(items)).first;
-            }
-            const double h = layout_inline_items(tree_, id, it->second,
-                                                 (*tree_)[id].content_width(), ctx_, *metrics_);
-            finalize_block_size(id, font_size, (*tree_)[id].padding_top +
-                                                   (*tree_)[id].border_top + h);
-        }
+        const double h = layout_inline_content(id, (*tree_)[id].content_width(), parent_style);
+        finalize_block_size(id, font_size,
+                            (*tree_)[id].padding_top + (*tree_)[id].border_top + h);
         return;
     }
     layout_content(id, font_size, width, parent_style);
@@ -663,12 +678,7 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     if ((*tree_)[id].contains_inlines) {
         // Without a font backend nothing can be measured, so the box reports
         // zero content height rather than a number derived from guessing.
-        double inline_h = 0;
-        if (metrics_) {
-            std::vector<InlineItem> items = collect_inline_items(*tree_, id, ctx_);
-            size_atoms(&items, content_w, own_style);
-            inline_h = layout_inline_items(tree_, id, items, content_w, ctx_, *metrics_);
-        }
+        const double inline_h = layout_inline_content(id, content_w, own_style);
         finalize_block_size(id, font_size, top_inner + inline_h);
         return;
     }
