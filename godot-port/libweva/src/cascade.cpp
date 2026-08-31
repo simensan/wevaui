@@ -86,11 +86,21 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
             compile_rules(sr->nested_rules, origin, source_index, layer_ordinal);
         } else {
             const auto* ar = static_cast<const GenericAtRule*>(r.get());
-            // Conditional at-rules (@media, @supports, @container) are not
-            // evaluated yet; their bodies are compiled unconditionally so the
-            // rules exist. Evaluating the conditions is a later slice — until
-            // then a non-matching @media block WILL apply, which is why this
-            // is called out rather than left implicit.
+            // Conditional at-rules gate their body. A false condition
+            // contributes no rules at all, rather than contributing rules that
+            // silently apply.
+            if (ar->name == "media") {
+                if (!evaluate_media_query(ar->prelude, media_)) continue;
+            } else if (ar->name == "supports") {
+                if (!evaluate_supports(ar->prelude)) continue;
+            } else if (ar->name == "container") {
+                // @container needs per-element container sizes, which the
+                // layout engine has not been ported to supply. Skipping the
+                // body would hide styles that should apply; applying it
+                // unconditionally shows styles that may not. Applying is the
+                // less-wrong default for a UI toolkit, and it is recorded in
+                // PORT_PLAN.md rather than left to be discovered.
+            }
             compile_rules(ar->nested_rules, origin, source_index, layer_ordinal);
         }
     }

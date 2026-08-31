@@ -19,6 +19,9 @@ void test_cascade_order();
 void test_cascade_compute();
 void test_variables();
 void test_variables_in_cascade();
+void test_media_queries();
+void test_supports();
+void test_conditional_rules_in_cascade();
 int main() {
     test_arena();
     test_intern();
@@ -40,6 +43,9 @@ int main() {
     test_cascade_compute();
     test_variables();
     test_variables_in_cascade();
+    test_media_queries();
+    test_supports();
+    test_conditional_rules_in_cascade();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

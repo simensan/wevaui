@@ -1,6 +1,7 @@
 #pragma once
 #include "weva/computed_style.h"
 #include "weva/css_rule.h"
+#include "weva/media.h"
 #include "weva/selector.h"
 
 #include <memory>
@@ -47,6 +48,12 @@ struct OriginatedStylesheet {
 
 class CascadeEngine {
 public:
+    // Conditional at-rules are evaluated at compile time against this context,
+    // so a non-matching @media block contributes no rules at all. Changing it
+    // requires recompiling the sheets.
+    void set_media_context(const MediaContext& ctx) { media_ = ctx; }
+    const MediaContext& media_context() const { return media_; }
+
     void add_stylesheet(const Stylesheet* sheet, DeclarationOrigin origin);
     void clear();
 
@@ -72,6 +79,7 @@ private:
                        int* source_index, int layer_ordinal);
 
     std::vector<CompiledRule> rules_;
+    MediaContext media_;
     // Ids whose declaration was invalid at computed-value time in the current
     // compute() call, so the inherit/initial pass knows to refill them.
     mutable std::vector<int> dropped_;

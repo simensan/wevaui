@@ -436,10 +436,11 @@ later slice.
 
 ### Known-incomplete, called out rather than left implicit
 
-* **Conditional at-rules are not evaluated.** `@media`, `@supports` and
-  `@container` bodies are compiled unconditionally, so a *non-matching* `@media`
-  block currently **does** apply. This is the most likely source of wrong output
-  in the demo right now.
+* ~~Conditional at-rules are not evaluated~~ — **`@media` and `@supports` now
+  gate their bodies.** `@container` still applies unconditionally, because it
+  needs per-element container sizes that only the layout engine can supply;
+  applying is the less-wrong default for a UI toolkit, and it is recorded here
+  rather than left to be discovered.
 * ~~`var()` is unresolved~~ — **done**, see below. `env()` and `attr()` remain.
 * `@property`'s `inherits: false` is not honoured; custom properties inherit
   unconditionally.
@@ -463,6 +464,27 @@ fallback must not rescue a cycle member.** Given `--a: var(--b)` and
 `--b: var(--a, safe)`, the `safe` fallback would otherwise resolve through the
 still-open stack frame and paper over the cycle. Once a name is known to be in a
 cycle, every later reference to it is invalid regardless of its own fallback.
+
+**`@media` / `@supports` evaluation done.** 945 checks green. Conditions are
+evaluated at rule-compile time, so a false condition contributes **no rules at
+all** rather than rules that silently apply.
+
+This was not academic. The demo stylesheet carries four `@media` blocks —
+`(min-aspect-ratio: 19/9)`, `(max-aspect-ratio: 4/3)`, `(orientation: portrait)`
+and `(orientation: landscape)` — i.e. two **mutually contradictory pairs**.
+Before gating, all four applied simultaneously at every viewport. Now three
+different viewports produce three different rule sets:
+
+| viewport | matched declarations across all `<div>` |
+|---|---:|
+| landscape 1920×1080 | 2,026 |
+| portrait 800×1200 | 2,042 |
+| ultrawide 2560×1080 | 2,027 |
+
+The design rule throughout: **an unknown feature evaluates to false.** An
+unrecognised condition must hide its block rather than apply unconditionally —
+the opposite default would make every future CSS feature a silent styling bug.
+Same for `@supports`: a malformed condition is unsupported, not vacuously true.
 
 ## Phase 4 — Block and inline layout + software paint (~15k LOC)
 

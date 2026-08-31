@@ -15,6 +15,7 @@ add_executable(weva_tests
     test_cascade_store.cpp
     test_cascade.cpp
     test_variables.cpp
+    test_media.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)
