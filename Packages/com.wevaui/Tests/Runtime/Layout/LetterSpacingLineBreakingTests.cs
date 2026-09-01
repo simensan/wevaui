@@ -402,5 +402,41 @@ namespace Weva.Tests.Layout {
             Assert.That(LinesOf(flexItem).Count, Is.EqualTo(1));
         }
 
+        // CSS Text L3 §4.1.1: a collapsible space at the START of a line is
+        // removed, and so is one at the end. The single-run fast path
+        // (InlineLayout.TryLayoutSingleRunFast, taken when a container has
+        // exactly one text child) measured and emitted the raw string instead,
+        // so the space survived — the box measured one space too wide AND the
+        // text rendered indented by it. Only visible on shrink-to-fit boxes,
+        // where width comes from the content: weva-landing's nav brand came
+        // out 82 where Chrome and the C++ port both say 73.
+        [Test]
+        public void Leading_space_is_dropped_by_the_single_run_fast_path() {
+            var (root, _, _) = Build(
+                "<div class=\"a\"> Weva</div><div class=\"b\">Weva</div>",
+                ".a, .b { display: inline-block; }", viewportWidth: 800);
+
+            BlockBox Find(string cls) {
+                foreach (var box in AllBoxes(root)) {
+                    if (box is BlockBox bb && bb.Element != null
+                        && (bb.Element.GetAttribute("class") ?? "") == cls) return bb;
+                }
+                return null;
+            }
+            var withSpace = Find("a");
+            var without = Find("b");
+            Assert.That(withSpace, Is.Not.Null);
+            Assert.That(without, Is.Not.Null);
+            Assert.That(withSpace.Width, Is.EqualTo(without.Width).Within(0.001),
+                "a leading collapsible space must not widen a shrink-to-fit box");
+
+            // ...and the text must not be rendered indented by it either.
+            foreach (var tr in RunsUnder(withSpace)) {
+                Assert.That(tr.Text, Is.EqualTo("Weva"),
+                    "the emitted run must not carry the collapsed space");
+                Assert.That(tr.X, Is.EqualTo(0).Within(0.001));
+            }
+        }
+
     }
 }

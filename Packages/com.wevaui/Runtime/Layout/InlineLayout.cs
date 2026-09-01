@@ -372,6 +372,24 @@ namespace Weva.Layout {
             if (ws != "normal" && ws != "nowrap") return false;
             string text = source.Text ?? "";
             if (!IsSimpleCollapsibleText(text)) return false;
+            // CSS Text L3 §4.1.1: a collapsible space at the START of a line is
+            // REMOVED, and so is one at the end. This path lays the container's
+            // only child out as a single line, so both edges qualify.
+            //
+            // Without this the raw string was measured and emitted verbatim, so
+            // `<div class="brand"><span class="logo"></span> Weva</div>` kept
+            // the space before "Weva" — the box measured 45px instead of 36 and
+            // the text rendered indented by one space. It only showed up on
+            // shrink-to-fit boxes, where the width is the content's: weva-landing's
+            // nav brand came out 82 where Chrome and the C++ port both say 73.
+            // The slow path already drops it (AppendCollapsing skips a space
+            // token while nothing is on the line yet).
+            //
+            // A run that is nothing BUT spaces collapses to nothing; leave that
+            // to the slow path, which has the empty-line handling.
+            string trimmed = text.Trim(' ');
+            if (trimmed.Length == 0 && text.Length != 0) return false;
+            text = trimmed;
             // W5 UAX #9 bidi fast-path guard: bail to the slow path when the
             // container is RTL or the text contains any R-class codepoint. The
             // slow path will produce the same single-run result PLUS apply
