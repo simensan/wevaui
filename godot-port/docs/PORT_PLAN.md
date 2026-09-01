@@ -2313,6 +2313,50 @@ short search rather than a division.
 Recording it because the near-miss is the point: a green oracle means the corpus
 does not distinguish the alternatives, not that the implementation is right.
 
+### Widening the corpus, because a clean corpus proved nothing
+
+`tools/oracle/harvest_corpus.py` extracts HTML+CSS fixtures from the C# test
+suite's verbatim strings — ORACLE.md's first listed corpus source, and worth
+doing precisely because the hand-built 47 cases had gone green. Multicol had
+already shown what that is worth: a wrong balancing algorithm passed the corpus
+because its one multicol case did not separate the two answers.
+
+Classifying strings by CONTENT rather than by variable name is what made it
+work: the suite writes `const string css`, `var css`, `string Css`, and passes
+markup straight into a call unnamed. Matching on `const string` alone harvested
+53 cases from 17 files; matching every verbatim string harvested **212 from 39**.
+
+**First run: 120/212.** Three bugs so far, none reachable from the old corpus.
+
+**Inline fragments were attached in the wrong order.** They went on after the
+line's runs, so `<label>Name</label>` came out AFTER the `<input>` that follows
+it in the source. Fragments are now attached where the box OPENS — but that
+reparents the box onto the line, which severs the ancestor chain the next
+fragment's span walks, so the accumulate and the attach had to become two
+passes. `box.h` had documented `insert_child_first` for exactly this ordering
+problem and nothing used it.
+
+**`min-height` was read as a definite height.** The flex and grid dispatch asked
+`!parent_height_auto`, which also answers "not auto" for a box constrained only
+by `min-height` — and a min-height gives no USED height at that point, so the
+container got an available main size read off an uncomputed field. It was zero,
+and a column flex container shrank every item to nothing. `min-height: 100vh` on
+a page shell is common enough that this alone was five harvested cases.
+
+**An empty inline box.** `<div><section><span></span></section></div>` has to
+produce a line box — the section takes the strut's height — and no fragment box,
+because a fragment is earned by covering content. Both halves matter and pull
+opposite ways: drop the line and the height goes; keep the fragment and the
+element count is wrong. And an empty `<a>` on a line that DOES have content must
+still appear, which is the block-in-inline case from `23-inline-splitting`. That
+one rule took the harvested corpus from 122 to **140/212**.
+
+**Where it stands: 140/212 harvested, 46/47 hand-built.** Of the 72 harvested
+failures, **24 use only ported features** and are a real backlog — the largest
+groups are selector-combinator and spatial-navigation cases. The rest need
+`flex-wrap`, advanced grid, anchor positioning, transforms, counters and the
+other features the plan already lists as unported.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),

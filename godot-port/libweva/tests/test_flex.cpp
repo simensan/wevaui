@@ -175,6 +175,20 @@ void test_flex_main_axis() {
     }
 }
 
+void test_flex_min_height_is_not_a_definite_height() {
+    // `min-height` constrains the height; it does not GIVE one. Treating "the
+    // height property is not auto" as "a used height exists" handed a column
+    // container an available main size of zero — read off a height that had not
+    // been computed — and every item shrank to nothing. `min-height: 100vh` on
+    // a page shell is common enough that this was five harvested cases.
+    Fixture f;
+    CHECK(f.css("#s { min-height: 600px; display: flex; flex-direction: column }"
+                "#bar { height: 100px }"
+                "#rest { flex: 1 1 auto }"));
+    CHECK(f.layout("<body><div id=s><div id=bar></div><div id=rest></div></div></body>"));
+    CHECK(near(f.box("bar").height, 100));
+}
+
 void test_flex_cross_axis() {
     {
         // stretch is the initial alignment: an auto-height item fills the line.

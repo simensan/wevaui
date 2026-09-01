@@ -294,7 +294,13 @@ void test_line_metrics_and_align() {
         // ascent 25.6 + descent 12.8 = 38.4 content; leading max(19.2, 38.4).
         CHECK(near(f.tree[ls[0]].height, 38.4));
         CHECK(near(f.tree[ls[0]].baseline, 25.6));
-        const std::vector<BoxId> runs = {f.tree.child_at(ls[0], 0), f.tree.child_at(ls[0], 1)};
+        // Text runs only: a line's children now also carry the inline-box
+        // fragments (§9.4.2), interleaved in document order.
+        std::vector<BoxId> runs;
+        for (BoxId c : f.tree.children(ls[0])) {
+            if (f.tree[c].kind == BoxKind::Text) runs.push_back(c);
+        }
+        CHECK(runs.size() >= 2);
         // The small run sits lower so its baseline lines up with the big one.
         CHECK(near(f.tree[runs[0]].y, 25.6 - 12.8));
         CHECK(near(f.tree[runs[1]].y, 25.6 - 25.6));
@@ -495,6 +501,64 @@ void test_inline_fragments() {
         CHECK(o != kNoBox && i != kNoBox);
         CHECK(f.tree[o].x <= f.tree[i].x);
         CHECK(f.tree[o].x + f.tree[o].width >= f.tree[i].x + f.tree[i].width);
+    }
+}
+
+// Three rules about inline boxes that the harvested corpus found, each pulling
+// against the others. They are one test because getting any one right in
+// isolation is easy and getting all three right together is the actual problem.
+void test_inline_fragment_edges() {
+    {
+        // Document order. A line's children are read first-box-per-element by
+        // the dump, by paint and by hit testing, so a fragment has to be
+        // attached where its box OPENS, not after the runs. Appending them
+        // afterwards put a <label> after the <input> that follows it in source.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#i { display: inline-block; width: 20px; height: 10px }"));
+        CHECK(f.layout("<body><div id=w><span id=s>Name</span>"
+                       "<span id=i></span></div></body>"));
+        const BoxId line = f.lines("w")[0];
+        int span_index = -1, atom_index = -1, k = 0;
+        for (BoxId c : f.tree.children(line)) {
+            const Box& b = f.tree[c];
+            if (b.element && b.element->get_attribute("id") == "s" &&
+                b.kind == BoxKind::Inline && span_index < 0) {
+                span_index = k;
+            }
+            if (b.element && b.element->get_attribute("id") == "i") atom_index = k;
+            ++k;
+        }
+        CHECK(span_index >= 0 && atom_index >= 0);
+        CHECK(span_index < atom_index);
+    }
+    {
+        // An empty inline box still gives its container a line box, so the
+        // container has the strut's height rather than none.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
+                    "     line-height: 1 }"));
+        CHECK(f.layout("<body><div id=w><span id=s></span></div></body>"));
+        CHECK(near(f.box("w").height, 16));
+    }
+    {
+        // ...but it gets no fragment box, because a fragment is earned by
+        // covering content and there is none on that line.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"));
+        CHECK(f.layout("<body><div id=w><span id=s></span></div></body>"));
+        CHECK(f.find_kind("s", BoxKind::Inline) == kNoBox);
+    }
+    {
+        // An empty inline box on a line that DOES have content must appear —
+        // this is the shape block-in-inline splitting leaves behind, and it is
+        // the case that stops the rule above from being "drop empty spans".
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"));
+        CHECK(f.layout("<body><div id=w>Click <span id=s></span></div></body>"));
+        const BoxId s = f.find_kind("s", BoxKind::Inline);
+        CHECK(s != kNoBox);
+        CHECK(near(f.tree[s].width, 0));
     }
 }
 

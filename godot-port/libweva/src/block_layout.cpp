@@ -387,6 +387,29 @@ bool parent_bottom_open(const Box& b) {
     return b.padding_bottom <= 0 && b.border_bottom <= 0;
 }
 
+// The content height a flex or grid container can distribute, or -1 when it has
+// none.
+//
+// NOT `!parent_height_auto`: that test also reports "not auto" for a box whose
+// only vertical constraint is `min-height`, and a min-height gives no USED
+// height at this point — `box.height` has not been computed yet. Treating it as
+// definite handed the container an available main size of zero, and a column
+// flex container then shrank every item to nothing. `min-height: 100vh` on a
+// page shell is a common enough shape that this was five harvested cases at
+// once.
+//
+// A height imposed by an enclosing flex line counts, because that one IS
+// already stamped.
+double definite_flow_content_height(const Box& b, const LayoutContext& ctx, double font_size) {
+    if (b.cross_size_imposed) return b.content_height();
+    if (!b.style) return -1;
+    const std::string_view raw = get(b.style, "height");
+    if (raw.empty() || raw == "auto") return -1;
+    const ResolvedLength r = resolve_length(b.style, "height", ctx, font_size, std::nullopt);
+    if (r.kind != LengthKind::Length && r.kind != LengthKind::Percent) return -1;
+    return b.content_height();
+}
+
 bool parent_height_auto(const Box& b, const LayoutContext& ctx, double font_size) {
     if (!b.style) return true;
     const auto blocks = [&](std::string_view property, bool percent_must_be_positive) {
@@ -806,10 +829,7 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     }
     if ((*tree_)[id].display == DisplayKind::Grid ||
         (*tree_)[id].display == DisplayKind::InlineGrid) {
-        const double definite_h = (*tree_)[id].cross_size_imposed ||
-                                          !parent_height_auto((*tree_)[id], ctx_, font_size)
-                                      ? (*tree_)[id].content_height()
-                                      : -1.0;
+        const double definite_h = definite_flow_content_height((*tree_)[id], ctx_, font_size);
         const double h = layout_grid(tree_, id, content_w, definite_h, ctx_, this);
         finalize_block_size(id, font_size, top_inner + h);
         return;
@@ -818,16 +838,7 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         (*tree_)[id].display == DisplayKind::InlineFlex) {
         // A definite content height lets the cross axis centre against the
         // container; a negative one means "content-derived".
-        // parent_height_auto is the existing "this box's height is NOT
-        // author-specified" test; a flex container needs the opposite.
-        // A height imposed by an enclosing flex line counts as definite even
-        // though the style says `auto` — that is the whole point of imposing
-        // it, and without this a nested column container has no main size to
-        // distribute and its justify-content has nothing to centre in.
-        const double definite_h =
-            (*tree_)[id].cross_size_imposed || !parent_height_auto((*tree_)[id], ctx_, font_size)
-                ? (*tree_)[id].content_height()
-                : -1.0;
+        const double definite_h = definite_flow_content_height((*tree_)[id], ctx_, font_size);
         const double h = layout_flex(tree_, id, content_w, definite_h, ctx_, this);
         finalize_block_size(id, font_size, top_inner + h);
         return;
