@@ -278,6 +278,18 @@ bool participates_in_flow(const Box& b) {
     return !is_out_of_flow(b);
 }
 
+// Whether a box clips its overflow, which decides whether it exposes its
+// contents' baseline. Both axis longhands are checked for the same reason
+// establishes_new_bfc checks them: the shorthand expands, so the `overflow`
+// slot itself usually still holds its initial value.
+bool has_non_visible_overflow(const Box& b) {
+    if (!b.style) return false;
+    const std::string_view ox = get(b.style, "overflow-x");
+    if (!ox.empty() && ox != "visible") return true;
+    const std::string_view oy = get(b.style, "overflow-y");
+    return !oy.empty() && oy != "visible";
+}
+
 bool establishes_new_bfc(const Box& b) {
     if (!b.style) return false;
     // The `overflow` shorthand expands to overflow-x / overflow-y, so the
@@ -519,7 +531,20 @@ double BlockLayout::layout_inline_content(BoxId id, double content_width,
         it = inline_items_.emplace(id, collect_inline_items(*tree_, id, ctx_, metrics_)).first;
     }
     size_atoms(&it->second, content_width, parent_style);
-    return layout_inline_items(tree_, id, it->second, content_width, ctx_, *metrics_);
+
+    // The container's own offset inside the BFC. bfc_origin_ still refers to
+    // the PARENT here — it is updated further down layout_block, past the
+    // inline early return — so the container's own y is added. That y is the
+    // placement loop's running estimate, stamped before recursing for exactly
+    // this reason.
+    InlineFloatEnv env;
+    if (current_floats_ && current_floats_->count() > 0) {
+        env.floats = current_floats_;
+        env.bfc_content_top = bfc_origin_y_ + (*tree_)[id].y + (*tree_)[id].padding_top +
+                              (*tree_)[id].border_top;
+    }
+    return layout_inline_items(tree_, id, it->second, content_width, ctx_, *metrics_,
+                               env.floats ? &env : nullptr);
 }
 
 void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_width,
@@ -529,12 +554,34 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
         shrink_to_fit(it.atom_box, available_width, parent_style);
         const Box& a = (*tree_)[it.atom_box];
         it.atom_outer_width = a.margin_left + a.width + a.margin_right;
-        // CSS 2.1 §10.8.1: an inline-block's baseline is the baseline of its
-        // last line box, or — when it has none, or its overflow is not visible
-        // — its bottom MARGIN edge. Only the second case is handled here; the
-        // first needs the atom's own line boxes to be inspected, which is a
-        // later slice.
-        it.atom_baseline = a.margin_top + a.height + a.margin_bottom;
+        // CSS 2.1 §10.8.1: an inline-block's baseline, measured from its TOP
+        // BORDER EDGE — not its margin edge, which is why margin_top appears
+        // in none of the three branches.
+        //
+        //  1. overflow other than visible: the bottom margin edge, because a
+        //     clipping box does not expose its contents' baseline;
+        //  2. otherwise its LAST line box's baseline;
+        //  3. otherwise (only block children, or empty) the bottom of the
+        //     content area, which is what Blink does.
+        //
+        // Case 2 was previously unimplemented and case 1 was applied to
+        // everything, which put the baseline at the atom's bottom edge and made
+        // every line holding an inline-block one text-descent too tall. The
+        // oracle caught it; no self-written test had.
+        if (has_non_visible_overflow(a)) {
+            it.atom_baseline = a.height + a.margin_bottom;
+        } else {
+            BoxId last_line = kNoBox;
+            for (BoxId c : tree_->children(it.atom_box)) {
+                if ((*tree_)[c].kind == BoxKind::Line) last_line = c;
+            }
+            if (last_line != kNoBox) {
+                it.atom_baseline = (*tree_)[last_line].y + (*tree_)[last_line].baseline;
+            } else {
+                const double content_bottom = a.height - a.padding_bottom - a.border_bottom;
+                it.atom_baseline = content_bottom < 0 ? a.height : content_bottom;
+            }
+        }
     }
 }
 

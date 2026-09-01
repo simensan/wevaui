@@ -1,5 +1,8 @@
 #include "weva/inline_layout.h"
 
+// For FloatContext, which line-box narrowing queries.
+#include "weva/block_layout.h"
+
 #include <optional>
 
 #include "weva/css_properties.h"
@@ -117,7 +120,8 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
 
 double layout_inline_items(BoxTree* tree, BoxId container,
                            const std::vector<InlineItem>& items, double available_width,
-                           const LayoutContext& ctx, const FontMetrics& metrics) {
+                           const LayoutContext& ctx, const FontMetrics& metrics,
+                           const InlineFloatEnv* float_env) {
     const Box& cbox = (*tree)[container];
     const double top_inner = cbox.padding_top + cbox.border_top;
     const double left_inner = cbox.padding_left + cbox.border_left;
@@ -164,6 +168,28 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     double pen = 0;
     double max_ascent = 0, max_descent = 0, max_leading = 0;
 
+    // CSS 2.1 §9.5: a line box beside a float is shortened to make room for it.
+    // This has to be known while the line is being FILLED, not only when it is
+    // flushed — the wrap decision compares against it — so it is recomputed
+    // whenever a line starts.
+    double line_left = 0;
+    double line_width = available_width;
+    const auto begin_line_at = [&](double line_y) {
+        line_left = 0;
+        line_width = available_width;
+        if (!float_env || !float_env->floats) return;
+        const double bfc_y = float_env->bfc_content_top + (line_y - top_inner);
+        const double left_in = float_env->floats->left_extent_at(bfc_y);
+        const double right_in = float_env->floats->right_extent_at(bfc_y, available_width);
+        line_left = left_in;
+        line_width = available_width - left_in - right_in;
+        // A float wider than the containing block leaves nothing; the line then
+        // holds one overflowing word rather than looping forever on a zero
+        // width.
+        if (line_width < 0) line_width = 0;
+    };
+    begin_line_at(y);
+
     const auto reset_line_metrics = [&] {
         max_ascent = 0;
         max_descent = 0;
@@ -198,15 +224,17 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         const double line_height = declared_line_height.value_or(natural_height);
         const double baseline = natural_baseline + (line_height - natural_height) * 0.5;
 
-        double dx = 0;
-        if (iequals(align, "right")) dx = available_width - pen;
-        else if (iequals(align, "center")) dx = (available_width - pen) * 0.5;
-        if (dx < 0) dx = 0;
+        double dx = line_left;
+        if (iequals(align, "right")) dx += line_width - pen;
+        else if (iequals(align, "center")) dx += (line_width - pen) * 0.5;
+        if (dx < line_left) dx = line_left;
 
         const BoxId lb = tree->create(BoxKind::Line, nullptr, cbox.style);
-        (*tree)[lb].x = left_inner;
         (*tree)[lb].y = y;
-        (*tree)[lb].width = available_width;
+        // The line box spans only the space the floats leave it, offset to
+        // where that space starts.
+        (*tree)[lb].x = left_inner + line_left;
+        (*tree)[lb].width = line_width;
         (*tree)[lb].height = line_height;
         (*tree)[lb].baseline = baseline;
         (*tree)[lb].is_final_line = is_final;
@@ -243,6 +271,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         line.clear();
         pen = 0;
         reset_line_metrics();
+        begin_line_at(y);
     };
 
     const auto grow_line_metrics = [&](const InlineItem& it) {
@@ -264,7 +293,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         if (it.is_atom()) {
             // An atom wraps as a unit: it moves to the next line when it does
             // not fit, but is never split.
-            if (!line.empty() && pen + it.atom_outer_width > available_width) {
+            if (!line.empty() && pen + it.atom_outer_width > line_width) {
                 flush_line(false);
             }
             grow_line_metrics(it);
@@ -295,7 +324,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             const double w = metrics.measure(t.word, it.font_size);
             // A word that does not fit starts a new line — unless the line is
             // already empty, in which case it overflows rather than looping.
-            if (it.allow_wrap && !line.empty() && pen + w > available_width) {
+            if (it.allow_wrap && !line.empty() && pen + w > line_width) {
                 flush_line(false);
             }
             grow_line_metrics(it);

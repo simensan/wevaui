@@ -1732,6 +1732,68 @@ argument for the oracle and the reason ORACLE.md says to build it first. I did
 not, and four phases of "parity" turned out to mean "agrees with tests I wrote
 from the same misunderstanding".
 
+### 20/47, and the number that actually matters
+
+Three more bugs, all found by the oracle and none visible to the self-written
+suite. 7,147 checks stayed green through every one of them, which is the point.
+
+**Floats did not shorten line boxes.** CSS 2.1 §9.5: a line box beside a float
+is narrowed to make room for it. `FloatContext` already had `left_extent_at` and
+`right_extent_at`, and the header comment on them literally said "which is what
+line-box narrowing needs" — nothing ever called them from inline layout. Floats
+were signed off, inline layout was signed off, and their interaction was never
+built. The narrowing has to be recomputed at the START of each line rather than
+at flush, because the wrap decision compares against it.
+
+**An inline-block's baseline was its bottom edge.** §10.8.1 gives three cases:
+clipped overflow → bottom margin edge; otherwise the last line box's baseline;
+otherwise the content-area bottom. Only the first was implemented, applied to
+everything — a `// later slice` comment marked the gap honestly and nothing ever
+came back to it. Every line holding an inline-block came out one text-descent
+too tall. Also: the baseline is measured from the TOP BORDER edge, so the
+`margin_top` the old code added did not belong there either.
+
+**Auto margins centred a box on an axis with no definite size.** The `<dialog>`
+UA sheet pins all four edges with `margin: auto` and `width`/`height:
+fit-content`. An author writing `top: 80px; left: 80px; width: 240px` should get
+a box centred horizontally (definite width) at top 80 (height is not definite).
+The port split the slack on both axes and put the dialog 217px too low. The
+comment above the code already said "a definite size"; the code never checked.
+
+That last one is worth recording for how it was settled. CSS 2.1 §10.6.4 read
+literally gives the equal split — my implementation was defensible from the
+spec. **The corpus carries Chrome's own `getBoundingClientRect` output**
+alongside each case, and Chrome and the reference both say 80. Three sources,
+and the two that are not me agreed. Reading the reference then showed the rule
+stated outright: auto-margin centring applies only when that dimension is
+definite, "excluding auto/fit-content/min-content/max-content, which per the
+spec leave the auto margins as 0".
+
+#### The honest scoreboard
+
+"20/47" undersells it in one direction and oversells in another, so both
+numbers:
+
+* **26 of the 27 remaining failures use features that are not ported** — flex,
+  grid, multicol, counters, list markers, quotes, `<br>`, containment,
+  `word-break`. Phases 5–8. Their failing is the plan working.
+* **Of the 21 cases that use only ported features, 20 now agree exactly.**
+
+I got the classification wrong the first time and should not have: I read
+`31-centered-modal`'s coordinates, saw an uncentred box, and called it an
+absolute-positioning bug. It is a flex case. Two others I listed the same way
+were flex and grid. Reading the coordinates instead of the stylesheet is exactly
+the shortcut this harness exists to remove, and I took it while reporting the
+harness's results. The classification is now scripted against the CSS.
+
+The one real failure left is **`23-inline-splitting`**: the reference emits a
+principal box per inline element (CSS 2.1 §9.4.2 — one fragment per line it
+occupies), and the port collapses spans into raw items and never rebuilds them,
+so `<a>` produces no box at all. The C# has a comment at the rebuild site
+listing what breaks without it: paint cannot draw the span's background or
+border, hit testing cannot surface clicks on it, and the DOM walk pairs every
+following element against the wrong rect. That is a feature, not a fix.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

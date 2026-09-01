@@ -17,6 +17,8 @@
 
 namespace weva {
 
+class FloatContext;
+
 // One piece of inline content, flattened out of the inline box tree. The tree
 // structure is not lost — each item remembers the inline box it came from — but
 // line breaking works on a flat sequence, because a line break can fall
@@ -59,9 +61,27 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
 // caller size the atoms in between — and what lets a shrink-to-fit probe run
 // the layout twice, since the first run replaces the container's children with
 // line boxes and the source runs can no longer be walked.
+// The floats a line box has to avoid (CSS 2.1 §9.5: line boxes next to a float
+// are shortened to make room for it). Absent when the container's formatting
+// context holds no floats, which is the common case and costs nothing.
+//
+// The extents are measured from the BFC's content-left edge, and this treats
+// the container's content box as aligned with it — the same assumption
+// place_float already makes. That is exact when the container is the BFC root
+// or shares its horizontal frame, and approximate when it is indented inside
+// one; a container with its own left padding inside a float-bearing BFC will
+// narrow by slightly too much.
+struct InlineFloatEnv {
+    const FloatContext* floats = nullptr;
+    // BFC y of the container's content-top edge, so a line at container-local
+    // y maps into the frame the float extents are recorded in.
+    double bfc_content_top = 0;
+};
+
 double layout_inline_items(BoxTree* tree, BoxId container,
                            const std::vector<InlineItem>& items, double available_width,
-                           const LayoutContext& ctx, const FontMetrics& metrics);
+                           const LayoutContext& ctx, const FontMetrics& metrics,
+                           const InlineFloatEnv* floats = nullptr);
 
 // CSS Sizing L3: the widest the content wants to be, given unlimited width.
 // Floats and out-of-flow boxes are excluded — the containing block flows around

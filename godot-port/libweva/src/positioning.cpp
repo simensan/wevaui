@@ -95,6 +95,25 @@ bool has_explicit_size(const ComputedStyle* style, std::string_view property) {
     return !raw.empty() && !iequals(raw, "auto");
 }
 
+// A size is DEFINITE only when it resolves to a length or a percentage.
+// `fit-content`, `min-content` and `max-content` are explicit but not definite,
+// and the difference decides whether auto margins centre the box.
+//
+// The `<dialog>` UA sheet is the case that makes this matter: it pins all four
+// edges with `margin: auto`, `width: fit-content` and `height: fit-content`.
+// An author writing `top: 80px; left: 80px; width: 240px` gets a box centred
+// HORIZONTALLY (width is definite) but sitting at top 80 (height is not), and
+// treating both axes alike put the dialog 217px lower. Chrome and the reference
+// agree on 80; the corpus carries Chrome's own numbers, which is how this was
+// settled rather than argued.
+bool is_definite_size(const ComputedStyle* style, std::string_view property,
+                      const LayoutContext& ctx, double font_size, double basis) {
+    const std::string_view raw = get(style, property);
+    if (raw.empty() || iequals(raw, "auto")) return false;
+    const ResolvedLength r = resolve_length(raw, ctx, font_size, basis);
+    return r.kind == LengthKind::Length || r.kind == LengthKind::Percent;
+}
+
 } // namespace
 
 void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y) {
@@ -213,18 +232,17 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     // centres. This is what makes `inset: 0; margin: auto` centre a dialog.
     double extra_left = 0, extra_top = 0;
     const BoxSideValues mar = box_sides(style, "margin");
-    if (horiz_pinned && iequals(mar.left, "auto") && iequals(mar.right, "auto")) {
+    if (horiz_pinned && iequals(mar.left, "auto") && iequals(mar.right, "auto") &&
+        is_definite_size(style, "width", ctx, fs, cb.width)) {
         const double slack = cb.width - *box.offset_left - *box.offset_right -
                              box.margin_left - box.margin_right - box.width;
         if (slack > 0) extra_left = slack * 0.5;
     }
-    if (vert_pinned) {
-        const BoxSideValues m2 = box_sides(style, "margin");
-        if (iequals(m2.top, "auto") && iequals(m2.bottom, "auto")) {
-            const double slack = cb.height - *box.offset_top - *box.offset_bottom -
-                                 box.margin_top - box.margin_bottom - box.height;
-            if (slack > 0) extra_top = slack * 0.5;
-        }
+    if (vert_pinned && iequals(mar.top, "auto") && iequals(mar.bottom, "auto") &&
+        is_definite_size(style, "height", ctx, fs, cb.height)) {
+        const double slack = cb.height - *box.offset_top - *box.offset_bottom -
+                             box.margin_top - box.margin_bottom - box.height;
+        if (slack > 0) extra_top = slack * 0.5;
     }
 
     double parent_x = 0, parent_y = 0;
