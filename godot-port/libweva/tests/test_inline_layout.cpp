@@ -509,10 +509,11 @@ void test_inline_fragments() {
 // isolation is easy and getting all three right together is the actual problem.
 void test_inline_fragment_edges() {
     {
-        // Document order. A line's children are read first-box-per-element by
-        // the dump, by paint and by hit testing, so a fragment has to be
-        // attached where its box OPENS, not after the runs. Appending them
-        // afterwards put a <label> after the <input> that follows it in source.
+        // A line's children are read first-box-per-element by the dump, by
+        // paint and by hit testing, so a fragment has to precede the runs and
+        // atoms it sits among — the reference inserts every fragment FIRST.
+        // Appending them afterwards put a <label> after the <input> that
+        // follows it in source.
         Fixture f;
         CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
                     "#i { display: inline-block; width: 20px; height: 10px }"));
@@ -647,5 +648,66 @@ void test_anonymous_block_inherits_text_align() {
         for (BoxId c : f.tree.children(line)) text_w += f.tree[c].width;
         CHECK(text_w > 0 && text_w < w.width);
         CHECK(near(f.tree[line].applied_text_align_delta, (w.width - text_w) * 0.5));
+    }
+}
+
+void test_letter_spacing_widens_runs() {
+    // CSS Text L3 §8.2, the reference's convention: each measured piece grows
+    // by letter-spacing × (characters − 1). A 5-letter word gains 4 gaps; a
+    // single space gains none.
+    Fixture plain, spaced;
+    CHECK(plain.css("#w { width: 1000px; white-space: nowrap }"));
+    CHECK(spaced.css("#w { width: 1000px; white-space: nowrap; letter-spacing: 2px }"));
+    CHECK(plain.layout("<body><div id=w>Hello world</div></body>"));
+    CHECK(spaced.layout("<body><div id=w>Hello world</div></body>"));
+    double plain_w = 0, spaced_w = 0;
+    for (BoxId c : plain.tree.children(plain.lines("w")[0])) plain_w += plain.tree[c].width;
+    for (BoxId c : spaced.tree.children(spaced.lines("w")[0])) spaced_w += spaced.tree[c].width;
+    // "Hello" (4 gaps) + " " (0) + "world" (4 gaps).
+    CHECK(near(spaced_w - plain_w, 16));
+    // em resolves against the run's own font size.
+    Fixture em;
+    CHECK(em.css("#w { width: 1000px; white-space: nowrap; font-size: 20px;"
+                 "     letter-spacing: 0.5em }"));
+    CHECK(em.layout("<body><div id=w>ab</div></body>"));
+    Fixture em0;
+    CHECK(em0.css("#w { width: 1000px; white-space: nowrap; font-size: 20px }"));
+    CHECK(em0.layout("<body><div id=w>ab</div></body>"));
+    double a = 0, b = 0;
+    for (BoxId c : em.tree.children(em.lines("w")[0])) a += em.tree[c].width;
+    for (BoxId c : em0.tree.children(em0.lines("w")[0])) b += em0.tree[c].width;
+    CHECK(near(a - b, 10));
+}
+
+void test_inline_fragment_height_and_order() {
+    {
+        // A fragment is as tall as ITS font, not the root's: the box builder
+        // never stamps a font size on an inline box.
+        Fixture f;
+        CHECK(f.css("#p { font-size: 35px; line-height: 1.28; width: 800px }"));
+        CHECK(f.layout("<body><p id=p>Welcome, <span id=hl>Matt</span>!</p></body>"));
+        const Box& hl = f.tree[f.find_kind("hl", BoxKind::Inline)];
+        CHECK(near(hl.height, f.metrics.ascent(35) + f.metrics.descent(35)));
+    }
+    {
+        // Fragments are inserted FIRST on the line, later-opened before
+        // earlier-opened, all before the runs — the reference's
+        // InsertChildFirst order, which is what the dump walks.
+        Fixture f;
+        CHECK(f.css("#p { width: 800px }"));
+        CHECK(f.layout("<body><p id=p>Edit <code id=c>menu.css</code> then <kbd id=k>F12</kbd>."
+                       "</p></body>"));
+        const std::vector<BoxId> ls = f.lines("p");
+        CHECK(ls.size() == 1);
+        std::vector<BoxId> kids;
+        for (BoxId c : f.tree.children(ls[0])) kids.push_back(c);
+        CHECK(kids.size() >= 3);
+        CHECK(f.tree[kids[0]].kind == BoxKind::Inline);
+        CHECK(f.tree[kids[0]].element->get_attribute("id") == "k");
+        CHECK(f.tree[kids[1]].kind == BoxKind::Inline);
+        CHECK(f.tree[kids[1]].element->get_attribute("id") == "c");
+        CHECK(f.tree[kids[2]].kind == BoxKind::Text);
+        // Geometry is unaffected by the order: code still sits before kbd.
+        CHECK(f.tree[kids[1]].x < f.tree[kids[0]].x);
     }
 }

@@ -144,3 +144,30 @@ void test_variables_in_cascade() {
     CHECK(bad.get("color") != "var(--nope)");
     CHECK(bad.get("color") == "#f00");              // inherited from #p
 }
+
+void test_var_in_shorthand_expands_after_substitution() {
+    // A shorthand carrying var() cannot expand at compile time; once the
+    // reference is substituted it is expanded onto its longhands, so
+    // `border: 2px solid var(--c)` yields a border width.
+    SymbolTable symbols;
+    HtmlParseError he;
+    ParseOptions o;
+    o.strict = false;
+    auto doc = parse_html("<div id=a></div>", &symbols, o, &he);
+    CHECK(static_cast<bool>(doc));
+    Stylesheet sheet;
+    CssParseError ce;
+    CHECK(parse_stylesheet("#a { --c: #0ff; --p: 4px; border: 2px solid var(--c);"
+                           "     padding: var(--p) 8px }",
+                           false, &sheet, &ce));
+    CascadeEngine eng;
+    eng.add_stylesheet(&sheet, DeclarationOrigin::Author);
+    NullStateProvider st;
+    ComputedStyle s;
+    eng.compute(*doc->get_element_by_id("a"), st, nullptr, &s);
+    CHECK(s.get("border-top-width") == "2px");
+    CHECK(s.get("border-left-style") == "solid");
+    CHECK(s.get("border-bottom-color") == "#0ff");
+    CHECK(s.get("padding-top") == "4px");
+    CHECK(s.get("padding-right") == "8px");
+}

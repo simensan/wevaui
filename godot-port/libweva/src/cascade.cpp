@@ -65,6 +65,26 @@ bool iequals_ascii(std::string_view a, std::string_view b) {
 // never revisits it either, so it stays a shorthand for good.
 //
 // Done once per rule at compile time rather than once per element per pass.
+// A shorthand that reached the computed style unexpanded — because its value
+// carried var() at compile time — is expanded now that the reference is
+// resolved. `border: 2px solid var(--cyan)` otherwise produced no border
+// widths at all, and every card and chip using a themed border was 4px short.
+// Order caveat: a longhand declared AFTER the shorthand in the same cascade
+// has already been applied and is overwritten here; that is the one case the
+// compile-time expansion gets right and this does not.
+void expand_substituted_shorthands(const std::vector<std::pair<int, std::string>>& rewrites,
+                                   ComputedStyle* out) {
+    const auto& reg = CssPropertyRegistry::instance();
+    std::vector<ShorthandLonghand> longhands;
+    for (const auto& r : rewrites) {
+        const std::string_view name = reg.name_of(r.first);
+        if (name.empty() || !is_shorthand(name)) continue;
+        longhands.clear();
+        if (!expand_shorthand(name, r.second, &longhands)) continue;
+        for (const ShorthandLonghand& lh : longhands) out->set(lh.property, lh.value);
+    }
+}
+
 std::vector<Declaration> expand_declarations(const std::vector<Declaration>& source) {
     bool any = false;
     for (const Declaration& d : source) {
@@ -587,6 +607,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
             }
         }
         for (auto& r : rewrites) out->set(r.first, r.second);
+        expand_substituted_shorthands(rewrites, out);
         for (int id : drops) out->set(id, "");
         // A dropped declaration must not keep its slot, or step 4 would see it
         // as "already set" and skip the inherit/initial fill.
@@ -754,6 +775,7 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
             else drops.push_back(id);
         }
         for (auto& r : rewrites) out->set(r.first, r.second);
+        expand_substituted_shorthands(rewrites, out);
         for (int id : drops) out->set(id, "");
         dropped_ = drops;
     }

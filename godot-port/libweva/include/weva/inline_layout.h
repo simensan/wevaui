@@ -30,6 +30,11 @@ struct InlineItem {
     const ComputedStyle* style = nullptr;
     double font_size = 16;
     double line_height = 0;
+    // CSS Text L3 §8.2, resolved to pixels. Applied the way the reference's
+    // LineBreaker applies it: every measured piece of text is widened by
+    // letter_spacing × (characters − 1), so a lone space or a single glyph
+    // gains nothing and a word gains one gap per boundary inside it.
+    double letter_spacing = 0;
     // `normal` collapses runs of whitespace and allows breaks; `nowrap`
     // collapses but forbids them; `pre` preserves both.
     bool collapse_whitespace = true;

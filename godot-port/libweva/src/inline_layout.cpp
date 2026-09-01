@@ -54,6 +54,33 @@ std::vector<Token> tokenize_collapsing(std::string_view text) {
     return out;
 }
 
+double letter_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
+    const std::string_view raw = get(style, "letter-spacing");
+    if (raw.empty() || iequals(raw, "normal")) return 0;
+    const ResolvedLength r = resolve_length(style, "letter-spacing", ctx, font_size, std::nullopt);
+    if (r.kind == LengthKind::Length) return r.pixels;
+    // A percentage is of the font size (css-text-4), the same reading the
+    // reference takes.
+    if (r.kind == LengthKind::Percent) return font_size * r.percent * 0.01;
+    return 0;
+}
+
+// Code points, not bytes: a multi-byte UTF-8 glyph is one letter.
+int letter_count(std::string_view text) {
+    int n = 0;
+    for (unsigned char c : text) {
+        if ((c & 0xC0) != 0x80) ++n;
+    }
+    return n;
+}
+
+double measure_spaced(const FontMetrics& metrics, std::string_view text, const InlineItem& it) {
+    double w = metrics.measure(text, it.font_size);
+    const int n = letter_count(text);
+    if (it.letter_spacing != 0 && n > 1) w += it.letter_spacing * static_cast<double>(n - 1);
+    return w;
+}
+
 void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
                        const LayoutContext& ctx, const ComputedStyle* inherited,
                        const FontMetrics* metrics, std::vector<InlineItem>* out) {
@@ -67,6 +94,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, nullptr, ctx);
             item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
+            item.letter_spacing = letter_spacing_px(item.style, ctx, item.font_size);
             const std::string_view ws = get(item.style, "white-space");
             // `pre` and `pre-wrap` preserve whitespace; `nowrap` and `pre`
             // forbid wrapping. Only the two axes matter to layout, so they are
@@ -392,12 +420,23 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                         attached_inlines.end()) {
                         frag = tree->create(BoxKind::Inline, (*tree)[sp.box].element,
                                             (*tree)[sp.box].style);
-                        (*tree)[frag].font_size = (*tree)[sp.box].font_size;
                     } else {
                         attached_inlines.push_back(sp.box);
                     }
+                    // The box builder never stamps a font size on an inline
+                    // box, so without this the fragment's height came from
+                    // the root size: a 35px `<span>` reported 18.29 tall.
+                    (*tree)[frag].font_size = f.item->font_size;
                     sp.fragment = frag;
-                    tree->append_child(lb, frag);
+                    // Inserted FIRST, as the reference does (InlineLayout.cs,
+                    // `line.InsertChildFirst(frag)`): every fragment precedes
+                    // the runs, and fragments opened later precede ones opened
+                    // earlier. Not document order — but the dump is a walk of
+                    // the box tree, and this is the tree the reference builds.
+                    // Appending instead put `<code>` before `<kbd>` where the
+                    // reference has `<kbd>` first, on every page with two
+                    // inline elements on one line.
+                    tree->insert_child_first(lb, frag);
                     break;
                 }
                 continue;
@@ -504,7 +543,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         if (!it.collapse_whitespace) {
             // Preserved whitespace is a later slice; the text is placed as one
             // unbreakable fragment so its width is still accounted for.
-            const double w = metrics.measure(it.text, it.font_size);
+            const double w = measure_spaced(metrics, it.text, it);
             grow_line_metrics(it);
             line.push_back({&it, it.text, false, pen, w});
             pen += w;
@@ -525,7 +564,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     ++next;
                 }
                 const double w =
-                    metrics.measure(word.substr(from, next - from), it.font_size);
+                    measure_spaced(metrics, word.substr(from, next - from), it);
                 if (w > max_width) break;
                 fits = next - from;
                 i = next;
@@ -538,7 +577,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 // A collapsed space at the very start of a line is dropped:
                 // it would indent every wrapped line by a space.
                 if (line.empty()) continue;
-                const double w = metrics.measure(" ", it.font_size);
+                const double w = measure_spaced(metrics, " ", it);
                 grow_line_metrics(it);
                 line.push_back({&it, " ", true, pen, w});
                 pen += w;
@@ -572,7 +611,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                         }
                     }
                     const std::string_view slice = t.word.substr(idx, take);
-                    const double sw = metrics.measure(slice, it.font_size);
+                    const double sw = measure_spaced(metrics, slice, it);
                     grow_line_metrics(it);
                     line.push_back({&it, slice, false, pen, sw});
                     pen += sw;
@@ -581,7 +620,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 }
                 continue;
             }
-            const double w = metrics.measure(t.word, it.font_size);
+            const double w = measure_spaced(metrics, t.word, it);
             // A word that does not fit starts a new line — unless the line is
             // already empty, in which case it overflows rather than looping.
             if (it.allow_wrap && !line.empty() && pen + w > line_width) {
