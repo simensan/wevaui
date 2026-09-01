@@ -560,6 +560,20 @@ void test_pseudo_counters_and_quotes() {
     }
 }
 
+// A pseudo's `content` may come from a custom property set inline on the
+// host (combat-hud's `style="--icon: '⚔'"` ability slots).
+void test_pseudo_content_from_inline_custom_property() {
+    Fixture f;
+    CHECK(f.css("li { display: block } li::before { content: var(--icon) }"
+                "#k::after { content: var(--missing, 'fb') }"));
+    const BoxId root = f.build("<li id=a style=\"--icon: 'X'\">t</li><li id=k>t</li>");
+    const BoxId a = f.find(root, "a");
+    CHECK(f.tree[a].first_child != kNoBox && f.tree[f.tree[a].first_child].pseudo_host != nullptr);
+    CHECK_EQ(std::string(f.tree[f.tree[f.tree[a].first_child].first_child].text), "X");
+    const BoxId k = f.find(root, "k");
+    CHECK_EQ(std::string(f.tree[f.tree[f.tree[k].last_child].first_child].text), "fb");
+}
+
 void test_text_transform_at_build() {
     // `text-transform` is applied when the run's box is built, so layout
     // measures the transformed text; the tree owns the new string.

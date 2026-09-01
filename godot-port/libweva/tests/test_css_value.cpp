@@ -20,6 +20,29 @@ struct V {
 };
 } // namespace
 
+// CSS Color 5 §3: color-mix() evaluates to a colour like rgb() does.
+void test_color_mix() {
+    const auto mix = [](std::string_view src, int r, int g, int b, float a) {
+        CssParseError err;
+        CssValuePtr v = parse_css_value(src, &err);
+        if (!v || v->kind() != CssValueKind::Color) { CHECK(false); return; }
+        const auto& c = static_cast<const CssColor&>(*v);
+        CHECK(std::abs(int(c.r) - r) <= 1 && std::abs(int(c.g) - g) <= 1 && std::abs(int(c.b) - b) <= 1);
+        CHECK(std::fabs(c.a - a) < 0.01f);
+    };
+    mix("color-mix(in srgb, red, blue)", 128, 0, 128, 1);
+    mix("color-mix(in srgb, red 25%, blue)", 64, 0, 191, 1);
+    mix("color-mix(in srgb, rgb(255, 0, 0) 100%, transparent)", 255, 0, 0, 1);
+    // A single 30% mixes 30/70; a sum under 100% scales the alpha.
+    mix("color-mix(in srgb, #ff0000 30%, #0000ff)", 77, 0, 179, 1);
+    mix("color-mix(in srgb, red 20%, transparent)", 255, 0, 0, 0.2f);
+    mix("color-mix(in oklab, white 50%, black 50%)", 128, 128, 128, 1);
+    // Unresolvable components stay a function call rather than a wrong colour.
+    CssParseError err;
+    CssValuePtr v = parse_css_value("color-mix(in srgb, currentcolor, red)", &err);
+    CHECK(!v || v->kind() != CssValueKind::Color);
+}
+
 void test_css_value() {
     // ---- primitives
     {
@@ -354,7 +377,7 @@ void test_css_color() {
         CHECK(v.v->kind() == CssValueKind::FunctionCall);
         CHECK(v.run("rgb(1,2)"));                      // wrong arity
         CHECK(v.v->kind() == CssValueKind::FunctionCall);
-        CHECK(v.run("color-mix(in srgb, red, blue)")); // not a colour function here
+        CHECK(v.run("color-mix(in srgb, var(--a), blue)")); // unresolved component
         CHECK(v.v->kind() == CssValueKind::FunctionCall);
     }
 }

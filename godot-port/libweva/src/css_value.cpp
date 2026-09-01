@@ -226,11 +226,94 @@ bool arg_number(const CssValue& v, double* out, bool* is_percent) {
     }
 }
 
+// One color-mix() component: `<color> [<percentage>]?`, as a colour value,
+// an identifier (`transparent`) or a space list of the two. False when the
+// colour cannot be evaluated here (currentcolor, an unresolved var()).
+bool colour_mix_component(const CssValue& v, const CssColor** color, double* percent,
+                          bool* has_percent, std::unique_ptr<CssColor>* scratch) {
+    *has_percent = false;
+    const CssValue* c = &v;
+    if (v.kind() == CssValueKind::List) {
+        const auto& l = static_cast<const CssValueList&>(v);
+        c = nullptr;
+        for (const CssValuePtr& item : l.items) {
+            if (!item) continue;
+            if (item->kind() == CssValueKind::Percentage) {
+                *percent = static_cast<const CssPercentage&>(*item).value;
+                *has_percent = true;
+            } else if (!c) {
+                c = item.get();
+            }
+        }
+        if (!c) return false;
+    }
+    if (c->kind() == CssValueKind::Color) {
+        *color = static_cast<const CssColor*>(c);
+        return true;
+    }
+    if (c->kind() == CssValueKind::Identifier || c->kind() == CssValueKind::Keyword) {
+        const std::string& name = c->kind() == CssValueKind::Identifier
+                                      ? static_cast<const CssIdentifier&>(*c).name
+                                      : static_cast<const CssKeyword&>(*c).name;
+        if (name == "transparent") {
+            *scratch = std::make_unique<CssColor>();
+            (*scratch)->a = 0;
+            *color = scratch->get();
+            return true;
+        }
+    }
+    return false;
+}
+
+// CSS Color 5 §3: color-mix(in <space>, <c1> [p1], <c2> [p2]). Every space is
+// mixed as sRGB here — premultiplied, as the spec interpolates — which is
+// exact for `in srgb` and close for the others at the opacities sheets use
+// it for (a tint of a token, a fade to transparent).
+CssValuePtr eval_colour_mix(const CssFunctionCall& call) {
+    if (call.arguments.size() != 3 || !call.arguments[1] || !call.arguments[2]) return nullptr;
+    const CssColor* c1 = nullptr;
+    const CssColor* c2 = nullptr;
+    std::unique_ptr<CssColor> s1, s2;
+    double p1 = 0, p2 = 0;
+    bool h1 = false, h2 = false;
+    if (!colour_mix_component(*call.arguments[1], &c1, &p1, &h1, &s1)) return nullptr;
+    if (!colour_mix_component(*call.arguments[2], &c2, &p2, &h2, &s2)) return nullptr;
+    // §3.1 percentage normalisation.
+    if (!h1 && !h2) { p1 = p2 = 50; }
+    else if (h1 && !h2) { p2 = 100 - p1; }
+    else if (!h1 && h2) { p1 = 100 - p2; }
+    if (p1 < 0 || p2 < 0) return nullptr;
+    double alpha_mult = 1;
+    const double sum = p1 + p2;
+    if (sum <= 0) return nullptr;
+    if (sum != 100) {
+        if (sum < 100) alpha_mult = sum / 100.0;
+        p1 = p1 * 100.0 / sum;
+        p2 = p2 * 100.0 / sum;
+    }
+    const double w1 = p1 / 100.0, w2 = p2 / 100.0;
+    const double a1 = c1->a, a2 = c2->a;
+    const double a = a1 * w1 + a2 * w2;
+    auto out = std::make_unique<CssColor>();
+    if (a > 0) {
+        const double r = (c1->r * a1 * w1 + c2->r * a2 * w2) / a;
+        const double g = (c1->g * a1 * w1 + c2->g * a2 * w2) / a;
+        const double b = (c1->b * a1 * w1 + c2->b * a2 * w2) / a;
+        out->r = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, r))));
+        out->g = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, g))));
+        out->b = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, b))));
+    }
+    out->a = static_cast<float>(std::min(1.0, a * alpha_mult));
+    out->raw = call.raw;
+    return out;
+}
+
 // rgb()/rgba()/hsl()/hsla()/hwb() collapse to a CssColor. Anything else — and
 // any of these whose arguments don't evaluate (a var() or calc() inside) —
 // stays a CssFunctionCall for a later pass to resolve.
 CssValuePtr eval_colour_function(const CssFunctionCall& call) {
     const std::string& n = call.name;
+    if (n == "color-mix") return eval_colour_mix(call);
     bool is_rgb = (n == "rgb" || n == "rgba");
     bool is_hsl = (n == "hsl" || n == "hsla");
     bool is_hwb = (n == "hwb");
