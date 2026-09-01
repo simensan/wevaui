@@ -529,3 +529,89 @@ void test_flex_percent_height_against_an_auto_parent_is_indefinite() {
     CHECK(g.layout("<body><div id=panel><div id=content>Content</div></div></body>"));
     CHECK(near(g.box("content").height, 100));
 }
+
+void test_flex_wrap() {
+    {
+        // §9.3: items go onto a line while they fit; the first that does not
+        // starts the next. Three 100px cards with 10px gaps in 250px: two per
+        // line, then one; each line flexes on its own.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; flex-wrap: wrap; width: 250px; column-gap: 10px;"
+                    "     row-gap: 6px }"
+                    ".c { width: 100px; height: 20px }"));
+        CHECK(f.layout("<body><div id=r><div id=a class=c></div><div id=b class=c></div>"
+                       "<div id=d class=c></div></div></body>"));
+        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
+        CHECK(near(f.box("b").x, 110) && near(f.box("b").y, 0));
+        CHECK(near(f.box("d").x, 0) && near(f.box("d").y, 26));
+        CHECK(near(f.box("r").height, 46));
+    }
+    {
+        // `flex: 1 1 220px` cards in 600px: two per line growing to fill it,
+        // the last alone on its line growing to the full width.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; flex-wrap: wrap; width: 600px; gap: 20px }"
+                    ".c { flex: 1 1 220px; height: 30px }"));
+        CHECK(f.layout("<body><div id=r><div id=a class=c></div><div id=b class=c></div>"
+                       "<div id=d class=c></div></div></body>"));
+        CHECK(near(f.box("a").width, 290) && near(f.box("b").x, 310));
+        CHECK(near(f.box("d").y, 50) && near(f.box("d").width, 600));
+        CHECK(near(f.box("r").height, 80));
+    }
+    {
+        // A definite cross size with several lines: `align-content: normal`
+        // stretches the lines to fill it; space-between spreads them.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; flex-wrap: wrap; width: 200px; height: 200px }"
+                    ".c { width: 200px; height: 20px }"));
+        CHECK(f.layout("<body><div id=r><div id=a class=c></div><div id=b class=c></div>"
+                       "</div></body>"));
+        // Each line is 20 tall plus half the 160 of free space: 100 each.
+        CHECK(near(f.box("b").y, 100));
+        Fixture g;
+        CHECK(g.css("#r { display: flex; flex-wrap: wrap; width: 200px; height: 200px;"
+                    "     align-content: space-between }"
+                    ".c { width: 200px; height: 20px }"));
+        CHECK(g.layout("<body><div id=r><div id=a class=c></div><div id=b class=c></div>"
+                       "</div></body>"));
+        CHECK(near(g.box("a").y, 0) && near(g.box("b").y, 180));
+        Fixture h;
+        CHECK(h.css("#r { display: flex; flex-wrap: wrap; width: 200px; height: 200px;"
+                    "     align-content: center }"
+                    ".c { width: 200px; height: 20px }"));
+        CHECK(h.layout("<body><div id=r><div id=a class=c></div><div id=b class=c></div>"
+                       "</div></body>"));
+        CHECK(near(h.box("a").y, 80) && near(h.box("b").y, 100));
+    }
+    {
+        // Items stretch to THEIR line's cross size, and justify-content
+        // applies per line.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; flex-wrap: wrap; width: 300px; justify-content: center }"
+                    "#a { width: 200px; height: 40px } #b { width: 200px } #d { width: 100px; height: 10px }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div><div id=b></div><div id=d></div>"
+                       "</div></body>"));
+        CHECK(near(f.box("a").x, 50));
+        CHECK(near(f.box("b").y, 40) && near(f.box("b").x, 0));
+        CHECK(near(f.box("d").y, 40) && near(f.box("d").x, 200));
+        // b is alone-ish on line 2 with d: line 2 cross = max(b content 0, d 10)
+        // = 10, and b stretches to it.
+        CHECK(near(f.box("b").height, 10));
+    }
+    {
+        // wrap-reverse stacks the lines from the cross end; nowrap and an
+        // indefinite main size never wrap.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; flex-wrap: wrap-reverse; width: 100px }"
+                    ".c { width: 100px; height: 20px }"));
+        CHECK(f.layout("<body><div id=r><div id=a class=c></div><div id=b class=c></div>"
+                       "</div></body>"));
+        CHECK(near(f.box("a").y, 20) && near(f.box("b").y, 0));
+        Fixture g;
+        CHECK(g.css("#r { display: flex; flex-wrap: wrap; flex-direction: column }"
+                    ".c { width: 20px; height: 100px }"));
+        CHECK(g.layout("<body><div id=r><div id=a class=c></div><div id=b class=c></div>"
+                       "</div></body>"));
+        CHECK(near(g.box("b").y, 100));
+    }
+}

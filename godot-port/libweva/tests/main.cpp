@@ -125,6 +125,7 @@ void test_letter_spacing_counts_utf16_units();
 void test_inline_box_opening_at_line_end_has_no_fragment_there();
 void test_flex_percent_height_against_an_auto_parent_is_indefinite();
 void test_grid_aspect_ratio_item_stretches_one_axis();
+void test_flex_wrap();
 void test_anonymous_block_inherits_text_align();
 void test_inline_fragments();
 void test_inline_atoms();
@@ -287,6 +288,7 @@ int main() {
     test_inline_box_opening_at_line_end_has_no_fragment_there();
     test_flex_percent_height_against_an_auto_parent_is_indefinite();
     test_grid_aspect_ratio_item_stretches_one_axis();
+    test_flex_wrap();
     test_anonymous_block_inherits_text_align();
     test_inline_fragments();
     test_inline_atoms();

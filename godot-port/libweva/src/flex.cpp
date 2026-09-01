@@ -214,7 +214,17 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         it.main = it.hypothetical;
     }
 
-    // ---- Resolve the flexible lengths (§9.7) -------------------------------
+    // ---- Flex lines (§9.3) --------------------------------------------------
+    // Single-line unless `flex-wrap` asks otherwise AND the main size is
+    // definite — without one there is nothing to wrap against. Items go onto
+    // a line while their outer hypothetical sizes plus gaps fit; the first
+    // that does not fit starts the next line, and an item that fits nowhere
+    // still gets a line of its own. Before this every wrapping card grid was
+    // one squeezed row.
+    const std::string_view wrap_raw = get(style, "flex-wrap");
+    const bool wrap_reverse = iequals(wrap_raw, "wrap-reverse");
+    const bool wraps = iequals(wrap_raw, "wrap") || wrap_reverse;
+
     const double total_gap = main_gap * static_cast<double>(items.size() - 1);
     double used = total_gap;
     for (const Item& it : items) used += it.hypothetical + it.main_margins;
@@ -246,19 +256,54 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         }
     }
 
-    if (definite_main && std::fabs(available_main - used) > 1e-9) {
-        const bool growing = available_main > used;
+    struct Line {
+        size_t begin = 0, end = 0;
+        double cross = 0;       // the line's cross size
+        double cross_pos = 0;   // offset of the line's cross-start from the content edge
+        double main_pos = 0;    // where the first item starts (justify-content)
+        double between = 0;     // main gap between items, justify included
+    };
+    std::vector<Line> lines;
+    if (wraps && definite_main) {
+        size_t begin = 0;
+        double line_used = 0;
+        for (size_t i = 0; i < items.size(); ++i) {
+            const double outer = items[i].hypothetical + items[i].main_margins;
+            if (i > begin && line_used + main_gap + outer > available_main + 1e-9) {
+                lines.push_back({begin, i});
+                begin = i;
+                line_used = 0;
+            }
+            line_used += (i > begin ? main_gap : 0.0) + outer;
+        }
+        lines.push_back({begin, items.size()});
+    } else {
+        lines.push_back({0, items.size()});
+    }
+
+    // ---- Resolve the flexible lengths (§9.7), one line at a time -----------
+    const auto resolve_line = [&](const Line& ln) {
+        const size_t n = ln.end - ln.begin;
+        const double gaps = main_gap * static_cast<double>(n - 1);
+        double line_used = gaps;
+        for (size_t i = ln.begin; i < ln.end; ++i) {
+            line_used += items[i].hypothetical + items[i].main_margins;
+        }
+        if (!definite_main || std::fabs(available_main - line_used) <= 1e-9) return;
+        const bool growing = available_main > line_used;
         // An item that cannot flex in the needed direction is frozen up front.
-        for (Item& it : items) {
+        for (size_t i = ln.begin; i < ln.end; ++i) {
+            Item& it = items[i];
             it.main = it.hypothetical;
             it.frozen = growing ? it.grow <= 0 : it.shrink <= 0;
         }
         // Loop because clamping an item to its min or max frees space that the
         // remaining items must absorb — §9.7 step 4's "restart" condition.
-        for (int pass = 0; pass < static_cast<int>(items.size()) + 1; ++pass) {
-            double frozen_total = total_gap;
+        for (size_t pass = 0; pass < n + 1; ++pass) {
+            double frozen_total = gaps;
             double flex_factor = 0;
-            for (const Item& it : items) {
+            for (size_t i = ln.begin; i < ln.end; ++i) {
+                const Item& it = items[i];
                 frozen_total += it.main_margins;
                 if (it.frozen) frozen_total += it.main;
                 else {
@@ -270,7 +315,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             if (flex_factor <= 0) break;
 
             bool clamped_any = false;
-            for (Item& it : items) {
+            for (size_t i = ln.begin; i < ln.end; ++i) {
+                Item& it = items[i];
                 if (it.frozen) continue;
                 const double share = growing ? it.grow : it.shrink * it.base;
                 double target = it.base + free_space * (share / flex_factor);
@@ -288,7 +334,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             }
             if (!clamped_any) break;
         }
-    }
+    };
+    for (const Line& ln : lines) resolve_line(ln);
 
     const std::string_view align_items = get(style, "align-items");
     const auto self_align = [&](const Box& b) {
@@ -299,244 +346,282 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     };
 
     // ---- Re-lay each item at its final main size, and measure the cross ----
-    double line_cross = 0;
-    for (Item& it : items) {
-        // Re-indexed after every call that can lay out a box: BoxTree::create
-        // appends to a vector, so a `Box&` held across a relayout dangles. This
-        // is the third place in the port to hit that; see PORT_PLAN.md on
-        // making the storage stable instead of relying on discipline.
-        if (!column) {
-            if (std::fabs((*tree)[it.box].width - it.main) > 1e-9) {
-                block->relayout_at(it.box, it.main);
-            }
-        } else {
-            // Re-laid, not merely stamped: the flexed main size is definite for
-            // the item's own contents (§9.8), so a nested row flex inside it
-            // stretches its children to this height, and a `margin-top: auto`
-            // child has this height to push against. Stamping alone left a
-            // `flex: 1 1 auto` row 180 tall with a 0-tall stretched child.
-            if (std::fabs((*tree)[it.box].height - it.main) > 1e-9) {
-                block->relayout_at_size(it.box, (*tree)[it.box].width, it.main);
-            }
-            (*tree)[it.box].height = it.main;
-            // §9.4: an item that is NOT being stretched sizes to fit its own
-            // content on the cross axis. In a column that means the width has
-            // to come off the block default of filling the container — an
-            // `align-items: center` item was coming out full width and then
-            // "centred" with no space to move in.
-            const std::string_view cross_raw = get((*tree)[it.box].style, "width");
-            if ((cross_raw.empty() || iequals(cross_raw, "auto")) &&
-                !iequals(self_align((*tree)[it.box]), "stretch")) {
-                const Box& cb = (*tree)[it.box];
-                const double frame =
-                    cb.padding_left + cb.padding_right + cb.border_left + cb.border_right;
-                const double fit =
-                    std::min(content_width, max_content_width(*tree, it.box, &ctx) + frame);
-                if (std::fabs((*tree)[it.box].width - fit) > 1e-9) {
-                    block->relayout_at(it.box, fit);
+    for (Line& ln : lines) {
+        double line_cross = 0;
+        for (size_t i = ln.begin; i < ln.end; ++i) {
+            Item& it = items[i];
+            // Re-indexed after every call that can lay out a box: BoxTree::create
+            // appends to a vector, so a `Box&` held across a relayout dangles.
+            if (!column) {
+                if (std::fabs((*tree)[it.box].width - it.main) > 1e-9) {
+                    block->relayout_at(it.box, it.main);
+                }
+            } else {
+                // Re-laid, not merely stamped: the flexed main size is definite
+                // for the item's own contents (§9.8), so a nested row flex
+                // inside it stretches its children to this height, and a
+                // `margin-top: auto` child has this height to push against.
+                if (std::fabs((*tree)[it.box].height - it.main) > 1e-9) {
+                    block->relayout_at_size(it.box, (*tree)[it.box].width, it.main);
                 }
                 (*tree)[it.box].height = it.main;
-            }
-        }
-        const Box& measured = (*tree)[it.box];
-        line_cross = std::max(line_cross,
-                              (column ? measured.width : measured.height) + it.cross_margins);
-    }
-    // A row container with a definite height gives its line that height, so
-    // `align-items: center` centres against the container rather than against
-    // the tallest item.
-    // A definite cross size IS the line's cross size (§9.4 step 8), not a
-    // floor under the items: an item wider than a column container overflows
-    // it and centres around it, rather than growing the line to itself.
-    if (!column && content_height >= 0) line_cross = content_height;
-    if (column && content_width >= 0) line_cross = content_width;
-    // ...and a row container with an auto height but a min-height is at least
-    // that tall, which is what `align-items: flex-end` in a `min-height: 100vh`
-    // stage pushes against. Same rule as the column main-size clamp above.
-    if (!column && content_height < 0) {
-        const Box& cb = (*tree)[container];
-        const double frame =
-            cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
-        const double own_frame = is_border_box(style) ? frame : 0;
-        const ResolvedLength min_r =
-            resolve_length(style, "min-height", ctx, font_size, std::nullopt);
-        const ResolvedLength max_r =
-            resolve_length(style, "max-height", ctx, font_size, std::nullopt);
-        if (min_r.kind == LengthKind::Length) {
-            line_cross = std::max(line_cross, std::max(0.0, min_r.pixels - own_frame));
-        }
-        if (max_r.kind == LengthKind::Length) {
-            line_cross = std::min(line_cross, std::max(0.0, max_r.pixels - own_frame));
-        }
-    }
-
-    // ---- Main-axis alignment (§9.5) ---------------------------------------
-    double content_main = total_gap;
-    for (const Item& it : items) content_main += it.main + it.main_margins;
-    const double leftover = definite_main ? available_main - content_main : 0;
-
-    // §9.5 step 1: positive free space goes to the main-axis auto margins
-    // first, split equally; justify-content only sees what is left, which with
-    // any auto margin present is nothing. The margins are written back onto the
-    // boxes so placement below and any later reader see the used values.
-    double leftover_for_justify = leftover;
-    if (leftover > 0) {
-        int auto_count = 0;
-        for (const Item& it : items) {
-            auto_count += (it.auto_margin_start ? 1 : 0) + (it.auto_margin_end ? 1 : 0);
-        }
-        if (auto_count > 0) {
-            const double each = leftover / static_cast<double>(auto_count);
-            for (Item& it : items) {
-                Box& b = (*tree)[it.box];
-                if (it.auto_margin_start) {
-                    (column ? b.margin_top : b.margin_left) += each;
-                    it.main_margins += each;
-                }
-                if (it.auto_margin_end) {
-                    (column ? b.margin_bottom : b.margin_right) += each;
-                    it.main_margins += each;
+                // §9.4: an item that is NOT being stretched sizes to fit its own
+                // content on the cross axis. In a column that means the width
+                // has to come off the block default of filling the container.
+                const std::string_view cross_raw = get((*tree)[it.box].style, "width");
+                if ((cross_raw.empty() || iequals(cross_raw, "auto")) &&
+                    !iequals(self_align((*tree)[it.box]), "stretch")) {
+                    const Box& cb = (*tree)[it.box];
+                    const double frame =
+                        cb.padding_left + cb.padding_right + cb.border_left + cb.border_right;
+                    const double fit =
+                        std::min(content_width, max_content_width(*tree, it.box, &ctx) + frame);
+                    if (std::fabs((*tree)[it.box].width - fit) > 1e-9) {
+                        block->relayout_at(it.box, fit);
+                    }
+                    (*tree)[it.box].height = it.main;
                 }
             }
-            leftover_for_justify = 0;
+            const Box& measured = (*tree)[it.box];
+            line_cross = std::max(line_cross,
+                                  (column ? measured.width : measured.height) + it.cross_margins);
+        }
+        ln.cross = line_cross;
+    }
+
+    // ---- Cross sizes of the lines (§9.4 step 8, §9.6 align-content) --------
+    const double container_cross = column ? content_width : content_height;   // -1: indefinite
+    const double cross_gap = column ? gap_px(style, "column-gap", ctx, font_size, content_width)
+                                    : gap_px(style, "row-gap", ctx, font_size, content_height);
+    double total_cross = 0;
+    if (lines.size() == 1) {
+        Line& ln = lines[0];
+        // A definite cross size IS the single line's cross size, not a floor
+        // under the items: an item wider than a column container overflows it
+        // and centres around it, rather than growing the line to itself.
+        if (container_cross >= 0) ln.cross = container_cross;
+        // ...and a row container with an auto height but a min-height is at
+        // least that tall, which is what `align-items: flex-end` in a
+        // `min-height: 100vh` stage pushes against.
+        if (!column && content_height < 0) {
+            const Box& cb = (*tree)[container];
+            const double frame =
+                cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
+            const double own_frame = is_border_box(style) ? frame : 0;
+            const ResolvedLength min_r =
+                resolve_length(style, "min-height", ctx, font_size, std::nullopt);
+            const ResolvedLength max_r =
+                resolve_length(style, "max-height", ctx, font_size, std::nullopt);
+            if (min_r.kind == LengthKind::Length) {
+                ln.cross = std::max(ln.cross, std::max(0.0, min_r.pixels - own_frame));
+            }
+            if (max_r.kind == LengthKind::Length) {
+                ln.cross = std::min(ln.cross, std::max(0.0, max_r.pixels - own_frame));
+            }
+        }
+        ln.cross_pos = 0;
+        total_cross = ln.cross;
+    } else {
+        double sum = cross_gap * static_cast<double>(lines.size() - 1);
+        for (const Line& ln : lines) sum += ln.cross;
+        double before = 0, extra_between = 0;
+        if (container_cross >= 0 && container_cross > sum) {
+            const double free_space = container_cross - sum;
+            const std::string_view ac = get(style, "align-content");
+            const size_t n = lines.size();
+            if (ac.empty() || iequals(ac, "normal") || iequals(ac, "stretch")) {
+                // The free space is split equally onto the lines themselves.
+                for (Line& ln : lines) ln.cross += free_space / static_cast<double>(n);
+            } else if (iequals(ac, "center")) {
+                before = free_space * 0.5;
+            } else if (iequals(ac, "flex-end") || iequals(ac, "end")) {
+                before = free_space;
+            } else if (iequals(ac, "space-between")) {
+                extra_between = free_space / static_cast<double>(n - 1);
+            } else if (iequals(ac, "space-around")) {
+                extra_between = free_space / static_cast<double>(n);
+                before = extra_between * 0.5;
+            } else if (iequals(ac, "space-evenly")) {
+                extra_between = free_space / static_cast<double>(n + 1);
+                before = extra_between;
+            }
+        }
+        double pos = before;
+        for (Line& ln : lines) {
+            ln.cross_pos = pos;
+            pos += ln.cross + cross_gap + extra_between;
+        }
+        total_cross = container_cross >= 0 ? container_cross : pos - cross_gap - extra_between;
+        if (wrap_reverse) {
+            // Lines stack from the cross-end instead.
+            for (Line& ln : lines) ln.cross_pos = total_cross - ln.cross_pos - ln.cross;
         }
     }
 
+    // ---- Main-axis alignment (§9.5), per line ------------------------------
     const std::string_view justify = get(style, "justify-content");
-    double main_pos = 0;
-    double between = main_gap;
-    if (leftover_for_justify > 0) {
-        const double leftover = leftover_for_justify;
-        if (iequals(justify, "center")) main_pos = leftover * 0.5;
-        else if (iequals(justify, "flex-end") || iequals(justify, "end") ||
-                 iequals(justify, "right")) {
-            main_pos = leftover;
-        } else if (iequals(justify, "space-between") && items.size() > 1) {
-            between += leftover / static_cast<double>(items.size() - 1);
-        } else if (iequals(justify, "space-around")) {
-            const double each = leftover / static_cast<double>(items.size());
-            main_pos = each * 0.5;
-            between += each;
-        } else if (iequals(justify, "space-evenly")) {
-            const double each = leftover / static_cast<double>(items.size() + 1);
-            main_pos = each;
-            between += each;
+    for (Line& ln : lines) {
+        const size_t n = ln.end - ln.begin;
+        double content_main = main_gap * static_cast<double>(n - 1);
+        for (size_t i = ln.begin; i < ln.end; ++i) content_main += items[i].main + items[i].main_margins;
+        const double leftover = definite_main ? available_main - content_main : 0;
+
+        // §9.5 step 1: positive free space goes to the main-axis auto margins
+        // first, split equally; justify-content only sees what is left, which
+        // with any auto margin present is nothing. The margins are written
+        // back onto the boxes so placement and any later reader see them.
+        double leftover_for_justify = leftover;
+        if (leftover > 0) {
+            int auto_count = 0;
+            for (size_t i = ln.begin; i < ln.end; ++i) {
+                auto_count += (items[i].auto_margin_start ? 1 : 0) + (items[i].auto_margin_end ? 1 : 0);
+            }
+            if (auto_count > 0) {
+                const double each = leftover / static_cast<double>(auto_count);
+                for (size_t i = ln.begin; i < ln.end; ++i) {
+                    Item& it = items[i];
+                    Box& b = (*tree)[it.box];
+                    if (it.auto_margin_start) {
+                        (column ? b.margin_top : b.margin_left) += each;
+                        it.main_margins += each;
+                    }
+                    if (it.auto_margin_end) {
+                        (column ? b.margin_bottom : b.margin_right) += each;
+                        it.main_margins += each;
+                    }
+                }
+                leftover_for_justify = 0;
+            }
+        }
+
+        ln.main_pos = 0;
+        ln.between = main_gap;
+        if (leftover_for_justify > 0) {
+            const double lo = leftover_for_justify;
+            if (iequals(justify, "center")) ln.main_pos = lo * 0.5;
+            else if (iequals(justify, "flex-end") || iequals(justify, "end") ||
+                     iequals(justify, "right")) {
+                ln.main_pos = lo;
+            } else if (iequals(justify, "space-between") && n > 1) {
+                ln.between += lo / static_cast<double>(n - 1);
+            } else if (iequals(justify, "space-around")) {
+                const double each = lo / static_cast<double>(n);
+                ln.main_pos = each * 0.5;
+                ln.between += each;
+            } else if (iequals(justify, "space-evenly")) {
+                const double each = lo / static_cast<double>(n + 1);
+                ln.main_pos = each;
+                ln.between += each;
+            }
         }
     }
 
     // ---- Cross-axis alignment (§9.6) and placement -------------------------
-    // Baseline alignment needs the deepest first baseline on the line before
-    // any item can be placed.
+    const double left_inner = (*tree)[container].padding_left + (*tree)[container].border_left;
+    const double top_inner = (*tree)[container].padding_top + (*tree)[container].border_top;
+
     // An item's baseline is its first line box's, or its bottom margin edge
     // when it has none — the same rule an inline-block follows.
-    double max_baseline = 0;
-    for (const Item& it : items) {
-        const Box& b = (*tree)[it.box];
-        if (!iequals(self_align(b), "baseline")) continue;
-        double baseline = b.height;
-        for (BoxId c : tree->children(it.box)) {
+    const auto first_baseline = [&](BoxId box) {
+        double baseline = (*tree)[box].height;
+        for (BoxId c : tree->children(box)) {
             if ((*tree)[c].kind == BoxKind::Line) {
                 baseline = (*tree)[c].y + (*tree)[c].baseline;
                 break;
             }
         }
-        max_baseline = std::max(max_baseline, baseline + b.margin_top);
-    }
+        return baseline;
+    };
 
-    const double left_inner = (*tree)[container].padding_left + (*tree)[container].border_left;
-    const double top_inner = (*tree)[container].padding_top + (*tree)[container].border_top;
+    for (const Line& ln : lines) {
+        // Baseline alignment needs the deepest first baseline on the line
+        // before any item can be placed.
+        double max_baseline = 0;
+        for (size_t i = ln.begin; i < ln.end; ++i) {
+            const Box& b = (*tree)[items[i].box];
+            if (!iequals(self_align(b), "baseline")) continue;
+            max_baseline = std::max(max_baseline, first_baseline(items[i].box) + b.margin_top);
+        }
 
-    if (reverse) std::reverse(items.begin(), items.end());
+        double cursor = ln.main_pos;
+        for (size_t k = 0; k < ln.end - ln.begin; ++k) {
+            // `row-reverse` / `column-reverse` lay each line out from its end.
+            const size_t i = reverse ? ln.end - 1 - k : ln.begin + k;
+            Item& it = items[i];
+            const std::string_view self = self_align((*tree)[it.box]);
 
-    double cursor = main_pos;
-    for (const Item& it : items) {
-        const std::string_view self = self_align((*tree)[it.box]);
-
-        const double outer_cross =
-            (column ? (*tree)[it.box].width : (*tree)[it.box].height) + it.cross_margins;
-        double cross_pos = 0;
-        if (iequals(self, "center")) {
-            cross_pos = (line_cross - outer_cross) * 0.5;
-        } else if (iequals(self, "flex-end") || iequals(self, "end")) {
-            cross_pos = line_cross - outer_cross;
-        } else if (iequals(self, "baseline") && !column) {
-            double baseline = (*tree)[it.box].height;
-            for (BoxId c : tree->children(it.box)) {
-                if ((*tree)[c].kind == BoxKind::Line) {
-                    baseline = (*tree)[c].y + (*tree)[c].baseline;
-                    break;
+            const double outer_cross =
+                (column ? (*tree)[it.box].width : (*tree)[it.box].height) + it.cross_margins;
+            double cross_pos = 0;
+            if (iequals(self, "center")) {
+                cross_pos = (ln.cross - outer_cross) * 0.5;
+            } else if (iequals(self, "flex-end") || iequals(self, "end")) {
+                cross_pos = ln.cross - outer_cross;
+            } else if (iequals(self, "baseline") && !column) {
+                cross_pos = max_baseline - (first_baseline(it.box) + (*tree)[it.box].margin_top);
+            } else if (!iequals(self, "flex-start") && !iequals(self, "start")) {
+                // `stretch` is the initial value: an item with an auto cross size
+                // fills the line. One with a definite size keeps it.
+                const std::string_view cross_raw =
+                    get((*tree)[it.box].style, column ? "width" : "height");
+                if (cross_raw.empty() || iequals(cross_raw, "auto")) {
+                    double stretched = std::max(0.0, ln.cross - it.cross_margins);
+                    // §9.4: the stretched size is still clamped by the item's own
+                    // min/max in that axis. A `max-width: 760px` grid in a column
+                    // was stretched to the page.
+                    {
+                        const Box& ib = (*tree)[it.box];
+                        const double item_fs = ib.font_size > 0 ? ib.font_size : font_size;
+                        const double cross_frame =
+                            column ? ib.padding_left + ib.padding_right + ib.border_left + ib.border_right
+                                   : ib.padding_top + ib.padding_bottom + ib.border_top + ib.border_bottom;
+                        const double mm_frame = is_border_box(ib.style) ? 0 : cross_frame;
+                        const std::optional<double> cross_basis =
+                            container_cross >= 0 ? std::optional<double>(container_cross)
+                                                 : std::nullopt;
+                        const ResolvedLength min_c = resolve_length(
+                            ib.style, column ? "min-width" : "min-height", ctx, item_fs, cross_basis);
+                        const ResolvedLength max_c = resolve_length(
+                            ib.style, column ? "max-width" : "max-height", ctx, item_fs, cross_basis);
+                        if (min_c.kind == LengthKind::Length) {
+                            stretched = std::max(stretched, min_c.pixels + mm_frame);
+                        }
+                        if (max_c.kind == LengthKind::Length) {
+                            stretched = std::min(stretched, max_c.pixels + mm_frame);
+                        }
+                    }
+                    // Re-laid, not just stamped: anything inside whose layout
+                    // depends on the cross size has to see the stretched value.
+                    if (!column) {
+                        if (std::fabs((*tree)[it.box].height - stretched) > 1e-9) {
+                            block->relayout_at_size(it.box, (*tree)[it.box].width, stretched);
+                        }
+                    } else if (std::fabs((*tree)[it.box].width - stretched) > 1e-9) {
+                        block->relayout_at_size(it.box, stretched, (*tree)[it.box].height);
+                    }
                 }
             }
-            cross_pos = max_baseline - (baseline + (*tree)[it.box].margin_top);
-        } else if (!iequals(self, "flex-start") && !iequals(self, "start")) {
-            // `stretch` is the initial value: an item with an auto cross size
-            // fills the line. One with a definite size keeps it.
-            const std::string_view cross_raw =
-                get((*tree)[it.box].style, column ? "width" : "height");
-            if (cross_raw.empty() || iequals(cross_raw, "auto")) {
-                double stretched = std::max(0.0, line_cross - it.cross_margins);
-                // §9.4: the stretched size is still clamped by the item's own
-                // min/max in that axis. A `max-width: 760px` grid in a column
-                // was stretched to the page.
-                {
-                    const Box& ib = (*tree)[it.box];
-                    const double item_fs = ib.font_size > 0 ? ib.font_size : font_size;
-                    const double cross_frame =
-                        column ? ib.padding_left + ib.padding_right + ib.border_left + ib.border_right
-                               : ib.padding_top + ib.padding_bottom + ib.border_top + ib.border_bottom;
-                    const double mm_frame = is_border_box(ib.style) ? 0 : cross_frame;
-                    const std::optional<double> cross_basis =
-                        (column ? content_width : content_height) >= 0
-                            ? std::optional<double>(column ? content_width : content_height)
-                            : std::nullopt;
-                    const ResolvedLength min_c = resolve_length(
-                        ib.style, column ? "min-width" : "min-height", ctx, item_fs, cross_basis);
-                    const ResolvedLength max_c = resolve_length(
-                        ib.style, column ? "max-width" : "max-height", ctx, item_fs, cross_basis);
-                    if (min_c.kind == LengthKind::Length) {
-                        stretched = std::max(stretched, min_c.pixels + mm_frame);
-                    }
-                    if (max_c.kind == LengthKind::Length) {
-                        stretched = std::min(stretched, max_c.pixels + mm_frame);
-                    }
-                }
-                // Re-laid, not just stamped: anything inside whose layout
-                // depends on the cross size has to see the stretched value. A
-                // nested column flex container is the case that makes this
-                // visible — its main size IS this height, and without the
-                // re-layout its justify-content had nothing to centre in.
-                if (!column) {
-                    if (std::fabs((*tree)[it.box].height - stretched) > 1e-9) {
-                        block->relayout_at_size(it.box, (*tree)[it.box].width, stretched);
-                    }
-                } else if (std::fabs((*tree)[it.box].width - stretched) > 1e-9) {
-                    block->relayout_at_size(it.box, stretched, (*tree)[it.box].height);
-                }
-            }
-        }
-        // CSS Box Alignment §5.4: `center` and `end` default to UNSAFE, so an
-        // item wider than the line overflows both sides equally rather than
-        // being pushed back to the start. A `width: 100%` portrait with a 2px
-        // border sits at x = -2 in Chrome and the reference; clamping put it
-        // at 0. Baseline stays clamped: a negative baseline offset would be a
-        // bug upstream, not an alignment.
-        if (cross_pos < 0 && iequals(self, "baseline")) cross_pos = 0;
+            // CSS Box Alignment §5.4: `center` and `end` default to UNSAFE, so
+            // an item wider than the line overflows both sides equally rather
+            // than being pushed back to the start. Baseline stays clamped.
+            if (cross_pos < 0 && iequals(self, "baseline")) cross_pos = 0;
 
-        // Safe from here: placement creates nothing.
-        Box& b = (*tree)[it.box];
-        if (column) {
-            b.x = left_inner + cross_pos + b.margin_left;
-            b.y = top_inner + cursor + b.margin_top;
-        } else {
-            b.x = left_inner + cursor + b.margin_left;
-            b.y = top_inner + cross_pos + b.margin_top;
+            // Safe from here: placement creates nothing.
+            Box& b = (*tree)[it.box];
+            if (column) {
+                b.x = left_inner + ln.cross_pos + cross_pos + b.margin_left;
+                b.y = top_inner + cursor + b.margin_top;
+            } else {
+                b.x = left_inner + cursor + b.margin_left;
+                b.y = top_inner + ln.cross_pos + cross_pos + b.margin_top;
+            }
+            cursor += it.main + it.main_margins + ln.between;
         }
-        cursor += it.main + it.main_margins + between;
     }
 
-    // The container's content height: the line's cross size in a row, the sum
-    // of the items in a column.
-    if (!column) return line_cross;
+    // The container's content height: the lines' cross extent in a row, the
+    // items' extent in a column.
+    if (!column) return total_cross;
     double bottom = 0;
     for (const Item& it : items) {
         const Box& b = (*tree)[it.box];
