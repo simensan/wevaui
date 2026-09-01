@@ -5,10 +5,11 @@ docs/ORACLE.md is the design. This is the harness it describes: for every case
 it runs BaselineGen's `layout-dump` and `weva_dump` at the same viewport and
 compares the two JSON dumps element by element.
 
-Tolerance is zero, deliberately. Both sides round to 2dp with the same
-away-from-zero rule before formatting, so a value that differs at all differs
-because the engines disagree, not because a double drifted. A tolerance knob
-here would be a way to stop seeing bugs.
+Reference and candidate are compared at the dump's own resolution: both sides
+round to 4dp with the same away-from-zero rule, and a difference of one unit
+in that last place is read as agreement because it cannot be distinguished
+from a decimal-midpoint tie (see same_value). Nothing looser than that. A real
+tolerance knob here would be a way to stop seeing bugs.
 
 Stdlib only, so it runs wherever the tests run.
 """
@@ -43,6 +44,31 @@ def run_candidate(weva_dump, html, css, width, height, out):
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
+# The dump prints four decimals, so one unit in the last place is the finest
+# difference it can express. Two independent implementations computing the same
+# value can still land on opposite sides of a decimal midpoint: the half-leading
+# of a 22.95px line is exactly 3.75975, and whether that prints 3.7597 or 3.7598
+# depends on the last bit of a double, not on layout. A one-last-place gap is
+# therefore below this instrument's resolution and is read as agreement;
+# anything larger is a finding.
+#
+# This is the only tolerance between reference and candidate, and it is two
+# orders of magnitude TIGHTER than the exact 2dp comparison it replaces — that
+# one reported every tie as a 0.01 difference, and on weva-landing a single such
+# tie at `.stats` cascaded into 80 reported differences that buried a real one.
+LAST_PLACE = 1e-4
+
+
+def same_value(x, y):
+    """True when two dumped numbers agree to within the dump's resolution."""
+    if x == y:
+        return True
+    try:
+        return abs(float(x) - float(y)) <= LAST_PLACE * 1.0001
+    except (TypeError, ValueError):
+        return False
+
+
 def compare(reference, candidate):
     """Returns a list of human-readable differences, empty when they agree."""
     problems = []
@@ -61,7 +87,8 @@ def compare(reference, candidate):
                 problems.append(
                     f"[{i}] {key}: reference {ea.get(key)!r}, candidate {eb.get(key)!r}")
         deltas = [f"{key} {ea.get(key)} vs {eb.get(key)}"
-                  for key in ("x", "y", "w", "h") if ea.get(key) != eb.get(key)]
+                  for key in ("x", "y", "w", "h")
+                  if not same_value(ea.get(key), eb.get(key))]
         if deltas:
             label = f"{ea.get('tag')}#{ea.get('id')}.{ea.get('cls')}".rstrip("#.")
             problems.append(f"[{i}] {label}: " + ", ".join(deltas))
@@ -254,7 +281,7 @@ def arbitrate(reference, candidate, chrome):
         ec = c[ac[i]] if i in ac else None
         label = f"{ea.get('tag')}#{ea.get('id')}.{ea.get('cls')}".rstrip("#.")
         for key in ("x", "y", "w", "h"):
-            if ea.get(key) == eb.get(key):
+            if same_value(ea.get(key), eb.get(key)):
                 continue
             line = f"[{i}] {label}: {key} reference {ea.get(key)} vs candidate {eb.get(key)}"
             if ec is None:
