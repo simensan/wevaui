@@ -2932,6 +2932,43 @@ Two things this exposed while fixing it:
 
 weva-landing's element count now matches Chrome exactly (137 = 137).
 
+### Open reference bug: a `<span>` inside an inline-block reports zero width
+
+Diagnosed, not fixed — the next thing to pick up, and pre-existing (verified
+by running the repro at the session's starting commit). EVERY inline box
+inside a shrink-to-fit atom ends up with a zero-width rect:
+
+```html
+<div style="display:inline-block"><span>hello</span></div>
+```
+
+The atom is sized correctly (36px) but the span's box is `w = 0`. The same
+span in a plain block is correct. Paint therefore cannot draw the span's
+background, border or decorations, and hit-testing has nothing to hit — so
+any styled inline inside a badge, pill or chip built from an inline-block is
+affected, not just the layout dump.
+
+Instrumenting `AttachInlineFragmentsToLines` shows the cause is a DOUBLE
+attach. The same span object is attached twice:
+
+```
+DBGSPAN attach span#31291646 container=div                 <- correct, inside the atom
+DBGSPAN attach span#31291646 container=AnonymousBlockBox   <- wrong, outer level
+```
+
+The first attach finds the span's text fragments on the atom's own line and
+computes a correct bbox. The second runs at the OUTER container, whose lines
+hold only the atoms themselves (`LINE(BlockBox TextRun<el=body> BlockBox …)`)
+— no fragment there carries the span's Element, so it falls into the
+empty-inline fallback, which sets `Width = 0` and overwrites the good rect.
+
+So the atom's interior spans are leaking into the outer `pendingInlineBoxes`
+slice. That list is shared with "stack-discipline pop" precisely to stop this
+(`inlineBoxSnapshot` / `RemoveRange` around each `LayoutInline`), so the leak
+is either a pop that does not cover the atom's interior passes or an interior
+layout reached by a path that never pops. Repro: `sp.html` in the scratch mini
+corpus.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
