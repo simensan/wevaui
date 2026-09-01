@@ -3186,6 +3186,46 @@ sub-pixel text measurement Chrome sides with neither on), and `inventory` (41,
 Chrome's 1fr re-growth from an aspect-ratio transferred minimum). `menu` went
 from 47 differences to passing; `stock-dashboard` from 314 to 5.
 
+### Fourteenth pass: aspect-ratio relates content boxes. hand 47/47
+
+CSS Sizing L4 §5 says the ratio relates the two dimensions of the box that
+`box-sizing` selects — with the default content-box, CONTENT width to CONTENT
+height. The reference divided the BORDER-box width and then added the vertical
+frame, counting the frame twice: `width: 101px; border: 1px; aspect-ratio: 1/1`
+came out 105 where Chrome and the port both say 103.
+
+The derivation had been written out FOUR times — BlockLayout.FinalizeBlockSize,
+LayoutEngine's aspect-ratio fixup, and both of FlexLayout's directional helpers
+— and every copy carried the same bug, one with a comment admitting it ("v1
+simplification ignores box-sizing for ratio derivation"). They now share
+`AspectRatioMath`, which also fixed the height-from-width direction no repro
+had reached yet. This is the second time in this port that a rule copied into
+several places was wrong in all of them; the first was the two box builders.
+
+**hand is now 47/47 with zero reference bugs** — this was the last one.
+inventory went from 41 differences to 13, and the goldens' card grid now
+measures 240x240 against Chrome's own 240x240 (its baseline PNG had been
+rendered at the old 242 and was regenerated; the other 37 were reverted).
+
+**Open, with the analysis done.** Both engines mis-place a flex item centred in
+a container whose height came from `aspect-ratio`, and they do it in DIFFERENT
+configurations, so the oracle sees a difference where both are wrong:
+
+* Minimal case (`width: 200px; aspect-ratio: 2/1; border: 1px; display: flex;
+  align-items: center` around a 32px glyph): Chrome and the port put the glyph
+  at 35, the reference at 35.998 — and at 155.998 against 151 when the border
+  is 5px, so the reference is adding the border a second time. It looks like
+  the cross-axis centre is taken against the container's BORDER-box height
+  while the offset is measured from its CONTENT top; `containerCrossSize` at
+  FlexLayout.cs:223 reads `ContentHeight` correctly, so the culprit is one of
+  the paths that overwrite it (the min-floor near :471 and the pre-pass-2 stamp
+  near :505 are the candidates).
+* inventory's `.slot` is the mirror: there the REFERENCE matches Chrome
+  (197.96 against 197.95) and the PORT is 1px high, and that slot's height
+  comes from `aspect-ratio` on a 1fr grid track rather than an explicit width.
+
+Both need to be fixed against Chrome rather than against each other.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
