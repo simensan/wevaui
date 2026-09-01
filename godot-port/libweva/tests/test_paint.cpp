@@ -325,6 +325,74 @@ void test_paint_tree_calls() {
     CHECK(backend.draws[0].vertices[0].position.y < backend.draws[1].vertices[0].position.y);
 }
 
+namespace {
+double mesh_area(const Mesh& m) {
+    double a = 0;
+    for (size_t i = 0; i + 2 < m.indices.size(); i += 3) {
+        const auto& p = m.vertices[m.indices[i]].position;
+        const auto& q = m.vertices[m.indices[i + 1]].position;
+        const auto& r = m.vertices[m.indices[i + 2]].position;
+        a += std::fabs((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)) * 0.5;
+    }
+    return a;
+}
+double polygon_area(const std::vector<ClipPoint>& p) {
+    double a = 0;
+    for (size_t i = 0; i < p.size(); ++i) {
+        const ClipPoint& u = p[i];
+        const ClipPoint& v = p[(i + 1) % p.size()];
+        a += u.x * v.y - v.x * u.y;
+    }
+    return std::fabs(a) * 0.5;
+}
+} // namespace
+
+// Polygon clipping covers exactly the intersection, convex or not.
+void test_clip_triangles_polygon() {
+    Mesh square;
+    tessellate_rect(Rect(0, 0, 100, 100), LinearColor::white(), &square);
+    {
+        // Regular hexagon inside the square (clip-path: polygon(50% 0, 100% 25%, ...)).
+        const std::vector<ClipPoint> hex = {{50, 0}, {100, 25}, {100, 75}, {50, 100}, {0, 75}, {0, 25}};
+        Mesh out;
+        clip_triangles_polygon(square.vertices, square.indices, hex, &out);
+        CHECK(std::fabs(mesh_area(out) - polygon_area(hex)) < 0.05);
+        CHECK(std::fabs(polygon_area(hex) - 7500) < 1e-9);
+    }
+    {
+        // Concave arrow, clockwise winding: still the exact intersection.
+        const std::vector<ClipPoint> arrow = {{0, 0}, {100, 50}, {0, 100}, {30, 50}};
+        Mesh out;
+        clip_triangles_polygon(square.vertices, square.indices, arrow, &out);
+        CHECK(std::fabs(mesh_area(out) - polygon_area(arrow)) < 0.05);
+        // Nothing survives in the notch.
+        for (const Vertex& v : out.vertices) {
+            if (std::fabs(v.position.y - 50) < 1e-6) CHECK(v.position.x >= 30 - 1e-6);
+        }
+    }
+    {
+        // A polygon partly outside the mesh clips to the mesh's part of it.
+        const std::vector<ClipPoint> tri = {{50, 50}, {150, 50}, {150, 150}};
+        Mesh out;
+        clip_triangles_polygon(square.vertices, square.indices, tri, &out);
+        CHECK(std::fabs(mesh_area(out) - 1250) < 1e-6);   // the corner triangle 50..100
+    }
+    {
+        // Rounded rectangle outline: arcs on rounded corners, a point on square ones.
+        BorderRadii r;
+        r.top_left = CornerRadius(20);
+        const std::vector<ClipPoint> o = rounded_rect_outline(Rect(0, 0, 100, 50), r, 4);
+        CHECK(o.size() == 5 + 3);
+        CHECK(std::fabs(o.front().x - 0) < 1e-9 && std::fabs(o.front().y - 20) < 1e-9);
+        CHECK(std::fabs(o[4].x - 20) < 1e-9 && std::fabs(o[4].y - 0) < 1e-9);
+        for (const ClipPoint& p : o) CHECK(p.x >= -1e-9 && p.x <= 100 + 1e-9 && p.y >= -1e-9 && p.y <= 50 + 1e-9);
+        // The corner itself is cut off: area is the rect minus the corner's
+        // (square - quarter circle), approximately.
+        const double a = polygon_area(o);
+        CHECK(a < 5000 && a > 5000 - 400 * (1 - 3.14159 / 4) - 30);
+    }
+}
+
 void test_clip_triangles() {
     // A quad straddling the rect's right edge is cut at it; one inside passes
     // through untouched; one outside vanishes. Colour and UV interpolate.

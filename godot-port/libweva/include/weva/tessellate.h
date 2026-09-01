@@ -52,6 +52,26 @@ BorderRadii inset_radii(const BorderRadii& r, double top, double right, double b
 // wholly inside pass through; wholly outside vanish. This is how a scissor
 // reaches a host whose canvas cannot clip per draw: the geometry arrives
 // already cut.
+struct ClipPoint {
+    double x = 0, y = 0;
+};
+
+// Clips triangles to a simple polygon — convex or not, either winding. The
+// polygon is triangulated by ear clipping and every mesh triangle is clipped
+// (Sutherland-Hodgman) against each piece; the pieces tile the polygon, so the
+// output covers exactly the intersection. Attributes interpolate as for the
+// rectangle form. This is what `clip-path` and a rounded `overflow: hidden`
+// resolve to, since the backends know only rectangular scissors.
+void clip_triangles_polygon(const std::vector<Vertex>& vertices,
+                            const std::vector<uint32_t>& indices,
+                            const std::vector<ClipPoint>& polygon, Mesh* out);
+
+// The outline of a rounded rectangle as a polygon: `segments` points along
+// each rounded corner's arc, a single point at a square one. Radii are clamped
+// to the rectangle as CSS Backgrounds §5.5 does.
+std::vector<ClipPoint> rounded_rect_outline(const Rect& r, const BorderRadii& radii,
+                                            int segments = 8);
+
 void clip_triangles(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
                     const Rect& rect, Mesh* out);
 

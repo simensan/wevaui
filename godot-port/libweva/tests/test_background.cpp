@@ -479,6 +479,53 @@ void test_paint_form_control_marks() {
     CHECK(caret == 1);
 }
 
+// clip-path and a rounded overflow:hidden cut the geometry, not just the
+// scissor rectangle.
+void test_paint_clip_path_and_rounded_overflow() {
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 }"
+                "#t { width: 100px; height: 100px; background: #f00;"
+                "     clip-path: polygon(0 0, 100% 0, 50% 100%) }"
+                "#o { width: 100px; height: 100px; overflow: hidden; border-radius: 50px }"
+                "#c { width: 100px; height: 100px; background: #00f }"
+                "#s { width: 100px; height: 100px; overflow: hidden }"
+                "#d { width: 100px; height: 100px; background: #0f0 }"));
+    CHECK(f.layout("<body><div id=t></div><div id=o><div id=c></div></div>"
+                   "<div id=s><div id=d></div></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+
+    bool red = false, blue = false, green = false;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty()) continue;
+        const LinearColor c = d.geometry.vertices[0].color;
+        double area = 0;
+        for (size_t i = 0; i + 2 < d.geometry.indices.size(); i += 3) {
+            const auto& p = d.geometry.vertices[d.geometry.indices[i]].position;
+            const auto& q = d.geometry.vertices[d.geometry.indices[i + 1]].position;
+            const auto& r = d.geometry.vertices[d.geometry.indices[i + 2]].position;
+            area += std::fabs((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)) * 0.5;
+        }
+        if (near(c.r, 1) && near(c.g, 0) && near(c.b, 0)) {
+            red = true;
+            CHECK(std::fabs(area - 5000) < 1e-3);   // the triangle is half the box
+        } else if (near(c.b, 1) && near(c.r, 0)) {
+            blue = true;
+            // A circle of radius 50: pi * 2500, within the polygon approximation.
+            CHECK(area < 7900 && area > 7700);
+            for (const Vertex& v : d.geometry.vertices) {
+                CHECK(!(near(v.position.x, 0) && near(v.position.y, 100)));   // no corner survives
+            }
+        } else if (near(c.g, 1) && near(c.r, 0)) {
+            green = true;
+            CHECK(std::fabs(area - 10000) < 1e-3);   // square overflow: untouched geometry
+        }
+    }
+    CHECK(red && blue && green);
+}
+
 void test_font_weight_resolution() {
     // CSS Fonts L4 §2.2: keywords and numbers; bolder / lighter against the
     // 400 base; italic and oblique both count as italic.

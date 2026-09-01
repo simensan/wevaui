@@ -160,6 +160,8 @@ void test_text_transform_at_build();
 void test_pseudo_element_boxes();
 void test_pseudo_counters_and_quotes();
 void test_paint_form_control_marks();
+void test_clip_triangles_polygon();
+void test_paint_clip_path_and_rounded_overflow();
 void test_blur_and_padded_rasterize();
 void test_paint_transform_rotates_geometry();
 void test_font_weight_resolution();
@@ -361,6 +363,8 @@ int main() {
     test_pseudo_element_boxes();
     test_pseudo_counters_and_quotes();
     test_paint_form_control_marks();
+    test_clip_triangles_polygon();
+    test_paint_clip_path_and_rounded_overflow();
     test_blur_and_padded_rasterize();
     test_paint_transform_rotates_geometry();
     test_font_weight_resolution();

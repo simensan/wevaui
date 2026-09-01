@@ -8,11 +8,22 @@
 #include <cctype>
 #include <cstdlib>
 #include <cmath>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace weva {
+
+// A clip in force for a subtree: `clip-path`, or the rounded padding box of an
+// `overflow: hidden` box. Chained through the parent so nested clips all
+// apply; shared by the PaintState copies below rather than copied per box.
+// Polygons are in layout coordinates, the space meshes are built in before
+// the accumulated transform is applied.
+struct ClipNode {
+    std::vector<ClipPoint> polygon;
+    std::shared_ptr<const ClipNode> parent;
+};
 
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property);
 
@@ -72,9 +83,21 @@ std::vector<std::string_view> split_shadow_list(std::string_view s, char sep);
 // `opacity` scales every vertex alpha: the group is not composited through a
 // layer, so overlapping children of a translucent box double up where they
 // overlap. A layer per opacity group is the later, exact form.
-void draw_mesh(const Mesh& mesh, RenderInterface* backend, TextureHandle tex, double opacity = 1,
-               const Transform2D* xform = nullptr) {
-    if (mesh.empty()) return;
+void draw_mesh(const Mesh& input, RenderInterface* backend, TextureHandle tex, double opacity = 1,
+               const Transform2D* xform = nullptr, const ClipNode* clip = nullptr) {
+    if (input.empty()) return;
+    // Geometric clipping first, innermost clip outwards, while the vertices
+    // are still in layout coordinates.
+    Mesh clipped;
+    const Mesh* src = &input;
+    for (const ClipNode* n = clip; n; n = n->parent.get()) {
+        Mesh tmp;
+        clip_triangles_polygon(src->vertices, src->indices, n->polygon, &tmp);
+        clipped = std::move(tmp);
+        src = &clipped;
+        if (src->empty()) return;
+    }
+    const Mesh& mesh = *src;
     // Compiled and released per draw for now. A backend that batches will want
     // geometry to outlive a frame; that needs the paint cache, keyed on style
     // and layout versions, which is a later slice.
@@ -371,7 +394,7 @@ constexpr int kShadowLayers = 12;
 
 void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_box,
                          const BorderRadii& radii, RenderInterface* backend, double opacity,
-                         const Transform2D* xf = nullptr) {
+                         const Transform2D* xf = nullptr, const ClipNode* clip = nullptr) {
     for (size_t s = shadows.size(); s-- > 0;) {   // first shadow on top
         const Shadow& sh = shadows[s];
         if (sh.inset) continue;
@@ -394,7 +417,7 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             Mesh mesh;
             tessellate_rounded_rect(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
                                     c, &mesh);
-            draw_mesh(mesh, backend, {}, opacity, xf);
+            draw_mesh(mesh, backend, {}, opacity, xf, clip);
         }
     }
 }
@@ -403,7 +426,7 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
 // deepens the sides it points away from. Rendered as nested frames.
 void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding_box,
                          const BorderRadii& radii, RenderInterface* backend, double opacity,
-                         const Transform2D* xf = nullptr) {
+                         const Transform2D* xf = nullptr, const ClipNode* clip = nullptr) {
     for (size_t s = shadows.size(); s-- > 0;) {
         const Shadow& sh = shadows[s];
         if (!sh.inset) continue;
@@ -431,7 +454,7 @@ void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding
             tessellate_border(padding_box, radii, std::min(top, padding_box.height),
                               std::min(right, padding_box.width), std::min(bottom, padding_box.height),
                               std::min(left, padding_box.width), colors, &mesh);
-            draw_mesh(mesh, backend, {}, opacity, xf);
+            draw_mesh(mesh, backend, {}, opacity, xf, clip);
         }
     }
 }
@@ -460,7 +483,176 @@ struct PaintState {
     std::optional<Recti> scissor;
     bool transformed = false;
     Transform2D xform;   // accumulated, in absolute coordinates
+    std::shared_ptr<const ClipNode> clip;
 };
+
+// Pushes a polygon clip onto the state's chain.
+void push_clip(PaintState* state, std::vector<ClipPoint> polygon) {
+    if (polygon.size() < 3) return;
+    auto n = std::make_shared<ClipNode>();
+    n->polygon = std::move(polygon);
+    n->parent = state->clip;
+    state->clip = std::move(n);
+}
+
+// ---- clip-path (CSS Masking L1 §5) --------------------------------------------
+//
+// polygon(), circle(), ellipse() and inset() against the border box; url()
+// and the other reference boxes are not handled (no clip). Lengths resolve
+// like any other; percentages against the box's width (x) or height (y),
+// and for a circle's radius against sqrt(w^2 + h^2) / sqrt(2).
+
+bool ci_equal(std::string_view a, std::string_view b);   // defined with the form controls below
+
+double clip_len(std::string_view raw, const LayoutContext& ctx, double font_size, double basis) {
+    const ResolvedLength r = resolve_length(raw, ctx, font_size, basis);
+    if (r.kind == LengthKind::Length) return r.pixels;
+    if (r.kind == LengthKind::Percent) return basis * r.percent * 0.01;
+    return 0;
+}
+
+std::string_view trim_view(std::string_view s) {
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.remove_prefix(1);
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.remove_suffix(1);
+    return s;
+}
+
+std::vector<std::string_view> split_ws(std::string_view s) {
+    std::vector<std::string_view> out;
+    size_t i = 0;
+    while (i < s.size()) {
+        while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) ++i;
+        const size_t start = i;
+        while (i < s.size() && !std::isspace(static_cast<unsigned char>(s[i]))) ++i;
+        if (i > start) out.push_back(s.substr(start, i - start));
+    }
+    return out;
+}
+
+// A <position> component: keyword or length-percentage, against `basis`.
+double position_component(std::string_view raw, const LayoutContext& ctx, double font_size,
+                          double basis) {
+    if (ci_equal(raw, "left") || ci_equal(raw, "top")) return 0;
+    if (ci_equal(raw, "center")) return basis * 0.5;
+    if (ci_equal(raw, "right") || ci_equal(raw, "bottom")) return basis;
+    return clip_len(raw, ctx, font_size, basis);
+}
+
+void ellipse_points(double cx, double cy, double rx, double ry, std::vector<ClipPoint>* out) {
+    const int n = 48;
+    for (int i = 0; i < n; ++i) {
+        const double a = 2 * 3.14159265358979323846 * i / n;
+        out->push_back({cx + rx * std::cos(a), cy + ry * std::sin(a)});
+    }
+}
+
+bool parse_clip_path(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+                     const Rect& box, std::vector<ClipPoint>* out) {
+    const std::string_view raw = trim_view(get(style, "clip-path"));
+    if (raw.empty() || ci_equal(raw, "none")) return false;
+    const size_t open = raw.find('(');
+    const size_t close = raw.rfind(')');
+    if (open == std::string_view::npos || close == std::string_view::npos || close < open) return false;
+    std::string name(trim_view(raw.substr(0, open)));
+    for (char& c : name) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    const std::string_view inner = trim_view(raw.substr(open + 1, close - open - 1));
+    out->clear();
+
+    if (name == "polygon") {
+        size_t i = 0;
+        bool first = true;
+        while (i <= inner.size()) {
+            size_t comma = inner.find(',', i);
+            if (comma == std::string_view::npos) comma = inner.size();
+            const std::string_view seg = trim_view(inner.substr(i, comma - i));
+            i = comma + 1;
+            if (seg.empty()) continue;
+            if (first && (ci_equal(seg, "nonzero") || ci_equal(seg, "evenodd"))) { first = false; continue; }
+            first = false;
+            const std::vector<std::string_view> parts = split_ws(seg);
+            if (parts.size() < 2) return false;
+            out->push_back({box.x + clip_len(parts[0], ctx, font_size, box.width),
+                            box.y + clip_len(parts[1], ctx, font_size, box.height)});
+        }
+        return out->size() >= 3;
+    }
+
+    // circle( [<radius>]? [at <position>]? ), ellipse( [rx ry]? [at ...]? )
+    if (name == "circle" || name == "ellipse") {
+        std::string_view shape = inner, pos;
+        const size_t at = inner.find(" at ");
+        if (at != std::string_view::npos) {
+            shape = trim_view(inner.substr(0, at));
+            pos = trim_view(inner.substr(at + 4));
+        } else if (inner.substr(0, 3) == "at " || inner.substr(0, 3) == "at\t") {
+            shape = {};
+            pos = trim_view(inner.substr(3));
+        }
+        double cx = box.width * 0.5, cy = box.height * 0.5;
+        if (!pos.empty()) {
+            const std::vector<std::string_view> p = split_ws(pos);
+            if (!p.empty()) cx = position_component(p[0], ctx, font_size, box.width);
+            if (p.size() > 1) cy = position_component(p[1], ctx, font_size, box.height);
+        }
+        const auto side_radius = [&](std::string_view r, double along_basis, bool horizontal) {
+            const double d0 = horizontal ? cx : cy;
+            const double d1 = (horizontal ? box.width : box.height) - d0;
+            if (r.empty() || ci_equal(r, "closest-side")) return std::min(d0, d1);
+            if (ci_equal(r, "farthest-side")) return std::max(d0, d1);
+            return clip_len(r, ctx, font_size, along_basis);
+        };
+        double rx = 0, ry = 0;
+        const std::vector<std::string_view> rs = split_ws(shape);
+        if (name == "circle") {
+            const double basis = std::sqrt(box.width * box.width + box.height * box.height) / std::sqrt(2.0);
+            const std::string_view r = rs.empty() ? std::string_view() : rs[0];
+            if (r.empty() || ci_equal(r, "closest-side")) {
+                rx = ry = std::min({cx, cy, box.width - cx, box.height - cy});
+            } else if (ci_equal(r, "farthest-side")) {
+                rx = ry = std::max({cx, cy, box.width - cx, box.height - cy});
+            } else {
+                rx = ry = clip_len(r, ctx, font_size, basis);
+            }
+        } else {
+            rx = side_radius(rs.empty() ? std::string_view() : rs[0], box.width, true);
+            ry = side_radius(rs.size() > 1 ? rs[1] : std::string_view(), box.height, false);
+        }
+        if (rx <= 0 || ry <= 0) return false;
+        ellipse_points(box.x + cx, box.y + cy, rx, ry, out);
+        return true;
+    }
+
+    // inset( <top> [<right> [<bottom> [<left>]]] [round <radius>] )
+    if (name == "inset") {
+        std::string_view offsets = inner, round;
+        const size_t r = inner.find(" round ");
+        if (r != std::string_view::npos) {
+            offsets = trim_view(inner.substr(0, r));
+            round = trim_view(inner.substr(r + 7));
+        }
+        const std::vector<std::string_view> o = split_ws(offsets);
+        if (o.empty()) return false;
+        const double t = clip_len(o[0], ctx, font_size, box.height);
+        const double rt = clip_len(o.size() > 1 ? o[1] : o[0], ctx, font_size, box.width);
+        const double bt = clip_len(o.size() > 2 ? o[2] : o[0], ctx, font_size, box.height);
+        const double lt = clip_len(o.size() > 3 ? o[3] : (o.size() > 1 ? o[1] : o[0]), ctx, font_size, box.width);
+        const Rect inset(box.x + lt, box.y + t, box.width - lt - rt, box.height - t - bt);
+        if (inset.width <= 0 || inset.height <= 0) return false;
+        BorderRadii radii;
+        if (!round.empty()) {
+            const std::vector<std::string_view> rr = split_ws(round);
+            const auto cr = [&](size_t i) {
+                const std::string_view v = rr[std::min(i, rr.size() - 1)];
+                return CornerRadius(clip_len(v, ctx, font_size, inset.width),
+                                    clip_len(v, ctx, font_size, inset.height));
+            };
+            radii = BorderRadii(cr(0), cr(1), cr(2), cr(3));
+        }
+        *out = rounded_rect_outline(inset, radii);
+        return out->size() >= 3;
+    }
+    return false;
+}
 
 Recti intersect(const Recti& a, const Recti& b) {
     const int x0 = std::max(a.x, b.x), y0 = std::max(a.y, b.y);
@@ -634,13 +826,13 @@ LinearColor accent_color_of(const ComputedStyle* style) {
 }
 
 void fill_rounded(const Rect& r, double radius, const LinearColor& color, RenderInterface* backend,
-                  double opacity, const Transform2D* xf) {
+                  double opacity, const Transform2D* xf, const ClipNode* clip = nullptr) {
     if (r.width <= 0 || r.height <= 0 || !backend) return;
     Mesh mesh;
     const double rr = std::min(radius, std::min(r.width, r.height) * 0.5);
     const CornerRadius cr(rr);
     tessellate_rounded_rect(r, BorderRadii(cr, cr, cr, cr), color, &mesh);
-    draw_mesh(mesh, backend, {}, opacity, xf);
+    draw_mesh(mesh, backend, {}, opacity, xf, clip);
 }
 
 double attr_double(const Element& e, std::string_view name, double fallback) {
@@ -668,7 +860,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             if (!e.has_attribute("checked")) return;
             const double inset = 2;
             fill_rounded(Rect(x + inset, y + inset, b.width - 2 * inset, b.height - 2 * inset), 1,
-                         accent_color_of(b.style), paint.backend, state.opacity, xf);
+                         accent_color_of(b.style), paint.backend, state.opacity, xf, state.clip.get());
             return;
         }
         if (type == "radio") {
@@ -676,7 +868,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             const double inset = b.width * 0.25;
             const double d = b.width - 2 * inset;
             fill_rounded(Rect(x + inset, y + inset, d, d), d * 0.5, accent_color_of(b.style),
-                         paint.backend, state.opacity, xf);
+                         paint.backend, state.opacity, xf, state.clip.get());
             return;
         }
         if (type == "range") {
@@ -698,13 +890,13 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             LinearColor groove = accent;
             groove.a *= 0.3f;
             fill_rounded(Rect(cl, rail_top, cw, rail_h), rail_h * 0.5, groove, paint.backend,
-                         state.opacity, xf);
+                         state.opacity, xf, state.clip.get());
             if (cx - cl > 0) {
                 fill_rounded(Rect(cl, rail_top, cx - cl, rail_h), rail_h * 0.5, accent, paint.backend,
-                             state.opacity, xf);
+                             state.opacity, xf, state.clip.get());
             }
             fill_rounded(Rect(cx - thumb * 0.5, cy - thumb * 0.5, thumb, thumb), thumb * 0.5, accent,
-                         paint.backend, state.opacity, xf);
+                         paint.backend, state.opacity, xf, state.clip.get());
             return;
         }
     }
@@ -730,14 +922,14 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
         Mesh text;
         build_text_geometry(t.text, cl, baseline, fs, color, paint, &text,
                             letter_spacing_of(b.style, ctx, fs), &face);
-        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf);
+        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get());
         paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
     }
     if (tag == "select" && !e.has_attribute("multiple") && !e.has_attribute("size")) {
         // The runtime's v1 caret: a 6x3 grey bar 8px from the right edge.
         const double margin = 8, w = 6, h = 3;
         fill_rounded(Rect(x + b.width - margin - w, y + (b.height - h) * 0.5, w, h), 1,
-                     LinearColor(0.6f, 0.6f, 0.6f, 1.f), paint.backend, state.opacity, xf);
+                     LinearColor(0.6f, 0.6f, 0.6f, 1.f), paint.backend, state.opacity, xf, state.clip.get());
     }
 }
 
@@ -782,7 +974,7 @@ bool has_gradient_layer(const std::vector<BackgroundLayer>& layers) {
 bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
                               const Rect& area, const BorderRadii& radii, const LayoutContext& ctx,
                               double font_size, const PaintContext& paint, double opacity = 1,
-                              const Transform2D* xf = nullptr) {
+                              const Transform2D* xf = nullptr, const ClipNode* clip = nullptr) {
     if (!has_gradient_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
         return false;
     }
@@ -799,7 +991,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
         v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                        static_cast<float>((v.position.y - area.y) / area.height)};
     }
-    draw_mesh(mesh, paint.backend, tex, opacity, xf);
+    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip);
     return true;
 }
 
@@ -850,6 +1042,12 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     }
     const Transform2D* xf = state.transformed ? &state.xform : nullptr;
 
+    // `clip-path` clips the box's own paint and everything below it.
+    if (decorated && b.style && b.width > 0 && b.height > 0) {
+        std::vector<ClipPoint> poly;
+        if (parse_clip_path(b.style, ctx, fs, border_box, &poly)) push_clip(&state, std::move(poly));
+    }
+
     // `filter: blur()`: the box's own paint — background and shape — is
     // rasterized with room around it, blurred, and drawn as one texture; its
     // border and shadows are folded into that (dropped, for now), and its
@@ -879,7 +1077,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                                static_cast<float>((v.position.y - area.y) / area.height)};
             }
-            draw_mesh(mesh, paint.backend, tex, state.opacity, xf);
+            draw_mesh(mesh, paint.backend, tex, state.opacity, xf, state.clip.get());
             blurred = true;
         }
     }
@@ -887,7 +1085,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     std::vector<Shadow> shadows;
     if (decorated && b.style && !hidden && !blurred && b.width > 0 && b.height > 0) {
         shadows = parse_box_shadows(b.style, ctx, fs, resolve_color(b.style, "color"));
-        paint_outer_shadows(shadows, border_box, radii, paint.backend, state.opacity, xf);
+        paint_outer_shadows(shadows, border_box, radii, paint.backend, state.opacity, xf, state.clip.get());
     }
 
     // A box whose background went onto the canvas (§14.2) does not paint it
@@ -901,14 +1099,14 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         if (has_gradient_layer(layers)) {
             background_done = paint_layered_background(
                 layers, resolve_color(b.style, "background-color"), border_box, radii, ctx, fs, paint,
-                state.opacity, xf);
+                state.opacity, xf, state.clip.get());
         }
     }
 
     if (decorated && !hidden && !blurred) {
         Mesh mesh;
         paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done);
-        draw_mesh(mesh, paint.backend, {}, state.opacity, xf);
+        draw_mesh(mesh, paint.backend, {}, state.opacity, xf, state.clip.get());
         if (!shadows.empty()) {
             const Rect padding_box(x + b.border_left, y + b.border_top,
                                    b.width - b.border_left - b.border_right,
@@ -917,7 +1115,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 paint_inset_shadows(shadows, padding_box,
                                     inset_radii(radii, b.border_top, b.border_right, b.border_bottom,
                                                 b.border_left),
-                                    paint.backend, state.opacity, xf);
+                                    paint.backend, state.opacity, xf, state.clip.get());
             }
         }
     }
@@ -951,7 +1149,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 Mesh shadow;
                 build_text_geometry(b.text, x + sh.x, baseline + sh.y, b.font_size, sh.color, paint,
                                     &shadow, spacing, &run_face);
-                draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf);
+                draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get());
                 continue;
             }
             const double sigma = sh.blur * 0.5;
@@ -974,7 +1172,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                     Mesh shadow;
                     build_text_geometry(b.text, x + sh.x + i * sigma, baseline + sh.y + j * sigma,
                                         b.font_size, c, paint, &shadow, spacing, &run_face);
-                    draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf);
+                    draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get());
                 }
             }
         }
@@ -1001,7 +1199,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
         // The handle from the single up-front upload, never a fresh one: see
         // prepare_glyphs.
-        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf);
+        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get());
     }
 
     // `overflow` other than visible clips the children to the padding box
@@ -1032,6 +1230,15 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         if (state.scissor) r = intersect(*state.scissor, r);
         state.scissor = r;
         paint.backend->set_scissor(&r);
+        // A rounded scroller clips to its rounded padding box (§11.1.1 with
+        // Backgrounds §5.3): the corners are cut geometrically, since the
+        // scissor is only the bounding rectangle.
+        const BorderRadii inner =
+            inset_radii(radii, b.border_top, b.border_right, b.border_bottom, b.border_left);
+        if (!inner.top_left.is_zero() || !inner.top_right.is_zero() ||
+            !inner.bottom_right.is_zero() || !inner.bottom_left.is_zero()) {
+            push_clip(&state, rounded_rect_outline(Rect(px0, py0, px1 - px0, py1 - py0), inner));
+        }
     }
 
     for (BoxId c : tree.children(id)) {

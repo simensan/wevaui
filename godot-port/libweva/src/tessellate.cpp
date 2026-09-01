@@ -1,5 +1,7 @@
 #include "weva/tessellate.h"
 
+#include <array>
+
 #include <algorithm>
 #include <cmath>
 
@@ -208,6 +210,152 @@ void clip_edge(const std::vector<Vertex>& in, std::vector<Vertex>* out, Side sid
 }
 
 } // namespace
+
+namespace {
+
+double cross2(const ClipPoint& o, const ClipPoint& a, const ClipPoint& b) {
+    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+bool point_in_triangle(const ClipPoint& p, const ClipPoint& a, const ClipPoint& b,
+                       const ClipPoint& c) {
+    // Triangle is CCW (positive area); strictly inside or on an edge counts.
+    return cross2(a, b, p) >= 0 && cross2(b, c, p) >= 0 && cross2(c, a, p) >= 0;
+}
+
+// Ear clipping. O(n^2) per polygon, and polygons here have a handful of points.
+void triangulate(std::vector<ClipPoint> pts, std::vector<std::array<ClipPoint, 3>>* out) {
+    // Drop consecutive duplicates (a closing point equal to the first, or
+    // percentages that resolved onto each other).
+    std::vector<ClipPoint> clean;
+    for (const ClipPoint& p : pts) {
+        if (clean.empty() || std::fabs(clean.back().x - p.x) > 1e-9 || std::fabs(clean.back().y - p.y) > 1e-9) {
+            clean.push_back(p);
+        }
+    }
+    while (clean.size() > 1 && std::fabs(clean.front().x - clean.back().x) < 1e-9 &&
+           std::fabs(clean.front().y - clean.back().y) < 1e-9) {
+        clean.pop_back();
+    }
+    if (clean.size() < 3) return;
+    double area = 0;
+    for (size_t i = 0; i < clean.size(); ++i) {
+        const ClipPoint& a = clean[i];
+        const ClipPoint& b = clean[(i + 1) % clean.size()];
+        area += a.x * b.y - b.x * a.y;
+    }
+    if (std::fabs(area) < 1e-12) return;
+    if (area < 0) std::reverse(clean.begin(), clean.end());
+
+    std::vector<size_t> idx(clean.size());
+    for (size_t i = 0; i < idx.size(); ++i) idx[i] = i;
+    size_t guard = 0;
+    while (idx.size() > 3 && guard++ < 10000) {
+        bool clipped = false;
+        for (size_t i = 0; i < idx.size(); ++i) {
+            const size_t ip = idx[(i + idx.size() - 1) % idx.size()];
+            const size_t ic = idx[i];
+            const size_t in = idx[(i + 1) % idx.size()];
+            const ClipPoint &a = clean[ip], &b = clean[ic], &c = clean[in];
+            if (cross2(a, b, c) <= 1e-12) continue;   // reflex or degenerate
+            bool empty = true;
+            for (size_t k : idx) {
+                if (k == ip || k == ic || k == in) continue;
+                if (point_in_triangle(clean[k], a, b, c)) { empty = false; break; }
+            }
+            if (!empty) continue;
+            out->push_back({a, b, c});
+            idx.erase(idx.begin() + static_cast<std::ptrdiff_t>(i));
+            clipped = true;
+            break;
+        }
+        if (!clipped) break;   // no ear: self-intersecting input; fan the rest
+    }
+    for (size_t i = 1; i + 1 < idx.size(); ++i) {
+        const ClipPoint &a = clean[idx[0]], &b = clean[idx[i]], &c = clean[idx[i + 1]];
+        if (cross2(a, b, c) > 1e-12) out->push_back({a, b, c});
+        else if (cross2(a, b, c) < -1e-12) out->push_back({a, c, b});
+    }
+}
+
+// Sutherland-Hodgman of a convex polygon of vertices against one CCW triangle.
+void clip_to_triangle(const std::vector<Vertex>& in, const std::array<ClipPoint, 3>& t,
+                      std::vector<Vertex>* poly, std::vector<Vertex>* scratch) {
+    *poly = in;
+    for (int e = 0; e < 3 && !poly->empty(); ++e) {
+        const ClipPoint& p = t[static_cast<size_t>(e)];
+        const ClipPoint& q = t[static_cast<size_t>((e + 1) % 3)];
+        const double ex = q.x - p.x, ey = q.y - p.y;
+        clip_edge(*poly, scratch,
+                  [&](const Vertex& v) { return ex * (v.position.y - p.y) - ey * (v.position.x - p.x); },
+                  [&](const Vertex& a, const Vertex& b) {
+                      const double da = ex * (a.position.y - p.y) - ey * (a.position.x - p.x);
+                      const double db = ex * (b.position.y - p.y) - ey * (b.position.x - p.x);
+                      return da / (da - db);
+                  });
+        poly->swap(*scratch);
+    }
+}
+
+} // namespace
+
+void clip_triangles_polygon(const std::vector<Vertex>& vertices,
+                            const std::vector<uint32_t>& indices,
+                            const std::vector<ClipPoint>& polygon, Mesh* out) {
+    std::vector<std::array<ClipPoint, 3>> pieces;
+    triangulate(polygon, &pieces);
+    if (pieces.empty()) return;
+    double px0 = 1e300, py0 = 1e300, px1 = -1e300, py1 = -1e300;
+    for (const ClipPoint& p : polygon) {
+        px0 = std::min(px0, p.x); py0 = std::min(py0, p.y);
+        px1 = std::max(px1, p.x); py1 = std::max(py1, p.y);
+    }
+    std::vector<Vertex> tri(3), poly, scratch;
+    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+        tri[0] = vertices[indices[i]];
+        tri[1] = vertices[indices[i + 1]];
+        tri[2] = vertices[indices[i + 2]];
+        const double minx = std::min({tri[0].position.x, tri[1].position.x, tri[2].position.x});
+        const double maxx = std::max({tri[0].position.x, tri[1].position.x, tri[2].position.x});
+        const double miny = std::min({tri[0].position.y, tri[1].position.y, tri[2].position.y});
+        const double maxy = std::max({tri[0].position.y, tri[1].position.y, tri[2].position.y});
+        if (maxx <= px0 || minx >= px1 || maxy <= py0 || miny >= py1) continue;
+        for (const auto& piece : pieces) {
+            clip_to_triangle(tri, piece, &poly, &scratch);
+            if (poly.size() < 3) continue;
+            const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+            out->vertices.insert(out->vertices.end(), poly.begin(), poly.end());
+            for (uint32_t k = 1; k + 1 < poly.size(); ++k) {
+                out->indices.insert(out->indices.end(), {base, base + k, base + k + 1});
+            }
+        }
+    }
+}
+
+std::vector<ClipPoint> rounded_rect_outline(const Rect& r, const BorderRadii& radii, int segments) {
+    const BorderRadii c = clamp_radii_to_rect(radii, r.width, r.height);
+    std::vector<ClipPoint> out;
+    const double x0 = r.x, y0 = r.y, x1 = r.x + r.width, y1 = r.y + r.height;
+    const double kPi = 3.14159265358979323846;
+    // Corner centre, radii, start angle; angles run clockwise on a y-down page.
+    const auto arc = [&](double cx, double cy, double rx, double ry, double a0) {
+        if (rx <= 0 || ry <= 0) return false;
+        for (int i = 0; i <= segments; ++i) {
+            const double a = a0 + (kPi / 2) * i / segments;
+            out.push_back({cx + rx * std::cos(a), cy + ry * std::sin(a)});
+        }
+        return true;
+    };
+    if (!arc(x0 + c.top_left.x_radius, y0 + c.top_left.y_radius, c.top_left.x_radius,
+             c.top_left.y_radius, kPi)) out.push_back({x0, y0});
+    if (!arc(x1 - c.top_right.x_radius, y0 + c.top_right.y_radius, c.top_right.x_radius,
+             c.top_right.y_radius, 1.5 * kPi)) out.push_back({x1, y0});
+    if (!arc(x1 - c.bottom_right.x_radius, y1 - c.bottom_right.y_radius, c.bottom_right.x_radius,
+             c.bottom_right.y_radius, 0)) out.push_back({x1, y1});
+    if (!arc(x0 + c.bottom_left.x_radius, y1 - c.bottom_left.y_radius, c.bottom_left.x_radius,
+             c.bottom_left.y_radius, 0.5 * kPi)) out.push_back({x0, y1});
+    return out;
+}
 
 void clip_triangles(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
                     const Rect& rect, Mesh* out) {
