@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 #include <godot_cpp/classes/canvas_item.hpp>
 #include <godot_cpp/classes/image_texture.hpp>
@@ -105,7 +106,7 @@ private:
     GodotFontBackend font_backend_;
     // System faces behind the theme font for the symbols and emoji it lacks
     // (★, ⚔, 🛡). Kept alive here because the backend holds only RIDs.
-    godot::Ref<godot::SystemFont> symbol_font_;
+    std::vector<godot::Ref<godot::SystemFont>> symbol_fonts_;
     weva_font_backend font_table_{};
     uint64_t font_face_ = 0;
     bool use_engine_font_ = true;

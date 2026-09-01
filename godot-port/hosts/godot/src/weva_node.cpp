@@ -4,6 +4,7 @@
 #include <godot_cpp/classes/font_file.hpp>
 #include <godot_cpp/classes/image.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/theme_db.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
@@ -66,20 +67,30 @@ void WevaDocument::ensure_font_backend() {
 
     // Behind it, whatever the system has for symbols and emoji: the theme
     // font covers Latin and little else, and a sample's ★ or 🛡 would draw
-    // nothing. Colour emoji rasterise through the coverage atlas as
-    // silhouettes in the text colour — shapes, not colours, for now.
-    if (symbol_font_.is_null()) {
-        symbol_font_.instantiate();
-        PackedStringArray names;
+    // nothing. One SystemFont PER installed name — a single SystemFont with a
+    // name list resolves to the first match only, so with "Segoe UI Symbol"
+    // present the emoji face after it was never reached. Names the system
+    // lacks are skipped rather than left to fall back to the default face,
+    // which would shadow every name behind them.
+    if (symbol_fonts_.empty()) {
+        PackedStringArray installed;
+        if (OS* os = OS::get_singleton()) installed = os->get_system_fonts();
         for (const char* n : {"Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji",
                               "Noto Color Emoji", "Noto Sans Symbols2", "Noto Sans Symbols",
                               "DejaVu Sans", "Symbola"}) {
+            if (installed.size() > 0 && !installed.has(String(n))) continue;
+            Ref<SystemFont> sf;
+            sf.instantiate();
+            PackedStringArray names;
             names.push_back(n);
+            sf->set_font_names(names);
+            symbol_fonts_.push_back(sf);
         }
-        symbol_font_->set_font_names(names);
     }
-    const TypedArray<RID> symbol_rids = symbol_font_->get_rids();
-    for (int64_t i = 0; i < symbol_rids.size(); ++i) rids.push_back(symbol_rids[i]);
+    for (const Ref<SystemFont>& sf : symbol_fonts_) {
+        const TypedArray<RID> symbol_rids = sf->get_rids();
+        for (int64_t i = 0; i < symbol_rids.size(); ++i) rids.push_back(symbol_rids[i]);
+    }
 
     // The theme font's file data lets the backend build bold and italic
     // variants as fonts of their own (a variation would share its glyphs).

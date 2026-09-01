@@ -81,8 +81,10 @@ struct RecordingBackend : RenderInterface {
     }
     void release_geometry(GeometryHandle g) override { compiled.erase(g.id); }
     TextureHandle load_texture(std::string_view, Vec2i*) override { return {}; }
-    TextureHandle generate_texture(const std::vector<uint8_t>&, Vec2i size) override {
+    std::map<uint64_t, std::vector<uint8_t>> texture_bytes;
+    TextureHandle generate_texture(const std::vector<uint8_t>& rgba, Vec2i size) override {
         textures[next] = size;
+        texture_bytes[next] = rgba;
         return TextureHandle{next++};
     }
     void release_texture(TextureHandle t) override { textures.erase(t.id); }
@@ -601,6 +603,64 @@ void test_paint_stacking_order() {
     }
     // yellow (z -1), grey (in flow), red then green (positioned, tree order), blue (z 1)
     CHECK_EQ(order, std::string("YgRGB"));
+}
+
+// A colour glyph keeps its texels in the atlas and is drawn white.
+namespace {
+struct ColorStubFont : FontInterface {
+    FaceHandle load_face(const std::vector<uint8_t>&, int) override { return FaceHandle{1}; }
+    bool face_metrics(FaceHandle, double px, FaceMetrics* out) override {
+        out->ascent = px * 0.8; out->descent = px * 0.2; out->units_per_em = px; return true;
+    }
+    bool glyph_index(FaceHandle, uint32_t cp, uint32_t* out) override { *out = cp; return true; }
+    bool glyph_metrics(FaceHandle, uint32_t, double px, GlyphMetrics* out) override {
+        out->advance = px; out->bearing_x = 0; out->bearing_y = px; out->width = 2; out->height = 2; return true;
+    }
+    bool rasterize(FaceHandle, uint32_t glyph, double, RenderMode, Bitmap* out) override {
+        out->width = out->height = 2;
+        out->data = {255, 255, 255, 255};
+        if (glyph == 7) {
+            out->is_color = true;
+            out->rgba = {255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 10, 20, 30, 128};
+        }
+        return true;
+    }
+    void shape(FaceHandle, std::string_view utf8, double px, std::vector<ShapedGlyph>* out) override {
+        out->clear();
+        for (unsigned char c : utf8) { ShapedGlyph g; g.glyph = c; g.x_advance = px; out->push_back(g); }
+    }
+};
+} // namespace
+
+void test_color_glyphs() {
+    ColorStubFont font;
+    GlyphAtlas atlas(64, 64);
+    const GlyphSlot* mono = atlas.get(&font, FaceHandle{1}, 65, 16);
+    const GlyphSlot* color = atlas.get(&font, FaceHandle{1}, 7, 16);
+    CHECK(mono && !mono->is_color);
+    CHECK(color && color->is_color);
+    RecordingBackend backend;
+    const TextureHandle t = atlas.texture(&backend);
+    const std::vector<uint8_t>& px = backend.texture_bytes[t.id];
+    const auto at = [&](const GlyphSlot* s, int x, int y, int c) {
+        return px[((static_cast<size_t>(s->y + y)) * 64 + s->x + x) * 4 + c];
+    };
+    CHECK(at(mono, 0, 0, 0) == 255 && at(mono, 0, 0, 3) == 255);
+    CHECK(at(color, 0, 0, 0) == 255 && at(color, 0, 0, 1) == 0);      // red texel kept
+    CHECK(at(color, 1, 1, 0) == 10 && at(color, 1, 1, 3) == 128);
+    // Paint draws the colour glyph's quad white with the text's alpha, and a
+    // coverage glyph in the text colour.
+    PaintContext paint;
+    paint.font = &font;
+    paint.atlas = &atlas;
+    paint.face = FaceHandle{1};
+    Mesh mesh;
+    const std::string text = std::string("A") + static_cast<char>(7);
+    build_text_geometry(text, 0, 16, 16, LinearColor(1, 0, 0, 0.5f), paint, &mesh, 0, nullptr);
+    CHECK(mesh.vertices.size() == 8);
+    CHECK(near(mesh.vertices[0].color.r, 1) && near(mesh.vertices[0].color.g, 0));
+    CHECK(near(mesh.vertices[4].color.r, 1) && near(mesh.vertices[4].color.g, 1) &&
+          near(mesh.vertices[4].color.b, 1) && near(mesh.vertices[4].color.a, 0.5f));
 }
 
 void test_font_weight_resolution() {

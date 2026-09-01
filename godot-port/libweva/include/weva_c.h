@@ -133,6 +133,10 @@ typedef struct weva_glyph_bitmap {
      * call returns. */
     const uint8_t* alpha;
     int32_t width, height;
+    /* Optional, for a colour glyph: straight-alpha RGBA8, four bytes per
+     * pixel, same size. Null (the zero-initialised default) means the glyph
+     * is coverage only and draws in the text colour. */
+    const uint8_t* rgba;
 } weva_glyph_bitmap;
 
 typedef struct weva_font_backend {

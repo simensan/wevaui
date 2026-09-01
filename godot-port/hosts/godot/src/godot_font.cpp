@@ -204,23 +204,40 @@ int32_t GodotFontBackend::rasterize(void* self, uint64_t face, uint32_t glyph, d
         return 0;
     }
 
-    // The core wants one coverage byte per pixel. TextServer's atlas may be
-    // RGBA (colour or subpixel) or 8-bit; the alpha channel is the coverage in
-    // the first case, and Image::get_pixel normalises the second to it too, so
-    // reading alpha is correct either way at the cost of a per-pixel call. Done
-    // once per glyph per size, not per frame.
-    me->scratch_.resize(static_cast<size_t>(gw) * gh);
+    // The core wants one coverage byte per pixel, plus the texels themselves
+    // for a colour glyph. TextServer's atlas is LA8 for coverage glyphs and
+    // RGBA8 for colour ones (a CBDT/COLR emoji); the alpha channel is the
+    // coverage either way, and Image::get_pixel normalises both. A colour
+    // glyph is one whose texels actually carry chroma — an RGBA8 page can
+    // also hold plain coverage. Done once per glyph per size, not per frame.
+    const size_t n = static_cast<size_t>(gw) * gh;
+    me->scratch_.resize(n);
+    const bool rgba_page = image->get_format() == Image::FORMAT_RGBA8 ||
+                           image->get_format() == Image::FORMAT_RGB8;
+    if (rgba_page) me->scratch_rgba_.resize(n * 4);
+    bool chroma = false;
     for (int32_t y = 0; y < gh; ++y) {
         for (int32_t x = 0; x < gw; ++x) {
             const Color c = image->get_pixel(gx + x, gy + y);
-            me->scratch_[static_cast<size_t>(y) * gw + x] =
-                static_cast<uint8_t>(std::lround(c.a * 255.0));
+            const size_t i = static_cast<size_t>(y) * gw + x;
+            me->scratch_[i] = static_cast<uint8_t>(std::lround(c.a * 255.0));
+            if (rgba_page) {
+                me->scratch_rgba_[4 * i + 0] = static_cast<uint8_t>(std::lround(c.r * 255.0));
+                me->scratch_rgba_[4 * i + 1] = static_cast<uint8_t>(std::lround(c.g * 255.0));
+                me->scratch_rgba_[4 * i + 2] = static_cast<uint8_t>(std::lround(c.b * 255.0));
+                me->scratch_rgba_[4 * i + 3] = me->scratch_[i];
+                if (c.a > 0.02 && (std::fabs(c.r - c.g) > 0.02 || std::fabs(c.g - c.b) > 0.02 ||
+                                   c.r < 0.98)) {
+                    chroma = true;
+                }
+            }
         }
     }
 
     out->alpha = me->scratch_.data();
     out->width = gw;
     out->height = gh;
+    out->rgba = (rgba_page && chroma) ? me->scratch_rgba_.data() : nullptr;
     return 1;
 }
 

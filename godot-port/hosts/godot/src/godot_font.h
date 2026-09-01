@@ -76,6 +76,7 @@ private:
     // The core copies the bitmap before `rasterize` returns, so one reusable
     // buffer is enough and costs no per-glyph allocation.
     std::vector<uint8_t> scratch_;
+    std::vector<uint8_t> scratch_rgba_;
 };
 
 } // namespace weva_godot

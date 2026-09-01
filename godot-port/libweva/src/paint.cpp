@@ -1442,10 +1442,15 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
             // is above it.
             const double gy = baseline_y - g.y_offset - slot->bearing_y;
             const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+            // A colour glyph carries its own colours in the atlas; only the
+            // text's alpha applies to it (CSS Fonts 4 §5.2 — `color` does not
+            // tint a colour font's glyphs).
+            const LinearColor glyph_color =
+                slot->is_color ? LinearColor(1.f, 1.f, 1.f, color.a) : color;
             const auto v = [&](double px, double py, float u, float w) {
                 Vertex vt;
                 vt.position = {static_cast<float>(px), static_cast<float>(py)};
-                vt.color = color;
+                vt.color = glyph_color;
                 vt.tex_coord = {u, w};
                 return vt;
             };

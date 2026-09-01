@@ -259,6 +259,15 @@ public:
         // Copied here, so the host's buffer need only live for the call.
         out->data.assign(bmp.alpha, bmp.alpha ? bmp.alpha + n : bmp.alpha);
         if (!bmp.alpha) out->data.assign(n, 0);
+        out->is_color = false;
+        out->rgba.clear();
+        if (bmp.rgba) {
+            out->is_color = true;
+            out->rgba.assign(bmp.rgba, bmp.rgba + 4 * n);
+            if (!bmp.alpha) {
+                for (size_t i = 0; i < n; ++i) out->data[i] = bmp.rgba[4 * i + 3];
+            }
+        }
         return true;
     }
     FaceHandle variant(FaceHandle face, int weight, bool italic) override {

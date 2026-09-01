@@ -18,6 +18,9 @@ struct GlyphSlot {
     // Normalised texture coordinates, precomputed because every emitted quad
     // needs them and the atlas size does not change between uploads.
     float u0 = 0, v0 = 0, u1 = 0, v1 = 0;
+    // The atlas texels hold the glyph's own colours (an emoji); the text
+    // colour must not modulate them.
+    bool is_color = false;
 };
 
 class GlyphAtlas {

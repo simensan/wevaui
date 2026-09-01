@@ -50,6 +50,11 @@ enum class RenderMode : uint8_t { Alpha8, Sdf };
 struct Bitmap {
     std::vector<uint8_t> data;   // one byte per pixel in Alpha8
     int width = 0, height = 0;
+    // A colour glyph (an emoji from a COLR/CBDT face): straight-alpha RGBA8,
+    // four bytes per pixel, beside its coverage in `data`. Drawn in its own
+    // colours rather than the text colour.
+    std::vector<uint8_t> rgba;
+    bool is_color = false;
 };
 
 class FontInterface {

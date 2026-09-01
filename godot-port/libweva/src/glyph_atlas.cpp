@@ -46,15 +46,26 @@ const GlyphSlot* GlyphAtlas::get(FontInterface* font, FaceHandle face, uint32_t 
 
     // The coverage byte goes into all four channels: white RGB means the
     // vertex colour passes through unchanged when the texture modulates it, so
-    // one atlas serves text of any colour.
+    // one atlas serves text of any colour. A colour glyph keeps its texels and
+    // paint draws its quad white instead (see build_text_geometry).
+    const bool color = bmp.is_color &&
+                       bmp.rgba.size() >= static_cast<size_t>(bmp.width) * bmp.height * 4;
+    slot.is_color = color;
     for (int y = 0; y < bmp.height; ++y) {
         for (int x = 0; x < bmp.width; ++x) {
-            const uint8_t a = bmp.data[static_cast<size_t>(y) * bmp.width + x];
+            const size_t i = static_cast<size_t>(y) * bmp.width + x;
             const size_t o = (static_cast<size_t>(slot.y + y) * width_ + slot.x + x) * 4;
-            pixels_[o + 0] = 255;
-            pixels_[o + 1] = 255;
-            pixels_[o + 2] = 255;
-            pixels_[o + 3] = a;
+            if (color) {
+                pixels_[o + 0] = bmp.rgba[4 * i + 0];
+                pixels_[o + 1] = bmp.rgba[4 * i + 1];
+                pixels_[o + 2] = bmp.rgba[4 * i + 2];
+                pixels_[o + 3] = bmp.rgba[4 * i + 3];
+            } else {
+                pixels_[o + 0] = 255;
+                pixels_[o + 1] = 255;
+                pixels_[o + 2] = 255;
+                pixels_[o + 3] = bmp.data[i];
+            }
         }
     }
 
