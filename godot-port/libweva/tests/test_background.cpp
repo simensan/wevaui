@@ -537,6 +537,41 @@ void test_paint_clip_path_and_rounded_overflow() {
     CHECK(red && blue && green);
 }
 
+// A transformed descendant is clipped where it lands on screen, not where
+// it was laid out (level-select's rotated roads inside a round map).
+void test_paint_clip_follows_descendant_transform() {
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 }"
+                "#p { width: 100px; height: 100px; clip-path: circle(50px at 50px 50px) }"
+                "#c { width: 100px; height: 100px; background: #00f; transform: translate(50px, 0) }"));
+    CHECK(f.layout("<body><div id=p><div id=c></div></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    bool blue = false;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty()) continue;
+        const LinearColor c = d.geometry.vertices[0].color;
+        if (!(near(c.b, 1) && near(c.r, 0))) continue;
+        blue = true;
+        double area = 0;
+        double minx = 1e9, maxx = -1e9;
+        for (size_t i = 0; i + 2 < d.geometry.indices.size(); i += 3) {
+            const auto& p = d.geometry.vertices[d.geometry.indices[i]].position;
+            const auto& q = d.geometry.vertices[d.geometry.indices[i + 1]].position;
+            const auto& r = d.geometry.vertices[d.geometry.indices[i + 2]].position;
+            area += std::fabs((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)) * 0.5;
+        }
+        for (const Vertex& v : d.geometry.vertices) { minx = std::min<double>(minx, v.position.x); maxx = std::max<double>(maxx, v.position.x); }
+        // The translated box covers x in [50, 150]; only the circle's right
+        // half survives: pi * 50^2 / 2, and nothing left of x = 50.
+        CHECK(area > 3750 && area < 4050);
+        CHECK(minx > 49.9 && maxx < 100.1);
+    }
+    CHECK(blue);
+}
+
 void test_font_weight_resolution() {
     // CSS Fonts L4 §2.2: keywords and numbers; bolder / lighter against the
     // 400 base; italic and oblique both count as italic.

@@ -18,8 +18,10 @@ namespace weva {
 // A clip in force for a subtree: `clip-path`, or the rounded padding box of an
 // `overflow: hidden` box. Chained through the parent so nested clips all
 // apply; shared by the PaintState copies below rather than copied per box.
-// Polygons are in layout coordinates, the space meshes are built in before
-// the accumulated transform is applied.
+// Polygons are in SCREEN coordinates — mapped through the transform in force
+// where the clip was pushed — because a descendant may add a transform of
+// its own: a road rotated across a round map is clipped where it lands, not
+// where it was laid out.
 struct ClipNode {
     std::vector<ClipPoint> polygon;
     std::shared_ptr<const ClipNode> parent;
@@ -86,18 +88,33 @@ std::vector<std::string_view> split_shadow_list(std::string_view s, char sep);
 void draw_mesh(const Mesh& input, RenderInterface* backend, TextureHandle tex, double opacity = 1,
                const Transform2D* xform = nullptr, const ClipNode* clip = nullptr) {
     if (input.empty()) return;
-    // Geometric clipping first, innermost clip outwards, while the vertices
-    // are still in layout coordinates.
-    Mesh clipped;
-    const Mesh* src = &input;
-    for (const ClipNode* n = clip; n; n = n->parent.get()) {
-        Mesh tmp;
-        clip_triangles_polygon(src->vertices, src->indices, n->polygon, &tmp);
-        clipped = std::move(tmp);
-        src = &clipped;
-        if (src->empty()) return;
+    if (clip) {
+        // Into screen space first, then geometric clipping, innermost clip
+        // outwards; opacity last. The transformed path below is folded in
+        // here so the polygons and the vertices meet in one space.
+        Mesh cur = input;
+        if (xform) {
+            for (Vertex& v : cur.vertices) {
+                double x = 0, y = 0;
+                xform->apply(v.position.x, v.position.y, &x, &y);
+                v.position = {static_cast<float>(x), static_cast<float>(y)};
+            }
+        }
+        for (const ClipNode* n = clip; n; n = n->parent.get()) {
+            Mesh tmp;
+            clip_triangles_polygon(cur.vertices, cur.indices, n->polygon, &tmp);
+            cur = std::move(tmp);
+            if (cur.empty()) return;
+        }
+        if (opacity < 1) {
+            for (Vertex& v : cur.vertices) v.color.a *= static_cast<float>(std::max(0.0, opacity));
+        }
+        const GeometryHandle g = backend->compile_geometry(cur.vertices, cur.indices);
+        backend->render_geometry(g, {0, 0}, tex);
+        backend->release_geometry(g);
+        return;
     }
-    const Mesh& mesh = *src;
+    const Mesh& mesh = input;
     // Compiled and released per draw for now. A backend that batches will want
     // geometry to outlive a frame; that needs the paint cache, keyed on style
     // and layout versions, which is a later slice.
@@ -486,9 +503,18 @@ struct PaintState {
     std::shared_ptr<const ClipNode> clip;
 };
 
-// Pushes a polygon clip onto the state's chain.
+// Pushes a polygon clip onto the state's chain, mapping it through the
+// transform in force so it lives in screen space (see ClipNode).
 void push_clip(PaintState* state, std::vector<ClipPoint> polygon) {
     if (polygon.size() < 3) return;
+    if (state->transformed) {
+        for (ClipPoint& p : polygon) {
+            double x = 0, y = 0;
+            state->xform.apply(p.x, p.y, &x, &y);
+            p.x = x;
+            p.y = y;
+        }
+    }
     auto n = std::make_shared<ClipNode>();
     n->polygon = std::move(polygon);
     n->parent = state->clip;

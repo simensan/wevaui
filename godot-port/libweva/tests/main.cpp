@@ -166,6 +166,7 @@ void test_gradient_calc_stop_position();
 void test_paint_form_control_marks();
 void test_clip_triangles_polygon();
 void test_paint_clip_path_and_rounded_overflow();
+void test_paint_clip_follows_descendant_transform();
 void test_blur_and_padded_rasterize();
 void test_paint_transform_rotates_geometry();
 void test_font_weight_resolution();
@@ -373,6 +374,7 @@ int main() {
     test_paint_form_control_marks();
     test_clip_triangles_polygon();
     test_paint_clip_path_and_rounded_overflow();
+    test_paint_clip_follows_descendant_transform();
     test_blur_and_padded_rasterize();
     test_paint_transform_rotates_geometry();
     test_font_weight_resolution();
