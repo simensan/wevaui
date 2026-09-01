@@ -2791,6 +2791,53 @@ notch), `::after` badges to verify, generic families (`serif`, `monospace`)
 mapped to system faces, inline-style custom properties (level-select's road
 colours), colour emoji, `url()` images.
 
+### Tenth pass: the boxes nobody was generating. 12/35 + 11
+
+The form-control audit found something larger than form controls: the port
+cascaded `::before` / `::after` styles but never built their boxes, and
+BaselineGen — the oracle's reference — omitted both the pseudo resolvers
+and FormControlStylesheet, so ref and cand agreed on a shared omission.
+Every badge, quote mark, counter prefix and decorative overlay in the
+samples had been missing on both sides of the diff.
+
+* **Pseudo-element boxes.** `StyleProvider::pseudo_style_of`; the builder
+  injects the boxes as first/last children (blockified when abspos/floated,
+  items in flex/grid), with `pseudo_host` on the Box so paint decorates
+  them while the dump skips them. Counters and quote depth are tracked in
+  the builder's own document-order walk (`counter-reset/-increment/-set`
+  scopes, `counter()`/`counters()` in decimal/alpha/roman, `open-quote`
+  through the `quotes` pairs). Two cascade bugs surfaced only once boxes
+  existed: the pseudo inherited nothing declared above the host
+  (`contains()` sees own slots; read through the inherit chain), and its
+  var() namespace held only the host's own tokens (combat-hud sets
+  `--icon` on the `<li>`, the pseudo hangs off a child).
+* **Form controls.** The UA sheet gained the FormControlStylesheet rules
+  (218×34 inputs, `option { display: none }`, the range track) plus Chrome's
+  `input[type=hidden] { display: none }` — added to the C# sheet too, it laid
+  out as a text field. Paint draws the runtime's overlays: value /
+  placeholder / password bullets / the chosen option, check and radio
+  marks, the range rail + thumb, the select caret. BaselineGen now mirrors
+  UIDocumentBuilder (form sheet, Before/AfterStyleOf), and weva_dump /
+  weva_bench cascade the pseudos.
+* **Geometric clipping.** `clip_triangles_polygon` (ear clipping, concave
+  allowed) and `rounded_rect_outline`; paint carries a ClipNode chain so
+  `clip-path: polygon/circle/ellipse/inset` clips a subtree and a rounded
+  `overflow: hidden` cuts its corners. combat-hud's hexagons and round
+  minimap, the avatar circles.
+* **color-mix()** evaluates (premultiplied, sRGB), and gradient stops take
+  a `calc()` position — the progress-ring and HP-fill idioms both depended
+  on those.
+
+**Where it stands: samples 12/35 agree + 11 arbitrated (unchanged — both
+sides gained the same boxes); harvest 178/210 + 18; hand 46/47 (43-quotes
+and 44-counters now agree); 8,304 checks green; host 23/23 on Linux and
+Windows; form-demo renders every control.** Still open from the
+side-by-sides: colour emoji (the host copies alpha out of Godot's glyph
+texture; a colour glyph needs an RGBA atlas), `mask-image` fades,
+`backdrop-filter` (10 samples), an opacity group layer, `url()` images and
+`border-image`, `@container`, and the shared engine-vs-Chrome divergences
+the oracle lists (form-demo's control heights, inventory's 1fr regrowth).
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
