@@ -170,6 +170,7 @@ void test_paint_clip_follows_descendant_transform();
 void test_paint_stacking_order();
 void test_color_glyphs();
 void test_paint_color_filters();
+void test_box_shadow_layer_density();
 void test_blur_and_padded_rasterize();
 void test_paint_transform_rotates_geometry();
 void test_font_weight_resolution();
@@ -381,6 +382,7 @@ int main() {
     test_paint_stacking_order();
     test_color_glyphs();
     test_paint_color_filters();
+    test_box_shadow_layer_density();
     test_blur_and_padded_rasterize();
     test_paint_transform_rotates_geometry();
     test_font_weight_resolution();

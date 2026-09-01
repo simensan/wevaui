@@ -487,9 +487,16 @@ double blurred_coverage(double e, double sigma) {
 
 // The blur is approximated with K nested shapes drawn outermost first, each
 // with the alpha that brings the accumulated coverage to the Gaussian's value
-// at its edge. No blur pass exists in the canvas; K = 12 reads as smooth at
-// the blur radii the samples use (6-24px).
-constexpr int kShadowLayers = 12;
+// at its edge. No blur pass exists in the canvas, so K sets how smooth the
+// falloff reads: one layer per ~2px of blur, since a step wider than that
+// shows as a visible band. A fixed K = 12 was smooth at the 6-24px radii most
+// samples use, but quests' `0 34px 90px` shadow banded into 12 grey rings.
+// Clamped so a small shadow stays cheap and a huge one stays bounded.
+int shadow_layers(double blur) {
+    if (blur <= 0) return 1;
+    const int k = static_cast<int>(std::lround(blur * 0.5));
+    return std::min(48, std::max(12, k));
+}
 
 void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_box,
                          const BorderRadii& radii, RenderInterface* backend, double opacity,
@@ -499,7 +506,7 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
         const Shadow& sh = shadows[s];
         if (sh.inset) continue;
         const double sigma = sh.blur * 0.5;
-        const int layers = sh.blur > 0 ? kShadowLayers : 1;
+        const int layers = shadow_layers(sh.blur);
         double accumulated = 0;
         for (int k = 0; k < layers; ++k) {
             // Extents run from +blur (nothing) to -blur (fully covered).
@@ -532,7 +539,7 @@ void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding
         const Shadow& sh = shadows[s];
         if (!sh.inset) continue;
         const double sigma = sh.blur * 0.5;
-        const int layers = sh.blur > 0 ? kShadowLayers : 1;
+        const int layers = shadow_layers(sh.blur);
         double accumulated = 0;
         for (int k = 0; k < layers; ++k) {
             const double e = sh.blur > 0 ? sh.blur * (1.0 - 2.0 * (k + 0.5) / layers) : 0.0;

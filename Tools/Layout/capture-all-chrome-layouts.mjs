@@ -144,7 +144,16 @@ async function captureOne(browser, target) {
     if (!fs.existsSync(htmlPath)) {
         return { htmlPath, ok: false, error: 'missing' };
     }
-    const raw = fs.readFileSync(htmlPath, 'utf8');
+    // `<link rel=stylesheet>` is dropped: the corpus contract is "the sibling
+    // .css by basename, nothing else", which is what BaselineGen and weva_dump
+    // load. Chrome would follow the link as well, and in a FLAT corpus a link
+    // can resolve to another sample's sheet — collect_samples renames a
+    // second `menu.html` to `sample-menu.html`, so its `href="menu.css"`
+    // picked up the OTHER menu's stylesheet and Chrome laid out a page
+    // neither engine had ever seen. For every other sample the link points at
+    // the sheet already injected below, so dropping it changes nothing.
+    const raw = fs.readFileSync(htmlPath, 'utf8')
+        .replace(/<link\b[^>]*>/gi, tag => (/rel\s*=\s*['"]?[^'">]*stylesheet/i.test(tag) ? '' : tag));
     const cssPath = htmlPath.replace(/\.html$/i, '.css');
     const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '';
     const isFragment = !/<\s*html[\s>]/i.test(raw) && !/<!doctype/i.test(raw);
@@ -175,14 +184,16 @@ async function captureOne(browser, target) {
         tempPath = htmlPath + '.tmp.chrome-extract.html';
         fs.writeFileSync(tempPath, wrapped, 'utf8');
         loadPath = tempPath;
-    } else if (METRICS === 'mono') {
-        // A full document gets the same injection at the start of its
-        // <head>, from a temp copy beside it so relative <link>s still
-        // resolve.
+    } else {
+        // A full document gets the same injection at the start of its <head>,
+        // plus the author sheet the engines were given, from a temp copy
+        // beside it so any remaining relative URLs still resolve. Always a
+        // temp copy, so the link stripping above applies here too.
         let doc = raw;
-        if (/<head[^>]*>/i.test(doc)) doc = doc.replace(/<head[^>]*>/i, m => m + injected);
-        else if (/<html[^>]*>/i.test(doc)) doc = doc.replace(/<html[^>]*>/i, m => m + '<head>' + injected + '</head>');
-        else doc = injected + doc;
+        const head = injected + '<style>' + css + '</style>';
+        if (/<head[^>]*>/i.test(doc)) doc = doc.replace(/<head[^>]*>/i, m => m + head);
+        else if (/<html[^>]*>/i.test(doc)) doc = doc.replace(/<html[^>]*>/i, m => m + '<head>' + head + '</head>');
+        else doc = head + doc;
         tempPath = htmlPath + '.tmp.chrome-extract.html';
         fs.writeFileSync(tempPath, doc, 'utf8');
         loadPath = tempPath;

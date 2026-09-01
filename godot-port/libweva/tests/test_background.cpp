@@ -699,6 +699,42 @@ void test_paint_color_filters() {
     CHECK(green_shadow >= 1);
 }
 
+// The blur falloff gets one layer per ~2px, so a wide shadow does not band.
+void test_box_shadow_layer_density() {
+    const auto shadow_draws = [](const char* css, const char* html) {
+        Fixture f;
+        CHECK(f.css(css));
+        CHECK(f.layout(html));
+        RecordingBackend backend;
+        PaintContext paint;
+        paint.backend = &backend;
+        paint_tree(f.tree, f.root, f.ctx, paint);
+        int n = 0;
+        for (const RecordingBackend::Draw& d : backend.draws) {
+            if (d.geometry.vertices.empty() || d.texture != 0) continue;
+            // The shadow layers are the translucent black draws.
+            const LinearColor c = d.geometry.vertices[0].color;
+            if (c.r == 0 && c.g == 0 && c.b == 0 && c.a > 0 && c.a < 1) ++n;
+        }
+        return n;
+    };
+    const int narrow = shadow_draws(
+        "html, body { margin: 0 } #b { width: 100px; height: 40px; background: #fff;"
+        " box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) }",
+        "<body><div id=b></div></body>");
+    // Big enough that no layer collapses to a zero-sized rect (the inner
+    // extents shrink the shape by 2e on each axis).
+    const int wide = shadow_draws(
+        "html, body { margin: 0 } #b { width: 600px; height: 400px; background: #fff;"
+        " box-shadow: 0 34px 90px rgba(0, 0, 0, 0.5) }",
+        "<body><div id=b></div></body>");
+    CHECK(narrow >= 8 && narrow <= 12);
+    // 90px of blur needs many more steps than the old fixed 12, or the
+    // falloff bands into visible rings (quests' outer panel).
+    CHECK(wide >= 40);
+    CHECK(wide <= 48);
+}
+
 void test_font_weight_resolution() {
     // CSS Fonts L4 §2.2: keywords and numbers; bolder / lighter against the
     // 400 base; italic and oblique both count as italic.
