@@ -2620,6 +2620,57 @@ harvest cases), the template/`<slot>` expansion (card-component), anchor
 positioning (nine harvest cases), and the C# reference's own bugs behind
 most of the sub-10-difference pages.
 
+### Fourth pass: what the reference lists where, and what Chrome can decide. 11/35 + 5
+
+Mostly about making the oracle able to say who is right, then acting on it.
+
+* **Chrome measures with the engines' faces.** Two synthetic TrueType faces
+  (`make_mono_font.py`: 0.45em / 0.6em advances, 0.85 / 0.293 vertical
+  metrics, emoji at the engines' 1.3em / 1.0em) loaded by the capture script
+  under `--metrics=mono`, `line-height: normal` pinned to 1.143 because Blink
+  rounds a face's ascent and descent for `normal`. Text widths now agree to
+  the hundredth, and every FAIL line says whose side Chrome takes. The faces
+  are generated from the corpora's own character set — 87 code points on 20
+  sample pages were falling back to a system font before.
+* **Elements pair by identity, not index.** The engines list inline
+  fragments in the C# `InsertChildFirst` order while Chrome walks the DOM,
+  and Chrome omits `display: none`; either used to leave a whole page
+  unjudged. Longest-common-subsequence first, leftover same-identity
+  elements as moves; a shift from an inserted neighbour is not a move.
+  Seven sample pages gained verdicts; stock-dashboard's `<b class=up>`
+  turned out to be the reference's "empty inline → insertion point" fallback.
+* **Block-in-inline splitting** (§9.2.1.1), **subgrid** hand-off,
+  **row-reverse** packing from the main end, **wrap-reverse** flipping item
+  alignment (an inapplicable `stretch` is `flex-start` and flips too),
+  top-level `min()`/`max()`/`clamp()`, a grid container's height being its
+  tracks' extent, and its intrinsic width being its tracks' (an 8-column
+  board centred in a flex row was shrink-fitted to one tile).
+* **Auto margins are not intrinsic width** — a resolved `margin: auto`
+  is leftover space from the last layout, not content.
+* **Aspect-ratio relates the boxes box-sizing names** (css-sizing-4 §5.1),
+  in both directions. hud's 3/4 portrait: 383.33 under content-box, as
+  Chrome and the reference both say; the port had 384. The one test that
+  pinned the border-box shortcut for width-from-height was recalibrated to
+  Chrome (220, not 200).
+* **Baseline-aligned flex items size the line** (§9.4 step 8): largest
+  ascent plus largest descent. layout-stress's topbar went from 718
+  differences to 8 on that alone.
+
+Tried and reverted: letter-spacing after every character (Blink) instead of
+every character but the last (both engines). Correct, but on pages where
+Chrome cannot arbitrate text it only moves the port away from the reference
+— 11/35 became 4/35. Kept as a documented shared deviation.
+
+**Where it stands: 11/35 agree, five more (flex-playground, glass,
+grid-playground, load-game, map) arbitrated to the reference; harvest 180/210
+with 14 arbitrated; hand-built 46/47. 7,827 checks green on gcc 13, clang 18,
+ASan+UBSan.** What remains on the samples, in order of size: HTML tables
+(leaderboard, the one page where Chrome sides with the reference in bulk —
+`Tables/` is 1,431 lines of C#), and a long tail Chrome cannot settle —
+inline rects Blink rounds, animated properties sampled at different times,
+form controls neither engine sizes like Chrome (form-demo's reference form
+is also 330px shorter than its own children).
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
