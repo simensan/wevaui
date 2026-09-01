@@ -2983,10 +2983,39 @@ branch. Repro: `sp.html` / `sf.html` in the scratch mini corpus.
 Worth remembering as a rule: **for anything touching the two-pass layout
 paths, the corpora are the regression gate, not the unit suite.**
 
-### Open reference bug: a line sized from an inline-flex atom's STALE height
+### Open reference bug: a flex item's max-content measured before flex restructures it
 
-Diagnosed, not fixed. An `inline-flex` atom that contains an inline-block is
-measured at its block-STACKED height when the surrounding line is built, then
+Diagnosed, not fixed. Sibling of the stale-height bug below, and what remains
+of weva-landing after that one was fixed (147 → 80 differences).
+
+```html
+<div class="nav"><div class="brand"><span class="lg"></span> Weva</div>…</div>
+.nav   { display: flex }
+.brand { display: flex; gap: 11px }
+.lg    { width: 26px; height: 26px }
+```
+
+`.brand` measures **82** in the reference; Chrome and the port both say **73**
+(26 logo + 11 gap + 36 text). Delete the space before `Weva` and all three
+agree — so the 9px is exactly that space at 20px.
+
+The space is legitimate in the PRE-flex layout: before flex runs, `.brand`'s
+children are inline, so the logo span and the text sit on one line and the
+space between them is real. Flex then blockifies them into separate items,
+which makes that space LEADING whitespace of the anonymous text item — and
+leading whitespace collapses away (the line breaker's `AppendCollapsing`
+already skips a space token when nothing is on the line yet). The reference's
+max-content is taken from the pre-flex inline measurement and never re-derived
+from the post-flex item structure, so it keeps a space that no longer exists.
+
+Same shape as the stale-height bug: **a measurement taken before flex layout
+has restructured the children.** Repro: `lead2.html` in the scratch corpus.
+
+### Reference bug, now fixed: a line sized from an inline-flex atom's STALE height
+
+FIXED (commit "size a line from an inline-flex atom's flex height"). An
+`inline-flex` atom that contains an inline-block was measured at its
+block-STACKED height when the surrounding line is built, then
 corrected to its real flex height afterwards — and the line keeps the stale,
 taller value. Minimal case (`nest.html` in the scratch corpus):
 
@@ -3015,11 +3044,21 @@ anonymous flex item wrapping the raw text existed). The final tree reports
 `.eb` at 28.86, so the atom is fixed later; only the line box keeps the old
 number.
 
-This is what puts weva-landing 8px out from the reference on everything below
-its hero: the `.eyebrow` is an inline-flex holding an 8px `.pulse` dot, and
-every subsequent element inherits the offset. Fixing it needs either the atom
-laid out completely before the item is made, or the line's metrics recomputed
-from the atom's final height.
+This put weva-landing 8px out on everything below its hero (`.eyebrow` is an
+inline-flex holding an 8px `.pulse` dot), which was 147 of its differences;
+it is now 80.
+
+The fix takes the cross extent from `PositioningPass.FlexIntrinsicCross` —
+the same non-destructive helper the flex code already uses for intrinsic
+sizing — applied AFTER all of the atom's layout, just before the line item is
+built. Two approaches that do NOT work, recorded so they are not retried:
+
+* Wiring `FlexLayout` into `InlineLayout` and calling `Layout(atom)`. It fixes
+  the minimal case and breaks the next one up (an `<h1>` landed at y=4 instead
+  of 48.86) — `FlexLayout` shares `LayoutScratch` with the inline pass, so
+  re-entering it corrupts the line being built.
+* Correcting the height right after `LayoutBlock`. The `RelayoutContentAt` at
+  the end of the shrink-to-fit path overwrites it.
 
 ## Phase 8 — Remaining layout (~8k LOC)
 
