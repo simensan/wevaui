@@ -572,6 +572,37 @@ void test_paint_clip_follows_descendant_transform() {
     CHECK(blue);
 }
 
+// CSS 2.1 Appendix E: positioned children paint after in-flow ones, and
+// z-index orders stacking contexts regardless of tree order.
+void test_paint_stacking_order() {
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 }"
+                "#p { position: relative; width: 200px; height: 100px }"
+                "#red { position: absolute; left: 0; top: 0; width: 50px; height: 50px; background: #f00 }"
+                "#grey { width: 50px; height: 50px; background: #808080 }"
+                "#blue { position: absolute; z-index: 1; left: 0; top: 0; width: 50px; height: 50px; background: #00f }"
+                "#green { position: absolute; left: 0; top: 0; width: 50px; height: 50px; background: #0f0 }"
+                "#neg { position: absolute; z-index: -1; left: 0; top: 0; width: 50px; height: 50px; background: #ff0 }"));
+    CHECK(f.layout("<body><div id=p><div id=red></div><div id=grey></div><div id=blue></div>"
+                   "<div id=green></div><div id=neg></div></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    std::string order;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty()) continue;
+        const LinearColor c = d.geometry.vertices[0].color;
+        if (near(c.r, 1) && near(c.g, 0) && near(c.b, 0)) order += 'R';
+        else if (near(c.g, 1) && near(c.r, 0) && near(c.b, 0)) order += 'G';
+        else if (near(c.b, 1) && near(c.r, 0) && near(c.g, 0)) order += 'B';
+        else if (near(c.r, 1) && near(c.g, 1) && near(c.b, 0)) order += 'Y';
+        else if (c.r > 0.2f && c.r < 0.3f && near(c.g, c.r) && near(c.b, c.r)) order += 'g';
+    }
+    // yellow (z -1), grey (in flow), red then green (positioned, tree order), blue (z 1)
+    CHECK_EQ(order, std::string("YgRGB"));
+}
+
 void test_font_weight_resolution() {
     // CSS Fonts L4 §2.2: keywords and numbers; bolder / lighter against the
     // 400 base; italic and oblique both count as italic.

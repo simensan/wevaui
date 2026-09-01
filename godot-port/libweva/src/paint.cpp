@@ -1267,8 +1267,53 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
     }
 
-    for (BoxId c : tree.children(id)) {
-        paint_recursive(tree, c, ctx, x, y, paint, atlas_texture, canvas_owner, state);
+    // CSS 2.1 Appendix E, per container as BoxToPaintConverter does it:
+    // negative-z stacking contexts, then in-flow children in tree order, then
+    // positioned z:auto/0 children in tree order, then positive z ascending
+    // (ties by tree order). A ring's `::after` cover painted over its
+    // `z-index: 1` number until this; a badge's `position: absolute`
+    // sibling painted under a later in-flow one.
+    struct ChildEntry {
+        BoxId id;
+        int z;
+        int order;
+    };
+    std::vector<ChildEntry> negative, in_flow, positioned, positive;
+    {
+        int order = 0;
+        const DisplayKind pd = b.display;
+        const bool items_stack = pd == DisplayKind::Flex || pd == DisplayKind::InlineFlex ||
+                                 pd == DisplayKind::Grid || pd == DisplayKind::InlineGrid;
+        for (BoxId c : tree.children(id)) {
+            const Box& cb = tree[c];
+            const bool is_positioned =
+                cb.style && cb.kind == BoxKind::Block && cb.position != PositionType::Static;
+            int z = 0;
+            if (cb.z_index && is_positioned) {
+                z = *cb.z_index;
+            } else if (items_stack && cb.style && cb.kind == BoxKind::Block) {
+                // A flex/grid item stacks by z-index without being positioned
+                // (Flexbox §4.3, Grid §6.4); layout stamps z only on the
+                // positioned, so it is read here.
+                const std::string_view zr = get(cb.style, "z-index");
+                if (!zr.empty() && !ci_equal(zr, "auto")) z = std::atoi(std::string(zr).c_str());
+            }
+            const ChildEntry e{c, z, order++};
+            if (z < 0) negative.push_back(e);
+            else if (z > 0) positive.push_back(e);
+            else if (is_positioned) positioned.push_back(e);
+            else in_flow.push_back(e);
+        }
+    }
+    const auto by_z = [](const ChildEntry& a, const ChildEntry& c) {
+        return a.z != c.z ? a.z < c.z : a.order < c.order;
+    };
+    std::stable_sort(negative.begin(), negative.end(), by_z);
+    std::stable_sort(positive.begin(), positive.end(), by_z);
+    for (const auto* bucket : {&negative, &in_flow, &positioned, &positive}) {
+        for (const ChildEntry& e : *bucket) {
+            paint_recursive(tree, e.id, ctx, x, y, paint, atlas_texture, canvas_owner, state);
+        }
     }
 
     if (state.scissor.has_value() != outer_scissor.has_value() ||
