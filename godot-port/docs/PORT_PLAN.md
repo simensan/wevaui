@@ -2533,6 +2533,63 @@ UpgradeMeter), the template/`<slot>` component expansion the package sample
 uses (`card-component`), then the C# fixes above so the reference stops
 arguing with Chrome.
 
+### Second pass: flex-wrap, the automatic minimum, and what the cascade owed. 7 → 9/35
+
+* **`flex-wrap`.** `layout_flex` is now a list of lines (§9.3): items go onto
+  a line while their outer hypothetical sizes plus gaps fit; flexing, auto
+  margins, justify-content and baseline grouping run per line; align-content
+  distributes a definite cross size (normal/stretch onto the lines, the
+  space-* keywords as gaps); wrap-reverse stacks from the cross end. The menu
+  page renders as a card grid in Godot instead of one squeezed row.
+* **The automatic minimum size (§4.5), both axes.** A column item's
+  `min-height: auto` is its content height, a row item's `min-width: auto`
+  its min-content width, neither for scroll containers. Without it a
+  `height: 100vh; overflow: auto` shell shrank its topbar to its padding and
+  a quest card to 40px less than its own children; with the row half a
+  1310px carousel keeps its width and centres at −15. `min_content_width`
+  joins `max_content_width` on one intrinsic-size walk — and max-content of
+  wrapped text is the paragraph rejoined from its lines plus the spaces the
+  wrap trimmed, which is what let a centred paragraph fit its column instead
+  of its widest line.
+* **Negative free space** (§8.2): center/end overflow both sides / the
+  start; space-around/evenly fall back to center, space-between to start.
+* **`var()` shorthands expand at their cascade position.** Custom
+  properties are applied first (the parent link borrowed for inherited
+  ones), then the shorthand is substituted and expanded in the main pass —
+  so `.row:last-child { border-bottom: none }` beats an earlier
+  `.row { border-bottom: 1px solid var(--edge) }`, which the end-of-compute
+  expansion had been overwriting.
+* **`@container` follows the reference's single pass.** The C# evaluates
+  container queries through a box-lookup hook that is null until a box tree
+  exists, so in BaselineGen they never apply. Applying them unconditionally
+  put a 22px h2 on every card the reference lays out at 18px. Chrome applies
+  them; both engines need the layout-then-restyle loop before this can.
+* **Inline `em` font sizes** resolve against the element's parent, not the
+  root (`<small>` in a 14px label is 11.62, not 13.28).
+* **Abspos children of a flex container** take their static position as if
+  the sole item (§4.1) — centred by center/center — against the container's
+  final size and with their shrink-to-fit width.
+* **`weva_dump` mirrors `LayoutDump.ResolveTransformTranslation`**, so a
+  `transform: translateX(-50%)` tooltip is compared where the reference
+  reports it. Both TransformHitTest cases agree as a result.
+
+**Where it stands: 9/35 samples agree** (inputtest, story-bubble, todo,
+episode-stats, sample-menu, particles, neon, settings, level-select), plus
+`map` arbitrated as a reference bug — Chrome sides with the port on its
+card widths. quests, dialogue, nook-dialogue are at 2 differences, combat-hud
+at 4, form-demo 4, vendor 6, load-game 7; all but combat-hud's on the
+reference-bug list. Harvest 176/210, hand-built 46/47. 7,709 checks green on
+gcc 13 and clang 18 with ASan+UBSan; Godot host 23/23.
+
+**One more reference finding:** the C# has no automatic minimum size in
+either axis — `flex-playground`'s `.body` (a `flex: 1` column item with
+1.5k px of content in a 720px shell) is 657 tall there and 1579 in Chrome.
+
+**Next:** `grid-template-columns: subgrid` (menu's `.sub`, five harvest
+cases), `minmax()` / `auto-fill`, the template/`<slot>` expansion for
+`card-component`, then the page-shaped remainders (inventory, stats, hud,
+leaderboard) once the C# side stops disagreeing with Chrome.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
