@@ -2764,11 +2764,32 @@ the order they were visible, weighted by how many pages use each:
 * **`filter: blur()`** (28): background and rounded shape rasterized with
   room, blurred, drawn as one texture; children sharp (neon's blobs).
 
+**Where it stands after the eighth pass: samples 12/35 agree + 11
+arbitrated; harvest 179/210 + 17; hand 46/47; 8,021 checks green; host 23/23
+on Linux and Windows.**
+
+### Ninth pass: Godot beside Chrome, page by page. 12/35 + 11
+
+The capture script grew `--screenshot` / `--no-layout`, and every sample was
+put beside its Chrome screenshot. Most pages read the same; the difference
+on EVERY page was weight: the host had one face, so every heading, `<b>`
+and `<strong>` drew regular.
+
+* **Bold and italic through the host.** `variant(face, weight, italic)` in
+  the font ABI; layout measures a 600+ or italic run with the variant's
+  metrics and paint draws it with the variant face; the glyph atlas is keyed
+  by face. The Godot host builds variants as independent fonts from the
+  theme FontFile's data (embolden, shear) — a linked variation shares the
+  glyph cache, and the whole page came out bold italic.
+
 **Where it stands: samples 12/35 agree + 11 arbitrated; harvest 179/210 +
-17; hand 46/47; 8,021 checks green; host 23/23 on Linux and Windows.** Left,
-by the sweep: `url()` images and `border-image` (9slice-demo, avatars),
-`clip-path` (24), `backdrop-filter` (26, needs a backdrop copy), rounded
-clipping, an opacity group layer, colour emoji, `mix-blend-mode`, `mask`.
+17; hand 46/47; 8,030 checks green; host 23/23 on Linux and Windows.** Next
+from the side-by-sides: form controls (inputs collapse to lines, selects show
+every option, no placeholders, no range thumb), rounded clipping and
+`clip-path` (combat-hud's circular minimap and hex icons, story-bubble's
+notch), `::after` badges to verify, generic families (`serif`, `monospace`)
+mapped to system faces, inline-style custom properties (level-select's road
+colours), colour emoji, `url()` images.
 
 ## Phase 8 — Remaining layout (~8k LOC)
 
