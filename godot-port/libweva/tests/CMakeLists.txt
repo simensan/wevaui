@@ -40,6 +40,7 @@ add_executable(weva_tests
     test_text_render.cpp
     test_c_abi.cpp
     test_table.cpp
+    test_background.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)

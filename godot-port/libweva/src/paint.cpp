@@ -1,5 +1,6 @@
 #include "weva/paint.h"
 
+#include "weva/background.h"
 #include "weva/block_layout.h"
 #include "weva/css_value.h"
 
@@ -79,15 +80,83 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const PaintContext& paint) {
     for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, paint);
 }
 
+bool has_gradient_layer(const std::vector<BackgroundLayer>& layers) {
+    for (const BackgroundLayer& l : layers) {
+        if (l.is_gradient) return true;
+    }
+    return false;
+}
+
+// Paints `layers` over `color` across `area` as ONE textured mesh: the layers
+// are rasterized together into an RGBA texture the size of the area (capped,
+// the UVs scale), and the rounded rectangle samples it. Rendering the
+// gradient itself as geometry would need per-pixel maths the canvas cannot
+// do; a texture per box is exact and one draw. Returns false when there is
+// nothing textured to paint, so the caller paints the plain colour.
+bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
+                              const Rect& area, const BorderRadii& radii, const LayoutContext& ctx,
+                              double font_size, const PaintContext& paint) {
+    if (!has_gradient_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
+        return false;
+    }
+    const int tex_w = static_cast<int>(std::min(1024.0, std::ceil(area.width)));
+    const int tex_h = static_cast<int>(std::min(1024.0, std::ceil(area.height)));
+    std::vector<uint8_t> rgba;
+    rasterize_background(layers, color, area.width, area.height, tex_w, tex_h, ctx, font_size, &rgba);
+    const TextureHandle tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+    if (paint.owned_textures) paint.owned_textures->push_back(tex);
+
+    Mesh mesh;
+    tessellate_rounded_rect(area, radii, LinearColor::white(), &mesh);
+    for (Vertex& v : mesh.vertices) {
+        v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
+                       static_cast<float>((v.position.y - area.y) / area.height)};
+    }
+    draw_mesh(mesh, paint.backend, tex);
+    return true;
+}
+
+// The box's background image layers, resolved against its own colour.
+std::vector<BackgroundLayer> layers_of(const Box& b) {
+    if (!b.style) return {};
+    return resolve_background_layers(b.style, resolve_color(b.style, "color"));
+}
+
 void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, double origin_x,
-                     double origin_y, const PaintContext& paint, TextureHandle atlas_texture) {
+                     double origin_y, const PaintContext& paint, TextureHandle atlas_texture,
+                     BoxId canvas_owner) {
     const Box& b = tree[id];
     const double x = origin_x + b.x;
     const double y = origin_y + b.y;
 
-    Mesh mesh;
-    paint_box_decorations(tree, id, ctx, x, y, &mesh);
-    draw_mesh(mesh, paint.backend, {});
+    // Line boxes carry their container's style for inline layout's sake and
+    // anonymous boxes are not elements: neither has a background or border of
+    // its own to paint. Painting a line box with its <th>'s background drew a
+    // bar behind every header's text.
+    const bool decorated = b.kind != BoxKind::Line && b.kind != BoxKind::AnonymousBlock &&
+                           b.kind != BoxKind::AnonymousInline && b.kind != BoxKind::Text;
+    // A box whose background went onto the canvas (§14.2) does not paint it
+    // again; a box with gradient layers paints them as one texture and only
+    // its border through the mesh.
+    bool background_done = id == canvas_owner || !decorated;
+    if (!background_done && b.style && b.width > 0 && b.height > 0) {
+        const std::vector<BackgroundLayer> layers = layers_of(b);
+        if (has_gradient_layer(layers)) {
+            const BoxId parent = b.parent;
+            const ComputedStyle* ps = parent == kNoBox ? nullptr : tree[parent].style;
+            const double fs = font_size_px(b.style, ps, ctx);
+            const Rect border_box(x, y, b.width, b.height);
+            const BorderRadii radii = resolve_border_radii(b.style, b.width, b.height, ctx, fs);
+            background_done = paint_layered_background(
+                layers, resolve_color(b.style, "background-color"), border_box, radii, ctx, fs, paint);
+        }
+    }
+
+    if (decorated) {
+        Mesh mesh;
+        paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done);
+        draw_mesh(mesh, paint.backend, {});
+    }
 
     // A text run's own y is its top; the baseline is where the glyphs sit, and
     // the line box put it there.
@@ -105,8 +174,51 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     }
 
     for (BoxId c : tree.children(id)) {
-        paint_recursive(tree, c, ctx, x, y, paint, atlas_texture);
+        paint_recursive(tree, c, ctx, x, y, paint, atlas_texture, canvas_owner);
     }
+}
+
+BoxId child_element(const BoxTree& tree, BoxId parent, std::string_view tag) {
+    if (parent == kNoBox) return kNoBox;
+    for (BoxId c : tree.children(parent)) {
+        const Box& b = tree[c];
+        if (b.kind == BoxKind::Block && b.element && b.element->tag_name() == tag) return c;
+    }
+    return kNoBox;
+}
+
+bool has_background(const Box& b) {
+    if (!b.style) return false;
+    if (resolve_color(b.style, "background-color").a > 0) return true;
+    return has_gradient_layer(layers_of(b));
+}
+
+// CSS 2.1 §14.2: the root element's background covers the whole canvas; when
+// the root has none, the body's is used instead and the body paints none of
+// its own. Returns the box whose background was taken.
+BoxId paint_canvas(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
+                   const PaintContext& paint) {
+    BoxId html = child_element(tree, root, "html");
+    if (html == kNoBox && tree[root].element && tree[root].element->tag_name() == "html") html = root;
+    const BoxId body = child_element(tree, html, "body");
+    BoxId owner = kNoBox;
+    if (html != kNoBox && has_background(tree[html])) owner = html;
+    else if (body != kNoBox && has_background(tree[body])) owner = body;
+    if (owner == kNoBox) return kNoBox;
+
+    const Box& b = tree[owner];
+    const BoxId parent = b.parent;
+    const ComputedStyle* ps = parent == kNoBox ? nullptr : tree[parent].style;
+    const double fs = font_size_px(b.style, ps, ctx);
+    const Rect canvas(0, 0, ctx.viewport_width_px, ctx.viewport_height_px);
+    const LinearColor color = resolve_color(b.style, "background-color");
+    if (!paint_layered_background(layers_of(b), color, canvas, BorderRadii::zero(), ctx, fs, paint) &&
+        color.a > 0) {
+        Mesh mesh;
+        tessellate_rect(canvas, color, &mesh);
+        draw_mesh(mesh, paint.backend, {});
+    }
+    return owner;
 }
 
 } // namespace
@@ -131,7 +243,7 @@ BorderRadii resolve_border_radii(const ComputedStyle* style, double width, doubl
 }
 
 void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
-                           double origin_x, double origin_y, Mesh* out) {
+                           double origin_x, double origin_y, Mesh* out, bool with_background) {
     const Box& b = tree[id];
     if (!b.style || b.width <= 0 || b.height <= 0) return;
 
@@ -144,7 +256,7 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
     // The background paints under the border, out to the border box: a
     // semi-transparent border shows the background through it.
     const LinearColor bg = resolve_color(b.style, "background-color");
-    if (bg.a > 0) tessellate_rounded_rect(border_box, radii, bg, out);
+    if (with_background && bg.a > 0) tessellate_rounded_rect(border_box, radii, bg, out);
 
     if (b.border_top > 0 || b.border_right > 0 || b.border_bottom > 0 || b.border_left > 0) {
         // An unset border-color is `currentColor`, which is what makes a
@@ -214,7 +326,8 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
         prepare_glyphs(tree, root, paint);
         atlas_texture = paint.atlas->texture(paint.backend);
     }
-    paint_recursive(tree, root, ctx, 0, 0, paint, atlas_texture);
+    const BoxId canvas_owner = paint_canvas(tree, root, ctx, paint);
+    paint_recursive(tree, root, ctx, 0, 0, paint, atlas_texture, canvas_owner);
 }
 
 } // namespace weva

@@ -158,20 +158,29 @@ void WevaDocument::ensure_updated() {
     weva_document_update(doc_, 0.0);
     dirty_ = false;
 
-    // Republish the glyph atlas if the document has a new one. Rebuilt rather
-    // than updated because the ABI publishes whole textures, and there are a
-    // handful of them per document rather than one per frame.
+    // Mirror the document's textures by id: a texture already held is kept
+    // (ids are never reused within a document), a new one is uploaded, one
+    // the document dropped is dropped here. The ABI publishes whole textures,
+    // and there are a handful per document rather than one per frame.
     size_t texture_count = 0;
     const weva_texture* textures = weva_document_textures(doc_, &texture_count);
-    if (texture_count > 0 && textures[0].id != atlas_id_) {
-        const int w = textures[0].width, h = textures[0].height;
+    std::map<uint64_t, Ref<ImageTexture>> next;
+    for (size_t i = 0; i < texture_count; ++i) {
+        const weva_texture& t = textures[i];
+        const auto held = textures_.find(t.id);
+        if (held != textures_.end()) {
+            next[t.id] = held->second;
+            continue;
+        }
+        const int w = t.width, h = t.height;
+        if (w <= 0 || h <= 0 || !t.rgba) continue;
         PackedByteArray bytes;
         bytes.resize(static_cast<int64_t>(w) * h * 4);
-        std::memcpy(bytes.ptrw(), textures[0].rgba, static_cast<size_t>(w) * h * 4);
+        std::memcpy(bytes.ptrw(), t.rgba, static_cast<size_t>(w) * h * 4);
         const Ref<Image> img = Image::create_from_data(w, h, false, Image::FORMAT_RGBA8, bytes);
-        atlas_ = ImageTexture::create_from_image(img);
-        atlas_id_ = textures[0].id;
+        next[t.id] = ImageTexture::create_from_image(img);
     }
+    textures_.swap(next);
 }
 
 void WevaDocument::update_document() {
@@ -222,8 +231,11 @@ void WevaDocument::_draw() {
             iw[k] = static_cast<int32_t>(d.indices[k]);
         }
 
-        const RID texture =
-            (d.texture_id != 0 && atlas_.is_valid()) ? atlas_->get_rid() : RID();
+        RID texture;
+        if (d.texture_id != 0) {
+            const auto it = textures_.find(d.texture_id);
+            if (it != textures_.end() && it->second.is_valid()) texture = it->second->get_rid();
+        }
         RenderingServer::get_singleton()->canvas_item_add_triangle_array(
             get_canvas_item(), indices, points, colors, uvs, PackedInt32Array(),
             PackedFloat32Array(), texture);

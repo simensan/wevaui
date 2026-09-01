@@ -35,6 +35,11 @@ struct PaintContext {
     FontInterface* font = nullptr;
     GlyphAtlas* atlas = nullptr;
     FaceHandle face;
+    // Textures paint generates for this pass (rasterized gradient layers).
+    // The caller owns their release — after the host has consumed the draws
+    // that reference them, typically at the start of the next pass. Null
+    // means paint leaks nothing it can avoid and generates them anyway.
+    std::vector<TextureHandle>* owned_textures = nullptr;
 };
 
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
@@ -51,6 +56,7 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
 // Builds the mesh for one box's background and border, without issuing any
 // draw. Exposed because it is far easier to assert geometry than backend calls.
 void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
-                           double origin_x, double origin_y, Mesh* out);
+                           double origin_x, double origin_y, Mesh* out,
+                           bool with_background = true);
 
 } // namespace weva

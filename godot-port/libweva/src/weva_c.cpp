@@ -73,7 +73,10 @@ public:
     }
     TextureHandle generate_texture(const std::vector<uint8_t>& rgba, Vec2i size) override {
         if (size.x <= 0 || size.y <= 0) return {};
-        const TextureHandle h{next_++};
+        // Texture ids are never reused within a document: the host caches
+        // uploads by id across frames, and the atlas outlives any one frame.
+        // Geometry ids restart with every frame; textures must not.
+        const TextureHandle h{next_texture_++};
         textures[h.id] = {rgba, size};
         return h;
     }
@@ -89,6 +92,7 @@ public:
 private:
     std::map<uint64_t, std::pair<std::vector<Vertex>, std::vector<uint32_t>>> geometry_;
     uint64_t next_ = 1;
+    uint64_t next_texture_ = 1;
     std::optional<Recti> scissor_;
 };
 
@@ -282,6 +286,10 @@ struct weva_document {
     std::unique_ptr<FontInterfaceMetrics> host_metrics;
     FaceHandle face = StubFont::builtin();
     BoxId root = kNoBox;
+    // Textures paint generated for the last published draws (gradient
+    // layers). Released at the start of the next update, once the host has
+    // had the frame.
+    std::vector<TextureHandle> transient_textures;
 
     RenderInterface* render_backend() {
         return host_render ? static_cast<RenderInterface*>(host_render.get()) : &backend;
@@ -425,12 +433,15 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     block.layout_root(doc->root, doc->ctx.viewport_width_px, doc->ctx.viewport_height_px);
     run_positioning(&doc->tree, doc->root, doc->ctx, &block);
 
+    for (TextureHandle t : doc->transient_textures) doc->render_backend()->release_texture(t);
+    doc->transient_textures.clear();
     doc->backend.begin_frame();
     PaintContext paint;
     paint.backend = doc->render_backend();
     paint.font = doc->font_backend();
     paint.atlas = &doc->atlas;
     paint.face = doc->face;
+    paint.owned_textures = &doc->transient_textures;
     paint_tree(doc->tree, doc->root, doc->ctx, paint);
 
     // With a host backend registered the host issued its own draws, so there

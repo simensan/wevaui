@@ -34,6 +34,7 @@ add_library(weva STATIC
     src/positioning.cpp
     src/tessellate.cpp
     src/paint.cpp
+    src/background.cpp
     src/software_renderer.cpp
     src/flex.cpp
     src/grid.cpp

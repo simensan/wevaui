@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include <godot_cpp/classes/canvas_item.hpp>
 #include <godot_cpp/classes/image_texture.hpp>
 #include <godot_cpp/classes/node2d.hpp>
@@ -94,14 +96,15 @@ private:
     bool dirty_ = true;
     // The atlas texture, rebuilt when the document publishes a new one. Held
     // so it outlives the draw call that references it.
-    godot::Ref<godot::ImageTexture> atlas_;
+    // Every texture the document published, by the id its draws name: the
+    // glyph atlas and the rasterized background layers alike.
+    std::map<uint64_t, godot::Ref<godot::ImageTexture>> textures_;
     // The font backend must outlive the document: the core holds the table by
     // pointer and calls into it on every update.
     GodotFontBackend font_backend_;
     weva_font_backend font_table_{};
     uint64_t font_face_ = 0;
     bool use_engine_font_ = true;
-    uint64_t atlas_id_ = 0;
 };
 
 } // namespace weva_godot

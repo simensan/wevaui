@@ -468,6 +468,90 @@ bool expand_shorthand(std::string_view name, std::string_view value,
     // makes `font: bold 14px sans-serif` on a button give a 16px line rather
     // than inherit the 18.29 of the page. System-font keywords (`menu`,
     // `caption`...) are not resolved and drop the declaration.
+    // CSS Backgrounds L3 §3.10: comma-separated layers, each `<bg-image> ||
+    // <position> [ / <bg-size> ]? || <repeat-style> || <attachment> ||
+    // <box>{1,2}`, and the colour only on the last. Attachment, origin and
+    // clip are accepted and dropped. Every longhand is reset — the colour to
+    // `transparent` — which is what makes `background: none` clear a box.
+    if (name == "background") {
+        if (t.empty()) return true;
+        if (t.size() == 1 && is_css_wide_keyword(t[0])) {
+            for (const char* p : {"background-color", "background-image", "background-position",
+                                  "background-size", "background-repeat"}) {
+                emit(out, p, t[0]);
+            }
+            return true;
+        }
+        const auto is_repeat_word = [](std::string_view s) {
+            return iequals(s, "repeat") || iequals(s, "no-repeat") || iequals(s, "repeat-x") ||
+                   iequals(s, "repeat-y") || iequals(s, "space") || iequals(s, "round");
+        };
+        const auto is_position_word = [](std::string_view s) {
+            return iequals(s, "left") || iequals(s, "right") || iequals(s, "top") ||
+                   iequals(s, "bottom") || iequals(s, "center");
+        };
+        const auto is_size_word = [](std::string_view s) {
+            return iequals(s, "auto") || iequals(s, "cover") || iequals(s, "contain");
+        };
+        const auto is_dropped_word = [](std::string_view s) {
+            return iequals(s, "scroll") || iequals(s, "fixed") || iequals(s, "local") ||
+                   iequals(s, "border-box") || iequals(s, "padding-box") ||
+                   iequals(s, "content-box") || iequals(s, "text");
+        };
+        const auto is_image = [](std::string_view s) {
+            return iequals(s, "none") || istarts_with(s, "url(") ||
+                   s.find("gradient(") != std::string_view::npos ||
+                   istarts_with(s, "image-set(") || istarts_with(s, "cross-fade(");
+        };
+        std::string images, positions, sizes, repeats;
+        std::string color = "transparent";
+        const auto join = [](std::string* list, std::string_view piece) {
+            if (!list->empty()) *list += ", ";
+            list->append(piece);
+        };
+        size_t i = 0;
+        while (i <= t.size()) {
+            std::string image = "none", position, size, repeat;
+            bool after_slash = false;
+            for (; i < t.size() && t[i] != ","; ++i) {
+                const std::string_view tok = t[i];
+                if (tok == "/") { after_slash = true; continue; }
+                if (after_slash && (is_size_word(tok) || is_length_or_percentage(tok))) {
+                    if (!size.empty()) size += ' ';
+                    size.append(tok);
+                    continue;
+                }
+                after_slash = false;
+                if (is_image(tok)) image = std::string(tok);
+                else if (is_repeat_word(tok)) {
+                    if (!repeat.empty()) repeat += ' ';
+                    repeat.append(tok);
+                } else if (is_position_word(tok) || is_length_or_percentage(tok)) {
+                    if (!position.empty()) position += ' ';
+                    position.append(tok);
+                } else if (is_dropped_word(tok)) {
+                    continue;
+                } else if (is_color_token(tok)) {
+                    color = std::string(tok);
+                } else {
+                    return false;
+                }
+            }
+            join(&images, image);
+            join(&positions, position.empty() ? "0% 0%" : position);
+            join(&sizes, size.empty() ? "auto" : size);
+            join(&repeats, repeat.empty() ? "repeat" : repeat);
+            if (i >= t.size()) break;
+            ++i;   // the comma
+        }
+        emit(out, "background-color", color);
+        emit(out, "background-image", images);
+        emit(out, "background-position", positions);
+        emit(out, "background-size", sizes);
+        emit(out, "background-repeat", repeats);
+        return true;
+    }
+
     if (name == "font") {
         if (t.empty()) return true;
         if (t.size() == 1 && is_css_wide_keyword(t[0])) {
