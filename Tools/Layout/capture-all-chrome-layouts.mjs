@@ -39,6 +39,23 @@ function bundledFontFaceCss() {
     return s;
 }
 
+// Under --metrics=mono Chrome also lays out under the ENGINES' user-agent
+// sheet (godot-port/libweva/src/user_agent_stylesheet.cpp is the C#
+// UserAgentStylesheet verbatim): `html, body { margin: 0; height: 100% }`,
+// the form-control and heading defaults, the table defaults. Injected inside
+// `@layer weva-ua`, so it beats Chrome's own UA sheet (author origin) but
+// loses to every unlayered author rule whatever its specificity — exactly
+// where a UA sheet sits. Without it every page that relies on a UA default
+// (a body without `margin: 0`, an unstyled <h2>) is off Chrome by that
+// default and nothing on it can be arbitrated.
+const UA_SHEET_CPP = path.join(REPO, 'godot-port', 'libweva', 'src', 'user_agent_stylesheet.cpp');
+function wevaUaCss() {
+    if (!fs.existsSync(UA_SHEET_CPP)) return '';
+    const src = fs.readFileSync(UA_SHEET_CPP, 'utf8');
+    const m = /R"CSS\(([\s\S]*?)\)CSS"/.exec(src);
+    return m ? m[1] : '';
+}
+
 function listSnippets() {
     return fs.readdirSync(SNIPPET_DIR)
         .filter(f => f.endsWith('.html'))
@@ -116,6 +133,15 @@ async function captureOne(browser, target) {
     const css = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '';
     const isFragment = !/<\s*html[\s>]/i.test(raw) && !/<!doctype/i.test(raw);
 
+    // What goes into <head> before the author's styles: the body margin
+    // reset (or, under --metrics=mono, the engines' whole UA sheet in a
+    // layer) and the font faces.
+    const injected =
+        (METRICS === 'mono'
+            ? '<style>@layer weva-ua{' + wevaUaCss() + '}</style>'
+            : '<style>body{margin:0}</style>') +
+        '<style>' + (METRICS === 'mono' ? monoFontFaceCss() : bundledFontFaceCss()) + '</style>';
+
     let loadPath = htmlPath;
     let tempPath = null;
     if (isFragment) {
@@ -127,12 +153,22 @@ async function captureOne(browser, target) {
         // author sheet so the author can still override it if intentional.
         const wrapped =
             '<!doctype html>\n' +
-            '<html><head><meta charset="utf-8"><style>body{margin:0}</style>' +
-            '<style>' + (METRICS === 'mono' ? monoFontFaceCss() : bundledFontFaceCss()) + '</style>' +
+            '<html><head><meta charset="utf-8">' + injected +
             '<style>' + css + '</style></head>' +
             '<body>' + raw + '</body></html>\n';
         tempPath = htmlPath + '.tmp.chrome-extract.html';
         fs.writeFileSync(tempPath, wrapped, 'utf8');
+        loadPath = tempPath;
+    } else if (METRICS === 'mono') {
+        // A full document gets the same injection at the start of its
+        // <head>, from a temp copy beside it so relative <link>s still
+        // resolve.
+        let doc = raw;
+        if (/<head[^>]*>/i.test(doc)) doc = doc.replace(/<head[^>]*>/i, m => m + injected);
+        else if (/<html[^>]*>/i.test(doc)) doc = doc.replace(/<html[^>]*>/i, m => m + '<head>' + injected + '</head>');
+        else doc = injected + doc;
+        tempPath = htmlPath + '.tmp.chrome-extract.html';
+        fs.writeFileSync(tempPath, doc, 'utf8');
         loadPath = tempPath;
     }
 
