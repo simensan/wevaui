@@ -62,17 +62,28 @@ std::string json_escape(std::string_view v) {
 // Matches C#'s Math.Round(v, 2, MidpointRounding.AwayFromZero) followed by
 // value.ToString("0.##", InvariantCulture).
 //
-// The explicit round matters. printf("%.2f") rounds half-to-even in glibc,
-// while C# Round2 rounds half away from zero, so 0.125 formats as "0.12" here
-// and "0.13" there. Every such midpoint would surface as a phantom one-cent
-// layout difference in the oracle, and chasing those instead of real bugs is
-// exactly how a differential harness loses its credibility. Round explicitly,
-// then format a value that is already exact at 2dp.
+// The explicit round matters. printf("%.4f") rounds half-to-even in glibc,
+// while C# Math.Round(.., AwayFromZero) rounds half away from zero, so a
+// midpoint formats differently on the two sides. Every such midpoint would
+// surface as a phantom layout difference in the oracle, and chasing those
+// instead of real bugs is exactly how a differential harness loses its
+// credibility. Round explicitly, then format a value already exact at 4dp.
+//
+// FOUR decimals, not two. The two engines are separate implementations, so
+// they accumulate the same arithmetic in slightly different orders and land
+// fractions of a ulp apart. At 2dp such a pair straddles a rounding boundary
+// every so often and prints as a 0.01 difference — which the oracle compares
+// EXACTLY and reports, and which then cascades to every box below it. On
+// weva-landing that produced 80 differences from one 0.01 step at `.stats`,
+// burying a real 56px difference further down the page. At 4dp the pair
+// agrees and the real difference is what surfaces. Measured across the
+// corpora the change is strictly better: hand and harvest identical, samples
+// 15 -> 16 agreeing (one page was only ever a rounding artifact).
 std::string format_num(double v) {
-    double scaled = v * 100.0;
-    double rounded = (scaled < 0.0 ? -std::floor(-scaled + 0.5) : std::floor(scaled + 0.5)) / 100.0;
+    double scaled = v * 10000.0;
+    double rounded = (scaled < 0.0 ? -std::floor(-scaled + 0.5) : std::floor(scaled + 0.5)) / 10000.0;
     char buf[64];
-    std::snprintf(buf, sizeof(buf), "%.2f", rounded);
+    std::snprintf(buf, sizeof(buf), "%.4f", rounded);
     std::string s(buf);
     if (s.find('.') != std::string::npos) {
         while (!s.empty() && s.back() == '0') s.pop_back();

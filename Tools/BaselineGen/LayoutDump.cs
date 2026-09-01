@@ -255,9 +255,16 @@ namespace Weva.BaselineGen {
             File.WriteAllText(outPath, sb.ToString());
         }
 
-        static double Round2(double value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+        // FOUR decimals. The C++ port is a separate implementation, so it
+        // accumulates the same arithmetic in a slightly different order and
+        // lands fractions of a ulp away. At 2dp such a pair straddles a
+        // rounding boundary often enough to print as a phantom 0.01 difference,
+        // which the oracle compares exactly and which then cascades to every
+        // box below. Kept in step with weva_dump's format_num, including the
+        // away-from-zero midpoint rule.
+        static double Round2(double value) => Math.Round(value, 4, MidpointRounding.AwayFromZero);
 
-        static string Format(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+        static string Format(double value) => value.ToString("0.####", CultureInfo.InvariantCulture);
 
         static string JsonEscape(string value) {
             if (string.IsNullOrEmpty(value)) return string.Empty;
