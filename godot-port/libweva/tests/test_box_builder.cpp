@@ -582,6 +582,30 @@ void test_pseudo_content_from_inline_custom_property() {
     CHECK_EQ(std::string(g.tree[g.tree[g.tree[i].first_child].first_child].text), "Y");
 }
 
+// An element's own var() reads a custom property set in its inline style
+// (level-select's `style="--c:#3f8ea3;--r:25deg"` roads).
+void test_inline_custom_property_feeds_var() {
+    Fixture f;
+    CHECK(f.css("div { display: block; background-color: var(--c, blue); transform: rotate(var(--r)) }"));
+    const BoxId root = f.build("<div id=a style=\"--c: red; --r: 25deg;\">t</div><div id=b>t</div>");
+    const ComputedStyle* a = f.tree[f.find(root, "a")].style;
+    const ComputedStyle* b = f.tree[f.find(root, "b")].style;
+    CHECK_EQ(std::string(a->get("background-color")), "red");
+    CHECK_EQ(std::string(a->get("transform")), "rotate(25deg)");
+    CHECK_EQ(std::string(b->get("background-color")), "blue");
+    // The compact form authors actually write: no spaces, hash colours,
+    // several tokens, trailing semicolon.
+    Fixture g;
+    CHECK(g.css("div, span { display: block; background: var(--bg, #d8e6ef) }"
+                "span { background: var(--c, #888); transform: translate(-50%, -50%) rotate(var(--r, 0deg)) }"));
+    const BoxId r2 = g.build("<div id=m style=\"--bg:#cfe0c6;\"><span id=l style=\"--c:#7aa35a;--r:30deg;\"></span></div>");
+    const ComputedStyle* m = g.tree[g.find(r2, "m")].style;
+    const ComputedStyle* l = g.tree[g.find(r2, "l")].style;
+    CHECK_EQ(std::string(m->get("background-color")), "#cfe0c6");
+    CHECK_EQ(std::string(l->get("background-color")), "#7aa35a");
+    CHECK_EQ(std::string(l->get("transform")), "translate(-50%, -50%) rotate(30deg)");
+}
+
 void test_text_transform_at_build() {
     // `text-transform` is applied when the run's box is built, so layout
     // measures the transformed text; the tree owns the new string.

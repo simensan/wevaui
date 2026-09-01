@@ -506,6 +506,25 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
             out->set(name, m.declaration->value_text);
         }
     }
+    // Inline custom properties must be in place before the early shorthand
+    // substitution below: `.map { background: var(--bg, #d8e6ef) }` on an
+    // element with `style="--bg:#cfe0c6"` resolved against the sheet alone
+    // and took the fallback — level-select's discs and roads all grey. The
+    // attribute is parsed once here; step 2 applies the rest of it.
+    std::vector<Declaration> inline_expanded;
+    if (e.has_attribute("style")) {
+        std::vector<Declaration> inline_decls;
+        CssParseError perr;
+        if (parse_inline_declarations(e.get_attribute("style"), /*strict=*/false,
+                                      &inline_decls, &perr)) {
+            inline_expanded = expand_declarations(inline_decls);
+        }
+        for (const Declaration& d : inline_expanded) {
+            if (d.property.size() > 2 && d.property[0] == '-' && d.property[1] == '-') {
+                out->set(d.property, d.value_text);
+            }
+        }
+    }
     // Inherited custom properties live on the parent; the link is normally
     // attached only for the substitution step, so it is borrowed here for the
     // duration of this pass and released again.
@@ -546,13 +565,10 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     }
     out->set_inherit_parent(nullptr);
 
-    // 2. Inline styles. Parsed here rather than in collect_matches so the
-    // Declaration storage does not outlive the call that owns it.
-    if (e.has_attribute("style")) {
-        std::vector<Declaration> inline_decls;
-        CssParseError perr;
-        if (parse_inline_declarations(e.get_attribute("style"), /*strict=*/false,
-                                      &inline_decls, &perr)) {
+    // 2. Inline styles (parsed above, so the Declaration storage does not
+    // outlive the call that owns it).
+    {
+        {
             // Shorthands in an inline style need expanding just as much as
             // those in a rule. Stylesheet rules are expanded once at compile
             // time (see expand_declarations), and inline styles were reaching
@@ -564,7 +580,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
             // Expanded per element rather than per rule, which is the cost of
             // an inline style; the early-out inside makes it free when the
             // attribute holds no shorthand.
-            const std::vector<Declaration> expanded = expand_declarations(inline_decls);
+            const std::vector<Declaration>& expanded = inline_expanded;
             int in_rule = 0;
             for (const Declaration& d : expanded) {
                 int id = reg.id_of(d.property);

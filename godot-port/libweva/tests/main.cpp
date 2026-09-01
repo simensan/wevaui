@@ -160,6 +160,7 @@ void test_text_transform_at_build();
 void test_pseudo_element_boxes();
 void test_pseudo_counters_and_quotes();
 void test_pseudo_content_from_inline_custom_property();
+void test_inline_custom_property_feeds_var();
 void test_color_mix();
 void test_gradient_calc_stop_position();
 void test_paint_form_control_marks();
@@ -366,6 +367,7 @@ int main() {
     test_pseudo_element_boxes();
     test_pseudo_counters_and_quotes();
     test_pseudo_content_from_inline_custom_property();
+    test_inline_custom_property_feeds_var();
     test_color_mix();
     test_gradient_calc_stop_position();
     test_paint_form_control_marks();
