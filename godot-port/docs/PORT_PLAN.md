@@ -2741,12 +2741,34 @@ clang 18, ASan+UBSan and MSVC 14.44; host 23/23 on Linux and Windows.**
   item (bisected with env switches on the host); the collecting backend
   now cuts scissored triangles itself, so any host draws what it is given.
 
+**Where it stands after the seventh pass: samples 12/35 agree + 11
+arbitrated; harvest 179/210 + 17; hand 46/47; 8,005 checks green; host 23/23
+on Linux and Windows.**
+
+### Eighth pass: all 35 samples on Windows, and what they showed. 12/35 + 11
+
+A contact sheet of every sample through the Windows host, then the gaps in
+the order they were visible, weighted by how many pages use each:
+
+* **`text-transform`** was unimplemented (51 uses). Applied when the run's
+  Text box is built, the tree owning the string; the mono-metric oracle
+  cannot see it, a real face's capitals are wider.
+* **CSS transforms** (190 uses, 30 pages): translate/scale/rotate/skew/
+  matrix with `transform-origin`, as a matrix stack every draw of the
+  subtree goes through; a clip under a transform is the transformed box's
+  bounding box.
+* **`text-shadow`** (34): offset copies; a blur is a 5x5 Gaussian kernel of
+  glyph copies.
+* **`background-clip: text`**: the gradient reaches the glyph vertices
+  (weva-landing's headline).
+* **`filter: blur()`** (28): background and rounded shape rasterized with
+  room, blurred, drawn as one texture; children sharp (neon's blobs).
+
 **Where it stands: samples 12/35 agree + 11 arbitrated; harvest 179/210 +
-17; hand 46/47; 8,005 checks green; host 23/23 on Linux and Windows.** hud,
-glass and leaderboard render with their gradients, shadows, glyphs and
-clipping. Paint gaps left: `url()` images, rounded clipping, a group layer
-for opacity, colour emoji, `backdrop-filter` (25 uses) and `filter`,
-`text-shadow`, `transform`.
+17; hand 46/47; 8,021 checks green; host 23/23 on Linux and Windows.** Left,
+by the sweep: `url()` images and `border-image` (9slice-demo, avatars),
+`clip-path` (24), `backdrop-filter` (26, needs a backdrop copy), rounded
+clipping, an opacity group layer, colour emoji, `mix-blend-mode`, `mask`.
 
 ## Phase 8 — Remaining layout (~8k LOC)
 
