@@ -27,6 +27,47 @@ struct ClipNode {
     std::shared_ptr<const ClipNode> parent;
 };
 
+// The colour half of `filter` (Filter Effects L1 §8): brightness, contrast,
+// grayscale, sepia, saturate, invert and opacity compose into one affine
+// colour transform, applied in sRGB to every vertex colour and generated
+// texel painted under the box. Nested filters compose parent-after-child.
+// blur() and drop-shadow() are handled separately (a padded rasterize; an
+// outer shadow); url() filters are not applied.
+struct ColorFilter {
+    float m[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    float add[3] = {0, 0, 0};
+    float alpha = 1;
+
+    // this = other ∘ this (apply this first, then other).
+    void then(const ColorFilter& o) {
+        float nm[3][3];
+        float na[3];
+        for (int r = 0; r < 3; ++r) {
+            for (int c = 0; c < 3; ++c) {
+                nm[r][c] = o.m[r][0] * m[0][c] + o.m[r][1] * m[1][c] + o.m[r][2] * m[2][c];
+            }
+            na[r] = o.m[r][0] * add[0] + o.m[r][1] * add[1] + o.m[r][2] * add[2] + o.add[r];
+        }
+        for (int r = 0; r < 3; ++r) {
+            for (int c = 0; c < 3; ++c) m[r][c] = nm[r][c];
+            add[r] = na[r];
+        }
+        alpha *= o.alpha;
+    }
+    void apply_srgb(float* r, float* g, float* b, float* a) const {
+        const float in[3] = {*r, *g, *b};
+        float out[3];
+        for (int i = 0; i < 3; ++i) {
+            out[i] = m[i][0] * in[0] + m[i][1] * in[1] + m[i][2] * in[2] + add[i];
+            out[i] = std::min(1.f, std::max(0.f, out[i]));
+        }
+        *r = out[0];
+        *g = out[1];
+        *b = out[2];
+        *a *= alpha;
+    }
+};
+
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property);
 
 namespace {
@@ -85,9 +126,50 @@ std::vector<std::string_view> split_shadow_list(std::string_view s, char sep);
 // `opacity` scales every vertex alpha: the group is not composited through a
 // layer, so overlapping children of a translucent box double up where they
 // overlap. A layer per opacity group is the later, exact form.
-void draw_mesh(const Mesh& input, RenderInterface* backend, TextureHandle tex, double opacity = 1,
-               const Transform2D* xform = nullptr, const ClipNode* clip = nullptr) {
-    if (input.empty()) return;
+float srgb_to_linear_f(float v);
+float linear_to_srgb_f(float v) {
+    if (v <= 0) return 0;
+    if (v >= 1) return 1;
+    return v <= 0.0031308f ? v * 12.92f : 1.055f * std::pow(v, 1.f / 2.4f) - 0.055f;
+}
+
+void filter_vertices(std::vector<Vertex>* vertices, const ColorFilter& f) {
+    for (Vertex& v : *vertices) {
+        float r = linear_to_srgb_f(v.color.r), g = linear_to_srgb_f(v.color.g),
+              b = linear_to_srgb_f(v.color.b), a = v.color.a;
+        f.apply_srgb(&r, &g, &b, &a);
+        v.color = LinearColor(srgb_to_linear_f(r), srgb_to_linear_f(g), srgb_to_linear_f(b), a);
+    }
+}
+
+// Straight-alpha sRGB8 texels, in place (generated backgrounds).
+void filter_rgba(std::vector<uint8_t>* rgba, const ColorFilter& f) {
+    for (size_t i = 0; i + 3 < rgba->size(); i += 4) {
+        float r = (*rgba)[i] / 255.f, g = (*rgba)[i + 1] / 255.f, b = (*rgba)[i + 2] / 255.f,
+              a = (*rgba)[i + 3] / 255.f;
+        f.apply_srgb(&r, &g, &b, &a);
+        (*rgba)[i] = static_cast<uint8_t>(std::lround(r * 255));
+        (*rgba)[i + 1] = static_cast<uint8_t>(std::lround(g * 255));
+        (*rgba)[i + 2] = static_cast<uint8_t>(std::lround(b * 255));
+        (*rgba)[i + 3] = static_cast<uint8_t>(std::lround(a * 255));
+    }
+}
+
+void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, double opacity = 1,
+               const Transform2D* xform = nullptr, const ClipNode* clip = nullptr,
+               const ColorFilter* filter = nullptr) {
+    if (source.empty()) return;
+    // A colour filter rewrites the vertex colours: the whole story for solid
+    // geometry and coverage text; textured draws had their texels filtered
+    // where they were generated (see filter_rgba), and keep white vertices.
+    Mesh filtered;
+    const Mesh* in = &source;
+    if (filter) {
+        filtered = source;
+        filter_vertices(&filtered.vertices, *filter);
+        in = &filtered;
+    }
+    const Mesh& input = *in;
     if (clip) {
         // Into screen space first, then geometric clipping, innermost clip
         // outwards; opacity last. The transformed path below is folded in
@@ -411,7 +493,8 @@ constexpr int kShadowLayers = 12;
 
 void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_box,
                          const BorderRadii& radii, RenderInterface* backend, double opacity,
-                         const Transform2D* xf = nullptr, const ClipNode* clip = nullptr) {
+                         const Transform2D* xf = nullptr, const ClipNode* clip = nullptr,
+                         const ColorFilter* filter = nullptr) {
     for (size_t s = shadows.size(); s-- > 0;) {   // first shadow on top
         const Shadow& sh = shadows[s];
         if (sh.inset) continue;
@@ -434,7 +517,7 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             Mesh mesh;
             tessellate_rounded_rect(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
                                     c, &mesh);
-            draw_mesh(mesh, backend, {}, opacity, xf, clip);
+            draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
         }
     }
 }
@@ -443,7 +526,8 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
 // deepens the sides it points away from. Rendered as nested frames.
 void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding_box,
                          const BorderRadii& radii, RenderInterface* backend, double opacity,
-                         const Transform2D* xf = nullptr, const ClipNode* clip = nullptr) {
+                         const Transform2D* xf = nullptr, const ClipNode* clip = nullptr,
+                         const ColorFilter* filter = nullptr) {
     for (size_t s = shadows.size(); s-- > 0;) {
         const Shadow& sh = shadows[s];
         if (!sh.inset) continue;
@@ -471,7 +555,7 @@ void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding
             tessellate_border(padding_box, radii, std::min(top, padding_box.height),
                               std::min(right, padding_box.width), std::min(bottom, padding_box.height),
                               std::min(left, padding_box.width), colors, &mesh);
-            draw_mesh(mesh, backend, {}, opacity, xf, clip);
+            draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
         }
     }
 }
@@ -501,7 +585,125 @@ struct PaintState {
     bool transformed = false;
     Transform2D xform;   // accumulated, in absolute coordinates
     std::shared_ptr<const ClipNode> clip;
+    std::shared_ptr<const ColorFilter> filter;
 };
+
+bool ci_equal(std::string_view a, std::string_view b);
+std::string_view trim_view(std::string_view s);
+std::vector<std::string_view> split_ws(std::string_view s);
+
+// The colour functions and drop-shadow()s of a `filter` list, in order.
+// Returns false when the list has none of them.
+bool parse_color_filter(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+                        ColorFilter* out, std::vector<Shadow>* drop_shadows) {
+    const std::string_view raw = get(style, "filter");
+    if (raw.empty() || ci_equal(raw, "none")) return false;
+    bool any = false;
+    size_t i = 0;
+    while (i < raw.size()) {
+        const size_t open = raw.find('(', i);
+        if (open == std::string_view::npos) break;
+        size_t depth = 1, close = open + 1;
+        while (close < raw.size() && depth > 0) {
+            if (raw[close] == '(') ++depth;
+            else if (raw[close] == ')') --depth;
+            ++close;
+        }
+        std::string name(trim_view(raw.substr(i, open - i)));
+        for (char& c : name) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        const std::string_view arg = trim_view(raw.substr(open + 1, close - open - 2));
+        i = close;
+        const auto number = [&](double fallback) {
+            if (arg.empty()) return fallback;
+            const std::string a(arg);
+            char* end = nullptr;
+            double v = std::strtod(a.c_str(), &end);
+            if (end == a.c_str()) return fallback;
+            if (*end == '%') v /= 100.0;
+            return std::max(0.0, v);
+        };
+        ColorFilter f;
+        bool colour = true;
+        if (name == "brightness") {
+            const float k = static_cast<float>(number(1));
+            for (int r = 0; r < 3; ++r) f.m[r][r] = k;
+        } else if (name == "contrast") {
+            const float k = static_cast<float>(number(1));
+            for (int r = 0; r < 3; ++r) { f.m[r][r] = k; f.add[r] = 0.5f - 0.5f * k; }
+        } else if (name == "grayscale" || name == "saturate" || name == "sepia") {
+            double amount = number(name == "saturate" ? 1 : 0);
+            if (name != "saturate") amount = std::min(1.0, amount);
+            const float s = static_cast<float>(name == "saturate" ? amount : 1 - amount);
+            if (name == "sepia") {
+                // §8.1 sepia matrix, interpolated toward identity by (1 - amount).
+                const float a = static_cast<float>(amount);
+                const float sep[3][3] = {{0.393f, 0.769f, 0.189f}, {0.349f, 0.686f, 0.168f},
+                                         {0.272f, 0.534f, 0.131f}};
+                for (int r = 0; r < 3; ++r) {
+                    for (int c = 0; c < 3; ++c) f.m[r][c] = (r == c ? 1 - a : 0) + a * sep[r][c];
+                }
+            } else {
+                // §8.1 saturate / grayscale share the luminance-weighted matrix.
+                const float lr = 0.2126f, lg = 0.7152f, lb = 0.0722f;
+                f.m[0][0] = lr + (1 - lr) * s; f.m[0][1] = lg - lg * s;       f.m[0][2] = lb - lb * s;
+                f.m[1][0] = lr - lr * s;       f.m[1][1] = lg + (1 - lg) * s; f.m[1][2] = lb - lb * s;
+                f.m[2][0] = lr - lr * s;       f.m[2][1] = lg - lg * s;       f.m[2][2] = lb + (1 - lb) * s;
+            }
+        } else if (name == "invert") {
+            const float a = static_cast<float>(std::min(1.0, number(0)));
+            for (int r = 0; r < 3; ++r) { f.m[r][r] = 1 - 2 * a; f.add[r] = a; }
+        } else if (name == "opacity") {
+            f.alpha = static_cast<float>(std::min(1.0, number(1)));
+        } else if (name == "drop-shadow") {
+            colour = false;
+            // <offset-x> <offset-y> [<blur>]? <color>? — parsed like a box-shadow
+            // without spread; the box's border box stands in for its alpha
+            // shape, which is right for a card and rough for text.
+            const std::vector<std::string_view> parts = split_ws(arg);
+            Shadow sh;
+            sh.color = LinearColor(0, 0, 0, 1);
+            std::vector<double> lengths;
+            std::string colour_text;
+            for (size_t k = 0; k < parts.size(); ++k) {
+                const ResolvedLength r = resolve_length(parts[k], ctx, font_size, std::nullopt);
+                if (r.kind == LengthKind::Length && lengths.size() < 3 &&
+                    (std::isdigit(static_cast<unsigned char>(parts[k][0])) || parts[k][0] == '-' ||
+                     parts[k][0] == '.' || parts[k][0] == '+')) {
+                    lengths.push_back(r.pixels);
+                } else {
+                    // The colour may itself contain spaces: rejoin the rest.
+                    for (size_t q = k; q < parts.size(); ++q) {
+                        if (!colour_text.empty()) colour_text += ' ';
+                        colour_text += std::string(parts[q]);
+                    }
+                    break;
+                }
+            }
+            if (lengths.size() >= 2) {
+                sh.x = lengths[0];
+                sh.y = lengths[1];
+                if (lengths.size() > 2) sh.blur = lengths[2];
+                if (!colour_text.empty()) {
+                    CssParseError err;
+                    CssValuePtr v = parse_css_value(colour_text, &err);
+                    if (v && v->kind() == CssValueKind::Color) {
+                        const auto& c = static_cast<const CssColor&>(*v);
+                        sh.color = LinearColor::from_srgb(c.r, c.g, c.b, c.a);
+                    }
+                }
+                if (drop_shadows) drop_shadows->push_back(sh);
+                any = true;
+            }
+        } else {
+            colour = false;   // blur() handled elsewhere; url() not applied
+        }
+        if (colour) {
+            out->then(f);
+            any = true;
+        }
+    }
+    return any;
+}
 
 // Pushes a polygon clip onto the state's chain, mapping it through the
 // transform in force so it lives in screen space (see ClipNode).
@@ -852,13 +1054,14 @@ LinearColor accent_color_of(const ComputedStyle* style) {
 }
 
 void fill_rounded(const Rect& r, double radius, const LinearColor& color, RenderInterface* backend,
-                  double opacity, const Transform2D* xf, const ClipNode* clip = nullptr) {
+                  double opacity, const Transform2D* xf, const ClipNode* clip = nullptr,
+                  const ColorFilter* filter = nullptr) {
     if (r.width <= 0 || r.height <= 0 || !backend) return;
     Mesh mesh;
     const double rr = std::min(radius, std::min(r.width, r.height) * 0.5);
     const CornerRadius cr(rr);
     tessellate_rounded_rect(r, BorderRadii(cr, cr, cr, cr), color, &mesh);
-    draw_mesh(mesh, backend, {}, opacity, xf, clip);
+    draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
 }
 
 double attr_double(const Element& e, std::string_view name, double fallback) {
@@ -886,7 +1089,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             if (!e.has_attribute("checked")) return;
             const double inset = 2;
             fill_rounded(Rect(x + inset, y + inset, b.width - 2 * inset, b.height - 2 * inset), 1,
-                         accent_color_of(b.style), paint.backend, state.opacity, xf, state.clip.get());
+                         accent_color_of(b.style), paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
             return;
         }
         if (type == "radio") {
@@ -894,7 +1097,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             const double inset = b.width * 0.25;
             const double d = b.width - 2 * inset;
             fill_rounded(Rect(x + inset, y + inset, d, d), d * 0.5, accent_color_of(b.style),
-                         paint.backend, state.opacity, xf, state.clip.get());
+                         paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
             return;
         }
         if (type == "range") {
@@ -916,13 +1119,13 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             LinearColor groove = accent;
             groove.a *= 0.3f;
             fill_rounded(Rect(cl, rail_top, cw, rail_h), rail_h * 0.5, groove, paint.backend,
-                         state.opacity, xf, state.clip.get());
+                         state.opacity, xf, state.clip.get(), state.filter.get());
             if (cx - cl > 0) {
                 fill_rounded(Rect(cl, rail_top, cx - cl, rail_h), rail_h * 0.5, accent, paint.backend,
-                             state.opacity, xf, state.clip.get());
+                             state.opacity, xf, state.clip.get(), state.filter.get());
             }
             fill_rounded(Rect(cx - thumb * 0.5, cy - thumb * 0.5, thumb, thumb), thumb * 0.5, accent,
-                         paint.backend, state.opacity, xf, state.clip.get());
+                         paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
             return;
         }
     }
@@ -948,14 +1151,14 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
         Mesh text;
         build_text_geometry(t.text, cl, baseline, fs, color, paint, &text,
                             letter_spacing_of(b.style, ctx, fs), &face);
-        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get());
+        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
         paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
     }
     if (tag == "select" && !e.has_attribute("multiple") && !e.has_attribute("size")) {
         // The runtime's v1 caret: a 6x3 grey bar 8px from the right edge.
         const double margin = 8, w = 6, h = 3;
         fill_rounded(Rect(x + b.width - margin - w, y + (b.height - h) * 0.5, w, h), 1,
-                     LinearColor(0.6f, 0.6f, 0.6f, 1.f), paint.backend, state.opacity, xf, state.clip.get());
+                     LinearColor(0.6f, 0.6f, 0.6f, 1.f), paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
     }
 }
 
@@ -1000,7 +1203,8 @@ bool has_gradient_layer(const std::vector<BackgroundLayer>& layers) {
 bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
                               const Rect& area, const BorderRadii& radii, const LayoutContext& ctx,
                               double font_size, const PaintContext& paint, double opacity = 1,
-                              const Transform2D* xf = nullptr, const ClipNode* clip = nullptr) {
+                              const Transform2D* xf = nullptr, const ClipNode* clip = nullptr,
+                              const ColorFilter* filter = nullptr) {
     if (!has_gradient_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
         return false;
     }
@@ -1008,6 +1212,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     const int tex_h = static_cast<int>(std::min(1024.0, std::ceil(area.height)));
     std::vector<uint8_t> rgba;
     rasterize_background(layers, color, area.width, area.height, tex_w, tex_h, ctx, font_size, &rgba);
+    if (filter) filter_rgba(&rgba, *filter);
     const TextureHandle tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
     if (paint.owned_textures) paint.owned_textures->push_back(tex);
 
@@ -1017,7 +1222,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
         v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                        static_cast<float>((v.position.y - area.y) / area.height)};
     }
-    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip);
+    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip, filter);
     return true;
 }
 
@@ -1103,15 +1308,32 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                                static_cast<float>((v.position.y - area.y) / area.height)};
             }
-            draw_mesh(mesh, paint.backend, tex, state.opacity, xf, state.clip.get());
+            draw_mesh(mesh, paint.backend, tex, state.opacity, xf, state.clip.get(), state.filter.get());
             blurred = true;
+        }
+    }
+
+    // `filter`'s colour functions apply to the box and its subtree, composed
+    // under any filter already in force; drop-shadow()s paint as outer
+    // shadows of the border box.
+    std::vector<Shadow> drop_shadows;
+    if (decorated && b.style && b.width > 0 && b.height > 0) {
+        ColorFilter own;
+        if (parse_color_filter(b.style, ctx, fs, &own, &drop_shadows)) {
+            auto combined = std::make_shared<ColorFilter>(own);
+            if (state.filter) combined->then(*state.filter);
+            state.filter = std::move(combined);
         }
     }
 
     std::vector<Shadow> shadows;
     if (decorated && b.style && !hidden && !blurred && b.width > 0 && b.height > 0) {
         shadows = parse_box_shadows(b.style, ctx, fs, resolve_color(b.style, "color"));
-        paint_outer_shadows(shadows, border_box, radii, paint.backend, state.opacity, xf, state.clip.get());
+        if (!drop_shadows.empty()) {
+            paint_outer_shadows(drop_shadows, border_box, radii, paint.backend, state.opacity, xf,
+                                state.clip.get(), state.filter.get());
+        }
+        paint_outer_shadows(shadows, border_box, radii, paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
     }
 
     // A box whose background went onto the canvas (§14.2) does not paint it
@@ -1125,14 +1347,14 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         if (has_gradient_layer(layers)) {
             background_done = paint_layered_background(
                 layers, resolve_color(b.style, "background-color"), border_box, radii, ctx, fs, paint,
-                state.opacity, xf, state.clip.get());
+                state.opacity, xf, state.clip.get(), state.filter.get());
         }
     }
 
     if (decorated && !hidden && !blurred) {
         Mesh mesh;
         paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done);
-        draw_mesh(mesh, paint.backend, {}, state.opacity, xf, state.clip.get());
+        draw_mesh(mesh, paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
         if (!shadows.empty()) {
             const Rect padding_box(x + b.border_left, y + b.border_top,
                                    b.width - b.border_left - b.border_right,
@@ -1141,7 +1363,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 paint_inset_shadows(shadows, padding_box,
                                     inset_radii(radii, b.border_top, b.border_right, b.border_bottom,
                                                 b.border_left),
-                                    paint.backend, state.opacity, xf, state.clip.get());
+                                    paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
             }
         }
     }
@@ -1175,7 +1397,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 Mesh shadow;
                 build_text_geometry(b.text, x + sh.x, baseline + sh.y, b.font_size, sh.color, paint,
                                     &shadow, spacing, &run_face);
-                draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get());
+                draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
                 continue;
             }
             const double sigma = sh.blur * 0.5;
@@ -1198,7 +1420,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                     Mesh shadow;
                     build_text_geometry(b.text, x + sh.x + i * sigma, baseline + sh.y + j * sigma,
                                         b.font_size, c, paint, &shadow, spacing, &run_face);
-                    draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get());
+                    draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
                 }
             }
         }
@@ -1225,7 +1447,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
         // The handle from the single up-front upload, never a fresh one: see
         // prepare_glyphs.
-        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get());
+        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
     }
 
     // `overflow` other than visible clips the children to the padding box

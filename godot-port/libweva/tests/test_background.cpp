@@ -663,6 +663,42 @@ void test_color_glyphs() {
           near(mesh.vertices[4].color.b, 1) && near(mesh.vertices[4].color.a, 0.5f));
 }
 
+// Filter Effects §8: brightness / grayscale rewrite the colours painted under
+// the box; drop-shadow paints an outer shadow.
+void test_paint_color_filters() {
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 }"
+                "#dim { width: 40px; height: 40px; background: #ff0000; filter: brightness(0.5) }"
+                "#grey { width: 40px; height: 40px; background: #ff0000; filter: grayscale(1) }"
+                "#nest { filter: brightness(0.5) } #nest div { width: 40px; height: 40px;"
+                "        background: #ffffff; filter: brightness(0.5) }"
+                "#ds { width: 40px; height: 40px; background: #0000ff;"
+                "      filter: drop-shadow(0 4px 6px rgba(0, 255, 0, 0.5)) }"));
+    CHECK(f.layout("<body><div id=dim></div><div id=grey></div><div id=nest><div></div></div>"
+                   "<div id=ds></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    int dim = 0, grey = 0, quarter = 0, green_shadow = 0;
+    const auto s2l = [](float v) { return v <= 0.04045f ? v / 12.92f : std::pow((v + 0.055f) / 1.055f, 2.4f); };
+    const float half = s2l(0.5f);            // brightness(0.5) on #f00, in sRGB
+    const float luma = s2l(0.2126f);         // grayscale(1) on #f00
+    const float q = s2l(0.25f);              // two nested brightness(0.5)
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty()) continue;
+        const LinearColor c = d.geometry.vertices[0].color;
+        if (std::fabs(c.r - half) < 0.01f && c.g == 0 && c.b == 0) ++dim;
+        if (std::fabs(c.r - luma) < 0.01f && std::fabs(c.g - luma) < 0.01f && std::fabs(c.b - luma) < 0.01f) ++grey;
+        if (std::fabs(c.r - q) < 0.01f && std::fabs(c.g - q) < 0.01f && std::fabs(c.b - q) < 0.01f) ++quarter;
+        if (c.g > 0.9f && c.r == 0 && c.b == 0 && c.a < 0.6f) ++green_shadow;
+    }
+    CHECK(dim == 1);
+    CHECK(grey == 1);
+    CHECK(quarter == 1);
+    CHECK(green_shadow >= 1);
+}
+
 void test_font_weight_resolution() {
     // CSS Fonts L4 §2.2: keywords and numbers; bolder / lighter against the
     // 400 base; italic and oblique both count as italic.
