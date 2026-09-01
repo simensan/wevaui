@@ -73,6 +73,62 @@ def compare(reference, candidate):
     return problems
 
 
+def load_chrome(corpus, name):
+    """Chrome's own getBoundingClientRect capture for a case, when the corpus has one.
+
+    The reference is a reference, not ground truth. When the two implementations
+    disagree, this is the tiebreak — and it has already been needed once, on
+    `aspect-ratio` inside a grid track, where the C# reports a card 2px taller
+    than the row it sits in AND a container height that contradicts its own
+    cards. Chrome and the C++ agree; the C# is wrong.
+    """
+    for suffix in (".html.chrome-layout.json", ".chrome-layout.json"):
+        path = os.path.join(corpus, name + suffix)
+        if os.path.exists(path):
+            with open(path) as f:
+                return json.load(f)
+    return None
+
+
+def arbitrate(reference, candidate, chrome):
+    """Splits differences into ones the third source blames on each side.
+
+    Returns (reference_bugs, real) — lists of description strings. A difference
+    counts as a reference bug only when Chrome's geometry matches the candidate
+    EXACTLY and differs from the reference, on an element the three agree on the
+    identity of. Anything else stays a real failure, including any case where
+    Chrome is absent or its element list does not line up.
+    """
+    if not chrome:
+        return [], compare(reference, candidate)
+
+    a, b, c = (reference.get("elements", []), candidate.get("elements", []),
+               chrome.get("elements", []))
+    if not (len(a) == len(b) == len(c)):
+        return [], compare(reference, candidate)
+
+    reference_bugs, real = [], []
+    for i in range(len(a)):
+        ea, eb, ec = a[i], b[i], c[i]
+        if (ea.get("tag"), ea.get("id"), ea.get("cls")) != (ec.get("tag"), ec.get("id"),
+                                                            ec.get("cls")):
+            # The lists are not describing the same elements; no arbitration.
+            return [], compare(reference, candidate)
+        for key in ("depth", "tag", "id", "cls"):
+            if ea.get(key) != eb.get(key):
+                real.append(f"[{i}] {key}: reference {ea.get(key)!r}, candidate {eb.get(key)!r}")
+        for key in ("x", "y", "w", "h"):
+            if ea.get(key) == eb.get(key):
+                continue
+            label = f"{ea.get('tag')}#{ea.get('id')}.{ea.get('cls')}".rstrip("#.")
+            line = f"[{i}] {label}: {key} reference {ea.get(key)} vs candidate {eb.get(key)}"
+            if ec.get(key) == eb.get(key):
+                reference_bugs.append(line + f", chrome {ec.get(key)} — chrome agrees with us")
+            else:
+                real.append(line + f", chrome {ec.get(key)}")
+    return reference_bugs, real
+
+
 def cases_in(corpus):
     """Every .html in the corpus, paired with its .css when one sits beside it."""
     found = []
@@ -107,7 +163,7 @@ def main():
         print(f"no cases in {args.corpus}")
         return 1
 
-    passed, failed, errored = [], [], []
+    passed, failed, errored, arbitrated = [], [], [], []
     for name, html, css in cases:
         ref_out = os.path.join(args.out_dir, name + ".ref.json")
         cand_out = os.path.join(args.out_dir, name + ".cand.json")
@@ -122,8 +178,14 @@ def main():
             errored.append((name, "candidate: " + (c.stderr or c.stdout).strip()[:300]))
             continue
 
-        problems = compare(load(ref_out), load(cand_out))
-        if problems:
+        chrome = load_chrome(args.corpus, name)
+        reference_bugs, problems = arbitrate(load(ref_out), load(cand_out), chrome)
+        if reference_bugs and not problems:
+            arbitrated.append((name, reference_bugs))
+            print(f"REF! {name}  ({len(reference_bugs)} difference(s), chrome sides with us)")
+            for line in reference_bugs[:6]:
+                print(f"       {line}")
+        elif problems:
             failed.append((name, problems))
             print(f"FAIL {name}  ({len(problems)} difference(s))")
             for line in problems[:12]:
@@ -136,9 +198,14 @@ def main():
                 print(f"ok   {name}")
 
     total = len(cases)
-    print(f"\n{len(passed)}/{total} agree, {len(failed)} differ, {len(errored)} errored")
+    print(f"\n{len(passed)}/{total} agree, {len(failed)} differ, "
+          f"{len(arbitrated)} reference bugs, {len(errored)} errored")
+    for name, why in arbitrated:
+        print(f"  REFERENCE BUG {name}: {len(why)} value(s) where chrome matches the candidate")
     for name, why in errored:
         print(f"  ERROR {name}: {why}")
+    # An arbitrated difference is not a failure: the candidate matches the third
+    # source. It is still printed, so it cannot be forgotten.
     return 0 if not failed and not errored else 1
 
 

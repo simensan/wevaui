@@ -2171,6 +2171,63 @@ a conformance change.
 
 **Exit:** `corpus/flex/` diff clean.
 
+### Phase 7, first slice: the explicit grid. 38 → 41/47.
+
+Scoped from the corpus, as flex was: track lists over `<length>`, `<percentage>`,
+`auto` and `<n>fr` with `repeat(<count>, <track>)`; `grid-template-areas` with
+`grid-area: <name>`; row-major auto-placement; gaps; stretch placement. NOT
+ported and named in the header: `minmax()`, `fit-content()`, intrinsic tracks,
+`auto-fill`/`auto-fit`, numeric line placement, spans, `grid-auto-flow: column`
+or `dense`, subgrid, and the alignment families beyond stretch.
+`grid_is_fully_ported()` returns false. ~380 lines against the C#'s 4,848.
+
+**All six grid cases now agree.** Three bugs, each found by grading a step:
+
+* **Leftover space did not stretch `auto` tracks.** `align-content` and
+  `justify-content` default to `normal`, which for a grid behaves as `stretch`.
+  A single auto column in an 800px container came out at its max-content width.
+* **Items in FIXED tracks never had their box model resolved.** Only auto tracks
+  called `layout_block` (to measure max-content), so an item in a `260px` track
+  kept zero padding, border and margin — a sidebar's children were placed at its
+  content origin instead of inside its 16px padding.
+* **A scroll container forced its row to grow.** CSS Grid §6.6 gives it an
+  automatic minimum size of zero; it scrolls rather than expanding the track. A
+  552px row whose item held 604px of content came out 604 and overflowed its own
+  grid.
+
+### The oracle is a reference, not ground truth
+
+`29-card-grid-3x2` failed on six values, and the C++ was right.
+
+`aspect-ratio: 1` on a card in a 240px track: Chrome says the card is 240 tall,
+the C++ says 240, **the C# says 242** — while simultaneously reporting a
+container height of 530, which its own 242-tall cards cannot produce. The
+reference is internally inconsistent there.
+
+The corpus has carried Chrome's `getBoundingClientRect` capture beside every
+case since before this port started, and this is what it is for. `run_oracle.py`
+now **arbitrates**: on a difference, when Chrome's geometry matches the candidate
+exactly and differs from the reference, it reports `REFERENCE BUG` instead of a
+failure, and prints Chrome's value on every difference either way.
+
+The arbitration is automatic rather than a hand-maintained exemption list, which
+matters: a list goes stale silently and starts hiding real regressions. This
+re-derives the verdict from the third source on every run, and refuses to
+arbitrate at all unless the three element lists line up element-for-element.
+
+ORACLE.md says tolerance is zero. That still holds — what changed is that a
+difference now has three possible verdicts rather than two, and the third is
+evidenced rather than asserted.
+
+### A number that looks like a regression and is not
+
+`weva_bench` on the demo document went from 2.50 ms to 10.04 ms — because the
+box count went from **1,691 to 6,967**. That document uses grid in 28 places,
+and those subtrees were previously laid out as plain blocks. Per box the cost
+went *down*: 1.48 → 1.44 µs. Allocations per box rose from 1.5 to 2.2, which is
+the new grid code's own per-call vectors and is the same scratch-buffer work
+already queued for `layout_inline_items`.
+
 ## Phase 7 — Grid and subgrid (~5k LOC)
 
 `Layout/Grid` (4,848). The hardest algorithm in the port and the single largest

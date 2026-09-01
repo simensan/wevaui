@@ -1,6 +1,7 @@
 #include "weva/block_layout.h"
 
 #include "weva/flex.h"
+#include "weva/grid.h"
 
 #include "weva/css_properties.h"
 #include "weva/inline_layout.h"
@@ -754,6 +755,16 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     // formatting context, but its items never consult a float context — each
     // item is a BFC root in its own right — so returning before the float
     // bookkeeping below is safe rather than an omission.
+    if ((*tree_)[id].display == DisplayKind::Grid ||
+        (*tree_)[id].display == DisplayKind::InlineGrid) {
+        const double definite_h = (*tree_)[id].cross_size_imposed ||
+                                          !parent_height_auto((*tree_)[id], ctx_, font_size)
+                                      ? (*tree_)[id].content_height()
+                                      : -1.0;
+        const double h = layout_grid(tree_, id, content_w, definite_h, ctx_, this);
+        finalize_block_size(id, font_size, top_inner + h);
+        return;
+    }
     if ((*tree_)[id].display == DisplayKind::Flex ||
         (*tree_)[id].display == DisplayKind::InlineFlex) {
         // A definite content height lets the cross axis centre against the
