@@ -13,6 +13,13 @@ namespace weva {
 
 namespace {
 
+// A box shrink-fitted to its content is re-laid at the SUM of its run widths,
+// and the pen then re-accumulates those same widths in another order. With a
+// real face the advances are arbitrary floats, and the last word can come out
+// an ulp past the line and wrap. One part in a billion is below any decision
+// layout makes and above any rounding it does.
+constexpr double kFitEpsilon = 1e-9;
+
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
@@ -665,7 +672,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         if (it.is_atom()) {
             // An atom wraps as a unit: it moves to the next line when it does
             // not fit, but is never split.
-            if (line_has_content() && pen + it.atom_outer_width > line_width) {
+            if (line_has_content() && pen + it.atom_outer_width > line_width + kFitEpsilon) {
                 flush_line(false);
             }
             grow_line_metrics(it);
@@ -762,7 +769,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             first_piece = false;
             // A word that does not fit starts a new line — unless the line is
             // already empty, in which case it overflows rather than looping.
-            if (it.allow_wrap && line_has_content() && pen + w > line_width) {
+            if (it.allow_wrap && line_has_content() && pen + w > line_width + kFitEpsilon) {
                 flush_line(false);
             }
             grow_line_metrics(it);
