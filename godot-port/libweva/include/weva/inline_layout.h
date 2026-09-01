@@ -30,6 +30,9 @@ struct InlineItem {
     const ComputedStyle* style = nullptr;
     double font_size = 16;
     double line_height = 0;
+    // The face this item measures with: the context's registration for its
+    // font-family stack, or null for the container's default face.
+    const FontMetrics* metrics = nullptr;
     // CSS Text L3 §8.2, resolved to pixels. Applied the way the reference's
     // LineBreaker applies it: every measured piece of text is widened by
     // letter_spacing × (characters − 1), so a lone space or a single glyph

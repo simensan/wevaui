@@ -663,8 +663,9 @@ void test_letter_spacing_widens_runs() {
     double plain_w = 0, spaced_w = 0;
     for (BoxId c : plain.tree.children(plain.lines("w")[0])) plain_w += plain.tree[c].width;
     for (BoxId c : spaced.tree.children(spaced.lines("w")[0])) spaced_w += spaced.tree[c].width;
-    // "Hello" (4 gaps) + " " (0) + "world" (4 gaps).
-    CHECK(near(spaced_w - plain_w, 16));
+    // The whole run: "Hello world" is 11 characters, 10 gaps — spaces count,
+    // as in the reference's single-line measure.
+    CHECK(near(spaced_w - plain_w, 20));
     // em resolves against the run's own font size.
     Fixture em;
     CHECK(em.css("#w { width: 1000px; white-space: nowrap; font-size: 20px;"
@@ -710,4 +711,27 @@ void test_inline_fragment_height_and_order() {
         // Geometry is unaffected by the order: code still sits before kbd.
         CHECK(f.tree[kids[1]].x < f.tree[kids[0]].x);
     }
+}
+
+void test_font_family_registry() {
+    // A registered family wins for any stack that names it; an unknown head
+    // is skipped, and nothing registered falls back to the default face.
+    const MonoFontMetrics mono = MonoFontMetrics::chrome_monospace();
+    Fixture f;
+    f.ctx.register_font("monospace", &mono);
+    CHECK(f.css("#w { width: 1000px; white-space: nowrap; font-size: 20px }"
+                "#c { font-family: \"Courier New\", monospace }"
+                "#s { font-family: Arial, sans-serif }"));
+    CHECK(f.layout("<body><div id=w><span id=c>abcd</span><span id=s>abcd</span></div></body>"));
+    const Box& c = f.tree[f.find_kind("c", BoxKind::Inline)];
+    const Box& s = f.tree[f.find_kind("s", BoxKind::Inline)];
+    // The fixture's default face is 0.5em per glyph; monospace is 0.6em.
+    CHECK(near(c.width, 4 * 20 * 0.6));
+    CHECK(near(s.width, 4 * 20 * 0.5));
+    LayoutContext ctx;
+    ctx.register_font("Monospace", &mono);
+    CHECK(ctx.font_for("'monospace'") == &mono);
+    CHECK(ctx.font_for("Sniglet, \"Baloo 2\", monospace") == &mono);
+    CHECK(ctx.font_for("Sniglet, sans-serif") == nullptr);
+    CHECK(ctx.font_for("") == nullptr);
 }

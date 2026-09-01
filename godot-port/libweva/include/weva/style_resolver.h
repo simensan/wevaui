@@ -5,6 +5,9 @@
 
 #include <optional>
 #include <string_view>
+#include <vector>
+#include <utility>
+#include <string>
 
 // Ports the length- and font-resolution half of Runtime/Layout/StyleResolver.cs
 // — the layer between the cascade's strings and layout's pixels.
@@ -14,10 +17,21 @@ namespace weva {
 // Document-scoped inputs every relative length resolves against. The C#
 // LayoutContext also carries the anchor registry, font-metrics cache and the
 // incremental-layout boundary; those belong to their own slices.
+class FontMetrics;
+
 struct LayoutContext {
     double viewport_width_px = 1920;
     double viewport_height_px = 1080;
     double root_font_size_px = 16;
+
+    // Font metrics by family (Runtime/Layout/LayoutContext.cs RegisterFont /
+    // GetMetrics): a `font-family` stack is walked head by head and the first
+    // registered name wins; nothing registered means the caller's default
+    // face. BaselineGen registers `monospace` beside the default, which is
+    // how a <code> run comes out 0.6em per glyph where body text is 0.45.
+    std::vector<std::pair<std::string, const FontMetrics*>> fonts;
+    void register_font(std::string_view family, const FontMetrics* metrics);
+    const FontMetrics* font_for(std::string_view family_stack) const;
     // The document root's resolved line-height, for `rlh` lengths. Zero means
     // unset, in which case CssLength falls back to root_font_size * 1.2.
     double root_line_height_px = 0;

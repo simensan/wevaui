@@ -74,10 +74,19 @@ int letter_count(std::string_view text) {
     return n;
 }
 
-double measure_spaced(const FontMetrics& metrics, std::string_view text, const InlineItem& it) {
-    double w = metrics.measure(text, it.font_size);
-    const int n = letter_count(text);
-    if (it.letter_spacing != 0 && n > 1) w += it.letter_spacing * static_cast<double>(n - 1);
+// The reference measures a whole run as width + spacing × (characters − 1),
+// spaces included. A run is placed here piece by piece, so every piece adds
+// spacing × characters and the run's FIRST piece adds one less — the sum is
+// the same however the run breaks. Counting per piece with (n − 1) each
+// dropped one spacing per space: "LV 7" at 0.16em came out 6.4px short.
+double measure_spaced(const FontMetrics& default_metrics, std::string_view text,
+                      const InlineItem& it, bool first_piece_of_item) {
+    const FontMetrics& fm = it.metrics ? *it.metrics : default_metrics;
+    double w = fm.measure(text, it.font_size);
+    if (it.letter_spacing != 0) {
+        const int n = letter_count(text) - (first_piece_of_item ? 1 : 0);
+        if (n > 0) w += it.letter_spacing * static_cast<double>(n);
+    }
     return w;
 }
 
@@ -93,7 +102,9 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.text = b.text;
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, nullptr, ctx);
-            item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
+            item.metrics = ctx.font_for(get(item.style, "font-family"));
+            item.line_height = line_height_px(item.style, item.font_size, ctx,
+                                              item.metrics ? item.metrics : metrics);
             item.letter_spacing = letter_spacing_px(item.style, ctx, item.font_size);
             const std::string_view ws = get(item.style, "white-space");
             // `pre` and `pre-wrap` preserve whitespace; `nowrap` and `pre`
@@ -121,7 +132,9 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.inline_parent = inline_parent;
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, nullptr, ctx);
-            item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
+            item.metrics = ctx.font_for(get(item.style, "font-family"));
+            item.line_height = line_height_px(item.style, item.font_size, ctx,
+                                              item.metrics ? item.metrics : metrics);
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline || b.kind == BoxKind::AnonymousInline) {
             // CSS 2.1 §9.4.2: an inline element produces a box on every line it
@@ -133,7 +146,9 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
                 item.inline_parent = inline_parent;
                 item.style = b.style ? b.style : inherited;
                 item.font_size = font_size_px(item.style, nullptr, ctx);
-                item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
+                item.metrics = ctx.font_for(get(item.style, "font-family"));
+                item.line_height = line_height_px(item.style, item.font_size, ctx,
+                                                  item.metrics ? item.metrics : metrics);
                 out->push_back(item);
             }
             collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited, metrics, out);
@@ -146,7 +161,9 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.inline_parent = inline_parent;
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, nullptr, ctx);
-            item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
+            item.metrics = ctx.font_for(get(item.style, "font-family"));
+            item.line_height = line_height_px(item.style, item.font_size, ctx,
+                                              item.metrics ? item.metrics : metrics);
             out->push_back(item);
         }
     }
@@ -470,9 +487,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             r.x = f.x + dx;
             // Runs sit on the shared baseline, so a smaller span aligns with a
             // larger one rather than with the line's top edge.
-            r.y = baseline - metrics.ascent(f.item->font_size);
+            const FontMetrics& fm = f.item->metrics ? *f.item->metrics : metrics;
+            r.y = baseline - fm.ascent(f.item->font_size);
             r.width = f.width;
-            r.height = metrics.ascent(f.item->font_size) + metrics.descent(f.item->font_size);
+            r.height = fm.ascent(f.item->font_size) + fm.descent(f.item->font_size);
             tree->append_child(lb, run);
         }
         for (const Span& sp : spans) {
@@ -506,8 +524,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             max_descent = std::max(max_descent, outer_h - it.atom_baseline);
             return;
         }
-        max_ascent = std::max(max_ascent, metrics.ascent(it.font_size));
-        max_descent = std::max(max_descent, metrics.descent(it.font_size));
+        const FontMetrics& fm = it.metrics ? *it.metrics : metrics;
+        max_ascent = std::max(max_ascent, fm.ascent(it.font_size));
+        max_descent = std::max(max_descent, fm.descent(it.font_size));
         max_leading = std::max(max_leading, it.line_height);
     };
 
@@ -540,10 +559,11 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             pen += it.atom_outer_width;
             continue;
         }
+        bool first_piece = true;
         if (!it.collapse_whitespace) {
             // Preserved whitespace is a later slice; the text is placed as one
             // unbreakable fragment so its width is still accounted for.
-            const double w = measure_spaced(metrics, it.text, it);
+            const double w = measure_spaced(metrics, it.text, it, true);
             grow_line_metrics(it);
             line.push_back({&it, it.text, false, pen, w});
             pen += w;
@@ -564,7 +584,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     ++next;
                 }
                 const double w =
-                    measure_spaced(metrics, word.substr(from, next - from), it);
+                    measure_spaced(metrics, word.substr(from, next - from), it, first_piece);
                 if (w > max_width) break;
                 fits = next - from;
                 i = next;
@@ -577,7 +597,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 // A collapsed space at the very start of a line is dropped:
                 // it would indent every wrapped line by a space.
                 if (line.empty()) continue;
-                const double w = measure_spaced(metrics, " ", it);
+                const double w = measure_spaced(metrics, " ", it, first_piece);
+                first_piece = false;
                 grow_line_metrics(it);
                 line.push_back({&it, " ", true, pen, w});
                 pen += w;
@@ -611,7 +632,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                         }
                     }
                     const std::string_view slice = t.word.substr(idx, take);
-                    const double sw = measure_spaced(metrics, slice, it);
+                    const double sw = measure_spaced(metrics, slice, it, first_piece);
+                    first_piece = false;
                     grow_line_metrics(it);
                     line.push_back({&it, slice, false, pen, sw});
                     pen += sw;
@@ -620,7 +642,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 }
                 continue;
             }
-            const double w = measure_spaced(metrics, t.word, it);
+            const double w = measure_spaced(metrics, t.word, it, first_piece);
+            first_piece = false;
             // A word that does not fit starts a new line — unless the line is
             // already empty, in which case it overflows rather than looping.
             if (it.allow_wrap && !line.empty() && pen + w > line_width) {

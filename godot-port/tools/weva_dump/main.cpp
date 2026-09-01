@@ -268,9 +268,14 @@ int main(int argc, char** argv) {
     // match the oracle, not the ABI, or every text measurement diverges for a
     // reason that has nothing to do with the engine.
     const weva::MonoFontMetrics metrics = weva::MonoFontMetrics::chrome_sans_serif();
+    // BaselineGen also registers ChromeMonospace under `monospace`, so a
+    // <code> run measures at 0.6em per glyph there; without the same
+    // registration every code snippet on a page was 25% narrower here.
+    const weva::MonoFontMetrics monospace = weva::MonoFontMetrics::chrome_monospace();
     weva::LayoutContext ctx;
     ctx.viewport_width_px = width;
     ctx.viewport_height_px = height;
+    ctx.register_font("monospace", &monospace);
 
     weva::BoxTree tree;
     weva::BoxBuilder builder(&tree, &styles);

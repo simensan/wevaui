@@ -503,3 +503,54 @@ bool is_rtl(const ComputedStyle* style) {
 }
 
 } // namespace weva
+
+namespace weva {
+
+namespace {
+
+std::string normalize_family(std::string_view s) {
+    // Trim, strip one pair of quotes, lowercase — the reference's
+    // NormalizeFamily + StripFamilyQuotes.
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t')) s.remove_prefix(1);
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t')) s.remove_suffix(1);
+    if (s.size() >= 2 && (s.front() == '"' || s.front() == '\'') && s.back() == s.front()) {
+        s = s.substr(1, s.size() - 2);
+    }
+    std::string out(s);
+    for (char& c : out) {
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    return out;
+}
+
+} // namespace
+
+void LayoutContext::register_font(std::string_view family, const FontMetrics* metrics) {
+    if (family.empty() || !metrics) return;
+    const std::string key = normalize_family(family);
+    for (auto& f : fonts) {
+        if (f.first == key) { f.second = metrics; return; }
+    }
+    fonts.emplace_back(key, metrics);
+}
+
+const FontMetrics* LayoutContext::font_for(std::string_view stack) const {
+    if (fonts.empty() || stack.empty()) return nullptr;
+    size_t from = 0;
+    while (from <= stack.size()) {
+        const size_t comma = stack.find(',', from);
+        const std::string_view head =
+            stack.substr(from, comma == std::string_view::npos ? std::string_view::npos : comma - from);
+        const std::string key = normalize_family(head);
+        if (!key.empty()) {
+            for (const auto& f : fonts) {
+                if (f.first == key) return f.second;
+            }
+        }
+        if (comma == std::string_view::npos) break;
+        from = comma + 1;
+    }
+    return nullptr;
+}
+
+} // namespace weva

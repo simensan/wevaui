@@ -117,6 +117,7 @@ void test_flex_row_max_content_sums_its_items();
 void test_letter_spacing_widens_runs();
 void test_inline_fragment_height_and_order();
 void test_var_in_shorthand_expands_after_substitution();
+void test_font_family_registry();
 void test_anonymous_block_inherits_text_align();
 void test_inline_fragments();
 void test_inline_atoms();
@@ -271,6 +272,7 @@ int main() {
     test_letter_spacing_widens_runs();
     test_inline_fragment_height_and_order();
     test_var_in_shorthand_expands_after_substitution();
+    test_font_family_registry();
     test_anonymous_block_inherits_text_align();
     test_inline_fragments();
     test_inline_atoms();
