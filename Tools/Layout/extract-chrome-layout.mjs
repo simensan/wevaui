@@ -68,7 +68,7 @@ async function main() {
     // file. Snippet CSS still overrides (the body rule has zero specificity
     // advantage and comes first).
     const fontsDir = path.resolve(__dirname, '..', '..',
-        'Packages', 'com.wevaui', 'Runtime', 'Text', 'Sdf', 'Fonts');
+        'Packages', 'com.wevaui', 'Runtime', 'Resources', 'Fonts');
     const fontFaceCss = (() => {
         const reg = path.join(fontsDir, 'Weva-Default.ttf');
         const bold = path.join(fontsDir, 'Weva-Default-Bold.ttf');

@@ -25,7 +25,7 @@ const SNIPPET_DIR = path.join(REPO, 'Packages', 'com.wevaui', 'Tests', 'Runtime'
 // measures with the SAME face the engine ships instead of the machine's
 // sans-serif (Arial/Segoe, normal line-height ~1.15 vs Inter's 1.21).
 // Mirrors extract-chrome-layout.mjs.
-const FONTS_DIR = path.join(REPO, 'Packages', 'com.wevaui', 'Runtime', 'Text', 'Sdf', 'Fonts');
+const FONTS_DIR = path.join(REPO, 'Packages', 'com.wevaui', 'Runtime', 'Resources', 'Fonts');
 function bundledFontFaceCss() {
     const reg = path.join(FONTS_DIR, 'Weva-Default.ttf');
     const bold = path.join(FONTS_DIR, 'Weva-Default-Bold.ttf');
@@ -46,7 +46,23 @@ function listSnippets() {
         .map(f => ({ html: path.join(SNIPPET_DIR, f), width: 800, height: 600 }));
 }
 
+// Directory mode: `node capture-all-chrome-layouts.mjs <dir> [w] [h]`
+// captures every .html in <dir> (with its sibling .css) instead of the
+// hard-coded demo list. The oracle's harvested corpus is generated, not
+// versioned, so it cannot be a hard-coded target.
+function listDir(dir, width, height) {
+    return fs.readdirSync(dir)
+        .filter(f => f.endsWith('.html'))
+        .sort()
+        .map(f => ({ html: path.join(dir, f), width, height }));
+}
+
 function targets() {
+    const argv = process.argv.slice(2);
+    if (argv[0]) {
+        return listDir(path.resolve(argv[0]),
+                       parseInt(argv[1] || '800', 10), parseInt(argv[2] || '600', 10));
+    }
     const out = listSnippets();
     out.push({
         html: path.join(REPO, 'Assets', 'UI', 'match3.html'),
@@ -106,6 +122,7 @@ async function captureOne(browser, target) {
         await page.addStyleTag({
             content: '*,*::before,*::after{animation:none!important;transition:none!important;}'
         });
+        await page.evaluate(() => document.fonts.ready);
         await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
         elements = await page.evaluate(() => {
             const out = [];

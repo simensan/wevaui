@@ -129,6 +129,20 @@ def arbitrate(reference, candidate, chrome):
     return reference_bugs, real
 
 
+def reference_is_fresh(ref_out, html, css):
+    """A reference dump counts as reusable when it is newer than its inputs.
+
+    Deliberately NOT keyed on the BaselineGen binary: a C# change should be
+    followed by a run without --reuse-reference, and the flag's help says so.
+    """
+    if not os.path.exists(ref_out):
+        return False
+    newest_input = os.path.getmtime(html)
+    if css:
+        newest_input = max(newest_input, os.path.getmtime(css))
+    return os.path.getmtime(ref_out) >= newest_input
+
+
 def cases_in(corpus):
     """Every .html in the corpus, paired with its .css when one sits beside it."""
     found = []
@@ -153,6 +167,10 @@ def main():
     ap.add_argument("--out-dir", default="/tmp/oracle-run")
     ap.add_argument("--only", help="run just the cases whose name contains this")
     ap.add_argument("--quiet", action="store_true", help="only list failures")
+    ap.add_argument("--reuse-reference", action="store_true",
+                    help="skip BaselineGen when a reference dump newer than the case exists; "
+                         "the reference only changes when the corpus or the C# does, and the "
+                         ".NET start-up per case is most of a run")
     args = ap.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -168,10 +186,13 @@ def main():
         ref_out = os.path.join(args.out_dir, name + ".ref.json")
         cand_out = os.path.join(args.out_dir, name + ".cand.json")
 
-        r = run_reference(args.dotnet, args.baselinegen, html, css, args.width, args.height,
-                          ref_out)
+        if args.reuse_reference and reference_is_fresh(ref_out, html, css):
+            r = None
+        else:
+            r = run_reference(args.dotnet, args.baselinegen, html, css, args.width, args.height,
+                              ref_out)
         c = run_candidate(args.weva_dump, html, css, args.width, args.height, cand_out)
-        if r.returncode != 0 or not os.path.exists(ref_out):
+        if r is not None and (r.returncode != 0 or not os.path.exists(ref_out)):
             errored.append((name, "reference: " + (r.stderr or r.stdout).strip()[:300]))
             continue
         if c.returncode != 0 or not os.path.exists(cand_out):

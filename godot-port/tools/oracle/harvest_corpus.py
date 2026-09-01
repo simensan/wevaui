@@ -42,8 +42,15 @@ def unescape(text):
     return text.replace('""', '"')
 
 
+# A closing tag or a void element, not just angle brackets: an @property
+# block's `syntax: "<length>"` has brackets and is a stylesheet, and matching
+# on brackets alone harvested it as markup (two bogus cases whose "elements"
+# were <length> tags).
+HTML_MARK = re.compile(r"</[a-zA-Z]|<(?:img|input|br|hr|meta|link|source|col|wbr)", re.I)
+
+
 def looks_like_html(text):
-    return "<" in text and ">" in text
+    return HTML_MARK.search(text) is not None
 
 
 def looks_like_css(text):
