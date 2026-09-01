@@ -2983,6 +2983,44 @@ branch. Repro: `sp.html` / `sf.html` in the scratch mini corpus.
 Worth remembering as a rule: **for anything touching the two-pass layout
 paths, the corpora are the regression gate, not the unit suite.**
 
+### Open reference bug: a line sized from an inline-flex atom's STALE height
+
+Diagnosed, not fixed. An `inline-flex` atom that contains an inline-block is
+measured at its block-STACKED height when the surrounding line is built, then
+corrected to its real flex height afterwards — and the line keeps the stale,
+taller value. Minimal case (`nest.html` in the scratch corpus):
+
+```html
+<div class="w"><span class="eb"><span class="dot"></span>Text</span></div>
+.eb  { display: inline-flex; align-items: center; padding: 6px 13px; border: 1px solid; font-size: 13px }
+.dot { display: inline-block; width: 8px; height: 8px }
+```
+
+`.w` comes out **36.86** tall in the reference. Chrome says **28.84** and the
+port says 28.86, so the port is right and the reference is 8px — exactly the
+dot's height — too tall. Remove the dot and both engines agree, so it is the
+inline-block INSIDE the inline-flex that triggers it.
+
+Instrumenting `LineBreaker.AppendAtom` shows the atom's height at line-build
+time:
+
+```
+DBGATOM span.eb h=36.859 a=29.859 d=7     <- with the dot: block-stacked (8 + 14.86 text + 14 frame)
+DBGATOM span.eb h=28.859 a=21.859 d=7     <- without it: correct flex height
+```
+
+36.859 is what you get by STACKING the dot and the text instead of laying
+them out in a row — i.e. the flex layout has not run yet (or ran before the
+anonymous flex item wrapping the raw text existed). The final tree reports
+`.eb` at 28.86, so the atom is fixed later; only the line box keeps the old
+number.
+
+This is what puts weva-landing 8px out from the reference on everything below
+its hero: the `.eyebrow` is an inline-flex holding an 8px `.pulse` dot, and
+every subsequent element inherits the offset. Fixing it needs either the atom
+laid out completely before the item is made, or the line's metrics recomputed
+from the atom's final height.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
