@@ -3141,6 +3141,51 @@ page full of independent problems.
   minimum.
 * `menu` (47): `@container`, which BaselineGen's single-pass never applies.
 
+### Thirteenth pass: two engines, one card. 17/35 + 12
+
+Chasing ONE number — menu.html's `.card` at 108.57 against the reference's
+113.15 — turned up four bugs, two on each side.
+
+**Port: `@layer` was never implemented.** Layered rules kept the unlayered
+ordinal, so they competed on specificity alone and a layered rule beat the
+unlayered one it was written to lose to. `compare_declarations` already had the
+layer axis right in both directions; it was simply never given an ordinal.
+Both forms now work, including the statement form `@layer a, b, c;` — whose
+whole purpose is fixing the order, since a layer's priority comes from where it
+is first NAMED, not where its rules sit.
+
+**Port: no line box had a strut.** CSS 2.1 §10.8 puts a zero-width inline box
+with the containing block's font on every line. Without it a line holding only
+an inline-block came out exactly the atom's height.
+
+**Reference: an atomic inline dropped its vertical margins** from the line
+(§10.8.1 says margin box; LineBreaker read the border box).
+
+**Reference: `anchor-name` matched text runs.** A TextRun carries its element's
+ComputedStyle, so an anchor WITH TEXT registered its run too, and the run comes
+later in pre-order, so it won. Every `anchor()` then resolved against the run's
+geometry. Every existing anchor test used an empty anchor, which is exactly why
+this survived a whole test file.
+
+**Chrome nearly sent us the wrong way twice, and the lesson is the same both
+times: check what the arbiter is actually measuring.**
+
+* On `.card`, Chrome reported 113 — matching the reference's 113.15 — but its
+  `h2` was 25 to our 20.57, because `font: bold 18px sans-serif` escaped the
+  capture's synthetic face. The totals agreed by coincidence, out of different
+  parts. A stripped-down repro with explicit font properties gave Chrome 44.56
+  against the port's 40 and settled it the other way.
+* Chrome's `<button>` UA font is `13.333px`, not inherited. Both engines
+  inherit the page font, so a label that wraps here does not wrap there. That
+  is a real shared divergence and still open.
+
+**Where the samples stand.** Six still differ: `audit-validation` (2, an
+`<input>` baseline-aligned beside a 90px `<textarea>`), `card-component` (4,
+`<template>`/`<slot>`), `combat-hud`, `dialogue` and `randhtml` (1 each,
+sub-pixel text measurement Chrome sides with neither on), and `inventory` (41,
+Chrome's 1fr re-growth from an aspect-ratio transferred minimum). `menu` went
+from 47 differences to passing; `stock-dashboard` from 314 to 5.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
