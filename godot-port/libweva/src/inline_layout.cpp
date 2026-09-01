@@ -65,11 +65,14 @@ double letter_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, d
     return 0;
 }
 
-// Code points, not bytes: a multi-byte UTF-8 glyph is one letter.
+// UTF-16 code units, which is what the reference's string.Length counts: an
+// astral-plane emoji is two, everything else one. A 32px glyph with 0.01em
+// spacing measured 0.32px wider there than a code-point count gives.
 int letter_count(std::string_view text) {
     int n = 0;
     for (unsigned char c : text) {
-        if ((c & 0xC0) != 0x80) ++n;
+        if ((c & 0xC0) == 0x80) continue;
+        n += (c & 0xF8) == 0xF0 ? 2 : 1;
     }
     return n;
 }
@@ -278,6 +281,24 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     // the same box clones it rather than moving it.
     std::vector<BoxId> attached_inlines;
 
+    // Inline boxes that enclose some content somewhere in the stream. A box
+    // that opens at the very end of a line and whose text wraps gets NO
+    // fragment on that line — its first box is where its content is, which is
+    // what the reference emits. A box with no content on ANY line (the
+    // block-in-inline `<a>`) still gets its zero-width fragment where it
+    // opens. Computed here, while the ancestor chain is still intact.
+    std::vector<BoxId> boxes_with_content;
+    for (const InlineItem& it : items) {
+        if (it.is_inline_start() || it.is_break()) continue;
+        for (BoxId b = it.inline_parent; b != kNoBox && b != container; b = (*tree)[b].parent) {
+            if ((*tree)[b].kind != BoxKind::Inline) break;
+            if (std::find(boxes_with_content.begin(), boxes_with_content.end(), b) ==
+                boxes_with_content.end()) {
+                boxes_with_content.push_back(b);
+            }
+        }
+    }
+
     double line_left = 0;
     double line_width = available_width;
     const auto begin_line_at = [&](double line_y) {
@@ -324,8 +345,20 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             }
             break;
         }
+        // A marker left dangling at the END of a line whose box has content
+        // further on belongs to the next line: the box's first fragment is
+        // where its content is, which is what the reference emits. Only a
+        // box with no content anywhere keeps its zero-width fragment here.
+        std::vector<Fragment> carried;
         for (auto it = trailing_markers.rbegin(); it != trailing_markers.rend(); ++it) {
             Fragment m = *it;
+            const bool has_content_later =
+                std::find(boxes_with_content.begin(), boxes_with_content.end(),
+                          m.item->inline_box_start) != boxes_with_content.end();
+            if (!is_final && has_content_later) {
+                carried.push_back(m);
+                continue;
+            }
             m.x = pen;
             line.push_back(m);
         }
@@ -349,6 +382,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         if (line.empty() && !is_final) {
             reset_line_metrics();
             pen = 0;
+            for (Fragment& m : carried) { m.x = 0; line.push_back(m); }
             return;
         }
         if (line.empty()) return;
@@ -386,9 +420,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // `<a><b>x</b></a>` gives both a box. The chain is walked through the
         // tree because it is still intact here — clear_children runs once, at
         // the very end, and only detaches the container's direct children.
-        struct Span { BoxId box; BoxId fragment; double x0; double x1; };
+        struct Span { BoxId box; BoxId fragment; double x0; double x1; bool covers_content; };
         std::vector<Span> spans;
-        const auto contribute = [&](BoxId from, double x0, double x1) {
+        const auto contribute = [&](BoxId from, double x0, double x1, bool content) {
             for (BoxId b = from; b != kNoBox && b != container; b = (*tree)[b].parent) {
                 if ((*tree)[b].kind != BoxKind::Inline) break;
                 bool found = false;
@@ -396,11 +430,12 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     if (sp.box == b) {
                         if (x0 < sp.x0) sp.x0 = x0;
                         if (x1 > sp.x1) sp.x1 = x1;
+                        sp.covers_content = sp.covers_content || content;
                         found = true;
                         break;
                     }
                 }
-                if (!found) spans.push_back({b, kNoBox, x0, x1});
+                if (!found) spans.push_back({b, kNoBox, x0, x1, content});
             }
         };
 
@@ -412,9 +447,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         for (const Fragment& f : line) {
             if (only_markers) break;
             if (f.item->is_inline_start()) {
-                contribute(f.item->inline_box_start, f.x + dx, f.x + dx);
+                contribute(f.item->inline_box_start, f.x + dx, f.x + dx, false);
             } else if (f.item->inline_parent != kNoBox) {
-                contribute(f.item->inline_parent, f.x + dx, f.x + dx + f.width);
+                contribute(f.item->inline_parent, f.x + dx, f.x + dx + f.width, true);
             }
         }
 
@@ -512,6 +547,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         pen = 0;
         reset_line_metrics();
         begin_line_at(y);
+        for (Fragment& m : carried) { m.x = 0; line.push_back(m); }
     };
 
     const auto grow_line_metrics = [&](const InlineItem& it) {

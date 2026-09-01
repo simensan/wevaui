@@ -428,3 +428,51 @@ void test_grid_auto_track_contributions() {
         CHECK(near(f.box("s").y, 0));
     }
 }
+
+void test_grid_item_relaid_in_a_second_pass_drops_the_imposed_height() {
+    // A grid inside a column flex is laid out more than once. The imposed
+    // height a grid area stamped in the first pass must not survive into the
+    // second, or a square item keeps its provisional height.
+    Fixture f;
+    CHECK(f.css("#col { display: flex; flex-direction: column; width: 400px }"
+                "#g { display: grid; grid-template-columns: 80px 80px; gap: 10px }"
+                ".f { aspect-ratio: 1 / 1; display: flex; align-items: center;"
+                "     justify-content: center }"
+                ".i { width: 10px; height: 10px }"));
+    CHECK(f.layout("<body><div id=col><div id=g><div id=a class=f><div class=i></div></div>"
+                   "<div id=b class=f><div class=i></div></div></div></div></body>"));
+    CHECK(near(f.box("a").width, 80) && near(f.box("a").height, 80));
+    CHECK(near(f.box("b").height, 80));
+    CHECK(near(f.box("g").height, 80));
+}
+
+void test_grid_aspect_ratio_item_stretches_one_axis() {
+    {
+        // Auto row: the inline axis is stretched to the column and the height
+        // follows from the ratio — the square is not stretched to the text
+        // beside it. Chrome: 80 tall.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: 80px 1fr; gap: 12px; width: 600px }"
+                    "#sq { aspect-ratio: 1 / 1; display: flex; align-items: center;"
+                    "      justify-content: center }"
+                    "#body { height: 200px }"));
+        CHECK(f.layout("<body><div id=g><div id=sq></div><div id=body></div></div></body>"));
+        CHECK(near(f.box("sq").width, 80));
+        CHECK(near(f.box("sq").height, 80));
+        CHECK(near(f.box("g").height, 200));
+    }
+    {
+        // Definite rows: the block axis is stretched to the row and the width
+        // follows — Chrome and the reference both give 196 in a 119px column.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: repeat(4, 1fr);"
+                    "     grid-template-rows: 1fr 1fr; gap: 8px; width: 500px; height: 400px }"
+                    ".c { aspect-ratio: 1 / 1 }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=c></div><div id=b class=c></div>"
+                       "<div class=c></div><div class=c></div><div class=c></div>"
+                       "<div class=c></div><div class=c></div><div class=c></div></div></body>"));
+        CHECK(near(f.box("a").height, 196));
+        CHECK(near(f.box("a").width, 196));
+        CHECK(near(f.box("b").x, 119 + 8));
+    }
+}

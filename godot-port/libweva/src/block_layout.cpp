@@ -400,13 +400,34 @@ bool parent_bottom_open(const Box& b) {
 //
 // A height imposed by an enclosing flex line counts, because that one IS
 // already stamped.
-double definite_flow_content_height(const Box& b, const LayoutContext& ctx, double font_size) {
+double definite_flow_content_height(const BoxTree& tree, const Box& b, const LayoutContext& ctx,
+                                    double font_size) {
     if (b.cross_size_imposed) return b.content_height();
     if (!b.style) return -1;
     const std::string_view raw = get(b.style, "height");
-    if (raw.empty() || raw == "auto") return -1;
+    if (raw.empty() || raw == "auto") {
+        // css-sizing-4 §4.2: an auto height derived from aspect-ratio and a
+        // known width IS definite. A square `display: flex; align-items:
+        // center` portrait centres its glyph in Chrome and the reference;
+        // treating the height as content-derived left the glyph at the top.
+        double ratio = 0;
+        if (try_resolve_aspect_ratio(b.style, &ratio) && ratio > 0 && b.width > 0) {
+            const double frame = b.padding_top + b.padding_bottom + b.border_top + b.border_bottom;
+            return std::max(0.0, b.width / ratio - frame);
+        }
+        return -1;
+    }
     const ResolvedLength r = resolve_length(b.style, "height", ctx, font_size, std::nullopt);
-    if (r.kind != LengthKind::Length && r.kind != LengthKind::Percent) return -1;
+    if (r.kind == LengthKind::Percent) {
+        // CSS 2.1 §10.5: a percentage against an indefinite parent computes to
+        // auto. Reading the box's own (not yet computed) height here handed a
+        // `height: 100%` flex container a definite height of zero, and the
+        // line took it. Only when the parent is definite has apply_box_model
+        // already stamped the resolved height onto the box.
+        if (!definite_content_height(tree, b.parent)) return -1;
+        return b.content_height();
+    }
+    if (r.kind != LengthKind::Length) return -1;
     return b.content_height();
 }
 
@@ -727,6 +748,8 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
 }
 
 void BlockLayout::relayout_at(BoxId id, double width) {
+    // Only the width is imposed here; the height is recomputed from it.
+    (*tree_)[id].cross_size_imposed = false;
     const BoxId parent = (*tree_)[id].parent;
     const ComputedStyle* parent_style = parent == kNoBox ? nullptr : (*tree_)[parent].style;
     const double fs = font_size_px((*tree_)[id].style, parent_style, ctx_);
@@ -774,6 +797,11 @@ void BlockLayout::layout_root(BoxId root, double viewport_width, double viewport
 
 void BlockLayout::layout_block(BoxId id, double available_width,
                                const ComputedStyle* parent_style) {
+    // A fresh layout imposes nothing: the flag a flex line or grid area set
+    // in an EARLIER pass must not survive into this one, or finalize keeps a
+    // stale height. A square item in a grid inside a column flex was 199.85
+    // tall — its provisional first-pass height — instead of 80.
+    (*tree_)[id].cross_size_imposed = false;
     double fs;
     if ((*tree_)[id].style) {
         fs = apply_box_model(tree_, id, available_width, parent_style, ctx_);
@@ -829,7 +857,8 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     }
     if ((*tree_)[id].display == DisplayKind::Grid ||
         (*tree_)[id].display == DisplayKind::InlineGrid) {
-        const double definite_h = definite_flow_content_height((*tree_)[id], ctx_, font_size);
+        const double definite_h =
+            definite_flow_content_height(*tree_, (*tree_)[id], ctx_, font_size);
         const double h = layout_grid(tree_, id, content_w, definite_h, ctx_, this);
         finalize_block_size(id, font_size, top_inner + h);
         return;
@@ -838,7 +867,8 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         (*tree_)[id].display == DisplayKind::InlineFlex) {
         // A definite content height lets the cross axis centre against the
         // container; a negative one means "content-derived".
-        const double definite_h = definite_flow_content_height((*tree_)[id], ctx_, font_size);
+        const double definite_h =
+            definite_flow_content_height(*tree_, (*tree_)[id], ctx_, font_size);
         const double h = layout_flex(tree_, id, content_w, definite_h, ctx_, this);
         finalize_block_size(id, font_size, top_inner + h);
         return;

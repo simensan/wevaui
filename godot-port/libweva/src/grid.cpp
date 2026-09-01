@@ -701,6 +701,23 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // and an explicit width is kept — re-resolved against the cell, since the
     // grid AREA is the item's containing block — rather than overwritten. The
     // height that falls out then sizes any auto row.
+    // css-align §6.1: `normal` behaves as stretch for a grid item — except one
+    // with a preferred aspect ratio, which is stretched in ONE axis and takes
+    // the other from the ratio. Chrome stretches the block axis when the row
+    // is definite (a 1fr row in a sized grid: the cell's height, and the width
+    // follows) and the inline axis otherwise (an auto row: the column's width,
+    // and the height follows). Stretching both gave a square in an `80px 1fr`
+    // card the height of the text beside it.
+    const auto has_ratio = [&](const Box& b) {
+        double ratio = 0;
+        return b.style && try_resolve_aspect_ratio(b.style, &ratio) && ratio > 0;
+    };
+    const auto row_is_definite = [&](const Placement& p) {
+        if (p.row >= static_cast<int>(rows.size())) return false;
+        const Track& t = rows[p.row];
+        if (t.kind == Track::Kind::Fixed) return true;
+        return t.kind == Track::Kind::Fraction && content_height >= 0;
+    };
     const auto size_inline = [&](const Placement& p) {
         const double w = span_size(columns, p.column, p.column_span, column_gap);
         const Box& b = (*tree)[p.box];
@@ -708,6 +725,16 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         const bool auto_width = width_raw.empty() || iequals(width_raw, "auto");
         if (!auto_width) {
             block->layout_block(p.box, w, style);
+            return;
+        }
+        const std::string_view height_raw = get(b.style, "height");
+        const bool auto_height = height_raw.empty() || iequals(height_raw, "auto");
+        if (auto_height && has_ratio(b) && row_is_definite(p) &&
+            is_stretch(self_alignment(b.style, style, true))) {
+            // The block axis will be stretched at placement; the width follows
+            // from it there. Lay out at the cell width for now so the box
+            // model is resolved.
+            if (std::fabs(b.width - w) > 1e-9) block->relayout_at(p.box, w);
             return;
         }
         if (is_stretch(self_alignment(b.style, style, false))) {
@@ -782,10 +809,30 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         const std::string_view align = self_alignment(before.style, style, true);
         const std::string_view height_raw = get(before.style, "height");
         const bool auto_height = height_raw.empty() || iequals(height_raw, "auto");
+        const std::string_view width_raw = get(before.style, "width");
+        const bool auto_width = width_raw.empty() || iequals(width_raw, "auto");
         if (auto_height && is_stretch(align) && h > 0) {
-            // At the inline size it already has, not the cell's: a `center`
-            // or explicit-width item must not be widened by the stretch.
-            block->relayout_at_size(p.box, before.width, h);
+            if (has_ratio(before) && auto_width) {
+                if (row_is_definite(p)) {
+                    // Block axis stretched, inline derived from the ratio.
+                    double ratio = 1;
+                    try_resolve_aspect_ratio(before.style, &ratio);
+                    const bool border_box = is_border_box(before.style);
+                    const double h_frame = before.padding_top + before.padding_bottom +
+                                           before.border_top + before.border_bottom;
+                    const double w_frame = before.padding_left + before.padding_right +
+                                           before.border_left + before.border_right;
+                    const double content_h = std::max(0.0, h - h_frame);
+                    const double derived_w = border_box ? h * ratio : content_h * ratio + w_frame;
+                    block->relayout_at_size(p.box, derived_w, h);
+                }
+                // Otherwise the inline axis was stretched and the height the
+                // ratio gave it stands: no block-axis stretch.
+            } else {
+                // At the inline size it already has, not the cell's: a `center`
+                // or explicit-width item must not be widened by the stretch.
+                block->relayout_at_size(p.box, before.width, h);
+            }
         }
         Box& b = (*tree)[p.box];
         const double outer_w = b.width + b.margin_left + b.margin_right;

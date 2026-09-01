@@ -735,3 +735,46 @@ void test_font_family_registry() {
     CHECK(ctx.font_for("Sniglet, sans-serif") == nullptr);
     CHECK(ctx.font_for("") == nullptr);
 }
+
+void test_letter_spacing_counts_utf16_units() {
+    // The reference counts gaps in UTF-16 code units, so an astral emoji is
+    // two: one gap of spacing on its own.
+    Fixture a, b;
+    CHECK(a.css("#w { width: 1000px; white-space: nowrap; font-size: 32px }"));
+    CHECK(b.css("#w { width: 1000px; white-space: nowrap; font-size: 32px;"
+                "     letter-spacing: 0.01em }"));
+    CHECK(a.layout("<body><div id=w>\xF0\x9F\x98\x80</div></body>"));
+    CHECK(b.layout("<body><div id=w>\xF0\x9F\x98\x80</div></body>"));
+    double wa = 0, wb = 0;
+    for (BoxId c : a.tree.children(a.lines("w")[0])) wa += a.tree[c].width;
+    for (BoxId c : b.tree.children(b.lines("w")[0])) wb += b.tree[c].width;
+    CHECK(near(wb - wa, 0.32));
+}
+
+void test_inline_box_opening_at_line_end_has_no_fragment_there() {
+    // A `<code>` that opens at the very end of a line and whose text wraps
+    // gets its first box on the NEXT line, where its content is — the
+    // reference emits no zero-width fragment on the first line. An inline
+    // with no content anywhere still gets one where it opens.
+    Fixture f;
+    // 0.5em per glyph at 16px: 8px a character. "aaaaaaaaaa " fills 88 of 100;
+    // "bbbbbb" (48) wraps.
+    CHECK(f.css("#p { width: 100px; font-size: 16px }"));
+    CHECK(f.layout("<body><p id=p>aaaaaaaaaa <code id=c>bbbbbb</code> <span id=e></span></p>"
+                   "</body>"));
+    const std::vector<BoxId> ls = f.lines("p");
+    CHECK(ls.size() == 2);
+    bool code_on_first = false, code_on_second = false, empty_span_found = false;
+    for (BoxId c : f.tree.children(ls[0])) {
+        const Box& b = f.tree[c];
+        if (b.kind == BoxKind::Inline && b.element->get_attribute("id") == "c") code_on_first = true;
+    }
+    for (BoxId c : f.tree.children(ls[1])) {
+        const Box& b = f.tree[c];
+        if (b.kind == BoxKind::Inline && b.element->get_attribute("id") == "c") code_on_second = true;
+        if (b.kind == BoxKind::Inline && b.element->get_attribute("id") == "e") empty_span_found = true;
+    }
+    CHECK(!code_on_first);
+    CHECK(code_on_second);
+    CHECK(empty_span_found);
+}

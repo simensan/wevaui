@@ -477,3 +477,55 @@ void test_flex_row_max_content_sums_its_items() {
     CHECK(near(f.box("coin").width, 26));
     CHECK(near(f.box("amt").x, 12 + 26 + 10));
 }
+
+void test_flex_center_is_unsafe() {
+    // An item wider than the line, centred, overflows both sides equally
+    // rather than being pushed back to the start (Box Alignment §5.4).
+    Fixture f;
+    CHECK(f.css("#col { display: flex; flex-direction: column; align-items: center;"
+                "       width: 100px }"
+                "#p { width: 100%; border: 2px solid black; height: 10px }"));
+    CHECK(f.layout("<body><div id=col><div id=p></div></div></body>"));
+    CHECK(near(f.box("p").width, 104));
+    CHECK(near(f.box("p").x, -2));
+}
+
+void test_flex_aspect_ratio_height_is_definite() {
+    // css-sizing-4 §4.2: a height derived from aspect-ratio is definite, so a
+    // square flex container centres its child vertically.
+    Fixture f;
+    CHECK(f.css("#p { width: 200px; aspect-ratio: 1 / 1; display: flex;"
+                "     align-items: center; justify-content: center }"
+                "#g { width: 40px; height: 40px }"));
+    CHECK(f.layout("<body><div id=p><div id=g></div></div></body>"));
+    CHECK(near(f.box("p").height, 200));
+    CHECK(near(f.box("g").x, 80) && near(f.box("g").y, 80));
+    // With a border the ratio applies to the border box and the content box
+    // is what the child centres in.
+    Fixture g;
+    CHECK(g.css("#p { width: 200px; aspect-ratio: 1 / 1; display: flex; align-items: center;"
+                "     border: 10px solid black }"
+                "#g { width: 40px; height: 40px }"));
+    CHECK(g.layout("<body><div id=p><div id=g></div></div></body>"));
+    // Under content-box sizing the ratio applies to the 200px content box, so
+    // the border box is 220 (Chrome agrees), and the child centres in 200.
+    CHECK(near(g.box("p").height, 220));
+    CHECK(near(g.box("g").y, 10 + (200 - 40) * 0.5));
+}
+
+void test_flex_percent_height_against_an_auto_parent_is_indefinite() {
+    // CSS 2.1 §10.5: `height: 100%` under an auto-height parent computes to
+    // auto. Read as definite (of the box's own unresolved height, zero), a
+    // flex container's line took height 0 and so did its whole ancestry.
+    Fixture f;
+    CHECK(f.css("#content { display: flex; flex: 1; height: 100% }"));
+    CHECK(f.layout("<body><div id=overlay><div id=panel><div id=content>Content</div>"
+                   "</div></div></body>"));
+    CHECK(f.box("content").height > 10);
+    CHECK(near(f.box("panel").height, f.box("content").height));
+    // ...and against a DEFINITE parent it is the parent's height.
+    Fixture g;
+    CHECK(g.css("#panel { height: 100px } #content { display: flex; height: 100% }"));
+    CHECK(g.layout("<body><div id=panel><div id=content>Content</div></div></body>"));
+    CHECK(near(g.box("content").height, 100));
+}

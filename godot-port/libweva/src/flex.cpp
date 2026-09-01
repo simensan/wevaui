@@ -345,8 +345,11 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     // A row container with a definite height gives its line that height, so
     // `align-items: center` centres against the container rather than against
     // the tallest item.
-    if (!column && content_height >= 0) line_cross = std::max(line_cross, content_height);
-    if (column && content_width >= 0) line_cross = std::max(line_cross, content_width);
+    // A definite cross size IS the line's cross size (§9.4 step 8), not a
+    // floor under the items: an item wider than a column container overflows
+    // it and centres around it, rather than growing the line to itself.
+    if (!column && content_height >= 0) line_cross = content_height;
+    if (column && content_width >= 0) line_cross = content_width;
     // ...and a row container with an auto height but a min-height is at least
     // that tall, which is what `align-items: flex-end` in a `min-height: 100vh`
     // stage pushes against. Same rule as the column main-size clamp above.
@@ -511,7 +514,13 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                 }
             }
         }
-        if (cross_pos < 0) cross_pos = 0;
+        // CSS Box Alignment §5.4: `center` and `end` default to UNSAFE, so an
+        // item wider than the line overflows both sides equally rather than
+        // being pushed back to the start. A `width: 100%` portrait with a 2px
+        // border sits at x = -2 in Chrome and the reference; clamping put it
+        // at 0. Baseline stays clamped: a negative baseline offset would be a
+        // bug upstream, not an alignment.
+        if (cross_pos < 0 && iequals(self, "baseline")) cross_pos = 0;
 
         // Safe from here: placement creates nothing.
         Box& b = (*tree)[it.box];
