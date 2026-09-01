@@ -2690,6 +2690,38 @@ re-growth of `1fr` tracks from aspect-ratio items' transferred minimum
 (advanced-dashboard), and per-page inline-rect and text-width residue
 (audit-validation, weva-landing).
 
+### Sixth pass: the port opens on Windows, and pages get their paint. 12/35 + 10
+
+* **Stretched rows feed back into `1fr` columns** (§12.1 steps 3–4) for
+  aspect-ratio items — but only into columns with an intrinsic minimum; a
+  fixed column settles the inline size first. stats REF~, vendor REF!, a
+  harvest case REF!. The 119/196 test had pinned the reference's
+  non-regrowing columns; Chrome regrows (second square at 204).
+* **Windows build.** MSVC branch for the load-bearing flags; the core's
+  7,9xx checks pass under MSVC unchanged. The host needs godot-cpp's
+  `/Zc:__cplusplus` and `/vmg`, the static CRT to match godot-cpp, and
+  per-configuration output directories. `weva_godot.dll` runs the host
+  suite 23/23 under Godot 4.7.1 win64 and `capture.tscn` renders through
+  the GPU.
+* **Backgrounds.** Until now paint knew `background-color` and the
+  `background` shorthand expanded to nothing, so every sample page rendered
+  on white. Now: gradients (linear / radial / conic, repeating, hints,
+  double stops, premultiplied sRGB) rasterized with their
+  position/size/repeat into one texture per box and drawn on the rounded
+  rect; the root/body background on the canvas (§14.2); the shorthand's
+  five longhands; transient textures owned by the document across the ABI,
+  mirrored by id in the host. Line and anonymous boxes stopped painting
+  their container's decorations.
+
+**Where it stands: samples 12/35 agree + 10 arbitrated; harvest 179/210 +
+17; hand 46/47; 7,980 checks green on gcc 13, clang 18, ASan+UBSan and
+MSVC 14.44; host 23/23 on Linux and Windows.** leaderboard, hud and glass
+render recognisably. Paint gaps in the order they show: glyphs the host
+font lacks (★, emoji) draw nothing — a fallback face is needed; word gaps
+come out wide through the Godot text path; `box-shadow` (130 uses in the
+samples), `overflow: hidden` clipping and `opacity` are not painted;
+`url()` images are parsed and skipped.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
