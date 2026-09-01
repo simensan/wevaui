@@ -2590,6 +2590,36 @@ cases), `minmax()` / `auto-fill`, the template/`<slot>` expansion for
 `card-component`, then the page-shaped remainders (inventory, stats, hud,
 leaderboard) once the C# side stops disagreeing with Chrome.
 
+### Third pass: the grid track model, and what an inline box owns. 179/210, 9/35 + 2
+
+* **Tracks are min/max sizing functions** (§7.2.3) and `size_tracks` is
+  §12.3–12.8: intrinsic bases and limits from the items' min-/max-content
+  contributions (spanning items spread what the covered tracks lack,
+  shortest spans first), maximize, the fr found by re-dividing around
+  tracks whose base exceeds their share, stretch for auto-max tracks.
+  `minmax()`, `fit-content()`, `min-content`/`max-content`,
+  `repeat(auto-fill|auto-fit)` (auto-fit collapsing what nothing landed in)
+  and `grid-auto-rows/columns` all parse and size. Three harvest cases and
+  most of grid-playground (276 → 8), advanced-dashboard (161 → 5) and glass
+  followed.
+* **Inline boxes own their horizontal edges** (§10.6.1): start and end
+  markers carry margin/border/padding, advance the pen, and give the first
+  and last fragments their decoration; the intrinsic-width walk counts them
+  and no longer counts the fragment boxes on top of their runs (every bold
+  word had been doubled toward max-content).
+* **Aspect-ratio grid items** take, per axis, the larger of their own
+  stretch and the transfer from the other axis — the one rule that fits
+  Chrome's 196×196, 195×195 and 80×80.
+* **Chrome verdicts within 1/64px.** LayoutNG snaps; 103.01 against 103 is
+  agreement. Only the arbitration reads this way; ref-vs-cand stays exact.
+
+**Where it stands: 9/35 agree, glass and map arbitrated to the reference;
+harvest 179/210 with 13 arbitrated; hand-built 46/47. 7,759 checks green.**
+Still unported and now the largest remaining causes: `subgrid` (menu, five
+harvest cases), the template/`<slot>` expansion (card-component), anchor
+positioning (nine harvest cases), and the C# reference's own bugs behind
+most of the sub-10-difference pages.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
