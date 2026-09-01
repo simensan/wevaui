@@ -57,6 +57,33 @@ function listDir(dir, width, height) {
         .map(f => ({ html: path.join(dir, f), width, height }));
 }
 
+// --metrics=mono: measure with the engines' synthetic faces instead of Inter.
+// Both BaselineGen and weva_dump use MonoFontMetrics (0.45em per glyph, 0.85 /
+// 0.293 ascent/descent, 1.143 normal line-height; 0.6em for `monospace`), so
+// with these faces Chrome's text widths equal the engines' exactly and it can
+// arbitrate text-dependent differences too. `line-height: normal` is pinned to
+// 1.143 because Blink rounds a face's ascent and descent to whole pixels for
+// `normal` but computes a numeric line-height precisely.
+const METRICS = (() => {
+    const i = process.argv.findIndex(a => a.startsWith('--metrics='));
+    if (i < 0) return 'inter';
+    const v = process.argv[i].slice('--metrics='.length);
+    process.argv.splice(i, 1);
+    return v;
+})();
+const MONO_FONTS_DIR = path.join(REPO, 'godot-port', 'tools', 'oracle', 'fonts');
+function monoFontFaceCss() {
+    const u = p => pathToFileURL(p).href;
+    const sans = path.join(MONO_FONTS_DIR, 'WevaMonoSans.ttf');
+    const mono = path.join(MONO_FONTS_DIR, 'WevaMonoMonospace.ttf');
+    if (!fs.existsSync(sans) || !fs.existsSync(mono)) {
+        throw new Error('--metrics=mono needs the synthetic fonts: run godot-port/tools/oracle/make_mono_font.py');
+    }
+    return `@font-face{font-family:'WevaMonoSans';src:url('${u(sans)}')}` +
+           `@font-face{font-family:'WevaMonoMonospace';src:url('${u(mono)}')}` +
+           `html{font-family:'WevaMonoSans'}*{line-height:1.143}`;
+}
+
 function targets() {
     const argv = process.argv.slice(2);
     if (argv[0]) {
@@ -101,7 +128,7 @@ async function captureOne(browser, target) {
         const wrapped =
             '<!doctype html>\n' +
             '<html><head><meta charset="utf-8"><style>body{margin:0}</style>' +
-            '<style>' + bundledFontFaceCss() + '</style>' +
+            '<style>' + (METRICS === 'mono' ? monoFontFaceCss() : bundledFontFaceCss()) + '</style>' +
             '<style>' + css + '</style></head>' +
             '<body>' + raw + '</body></html>\n';
         tempPath = htmlPath + '.tmp.chrome-extract.html';
@@ -122,6 +149,21 @@ async function captureOne(browser, target) {
         await page.addStyleTag({
             content: '*,*::before,*::after{animation:none!important;transition:none!important;}'
         });
+        if (METRICS === 'mono') {
+            // The engines resolve a font-family stack to the first REGISTERED
+            // family — only `monospace` is registered beside the default — so
+            // every element measures with the sans face unless its stack names
+            // monospace anywhere. Mirror that per element, then let fonts
+            // settle again.
+            await page.evaluate(() => {
+                const all = document.querySelectorAll('body, body *');
+                for (const el of all) {
+                    const fam = getComputedStyle(el).fontFamily || '';
+                    const mono = /(^|,)\s*['"]?monospace['"]?\s*(,|$)/i.test(fam);
+                    el.style.setProperty('font-family', mono ? 'WevaMonoMonospace' : 'WevaMonoSans', 'important');
+                }
+            });
+        }
         await page.evaluate(() => document.fonts.ready);
         await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
         elements = await page.evaluate(() => {

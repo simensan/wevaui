@@ -138,8 +138,10 @@ def arbitrate(reference, candidate, chrome):
             line = f"[{i}] {label}: {key} reference {ea.get(key)} vs candidate {eb.get(key)}"
             if chrome_agrees(ec.get(key), eb.get(key)):
                 reference_bugs.append(line + f", chrome {ec.get(key)} — chrome agrees with us")
+            elif chrome_agrees(ec.get(key), ea.get(key)):
+                real.append(line + f", chrome {ec.get(key)} — chrome agrees with the REFERENCE")
             else:
-                real.append(line + f", chrome {ec.get(key)}")
+                real.append(line + f", chrome {ec.get(key)} — chrome agrees with neither")
     return reference_bugs, real
 
 
@@ -222,7 +224,17 @@ def main():
                 print(f"       {line}")
         elif problems:
             failed.append((name, problems))
-            print(f"FAIL {name}  ({len(problems)} difference(s))")
+            # With a Chrome capture the differences split by whose side Chrome
+            # takes: the ones where it agrees with the reference are the port's
+            # bugs, the ones where it agrees with the port are already listed
+            # above as reference bugs, and the rest are undecided.
+            with_reference = sum(1 for p in problems if "agrees with the REFERENCE" in p)
+            neither = sum(1 for p in problems if "agrees with neither" in p)
+            breakdown = ""
+            if chrome:
+                breakdown = (f"; chrome sides with the reference on {with_reference}, "
+                             f"with neither on {neither}, with us on {len(reference_bugs)}")
+            print(f"FAIL {name}  ({len(problems)} difference(s){breakdown})")
             for line in problems[:12]:
                 print(f"       {line}")
             if len(problems) > 12:
