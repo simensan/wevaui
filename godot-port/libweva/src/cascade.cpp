@@ -803,9 +803,13 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
     }
 
     // A pseudo participates in the host's var() namespace, so authors can
-    // reference --tokens declared on the originating element.
-    for (const auto& kv : host_style.custom_properties()) {
-        if (!out->contains(kv.first)) out->set(kv.first, kv.second);
+    // reference --tokens declared on the originating element — or inherited
+    // by it: `.slot { --icon: '⚔' } .slot-icon::before { content:
+    // var(--icon) }` reads the token through the host's inherit chain.
+    for (const ComputedStyle* s = &host_style; s; s = s->inherit_parent()) {
+        for (const auto& kv : s->custom_properties()) {
+            if (!out->contains(kv.first)) out->set(kv.first, kv.second);
+        }
     }
     {
         std::vector<std::pair<int, std::string>> rewrites;

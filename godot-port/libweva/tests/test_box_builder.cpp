@@ -572,6 +572,14 @@ void test_pseudo_content_from_inline_custom_property() {
     CHECK_EQ(std::string(f.tree[f.tree[f.tree[a].first_child].first_child].text), "X");
     const BoxId k = f.find(root, "k");
     CHECK_EQ(std::string(f.tree[f.tree[f.tree[k].last_child].first_child].text), "fb");
+    // The token may live on an ancestor of the host (combat-hud sets --icon
+    // on the <li>; the pseudo hangs off a child div).
+    Fixture g;
+    CHECK(g.css("li, div { display: block } .ic::before { content: var(--icon) }"));
+    const BoxId r2 = g.build("<li style=\"--icon: 'Y'\"><div id=i class=ic></div></li>");
+    const BoxId i = g.find(r2, "i");
+    CHECK(g.tree[i].first_child != kNoBox);
+    CHECK_EQ(std::string(g.tree[g.tree[g.tree[i].first_child].first_child].text), "Y");
 }
 
 void test_text_transform_at_build() {
