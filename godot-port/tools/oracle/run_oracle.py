@@ -101,6 +101,24 @@ CHROME_TOLERANCE = 0.02
 # 0.1–0.2px from the engines' exact double. One part in ten thousand of the
 # value covers that without covering any real disagreement.
 CHROME_RELATIVE_TOLERANCE = 2.5e-4
+# When Chrome agrees with neither side exactly, it can still LEAN: within
+# LEAN_NEAR of one side while the other is whole pixels away and at least
+# LEAN_FAR_FACTOR times farther. That is the shape of Blink's own residue —
+# an inline rect rounded to the pixel, a text width off by a hundredth of an
+# em — sitting on top of a real disagreement. A lean is reported apart from
+# exact agreement (REF~ rather than REF!) and never overrides one.
+LEAN_NEAR = 1.5
+LEAN_FAR_FACTOR = 4.0
+LEAN_FAR_MIN = 1.0
+
+
+def lean(chrome_value, near_value, far_value):
+    try:
+        c, n, f = float(chrome_value), float(near_value), float(far_value)
+    except (TypeError, ValueError):
+        return False
+    dn, df = abs(c - n), abs(c - f)
+    return dn <= LEAN_NEAR and df >= LEAN_FAR_MIN and df >= LEAN_FAR_FACTOR * dn
 
 
 def chrome_agrees(chrome_value, value):
@@ -146,23 +164,83 @@ def align(a, b):
     return pairs, moved
 
 
+def refine_runs(a, b, c, rc, ac):
+    """Re-pairs runs of same-identity siblings against Chrome.
+
+    Two bare <code>s in one line can come out in a different order on the two
+    sides — the engines list fragments InsertChildFirst, Chrome walks the DOM
+    — and positional pairing then judges each against the other's partner.
+    For such a run, three pairings are tried: positional, nearest by the
+    reference's geometry, nearest by the candidate's; the one under which
+    Chrome agrees with EITHER side on the most values wins, positional on a
+    tie. Neither side's geometry alone decides, so a wrong reference cannot
+    drag Chrome's partners onto itself.
+    """
+    ia = [_identity(e) for e in a]
+
+    def score(mapping):
+        n = 0
+        for k, t in mapping.items():
+            for key in ("x", "y", "w", "h"):
+                if chrome_agrees(c[t].get(key), a[k].get(key)):
+                    n += 1
+                elif k in rc and chrome_agrees(c[t].get(key), b[rc[k]].get(key)):
+                    n += 1
+        return n
+
+    def nearest(run, targets, coords):
+        cands = sorted((abs(coords[k][0] - float(c[t].get("x", 0))) +
+                        abs(coords[k][1] - float(c[t].get("y", 0))), k, t)
+                       for k in run for t in targets)
+        m, taken_k, taken_t = {}, set(), set()
+        for _, k, t in cands:
+            if k in taken_k or t in taken_t:
+                continue
+            m[k] = t
+            taken_k.add(k)
+            taken_t.add(t)
+        return m
+
+    i = 0
+    while i < len(ia):
+        j = i + 1
+        while j < len(ia) and ia[j] == ia[i]:
+            j += 1
+        run = [k for k in range(i, j) if k in ac]
+        if len(run) > 1:
+            targets = [ac[k] for k in run]
+            options = [{k: ac[k] for k in run},
+                       nearest(run, targets, {k: (float(a[k].get("x", 0)), float(a[k].get("y", 0)))
+                                              for k in run})]
+            if all(k in rc for k in run):
+                options.append(nearest(run, targets,
+                                       {k: (float(b[rc[k]].get("x", 0)), float(b[rc[k]].get("y", 0)))
+                                        for k in run}))
+            ac.update(max(options, key=score))
+        i = j
+    return ac
+
+
 def arbitrate(reference, candidate, chrome):
     """Splits differences into ones the third source blames on each side.
 
-    Returns (reference_bugs, real) — lists of description strings. A difference
-    counts as a reference bug only when Chrome's geometry matches the candidate
-    (within CHROME_TOLERANCE) and differs from the reference, on an element all
-    three agree on the identity of. Anything else stays a real failure,
-    including every difference on an element Chrome's capture has no partner
-    for. Elements are paired by identity (see align), not by position.
+    Returns (reference_bugs, leans, real) — lists of description strings. A
+    difference counts as a reference bug only when Chrome's geometry matches
+    the candidate (within CHROME_TOLERANCE) and differs from the reference, on
+    an element all three agree on the identity of; it counts as a lean when
+    Chrome is within LEAN_NEAR of the candidate and whole pixels from the
+    reference (see lean). Anything else stays a real failure, including every
+    difference on an element Chrome's capture has no partner for. Elements are
+    paired by identity (see align), not by position; an element that merely
+    sits elsewhere in the walk is not a difference.
     """
     a, b = reference.get("elements", []), candidate.get("elements", [])
     c = chrome.get("elements", []) if chrome else []
     same_order = len(a) == len(b) and all(_identity(x) == _identity(y) for x, y in zip(a, b))
     rc, moved = ({i: i for i in range(len(a))}, set()) if same_order else align(a, b)
-    ac = align(a, c)[0] if chrome else {}
+    ac = refine_runs(a, b, c, rc, align(a, c)[0]) if chrome else {}
 
-    reference_bugs, real = [], []
+    reference_bugs, leans, real = [], [], []
     if len(a) != len(b):
         real.append(f"element count: reference {len(a)}, candidate {len(b)}")
     for i, ea in enumerate(a):
@@ -170,11 +248,6 @@ def arbitrate(reference, candidate, chrome):
             real.append(f"[{i}] {_identity(ea)}: only in the reference")
             continue
         eb = b[rc[i]]
-        if i in moved:
-            # The same element in a different place in the walk: still a
-            # difference (the dump is the box tree), but its geometry is
-            # judged against ITS OWN Chrome partner, not its neighbour's.
-            real.append(f"[{i}] {_identity(ea)}: moved, candidate index {rc[i]}")
         for key in ("depth", "tag", "id", "cls"):
             if ea.get(key) != eb.get(key):
                 real.append(f"[{i}] {key}: reference {ea.get(key)!r}, candidate {eb.get(key)!r}")
@@ -190,13 +263,17 @@ def arbitrate(reference, candidate, chrome):
                 reference_bugs.append(line + f", chrome {ec.get(key)} — chrome agrees with us")
             elif chrome_agrees(ec.get(key), ea.get(key)):
                 real.append(line + f", chrome {ec.get(key)} — chrome agrees with the REFERENCE")
+            elif lean(ec.get(key), eb.get(key), ea.get(key)):
+                leans.append(line + f", chrome {ec.get(key)} — chrome leans to us")
+            elif lean(ec.get(key), ea.get(key), eb.get(key)):
+                real.append(line + f", chrome {ec.get(key)} — chrome leans to the REFERENCE")
             else:
                 real.append(line + f", chrome {ec.get(key)} — chrome agrees with neither")
     paired_b = set(rc.values())
     for j, eb in enumerate(b):
         if j not in paired_b:
             real.append(f"[cand {j}] {_identity(eb)}: only in the candidate")
-    return reference_bugs, real
+    return reference_bugs, leans, real
 
 
 def reference_is_fresh(ref_out, html, css):
@@ -270,11 +347,15 @@ def main():
             continue
 
         chrome = load_chrome(args.corpus, name)
-        reference_bugs, problems = arbitrate(load(ref_out), load(cand_out), chrome)
-        if reference_bugs and not problems:
-            arbitrated.append((name, reference_bugs))
-            print(f"REF! {name}  ({len(reference_bugs)} difference(s), chrome sides with us)")
-            for line in reference_bugs[:6]:
+        reference_bugs, leans, problems = arbitrate(load(ref_out), load(cand_out), chrome)
+        if (reference_bugs or leans) and not problems:
+            arbitrated.append((name, reference_bugs + leans))
+            if leans:
+                print(f"REF~ {name}  ({len(reference_bugs)} difference(s) chrome sides with us on, "
+                      f"{len(leans)} it leans to us on)")
+            else:
+                print(f"REF! {name}  ({len(reference_bugs)} difference(s), chrome sides with us)")
+            for line in (reference_bugs + leans)[:6]:
                 print(f"       {line}")
         elif problems:
             failed.append((name, problems))
@@ -283,11 +364,13 @@ def main():
             # bugs, the ones where it agrees with the port are already listed
             # above as reference bugs, and the rest are undecided.
             with_reference = sum(1 for p in problems if "agrees with the REFERENCE" in p)
+            leans_reference = sum(1 for p in problems if "leans to the REFERENCE" in p)
             neither = sum(1 for p in problems if "agrees with neither" in p)
             breakdown = ""
             if chrome:
-                breakdown = (f"; chrome sides with the reference on {with_reference}, "
-                             f"with neither on {neither}, with us on {len(reference_bugs)}")
+                breakdown = (f"; chrome sides with the reference on {with_reference}"
+                             f" (+{leans_reference} leaning), with neither on {neither}, "
+                             f"with us on {len(reference_bugs)} (+{len(leans)} leaning)")
             print(f"FAIL {name}  ({len(problems)} difference(s){breakdown})")
             for line in problems[:12]:
                 print(f"       {line}")
