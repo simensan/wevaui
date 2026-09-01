@@ -1321,11 +1321,17 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         bottom = std::max(bottom, b.y + b.height + b.margin_bottom - top_inner);
     }
 
-    // The container's content height is the row track total when the rows are
-    // definite, and the items' extent when they are not.
+    // The container's content height is its row tracks' extent. An item that
+    // overflows its area — an aspect-ratio tile taller than its 110px row —
+    // overflows the grid too rather than growing it (Chrome: 248 for two
+    // 110px rows and a gap, with 195px tiles hanging out of them).
     if (!rows.empty()) {
-        const Track& last = rows.back();
-        bottom = std::max(bottom, last.position + last.size);
+        double extent = 0;
+        for (size_t r = 0; r < rows.size(); ++r) {
+            if (rows[r].collapsed) continue;
+            extent = std::max(extent, rows[r].position + rows[r].size);
+        }
+        bottom = extent;
     }
     return bottom;
 }

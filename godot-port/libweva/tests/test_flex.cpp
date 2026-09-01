@@ -774,3 +774,20 @@ void test_grid_intrinsic_width_is_its_tracks() {
     CHECK(near(f.box("board").width, 230));
     CHECK(near(f.box("board").x, 285));
 }
+
+void test_flex_wrap_reverse_flips_item_alignment() {
+    // A single line in a 150px wrap-reverse container: cross-start is the
+    // bottom, so flex-start items sit against it.
+    Fixture f;
+    CHECK(f.css("#d { display: flex; flex-wrap: wrap-reverse; height: 150px; width: 500px;"
+                "     align-items: flex-start }"
+                ".i { width: 38px; height: 38px }"));
+    CHECK(f.layout("<body><div id=d><div id=a class=i></div><div class=i></div></div></body>"));
+    CHECK(near(f.box("a").y, 112));
+    Fixture g;
+    CHECK(g.css("#d { display: flex; flex-wrap: wrap-reverse; height: 150px; width: 500px }"
+                ".i { width: 38px; height: 38px }"));
+    CHECK(g.layout("<body><div id=d><div id=a class=i></div></div></body>"));
+    // The default `stretch` with a definite height behaves as start: bottom too.
+    CHECK(near(g.box("a").y, 112));
+}

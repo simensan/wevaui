@@ -438,12 +438,26 @@ CalcNodePtr parse_calc_expression(Reader& r, int depth) {
 
 CssValuePtr parse_function(Reader& r) {
     const CssToken fn = r.peek();
-    if (ascii_lower(fn.text) == "calc") {
+    const std::string lower = ascii_lower(fn.text);
+    if (lower == "calc") {
         r.advance();
         CalcNodePtr node = parse_calc_expression(r, 0);
         if (!node) return nullptr;
         r.skip_ws();
         if (r.peek().kind == CssTokenKind::RParen) r.advance();
+        auto c = std::make_unique<CssCalc>();
+        c->expression = std::move(node);
+        c->raw = fn.text + "(";
+        return c;
+    }
+    if (lower == "min" || lower == "max" || lower == "clamp") {
+        // CSS Values L4 §10.3: the comparison functions are math functions in
+        // their own right, not only calc() operands. The calc parser already
+        // reads them from the function token on, so it is entered without
+        // consuming it. `width: min(560px, 92vw)` had fallen through to a
+        // FunctionCall no length resolver reads, and the width to auto.
+        CalcNodePtr node = parse_calc_expression(r, 0);
+        if (!node) return nullptr;
         auto c = std::make_unique<CssCalc>();
         c->expression = std::move(node);
         c->raw = fn.text + "(";

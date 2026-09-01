@@ -720,6 +720,18 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             // an item wider than the line overflows both sides equally rather
             // than being pushed back to the start. Baseline stays clamped.
             if (cross_pos < 0 && iequals(self, "baseline")) cross_pos = 0;
+            // wrap-reverse swaps cross-start and cross-end (§5.2), for the
+            // items within a line as much as for the lines: flex-start sits
+            // against the line's far edge. A single line of buttons in a
+            // 150px wrap-reverse strip sits at its bottom.
+            // `center` is symmetric and an applied stretch fills the line;
+            // a stretch that could not apply (definite cross size) is
+            // flex-start and flips with it.
+            if (wrap_reverse && !iequals(self, "center")) {
+                const double now_cross =
+                    (column ? (*tree)[it.box].width : (*tree)[it.box].height) + it.cross_margins;
+                cross_pos = ln.cross - now_cross - cross_pos;
+            }
 
             // Safe from here: placement creates nothing.
             Box& b = (*tree)[it.box];

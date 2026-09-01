@@ -1,5 +1,6 @@
 #include "check.h"
 #include "weva/css_value.h"
+#include "weva/style_resolver.h"
 #include <cmath>
 #include <string>
 
@@ -356,4 +357,20 @@ void test_css_color() {
         CHECK(v.run("color-mix(in srgb, red, blue)")); // not a colour function here
         CHECK(v.v->kind() == CssValueKind::FunctionCall);
     }
+}
+
+void test_top_level_comparison_functions() {
+    // min(), max() and clamp() are math functions at the top level of a value
+    // as well as inside calc().
+    LayoutContext ctx;
+    ctx.viewport_width_px = 1280;
+    ctx.viewport_height_px = 720;
+    ResolvedLength r = resolve_length("min(560px, 92vw)", ctx, 16, 1280);
+    CHECK(r.kind == LengthKind::Length && std::fabs(r.pixels - 560) < 1e-9);
+    r = resolve_length("min(560px, 30vw)", ctx, 16, 1280);
+    CHECK(r.kind == LengthKind::Length && std::fabs(r.pixels - 384) < 1e-9);
+    r = resolve_length("max(10%, 200px)", ctx, 16, 1280);
+    CHECK(r.kind == LengthKind::Length && std::fabs(r.pixels - 200) < 1e-9);
+    r = resolve_length("clamp(100px, 92vw, 560px)", ctx, 16, 1280);
+    CHECK(r.kind == LengthKind::Length && std::fabs(r.pixels - 560) < 1e-9);
 }

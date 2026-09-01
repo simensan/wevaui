@@ -95,11 +95,17 @@ def load_chrome(corpus, name):
 # engines share. This tolerance applies ONLY to reading Chrome's verdict; the
 # reference-versus-candidate comparison stays exact (ORACLE.md).
 CHROME_TOLERANCE = 0.02
+# ...and the snapping accumulates down a page: every line box and every
+# block edge is placed on the 1/64 grid, so a value 1500px down can sit
+# 0.1–0.2px from the engines' exact double. One part in ten thousand of the
+# value covers that without covering any real disagreement.
+CHROME_RELATIVE_TOLERANCE = 2.5e-4
 
 
 def chrome_agrees(chrome_value, value):
     try:
-        return abs(float(chrome_value) - float(value)) <= CHROME_TOLERANCE
+        c, v = float(chrome_value), float(value)
+        return abs(c - v) <= CHROME_TOLERANCE + CHROME_RELATIVE_TOLERANCE * abs(v)
     except (TypeError, ValueError):
         return chrome_value == value
 
