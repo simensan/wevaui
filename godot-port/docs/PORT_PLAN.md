@@ -3060,6 +3060,87 @@ built. Two approaches that do NOT work, recorded so they are not retried:
 * Correcting the height right after `LayoutBlock`. The `RelayoutContentAt` at
   the end of the shrink-to-fit path overwrites it.
 
+### Twelfth pass: sharpening the instrument. 17/35 + 11
+
+The gate moved 15 -> 17 genuinely agreeing (28/35 counting Chrome-arbitrated
+reference bugs), and the biggest single lesson was about the harness rather
+than either engine.
+
+**The oracle was measuring its own rounding.** Both dumps printed 2 decimals
+and the oracle compared the strings exactly. Two independent implementations
+accumulate the same arithmetic in slightly different orders, so a value that
+lands on a decimal midpoint prints differently on the two sides for reasons
+that have nothing to do with layout — and the oracle then reported a 0.01
+difference and every box below it. weva-landing showed 80 differences that
+were ALL one such tie at `.stats` cascading downward, and the cascade buried a
+real 56px difference further down the page.
+
+Both dumps now print four decimals, and a one-last-place gap is read as
+agreement (`same_value` in run_oracle.py). That is two orders of magnitude
+TIGHTER than the exact 2dp comparison it replaces, not looser: the noise floor
+went from 0.01 to 0.0001. Measured across the corpora it is strictly better —
+hand and harvest identical, samples 15 -> 16 agreeing before any engine fix,
+because one page had only ever been a rounding artifact. When an oracle
+reports differences you cannot explain, check its resolution before chasing
+the differences.
+
+**Port bugs fixed**
+
+* **Preserved newlines never broke a line.** CSS Text L3 §4.1.1 makes a
+  newline kept by `pre`/`pre-wrap`/`pre-line`/`break-spaces` a segment break,
+  and a preserved segment break forces a line break. The preserved-whitespace
+  path placed a whole text node as ONE unbreakable fragment, so a nine-line
+  `<pre>` listing laid out as a single 1.3kpx-wide line and reported one
+  line-height of height. `preserve_newlines` is a third axis alongside
+  `collapse_whitespace` and `allow_wrap` — `pre-line` collapses spaces like
+  `normal` while still breaking at every newline — and an empty segment still
+  pushes a zero-width fragment, because a blank line in a `pre` is a line and
+  `flush_line` drops a fragment-less one.
+* **The `<button>` centering pass ran on flex buttons.** Its guard was a
+  comment ("a button with an author `display: flex/grid` is laid out
+  elsewhere") rather than a condition; `finish_height` runs for those too, so a
+  column flex button with `justify-content: center` was centred twice. Now
+  conditioned on the button actually establishing a flow formatting context.
+
+**Reference (C#) bugs fixed — all three confirmed against Chrome**
+
+* **A list item's marker took the li's own style.** `ComputeMarker` returned
+  null whenever the page had no authored `::marker` rule, and BoxBuilder's
+  fallback for a null marker style is the `<li>`'s OWN ComputedStyle — handing
+  the anonymous marker box the li's padding, border, margin and background.
+  `li { padding: 5px 10px }` measured 26.9 where Chrome says 26. `::before` and
+  `::after` legitimately return null (they need `content` to generate a box at
+  all) but a list item HAS a marker whether or not anyone styled it, so
+  `ComputePseudoElement` grew an `alwaysProduce` flag. Note BOTH harnesses hid
+  this: neither BaselineGen's LayoutDump nor LayoutTestHelpers wired
+  `MarkerStyleOf` the way UIDocumentBuilder does at runtime. **A harness that
+  omits a runtime hook does not just miss bugs, it manufactures them.**
+* **An atomic inline dropped its vertical margins from the line.** CSS 2.1
+  §10.8.1 is explicit that an inline-block contributes its MARGIN box;
+  LineBreaker read `AtomBox.Height`, the border box. `input { margin-bottom:
+  6px }` sat in a line box exactly 28 tall. Captured Chrome directly on the
+  isolated case to settle it: Chrome 125.28, port 125.311, reference 119.311.
+* Together these took audit-validation from 71 differences to **2**.
+
+**On arbitration.** Both C# bugs above were cumulative: each shifted everything
+below it down the page, and since Chrome is compared on ABSOLUTE geometry, a
+single early offset makes Chrome side with nobody for the rest of the document.
+That is why audit-validation reported "chrome agrees with neither" 67 times for
+what turned out to be two bugs. When a page shows a long run of three-way
+disagreement, look for one shared offset at the top of the run rather than a
+page full of independent problems.
+
+**Still open on the seven failing samples**
+
+* `audit-validation` (2): an `<input>` baseline-aligned beside a 90px
+  `<textarea>` — ref 1861, cand 1845, Chrome 1892, so all three disagree.
+* `card-component` (4): `<template>`/`<slot>`, which the port does not build.
+* `combat-hud` (1), `dialogue` (1), `randhtml` (1): sub-pixel text-measurement
+  divergences where Chrome sides with neither engine.
+* `inventory` (41): Chrome's 1fr re-growth from an aspect-ratio transferred
+  minimum.
+* `menu` (47): `@container`, which BaselineGen's single-pass never applies.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
