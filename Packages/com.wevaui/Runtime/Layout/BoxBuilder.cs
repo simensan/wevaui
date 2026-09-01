@@ -478,6 +478,26 @@ namespace Weva.Layout {
         //
         // Only applies to `<img>`. Other replaced elements (audio/video)
         // aren't supported in v1.
+        // CSS Display 3 §2.7 — the inline-level outer displays, i.e. those
+        // that blockify when the box goes out of flow.
+        static bool IsInlineLevelDisplay(string disp) {
+            return string.IsNullOrEmpty(disp) || disp == "inline" || disp == "inline-block"
+                || disp == "inline-flex" || disp == "inline-grid" || disp == "inline-table";
+        }
+
+        // §2.7's value table: the inner display is preserved, only the outer
+        // one becomes block. `inline-flex` must become `flex`, NOT `block`, or
+        // an absolutely positioned flex container would lay its children out
+        // as blocks.
+        static string Blockified(string disp) {
+            switch (disp) {
+                case "inline-flex": return "flex";
+                case "inline-grid": return "grid";
+                case "inline-table": return "table";
+                default: return "block";
+            }
+        }
+
         void MaybeApplyImgIntrinsicSize(Element e, ComputedStyle style) {
             pendingIntrinsicWidth = 0;
             pendingIntrinsicHeight = 0;
@@ -685,16 +705,24 @@ namespace Weva.Layout {
                 // (the float property is ignored on flex/grid items per
                 // CSS Flexbox §3 / Grid §6.4); we honour that by NOT
                 // re-promoting inline content when the parent is flex/grid.
-                if (!blockifyInlines && (disp == "inline" || string.IsNullOrEmpty(disp))) {
+                //
+                // EVERY inline-level display blockifies, not just `inline`
+                // (CSS Display 3 §2.7 gives the value table). An
+                // `position: absolute` element that is inline-block by the UA
+                // sheet — an <img>, <button>, <input>, or any author
+                // `display: inline-block` badge — stayed an inline atom, was
+                // placed on a line box, and shrink-to-fit sized it to its
+                // content: zero for a replaced element with no loaded source.
+                // An absolutely positioned avatar with `width: calc(100% - 8px)`
+                // came out 0 wide (advanced-dashboard).
+                if (!blockifyInlines && IsInlineLevelDisplay(disp)) {
                     string pos = KeywordName(style?.GetParsed(CssProperties.PositionId));
-                    if (pos == "absolute" || pos == "fixed") {
-                        disp = "block";
-                    } else {
+                    bool outOfFlow = pos == "absolute" || pos == "fixed";
+                    if (!outOfFlow) {
                         string flt = KeywordName(style?.GetParsed(CssProperties.FloatId));
-                        if (!string.IsNullOrEmpty(flt) && flt != "none") {
-                            disp = "block";
-                        }
+                        outOfFlow = !string.IsNullOrEmpty(flt) && flt != "none";
                     }
+                    if (outOfFlow) disp = Blockified(disp);
                 }
                 MaybeApplyImgIntrinsicSize(e, style);
                 MaybeApplyFieldSizingWidth(e, style);
@@ -991,16 +1019,17 @@ namespace Weva.Layout {
                 // nested inside an InlineBox to block so they participate
                 // in float layout instead of being collapsed into the
                 // inline-flow stream.
-                if (disp == "inline" || string.IsNullOrEmpty(disp)) {
+                // Every inline-level display blockifies, not just `inline` —
+                // see AppendNodeAsBlockChild for the value table and the
+                // zero-width absolutely positioned <img> it fixes.
+                if (IsInlineLevelDisplay(disp)) {
                     string pos = KeywordName(style?.GetParsed(CssProperties.PositionId));
-                    if (pos == "absolute" || pos == "fixed") {
-                        disp = "block";
-                    } else {
+                    bool outOfFlow = pos == "absolute" || pos == "fixed";
+                    if (!outOfFlow) {
                         string flt = KeywordName(style?.GetParsed(CssProperties.FloatId));
-                        if (!string.IsNullOrEmpty(flt) && flt != "none") {
-                            disp = "block";
-                        }
+                        outOfFlow = !string.IsNullOrEmpty(flt) && flt != "none";
                     }
+                    if (outOfFlow) disp = Blockified(disp);
                 }
                 MaybeApplyImgIntrinsicSize(e, style);
                 MaybeApplyFieldSizingWidth(e, style);

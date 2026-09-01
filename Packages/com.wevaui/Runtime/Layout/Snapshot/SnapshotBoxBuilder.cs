@@ -176,20 +176,39 @@ namespace Weva.Layout {
             BuildPseudoBox(host, parent, pseudoStyle, disp, text);
         }
 
+        // CSS Display 3 §2.7 — the inline-level outer displays, i.e. those
+        // that blockify when the box goes out of flow. Mirrors BoxBuilder.
+        static bool IsInlineLevelDisplay(string disp) {
+            return string.IsNullOrEmpty(disp) || disp == "inline" || disp == "inline-block"
+                || disp == "inline-flex" || disp == "inline-grid" || disp == "inline-table";
+        }
+
+        // §2.7's value table: only the OUTER display becomes block, so
+        // `inline-flex` becomes `flex` rather than `block` — an absolutely
+        // positioned flex container must still lay its children out as flex.
+        static string Blockified(string disp) {
+            switch (disp) {
+                case "inline-flex": return "flex";
+                case "inline-grid": return "grid";
+                case "inline-table": return "table";
+                default: return "block";
+            }
+        }
+
         void BuildPseudoBox(Element host, Box parent, ComputedStyle pseudoStyle, string disp, string text) {
             // CSS 2.1 §9.7 blockification — see BoxBuilder.BuildPseudoBox for
             // the rationale. Mirrored here so the snapshot path stays in
             // step with the live build path.
-            if (string.IsNullOrEmpty(disp) || disp == "inline") {
+            if (IsInlineLevelDisplay(disp)) {
                 // Per-style parsed cache: keyword-typed properties read via
                 // direct pattern match on the cached CssValue.
                 string pos = KeywordName(pseudoStyle.GetParsed(CssProperties.PositionId));
-                if (pos == "absolute" || pos == "fixed") {
-                    disp = "block";
-                } else {
+                bool outOfFlow = pos == "absolute" || pos == "fixed";
+                if (!outOfFlow) {
                     string flt = KeywordName(pseudoStyle.GetParsed(CssProperties.FloatId));
-                    if (!string.IsNullOrEmpty(flt) && flt != "none") disp = "block";
+                    outOfFlow = !string.IsNullOrEmpty(flt) && flt != "none";
                 }
+                if (outOfFlow) disp = Blockified(disp);
             }
             if (disp == "block" || disp == "flex" || disp == "grid"
                 || disp == "inline-block" || disp == "inline-flex" || disp == "inline-grid"
@@ -322,16 +341,24 @@ namespace Weva.Layout {
                 // items, hits the empty-container branch (one empty LineBox),
                 // and never re-attaches the pending inline. The box is lost
                 // entirely and PositioningPass has no Box to reposition.
-                if (!blockifyInlines && (disp == "inline" || string.IsNullOrEmpty(disp))) {
+                //
+                // EVERY inline-level display blockifies, not just `inline`
+                // (CSS Display 3 §2.7 gives the value table). An
+                // absolutely positioned element that is inline-block by the UA
+                // sheet — <img>, <button>, <input> — or by an author rule
+                // stayed an inline atom and was shrink-to-fit sized to its
+                // content, which is ZERO for a replaced element with no loaded
+                // source: an avatar pinned with `inset: 4px; width: calc(100%
+                // - 8px)` came out 0 wide while its height was right
+                // (advanced-dashboard).
+                if (!blockifyInlines && IsInlineLevelDisplay(disp)) {
                     string pos = KeywordName(style?.GetParsed(CssProperties.PositionId));
-                    if (pos == "absolute" || pos == "fixed") {
-                        disp = "block";
-                    } else {
+                    bool outOfFlow = pos == "absolute" || pos == "fixed";
+                    if (!outOfFlow) {
                         string flt = KeywordName(style?.GetParsed(CssProperties.FloatId));
-                        if (!string.IsNullOrEmpty(flt) && flt != "none") {
-                            disp = "block";
-                        }
+                        outOfFlow = !string.IsNullOrEmpty(flt) && flt != "none";
                     }
+                    if (outOfFlow) disp = Blockified(disp);
                 }
                 MaybeApplyFieldSizingWidth(managed, style);
                 MaybeInjectBackdrop(managed, parent);
