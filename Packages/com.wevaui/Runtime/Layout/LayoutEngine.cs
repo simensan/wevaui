@@ -823,10 +823,13 @@ namespace Weva.Layout {
                 if (heightAuto
                     && StyleResolver.TryResolveAspectRatio(bb.Style, out double ratio)
                     && ratio > 0) {
-                    double derived = bb.Width / ratio;
                     bool borderBox = IsBorderBoxLocal(bb.Style);
                     double frame = bb.PaddingTop + bb.PaddingBottom + bb.BorderTop + bb.BorderBottom;
-                    double newHeight = borderBox ? derived : derived + frame;
+                    // CSS Sizing L4 §5, box-sizing aware — see AspectRatioMath.
+                    double newHeight = Weva.Layout.AspectRatioMath.HeightFromWidth(
+                        bb.Width, ratio, borderBox,
+                        bb.PaddingLeft + bb.PaddingRight + bb.BorderLeft + bb.BorderRight,
+                        frame);
                     // CSS Sizing L3 §5.2: clamp the aspect-ratio-derived height
                     // by min-height / max-height. Without this, `width:100px;
                     // aspect-ratio:2/1; min-height:80px` ended up at 50 (ratio

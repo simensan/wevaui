@@ -919,12 +919,11 @@ namespace Weva.Layout {
             if (explicitHeight >= 0) {
                 computedHeight = heightBorderBox ? explicitHeight : explicitHeight + heightFrame;
             } else if (StyleResolver.TryResolveAspectRatio(box.Style, out double aspectRatio) && aspectRatio > 0 && box.Width > 0) {
-                // CSS Sizing L4 §5: width set, height auto -> derive height
-                // from width via the ratio. v1 simplification ignores
-                // box-sizing for ratio derivation; the spec applies the ratio
-                // to content-box unless `aspect-ratio` is paired with a
-                // non-default sizing.
-                computedHeight = box.Width / aspectRatio;
+                // CSS Sizing L4 §5, box-sizing aware — see AspectRatioMath.
+                computedHeight = AspectRatioMath.HeightFromWidth(
+                    box.Width, aspectRatio, heightBorderBox,
+                    box.PaddingLeft + box.PaddingRight + box.BorderLeft + box.BorderRight,
+                    heightFrame);
             } else if (isOOF && box.OffsetTop.HasValue && box.OffsetBottom.HasValue && box.Height > 0) {
                 // OOF box with inset top+bottom pinned and a Height already
                 // resolved by PositioningPass. RelayoutContentAt re-enters

@@ -107,15 +107,11 @@ namespace Weva.Layout.Flex {
             if (!string.IsNullOrEmpty(heightRaw) && heightRaw != "auto") return;
             if (!StyleResolver.TryResolveAspectRatio(box.Style, out double ratio) || ratio <= 0) return;
             if (box.Width <= 0) return;
-            double derived = box.Width / ratio;
-            // The box's height includes its own padding/border frame (border-box
-            // is the rendered geometry). v1 simplification mirrors BlockLayout's
-            // FinalizeBlockSize aspect-ratio branch: ratio applies to content
-            // area; add the vertical frame so the rendered box is the
-            // content-box-derived size + frame.
-            bool borderBox = IsBorderBox(box.Style);
-            double frame = box.PaddingTop + box.PaddingBottom + box.BorderTop + box.BorderBottom;
-            box.Height = borderBox ? derived : derived + frame;
+            // CSS Sizing L4 §5, box-sizing aware — see AspectRatioMath.
+            box.Height = Weva.Layout.AspectRatioMath.HeightFromWidth(
+                box.Width, ratio, IsBorderBox(box.Style),
+                box.PaddingLeft + box.PaddingRight + box.BorderLeft + box.BorderRight,
+                box.PaddingTop + box.PaddingBottom + box.BorderTop + box.BorderBottom);
         }
 
         // Mirror of BlockLayout.IsBorderBox — kept local to avoid widening
@@ -137,10 +133,11 @@ namespace Weva.Layout.Flex {
             if (!string.IsNullOrEmpty(widthRaw) && widthRaw != "auto") return;
             if (!StyleResolver.TryResolveAspectRatio(box.Style, out double ratio) || ratio <= 0) return;
             if (box.Height <= 0) return;
-            double derived = box.Height * ratio;
-            bool borderBox = IsBorderBox(box.Style);
-            double frame = box.PaddingLeft + box.PaddingRight + box.BorderLeft + box.BorderRight;
-            box.Width = borderBox ? derived : derived + frame;
+            // CSS Sizing L4 §5, box-sizing aware — see AspectRatioMath.
+            box.Width = Weva.Layout.AspectRatioMath.WidthFromHeight(
+                box.Height, ratio, IsBorderBox(box.Style),
+                box.PaddingTop + box.PaddingBottom + box.BorderTop + box.BorderBottom,
+                box.PaddingLeft + box.PaddingRight + box.BorderLeft + box.BorderRight);
         }
 
         void ReflowIfShrunk(BlockBox box, double newW, double preW) {
