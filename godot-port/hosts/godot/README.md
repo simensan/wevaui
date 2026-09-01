@@ -156,3 +156,45 @@ Not yet wired: input events, the animation tick, and registering Godot's
 `RenderingServer` as the core's render backend through the function-pointer
 table — drawing currently goes through the collected draw list rather than
 straight into the engine.
+
+## Windows (MSVC)
+
+Verified with Visual Studio 2022 Build Tools, CMake 4.3 and Godot 4.7.1
+(win64, mono): the host suite passes 23/23 and `capture.tscn` renders through
+the GPU. From a Developer-agnostic shell (CMake finds MSBuild itself):
+
+```powershell
+git clone --depth 1 https://github.com/godotengine/godot-cpp C:\Users\<you>\godot-cpp
+cmake -S C:\Users\<you>\godot-cpp -B C:\Users\<you>\godot-cpp\build-msvc `
+      -G "Visual Studio 17 2022" -A x64 -DGODOTCPP_API_VERSION=4.7
+cmake --build C:\Users\<you>\godot-cpp\build-msvc --config Release -j 8
+
+cmake -S godot-port\hosts\godot -B C:\Users\<you>\weva-build\godot-msvc `
+      -G "Visual Studio 17 2022" -A x64 `
+      -DGODOT_CPP_DIR=C:/Users/<you>/godot-cpp -DGODOT_CPP_BUILD_DIR=C:/Users/<you>/godot-cpp/build-msvc
+cmake --build C:\Users\<you>\weva-build\godot-msvc --config Release -j 8
+```
+
+That lands `project/addons/weva/bin/weva_godot.dll`, the name
+`weva.gdextension` expects. Three things the CMake files already take care
+of, recorded because each one cost a build: godot-cpp's `method_bind.hpp`
+needs `/Zc:__cplusplus` (MSVC reports 199711L otherwise) and `/vmg`
+(pointer-to-member casts across an incomplete class); godot-cpp links the
+static CRT, so the host and the core are built `/MT` to match
+(`CMAKE_MSVC_RUNTIME_LIBRARY`, set before `project()`); and a DLL is a
+RUNTIME artefact under a multi-config generator, so the output directory is
+pinned per configuration or the .dll lands in `bin/Release/`.
+
+Keep build directories on a short path: MSBuild's tracker fails with
+`DirectoryNotFoundException` on the paths a temp directory produces.
+
+Then, from `hosts/godot/project`:
+
+```powershell
+Godot_v4.7.1-stable_mono_win64_console.exe --headless --path .        # 23 checks
+Godot_v4.7.1-stable_mono_win64_console.exe --path . --rendering-driver opengl3 `
+    --scene res://capture.tscn -- --html C:/.../Assets/UI/leaderboard.html `
+    --css C:/.../Assets/UI/leaderboard.css --size 1280x720 --png C:/tmp/leaderboard.png
+```
+
+or open `project/project.godot` in the editor and run `test_scene.tscn`.

@@ -13,11 +13,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #                     bit-identical geometry against the C# implementation.
 #                     -ffast-math / -Ofast silently break that. Do not add them.
 add_library(weva_flags INTERFACE)
-target_compile_options(weva_flags INTERFACE
-    -fno-exceptions
-    -Wall -Wextra -Wpedantic
-    $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
-)
+if(MSVC)
+    # The same two rules in MSVC's dialect: no exception unwinding, and the
+    # standard library told so; warnings at /W4. /utf-8 because the sources
+    # hold UTF-8 literals (the UA sheet, test strings).
+    target_compile_options(weva_flags INTERFACE /EHs-c- /W4 /utf-8 /wd4100 /wd4127 /wd4244 /wd4267 /wd4456 /wd4457 /wd4458 /wd4459 /wd4702)
+    target_compile_definitions(weva_flags INTERFACE _HAS_EXCEPTIONS=0 _CRT_SECURE_NO_WARNINGS NOMINMAX)
+else()
+    target_compile_options(weva_flags INTERFACE
+        -fno-exceptions
+        -Wall -Wextra -Wpedantic
+        $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+    )
+endif()
 
 # A host embeds the core with add_subdirectory and wants neither the tests nor
 # the dump tool. Defaulting ON keeps a bare `cmake -S .` building everything.
