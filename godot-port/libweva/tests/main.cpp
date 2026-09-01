@@ -132,6 +132,7 @@ void test_var_shorthand_expands_at_its_cascade_position();
 void test_inline_em_font_size_resolves_against_the_parent();
 void test_max_content_joins_wrapped_lines();
 void test_flex_abspos_child_static_position_follows_alignment();
+void test_grid_track_sizing_functions();
 void test_anonymous_block_inherits_text_align();
 void test_inline_fragments();
 void test_inline_atoms();
@@ -301,6 +302,7 @@ int main() {
     test_inline_em_font_size_resolves_against_the_parent();
     test_max_content_joins_wrapped_lines();
     test_flex_abspos_child_static_position_follows_alignment();
+    test_grid_track_sizing_functions();
     test_anonymous_block_inherits_text_align();
     test_inline_fragments();
     test_inline_atoms();

@@ -31,13 +31,51 @@ bool iequals(std::string_view a, std::string_view b) {
     return true;
 }
 
-// One track of the explicit grid. `fr` and `auto` are resolved after the fixed
-// tracks have taken their space.
+// A track sizing function (CSS Grid L1 §7.2.3): one side of minmax(). `fr`
+// is only ever a max; fit-content() only ever a max as well.
+struct Sizing {
+    enum class Kind { Fixed, Auto, MinContent, MaxContent, Flex, FitContent } kind = Kind::Auto;
+    double value = 0;   // pixels for Fixed and the fit-content() limit, the flex factor for Flex
+};
+
+// One track: its min and max sizing functions, and the state §12 works on.
+// `100px` is minmax(100px, 100px); `1fr` is minmax(auto, 1fr); `auto` is
+// minmax(auto, auto).
 struct Track {
-    enum class Kind { Fixed, Fraction, Auto } kind = Kind::Auto;
-    double value = 0;   // pixels for Fixed, the flex factor for Fraction
-    double size = 0;    // resolved
+    Sizing min, max;
+    double base = 0;         // §12.3 base size
+    double limit = -1;       // growth limit; negative = not yet bounded / infinite
+    double size = 0;         // the used size
     double position = 0;
+    bool collapsible = false;   // produced by repeat(auto-fit)
+    bool collapsed = false;     // an auto-fit track nothing landed in: no size, no gap
+    bool is_flex() const { return max.kind == Sizing::Kind::Flex; }
+    bool is_definite() const {
+        return min.kind == Sizing::Kind::Fixed && max.kind == Sizing::Kind::Fixed;
+    }
+    bool intrinsic_min() const {
+        return min.kind == Sizing::Kind::Auto || min.kind == Sizing::Kind::MinContent ||
+               min.kind == Sizing::Kind::MaxContent;
+    }
+    bool intrinsic_max() const {
+        return max.kind == Sizing::Kind::Auto || max.kind == Sizing::Kind::MinContent ||
+               max.kind == Sizing::Kind::MaxContent || max.kind == Sizing::Kind::FitContent;
+    }
+    static Track fixed(double px) {
+        Track t;
+        t.min = {Sizing::Kind::Fixed, px};
+        t.max = {Sizing::Kind::Fixed, px};
+        return t;
+    }
+};
+
+// What an item asks of the tracks it covers (§12.5): its min-content and
+// max-content contributions, outer sizes.
+struct Contribution {
+    int start = 0;
+    int span = 1;
+    double min_c = 0;
+    double max_c = 0;
 };
 
 // Splits a value list on top-level whitespace, keeping a function call and its
@@ -64,61 +102,137 @@ std::vector<std::string_view> split_tracks(std::string_view raw) {
     return out;
 }
 
-bool parse_track(std::string_view text, const LayoutContext& ctx, double font_size, double basis,
-                 Track* out) {
-    if (text.empty() || iequals(text, "auto")) {
-        *out = {Track::Kind::Auto, 0, 0, 0};
-        return true;
+std::string_view trim_track(std::string_view s) {
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\n')) s.remove_prefix(1);
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\n')) s.remove_suffix(1);
+    return s;
+}
+
+// Splits on top-level commas, so `minmax(100px, 1fr)` yields its two sides
+// and `repeat(2, minmax(0, 1fr))` its count and body.
+std::vector<std::string_view> split_top_level_commas(std::string_view raw) {
+    std::vector<std::string_view> out;
+    int depth = 0;
+    size_t start = 0;
+    for (size_t i = 0; i < raw.size(); ++i) {
+        if (raw[i] == '(') ++depth;
+        else if (raw[i] == ')') --depth;
+        else if (raw[i] == ',' && depth == 0) {
+            out.push_back(trim_track(raw.substr(start, i - start)));
+            start = i + 1;
+        }
     }
-    if (text.size() > 2 && text.substr(text.size() - 2) == "fr") {
+    out.push_back(trim_track(raw.substr(start)));
+    return out;
+}
+
+bool is_function(std::string_view text, std::string_view name) {
+    return text.size() > name.size() + 1 && iequals(text.substr(0, name.size() + 1),
+                                                    std::string(name) + "(") &&
+           text.back() == ')';
+}
+
+Sizing parse_sizing(std::string_view text, const LayoutContext& ctx, double font_size,
+                    double basis, bool allow_flex) {
+    text = trim_track(text);
+    if (text.empty() || iequals(text, "auto")) return {Sizing::Kind::Auto, 0};
+    if (iequals(text, "min-content")) return {Sizing::Kind::MinContent, 0};
+    if (iequals(text, "max-content")) return {Sizing::Kind::MaxContent, 0};
+    if (allow_flex && text.size() > 2 && iequals(text.substr(text.size() - 2), "fr")) {
         const std::string number(text.substr(0, text.size() - 2));
-        *out = {Track::Kind::Fraction, std::strtod(number.c_str(), nullptr), 0, 0};
-        return true;
+        return {Sizing::Kind::Flex, std::max(0.0, std::strtod(number.c_str(), nullptr))};
+    }
+    if (allow_flex && is_function(text, "fit-content")) {
+        const Sizing inner = parse_sizing(text.substr(12, text.size() - 13), ctx, font_size, basis, false);
+        if (inner.kind == Sizing::Kind::Fixed) return {Sizing::Kind::FitContent, inner.value};
+        return {Sizing::Kind::Auto, 0};
     }
     const ResolvedLength r = resolve_length(text, ctx, font_size, basis);
-    if (r.kind == LengthKind::Length) {
-        *out = {Track::Kind::Fixed, r.pixels, 0, 0};
-        return true;
-    }
+    if (r.kind == LengthKind::Length) return {Sizing::Kind::Fixed, std::max(0.0, r.pixels)};
     if (r.kind == LengthKind::Percent) {
-        *out = {Track::Kind::Fixed, basis * r.percent * 0.01, 0, 0};
-        return true;
+        // A percentage against an indefinite size behaves as auto (§7.2.1).
+        if (basis <= 0) return {Sizing::Kind::Auto, 0};
+        return {Sizing::Kind::Fixed, std::max(0.0, basis * r.percent * 0.01)};
     }
-    // Anything this cannot read — minmax(), fit-content(), min-content —
-    // becomes an auto track. Visibly the wrong size rather than subtly so.
-    *out = {Track::Kind::Auto, 0, 0, 0};
-    return true;
+    // subgrid, named lines, anything else: auto. Visibly the wrong size
+    // rather than subtly so.
+    return {Sizing::Kind::Auto, 0};
+}
+
+Track parse_track(std::string_view text, const LayoutContext& ctx, double font_size,
+                  double basis) {
+    text = trim_track(text);
+    Track t;
+    if (is_function(text, "minmax")) {
+        const std::vector<std::string_view> sides =
+            split_top_level_commas(text.substr(7, text.size() - 8));
+        if (sides.size() == 2) {
+            t.min = parse_sizing(sides[0], ctx, font_size, basis, false);
+            t.max = parse_sizing(sides[1], ctx, font_size, basis, true);
+            return t;
+        }
+        return t;
+    }
+    const Sizing one = parse_sizing(text, ctx, font_size, basis, true);
+    if (one.kind == Sizing::Kind::Flex || one.kind == Sizing::Kind::FitContent) {
+        t.min = {Sizing::Kind::Auto, 0};
+        t.max = one;
+        return t;
+    }
+    t.min = one;
+    t.max = one;
+    return t;
+}
+
+// The size a track pattern occupies when counting repeat(auto-fill|auto-fit)
+// repetitions (§7.2.3.2): a definite max, else a definite min, else nothing.
+double counting_size(const Track& t) {
+    if (t.max.kind == Sizing::Kind::Fixed) return t.max.value;
+    if (t.min.kind == Sizing::Kind::Fixed) return t.min.value;
+    return 0;
 }
 
 std::vector<Track> parse_track_list(std::string_view raw, const LayoutContext& ctx,
-                                    double font_size, double basis) {
+                                    double font_size, double basis, double gap) {
     std::vector<Track> tracks;
+    raw = trim_track(raw);
     if (raw.empty() || iequals(raw, "none")) return tracks;
     for (std::string_view token : split_tracks(raw)) {
-        // repeat(<count>, <track>): the only repeat form in the corpus. The
-        // auto-fill and auto-fit counts need the container's size and the
-        // items' sizes, which is a different algorithm.
-        if (token.size() > 7 && iequals(token.substr(0, 7), "repeat(") &&
-            token.back() == ')') {
-            const std::string_view inner = token.substr(7, token.size() - 8);
-            const size_t comma = inner.find(',');
-            if (comma == std::string_view::npos) continue;
-            const std::string count_text(inner.substr(0, comma));
-            const int count = std::atoi(count_text.c_str());
-            std::string_view body = inner.substr(comma + 1);
-            while (!body.empty() && (body.front() == ' ' || body.front() == '\t')) {
-                body.remove_prefix(1);
+        if (is_function(token, "repeat")) {
+            const std::vector<std::string_view> parts =
+                split_top_level_commas(token.substr(7, token.size() - 8));
+            if (parts.size() < 2) continue;
+            std::vector<Track> body;
+            for (std::string_view sub : split_tracks(parts[1])) {
+                body.push_back(parse_track(sub, ctx, font_size, basis));
+            }
+            if (body.empty()) continue;
+            int count = 0;
+            bool collapsible = false;
+            if (iequals(parts[0], "auto-fill") || iequals(parts[0], "auto-fit")) {
+                // As many repetitions as fit the definite size, at least one.
+                // An indefinite size fits exactly one (§7.2.3.2).
+                collapsible = iequals(parts[0], "auto-fit");
+                count = 1;
+                if (basis > 0) {
+                    double pattern = gap * static_cast<double>(body.size());
+                    for (const Track& t : body) pattern += counting_size(t);
+                    if (pattern > 0) {
+                        count = std::max(1, static_cast<int>(std::floor((basis + gap) / pattern + 1e-9)));
+                    }
+                }
+            } else {
+                count = std::atoi(std::string(parts[0]).c_str());
             }
             for (int i = 0; i < count && i < 1024; ++i) {
-                for (std::string_view sub : split_tracks(body)) {
-                    Track t;
-                    if (parse_track(sub, ctx, font_size, basis, &t)) tracks.push_back(t);
+                for (Track t : body) {
+                    t.collapsible = collapsible;
+                    tracks.push_back(t);
                 }
             }
             continue;
         }
-        Track t;
-        if (parse_track(token, ctx, font_size, basis, &t)) tracks.push_back(t);
+        tracks.push_back(parse_track(token, ctx, font_size, basis));
     }
     return tracks;
 }
@@ -333,54 +447,240 @@ AxisPlacement resolve_axis(const LineSpec& s, const LineSpec& e, int explicit_tr
     return out;
 }
 
-void resolve_tracks(std::vector<Track>* tracks, double available, double gap,
-                    std::string_view content_align) {
-    if (tracks->empty()) return;
-    const double total_gap = gap * static_cast<double>(tracks->size() - 1);
-    double fixed = total_gap;
-    double fraction_total = 0;
-    for (const Track& t : *tracks) {
-        if (t.kind == Track::Kind::Fixed) fixed += t.value;
-        else if (t.kind == Track::Kind::Fraction) fraction_total += t.value;
-        else fixed += t.size;   // an auto track sized from its content already
+// The gap after track i: none after a collapsed track or before one, and
+// none after the last.
+double gap_after(const std::vector<Track>& tracks, size_t i, double gap) {
+    if (tracks[i].collapsed) return 0;
+    for (size_t j = i + 1; j < tracks.size(); ++j) {
+        if (!tracks[j].collapsed) return gap;
     }
-    const double free_space = available >= 0 ? std::max(0.0, available - fixed) : 0;
-    for (Track& t : *tracks) {
-        if (t.kind == Track::Kind::Fixed) t.size = t.value;
-        else if (t.kind == Track::Kind::Fraction) {
-            t.size = fraction_total > 0 ? free_space * (t.value / fraction_total) : 0;
-        }
-    }
-    // CSS Box Alignment §5.3: `align-content` / `justify-content` default to
-    // `normal`, which for a grid container behaves as `stretch` — leftover space
-    // goes to the AUTO tracks rather than being left as a gap at the end.
-    // Without it a single auto column in an 800px container came out at its
-    // max-content width, and a single auto row in a 600px-tall container
-    // stopped at its content height.
-    //
-    // Only when nothing is flexible: an `fr` track has already absorbed the
-    // free space and there is none left to stretch with.
-    // ...and only for those two keywords: `justify-content: start` on auto
-    // columns leaves them at their content size, which is what the keyword is
-    // for.
-    const bool stretches = content_align.empty() || iequals(content_align, "normal") ||
-                           iequals(content_align, "stretch");
-    if (available >= 0 && fraction_total <= 0 && stretches) {
-        int auto_count = 0;
-        for (const Track& t : *tracks) {
-            if (t.kind == Track::Kind::Auto) ++auto_count;
-        }
-        if (auto_count > 0 && free_space > 0) {
-            const double share = free_space / auto_count;
-            for (Track& t : *tracks) {
-                if (t.kind == Track::Kind::Auto) t.size += share;
+    return 0;
+}
+
+double gaps_within(const std::vector<Track>& tracks, int start, int span, double gap) {
+    double total = 0;
+    const int end = std::min(static_cast<int>(tracks.size()), start + span);
+    for (int i = start; i < end - 1; ++i) {
+        if (!tracks[i].collapsed) {
+            for (int j = i + 1; j < end; ++j) {
+                if (!tracks[j].collapsed) { total += gap; break; }
             }
         }
     }
-    double pos = 0;
+    return total;
+}
+
+// CSS Grid L1 §12.3–12.8, the track sizing algorithm, for one axis.
+//
+// `available` is the definite space in that axis or negative when there is
+// none — a max-content constraint, under which every free-space step treats
+// the space as infinite and the tracks grow to their limits.
+void size_tracks(std::vector<Track>* tracks, double available, double gap,
+                 std::vector<Contribution> items, std::string_view content_align) {
+    if (tracks->empty()) return;
+    const int n = static_cast<int>(tracks->size());
+    const bool definite = available >= 0;
+
+    // §12.4 initialise: a fixed min is the base, a fixed max the limit;
+    // intrinsic ones wait for the items; a flexible max is unbounded.
     for (Track& t : *tracks) {
+        if (t.collapsed) { t.base = 0; t.limit = 0; t.size = 0; continue; }
+        t.base = t.min.kind == Sizing::Kind::Fixed ? t.min.value : 0;
+        t.limit = t.max.kind == Sizing::Kind::Fixed ? t.max.value : -1;
+    }
+    const auto min_contribution = [](const Track& t, const Contribution& c) {
+        return t.min.kind == Sizing::Kind::MaxContent ? c.max_c : c.min_c;
+    };
+    const auto max_contribution = [](const Track& t, const Contribution& c) {
+        if (t.max.kind == Sizing::Kind::MinContent) return c.min_c;
+        if (t.max.kind == Sizing::Kind::FitContent) {
+            return std::max(c.min_c, std::min(c.max_c, t.max.value));
+        }
+        return c.max_c;
+    };
+
+    // §12.5 step 2: items spanning one track.
+    for (const Contribution& c : items) {
+        if (c.span != 1 || c.start < 0 || c.start >= n) continue;
+        Track& t = (*tracks)[c.start];
+        if (t.collapsed) continue;
+        if (t.intrinsic_min()) t.base = std::max(t.base, min_contribution(t, c));
+        if (t.intrinsic_max()) t.limit = std::max(t.limit, max_contribution(t, c));
+    }
+    for (Track& t : *tracks) {
+        if (t.collapsed) continue;
+        if (t.intrinsic_max() && t.limit < 0) t.limit = t.base;
+        if (t.limit >= 0 && t.limit < t.base) t.limit = t.base;
+    }
+
+    // §12.5 step 3: spanning items, shortest spans first, not those crossing
+    // a flexible track (step 4 handles those through the fr size). Whatever
+    // the tracks they cover do not already hold is split equally onto the
+    // intrinsic ones among them.
+    std::stable_sort(items.begin(), items.end(),
+                     [](const Contribution& a, const Contribution& b) { return a.span < b.span; });
+    for (const Contribution& c : items) {
+        if (c.span <= 1 || c.start < 0) continue;
+        const int end = std::min(n, c.start + c.span);
+        bool crosses_flex = false;
+        double sum_base = 0, sum_limit = 0;
+        int intrinsic_mins = 0, intrinsic_maxes = 0;
+        for (int i = c.start; i < end; ++i) {
+            const Track& t = (*tracks)[i];
+            if (t.collapsed) continue;
+            if (t.is_flex()) crosses_flex = true;
+            sum_base += t.base;
+            sum_limit += t.limit >= 0 ? t.limit : t.base;
+            if (t.intrinsic_min()) ++intrinsic_mins;
+            if (t.intrinsic_max()) ++intrinsic_maxes;
+        }
+        if (crosses_flex) continue;
+        const double g = gaps_within(*tracks, c.start, c.span, gap);
+        const double extra_min = c.min_c - (sum_base + g);
+        if (extra_min > 0 && intrinsic_mins > 0) {
+            const double share = extra_min / intrinsic_mins;
+            for (int i = c.start; i < end; ++i) {
+                Track& t = (*tracks)[i];
+                if (t.collapsed || !t.intrinsic_min()) continue;
+                t.base += share;
+                if (t.limit >= 0 && t.limit < t.base) t.limit = t.base;
+            }
+        }
+        // The limits are re-read after the minimum step raised some of them.
+        sum_limit = 0;
+        for (int i = c.start; i < end; ++i) {
+            const Track& t = (*tracks)[i];
+            if (!t.collapsed) sum_limit += t.limit >= 0 ? t.limit : t.base;
+        }
+        const double extra_max = c.max_c - (sum_limit + g);
+        if (extra_max > 0 && intrinsic_maxes > 0) {
+            const double share = extra_max / intrinsic_maxes;
+            for (int i = c.start; i < end; ++i) {
+                Track& t = (*tracks)[i];
+                if (t.collapsed || !t.intrinsic_max()) continue;
+                t.limit = (t.limit >= 0 ? t.limit : t.base) + share;
+            }
+        }
+    }
+
+    const auto total_gaps = [&] {
+        double g = 0;
+        for (size_t i = 0; i < tracks->size(); ++i) g += gap_after(*tracks, i, gap);
+        return g;
+    };
+
+    // §12.6 maximize: positive free space grows the non-flexible tracks
+    // equally up to their limits. Under a max-content constraint the space is
+    // infinite and each simply reaches its limit.
+    if (definite) {
+        double used = total_gaps();
+        for (const Track& t : *tracks) used += t.base;
+        double free_space = available - used;
+        for (int pass = 0; pass < n + 1 && free_space > 1e-9; ++pass) {
+            int growable = 0;
+            for (const Track& t : *tracks) {
+                if (!t.collapsed && !t.is_flex() && t.limit >= 0 && t.base < t.limit - 1e-9) ++growable;
+            }
+            if (growable == 0) break;
+            const double share = free_space / growable;
+            for (Track& t : *tracks) {
+                if (t.collapsed || t.is_flex() || t.limit < 0 || t.base >= t.limit - 1e-9) continue;
+                const double grow = std::min(share, t.limit - t.base);
+                t.base += grow;
+                free_space -= grow;
+            }
+        }
+    } else {
+        for (Track& t : *tracks) {
+            if (!t.collapsed && !t.is_flex() && t.limit >= 0) t.base = t.limit;
+        }
+    }
+    for (Track& t : *tracks) t.size = t.base;
+
+    // §12.7 expand flexible tracks.
+    bool any_flex = false;
+    for (const Track& t : *tracks) any_flex = any_flex || (!t.collapsed && t.is_flex());
+    if (any_flex) {
+        if (definite) {
+            // §12.7.1 find the size of an fr: a flexible track whose base
+            // already exceeds its share is treated as inflexible and the rest
+            // re-divided, until none does.
+            double leftover = available - total_gaps();
+            for (const Track& t : *tracks) {
+                if (!t.collapsed && !t.is_flex()) leftover -= t.base;
+            }
+            std::vector<bool> flexible(tracks->size(), false);
+            for (size_t i = 0; i < tracks->size(); ++i) {
+                flexible[i] = !(*tracks)[i].collapsed && (*tracks)[i].is_flex();
+            }
+            double hypothetical = 0;
+            for (int pass = 0; pass < n + 1; ++pass) {
+                double sum_fr = 0, inflexible = 0;
+                for (size_t i = 0; i < tracks->size(); ++i) {
+                    const Track& t = (*tracks)[i];
+                    if (!t.is_flex() || t.collapsed) continue;
+                    if (flexible[i]) sum_fr += t.max.value;
+                    else inflexible += t.base;
+                }
+                hypothetical = sum_fr > 0 ? std::max(0.0, (leftover - inflexible) / std::max(sum_fr, 1.0)) : 0;
+                bool changed = false;
+                for (size_t i = 0; i < tracks->size(); ++i) {
+                    const Track& t = (*tracks)[i];
+                    if (!flexible[i]) continue;
+                    if (t.base > hypothetical * t.max.value + 1e-9) {
+                        flexible[i] = false;
+                        changed = true;
+                    }
+                }
+                if (!changed) break;
+            }
+            for (size_t i = 0; i < tracks->size(); ++i) {
+                Track& t = (*tracks)[i];
+                if (!t.is_flex() || t.collapsed) continue;
+                t.size = flexible[i] ? hypothetical * t.max.value : t.base;
+            }
+        } else {
+            // Indefinite: the fr is the largest of each flexible track's base
+            // over its factor (§12.7.1) — its content, in other words.
+            double fr = 0;
+            for (const Track& t : *tracks) {
+                if (t.collapsed || !t.is_flex()) continue;
+                const double f = t.max.value > 1 ? t.max.value : 1.0;
+                fr = std::max(fr, t.base / f);
+            }
+            for (Track& t : *tracks) {
+                if (!t.collapsed && t.is_flex()) t.size = std::max(t.base, fr * t.max.value);
+            }
+        }
+    }
+
+    // §12.8 stretch auto tracks: `normal`/`stretch` content alignment hands
+    // any remaining definite free space equally to the tracks with an `auto`
+    // max. `justify-content: start` on auto columns leaves them at their
+    // content size, which is what the keyword is for.
+    const bool stretches = content_align.empty() || iequals(content_align, "normal") ||
+                           iequals(content_align, "stretch");
+    if (definite && stretches) {
+        double used = total_gaps();
+        for (const Track& t : *tracks) used += t.size;
+        const double free_space = available - used;
+        int auto_count = 0;
+        for (const Track& t : *tracks) {
+            if (!t.collapsed && t.max.kind == Sizing::Kind::Auto) ++auto_count;
+        }
+        if (free_space > 1e-9 && auto_count > 0) {
+            const double share = free_space / auto_count;
+            for (Track& t : *tracks) {
+                if (!t.collapsed && t.max.kind == Sizing::Kind::Auto) t.size += share;
+            }
+        }
+    }
+
+    double pos = 0;
+    for (size_t i = 0; i < tracks->size(); ++i) {
+        Track& t = *(&(*tracks)[i]);
         t.position = pos;
-        pos += t.size + gap;
+        pos += t.size + gap_after(*tracks, i, gap);
     }
 }
 
@@ -421,9 +721,15 @@ double align_offset(std::string_view v, double cell, double outer) {
 void distribute_content(std::vector<Track>* tracks, double available, double gap,
                         std::string_view align) {
     if (available < 0 || tracks->empty()) return;
-    const int n = static_cast<int>(tracks->size());
-    double used = gap * static_cast<double>(n - 1);
-    for (const Track& t : *tracks) used += t.size;
+    int n = 0;
+    double used = 0;
+    for (size_t i = 0; i < tracks->size(); ++i) {
+        const Track& t = (*tracks)[i];
+        if (t.collapsed) continue;
+        ++n;
+        used += t.size + gap_after(*tracks, i, gap);
+    }
+    if (n == 0) return;
     const double free_space = available - used;
     if (free_space <= 0) return;
     double offset = 0, extra_gap = 0;
@@ -444,9 +750,13 @@ void distribute_content(std::vector<Track>* tracks, double available, double gap
         return;
     }
     double pos = offset;
-    for (Track& t : *tracks) {
+    for (size_t i = 0; i < tracks->size(); ++i) {
+        Track& t = (*tracks)[i];
         t.position = pos;
-        pos += t.size + gap + extra_gap;
+        if (t.collapsed) continue;
+        bool followed = false;
+        for (size_t j = i + 1; j < tracks->size(); ++j) followed = followed || !(*tracks)[j].collapsed;
+        pos += t.size + gap_after(*tracks, i, gap) + (followed ? extra_gap : 0);
     }
 }
 
@@ -454,9 +764,8 @@ double span_size(const std::vector<Track>& tracks, int start, int span, double g
     double total = 0;
     for (int i = start; i < start + span && i < static_cast<int>(tracks.size()); ++i) {
         total += tracks[i].size;
-        if (i > start) total += gap;
     }
-    return total;
+    return total + gaps_within(tracks, start, span, gap);
 }
 
 } // namespace
@@ -481,17 +790,26 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : 0.0;
     }();
 
-    std::vector<Track> columns =
-        parse_track_list(get(style, "grid-template-columns"), ctx, font_size, content_width);
+    std::vector<Track> columns = parse_track_list(get(style, "grid-template-columns"), ctx,
+                                                  font_size, content_width, column_gap);
     std::vector<Track> rows =
         parse_track_list(get(style, "grid-template-rows"), ctx, font_size,
-                         content_height >= 0 ? content_height : 0);
+                         content_height >= 0 ? content_height : 0, row_gap);
+    // Implicit tracks take their sizing from grid-auto-columns/rows, cycling
+    // through the list; the initial `auto` when there is none.
+    std::vector<Track> auto_columns = parse_track_list(get(style, "grid-auto-columns"), ctx,
+                                                       font_size, content_width, column_gap);
+    std::vector<Track> auto_rows =
+        parse_track_list(get(style, "grid-auto-rows"), ctx, font_size,
+                         content_height >= 0 ? content_height : 0, row_gap);
+    if (auto_columns.empty()) auto_columns.push_back(Track{});
+    if (auto_rows.empty()) auto_rows.push_back(Track{});
     const std::vector<std::vector<std::string>> areas =
         parse_areas(get(style, "grid-template-areas"));
 
     // A container with no explicit columns is one column wide, which is what
     // the initial `grid-template-columns: none` means for row-major flow.
-    if (columns.empty()) columns.push_back({Track::Kind::Auto, 0, 0, 0});
+    if (columns.empty()) columns.push_back(Track{});
 
     // ---- Collect and place the items ---------------------------------------
     // CSS Grid L1 §8.5, sparse `row` flow. Items are grouped by how much of
@@ -644,15 +962,42 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // since grid-auto-columns is not ported.
     int max_column = 0;
     for (const Placement& p : items) max_column = std::max(max_column, p.column + p.column_span);
-    while (static_cast<int>(columns.size()) < max_column) {
-        columns.push_back({Track::Kind::Auto, 0, 0, 0});
+    for (int i = 0; static_cast<int>(columns.size()) < max_column; ++i) {
+        columns.push_back(auto_columns[static_cast<size_t>(i) % auto_columns.size()]);
     }
 
-    // Implicit rows: a grid with more items than explicit rows grows. Every
-    // implicit row is `auto`, since grid-auto-rows is not ported.
+    // Implicit rows: a grid with more items than explicit rows grows, each
+    // new row sized by grid-auto-rows.
     int max_row = 0;
     for (const Placement& p : items) max_row = std::max(max_row, p.row + p.row_span);
-    while (static_cast<int>(rows.size()) < max_row) rows.push_back({Track::Kind::Auto, 0, 0, 0});
+    for (int i = 0; static_cast<int>(rows.size()) < max_row; ++i) {
+        rows.push_back(auto_rows[static_cast<size_t>(i) % auto_rows.size()]);
+    }
+
+    // repeat(auto-fit): a track nothing landed in collapses to nothing and
+    // takes its gap with it.
+    for (size_t c = 0; c < columns.size(); ++c) {
+        if (!columns[c].collapsible) continue;
+        bool occupied = false;
+        for (const Placement& p : items) {
+            if (p.column <= static_cast<int>(c) && static_cast<int>(c) < p.column + p.column_span) {
+                occupied = true;
+                break;
+            }
+        }
+        columns[c].collapsed = !occupied;
+    }
+    for (size_t r = 0; r < rows.size(); ++r) {
+        if (!rows[r].collapsible) continue;
+        bool occupied = false;
+        for (const Placement& p : items) {
+            if (p.row <= static_cast<int>(r) && static_cast<int>(r) < p.row + p.row_span) {
+                occupied = true;
+                break;
+            }
+        }
+        rows[r].collapsed = !occupied;
+    }
 
     // ---- Size the columns, then lay the items out to size the rows ---------
     // Every item is laid out once first, whatever track it lands in. This is
@@ -663,37 +1008,48 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         block->layout_block(p.box, content_width, style);
     }
 
-    // An auto column takes the widest max-content of the items in it.
-    for (size_t c = 0; c < columns.size(); ++c) {
-        if (columns[c].kind != Track::Kind::Auto) continue;
-        double widest = 0;
-        for (const Placement& p : items) {
-            if (p.column != static_cast<int>(c) || p.column_span != 1) continue;
-            const Box& b = (*tree)[p.box];
-            const double frame =
-                b.padding_left + b.padding_right + b.border_left + b.border_right;
-            double contribution = max_content_width(*tree, p.box, &ctx) + frame;
-            // The item's own min-/max-width bound its contribution: a
-            // `min-width: 200px` cell in an auto column makes the column 200
-            // wide even when its text is narrower.
+    // Each item's inline contributions (§12.5): its min-content and
+    // max-content widths plus frame and margins, bounded by its own min-/max-
+    // width, or its explicit width for both; a scroll container's automatic
+    // minimum is zero.
+    std::vector<Contribution> column_contributions;
+    for (const Placement& p : items) {
+        const Box& b = (*tree)[p.box];
+        const double frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
+        const double margins = b.margin_left + b.margin_right;
+        Contribution c;
+        c.start = p.column;
+        c.span = p.column_span;
+        const std::string_view width_raw = get(b.style, "width");
+        const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
+                                    width_raw.find('%') == std::string_view::npos;
+        if (explicit_width) {
+            c.min_c = c.max_c = b.width + margins;
+        } else {
+            double min_c = min_content_width(*tree, p.box, &ctx) + frame;
+            double max_c = max_content_width(*tree, p.box, &ctx) + frame;
             const double item_fs = b.font_size > 0 ? b.font_size : font_size;
             const double minmax_frame = is_border_box(b.style) ? 0 : frame;
             const ResolvedLength min_w =
                 resolve_length(b.style, "min-width", ctx, item_fs, content_width);
             if (min_w.kind == LengthKind::Length) {
-                contribution = std::max(contribution, min_w.pixels + minmax_frame);
+                min_c = std::max(min_c, min_w.pixels + minmax_frame);
+                max_c = std::max(max_c, min_w.pixels + minmax_frame);
             }
             const ResolvedLength max_w =
                 resolve_length(b.style, "max-width", ctx, item_fs, content_width);
             if (max_w.kind == LengthKind::Length) {
-                contribution = std::min(contribution, max_w.pixels + minmax_frame);
+                min_c = std::min(min_c, max_w.pixels + minmax_frame);
+                max_c = std::min(max_c, max_w.pixels + minmax_frame);
             }
-            widest = std::max(widest, contribution + b.margin_left + b.margin_right);
+            if (clips_overflow(b.style) && min_w.kind != LengthKind::Length) min_c = 0;
+            c.min_c = min_c + margins;
+            c.max_c = std::max(min_c, max_c) + margins;
         }
-        columns[c].size = widest;
+        column_contributions.push_back(c);
     }
-
-    resolve_tracks(&columns, content_width, column_gap, get(style, "justify-content"));
+    size_tracks(&columns, content_width, column_gap, column_contributions,
+                get(style, "justify-content"));
     distribute_content(&columns, content_width, column_gap, get(style, "justify-content"));
 
     // Each item takes its inline size from its cell: a stretched auto-width
@@ -715,8 +1071,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     const auto row_is_definite = [&](const Placement& p) {
         if (p.row >= static_cast<int>(rows.size())) return false;
         const Track& t = rows[p.row];
-        if (t.kind == Track::Kind::Fixed) return true;
-        return t.kind == Track::Kind::Fraction && content_height >= 0;
+        if (t.is_definite()) return true;
+        return t.is_flex() && content_height >= 0;
     };
     const auto size_inline = [&](const Placement& p) {
         const double w = span_size(columns, p.column, p.column_span, column_gap);
@@ -744,26 +1100,22 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         block->shrink_to_fit(p.box, w, style);
     };
     for (const Placement& p : items) size_inline(p);
-    // An auto row's base size is its items' minimum contributions, and a
-    // scroll container's automatic minimum is zero (§6.6) — so in a grid with
-    // a DEFINITE height such an item does not force the row past the space
-    // there is; the row takes its share of that height and the item scrolls.
-    // A grid with an AUTO height is sized under a max-content constraint, and
-    // there every auto track grows to its growth limit, which is the items'
-    // max-content contribution, scroll container or not. Skipping the scroll
-    // container in both cases left an `overflow: hidden` segmented control
-    // out of its own row's height.
-    for (size_t r = 0; r < rows.size(); ++r) {
-        if (rows[r].kind != Track::Kind::Auto) continue;
-        double base = 0, limit = 0;
-        for (const Placement& p : items) {
-            if (p.row != static_cast<int>(r) || p.row_span != 1) continue;
-            const Box& b = (*tree)[p.box];
-            const double outer = b.height + b.margin_top + b.margin_bottom;
-            limit = std::max(limit, outer);
-            if (!clips_overflow(b.style)) base = std::max(base, outer);
-        }
-        rows[r].size = content_height >= 0 ? base : limit;
+    // Each item's block contributions: its laid-out outer height for both,
+    // except that a scroll container's automatic minimum is zero (§6.6) — so
+    // in a grid with a DEFINITE height such an item does not force the row
+    // past the space there is; the row takes its share and the item scrolls.
+    // Under an auto height the grid is sized under a max-content constraint
+    // and every auto track grows to its limit, scroll container or not.
+    std::vector<Contribution> row_contributions;
+    for (const Placement& p : items) {
+        const Box& b = (*tree)[p.box];
+        const double outer = b.height + b.margin_top + b.margin_bottom;
+        Contribution c;
+        c.start = p.row;
+        c.span = p.row_span;
+        c.min_c = clips_overflow(b.style) ? 0 : outer;
+        c.max_c = outer;
+        row_contributions.push_back(c);
     }
     // A container with no definite height is sized to its rows and then
     // clamped by its own min/max-height; the clamped size is definite, so the
@@ -771,9 +1123,10 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // `align-content: space-between; min-height: 150px` over two 40px rows
     // puts the second row at 110, not 40.
     double rows_available = content_height;
+    size_tracks(&rows, rows_available, row_gap, row_contributions, get(style, "align-content"));
     if (rows_available < 0 && !rows.empty()) {
-        double natural = row_gap * static_cast<double>(rows.size() - 1);
-        for (const Track& t : rows) natural += t.kind == Track::Kind::Fixed ? t.value : t.size;
+        double natural = 0;
+        for (size_t r = 0; r < rows.size(); ++r) natural += rows[r].size + gap_after(rows, r, row_gap);
         const Box& cb = (*tree)[container];
         const double frame =
             cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
@@ -789,9 +1142,12 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         if (max_r.kind == LengthKind::Length) {
             clamped = std::min(clamped, std::max(0.0, max_r.pixels - own_frame));
         }
-        if (std::fabs(clamped - natural) > 1e-9) rows_available = clamped;
+        if (std::fabs(clamped - natural) > 1e-9) {
+            rows_available = clamped;
+            size_tracks(&rows, rows_available, row_gap, row_contributions,
+                        get(style, "align-content"));
+        }
     }
-    resolve_tracks(&rows, rows_available, row_gap, get(style, "align-content"));
     distribute_content(&rows, rows_available, row_gap, get(style, "align-content"));
 
     // ---- Place ------------------------------------------------------------

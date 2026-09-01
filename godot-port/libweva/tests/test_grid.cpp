@@ -476,3 +476,92 @@ void test_grid_aspect_ratio_item_stretches_one_axis() {
         CHECK(near(f.box("b").x, 119 + 8));
     }
 }
+
+void test_grid_track_sizing_functions() {
+    {
+        // minmax(80px, 1fr) minmax(80px, 2fr) minmax(80px, 1fr): the fr shares
+        // 1:2:1 once every track's 80px minimum is met — 146/292/146 in 600px
+        // with 8px gaps (Chrome and the reference).
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 600px; gap: 8px;"
+                    "     grid-template-columns: minmax(80px, 1fr) minmax(80px, 2fr) minmax(80px, 1fr) }"
+                    ".i { padding: 12px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i>A</div><div id=b class=i>B</div>"
+                       "<div id=c class=i>C</div></div></body>"));
+        CHECK(near(f.box("a").width, 146));
+        CHECK(near(f.box("b").x, 154) && near(f.box("b").width, 292));
+        CHECK(near(f.box("c").x, 454));
+    }
+    {
+        // A fixed minimum wins over the fr share when the share is smaller.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 300px; grid-template-columns: minmax(200px, 1fr) 1fr }"
+                    ".i { height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div></div></body>"));
+        CHECK(near(f.box("a").width, 200));
+        CHECK(near(f.box("b").width, 100));
+    }
+    {
+        // minmax(100px, 200px): the track grows from its base toward its limit
+        // with the free space and stops there; the rest goes to the auto track.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 600px; grid-template-columns: minmax(100px, 200px) auto }"
+                    ".i { height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div></div></body>"));
+        CHECK(near(f.box("a").width, 200));
+        CHECK(near(f.box("b").width, 400));
+    }
+    {
+        // repeat(auto-fill, minmax(140px, 1fr)) in 600px with 10px gaps: four
+        // columns (4*140 + 3*10 = 590), each grown to (600 - 30) / 4.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 600px; gap: 10px;"
+                    "     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) }"
+                    ".i { height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div>"
+                       "<div class=i></div><div class=i></div><div id=e class=i></div></div></body>"));
+        CHECK(near(f.box("a").width, 142.5));
+        CHECK(near(f.box("b").x, 152.5));
+        CHECK(near(f.box("e").y, 20));
+        CHECK(near(f.box("g").height, 30));
+    }
+    {
+        // auto-fit collapses the empty columns: two items in a 600px grid that
+        // fits four get 295 each, not 142.5.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 600px; gap: 10px;"
+                    "     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) }"
+                    ".i { height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div></div></body>"));
+        CHECK(near(f.box("a").width, 295));
+        CHECK(near(f.box("b").x, 305));
+    }
+    {
+        // grid-auto-rows sizes the implicit rows; an indefinite-height grid
+        // with `grid-auto-rows: 1fr` gives every row the tallest content.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 200px; grid-template-columns: 1fr 1fr;"
+                    "     grid-auto-rows: 1fr }"
+                    "#a { height: 30px } #b { height: 50px } #c { height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=a></div><div id=b></div><div id=c></div></div></body>"));
+        CHECK(near(f.box("c").y, 50));
+        CHECK(near(f.box("g").height, 100));
+        Fixture h;
+        CHECK(h.css("#g { display: grid; width: 200px; grid-template-columns: 1fr;"
+                    "     grid-auto-rows: 40px 60px }"
+                    ".i { height: 5px }"));
+        CHECK(h.layout("<body><div id=g><div class=i></div><div class=i></div><div id=c class=i></div>"
+                       "</div></body>"));
+        CHECK(near(h.box("c").y, 100));
+    }
+    {
+        // An item spanning two auto columns spreads its width over them.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: auto auto; justify-content: start;"
+                    "     width: 600px }"
+                    "#w { grid-column: 1 / 3; width: 100px; height: 10px }"
+                    "#a { width: 20px; height: 10px } #b { width: 20px; height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=w></div><div id=a></div><div id=b></div></div></body>"));
+        CHECK(near(f.box("b").x, 50));
+    }
+}
