@@ -90,6 +90,7 @@ void test_line_metrics_and_align();
 void test_shrink_to_fit();
 void test_forced_breaks();
 void test_break_all();
+void test_inline_fragments();
 void test_inline_atoms();
 void test_relative_positioning();
 void test_absolute_containing_block();
@@ -215,6 +216,7 @@ int main() {
     test_shrink_to_fit();
     test_forced_breaks();
     test_break_all();
+    test_inline_fragments();
     test_inline_atoms();
     test_relative_positioning();
     test_absolute_containing_block();

@@ -96,6 +96,18 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline || b.kind == BoxKind::AnonymousInline) {
+            // CSS 2.1 §9.4.2: an inline element produces a box on every line it
+            // covers. A marker records where it starts so a box that ends up
+            // with no fragments of its own is still placed.
+            if (b.kind == BoxKind::Inline) {
+                InlineItem item;
+                item.inline_box_start = c;
+                item.inline_parent = inline_parent;
+                item.style = b.style ? b.style : inherited;
+                item.font_size = font_size_px(item.style, nullptr, ctx);
+                item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
+                out->push_back(item);
+            }
             collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited, metrics, out);
         } else if (b.kind == BoxKind::Block && b.is_inline_block) {
             // An atom: placed whole, never broken. It is recorded here but not
@@ -201,6 +213,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     // This has to be known while the line is being FILLED, not only when it is
     // flushed — the wrap decision compares against it — so it is recomputed
     // whenever a line starts.
+    // Inline boxes already given their first fragment; a second line covering
+    // the same box clones it rather than moving it.
+    std::vector<BoxId> attached_inlines;
+
     double line_left = 0;
     double line_width = available_width;
     const auto begin_line_at = [&](double line_y) {
@@ -230,9 +246,27 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // Trailing collapsible spaces do not occupy the end of a line — they
         // would otherwise push the alignment of every centred or right-aligned
         // line by a space width.
-        while (!line.empty() && line.back().is_space) {
-            pen -= line.back().width;
-            line.pop_back();
+        // Zero-width inline-box markers ride along: a marker sitting after a
+        // trailing space must end up at the TRIMMED pen, not keep the position
+        // the removed space had pushed it to.
+        std::vector<Fragment> trailing_markers;
+        while (!line.empty()) {
+            if (line.back().item->is_inline_start()) {
+                trailing_markers.push_back(line.back());
+                line.pop_back();
+                continue;
+            }
+            if (line.back().is_space) {
+                pen -= line.back().width;
+                line.pop_back();
+                continue;
+            }
+            break;
+        }
+        for (auto it = trailing_markers.rbegin(); it != trailing_markers.rend(); ++it) {
+            Fragment m = *it;
+            m.x = pen;
+            line.push_back(m);
         }
         if (line.empty() && !is_final) {
             reset_line_metrics();
@@ -269,7 +303,38 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         (*tree)[lb].is_final_line = is_final;
         (*tree)[lb].applied_text_align_delta = dx;
 
+        // CSS 2.1 §9.4.2: each inline box covering this line gets a fragment.
+        // Spans are accumulated over the inline ANCESTOR chain, so a nested
+        // `<a><b>x</b></a>` gives both a box. The chain is walked through the
+        // tree because it is still intact here — clear_children runs once, at
+        // the very end, and only detaches the container's direct children.
+        struct Span { BoxId box; double x0; double x1; };
+        std::vector<Span> spans;
+        const auto contribute = [&](BoxId from, double x0, double x1) {
+            for (BoxId b = from; b != kNoBox && b != container; b = (*tree)[b].parent) {
+                if ((*tree)[b].kind != BoxKind::Inline) break;
+                bool found = false;
+                for (Span& sp : spans) {
+                    if (sp.box == b) {
+                        if (x0 < sp.x0) sp.x0 = x0;
+                        if (x1 > sp.x1) sp.x1 = x1;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) spans.push_back({b, x0, x1});
+            }
+        };
+
         for (const Fragment& f : line) {
+            if (f.item->is_inline_start()) {
+                // A marker has no width; it only pins where the box begins.
+                contribute(f.item->inline_box_start, f.x + dx, f.x + dx);
+                continue;
+            }
+            if (f.item->inline_parent != kNoBox) {
+                contribute(f.item->inline_parent, f.x + dx, f.x + dx + f.width);
+            }
             if (f.item->is_break()) {
                 Box& br = (*tree)[f.item->break_box];
                 br.x = f.x + dx;
@@ -304,6 +369,30 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             r.height = metrics.ascent(f.item->font_size) + metrics.descent(f.item->font_size);
             tree->append_child(lb, run);
         }
+        for (const Span& sp : spans) {
+            // The first line an inline box covers reuses the box itself, so the
+            // element keeps its identity; every later line gets a fragment
+            // carrying the same element and style.
+            BoxId frag = sp.box;
+            if (std::find(attached_inlines.begin(), attached_inlines.end(), sp.box) !=
+                attached_inlines.end()) {
+                frag = tree->create(BoxKind::Inline, (*tree)[sp.box].element,
+                                    (*tree)[sp.box].style);
+                (*tree)[frag].font_size = (*tree)[sp.box].font_size;
+            } else {
+                attached_inlines.push_back(sp.box);
+            }
+            Box& fb = (*tree)[frag];
+            const double fs = fb.font_size > 0 ? fb.font_size : ctx.root_font_size_px;
+            fb.x = sp.x0;
+            // An inline box's content area sits on the baseline and is as tall
+            // as the font, not as the line.
+            fb.y = baseline - metrics.ascent(fs);
+            fb.width = sp.x1 - sp.x0;
+            fb.height = metrics.ascent(fs) + metrics.descent(fs);
+            tree->append_child(lb, frag);
+        }
+
         line_boxes.push_back(lb);
         y += line_height;
         line.clear();
@@ -328,6 +417,14 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     };
 
     for (const InlineItem& it : items) {
+        if (it.is_inline_start()) {
+            // Zero width and no break opportunity: it only records a position.
+            // It does grow the line metrics, because an inline box contributes
+            // its strut whether or not it holds anything.
+            grow_line_metrics(it);
+            line.push_back({&it, {}, false, pen, 0});
+            continue;
+        }
         if (it.is_break()) {
             // The break box sits at the pen, ends the line, and takes the
             // line's own height — which is only known at flush, so it is

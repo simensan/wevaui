@@ -97,6 +97,21 @@ struct Fixture {
         return kNoBox;
     }
     const Box& box(std::string_view id) const { return tree[find(id)]; }
+    // Text runs carry the element they came from too, and they precede the
+    // inline boxes in a line's child list — so a plain find() for a span's id
+    // returns its text, not its box. Anything asserting on an inline FRAGMENT
+    // has to say so, or it passes with the feature removed.
+    BoxId find_kind(std::string_view id, BoxKind kind, BoxId from = -2) const {
+        const BoxId start = from == -2 ? root : from;
+        if (start == kNoBox) return kNoBox;
+        const Box& b = tree[start];
+        if (b.kind == kind && b.element && b.element->get_attribute("id") == id) return start;
+        for (BoxId c : tree.children(start)) {
+            const BoxId hit = find_kind(id, kind, c);
+            if (hit != kNoBox) return hit;
+        }
+        return kNoBox;
+    }
     std::vector<BoxId> lines(std::string_view id) const {
         std::vector<BoxId> out;
         for (BoxId c : tree.children(find(id))) {
@@ -171,14 +186,22 @@ void test_inline_item_collection() {
     g.root = builder.build_document(*g.doc);
     const BoxId w = g.find("w");
     const std::vector<InlineItem> items = collect_inline_items(g.tree, w, g.ctx);
-    CHECK(items.size() == 3);
+    // Four, not three: entering the span emits a zero-width marker recording
+    // where the inline box starts, so §9.4.2 can give it a fragment box even on
+    // a line where it contributes no text of its own.
+    CHECK(items.size() == 4);
     CHECK(items[0].text == "one ");
-    CHECK(items[1].text == "two");
-    CHECK(items[2].text == " three");
-    // The middle item is inside the span, the outer two are not.
+    CHECK(items[1].is_inline_start());
+    CHECK(items[2].text == "two");
+    CHECK(items[3].text == " three");
+    // The text inside the span is parented to it, the outer two are not; the
+    // marker itself sits OUTSIDE the box it opens, which is what puts it at the
+    // pen position where that box begins.
     CHECK(items[0].inline_parent == kNoBox);
-    CHECK(items[1].inline_parent != kNoBox);
-    CHECK(near(items[1].font_size, 32));
+    CHECK(items[1].inline_parent == kNoBox);
+    CHECK(items[2].inline_parent != kNoBox);
+    CHECK(items[1].inline_box_start == items[2].inline_parent);
+    CHECK(near(items[2].font_size, 32));
     CHECK(near(items[0].font_size, 16));
 }
 
@@ -425,6 +448,53 @@ void test_break_all() {
                     "     line-height: 1; word-break: break-all }"));
         CHECK(f.layout("<body><div id=w>abc</div></body>"));
         CHECK(f.lines("w").size() == 3);
+    }
+}
+
+// CSS 2.1 §9.4.2. The port flattened inline elements into text runs and let
+// BoxTree::clear_children orphan the inline boxes, so a `<span>` produced no box
+// at all: paint could not draw its background or border, and hit testing had
+// nothing to surface a click on. The oracle found it as two missing elements.
+void test_inline_fragments() {
+    {
+        // One line: the span's box spans exactly its own text.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#s { background-color: #f00 }"));
+        CHECK(f.layout("<body><div id=w>one <span id=s>two</span> three</div></body>"));
+        const BoxId s = f.find_kind("s", BoxKind::Inline);
+        CHECK(s != kNoBox);
+        const Box& sb = f.tree[s];
+        // "one " is 4 chars at 8px.
+        CHECK(near(sb.x, 32));
+        CHECK(near(sb.width, 24));
+        // As tall as the font, not as the line.
+        CHECK(near(sb.height, 16 * 0.8 + 16 * 0.4));
+        // It hangs off the line box, beside the runs rather than around them.
+        CHECK(f.tree[sb.parent].kind == BoxKind::Line);
+    }
+    {
+        // An inline box with no content of its own still gets a box, at the pen
+        // where it begins. This is the shape block-in-inline splitting leaves
+        // behind when the block moves out of the inline.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"));
+        CHECK(f.layout("<body><div id=w>one <span id=s></span>two</div></body>"));
+        const BoxId s = f.find_kind("s", BoxKind::Inline);
+        CHECK(s != kNoBox);
+        CHECK(near(f.tree[s].width, 0));
+        CHECK(near(f.tree[s].x, 32));
+    }
+    {
+        // Nested inlines each get a box, and the outer one spans the inner.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"));
+        CHECK(f.layout("<body><div id=w>a <span id=o>b <span id=i>c</span></span></div></body>"));
+        const BoxId o = f.find_kind("o", BoxKind::Inline);
+        const BoxId i = f.find_kind("i", BoxKind::Inline);
+        CHECK(o != kNoBox && i != kNoBox);
+        CHECK(f.tree[o].x <= f.tree[i].x);
+        CHECK(f.tree[o].x + f.tree[o].width >= f.tree[i].x + f.tree[i].width);
     }
 }
 

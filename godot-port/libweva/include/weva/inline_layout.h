@@ -56,8 +56,16 @@ struct InlineItem {
     // the break from a gap.
     BoxId break_box = kNoBox;
 
+    // Marks where an inline box begins in the item stream. It carries no text
+    // and no width, and exists so an inline box with NO items of its own still
+    // gets a fragment at the right pen position — an `<a>` whose only child was
+    // a block that block-in-inline splitting moved into a sibling box is empty
+    // here but still occupies a point on the line.
+    BoxId inline_box_start = kNoBox;
+
     bool is_atom() const { return atom_box != kNoBox; }
     bool is_break() const { return break_box != kNoBox; }
+    bool is_inline_start() const { return inline_box_start != kNoBox; }
 };
 
 // Lays out `container`'s inline content into line boxes, replacing its children.

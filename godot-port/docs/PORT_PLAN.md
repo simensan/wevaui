@@ -1853,6 +1853,56 @@ inside a block splits the paragraph into three boxes, plus §9.4.2 inline
 fragments so the `<a>` produces a box per line it covers. Chrome's own capture
 in the corpus shows the six boxes expected; the port produces four.
 
+### Inline fragments: every in-scope corpus case now agrees
+
+**24/47, and zero in-scope failures.** Every case that uses only ported features
+matches the C# reference exactly.
+
+The last one was CSS 2.1 §9.4.2. Block-in-inline splitting turned out to be
+*already correct* — the port produced the right four boxes with the right
+geometry — but an inline element produced no box at all. The port flattens
+inline subtrees into text runs tagged with their originating element, and
+`BoxTree::clear_children` then orphans the inline boxes. The C# has a comment at
+the site where it rebuilds them listing what breaks without it: paint cannot
+draw the span's background or border, hit testing cannot surface a click on it,
+and a DOM walk pairs every following element against the wrong rect.
+
+Three pieces:
+
+* **A start marker per inline box.** Spans are usually derivable from the items
+  inside them, but not always: an `<a>` whose only child is a block that
+  block-in-inline splitting moved into a sibling has no items left here, and the
+  reference still places it — zero width, at the pen where it began. A
+  zero-width marker item records that point.
+* **Markers survive the trailing-space trim.** A marker after a trailing space
+  has to end up at the *trimmed* pen. The reference puts that empty `<a>` at
+  x=36, hard against "Click", not at 43.2 where the removed space would have
+  left it.
+* **Spans accumulate over the inline ANCESTOR chain**, so nested inlines each
+  get a box and the outer encloses the inner. The chain is walked through the
+  tree because it is still intact at flush time — `clear_children` runs once, at
+  the very end, and only detaches the container's direct children.
+
+Fixing this also fixed `44-counters`, whose remaining difference was the same
+missing boxes.
+
+#### The first version of the regression test was worthless
+
+It asserted on `find("s")`, which walks the tree for a box whose element has
+that id — and **text runs carry their originating element too**, and precede the
+inline boxes in a line's child list. So the test was measuring the text run. Its
+x, width and height all happened to match what the inline box should have, and
+it passed with the feature reverted.
+
+Caught by deliberately disabling the attachment and re-running, the same check
+used on the atlas-texture test earlier. The suite now has `find_kind`, which
+takes a `BoxKind`, and the tests fail 8 checks with the feature removed.
+
+That is twice now that a test written to pin new behaviour did not actually
+exercise it. Both times the check that caught it was the same: break the thing
+on purpose and confirm the test notices. It is cheap and it should be the
+default for any test written to pin a fix.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)
