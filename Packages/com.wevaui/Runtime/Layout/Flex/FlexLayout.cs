@@ -242,6 +242,7 @@ namespace Weva.Layout.Flex {
             // cross-start. Treat the min-floored cross as definite, mirroring
             // the aspect-ratio derivation below. CSS Box Sizing L3 §5.
             bool crossFlooredByMin = false;
+            double crossMinFloor = 0;
             if (string.IsNullOrEmpty(crossRaw) || crossRaw == "auto") {
                 double derived = TryDeriveCrossFromAspectRatio(container, isRow);
                 if (derived > containerCrossSize) containerCrossSize = derived;
@@ -256,6 +257,7 @@ namespace Weva.Layout.Flex {
                 if (minFloor > 0) {
                     if (minFloor > containerCrossSize) containerCrossSize = minFloor;
                     crossFlooredByMin = true;
+                    crossMinFloor = minFloor;
                 }
             }
 
@@ -465,10 +467,32 @@ namespace Weva.Layout.Flex {
             // A row container whose height was grown by a column parent's
             // flex-grow (FlexParentAssignedCross) has a definite cross.
             bool rowFlexGrownCross = isRow && container is BlockBox bbRowFa && bbRowFa.FlexParentAssignedCross;
-            double clampCrossSize = (HasDefiniteCross(container, isRow) || gridImposedCross || positionPinnedCross || columnWithAssignedWidth || crossFlooredByMin || rowFlexGrownCross)
-                ? containerCrossSize : 0;
+            // `crossFlooredByMin` is deliberately NOT in this list. The clamp
+            // CAPS each item's cross contribution at the container's cross
+            // size, which is only sound when that size is genuinely definite.
+            // On an auto cross floored by `min-height`, containerCrossSize is
+            // max(min-floor, container.ContentHeight) — and that ContentHeight
+            // came from the pre-flex BlockLayout pass, which stacks a
+            // column-flex child's children WITHOUT their row gaps. Capping
+            // against it shrank the child back to the gap-less sum: a
+            // `min-height:100vh` page holding a `display:flex;
+            // flex-direction:column; gap:22px` card lost 22px per gap from the
+            // card's height (form-demo: 14 gaps, 308px) while its children
+            // stayed correctly spaced, so the card's own background stopped
+            // short of its content.
+            bool trulyDefiniteCross = HasDefiniteCross(container, isRow) || gridImposedCross
+                || positionPinnedCross || columnWithAssignedWidth || rowFlexGrownCross;
+            double clampCrossSize = trulyDefiniteCross ? containerCrossSize : 0;
             foreach (var line in lines) {
                 ComputeLineCrossSize(line, items, props, isRow, clampCrossSize);
+                // A min-floored auto cross is a FLOOR on the line, never a cap:
+                // the line must fill it so align-items has space to distribute
+                // (the reason the flag exists), but it must never shrink a line
+                // whose items are taller.
+                if (!trulyDefiniteCross && crossFlooredByMin && lines.Count == 1
+                    && line.CrossSize < crossMinFloor) {
+                    line.CrossSize = crossMinFloor;
+                }
             }
 
             double linesCrossTotal = 0;
