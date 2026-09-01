@@ -2,6 +2,7 @@
 
 #include "weva/flex.h"
 #include "weva/grid.h"
+#include "weva/table_layout.h"
 #include "weva/multicol.h"
 
 #include "weva/css_properties.h"
@@ -871,6 +872,15 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         const double definite_h =
             definite_flow_content_height(*tree_, (*tree_)[id], ctx_, font_size);
         const double h = layout_grid(tree_, id, content_w, definite_h, ctx_, this);
+        finalize_block_size(id, font_size, top_inner + h);
+        return;
+    }
+    // A table lays out its rows, groups and cells itself (§17.5); before this
+    // its subtree was stacked as plain blocks, every cell a full-width block
+    // under the next, and the table stood 1,941px tall for 332px of rows.
+    if ((*tree_)[id].display == DisplayKind::Table ||
+        (*tree_)[id].display == DisplayKind::InlineTable) {
+        const double h = layout_table(tree_, id, content_w, ctx_, this);
         finalize_block_size(id, font_size, top_inner + h);
         return;
     }

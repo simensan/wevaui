@@ -37,6 +37,7 @@ add_library(weva STATIC
     src/software_renderer.cpp
     src/flex.cpp
     src/grid.cpp
+    src/table_layout.cpp
     src/multicol.cpp
     src/font_interface.cpp
     src/glyph_atlas.cpp
