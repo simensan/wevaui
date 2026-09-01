@@ -368,5 +368,51 @@ namespace Weva.Tests.Layout {
                 + "block-stacked height it had before the flex pass ran");
         }
 
+        // CSS 2.1 §10.8.1: "For replaced elements, inline-block elements and
+        // inline-table elements, this is the height of their margin box." The
+        // line box read the atom's BORDER box, so an inline-block's vertical
+        // margins vanished from the line. audit-validation's
+        // `input { margin-bottom: 6px }` sat in a line box exactly 28 tall
+        // where Chrome (verified directly) and the C++ port both make it 34.
+        [Test]
+        public void Inline_block_contributes_its_margin_box_to_the_line() {
+            const string css =
+                "#w { width: 400px }" +
+                ".a { display: inline-block; width: 40px; height: 28px }" +
+                ".m { display: inline-block; width: 40px; height: 28px; margin-bottom: 6px }";
+            var (root, _, _) = Build(
+                "<div id=w><div id=plain><span class=a></span></div>" +
+                "<div id=marginal><span class=m></span></div></div>", css);
+
+            BlockBox plain = null, marginal = null;
+            foreach (var b in AllBoxes(root)) {
+                if (b is BlockBox bb && bb.Element?.GetAttribute("id") == "plain") plain = bb;
+                if (b is BlockBox bb2 && bb2.Element?.GetAttribute("id") == "marginal") marginal = bb2;
+            }
+            Assert.That(plain, Is.Not.Null);
+            Assert.That(marginal, Is.Not.Null);
+            Assert.That(marginal.Height - plain.Height, Is.EqualTo(6).Within(1e-9),
+                "a 6px bottom margin on an inline-block must make its line 6px taller");
+        }
+
+        [Test]
+        public void Inline_block_top_margin_also_counts_toward_the_line() {
+            const string css =
+                "#w { width: 400px }" +
+                ".a { display: inline-block; width: 40px; height: 28px }" +
+                ".m { display: inline-block; width: 40px; height: 28px; margin-top: 9px }";
+            var (root, _, _) = Build(
+                "<div id=w><div id=plain><span class=a></span></div>" +
+                "<div id=marginal><span class=m></span></div></div>", css);
+
+            BlockBox plain = null, marginal = null;
+            foreach (var b in AllBoxes(root)) {
+                if (b is BlockBox bb && bb.Element?.GetAttribute("id") == "plain") plain = bb;
+                if (b is BlockBox bb2 && bb2.Element?.GetAttribute("id") == "marginal") marginal = bb2;
+            }
+            Assert.That(marginal.Height - plain.Height, Is.EqualTo(9).Within(1e-9),
+                "a 9px top margin on an inline-block must make its line 9px taller");
+        }
+
     }
 }
