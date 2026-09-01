@@ -2713,14 +2713,40 @@ re-growth of `1fr` tracks from aspect-ratio items' transferred minimum
   mirrored by id in the host. Line and anonymous boxes stopped painting
   their container's decorations.
 
-**Where it stands: samples 12/35 agree + 10 arbitrated; harvest 179/210 +
-17; hand 46/47; 7,980 checks green on gcc 13, clang 18, ASan+UBSan and
-MSVC 14.44; host 23/23 on Linux and Windows.** leaderboard, hud and glass
-render recognisably. Paint gaps in the order they show: glyphs the host
-font lacks (★, emoji) draw nothing — a fallback face is needed; word gaps
-come out wide through the Godot text path; `box-shadow` (130 uses in the
-samples), `overflow: hidden` clipping and `opacity` are not painted;
-`url()` images are parsed and skipped.
+**Where it stands after the sixth pass: samples 12/35 agree + 10
+arbitrated; harvest 179/210 + 17; hand 46/47; 7,980 checks green on gcc 13,
+clang 18, ASan+UBSan and MSVC 14.44; host 23/23 on Linux and Windows.**
+
+### Seventh pass: text through the host, and the rest of the box's paint. 12/35 + 11
+
+* **Fallback fonts in the host.** A face is a list of TextServer fonts (the
+  theme font, then a SystemFont over the platform's symbol and emoji
+  faces); shaping runs across the list and a glyph id carries its font in
+  its top byte. ★, →, ⚔ and the emoji icons draw (colour emoji as
+  silhouettes — the atlas is coverage-only).
+* **Letter-spacing in paint.** Layout had sized every word with it and
+  paint drew the glyphs without, so words came out narrower than their
+  boxes and the gaps read as doubled.
+* **A 1e-9 fit tolerance on the wrap test.** A shrink-fitted box is re-laid
+  at the sum of its run widths and the pen re-adds them in another order;
+  with a real face's float advances the last word landed an ulp past the
+  line ("View Full Ladder" on two lines). 9slice-demo's `<code>` was the
+  same, and is now arbitrated to the port.
+* **box-shadow, overflow clipping, opacity, visibility.** Shadows as
+  Gaussian-profiled nested shapes (no blur pass in the canvas); clipping as
+  a rectangle to the padding box; opacity as vertex alpha (no group layer
+  yet).
+* **Scissors are applied to the geometry.** Godot clips per canvas item,
+  and the compatibility renderer dropped every draw after a clipped sibling
+  item (bisected with env switches on the host); the collecting backend
+  now cuts scissored triangles itself, so any host draws what it is given.
+
+**Where it stands: samples 12/35 agree + 11 arbitrated; harvest 179/210 +
+17; hand 46/47; 8,005 checks green; host 23/23 on Linux and Windows.** hud,
+glass and leaderboard render with their gradients, shadows, glyphs and
+clipping. Paint gaps left: `url()` images, rounded clipping, a group layer
+for opacity, colour emoji, `backdrop-filter` (25 uses) and `filter`,
+`text-shadow`, `transform`.
 
 ## Phase 8 — Remaining layout (~8k LOC)
 
