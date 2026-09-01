@@ -50,6 +50,10 @@ private:
     void append_inline_child(const Node& node, const ComputedStyle* parent_style, BoxId parent);
     BoxId new_block_box_for(DisplayKind display, const Element* e, const ComputedStyle* style);
     void finalize_block_children(BoxId parent);
+    // §9.2.1.1: breaks an inline box around the in-flow blocks it holds. `out`
+    // receives the pieces and the blocks in order; the first piece is the box
+    // itself, later ones clones carrying its element and style.
+    void split_inline_around_blocks(BoxId inline_box, std::vector<BoxId>* out);
     void flush_anonymous(BoxId parent, std::vector<BoxId>* inlines);
 
     BoxTree* tree_;

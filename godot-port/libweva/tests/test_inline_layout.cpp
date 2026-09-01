@@ -866,3 +866,13 @@ void test_inline_box_edges_take_space_on_the_line() {
         CHECK(near(first.x, 0) && near(first.width, 42));
     }
 }
+
+void test_leading_space_after_an_inline_start_is_dropped() {
+    // Whitespace at the start of a line is collapsed away even when an inline
+    // box's marker precedes it: `<card>\n <span>` does not indent the span.
+    Fixture f;
+    CHECK(f.css("#c { display: inline } #w { width: 500px }"));
+    CHECK(f.layout("<body><div id=w><span id=c>\n  <span id=s>Welcome</span></span></div></body>"));
+    const Box& s = f.tree[f.find_kind("s", BoxKind::Inline)];
+    CHECK(near(s.x, 0));
+}

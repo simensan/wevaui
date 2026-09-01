@@ -361,6 +361,15 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         max_descent = 0;
         max_leading = 0;
     };
+    // Markers are not content: a line holding only the opening of an inline
+    // box is still at its start for the purposes of dropping a leading
+    // collapsible space and of the wrap decision.
+    const auto line_has_content = [&] {
+        for (const Fragment& f : line) {
+            if (!f.item->is_marker()) return true;
+        }
+        return false;
+    };
 
     // Emits the fragments collected so far as one LineBox with TextRun children.
     const auto flush_line = [&](bool is_final) {
@@ -656,7 +665,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         if (it.is_atom()) {
             // An atom wraps as a unit: it moves to the next line when it does
             // not fit, but is never split.
-            if (!line.empty() && pen + it.atom_outer_width > line_width) {
+            if (line_has_content() && pen + it.atom_outer_width > line_width) {
                 flush_line(false);
             }
             grow_line_metrics(it);
@@ -700,8 +709,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         for (const Token& t : tokenize_collapsing(it.text)) {
             if (t.is_space) {
                 // A collapsed space at the very start of a line is dropped:
-                // it would indent every wrapped line by a space.
-                if (line.empty()) continue;
+                // it would indent every wrapped line by a space. A line that
+                // holds only inline-box markers counts as its start — the
+                // whitespace after `<card>` is not a 7px indent.
+                if (!line_has_content()) continue;
                 const double w = measure_spaced(metrics, " ", it, first_piece);
                 first_piece = false;
                 grow_line_metrics(it);
@@ -751,7 +762,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             first_piece = false;
             // A word that does not fit starts a new line — unless the line is
             // already empty, in which case it overflows rather than looping.
-            if (it.allow_wrap && !line.empty() && pen + w > line_width) {
+            if (it.allow_wrap && line_has_content() && pen + w > line_width) {
                 flush_line(false);
             }
             grow_line_metrics(it);

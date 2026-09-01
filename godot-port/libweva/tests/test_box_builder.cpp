@@ -116,7 +116,9 @@ void test_box_builder_display() {
         // display: contents generates no box; the children take its place in
         // the parent.
         Fixture f;
-        CHECK(f.css("#c { display: contents } #a, #b { display: block }"));
+        // #w is block: this fixture has no UA sheet, and an INLINE box holding
+        // blocks is broken around them (§9.2.1.1), which is a different test.
+        CHECK(f.css("#w { display: block } #c { display: contents } #a, #b { display: block }"));
         const BoxId root = f.build("<div id=w><div id=c><div id=a></div><div id=b></div></div></div>");
         const BoxId w = f.find(root, "w");
         CHECK(f.find(root, "c") == kNoBox);
@@ -349,5 +351,50 @@ void test_box_builder_text_and_multicol() {
         CHECK(f.tree[root].element == nullptr && f.tree[root].style == nullptr);
         CHECK(f.tree.child_count(root) == 1);
         CHECK(f.tree[f.tree.child_at(root, 0)].element->tag_name() == "html");
+    }
+}
+
+void test_block_in_inline_splitting() {
+    // §9.2.1.1: an inline box holding a block is broken around it. The block
+    // becomes a block-level child of the container; the inline's pieces —
+    // the original box and a clone with the same element and style — hold
+    // what came before and after, each wrapped in an anonymous block.
+    {
+        Fixture f;
+        CHECK(f.css("#w { display: block } card { display: inline } p { display: block }"));
+        const BoxId root = f.build("<div id=w><card id=c><span id=s>t</span><p id=p>b</p>"
+                                   "<button id=b>ok</button></card></div>");
+        const BoxId w = f.find(root, "w");
+        const std::vector<BoxKind> kinds = f.child_kinds(w);
+        CHECK(kinds.size() == 3);
+        CHECK(kinds[0] == BoxKind::AnonymousBlock);
+        CHECK(kinds[1] == BoxKind::Block);
+        CHECK(kinds[2] == BoxKind::AnonymousBlock);
+        CHECK(f.tree[f.find(root, "p")].parent == w);
+        // Both pieces are inline boxes of the card element.
+        int card_pieces = 0;
+        for (BoxId anon : f.tree.children(w)) {
+            for (BoxId c : f.tree.children(anon)) {
+                if (f.tree[c].kind == BoxKind::Inline && f.tree[c].element &&
+                    f.tree[c].element->get_attribute("id") == "c") {
+                    ++card_pieces;
+                }
+            }
+        }
+        CHECK(card_pieces == 2);
+        CHECK(!f.tree[w].contains_inlines);
+    }
+    {
+        // Nested: <a><b><div/></b></a> splits both levels; an out-of-flow
+        // block inside the inline is left where it is.
+        Fixture f;
+        CHECK(f.css("a, b { display: inline } div { display: block } #z { position: absolute }"));
+        const BoxId root = f.build("<div id=w><a id=a>x<b id=bb>y<div id=d></div>z</b></a>"
+                                   "<span id=s>q<div id=z></div></span></div>");
+        const BoxId w = f.find(root, "w");
+        CHECK(f.tree[f.find(root, "d")].parent == w);
+        const std::vector<BoxKind> kinds = f.child_kinds(w);
+        CHECK(kinds.size() == 3);   // anon(a>b piece 1), div, anon(a>b piece 2, span)
+        CHECK(f.tree[f.find(root, "z")].parent == f.find(root, "s"));
     }
 }

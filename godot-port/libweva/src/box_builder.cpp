@@ -268,6 +268,73 @@ void BoxBuilder::flush_anonymous(BoxId parent, std::vector<BoxId>* inlines) {
     tree_->append_child(parent, anon);
 }
 
+// CSS 2.1 §9.2.1.1, the other half: an inline box that contains a block-level
+// box is broken around it. The block becomes a block-level sibling of the
+// inline box's pieces, and the pieces — the original box first, then clones
+// carrying the same element and style — hold what came before and after. A
+// `<card><span>title</span><p>body</p><button>ok</button></card>` custom
+// element lays out as a line, a paragraph, a line; left whole, the `<p>` sat
+// inside an inline box that inline layout could not lay out at all, 0x0.
+// Out-of-flow and floated boxes stay where they are: they are not in flow.
+namespace {
+
+bool is_in_flow_block(const BoxTree& tree, BoxId id) {
+    const Box& b = tree[id];
+    if (b.kind != BoxKind::Block || b.is_inline_block) return false;
+    if (b.style) {
+        if (is_out_of_flow_position(b.style) || is_floated(b.style)) return false;
+    }
+    return true;
+}
+
+bool holds_in_flow_block(const BoxTree& tree, BoxId inline_box) {
+    for (BoxId c : tree.children(inline_box)) {
+        if (is_in_flow_block(tree, c)) return true;
+        if (tree[c].kind == BoxKind::Inline && holds_in_flow_block(tree, c)) return true;
+    }
+    return false;
+}
+
+} // namespace
+
+void BoxBuilder::split_inline_around_blocks(BoxId inline_box, std::vector<BoxId>* out) {
+    std::vector<BoxId> kids;
+    for (BoxId c : tree_->children(inline_box)) kids.push_back(c);
+    tree_->clear_children(inline_box);
+
+    BoxId piece = inline_box;
+    const auto new_piece = [&] {
+        const BoxId clone = tree_->create(BoxKind::Inline, (*tree_)[inline_box].element,
+                                          (*tree_)[inline_box].style);
+        (*tree_)[clone].display = (*tree_)[inline_box].display;
+        return clone;
+    };
+    for (BoxId k : kids) {
+        if (is_in_flow_block(*tree_, k)) {
+            out->push_back(piece);
+            out->push_back(k);
+            piece = new_piece();
+            continue;
+        }
+        if ((*tree_)[k].kind == BoxKind::Inline && holds_in_flow_block(*tree_, k)) {
+            std::vector<BoxId> sub;
+            split_inline_around_blocks(k, &sub);
+            for (BoxId s : sub) {
+                if (is_in_flow_block(*tree_, s)) {
+                    out->push_back(piece);
+                    out->push_back(s);
+                    piece = new_piece();
+                } else {
+                    tree_->append_child(piece, s);
+                }
+            }
+            continue;
+        }
+        tree_->append_child(piece, k);
+    }
+    out->push_back(piece);
+}
+
 void BoxBuilder::finalize_block_children(BoxId parent) {
     // CSS 2.1 §9.2.1.1: a block container holds either only inline-level boxes
     // or only block-level ones. Where an author mixes them, each run of
@@ -276,6 +343,32 @@ void BoxBuilder::finalize_block_children(BoxId parent) {
     if ((*tree_)[parent].first_child == kNoBox) {
         (*tree_)[parent].contains_inlines = false;
         return;
+    }
+
+    // First, inline boxes holding blocks are broken around them, so the
+    // classification below sees the blocks as the parent's own children.
+    if (!blockifies_children((*tree_)[parent].display)) {
+        bool any_split = false;
+        for (BoxId c : tree_->children(parent)) {
+            if ((*tree_)[c].kind == BoxKind::Inline && holds_in_flow_block(*tree_, c)) {
+                any_split = true;
+                break;
+            }
+        }
+        if (any_split) {
+            std::vector<BoxId> original;
+            for (BoxId c : tree_->children(parent)) original.push_back(c);
+            tree_->clear_children(parent);
+            for (BoxId c : original) {
+                if ((*tree_)[c].kind == BoxKind::Inline && holds_in_flow_block(*tree_, c)) {
+                    std::vector<BoxId> pieces;
+                    split_inline_around_blocks(c, &pieces);
+                    for (BoxId p : pieces) tree_->append_child(parent, p);
+                } else {
+                    tree_->append_child(parent, c);
+                }
+            }
+        }
     }
 
     const auto is_block_level = [this](BoxId id) {
