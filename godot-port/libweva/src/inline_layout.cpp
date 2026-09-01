@@ -812,7 +812,16 @@ double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContex
             if (max_w.kind == LengthKind::Length) w = std::min(w, max_w.pixels + minmax_frame);
         }
     }
-    return w + b.margin_left + b.margin_right;
+    // `margin: auto` is resolved by the box's container (centring, or a flex
+    // line's free space) and holds whatever was left over at the last layout;
+    // it is not content. Counting it made a card with an auto-margin-pushed
+    // item as wide as the line it was last laid out in, and it then could not
+    // share a line with anything.
+    const std::string_view ml = get(b.style, "margin-left");
+    const std::string_view mr = get(b.style, "margin-right");
+    const double margins = (iequals(ml, "auto") ? 0.0 : b.margin_left) +
+                           (iequals(mr, "auto") ? 0.0 : b.margin_right);
+    return w + margins;
 }
 
 } // namespace
@@ -833,6 +842,15 @@ double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx
 
 double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, bool minimum) {
     const Box& self = tree[id];
+    // A grid container's intrinsic size is its tracks', which layout_grid
+    // records when it sizes them (§12 under a max-content constraint); the
+    // children alone say nothing about fixed tracks or gaps. An 8-column
+    // 56px board centred in a flex row was shrink-fitted to one tile.
+    if (self.kind == BoxKind::Block &&
+        (self.display == DisplayKind::Grid || self.display == DisplayKind::InlineGrid) &&
+        self.grid_max_content >= 0) {
+        return minimum ? self.grid_min_content : self.grid_max_content;
+    }
     const bool flex = self.kind == BoxKind::Block &&
                       (self.display == DisplayKind::Flex || self.display == DisplayKind::InlineFlex);
     const std::string_view direction = get(self.style, "flex-direction");

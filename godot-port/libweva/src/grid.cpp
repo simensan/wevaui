@@ -1104,6 +1104,23 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         }
         column_contributions.push_back(c);
     }
+    // The grid's own intrinsic inline sizes, for whoever shrink-fits it: the
+    // tracks under a max-content constraint, and again with every item's
+    // max-content pinned to its min-content for the min side.
+    {
+        std::vector<Track> probe = columns;
+        size_tracks(&probe, -1, column_gap, column_contributions, "normal");
+        double max_w = 0;
+        for (size_t c = 0; c < probe.size(); ++c) max_w += probe[c].size + gap_after(probe, c, column_gap);
+        std::vector<Contribution> mins = column_contributions;
+        for (Contribution& c : mins) c.max_c = c.min_c;
+        std::vector<Track> probe_min = columns;
+        size_tracks(&probe_min, -1, column_gap, mins, "normal");
+        double min_w = 0;
+        for (size_t c = 0; c < probe_min.size(); ++c) min_w += probe_min[c].size + gap_after(probe_min, c, column_gap);
+        (*tree)[container].grid_min_content = min_w;
+        (*tree)[container].grid_max_content = max_w;
+    }
     size_tracks(&columns, content_width, column_gap, column_contributions,
                 get(style, "justify-content"));
     distribute_content(&columns, content_width, column_gap, get(style, "justify-content"));

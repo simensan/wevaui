@@ -264,6 +264,26 @@ void test_flex_direction_and_order() {
         CHECK(near(f.box("b").x, 0));
         CHECK(near(f.box("a").x, 50));
     }
+    {
+        // row-reverse: main-start is the right edge, so the first item sits
+        // against it and the rest run leftward (§5.1); justify-content:
+        // flex-start packs there, center still centres.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; flex-direction: row-reverse; width: 300px }"
+                    ".c { width: 50px; height: 10px }"));
+        CHECK(f.layout("<body><div id=r><div id=a class=c></div>"
+                       "<div id=b class=c></div></div></body>"));
+        CHECK(near(f.box("a").x, 250));
+        CHECK(near(f.box("b").x, 200));
+        Fixture g;
+        CHECK(g.css("#r { display: flex; flex-direction: row-reverse; width: 300px;"
+                    "     justify-content: center }"
+                    ".c { width: 50px; height: 10px }"));
+        CHECK(g.layout("<body><div id=r><div id=a class=c></div>"
+                       "<div id=b class=c></div></div></body>"));
+        CHECK(near(g.box("a").x, 150));
+        CHECK(near(g.box("b").x, 100));
+    }
 }
 
 void test_flex_min_max_carry_the_frame() {
@@ -719,4 +739,38 @@ void test_flex_abspos_child_static_position_follows_alignment() {
                 "#h { position: absolute; width: 20px; height: 10px }"));
     CHECK(g.layout("<body><div id=m><div id=h></div></div></body>"));
     CHECK(near(g.box("h").x, 80) && near(g.box("h").y, 40));
+}
+
+void test_intrinsic_width_ignores_auto_margins() {
+    // A resolved `margin: auto` is leftover space, not content: a card whose
+    // demo row pushes an item with margin-left: auto has the min-content of
+    // its items and shares a wrapped line with its neighbours.
+    Fixture f;
+    CHECK(f.css("#g { display: flex; flex-wrap: wrap; gap: 14px; width: 972px }"
+                ".card { flex: 1 1 220px; display: flex; flex-direction: column }"
+                ".demo { display: flex; gap: 8px }"
+                ".demo i { display: flex; min-width: 38px; height: 38px }"
+                ".push { margin-left: auto }"
+                ".wide { flex-basis: 360px }"));
+    CHECK(f.layout("<body><div id=g>"
+                   "<div id=a class='card wide'><div class=demo><i></i><i></i><i class=push></i></div></div>"
+                   "<div id=b class='card wide'><div class=demo><i></i></div></div>"
+                   "<div id=c class=card><div class=demo><i></i></div></div>"
+                   "</div></body>"));
+    // 360 + 360 + 220 + 28 = 968 fits: one line, the 4px grown three ways.
+    CHECK(near(f.box("a").y, f.box("c").y));
+    CHECK(near(f.box("a").width, 361.0 + 1.0 / 3));
+}
+
+void test_grid_intrinsic_width_is_its_tracks() {
+    // A grid container centred in a flex row shrink-fits to its tracks and
+    // gaps, not to its widest child.
+    Fixture f;
+    CHECK(f.css("#wrap { display: flex; justify-content: center; width: 800px }"
+                "#board { display: grid; grid-template-columns: repeat(4, 50px); gap: 10px }"
+                ".t { height: 50px }"));
+    CHECK(f.layout("<body><div id=wrap><div id=board><div class=t></div><div class=t></div>"
+                   "<div class=t></div><div class=t></div></div></div></body>"));
+    CHECK(near(f.box("board").width, 230));
+    CHECK(near(f.box("board").x, 285));
 }

@@ -644,10 +644,24 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             max_baseline = std::max(max_baseline, first_baseline(items[i].box) + b.margin_top);
         }
 
+        // `row-reverse` / `column-reverse`: main-start is the END edge, so the
+        // first item sits against it and the rest run back toward the start
+        // (§5.1). With a definite main size the extent is the container's;
+        // without one the content's own extent stands in, which is what an
+        // auto-height column-reverse packs against.
+        double reverse_extent = 0;
+        if (reverse) {
+            reverse_extent = definite_main ? available_main : 0;
+            if (!definite_main) {
+                reverse_extent = main_gap * static_cast<double>(ln.end - ln.begin - 1);
+                for (size_t i = ln.begin; i < ln.end; ++i) {
+                    reverse_extent += items[i].main + items[i].main_margins;
+                }
+            }
+        }
         double cursor = ln.main_pos;
         for (size_t k = 0; k < ln.end - ln.begin; ++k) {
-            // `row-reverse` / `column-reverse` lay each line out from its end.
-            const size_t i = reverse ? ln.end - 1 - k : ln.begin + k;
+            const size_t i = ln.begin + k;
             Item& it = items[i];
             const std::string_view self = self_align((*tree)[it.box]);
 
@@ -709,11 +723,13 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
             // Safe from here: placement creates nothing.
             Box& b = (*tree)[it.box];
+            const double main_offset =
+                reverse ? reverse_extent - cursor - it.main - it.main_margins : cursor;
             if (column) {
                 b.x = left_inner + ln.cross_pos + cross_pos + b.margin_left;
-                b.y = top_inner + cursor + b.margin_top;
+                b.y = top_inner + main_offset + b.margin_top;
             } else {
-                b.x = left_inner + cursor + b.margin_left;
+                b.x = left_inner + main_offset + b.margin_left;
                 b.y = top_inner + ln.cross_pos + cross_pos + b.margin_top;
             }
             cursor += it.main + it.main_margins + ln.between;

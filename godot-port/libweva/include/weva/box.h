@@ -162,6 +162,11 @@ struct Box {
     // On a line box: the inline boxes' own horizontal margin, border and
     // padding placed on this line — on the line, in no run.
     double inline_decoration_width = 0;
+    // On a grid container: the tracks' min- and max-content extents (with
+    // gaps), recorded by layout_grid so the intrinsic-width walk can answer
+    // for it; negative until the grid has been sized once.
+    double grid_min_content = -1;
+    double grid_max_content = -1;
 
     // ---- Text -----------------------------------------------------------
     // Points into either the source text node or the pass arena (for collapsed
