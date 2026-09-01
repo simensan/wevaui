@@ -181,14 +181,23 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     // per-item values, because that is what the reference does: it lays lines
     // out at their natural metric height and then overrides them in a pass over
     // the container's children.
+    // CSS 2.1 §9.2.1.1: an anonymous box inherits inheritable properties from
+    // its parent. Anonymous blocks are created with a null style, so reading
+    // line-height off the container alone missed the author's value and fell
+    // back to the metric height — a nested list item came out 18.29 tall where
+    // `line-height: 1` on body asks for 16. The reference falls back the same
+    // way, and says so at the same spot.
+    const ComputedStyle* const line_height_style =
+        cbox.style ? cbox.style
+                   : (cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr);
     std::optional<double> declared_line_height;
-    if (cbox.style) {
-        const std::string_view raw = get(cbox.style, "line-height");
+    if (line_height_style) {
+        const std::string_view raw = get(line_height_style, "line-height");
         if (!raw.empty() && !iequals(raw, "normal")) {
             const double container_fs =
-                font_size_px(cbox.style, cbox.parent != kNoBox ? (*tree)[cbox.parent].style
-                                                               : nullptr, ctx);
-            declared_line_height = line_height_px(cbox.style, container_fs, ctx, &metrics);
+                font_size_px(line_height_style,
+                             cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr, ctx);
+            declared_line_height = line_height_px(line_height_style, container_fs, ctx, &metrics);
         }
     }
 

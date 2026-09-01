@@ -2228,6 +2228,45 @@ went *down*: 1.48 → 1.44 µs. Allocations per box rose from 1.5 to 2.2, which 
 the new grid code's own per-call vectors and is the same scratch-buffer work
 already queued for `layout_inline_items`.
 
+### 45/47, and one line of inheritance that closed two cases
+
+**Containment.** `contain: size` and `content-visibility: hidden` size a box as
+though it had no contents, with `contain-intrinsic-size` supplying a substitute.
+
+The first attempt skipped laying the children out, which is what "skips its
+contents" sounds like — and it was wrong. Chrome and the reference both report
+**normal rects for the whole subtree** of a `content-visibility: hidden` box;
+what is contained is the box's own contribution, not its children's geometry.
+The fix moved to `finalize_block_size`, one place, and the special-case branch
+in `layout_content` disappeared entirely.
+
+The value test matters too: `contain` is a space-separated list, so `contain:
+strict` and `contain: layout size` both apply — but a plain substring search
+reads `contain: inline-size` as size containment, which it is not. The check is
+word-bounded, and there is a test for exactly that.
+
+**Anonymous boxes inherit.** CSS 2.1 §9.2.1.1. An anonymous block is created
+with a null style, so reading `line-height` off the container alone missed the
+author's value and fell back to the font's metric height. One box in a nested
+list came out 18.29 tall where `line-height: 1` asks for 16, and everything
+below it shifted by 2.29.
+
+That single fallback — the container's style, or its parent's when it has none —
+closed **both** `45-list-markers` and `43-quotes-pseudo`. Neither is about list
+markers or quotes: both documents simply put text and a block in the same
+container, which is what creates an anonymous wrapper. The reference falls back
+the same way and carries a comment saying so at the same spot.
+
+Worth noting how little the case names meant here. Two cases named after
+features that are NOT ported passed once an inheritance rule was fixed, because
+their failures were never about markers or quotes at all. Classifying failures
+by the features a document mentions is a heuristic for triage, not a diagnosis —
+the same shortcut that had me call three flex cases positioning bugs earlier.
+
+**45/47 agree, 1 reference bug, 1 differs.** The one is `39-multicol`, which
+needs multi-column layout — a real unported feature and the last of them in this
+corpus.
+
 ## Phase 7 — Grid and subgrid (~5k LOC)
 
 `Layout/Grid` (4,848). The hardest algorithm in the port and the single largest

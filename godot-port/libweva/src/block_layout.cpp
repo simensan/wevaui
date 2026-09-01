@@ -292,6 +292,49 @@ bool participates_in_flow(const Box& b) {
 // contents' baseline. Both axis longhands are checked for the same reason
 // establishes_new_bfc checks them: the shorthand expands, so the `overflow`
 // slot itself usually still holds its initial value.
+// CSS Containment L2 §2.2 / §4. Size containment makes a box size as though it
+// had no contents; `content-visibility: hidden` additionally skips laying the
+// contents out at all (it implies `contain: size layout style paint`).
+//
+// `contain` is a space-separated list, so a substring match on the whole value
+// is what reads it — `contain: layout size` and `contain: strict` both apply.
+bool has_size_containment(const ComputedStyle* style) {
+    if (!style) return false;
+    const std::string_view cv = get(style, "content-visibility");
+    if (iequals(cv, "hidden")) return true;
+    const std::string_view contain = get(style, "contain");
+    if (contain.empty() || iequals(contain, "none")) return false;
+    if (iequals(contain, "strict") || iequals(contain, "content")) return true;
+    // Word-boundary search, so `contain: inline-size` does not read as `size`.
+    size_t at = contain.find("size");
+    while (at != std::string_view::npos) {
+        const bool start_ok = at == 0 || contain[at - 1] == ' ';
+        const size_t end = at + 4;
+        const bool end_ok = end == contain.size() || contain[end] == ' ';
+        if (start_ok && end_ok) return true;
+        at = contain.find("size", at + 1);
+    }
+    return false;
+}
+
+// The substitute content size a size-contained box uses, from
+// `contain-intrinsic-size: <width> <height>` or its longhands. Negative means
+// none was given, which makes the contained size zero.
+double contain_intrinsic_height(const ComputedStyle* style, const LayoutContext& ctx,
+                                double font_size) {
+    if (!style) return -1;
+    std::string_view raw = get(style, "contain-intrinsic-height");
+    if (raw.empty() || iequals(raw, "none")) {
+        raw = get(style, "contain-intrinsic-size");
+        if (raw.empty() || iequals(raw, "none")) return -1;
+        // Two values are width then height; one applies to both axes.
+        size_t space = raw.find(' ');
+        if (space != std::string_view::npos) raw = raw.substr(space + 1);
+    }
+    const ResolvedLength r = resolve_length(raw, ctx, font_size, std::nullopt);
+    return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : -1;
+}
+
 bool has_non_visible_overflow(const Box& b) {
     if (!b.style) return false;
     const std::string_view ox = get(b.style, "overflow-x");
@@ -1014,6 +1057,16 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
     Box& box = (*tree_)[id];
     // A flex line already decided this box's height; keep it.
     if (box.cross_size_imposed) return;
+
+    // CSS Containment L2: a size-contained box is sized as though it had no
+    // contents. Applied HERE rather than by skipping the children's layout,
+    // because the children are still laid out and still have real geometry —
+    // Chrome and the reference both report normal rects for the subtree of a
+    // `content-visibility: hidden` box. Only the box's own contribution goes.
+    if (has_size_containment(box.style)) {
+        const double intrinsic = contain_intrinsic_height(box.style, ctx_, font_size);
+        content_bottom_y = box.padding_top + box.border_top + (intrinsic >= 0 ? intrinsic : 0.0);
+    }
     if (!box.style) {
         // The synthetic root was seeded with the viewport height so percentage
         // heights had a basis; now that its children are placed it must
