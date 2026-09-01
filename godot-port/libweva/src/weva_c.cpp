@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <cstring>
 #include <map>
+#include <tuple>
 #include <memory>
 #include <optional>
 #include <string>
@@ -244,6 +245,11 @@ public:
         if (!bmp.alpha) out->data.assign(n, 0);
         return true;
     }
+    FaceHandle variant(FaceHandle face, int weight, bool italic) override {
+        if (!t_.variant) return face;
+        const uint64_t v = t_.variant(t_.user_data, face.id, weight, italic ? 1 : 0);
+        return v ? FaceHandle{v} : face;
+    }
     void shape(FaceHandle face, std::string_view utf8, double px,
                std::vector<ShapedGlyph>* out) override {
         if (!t_.shape) { fallback_->shape(face, utf8, px, out); return; }
@@ -297,6 +303,9 @@ struct weva_document {
     // measure with the stub's advances while paint drew the host's glyphs, and
     // the text would drift off the line boxes laid out for it.
     std::unique_ptr<FontInterfaceMetrics> host_metrics;
+    // Metrics for the host's bold / italic variants of the default face, by
+    // (face, weight, italic); handed to layout through ctx.variant_metrics.
+    std::map<std::tuple<uint64_t, int, bool>, std::unique_ptr<FontInterfaceMetrics>> variant_metrics;
     FaceHandle face = StubFont::builtin();
     BoxId root = kNoBox;
     // Textures paint generated for the last published draws (gradient
@@ -349,13 +358,41 @@ void weva_document_set_render_backend(weva_document_t doc, const weva_render_bac
     doc->host_render = std::make_unique<HostRenderBackend>(*backend, &doc->backend);
 }
 
+namespace {
+
+// ctx.variant_metrics for a document: the host's variant of the default
+// face, measured through the same FontInterface paint draws with.
+const FontMetrics* document_variant_metrics(void* user, const FontMetrics* base, int weight,
+                                            bool italic) {
+    auto* doc = static_cast<weva_document*>(user);
+    if (!doc || !doc->host_font) return base;
+    // Only the default face has variants here; a registered family's
+    // metrics object is not a host face.
+    if (base && base != doc->host_metrics.get()) return base;
+    const FaceHandle v = doc->host_font->variant(doc->face, weight, italic);
+    if (v.id == doc->face.id) return base;
+    const auto key = std::make_tuple(v.id, weight, italic);
+    auto it = doc->variant_metrics.find(key);
+    if (it == doc->variant_metrics.end()) {
+        it = doc->variant_metrics
+                 .emplace(key, std::make_unique<FontInterfaceMetrics>(doc->host_font.get(), v))
+                 .first;
+    }
+    return it->second.get();
+}
+
+} // namespace
+
 void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend* backend,
                                     uint64_t face) {
     if (!doc) return;
+    doc->variant_metrics.clear();
     if (!backend) {
         doc->host_font.reset();
         doc->host_metrics.reset();
         doc->face = StubFont::builtin();
+        doc->ctx.variant_metrics = nullptr;
+        doc->ctx.variant_user = nullptr;
         return;
     }
     doc->host_font = std::make_unique<HostFontBackend>(*backend, &doc->font);
@@ -363,6 +400,8 @@ void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend
     // a host that has only one face can leave alone.
     doc->face = face ? FaceHandle{face} : StubFont::builtin();
     doc->host_metrics = std::make_unique<FontInterfaceMetrics>(doc->host_font.get(), doc->face);
+    doc->ctx.variant_metrics = &document_variant_metrics;
+    doc->ctx.variant_user = doc;
 }
 
 weva_document_t weva_document_create(const weva_config* config) {

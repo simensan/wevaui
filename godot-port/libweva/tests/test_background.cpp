@@ -99,6 +99,18 @@ struct Fixture {
     MonoFontMetrics metrics;
     BoxId root = kNoBox;
 
+    BoxId find(std::string_view id, BoxId from = -2) const {
+        const BoxId start = from == -2 ? root : from;
+        if (start == kNoBox) return kNoBox;
+        const Box& b = tree[start];
+        if (b.kind == BoxKind::Block && b.element && b.element->get_attribute("id") == id) return start;
+        for (BoxId c : tree.children(start)) {
+            const BoxId hit = find(id, c);
+            if (hit != kNoBox) return hit;
+        }
+        return kNoBox;
+    }
+
     Fixture() {
         auto ua = std::make_unique<Stylesheet>();
         CssParseError e;
@@ -429,4 +441,21 @@ void test_paint_transform_rotates_geometry() {
     }
     CHECK(rotated);
     CHECK(shifted);
+}
+
+void test_font_weight_resolution() {
+    // CSS Fonts L4 §2.2: keywords and numbers; bolder / lighter against the
+    // 400 base; italic and oblique both count as italic.
+    Fixture f;
+    CHECK(f.css("#a { font-weight: bold } #b { font-weight: 600 } #c { font-weight: lighter }"
+                "#d { font-style: italic } #e { font-style: oblique 10deg } #n { }"));
+    CHECK(f.layout("<body><p id=a></p><p id=b></p><p id=c></p><p id=d></p><p id=e></p><p id=n></p></body>"));
+    const auto style = [&](std::string_view id) { return f.tree[f.find(id)].style; };
+    CHECK(resolve_font_weight(style("a")) == 700);
+    CHECK(resolve_font_weight(style("b")) == 600);
+    CHECK(resolve_font_weight(style("c")) == 300);
+    CHECK(resolve_font_weight(style("n")) == 400);
+    CHECK(resolve_font_italic(style("d")));
+    CHECK(resolve_font_italic(style("e")));
+    CHECK(!resolve_font_italic(style("n")));
 }

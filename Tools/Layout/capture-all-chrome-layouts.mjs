@@ -88,6 +88,22 @@ const METRICS = (() => {
     process.argv.splice(i, 1);
     return v;
 })();
+// --screenshot writes <page>.chrome.png beside the page (the viewport, after
+// the same animation freeze the layout capture applies); --no-layout skips
+// the .chrome-layout.json, so a visual pass with real fonts never overwrites
+// the synthetic-metric captures the oracle arbitrates with.
+const SCREENSHOT = (() => {
+    const i = process.argv.indexOf('--screenshot');
+    if (i < 0) return false;
+    process.argv.splice(i, 1);
+    return true;
+})();
+const NO_LAYOUT = (() => {
+    const i = process.argv.indexOf('--no-layout');
+    if (i < 0) return false;
+    process.argv.splice(i, 1);
+    return true;
+})();
 const MONO_FONTS_DIR = path.join(REPO, 'godot-port', 'tools', 'oracle', 'fonts');
 function monoFontFaceCss() {
     const u = p => pathToFileURL(p).href;
@@ -202,6 +218,9 @@ async function captureOne(browser, target) {
         }
         await page.evaluate(() => document.fonts.ready);
         await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+        if (SCREENSHOT) {
+            await page.screenshot({ path: htmlPath + '.chrome.png', clip: { x: 0, y: 0, width, height } });
+        }
         elements = await page.evaluate(() => {
             const out = [];
             // Skip the synthetic wrapper (html/head/body) and anything inside
@@ -250,6 +269,7 @@ async function captureOne(browser, target) {
     }
 
     const outPath = htmlPath + '.chrome-layout.json';
+    if (NO_LAYOUT) return { htmlPath, outPath, ok: true, count: elements.length };
     fs.writeFileSync(outPath, JSON.stringify({
         source: path.basename(htmlPath),
         width, height,

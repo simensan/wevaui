@@ -473,13 +473,24 @@ Recti intersect(const Recti& a, const Recti& b) {
 // texture that no longer exists, which a host that maps ids faithfully renders
 // untextured — and which, under a real GPU backend, frees a texture a queued
 // draw is still using. Shaping twice is cheap next to that.
+// The face a run draws with: the document face, or the host's bold / italic
+// variant of it for the run's font-weight and font-style.
+FaceHandle face_for_run(const Box& b, const PaintContext& paint) {
+    if (!paint.font) return paint.face;
+    const int weight = resolve_font_weight(b.style);
+    const bool italic = resolve_font_italic(b.style);
+    if (weight < 600 && !italic) return paint.face;
+    return paint.font->variant(paint.face, weight, italic);
+}
+
 void prepare_glyphs(const BoxTree& tree, BoxId id, const PaintContext& paint) {
     const Box& b = tree[id];
     if (b.kind == BoxKind::Text && !b.text.empty() && paint.font && paint.atlas) {
+        const FaceHandle face = face_for_run(b, paint);
         std::vector<ShapedGlyph> glyphs;
-        paint.font->shape(paint.face, b.text, b.font_size, &glyphs);
+        paint.font->shape(face, b.text, b.font_size, &glyphs);
         for (const ShapedGlyph& g : glyphs) {
-            paint.atlas->get(paint.font, paint.face, g.glyph, b.font_size);
+            paint.atlas->get(paint.font, face, g.glyph, b.font_size);
         }
     }
     for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, paint);
@@ -651,6 +662,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         const double spacing =
             letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;
         const LinearColor text_color = resolve_color(b.style, "color");
+        const FaceHandle run_face = face_for_run(b, paint);
         // text-shadow first, under the glyphs: the offset run in the shadow
         // colour. A blur is a 5x5 Gaussian kernel of glyph copies, sigma =
         // blur / 2, weights normalised so the stack's coverage approaches
@@ -660,7 +672,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             if (sh.blur <= 0) {
                 Mesh shadow;
                 build_text_geometry(b.text, x + sh.x, baseline + sh.y, b.font_size, sh.color, paint,
-                                    &shadow, spacing);
+                                    &shadow, spacing, &run_face);
                 draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf);
                 continue;
             }
@@ -683,13 +695,14 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                     if (c.a > 1) c.a = 1;
                     Mesh shadow;
                     build_text_geometry(b.text, x + sh.x + i * sigma, baseline + sh.y + j * sigma,
-                                        b.font_size, c, paint, &shadow, spacing);
+                                        b.font_size, c, paint, &shadow, spacing, &run_face);
                     draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf);
                 }
             }
         }
         Mesh text;
-        build_text_geometry(b.text, x, baseline, b.font_size, text_color, paint, &text, spacing);
+        build_text_geometry(b.text, x, baseline, b.font_size, text_color, paint, &text, spacing,
+                            &run_face);
         // `background-clip: text`: the run's element paints its gradient
         // through the glyphs. Each glyph vertex takes the gradient's colour
         // at its position over the run — right for a run-wide gradient,
@@ -855,14 +868,15 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
 
 void build_text_geometry(std::string_view text, double x, double baseline_y, double font_size,
                          const LinearColor& color, const PaintContext& paint, Mesh* out,
-                         double letter_spacing) {
+                         double letter_spacing, const FaceHandle* face_override) {
     if (!paint.font || !paint.atlas || text.empty()) return;
+    const FaceHandle face = face_override ? *face_override : paint.face;
     std::vector<ShapedGlyph> glyphs;
-    paint.font->shape(paint.face, text, font_size, &glyphs);
+    paint.font->shape(face, text, font_size, &glyphs);
 
     double pen = x;
     for (const ShapedGlyph& g : glyphs) {
-        const GlyphSlot* slot = paint.atlas->get(paint.font, paint.face, g.glyph, font_size);
+        const GlyphSlot* slot = paint.atlas->get(paint.font, face, g.glyph, font_size);
         // A glyph with no bitmap — a space, or one the face does not have —
         // still advances the pen. Skipping the advance would close the gaps
         // between words.

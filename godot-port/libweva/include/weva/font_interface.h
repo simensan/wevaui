@@ -64,6 +64,13 @@ public:
                            Bitmap* out) = 0;
     virtual void shape(FaceHandle face, std::string_view utf8, double px,
                        std::vector<ShapedGlyph>* out) = 0;
+    // The face for a font-weight and italic flag: a real bold or italic face,
+    // a synthesized one, or `face` itself when the backend has neither.
+    virtual FaceHandle variant(FaceHandle face, int weight, bool italic) {
+        (void)weight;
+        (void)italic;
+        return face;
+    }
 };
 
 // A built-in 5x7 bitmap face covering printable ASCII, so the pipeline can

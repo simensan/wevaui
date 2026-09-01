@@ -11,7 +11,7 @@ const GlyphSlot* GlyphAtlas::get(FontInterface* font, FaceHandle face, uint32_t 
     // 16px glyph rasterize identically, and keying on the raw double would
     // re-pack the same glyph for every fractional size a percentage font-size
     // produces.
-    const Key key{glyph, static_cast<int>(std::lround(px))};
+    const Key key{face.id, glyph, static_cast<int>(std::lround(px))};
     auto it = slots_.find(key);
     if (it != slots_.end()) return &it->second;
 

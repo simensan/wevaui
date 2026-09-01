@@ -7,6 +7,7 @@
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/typed_array.hpp>
+#include <godot_cpp/variant/transform2d.hpp>
 #include <godot_cpp/variant/vector2.hpp>
 #include <godot_cpp/variant/vector2i.hpp>
 
@@ -43,6 +44,12 @@ int64_t index_of(uint32_t glyph) { return static_cast<int64_t>(glyph & kIndexMas
 
 } // namespace
 
+GodotFontBackend::~GodotFontBackend() {
+    TextServer* ts = server();
+    if (!ts) return;
+    for (const RID& r : owned_) ts->free_rid(r);
+}
+
 uint64_t GodotFontBackend::adopt(const RID& font) {
     if (!font.is_valid()) return 0;
     const uint64_t handle = next_face_++;
@@ -59,6 +66,12 @@ uint64_t GodotFontBackend::adopt(const TypedArray<RID>& fonts) {
     if (list.empty()) return 0;
     const uint64_t handle = next_face_++;
     faces_[handle] = std::move(list);
+    return handle;
+}
+
+uint64_t GodotFontBackend::adopt(const TypedArray<RID>& fonts, const PackedByteArray& primary_data) {
+    const uint64_t handle = adopt(fonts);
+    if (handle && !primary_data.is_empty()) face_data_[handle] = primary_data;
     return handle;
 }
 
@@ -87,6 +100,7 @@ uint64_t GodotFontBackend::load_face(void* self, const uint8_t* data, size_t len
     const RID font = ts->create_font();
     if (!font.is_valid()) return 0;
     ts->font_set_data(font, bytes);
+    me->owned_.push_back(font);
     return me->adopt(font);
 }
 
@@ -251,6 +265,55 @@ size_t GodotFontBackend::shape(void* self, uint64_t face, const char* utf8, size
     return count;
 }
 
+uint64_t GodotFontBackend::variant(void* self, uint64_t face, int32_t weight, int32_t italic) {
+    GodotFontBackend* me = static_cast<GodotFontBackend*>(self);
+    TextServer* ts = server();
+    if (!me || !ts) return face;
+    const bool bold = weight >= 600;
+    const bool oblique = italic != 0;
+    if (!bold && !oblique) return face;
+    const auto key = std::make_tuple(face, bold, oblique);
+    const auto hit = me->variants_.find(key);
+    if (hit != me->variants_.end()) return hit->second;
+    const std::vector<RID>* fonts = me->fonts_of(face);
+    if (!fonts || fonts->empty()) return face;
+    // The theme font ships one weight, so bold is emboldened outlines (the
+    // same synthesis Godot's own SystemFont applies without a bold file) and
+    // italic a shear; a face with real bold or italic files would be adopted
+    // as its own face instead. Each variant is an INDEPENDENT font over the
+    // same data: a linked variation shares the base font's glyph cache, and
+    // its emboldened, sheared glyphs replaced the regular ones at every size
+    // both were drawn at — the whole page came out bold italic. A font whose
+    // data is not readable (a system symbol face) keeps its regular self.
+    const auto data_it = me->face_data_.find(face);
+    if (data_it == me->face_data_.end() || data_it->second.is_empty()) return face;
+    std::vector<RID> derived;
+    for (size_t slot = 0; slot < fonts->size(); ++slot) {
+        const RID& base = (*fonts)[slot];
+        // Only the primary font's data is known; the fallbacks (system symbol
+        // faces) keep their regular selves.
+        if (slot != 0) {
+            derived.push_back(base);
+            continue;
+        }
+        const RID v = ts->create_font();
+        if (!v.is_valid()) {
+            derived.push_back(base);
+            continue;
+        }
+        ts->font_set_data(v, data_it->second);
+        if (bold) ts->font_set_embolden(v, weight >= 800 ? 0.9 : 0.6);
+        if (oblique) ts->font_set_transform(v, Transform2D(1.0, 0.0, 0.2, 1.0, 0.0, 0.0));
+        me->owned_.push_back(v);
+        derived.push_back(v);
+    }
+    if (derived.empty()) return face;
+    const uint64_t handle = me->next_face_++;
+    me->faces_[handle] = std::move(derived);
+    me->variants_[key] = handle;
+    return handle;
+}
+
 void GodotFontBackend::fill(weva_font_backend* out) {
     if (!out) return;
     out->user_data = this;
@@ -260,6 +323,7 @@ void GodotFontBackend::fill(weva_font_backend* out) {
     out->glyph_metrics = &GodotFontBackend::glyph_metrics;
     out->rasterize = &GodotFontBackend::rasterize;
     out->shape = &GodotFontBackend::shape;
+    out->variant = &GodotFontBackend::variant;
 }
 
 } // namespace weva_godot

@@ -40,10 +40,15 @@ public:
     int slot_count() const { return static_cast<int>(slots_.size()); }
 
 private:
+    // Keyed by face as well as glyph: a bold or italic variant is another
+    // face over the same glyph indices, and without the face in the key a
+    // bold run reused whichever regular glyphs were already packed.
     struct Key {
+        uint64_t face;
         uint32_t glyph;
         int px_quantised;
         bool operator<(const Key& o) const {
+            if (face != o.face) return face < o.face;
             return glyph != o.glyph ? glyph < o.glyph : px_quantised < o.px_quantised;
         }
     };

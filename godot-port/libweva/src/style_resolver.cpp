@@ -554,3 +554,30 @@ const FontMetrics* LayoutContext::font_for(std::string_view stack) const {
 }
 
 } // namespace weva
+
+namespace weva {
+
+int resolve_font_weight(const ComputedStyle* style) {
+    if (!style) return 400;
+    std::string_view v = style->get("font-weight");
+    while (!v.empty() && v.front() == ' ') v.remove_prefix(1);
+    while (!v.empty() && v.back() == ' ') v.remove_suffix(1);
+    if (v.empty() || v == "normal") return 400;
+    if (v == "bold" || v == "bolder") return 700;
+    if (v == "lighter") return 300;
+    int n = 0;
+    for (char c : v) {
+        if (c < '0' || c > '9') return 400;
+        n = n * 10 + (c - '0');
+    }
+    return n >= 1 && n <= 1000 ? n : 400;
+}
+
+bool resolve_font_italic(const ComputedStyle* style) {
+    if (!style) return false;
+    std::string_view v = style->get("font-style");
+    while (!v.empty() && v.front() == ' ') v.remove_prefix(1);
+    return v.size() >= 6 && (v.substr(0, 6) == "italic" || v.substr(0, 7) == "oblique");
+}
+
+} // namespace weva

@@ -32,6 +32,13 @@ struct LayoutContext {
     std::vector<std::pair<std::string, const FontMetrics*>> fonts;
     void register_font(std::string_view family, const FontMetrics* metrics);
     const FontMetrics* font_for(std::string_view family_stack) const;
+    // Metrics for a bold or italic variant of `base` (null = the default
+    // face), when the host can supply one: a bold face's advances are wider,
+    // and layout has to measure with the face paint will draw. Unset means
+    // every weight measures like the regular face, as the reference does.
+    const FontMetrics* (*variant_metrics)(void* user, const FontMetrics* base, int weight,
+                                          bool italic) = nullptr;
+    void* variant_user = nullptr;
     // The document root's resolved line-height, for `rlh` lengths. Zero means
     // unset, in which case CssLength falls back to root_font_size * 1.2.
     double root_line_height_px = 0;
@@ -157,5 +164,11 @@ BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand);
 bool try_resolve_aspect_ratio(const ComputedStyle* style, double* ratio);
 
 bool is_rtl(const ComputedStyle* style);
+
+// CSS Fonts L4 §2.2 / §2.3: the numeric font-weight (100-900; `bolder` and
+// `lighter` read as 700 and 300 against the common 400 base) and whether the
+// font-style is italic or oblique.
+int resolve_font_weight(const ComputedStyle* style);
+bool resolve_font_italic(const ComputedStyle* style);
 
 } // namespace weva

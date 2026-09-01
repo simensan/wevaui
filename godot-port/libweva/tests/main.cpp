@@ -159,6 +159,7 @@ void test_paint_gradient_backgrounds_and_canvas();
 void test_text_transform_at_build();
 void test_blur_and_padded_rasterize();
 void test_paint_transform_rotates_geometry();
+void test_font_weight_resolution();
 void test_anonymous_block_inherits_text_align();
 void test_inline_fragments();
 void test_inline_atoms();
@@ -356,6 +357,7 @@ int main() {
     test_text_transform_at_build();
     test_blur_and_padded_rasterize();
     test_paint_transform_rotates_geometry();
+    test_font_weight_resolution();
     test_anonymous_block_inherits_text_align();
     test_inline_fragments();
     test_inline_atoms();

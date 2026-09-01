@@ -2,11 +2,13 @@
 
 #include "weva_c.h"
 
+#include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/typed_array.hpp>
 
 #include <cstdint>
 #include <map>
+#include <tuple>
 #include <vector>
 
 // libweva's font backend, implemented over Godot's TextServer.
@@ -27,6 +29,9 @@ public:
     // Fills a table whose `user_data` is this object. The table outlives the
     // call; the caller keeps it alive for as long as the document.
     void fill(weva_font_backend* out);
+    // Frees the faces this backend created (loaded files, synthesized
+    // variants); adopted engine fonts are left to their owners.
+    ~GodotFontBackend();
 
     // Adopts a face the engine already has — the theme's fallback font, say —
     // without going through a font file. Returns the handle to hand to
@@ -37,6 +42,10 @@ public:
     // face). Shaping runs across all of them, and a glyph id carries which
     // one it came from in its top byte, so the core's opaque ids stay opaque.
     uint64_t adopt(const godot::TypedArray<godot::RID>& fonts);
+    // The same, with the primary font's file data, from which bold and italic
+    // variants are built as independent fonts (see variant).
+    uint64_t adopt(const godot::TypedArray<godot::RID>& fonts,
+                   const godot::PackedByteArray& primary_data);
 
 private:
     // Every entry point is static so its address fits a C function pointer;
@@ -52,11 +61,17 @@ private:
                              weva_glyph_bitmap* out);
     static size_t shape(void* self, uint64_t face, const char* utf8, size_t length, double px,
                         uint32_t* glyphs, double* advances, uint32_t* clusters, size_t capacity);
+    static uint64_t variant(void* self, uint64_t face, int32_t weight, int32_t italic);
 
     godot::RID resolve(uint64_t face, uint32_t slot = 0) const;
     const std::vector<godot::RID>* fonts_of(uint64_t face) const;
 
     std::map<uint64_t, std::vector<godot::RID>> faces_;
+    // Synthesized bold / italic faces by (base face, bold, italic): linked
+    // variations of every font in the face, sharing their glyph caches.
+    std::map<std::tuple<uint64_t, bool, bool>, uint64_t> variants_;
+    std::vector<godot::RID> owned_;
+    std::map<uint64_t, godot::PackedByteArray> face_data_;
     uint64_t next_face_ = 1;
     // The core copies the bitmap before `rasterize` returns, so one reusable
     // buffer is enough and costs no per-glyph allocation.

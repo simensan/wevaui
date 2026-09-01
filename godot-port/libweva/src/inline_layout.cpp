@@ -100,6 +100,18 @@ double measure_spaced(const FontMetrics& default_metrics, std::string_view text,
     return w;
 }
 
+// The face a run measures with: the family's registered metrics, then the
+// weight/italic variant of it when the host provides one.
+const FontMetrics* metrics_for_style(const LayoutContext& ctx, const ComputedStyle* style) {
+    const FontMetrics* base = ctx.font_for(get(style, "font-family"));
+    if (!ctx.variant_metrics) return base;
+    const int weight = resolve_font_weight(style);
+    const bool italic = resolve_font_italic(style);
+    if (weight < 600 && !italic) return base;
+    const FontMetrics* v = ctx.variant_metrics(ctx.variant_user, base, weight, italic);
+    return v ? v : base;
+}
+
 void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
                        const LayoutContext& ctx, const ComputedStyle* inherited,
                        const ComputedStyle* inherited_parent, const FontMetrics* metrics,
@@ -116,7 +128,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // that element's PARENT — `<small>` (0.83em) inside a 14px label is
             // 11.62px, not 0.83 of the root.
             item.font_size = font_size_px(item.style, inherited_parent, ctx);
-            item.metrics = ctx.font_for(get(item.style, "font-family"));
+            item.metrics = metrics_for_style(ctx, item.style);
             item.line_height = line_height_px(item.style, item.font_size, ctx,
                                               item.metrics ? item.metrics : metrics);
             item.letter_spacing = letter_spacing_px(item.style, ctx, item.font_size);
@@ -146,7 +158,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.inline_parent = inline_parent;
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, inherited, ctx);
-            item.metrics = ctx.font_for(get(item.style, "font-family"));
+            item.metrics = metrics_for_style(ctx, item.style);
             item.line_height = line_height_px(item.style, item.font_size, ctx,
                                               item.metrics ? item.metrics : metrics);
             out->push_back(item);
@@ -173,7 +185,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
                 item.font_size = font_size_px(item.style, inherited, ctx);
                 item.margin_edge = mar.left;
                 item.decoration = bor.left + pad.left;
-                item.metrics = ctx.font_for(get(item.style, "font-family"));
+                item.metrics = metrics_for_style(ctx, item.style);
                 item.line_height = line_height_px(item.style, item.font_size, ctx,
                                                   item.metrics ? item.metrics : metrics);
                 out->push_back(item);
@@ -199,7 +211,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.inline_parent = inline_parent;
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, inherited, ctx);
-            item.metrics = ctx.font_for(get(item.style, "font-family"));
+            item.metrics = metrics_for_style(ctx, item.style);
             item.line_height = line_height_px(item.style, item.font_size, ctx,
                                               item.metrics ? item.metrics : metrics);
             out->push_back(item);

@@ -155,6 +155,11 @@ typedef struct weva_font_backend {
     size_t (*shape)(void* user_data, uint64_t face, const char* utf8, size_t length, double px,
                     uint32_t* out_glyphs, double* out_advances, uint32_t* out_clusters,
                     size_t capacity);
+    /* Optional. The face to use for a CSS font-weight (100-900) and italic
+     * flag: a real bold or italic face when the host has one, a synthesized
+     * one otherwise. Returning `face` (or leaving this null) means the
+     * regular face serves every weight. */
+    uint64_t (*variant)(void* user_data, uint64_t face, int32_t weight, int32_t italic);
 } weva_font_backend;
 
 /* Both copy the table, so the caller may free it on return. Passing null

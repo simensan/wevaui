@@ -1,6 +1,7 @@
 #include "weva_node.h"
 
 #include <godot_cpp/classes/font.hpp>
+#include <godot_cpp/classes/font_file.hpp>
 #include <godot_cpp/classes/image.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/theme_db.hpp>
@@ -80,7 +81,12 @@ void WevaDocument::ensure_font_backend() {
     const TypedArray<RID> symbol_rids = symbol_font_->get_rids();
     for (int64_t i = 0; i < symbol_rids.size(); ++i) rids.push_back(symbol_rids[i]);
 
-    font_face_ = font_backend_.adopt(rids);
+    // The theme font's file data lets the backend build bold and italic
+    // variants as fonts of their own (a variation would share its glyphs).
+    PackedByteArray primary_data;
+    const Ref<FontFile> file = fallback;
+    if (file.is_valid()) primary_data = file->get_data();
+    font_face_ = font_backend_.adopt(rids, primary_data);
     if (font_face_ == 0) return;
     font_backend_.fill(&font_table_);
     weva_document_set_font_backend(doc_, &font_table_, font_face_);
