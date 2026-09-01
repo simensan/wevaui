@@ -62,18 +62,28 @@ double letter_spacing_of(const ComputedStyle* style, const LayoutContext& ctx, d
     return 0;
 }
 
+std::vector<std::string_view> split_shadow_list(std::string_view s, char sep);
+
 // `opacity` scales every vertex alpha: the group is not composited through a
 // layer, so overlapping children of a translucent box double up where they
 // overlap. A layer per opacity group is the later, exact form.
-void draw_mesh(const Mesh& mesh, RenderInterface* backend, TextureHandle tex, double opacity = 1) {
+void draw_mesh(const Mesh& mesh, RenderInterface* backend, TextureHandle tex, double opacity = 1,
+               const Transform2D* xform = nullptr) {
     if (mesh.empty()) return;
     // Compiled and released per draw for now. A backend that batches will want
     // geometry to outlive a frame; that needs the paint cache, keyed on style
     // and layout versions, which is a later slice.
-    if (opacity < 1) {
-        Mesh faded = mesh;
-        for (Vertex& v : faded.vertices) v.color.a *= static_cast<float>(std::max(0.0, opacity));
-        const GeometryHandle g = backend->compile_geometry(faded.vertices, faded.indices);
+    if (opacity < 1 || xform) {
+        Mesh copy = mesh;
+        for (Vertex& v : copy.vertices) {
+            if (opacity < 1) v.color.a *= static_cast<float>(std::max(0.0, opacity));
+            if (xform) {
+                double x = 0, y = 0;
+                xform->apply(v.position.x, v.position.y, &x, &y);
+                v.position = {static_cast<float>(x), static_cast<float>(y)};
+            }
+        }
+        const GeometryHandle g = backend->compile_geometry(copy.vertices, copy.indices);
         backend->render_geometry(g, {0, 0}, tex);
         backend->release_geometry(g);
         return;
@@ -81,6 +91,193 @@ void draw_mesh(const Mesh& mesh, RenderInterface* backend, TextureHandle tex, do
     const GeometryHandle g = backend->compile_geometry(mesh.vertices, mesh.indices);
     backend->render_geometry(g, {0, 0}, tex);
     backend->release_geometry(g);
+}
+
+// ---- transform (CSS Transforms L1) ---------------------------------------
+
+// `<transform-list>` applied about `transform-origin`, as a matrix in the
+// coordinates of the box's border box; identity when there is none. skew and
+// matrix() are read; 3D functions are ignored.
+bool parse_transform(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+                     double width, double height, Transform2D* out) {
+    const std::string_view raw = get(style, "transform");
+    if (raw.empty() || raw == "none") return false;
+    struct Fn { std::string name; std::vector<std::string_view> args; };
+    std::vector<Fn> fns;
+    size_t cursor = 0;
+    while (cursor < raw.size()) {
+        const size_t open = raw.find('(', cursor);
+        if (open == std::string_view::npos) break;
+        size_t close = std::string_view::npos;
+        int depth = 0;
+        for (size_t i = open; i < raw.size(); ++i) {
+            if (raw[i] == '(') ++depth;
+            else if (raw[i] == ')' && --depth == 0) { close = i; break; }
+        }
+        if (close == std::string_view::npos) break;
+        Fn f;
+        std::string_view name = raw.substr(cursor, open - cursor);
+        while (!name.empty() && (name.front() == ' ' || name.front() == ',')) name.remove_prefix(1);
+        while (!name.empty() && name.back() == ' ') name.remove_suffix(1);
+        f.name.assign(name);
+        for (char& c : f.name) c = static_cast<char>(c >= 'A' && c <= 'Z' ? c - 'A' + 'a' : c);
+        f.args = split_shadow_list(raw.substr(open + 1, close - open - 1), ',');
+        for (std::string_view& a : f.args) {
+            while (!a.empty() && a.front() == ' ') a.remove_prefix(1);
+            while (!a.empty() && a.back() == ' ') a.remove_suffix(1);
+        }
+        fns.push_back(std::move(f));
+        cursor = close + 1;
+    }
+    if (fns.empty()) return false;
+    const auto length = [&](std::string_view s, double basis) {
+        const ResolvedLength r = resolve_length(s, ctx, font_size, basis);
+        if (r.kind == LengthKind::Length) return r.pixels;
+        if (r.kind == LengthKind::Percent) return basis * r.percent * 0.01;
+        return 0.0;
+    };
+    const auto number = [](std::string_view s, double fallback) {
+        const std::string t(s);
+        char* end = nullptr;
+        const double v = std::strtod(t.c_str(), &end);
+        return end == t.c_str() ? fallback : v;
+    };
+    const auto angle = [&](std::string_view s) {
+        const std::string t(s);
+        char* end = nullptr;
+        const double v = std::strtod(t.c_str(), &end);
+        if (end == t.c_str()) return 0.0;
+        const std::string_view unit(end);
+        if (unit == "rad") return v * 180.0 / 3.14159265358979323846;
+        if (unit == "grad") return v * 0.9;
+        if (unit == "turn") return v * 360.0;
+        return v;
+    };
+    // CSS applies the list right to left to a point: the last function
+    // first. multiply() applies its receiver first, so fold from the end.
+    Transform2D m = Transform2D::identity();
+    for (size_t i = fns.size(); i-- > 0;) {
+        const Fn& f = fns[i];
+        Transform2D t = Transform2D::identity();
+        const std::string& n = f.name;
+        const size_t argc = f.args.size();
+        if (n == "translate" && argc >= 1) {
+            t = Transform2D::translate(static_cast<float>(length(f.args[0], width)),
+                                       static_cast<float>(argc > 1 ? length(f.args[1], height) : 0.0));
+        } else if (n == "translatex" && argc >= 1) {
+            t = Transform2D::translate(static_cast<float>(length(f.args[0], width)), 0);
+        } else if (n == "translatey" && argc >= 1) {
+            t = Transform2D::translate(0, static_cast<float>(length(f.args[0], height)));
+        } else if (n == "scale" && argc >= 1) {
+            const double sx = number(f.args[0], 1);
+            t = Transform2D::scale(static_cast<float>(sx),
+                                   static_cast<float>(argc > 1 ? number(f.args[1], 1) : sx));
+        } else if (n == "scalex" && argc >= 1) {
+            t = Transform2D::scale(static_cast<float>(number(f.args[0], 1)), 1);
+        } else if (n == "scaley" && argc >= 1) {
+            t = Transform2D::scale(1, static_cast<float>(number(f.args[0], 1)));
+        } else if (n == "rotate" && argc >= 1) {
+            t = Transform2D::rotate(angle(f.args[0]));
+        } else if (n == "skewx" && argc >= 1) {
+            t = Transform2D(1, 0, static_cast<float>(std::tan(angle(f.args[0]) * 3.14159265358979323846 / 180)), 1, 0, 0);
+        } else if (n == "skewy" && argc >= 1) {
+            t = Transform2D(1, static_cast<float>(std::tan(angle(f.args[0]) * 3.14159265358979323846 / 180)), 0, 1, 0, 0);
+        } else if (n == "skew" && argc >= 1) {
+            const double ax = angle(f.args[0]), ay = argc > 1 ? angle(f.args[1]) : 0;
+            t = Transform2D(1, static_cast<float>(std::tan(ay * 3.14159265358979323846 / 180)),
+                            static_cast<float>(std::tan(ax * 3.14159265358979323846 / 180)), 1, 0, 0);
+        } else if (n == "matrix" && argc >= 6) {
+            t = Transform2D(static_cast<float>(number(f.args[0], 1)), static_cast<float>(number(f.args[1], 0)),
+                            static_cast<float>(number(f.args[2], 0)), static_cast<float>(number(f.args[3], 1)),
+                            static_cast<float>(number(f.args[4], 0)), static_cast<float>(number(f.args[5], 0)));
+        } else {
+            continue;   // a 3D or unknown function: no effect
+        }
+        m = m.multiply(t);
+    }
+    // transform-origin, default 50% 50%; keywords and one-value forms.
+    double ox = width * 0.5, oy = height * 0.5;
+    const std::string_view origin_raw = get(style, "transform-origin");
+    if (!origin_raw.empty()) {
+        std::vector<std::string_view> toks = split_shadow_list(origin_raw, ' ');
+        const auto axis = [&](std::string_view s, double extent, bool horizontal) {
+            if (s == "center") return extent * 0.5;
+            if (s == (horizontal ? "left" : "top")) return 0.0;
+            if (s == (horizontal ? "right" : "bottom")) return extent;
+            return length(s, extent);
+        };
+        if (!toks.empty()) {
+            std::string_view a = toks[0], b = toks.size() > 1 ? toks[1] : std::string_view("center");
+            if (a == "top" || a == "bottom" || b == "left" || b == "right") std::swap(a, b);
+            ox = axis(a, width, true);
+            oy = axis(b, height, false);
+        }
+    }
+    *out = Transform2D::translate(static_cast<float>(-ox), static_cast<float>(-oy))
+               .multiply(m)
+               .multiply(Transform2D::translate(static_cast<float>(ox), static_cast<float>(oy)));
+    return true;
+}
+
+// ---- text-shadow (CSS Text Decoration L3 §4) ------------------------------
+
+struct TextShadow {
+    double x = 0, y = 0, blur = 0;
+    LinearColor color;
+};
+
+std::vector<TextShadow> parse_text_shadows(const ComputedStyle* style, const LayoutContext& ctx,
+                                           double font_size, const LinearColor& current) {
+    std::vector<TextShadow> out;
+    const std::string_view raw = get(style, "text-shadow");
+    if (raw.empty() || raw == "none") return out;
+    for (std::string_view layer : split_shadow_list(raw, ',')) {
+        TextShadow sh;
+        sh.color = current;
+        std::vector<double> lengths;
+        for (std::string_view tok : split_shadow_list(layer, ' ')) {
+            const ResolvedLength r = resolve_length(tok, ctx, font_size, std::nullopt);
+            if (r.kind == LengthKind::Length) { lengths.push_back(r.pixels); continue; }
+            if (tok == "currentcolor" || tok == "currentColor") continue;
+            CssParseError err;
+            CssValuePtr v = parse_css_value(tok, &err);
+            if (v && v->kind() == CssValueKind::Color) {
+                const auto& c = static_cast<const CssColor&>(*v);
+                sh.color = LinearColor::from_srgb(c.r, c.g, c.b, c.a);
+                continue;
+            }
+            return {};
+        }
+        if (lengths.size() < 2) return {};
+        sh.x = lengths[0];
+        sh.y = lengths[1];
+        if (lengths.size() > 2) sh.blur = std::max(0.0, lengths[2]);
+        if (sh.color.a > 0) out.push_back(sh);
+    }
+    return out;
+}
+
+float srgb_to_linear_f(float v) {
+    if (v <= 0) return 0;
+    if (v >= 1) return 1;
+    return v <= 0.04045f ? v / 12.92f : std::pow((v + 0.055f) / 1.055f, 2.4f);
+}
+
+bool clips_background_to_text(const ComputedStyle* style) {
+    return get(style, "-webkit-background-clip") == "text" || get(style, "background-clip") == "text";
+}
+
+// `filter: blur(<length>)` — the one filter painted; the rest pass through.
+double blur_filter_radius(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
+    const std::string_view raw = get(style, "filter");
+    const size_t at = raw.find("blur(");
+    if (at == std::string_view::npos) return 0;
+    const size_t close = raw.find(')', at);
+    if (close == std::string_view::npos) return 0;
+    std::string_view arg = raw.substr(at + 5, close - at - 5);
+    while (!arg.empty() && arg.front() == ' ') arg.remove_prefix(1);
+    const ResolvedLength r = resolve_length(arg, ctx, font_size, std::nullopt);
+    return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : 0;
 }
 
 // ---- box-shadow (CSS Backgrounds L3 §7.1) --------------------------------
@@ -168,7 +365,8 @@ double blurred_coverage(double e, double sigma) {
 constexpr int kShadowLayers = 12;
 
 void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_box,
-                         const BorderRadii& radii, RenderInterface* backend, double opacity) {
+                         const BorderRadii& radii, RenderInterface* backend, double opacity,
+                         const Transform2D* xf = nullptr) {
     for (size_t s = shadows.size(); s-- > 0;) {   // first shadow on top
         const Shadow& sh = shadows[s];
         if (sh.inset) continue;
@@ -191,7 +389,7 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             Mesh mesh;
             tessellate_rounded_rect(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
                                     c, &mesh);
-            draw_mesh(mesh, backend, {}, opacity);
+            draw_mesh(mesh, backend, {}, opacity, xf);
         }
     }
 }
@@ -199,7 +397,8 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
 // An inset shadow darkens the padding box from its edges inward; the offset
 // deepens the sides it points away from. Rendered as nested frames.
 void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding_box,
-                         const BorderRadii& radii, RenderInterface* backend, double opacity) {
+                         const BorderRadii& radii, RenderInterface* backend, double opacity,
+                         const Transform2D* xf = nullptr) {
     for (size_t s = shadows.size(); s-- > 0;) {
         const Shadow& sh = shadows[s];
         if (!sh.inset) continue;
@@ -227,7 +426,7 @@ void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding
             tessellate_border(padding_box, radii, std::min(top, padding_box.height),
                               std::min(right, padding_box.width), std::min(bottom, padding_box.height),
                               std::min(left, padding_box.width), colors, &mesh);
-            draw_mesh(mesh, backend, {}, opacity);
+            draw_mesh(mesh, backend, {}, opacity, xf);
         }
     }
 }
@@ -254,6 +453,8 @@ bool clips_children(const ComputedStyle* style) {
 struct PaintState {
     double opacity = 1;
     std::optional<Recti> scissor;
+    bool transformed = false;
+    Transform2D xform;   // accumulated, in absolute coordinates
 };
 
 Recti intersect(const Recti& a, const Recti& b) {
@@ -299,7 +500,8 @@ bool has_gradient_layer(const std::vector<BackgroundLayer>& layers) {
 // nothing textured to paint, so the caller paints the plain colour.
 bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
                               const Rect& area, const BorderRadii& radii, const LayoutContext& ctx,
-                              double font_size, const PaintContext& paint, double opacity = 1) {
+                              double font_size, const PaintContext& paint, double opacity = 1,
+                              const Transform2D* xf = nullptr) {
     if (!has_gradient_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
         return false;
     }
@@ -316,7 +518,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
         v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                        static_cast<float>((v.position.y - area.y) / area.height)};
     }
-    draw_mesh(mesh, paint.backend, tex, opacity);
+    draw_mesh(mesh, paint.backend, tex, opacity, xf);
     return true;
 }
 
@@ -351,29 +553,81 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     const BorderRadii radii =
         decorated && b.style ? resolve_border_radii(b.style, b.width, b.height, ctx, fs)
                              : BorderRadii::zero();
+
+    // A transform applies to the box and everything in it, about its origin
+    // in the box, in the frame its ancestors' transforms already set.
+    if (decorated && b.style && b.width > 0 && b.height > 0) {
+        Transform2D local;
+        if (parse_transform(b.style, ctx, fs, b.width, b.height, &local)) {
+            const Transform2D about_box =
+                Transform2D::translate(static_cast<float>(-x), static_cast<float>(-y))
+                    .multiply(local)
+                    .multiply(Transform2D::translate(static_cast<float>(x), static_cast<float>(y)));
+            state.xform = state.transformed ? about_box.multiply(state.xform) : about_box;
+            state.transformed = true;
+        }
+    }
+    const Transform2D* xf = state.transformed ? &state.xform : nullptr;
+
+    // `filter: blur()`: the box's own paint — background and shape — is
+    // rasterized with room around it, blurred, and drawn as one texture; its
+    // border and shadows are folded into that (dropped, for now), and its
+    // children paint sharp on top.
+    const double blur = decorated && b.style ? blur_filter_radius(b.style, ctx, fs) : 0;
+    bool blurred = false;
+    if (blur > 0 && !hidden && b.width > 0 && b.height > 0 && paint.backend && id != canvas_owner) {
+        const std::vector<BackgroundLayer> layers = layers_of(b);
+        const LinearColor bg = resolve_color(b.style, "background-color");
+        if (bg.a > 0 || has_gradient_layer(layers)) {
+            const double pad_px = 3 * blur;
+            const double full_w = b.width + 2 * pad_px, full_h = b.height + 2 * pad_px;
+            const double scale = std::min(1.0, 1024.0 / std::max(full_w, full_h));
+            const int tex_w = std::max(1, static_cast<int>(std::ceil(full_w * scale)));
+            const int tex_h = std::max(1, static_cast<int>(std::ceil(full_h * scale)));
+            const int pad = static_cast<int>(std::round(pad_px * scale));
+            std::vector<uint8_t> rgba;
+            rasterize_background_padded(layers, bg, b.width, b.height, tex_w, tex_h, pad, &radii, ctx,
+                                        fs, &rgba);
+            blur_rgba(&rgba, tex_w, tex_h, blur * scale);
+            const TextureHandle tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+            if (paint.owned_textures) paint.owned_textures->push_back(tex);
+            const Rect area(x - pad_px, y - pad_px, full_w, full_h);
+            Mesh mesh;
+            tessellate_rect(area, LinearColor::white(), &mesh);
+            for (Vertex& v : mesh.vertices) {
+                v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
+                               static_cast<float>((v.position.y - area.y) / area.height)};
+            }
+            draw_mesh(mesh, paint.backend, tex, state.opacity, xf);
+            blurred = true;
+        }
+    }
+
     std::vector<Shadow> shadows;
-    if (decorated && b.style && !hidden && b.width > 0 && b.height > 0) {
+    if (decorated && b.style && !hidden && !blurred && b.width > 0 && b.height > 0) {
         shadows = parse_box_shadows(b.style, ctx, fs, resolve_color(b.style, "color"));
-        paint_outer_shadows(shadows, border_box, radii, paint.backend, state.opacity);
+        paint_outer_shadows(shadows, border_box, radii, paint.backend, state.opacity, xf);
     }
 
     // A box whose background went onto the canvas (§14.2) does not paint it
     // again; a box with gradient layers paints them as one texture and only
-    // its border through the mesh.
-    bool background_done = id == canvas_owner || !decorated || hidden;
+    // its border through the mesh; one that clips its background to its text
+    // paints it through the glyphs instead (see the text branch).
+    const bool clip_text = decorated && b.style && clips_background_to_text(b.style);
+    bool background_done = id == canvas_owner || !decorated || hidden || blurred || clip_text;
     if (!background_done && b.style && b.width > 0 && b.height > 0) {
         const std::vector<BackgroundLayer> layers = layers_of(b);
         if (has_gradient_layer(layers)) {
             background_done = paint_layered_background(
                 layers, resolve_color(b.style, "background-color"), border_box, radii, ctx, fs, paint,
-                state.opacity);
+                state.opacity, xf);
         }
     }
 
-    if (decorated && !hidden) {
+    if (decorated && !hidden && !blurred) {
         Mesh mesh;
         paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done);
-        draw_mesh(mesh, paint.backend, {}, state.opacity);
+        draw_mesh(mesh, paint.backend, {}, state.opacity, xf);
         if (!shadows.empty()) {
             const Rect padding_box(x + b.border_left, y + b.border_top,
                                    b.width - b.border_left - b.border_right,
@@ -382,7 +636,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 paint_inset_shadows(shadows, padding_box,
                                     inset_radii(radii, b.border_top, b.border_right, b.border_bottom,
                                                 b.border_left),
-                                    paint.backend, state.opacity);
+                                    paint.backend, state.opacity, xf);
             }
         }
     }
@@ -394,14 +648,69 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         const double baseline =
             line != kNoBox && tree[line].kind == BoxKind::Line ? origin_y + tree[line].baseline
                                                                : y + b.height;
-        Mesh text;
         const double spacing =
             letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;
-        build_text_geometry(b.text, x, baseline, b.font_size, resolve_color(b.style, "color"),
-                            paint, &text, spacing);
+        const LinearColor text_color = resolve_color(b.style, "color");
+        // text-shadow first, under the glyphs: the offset run in the shadow
+        // colour. A blur is a 5x5 Gaussian kernel of glyph copies, sigma =
+        // blur / 2, weights normalised so the stack's coverage approaches
+        // the shadow's alpha at the centre — no blur pass exists in the
+        // canvas, and text is cheap to draw 25 times.
+        for (const TextShadow& sh : parse_text_shadows(b.style, ctx, b.font_size, text_color)) {
+            if (sh.blur <= 0) {
+                Mesh shadow;
+                build_text_geometry(b.text, x + sh.x, baseline + sh.y, b.font_size, sh.color, paint,
+                                    &shadow, spacing);
+                draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf);
+                continue;
+            }
+            const double sigma = sh.blur * 0.5;
+            double weights[5][5];
+            double total = 0;
+            for (int i = -2; i <= 2; ++i) {
+                for (int j = -2; j <= 2; ++j) {
+                    weights[i + 2][j + 2] = std::exp(-(i * i + j * j) / 2.0);
+                    total += weights[i + 2][j + 2];
+                }
+            }
+            for (int i = -2; i <= 2; ++i) {
+                for (int j = -2; j <= 2; ++j) {
+                    LinearColor c = sh.color;
+                    // Source-over of the stack: each copy's alpha is its share
+                    // of the remaining coverage, so the centre sums to the
+                    // shadow's own alpha rather than saturating.
+                    c.a = static_cast<float>(sh.color.a * weights[i + 2][j + 2] / total * 1.6);
+                    if (c.a > 1) c.a = 1;
+                    Mesh shadow;
+                    build_text_geometry(b.text, x + sh.x + i * sigma, baseline + sh.y + j * sigma,
+                                        b.font_size, c, paint, &shadow, spacing);
+                    draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf);
+                }
+            }
+        }
+        Mesh text;
+        build_text_geometry(b.text, x, baseline, b.font_size, text_color, paint, &text, spacing);
+        // `background-clip: text`: the run's element paints its gradient
+        // through the glyphs. Each glyph vertex takes the gradient's colour
+        // at its position over the run — right for a run-wide gradient,
+        // approximate for a multi-line one.
+        if (clips_background_to_text(b.style)) {
+            const std::vector<BackgroundLayer> layers = layers_of(b);
+            const BackgroundLayer* grad = nullptr;
+            for (const BackgroundLayer& l : layers) if (l.is_gradient) { grad = &l; break; }
+            if (grad) {
+                for (Vertex& v : text.vertices) {
+                    float c[4];
+                    sample_gradient(grad->gradient, v.position.x - x, v.position.y - y,
+                                    std::max(1.0, b.width), std::max(1.0, b.height), ctx, b.font_size, c);
+                    v.color = LinearColor(srgb_to_linear_f(c[0]), srgb_to_linear_f(c[1]),
+                                          srgb_to_linear_f(c[2]), c[3]);
+                }
+            }
+        }
         // The handle from the single up-front upload, never a fresh one: see
         // prepare_glyphs.
-        draw_mesh(text, paint.backend, atlas_texture, state.opacity);
+        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf);
     }
 
     // `overflow` other than visible clips the children to the padding box
@@ -411,9 +720,24 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     if (decorated && b.style && clips_children(b.style)) {
         const double px0 = x + b.border_left, py0 = y + b.border_top;
         const double px1 = x + b.width - b.border_right, py1 = y + b.height - b.border_bottom;
-        Recti r{static_cast<int>(std::floor(px0)), static_cast<int>(std::floor(py0)),
-                std::max(0, static_cast<int>(std::ceil(px1)) - static_cast<int>(std::floor(px0))),
-                std::max(0, static_cast<int>(std::ceil(py1)) - static_cast<int>(std::floor(py0)))};
+        double cx0 = px0, cy0 = py0, cx1 = px1, cy1 = py1;
+        if (xf) {
+            // The clip follows the transform as the bounding box of the
+            // transformed padding box: exact for translation and scale, a
+            // superset under rotation.
+            const double xs[4] = {px0, px1, px1, px0}, ys[4] = {py0, py0, py1, py1};
+            cx0 = cy0 = 1e300;
+            cx1 = cy1 = -1e300;
+            for (int k = 0; k < 4; ++k) {
+                double tx = 0, ty = 0;
+                xf->apply(xs[k], ys[k], &tx, &ty);
+                cx0 = std::min(cx0, tx); cy0 = std::min(cy0, ty);
+                cx1 = std::max(cx1, tx); cy1 = std::max(cy1, ty);
+            }
+        }
+        Recti r{static_cast<int>(std::floor(cx0)), static_cast<int>(std::floor(cy0)),
+                std::max(0, static_cast<int>(std::ceil(cx1)) - static_cast<int>(std::floor(cx0))),
+                std::max(0, static_cast<int>(std::ceil(cy1)) - static_cast<int>(std::floor(cy0)))};
         if (state.scissor) r = intersect(*state.scissor, r);
         state.scissor = r;
         paint.backend->set_scissor(&r);

@@ -79,6 +79,59 @@ bool is_inline_level_block(DisplayKind d) {
 
 } // namespace
 
+// CSS Text L3 §2.1 `text-transform`: uppercase, lowercase and capitalize
+// over ASCII and Latin-1 (the ranges the samples use); other scripts pass
+// through unchanged. The result is owned by the tree, since no DOM node
+// holds it. Applied when the run's box is built so layout measures the
+// transformed text — with a real face the capitals are wider.
+std::string_view BoxBuilder::transformed_text(std::string_view text,
+                                              const ComputedStyle* style) {
+    const std::string_view mode = get(style, "text-transform");
+    if (mode.empty() || mode == "none" || text.empty()) return text;
+    const bool upper = mode == "uppercase", lower = mode == "lowercase",
+               capitalize = mode == "capitalize";
+    if (!upper && !lower && !capitalize) return text;
+    std::string out;
+    out.reserve(text.size());
+    bool at_word_start = true;
+    for (size_t i = 0; i < text.size(); ++i) {
+        const unsigned char c = static_cast<unsigned char>(text[i]);
+        // A two-byte Latin-1 letter: U+00C0-U+00DE upper, U+00E0-U+00FE lower
+        // (× and ÷ excepted), encoded as C3 80-9E / C3 A0-BE.
+        if (c == 0xC3 && i + 1 < text.size()) {
+            unsigned char d = static_cast<unsigned char>(text[i + 1]);
+            const bool is_upper = d >= 0x80 && d <= 0x9E && d != 0x97;
+            const bool is_lower = d >= 0xA0 && d <= 0xBE && d != 0xB7;
+            const bool to_upper = upper || (capitalize && at_word_start);
+            if (to_upper && is_lower) d = static_cast<unsigned char>(d - 0x20);
+            else if (lower && is_upper) d = static_cast<unsigned char>(d + 0x20);
+            out.push_back(static_cast<char>(c));
+            out.push_back(static_cast<char>(d));
+            at_word_start = false;
+            ++i;
+            continue;
+        }
+        if (c >= 0x80) {
+            out.push_back(static_cast<char>(c));
+            at_word_start = false;
+            continue;
+        }
+        const bool letter = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        const bool digit = c >= '0' && c <= '9';
+        char o = static_cast<char>(c);
+        if (upper || (capitalize && at_word_start)) {
+            if (c >= 'a' && c <= 'z') o = static_cast<char>(c - 'a' + 'A');
+        } else if (lower) {
+            if (c >= 'A' && c <= 'Z') o = static_cast<char>(c - 'A' + 'a');
+        }
+        out.push_back(o);
+        // Capitalize acts on the first typographic letter unit of each word;
+        // a word starts after whitespace or punctuation (§2.1 "word" per UA).
+        at_word_start = !(letter || digit || c == '\'');
+    }
+    return tree_->own_text(std::move(out));
+}
+
 BoxId BoxBuilder::new_block_box_for(DisplayKind display, const Element* e,
                                     const ComputedStyle* style) {
     const BoxId id = tree_->create(BoxKind::Block, e, style);
@@ -122,7 +175,7 @@ void BoxBuilder::append_node_as_block_child(const Node& node, const ComputedStyl
         const auto& tn = static_cast<const TextNode&>(node);
         const BoxId id = tree_->create(BoxKind::Text, (*tree_)[parent].element, parent_style);
         Box& b = (*tree_)[id];
-        b.text = tn.data();
+        b.text = transformed_text(tn.data(), parent_style);
         b.source_node = &tn;
         tree_->append_child(parent, id);
         return;
@@ -211,7 +264,7 @@ void BoxBuilder::append_inline_child(const Node& node, const ComputedStyle* pare
         const auto& tn = static_cast<const TextNode&>(node);
         const BoxId id = tree_->create(BoxKind::Text, (*tree_)[parent].element, parent_style);
         Box& b = (*tree_)[id];
-        b.text = tn.data();
+        b.text = transformed_text(tn.data(), parent_style);
         b.source_node = &tn;
         tree_->append_child(parent, id);
         return;

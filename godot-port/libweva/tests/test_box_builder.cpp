@@ -398,3 +398,25 @@ void test_block_in_inline_splitting() {
         CHECK(f.tree[f.find(root, "z")].parent == f.find(root, "s"));
     }
 }
+
+void test_text_transform_at_build() {
+    // `text-transform` is applied when the run's box is built, so layout
+    // measures the transformed text; the tree owns the new string.
+    Fixture f;
+    CHECK(f.css("#u { text-transform: uppercase; display: block }"
+                "#l { text-transform: lowercase; display: block }"
+                "#c { text-transform: capitalize; display: block }"));
+    const BoxId root = f.build("<div id=u>View Full Ladder \xc3\xa9t\xc3\xa9</div>"
+                               "<div id=l>ABC Def</div>"
+                               "<div id=c>hello wide-world o'neil</div>");
+    const auto text_of = [&](std::string_view id) {
+        const BoxId b = f.find(root, id);
+        for (BoxId c : f.tree.children(b)) {
+            if (f.tree[c].kind == BoxKind::Text) return std::string(f.tree[c].text);
+        }
+        return std::string("<none>");
+    };
+    CHECK(text_of("u") == "VIEW FULL LADDER \xc3\x89T\xc3\x89");
+    CHECK(text_of("l") == "abc def");
+    CHECK(text_of("c") == "Hello Wide-World O'neil");
+}

@@ -752,3 +752,128 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
 }
 
 } // namespace weva
+
+namespace weva {
+
+namespace {
+
+// Coverage of a rounded rectangle (origin 0,0, size w x h) at a texel centre.
+double rounded_coverage(double px, double py, double w, double h, const BorderRadii* radii) {
+    if (px < 0 || py < 0 || px > w || py > h) return 0;
+    if (!radii) return 1;
+    const auto corner = [&](const CornerRadius& r, double cx, double cy, double dx, double dy) {
+        // Inside the corner's ellipse region only when within its quarter.
+        if (r.x_radius <= 0 || r.y_radius <= 0) return 1.0;
+        if (dx < 0 || dy < 0) return 1.0;
+        const double ex = dx / r.x_radius, ey = dy / r.y_radius;
+        (void)cx; (void)cy;
+        return ex * ex + ey * ey <= 1.0 ? 1.0 : 0.0;
+    };
+    double c = 1;
+    c = std::min(c, corner(radii->top_left, radii->top_left.x_radius, radii->top_left.y_radius,
+                           radii->top_left.x_radius - px, radii->top_left.y_radius - py));
+    c = std::min(c, corner(radii->top_right, w - radii->top_right.x_radius, radii->top_right.y_radius,
+                           px - (w - radii->top_right.x_radius), radii->top_right.y_radius - py));
+    c = std::min(c, corner(radii->bottom_right, w - radii->bottom_right.x_radius,
+                           h - radii->bottom_right.y_radius, px - (w - radii->bottom_right.x_radius),
+                           py - (h - radii->bottom_right.y_radius)));
+    c = std::min(c, corner(radii->bottom_left, radii->bottom_left.x_radius,
+                           h - radii->bottom_left.y_radius, radii->bottom_left.x_radius - px,
+                           py - (h - radii->bottom_left.y_radius)));
+    return c;
+}
+
+} // namespace
+
+void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
+                                 const LinearColor& color, double width, double height,
+                                 int tex_w, int tex_h, int pad, const BorderRadii* radii,
+                                 const LayoutContext& ctx, double font_size,
+                                 std::vector<uint8_t>* out_rgba) {
+    const int inner_w = std::max(1, tex_w - 2 * pad), inner_h = std::max(1, tex_h - 2 * pad);
+    std::vector<uint8_t> inner;
+    rasterize_background(layers, color, width, height, inner_w, inner_h, ctx, font_size, &inner);
+    out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
+    const double sx = width / inner_w, sy = height / inner_h;
+    for (int y = 0; y < inner_h; ++y) {
+        for (int x = 0; x < inner_w; ++x) {
+            const uint8_t* src = inner.data() + (static_cast<size_t>(y) * inner_w + x) * 4;
+            uint8_t* dst = out_rgba->data() + (static_cast<size_t>(y + pad) * tex_w + (x + pad)) * 4;
+            const double cov = rounded_coverage((x + 0.5) * sx, (y + 0.5) * sy, width, height, radii);
+            dst[0] = src[0];
+            dst[1] = src[1];
+            dst[2] = src[2];
+            dst[3] = static_cast<uint8_t>(std::lround(src[3] * cov));
+        }
+    }
+}
+
+void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) {
+    if (sigma <= 0.3 || width <= 0 || height <= 0) return;
+    const size_t n = static_cast<size_t>(width) * height;
+    std::vector<float> p(n * 4);
+    for (size_t i = 0; i < n; ++i) {
+        const float a = (*rgba)[i * 4 + 3] / 255.0f;
+        p[i * 4 + 0] = (*rgba)[i * 4 + 0] / 255.0f * a;
+        p[i * 4 + 1] = (*rgba)[i * 4 + 1] / 255.0f * a;
+        p[i * 4 + 2] = (*rgba)[i * 4 + 2] / 255.0f * a;
+        p[i * 4 + 3] = a;
+    }
+    // Three box blurs of width w approximate a Gaussian of sigma:
+    // w = sqrt(12 sigma^2 / 3 + 1).
+    const int box = std::max(1, static_cast<int>(std::sqrt(12.0 * sigma * sigma / 3.0 + 1.0)));
+    const int r = box / 2;
+    std::vector<float> tmp(n * 4);
+    const auto pass_h = [&](const std::vector<float>& in, std::vector<float>* out) {
+        for (int y = 0; y < height; ++y) {
+            const float* row = in.data() + static_cast<size_t>(y) * width * 4;
+            float* orow = out->data() + static_cast<size_t>(y) * width * 4;
+            for (int x = 0; x < width; ++x) {
+                float acc[4] = {0, 0, 0, 0};
+                int count = 0;
+                for (int k = -r; k <= r; ++k) {
+                    const int xx = std::clamp(x + k, 0, width - 1);
+                    for (int c = 0; c < 4; ++c) acc[c] += row[xx * 4 + c];
+                    ++count;
+                }
+                for (int c = 0; c < 4; ++c) orow[x * 4 + c] = acc[c] / count;
+            }
+        }
+    };
+    const auto pass_v = [&](const std::vector<float>& in, std::vector<float>* out) {
+        for (int x = 0; x < width; ++x) {
+            for (int y = 0; y < height; ++y) {
+                float acc[4] = {0, 0, 0, 0};
+                int count = 0;
+                for (int k = -r; k <= r; ++k) {
+                    const int yy = std::clamp(y + k, 0, height - 1);
+                    const float* px = in.data() + (static_cast<size_t>(yy) * width + x) * 4;
+                    for (int c = 0; c < 4; ++c) acc[c] += px[c];
+                    ++count;
+                }
+                float* o = out->data() + (static_cast<size_t>(y) * width + x) * 4;
+                for (int c = 0; c < 4; ++c) o[c] = acc[c] / count;
+            }
+        }
+    };
+    for (int i = 0; i < 3; ++i) {
+        pass_h(p, &tmp);
+        pass_v(tmp, &p);
+    }
+    for (size_t i = 0; i < n; ++i) {
+        const float a = p[i * 4 + 3];
+        const auto byte = [](float v) {
+            return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255));
+        };
+        if (a > 0) {
+            (*rgba)[i * 4 + 0] = byte(p[i * 4 + 0] / a);
+            (*rgba)[i * 4 + 1] = byte(p[i * 4 + 1] / a);
+            (*rgba)[i * 4 + 2] = byte(p[i * 4 + 2] / a);
+        } else {
+            (*rgba)[i * 4 + 0] = (*rgba)[i * 4 + 1] = (*rgba)[i * 4 + 2] = 0;
+        }
+        (*rgba)[i * 4 + 3] = byte(a);
+    }
+}
+
+} // namespace weva

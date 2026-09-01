@@ -379,3 +379,54 @@ void test_paint_gradient_backgrounds_and_canvas() {
     }
     CHECK(has_canvas_tex && has_small_tex);
 }
+
+void test_blur_and_padded_rasterize() {
+    // A lone opaque texel spreads over its neighbours and keeps its alpha
+    // mass; the padded rasterizer leaves the pad transparent and masks the
+    // rounded corners.
+    std::vector<uint8_t> px(5 * 5 * 4, 0);
+    px[(2 * 5 + 2) * 4 + 0] = 255;
+    px[(2 * 5 + 2) * 4 + 3] = 255;
+    blur_rgba(&px, 5, 5, 1.0);
+    CHECK(px[(2 * 5 + 2) * 4 + 3] < 255);
+    CHECK(px[(2 * 5 + 1) * 4 + 3] > 0);
+    CHECK(px[(2 * 5 + 1) * 4 + 0] > 200);   // colour stays red, not darkened by transparency
+    int mass = 0;
+    for (int i = 0; i < 25; ++i) mass += px[i * 4 + 3];
+    CHECK(mass > 200 && mass < 300);
+
+    LayoutContext ctx;
+    std::vector<uint8_t> tex;
+    const BorderRadii round = BorderRadii::uniform(50);
+    rasterize_background_padded({}, LinearColor::black(), 100, 100, 20, 20, 5, &round, ctx, 16, &tex);
+    CHECK(tex.size() == 20 * 20 * 4);
+    CHECK(tex[(0 * 20 + 0) * 4 + 3] == 0);          // in the pad
+    CHECK(tex[(5 * 20 + 5) * 4 + 3] == 0);          // the box's corner, outside the circle
+    CHECK(tex[(10 * 20 + 10) * 4 + 3] == 255);      // its centre
+}
+
+void test_paint_transform_rotates_geometry() {
+    // A 100x50 box rotated 90deg about its centre paints as a 50x100 mesh
+    // around the same centre; a translate(50%, 0) shifts it by half its width.
+    Fixture f;
+    CHECK(f.css("#r { width: 100px; height: 50px; background: #f00; transform: rotate(90deg) }"
+                "#t { width: 100px; height: 50px; background: #0f0; transform: translate(50%, 0) }"));
+    CHECK(f.layout("<body><div id=r></div><div id=t></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    bool rotated = false, shifted = false;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty()) continue;
+        const Rect r = bounds_of(d.geometry);
+        const LinearColor c = d.geometry.vertices[0].color;
+        if (near(c.r, 1) && near(c.g, 0) && near(r.width, 50, 1e-3) && near(r.height, 100, 1e-3) &&
+            near(r.x, 25, 1e-3) && near(r.y, -25, 1e-3)) {
+            rotated = true;
+        }
+        if (near(c.g, 1) && near(c.r, 0) && near(r.x, 50, 1e-3) && near(r.y, 50, 1e-3)) shifted = true;
+    }
+    CHECK(rotated);
+    CHECK(shifted);
+}

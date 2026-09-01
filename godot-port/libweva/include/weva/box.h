@@ -2,6 +2,8 @@
 #include "weva/computed_style.h"
 #include "weva/dom.h"
 
+#include <deque>
+#include <string>
 #include <cstdint>
 #include <optional>
 #include <string_view>
@@ -221,7 +223,16 @@ public:
     void clear_children(BoxId parent);
 
     // Frees every box. Capacity is kept: that is the point of the arena.
-    void reset() { boxes_.clear(); }
+    void reset() {
+        boxes_.clear();
+        owned_text_.clear();
+    }
+    // Storage for text the tree produced itself — a `text-transform`ed run
+    // — that no DOM node holds. Lives as long as the tree.
+    std::string_view own_text(std::string text) {
+        owned_text_.push_back(std::move(text));
+        return owned_text_.back();
+    }
     // Pre-sizes the storage so the first pass of a document does not grow it
     // repeatedly.
     void reserve(int n) { boxes_.reserve(static_cast<size_t>(n)); }
@@ -260,6 +271,7 @@ public:
 
 private:
     std::vector<Box> boxes_;
+    std::deque<std::string> owned_text_;
 };
 
 } // namespace weva

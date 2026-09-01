@@ -50,6 +50,7 @@ private:
     void append_inline_child(const Node& node, const ComputedStyle* parent_style, BoxId parent);
     BoxId new_block_box_for(DisplayKind display, const Element* e, const ComputedStyle* style);
     void finalize_block_children(BoxId parent);
+    std::string_view transformed_text(std::string_view text, const ComputedStyle* style);
     // §9.2.1.1: breaks an inline box around the in-flow blocks it holds. `out`
     // receives the pieces and the blocks in order; the first piece is the box
     // itself, later ones clones carrying its element and style.

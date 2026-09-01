@@ -1,6 +1,7 @@
 #pragma once
 #include "weva/color.h"
 #include "weva/computed_style.h"
+#include "weva/geometry.h"
 #include "weva/style_resolver.h"
 
 #include <cstdint>
@@ -84,6 +85,20 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                           double width, double height, int tex_w, int tex_h,
                           const LayoutContext& ctx, double font_size,
                           std::vector<uint8_t>* out_rgba);
+
+// The same, drawn `pad` texels inside a larger texture with the box's rounded
+// corners applied as a mask, for painting that needs room around the box (a
+// blur). `radii` may be null for square corners.
+void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
+                                 const LinearColor& color, double width, double height,
+                                 int tex_w, int tex_h, int pad, const struct BorderRadii* radii,
+                                 const LayoutContext& ctx, double font_size,
+                                 std::vector<uint8_t>* out_rgba);
+
+// A Gaussian blur of straight-alpha RGBA8 texels (blurred premultiplied, so
+// colour does not bleed from transparent texels), sigma in texels. Three box
+// passes per axis.
+void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma);
 
 // The colour of `g` at (x, y) inside a `width` x `height` gradient box, as
 // straight-alpha sRGB in [0, 1]. Exposed for tests.
