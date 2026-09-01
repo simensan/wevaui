@@ -644,3 +644,38 @@ void test_flex_column_items_do_not_shrink_below_their_content() {
         CHECK(near(f.box("c").height, 50));
     }
 }
+
+void test_flex_row_items_do_not_shrink_below_their_min_content() {
+    {
+        // A row item holding fixed-width children keeps their total and
+        // overflows its container, centred around it.
+        Fixture f;
+        CHECK(f.css("#page { display: flex; justify-content: center; width: 400px }"
+                    "#car { display: flex; gap: 10px }"
+                    ".c { width: 100px; height: 10px; flex: 0 0 100px }"));
+        CHECK(f.layout("<body><div id=page><div id=car><div class=c></div><div class=c></div>"
+                       "<div class=c></div><div class=c></div><div class=c></div></div></div></body>"));
+        CHECK(near(f.box("car").width, 540));
+        CHECK(near(f.box("car").x, -70));
+    }
+    {
+        // A text item shrinks to its longest word, not below; min-width: 0
+        // lets it shrink further; a scroll container has no automatic minimum.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 100px }"
+                    "#t { white-space: normal } #s { width: 90px; flex: 0 0 90px; height: 10px }"));
+        CHECK(f.layout("<body><div id=r><div id=t>ab abcdefgh</div><div id=s></div></div></body>"));
+        // Longest word "abcdefgh" = 8 glyphs at 8px in the fixture's face.
+        CHECK(near(f.box("t").width, 64));
+        Fixture g;
+        CHECK(g.css("#r { display: flex; width: 100px }"
+                    "#t { min-width: 0 } #s { width: 90px; flex: 0 0 90px; height: 10px }"));
+        CHECK(g.layout("<body><div id=r><div id=t>ab abcdefgh</div><div id=s></div></div></body>"));
+        CHECK(near(g.box("t").width, 10));
+        Fixture h;
+        CHECK(h.css("#r { display: flex; width: 100px }"
+                    "#t { overflow: hidden } #s { width: 90px; flex: 0 0 90px; height: 10px }"));
+        CHECK(h.layout("<body><div id=r><div id=t>ab abcdefgh</div><div id=s></div></div></body>"));
+        CHECK(near(h.box("t").width, 10));
+    }
+}

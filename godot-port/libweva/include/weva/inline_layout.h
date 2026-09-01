@@ -119,6 +119,10 @@ double max_content_width(const BoxTree& tree, BoxId id);
 // With a LayoutContext the gaps of a flex container and an item's min-/max-
 // width resolve; without one they are read as zero / absent.
 double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx);
+// The min-content inline size of a box's content: the widest unbreakable
+// piece — a word, an atom, an explicit width — rather than the whole line.
+// A flex row that may not wrap still sums its items.
+double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx);
 
 // Collects the flattened inline sequence, exposed for tests: getting the
 // whitespace handling right is most of the work, and it is far easier to check

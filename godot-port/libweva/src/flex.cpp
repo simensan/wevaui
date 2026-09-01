@@ -219,6 +219,23 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             // an empty item has a content size of zero and shrinks freely.
             const bool auto_main = size_raw.empty() || iequals(size_raw, "auto");
             if (!scroll_container && auto_main) it.min_main = std::max(it.min_main, b.height);
+        } else if (!column && (min_r.kind == LengthKind::Auto || get(is, "min-width").empty())) {
+            // The row counterpart: a row item's automatic minimum is its
+            // min-content WIDTH — the widest word, atom or fixed-width child
+            // — unless it is a scroll container. A carousel of fixed-width
+            // cards wider than the page keeps its 1310px and overflows,
+            // centred at x = -15, as Chrome and the reference lay it out.
+            const std::string_view oy = get(is, "overflow-y");
+            const std::string_view ox = get(is, "overflow-x");
+            const bool scroll_container =
+                (!oy.empty() && !iequals(oy, "visible") && !iequals(oy, "clip")) ||
+                (!ox.empty() && !iequals(ox, "visible") && !iequals(ox, "clip"));
+            const bool auto_main = size_raw.empty() || iequals(size_raw, "auto");
+            if (!scroll_container && auto_main) {
+                const double frame =
+                    b.padding_left + b.padding_right + b.border_left + b.border_right;
+                it.min_main = std::max(it.min_main, min_content_width(*tree, it.box, &ctx) + frame);
+            }
         }
         const ResolvedLength max_r =
             resolve_length(is, column ? "max-height" : "max-width", ctx,
@@ -517,7 +534,20 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
         ln.main_pos = 0;
         ln.between = main_gap;
-        if (leftover_for_justify > 0) {
+        if (leftover_for_justify < 0) {
+            // Negative free space: `center` and `end` are unsafe and overflow
+            // to both sides / the start (§8.2); `space-around` and
+            // `space-evenly` fall back to center, `space-between` to start. A
+            // 1310px carousel centred in a 1280px page sits at x = -15.
+            const double lo = leftover_for_justify;
+            if (iequals(justify, "center") || iequals(justify, "space-around") ||
+                iequals(justify, "space-evenly")) {
+                ln.main_pos = lo * 0.5;
+            } else if (iequals(justify, "flex-end") || iequals(justify, "end") ||
+                       iequals(justify, "right")) {
+                ln.main_pos = lo;
+            }
+        } else if (leftover_for_justify > 0) {
             const double lo = leftover_for_justify;
             if (iequals(justify, "center")) ln.main_pos = lo * 0.5;
             else if (iequals(justify, "flex-end") || iequals(justify, "end") ||

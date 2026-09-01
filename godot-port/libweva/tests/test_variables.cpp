@@ -171,3 +171,33 @@ void test_var_in_shorthand_expands_after_substitution() {
     CHECK(s.get("padding-top") == "4px");
     CHECK(s.get("padding-right") == "8px");
 }
+
+void test_var_shorthand_expands_at_its_cascade_position() {
+    // `.row { border-bottom: 1px solid var(--e) }` followed by
+    // `.row:last-child { border-bottom: none }`: the shorthand expands where
+    // it sits in the cascade, so the later longhand wins on the last row.
+    SymbolTable symbols;
+    HtmlParseError he;
+    ParseOptions o;
+    o.strict = false;
+    auto doc = parse_html("<section id=s><div id=a class=row></div><div id=b class=row></div></section>",
+                          &symbols, o, &he);
+    CHECK(static_cast<bool>(doc));
+    Stylesheet sheet;
+    CssParseError ce;
+    CHECK(parse_stylesheet(":root, section { --e: #123 }"
+                           ".row { border-bottom: 1px solid var(--e) }"
+                           ".row:last-child { border-bottom: none }",
+                           false, &sheet, &ce));
+    CascadeEngine eng;
+    eng.add_stylesheet(&sheet, DeclarationOrigin::Author);
+    NullStateProvider st;
+    ComputedStyle sec, a, b;
+    eng.compute(*doc->get_element_by_id("s"), st, nullptr, &sec);
+    eng.compute(*doc->get_element_by_id("a"), st, &sec, &a);
+    eng.compute(*doc->get_element_by_id("b"), st, &sec, &b);
+    CHECK(a.get("border-bottom-width") == "1px");
+    CHECK(a.get("border-bottom-style") == "solid");
+    CHECK(a.get("border-bottom-color") == "#123");
+    CHECK(b.get("border-bottom-style") == "none");
+}

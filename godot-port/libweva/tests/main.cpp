@@ -127,6 +127,8 @@ void test_flex_percent_height_against_an_auto_parent_is_indefinite();
 void test_grid_aspect_ratio_item_stretches_one_axis();
 void test_flex_wrap();
 void test_flex_column_items_do_not_shrink_below_their_content();
+void test_flex_row_items_do_not_shrink_below_their_min_content();
+void test_var_shorthand_expands_at_its_cascade_position();
 void test_anonymous_block_inherits_text_align();
 void test_inline_fragments();
 void test_inline_atoms();
@@ -291,6 +293,8 @@ int main() {
     test_grid_aspect_ratio_item_stretches_one_axis();
     test_flex_wrap();
     test_flex_column_items_do_not_shrink_below_their_content();
+    test_flex_row_items_do_not_shrink_below_their_min_content();
+    test_var_shorthand_expands_at_its_cascade_position();
     test_anonymous_block_inherits_text_align();
     test_inline_fragments();
     test_inline_atoms();

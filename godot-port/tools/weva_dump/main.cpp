@@ -159,12 +159,99 @@ struct StyleMap : weva::StyleProvider {
     }
 };
 
+// LayoutDump.ResolveTransformTranslation: the dump reports the VISUAL
+// position, so translate(), translateX() and translateY() move the box and
+// everything under it. Percentages are of the box's own size; `px` and bare
+// numbers are pixels; any other unit contributes nothing — the same reading
+// as the reference, so a tooltip at `left: 50%; transform: translateX(-50%)`
+// lands where it does there.
+std::string_view trim_ws(std::string_view s) {
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\n')) s.remove_prefix(1);
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\n')) s.remove_suffix(1);
+    return s;
+}
+
+double length_percent_px(std::string_view token, double basis) {
+    token = trim_ws(token);
+    if (token.empty()) return 0;
+    std::string s(token);
+    if (s.back() == '%') {
+        s.pop_back();
+        return std::strtod(s.c_str(), nullptr) * basis * 0.01;
+    }
+    if (s.size() > 2 && (s.compare(s.size() - 2, 2, "px") == 0 || s.compare(s.size() - 2, 2, "PX") == 0)) {
+        s.resize(s.size() - 2);
+    }
+    char* end = nullptr;
+    const double v = std::strtod(s.c_str(), &end);
+    return (end && *end == '\0') ? v : 0;
+}
+
+void split_first_two(std::string_view args, std::string_view* first, std::string_view* second) {
+    *first = args;
+    *second = std::string_view();
+    int depth = 0;
+    for (std::size_t i = 0; i < args.size(); ++i) {
+        const char c = args[i];
+        if (c == '(') ++depth;
+        else if (c == ')') --depth;
+        else if ((c == ',' || c == ' ' || c == '\t') && depth == 0) {
+            *first = trim_ws(args.substr(0, i));
+            std::size_t j = i + 1;
+            while (j < args.size() && (args[j] == ',' || args[j] == ' ' || args[j] == '\t')) ++j;
+            *second = j < args.size() ? trim_ws(args.substr(j)) : std::string_view();
+            return;
+        }
+    }
+    *first = trim_ws(args);
+}
+
+void transform_translation(const weva::Box& b, double* tx, double* ty) {
+    *tx = 0;
+    *ty = 0;
+    if (!b.style) return;
+    const std::string_view raw = trim_ws(b.style->get("transform"));
+    if (raw.empty() || raw == "none") return;
+    std::size_t cursor = 0;
+    while (cursor < raw.size()) {
+        const std::size_t open = raw.find('(', cursor);
+        if (open == std::string_view::npos) break;
+        int depth = 0;
+        std::size_t close = std::string_view::npos;
+        for (std::size_t i = open; i < raw.size(); ++i) {
+            if (raw[i] == '(') ++depth;
+            else if (raw[i] == ')' && --depth == 0) { close = i; break; }
+        }
+        if (close == std::string_view::npos) break;
+        std::string name(trim_ws(raw.substr(cursor, open - cursor)));
+        for (char& c : name) c = static_cast<char>((c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c);
+        const std::string_view args = raw.substr(open + 1, close - open - 1);
+        const auto ends_with = [&](const char* suffix) {
+            const std::size_t n = std::strlen(suffix);
+            return name.size() >= n && name.compare(name.size() - n, n, suffix) == 0;
+        };
+        std::string_view a, c2;
+        split_first_two(args, &a, &c2);
+        if (ends_with("translatex")) {
+            *tx += length_percent_px(a, b.width);
+        } else if (ends_with("translatey")) {
+            *ty += length_percent_px(a, b.height);
+        } else if (ends_with("translate")) {
+            *tx += length_percent_px(a, b.width);
+            *ty += length_percent_px(c2, b.height);
+        }
+        cursor = close + 1;
+    }
+}
+
 void walk(const weva::BoxTree& tree, weva::BoxId id, double parent_x, double parent_y,
           int depth, std::vector<ElementRect>* out, std::set<const weva::Element*>* seen) {
     if (id == weva::kNoBox) return;
     const weva::Box& b = tree[id];
-    const double x = parent_x + b.x;
-    const double y = parent_y + b.y;
+    double tx = 0, ty = 0;
+    transform_translation(b, &tx, &ty);
+    const double x = parent_x + b.x + tx;
+    const double y = parent_y + b.y + ty;
 
     // `html` and `body` do not appear in the dump but do not consume a level
     // either, so a top-level div is depth 1 on both sides.

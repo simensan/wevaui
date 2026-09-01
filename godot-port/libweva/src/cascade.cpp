@@ -495,14 +495,56 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     const uint64_t gen = ++cascade_generation_;
     winner_keys_.resize(static_cast<size_t>(reg.count()));
     std::vector<MatchedDeclaration> matches = collect_matches(e, state);
+    // Custom properties first, in cascade order among themselves, so that a
+    // shorthand carrying var() can be expanded AT ITS CASCADE POSITION in the
+    // pass below. Expanding it after the cascade instead — the only option
+    // when the value cannot be read — let `.row { border-bottom: 1px solid
+    // var(--edge) }` overwrite a later `.row:last-child { border-bottom: none }`.
     for (const MatchedDeclaration& m : matches) {
-        out->set(m.declaration->property, m.declaration->value_text);
-        int id = reg.id_of(m.declaration->property);
+        const std::string& name = m.declaration->property;
+        if (name.size() > 2 && name[0] == '-' && name[1] == '-') {
+            out->set(name, m.declaration->value_text);
+        }
+    }
+    // Inherited custom properties live on the parent; the link is normally
+    // attached only for the substitution step, so it is borrowed here for the
+    // duration of this pass and released again.
+    out->set_inherit_parent(parent);
+    std::vector<ShorthandLonghand> early_longhands;
+    for (const MatchedDeclaration& m : matches) {
+        const std::string& name = m.declaration->property;
+        if (name.size() > 2 && name[0] == '-' && name[1] == '-') continue;
+        const std::string& value = m.declaration->value_text;
+        if ((value.find("var(") != std::string::npos || value.find("VAR(") != std::string::npos) &&
+            is_shorthand(name)) {
+            std::string resolved;
+            if (resolve_variables(value, *out, &resolved)) {
+                early_longhands.clear();
+                if (expand_shorthand(name, resolved, &early_longhands) && !early_longhands.empty()) {
+                    // The shorthand slot keeps the substituted text as well:
+                    // readers of the raw shorthand (and tests of it) still see
+                    // the resolved value there.
+                    out->set(name, resolved);
+                    for (const ShorthandLonghand& lh : early_longhands) {
+                        out->set(lh.property, lh.value);
+                        const int lid = reg.id_of(lh.property);
+                        if (lid != kCustomPropertyId) {
+                            out->set_important(lid, m.declaration->important);
+                            winner_keys_[static_cast<size_t>(lid)] = CascadeKey::of(m, gen);
+                        }
+                    }
+                    continue;
+                }
+            }
+        }
+        out->set(name, value);
+        int id = reg.id_of(name);
         if (id != kCustomPropertyId) {
             out->set_important(id, m.declaration->important);
             winner_keys_[static_cast<size_t>(id)] = CascadeKey::of(m, gen);
         }
     }
+    out->set_inherit_parent(nullptr);
 
     // 2. Inline styles. Parsed here rather than in collect_matches so the
     // Declaration storage does not outlive the call that owns it.

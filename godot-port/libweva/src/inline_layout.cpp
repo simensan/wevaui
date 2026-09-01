@@ -705,12 +705,14 @@ double max_content_width(const BoxTree& tree, BoxId id) {
     return max_content_width(tree, id, nullptr);
 }
 
+double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, bool minimum);
+
 namespace {
 
 // A block-level child's outer max-content contribution: its explicit width
 // when it has one (already resolved onto the box), otherwise its content plus
 // its own frame, bounded by its min-/max-width — plus margins either way.
-double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContext* ctx) {
+double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContext* ctx, bool minimum) {
     const Box& b = tree[c];
     const std::string_view width_raw = get(b.style, "width");
     const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
@@ -720,7 +722,7 @@ double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContex
         w = b.width;
     } else {
         const double frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
-        w = max_content_width(tree, c, ctx) + frame;
+        w = intrinsic_width(tree, c, ctx, minimum) + frame;
         if (ctx && b.style) {
             const double fs = b.font_size > 0 ? b.font_size : ctx->root_font_size_px;
             const double minmax_frame = is_border_box(b.style) ? 0 : frame;
@@ -742,11 +744,27 @@ double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContex
 // absolutely positioned pill (icon + amount) shrink-to-fit to its widest
 // item alone, and its items then shrank to fit into that.
 double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
+    return intrinsic_width(tree, id, ctx, false);
+}
+
+double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
+    return intrinsic_width(tree, id, ctx, true);
+}
+
+double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, bool minimum) {
     const Box& self = tree[id];
     const bool flex = self.kind == BoxKind::Block &&
                       (self.display == DisplayKind::Flex || self.display == DisplayKind::InlineFlex);
     const std::string_view direction = get(self.style, "flex-direction");
     const bool flex_row = flex && !(iequals(direction, "column") || iequals(direction, "column-reverse"));
+    // A row that may wrap breaks between items, so its min-content is its
+    // widest item; one that may not still sums them. Text under
+    // `white-space: nowrap`/`pre` cannot break either.
+    const std::string_view wrap_raw = get(self.style, "flex-wrap");
+    const bool row_sums = flex_row && (!minimum || !(iequals(wrap_raw, "wrap") ||
+                                                       iequals(wrap_raw, "wrap-reverse")));
+    const std::string_view ws = get(self.style, "white-space");
+    const bool text_unbreakable = !minimum || iequals(ws, "nowrap") || iequals(ws, "pre");
 
     double max = 0;
     double sum = 0;
@@ -768,15 +786,20 @@ double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx
 
         if (b.kind == BoxKind::Line) {
             // The line's own width is post-alignment; summing the raw run
-            // widths gives the natural text advance instead.
-            double line_sum = 0;
+            // widths gives the natural text advance instead. For min-content
+            // the widest single run — a word, a space, an atom — is the
+            // unbreakable unit.
+            double line_sum = 0, widest = 0;
             for (BoxId r : tree.children(c)) {
                 const Box& run = tree[r];
-                line_sum += run.width + (run.kind == BoxKind::Block
-                                             ? run.margin_left + run.margin_right
-                                             : 0);
+                const double w = run.width + (run.kind == BoxKind::Block
+                                                  ? run.margin_left + run.margin_right
+                                                  : 0);
+                line_sum += w;
+                if (w > widest) widest = w;
             }
-            if (line_sum > max) max = line_sum;
+            const double v = text_unbreakable ? line_sum : widest;
+            if (v > max) max = v;
             continue;
         }
         if (b.kind == BoxKind::Block && b.is_inline_block) {
@@ -786,12 +809,12 @@ double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx
             continue;
         }
         if (b.kind != BoxKind::Block && b.kind != BoxKind::AnonymousBlock) continue;
-        const double contribution = block_child_contribution(tree, c, ctx);
+        const double contribution = block_child_contribution(tree, c, ctx, minimum);
         ++in_flow_blocks;
         sum += contribution;
         if (contribution > max) max = contribution;
     }
-    if (flex_row && in_flow_blocks > 1) {
+    if (row_sums && in_flow_blocks > 1) {
         double gap = 0;
         if (ctx && self.style) {
             const std::string_view raw = get(self.style, "column-gap");
