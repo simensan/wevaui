@@ -14,6 +14,9 @@ namespace Weva.Forms {
         public const string Source = @"
 input { display: inline-block; box-sizing: border-box; width: 218px; height: 34px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
 input[type=""checkbox""], input[type=""radio""] { width: 16px; height: 16px; padding: 0; margin: 0 4px 0 0; }
+/* Chrome html.css: a hidden input generates no box at all. Without this it
+   laid out as a 218x34 text field. */
+input[type=""hidden""] { display: none; }
 input[type=""radio""] { border-radius: 8px; }
 textarea { display: inline-block; box-sizing: border-box; width: 218px; height: 90px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
 select { display: inline-block; box-sizing: border-box; min-width: 218px; height: 34px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }

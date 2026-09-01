@@ -73,7 +73,12 @@ namespace Weva.BaselineGen {
 
         static List<ElementRect> BuildUnityBoxes(string html, string css, int width, int height) {
             var doc = HtmlParser.Parse(html ?? string.Empty, new ParseOptions { ThrowOnError = false });
-            var sheets = new List<OriginatedStylesheet> { UserAgentStylesheet.Parse() };
+            // Same UA origin as UIDocumentBuilder: base sheet, then the form
+            // control sheet (input/select/textarea sizes, option display:none).
+            var sheets = new List<OriginatedStylesheet> {
+                UserAgentStylesheet.Parse(),
+                Weva.Forms.FormControlStylesheet.Parse(),
+            };
             if (!string.IsNullOrEmpty(css)) {
                 var authorSheet = CssParser.Parse(css, new ParseOptions { ThrowOnError = false });
                 sheets.Add(OriginatedStylesheet.Author(authorSheet));
@@ -92,6 +97,10 @@ namespace Weva.BaselineGen {
 
             var layout = new LayoutEngine(fontMetrics);
             layout.BackdropStyleOf = e => cascade.ComputeBackdrop(e);
+            // ::before/::after boxes, as the runtime generates them. Without
+            // these the reference silently omitted every badge and overlay.
+            layout.BeforeStyleOf = e => cascade.ComputeBefore(e);
+            layout.AfterStyleOf = e => cascade.ComputeAfter(e);
             var root = layout.Layout(doc, e => styles.TryGetValue(e, out var s) ? s : null, ctx);
 
             var order = new List<ElementRect>();

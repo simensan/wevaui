@@ -443,6 +443,42 @@ void test_paint_transform_rotates_geometry() {
     CHECK(shifted);
 }
 
+// Runtime/Forms/InputRenderer.cs: the UA drawings on a control's box.
+void test_paint_form_control_marks() {
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 }"
+                "input { display: inline-block; width: 16px; height: 16px; padding: 0; border: 0 }"
+                "#r { width: 100px; height: 18px; border: 1px solid #000 }"
+                "select { display: inline-block; width: 100px; height: 30px; border: 0 }"
+                "#a { accent-color: rgb(255, 0, 0) }"));
+    CHECK(f.layout("<body><input id=c type=checkbox checked><input id=u type=checkbox>"
+                   "<input id=a type=radio checked><input id=r type=range value=50>"
+                   "<select id=s><option>A</option></select></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+
+    int check = 0, red_dot = 0, thumb = 0, caret = 0;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty() || d.texture != 0) continue;
+        const Rect r = bounds_of(d.geometry);
+        const LinearColor c = d.geometry.vertices[0].color;
+        // indigo check mark: 16 - 2*2 = 12 square
+        if (near(r.width, 12) && near(r.height, 12) && near(c.b, 0.671f)) ++check;
+        // radio dot in the author's accent colour: half the 16px box
+        if (near(r.width, 8) && near(r.height, 8) && near(c.r, 1) && near(c.g, 0)) ++red_dot;
+        // range thumb: content height 16 → a 14px knob
+        if (near(r.width, 14) && near(r.height, 14)) ++thumb;
+        // select caret: 6x3 grey bar
+        if (near(r.width, 6) && near(r.height, 3) && near(c.r, 0.6f)) ++caret;
+    }
+    CHECK(check == 1);     // the unchecked box draws no mark
+    CHECK(red_dot == 1);
+    CHECK(thumb == 1);
+    CHECK(caret == 1);
+}
+
 void test_font_weight_resolution() {
     // CSS Fonts L4 §2.2: keywords and numbers; bolder / lighter against the
     // 400 base; italic and oblique both count as italic.

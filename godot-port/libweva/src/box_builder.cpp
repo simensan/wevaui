@@ -1,4 +1,11 @@
 #include "weva/box_builder.h"
+#include "weva/cascade.h"
+#include "weva/css_value.h"
+
+#include <cctype>
+#include <cstdlib>
+#include <optional>
+#include <string>
 
 #include "weva/css_properties.h"
 
@@ -245,17 +252,335 @@ void BoxBuilder::append_node_as_block_child(const Node& node, const ComputedStyl
 
 void BoxBuilder::build_children(const Element& element, const ComputedStyle* style,
                                 BoxId parent) {
+    ++element_depth_;
+    apply_counters(style, element_depth_);
+    inject_pseudo(element, style, parent, "before");
     for (const Ref<Node>& c : element.children()) {
         append_node_as_block_child(*c, style, parent);
     }
+    inject_pseudo(element, style, parent, "after");
+    close_counters(element_depth_);
+    --element_depth_;
     finalize_block_children(parent);
 }
 
 void BoxBuilder::build_inline_children(const Element& element, const ComputedStyle* style,
                                        BoxId parent) {
+    ++element_depth_;
+    apply_counters(style, element_depth_);
+    inject_pseudo(element, style, parent, "before");
     for (const Ref<Node>& c : element.children()) {
         append_inline_child(*c, style, parent);
     }
+    inject_pseudo(element, style, parent, "after");
+    close_counters(element_depth_);
+    --element_depth_;
+}
+
+// ---- counters and quotes -----------------------------------------------------
+
+namespace {
+
+// `name [<integer>]` pairs, or `none`.
+std::vector<std::pair<std::string, std::optional<int>>> parse_counter_list(std::string_view raw) {
+    std::vector<std::pair<std::string, std::optional<int>>> out;
+    size_t i = 0;
+    const auto skip_ws = [&] { while (i < raw.size() && std::isspace(static_cast<unsigned char>(raw[i]))) ++i; };
+    const auto token = [&] {
+        const size_t s = i;
+        while (i < raw.size() && !std::isspace(static_cast<unsigned char>(raw[i]))) ++i;
+        return raw.substr(s, i - s);
+    };
+    skip_ws();
+    while (i < raw.size()) {
+        const std::string_view name = token();
+        if (name.empty()) break;
+        if (equals_ignoring_case(name, "none")) return {};
+        skip_ws();
+        std::optional<int> n;
+        if (i < raw.size() && (std::isdigit(static_cast<unsigned char>(raw[i])) || raw[i] == '-' || raw[i] == '+')) {
+            const size_t s = i;
+            const std::string_view t = token();
+            char* end = nullptr;
+            const std::string tmp(t);
+            const long v = std::strtol(tmp.c_str(), &end, 10);
+            if (end && *end == '\0') n = static_cast<int>(v);
+            else i = s, token();   // not a number after all: treat as the next name
+            skip_ws();
+        }
+        out.emplace_back(std::string(name), n);
+    }
+    return out;
+}
+
+std::string roman(int n, bool upper) {
+    if (n <= 0 || n >= 4000) return std::to_string(n);
+    static const std::pair<int, const char*> table[] = {
+        {1000, "m"}, {900, "cm"}, {500, "d"}, {400, "cd"}, {100, "c"}, {90, "xc"}, {50, "l"},
+        {40, "xl"}, {10, "x"}, {9, "ix"}, {5, "v"}, {4, "iv"}, {1, "i"}};
+    std::string s;
+    for (const auto& [v, sym] : table) {
+        while (n >= v) { s += sym; n -= v; }
+    }
+    if (upper) for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    return s;
+}
+
+std::string alpha(int n, bool upper) {
+    if (n <= 0) return std::to_string(n);
+    std::string s;
+    while (n > 0) {
+        --n;
+        s.insert(s.begin(), static_cast<char>((upper ? 'A' : 'a') + n % 26));
+        n /= 26;
+    }
+    return s;
+}
+
+std::string format_counter(int value, std::string_view style) {
+    if (style.empty() || equals_ignoring_case(style, "decimal")) return std::to_string(value);
+    if (equals_ignoring_case(style, "none")) return "";
+    if (equals_ignoring_case(style, "lower-roman")) return roman(value, false);
+    if (equals_ignoring_case(style, "upper-roman")) return roman(value, true);
+    if (equals_ignoring_case(style, "lower-alpha") || equals_ignoring_case(style, "lower-latin")) return alpha(value, false);
+    if (equals_ignoring_case(style, "upper-alpha") || equals_ignoring_case(style, "upper-latin")) return alpha(value, true);
+    if (equals_ignoring_case(style, "decimal-leading-zero")) {
+        return (value >= 0 && value < 10 ? "0" : "") + std::to_string(value);
+    }
+    if (equals_ignoring_case(style, "disc")) return "\xE2\x80\xA2";
+    if (equals_ignoring_case(style, "circle")) return "\xE2\x97\xA6";
+    if (equals_ignoring_case(style, "square")) return "\xE2\x96\xAA";
+    return std::to_string(value);
+}
+
+std::string ident_of(const CssValue& v) {
+    if (v.kind() == CssValueKind::Identifier) return static_cast<const CssIdentifier&>(v).name;
+    if (v.kind() == CssValueKind::Keyword) return static_cast<const CssKeyword&>(v).name;
+    if (v.kind() == CssValueKind::String) return static_cast<const CssString&>(v).text;
+    if (v.kind() == CssValueKind::List) {
+        const auto& l = static_cast<const CssValueList&>(v);
+        if (!l.items.empty() && l.items[0]) return ident_of(*l.items[0]);
+    }
+    return {};
+}
+
+// `quotes`: pairs of strings; `auto` (and the initial value) is the English
+// typographic pair; `none` is no text at all (but the depth still moves).
+struct QuotePairs {
+    std::vector<std::pair<std::string, std::string>> pairs;
+    bool none = false;
+};
+
+QuotePairs parse_quotes(std::string_view raw) {
+    QuotePairs q;
+    if (raw.empty() || equals_ignoring_case(raw, "auto") || equals_ignoring_case(raw, "initial") ||
+        equals_ignoring_case(raw, "inherit") || equals_ignoring_case(raw, "unset")) {
+        q.pairs = {{"\xE2\x80\x9C", "\xE2\x80\x9D"}, {"\xE2\x80\x98", "\xE2\x80\x99"}};
+        return q;
+    }
+    if (equals_ignoring_case(raw, "none")) {
+        q.none = true;
+        return q;
+    }
+    CssParseError err;
+    CssValuePtr v = parse_css_value(raw, &err);
+    std::vector<std::string> strings;
+    const auto collect = [&](const CssValue& x, auto& self) -> void {
+        if (x.kind() == CssValueKind::String) strings.push_back(static_cast<const CssString&>(x).text);
+        else if (x.kind() == CssValueKind::List) {
+            for (const CssValuePtr& it : static_cast<const CssValueList&>(x).items) if (it) self(*it, self);
+        }
+    };
+    if (v) collect(*v, collect);
+    for (size_t i = 0; i + 1 < strings.size(); i += 2) q.pairs.emplace_back(strings[i], strings[i + 1]);
+    if (q.pairs.empty()) q.pairs = {{"\xE2\x80\x9C", "\xE2\x80\x9D"}, {"\xE2\x80\x98", "\xE2\x80\x99"}};
+    return q;
+}
+
+} // namespace
+
+void BoxBuilder::apply_counters(const ComputedStyle* style, int depth) {
+    if (!style) return;
+    // Order per CounterContext.cs: reset (opens scopes), then increment, then set.
+    for (const auto& [name, n] : parse_counter_list(get(style, "counter-reset"))) {
+        counters_.push_back({name, n.value_or(0), depth});
+    }
+    const auto innermost = [&](const std::string& name) -> CounterScope* {
+        for (size_t i = counters_.size(); i-- > 0;) {
+            if (counters_[i].name == name) return &counters_[i];
+        }
+        return nullptr;
+    };
+    for (const auto& [name, n] : parse_counter_list(get(style, "counter-increment"))) {
+        CounterScope* s = innermost(name);
+        if (!s) {
+            // §12.4: an increment with no scope behaves as if reset to 0 here.
+            counters_.push_back({name, 0, depth});
+            s = &counters_.back();
+        }
+        s->value += n.value_or(1);
+    }
+    for (const auto& [name, n] : parse_counter_list(get(style, "counter-set"))) {
+        CounterScope* s = innermost(name);
+        if (!s) {
+            counters_.push_back({name, 0, depth});
+            s = &counters_.back();
+        }
+        s->value = n.value_or(0);
+    }
+}
+
+void BoxBuilder::close_counters(int depth) {
+    // Scopes opened at this depth or deeper end with the element. Following
+    // siblings start over, which is what CounterContext.cs does too (the
+    // sibling-inheritance of css-lists-3 is not modelled by either side).
+    while (!counters_.empty() && counters_.back().depth >= depth) counters_.pop_back();
+}
+
+bool BoxBuilder::resolve_content(const ComputedStyle* ps, const Element& host, std::string* out) {
+    const std::string_view raw = get(ps, "content");
+    if (raw.empty() || equals_ignoring_case(raw, "none") || equals_ignoring_case(raw, "normal")) {
+        return false;
+    }
+    CssParseError err;
+    CssValuePtr v = parse_css_value(raw, &err);
+    if (!v) return false;
+    if (v->kind() == CssValueKind::Keyword || v->kind() == CssValueKind::Identifier) {
+        const std::string name = ident_of(*v);
+        if (equals_ignoring_case(name, "none") || equals_ignoring_case(name, "normal") ||
+            equals_ignoring_case(name, "inherit") || equals_ignoring_case(name, "initial") ||
+            equals_ignoring_case(name, "unset")) {
+            return false;
+        }
+    }
+    out->clear();
+    std::optional<QuotePairs> quotes;
+    const auto quote_pairs = [&]() -> const QuotePairs& {
+        if (!quotes) quotes = parse_quotes(get(ps, "quotes"));
+        return *quotes;
+    };
+    const auto values_of = [&](const std::string& name, std::vector<int>* vals) {
+        for (const CounterScope& s : counters_) if (s.name == name) vals->push_back(s.value);
+    };
+    const auto append = [&](const CssValue& x, auto& self) -> void {
+        switch (x.kind()) {
+        case CssValueKind::String:
+            *out += static_cast<const CssString&>(x).text;
+            return;
+        case CssValueKind::List:
+            for (const CssValuePtr& it : static_cast<const CssValueList&>(x).items) if (it) self(*it, self);
+            return;
+        case CssValueKind::Keyword:
+        case CssValueKind::Identifier: {
+            const std::string kw = ident_of(x);
+            if (equals_ignoring_case(kw, "open-quote")) {
+                const QuotePairs& q = quote_pairs();
+                if (!q.none) {
+                    const size_t idx = std::min<size_t>(static_cast<size_t>(quote_depth_), q.pairs.size() - 1);
+                    *out += q.pairs[idx].first;
+                }
+                ++quote_depth_;
+            } else if (equals_ignoring_case(kw, "close-quote")) {
+                if (quote_depth_ > 0) --quote_depth_;
+                const QuotePairs& q = quote_pairs();
+                if (!q.none) {
+                    const size_t idx = std::min<size_t>(static_cast<size_t>(quote_depth_), q.pairs.size() - 1);
+                    *out += q.pairs[idx].second;
+                }
+            } else if (equals_ignoring_case(kw, "no-open-quote")) {
+                ++quote_depth_;
+            } else if (equals_ignoring_case(kw, "no-close-quote")) {
+                if (quote_depth_ > 0) --quote_depth_;
+            }
+            return;
+        }
+        case CssValueKind::FunctionCall: {
+            const auto& f = static_cast<const CssFunctionCall&>(x);
+            const auto arg = [&](size_t i) -> std::string {
+                return i < f.arguments.size() && f.arguments[i] ? ident_of(*f.arguments[i]) : std::string();
+            };
+            if (f.name == "attr") {
+                const std::string a = arg(0);
+                if (!a.empty()) *out += std::string(host.get_attribute(a));
+            } else if (f.name == "counter") {
+                std::vector<int> vals;
+                values_of(arg(0), &vals);
+                *out += format_counter(vals.empty() ? 0 : vals.back(), arg(1));
+            } else if (f.name == "counters") {
+                std::vector<int> vals;
+                values_of(arg(0), &vals);
+                const std::string sep = arg(1);
+                const std::string style = arg(2);
+                for (size_t i = 0; i < vals.size(); ++i) {
+                    if (i) *out += sep;
+                    *out += format_counter(vals[i], style);
+                }
+                if (vals.empty()) *out += format_counter(0, style);
+            }
+            // url() / image content: a box with no text.
+            return;
+        }
+        default:
+            return;
+        }
+    };
+    append(*v, append);
+    return true;
+}
+
+// Ports BoxBuilder.MaybeInjectPseudoElement + BuildPseudoBox. The pseudo box
+// has no element (a pseudo is not one: the dump and hit-testing never see it)
+// but remembers its host, and its text child carries the pseudo's own style.
+// Blockification follows the element path exactly — an absolutely positioned
+// or floated `::before { content: "" }` is the idiom for decorative overlays,
+// and left inline it would never reach the width/height/inset it was given.
+void BoxBuilder::inject_pseudo(const Element& host, const ComputedStyle* host_style, BoxId parent,
+                               std::string_view name) {
+    if (!styles_ || !host_style) return;
+    const ComputedStyle* ps = styles_->pseudo_style_of(host, name);
+    if (!ps) return;
+    // The pseudo's own counter properties apply before its content is read;
+    // a scope it opens closes with it (it has no descendants to see it).
+    apply_counters(ps, element_depth_ + 1);
+    std::string text;
+    const bool has_content = resolve_content(ps, host, &text);
+    close_counters(element_depth_ + 1);
+    if (!has_content) return;
+
+    DisplayKind disp = parse_display(get(ps, "display"));
+    if (disp == DisplayKind::None) return;
+    const bool blockify = blockifies_children((*tree_)[parent].display);
+    if (!blockify && (disp == DisplayKind::Inline || is_inline_level_block(disp)) &&
+        (is_out_of_flow_position(ps) || is_floated(ps))) {
+        disp = disp == DisplayKind::Inline ? DisplayKind::Block : blockified(disp);
+    }
+
+    BoxId text_box = kNoBox;
+    if (!text.empty()) {
+        const std::string_view owned = tree_->own_text(std::move(text));
+        text_box = tree_->create(BoxKind::Text, nullptr, ps);
+        (*tree_)[text_box].text = transformed_text(owned, ps);
+    }
+
+    if (establishes_block_box(disp) || is_inline_level_block(disp) || is_table_display(disp) ||
+        blockify) {
+        DisplayKind used = disp;
+        if (blockify) used = disp == DisplayKind::Inline ? DisplayKind::Block : blockified(disp);
+        const BoxId bb = new_block_box_for(used, nullptr, ps);
+        (*tree_)[bb].pseudo_host = &host;
+        if (text_box != kNoBox) tree_->append_child(bb, text_box);
+        // A raw text child of a flex/grid pseudo must become an anonymous
+        // item, or the container sees no items and collapses.
+        finalize_block_children(bb);
+        tree_->append_child(parent, bb);
+        return;
+    }
+
+    const BoxId ib = tree_->create(BoxKind::Inline, nullptr, ps);
+    (*tree_)[ib].display = disp;
+    (*tree_)[ib].pseudo_host = &host;
+    if (text_box != kNoBox) tree_->append_child(ib, text_box);
+    tree_->append_child(parent, ib);
 }
 
 void BoxBuilder::append_inline_child(const Node& node, const ComputedStyle* parent_style,

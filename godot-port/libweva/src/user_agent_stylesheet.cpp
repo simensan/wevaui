@@ -146,6 +146,41 @@ link, meta, head, title, script, style { display: none; }
 q { display: inline; }
 q::before { content: open-quote; }
 q::after  { content: close-quote; }
+
+/* ---- Runtime/Forms/FormControlStylesheet.cs, appended at the same UA origin
+   after the base sheet, as UIDocumentBuilder does. Later declarations win
+   among UA rules by document order, so these override the generic
+   `input, textarea, select` padding/border above. */
+input { display: inline-block; box-sizing: border-box; width: 218px; height: 34px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
+input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding: 0; margin: 0 4px 0 0; }
+input[type="hidden"] { display: none; }
+input[type="radio"] { border-radius: 8px; }
+textarea { display: inline-block; box-sizing: border-box; width: 218px; height: 90px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
+select { display: inline-block; box-sizing: border-box; min-width: 218px; height: 34px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
+/* A closed <select> renders only the selected option's text via its own
+   paint path; its <option> children are not laid out in flow. */
+option { display: none; }
+optgroup { display: none; }
+select[size] option, select[multiple] option { display: block; }
+select[size] optgroup, select[multiple] optgroup { display: block; }
+dialog { display: none; position: fixed; padding: 16px; border: 1px solid #ccc; border-radius: 8px; background: white; }
+dialog[open] { display: block; }
+[popover] { display: none; position: fixed; padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: white; }
+[popover][data-popover-open] { display: block; }
+::backdrop { background: rgba(0, 0, 0, 0.5); }
+:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+:disabled { opacity: 0.5; cursor: not-allowed; }
+/* range slider: the track footprint; paint adds the fill and the thumb. */
+input[type="range"] { width: 200px; height: 18px; padding: 0; border: 1px solid #ccc; border-radius: 9px; background: #e5e7eb; cursor: pointer; }
+.ui-tooltip { padding: 4px 8px; border-radius: 4px; background: rgba(15, 23, 42, 0.95); color: #f8fafc; font-size: 12px; line-height: 1.3; max-width: 240px; pointer-events: none; }
+.ui-menu { display: flex; flex-direction: column; min-width: 160px; padding: 4px 0; border: 1px solid #d1d5db; border-radius: 6px; background: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); font-size: 13px; }
+.ui-menu-item { display: flex; align-items: center; padding: 6px 12px; cursor: pointer; gap: 8px; }
+.ui-menu-item:hover { background: #f3f4f6; }
+.ui-menu-item.is-focused { background: #e0e7ff; }
+.ui-menu-item.is-disabled { opacity: 0.5; cursor: not-allowed; }
+.ui-menu-item .ui-menu-label { flex: 1; }
+.ui-menu-item .ui-menu-shortcut { color: #6b7280; font-size: 12px; }
+.ui-menu-separator { height: 1px; background: #e5e7eb; margin: 4px 0; }
 )CSS";
     return kSource;
 }

@@ -118,6 +118,12 @@ public:
     // the box builder treats as "no pseudo box".
     static bool resolve_pseudo_content(const ComputedStyle& pseudo_style,
                                        std::string* text);
+    // The box builder's form: concatenates a `content` list — strings,
+    // attr() read from `host`, open-quote/close-quote as the English pair —
+    // and yields an empty string (still a box) for counter()/url()/image
+    // items, which have no text rendering here yet.
+    static bool resolve_pseudo_content(const ComputedStyle& pseudo_style, const Element* host,
+                                       std::string* text);
 
 private:
     struct CompiledRule {

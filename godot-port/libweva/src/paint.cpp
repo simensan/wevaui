@@ -5,11 +5,16 @@
 #include "weva/css_value.h"
 
 #include <algorithm>
+#include <cctype>
+#include <cstdlib>
 #include <cmath>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace weva {
+
+LinearColor resolve_color(const ComputedStyle* style, std::string_view property);
 
 namespace {
 
@@ -483,7 +488,261 @@ FaceHandle face_for_run(const Box& b, const PaintContext& paint) {
     return paint.font->variant(paint.face, weight, italic);
 }
 
-void prepare_glyphs(const BoxTree& tree, BoxId id, const PaintContext& paint) {
+// ---- Form controls (Runtime/Forms/InputRenderer.cs) -----------------------
+//
+// An <input>'s value, a <select>'s chosen option and a placeholder are not in
+// the box tree — the runtime paints them as an overlay on the control's box,
+// and so does this. Checkbox / radio marks, the range rail + thumb and the
+// select chevron are the same UA drawings the reference emits.
+
+bool ci_equal(std::string_view a, std::string_view b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (std::tolower(static_cast<unsigned char>(a[i])) !=
+            std::tolower(static_cast<unsigned char>(b[i]))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string input_type(const Element& e) {
+    std::string t(e.get_attribute("type"));
+    for (char& c : t) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return t;
+}
+
+// HTML §4.10.7: the selected option is the last one with `selected`, else
+// the first option (also looked for inside <optgroup>).
+const Element* selected_option(const Element& select) {
+    const Element* first = nullptr;
+    const Element* chosen = nullptr;
+    const auto visit = [&](const Element& o) {
+        if (!first) first = &o;
+        if (o.has_attribute("selected")) chosen = &o;
+    };
+    for (const Ref<Node>& c : select.children()) {
+        if (c->node_type() != NodeType::Element) continue;
+        const auto& ce = static_cast<const Element&>(*c);
+        if (ce.tag_name() == "option") visit(ce);
+        else if (ce.tag_name() == "optgroup") {
+            for (const Ref<Node>& g : ce.children()) {
+                if (g->node_type() == NodeType::Element &&
+                    static_cast<const Element&>(*g).tag_name() == "option") {
+                    visit(static_cast<const Element&>(*g));
+                }
+            }
+        }
+    }
+    return chosen ? chosen : first;
+}
+
+std::string trimmed_text_of(const Element& e) {
+    std::string s;
+    for (const Ref<Node>& c : e.children()) {
+        if (c->node_type() == NodeType::Text) s += static_cast<const TextNode&>(*c).data();
+    }
+    size_t a = 0, z = s.size();
+    while (a < z && std::isspace(static_cast<unsigned char>(s[a]))) ++a;
+    while (z > a && std::isspace(static_cast<unsigned char>(s[z - 1]))) --z;
+    return s.substr(a, z - a);
+}
+
+struct ControlText {
+    std::string text;
+    bool placeholder = false;   // painted faded
+    bool centered = true;       // vertically, in the content box (single-line controls)
+};
+
+// The text a control shows that no box carries. False for controls whose
+// content is in the tree (a <textarea> with text, a <button>) or drawn as a
+// mark rather than text.
+bool form_control_text(const Box& b, ControlText* out) {
+    if (!b.element || b.kind != BoxKind::Block) return false;
+    const Element& e = *b.element;
+    const std::string_view tag = e.tag_name();
+    if (tag == "input") {
+        const std::string type = input_type(e);
+        if (type == "checkbox" || type == "radio" || type == "range" || type == "hidden" ||
+            type == "file" || type == "color" || type == "image") {
+            return false;
+        }
+        const std::string_view value = e.get_attribute("value");
+        if (type == "submit" || type == "button" || type == "reset") {
+            out->text = !value.empty() ? std::string(value)
+                        : type == "submit" ? "Submit" : type == "reset" ? "Reset" : "";
+            return !out->text.empty();
+        }
+        if (!value.empty()) {
+            if (type == "password") {
+                out->text.clear();
+                for (size_t i = 0; i < value.size(); ++i) out->text += "\xE2\x80\xA2";
+            } else {
+                out->text = std::string(value);
+            }
+            return true;
+        }
+        const std::string_view ph = e.get_attribute("placeholder");
+        if (ph.empty()) return false;
+        out->text = std::string(ph);
+        out->placeholder = true;
+        return true;
+    }
+    if (tag == "select") {
+        if (e.has_attribute("multiple") || e.has_attribute("size")) return false;
+        const Element* opt = selected_option(e);
+        if (!opt) return false;
+        out->text = trimmed_text_of(*opt);
+        return !out->text.empty();
+    }
+    if (tag == "textarea") {
+        if (!trimmed_text_of(e).empty()) return false;
+        const std::string_view ph = e.get_attribute("placeholder");
+        if (ph.empty()) return false;
+        out->text = std::string(ph);
+        out->placeholder = true;
+        out->centered = false;
+        return true;
+    }
+    return false;
+}
+
+bool is_form_control(const Box& b) {
+    if (!b.element || b.kind != BoxKind::Block) return false;
+    const std::string_view tag = b.element->tag_name();
+    return tag == "input" || tag == "select" || tag == "textarea";
+}
+
+const FontMetrics* control_metrics(const LayoutContext& ctx, const ComputedStyle* style) {
+    const FontMetrics* base = ctx.font_for(get(style, "font-family"));
+    if (!ctx.variant_metrics || !base) return base;
+    const int weight = resolve_font_weight(style);
+    const bool italic = resolve_font_italic(style);
+    if (weight < 600 && !italic) return base;
+    const FontMetrics* v = ctx.variant_metrics(ctx.variant_user, base, weight, italic);
+    return v ? v : base;
+}
+
+// CSS UI 4 §5.5 accent-color; `auto` is the platform default, the runtime's
+// indigo.
+LinearColor accent_color_of(const ComputedStyle* style) {
+    const LinearColor kCheck(0.090f, 0.196f, 0.671f, 1.f);
+    const std::string_view raw = get(style, "accent-color");
+    if (raw.empty() || ci_equal(raw, "auto")) return kCheck;
+    const LinearColor c = resolve_color(style, "accent-color");
+    return c.a > 0 ? c : kCheck;
+}
+
+void fill_rounded(const Rect& r, double radius, const LinearColor& color, RenderInterface* backend,
+                  double opacity, const Transform2D* xf) {
+    if (r.width <= 0 || r.height <= 0 || !backend) return;
+    Mesh mesh;
+    const double rr = std::min(radius, std::min(r.width, r.height) * 0.5);
+    const CornerRadius cr(rr);
+    tessellate_rounded_rect(r, BorderRadii(cr, cr, cr, cr), color, &mesh);
+    draw_mesh(mesh, backend, {}, opacity, xf);
+}
+
+double attr_double(const Element& e, std::string_view name, double fallback) {
+    const std::string_view raw = e.get_attribute(name);
+    if (raw.empty()) return fallback;
+    char* end = nullptr;
+    const std::string s(raw);
+    const double v = std::strtod(s.c_str(), &end);
+    if (end == s.c_str() || !std::isfinite(v)) return fallback;
+    return v;
+}
+
+void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double y, double fs,
+                        const PaintContext& paint, TextureHandle atlas_texture,
+                        const PaintState& state, const Transform2D* xf) {
+    const Element& e = *b.element;
+    const std::string_view tag = e.tag_name();
+    const double cl = x + b.border_left + b.padding_left;
+    const double ct = y + b.border_top + b.padding_top;
+    const double cw = b.width - b.border_left - b.border_right - b.padding_left - b.padding_right;
+    const double ch = b.height - b.border_top - b.border_bottom - b.padding_top - b.padding_bottom;
+    if (tag == "input") {
+        const std::string type = input_type(e);
+        if (type == "checkbox") {
+            if (!e.has_attribute("checked")) return;
+            const double inset = 2;
+            fill_rounded(Rect(x + inset, y + inset, b.width - 2 * inset, b.height - 2 * inset), 1,
+                         accent_color_of(b.style), paint.backend, state.opacity, xf);
+            return;
+        }
+        if (type == "radio") {
+            if (!e.has_attribute("checked")) return;
+            const double inset = b.width * 0.25;
+            const double d = b.width - 2 * inset;
+            fill_rounded(Rect(x + inset, y + inset, d, d), d * 0.5, accent_color_of(b.style),
+                         paint.backend, state.opacity, xf);
+            return;
+        }
+        if (type == "range") {
+            double lo = attr_double(e, "min", 0), hi = attr_double(e, "max", 100);
+            if (hi <= lo) hi = lo + 1;
+            const double value = attr_double(e, "value", (lo + hi) * 0.5);
+            double frac = (value - lo) / (hi - lo);
+            if (!(frac >= 0)) frac = 0;
+            if (frac > 1) frac = 1;
+            if (cw <= 0) return;
+            const double content_h = ch > 0 ? ch : b.height;
+            const double cy = ct + content_h * 0.5;
+            const LinearColor accent = accent_color_of(b.style);
+            const double rail_h = std::min(content_h, 6.0);
+            const double thumb = std::max(rail_h, std::min(content_h, 14.0));
+            const double rail_top = cy - rail_h * 0.5;
+            const double usable = std::max(0.0, cw - thumb);
+            const double cx = cl + thumb * 0.5 + frac * usable;
+            LinearColor groove = accent;
+            groove.a *= 0.3f;
+            fill_rounded(Rect(cl, rail_top, cw, rail_h), rail_h * 0.5, groove, paint.backend,
+                         state.opacity, xf);
+            if (cx - cl > 0) {
+                fill_rounded(Rect(cl, rail_top, cx - cl, rail_h), rail_h * 0.5, accent, paint.backend,
+                             state.opacity, xf);
+            }
+            fill_rounded(Rect(cx - thumb * 0.5, cy - thumb * 0.5, thumb, thumb), thumb * 0.5, accent,
+                         paint.backend, state.opacity, xf);
+            return;
+        }
+    }
+
+    ControlText t;
+    const bool has_text = form_control_text(b, &t);
+    if (has_text && paint.font && paint.atlas && cw > 0 && ch > 0) {
+        const FaceHandle face = face_for_run(b, paint);
+        const FontMetrics* m = control_metrics(ctx, b.style);
+        const double ascent = m ? m->ascent(fs) : fs * 0.8;
+        const double line_h = m ? m->line_height(fs) : fs * kDefaultLineHeightFactor;
+        const double baseline =
+            t.centered ? ct + std::max(0.0, (ch - line_h) * 0.5) + ascent : ct + ascent;
+        LinearColor color = resolve_color(b.style, "color");
+        if (t.placeholder) color = LinearColor(color.r * 0.5f, color.g * 0.5f, color.b * 0.5f, color.a * 0.5f);
+        // The overlay is clipped to the padding box, as the runtime's text
+        // overlay is; a long value does not spill past the border.
+        Recti clip{static_cast<int>(std::floor(cl)), static_cast<int>(std::floor(ct)),
+                   static_cast<int>(std::ceil(cl + cw)) - static_cast<int>(std::floor(cl)),
+                   static_cast<int>(std::ceil(ct + ch)) - static_cast<int>(std::floor(ct))};
+        if (state.scissor) clip = intersect(*state.scissor, clip);
+        paint.backend->set_scissor(&clip);
+        Mesh text;
+        build_text_geometry(t.text, cl, baseline, fs, color, paint, &text,
+                            letter_spacing_of(b.style, ctx, fs), &face);
+        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf);
+        paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
+    }
+    if (tag == "select" && !e.has_attribute("multiple") && !e.has_attribute("size")) {
+        // The runtime's v1 caret: a 6x3 grey bar 8px from the right edge.
+        const double margin = 8, w = 6, h = 3;
+        fill_rounded(Rect(x + b.width - margin - w, y + (b.height - h) * 0.5, w, h), 1,
+                     LinearColor(0.6f, 0.6f, 0.6f, 1.f), paint.backend, state.opacity, xf);
+    }
+}
+
+void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
+                    const PaintContext& paint) {
     const Box& b = tree[id];
     if (b.kind == BoxKind::Text && !b.text.empty() && paint.font && paint.atlas) {
         const FaceHandle face = face_for_run(b, paint);
@@ -493,7 +752,18 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const PaintContext& paint) {
             paint.atlas->get(paint.font, face, g.glyph, b.font_size);
         }
     }
-    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, paint);
+    // Control overlays draw text no box carries; their glyphs go into the
+    // same single up-front upload.
+    ControlText t;
+    if (paint.font && paint.atlas && is_form_control(b) && form_control_text(b, &t)) {
+        const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
+        const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
+        const FaceHandle face = face_for_run(b, paint);
+        std::vector<ShapedGlyph> glyphs;
+        paint.font->shape(face, t.text, fs, &glyphs);
+        for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, face, g.glyph, fs);
+    }
+    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, ctx, paint);
 }
 
 bool has_gradient_layer(const std::vector<BackgroundLayer>& layers) {
@@ -650,6 +920,14 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                                     paint.backend, state.opacity, xf);
             }
         }
+    }
+
+    // A control's UA drawing — value / placeholder / chosen option text,
+    // check and radio marks, the range rail, the select caret — sits on its
+    // own box, under its children (a <textarea>'s text).
+    if (decorated && !hidden && paint.backend && is_form_control(b) && b.width > 0 &&
+        b.height > 0) {
+        paint_form_control(b, ctx, x, y, fs, paint, atlas_texture, state, xf);
     }
 
     // A text run's own y is its top; the baseline is where the glyphs sit, and
@@ -916,7 +1194,7 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
 
     TextureHandle atlas_texture{};
     if (paint.atlas && paint.font) {
-        prepare_glyphs(tree, root, paint);
+        prepare_glyphs(tree, root, ctx, paint);
         atlas_texture = paint.atlas->texture(paint.backend);
     }
     const BoxId canvas_owner = paint_canvas(tree, root, ctx, paint);

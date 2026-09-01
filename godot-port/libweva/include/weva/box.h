@@ -95,6 +95,11 @@ struct Box {
 
     const Element* element = nullptr;
     const ComputedStyle* style = nullptr;
+    // Set on a ::before/::after box: the originating element. `element` stays
+    // null — a pseudo is not an element, so the dump and hit-testing skip it —
+    // but unlike a true anonymous box it carries its own style and IS
+    // decorated by paint.
+    const Element* pseudo_host = nullptr;
 
     // Border-box geometry, relative to the parent box's content origin.
     double x = 0, y = 0, width = 0, height = 0;

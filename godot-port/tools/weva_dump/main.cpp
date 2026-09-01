@@ -138,6 +138,10 @@ struct StyleMap : weva::StyleProvider {
     weva::NullStateProvider state;
     std::vector<std::unique_ptr<weva::ComputedStyle>> owned;
     std::map<const weva::Element*, weva::ComputedStyle*> by_element;
+    // ::before / ::after, cascaded beside the element (index 0 / 1). Only
+    // hosts some rule targets get an entry; the builder reads null as "no
+    // pseudo box".
+    std::map<std::pair<const weva::Element*, int>, weva::ComputedStyle*> pseudo_by_element;
 
     explicit StyleMap(weva::CascadeEngine& e) : engine(e) {}
 
@@ -147,6 +151,13 @@ struct StyleMap : weva::StyleProvider {
         weva::ComputedStyle* raw = cs.get();
         owned.push_back(std::move(cs));
         by_element[&e] = raw;
+        static constexpr std::string_view kPseudos[2] = {"before", "after"};
+        for (int i = 0; i < 2; ++i) {
+            auto ps = std::make_unique<weva::ComputedStyle>();
+            if (!engine.compute_pseudo_element(e, kPseudos[i], state, *raw, ps.get())) continue;
+            pseudo_by_element[{&e, i}] = ps.get();
+            owned.push_back(std::move(ps));
+        }
         for (const weva::Ref<weva::Node>& c : e.children()) {
             if (c->node_type() == weva::NodeType::Element) {
                 walk(static_cast<const weva::Element&>(*c), raw);
@@ -156,6 +167,13 @@ struct StyleMap : weva::StyleProvider {
     const weva::ComputedStyle* style_of(const weva::Element& e) override {
         auto it = by_element.find(&e);
         return it == by_element.end() ? nullptr : it->second;
+    }
+    const weva::ComputedStyle* pseudo_style_of(const weva::Element& e,
+                                               std::string_view name) override {
+        const int i = name == "before" ? 0 : name == "after" ? 1 : -1;
+        if (i < 0) return nullptr;
+        auto it = pseudo_by_element.find({&e, i});
+        return it == pseudo_by_element.end() ? nullptr : it->second;
     }
 };
 

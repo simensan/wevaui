@@ -34,6 +34,17 @@ struct CascadeStyles : StyleProvider {
         auto it = by_element.find(&e);
         return it == by_element.end() ? nullptr : it->second;
     }
+    std::map<std::pair<const Element*, std::string>, std::unique_ptr<ComputedStyle>> pseudos;
+    const ComputedStyle* pseudo_style_of(const Element& e, std::string_view name) override {
+        auto key = std::make_pair(&e, std::string(name));
+        auto it = pseudos.find(key);
+        if (it != pseudos.end()) return it->second.get();
+        const ComputedStyle* host = style_of(e);
+        if (!host) return nullptr;
+        auto ps = std::make_unique<ComputedStyle>();
+        if (!engine.compute_pseudo_element(e, name, state, *host, ps.get())) return nullptr;
+        return (pseudos[key] = std::move(ps)).get();
+    }
 };
 
 struct Fixture {
@@ -396,6 +407,156 @@ void test_block_in_inline_splitting() {
         const std::vector<BoxKind> kinds = f.child_kinds(w);
         CHECK(kinds.size() == 3);   // anon(a>b piece 1), div, anon(a>b piece 2, span)
         CHECK(f.tree[f.find(root, "z")].parent == f.find(root, "s"));
+    }
+}
+
+// CSS 2.1 §12.1: ::before/::after generate boxes as the host's first and last
+// children, styled by the pseudo's own cascade, with no element of their own.
+void test_pseudo_element_boxes() {
+    {
+        Fixture f;
+        CHECK(f.css("div { display: block }"
+                    "#a::before { content: 'B' } #a::after { content: 'A'; display: block }"));
+        const BoxId root = f.build("<div id=a>x</div>");
+        const BoxId a = f.find(root, "a");
+        CHECK(a != kNoBox);
+        // inline ::before + text → one anonymous block; block ::after follows.
+        CHECK((f.child_kinds(a) == std::vector<BoxKind>{BoxKind::AnonymousBlock, BoxKind::Block}));
+        const BoxId anon = f.tree[a].first_child;
+        const BoxId before = f.tree[anon].first_child;
+        CHECK(f.tree[before].kind == BoxKind::Inline);
+        CHECK(f.tree[before].element == nullptr);
+        CHECK(f.tree[before].pseudo_host == f.tree[a].element);
+        CHECK(f.tree[f.tree[before].first_child].text == "B");
+        CHECK(f.tree[f.tree[before].first_child].style == f.tree[before].style);
+        const BoxId after = f.tree[a].last_child;
+        CHECK(f.tree[after].pseudo_host == f.tree[a].element);
+        CHECK(f.tree[after].element == nullptr);
+        CHECK(f.tree[after].contains_inlines);
+        CHECK(f.tree[f.tree[after].first_child].text == "A");
+    }
+    {
+        // No rule, `content: none`, and `display: none` all generate nothing;
+        // `content: ""` still generates an (empty) box.
+        Fixture f;
+        CHECK(f.css("div { display: block }"
+                    "#n::before { content: none } #d::after { content: 'x'; display: none }"
+                    "#e::before { content: '' }"));
+        const BoxId root = f.build("<div id=n>t</div><div id=d>t</div><div id=e>t</div>"
+                                   "<div id=z>t</div>");
+        CHECK(f.child_kinds(f.find(root, "n")) == std::vector<BoxKind>{BoxKind::Text});
+        CHECK(f.child_kinds(f.find(root, "d")) == std::vector<BoxKind>{BoxKind::Text});
+        CHECK(f.child_kinds(f.find(root, "z")) == std::vector<BoxKind>{BoxKind::Text});
+        const BoxId e = f.find(root, "e");
+        CHECK((f.child_kinds(e) == std::vector<BoxKind>{BoxKind::Inline, BoxKind::Text}));
+        CHECK(f.tree[f.tree[e].first_child].first_child == kNoBox);
+    }
+    {
+        // §9.7: an absolutely positioned or floated pseudo is blockified, so
+        // the decorative-overlay idiom reaches block layout.
+        Fixture f;
+        CHECK(f.css("div { display: block }"
+                    "#a::before { content: ''; position: absolute; width: 10px; height: 10px }"
+                    "#b::after { content: ''; float: left }"));
+        const BoxId root = f.build("<div id=a>t</div><div id=b>t</div>");
+        const BoxId a = f.find(root, "a");
+        CHECK(f.tree[f.tree[a].first_child].kind == BoxKind::Block);
+        CHECK(f.tree[f.tree[a].first_child].pseudo_host != nullptr);
+        CHECK(f.tree[f.tree[f.find(root, "b")].last_child].kind == BoxKind::Block);
+    }
+    {
+        // A pseudo inside a flex container is an item like any child.
+        Fixture f;
+        CHECK(f.css("#fx { display: flex } #fx::after { content: 'tail' }"));
+        const BoxId root = f.build("<div id=fx><span>a</span></div>");
+        const BoxId fx = f.find(root, "fx");
+        CHECK((f.child_kinds(fx) == std::vector<BoxKind>{BoxKind::Block, BoxKind::Block}));
+        const BoxId item = f.tree[fx].last_child;
+        CHECK(f.tree[item].pseudo_host != nullptr && !f.tree[item].is_inline_block);
+        CHECK(f.tree[f.tree[item].first_child].text == "tail");
+    }
+    {
+        // Inline hosts get pseudos too; attr() reads the host; strings
+        // concatenate; text-transform applies to generated text.
+        Fixture f;
+        CHECK(f.css("p { display: block }"
+                    "#s::before { content: '[' attr(data-k) ']'; text-transform: uppercase }"));
+        const BoxId root = f.build("<p><span id=s data-k=ab>t</span></p>");
+        const BoxId s = f.find(root, "s");
+        CHECK((f.child_kinds(s) == std::vector<BoxKind>{BoxKind::Inline, BoxKind::Text}));
+        CHECK(f.tree[f.tree[f.tree[s].first_child].first_child].text == "[AB]");
+    }
+    {
+        // open-quote / close-quote resolve to the English pair (the UA
+        // sheet's `q` rules; the fixture cascades author rules only).
+        Fixture f;
+        CHECK(f.css("p { display: block } q::before { content: open-quote }"
+                    "q::after { content: close-quote }"));
+        const BoxId root = f.build("<p><q id=q>w</q></p>");
+        const BoxId q = f.find(root, "q");
+        CHECK((f.child_kinds(q) == std::vector<BoxKind>{BoxKind::Inline, BoxKind::Text, BoxKind::Inline}));
+        CHECK(f.tree[f.tree[f.tree[q].first_child].first_child].text == "\xE2\x80\x9C");
+    }
+}
+
+// CSS 2.1 §12.4 / Generated Content §3: counter() / counters() and the quote
+// keywords resolve against the walk's state (hand corpus 43 and 44).
+void test_pseudo_counters_and_quotes() {
+    const auto pseudo_text = [](const Fixture& f, BoxId host) {
+        const BoxId p = f.tree[host].first_child;
+        return std::string(f.tree[f.tree[p].first_child].text);
+    };
+    {
+        Fixture f;
+        CHECK(f.css("div, p { display: block }"
+                    "#wrap { counter-reset: sec } .heading { counter-increment: sec }"
+                    ".heading::before { content: counter(sec) '. ' }"
+                    ".chapter { counter-reset: ch; counter-increment: ch }"
+                    ".section { counter-reset: ch; counter-increment: ch }"
+                    ".section2 { counter-reset: ch; counter-increment: ch 2 }"
+                    ".leaf::before { content: counters(ch, '.') }"
+                    "#r::before { content: counter(sec, upper-roman) '-' counter(sec, lower-alpha) }"));
+        const BoxId root = f.build(
+            "<div id=wrap><div id=h1 class=heading>A</div><div id=h2 class=heading>B</div>"
+            "<div id=h3 class=heading>C</div>"
+            "<div class=chapter><div class=section><span id=l1 class=leaf>a</span></div>"
+            "<div class=section2><span id=l2 class=leaf>b</span></div></div>"
+            "<div id=r class=heading>D</div></div>");
+        CHECK_EQ(pseudo_text(f, f.find(root, "h1")), "1. ");
+        CHECK_EQ(pseudo_text(f, f.find(root, "h2")), "2. ");
+        CHECK_EQ(pseudo_text(f, f.find(root, "h3")), "3. ");
+        // The section's scope nests inside the chapter's; the second
+        // section starts a fresh inner scope rather than continuing.
+        CHECK_EQ(pseudo_text(f, f.find(root, "l1")), "1.1");
+        CHECK_EQ(pseudo_text(f, f.find(root, "l2")), "1.2");
+        CHECK_EQ(pseudo_text(f, f.find(root, "r")), "IV-d");
+    }
+    {
+        // An increment with no open scope resets to 0 first (§12.4).
+        Fixture f;
+        CHECK(f.css("div { display: block } #a { counter-increment: n 5 }"
+                    "#a::after { content: counter(n) }"));
+        const BoxId root = f.build("<div id=a>x</div>");
+        const BoxId a = f.find(root, "a");
+        CHECK_EQ(std::string(f.tree[f.tree[f.tree[a].last_child].first_child].text), "5");
+    }
+    {
+        // Quotes: the `quotes` pairs by nesting depth, the English pair for
+        // `auto`, nothing for `none`; depth carries across the document.
+        Fixture f;
+        CHECK(f.css("div, p { display: block } q::before { content: open-quote }"
+                    "q::after { content: close-quote }"
+                    "#w { quotes: '[' ']' '<' '>' } #n { quotes: none }"));
+        const BoxId root = f.build("<div id=w><q id=o>a<q id=i>b</q></q></div>"
+                                   "<p><q id=d>c</q></p><div id=n><q id=z>d</q></div>");
+        CHECK_EQ(pseudo_text(f, f.find(root, "o")), "[");
+        CHECK_EQ(pseudo_text(f, f.find(root, "i")), "<");
+        CHECK_EQ(std::string(f.tree[f.tree[f.tree[f.find(root, "i")].last_child].first_child].text), ">");
+        CHECK_EQ(std::string(f.tree[f.tree[f.tree[f.find(root, "o")].last_child].first_child].text), "]");
+        CHECK_EQ(pseudo_text(f, f.find(root, "d")), "\xE2\x80\x9C");
+        // `quotes: none` still generates the (empty) box.
+        const BoxId z = f.find(root, "z");
+        CHECK(f.tree[z].first_child != kNoBox && f.tree[f.tree[z].first_child].first_child == kNoBox);
     }
 }
 

@@ -831,10 +831,17 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
     auto was_dropped = [&](int id) {
         return has_drops && std::find(dropped_.begin(), dropped_.end(), id) != dropped_.end();
     };
+    // Read through the host's inherit chain: an element's own slots hold only
+    // what the cascade set on it, and a `quotes` or `color` declared on an
+    // ancestor lives up the chain (ComputedStyle::get walks it; contains()
+    // does not). Checking contains() here left every such pseudo at the
+    // initial value — `q::before` opened with the English pair no matter
+    // what `quotes` the author set on the wrapper.
     for (int id = 0; id < reg.count(); ++id) {
         if (out->contains(id) && !was_dropped(id)) continue;
-        if (reg.is_inherited(id) && host_style.contains(id)) {
-            out->set(id, host_style.get(id));
+        if (reg.is_inherited(id)) {
+            const std::string_view v = host_style.get(id);
+            if (!v.empty()) out->set(id, v);
         } else {
             std::string_view initial = reg.initial_value(id);
             if (!initial.empty()) out->set(id, initial);
@@ -862,6 +869,77 @@ bool CascadeEngine::resolve_pseudo_content(const ComputedStyle& pseudo_style,
     // caller treats false as "no pseudo box" rather than rendering the literal
     // function text.
     return false;
+}
+
+namespace {
+
+void append_content_item(const CssValue& v, const Element* host, std::string* out) {
+    switch (v.kind()) {
+    case CssValueKind::String:
+        *out += static_cast<const CssString&>(v).text;
+        return;
+    case CssValueKind::List:
+        for (const CssValuePtr& item : static_cast<const CssValueList&>(v).items) {
+            if (item) append_content_item(*item, host, out);
+        }
+        return;
+    case CssValueKind::Keyword:
+    case CssValueKind::Identifier: {
+        const std::string& name = v.kind() == CssValueKind::Keyword
+                                      ? static_cast<const CssKeyword&>(v).name
+                                      : static_cast<const CssIdentifier&>(v).name;
+        // CSS Generated Content §3.2: the `quotes` initial pair for English.
+        if (name == "open-quote") *out += "\xE2\x80\x9C";
+        else if (name == "close-quote") *out += "\xE2\x80\x9D";
+        return;
+    }
+    case CssValueKind::FunctionCall: {
+        const auto& f = static_cast<const CssFunctionCall&>(v);
+        if (f.name == "attr" && host && !f.arguments.empty() && f.arguments[0]) {
+            const CssValue& a = *f.arguments[0];
+            std::string attr;
+            if (a.kind() == CssValueKind::Identifier) attr = static_cast<const CssIdentifier&>(a).name;
+            else if (a.kind() == CssValueKind::Keyword) attr = static_cast<const CssKeyword&>(a).name;
+            else if (a.kind() == CssValueKind::List) {
+                const auto& l = static_cast<const CssValueList&>(a);
+                if (!l.items.empty() && l.items[0]) {
+                    if (l.items[0]->kind() == CssValueKind::Identifier)
+                        attr = static_cast<const CssIdentifier&>(*l.items[0]).name;
+                    else if (l.items[0]->kind() == CssValueKind::Keyword)
+                        attr = static_cast<const CssKeyword&>(*l.items[0]).name;
+                }
+            }
+            if (!attr.empty()) *out += std::string(host->get_attribute(attr));
+        }
+        // counter(), counters(), url(), image-set(): a box with no text.
+        return;
+    }
+    default:
+        return;
+    }
+}
+
+} // namespace
+
+bool CascadeEngine::resolve_pseudo_content(const ComputedStyle& pseudo_style, const Element* host,
+                                           std::string* text) {
+    std::string_view raw = pseudo_style.get("content");
+    if (raw.empty() || raw == "none" || raw == "normal") return false;
+    CssParseError err;
+    CssValuePtr v = parse_css_value(raw, &err);
+    if (!v) return false;
+    if (v->kind() == CssValueKind::Keyword || v->kind() == CssValueKind::Identifier) {
+        const std::string& name = v->kind() == CssValueKind::Keyword
+                                      ? static_cast<const CssKeyword&>(*v).name
+                                      : static_cast<const CssIdentifier&>(*v).name;
+        if (name == "none" || name == "normal" || name == "inherit" || name == "initial" ||
+            name == "unset") {
+            return false;
+        }
+    }
+    text->clear();
+    append_content_item(*v, host, text);
+    return true;
 }
 
 } // namespace weva

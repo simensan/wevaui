@@ -115,10 +115,13 @@ struct StyleMap : StyleProvider {
     NullStateProvider state;
     std::vector<std::unique_ptr<ComputedStyle>> owned;
     std::map<const Element*, ComputedStyle*> by_element;
+    // ::before at index 0, ::after at 1 — only for hosts some rule targets.
+    std::map<std::pair<const Element*, int>, ComputedStyle*> pseudo_by_element;
 
     void clear() {
         owned.clear();
         by_element.clear();
+        pseudo_by_element.clear();
     }
     void walk(const Element& e, const ComputedStyle* parent) {
         auto cs = std::make_unique<ComputedStyle>();
@@ -126,6 +129,13 @@ struct StyleMap : StyleProvider {
         ComputedStyle* raw = cs.get();
         owned.push_back(std::move(cs));
         by_element[&e] = raw;
+        static constexpr std::string_view kPseudos[2] = {"before", "after"};
+        for (int i = 0; i < 2; ++i) {
+            auto ps = std::make_unique<ComputedStyle>();
+            if (!engine.compute_pseudo_element(e, kPseudos[i], state, *raw, ps.get())) continue;
+            pseudo_by_element[{&e, i}] = ps.get();
+            owned.push_back(std::move(ps));
+        }
         for (const Ref<Node>& c : e.children()) {
             if (c->node_type() == NodeType::Element) {
                 walk(static_cast<const Element&>(*c), raw);
@@ -135,6 +145,12 @@ struct StyleMap : StyleProvider {
     const ComputedStyle* style_of(const Element& e) override {
         auto it = by_element.find(&e);
         return it == by_element.end() ? nullptr : it->second;
+    }
+    const ComputedStyle* pseudo_style_of(const Element& e, std::string_view name) override {
+        const int i = name == "before" ? 0 : name == "after" ? 1 : -1;
+        if (i < 0) return nullptr;
+        auto it = pseudo_by_element.find({&e, i});
+        return it == pseudo_by_element.end() ? nullptr : it->second;
     }
 };
 
