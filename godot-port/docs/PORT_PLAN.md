@@ -2446,6 +2446,93 @@ from arbitrating).
 was not rebuilt this round — nothing under `hosts/` changed and no Godot
 binary was available where this ran.
 
+### The sample gate: the Unity pages, in Godot. 0 → 7/35
+
+The goal past parity-by-corpus is the actual product: every page under
+`Assets/UI` and `Packages/com.wevaui/Samples~` laid out by the port and drawn
+by the Godot host. `tools/oracle/collect_samples.py` gathers the 35 into a
+corpus (a page whose stylesheet is inline in `<style>` gets it extracted —
+neither dumper reads `<style>`, and a page laid out unstyled on both sides
+would agree for a worthless reason). Run at 1280×720 with Chrome captures
+beside them. **First run: 0/35.**
+
+The host side is now reproducible locally as well as on the cloud box: Godot
+4.7.2 headless under WSL, `godot-cpp` at API 4.7, the extension built from
+`hosts/godot`, 23/23 render tests. Under WSLg Godot gets a GL context from
+llvmpipe, so `capture.tscn` renders a page to a PNG headlessly:
+
+    godot --path hosts/godot/project --rendering-driver opengl3 \
+          --scene res://capture.tscn -- --html menu.html --css menu.css \
+          --size 1280x720 --png out.png
+
+The first such render (menu.html) showed the card grid collapsed into one
+row — `flex-wrap` is unported — which is the kind of thing the layout gate
+below exists to find before a screenshot does.
+
+**Fixed, in the order the smallest-diverging pages surfaced them** (each with
+its own test; the oracle numbers are the sample corpus):
+
+* `font` shorthand was never expanded; `font: bold 14px sans-serif` left a
+  button's size at 16px.
+* `max_content_width` took the widest child for every container; a flex ROW
+  is the sum of its items plus gaps, and a block child contributes its
+  explicit width or content + frame + margins, not its inner text alone. An
+  absolutely positioned pill shrank to its amount and its icon was crushed.
+* The positioning pass handled descendants before their ancestor; sizing the
+  ancestor re-laid the descendant at the containing block's width.
+* A stretched flex item's cross size is clamped by its own min/max; a row
+  container with `min-height` is at least that tall.
+* `letter-spacing` was registered and never applied. The reference's
+  convention exactly: width + spacing × (UTF-16 units − 1) per run, spaces
+  included.
+* An inline fragment's height came from the root font size; inline boxes are
+  never stamped with one. Fragments are inserted FIRST on the line as the
+  reference's `InsertChildFirst` does, later-opened before earlier — not
+  document order, but it is the tree the dump walks. A marker dangling at a
+  line's end whose box has content later is carried to the next line.
+* A shorthand carrying `var()` was left unexpanded for good;
+  `border: 2px solid var(--cyan)` produced no border widths. Expanded after
+  substitution.
+* The font-family registry (`LayoutContext::register_font`, first registered
+  head of the stack wins); `weva_dump` registers `monospace` as BaselineGen
+  does, so `<code>` is 0.6em per glyph on both sides.
+* Flex `center`/`end` are unsafe; a definite cross size IS the line's cross
+  size; an aspect-ratio-derived height is definite; a grid item with a ratio
+  stretches one axis and derives the other (block when the row is definite,
+  inline otherwise); `cross_size_imposed` is per pass; a percentage height is
+  definite only against a definite parent.
+
+**Reference bugs the samples exposed** — each confirmed with a BaselineGen
+mini-case and each with Chrome on the port's side. They are not mirrored, and
+they are why several pages cannot reach "agree" without a C# fix:
+
+* An absolutely positioned child takes flow space inside a positioned parent:
+  the parent grows by the child's height and following siblings shift
+  (`nook-dialogue`, `load-game`).
+* A percentage width in a flex item's child resolves against the flex
+  container, not the item (`hud` bar fills: 70% of `.bar`, not of `.bar-track`).
+* `aspect-ratio` is applied to the border box under content-box sizing (an
+  80px square with 1px borders is 82 tall; Chrome and the port: 80) (`vendor`).
+* A column-flex card stretched in a row comes out shorter than its own
+  children (`form-demo`: 1017 with content to 1266; Chrome 1580).
+* A `1fr` grid item shrink-wrapped to its label (`9slice-demo`: 79.6; Chrome
+  and the port 389.33).
+* The centring of an aspect-ratio flex container's child is 2px low, as if
+  against the border box (`dialogue`).
+
+**Where it stands: 7/35 samples agree** (inputtest, story-bubble, todo,
+episode-stats, sample-menu, particles, neon); dialogue, nook-dialogue,
+vendor, form-demo, card-component and load-game are within 2–7 differences,
+all but card-component's on the reference-bug list above. The harvested
+corpus rose to 173/210 alongside and the hand-built stayed 46/47. 7,623
+checks green on gcc 13 and clang 18 with ASan+UBSan; Godot host 23/23.
+
+**Next, by pages unblocked:** `flex-wrap` (8 pages, and the menu render),
+`minmax()` / `repeat(auto-fill|auto-fit)` (grid-playground, stock-dashboard,
+UpgradeMeter), the template/`<slot>` component expansion the package sample
+uses (`card-component`), then the C# fixes above so the reference stops
+arguing with Chrome.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),

@@ -16,6 +16,17 @@ The working recipe (from the wevaui repo root, engines built):
     python3 godot-port/tools/oracle/run_oracle.py godot-port/tools/oracle/corpus/harvest \
         --weva-dump <build>/tools/weva_dump/weva_dump --quiet --reuse-reference
 
+The sample pages — the ones a Godot host must render — are collected the same
+way and run at the game viewport:
+
+    python3 godot-port/tools/oracle/collect_samples.py . \
+        --out godot-port/tools/oracle/corpus/samples
+    (cd Tools/Layout && node capture-all-chrome-layouts.mjs \
+        ../../godot-port/tools/oracle/corpus/samples 1280 720)
+    python3 godot-port/tools/oracle/run_oracle.py godot-port/tools/oracle/corpus/samples \
+        --width 1280 --height 720 --weva-dump <build>/tools/weva_dump/weva_dump \
+        --quiet --reuse-reference
+
 `--reuse-reference` keeps a reference dump that is newer than its case; the
 .NET start-up per case is otherwise most of a run. Drop the flag after a C#
 change. The Chrome capture beside each case is what lets a disagreement be
