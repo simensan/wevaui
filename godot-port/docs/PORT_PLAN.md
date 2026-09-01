@@ -2661,15 +2661,34 @@ every character but the last (both engines). Correct, but on pages where
 Chrome cannot arbitrate text it only moves the port away from the reference
 — 11/35 became 4/35. Kept as a documented shared deviation.
 
-**Where it stands: 11/35 agree, five more (flex-playground, glass,
-grid-playground, load-game, map) arbitrated to the reference; harvest 180/210
-with 14 arbitrated; hand-built 46/47. 7,827 checks green on gcc 13, clang 18,
-ASan+UBSan.** What remains on the samples, in order of size: HTML tables
-(leaderboard, the one page where Chrome sides with the reference in bulk —
-`Tables/` is 1,431 lines of C#), and a long tail Chrome cannot settle —
-inline rects Blink rounds, animated properties sampled at different times,
-form controls neither engine sizes like Chrome (form-demo's reference form
-is also 330px shorter than its own children).
+### Fifth pass: tables, and Chrome under the engines' UA sheet. 12/35 + 9
+
+* **Table layout** (CSS 2.1 §17, separated borders) as the reference has
+  it: colspan/rowspan placement, `table-layout: fixed` from `<col>` hints
+  and first-row authored widths, the reference's automatic layout, border-
+  spacing, header → body → footer order, captions, `vertical-align`,
+  `visibility: collapse`. Dispatched in flow like grid. leaderboard: 122
+  differences → 0.
+* **Chrome lays out under the engines' UA sheet** (`@layer weva-ua`, first
+  in `<head>`, full documents included) — `html, body { margin: 0; height:
+  100% }`, the form-control and heading defaults. layout-stress and vendor
+  arbitrated outright; randhtml 35 → 5 unjudged.
+* **Lean verdicts.** Chrome within 1.5px of the port and whole pixels from
+  the reference is a `REF~`; nook-dialogue and stock-dashboard. Same-
+  identity runs pair by whichever of three pairings gives Chrome the most
+  agreements with either side.
+
+**Where it stands: 12/35 agree, nine more arbitrated to the port (seven
+exact, two leaning); harvest 180/210 with 16 arbitrated; hand-built 46/47.
+7,908 checks green on gcc 13, clang 18, ASan+UBSan.** Left on the samples,
+all of it either the reference's own bugs Chrome cannot confirm or shared
+engine-vs-Chrome divergences: `@container` (menu — never applied in the
+single-pass BaselineGen, nor here), the `<template>`/`<slot>` expansion
+(card-component), form-control intrinsic sizes (form-demo), Chrome's
+re-growth of `1fr` tracks from aspect-ratio items' transferred minimum
+(inventory, stats), an `<img>` the reference wraps one level deeper
+(advanced-dashboard), and per-page inline-rect and text-width residue
+(audit-validation, weva-landing).
 
 ## Phase 8 — Remaining layout (~8k LOC)
 

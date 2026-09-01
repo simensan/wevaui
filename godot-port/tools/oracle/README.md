@@ -52,7 +52,19 @@ change. The Chrome capture beside each case is what lets a disagreement be
 blamed on the reference; without it every difference counts against the port.
 Elements are paired by identity (tag, id, class) rather than position, so a
 fragment the engines list elsewhere, or a `display: none` element Chrome
-omits, costs only its own verdict.
+omits, costs only its own verdict; an element that merely sits elsewhere in
+the walk is not a difference. A run of same-identity siblings is paired
+against Chrome by whichever of positional / nearest-by-reference /
+nearest-by-candidate gives Chrome the most agreements with either side.
+
+Verdicts: `REF!` — every difference is one Chrome sides with the port on
+(within 1/64px plus 2.5e-4 relative). `REF~` — the same, except that on some
+Chrome only LEANS to the port: within 1.5px of it while the reference is
+whole pixels off and at least 4x farther (Blink's own residue — an inline
+rect rounded to the pixel, a text width off by a hundredth of an em — on top
+of a real disagreement). Both count as arbitrated in the summary and are
+printed apart. `FAIL` lines break the rest down into sides-with-reference,
+leans-to-reference, neither, and the port's own counts.
 
 What Chrome still cannot arbitrate, even with the synthetic faces: the y and
 height of an inline element's own rect (Blink rounds a run's ascent and
