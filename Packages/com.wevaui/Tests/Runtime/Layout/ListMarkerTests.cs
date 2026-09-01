@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Weva.Css.Cascade;
 using Weva.Layout.Boxes;
 using static Weva.Tests.Layout.LayoutTestHelpers;
 
@@ -76,6 +77,53 @@ namespace Weva.Tests.Layout {
                     Assert.Fail("Expected no marker box, found one");
                 }
             }
+        }
+
+        // CSS Pseudo-Elements 4 §4.5. The marker box is a ::marker: it takes
+        // the list item's INHERITED properties and gives every non-inherited
+        // property its initial value. BoxBuilder used to fall back to the li's
+        // OWN ComputedStyle whenever no ::marker style was supplied, which
+        // handed the anonymous marker box the li's padding, border, margin and
+        // background — and the taller marker atom then grew the li's line box.
+        // audit-validation's `.zebra li { padding: 5px 10px }` measured 26.9
+        // where Chrome and the C++ port both say 26.
+        [Test]
+        public void Marker_does_not_take_the_list_items_own_padding() {
+            const string css = ListUA +
+                " li { padding: 20px 10px; }" +
+                " .bare { list-style-type: none; }";
+            var (root, _, _) = Build(
+                "<ul><li>x</li></ul><ul class=\"bare\"><li>x</li></ul>", css);
+
+            var lis = new System.Collections.Generic.List<BlockBox>();
+            foreach (var b in AllBoxes(root)) {
+                if (b is BlockBox bb && bb.Element?.TagName == "li") lis.Add(bb);
+            }
+            Assert.That(lis.Count, Is.EqualTo(2));
+            // A marker never changes how tall the list item is, so the bulleted
+            // item and the bare one must measure exactly the same.
+            Assert.That(lis[0].Height, Is.EqualTo(lis[1].Height).Within(1e-9),
+                "a disc marker must not make the list item taller than an unmarked one");
+        }
+
+        [Test]
+        public void Marker_box_carries_no_padding_from_the_list_item() {
+            var (root, _, _) = Build(
+                "<ul><li>x</li></ul>",
+                ListUA + " li { padding: 5px 10px; }");
+            BlockBox marker = null;
+            foreach (var b in AllBoxes(root)) {
+                if (b is BlockBox bb && bb.Element == null && bb.IsInlineBlock) marker = bb;
+            }
+            Assert.That(marker, Is.Not.Null, "expected an injected marker box");
+            // Read it off the style the marker box was actually built with:
+            // padding is not inherited, so a real ::marker style resolves it to
+            // the initial 0 no matter what the li declares.
+            Assert.That(marker.Style.Get(CssProperties.PaddingTopId), Is.EqualTo("0"));
+            Assert.That(marker.Style.Get(CssProperties.PaddingLeftId), Is.EqualTo("0"));
+            // Inherited properties still come through from the host.
+            Assert.That(marker.Style.Get(CssProperties.FontSizeId),
+                        Is.EqualTo("16px"));
         }
     }
 }

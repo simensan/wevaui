@@ -101,6 +101,15 @@ namespace Weva.BaselineGen {
             // these the reference silently omitted every badge and overlay.
             layout.BeforeStyleOf = e => cascade.ComputeBefore(e);
             layout.AfterStyleOf = e => cascade.ComputeAfter(e);
+            // ::marker likewise. Without it BoxBuilder falls back to the <li>'s
+            // OWN style for the marker atom, so the marker picks up the li's
+            // padding, border and margin — and vertical padding on a list item
+            // then inflated the li's line box. audit-validation's `.zebra li`
+            // (padding: 5px 10px) measured 26.9 where Chrome and the port both
+            // say 26, and the 0.9 per row accumulated into a 4.5px offset that
+            // pushed the rest of the page out of Chrome's reach for
+            // arbitration.
+            layout.MarkerStyleOf = e => cascade.ComputeMarker(e);
             var root = layout.Layout(doc, e => styles.TryGetValue(e, out var s) ? s : null, ctx);
 
             var order = new List<ElementRect>();

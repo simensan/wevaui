@@ -30,6 +30,11 @@ namespace Weva.Tests.Layout {
             var styles = new Dictionary<Element, ComputedStyle>();
             foreach (var kv in engine.ComputeAll(doc)) styles[kv.Key] = kv.Value;
             var bb = new BoxBuilder(e => styles.TryGetValue(e, out var cs) ? cs : null);
+            // ::marker, as UIDocumentBuilder wires it at runtime. Without this
+            // BoxBuilder falls back to the <li>'s OWN style for the marker box,
+            // so the marker inherits the li's padding/border/margin and a list
+            // item with vertical padding measures too tall.
+            bb.MarkerStyleOf = e => engine.ComputeMarker(e);
             return (bb.BuildDocument(doc), styles);
         }
 
@@ -56,6 +61,11 @@ namespace Weva.Tests.Layout {
                 SnapshotStyles = engine.Styles
             };
             var le = new LayoutEngine(new MonoFontMetrics());
+            // ::marker, as UIDocumentBuilder wires it at runtime. Without this
+            // BoxBuilder falls back to the <li>'s OWN style for the marker box,
+            // so the marker inherits the li's padding/border/margin and a list
+            // item with vertical padding measures too tall.
+            le.MarkerStyleOf = e => engine.ComputeMarker(e);
             var root = le.Layout(doc, e => styles.TryGetValue(e, out var cs) ? cs : null, ctx);
             LayoutInvariants.Check(root);
             return (root, styles, ctx);
@@ -88,6 +98,7 @@ namespace Weva.Tests.Layout {
                 SnapshotStyles = engine.Styles
             };
             var le = new LayoutEngine(fm);
+            le.MarkerStyleOf = e => engine.ComputeMarker(e);
             var root = le.Layout(doc, e => styles.TryGetValue(e, out var cs) ? cs : null, ctx);
             LayoutInvariants.Check(root);
             return (root, styles, ctx);
@@ -121,6 +132,7 @@ namespace Weva.Tests.Layout {
                 SnapshotStyles = engine.Styles
             };
             var le = new LayoutEngine(new MonoFontMetrics());
+            le.MarkerStyleOf = e => engine.ComputeMarker(e);
             var root = le.Layout(doc, e => styles.TryGetValue(e, out var cs) ? cs : null, ctx);
             return (root, styles, ctx);
         }
