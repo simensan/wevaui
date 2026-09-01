@@ -139,6 +139,8 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.collapse_whitespace = !(iequals(ws, "pre") || iequals(ws, "pre-wrap") ||
                                          iequals(ws, "break-spaces"));
             item.allow_wrap = !(iequals(ws, "nowrap") || iequals(ws, "pre"));
+            item.preserve_newlines = iequals(ws, "pre") || iequals(ws, "pre-wrap") ||
+                                     iequals(ws, "pre-line") || iequals(ws, "break-spaces");
             const std::string_view wb = get(item.style, "word-break");
             const std::string_view ow = get(item.style, "overflow-wrap");
             // `anywhere` differs from `break-all` only in how it affects
@@ -693,15 +695,6 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             continue;
         }
         bool first_piece = true;
-        if (!it.collapse_whitespace) {
-            // Preserved whitespace is a later slice; the text is placed as one
-            // unbreakable fragment so its width is still accounted for.
-            const double w = measure_spaced(metrics, it.text, it, true);
-            grow_line_metrics(it);
-            line.push_back({&it, it.text, false, pen, w});
-            pen += w;
-            continue;
-        }
         // Largest prefix of `word` from `from` whose measured width fits, never
         // splitting a UTF-8 sequence. Zero when not even one character fits.
         const auto prefix_that_fits = [&](std::string_view word, size_t from,
@@ -725,68 +718,105 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             return fits;
         };
 
-        for (const Token& t : tokenize_collapsing(it.text)) {
-            if (t.is_space) {
-                // A collapsed space at the very start of a line is dropped:
-                // it would indent every wrapped line by a space. A line that
-                // holds only inline-box markers counts as its start — the
-                // whitespace after `<card>` is not a 7px indent.
-                if (!line_has_content()) continue;
-                const double w = measure_spaced(metrics, " ", it, first_piece);
-                first_piece = false;
-                grow_line_metrics(it);
-                line.push_back({&it, " ", true, pen, w});
-                pen += w;
-                continue;
-            }
-            if (it.break_anywhere) {
-                // Every character boundary is a break opportunity, so the word
-                // is placed a slice at a time: fill the rest of this line, wrap,
-                // repeat. A slice is a view into the same source buffer, so no
-                // string is built.
-                size_t idx = 0;
-                while (idx < t.word.size()) {
-                    double remaining = line_width - pen;
-                    if (remaining <= 1e-9 && !line.empty()) {
-                        flush_line(false);
-                        remaining = line_width - pen;
-                    }
-                    size_t take = prefix_that_fits(t.word, idx, remaining);
-                    if (take == 0) {
-                        // Nothing fits. Wrap and retry; on an already-empty
-                        // line take one character anyway, because a line that
-                        // can hold nothing still has to make progress.
-                        if (!line.empty()) {
-                            flush_line(false);
-                            continue;
-                        }
-                        take = 1;
-                        while (idx + take < t.word.size() &&
-                               (static_cast<unsigned char>(t.word[idx + take]) & 0xC0) == 0x80) {
-                            ++take;
-                        }
-                    }
-                    const std::string_view slice = t.word.substr(idx, take);
-                    const double sw = measure_spaced(metrics, slice, it, first_piece);
+        // CSS Text L3 4.1.1: a preserved segment break forces a line break,
+        // whatever the line's remaining space. `white-space: pre` on a block of
+        // source lines used to arrive here as ONE unbreakable fragment, so a
+        // nine-line code listing laid out as a single 1.3kpx-wide line and its
+        // block reported one line-height of height (weva-landing's `.code-body`
+        // came out 242.55 -> 58.95). Cut the text at each newline and place the
+        // pieces through the normal machinery, flushing a line between them.
+        size_t seg_begin = 0;
+        while (true) {
+            const size_t nl =
+                it.preserve_newlines ? it.text.find('\n', seg_begin) : std::string_view::npos;
+            const std::string_view seg =
+                nl == std::string_view::npos ? it.text.substr(seg_begin)
+                                             : it.text.substr(seg_begin, nl - seg_begin);
+            // Each segment opens a line of its own, so it is a first piece
+            // again for the letter-spacing at its leading edge.
+            first_piece = true;
+            if (!it.collapse_whitespace) {
+                // Preserved whitespace is a later slice; the text is placed
+                // as one unbreakable fragment so its width is still accounted
+                // for. An EMPTY segment still pushes its (zero-width) fragment
+                // when the line holds nothing, because a blank line inside a
+                // `pre` is a line: without a fragment flush_line drops it and
+                // the block comes up one line-height short.
+                const double w = measure_spaced(metrics, seg, it, true);
+                if (!seg.empty() || line.empty()) {
+                    grow_line_metrics(it);
+                    line.push_back({&it, seg, false, pen, w});
+                    pen += w;
+                }
+            } else {
+            for (const Token& t : tokenize_collapsing(seg)) {
+                if (t.is_space) {
+                    // A collapsed space at the very start of a line is dropped:
+                    // it would indent every wrapped line by a space. A line that
+                    // holds only inline-box markers counts as its start — the
+                    // whitespace after `<card>` is not a 7px indent.
+                    if (!line_has_content()) continue;
+                    const double w = measure_spaced(metrics, " ", it, first_piece);
                     first_piece = false;
                     grow_line_metrics(it);
-                    line.push_back({&it, slice, false, pen, sw});
-                    pen += sw;
-                    idx += take;
-                    if (idx < t.word.size()) flush_line(false);
+                    line.push_back({&it, " ", true, pen, w});
+                    pen += w;
+                    continue;
                 }
-                continue;
+                if (it.break_anywhere) {
+                    // Every character boundary is a break opportunity, so the word
+                    // is placed a slice at a time: fill the rest of this line, wrap,
+                    // repeat. A slice is a view into the same source buffer, so no
+                    // string is built.
+                    size_t idx = 0;
+                    while (idx < t.word.size()) {
+                        double remaining = line_width - pen;
+                        if (remaining <= 1e-9 && !line.empty()) {
+                            flush_line(false);
+                            remaining = line_width - pen;
+                        }
+                        size_t take = prefix_that_fits(t.word, idx, remaining);
+                        if (take == 0) {
+                            // Nothing fits. Wrap and retry; on an already-empty
+                            // line take one character anyway, because a line that
+                            // can hold nothing still has to make progress.
+                            if (!line.empty()) {
+                                flush_line(false);
+                                continue;
+                            }
+                            take = 1;
+                            while (idx + take < t.word.size() &&
+                                   (static_cast<unsigned char>(t.word[idx + take]) & 0xC0) == 0x80) {
+                                ++take;
+                            }
+                        }
+                        const std::string_view slice = t.word.substr(idx, take);
+                        const double sw = measure_spaced(metrics, slice, it, first_piece);
+                        first_piece = false;
+                        grow_line_metrics(it);
+                        line.push_back({&it, slice, false, pen, sw});
+                        pen += sw;
+                        idx += take;
+                        if (idx < t.word.size()) flush_line(false);
+                    }
+                    continue;
+                }
+                const double w = measure_spaced(metrics, t.word, it, first_piece);
+                first_piece = false;
+                // A word that does not fit starts a new line — unless the line is
+                // already empty, in which case it overflows rather than looping.
+                if (it.allow_wrap && line_has_content() && pen + w > line_width + kFitEpsilon) {
+                    flush_line(false);
+                }
+                grow_line_metrics(it);
+                line.push_back({&it, t.word, false, pen, w});
+                pen += w;
             }
-            const double w = measure_spaced(metrics, t.word, it, first_piece);
-            first_piece = false;
-            // A word that does not fit starts a new line — unless the line is
-            // already empty, in which case it overflows rather than looping.
-            if (it.allow_wrap && line_has_content() && pen + w > line_width + kFitEpsilon) {
-                flush_line(false);
             }
+            if (nl == std::string_view::npos) break;
             grow_line_metrics(it);
-            line.push_back({&it, t.word, false, pen, w});
-            pen += w;
+            flush_line(false);
+            seg_begin = nl + 1;
         }
     }
     flush_line(true);

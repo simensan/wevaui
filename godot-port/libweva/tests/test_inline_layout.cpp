@@ -876,3 +876,94 @@ void test_leading_space_after_an_inline_start_is_dropped() {
     const Box& s = f.tree[f.find_kind("s", BoxKind::Inline)];
     CHECK(near(s.x, 0));
 }
+
+
+// CSS Text L3 4.1.1. A newline kept by `pre`/`pre-wrap`/`pre-line` is a
+// *segment break*, and a preserved segment break forces a line break. The
+// preserved-whitespace path used to place a whole text node as one unbreakable
+// fragment, so a multi-line `<pre>` laid out as a single very wide line and
+// reported one line-height of height.
+void test_preserved_newlines_force_line_breaks() {
+    {
+        // The base case: three source lines are three line boxes, and the
+        // block is three line-heights tall.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre }"));
+        CHECK(f.layout("<body><div id=w>one\ntwo\nthree</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 3);
+        CHECK_EQ(f.line_text(ls[0]), "one");
+        CHECK_EQ(f.line_text(ls[1]), "two");
+        CHECK_EQ(f.line_text(ls[2]), "three");
+        CHECK(near(f.box("w").height, 60));
+    }
+    {
+        // The break happens even though the whole text fits on one line, which
+        // is the part a width-driven wrap can never produce.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 4000px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre }"));
+        CHECK(f.layout("<body><div id=w>a\nb</div></body>"));
+        CHECK(f.lines("w").size() == 2);
+        CHECK(near(f.box("w").height, 40));
+    }
+    {
+        // A blank line is a line: without a fragment of its own the line box is
+        // dropped at flush and the block comes up one line-height short.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre }"));
+        CHECK(f.layout("<body><div id=w>a\n\nb</div></body>"));
+        CHECK(f.lines("w").size() == 3);
+        CHECK(near(f.box("w").height, 60));
+    }
+    {
+        // Inline children spanning the newlines land on their own lines — the
+        // shape of weva-landing's syntax-highlighted `.code-body`, where every
+        // span had been stacked onto one line at an ever-growing x.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre } #a, #b { display: inline }"));
+        CHECK(f.layout("<body><div id=w><span id=a>one</span>\n<span id=b>two</span></div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        // One span per line, each starting at the content edge — not both
+        // stacked onto one line at an ever-growing x, which is what the
+        // single-fragment placement produced.
+        CHECK_EQ(f.line_text(ls[0]), "one");
+        CHECK_EQ(f.line_text(ls[1]), "two");
+        CHECK(near(f.box("w").height, 40));
+    }
+    {
+        // `pre-line` is the third axis: it collapses spaces and tabs the way
+        // `normal` does, and still breaks at every newline.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 4000px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre-line }"));
+        CHECK(f.layout("<body><div id=w>a   b\nc</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        CHECK_EQ(f.line_text(ls[0]), "a b");
+        CHECK_EQ(f.line_text(ls[1]), "c");
+    }
+    {
+        // `pre-wrap` preserves the break too.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 4000px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre-wrap }"));
+        CHECK(f.layout("<body><div id=w>a\nb</div></body>"));
+        CHECK(f.lines("w").size() == 2);
+    }
+    {
+        // And `normal` still does not: there a newline is ordinary collapsible
+        // whitespace, so both words share one line.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 4000px; font-size: 16px;"
+                    "     line-height: 20px }"));
+        CHECK(f.layout("<body><div id=w>a\nb</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 1);
+        CHECK_EQ(f.line_text(ls[0]), "a b");
+    }
+}

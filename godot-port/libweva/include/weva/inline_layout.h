@@ -42,6 +42,12 @@ struct InlineItem {
     // collapses but forbids them; `pre` preserves both.
     bool collapse_whitespace = true;
     bool allow_wrap = true;
+    // CSS Text L3 4.1.1: a *segment break* (a newline in the source) is
+    // preserved by `pre`, `pre-wrap`, `pre-line` and `break-spaces`, and a
+    // preserved segment break forces a line break. This is a third axis, not a
+    // restatement of `collapse_whitespace`: `pre-line` collapses spaces and
+    // tabs like `normal` while still breaking at every newline.
+    bool preserve_newlines = false;
     // CSS Text L3 §5.2: `word-break: break-all` (and `overflow-wrap: anywhere`)
     // make every character boundary a break opportunity, so a word longer than
     // the line is split rather than left to overflow.
