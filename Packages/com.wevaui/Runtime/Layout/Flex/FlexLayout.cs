@@ -1213,16 +1213,21 @@ namespace Weva.Layout.Flex {
                     // narrower than its own text, which then wraps inside it
                     // (see PositioningPass.WalkContent for the same fix and
                     // the quests.html footer that exposed both).
+                    // Sum as the lower bound, extent only when it is
+                    // genuinely wider — see PositioningPass.WalkContent for why
+                    // the sum is kept when the two agree.
+                    double sum = 0;
                     double lo = double.MaxValue, hi = double.MinValue;
                     for (int j = 0; j < lb.Children.Count; j++) {
                         var frag = lb.Children[j];
                         if (frag is InlineBox) continue;
+                        double w = CurrentInlineFragmentWidth(frag);
+                        sum += w;
                         if (frag.X < lo) lo = frag.X;
-                        if (frag.X + CurrentInlineFragmentWidth(frag) > hi) {
-                            hi = frag.X + CurrentInlineFragmentWidth(frag);
-                        }
+                        if (frag.X + w > hi) hi = frag.X + w;
                     }
-                    double sum = hi > lo ? hi - lo : 0;
+                    double extent = hi > lo ? hi - lo : 0;
+                    if (extent > sum + 1e-6) sum = extent;
                     if (sum > max) max = sum;
                     continue;
                 }

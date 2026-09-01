@@ -1247,14 +1247,24 @@ namespace Weva.Layout.Positioning {
                     // one line, on any page that sets letter-spacing.
                     // Fragment X is line-relative, so this is independent of
                     // text-align. (quests.html, godot-port oracle.)
+                    // The sum is the lower bound; the extent additionally
+                    // catches the advance between fragments. Preferring the sum
+                    // when they agree keeps the arithmetic bit-identical to the
+                    // pre-fix result for the overwhelmingly common abutting
+                    // case — `hi - lo` and a running sum differ in the last ulp,
+                    // which the 2-decimal dump turned into a 0.01px diff on
+                    // level-select.
+                    double sum = 0;
                     double lo = double.MaxValue, hi = double.MinValue;
                     for (int j = 0; j < lb.Children.Count; j++) {
                         var r = lb.Children[j];
                         if (r is Weva.Layout.Boxes.InlineBox) continue;
+                        sum += r.Width;
                         if (r.X < lo) lo = r.X;
                         if (r.X + r.Width > hi) hi = r.X + r.Width;
                     }
-                    double sum = hi > lo ? hi - lo : 0;
+                    double extent = hi > lo ? hi - lo : 0;
+                    if (extent > sum + 1e-6) sum = extent;
                     if (sum > max) max = sum;
                     continue;
                 }
