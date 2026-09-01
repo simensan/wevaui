@@ -223,5 +223,58 @@ namespace Weva.Tests.Layout {
             // the inner content baseline is far above the box bottom (80px).
             Assert.That(atom.Y + atom.Height, Is.GreaterThan(outerLine.Baseline + 1));
         }
+        // CSS Sizing L3 §5.1: a shrink-to-fit box is sized to its content's
+        // max-content, whatever kind of content that is. The atom path read the
+        // block child's LAID-OUT width, which LayoutBlock had just set to the
+        // atom's full available width — so max-content came back as the
+        // container and the atom never shrank at all.
+        [Test]
+        public void Inline_block_with_a_block_child_shrinks_to_fit() {
+            var (root, _, _) = Build(
+                "<div class=\"ib\"><p>hello</p></div>",
+                ".ib { display: inline-block; } p { margin: 0; }",
+                viewportWidth: 800);
+            var ib = FirstInlineBlock(root);
+            Assert.That(ib, Is.Not.Null);
+            // "hello" at the mono metrics' 8px/char.
+            Assert.That(ib.Width, Is.EqualTo(40).Within(0.001),
+                "the atom must take its block child's max-content, not the "
+                + "width that child was just laid out at");
+        }
+
+        // A `<br>` must still force its break when the container is laid out
+        // TWICE — which is exactly what a shrink-to-fit atom does: measure,
+        // then lay out again at the fitted width.
+        //
+        // The second pass walks the child list the first left behind, where the
+        // <br>'s InlineBox has been replaced by the empty run the breaker
+        // emitted for it. Without a marker on that run the break vanished: the
+        // box rendered one line, and having measured one long line it did not
+        // shrink either.
+        [Test]
+        public void Br_still_breaks_inside_a_shrink_to_fit_atom() {
+            var (root, _, _) = Build(
+                "<div class=\"ib\"><p>aa<br/>bb</p></div>"
+                + "<div class=\"plain\"><p>aa<br/>bb</p></div>",
+                ".ib { display: inline-block; } p { margin: 0; }",
+                viewportWidth: 800);
+
+            BlockBox ib = FirstInlineBlock(root);
+            Assert.That(ib, Is.Not.Null);
+
+            // Both paragraphs hold the same content, so the atom's paragraph
+            // must be exactly as tall as the plain one — two lines.
+            var paras = new List<BlockBox>();
+            foreach (var b in AllBoxes(root)) {
+                if (b is BlockBox bb && bb.Element != null && bb.Element.TagName == "p") paras.Add(bb);
+            }
+            Assert.That(paras.Count, Is.EqualTo(2));
+            Assert.That(paras[0].Height, Is.EqualTo(paras[1].Height).Within(0.001),
+                "the <br> must break in the shrink-to-fit atom exactly as it "
+                + "does in a plain block");
+            // And the atom is sized to the widest line, not the whole line box.
+            Assert.That(ib.Width, Is.EqualTo(16).Within(0.001));
+        }
+
     }
 }

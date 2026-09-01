@@ -27,6 +27,11 @@ namespace Weva.Layout {
             // the SourceRun has no Element of its own — so pseudo-content runs
             // count toward the span's bounding box in AttachInlineFragmentsToLines.
             public Weva.Dom.Element OwnerElement;
+            // Set on the synthetic newline item InlineLayout emits for a
+            // `<br>`, and copied onto the emitted run so a second layout pass
+            // over the same container recognises the break again.
+            // RentItem does not clear pooled items, so every producer sets it.
+            public bool IsForcedBreak;
 
             // CSS Text Module Level 3 word-break / overflow-wrap.
             //   word-break: normal     - break only at word boundaries (default).
@@ -1487,6 +1492,7 @@ namespace Weva.Layout {
                         // AttachInlineFragmentsToLines. CSS 2.1 §12: generated
                         // content is logically part of the host element.
                         run.Element = f.Source.SourceRun?.Element ?? f.Source.OwnerElement;
+                        run.IsForcedBreak = f.Source.IsForcedBreak;
                         run.SourceNode = f.Source.SourceRun?.SourceNode;
                         run.FontFamily = f.Source.FontFamily;
                         run.FontSize = f.Source.FontSize;

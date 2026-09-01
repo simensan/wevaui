@@ -1127,6 +1127,7 @@ namespace Weva.Layout {
                         brItem.FontStyle = Paint.Conversion.TextRunResolver.ResolveFontStyle(brStyle);
                         brItem.Color = brStyle?.Get(CssProperties.ColorId);
                         brItem.WhiteSpace = "pre";
+                        brItem.IsForcedBreak = true;
                         brItem.Metrics = ctx.GetMetrics(brItem.FontFamily);
                         brItem.SourceRun = null;
                         brItem.OwnerElement = spanOwner;
@@ -1435,11 +1436,26 @@ namespace Weva.Layout {
                         if (line is LineBox lb && lb.Width > maxContent) maxContent = lb.Width;
                     }
                 } else {
+                    // Block children. Their laid-out Width is whatever
+                    // LayoutBlock just gave them — the atom's FULL available
+                    // width — so reading it back makes max-content equal the
+                    // container and the atom never shrinks: `<div style=
+                    // "display:inline-block"><p>hello</p></div>` came out
+                    // 1280 wide instead of 36. Ask for the child's real
+                    // max-content instead (non-destructive: it walks the line
+                    // boxes LayoutBlock already produced).
                     var atomChildren = atom.ChildList;
                     for (int i = 0; i < atomChildren.Count; i++) {
                         var c = atomChildren[i];
                         if (c is BlockBox cb) {
-                            double childOuter = cb.Width + cb.MarginLeft + cb.MarginRight;
+                            // MaxContentWidth returns the border box for
+                            // flex/grid containers and content-only for a
+                            // plain block, where the caller adds the frame.
+                            double childMax = Weva.Layout.Positioning.PositioningPass.MaxContentWidth(cb, ctx, itemFsFor(cb, inheritedStyle));
+                            if (!(cb is Weva.Layout.Flex.FlexBox || cb is Weva.Layout.Grid.GridBox)) {
+                                childMax += cb.PaddingLeft + cb.PaddingRight + cb.BorderLeft + cb.BorderRight;
+                            }
+                            double childOuter = childMax + cb.MarginLeft + cb.MarginRight;
                             if (childOuter > maxContent) maxContent = childOuter;
                         }
                     }
@@ -1800,6 +1816,16 @@ namespace Weva.Layout {
             it.WordSpacingPx = wordSpacingPx;
             it.Metrics = fm;
             it.SourceRun = source;
+            // RentItem hands back pooled Items without clearing them, so this
+            // must be stamped on every path. A run carrying the marker is the
+            // leftover of a <br> from an earlier layout pass over the same
+            // container (see TextRun.IsForcedBreak) — re-collecting it has to
+            // reproduce the forced break, not a blank run.
+            it.IsForcedBreak = source != null && source.IsForcedBreak;
+            if (it.IsForcedBreak) {
+                it.Text = "\n";
+                it.WhiteSpace = "pre";
+            }
             return it;
         }
 

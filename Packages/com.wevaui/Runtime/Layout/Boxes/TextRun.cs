@@ -16,6 +16,21 @@ namespace Weva.Layout.Boxes {
         // Reset to 0 in ResetForPool so recycled runs never carry stale justify state.
         public double JustifyLetterSpacingPx { get; internal set; }
 
+        // True when this run stands in for a `<br>`. The run is EMPTY — the
+        // newline is consumed by the break it caused — so afterwards nothing
+        // about its text or style says it was ever a break.
+        //
+        // It has to stay identifiable because a container can be laid out
+        // TWICE: an inline-block, or an auto-width absolutely positioned atom,
+        // is measured and then laid out again at its fitted width. The second
+        // pass walks the child list the first pass left behind, and there the
+        // <br>'s InlineBox has been replaced by this run. Without the marker
+        // that pass sees an ordinary empty run, produces no forced break, and
+        // the box renders one line where the author wrote two — and, having
+        // measured one long line, does not shrink to fit either.
+        // Cleared in ResetForPool so a recycled run never claims to be a break.
+        public bool IsForcedBreak { get; internal set; }
+
         public TextRun() { }
 
         public TextRun(string text, ComputedStyle style, Element element, TextNode source) {
@@ -27,6 +42,7 @@ namespace Weva.Layout.Boxes {
 
         internal override void ResetForPool() {
             base.ResetForPool();
+            IsForcedBreak = false;
             Text = null;
             FontFamily = null;
             FontSize = 0;
