@@ -21,6 +21,62 @@ namespace Weva.Tests.Layout.Flex {
             Assert.That(b.X, Is.EqualTo(300).Within(0.001));
         }
 
+        // CSS Flexbox L1 §9.7 step 4c: the target main size is
+        // `flex base size + ratio x remaining free space`. `flex: 1` sets the
+        // base to 0, and the automatic minimum (§4.5: min-width:auto resolves
+        // to min-content) applies as a CLAMP on the result — it is not the
+        // value growth starts from.
+        //
+        // Growing from the clamped hypothetical size instead handed every item
+        // its own content width PLUS an equal share, so two `flex: 1` items
+        // came out unequal by exactly the difference between their contents.
+        // Every test above uses empty divs, where min-content is 0 and the two
+        // readings coincide — which is why this went unnoticed. Real UIs put
+        // differently-sized labels in equal-width buttons constantly.
+        [Test]
+        public void Flex_one_items_split_equally_regardless_of_content_width() {
+            var (root, _, _) = Build(
+                "<div class=\"flex\"><div style=\"flex:1\">aaaaaaaa</div>"
+                + "<div style=\"flex:1\">a</div></div>",
+                Css, viewportWidth: 800);
+            var fb = FindFlex(root, "div");
+            var a = ChildAt(fb, 0); var b = ChildAt(fb, 1);
+            Assert.That(a.Width, Is.EqualTo(300).Within(0.001),
+                "content must not bias an equal split");
+            Assert.That(b.Width, Is.EqualTo(300).Within(0.001));
+            Assert.That(b.X, Is.EqualTo(300).Within(0.001));
+        }
+
+        // Same, with an uneven grow ratio: the 2:1 split is on the free space
+        // above the bases, so content width still must not enter.
+        [Test]
+        public void Grow_ratio_with_content_ignores_content_width() {
+            var (root, _, _) = Build(
+                "<div class=\"flex\"><div style=\"flex:2\">aaaaaaaa</div>"
+                + "<div style=\"flex:1\">a</div></div>",
+                Css, viewportWidth: 800);
+            var fb = FindFlex(root, "div");
+            var a = ChildAt(fb, 0); var b = ChildAt(fb, 1);
+            Assert.That(a.Width, Is.EqualTo(400).Within(0.001));
+            Assert.That(b.Width, Is.EqualTo(200).Within(0.001));
+        }
+
+        // §4.5: an authored `min-width` overrides the automatic minimum, and a
+        // min violation freezes the item — the space it could not take is
+        // redistributed to the others rather than overflowing the line.
+        [Test]
+        public void Min_width_violation_freezes_and_redistributes() {
+            var (root, _, _) = Build(
+                "<div class=\"flex\"><div style=\"flex:1;min-width:400px\"></div>"
+                + "<div style=\"flex:1\"></div></div>",
+                Css, viewportWidth: 800);
+            var fb = FindFlex(root, "div");
+            var a = ChildAt(fb, 0); var b = ChildAt(fb, 1);
+            Assert.That(a.Width, Is.EqualTo(400).Within(0.001));
+            Assert.That(b.Width, Is.EqualTo(200).Within(0.001),
+                "the frozen item's excess must come out of the other item's share");
+        }
+
         [Test]
         public void Grow_two_versus_one_yields_2_to_1_ratio() {
             var (root, _, _) = Build(

@@ -1669,23 +1669,48 @@ namespace Weva.Layout.Flex {
                 // always start from their HypotheticalMainSize (the grow factor
                 // fraction is on top of the base, not cumulative over iterations).
                 bool[] frozen = new bool[n];
+                // §9.7 step 2 "size inflexible items": an item with a zero flex
+                // factor, and (in the grow branch) an item whose flex base size
+                // already exceeds its hypothetical main size — i.e. one whose
+                // base was clamped DOWN by max-width — is frozen at its
+                // hypothetical size and takes no share.
+                for (int k = 0; k < n; k++) {
+                    var it0 = items[line.ItemIndices[k]];
+                    if (it0.Props.Grow <= 0
+                        || it0.FlexBaseSize > it0.HypotheticalMainSize + LayoutEpsilons.SubPixelEqual) {
+                        frozen[k] = true;
+                    }
+                }
                 const int maxIter = 8;
                 for (int iter = 0; iter < maxIter; iter++) {
                     // Recompute remaining free space: availableSpace minus frozen
-                    // items' committed sizes minus unfrozen items' hypothetical sizes.
+                    // items' committed sizes minus unfrozen items' FLEX BASE sizes.
+                    //
+                    // Base, not hypothetical. The hypothetical main size is the
+                    // base already clamped by min/max, and for the commonest
+                    // flex idiom of all — `flex: 1`, i.e. base 0 — the automatic
+                    // minimum (§4.5, min-width:auto = min-content) clamps it up
+                    // to the item's min-content width. Growing from THERE hands
+                    // every item its own content width plus an equal share, so
+                    // two `flex: 1` buttons came out unequal by exactly the
+                    // difference in their labels ("Strike" 648.6 vs "Block"
+                    // 623.4 where both should be 636). §9.7 step 4c is explicit
+                    // that the target is `flex base size + ratio x free space`;
+                    // the min floor re-enters as a clamp below, not as the
+                    // starting point.
                     double frozenSum = 0;
-                    double unfrozenHypo = 0;
+                    double unfrozenBase = 0;
                     double totalGrow = 0;
                     for (int k = 0; k < n; k++) {
                         var it = items[line.ItemIndices[k]];
                         if (frozen[k]) {
                             frozenSum += it.TargetMainSize + it.OuterMainMarginSum;
                         } else {
-                            unfrozenHypo += it.HypotheticalMainSize + it.OuterMainMarginSum;
+                            unfrozenBase += it.FlexBaseSize + it.OuterMainMarginSum;
                             totalGrow += it.Props.Grow;
                         }
                     }
-                    double freeSpace = availableSpace - frozenSum - unfrozenHypo;
+                    double freeSpace = availableSpace - frozenSum - unfrozenBase;
                     if (totalGrow <= 0 || freeSpace <= LayoutEpsilons.SubPixelEqual) break;
                     // Distribute remaining free space proportionally among unfrozen items.
                     bool anyFrozenThisIter = false;
@@ -1693,11 +1718,14 @@ namespace Weva.Layout.Flex {
                         if (frozen[k]) continue;
                         var it = items[line.ItemIndices[k]];
                         double share = it.Props.Grow > 0 ? freeSpace * (it.Props.Grow / totalGrow) : 0;
-                        double grown = it.HypotheticalMainSize + share;
+                        double grown = it.FlexBaseSize + share;
                         double clamped = ClampMainSizeByMinMax(it, container, containerMainSize, isRow, grown);
                         it.TargetMainSize = clamped;
-                        // Freeze items that hit a max constraint.
-                        if (clamped < grown - LayoutEpsilons.SubPixelEqual) {
+                        // §9.7 step 4e: freeze on either violation — a max
+                        // constraint that pulled the item back, or the
+                        // automatic/authored minimum that pushed it out. Both
+                        // change how much space is left for everyone else.
+                        if (System.Math.Abs(clamped - grown) > LayoutEpsilons.SubPixelEqual) {
                             frozen[k] = true;
                             anyFrozenThisIter = true;
                         }
