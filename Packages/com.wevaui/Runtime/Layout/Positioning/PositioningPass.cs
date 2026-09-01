@@ -301,7 +301,16 @@ namespace Weva.Layout.Positioning {
         }
 
         static void CollectAnchors(Box box, AnchorRegistry registry) {
-            if (box?.Style != null) {
+            // Only an element's PRINCIPAL box can be an anchor. A TextRun and a
+            // LineBox both carry the element's ComputedStyle, so an unfiltered
+            // walk matched `anchor-name` on them too — and because they come
+            // later in pre-order they OVERWROTE the real registration. Every
+            // anchor() then resolved against the text run: `left: anchor(left)`
+            // gave the run's x inside its line (68.4 rather than the button's
+            // 20) and `anchor(bottom)` used the run's 18.29 height instead of
+            // the button's 40. menu.html's tooltip landed 11px high and 48px
+            // right; Chrome and the C++ port agree with each other against us.
+            if (box?.Style != null && !(box is Boxes.TextRun) && !(box is Boxes.LineBox)) {
                 string name = box.Style.Get("anchor-name");
                 if (!string.IsNullOrEmpty(name) && name.Trim() != "none") {
                     foreach (var n in SplitNames(name)) {
