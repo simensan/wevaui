@@ -31,6 +31,26 @@ bool iequals(std::string_view a, std::string_view b) {
     return true;
 }
 
+// CSS Grid L2 §2: a grid item with `grid-template-columns/rows: subgrid`
+// takes its tracks from the parent grid's tracks it spans. The parent knows
+// those sizes; the child is laid out through block layout, which does not
+// carry them — so the parent leaves them here, keyed by the child's box,
+// right before it lays the child out, and the child's layout_grid picks them
+// up. The subgrid's own margin, border and padding come off its edge tracks
+// (§2.1), so its content width still equals the tracks plus gaps.
+struct SubgridTracks {
+    std::vector<double> columns, rows;
+    double column_gap = 0, row_gap = 0;
+};
+thread_local std::map<BoxId, SubgridTracks> g_subgrid_tracks;
+
+bool wants_subgrid(const ComputedStyle* style, std::string_view property) {
+    std::string_view v = get(style, property);
+    while (!v.empty() && (v.front() == ' ' || v.front() == '\t')) v.remove_prefix(1);
+    while (!v.empty() && (v.back() == ' ' || v.back() == '\t')) v.remove_suffix(1);
+    return iequals(v, "subgrid");
+}
+
 // A track sizing function (CSS Grid L1 §7.2.3): one side of minmax(). `fr`
 // is only ever a max; fit-content() only ever a max as well.
 struct Sizing {
@@ -777,13 +797,13 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     const double font_size =
         (*tree)[container].font_size > 0 ? (*tree)[container].font_size : ctx.root_font_size_px;
 
-    const double column_gap = [&] {
+    const double own_column_gap = [&] {
         const std::string_view raw = get(style, "column-gap");
         if (raw.empty() || iequals(raw, "normal")) return 0.0;
         const ResolvedLength r = resolve_length(style, "column-gap", ctx, font_size, content_width);
         return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : 0.0;
     }();
-    const double row_gap = [&] {
+    const double own_row_gap = [&] {
         const std::string_view raw = get(style, "row-gap");
         if (raw.empty() || iequals(raw, "normal")) return 0.0;
         const ResolvedLength r = resolve_length(style, "row-gap", ctx, font_size, content_width);
@@ -791,21 +811,57 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     }();
 
     std::vector<Track> columns = parse_track_list(get(style, "grid-template-columns"), ctx,
-                                                  font_size, content_width, column_gap);
+                                                  font_size, content_width, own_column_gap);
     std::vector<Track> rows =
         parse_track_list(get(style, "grid-template-rows"), ctx, font_size,
-                         content_height >= 0 ? content_height : 0, row_gap);
+                         content_height >= 0 ? content_height : 0, own_row_gap);
     // Implicit tracks take their sizing from grid-auto-columns/rows, cycling
     // through the list; the initial `auto` when there is none.
     std::vector<Track> auto_columns = parse_track_list(get(style, "grid-auto-columns"), ctx,
-                                                       font_size, content_width, column_gap);
+                                                       font_size, content_width, own_column_gap);
     std::vector<Track> auto_rows =
         parse_track_list(get(style, "grid-auto-rows"), ctx, font_size,
-                         content_height >= 0 ? content_height : 0, row_gap);
+                         content_height >= 0 ? content_height : 0, own_row_gap);
     if (auto_columns.empty()) auto_columns.push_back(Track{});
     if (auto_rows.empty()) auto_rows.push_back(Track{});
     const std::vector<std::vector<std::string>> areas =
         parse_areas(get(style, "grid-template-areas"));
+
+    // Subgrid: adopt the spanned parent tracks and the parent's gap; this
+    // box's own edges shorten the first and last of them.
+    double column_gap_used = own_column_gap;
+    double row_gap_used = own_row_gap;
+    {
+        const auto it = g_subgrid_tracks.find(container);
+        if (it != g_subgrid_tracks.end()) {
+            const Box& self = (*tree)[container];
+            const auto adopt = [&](const std::vector<double>& sizes, double start_edge,
+                                   double end_edge, std::vector<Track>* out) {
+                out->clear();
+                for (double px : sizes) out->push_back(Track::fixed(px));
+                if (!out->empty()) {
+                    Track& first = out->front();
+                    first.min.value = first.max.value = std::max(0.0, first.max.value - start_edge);
+                    Track& last = out->back();
+                    last.min.value = last.max.value = std::max(0.0, last.max.value - end_edge);
+                }
+            };
+            if (wants_subgrid(style, "grid-template-columns") && !it->second.columns.empty()) {
+                adopt(it->second.columns, self.padding_left + self.border_left,
+                      self.padding_right + self.border_right, &columns);
+                column_gap_used = it->second.column_gap;
+            }
+            if (wants_subgrid(style, "grid-template-rows") && !it->second.rows.empty()) {
+                adopt(it->second.rows, self.padding_top + self.border_top,
+                      self.padding_bottom + self.border_bottom, &rows);
+                row_gap_used = it->second.row_gap;
+            }
+            g_subgrid_tracks.erase(it);
+        }
+    }
+    // From here on the gaps are the ones in force for this grid.
+    const double column_gap = column_gap_used;
+    const double row_gap = row_gap_used;
 
     // A container with no explicit columns is one column wide, which is what
     // the initial `grid-template-columns: none` means for row-major flow.
@@ -1074,13 +1130,42 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         if (t.is_definite()) return true;
         return t.is_flex() && content_height >= 0;
     };
+    // A subgrid child gets the parent tracks it spans handed over before every
+    // layout of it, and is always re-laid so it sees them.
+    const auto hand_over = [&](const Placement& p, bool with_rows) {
+        const Box& b = (*tree)[p.box];
+        const bool cols = wants_subgrid(b.style, "grid-template-columns");
+        const bool rws = with_rows && wants_subgrid(b.style, "grid-template-rows");
+        if (!cols && !rws) return false;
+        SubgridTracks st;
+        st.column_gap = column_gap;
+        st.row_gap = row_gap;
+        if (cols) {
+            for (int i = p.column; i < p.column + p.column_span && i < static_cast<int>(columns.size()); ++i) {
+                st.columns.push_back(columns[i].size);
+            }
+        }
+        if (rws) {
+            for (int i = p.row; i < p.row + p.row_span && i < static_cast<int>(rows.size()); ++i) {
+                st.rows.push_back(rows[i].size);
+            }
+        }
+        g_subgrid_tracks[p.box] = std::move(st);
+        return true;
+    };
+
     const auto size_inline = [&](const Placement& p) {
         const double w = span_size(columns, p.column, p.column_span, column_gap);
+        const bool subgrid = hand_over(p, false);
         const Box& b = (*tree)[p.box];
         const std::string_view width_raw = get(b.style, "width");
         const bool auto_width = width_raw.empty() || iequals(width_raw, "auto");
         if (!auto_width) {
             block->layout_block(p.box, w, style);
+            return;
+        }
+        if (subgrid) {
+            block->relayout_at(p.box, w);
             return;
         }
         const std::string_view height_raw = get(b.style, "height");
@@ -1167,7 +1252,12 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         const bool auto_height = height_raw.empty() || iequals(height_raw, "auto");
         const std::string_view width_raw = get(before.style, "width");
         const bool auto_width = width_raw.empty() || iequals(width_raw, "auto");
-        if (auto_height && is_stretch(align) && h > 0) {
+        const bool subgrid_rows = hand_over(p, true);
+        if (subgrid_rows && h > 0) {
+            // The rows are known now; the child adopts them and is re-laid at
+            // its area's height whatever its alignment.
+            block->relayout_at_size(p.box, before.width, h);
+        } else if (auto_height && is_stretch(align) && h > 0) {
             if (has_ratio(before) && auto_width) {
                 if (row_is_definite(p)) {
                     // Both axes stretch and the ratio transfers each stretched

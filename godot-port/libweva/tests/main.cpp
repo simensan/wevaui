@@ -135,6 +135,7 @@ void test_flex_abspos_child_static_position_follows_alignment();
 void test_grid_track_sizing_functions();
 void test_inline_box_edges_take_space_on_the_line();
 void test_grid_aspect_ratio_item_takes_the_larger_transfer();
+void test_grid_subgrid();
 void test_anonymous_block_inherits_text_align();
 void test_inline_fragments();
 void test_inline_atoms();
@@ -307,6 +308,7 @@ int main() {
     test_grid_track_sizing_functions();
     test_inline_box_edges_take_space_on_the_line();
     test_grid_aspect_ratio_item_takes_the_larger_transfer();
+    test_grid_subgrid();
     test_anonymous_block_inherits_text_align();
     test_inline_fragments();
     test_inline_atoms();

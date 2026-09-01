@@ -580,3 +580,54 @@ void test_grid_aspect_ratio_item_takes_the_larger_transfer() {
     CHECK(near(f.box("a").width, 195));
     CHECK(near(f.box("a").height, 195));
 }
+
+void test_grid_subgrid() {
+    {
+        // Columns: the child spans the parent's three columns and lays its
+        // cells out on exactly those tracks.
+        Fixture f;
+        CHECK(f.css("#p { display: grid; grid-template-columns: 100px 200px 150px;"
+                    "     grid-template-rows: 30px; width: 600px }"
+                    "#c { display: grid; grid-column: 1 / 4; grid-template-columns: subgrid }"
+                    ".cell { height: 30px }"));
+        CHECK(f.layout("<body><div id=p><div id=c><div id=a class=cell></div>"
+                       "<div id=b class=cell></div><div id=d class=cell></div></div></div></body>"));
+        CHECK(near(f.box("c").width, 450));
+        CHECK(near(f.box("a").width, 100) && near(f.box("b").x, 100));
+        CHECK(near(f.box("b").width, 200) && near(f.box("d").x, 300));
+        CHECK(near(f.box("d").width, 150));
+    }
+    {
+        // Rows: the child spans two of the parent's rows; items past them go
+        // into implicit auto rows of its own.
+        Fixture f;
+        CHECK(f.css("#p { display: grid; grid-template-columns: 200px;"
+                    "     grid-template-rows: 40px 80px 40px 80px; width: 200px; height: 400px }"
+                    "#c { display: grid; grid-column: 1 / 2; grid-row: 1 / 3;"
+                    "     grid-template-rows: subgrid; grid-auto-rows: subgrid }"
+                    ".item { width: 10px }"));
+        CHECK(f.layout("<body><div id=p><div id=c><div id=i1 class=item></div>"
+                       "<div id=i2 class=item></div><div id=i3 class=item></div>"
+                       "<div id=i4 class=item></div></div></div></body>"));
+        CHECK(near(f.box("c").height, 120));
+        CHECK(near(f.box("i1").height, 40));
+        CHECK(near(f.box("i2").y, 40) && near(f.box("i2").height, 80));
+        CHECK(near(f.box("i3").y, 120));
+    }
+    {
+        // The parent's gap is the subgrid's gap, and the subgrid's own padding
+        // comes off its edge tracks so the cells still line up with the
+        // parent's columns.
+        Fixture f;
+        CHECK(f.css("#p { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 320px }"
+                    "#c { display: grid; grid-column: 1 / 3; grid-template-columns: subgrid;"
+                    "     padding: 0 10px }"
+                    ".cell { height: 30px }"));
+        CHECK(f.layout("<body><div id=p><div id=c><div id=a class=cell></div>"
+                       "<div id=b class=cell></div></div></div></body>"));
+        // Box x is relative to the child's border-box origin: the first cell
+        // starts after the 10px padding and is the 158px track less that.
+        CHECK(near(f.box("a").x, 10) && near(f.box("a").width, 148));
+        CHECK(near(f.box("b").x, 162) && near(f.box("b").width, 148));
+    }
+}
