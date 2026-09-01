@@ -167,6 +167,31 @@ void test_cascade_compute() {
         CHECK(g.css("#a { color: blue !important }"));
         CHECK(g.value("a", "color") == "blue");
     }
+    // ---- a shorthand in an inline style expands, like one in a rule
+    {
+        // Stylesheet rules are expanded once at compile time; inline styles
+        // reached the cascade unexpanded, so `style="margin: 0"` set a `margin`
+        // slot nothing reads while the UA sheet's already-expanded
+        // `p { margin: 1em 0 }` longhands kept the element. Every
+        // `<p style="margin:0">` in the corpus sat 16px too low.
+        Fixture f;
+        CHECK(f.html("<div id=a style='margin: 0'>x</div>"));
+        CHECK(f.css("#a { margin-top: 7px; margin-left: 7px }"));
+        CHECK(f.value("a", "margin-top") == "0");
+        CHECK(f.value("a", "margin-left") == "0");
+
+        // Source order still decides between an inline longhand and the
+        // expansion of an inline shorthand, which is the whole reason
+        // expansion happens at cascade time rather than at read time.
+        Fixture g;
+        CHECK(g.html("<div id=a style='margin: 1px; margin-left: 9px'>x</div>"));
+        CHECK(g.value("a", "margin-left") == "9px");
+        CHECK(g.value("a", "margin-top") == "1px");
+
+        Fixture h;
+        CHECK(h.html("<div id=a style='margin-left: 9px; margin: 1px'>x</div>"));
+        CHECK(h.value("a", "margin-left") == "1px");
+    }
     // ---- initial values fill everything unset
     {
         Fixture f;

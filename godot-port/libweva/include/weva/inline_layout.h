@@ -34,6 +34,10 @@ struct InlineItem {
     // collapses but forbids them; `pre` preserves both.
     bool collapse_whitespace = true;
     bool allow_wrap = true;
+    // CSS Text L3 §5.2: `word-break: break-all` (and `overflow-wrap: anywhere`)
+    // make every character boundary a break opportunity, so a word longer than
+    // the line is split rather than left to overflow.
+    bool break_anywhere = false;
 
     // An inline-level block (inline-block, inline-flex, ...) embedded in the
     // line. An atom is placed whole: never split, broken, or tokenised. The
@@ -46,7 +50,14 @@ struct InlineItem {
     // with no inline content of its own is its bottom margin edge.
     double atom_baseline = 0;
 
+    // A `<br>`: a forced line break. It carries a box because the reference
+    // emits one per break — zero width, the line's height — and layout, paint
+    // and hit testing all expect to find it on the line rather than inferring
+    // the break from a gap.
+    BoxId break_box = kNoBox;
+
     bool is_atom() const { return atom_box != kNoBox; }
+    bool is_break() const { return break_box != kNoBox; }
 };
 
 // Lays out `container`'s inline content into line boxes, replacing its children.

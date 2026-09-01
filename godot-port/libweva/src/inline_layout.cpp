@@ -74,6 +74,26 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.collapse_whitespace = !(iequals(ws, "pre") || iequals(ws, "pre-wrap") ||
                                          iequals(ws, "break-spaces"));
             item.allow_wrap = !(iequals(ws, "nowrap") || iequals(ws, "pre"));
+            const std::string_view wb = get(item.style, "word-break");
+            const std::string_view ow = get(item.style, "overflow-wrap");
+            // `anywhere` differs from `break-all` only in how it affects
+            // min-content sizing, which is not tracked yet, so the two are
+            // observably identical here — the same simplification the
+            // reference makes, and it says so.
+            item.break_anywhere =
+                item.allow_wrap && (iequals(wb, "break-all") || iequals(ow, "anywhere"));
+            out->push_back(item);
+        } else if (b.kind == BoxKind::Inline && b.element &&
+                   b.element->tag_name() == "br") {
+            // HTML §14.3.3: `br` is an inline element with no content that
+            // forces a line break. Recursing into it the way any other inline
+            // box is recursed into finds nothing and the break is lost.
+            InlineItem item;
+            item.break_box = c;
+            item.inline_parent = inline_parent;
+            item.style = b.style ? b.style : inherited;
+            item.font_size = font_size_px(item.style, nullptr, ctx);
+            item.line_height = line_height_px(item.style, item.font_size, ctx, metrics);
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline || b.kind == BoxKind::AnonymousInline) {
             collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited, metrics, out);
@@ -126,6 +146,15 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     const double top_inner = cbox.padding_top + cbox.border_top;
     const double left_inner = cbox.padding_left + cbox.border_left;
     const std::string_view align = resolve_text_align(cbox.style);
+    // Copied out, not read through `cbox`: BoxTree::create appends to a vector,
+    // so every box reference is invalidated by the next create — and flush_line
+    // creates one line box plus one run per fragment. `cbox` stays valid only
+    // until the first line is flushed, which is why the second line of a
+    // container that had grown the vector was reading freed memory. The style
+    // pointer is owned outside the tree, so copying it is safe.
+    //
+    // Everything else below re-indexes; nothing holds a Box& across a create.
+    const ComputedStyle* const container_style = cbox.style;
 
     // CSS 2.1 §10.8.1: half-leading is SIGNED. A line-height smaller than the
     // font's own ascent+descent gives a negative half-leading and a line box
@@ -229,7 +258,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         else if (iequals(align, "center")) dx += (line_width - pen) * 0.5;
         if (dx < line_left) dx = line_left;
 
-        const BoxId lb = tree->create(BoxKind::Line, nullptr, cbox.style);
+        const BoxId lb = tree->create(BoxKind::Line, nullptr, container_style);
         (*tree)[lb].y = y;
         // The line box spans only the space the floats leave it, offset to
         // where that space starts.
@@ -241,6 +270,15 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         (*tree)[lb].applied_text_align_delta = dx;
 
         for (const Fragment& f : line) {
+            if (f.item->is_break()) {
+                Box& br = (*tree)[f.item->break_box];
+                br.x = f.x + dx;
+                br.y = 0;
+                br.width = 0;
+                br.height = line_height;
+                tree->append_child(lb, f.item->break_box);
+                continue;
+            }
             if (f.item->is_atom()) {
                 // The atom keeps its own box; only its position on the line is
                 // decided here. Its baseline sits on the line's.
@@ -290,6 +328,15 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     };
 
     for (const InlineItem& it : items) {
+        if (it.is_break()) {
+            // The break box sits at the pen, ends the line, and takes the
+            // line's own height — which is only known at flush, so it is
+            // stamped there.
+            grow_line_metrics(it);
+            line.push_back({&it, {}, false, pen, 0});
+            flush_line(false);
+            continue;
+        }
         if (it.is_atom()) {
             // An atom wraps as a unit: it moves to the next line when it does
             // not fit, but is never split.
@@ -310,6 +357,29 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             pen += w;
             continue;
         }
+        // Largest prefix of `word` from `from` whose measured width fits, never
+        // splitting a UTF-8 sequence. Zero when not even one character fits.
+        const auto prefix_that_fits = [&](std::string_view word, size_t from,
+                                          double max_width) -> size_t {
+            if (max_width <= 0) return 0;
+            size_t fits = 0;
+            size_t i = from;
+            while (i < word.size()) {
+                // Advance one code point: continuation bytes are 10xxxxxx.
+                size_t next = i + 1;
+                while (next < word.size() &&
+                       (static_cast<unsigned char>(word[next]) & 0xC0) == 0x80) {
+                    ++next;
+                }
+                const double w =
+                    metrics.measure(word.substr(from, next - from), it.font_size);
+                if (w > max_width) break;
+                fits = next - from;
+                i = next;
+            }
+            return fits;
+        };
+
         for (const Token& t : tokenize_collapsing(it.text)) {
             if (t.is_space) {
                 // A collapsed space at the very start of a line is dropped:
@@ -319,6 +389,43 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 grow_line_metrics(it);
                 line.push_back({&it, " ", true, pen, w});
                 pen += w;
+                continue;
+            }
+            if (it.break_anywhere) {
+                // Every character boundary is a break opportunity, so the word
+                // is placed a slice at a time: fill the rest of this line, wrap,
+                // repeat. A slice is a view into the same source buffer, so no
+                // string is built.
+                size_t idx = 0;
+                while (idx < t.word.size()) {
+                    double remaining = line_width - pen;
+                    if (remaining <= 1e-9 && !line.empty()) {
+                        flush_line(false);
+                        remaining = line_width - pen;
+                    }
+                    size_t take = prefix_that_fits(t.word, idx, remaining);
+                    if (take == 0) {
+                        // Nothing fits. Wrap and retry; on an already-empty
+                        // line take one character anyway, because a line that
+                        // can hold nothing still has to make progress.
+                        if (!line.empty()) {
+                            flush_line(false);
+                            continue;
+                        }
+                        take = 1;
+                        while (idx + take < t.word.size() &&
+                               (static_cast<unsigned char>(t.word[idx + take]) & 0xC0) == 0x80) {
+                            ++take;
+                        }
+                    }
+                    const std::string_view slice = t.word.substr(idx, take);
+                    const double sw = metrics.measure(slice, it.font_size);
+                    grow_line_metrics(it);
+                    line.push_back({&it, slice, false, pen, sw});
+                    pen += sw;
+                    idx += take;
+                    if (idx < t.word.size()) flush_line(false);
+                }
                 continue;
             }
             const double w = metrics.measure(t.word, it.font_size);

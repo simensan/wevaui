@@ -1794,6 +1794,65 @@ listing what breaks without it: paint cannot draw the span's background or
 border, hit testing cannot surface clicks on it, and the DOM walk pairs every
 following element against the wrong rect. That is a feature, not a fix.
 
+### 22 of 23 in-scope cases, and a use-after-free the oracle flushed out
+
+Phase 5 items, each pinned by the corpus:
+
+**`<br>` did nothing.** It is an inline box with no children, so
+`collect_recursive` recursed into it, found nothing, and the break was lost.
+Now a forced-break item that ends the line and leaves a zero-width box on it,
+taking the line's height — the reference emits one per break, and paint and hit
+testing both expect to find it there rather than inferring a break from a gap.
+
+**`word-break: break-all` did not break.** Every character boundary is a break
+opportunity, so a long word is placed a slice at a time: fill the line, wrap,
+repeat. Slices are views into the same source buffer, so no string is built.
+`overflow-wrap: anywhere` is folded in with it — the two differ only in
+min-content sizing, which is not tracked yet, and the reference makes the same
+simplification and says so.
+
+**A shorthand in an inline `style` attribute was ignored.** Stylesheet rules go
+through `expand_declarations` once at compile time; inline styles never reached
+it. So `style="margin: 0"` set a `margin` slot nothing reads, while the UA
+sheet's already-expanded `p { margin: 1em 0 }` longhands kept the element — and
+every `<p style="margin:0">` in the corpus sat 16px too low. `margin-top: 0`
+worked, which is what made the bug invisible: the failing shape was the
+shorthand specifically.
+
+That last one had nothing to do with the phase it was found in. It is a cascade
+bug, in code signed off in Phase 3, surfaced by a Phase 5 corpus case.
+
+#### The regression test found a heap-use-after-free
+
+Adding a `<br>` test to the C++ suite made ASan abort — not on the new code, on
+`layout_inline_items`, which holds `const Box& cbox` across `flush_line`.
+`BoxTree::create` appends to a vector, so every box reference dies at the next
+create, and flush_line creates a line box plus a run per fragment. The reference
+was valid until the first line was flushed; the SECOND line of any container
+that had grown the vector past a reallocation was reading freed memory.
+
+**Pre-existing, and latent for the whole port.** Every multi-line container was
+exposed; the existing tests never happened to hit a reallocation at the wrong
+moment. Forced breaks flush more lines, and it fired immediately. Fixed by
+copying the style pointer out — it is owned outside the tree — rather than
+reading through a reference that a create can invalidate.
+
+Worth stating plainly: 7,180 checks, four toolchains and ASan+UBSan+LSan had all
+been green over that bug for the entire port. It took a corpus case to write a
+test that stepped on it.
+
+#### Where the corpus stands
+
+**22 of the 23 cases that use only ported features now agree exactly**
+(22/47 overall). The 25 remaining failures all need flex, grid, multicol,
+counters, list markers, quotes or containment — Phases 6–8.
+
+The single in-scope failure left is `23-inline-splitting`, and it is a feature:
+CSS 2.1 §9.2.1.1 block-in-inline splitting, where a block inside an inline
+inside a block splits the paragraph into three boxes, plus §9.4.2 inline
+fragments so the `<a>` produces a box per line it covers. Chrome's own capture
+in the corpus shows the six boxes expected; the port produces four.
+
 ## Phase 5 — Text (~9k LOC, highest uncertainty)
 
 Decide `FontInterface` implementation (FreeType+HarfBuzz vs Godot `TextServer`)

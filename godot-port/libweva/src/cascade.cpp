@@ -487,8 +487,20 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         CssParseError perr;
         if (parse_inline_declarations(e.get_attribute("style"), /*strict=*/false,
                                       &inline_decls, &perr)) {
+            // Shorthands in an inline style need expanding just as much as
+            // those in a rule. Stylesheet rules are expanded once at compile
+            // time (see expand_declarations), and inline styles were reaching
+            // the cascade unexpanded — so `style="margin: 0"` set a `margin`
+            // slot nothing reads, while the UA sheet's expanded
+            // `p { margin: 1em 0 }` longhands kept the element. The oracle
+            // found it as a 16px offset on every `<p style="margin:0">`.
+            //
+            // Expanded per element rather than per rule, which is the cost of
+            // an inline style; the early-out inside makes it free when the
+            // attribute holds no shorthand.
+            const std::vector<Declaration> expanded = expand_declarations(inline_decls);
             int in_rule = 0;
-            for (const Declaration& d : inline_decls) {
+            for (const Declaration& d : expanded) {
                 int id = reg.id_of(d.property);
                 const int idx = in_rule++;
                 // An inline normal declaration loses to an existing !important

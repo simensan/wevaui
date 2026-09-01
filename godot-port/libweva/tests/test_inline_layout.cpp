@@ -360,6 +360,74 @@ void test_shrink_to_fit() {
     }
 }
 
+// Both of these were found by the differential oracle rather than here, which
+// is the point of keeping them: the C++ suite had no case that could tell a
+// missing forced break or a missing intra-word break from correct output.
+void test_forced_breaks() {
+    {
+        // `br` forces a line break and leaves a zero-width box on the line it
+        // ends. Collecting it the way any other inline box is collected finds
+        // no children and loses the break entirely, which is what happened.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
+                    "     line-height: 1 }"));
+        CHECK(f.layout("<body><div id=w>one<br>two<br>three</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 3);
+        CHECK_EQ(f.line_text(ls[0]), "one");
+        CHECK_EQ(f.line_text(ls[1]), "two");
+        CHECK_EQ(f.line_text(ls[2]), "three");
+        CHECK(near(f.box("w").height, 48));
+
+        const BoxId br = f.find("br");
+        CHECK(br != kNoBox);
+        CHECK(near(f.tree[br].width, 0));
+        // It takes the height of the line it ends, not of its own content.
+        CHECK(near(f.tree[br].height, 16));
+    }
+    {
+        // A break with nothing before it still ends a line.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
+                    "     line-height: 1 }"));
+        CHECK(f.layout("<body><div id=w>a<br>b</div></body>"));
+        CHECK(f.lines("w").size() == 2);
+    }
+}
+
+void test_break_all() {
+    {
+        // A word longer than the line is split at character boundaries rather
+        // than left to overflow. 20 chars at 8px in a 40px box is 5 per line.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 40px; font-size: 16px;"
+                    "     line-height: 1; word-break: break-all }"));
+        CHECK(f.layout("<body><div id=w>abcdefghijklmnopqrst</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 4);
+        CHECK_EQ(f.line_text(ls[0]), "abcde");
+        CHECK_EQ(f.line_text(ls[3]), "pqrst");
+    }
+    {
+        // Without it the same word overflows on one line, which is the
+        // behaviour every other value keeps.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 40px; font-size: 16px;"
+                    "     line-height: 1 }"));
+        CHECK(f.layout("<body><div id=w>abcdefghijklmnopqrst</div></body>"));
+        CHECK(f.lines("w").size() == 1);
+    }
+    {
+        // A box too narrow for even one character still makes progress rather
+        // than looping: the character is placed and overflows.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 2px; font-size: 16px;"
+                    "     line-height: 1; word-break: break-all }"));
+        CHECK(f.layout("<body><div id=w>abc</div></body>"));
+        CHECK(f.lines("w").size() == 3);
+    }
+}
+
 void test_inline_atoms() {
     {
         // An inline-block is an atom: sized by shrink-to-fit, then placed whole
