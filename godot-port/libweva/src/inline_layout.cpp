@@ -95,7 +95,8 @@ double measure_spaced(const FontMetrics& default_metrics, std::string_view text,
 
 void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
                        const LayoutContext& ctx, const ComputedStyle* inherited,
-                       const FontMetrics* metrics, std::vector<InlineItem>* out) {
+                       const ComputedStyle* inherited_parent, const FontMetrics* metrics,
+                       std::vector<InlineItem>* out) {
     for (BoxId c : tree.children(node)) {
         const Box& b = tree[c];
         if (b.kind == BoxKind::Text) {
@@ -104,7 +105,10 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.inline_parent = inline_parent;
             item.text = b.text;
             item.style = b.style ? b.style : inherited;
-            item.font_size = font_size_px(item.style, nullptr, ctx);
+            // A text run's style is its element's, so `em` resolves against
+            // that element's PARENT — `<small>` (0.83em) inside a 14px label is
+            // 11.62px, not 0.83 of the root.
+            item.font_size = font_size_px(item.style, inherited_parent, ctx);
             item.metrics = ctx.font_for(get(item.style, "font-family"));
             item.line_height = line_height_px(item.style, item.font_size, ctx,
                                               item.metrics ? item.metrics : metrics);
@@ -134,7 +138,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.break_box = c;
             item.inline_parent = inline_parent;
             item.style = b.style ? b.style : inherited;
-            item.font_size = font_size_px(item.style, nullptr, ctx);
+            item.font_size = font_size_px(item.style, inherited, ctx);
             item.metrics = ctx.font_for(get(item.style, "font-family"));
             item.line_height = line_height_px(item.style, item.font_size, ctx,
                                               item.metrics ? item.metrics : metrics);
@@ -148,13 +152,14 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
                 item.inline_box_start = c;
                 item.inline_parent = inline_parent;
                 item.style = b.style ? b.style : inherited;
-                item.font_size = font_size_px(item.style, nullptr, ctx);
+                item.font_size = font_size_px(item.style, inherited, ctx);
                 item.metrics = ctx.font_for(get(item.style, "font-family"));
                 item.line_height = line_height_px(item.style, item.font_size, ctx,
                                                   item.metrics ? item.metrics : metrics);
                 out->push_back(item);
             }
-            collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited, metrics, out);
+            collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited,
+                              b.style ? inherited : inherited_parent, metrics, out);
         } else if (b.kind == BoxKind::Block && b.is_inline_block) {
             // An atom: placed whole, never broken. It is recorded here but not
             // sized — sizing it needs the block layout engine, so the caller
@@ -163,7 +168,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.atom_box = c;
             item.inline_parent = inline_parent;
             item.style = b.style ? b.style : inherited;
-            item.font_size = font_size_px(item.style, nullptr, ctx);
+            item.font_size = font_size_px(item.style, inherited, ctx);
             item.metrics = ctx.font_for(get(item.style, "font-family"));
             item.line_height = line_height_px(item.style, item.font_size, ctx,
                                               item.metrics ? item.metrics : metrics);
@@ -187,7 +192,18 @@ std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId containe
                                              const LayoutContext& ctx,
                                              const FontMetrics* metrics) {
     std::vector<InlineItem> out;
-    collect_recursive(tree, container, kNoBox, ctx, tree[container].style, metrics, &out);
+    const Box& cb = tree[container];
+    // The container's own parent style: an anonymous block has none of its
+    // own and its text belongs to the parent element, so the parent's parent
+    // is the right `em` basis there.
+    const ComputedStyle* container_parent =
+        cb.parent != kNoBox ? tree[cb.parent].style : nullptr;
+    collect_recursive(tree, container, kNoBox, ctx, cb.style ? cb.style : container_parent,
+                      cb.style ? container_parent
+                               : (cb.parent != kNoBox && tree[cb.parent].parent != kNoBox
+                                      ? tree[tree[cb.parent].parent].style
+                                      : nullptr),
+                      metrics, &out);
     return out;
 }
 
@@ -332,6 +348,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // trailing space must end up at the TRIMMED pen, not keep the position
         // the removed space had pushed it to.
         std::vector<Fragment> trailing_markers;
+        double trimmed_space = 0;
         while (!line.empty()) {
             if (line.back().item->is_inline_start()) {
                 trailing_markers.push_back(line.back());
@@ -340,6 +357,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             }
             if (line.back().is_space) {
                 pen -= line.back().width;
+                trimmed_space += line.back().width;
                 line.pop_back();
                 continue;
             }
@@ -414,6 +432,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         (*tree)[lb].baseline = baseline;
         (*tree)[lb].is_final_line = is_final;
         (*tree)[lb].applied_text_align_delta = dx;
+        // What the wrap took off the end of this line, so the unwrapped width
+        // of the paragraph can be rebuilt from its lines.
+        (*tree)[lb].trimmed_trailing_space = trimmed_space;
 
         // CSS 2.1 §9.4.2: each inline box covering this line gets a fragment.
         // Spans are accumulated over the inline ANCESTOR chain, so a nested
@@ -768,6 +789,7 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
 
     double max = 0;
     double sum = 0;
+    double paragraph = 0;   // running unwrapped width of the current run of lines
     int in_flow_blocks = 0;
     for (BoxId c : tree.children(id)) {
         const Box& b = tree[c];
@@ -788,18 +810,37 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
             // The line's own width is post-alignment; summing the raw run
             // widths gives the natural text advance instead. For min-content
             // the widest single run — a word, a space, an atom — is the
-            // unbreakable unit.
+            // unbreakable unit. For max-content the lines of one paragraph
+            // are joined back up (with the spaces the wrap trimmed), because
+            // the lines were broken at the width the box happened to have;
+            // reading the widest WRAPPED line fitted a centred paragraph to
+            // 163.8px inside its 194px column. A forced break ends a paragraph.
             double line_sum = 0, widest = 0;
+            bool forced_break = false;
             for (BoxId r : tree.children(c)) {
                 const Box& run = tree[r];
+                if (run.kind == BoxKind::Inline && run.element && run.element->tag_name() == "br") {
+                    forced_break = true;
+                }
                 const double w = run.width + (run.kind == BoxKind::Block
                                                   ? run.margin_left + run.margin_right
                                                   : 0);
                 line_sum += w;
                 if (w > widest) widest = w;
             }
-            const double v = text_unbreakable ? line_sum : widest;
-            if (v > max) max = v;
+            if (text_unbreakable) {
+                // The space a wrap trimmed sits BETWEEN two lines of the
+                // paragraph and comes back when they are joined; one trimmed
+                // at the paragraph's end is gone in max-content too.
+                const bool ends_paragraph = forced_break || b.is_final_line;
+                paragraph += line_sum + (ends_paragraph ? 0.0 : b.trimmed_trailing_space);
+                if (ends_paragraph) {
+                    if (paragraph > max) max = paragraph;
+                    paragraph = 0;
+                }
+            } else if (widest > max) {
+                max = widest;
+            }
             continue;
         }
         if (b.kind == BoxKind::Block && b.is_inline_block) {
@@ -814,6 +855,7 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
         sum += contribution;
         if (contribution > max) max = contribution;
     }
+    if (paragraph > max) max = paragraph;   // lines that did not end in a final line
     if (row_sums && in_flow_blocks > 1) {
         double gap = 0;
         if (ctx && self.style) {

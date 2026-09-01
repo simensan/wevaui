@@ -155,6 +155,10 @@ struct Box {
     // its width settles — subtracts this before applying the new offset.
     // Without it each pass stamps its shift on top of the previous one.
     double applied_text_align_delta = 0;
+    // On a line box: the width of the collapsible spaces the wrap removed from
+    // its end. Summing a paragraph's lines plus these gives its unwrapped
+    // (max-content) width without measuring the text again.
+    double trimmed_trailing_space = 0;
 
     // ---- Text -----------------------------------------------------------
     // Points into either the source text node or the pass arena (for collapsed

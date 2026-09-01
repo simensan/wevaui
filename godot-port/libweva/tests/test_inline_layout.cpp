@@ -778,3 +778,41 @@ void test_inline_box_opening_at_line_end_has_no_fragment_there() {
     CHECK(code_on_second);
     CHECK(empty_span_found);
 }
+
+void test_inline_em_font_size_resolves_against_the_parent() {
+    // `<small>` is 0.83em in the UA sheet; inside a 14px label that is 11.62,
+    // not 0.83 of the root. The run's style is its element's, so the basis
+    // is that element's parent.
+    Fixture f;
+    CHECK(f.css("#l { font-size: 14px; width: 500px }"));
+    CHECK(f.layout("<body><div id=l>Hits <small id=s>x</small></div></body>"));
+    const Box& s = f.tree[f.find_kind("s", BoxKind::Inline)];
+    const double fs = 14 * 0.83;
+    CHECK(near(s.height, f.metrics.ascent(fs) + f.metrics.descent(fs)));
+}
+
+void test_max_content_joins_wrapped_lines() {
+    // A paragraph laid out narrow and asked for its max-content width answers
+    // with the whole text, not its widest wrapped line: a centred paragraph
+    // in a column flex fits to the column, not to a line.
+    Fixture f;
+    CHECK(f.css("#info { display: flex; flex-direction: column; align-items: center; width: 194px }"
+                "#d { margin: 0 }"));
+    CHECK(f.layout("<body><div id=info><p id=d>Build the roads that get the millions of "
+                   "commuters to work on time.</p></div></body>"));
+    CHECK(near(f.box("d").width, 194));
+    CHECK(near(f.box("d").x, 0));
+    // A short paragraph still fits its text, and a trailing space in the
+    // source does not widen it.
+    Fixture g;
+    CHECK(g.css("#info { display: flex; flex-direction: column; align-items: center; width: 194px }"
+                "#d { margin: 0 }"));
+    CHECK(g.layout("<body><div id=info><p id=d>ab cd </p></div></body>"));
+    CHECK(near(g.box("d").width, 5 * 8));
+    // Anonymous text items in a flex row: " Back " is as wide as "Back".
+    Fixture h;
+    CHECK(h.css("#r { display: flex; align-items: center; gap: 10px; width: 600px }"
+                "#a { width: 26px; height: 26px }"));
+    CHECK(h.layout("<body><div id=r><span id=a></span> Back <span id=b class=x></span></div></body>"));
+    CHECK(near(h.box("b").x, 26 + 10 + 4 * 8 + 10));
+}

@@ -679,3 +679,44 @@ void test_flex_row_items_do_not_shrink_below_their_min_content() {
         CHECK(near(h.box("t").width, 10));
     }
 }
+
+void test_flex_abspos_child_static_position_follows_alignment() {
+    // §4.1: an absolutely positioned child of a flex container takes its
+    // static position as if it were the sole item — centred by
+    // justify-content/align-items: center — so an 80px halo under an 8px
+    // marker sits at -36, -36.
+    Fixture f;
+    CHECK(f.css("#m { position: absolute; left: 100px; top: 100px; width: 8px; height: 8px;"
+                "     display: flex; align-items: center; justify-content: center }"
+                "#h { position: absolute; width: 80px; height: 80px }"));
+    CHECK(f.layout("<body><div id=w><div id=m><div id=h></div></div></div></body>"));
+    CHECK(near(f.box("h").x, -36) && near(f.box("h").y, -36));
+    // An auto-height marker: the cross size is known only after its content
+    // is laid out, and the halo centres on that.
+    Fixture a;
+    CHECK(a.css("#m { position: absolute; left: 100px; top: 100px; width: 8px;"
+                "     display: flex; align-items: center; justify-content: center }"
+                "#i { width: 8px; height: 20px }"
+                "#h { position: absolute; width: 80px; height: 80px }"));
+    CHECK(a.layout("<body><div id=w><div id=m><div id=i></div><div id=h></div></div></div></body>"));
+    CHECK(near(a.box("h").y, (20 - 80) * 0.5));
+    // An auto-width child (text, shrink-to-fit) centres its fitted width, not
+    // the container width it was first laid out at: a cooldown label under
+    // an ability icon.
+    Fixture t;
+    CHECK(t.css("#ab { position: relative; width: 64px; height: 72px; display: flex;"
+                "      align-items: center; justify-content: center }"
+                "#ic { font-size: 22px }"
+                "#cd { position: absolute; bottom: 14px; font-size: 10px }"));
+    CHECK(t.layout("<body><div id=ab><span id=ic>Q</span><span id=cd>4.2s</span></div></body>"));
+    // "4.2s" is 4 glyphs at 5px in the fixture's face: 20 wide, centred in 64.
+    CHECK(near(t.box("cd").width, 20));
+    CHECK(near(t.box("cd").x, 22));
+    // flex-end: against the far edges; start: the origin.
+    Fixture g;
+    CHECK(g.css("#m { position: relative; width: 100px; height: 50px;"
+                "     display: flex; align-items: flex-end; justify-content: flex-end }"
+                "#h { position: absolute; width: 20px; height: 10px }"));
+    CHECK(g.layout("<body><div id=m><div id=h></div></div></body>"));
+    CHECK(near(g.box("h").x, 80) && near(g.box("h").y, 40));
+}

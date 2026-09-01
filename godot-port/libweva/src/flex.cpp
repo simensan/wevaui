@@ -98,6 +98,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
     // ---- Collect the items ------------------------------------------------
     std::vector<Item> items;
+    std::vector<BoxId> out_of_flow;
     int source_index = 0;
     for (BoxId c : tree->children(container)) {
         const Box& cb = (*tree)[c];
@@ -110,8 +111,22 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         const PositionType pos = parse_position_type(get(cb.style, "position"));
         if (pos == PositionType::Absolute || pos == PositionType::Fixed) {
             // Still laid out, so the positioning pass has geometry to place;
-            // it is just not an item.
-            block->layout_block(c, content_width, style);
+            // it is just not an item. Its STATIC position (what `left/top:
+            // auto` fall back to) is where it would sit as the sole item
+            // (§4.1): the container's justify-content and align-items apply.
+            // An 80px halo under an 8px marker with both centred sits at
+            // -36, -36, in Chrome and the reference alike.
+            // An auto width is shrink-to-fit for an absolutely positioned box
+            // (§10.3.7) and the static position centres its FINAL width; laid
+            // out at the container's width it would centre a full-width box
+            // at 0 and only shrink afterwards, in the positioning pass.
+            const std::string_view w_raw = get(cb.style, "width");
+            if (w_raw.empty() || iequals(w_raw, "auto")) {
+                block->shrink_to_fit(c, content_width, style);
+            } else {
+                block->layout_block(c, content_width, style);
+            }
+            out_of_flow.push_back(c);
             continue;
         }
         Item it;
@@ -120,7 +135,42 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         it.order = static_cast<int>(number_or(cb.style, "order", 0));
         items.push_back(it);
     }
-    if (items.empty()) return 0;
+    // Static positions for the out-of-flow children (§4.1): each sits where
+    // it would as the sole item, so the container's justify-content and
+    // align-items apply. Placed against the container's FINAL content size —
+    // a cross size known only once the lines are — which is why this is a
+    // function called at the end rather than done at collection. An 80px
+    // halo under an 8px marker with both centred sits at -36, -36; under an
+    // auto-height marker it centres on the marker's laid-out height.
+    const auto place_out_of_flow = [&](double final_main, double final_cross) {
+        const Box& cont = (*tree)[container];
+        const double li = cont.padding_left + cont.border_left;
+        const double ti = cont.padding_top + cont.border_top;
+        const auto offset_in = [&](std::string_view keyword, double avail, double outer) {
+            if (avail < 0) return 0.0;
+            if (iequals(keyword, "center")) return (avail - outer) * 0.5;
+            if (iequals(keyword, "flex-end") || iequals(keyword, "end")) return avail - outer;
+            return 0.0;
+        };
+        const std::string_view justify = get(style, "justify-content");
+        for (BoxId c : out_of_flow) {
+            Box& ab = (*tree)[c];
+            std::string_view self = get(ab.style, "align-self");
+            if (self.empty() || iequals(self, "auto")) self = get(style, "align-items");
+            const double outer_w = ab.width + ab.margin_left + ab.margin_right;
+            const double outer_h = ab.height + ab.margin_top + ab.margin_bottom;
+            const double main_off = offset_in(justify, final_main, column ? outer_h : outer_w);
+            const double cross_off = offset_in(self, final_cross, column ? outer_w : outer_h);
+            ab.x = li + ab.margin_left + (column ? cross_off : main_off);
+            ab.y = ti + ab.margin_top + (column ? main_off : cross_off);
+        }
+    };
+
+    if (items.empty()) {
+        place_out_of_flow(column ? content_height : content_width,
+                          column ? content_width : content_height);
+        return 0;
+    }
 
     // §5.4: items are laid out in `order`, ties broken by document order.
     std::stable_sort(items.begin(), items.end(), [](const Item& a, const Item& b) {
@@ -672,12 +722,16 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
     // The container's content height: the lines' cross extent in a row, the
     // items' extent in a column.
-    if (!column) return total_cross;
+    if (!column) {
+        place_out_of_flow(available_main, total_cross);
+        return total_cross;
+    }
     double bottom = 0;
     for (const Item& it : items) {
         const Box& b = (*tree)[it.box];
         bottom = std::max(bottom, b.y + b.height + b.margin_bottom - top_inner);
     }
+    place_out_of_flow(definite_main ? available_main : bottom, total_cross);
     return bottom;
 }
 
