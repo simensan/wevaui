@@ -2932,11 +2932,11 @@ Two things this exposed while fixing it:
 
 weva-landing's element count now matches Chrome exactly (137 = 137).
 
-### Open reference bug: a `<span>` inside an inline-block reports zero width
+### Reference bug, now fixed: a `<span>` inside an inline-block reported zero width
 
-Diagnosed, not fixed — the next thing to pick up, and pre-existing (verified
-by running the repro at the session's starting commit). EVERY inline box
-inside a shrink-to-fit atom ends up with a zero-width rect:
+FIXED (commit "an inline box inside a shrink-to-fit atom keeps its rect").
+Pre-existing, verified by running the repro at the session's starting commit.
+EVERY inline box inside a shrink-to-fit atom ended up with a zero-width rect:
 
 ```html
 <div style="display:inline-block"><span>hello</span></div>
@@ -2962,12 +2962,26 @@ hold only the atoms themselves (`LINE(BlockBox TextRun<el=body> BlockBox …)`)
 — no fragment there carries the span's Element, so it falls into the
 empty-inline fallback, which sets `Width = 0` and overwrites the good rect.
 
-So the atom's interior spans are leaking into the outer `pendingInlineBoxes`
-slice. That list is shared with "stack-discipline pop" precisely to stop this
-(`inlineBoxSnapshot` / `RemoveRange` around each `LayoutInline`), so the leak
-is either a pop that does not cover the atom's interior passes or an interior
-layout reached by a path that never pops. Repro: `sp.html` in the scratch mini
-corpus.
+The leak is real: `LayoutInline`'s empty-container early return pops
+`pendingOofBoxes` but not `pendingInlineBoxes`, so those boxes reach the
+caller's slice and the caller attaches them to its own lines.
+
+**But closing that leak is the WRONG fix, and the C# suite does not catch
+it.** Attaching those boxes at the empty container made every repro pass and
+kept all 9,906 tests green — while breaking **18 harvest cases (184 → 166)**.
+Some callers legitimately rely on inline boxes propagating up to the parent
+context. Only the corpora caught it; it was reverted.
+
+The actual cause is one level up. Pass 1's `AttachInlineFragmentsToLines`
+calls `ClearChildren()` on every span it places, and the atom's
+snapshot/restore only covered its TOP-LEVEL child list — so pass 2 received
+the spans as empty shells, found no items, and fell into the empty-container
+branch in the first place. The fix captures each descendant InlineBox's own
+children in the snapshot and restores them too, so pass 2 never reaches that
+branch. Repro: `sp.html` / `sf.html` in the scratch mini corpus.
+
+Worth remembering as a rule: **for anything touching the two-pass layout
+paths, the corpora are the regression gate, not the unit suite.**
 
 ## Phase 8 — Remaining layout (~8k LOC)
 
