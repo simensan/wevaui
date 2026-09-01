@@ -161,6 +161,7 @@ void test_pseudo_element_boxes();
 void test_pseudo_counters_and_quotes();
 void test_pseudo_content_from_inline_custom_property();
 void test_color_mix();
+void test_gradient_calc_stop_position();
 void test_paint_form_control_marks();
 void test_clip_triangles_polygon();
 void test_paint_clip_path_and_rounded_overflow();
@@ -366,6 +367,7 @@ int main() {
     test_pseudo_counters_and_quotes();
     test_pseudo_content_from_inline_custom_property();
     test_color_mix();
+    test_gradient_calc_stop_position();
     test_paint_form_control_marks();
     test_clip_triangles_polygon();
     test_paint_clip_path_and_rounded_overflow();

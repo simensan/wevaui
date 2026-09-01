@@ -1,4 +1,5 @@
 #include "weva/background.h"
+#include "weva/style_resolver.h"
 
 #include "weva/css_value.h"
 
@@ -107,10 +108,26 @@ bool looks_like_color(std::string_view s, const LinearColor& current) {
     return parse_color_token(s, current, &c);
 }
 
-// A stop position: `%`, `px` (kept as px) or a bare number (fraction).
+// A stop position: `%`, `px` (kept as px), a bare number (fraction), or a
+// calc() of either — `calc(var(--pct) * 1%)` after substitution is how a
+// conic progress ring states its angle. A calc mentioning `%` resolves as a
+// percentage (against 100, so the pixels ARE the percent), otherwise as px.
 bool parse_stop_position(std::string_view s, GradientStop* stop) {
     s = trim(s);
     double n = 0;
+    if (s.size() > 5 && iequals(s.substr(0, 5), "calc(")) {
+        const bool pct = s.find('%') != std::string_view::npos;
+        LayoutContext ctx;
+        const ResolvedLength r =
+            resolve_length(s, ctx, 16, pct ? std::optional<double>(100.0) : std::nullopt);
+        if (r.kind == LengthKind::Length) {
+            stop->position = pct ? r.pixels * 0.01 : r.pixels;
+            stop->has_position = true;
+            stop->is_px = !pct;
+            return true;
+        }
+        return false;
+    }
     if (!s.empty() && s.back() == '%' && parse_number(s.substr(0, s.size() - 1), &n)) {
         stop->position = n * 0.01;
         stop->has_position = true;
@@ -137,6 +154,16 @@ bool parse_stop_position(std::string_view s, GradientStop* stop) {
 bool parse_conic_position(std::string_view s, GradientStop* stop) {
     s = trim(s);
     double n = 0;
+    // calc() of a percentage — `calc(var(--pct) * 1%)` is the progress-ring
+    // idiom; a calc of angles is not resolved here.
+    if (s.size() > 5 && iequals(s.substr(0, 5), "calc(") && s.find('%') != std::string_view::npos) {
+        LayoutContext ctx;
+        const ResolvedLength r = resolve_length(s, ctx, 16, 100.0);
+        if (r.kind != LengthKind::Length) return false;
+        stop->position = r.pixels * 0.01;
+        stop->has_position = true;
+        return true;
+    }
     if (!s.empty() && s.back() == '%' && parse_number(s.substr(0, s.size() - 1), &n)) {
         stop->position = n * 0.01;
         stop->has_position = true;

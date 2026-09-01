@@ -260,6 +260,17 @@ void test_gradient_parsing() {
     }
 }
 
+// A calc() stop position: `calc(72 * 1%)` is the 72% mark (the ring idiom).
+void test_gradient_calc_stop_position() {
+    Gradient g;
+    CHECK(parse_gradient("conic-gradient(rgb(0, 0, 255) calc(72 * 1%), rgba(255, 255, 255, 0.08) 0)", LinearColor::white(), &g));
+    CHECK(g.stops.size() == 2);
+    CHECK(g.stops[0].has_position && !g.stops[0].is_px && std::fabs(g.stops[0].position - 0.72) < 1e-9);
+    Gradient h;
+    CHECK(parse_gradient("linear-gradient(red calc(10px + 5px), blue)", LinearColor::white(), &h));
+    CHECK(h.stops[0].has_position && h.stops[0].is_px && std::fabs(h.stops[0].position - 15) < 1e-9);
+}
+
 void test_gradient_sampling() {
     const LinearColor black = LinearColor::black();
     LayoutContext ctx;
