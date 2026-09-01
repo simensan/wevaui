@@ -2276,6 +2276,43 @@ exists rather than adopting one of them.
 **Exit:** `corpus/grid/` diff clean, including `repeat()`, `minmax()`,
 `fit-content()`, `auto-fill`/`auto-fit`, named lines and subgrid.
 
+### The corpus is clean: 46/47 agree, 0 differ
+
+Multi-column layout was the last case. `column-count`, `column-width` (and the
+used count derived from it), `column-gap`, and balancing. Not ported and named
+in the header: `column-span`, `column-rule`, `column-fill: auto`, orphans and
+widows, and — the significant one — **splitting a child across a column
+boundary**. A child taller than the balanced height takes a column to itself and
+overflows instead of fragmenting. `multicol_is_fully_ported()` returns false and
+a test pins that limit so it stays a known edge rather than a surprise.
+
+**Every case in the corpus is now accounted for**: 46 agree with the C#
+exactly, and the 47th is the `aspect-ratio` reference bug where Chrome sides
+with this port.
+
+#### The test caught the algorithm
+
+The balanced column height is **not** `total / count`. That is the lower bound,
+and with whole children it is usually unreachable: five 10px children in two
+columns give a bound of 25, but no column can be 25 tall, and filling to 25 puts
+two children in the first column and three in the second — where a browser puts
+three and two. Both arrangements are 30 tall, so **the container's height is
+identical either way** and only the children's x coordinates differ.
+
+The corpus case does not distinguish them — it is six equal children in three
+columns, where the bound is reachable and both algorithms agree. So the oracle
+was green on the wrong algorithm, and would have stayed green.
+
+What caught it was writing the test first and finding it disagreed with the
+code. The tempting move at that point is to change the assertion; working out
+what a browser actually does showed the code was wrong instead. The real rule is
+the smallest REACHABLE height that still fits in `count` columns, and the
+reachable heights are the prefix sums of the children's heights, so it is a
+short search rather than a division.
+
+Recording it because the near-miss is the point: a green oracle means the corpus
+does not distinguish the alternatives, not that the implementation is right.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),

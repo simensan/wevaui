@@ -98,6 +98,7 @@ void test_grid_items();
 void test_grid_areas();
 void test_size_containment();
 void test_anonymous_box_inherits_line_height();
+void test_multicol();
 void test_inline_fragments();
 void test_inline_atoms();
 void test_relative_positioning();
@@ -232,6 +233,7 @@ int main() {
     test_grid_areas();
     test_size_containment();
     test_anonymous_box_inherits_line_height();
+    test_multicol();
     test_inline_fragments();
     test_inline_atoms();
     test_relative_positioning();
