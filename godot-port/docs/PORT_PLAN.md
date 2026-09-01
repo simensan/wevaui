@@ -2827,11 +2827,19 @@ samples had been missing on both sides of the diff.
 * **color-mix()** evaluates (premultiplied, sRGB), and gradient stops take
   a `calc()` position — the progress-ring and HP-fill idioms both depended
   on those.
+* **Three more from the side-by-sides.** Inline custom properties are
+  seeded before the cascade's early shorthand var() substitution
+  (level-select's `style="--bg:…"` discs took the fallback); clip polygons
+  live in screen space so a rotated road is clipped where it lands inside
+  its round map; and children paint in Appendix E order per container
+  (negative z, in-flow, positioned z:auto, positive z) — the ring number
+  under its `::after` cover, badges under later siblings.
 
 **Where it stands: samples 12/35 agree + 11 arbitrated (unchanged — both
 sides gained the same boxes); harvest 178/210 + 18; hand 46/47 (43-quotes
-and 44-counters now agree); 8,304 checks green; host 23/23 on Linux and
-Windows; form-demo renders every control.** Still open from the
+and 44-counters now agree); 8,320 checks green; host 23/23 on Linux and
+Windows; form-demo renders every control, level-select and story-bubble
+read like Chrome.** Still open from the
 side-by-sides: colour emoji (the host copies alpha out of Godot's glyph
 texture; a colour glyph needs an RGBA atlas), `mask-image` fades,
 `backdrop-filter` (10 samples), an opacity group layer, `url()` images and
