@@ -604,10 +604,66 @@ double layout_inline_items(BoxTree* tree, BoxId container,
 }
 
 double max_content_width(const BoxTree& tree, BoxId id) {
+    return max_content_width(tree, id, nullptr);
+}
+
+namespace {
+
+// A block-level child's outer max-content contribution: its explicit width
+// when it has one (already resolved onto the box), otherwise its content plus
+// its own frame, bounded by its min-/max-width — plus margins either way.
+double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContext* ctx) {
+    const Box& b = tree[c];
+    const std::string_view width_raw = get(b.style, "width");
+    const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
+                                width_raw.find('%') == std::string_view::npos;
+    double w;
+    if (explicit_width) {
+        w = b.width;
+    } else {
+        const double frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
+        w = max_content_width(tree, c, ctx) + frame;
+        if (ctx && b.style) {
+            const double fs = b.font_size > 0 ? b.font_size : ctx->root_font_size_px;
+            const double minmax_frame = is_border_box(b.style) ? 0 : frame;
+            const ResolvedLength min_w = resolve_length(b.style, "min-width", *ctx, fs, std::nullopt);
+            const ResolvedLength max_w = resolve_length(b.style, "max-width", *ctx, fs, std::nullopt);
+            if (min_w.kind == LengthKind::Length) w = std::max(w, min_w.pixels + minmax_frame);
+            if (max_w.kind == LengthKind::Length) w = std::min(w, max_w.pixels + minmax_frame);
+        }
+    }
+    return w + b.margin_left + b.margin_right;
+}
+
+} // namespace
+
+// CSS 2.1 §10.3.5 / css-sizing-3 §5: the max-content inline size of a box's
+// CONTENT (the caller adds the box's own frame). A flex row sums its items —
+// a container is as wide as everything on its one line — where a block
+// container takes the widest child. Taking the max for a flex row made an
+// absolutely positioned pill (icon + amount) shrink-to-fit to its widest
+// item alone, and its items then shrank to fit into that.
+double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
+    const Box& self = tree[id];
+    const bool flex = self.kind == BoxKind::Block &&
+                      (self.display == DisplayKind::Flex || self.display == DisplayKind::InlineFlex);
+    const std::string_view direction = get(self.style, "flex-direction");
+    const bool flex_row = flex && !(iequals(direction, "column") || iequals(direction, "column-reverse"));
+
     double max = 0;
+    double sum = 0;
+    int in_flow_blocks = 0;
     for (BoxId c : tree.children(id)) {
         const Box& b = tree[c];
         if (b.position == PositionType::Absolute || b.position == PositionType::Fixed) continue;
+        // The layout pass has not always stamped `position` yet (see the flex
+        // collection note); the style is the truth either way. Only for
+        // ELEMENT boxes: a line box carries its container's style, and an
+        // absolutely positioned container's own lines are its content.
+        if (b.style && b.element && b.kind == BoxKind::Block) {
+            const PositionType p = parse_position_type(get(b.style, "position"));
+            if (p == PositionType::Absolute || p == PositionType::Fixed) continue;
+        }
         // CSS 2.1 §10.3.5: a float is out of flow for intrinsic sizing — its
         // containing block flows around it and it contributes nothing.
         if (b.is_float()) continue;
@@ -615,17 +671,39 @@ double max_content_width(const BoxTree& tree, BoxId id) {
         if (b.kind == BoxKind::Line) {
             // The line's own width is post-alignment; summing the raw run
             // widths gives the natural text advance instead.
-            double sum = 0;
-            for (BoxId r : tree.children(c)) sum += tree[r].width;
-            if (sum > max) max = sum;
+            double line_sum = 0;
+            for (BoxId r : tree.children(c)) {
+                const Box& run = tree[r];
+                line_sum += run.width + (run.kind == BoxKind::Block
+                                             ? run.margin_left + run.margin_right
+                                             : 0);
+            }
+            if (line_sum > max) max = line_sum;
             continue;
         }
         if (b.kind == BoxKind::Block && b.is_inline_block) {
+            // An atom that has not been placed on a line yet (a container
+            // whose inline content is still raw): its own width.
             if (b.width > max) max = b.width;
             continue;
         }
-        const double inner = max_content_width(tree, c);
-        if (inner > max) max = inner;
+        if (b.kind != BoxKind::Block && b.kind != BoxKind::AnonymousBlock) continue;
+        const double contribution = block_child_contribution(tree, c, ctx);
+        ++in_flow_blocks;
+        sum += contribution;
+        if (contribution > max) max = contribution;
+    }
+    if (flex_row && in_flow_blocks > 1) {
+        double gap = 0;
+        if (ctx && self.style) {
+            const std::string_view raw = get(self.style, "column-gap");
+            if (!raw.empty() && !iequals(raw, "normal")) {
+                const double fs = self.font_size > 0 ? self.font_size : ctx->root_font_size_px;
+                const ResolvedLength r = resolve_length(self.style, "column-gap", *ctx, fs, std::nullopt);
+                if (r.kind == LengthKind::Length) gap = std::max(0.0, r.pixels);
+            }
+        }
+        return sum + gap * static_cast<double>(in_flow_blocks - 1);
     }
     return max;
 }

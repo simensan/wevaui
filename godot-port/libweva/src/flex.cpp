@@ -181,7 +181,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             if (!column) {
                 const double frame =
                     b.padding_left + b.padding_right + b.border_left + b.border_right;
-                base = max_content_width(*tree, it.box) + frame;
+                base = max_content_width(*tree, it.box, &ctx) + frame;
             }
         }
 
@@ -331,7 +331,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                 const double frame =
                     cb.padding_left + cb.padding_right + cb.border_left + cb.border_right;
                 const double fit =
-                    std::min(content_width, max_content_width(*tree, it.box) + frame);
+                    std::min(content_width, max_content_width(*tree, it.box, &ctx) + frame);
                 if (std::fabs((*tree)[it.box].width - fit) > 1e-9) {
                     block->relayout_at(it.box, fit);
                 }
@@ -347,6 +347,25 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     // the tallest item.
     if (!column && content_height >= 0) line_cross = std::max(line_cross, content_height);
     if (column && content_width >= 0) line_cross = std::max(line_cross, content_width);
+    // ...and a row container with an auto height but a min-height is at least
+    // that tall, which is what `align-items: flex-end` in a `min-height: 100vh`
+    // stage pushes against. Same rule as the column main-size clamp above.
+    if (!column && content_height < 0) {
+        const Box& cb = (*tree)[container];
+        const double frame =
+            cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
+        const double own_frame = is_border_box(style) ? frame : 0;
+        const ResolvedLength min_r =
+            resolve_length(style, "min-height", ctx, font_size, std::nullopt);
+        const ResolvedLength max_r =
+            resolve_length(style, "max-height", ctx, font_size, std::nullopt);
+        if (min_r.kind == LengthKind::Length) {
+            line_cross = std::max(line_cross, std::max(0.0, min_r.pixels - own_frame));
+        }
+        if (max_r.kind == LengthKind::Length) {
+            line_cross = std::min(line_cross, std::max(0.0, max_r.pixels - own_frame));
+        }
+    }
 
     // ---- Main-axis alignment (§9.5) ---------------------------------------
     double content_main = total_gap;
@@ -452,7 +471,32 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             const std::string_view cross_raw =
                 get((*tree)[it.box].style, column ? "width" : "height");
             if (cross_raw.empty() || iequals(cross_raw, "auto")) {
-                const double stretched = std::max(0.0, line_cross - it.cross_margins);
+                double stretched = std::max(0.0, line_cross - it.cross_margins);
+                // §9.4: the stretched size is still clamped by the item's own
+                // min/max in that axis. A `max-width: 760px` grid in a column
+                // was stretched to the page.
+                {
+                    const Box& ib = (*tree)[it.box];
+                    const double item_fs = ib.font_size > 0 ? ib.font_size : font_size;
+                    const double cross_frame =
+                        column ? ib.padding_left + ib.padding_right + ib.border_left + ib.border_right
+                               : ib.padding_top + ib.padding_bottom + ib.border_top + ib.border_bottom;
+                    const double mm_frame = is_border_box(ib.style) ? 0 : cross_frame;
+                    const std::optional<double> cross_basis =
+                        (column ? content_width : content_height) >= 0
+                            ? std::optional<double>(column ? content_width : content_height)
+                            : std::nullopt;
+                    const ResolvedLength min_c = resolve_length(
+                        ib.style, column ? "min-width" : "min-height", ctx, item_fs, cross_basis);
+                    const ResolvedLength max_c = resolve_length(
+                        ib.style, column ? "max-width" : "max-height", ctx, item_fs, cross_basis);
+                    if (min_c.kind == LengthKind::Length) {
+                        stretched = std::max(stretched, min_c.pixels + mm_frame);
+                    }
+                    if (max_c.kind == LengthKind::Length) {
+                        stretched = std::min(stretched, max_c.pixels + mm_frame);
+                    }
+                }
                 // Re-laid, not just stamped: anything inside whose layout
                 // depends on the cross size has to see the stretched value. A
                 // nested column flex container is the case that makes this

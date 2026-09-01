@@ -108,6 +108,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
 //
 // Returns a CONTENT width: the caller adds the frame to reach a border box.
 double max_content_width(const BoxTree& tree, BoxId id);
+// With a LayoutContext the gaps of a flex container and an item's min-/max-
+// width resolve; without one they are read as zero / absent.
+double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx);
 
 // Collects the flattened inline sequence, exposed for tests: getting the
 // whitespace handling right is most of the work, and it is far easier to check

@@ -201,3 +201,23 @@ void test_substitution_defers_expansion() {
     CHECK(!contains_substitution(""));
     CHECK(!contains_substitution("variant"));
 }
+
+void test_shorthand_font() {
+    // CSS Fonts L4 §4.4: the shorthand resets every longhand it covers, so
+    // `font: bold 14px sans-serif` gives a 14px size AND a normal line-height.
+    CHECK_EQ(expand("font", "bold 14px sans-serif"),
+             "font-style=normal;font-variant=normal;font-weight=bold;font-stretch=normal;"
+             "font-size=14px;line-height=normal;font-family=sans-serif");
+    CHECK_EQ(expand("font", "italic small-caps 700 12px/1.5 \"Segoe UI\", Arial, sans-serif"),
+             "font-style=italic;font-variant=small-caps;font-weight=700;font-stretch=normal;"
+             "font-size=12px;line-height=1.5;font-family=\"Segoe UI\", Arial, sans-serif");
+    // The size and the family are mandatory; a system font keyword is not
+    // resolved and drops the declaration rather than half-applying it.
+    CHECK_EQ(expand("font", "bold sans-serif"), "<none>");
+    CHECK_EQ(expand("font", "14px"), "<none>");
+    CHECK_EQ(expand("font", "menu"), "<none>");
+    CHECK_EQ(expand("font", "inherit"),
+             "font-style=inherit;font-variant=inherit;font-weight=inherit;font-stretch=inherit;"
+             "font-size=inherit;line-height=inherit;font-family=inherit");
+    CHECK(is_shorthand("font"));
+}

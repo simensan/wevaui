@@ -672,7 +672,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             const Box& b = (*tree)[p.box];
             const double frame =
                 b.padding_left + b.padding_right + b.border_left + b.border_right;
-            double contribution = max_content_width(*tree, p.box) + frame;
+            double contribution = max_content_width(*tree, p.box, &ctx) + frame;
             // The item's own min-/max-width bound its contribution: a
             // `min-width: 200px` cell in an auto column makes the column 200
             // wide even when its text is narrower.

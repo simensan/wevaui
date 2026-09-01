@@ -418,3 +418,62 @@ void test_flex_container_min_height_makes_the_main_size_definite() {
         CHECK(near(f.box("b").height, 80));
     }
 }
+
+void test_flex_stretch_is_clamped_by_the_items_min_max() {
+    // §9.4: a stretched cross size still honours the item's own min/max in
+    // that axis. A `max-width: 760px` grid in a column flex was stretched to
+    // the page width.
+    {
+        Fixture f;
+        CHECK(f.css("#col { display: flex; flex-direction: column; width: 1200px }"
+                    "#g { max-width: 760px; height: 10px }"
+                    "#m { min-width: 900px; width: auto; height: 10px }"));
+        CHECK(f.layout("<body><div id=col><div id=g></div><div id=m></div></div></body>",
+                       1280, 720));
+        CHECK(near(f.box("g").width, 760));
+        CHECK(near(f.box("m").width, 1200));
+        Fixture h;
+        CHECK(h.css("#col { display: flex; flex-direction: column; width: 800px }"
+                    "#m { min-width: 900px; height: 10px }"));
+        CHECK(h.layout("<body><div id=col><div id=m></div></div></body>", 1280, 720));
+        CHECK(near(h.box("m").width, 900));
+    }
+    {
+        // Row: max-height clamps the stretched height.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 300px; height: 200px }"
+                    "#a { width: 50px; max-height: 80px }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").height, 80));
+    }
+}
+
+void test_flex_row_min_height_is_the_line_cross_size() {
+    // A row container with an auto height but a min-height is at least that
+    // tall, so `align-items: flex-end` has something to push against — the
+    // full-viewport dialogue stage.
+    Fixture f;
+    CHECK(f.css("#stage { display: flex; align-items: flex-end; justify-content: center;"
+                "         min-height: 600px; padding-bottom: 56px; width: 1000px }"
+                "#d { width: 820px; height: 188px }"));
+    CHECK(f.layout("<body><div id=stage><div id=d></div></div></body>", 1000, 600));
+    CHECK(near(f.box("stage").height, 656));
+    CHECK(near(f.box("d").y, 412));
+    CHECK(near(f.box("d").x, 90));
+}
+
+void test_flex_row_max_content_sums_its_items() {
+    // The intrinsic width of a flex row is the sum of its items plus gaps, not
+    // the widest item: an absolutely positioned pill (icon + amount) shrank to
+    // fit its amount alone and its icon was then shrunk to make room.
+    Fixture f;
+    CHECK(f.css("#pill { position: absolute; top: 0; right: 0; display: flex;"
+                "        align-items: center; gap: 10px; padding: 8px 20px 8px 12px }"
+                "#coin { width: 26px; height: 26px }"
+                "#amt { width: 50px; height: 10px }"));
+    CHECK(f.layout("<body><div id=w><div id=pill><div id=coin></div><div id=amt></div>"
+                   "</div></div></body>"));
+    CHECK(near(f.box("pill").width, 12 + 26 + 10 + 50 + 20));
+    CHECK(near(f.box("coin").width, 26));
+    CHECK(near(f.box("amt").x, 12 + 26 + 10));
+}

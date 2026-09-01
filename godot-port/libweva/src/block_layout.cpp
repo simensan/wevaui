@@ -690,9 +690,9 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     if (avail < 0) avail = 0;
 
     relayout_content_at(id, 1e6, fs, parent_style);
-    double max_content = max_content_width(*tree_, id) + frame;
+    double max_content = max_content_width(*tree_, id, &ctx_) + frame;
     relayout_content_at(id, 1, fs, parent_style);
-    double min_content = max_content_width(*tree_, id) + frame;
+    double min_content = max_content_width(*tree_, id, &ctx_) + frame;
     if (max_content < frame) max_content = frame;
     if (min_content < frame) min_content = frame;
 

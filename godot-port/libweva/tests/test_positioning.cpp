@@ -319,3 +319,19 @@ void test_absolute_auto_width_shrinks_to_fit() {
         CHECK(near(f.box("b").width, 40));
     }
 }
+
+void test_absolute_descendant_keeps_its_size_after_the_ancestor() {
+    // An absolutely positioned box is sized before its descendants are
+    // positioned: sizing it re-lays its content, and a descendant positioned
+    // first had its shrink-to-fit width overwritten by that relayout.
+    Fixture f;
+    CHECK(f.css("#dlg { position: absolute; left: 30px; right: 30px; bottom: 26px;"
+                "       padding: 34px 52px 30px 52px; min-height: 186px }"
+                "#pill { position: absolute; top: -20px; left: 46px; padding: 6px 26px }"));
+    CHECK(f.layout("<body><div id=w><div id=dlg><div id=pill>Timmy</div><p>Hi</p></div>"
+                   "</div></body>"));
+    CHECK(near(f.box("dlg").width, 940));
+    const double w = f.box("pill").width;
+    CHECK(w > 52 && w < 200);
+    CHECK(near(f.box("pill").x, 46));
+}

@@ -29,6 +29,11 @@ bool istarts_with(std::string_view s, std::string_view prefix) {
     return s.size() >= prefix.size() && iequals(s.substr(0, prefix.size()), prefix);
 }
 
+bool is_css_wide_keyword(std::string_view s) {
+    return iequals(s, "inherit") || iequals(s, "initial") || iequals(s, "unset") ||
+           iequals(s, "revert") || iequals(s, "revert-layer");
+}
+
 bool is_number(std::string_view s) {
     double d = 0;
     return css_parse_double(s, &d);
@@ -456,6 +461,77 @@ bool expand_shorthand(std::string_view name, std::string_view value,
         // A one- or two-number form sets the basis to zero, NOT auto: this is
         // what makes `flex: 1` share space equally regardless of content.
         emit(out, "flex-basis", basis.empty() ? "0%" : basis);
+        return true;
+    }
+    // CSS Fonts L4 §4.4: [style || variant || weight || stretch]? size [/ line-height]?
+    // family. Every longhand the shorthand covers is reset, which is what
+    // makes `font: bold 14px sans-serif` on a button give a 16px line rather
+    // than inherit the 18.29 of the page. System-font keywords (`menu`,
+    // `caption`...) are not resolved and drop the declaration.
+    if (name == "font") {
+        if (t.empty()) return true;
+        if (t.size() == 1 && is_css_wide_keyword(t[0])) {
+            for (const char* p : {"font-style", "font-variant", "font-weight", "font-stretch",
+                                  "font-size", "line-height", "font-family"}) {
+                emit(out, p, t[0]);
+            }
+            return true;
+        }
+        std::string_view style, variant, weight, stretch, size, line_height;
+        size_t i = 0;
+        for (; i < t.size(); ++i) {
+            const std::string_view v = t[i];
+            if (iequals(v, "normal")) continue;   // any of the four; all default to it
+            if (style.empty() && (iequals(v, "italic") || iequals(v, "oblique"))) {
+                style = v;
+            } else if (variant.empty() && iequals(v, "small-caps")) {
+                variant = v;
+            } else if (weight.empty() &&
+                       (iequals(v, "bold") || iequals(v, "bolder") || iequals(v, "lighter") ||
+                        (is_number(v) && v.find('.') == std::string_view::npos && v.size() == 3 &&
+                         v[1] == '0' && v[2] == '0'))) {
+                weight = v;
+            } else if (stretch.empty() &&
+                       (iequals(v, "condensed") || iequals(v, "expanded") ||
+                        iequals(v, "semi-condensed") || iequals(v, "semi-expanded") ||
+                        iequals(v, "extra-condensed") || iequals(v, "extra-expanded") ||
+                        iequals(v, "ultra-condensed") || iequals(v, "ultra-expanded"))) {
+                stretch = v;
+            } else {
+                break;
+            }
+        }
+        if (i >= t.size()) return true;
+        {
+            const std::string_view v = t[i];
+            static const char* kSizes[] = {"xx-small", "x-small", "small",  "medium",   "large",
+                                           "x-large",  "xx-large", "xxx-large", "larger", "smaller"};
+            bool keyword = false;
+            for (const char* k : kSizes) keyword = keyword || iequals(v, k);
+            if (!(keyword || is_length_or_percentage(v) || is_math_function(v))) return true;
+            size = v;
+            ++i;
+        }
+        if (i < t.size() && t[i] == "/") {
+            if (i + 1 >= t.size()) return true;
+            line_height = t[i + 1];
+            i += 2;
+        }
+        if (i >= t.size()) return true;   // the family is mandatory
+        std::string family;
+        for (; i < t.size(); ++i) {
+            if (t[i] == ",") { family += ","; continue; }
+            if (!family.empty() && family.back() != ',') family += " ";
+            else if (!family.empty()) family += " ";
+            family += std::string(t[i]);
+        }
+        emit(out, "font-style", style.empty() ? "normal" : style);
+        emit(out, "font-variant", variant.empty() ? "normal" : variant);
+        emit(out, "font-weight", weight.empty() ? "normal" : weight);
+        emit(out, "font-stretch", stretch.empty() ? "normal" : stretch);
+        emit(out, "font-size", size);
+        emit(out, "line-height", line_height.empty() ? "normal" : line_height);
+        emit(out, "font-family", family);
         return true;
     }
     if (name == "gap") return expand_two_axis(t, "row-gap", "column-gap", is_gap_value, out);

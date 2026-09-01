@@ -318,11 +318,12 @@ void apply_relative(BoxTree* tree, BoxId id) {
 }
 
 void run_recursive(BoxTree* tree, BoxId id, const LayoutContext& ctx, BlockLayout* block) {
-    // Children first, so an ancestor's geometry is final before a descendant
-    // resolves against it — except that placing the ancestor then moves the
-    // subtree with it, which is exactly what parent-relative coordinates give.
-    for (BoxId c : tree->children(id)) run_recursive(tree, c, ctx, block);
-
+    // The box itself FIRST, then its descendants. Sizing an absolutely
+    // positioned box re-lays its content, and that relayout runs block layout
+    // over any positioned descendants again — so a descendant handled before
+    // its ancestor had its shrink-to-fit width overwritten with the containing
+    // block's, and a name pill on a dialog came out 1116px wide. Descendants
+    // still see final ancestor geometry, since it is decided before they run.
     const Box& b = (*tree)[id];
     switch (b.position) {
         case PositionType::Relative:
@@ -340,6 +341,7 @@ void run_recursive(BoxTree* tree, BoxId id, const LayoutContext& ctx, BlockLayou
             // later slice, so it is left in flow.
             break;
     }
+    for (BoxId c : tree->children(id)) run_recursive(tree, c, ctx, block);
 }
 
 } // namespace
