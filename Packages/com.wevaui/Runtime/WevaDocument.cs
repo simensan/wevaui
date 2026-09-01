@@ -161,6 +161,15 @@ namespace Weva {
         // new MediaContext + LayoutContext viewport and marking the doc root
         // dirty for layout/paint.
         Vector2 lastViewportSize;
+        // One-shot setup diagnostic: a few frames after enable (the pipeline
+        // and its renderer features may initialize a camera-render or two
+        // after our OnEnable), check whether URP is active without the
+        // batched renderer feature and warn once per session. Countdown is
+        // per-document; the emitted flag is process-global so a scene full
+        // of documents produces one warning, not one per document.
+        const int UrpFeatureCheckDelayFrames = 3;
+        int urpFeatureCheckCountdown = -1;
+        static bool urpFeatureWarningEmitted;
         // Last Screen.safeArea we observed. Updates piped into
         // EnvironmentVariables so author stylesheets using
         // env(safe-area-inset-{top,right,bottom,left}) resolve to the current
@@ -244,6 +253,7 @@ namespace Weva {
                 UIPaintSourceRegistry.Register(this);
                 registered = true;
             }
+            urpFeatureCheckCountdown = UrpFeatureCheckDelayFrames;
             if (Application.isPlaying) {
                 // Edit mode must NOT AddComponent — that dirties the scene
                 // and would serialize the auto-attached bridge into it.
@@ -290,6 +300,9 @@ namespace Weva {
         void Update() {
             if (state == null) return;
             if (!Application.isPlaying && !editModePreview) return;
+            if (urpFeatureCheckCountdown > 0 && --urpFeatureCheckCountdown == 0) {
+                WarnIfUrpRendererFeatureMissing();
+            }
             // Detect Game View / Screen resize and re-run layout against the
             // new viewport. Runs before the lifecycle so the dirty mark we set
             // is consumed by this same frame's cascade + layout pass.
@@ -307,6 +320,22 @@ namespace Weva {
             }
             SyncImageRegistryVersion();
             UIDocumentLifecycle.Update(state, controller, Time.unscaledTimeAsDouble);
+        }
+
+        // Warns (once per session) when this document will render through the
+        // IMGUI debug fallback because URP is active but UIBatchedRendererFeature
+        // never registered. The message carries the exact fix — menu path for
+        // humans, -executeMethod entry point for AI agents / CI — so the log
+        // alone is enough to repair the project. Gated on the document's
+        // diagnostic log level; an explicit IMGUI backend is a deliberate
+        // choice and never warns.
+        void WarnIfUrpRendererFeatureMissing() {
+            if (urpFeatureWarningEmitted) return;
+            if (rendererBackend == RendererBackendKind.IMGUI) return;
+            if (diagnosticLogLevel < Weva.Diagnostics.WevaLogLevel.Warnings) return;
+            if (!Weva.Rendering.UrpFeatureStatus.BatchedFeatureMissing) return;
+            urpFeatureWarningEmitted = true;
+            Debug.LogWarning(Weva.Rendering.UrpFeatureStatus.MissingFeatureMessage(name), this);
         }
 
         void SyncImageRegistryVersion() {

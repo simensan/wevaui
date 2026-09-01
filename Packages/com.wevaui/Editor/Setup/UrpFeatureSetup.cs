@@ -39,6 +39,44 @@ namespace Weva.EditorTools.Setup {
             EditorUtility.DisplayDialog(title, body, "OK");
         }
 
+        // Non-interactive variant of RunFromMenu: same work (renderer
+        // feature + Always Included shaders) but logs to the Console instead
+        // of raising a modal dialog. This is the entry point for AI agents,
+        // CI, and scripted project setup — safe under -batchmode:
+        //   Unity -batchmode -quit -projectPath <project> -executeMethod Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive
+        // Idempotent: re-running when everything is configured is a no-op.
+        public static void ApplyNonInteractive() {
+            int added = AddFeatureToActiveRenderer(out string detail);
+            int shaderAdded = ShaderIncludeSetup.AddAllToAlwaysIncluded(out string shaderDetail);
+            Debug.Log(
+                "Weva URP setup: "
+                + (added > 0
+                    ? "added UIBatchedRendererFeature to " + added + " renderer(s). "
+                    : "renderer feature — nothing to add. ")
+                + (shaderAdded > 0
+                    ? "Added " + shaderAdded + " shader(s) to Always Included Shaders."
+                    : "Always Included Shaders — nothing to add.")
+                + "\n" + detail + "\n" + shaderDetail);
+        }
+
+        // True when URP is the active pipeline and NONE of its renderer data
+        // assets carry UIBatchedRendererFeature — the misconfiguration the
+        // WevaDocument inspector and the runtime warning point at. False
+        // when URP isn't active (nothing to fix) or when at least one
+        // renderer has the feature (mixed setups are assumed intentional).
+        public static bool IsFeatureMissingOnActiveRenderer() {
+            var pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (pipeline == null) return false;
+            var rendererListField = typeof(UniversalRenderPipelineAsset)
+                .GetField("m_RendererDataList", BindingFlags.NonPublic | BindingFlags.Instance);
+            var list = rendererListField?.GetValue(pipeline) as ScriptableRendererData[];
+            if (list == null || list.Length == 0) return false;
+            foreach (var data in list) {
+                if (data != null && HasFeature(data)) return false;
+            }
+            return true;
+        }
+
         // Returns the number of renderer assets the feature was added to.
         // `detail` is a human-readable explanation suitable for a dialog
         // or a Console log.

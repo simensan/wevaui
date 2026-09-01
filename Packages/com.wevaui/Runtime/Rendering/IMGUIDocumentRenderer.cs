@@ -45,23 +45,11 @@ namespace Weva.Rendering {
             doc.EmitPaint(backend);
         }
 
-        static bool IsUrpActive() {
-            var rp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
-            if (rp == null) return false;
-            // Identify URP by type name to avoid a hard reference to the URP assembly here
-            // (kept compatible with builds that don't link URP).
-            var t = rp.GetType();
-            return t.Name == "UniversalRenderPipelineAsset" || t.FullName != null && t.FullName.Contains("Universal");
-        }
+        // Both delegate to UrpFeatureStatus so the fallback decision here and
+        // the missing-feature warning in WevaDocument can never disagree.
+        static bool IsUrpActive() => UrpFeatureStatus.UrpActive;
 
-        static bool IsUrpBackendWired() {
-            // Only the actual UIBatchedRendererFeature registers a backend. Reflect into
-            // the registry so this file stays WEVA_URP-independent.
-            var t = System.Type.GetType("Weva.Rendering.URP.BatchedRendererBackendRegistry, Weva.Runtime");
-            if (t == null) return false;
-            var f = t.GetField("Active", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-            return f?.GetValue(null) != null;
-        }
+        static bool IsUrpBackendWired() => UrpFeatureStatus.BatchedFeatureRegistered;
     }
 
     internal sealed class IMGUIBackend : IRenderBackend {

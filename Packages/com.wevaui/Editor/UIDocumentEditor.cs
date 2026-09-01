@@ -34,9 +34,32 @@ namespace Weva.EditorTools {
             serializedObject.ApplyModifiedProperties();
 
             EditorGUILayout.Space();
+            DrawUrpSetupStatus();
             DrawValidation();
             EditorGUILayout.Space();
             DrawActions();
+        }
+
+        // Surfaces the missing-renderer-feature misconfiguration right where
+        // authors look first, with a one-click fix. Mirrors the once-per-
+        // session Console warning WevaDocument emits (UrpFeatureStatus owns
+        // the shared detection); this stays visible until actually fixed.
+        void DrawUrpSetupStatus() {
+#if WEVA_URP
+            var doc = (Weva.WevaDocument)target;
+            if (doc.RendererBackend == Weva.RendererBackendKind.IMGUI) return;
+            if (!Setup.UrpFeatureSetup.IsFeatureMissingOnActiveRenderer()) return;
+            EditorGUILayout.HelpBox(
+                "URP is active but UIBatchedRendererFeature is missing from the URP Renderer asset. " +
+                "This document renders through the IMGUI debug fallback (flat colors, no gradients/filters) — " +
+                "or not at all if Renderer Backend is forced to URP.\n" +
+                "Scriptable fix (AI/CI): Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive()",
+                MessageType.Warning);
+            if (GUILayout.Button("Add URP Renderer Feature + shader includes")) {
+                Setup.UrpFeatureSetup.ApplyNonInteractive();
+            }
+            EditorGUILayout.Space();
+#endif
         }
 
         void DrawValidation() {

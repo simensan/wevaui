@@ -129,8 +129,24 @@ The production renderer is a `ScriptableRendererFeature`. Add
 the camera color target (zero intermediate blit). Set `RendererBackend = URP`
 on the document to force this path.
 
+Three equivalent ways to set it up — all idempotent, and all also add the
+Weva shaders to **Always Included Shaders** (required for player builds):
+
+- **Menu:** `Window > Weva > Setup > Add URP Renderer Feature`.
+- **Inspector:** if the feature is missing, the `WevaDocument` inspector shows
+  a warning with an **Add URP Renderer Feature + shader includes** button.
+- **Script / AI agents / CI:** call
+  `Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive()` from editor
+  code, or headless:
+
+  ```
+  Unity -batchmode -quit -projectPath <project> -executeMethod Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive
+  ```
+
 Without the feature, set `RendererBackend = Auto` or `IMGUI` to fall back to
-the IMGUI renderer — fine for editor testing, not for shipping.
+the IMGUI renderer — fine for editor testing, not for shipping. When URP is
+active but the feature is missing, Weva logs a once-per-session Console
+warning (with the fixes above inlined) from the first enabled `WevaDocument`.
 
 > **Screen-space only (v1).** A `WevaDocument` draws as a screen-space overlay
 > into the camera color target; layering across documents is controlled by

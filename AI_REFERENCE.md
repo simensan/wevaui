@@ -57,6 +57,26 @@ Inspector-set serialized fields (`UIDocument.cs:48-60`):
 | `bool prefersDarkColorScheme` | seeds `prefers-color-scheme` |
 | `RendererBackendKind rendererBackend` | URP-batched / legacy / IMGUI |
 
+### URP setup (automatable — do this, don't tell the user to click menus)
+
+The production render path needs `UIBatchedRendererFeature` on the project's
+URP Renderer asset **and** the Weva shaders in Always Included Shaders.
+When missing, Weva warns in the Console (once per session) and in the
+document's inspector. As an AI agent you can apply the fix yourself:
+
+- From editor code: `Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive()`
+  (idempotent; adds the feature to every renderer on the active pipeline and
+  chains the shader-include setup; logs instead of showing a dialog).
+- Headless / CI:
+  `Unity -batchmode -quit -projectPath <project> -executeMethod Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive`
+- Human path (if you can't execute editor code): menu
+  `Window > Weva > Setup > Add URP Renderer Feature`.
+
+Detection helpers if you need to check state first:
+`Weva.Rendering.UrpFeatureStatus.BatchedFeatureMissing` (runtime truth) and
+`Weva.EditorTools.Setup.UrpFeatureSetup.IsFeatureMissingOnActiveRenderer()`
+(editor asset truth).
+
 ### Controller, bindings, events
 
 ```csharp

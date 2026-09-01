@@ -15,9 +15,20 @@ Work down this list — it's ordered by how often each one is the cause:
 2. **URP renderer feature missing.** For the production path you must add
    `UIBatchedRendererFeature` (or `UIRendererFeature`) to your URP Renderer
    asset's **Renderer Features** list. Without it and with
-   `RendererBackend = URP`, nothing draws. To check fast, set
-   `RendererBackend = IMGUI` (or `Auto`) — if the UI appears, the missing
-   feature was the cause. See [Getting Started → URP render setup](getting-started.md).
+   `RendererBackend = URP`, nothing draws. Weva detects this: the Console
+   gets a once-per-session warning and the `WevaDocument` inspector shows a
+   warning with a one-click **Add URP Renderer Feature + shader includes**
+   button. Fix it any of three ways (all idempotent):
+   - Menu: `Window > Weva > Setup > Add URP Renderer Feature`.
+   - Inspector: click the fix button on the warning.
+   - Script / AI agents / CI:
+     `Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive()`, or
+     headless `Unity -batchmode -quit -projectPath <project> -executeMethod
+     Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive`.
+
+   To check fast, set `RendererBackend = IMGUI` (or `Auto`) — if the UI
+   appears, the missing feature was the cause.
+   See [Getting Started → URP render setup](getting-started.md).
 3. **Zero-size viewport.** If `ViewportOverride` is set to something like
    `(0,0)` *and* no camera / screen size resolves, layout runs against a
    0×0 surface and everything collapses. Leave `ViewportOverride` at `(0,0)`
