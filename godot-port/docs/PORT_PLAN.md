@@ -1987,6 +1987,64 @@ own pass with a perf measurement rather than being bolted onto the flex work.
 The three known sites are fixed; the hazard is recorded here so the next tick
 starts with it.
 
+### The allocation target was never measured, and it is being missed by a mile
+
+`tools/weva_bench` times a layout pass and counts the heap allocations it makes,
+by replacing global `operator new`. Both numbers are things this plan asserts
+and nothing was checking.
+
+The zero-allocations-per-frame target is not a nice-to-have here: it is one of
+the **stated justifications for the port**, against a C# baseline of 1.42 MB per
+layout call. The first measurement:
+
+```
+randhtml.html   1691 boxes   best 7.62 ms   steady-state allocations 74914 (10.9 MB)
+```
+
+**10.9 MB per layout pass.** Not near zero — roughly eight times the C# figure
+the port set out to beat. The target has been in the plan since Phase 0 and had
+never been run.
+
+Attributing it took ten minutes with a scoped counter inside
+`parse_css_value` (instrumentation since reverted; the method is a depth flag
+plus an `operator new` that checks it):
+
+```
+parse_css_value: 8791 calls, 72319 allocations (97%), 10.7 MB (98%)
+```
+
+**97% of allocations are one thing: re-parsing CSS text during layout.**
+`resolve_length` takes a `std::string_view` of the raw declaration and calls
+`parse_css_value` every time — so every `width`, `height`, `margin-*`,
+`padding-*` and `flex-basis` read re-tokenises and re-allocates a value object,
+several times per box because shrink-to-fit probes lay a box out repeatedly.
+
+The reference does not do this. The C# reads `style.GetParsed(propertyId)` — a
+parsed value cached on the computed style — which is visible in
+`PositioningPass.IsBorderBox` and elsewhere. The port kept the string
+representation and pays for it on every read.
+
+This reframes the perf work. It is not a matter of tuning a data structure; the
+value path re-does at layout time what the cascade already did. The fix is the
+reference's: cache the parsed value per property on `ComputedStyle`, or memoise
+`parse_css_value` on the value's stable address and hand back a borrow.
+
+**Deferred to the next tick on purpose.** It changes the ownership contract of
+`parse_css_value` — callers currently take a `CssValuePtr` — and doing that at
+the end of a session, on the path every layout number depends on, is how a
+measured problem becomes an unmeasured one. The benchmark is committed first so
+the change has a gate to be judged against.
+
+#### And it retires the change this tick was supposed to make
+
+The previous tick queued replacing `BoxTree`'s `std::vector<Box>` with chunked
+storage, to kill the use-after-free class for good. The measurement says the
+motivation for hurrying was wrong: arena growth is amortised to nothing and does
+not appear in the steady-state count at all, so there was never a perf argument
+either way. The correctness argument stands entirely on its own, which makes it
+a smaller and safer change than it looked — and a lower priority than 10.9 MB a
+frame.
+
 ## Phase 6 — Flex (~4k LOC)
 
 `Layout/Flex` (3,975). Port the documented deviations deliberately — including
