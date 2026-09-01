@@ -2870,6 +2870,46 @@ needs the host to sample the back buffer under a shader, i.e. a canvas
 item split around each glass panel), `mask-image` fades, an opacity group
 layer, `url()` images / `border-image`, `@container`, template/slot.
 
+### Open reference bug: `<br>` is dropped in a shrink-to-fit box
+
+Diagnosed but NOT fixed — the next thing to pick up. The C# engine loses a
+forced line break inside any box that lays its inline content out twice: an
+`inline-block` or an absolutely positioned box with auto width. Floats and
+plain blocks are fine because they only lay out once.
+
+```html
+<div style="display:inline-block">a<br>b</div>
+```
+
+renders as ONE line, and the box does not shrink to fit either (it stays at
+the full container width). weva-landing's `<h1>` loses its break this way,
+which is the last structural difference on that page — Chrome and the port
+both report 137 boxes including the `br`, the reference reports 136.
+
+The mechanism, from instrumenting `CollectInlineInner`:
+
+* Pass 1 walks the container's children and sees
+  `TextRun InlineBox<span> TextRun InlineBox<br> TextRun`. The `<br>` branch
+  emits a synthetic `"\n"` item with `WhiteSpace = "pre"`, the breaker fires
+  its forced break, and `AttachInlineFragmentsToLines` re-parents the `<br>`
+  InlineBox onto a LineBox.
+* Pass 2 walks the SAME container and sees
+  `TextRun InlineBox<span> TextRun TextRun TextRun` — the `<br>`'s InlineBox
+  is gone from the child list, replaced by the plain TextRun the breaker
+  emitted for it. No `<br>` branch runs, so no forced break, and the box is
+  left with a single line.
+
+A `<span>` survives this round trip because its text fragments carry its
+Element and `AttachInlineFragmentsToLines` matches on that; a `<br>` has no
+fragments of its own, so it only ever gets the empty-inline fallback.
+
+Forcing `WhiteSpace = "pre"` on a re-collected single-newline run was tried
+and does NOT fix it — the replacement run is not a bare `"\n"`, so the real
+fix has to either preserve the `<br>` InlineBox in the container's child list
+across passes, or make the second pass reconstruct items from the line boxes
+rather than from a mutated child list. Repro files are in the scratch mini
+corpus (`b5`/`b6`).
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
