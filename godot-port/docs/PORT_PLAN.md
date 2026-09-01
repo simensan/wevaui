@@ -2846,6 +2846,30 @@ texture; a colour glyph needs an RGBA atlas), `mask-image` fades,
 `border-image`, `@container`, and the shared engine-vs-Chrome divergences
 the oracle lists (form-demo's control heights, inventory's 1fr regrowth).
 
+### Eleventh pass: colours the text colour must not touch. 12/35 + 11
+
+* **Colour glyphs.** A Bitmap may carry straight-alpha RGBA beside its
+  coverage (`weva_glyph_bitmap.rgba`, appended for ABI stability); the
+  atlas keeps a colour glyph's texels and paint draws that quad white with
+  the text's alpha (CSS Fonts 4 §5.2). The Godot host copies RGBA out of
+  TextServer's RGBA8 glyph pages when the texels carry chroma — and the
+  real bug behind blank emoji was the fallback list: one SystemFont with a
+  NAME LIST resolves to its first match only, so "Segoe UI Emoji" behind
+  "Segoe UI Symbol" was never reached. One SystemFont per installed name
+  now (checked against `OS::get_system_fonts`, so a missing name cannot
+  fall back to the default face and shadow the rest).
+* **filter's colour functions.** brightness / contrast / grayscale / sepia
+  / saturate / invert / opacity compose into one affine sRGB transform in
+  PaintState, applied to vertex colours and generated texels;
+  `drop-shadow()` paints as an outer shadow of the border box.
+
+**Where it stands: samples 12/35 + 11, hand 46/47, harvest 178/210 + 18
+(layout untouched); 8,334 checks; hosts 23/23. Emoji render in colour on
+15 samples; stats reads like Chrome.** Open: `backdrop-filter` (10 samples —
+needs the host to sample the back buffer under a shader, i.e. a canvas
+item split around each glass panel), `mask-image` fades, an opacity group
+layer, `url()` images / `border-image`, `@container`, template/slot.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
