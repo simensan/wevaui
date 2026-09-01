@@ -276,5 +276,32 @@ namespace Weva.Tests.Layout {
             Assert.That(ib.Width, Is.EqualTo(16).Within(0.001));
         }
 
+        // Chrome reports a `<br>` as a zero-width box with the line's height,
+        // and the box tree has to agree — a missing entry shifts every
+        // document-order comparison after it. On a re-laid-out container the
+        // <br>'s InlineBox is orphaned when the first pass's line boxes are
+        // discarded, so the run left in its place carries the box back
+        // (TextRun.ForcedBreakBox) for the second pass to re-register.
+        [Test]
+        public void Br_box_survives_relayout_in_a_shrink_to_fit_atom() {
+            var (root, _, _) = Build(
+                "<div class=\"ib\"><p>aa<br/>bb</p></div>"
+                + "<div class=\"plain\"><p>aa<br/>bb</p></div>",
+                ".ib { display: inline-block; } p { margin: 0; }",
+                viewportWidth: 800);
+
+            var brBoxes = new List<Box>();
+            foreach (var b in AllBoxes(root)) {
+                if (b.Element != null && b.Element.TagName == "br") brBoxes.Add(b);
+            }
+            Assert.That(brBoxes.Count, Is.EqualTo(2),
+                "both <br> elements must have a box — the shrink-to-fit atom's "
+                + "is the one that used to go missing");
+            foreach (var b in brBoxes) {
+                Assert.That(b.Width, Is.EqualTo(0).Within(0.001), "a <br> is zero-width");
+                Assert.That(b.Height, Is.GreaterThan(0), "and as tall as its line");
+            }
+        }
+
     }
 }

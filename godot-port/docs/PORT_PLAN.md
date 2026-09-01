@@ -2870,12 +2870,15 @@ needs the host to sample the back buffer under a shader, i.e. a canvas
 item split around each glass panel), `mask-image` fades, an opacity group
 layer, `url()` images / `border-image`, `@container`, template/slot.
 
-### Open reference bug: `<br>` is dropped in a shrink-to-fit box
+### Reference bug, now fixed: `<br>` was dropped in a shrink-to-fit box
 
-Diagnosed but NOT fixed — the next thing to pick up. The C# engine loses a
-forced line break inside any box that lays its inline content out twice: an
-`inline-block` or an absolutely positioned box with auto width. Floats and
-plain blocks are fine because they only lay out once.
+FIXED (see the `IsForcedBreak` / `ForcedBreakBox` commits). Kept here because
+the shape of it is worth remembering: a shrink-to-fit box lays its content out
+TWICE, and the second pass walks the wreckage of the first.
+
+The C# engine lost a forced line break inside any box that lays its inline
+content out twice: an `inline-block` or an absolutely positioned box with auto
+width. Floats and plain blocks are fine because they only lay out once.
 
 ```html
 <div style="display:inline-block">a<br>b</div>
@@ -2903,12 +2906,31 @@ A `<span>` survives this round trip because its text fragments carry its
 Element and `AttachInlineFragmentsToLines` matches on that; a `<br>` has no
 fragments of its own, so it only ever gets the empty-inline fallback.
 
-Forcing `WhiteSpace = "pre"` on a re-collected single-newline run was tried
-and does NOT fix it — the replacement run is not a bare `"\n"`, so the real
-fix has to either preserve the `<br>` InlineBox in the container's child list
-across passes, or make the second pass reconstruct items from the line boxes
-rather than from a mutated child list. Repro files are in the scratch mini
-corpus (`b5`/`b6`).
+Forcing `WhiteSpace = "pre"` on a re-collected single-newline run does NOT
+work — the replacement run is EMPTY, not a bare `"\n"`, because the newline
+was consumed by the break it caused. Nothing about its text or style says it
+was ever a break.
+
+The fix is a marker that rides along with it: `TextRun.IsForcedBreak` plus
+`TextRun.ForcedBreakBox` (the originating InlineBox), set on the
+`LineBreaker.Item` for the `<br>` and stamped onto the run the breaker emits.
+A second collection pass sees the marker, re-emits the synthetic newline item
+so the break happens again, and re-registers the box so it lands back in the
+tree with a rect. `RentItem` hands back pooled Items without clearing them, so
+`MakeItem` stamps both fields on every path.
+
+Two things this exposed while fixing it:
+
+* With the break restored the atom still would not shrink — 1280px wide for
+  36px of text. For a BLOCK child the atom's max-content was read from that
+  child's laid-out `Width`, which `LayoutBlock` had just set to the atom's
+  full available width. Only inline content took a real max-content path.
+* A `<span>` survives this round trip where a `<br>` did not, because
+  `AttachInlineFragmentsToLines` matches fragments by Element and a span's
+  text runs carry its Element. A `<br>` has no fragments of its own, so it
+  only ever got the empty-inline fallback.
+
+weva-landing's element count now matches Chrome exactly (137 = 137).
 
 ## Phase 8 — Remaining layout (~8k LOC)
 

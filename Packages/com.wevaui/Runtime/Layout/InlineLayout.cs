@@ -1103,6 +1103,16 @@ namespace Weva.Layout {
                     item.CloneSpanStartPbm = outerCloneStartPbm;
                     item.CloneSpanEndPbm   = outerCloneEndPbm;
                     items.Add(item);
+                    // A run left behind by a <br> on an earlier pass carries the
+                    // originating box; re-register it so it lands back in the
+                    // tree with a rect, as it did on the first pass.
+                    if (tr.ForcedBreakBox != null) {
+                        pendingInlineBoxes.Add(tr.ForcedBreakBox);
+                        var prevForBreak = items.Count >= 2
+                            ? items[items.Count - 2].SourceRun?.SourceNode
+                            : null;
+                        pendingInlineNextNode.Add(prevForBreak);
+                    }
                     continue;
                 }
                 if (child is InlineBox ib) {
@@ -1128,6 +1138,7 @@ namespace Weva.Layout {
                         brItem.Color = brStyle?.Get(CssProperties.ColorId);
                         brItem.WhiteSpace = "pre";
                         brItem.IsForcedBreak = true;
+                        brItem.ForcedBreakBox = ib;
                         brItem.Metrics = ctx.GetMetrics(brItem.FontFamily);
                         brItem.SourceRun = null;
                         brItem.OwnerElement = spanOwner;
@@ -1822,6 +1833,7 @@ namespace Weva.Layout {
             // container (see TextRun.IsForcedBreak) — re-collecting it has to
             // reproduce the forced break, not a blank run.
             it.IsForcedBreak = source != null && source.IsForcedBreak;
+            it.ForcedBreakBox = source?.ForcedBreakBox;
             if (it.IsForcedBreak) {
                 it.Text = "\n";
                 it.WhiteSpace = "pre";

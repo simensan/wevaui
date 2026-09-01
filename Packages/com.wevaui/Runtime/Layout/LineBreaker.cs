@@ -32,6 +32,9 @@ namespace Weva.Layout {
             // over the same container recognises the break again.
             // RentItem does not clear pooled items, so every producer sets it.
             public bool IsForcedBreak;
+            // The originating <br> box, carried so the emitted run can hand it
+            // back to a second collection pass (TextRun.ForcedBreakBox).
+            public Boxes.InlineBox ForcedBreakBox;
 
             // CSS Text Module Level 3 word-break / overflow-wrap.
             //   word-break: normal     - break only at word boundaries (default).
@@ -1493,6 +1496,7 @@ namespace Weva.Layout {
                         // content is logically part of the host element.
                         run.Element = f.Source.SourceRun?.Element ?? f.Source.OwnerElement;
                         run.IsForcedBreak = f.Source.IsForcedBreak;
+                        run.ForcedBreakBox = f.Source.ForcedBreakBox;
                         run.SourceNode = f.Source.SourceRun?.SourceNode;
                         run.FontFamily = f.Source.FontFamily;
                         run.FontSize = f.Source.FontSize;

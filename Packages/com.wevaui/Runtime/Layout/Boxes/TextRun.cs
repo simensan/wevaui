@@ -31,6 +31,15 @@ namespace Weva.Layout.Boxes {
         // Cleared in ResetForPool so a recycled run never claims to be a break.
         public bool IsForcedBreak { get; internal set; }
 
+        // The `<br>`'s own InlineBox. Kept alongside the marker so a second
+        // pass can put the box back in the tree, not just re-create the break:
+        // pass 1 re-parents it onto a LineBox, and clearing the container's
+        // children for pass 2 orphans it. Chrome reports a <br> as a
+        // zero-width box with the line's height, so dropping it leaves the box
+        // tree one entry short of what every other engine reports.
+        // Cleared in ResetForPool with the marker.
+        public InlineBox ForcedBreakBox { get; internal set; }
+
         public TextRun() { }
 
         public TextRun(string text, ComputedStyle style, Element element, TextNode source) {
@@ -43,6 +52,7 @@ namespace Weva.Layout.Boxes {
         internal override void ResetForPool() {
             base.ResetForPool();
             IsForcedBreak = false;
+            ForcedBreakBox = null;
             Text = null;
             FontFamily = null;
             FontSize = 0;
