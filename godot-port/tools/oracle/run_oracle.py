@@ -14,6 +14,7 @@ Stdlib only, so it runs wherever the tests run.
 """
 
 import argparse
+import difflib
 import json
 import os
 import subprocess
@@ -110,44 +111,82 @@ def chrome_agrees(chrome_value, value):
         return chrome_value == value
 
 
+def _identity(e):
+    return (e.get("tag"), e.get("id"), e.get("cls"))
+
+
+def align(a, b):
+    """Pairs elements of two dumps by identity, tolerating moves and gaps.
+
+    The engines emit inline fragments in the C# InsertChildFirst order while
+    Chrome walks the DOM, so a <b> can sit a few slots away in Chrome's list;
+    Chrome also omits `display: none` elements (a hidden <input>) that the
+    engines still dump. Neither is a reason to leave a whole page unjudged.
+    Longest-common-subsequence pairs first; then any element left over on both
+    sides with the same identity, in order, pairs up as a move. Returns
+    {index_in_a: index_in_b}.
+    """
+    ia, ib = [_identity(e) for e in a], [_identity(e) for e in b]
+    pairs = {}
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(a=ia, b=ib, autojunk=False).get_opcodes():
+        if tag == "equal":
+            for k in range(i2 - i1):
+                pairs[i1 + k] = j1 + k
+    used = set(pairs.values())
+    spare = {}
+    for j, ident in enumerate(ib):
+        if j not in used:
+            spare.setdefault(ident, []).append(j)
+    for i, ident in enumerate(ia):
+        if i not in pairs and spare.get(ident):
+            pairs[i] = spare[ident].pop(0)
+    return pairs
+
+
 def arbitrate(reference, candidate, chrome):
     """Splits differences into ones the third source blames on each side.
 
     Returns (reference_bugs, real) — lists of description strings. A difference
     counts as a reference bug only when Chrome's geometry matches the candidate
-    EXACTLY and differs from the reference, on an element the three agree on the
-    identity of. Anything else stays a real failure, including any case where
-    Chrome is absent or its element list does not line up.
+    (within CHROME_TOLERANCE) and differs from the reference, on an element all
+    three agree on the identity of. Anything else stays a real failure,
+    including every difference on an element Chrome's capture has no partner
+    for. Elements are paired by identity (see align), not by position.
     """
-    if not chrome:
-        return [], compare(reference, candidate)
-
-    a, b, c = (reference.get("elements", []), candidate.get("elements", []),
-               chrome.get("elements", []))
-    if not (len(a) == len(b) == len(c)):
-        return [], compare(reference, candidate)
+    a, b = reference.get("elements", []), candidate.get("elements", [])
+    c = chrome.get("elements", []) if chrome else []
+    rc = align(a, b) if len(a) != len(b) else {i: i for i in range(len(a))}
+    ac = align(a, c) if chrome else {}
 
     reference_bugs, real = [], []
-    for i in range(len(a)):
-        ea, eb, ec = a[i], b[i], c[i]
-        if (ea.get("tag"), ea.get("id"), ea.get("cls")) != (ec.get("tag"), ec.get("id"),
-                                                            ec.get("cls")):
-            # The lists are not describing the same elements; no arbitration.
-            return [], compare(reference, candidate)
+    if len(a) != len(b):
+        real.append(f"element count: reference {len(a)}, candidate {len(b)}")
+    for i, ea in enumerate(a):
+        if i not in rc:
+            real.append(f"[{i}] {_identity(ea)}: only in the reference")
+            continue
+        eb = b[rc[i]]
         for key in ("depth", "tag", "id", "cls"):
             if ea.get(key) != eb.get(key):
                 real.append(f"[{i}] {key}: reference {ea.get(key)!r}, candidate {eb.get(key)!r}")
+        ec = c[ac[i]] if i in ac else None
+        label = f"{ea.get('tag')}#{ea.get('id')}.{ea.get('cls')}".rstrip("#.")
         for key in ("x", "y", "w", "h"):
             if ea.get(key) == eb.get(key):
                 continue
-            label = f"{ea.get('tag')}#{ea.get('id')}.{ea.get('cls')}".rstrip("#.")
             line = f"[{i}] {label}: {key} reference {ea.get(key)} vs candidate {eb.get(key)}"
-            if chrome_agrees(ec.get(key), eb.get(key)):
+            if ec is None:
+                real.append(line + (", no chrome partner" if chrome else ""))
+            elif chrome_agrees(ec.get(key), eb.get(key)):
                 reference_bugs.append(line + f", chrome {ec.get(key)} — chrome agrees with us")
             elif chrome_agrees(ec.get(key), ea.get(key)):
                 real.append(line + f", chrome {ec.get(key)} — chrome agrees with the REFERENCE")
             else:
                 real.append(line + f", chrome {ec.get(key)} — chrome agrees with neither")
+    paired_b = set(rc.values())
+    for j, eb in enumerate(b):
+        if j not in paired_b:
+            real.append(f"[cand {j}] {_identity(eb)}: only in the candidate")
     return reference_bugs, real
 
 
