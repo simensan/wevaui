@@ -791,3 +791,47 @@ void test_flex_wrap_reverse_flips_item_alignment() {
     // The default `stretch` with a definite height behaves as start: bottom too.
     CHECK(near(g.box("a").y, 112));
 }
+
+void test_flex_baseline_items_size_the_line() {
+    // §9.4 step 8: baseline-aligned items contribute the largest ascent plus
+    // the largest descent. A 20px title (baseline 17 down, 5.86 below) next
+    // to an 11px badge with 4px padding and a 1px border (baseline 14.35
+    // down, 8.223 below) makes a 25.223px line; the tallest item alone is
+    // 22.86.
+    Fixture f;
+    CHECK(f.css("#d { display: flex; align-items: baseline; gap: 12px; width: 600px }"
+                "#t { font-size: 20px }"
+                "#b { font-size: 11px; padding: 4px; border: 1px solid black }"));
+    CHECK(f.layout("<body><div id=d><span id=t>System Monitor</span>"
+                   "<span id=b>LIVE</span></div></body>"));
+    // Against the fixture's own metrics (the 1.2 / 0.8 stand-in, no
+    // half-leading to speak of: the baseline sits `ascent + half-leading`
+    // below the line top).
+    const auto baseline = [&](double fs) {
+        return f.metrics.ascent(fs) + (f.metrics.line_height(fs) - f.metrics.ascent(fs) -
+                                       f.metrics.descent(fs)) * 0.5;
+    };
+    const double title_above = baseline(20);
+    const double badge_above = baseline(11) + 5;
+    const double badge_outer = f.metrics.line_height(11) + 10;
+    CHECK(near(f.box("d").height, title_above + (badge_outer - badge_above)));
+    CHECK(near(f.box("b").y, title_above - badge_above));
+    CHECK(near(f.box("t").y, 0));
+}
+
+void test_aspect_ratio_height_respects_box_sizing() {
+    // hud.html's portrait: `width: 100%; aspect-ratio: 3 / 4; border: 1px`
+    // in a 286px column. Content-box: 286 of content → 381.33, plus the
+    // border = 383.33 (Chrome and the reference). Border-box: 288 / 0.75 =
+    // 384.
+    Fixture f;
+    CHECK(f.css("#p { width: 286px }"
+                "#a { width: 100%; aspect-ratio: 3 / 4; border: 1px solid black }"
+                "#b { width: 288px; box-sizing: border-box; aspect-ratio: 3 / 4;"
+                "     border: 1px solid black }"));
+    CHECK(f.layout("<body><div id=p><div id=a></div><div id=b></div></div></body>"));
+    CHECK(near(f.box("a").width, 288));
+    CHECK(near(f.box("a").height, 383.0 + 1.0 / 3));
+    CHECK(near(f.box("b").height, 384));
+    CHECK(near(f.box("p").height, 383.0 + 1.0 / 3 + 384));
+}

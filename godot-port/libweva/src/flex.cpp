@@ -433,9 +433,30 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         return self;
     };
 
+    // An item's baseline is its first line box's, or its bottom margin edge
+    // when it has none — the same rule an inline-block follows.
+    const auto first_baseline = [&](BoxId box) {
+        double baseline = (*tree)[box].height;
+        for (BoxId c : tree->children(box)) {
+            if ((*tree)[c].kind == BoxKind::Line) {
+                baseline = (*tree)[c].y + (*tree)[c].baseline;
+                break;
+            }
+        }
+        return baseline;
+    };
+
     // ---- Re-lay each item at its final main size, and measure the cross ----
     for (Line& ln : lines) {
         double line_cross = 0;
+        // §9.4 step 8: the baseline-aligned items of a row contribute as a
+        // group — the largest distance from a baseline up to its item's outer
+        // cross-start edge, plus the largest distance from a baseline down to
+        // its item's outer cross-end edge. A 20px title and a padded 11px
+        // badge that align on the baseline make a 25.22px line, not a 22.86px
+        // one: the badge hangs below the title.
+        double baseline_above = 0;
+        double baseline_below = 0;
         for (size_t i = ln.begin; i < ln.end; ++i) {
             Item& it = items[i];
             // Re-indexed after every call that can lay out a box: BoxTree::create
@@ -471,10 +492,16 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                 }
             }
             const Box& measured = (*tree)[it.box];
-            line_cross = std::max(line_cross,
-                                  (column ? measured.width : measured.height) + it.cross_margins);
+            const double outer = (column ? measured.width : measured.height) + it.cross_margins;
+            if (!column && iequals(self_align(measured), "baseline")) {
+                const double above = first_baseline(it.box) + measured.margin_top;
+                baseline_above = std::max(baseline_above, above);
+                baseline_below = std::max(baseline_below, outer - above);
+            } else {
+                line_cross = std::max(line_cross, outer);
+            }
         }
-        ln.cross = line_cross;
+        ln.cross = std::max(line_cross, baseline_above + baseline_below);
     }
 
     // ---- Cross sizes of the lines (§9.4 step 8, §9.6 align-content) --------
@@ -620,19 +647,6 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     // ---- Cross-axis alignment (§9.6) and placement -------------------------
     const double left_inner = (*tree)[container].padding_left + (*tree)[container].border_left;
     const double top_inner = (*tree)[container].padding_top + (*tree)[container].border_top;
-
-    // An item's baseline is its first line box's, or its bottom margin edge
-    // when it has none — the same rule an inline-block follows.
-    const auto first_baseline = [&](BoxId box) {
-        double baseline = (*tree)[box].height;
-        for (BoxId c : tree->children(box)) {
-            if ((*tree)[c].kind == BoxKind::Line) {
-                baseline = (*tree)[c].y + (*tree)[c].baseline;
-                break;
-            }
-        }
-        return baseline;
-    };
 
     for (const Line& ln : lines) {
         // Baseline alignment needs the deepest first baseline on the line

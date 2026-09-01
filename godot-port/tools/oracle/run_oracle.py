@@ -124,7 +124,8 @@ def align(a, b):
     engines still dump. Neither is a reason to leave a whole page unjudged.
     Longest-common-subsequence pairs first; then any element left over on both
     sides with the same identity, in order, pairs up as a move. Returns
-    {index_in_a: index_in_b}.
+    ({index_in_a: index_in_b}, {index_in_a that paired as a move}) — a shift
+    caused by an inserted neighbour is not a move, a real reorder is.
     """
     ia, ib = [_identity(e) for e in a], [_identity(e) for e in b]
     pairs = {}
@@ -137,10 +138,12 @@ def align(a, b):
     for j, ident in enumerate(ib):
         if j not in used:
             spare.setdefault(ident, []).append(j)
+    moved = set()
     for i, ident in enumerate(ia):
         if i not in pairs and spare.get(ident):
             pairs[i] = spare[ident].pop(0)
-    return pairs
+            moved.add(i)
+    return pairs, moved
 
 
 def arbitrate(reference, candidate, chrome):
@@ -155,8 +158,9 @@ def arbitrate(reference, candidate, chrome):
     """
     a, b = reference.get("elements", []), candidate.get("elements", [])
     c = chrome.get("elements", []) if chrome else []
-    rc = align(a, b) if len(a) != len(b) else {i: i for i in range(len(a))}
-    ac = align(a, c) if chrome else {}
+    same_order = len(a) == len(b) and all(_identity(x) == _identity(y) for x, y in zip(a, b))
+    rc, moved = ({i: i for i in range(len(a))}, set()) if same_order else align(a, b)
+    ac = align(a, c)[0] if chrome else {}
 
     reference_bugs, real = [], []
     if len(a) != len(b):
@@ -166,6 +170,11 @@ def arbitrate(reference, candidate, chrome):
             real.append(f"[{i}] {_identity(ea)}: only in the reference")
             continue
         eb = b[rc[i]]
+        if i in moved:
+            # The same element in a different place in the walk: still a
+            # difference (the dump is the box tree), but its geometry is
+            # judged against ITS OWN Chrome partner, not its neighbour's.
+            real.append(f"[{i}] {_identity(ea)}: moved, candidate index {rc[i]}")
         for key in ("depth", "tag", "id", "cls"):
             if ea.get(key) != eb.get(key):
                 real.append(f"[{i}] {key}: reference {ea.get(key)!r}, candidate {eb.get(key)!r}")

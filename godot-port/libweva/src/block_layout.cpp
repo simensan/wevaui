@@ -165,8 +165,11 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     if (width_is_auto && has_ratio && height_is_definite && height_r.pixels > 0) {
         // CSS Sizing L4 §5: with one of the two auto, the ratio derives the
         // other. The opposite direction (height from width) belongs to the
-        // block-size finalisation, not here.
+        // block-size finalisation, not here. The ratio relates the boxes that
+        // box-sizing names (§5.1): under content-box the authored content
+        // height gives a content width and the frame goes on top.
         resolved_width = height_r.pixels * aspect_ratio;
+        if (!border_box) resolved_width += width_frame;
         if (resolved_width < 0) resolved_width = 0;
         width_is_auto = false;
     } else if (width_is_auto) {
@@ -412,8 +415,16 @@ double definite_flow_content_height(const BoxTree& tree, const Box& b, const Lay
         // treating the height as content-derived left the glyph at the top.
         double ratio = 0;
         if (try_resolve_aspect_ratio(b.style, &ratio) && ratio > 0 && b.width > 0) {
-            const double frame = b.padding_top + b.padding_bottom + b.border_top + b.border_bottom;
-            return std::max(0.0, b.width / ratio - frame);
+            // The ratio relates the boxes box-sizing names (css-sizing-4
+            // §5.1): border box to border box, or content box to content box.
+            if (is_border_box(b.style)) {
+                const double frame =
+                    b.padding_top + b.padding_bottom + b.border_top + b.border_bottom;
+                return std::max(0.0, b.width / ratio - frame);
+            }
+            const double w_frame =
+                b.padding_left + b.padding_right + b.border_left + b.border_right;
+            return std::max(0.0, (b.width - w_frame) / ratio);
         }
         return -1;
     }
@@ -1145,9 +1156,18 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
         computed = border_box ? height_r.pixels : height_r.pixels + frame;
     } else if (try_resolve_aspect_ratio(box.style, &aspect_ratio) && aspect_ratio > 0 &&
                box.width > 0) {
-        // Width set, height auto: the ratio derives the height. As on the width
-        // side, box-sizing is ignored for the derivation.
-        computed = box.width / aspect_ratio;
+        // Width set, height auto: the ratio derives the height, between the
+        // boxes box-sizing names (css-sizing-4 §5.1). A 288px-wide 3/4
+        // portrait with a 1px border is 383.33 tall under content-box (286
+        // of content → 381.33, plus the border) and 384 under border-box;
+        // Chrome and the reference both say so.
+        if (border_box) {
+            computed = box.width / aspect_ratio;
+        } else {
+            const double w_frame =
+                box.padding_left + box.padding_right + box.border_left + box.border_right;
+            computed = std::max(0.0, box.width - w_frame) / aspect_ratio + frame;
+        }
     } else {
         computed = content_bottom_y + box.padding_bottom + box.border_bottom;
     }

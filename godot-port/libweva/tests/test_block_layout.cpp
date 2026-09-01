@@ -181,14 +181,13 @@ void test_box_model_width() {
     CHECK(near(f.box("auto").width, 500 - 40));
 
     // CSS Sizing L4 §5: with width auto and a definite height, the ratio
-    // derives the width. The reference takes the ratio result as the BORDER-box
-    // width directly — no frame is added, and the ratio is measured against the
-    // authored (content) height. So padding does not widen the box here, which
-    // is not what box-sizing would suggest.
+    // derives the width — between the boxes box-sizing names (§5.1), so under
+    // content-box the 100px content height gives 200px of content width and
+    // the padding goes on top. Chrome: 220.
     f.apply("ratio", 1000);
     CHECK(near(f.box("ratio").width, 200));
     f.apply("ratiobb", 1000);
-    CHECK(near(f.box("ratiobb").width, 200));
+    CHECK(near(f.box("ratiobb").width, 220));
 }
 
 void test_box_model_min_max() {
