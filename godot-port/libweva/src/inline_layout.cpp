@@ -147,12 +147,25 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // CSS 2.1 §9.4.2: an inline element produces a box on every line it
             // covers. A marker records where it starts so a box that ends up
             // with no fragments of its own is still placed.
+            ResolvedSides pad, bor, mar;
+            if (b.kind == BoxKind::Inline && b.style) {
+                const double fs = font_size_px(b.style, inherited, ctx);
+                const double lh = line_height_px(b.style, fs, ctx, metrics);
+                // Percentages of the containing block's width: the block
+                // container's, which is what the box tree's ancestor chain
+                // reaches through the container box.
+                pad = resolve_box_sides_px(b.style, "padding", ctx, fs, 0, lh);
+                mar = resolve_box_sides_px(b.style, "margin", ctx, fs, 0, lh);
+                bor = resolve_border_edges(b.style, ctx, fs);
+            }
             if (b.kind == BoxKind::Inline) {
                 InlineItem item;
                 item.inline_box_start = c;
                 item.inline_parent = inline_parent;
                 item.style = b.style ? b.style : inherited;
                 item.font_size = font_size_px(item.style, inherited, ctx);
+                item.margin_edge = mar.left;
+                item.decoration = bor.left + pad.left;
                 item.metrics = ctx.font_for(get(item.style, "font-family"));
                 item.line_height = line_height_px(item.style, item.font_size, ctx,
                                                   item.metrics ? item.metrics : metrics);
@@ -160,6 +173,16 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             }
             collect_recursive(tree, c, c, ctx, b.style ? b.style : inherited,
                               b.style ? inherited : inherited_parent, metrics, out);
+            if (b.kind == BoxKind::Inline) {
+                InlineItem item;
+                item.inline_box_end = c;
+                item.inline_parent = inline_parent;
+                item.style = b.style ? b.style : inherited;
+                item.font_size = font_size_px(item.style, inherited, ctx);
+                item.margin_edge = mar.right;
+                item.decoration = bor.right + pad.right;
+                out->push_back(item);
+            }
         } else if (b.kind == BoxKind::Block && b.is_inline_block) {
             // An atom: placed whole, never broken. It is recorded here but not
             // sized — sizing it needs the block layout engine, so the caller
@@ -305,7 +328,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     // opens. Computed here, while the ancestor chain is still intact.
     std::vector<BoxId> boxes_with_content;
     for (const InlineItem& it : items) {
-        if (it.is_inline_start() || it.is_break()) continue;
+        if (it.is_marker() || it.is_break()) continue;
         for (BoxId b = it.inline_parent; b != kNoBox && b != container; b = (*tree)[b].parent) {
             if ((*tree)[b].kind != BoxKind::Inline) break;
             if (std::find(boxes_with_content.begin(), boxes_with_content.end(), b) ==
@@ -350,8 +373,12 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         std::vector<Fragment> trailing_markers;
         double trimmed_space = 0;
         while (!line.empty()) {
-            if (line.back().item->is_inline_start()) {
+            if (line.back().item->is_marker()) {
+                // Start AND end markers ride along: `Click <a>` at a line's
+                // end trims the space and puts the empty box at 76, not 83,
+                // whether or not the box's end marker follows its start.
                 trailing_markers.push_back(line.back());
+                pen -= line.back().width;
                 line.pop_back();
                 continue;
             }
@@ -371,6 +398,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         for (auto it = trailing_markers.rbegin(); it != trailing_markers.rend(); ++it) {
             Fragment m = *it;
             const bool has_content_later =
+                m.item->is_inline_start() &&
                 std::find(boxes_with_content.begin(), boxes_with_content.end(),
                           m.item->inline_box_start) != boxes_with_content.end();
             if (!is_final && has_content_later) {
@@ -378,6 +406,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 continue;
             }
             m.x = pen;
+            pen += m.width;
             line.push_back(m);
         }
         // A line holding nothing but inline-box markers still IS a line — an
@@ -394,13 +423,13 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // is the block-in-inline case in 23-inline-splitting.
         bool only_markers = !line.empty();
         for (const Fragment& f : line) {
-            if (!f.item->is_inline_start()) { only_markers = false; break; }
+            if (!f.item->is_marker()) { only_markers = false; break; }
         }
 
         if (line.empty() && !is_final) {
             reset_line_metrics();
             pen = 0;
-            for (Fragment& m : carried) { m.x = 0; line.push_back(m); }
+            for (Fragment& m : carried) { m.x = pen; pen += m.width; line.push_back(m); }
             return;
         }
         if (line.empty()) return;
@@ -435,6 +464,11 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // What the wrap took off the end of this line, so the unwrapped width
         // of the paragraph can be rebuilt from its lines.
         (*tree)[lb].trimmed_trailing_space = trimmed_space;
+        double decoration_total = 0;
+        for (const Fragment& f : line) {
+            if (f.item->is_marker()) decoration_total += f.width;
+        }
+        (*tree)[lb].inline_decoration_width = decoration_total;
 
         // CSS 2.1 §9.4.2: each inline box covering this line gets a fragment.
         // Spans are accumulated over the inline ANCESTOR chain, so a nested
@@ -468,7 +502,11 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         for (const Fragment& f : line) {
             if (only_markers) break;
             if (f.item->is_inline_start()) {
-                contribute(f.item->inline_box_start, f.x + dx, f.x + dx, false);
+                const double x0 = f.x + dx + f.item->margin_edge;
+                contribute(f.item->inline_box_start, x0, x0 + f.item->decoration, false);
+            } else if (f.item->is_inline_end()) {
+                const double x0 = f.x + dx;
+                contribute(f.item->inline_box_end, x0, x0 + f.item->decoration, false);
             } else if (f.item->inline_parent != kNoBox) {
                 contribute(f.item->inline_parent, f.x + dx, f.x + dx + f.width, true);
             }
@@ -514,6 +552,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 }
                 continue;
             }
+            if (f.item->is_inline_end()) continue;
             if (f.item->is_break()) {
                 Box& br = (*tree)[f.item->break_box];
                 br.x = f.x + dx;
@@ -568,7 +607,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         pen = 0;
         reset_line_metrics();
         begin_line_at(y);
-        for (Fragment& m : carried) { m.x = 0; line.push_back(m); }
+        for (Fragment& m : carried) { m.x = pen; pen += m.width; line.push_back(m); }
     };
 
     const auto grow_line_metrics = [&](const InlineItem& it) {
@@ -589,11 +628,20 @@ double layout_inline_items(BoxTree* tree, BoxId container,
 
     for (const InlineItem& it : items) {
         if (it.is_inline_start()) {
-            // Zero width and no break opportunity: it only records a position.
-            // It does grow the line metrics, because an inline box contributes
-            // its strut whether or not it holds anything.
+            // No break opportunity: it records where the box opens and takes
+            // the box's start edges (margin, border, padding). It grows the
+            // line metrics, because an inline box contributes its strut
+            // whether or not it holds anything.
             grow_line_metrics(it);
-            line.push_back({&it, {}, false, pen, 0});
+            const double w = it.margin_edge + it.decoration;
+            line.push_back({&it, {}, false, pen, w});
+            pen += w;
+            continue;
+        }
+        if (it.is_inline_end()) {
+            const double w = it.decoration + it.margin_edge;
+            line.push_back({&it, {}, false, pen, w});
+            pen += w;
             continue;
         }
         if (it.is_break()) {
@@ -822,6 +870,9 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
                 if (run.kind == BoxKind::Inline && run.element && run.element->tag_name() == "br") {
                     forced_break = true;
                 }
+                // An inline box's fragment spans the runs it covers; counting
+                // it as well as them doubled every bold word.
+                if (run.kind == BoxKind::Inline) continue;
                 const double w = run.width + (run.kind == BoxKind::Block
                                                   ? run.margin_left + run.margin_right
                                                   : 0);
@@ -831,9 +882,11 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
             if (text_unbreakable) {
                 // The space a wrap trimmed sits BETWEEN two lines of the
                 // paragraph and comes back when they are joined; one trimmed
-                // at the paragraph's end is gone in max-content too.
+                // at the paragraph's end is gone in max-content too. The
+                // inline boxes' own edges are on the line but in no run.
                 const bool ends_paragraph = forced_break || b.is_final_line;
-                paragraph += line_sum + (ends_paragraph ? 0.0 : b.trimmed_trailing_space);
+                paragraph += line_sum + b.inline_decoration_width +
+                             (ends_paragraph ? 0.0 : b.trimmed_trailing_space);
                 if (ends_paragraph) {
                     if (paragraph > max) max = paragraph;
                     paragraph = 0;

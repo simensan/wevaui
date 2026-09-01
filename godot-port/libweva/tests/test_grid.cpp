@@ -565,3 +565,18 @@ void test_grid_track_sizing_functions() {
         CHECK(near(f.box("b").x, 50));
     }
 }
+
+void test_grid_aspect_ratio_item_takes_the_larger_transfer() {
+    // With both axes stretched, each axis is the larger of its own stretch
+    // and the size transferred from the other's: a square in a 195px column
+    // and a 110px row is 195x195 (Chrome), just as one in a 119px column and
+    // a 196px row is 196x196.
+    Fixture f;
+    CHECK(f.css("#g { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 110px;"
+                "     gap: 16px; width: 828px }"
+                ".sq { aspect-ratio: 1 / 1; display: flex }"));
+    CHECK(f.layout("<body><div id=g><div id=a class=sq></div><div class=sq></div>"
+                   "<div class=sq></div><div class=sq></div></div></body>"));
+    CHECK(near(f.box("a").width, 195));
+    CHECK(near(f.box("a").height, 195));
+}

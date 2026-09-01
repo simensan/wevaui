@@ -90,6 +90,20 @@ def load_chrome(corpus, name):
     return None
 
 
+# Chrome's LayoutNG snaps to 1/64 px and getBoundingClientRect reports the
+# snapped value, so its numbers can sit up to 0.02 from an exact double the two
+# engines share. This tolerance applies ONLY to reading Chrome's verdict; the
+# reference-versus-candidate comparison stays exact (ORACLE.md).
+CHROME_TOLERANCE = 0.02
+
+
+def chrome_agrees(chrome_value, value):
+    try:
+        return abs(float(chrome_value) - float(value)) <= CHROME_TOLERANCE
+    except (TypeError, ValueError):
+        return chrome_value == value
+
+
 def arbitrate(reference, candidate, chrome):
     """Splits differences into ones the third source blames on each side.
 
@@ -122,7 +136,7 @@ def arbitrate(reference, candidate, chrome):
                 continue
             label = f"{ea.get('tag')}#{ea.get('id')}.{ea.get('cls')}".rstrip("#.")
             line = f"[{i}] {label}: {key} reference {ea.get(key)} vs candidate {eb.get(key)}"
-            if ec.get(key) == eb.get(key):
+            if chrome_agrees(ec.get(key), eb.get(key)):
                 reference_bugs.append(line + f", chrome {ec.get(key)} — chrome agrees with us")
             else:
                 real.append(line + f", chrome {ec.get(key)}")

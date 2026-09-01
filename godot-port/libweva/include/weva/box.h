@@ -159,6 +159,9 @@ struct Box {
     // its end. Summing a paragraph's lines plus these gives its unwrapped
     // (max-content) width without measuring the text again.
     double trimmed_trailing_space = 0;
+    // On a line box: the inline boxes' own horizontal margin, border and
+    // padding placed on this line — on the line, in no run.
+    double inline_decoration_width = 0;
 
     // ---- Text -----------------------------------------------------------
     // Points into either the source text node or the pass arena (for collapsed

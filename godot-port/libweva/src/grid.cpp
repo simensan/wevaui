@@ -1170,7 +1170,12 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         if (auto_height && is_stretch(align) && h > 0) {
             if (has_ratio(before) && auto_width) {
                 if (row_is_definite(p)) {
-                    // Block axis stretched, inline derived from the ratio.
+                    // Both axes stretch and the ratio transfers each stretched
+                    // size into the other axis; each axis ends up the LARGER
+                    // of its own stretch and the transfer (css-sizing-4 §5.1
+                    // with the automatic minimums of §4.4). Chrome: 196x196
+                    // cells in 119px columns and 196px rows, and 195x195 tiles
+                    // in 195px columns and 110px rows.
                     double ratio = 1;
                     try_resolve_aspect_ratio(before.style, &ratio);
                     const bool border_box = is_border_box(before.style);
@@ -1178,9 +1183,15 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
                                            before.border_top + before.border_bottom;
                     const double w_frame = before.padding_left + before.padding_right +
                                            before.border_left + before.border_right;
-                    const double content_h = std::max(0.0, h - h_frame);
-                    const double derived_w = border_box ? h * ratio : content_h * ratio + w_frame;
-                    block->relayout_at_size(p.box, derived_w, h);
+                    const auto width_from_height = [&](double hh) {
+                        return border_box ? hh * ratio : std::max(0.0, hh - h_frame) * ratio + w_frame;
+                    };
+                    const auto height_from_width = [&](double ww) {
+                        return border_box ? ww / ratio : std::max(0.0, ww - w_frame) / ratio + h_frame;
+                    };
+                    const double final_w = std::max(before.width, width_from_height(h));
+                    const double final_h = std::max(h, height_from_width(before.width));
+                    block->relayout_at_size(p.box, final_w, final_h);
                 }
                 // Otherwise the inline axis was stretched and the height the
                 // ratio gave it stands: no block-axis stretch.

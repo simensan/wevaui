@@ -186,14 +186,16 @@ void test_inline_item_collection() {
     g.root = builder.build_document(*g.doc);
     const BoxId w = g.find("w");
     const std::vector<InlineItem> items = collect_inline_items(g.tree, w, g.ctx);
-    // Four, not three: entering the span emits a zero-width marker recording
-    // where the inline box starts, so §9.4.2 can give it a fragment box even on
-    // a line where it contributes no text of its own.
-    CHECK(items.size() == 4);
+    // Five, not three: entering the span emits a marker recording where the
+    // inline box starts (so §9.4.2 can give it a fragment box even on a line
+    // where it contributes no text of its own) and leaving it emits one for
+    // where it ends, which carries the box's end edges.
+    CHECK(items.size() == 5);
     CHECK(items[0].text == "one ");
     CHECK(items[1].is_inline_start());
     CHECK(items[2].text == "two");
-    CHECK(items[3].text == " three");
+    CHECK(items[3].is_inline_end());
+    CHECK(items[4].text == " three");
     // The text inside the span is parented to it, the outer two are not; the
     // marker itself sits OUTSIDE the box it opens, which is what puts it at the
     // pen position where that box begins.
@@ -815,4 +817,52 @@ void test_max_content_joins_wrapped_lines() {
                 "#a { width: 26px; height: 26px }"));
     CHECK(h.layout("<body><div id=r><span id=a></span> Back <span id=b class=x></span></div></body>"));
     CHECK(near(h.box("b").x, 26 + 10 + 4 * 8 + 10));
+}
+
+void test_inline_box_edges_take_space_on_the_line() {
+    // CSS 2.1 §10.6.1: an inline box's horizontal padding, border and margin
+    // are on the line — they advance the pen and belong to its fragment.
+    {
+        Fixture f;
+        CHECK(f.css("#p { width: 600px; white-space: nowrap }"
+                    "#c { padding: 2px 6px; border: 1px solid black; margin: 0 3px }"));
+        CHECK(f.layout("<body><p id=p>ab <code id=c>cd</code> ef</p></body>"));
+        const Box& c = f.tree[f.find_kind("c", BoxKind::Inline)];
+        // 8px glyphs: "ab " = 24, then margin 3 -> the border edge at 27;
+        // border 1 + padding 6 + "cd" 16 + padding 6 + border 1 = 30 wide.
+        CHECK(near(c.x, 27));
+        CHECK(near(c.width, 30));
+        // " ef" starts after the right margin: 27 + 30 + 3 = 60.
+        const std::vector<BoxId> ls = f.lines("p");
+        double ef_x = -1;
+        for (BoxId r : f.tree.children(ls[0])) {
+            if (f.tree[r].kind == BoxKind::Text && f.tree[r].text == " ") {
+                if (f.tree[r].x > 50) ef_x = f.tree[r].x;
+            }
+        }
+        CHECK(near(ef_x, 60));
+    }
+    {
+        // The edges count toward the max-content width, so a shrink-to-fit
+        // container is wide enough for the padded badge.
+        Fixture f;
+        CHECK(f.css("#w { display: inline-block; white-space: nowrap }"
+                    "#c { padding: 0 6px }"));
+        CHECK(f.layout("<body><div id=p><span id=w>a<code id=c>b</code></span></div></body>"));
+        CHECK(near(f.box("w").width, 8 + 6 + 8 + 6));
+    }
+    {
+        // A box that wraps carries its start edge on the first line and its
+        // end edge on the last only (box-decoration-break: slice).
+        Fixture f;
+        CHECK(f.css("#p { width: 60px }"
+                    "#c { padding: 0 10px }"));
+        CHECK(f.layout("<body><p id=p><code id=c>aaaa bbbb</code></p></body>"));
+        const std::vector<BoxId> ls = f.lines("p");
+        CHECK(ls.size() == 2);
+        // Line 1: padding 10 + "aaaa" 32 = 42 (the space trimmed); line 2:
+        // "bbbb" 32 + padding 10 = 42.
+        const Box& first = f.tree[f.find_kind("c", BoxKind::Inline)];
+        CHECK(near(first.x, 0) && near(first.width, 42));
+    }
 }

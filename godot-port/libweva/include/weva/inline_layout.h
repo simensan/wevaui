@@ -70,10 +70,20 @@ struct InlineItem {
     // a block that block-in-inline splitting moved into a sibling box is empty
     // here but still occupies a point on the line.
     BoxId inline_box_start = kNoBox;
+    // ...and where it ends. CSS 2.1 §10.6.1 / §9.4.2: an inline box's own
+    // horizontal margin, border and padding sit on the line at its start and
+    // end edges, advance the pen, and belong to its first and last fragments.
+    // A `code { padding: 2px 6px }` badge is 12px wider than its text and
+    // pushes what follows it by as much.
+    BoxId inline_box_end = kNoBox;
+    double margin_edge = 0;     // start: margin-left; end: margin-right
+    double decoration = 0;      // start: border-left + padding-left; end: the right pair
 
     bool is_atom() const { return atom_box != kNoBox; }
     bool is_break() const { return break_box != kNoBox; }
     bool is_inline_start() const { return inline_box_start != kNoBox; }
+    bool is_inline_end() const { return inline_box_end != kNoBox; }
+    bool is_marker() const { return is_inline_start() || is_inline_end(); }
 };
 
 // Lays out `container`'s inline content into line boxes, replacing its children.
