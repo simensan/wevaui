@@ -605,7 +605,32 @@ CssValuePtr parse_single(Reader& r) {
 } // namespace
 
 CssValuePtr parse_css_value(std::string_view text, CssParseError* error) {
-    std::vector<CssToken> tokens;
+    // The token buffer is reused across calls rather than grown from empty each
+    // time. Profiling a layout pass (tools/weva_bench --profile) put its
+    // reallocation at the top of every allocation site: a fresh vector doubles
+    // 1-2-4-8 on every parse, and a document's declarations are short enough
+    // that the growth IS the cost.
+    //
+    // Reused, not shared: parse_css_value recurses through parse_single for
+    // function arguments, so a nested call must not reset the buffer its caller
+    // is reading. The depth counter keeps the reuse to the outermost call, and
+    // the engine is single-threaded by design (as are the property registry and
+    // the match cache).
+    // One buffer per nesting level, kept between calls. A nested call must not
+    // reset the buffer its caller is still reading, and giving the nested level
+    // a fresh vector would just move the allocation rather than remove it.
+    static std::vector<std::vector<CssToken>> scratch;
+    static size_t depth = 0;
+    if (depth >= scratch.size()) scratch.resize(depth + 1);
+    std::vector<CssToken>& tokens = scratch[depth];
+    tokens.clear();
+
+    struct DepthGuard {
+        size_t& d;
+        explicit DepthGuard(size_t& x) : d(x) { ++d; }
+        ~DepthGuard() { --d; }
+    } depth_guard(depth);
+
     CssTokenizer tokenizer(text, /*strict=*/true);
     if (!tokenizer.tokenize(&tokens, error)) return nullptr;
 

@@ -1,5 +1,7 @@
 #include "weva/style_resolver.h"
 
+#include <deque>
+
 #include "weva/css_calc.h"
 
 #include <cctype>
@@ -409,8 +411,10 @@ double resolve_border_width(std::string_view raw, double font_size, const Layout
 // and four registry lookups on every box for margin AND padding — the same trap
 // the logical-property tables already exist to avoid.
 const BoxSideValues& box_side_ids(std::string_view shorthand) {
+    // A deque, not a vector: the returned reference has to survive a later
+    // insertion, and a vector would move its elements out from under one.
     struct Entry { std::string name; BoxSideValues ids; };
-    static std::vector<Entry> cache;
+    static std::deque<Entry> cache;
     for (const Entry& e : cache) {
         if (e.name == shorthand) return e.ids;
     }
@@ -451,8 +455,16 @@ BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand) 
             }
         }
     }
+    // Filled in place rather than returning a fresh aggregate: brace-init here
+    // listed only the four strings and silently left the ids at their defaults,
+    // so every caller took the uncached parse path and the memo did nothing for
+    // margin or padding.
     const auto or_zero = [](std::string_view v) { return v.empty() ? std::string_view("0") : v; };
-    return {or_zero(r.top), or_zero(r.right), or_zero(r.bottom), or_zero(r.left)};
+    r.top = or_zero(r.top);
+    r.right = or_zero(r.right);
+    r.bottom = or_zero(r.bottom);
+    r.left = or_zero(r.left);
+    return r;
 }
 
 bool try_resolve_aspect_ratio(const ComputedStyle* style, double* ratio) {

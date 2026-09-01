@@ -42,3 +42,10 @@ add_library(weva STATIC
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags)
+
+# Opt-in frame pointers for tools/weva_bench --profile. Off by default so the
+# shipped library is not slowed by a diagnostic.
+option(WEVA_PROFILE_FRAMES "Keep frame pointers so allocation profiling can walk the stack" OFF)
+if(WEVA_PROFILE_FRAMES)
+    target_compile_options(weva PRIVATE -fno-omit-frame-pointer)
+endif()

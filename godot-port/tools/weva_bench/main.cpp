@@ -27,7 +27,9 @@
 #include "weva/style_resolver.h"
 #include "weva/user_agent_stylesheet.h"
 
+#include <algorithm>
 #include <chrono>
+#include <execinfo.h>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -38,15 +40,72 @@
 #include <vector>
 
 namespace {
+
 bool g_counting = false;
 size_t g_allocations = 0;
 size_t g_bytes = 0;
+
+// Optional per-call-site attribution.
+//
+// The previous attempt at this used hand-placed counters and drew the wrong
+// conclusion from them: parse_css_value is recursive, so a depth flag charges
+// nested parses to their top-level call and the per-site counts do not add up
+// to the total. A backtrace cannot be fooled that way — it records where the
+// allocation actually came from, and the totals reconcile by construction.
+//
+// Off by default: capturing six frames per allocation dominates the timing, so
+// the timed numbers and the attribution are never taken from the same run.
+bool g_profile = false;
+constexpr int kFrames = 6;
+
+struct Site {
+    void* frames[kFrames];
+    int depth;
+    size_t count;
+    size_t bytes;
+};
+Site g_sites[4096];
+size_t g_site_count = 0;
+
+void record_site(size_t size) {
+    void* frames[kFrames + 2];
+    const int n = backtrace(frames, kFrames + 2);
+    // Frame 0 is operator new itself; skip it so sites group by their caller.
+    const int start = n > 1 ? 1 : 0;
+    const int depth = n - start < kFrames ? n - start : kFrames;
+    for (size_t i = 0; i < g_site_count; ++i) {
+        if (g_sites[i].depth != depth) continue;
+        bool same = true;
+        for (int f = 0; f < depth; ++f) {
+            if (g_sites[i].frames[f] != frames[start + f]) { same = false; break; }
+        }
+        if (same) {
+            ++g_sites[i].count;
+            g_sites[i].bytes += size;
+            return;
+        }
+    }
+    if (g_site_count >= 4096) return;
+    Site& site = g_sites[g_site_count++];
+    site.depth = depth;
+    for (int f = 0; f < depth; ++f) site.frames[f] = frames[start + f];
+    site.count = 1;
+    site.bytes = size;
+}
+
 }   // namespace
 
 void* operator new(size_t size) {
     if (g_counting) {
         ++g_allocations;
         g_bytes += size;
+        if (g_profile) {
+            // Re-entrancy guard: backtrace_symbols and the recorder must not
+            // count their own allocations.
+            g_counting = false;
+            record_site(size);
+            g_counting = true;
+        }
     }
     void* p = std::malloc(size ? size : 1);
     // The build disables exceptions, so an allocation failure aborts rather
@@ -102,7 +161,13 @@ int main(int argc, char** argv) {
     }
     const std::string html = read_file(argv[1]);
     const std::string css = argc > 2 ? read_file(argv[2]) : std::string();
-    const int passes = argc > 3 ? std::atoi(argv[3]) : 200;
+    int passes = argc > 3 ? std::atoi(argv[3]) : 200;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--profile") g_profile = true;
+    }
+    // Attribution needs only one measured pass, and the capture makes the
+    // timings meaningless anyway.
+    if (g_profile && passes > 20) passes = 20;
 
     SymbolTable symbols;
     ParseOptions opts;
@@ -178,5 +243,24 @@ int main(int argc, char** argv) {
     std::printf("%-28s %6d boxes  best %7.3f ms  mean %7.3f ms  "
                 "steady-state allocations %zu (%zu bytes)\n",
                 argv[1], boxes, best_ms, total_ms / passes, steady_allocations, steady_bytes);
+    if (g_profile) {
+        std::printf("\n  allocation sites (top 12 of %zu), innermost frame first:\n",
+                    g_site_count);
+        std::vector<size_t> order(g_site_count);
+        for (size_t i = 0; i < g_site_count; ++i) order[i] = i;
+        std::sort(order.begin(), order.end(), [](size_t a, size_t b) {
+            return g_sites[a].count > g_sites[b].count;
+        });
+        for (size_t rank = 0; rank < order.size() && rank < 12; ++rank) {
+            const Site& site = g_sites[order[rank]];
+            std::printf("  %6zu allocs %9zu bytes (%.0f%%)\n", site.count, site.bytes,
+                        steady_allocations ? 100.0 * site.count / steady_allocations : 0.0);
+            char** names = backtrace_symbols(site.frames, site.depth);
+            for (int f = 0; f < site.depth && f < 4; ++f) {
+                std::printf("        %s\n", names ? names[f] : "?");
+            }
+            std::free(names);
+        }
+    }
     return 0;
 }

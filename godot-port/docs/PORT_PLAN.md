@@ -2105,6 +2105,62 @@ zero-allocation target is not met and should not be described as close. What is
 left is the cascade's own value handling rather than layout's re-reads, and it
 needs the same per-site attribution before anything is changed.
 
+### Allocation profiling, and the target is met
+
+`weva_bench --profile` records a backtrace per allocation and groups by call
+site. It exists because the hand-placed counters of the previous tick drew the
+wrong conclusion: `parse_css_value` is recursive, so a depth flag charges nested
+parses to their top-level call and the per-site counts do not reconcile with the
+total. A backtrace reconciles by construction. Frame pointers come from an
+opt-in `WEVA_PROFILE_FRAMES` build so the shipped library carries no cost.
+
+```
+                 baseline    parsed cache   token reuse   ids actually used
+time (best)       7.62 ms        3.57 ms       3.47 ms         2.50 ms
+allocations        74,914         25,035        16,131           2,595
+bytes             10.9 MB        1.88 MB        553 KB          184 KB
+```
+
+**3.0x faster, 28.9x fewer allocations, 59x less garbage.** The C# baseline the
+port set out to beat is 1.42 MB per layout call; this is 184 KB, about 7.7x
+better. The target the plan has carried since Phase 0 is met on this document.
+
+Two changes after the parsed-value cache:
+
+* **The tokenizer's buffer is reused across parses.** A fresh
+  `std::vector<CssToken>` doubles 1→2→4→8 on every call, and declarations are
+  short enough that the growth *is* the cost. One buffer per nesting level,
+  since a nested parse must not reset the one its caller is reading.
+
+* **The box-side ids were being thrown away.** This is the one worth recording.
+
+#### A field added, a construction site missed
+
+`box_sides` was changed last tick to carry the longhand ids so callers could
+read the parsed cache. It computed them correctly and then returned a **freshly
+brace-initialised** `BoxSideValues` listing only the four strings — leaving the
+new id fields at their `kCustomPropertyId` default. Every caller took the
+uncached path, and `margin` and `padding` — read on every box, four sides each —
+got no benefit at all.
+
+Nothing failed. 7,257 checks stayed green, the oracle stayed at 36/47, the
+numbers improved for other reasons, and the change looked like it worked. **The
+profiler is the only thing that found it**: the top allocation sites all read
+`resolve_box_sides_px → resolve_length_cached → parse_css_value`, and
+`resolve_length_cached` only calls `parse_css_value` on the branch where the id
+is absent. Fixing it took 16,131 allocations to 2,595 in one edit.
+
+The general hazard: adding a field to a struct that is built with aggregate
+initialisation anywhere. The compiler is happy, the new field is silently
+default-constructed, and the only symptom is that an optimisation does nothing.
+There was a second instance in the same function — a static cache returning a
+reference into a `std::vector` that a later insertion could move — fixed with a
+`std::deque`.
+
+Remaining: 2,595 allocations a pass, now in `layout_inline_items`' per-call
+vectors rather than anywhere near the value path. That is a scratch-buffer
+change on `BlockLayout` and a separate piece of work.
+
 ## Phase 6 — Flex (~4k LOC)
 
 `Layout/Flex` (3,975). Port the documented deviations deliberately — including
