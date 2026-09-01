@@ -1,5 +1,6 @@
 #pragma once
 #include "weva/css_properties.h"
+#include "weva/css_value.h"
 
 #include <cstdint>
 #include <map>
@@ -19,9 +20,13 @@
 // `(parent & ~child & inheritedMask)` in O(words) instead of scanning every
 // registered id. Both are kept here for the same reason.
 //
-// Not ported: the per-slot parsed-CssValue cache. It is a memo, not
-// semantics, and it interacts with the arena lifetime rules — revisit once
-// the cascade is running and there is something to measure.
+// The per-slot parsed-CssValue cache IS ported, after the measurement this
+// comment used to wait for. `tools/weva_bench` put 97% of a layout pass's
+// heap allocations — 10.9 MB of 11.1 on a 1691-box document — in
+// parse_css_value, because resolve_length re-parsed the raw declaration text
+// on every read, several times per box wherever shrink-to-fit lays a box out
+// repeatedly. The cache is a memo and changes no semantics: the same string
+// parses to the same value.
 
 namespace weva {
 
@@ -74,6 +79,20 @@ public:
     // computed-value time.
     void unset(int property_id);
     void clear();
+
+    // The parsed form of a slot, parsed once and kept. Null when the value does
+    // not parse — a result that is itself cached, so a malformed declaration
+    // costs one parse rather than one per read.
+    //
+    // Resolves through the inherit chain like get() does, and shares the
+    // ancestor's cache entry when it does, so an inherited property is parsed
+    // once for a subtree rather than once per element.
+    //
+    // Lifetime: valid until this style's slot is written or cleared. Layout
+    // reads happen after the cascade has finished, so in practice the value
+    // lives as long as the style.
+    const CssValue* parsed(int property_id) const;
+    const CssValue* parsed(std::string_view property) const;
     int set_count() const { return set_count_; }
     int64_t version() const { return version_; }
 
@@ -87,6 +106,11 @@ private:
     void ensure_capacity(int id);
 
     std::vector<std::string> values_;
+    // Parallel to values_. `parsed_ready_` distinguishes "not parsed yet" from
+    // "parsed, and the result was null" — without it a malformed value would be
+    // re-parsed on every read, which is the case the cache most needs to cover.
+    mutable std::vector<CssValuePtr> parsed_;
+    mutable std::vector<bool> parsed_ready_;
     std::vector<bool> occupied_;
     std::vector<uint64_t> occupied_bits_;
     std::vector<bool> important_;

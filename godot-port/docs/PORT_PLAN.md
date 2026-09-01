@@ -2045,6 +2045,66 @@ either way. The correctness argument stands entirely on its own, which makes it
 a smaller and safer change than it looked — and a lower priority than 10.9 MB a
 frame.
 
+### The parsed-value cache: 2.1x faster, 5.8x less garbage
+
+`ComputedStyle` now memoises the parsed form of each slot, invalidated on
+`set`/`unset`/`clear`. The header had this deferred with "revisit once the
+cascade is running and there is something to measure" — `weva_bench` was that
+measurement, and the answer was 10.9 MB a frame.
+
+```
+                 before      after
+time (best)     7.62 ms    3.57 ms    2.13x
+allocations      74,914     25,035    3.0x fewer
+bytes           10.9 MB    1.88 MB    5.8x less
+```
+
+An inherited property shares the ancestor's cache entry rather than being
+parsed once per element, and a failed parse is cached as a failure so a
+malformed declaration costs one parse rather than one per read.
+
+`box_sides` also stopped building four `std::string` concatenations and doing
+four registry lookups per call — for margin AND padding on every box. The ids
+are computed once per shorthand, which is the same fix the logical-property
+tables already carry.
+
+#### The attribution was wrong twice before it was right
+
+The first pass converted `resolve_length`'s call sites and moved the needle by
+**3.5%** — 74,914 to 72,296. The 97% figure was real but the conclusion drawn
+from it was not: `parse_css_value` is **recursive**, so the depth-flag counter
+attributed nested parses to their top-level call and the per-site call counts
+did not add up to the total. The sites converted were not the hot ones.
+
+Re-measuring per call site found the real distribution: `font_size_px` at 2,567
+top-level parses per pass, `line_height_px` at 712, flex's number reads at 486.
+`font_size_px` alone is called several times per box AND resolves its parent
+recursively. Converting those three took the pass from 7.6 ms to 3.7 ms in one
+step.
+
+The lesson is not "measure" — that part went right. It is that an attribution
+can be arithmetically correct and still point at the wrong fix, and the tell was
+available: the per-site counts summed to half the total, and I should have
+chased that gap before converting anything.
+
+#### The test was wrong too, in both directions
+
+The first version asserted the re-parsed value had a **different address** than
+the old one. It does not have to: the old parse is freed and the allocator may
+hand the same block back. That assertion passed for the wrong reason on one
+build and failed for the wrong reason on the next. It now asserts on the value.
+
+It also assumed `"!!!"` fails to parse. It does not. Removed rather than
+papered over.
+
+Verified by deleting the invalidation in `set()` and confirming the test fails —
+which is now the standing rule for any test written to pin a fix.
+
+Remaining: 25,035 allocations a pass, still ~90% inside `parse_css_value`. The
+zero-allocation target is not met and should not be described as close. What is
+left is the cascade's own value handling rather than layout's re-reads, and it
+needs the same per-site attribution before anything is changed.
+
 ## Phase 6 — Flex (~4k LOC)
 
 `Layout/Flex` (3,975). Port the documented deviations deliberately — including

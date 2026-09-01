@@ -84,7 +84,7 @@ std::optional<double> resolve_offset(const ComputedStyle* style, std::string_vie
     // `auto` is absent, not zero: an absent offset falls back to the static
     // position, a zero one pins to the containing block's edge.
     if (raw.empty() || iequals(raw, "auto")) return std::nullopt;
-    const ResolvedLength r = resolve_length(raw, ctx, font_size, basis);
+    const ResolvedLength r = resolve_length(style, property, ctx, font_size, basis);
     if (r.kind == LengthKind::Length) return r.pixels;
     if (r.kind == LengthKind::Percent) return basis * r.percent * 0.01;
     return std::nullopt;
@@ -110,7 +110,7 @@ bool is_definite_size(const ComputedStyle* style, std::string_view property,
                       const LayoutContext& ctx, double font_size, double basis) {
     const std::string_view raw = get(style, property);
     if (raw.empty() || iequals(raw, "auto")) return false;
-    const ResolvedLength r = resolve_length(raw, ctx, font_size, basis);
+    const ResolvedLength r = resolve_length(style, property, ctx, font_size, basis);
     return r.kind == LengthKind::Length || r.kind == LengthKind::Percent;
 }
 
@@ -236,7 +236,7 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     // which does not know the containing block top-down. This is the first
     // point at which it can be.
     if (has_explicit_size(style, "height") && cb.height > 0) {
-        const ResolvedLength r = resolve_length(get(style, "height"), ctx, fs, cb.height);
+        const ResolvedLength r = resolve_length(style, "height", ctx, fs, cb.height);
         if (r.kind == LengthKind::Length) {
             double h = r.pixels;
             if (!is_border_box(style)) {

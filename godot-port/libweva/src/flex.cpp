@@ -29,10 +29,11 @@ bool iequals(std::string_view a, std::string_view b) {
     return true;
 }
 
-double number_or(std::string_view raw, double fallback) {
-    if (raw.empty()) return fallback;
-    CssParseError err;
-    CssValuePtr v = parse_css_value(raw, &err);
+// Read through the style's parsed cache: flex-grow, flex-shrink and order are
+// read for every item on every pass.
+double number_or(const ComputedStyle* style, std::string_view property, double fallback) {
+    if (!style) return fallback;
+    const CssValue* v = style->parsed(property);
     if (!v || v->kind() != CssValueKind::Number) return fallback;
     return static_cast<const CssNumber&>(*v).value;
 }
@@ -42,7 +43,7 @@ double gap_px(const ComputedStyle* style, std::string_view property, const Layou
               double font_size, double basis) {
     const std::string_view raw = get(style, property);
     if (raw.empty() || iequals(raw, "normal")) return 0;
-    const ResolvedLength r = resolve_length(raw, ctx, font_size, basis);
+    const ResolvedLength r = resolve_length(style, property, ctx, font_size, basis);
     if (r.kind == LengthKind::Length) return std::max(0.0, r.pixels);
     if (r.kind == LengthKind::Percent) return std::max(0.0, basis * r.percent * 0.01);
     return 0;
@@ -109,7 +110,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         Item it;
         it.box = c;
         it.source_index = source_index++;
-        it.order = static_cast<int>(number_or(get(cb.style, "order"), 0));
+        it.order = static_cast<int>(number_or(cb.style, "order", 0));
         items.push_back(it);
     }
     if (items.empty()) return 0;
@@ -127,8 +128,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         Box& b = (*tree)[it.box];
         const ComputedStyle* is = b.style;
 
-        it.grow = std::max(0.0, number_or(get(is, "flex-grow"), 0));
-        it.shrink = std::max(0.0, number_or(get(is, "flex-shrink"), 1));
+        it.grow = std::max(0.0, number_or(is, "flex-grow", 0));
+        it.shrink = std::max(0.0, number_or(is, "flex-shrink", 1));
         it.main_margins = column ? b.margin_top + b.margin_bottom : b.margin_left + b.margin_right;
         it.cross_margins = column ? b.margin_left + b.margin_right : b.margin_top + b.margin_bottom;
 
@@ -138,7 +139,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         if (!basis_raw.empty() && !iequals(basis_raw, "auto") &&
             !iequals(basis_raw, "content")) {
             const ResolvedLength r =
-                resolve_length(basis_raw, ctx, b.font_size > 0 ? b.font_size : font_size,
+                resolve_length(is, "flex-basis", ctx, b.font_size > 0 ? b.font_size : font_size,
                                column ? content_height : content_width);
             if (r.kind == LengthKind::Length) {
                 base = r.pixels;
@@ -164,11 +165,11 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
         const double basis_for_minmax = column ? content_height : content_width;
         const ResolvedLength min_r =
-            resolve_length(get(is, column ? "min-height" : "min-width"), ctx,
+            resolve_length(is, column ? "min-height" : "min-width", ctx,
                            b.font_size > 0 ? b.font_size : font_size, basis_for_minmax);
         if (min_r.kind == LengthKind::Length) it.min_main = std::max(0.0, min_r.pixels);
         const ResolvedLength max_r =
-            resolve_length(get(is, column ? "max-height" : "max-width"), ctx,
+            resolve_length(is, column ? "max-height" : "max-width", ctx,
                            b.font_size > 0 ? b.font_size : font_size, basis_for_minmax);
         if (max_r.kind == LengthKind::Length) it.max_main = std::max(0.0, max_r.pixels);
 

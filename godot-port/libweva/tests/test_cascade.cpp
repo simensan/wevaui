@@ -192,6 +192,42 @@ void test_cascade_compute() {
         CHECK(h.html("<div id=a style='margin-left: 9px; margin: 1px'>x</div>"));
         CHECK(h.value("a", "margin-left") == "1px");
     }
+    // ---- the parsed-value memo tracks the string it describes
+    {
+        // A memo that outlives its value is worse than no memo. These pin the
+        // invalidation, because the win it buys (2.1x on a layout pass) is only
+        // safe if a rewritten slot re-parses.
+        Fixture f;
+        CHECK(f.html("<div id=a>x</div>"));
+        CHECK(f.css("#a { width: 10px }"));
+        ComputedStyle cs;
+        f.engine.compute(*f.id("a"), f.state, nullptr, &cs);
+
+        const int width_id = CssPropertyRegistry::instance().id_of("width");
+        const CssValue* first = cs.parsed(width_id);
+        CHECK(first != nullptr);
+        // The same slot read twice is the same object: that is the whole point.
+        CHECK(cs.parsed(width_id) == first);
+
+        CHECK(first->kind() == CssValueKind::Length);
+        CHECK(static_cast<const CssLength&>(*first).value == 10);
+
+        // Rewriting the slot re-parses. Asserted on the VALUE, not on pointer
+        // identity: the old parse is freed, and the allocator is free to hand
+        // the same address back — an inequality check here passed for the wrong
+        // reason and then failed for the wrong reason too.
+        cs.set(width_id, "20px");
+        const CssValue* second = cs.parsed(width_id);
+        CHECK(second != nullptr && second->kind() == CssValueKind::Length);
+        CHECK(static_cast<const CssLength&>(*second).value == 20);
+
+        // An unset slot falls back to the initial value, and its memo goes with
+        // it rather than continuing to describe the removed one.
+        cs.unset(width_id);
+        const CssValue* third = cs.parsed(width_id);
+        CHECK(third == nullptr || third->kind() != CssValueKind::Length ||
+              static_cast<const CssLength&>(*third).value != 20);
+    }
     // ---- initial values fill everything unset
     {
         Fixture f;

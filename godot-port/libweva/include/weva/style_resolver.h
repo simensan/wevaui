@@ -94,6 +94,29 @@ double line_height_px(const ComputedStyle* style, double font_size, const Layout
 // LengthKind::Percent rather than resolving, so the caller can decide.
 ResolvedLength resolve_length(std::string_view raw, const LayoutContext& ctx, double font_size,
                               std::optional<double> basis_px, double line_height = 0);
+
+// The same, over a value the caller already has parsed. resolve_length's string
+// form parses on every call, which tools/weva_bench measured as 97% of a layout
+// pass's heap allocations.
+ResolvedLength resolve_length_value(const CssValue* value, const LayoutContext& ctx,
+                                    double font_size,
+                                    std::optional<double> basis_px = std::nullopt,
+                                    double line_height = 0);
+
+// The form layout should use: reads the property through the style's parsed
+// cache, so a value is parsed once per style rather than once per read.
+ResolvedLength resolve_length(const ComputedStyle* style, std::string_view property,
+                              const LayoutContext& ctx, double font_size,
+                              std::optional<double> basis_px = std::nullopt,
+                              double line_height = 0);
+
+// By id, which also skips the registry name lookup. kCustomPropertyId reads as
+// "no cached slot" and falls back to parsing `raw`.
+ResolvedLength resolve_length_cached(const ComputedStyle* style, int property_id,
+                                     std::string_view raw, const LayoutContext& ctx,
+                                     double font_size,
+                                     std::optional<double> basis_px = std::nullopt,
+                                     double line_height = 0);
 // Auto, none and an unresolved percentage all yield `fallback`.
 double resolve_length_px(std::string_view raw, double fallback, const LayoutContext& ctx,
                          double font_size, std::optional<double> basis_px);
@@ -104,6 +127,11 @@ double resolve_border_width(std::string_view raw, double font_size, const Layout
 
 struct BoxSideValues {
     std::string_view top, right, bottom, left;
+    // The longhand ids the four values came from, or kCustomPropertyId when the
+    // value came from the shorthand fallback instead. A caller with an id can
+    // read the style's PARSED cache rather than re-parsing the string.
+    int top_id = kCustomPropertyId, right_id = kCustomPropertyId;
+    int bottom_id = kCustomPropertyId, left_id = kCustomPropertyId;
 };
 // Longhands win; the shorthand is consulted only when all four longhands are
 // at their initial value. Returned views borrow the style's storage.

@@ -141,8 +141,10 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
     const double fallback = parent_fs > 0 ? parent_fs : ctx.root_font_size_px;
     if (raw.empty()) return fallback;
 
-    CssParseError err;
-    CssValuePtr v = parse_css_value(raw, &err);
+    // Through the style's parsed cache: font_size_px is called for every box
+    // several times over, and re-parsing its declaration was the single largest
+    // remaining source of per-frame allocation.
+    const CssValue* v = style->parsed("font-size");
     if (!v) return fallback;
 
     if (const std::string_view id = identifier_of(*v); !id.empty()) {
@@ -193,8 +195,7 @@ double line_height_px(const ComputedStyle* style, double font_size, const Layout
         metrics ? metrics->line_height(font_size) : font_size * kDefaultLineHeightFactor;
     if (raw.empty()) return fallback;
 
-    CssParseError err;
-    CssValuePtr v = parse_css_value(raw, &err);
+    const CssValue* v = style->parsed("line-height");
     if (!v) return fallback;
 
     // `normal` — and any other keyword — falls through to the font-derived
@@ -230,21 +231,35 @@ double line_height_px(const ComputedStyle* style, double font_size, const Layout
     }
 }
 
-ResolvedLength resolve_length(std::string_view raw, const LayoutContext& ctx, double font_size,
-                              std::optional<double> basis_px, double line_height) {
-    if (raw.empty()) return ResolvedLength::automatic();
-    if (raw == "auto") return ResolvedLength::automatic();
-    if (raw == "none") return ResolvedLength::none();
-    // CSS Sizing L3 §5 intrinsic keywords. Nothing outside shrink-to-fit
-    // computes intrinsic sizes yet, so they degrade to auto — checked before
-    // parsing to keep the common case off the value-parser path.
-    if (raw == "min-content" || raw == "max-content" || raw == "fit-content") {
-        return ResolvedLength::automatic();
-    }
+namespace {
 
-    CssParseError err;
-    CssValuePtr v = parse_css_value(raw, &err);
-    if (!v) return ResolvedLength::invalid();
+// The keyword fast path, shared by both entry points. It is checked before any
+// parsed value is consulted because `auto` is by far the commonest declaration
+// in a document and there is nothing to gain from looking at its parse.
+//
+// Returns true when `raw` alone settles the answer.
+bool resolve_length_keyword(std::string_view raw, ResolvedLength* out) {
+    if (raw.empty() || raw == "auto") { *out = ResolvedLength::automatic(); return true; }
+    if (raw == "none") { *out = ResolvedLength::none(); return true; }
+    // CSS Sizing L3 §5 intrinsic keywords. Nothing outside shrink-to-fit
+    // computes intrinsic sizes yet, so they degrade to auto.
+    if (raw == "min-content" || raw == "max-content" || raw == "fit-content") {
+        *out = ResolvedLength::automatic();
+        return true;
+    }
+    return false;
+}
+
+} // namespace
+
+// The resolve half, over an ALREADY-PARSED value. Split out so a caller with a
+// cached parse never re-parses: re-parsing here was 97% of a layout pass's heap
+// allocations (see tools/weva_bench).
+ResolvedLength resolve_length_value(const CssValue* value, const LayoutContext& ctx,
+                                    double font_size, std::optional<double> basis_px,
+                                    double line_height) {
+    if (!value) return ResolvedLength::invalid();
+    const CssValue* v = value;
 
     if (const std::string_view id = identifier_of(*v); !id.empty()) {
         if (iequals(id, "auto")) return ResolvedLength::automatic();
@@ -309,6 +324,40 @@ ResolvedLength resolve_length(std::string_view raw, const LayoutContext& ctx, do
     }
 }
 
+ResolvedLength resolve_length(std::string_view raw, const LayoutContext& ctx, double font_size,
+                              std::optional<double> basis_px, double line_height) {
+    ResolvedLength keyword;
+    if (resolve_length_keyword(raw, &keyword)) return keyword;
+    CssParseError err;
+    const CssValuePtr v = parse_css_value(raw, &err);
+    return resolve_length_value(v.get(), ctx, font_size, basis_px, line_height);
+}
+
+ResolvedLength resolve_length_cached(const ComputedStyle* style, int property_id,
+                                     std::string_view raw, const LayoutContext& ctx,
+                                     double font_size, std::optional<double> basis_px,
+                                     double line_height) {
+    ResolvedLength keyword;
+    if (resolve_length_keyword(raw, &keyword)) return keyword;
+    if (!style || property_id == kCustomPropertyId) {
+        CssParseError err;
+        const CssValuePtr v = parse_css_value(raw, &err);
+        return resolve_length_value(v.get(), ctx, font_size, basis_px, line_height);
+    }
+    return resolve_length_value(style->parsed(property_id), ctx, font_size, basis_px,
+                                line_height);
+}
+
+ResolvedLength resolve_length(const ComputedStyle* style, std::string_view property,
+                              const LayoutContext& ctx, double font_size,
+                              std::optional<double> basis_px, double line_height) {
+    if (!style) return ResolvedLength::automatic();
+    const std::string_view raw = style->get(property);
+    ResolvedLength keyword;
+    if (resolve_length_keyword(raw, &keyword)) return keyword;
+    return resolve_length_value(style->parsed(property), ctx, font_size, basis_px, line_height);
+}
+
 double resolve_length_px(std::string_view raw, double fallback, const LayoutContext& ctx,
                          double font_size, std::optional<double> basis_px) {
     const ResolvedLength r = resolve_length(raw, ctx, font_size, basis_px);
@@ -355,13 +404,33 @@ double resolve_border_width(std::string_view raw, double font_size, const Layout
     }
 }
 
+// The four longhand ids for a shorthand, resolved once per shorthand rather
+// than per call. Building the names here cost four std::string concatenations
+// and four registry lookups on every box for margin AND padding — the same trap
+// the logical-property tables already exist to avoid.
+const BoxSideValues& box_side_ids(std::string_view shorthand) {
+    struct Entry { std::string name; BoxSideValues ids; };
+    static std::vector<Entry> cache;
+    for (const Entry& e : cache) {
+        if (e.name == shorthand) return e.ids;
+    }
+    auto& reg = CssPropertyRegistry::instance();
+    const std::string sh(shorthand);
+    BoxSideValues ids;
+    ids.top_id = reg.id_of(sh + "-top");
+    ids.right_id = reg.id_of(sh + "-right");
+    ids.bottom_id = reg.id_of(sh + "-bottom");
+    ids.left_id = reg.id_of(sh + "-left");
+    cache.push_back({sh, ids});
+    return cache.back().ids;
+}
+
 BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand) {
-    const std::string sh_name(shorthand);
-    BoxSideValues r;
-    r.top = get(style, sh_name + "-top");
-    r.right = get(style, sh_name + "-right");
-    r.bottom = get(style, sh_name + "-bottom");
-    r.left = get(style, sh_name + "-left");
+    BoxSideValues r = box_side_ids(shorthand);
+    r.top = style ? style->get(r.top_id) : std::string_view();
+    r.right = style ? style->get(r.right_id) : std::string_view();
+    r.bottom = style ? style->get(r.bottom_id) : std::string_view();
+    r.left = style ? style->get(r.left_id) : std::string_view();
 
     // The shorthand is a fallback, not an override: a longhand that is set to
     // anything but its initial value wins outright. Shorthand expansion is not
@@ -371,6 +440,8 @@ BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand) 
         const std::string_view sh = get(style, shorthand);
         if (!sh.empty() && sh != "0") {
             const std::vector<std::string_view> parts = split_top_level(sh);
+            // These came from the shorthand, so they have no longhand slot to
+            // memoise against; the default ids say so.
             switch (parts.size()) {
                 case 1: return {parts[0], parts[0], parts[0], parts[0]};
                 case 2: return {parts[0], parts[1], parts[0], parts[1]};

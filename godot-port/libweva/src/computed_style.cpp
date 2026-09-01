@@ -14,6 +14,8 @@ void ComputedStyle::ensure_capacity(int id) {
     auto need = static_cast<std::size_t>(id) + 1;
     if (values_.size() >= need) return;
     values_.resize(need);
+    parsed_.resize(need);
+    parsed_ready_.resize(need, false);
     occupied_.resize(need, false);
     important_.resize(need, false);
     occupied_bits_.resize((need + 63) / 64, 0);
@@ -53,6 +55,9 @@ void ComputedStyle::set(int id, std::string_view value) {
         ++set_count_;
     }
     values_[i] = std::string(value);
+    // The memo describes the old string.
+    parsed_[i].reset();
+    parsed_ready_[i] = false;
     version_ = next_version();
 }
 
@@ -103,12 +108,50 @@ bool ComputedStyle::contains(std::string_view property) const {
     return parent_ && parent_->contains(property);
 }
 
+const CssValue* ComputedStyle::parsed(int id) const {
+    if (id < 0) return nullptr;
+    const auto& reg = CssPropertyRegistry::instance();
+    if (!contains(id)) {
+        // Share the ancestor's entry rather than parsing the same inherited
+        // string again at every level of the subtree.
+        if (parent_ && reg.is_inherited(id)) return parent_->parsed(id);
+        // An initial value is shared and immutable, but the memo lives on the
+        // style, so it is cached here like any other slot. The registry has no
+        // storage of its own to hang it from.
+    }
+    const auto i = static_cast<std::size_t>(id);
+    if (i >= parsed_ready_.size()) {
+        // ensure_capacity is non-const; the memo is the only mutable state, so
+        // it is grown directly.
+        const std::size_t need = i + 1;
+        parsed_.resize(need);
+        parsed_ready_.resize(need, false);
+    }
+    if (!parsed_ready_[i]) {
+        CssParseError err;
+        const std::string_view raw = get(id);
+        parsed_[i] = raw.empty() ? nullptr : parse_css_value(raw, &err);
+        parsed_ready_[i] = true;
+    }
+    return parsed_[i].get();
+}
+
+const CssValue* ComputedStyle::parsed(std::string_view property) const {
+    const int id = CssPropertyRegistry::instance().id_of(property);
+    // A custom property has no slot to memoise against; it is parsed on demand
+    // by the variable resolver rather than here.
+    if (id == kCustomPropertyId) return nullptr;
+    return parsed(id);
+}
+
 void ComputedStyle::unset(int id) {
     if (!contains(id)) return;
     auto i = static_cast<std::size_t>(id);
     occupied_[i] = false;
     occupied_bits_[i >> 6] &= ~(1ULL << (i & 63));
     values_[i].clear();
+    parsed_[i].reset();
+    parsed_ready_[i] = false;
     important_[i] = false;
     --set_count_;
     version_ = next_version();
@@ -117,6 +160,8 @@ void ComputedStyle::unset(int id) {
 void ComputedStyle::clear() {
     parent_ = nullptr;
     values_.clear();
+    parsed_.clear();
+    parsed_ready_.clear();
     occupied_.clear();
     occupied_bits_.clear();
     important_.clear();
