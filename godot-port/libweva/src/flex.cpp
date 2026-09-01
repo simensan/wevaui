@@ -198,6 +198,27 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         const double minmax_frame = is_border_box(is) ? 0 : main_frame;
         if (min_r.kind == LengthKind::Length) {
             it.min_main = std::max(0.0, min_r.pixels) + minmax_frame;
+        } else if (column && (min_r.kind == LengthKind::Auto || get(is, "min-height").empty())) {
+            // §4.5, the automatic minimum size: `min-height: auto` on a column
+            // item is its content-based minimum unless it is a scroll
+            // container. A `height: 100vh; overflow: auto` app shell whose
+            // content overflows was shrinking its topbar to its padding and a
+            // quest card to 40px less than its own children; the container
+            // is what overflows (and scrolls), not the items.
+            //
+            // The laid-out height at this point is the content height (or the
+            // specified one, which the spec bounds the minimum by anyway).
+            // Row items are not yet covered: their minimum is the min-content
+            // WIDTH, which needs a probe this pass does not run.
+            const std::string_view oy = get(is, "overflow-y");
+            const std::string_view ox = get(is, "overflow-x");
+            const bool scroll_container =
+                (!oy.empty() && !iequals(oy, "visible") && !iequals(oy, "clip")) ||
+                (!ox.empty() && !iequals(ox, "visible") && !iequals(ox, "clip"));
+            // Only an AUTO height is its content: an explicit `height: 80px` on
+            // an empty item has a content size of zero and shrinks freely.
+            const bool auto_main = size_raw.empty() || iequals(size_raw, "auto");
+            if (!scroll_container && auto_main) it.min_main = std::max(it.min_main, b.height);
         }
         const ResolvedLength max_r =
             resolve_length(is, column ? "max-height" : "max-width", ctx,

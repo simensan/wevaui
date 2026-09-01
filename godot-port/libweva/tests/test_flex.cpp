@@ -615,3 +615,32 @@ void test_flex_wrap() {
         CHECK(near(g.box("b").y, 100));
     }
 }
+
+void test_flex_column_items_do_not_shrink_below_their_content() {
+    // §4.5: `min-height: auto` on a column item is its content height, so a
+    // fixed-height column whose content overflows keeps its items whole and
+    // overflows itself; `min-height: 0` or a scroll container lets them
+    // shrink.
+    {
+        Fixture f;
+        CHECK(f.css("#col { display: flex; flex-direction: column; height: 100px; width: 200px }"
+                    "#a { padding: 14px 0 } #a-in { height: 34px }"
+                    "#b { height: 80px } #c { height: 80px }"));
+        CHECK(f.layout("<body><div id=col><div id=a><div id=a-in></div></div><div id=b></div>"
+                       "<div id=c></div></div></body>"));
+        // a's content (62) is its minimum and it stays whole; b and c have an
+        // explicit height and no content, so their minimum is 0 and they take
+        // the whole 122 of negative space between them.
+        CHECK(near(f.box("a").height, 62));
+        CHECK(near(f.box("b").height, 19));
+        CHECK(near(f.box("c").y, 81));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#col { display: flex; flex-direction: column; height: 100px; width: 200px }"
+                    "#b { height: 80px; min-height: 0 } #c { height: 80px; overflow: auto }"));
+        CHECK(f.layout("<body><div id=col><div id=b></div><div id=c></div></div></body>"));
+        CHECK(near(f.box("b").height, 50));
+        CHECK(near(f.box("c").height, 50));
+    }
+}

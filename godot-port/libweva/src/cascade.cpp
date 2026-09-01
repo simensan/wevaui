@@ -409,12 +409,16 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 if (auto d = parse_at_property_rule(*ar)) property_registry_.register_descriptor(*d);
                 continue;
             } else if (ar->name == "container") {
-                // @container needs per-element container sizes, which the
-                // layout engine has not been ported to supply. Skipping the
-                // body would hide styles that should apply; applying it
-                // unconditionally shows styles that may not. Applying is the
-                // less-wrong default for a UI toolkit, and it is recorded in
-                // PORT_PLAN.md rather than left to be discovered.
+                // @container needs per-element container sizes, which only a
+                // layout pass can supply. The reference evaluates these rules
+                // through a box-lookup hook that is null until a box tree
+                // exists, so in its single headless pass — the oracle — they
+                // never apply. Applying them unconditionally here put a card's
+                // `@container card (min-width: 280px) { h2 { font-size: 22px } }`
+                // on every page the reference lays out at 18px. Skipped until
+                // both engines have the layout-then-restyle loop this needs;
+                // Chrome applies them, and this is recorded in PORT_PLAN.md.
+                continue;
             }
             compile_rules(ar->nested_rules, origin, source_index, layer_ordinal);
         }
