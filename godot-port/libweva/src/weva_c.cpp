@@ -6,6 +6,7 @@
 #include "weva/font_interface.h"
 #include "weva/font_metrics.h"
 #include "weva/glyph_atlas.h"
+#include "weva/tessellate.h"
 #include "weva/html.h"
 #include "weva/paint.h"
 #include "weva/positioning.h"
@@ -61,6 +62,18 @@ public:
             v.position.y += t.y;
         }
         d.indices = it->second.second;
+        // A scissor is applied to the geometry itself, so a host whose canvas
+        // cannot clip per draw (Godot's clips per item, and its compatibility
+        // renderer lost every draw after a clipped sibling) needs nothing. The
+        // rect is still published for hosts that can.
+        if (scissor_) {
+            Mesh clipped;
+            clip_triangles(d.vertices, d.indices,
+                           Rect(scissor_->x, scissor_->y, scissor_->width, scissor_->height), &clipped);
+            if (clipped.empty()) return;
+            d.vertices = std::move(clipped.vertices);
+            d.indices = std::move(clipped.indices);
+        }
         d.texture = tex.id;
         d.scissor = scissor_;
         draws.push_back(std::move(d));

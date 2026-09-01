@@ -169,6 +169,7 @@ void test_tessellate_rounded();
 void test_radii_clamping();
 void test_tessellate_border();
 void test_paint_decorations();
+void test_clip_triangles();
 void test_paint_tree_calls();
 void test_software_raster_coverage();
 void test_software_fill_rule();
@@ -362,6 +363,7 @@ int main() {
     test_radii_clamping();
     test_tessellate_border();
     test_paint_decorations();
+    test_clip_triangles();
     test_paint_tree_calls();
     test_software_raster_coverage();
     test_software_fill_rule();

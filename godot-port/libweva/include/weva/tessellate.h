@@ -47,6 +47,14 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
 BorderRadii inset_radii(const BorderRadii& r, double top, double right, double bottom,
                         double left);
 
+// Clips a triangle list to `rect` (Sutherland–Hodgman per triangle, colour and
+// texture coordinates interpolated), appending the pieces to `out`. Triangles
+// wholly inside pass through; wholly outside vanish. This is how a scissor
+// reaches a host whose canvas cannot clip per draw: the geometry arrives
+// already cut.
+void clip_triangles(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
+                    const Rect& rect, Mesh* out);
+
 // CSS Backgrounds §5.5: when adjacent radii overlap along an edge, every radius
 // is scaled by the same factor until they fit. Scaling per corner instead would
 // change the shape's proportions.

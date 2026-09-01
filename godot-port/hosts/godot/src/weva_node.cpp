@@ -212,10 +212,16 @@ void WevaDocument::_draw() {
 
     size_t count = 0;
     const weva_draw* draws = weva_document_draws(doc_, &count);
+    RenderingServer* rs = RenderingServer::get_singleton();
     for (size_t i = 0; i < count; ++i) {
         const weva_draw& d = draws[i];
         if (d.vertex_count == 0 || d.index_count == 0) continue;
 
+        // The core clips scissored geometry before publishing it, so every
+        // draw goes on this one canvas item in order. (Per-item clipping via
+        // canvas_item_set_clip was tried: the compatibility renderer dropped
+        // every draw after a clipped sibling item.)
+        //
         // draw_polygon takes a polygon OUTLINE and triangulates it, so feeding
         // it a triangle soup produces garbage where it does not fail outright
         // ("Invalid polygon data, triangulation failed"). canvas_item_add_
@@ -253,9 +259,8 @@ void WevaDocument::_draw() {
             const auto it = textures_.find(d.texture_id);
             if (it != textures_.end() && it->second.is_valid()) texture = it->second->get_rid();
         }
-        RenderingServer::get_singleton()->canvas_item_add_triangle_array(
-            get_canvas_item(), indices, points, colors, uvs, PackedInt32Array(),
-            PackedFloat32Array(), texture);
+        rs->canvas_item_add_triangle_array(get_canvas_item(), indices, points, colors, uvs,
+                                           PackedInt32Array(), PackedFloat32Array(), texture);
     }
 }
 

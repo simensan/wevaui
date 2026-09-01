@@ -170,3 +170,91 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
 }
 
 } // namespace weva
+
+namespace weva {
+
+namespace {
+
+Vertex lerp_vertex(const Vertex& a, const Vertex& b, double t) {
+    Vertex v;
+    const float ft = static_cast<float>(t);
+    v.position = {a.position.x + (b.position.x - a.position.x) * ft,
+                  a.position.y + (b.position.y - a.position.y) * ft};
+    v.color = LinearColor(a.color.r + (b.color.r - a.color.r) * ft,
+                          a.color.g + (b.color.g - a.color.g) * ft,
+                          a.color.b + (b.color.b - a.color.b) * ft,
+                          a.color.a + (b.color.a - a.color.a) * ft);
+    v.tex_coord = {a.tex_coord.x + (b.tex_coord.x - a.tex_coord.x) * ft,
+                   a.tex_coord.y + (b.tex_coord.y - a.tex_coord.y) * ft};
+    return v;
+}
+
+// Clips a convex polygon against one half-plane: keep where `side(p) >= 0`.
+template <typename Side, typename At>
+void clip_edge(const std::vector<Vertex>& in, std::vector<Vertex>* out, Side side, At at) {
+    out->clear();
+    const size_t n = in.size();
+    for (size_t i = 0; i < n; ++i) {
+        const Vertex& cur = in[i];
+        const Vertex& prev = in[(i + n - 1) % n];
+        const double dc = side(cur), dp = side(prev);
+        if (dc >= 0) {
+            if (dp < 0) out->push_back(lerp_vertex(prev, cur, at(prev, cur)));
+            out->push_back(cur);
+        } else if (dp >= 0) {
+            out->push_back(lerp_vertex(prev, cur, at(prev, cur)));
+        }
+    }
+}
+
+} // namespace
+
+void clip_triangles(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices,
+                    const Rect& rect, Mesh* out) {
+    const double x0 = rect.x, y0 = rect.y, x1 = rect.x + rect.width, y1 = rect.y + rect.height;
+    std::vector<Vertex> poly, scratch;
+    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+        const Vertex& a = vertices[indices[i]];
+        const Vertex& b = vertices[indices[i + 1]];
+        const Vertex& c = vertices[indices[i + 2]];
+        const double minx = std::min({a.position.x, b.position.x, c.position.x});
+        const double maxx = std::max({a.position.x, b.position.x, c.position.x});
+        const double miny = std::min({a.position.y, b.position.y, c.position.y});
+        const double maxy = std::max({a.position.y, b.position.y, c.position.y});
+        if (maxx <= x0 || minx >= x1 || maxy <= y0 || miny >= y1) continue;
+        if (minx >= x0 && maxx <= x1 && miny >= y0 && maxy <= y1) {
+            const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+            out->vertices.push_back(a);
+            out->vertices.push_back(b);
+            out->vertices.push_back(c);
+            out->indices.insert(out->indices.end(), {base, base + 1, base + 2});
+            continue;
+        }
+        poly = {a, b, c};
+        // Left, right, top, bottom.
+        clip_edge(poly, &scratch, [x0](const Vertex& v) { return v.position.x - x0; },
+                  [x0](const Vertex& p, const Vertex& q) { return (x0 - p.position.x) / (q.position.x - p.position.x); });
+        poly.swap(scratch);
+        if (poly.empty()) continue;
+        clip_edge(poly, &scratch, [x1](const Vertex& v) { return x1 - v.position.x; },
+                  [x1](const Vertex& p, const Vertex& q) { return (x1 - p.position.x) / (q.position.x - p.position.x); });
+        poly.swap(scratch);
+        if (poly.empty()) continue;
+        clip_edge(poly, &scratch, [y0](const Vertex& v) { return v.position.y - y0; },
+                  [y0](const Vertex& p, const Vertex& q) { return (y0 - p.position.y) / (q.position.y - p.position.y); });
+        poly.swap(scratch);
+        if (poly.empty()) continue;
+        clip_edge(poly, &scratch, [y1](const Vertex& v) { return y1 - v.position.y; },
+                  [y1](const Vertex& p, const Vertex& q) { return (y1 - p.position.y) / (q.position.y - p.position.y); });
+        poly.swap(scratch);
+        if (poly.size() < 3) continue;
+        const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+        for (const Vertex& v : poly) out->vertices.push_back(v);
+        for (size_t k = 1; k + 1 < poly.size(); ++k) {
+            out->indices.insert(out->indices.end(),
+                                {base, base + static_cast<uint32_t>(k), base + static_cast<uint32_t>(k + 1)});
+        }
+    }
+}
+
+} // namespace weva

@@ -137,6 +137,14 @@ int main(int argc, char** argv) {
                 break;
             }
         }
+        // WEVA_RENDER_TRACE=1 prints every draw with its scissor: the quickest
+        // way to see what a host is handed when its clipping misbehaves.
+        if (std::getenv("WEVA_RENDER_TRACE")) {
+            std::fprintf(stderr, "draw %zu: %zu verts, texture %llu, scissor %s %d,%d %dx%d\n", i,
+                         static_cast<size_t>(d.vertex_count),
+                         static_cast<unsigned long long>(d.texture_id), d.has_scissor ? "on" : "off",
+                         d.scissor_x, d.scissor_y, d.scissor_width, d.scissor_height);
+        }
         if (d.has_scissor) {
             const weva::Recti r{d.scissor_x, d.scissor_y, d.scissor_width, d.scissor_height};
             renderer.set_scissor(&r);

@@ -324,3 +324,39 @@ void test_paint_tree_calls() {
     // Boxes are painted in tree order, so `a` precedes `b` on screen.
     CHECK(backend.draws[0].vertices[0].position.y < backend.draws[1].vertices[0].position.y);
 }
+
+void test_clip_triangles() {
+    // A quad straddling the rect's right edge is cut at it; one inside passes
+    // through untouched; one outside vanishes. Colour and UV interpolate.
+    Mesh quad;
+    Vertex v[4];
+    const float xs[4] = {0, 100, 100, 0}, ys[4] = {0, 0, 50, 50};
+    for (int i = 0; i < 4; ++i) {
+        v[i].position = {xs[i], ys[i]};
+        v[i].color = LinearColor(xs[i] / 100.0f, 0, 0, 1);
+        v[i].tex_coord = {xs[i] / 100.0f, ys[i] / 50.0f};
+        quad.vertices.push_back(v[i]);
+    }
+    quad.indices = {0, 1, 2, 0, 2, 3};
+
+    Mesh out;
+    clip_triangles(quad.vertices, quad.indices, Rect(0, 0, 60, 100), &out);
+    CHECK(!out.empty());
+    double max_x = 0, max_u = 0;
+    for (const Vertex& p : out.vertices) {
+        max_x = std::max<double>(max_x, p.position.x);
+        max_u = std::max<double>(max_u, p.tex_coord.x);
+        CHECK(p.position.x <= 60 + 1e-3);   // float positions
+        CHECK(std::fabs(p.color.r - p.position.x / 100.0) < 1e-5);
+    }
+    CHECK(std::fabs(max_x - 60) < 1e-3);
+    CHECK(std::fabs(max_u - 0.6) < 1e-4);
+
+    Mesh inside;
+    clip_triangles(quad.vertices, quad.indices, Rect(-10, -10, 200, 200), &inside);
+    CHECK(inside.vertices.size() == 6 && inside.indices.size() == 6);
+
+    Mesh outside;
+    clip_triangles(quad.vertices, quad.indices, Rect(200, 200, 10, 10), &outside);
+    CHECK(outside.empty());
+}
