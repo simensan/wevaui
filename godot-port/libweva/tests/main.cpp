@@ -18,6 +18,7 @@ void test_computed_style();
 void test_lazy_inheritance();
 void test_cascade_order();
 void test_cascade_compute();
+void test_cascade_layers();
 void test_variables();
 void test_variables_in_cascade();
 void test_media_queries();
@@ -232,6 +233,7 @@ int main() {
     test_lazy_inheritance();
     test_cascade_order();
     test_cascade_compute();
+    test_cascade_layers();
     test_variables();
     test_variables_in_cascade();
     test_media_queries();

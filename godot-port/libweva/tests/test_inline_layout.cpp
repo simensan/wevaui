@@ -610,7 +610,13 @@ void test_inline_atoms() {
         // and the line carries the offset down the page.
         CHECK(f.tree[f.find("a")].parent == ls[1]);
         CHECK(near(f.tree[ls[1]].y, 19.2));
-        CHECK(near(f.box("a").y, 0));
+        // CSS 2.1 §10.8: the second line still carries the block's strut even
+        // though no text lands on it, so the 10px atom sits on the baseline
+        // with the strut's ascent above it — not flush with the line's top.
+        // Verified against Chrome on this exact markup: it puts the span 3px
+        // into a second line that is a full line-height tall. Before the strut
+        // existed the line was exactly the atom's 10px and this read 0.
+        CHECK(near(f.box("a").y, f.metrics.ascent(16) - 10));
     }
 }
 

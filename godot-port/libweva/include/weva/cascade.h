@@ -145,6 +145,18 @@ private:
     };
     void compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
                        int* source_index, int layer_ordinal);
+
+    // CSS Cascade 5 §6.4.4. Cascade layers, in the order they were first named
+    // — by an `@layer a, b, c;` statement or by the first `@layer a { ... }`
+    // block that mentions them. The ordinal IS the index, so a later layer wins
+    // for normal declarations and loses for `!important`, which is what
+    // compare_declarations already implements. Unlayered rules keep
+    // kUnlayeredOrdinal and so beat every layer.
+    std::vector<std::string> layer_names_;
+    // The enclosing layer's full name while compiling a nested `@layer` block,
+    // so `@layer a { @layer b { ... } }` names the inner layer `a.b`.
+    std::string layer_prefix_;
+    int layer_ordinal_for(std::string_view name);
     // Resolves one element's custom properties: CSS-wide keywords, `@property`
     // syntax validation, and initial-value seeding. Runs before substitution.
     void resolve_custom_properties(ComputedStyle* out, const ComputedStyle* parent) const;

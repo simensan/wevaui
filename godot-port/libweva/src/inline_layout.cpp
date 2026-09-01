@@ -316,6 +316,28 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         }
     }
 
+    // CSS 2.1 §10.8: every line box contains a "strut" — a zero-width inline
+    // box with the containing block's font and line-height. Nothing here
+    // created one, so a line holding ONLY an inline-block came out exactly the
+    // atom's height: the block's own text descent below the atom's baseline
+    // went missing. A `<button>` whose label wraps to two lines inside an
+    // explicit 40px height has its baseline (its LAST line's) at its bottom
+    // edge, so the strut's descent is all that sits below — Chrome puts that
+    // line at 44.56 and this produced 40, which is menu.html's `.card` coming
+    // out 108.57 against the reference's and Chrome's 113.
+    const FontMetrics* const strut_metrics =
+        line_height_style ? metrics_for_style(ctx, line_height_style) : nullptr;
+    const FontMetrics& strut_fm = strut_metrics ? *strut_metrics : metrics;
+    const double strut_font_size =
+        line_height_style
+            ? font_size_px(line_height_style,
+                           cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr, ctx)
+            : ctx.root_font_size_px;
+    const double strut_ascent = strut_fm.ascent(strut_font_size);
+    const double strut_descent = strut_fm.descent(strut_font_size);
+    const double strut_leading =
+        declared_line_height ? *declared_line_height : strut_fm.line_height(strut_font_size);
+
     // One fragment of text placed on the line being built.
     struct Fragment {
         const InlineItem* item;
@@ -378,9 +400,11 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     begin_line_at(y);
 
     const auto reset_line_metrics = [&] {
-        max_ascent = 0;
-        max_descent = 0;
-        max_leading = 0;
+        // Seeded with the strut, not with zero: the containing block's own
+        // font is present on every line whether or not any text lands there.
+        max_ascent = strut_ascent;
+        max_descent = strut_descent;
+        max_leading = strut_leading;
     };
     // Markers are not content: a line holding only the opening of an inline
     // box is still at its start for the purposes of dropping a leading

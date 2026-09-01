@@ -184,6 +184,8 @@ void CascadeEngine::clear() {
     rules_.clear();
     property_registry_.clear();
     pseudo_rules_.clear();
+    layer_names_.clear();
+    layer_prefix_.clear();
     shape_cache_.clear();
     cache_unsafe_sibling_composition_ = false;
     cache_unsafe_has_ = false;
@@ -361,6 +363,31 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     return h == 0 ? 1 : h;   // never collide with the "do not cache" sentinel
 }
 
+namespace {
+
+std::string_view trim_ascii(std::string_view s) {
+    size_t b = 0, e = s.size();
+    while (b < e && (s[b] == ' ' || s[b] == '\t' || s[b] == '\n' || s[b] == '\r')) ++b;
+    while (e > b && (s[e - 1] == ' ' || s[e - 1] == '\t' || s[e - 1] == '\n' ||
+                     s[e - 1] == '\r')) {
+        --e;
+    }
+    return s.substr(b, e - b);
+}
+
+} // namespace
+
+// The ordinal for a layer name, registering it at the end if this is the first
+// time it has been named. First mention fixes the order; reopening a layer
+// later does not move it.
+int CascadeEngine::layer_ordinal_for(std::string_view name) {
+    for (size_t i = 0; i < layer_names_.size(); ++i) {
+        if (layer_names_[i] == name) return static_cast<int>(i);
+    }
+    layer_names_.emplace_back(name);
+    return static_cast<int>(layer_names_.size() - 1);
+}
+
 void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
                                   int* source_index, int layer_ordinal) {
     for (const auto& r : rules) {
@@ -407,6 +434,51 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 // descriptor and is otherwise inert, so it is dropped here
                 // rather than at parse time.
                 if (auto d = parse_at_property_rule(*ar)) property_registry_.register_descriptor(*d);
+                continue;
+            } else if (ar->name == "layer") {
+                // CSS Cascade 5 §6.4.4. Two forms. The statement form,
+                // `@layer a, b, c;`, only fixes the ORDER — which is the whole
+                // point of writing it, since a layer's priority comes from
+                // where it was first named, not from where its rules sit. The
+                // block form assigns its rules to one layer.
+                //
+                // Doing neither, which is what happened before, left every
+                // layered rule at kUnlayeredOrdinal — i.e. unlayered — so it
+                // competed on specificity alone and a layered `.layered-btn`
+                // beat the unlayered `button` rule it was written to lose to.
+                // menu.html's button then took `padding: 4px 8px` instead of
+                // `8px 20px`, which was enough for its label to stop wrapping
+                // and its card to come out 108.57 against Chrome's 113.
+                if (!ar->has_block) {
+                    size_t start = 0;
+                    while (start <= ar->prelude.size()) {
+                        const size_t comma = ar->prelude.find(',', start);
+                        const std::string_view piece =
+                            std::string_view(ar->prelude).substr(
+                                start, comma == std::string::npos ? std::string::npos
+                                                                  : comma - start);
+                        layer_ordinal_for(trim_ascii(piece));
+                        if (comma == std::string::npos) break;
+                        start = comma + 1;
+                    }
+                    continue;
+                }
+                const std::string_view raw_name = trim_ascii(ar->prelude);
+                // An anonymous `@layer { ... }` is its own layer that nothing
+                // else can name or reopen, so give it a name no author can
+                // write.
+                std::string full = layer_prefix_;
+                if (!full.empty()) full += '.';
+                if (raw_name.empty()) {
+                    full += "%anon" + std::to_string(layer_names_.size());
+                } else {
+                    full.append(raw_name);
+                }
+                const int ordinal = layer_ordinal_for(full);
+                const std::string saved_prefix = layer_prefix_;
+                layer_prefix_ = full;
+                compile_rules(ar->nested_rules, origin, source_index, ordinal);
+                layer_prefix_ = saved_prefix;
                 continue;
             } else if (ar->name == "container") {
                 // @container needs per-element container sizes, which only a
