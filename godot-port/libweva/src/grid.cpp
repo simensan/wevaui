@@ -1141,11 +1141,27 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         double ratio = 0;
         return b.style && try_resolve_aspect_ratio(b.style, &ratio) && ratio > 0;
     };
+    // Set once the rows are sized: in a grid with a definite height and
+    // `align-content: normal | stretch`, the auto rows were stretched to fill
+    // it (§12.8), and an item can treat such a row as a definite block size —
+    // but only where its columns have an intrinsic minimum that the
+    // transferred size can feed. In a FIXED column the inline size is settled
+    // first and the height follows the ratio: Chrome keeps vendor's
+    // `aspect-ratio: 1` frame in an `80px` column at 80x80 under a row
+    // stretched to 200, and grows stats' `1fr` columns to the stretched row.
+    bool rows_definite_by_stretch = false;
+    const auto columns_intrinsic = [&](const Placement& p) {
+        for (int c = p.column; c < p.column + p.column_span && c < static_cast<int>(columns.size()); ++c) {
+            if (!columns[c].intrinsic_min()) return false;
+        }
+        return true;
+    };
     const auto row_is_definite = [&](const Placement& p) {
         if (p.row >= static_cast<int>(rows.size())) return false;
         const Track& t = rows[p.row];
         if (t.is_definite()) return true;
-        return t.is_flex() && content_height >= 0;
+        if (t.is_flex() && content_height >= 0) return true;
+        return rows_definite_by_stretch && t.intrinsic_max() && columns_intrinsic(p);
     };
     // A subgrid child gets the parent tracks it spans handed over before every
     // layout of it, and is always re-laid so it sees them.
@@ -1251,6 +1267,69 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         }
     }
     distribute_content(&rows, rows_available, row_gap, get(style, "align-content"));
+
+    // ---- §12.1 steps 3 and 4: the rows can feed back into the columns -------
+    // An aspect-ratio item that will be stretched to a now-definite row takes
+    // its inline size from that height (css-sizing-4 §5.1), and that
+    // transferred size is its new min-content contribution. Where it exceeds
+    // what the column had, the columns are re-resolved with it and the rows
+    // after them. Chrome: a `flex: 1` gear grid in a column flex gets a
+    // definite 287.81px height, its two auto rows stretch to 139.91, and the
+    // four `1fr` columns grow to 139.91 squares — overflowing the 460px grid
+    // rather than staying at their 109px share.
+    {
+        const std::string_view ac = get(style, "align-content");
+        rows_definite_by_stretch =
+            rows_available >= 0 && (ac.empty() || iequals(ac, "normal") || iequals(ac, "stretch"));
+        bool columns_changed = false;
+        for (size_t i = 0; i < items.size() && i < column_contributions.size(); ++i) {
+            const Placement& p = items[i];
+            const Box& b = (*tree)[p.box];
+            if (!has_ratio(b) || !row_is_definite(p)) continue;
+            const std::string_view width_raw = get(b.style, "width");
+            const std::string_view height_raw = get(b.style, "height");
+            if (!(width_raw.empty() || iequals(width_raw, "auto"))) continue;
+            if (!(height_raw.empty() || iequals(height_raw, "auto"))) continue;
+            if (!is_stretch(self_alignment(b.style, style, true))) continue;
+            const double h =
+                span_size(rows, p.row, p.row_span, row_gap) - b.margin_top - b.margin_bottom;
+            if (h <= 0) continue;
+            double ratio = 1;
+            try_resolve_aspect_ratio(b.style, &ratio);
+            const double h_frame =
+                b.padding_top + b.padding_bottom + b.border_top + b.border_bottom;
+            const double w_frame =
+                b.padding_left + b.padding_right + b.border_left + b.border_right;
+            const double transferred =
+                (is_border_box(b.style) ? h * ratio : std::max(0.0, h - h_frame) * ratio + w_frame) +
+                b.margin_left + b.margin_right;
+            Contribution& c = column_contributions[i];
+            if (transferred > c.min_c + 1e-9) {
+                c.min_c = transferred;
+                c.max_c = std::max(c.max_c, transferred);
+                columns_changed = true;
+            }
+        }
+        if (columns_changed) {
+            size_tracks(&columns, content_width, column_gap, column_contributions,
+                        get(style, "justify-content"));
+            distribute_content(&columns, content_width, column_gap, get(style, "justify-content"));
+            for (const Placement& p : items) size_inline(p);
+            row_contributions.clear();
+            for (const Placement& p : items) {
+                const Box& b = (*tree)[p.box];
+                const double outer = b.height + b.margin_top + b.margin_bottom;
+                Contribution c;
+                c.start = p.row;
+                c.span = p.row_span;
+                c.min_c = clips_overflow(b.style) ? 0 : outer;
+                c.max_c = outer;
+                row_contributions.push_back(c);
+            }
+            size_tracks(&rows, rows_available, row_gap, row_contributions, ac);
+            distribute_content(&rows, rows_available, row_gap, ac);
+        }
+    }
 
     // ---- Place ------------------------------------------------------------
     const double left_inner = (*tree)[container].padding_left + (*tree)[container].border_left;

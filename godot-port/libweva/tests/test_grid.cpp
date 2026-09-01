@@ -463,7 +463,10 @@ void test_grid_aspect_ratio_item_stretches_one_axis() {
     }
     {
         // Definite rows: the block axis is stretched to the row and the width
-        // follows — Chrome and the reference both give 196 in a 119px column.
+        // follows — 196 squares. That transferred size is then the items'
+        // min-content contribution, so the `1fr` columns re-resolve to 196
+        // and overflow the 500px grid (§12.1 step 3; Chrome puts the second
+        // square at 204). The reference keeps the 119px columns.
         Fixture f;
         CHECK(f.css("#g { display: grid; grid-template-columns: repeat(4, 1fr);"
                     "     grid-template-rows: 1fr 1fr; gap: 8px; width: 500px; height: 400px }"
@@ -473,7 +476,7 @@ void test_grid_aspect_ratio_item_stretches_one_axis() {
                        "<div class=c></div><div class=c></div><div class=c></div></div></body>"));
         CHECK(near(f.box("a").height, 196));
         CHECK(near(f.box("a").width, 196));
-        CHECK(near(f.box("b").x, 119 + 8));
+        CHECK(near(f.box("b").x, 196 + 8));
     }
 }
 
@@ -630,4 +633,32 @@ void test_grid_subgrid() {
         CHECK(near(f.box("a").x, 10) && near(f.box("a").width, 148));
         CHECK(near(f.box("b").x, 162) && near(f.box("b").width, 148));
     }
+}
+
+void test_grid_stretched_rows_feed_back_into_columns() {
+    // §12.1 steps 3-4. A `flex: 1` grid in a 300px column flex has a definite
+    // height; its two auto rows stretch to 150 each, the aspect-ratio items
+    // take 150 from the row, and that transferred size is their new
+    // min-content contribution — the two `1fr` columns re-resolve to 150 and
+    // overflow the 200px grid, as Chrome lays it out. Without a definite
+    // height the columns keep their 100px share and the items are 100 squares.
+    Fixture f;
+    CHECK(f.css("#col { display: flex; flex-direction: column; height: 300px; width: 200px }"
+                "#g { display: grid; grid-template-columns: repeat(2, 1fr); flex: 1 }"
+                ".s { aspect-ratio: 1 / 1 }"));
+    CHECK(f.layout("<body><div id=col><div id=g><div id=a class=s></div><div id=b class=s></div>"
+                   "<div id=c class=s></div><div id=d class=s></div></div></div></body>"));
+    CHECK(near(f.box("g").height, 300));
+    CHECK(near(f.box("a").width, 150));
+    CHECK(near(f.box("a").height, 150));
+    CHECK(near(f.box("b").x, 150));
+    CHECK(near(f.box("c").y, 150));
+
+    Fixture g;
+    CHECK(g.css("#g { display: grid; grid-template-columns: repeat(2, 1fr); width: 200px }"
+                ".s { aspect-ratio: 1 / 1 }"));
+    CHECK(g.layout("<body><div id=g><div id=a class=s></div><div id=b class=s></div></div></body>"));
+    CHECK(near(g.box("a").width, 100));
+    CHECK(near(g.box("a").height, 100));
+    CHECK(near(g.box("g").height, 100));
 }

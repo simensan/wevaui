@@ -1,0 +1,6 @@
+.g { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 500px; height: 400px; margin-bottom: 20px }
+.fr { grid-template-rows: 1fr 1fr } .au { grid-template-rows: auto auto }
+.c { aspect-ratio: 1 / 1; border: 1px solid #888 }
+.col { display: flex; flex-direction: column; height: 300px; width: 200px; margin-bottom: 20px }
+.gf { display: grid; grid-template-columns: repeat(2, 1fr); flex: 1 }
+.t { font-size: 10px }

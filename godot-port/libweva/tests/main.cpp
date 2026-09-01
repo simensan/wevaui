@@ -150,6 +150,7 @@ void test_table_colspan_and_rowspan();
 void test_table_cells_stretch_and_vertical_align();
 void test_table_row_groups_and_captions();
 void test_table_visibility_collapse_and_column_hints();
+void test_grid_stretched_rows_feed_back_into_columns();
 void test_anonymous_block_inherits_text_align();
 void test_inline_fragments();
 void test_inline_atoms();
@@ -337,6 +338,7 @@ int main() {
     test_table_cells_stretch_and_vertical_align();
     test_table_row_groups_and_captions();
     test_table_visibility_collapse_and_column_hints();
+    test_grid_stretched_rows_feed_back_into_columns();
     test_anonymous_block_inherits_text_align();
     test_inline_fragments();
     test_inline_atoms();
