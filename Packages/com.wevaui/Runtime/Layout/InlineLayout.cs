@@ -1341,6 +1341,36 @@ namespace Weva.Layout {
         // size, then packages it as a LineBreaker atom item. When the inline-
         // block has no explicit width, we shrink-to-fit using BlockLayout's
         // intrinsic-content-width helper.
+        // Saved (inline box -> its children) pairs for the shrink-to-fit atom
+        // round trip. A list of pairs rather than a dictionary: an atom holds a
+        // handful of inlines and this runs per atom per layout.
+        readonly List<(InlineBox Box, List<Box> Kids)> inlineKidsSnapshot = new(4);
+
+        // Records every descendant InlineBox's child list, depth first.
+        static void CaptureInlineChildren(Box parent, List<(InlineBox, List<Box>)> into) {
+            var kids = parent.ChildList;
+            for (int i = 0; i < kids.Count; i++) {
+                if (kids[i] is InlineBox ib) {
+                    var saved = new List<Box>(ib.ChildList.Count);
+                    saved.AddRange(ib.ChildList);
+                    into.Add((ib, saved));
+                    CaptureInlineChildren(ib, into);
+                }
+            }
+        }
+
+        static void RestoreInlineChildren(List<(InlineBox Box, List<Box> Kids)> saved) {
+            // Outermost first: re-parenting a child detaches it from wherever
+            // pass 1 left it, so restoring a span before its own parent span is
+            // fine either way, but this order keeps the tree consistent while
+            // it is being rebuilt.
+            for (int i = 0; i < saved.Count; i++) {
+                var (box, kids) = saved[i];
+                box.ClearChildren();
+                for (int k = 0; k < kids.Count; k++) box.AddChild(kids[k]);
+            }
+        }
+
         LineBreaker.Item MakeAtomItem(BlockBox atom, double availableWidth, ComputedStyle inheritedStyle) {
             if (BlockLayout == null) return null;
 
@@ -1405,6 +1435,16 @@ namespace Weva.Layout {
                 if (atomContainedInlines) {
                     var rawKids = atom.ChildList;
                     for (int i = 0; i < rawKids.Count; i++) snapshotBuf.Add(rawKids[i]);
+                    // ...and each inline box's OWN children. Restoring only the
+                    // atom's top-level list is not enough: pass 1's
+                    // AttachInlineFragmentsToLines calls ClearChildren() on
+                    // every span it places, so by pass 2 the restored span is
+                    // an empty shell. The collect then finds no items, takes
+                    // the empty-container branch, and the span ends up with no
+                    // fragments to measure — a zero-width rect, so its
+                    // background, border and hit-testing area all vanish.
+                    inlineKidsSnapshot.Clear();
+                    CaptureInlineChildren(atom, inlineKidsSnapshot);
                 }
 
                 BlockLayout.LayoutBlock(atom, availableWidth, atom.Parent?.Style ?? inheritedStyle);
@@ -1520,6 +1560,10 @@ namespace Weva.Layout {
                     }
                     atom.ContainsInlines = true;
                     snapshotBuf.RemoveRange(snapshotStart, snapshotBuf.Count - snapshotStart);
+                    // Put each inline box's own children back, so pass 2 sees
+                    // real content instead of the gutted shells pass 1 left.
+                    RestoreInlineChildren(inlineKidsSnapshot);
+                    inlineKidsSnapshot.Clear();
                 }
 
                 BlockLayout.RelayoutContentAt(atom, fitted);

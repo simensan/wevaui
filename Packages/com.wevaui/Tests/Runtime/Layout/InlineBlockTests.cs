@@ -303,5 +303,33 @@ namespace Weva.Tests.Layout {
             }
         }
 
+        // An inline box inside a shrink-to-fit atom must get a real rect. The
+        // atom lays its content out twice, and pass 1's
+        // AttachInlineFragmentsToLines calls ClearChildren() on every span it
+        // places — so the atom's snapshot, which only restored its TOP-LEVEL
+        // child list, handed pass 2 an empty shell. With no fragments to
+        // measure the span collapsed to Width = 0, taking its background,
+        // border and hit-testing area with it.
+        [Test]
+        public void Span_inside_an_inline_block_keeps_its_rect() {
+            var (root, _, _) = Build(
+                "<div class=\"ib\"><span class=\"s\">hello</span></div>"
+                + "<div class=\"plain\"><span class=\"s\">hello</span></div>",
+                ".ib { display: inline-block; }",
+                viewportWidth: 800);
+
+            var spans = new List<Box>();
+            foreach (var b in AllBoxes(root)) {
+                if (b is InlineBox && b.Element != null && b.Element.TagName == "span") spans.Add(b);
+            }
+            Assert.That(spans.Count, Is.EqualTo(2), "one span in the atom, one in the plain block");
+            // "hello" at the mono metrics' 8px/char — and the atom's span must
+            // measure exactly the same as the plain block's.
+            foreach (var sp in spans) {
+                Assert.That(sp.Width, Is.EqualTo(40).Within(0.001),
+                    "a span inside a shrink-to-fit atom must measure like any other");
+            }
+        }
+
     }
 }
