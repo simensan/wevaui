@@ -49,6 +49,17 @@ CornerRadius corner(const ComputedStyle* style, std::string_view property,
                         radius_component(raw.substr(split + 1), ctx, font_size, height));
 }
 
+// `letter-spacing` in px: a length, or a percentage of the font size (the
+// reading inline layout takes, css-text-4).
+double letter_spacing_of(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
+    const std::string_view raw = get(style, "letter-spacing");
+    if (raw.empty() || raw == "normal") return 0;
+    const ResolvedLength r = resolve_length(style, "letter-spacing", ctx, font_size, std::nullopt);
+    if (r.kind == LengthKind::Length) return r.pixels;
+    if (r.kind == LengthKind::Percent) return font_size * r.percent * 0.01;
+    return 0;
+}
+
 void draw_mesh(const Mesh& mesh, RenderInterface* backend, TextureHandle tex) {
     if (mesh.empty()) return;
     // Compiled and released per draw for now. A backend that batches will want
@@ -166,8 +177,10 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             line != kNoBox && tree[line].kind == BoxKind::Line ? origin_y + tree[line].baseline
                                                                : y + b.height;
         Mesh text;
+        const double spacing =
+            letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;
         build_text_geometry(b.text, x, baseline, b.font_size, resolve_color(b.style, "color"),
-                            paint, &text);
+                            paint, &text, spacing);
         // The handle from the single up-front upload, never a fresh one: see
         // prepare_glyphs.
         draw_mesh(text, paint.backend, atlas_texture);
@@ -276,7 +289,8 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
 }
 
 void build_text_geometry(std::string_view text, double x, double baseline_y, double font_size,
-                         const LinearColor& color, const PaintContext& paint, Mesh* out) {
+                         const LinearColor& color, const PaintContext& paint, Mesh* out,
+                         double letter_spacing) {
     if (!paint.font || !paint.atlas || text.empty()) return;
     std::vector<ShapedGlyph> glyphs;
     paint.font->shape(paint.face, text, font_size, &glyphs);
@@ -306,7 +320,7 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
             out->vertices.push_back(v(gx, gy + slot->height, slot->u0, slot->v1));
             for (uint32_t i : {0u, 1u, 2u, 0u, 2u, 3u}) out->indices.push_back(base + i);
         }
-        pen += g.x_advance;
+        pen += g.x_advance + letter_spacing;
     }
 }
 

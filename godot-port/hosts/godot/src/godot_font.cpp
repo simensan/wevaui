@@ -31,18 +31,46 @@ int64_t size_of(double px) {
     return s > 0 ? s : 1;
 }
 
+// A glyph id is the TextServer glyph index in the low 24 bits and the
+// fallback slot — which of the face's fonts it came from — in the top byte.
+constexpr uint32_t kSlotShift = 24;
+constexpr uint32_t kIndexMask = 0xFFFFFFu;
+uint32_t encode_glyph(uint32_t slot, int64_t index) {
+    return (slot << kSlotShift) | (static_cast<uint32_t>(index) & kIndexMask);
+}
+uint32_t slot_of(uint32_t glyph) { return glyph >> kSlotShift; }
+int64_t index_of(uint32_t glyph) { return static_cast<int64_t>(glyph & kIndexMask); }
+
 } // namespace
 
 uint64_t GodotFontBackend::adopt(const RID& font) {
     if (!font.is_valid()) return 0;
     const uint64_t handle = next_face_++;
-    faces_[handle] = font;
+    faces_[handle] = {font};
     return handle;
 }
 
-RID GodotFontBackend::resolve(uint64_t face) const {
+uint64_t GodotFontBackend::adopt(const TypedArray<RID>& fonts) {
+    std::vector<RID> list;
+    for (int64_t i = 0; i < fonts.size(); ++i) {
+        const RID r = fonts[i];
+        if (r.is_valid()) list.push_back(r);
+    }
+    if (list.empty()) return 0;
+    const uint64_t handle = next_face_++;
+    faces_[handle] = std::move(list);
+    return handle;
+}
+
+RID GodotFontBackend::resolve(uint64_t face, uint32_t slot) const {
     const auto it = faces_.find(face);
-    return it == faces_.end() ? RID() : it->second;
+    if (it == faces_.end() || slot >= it->second.size()) return RID();
+    return it->second[slot];
+}
+
+const std::vector<RID>* GodotFontBackend::fonts_of(uint64_t face) const {
+    const auto it = faces_.find(face);
+    return it == faces_.end() ? nullptr : &it->second;
 }
 
 uint64_t GodotFontBackend::load_face(void* self, const uint8_t* data, size_t length,
@@ -85,14 +113,22 @@ int32_t GodotFontBackend::glyph_index(void* self, uint64_t face, uint32_t codepo
     GodotFontBackend* me = static_cast<GodotFontBackend*>(self);
     TextServer* ts = server();
     if (!me || !ts || !out) return 0;
-    const RID font = me->resolve(face);
-    if (!font.is_valid()) return 0;
+    const std::vector<RID>* fonts = me->fonts_of(face);
+    if (!fonts || fonts->empty()) return 0;
 
     // The ABI's glyph_index carries no size because a glyph id does not depend
     // on one; TextServer asks for a size anyway, so a reference size is used.
-    // This is only a lookup key — every metric call passes the real size.
-    const int64_t glyph = ts->font_get_glyph_index(font, 16, codepoint, 0);
-    *out = static_cast<uint32_t>(glyph);
+    // This is only a lookup key — every metric call passes the real size. The
+    // first font that has the character wins; none having it yields the
+    // primary face's .notdef, as a single font would.
+    for (size_t slot = 0; slot < fonts->size(); ++slot) {
+        const int64_t glyph = ts->font_get_glyph_index((*fonts)[slot], 16, codepoint, 0);
+        if (glyph != 0) {
+            *out = encode_glyph(static_cast<uint32_t>(slot), glyph);
+            return 1;
+        }
+    }
+    *out = encode_glyph(0, 0);
     return 1;
 }
 
@@ -102,14 +138,15 @@ int32_t GodotFontBackend::glyph_metrics(void* self, uint64_t face, uint32_t glyp
     GodotFontBackend* me = static_cast<GodotFontBackend*>(self);
     TextServer* ts = server();
     if (!me || !ts) return 0;
-    const RID font = me->resolve(face);
+    const RID font = me->resolve(face, slot_of(glyph));
     if (!font.is_valid()) return 0;
+    const int64_t index = index_of(glyph);
 
     const int64_t size = size_of(px);
     const Vector2i sz(static_cast<int32_t>(size), 0);
-    const Vector2 adv = ts->font_get_glyph_advance(font, size, glyph);
-    const Vector2 offset = ts->font_get_glyph_offset(font, sz, glyph);
-    const Vector2 extent = ts->font_get_glyph_size(font, sz, glyph);
+    const Vector2 adv = ts->font_get_glyph_advance(font, size, index);
+    const Vector2 offset = ts->font_get_glyph_offset(font, sz, index);
+    const Vector2 extent = ts->font_get_glyph_size(font, sz, index);
 
     if (advance) *advance = adv.x;
     if (bearing_x) *bearing_x = offset.x;
@@ -127,20 +164,21 @@ int32_t GodotFontBackend::rasterize(void* self, uint64_t face, uint32_t glyph, d
     GodotFontBackend* me = static_cast<GodotFontBackend*>(self);
     TextServer* ts = server();
     if (!me || !ts || !out) return 0;
-    const RID font = me->resolve(face);
+    const RID font = me->resolve(face, slot_of(glyph));
     if (!font.is_valid()) return 0;
+    const int64_t index = index_of(glyph);
 
     const Vector2i sz(static_cast<int32_t>(size_of(px)), 0);
     // TextServer rasterises lazily into its own atlas, so the glyph has to be
     // asked for before its texture exists.
-    ts->font_render_glyph(font, sz, glyph);
+    ts->font_render_glyph(font, sz, index);
 
-    const int64_t texture_index = ts->font_get_glyph_texture_idx(font, sz, glyph);
+    const int64_t texture_index = ts->font_get_glyph_texture_idx(font, sz, index);
     if (texture_index < 0) return 0;
     const Ref<Image> image = ts->font_get_texture_image(font, sz, texture_index);
     if (image.is_null()) return 0;
 
-    const Rect2 uv = ts->font_get_glyph_uv_rect(font, sz, glyph);
+    const Rect2 uv = ts->font_get_glyph_uv_rect(font, sz, index);
     const int32_t gx = static_cast<int32_t>(uv.position.x);
     const int32_t gy = static_cast<int32_t>(uv.position.y);
     const int32_t gw = static_cast<int32_t>(uv.size.x);
@@ -178,15 +216,17 @@ size_t GodotFontBackend::shape(void* self, uint64_t face, const char* utf8, size
     GodotFontBackend* me = static_cast<GodotFontBackend*>(self);
     TextServer* ts = server();
     if (!me || !ts || !utf8) return 0;
-    const RID font = me->resolve(face);
-    if (!font.is_valid()) return 0;
+    const std::vector<RID>* face_fonts = me->fonts_of(face);
+    if (!face_fonts || face_fonts->empty()) return 0;
 
     const String text = String::utf8(utf8, static_cast<int64_t>(length));
     const RID shaped = ts->create_shaped_text();
     if (!shaped.is_valid()) return 0;
 
+    // Every font of the face, in order: TextServer falls back through the
+    // list per character, and reports which font each glyph came from.
     TypedArray<RID> fonts;
-    fonts.push_back(font);
+    for (const RID& r : *face_fonts) fonts.push_back(r);
     ts->shaped_text_add_string(shaped, text, fonts, size_of(px));
     ts->shaped_text_shape(shaped);
 
@@ -194,7 +234,12 @@ size_t GodotFontBackend::shape(void* self, uint64_t face, const char* utf8, size
     const size_t count = static_cast<size_t>(shaped_glyphs.size());
     for (size_t i = 0; i < count && i < capacity; ++i) {
         const Dictionary g = shaped_glyphs[static_cast<int64_t>(i)];
-        if (glyphs) glyphs[i] = static_cast<uint32_t>(static_cast<int64_t>(g["index"]));
+        uint32_t slot = 0;
+        const RID from = g["font_rid"];
+        for (size_t s = 0; s < face_fonts->size(); ++s) {
+            if ((*face_fonts)[s] == from) { slot = static_cast<uint32_t>(s); break; }
+        }
+        if (glyphs) glyphs[i] = encode_glyph(slot, static_cast<int64_t>(g["index"]));
         if (advances) advances[i] = static_cast<double>(g["advance"]);
         // "start" is the byte offset into the string this glyph came from,
         // which is exactly the cluster the core uses to map back to text.

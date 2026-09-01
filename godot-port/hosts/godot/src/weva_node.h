@@ -5,6 +5,7 @@
 #include <godot_cpp/classes/canvas_item.hpp>
 #include <godot_cpp/classes/image_texture.hpp>
 #include <godot_cpp/classes/node2d.hpp>
+#include <godot_cpp/classes/system_font.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 
@@ -102,6 +103,9 @@ private:
     // The font backend must outlive the document: the core holds the table by
     // pointer and calls into it on every update.
     GodotFontBackend font_backend_;
+    // System faces behind the theme font for the symbols and emoji it lacks
+    // (★, ⚔, 🛡). Kept alive here because the backend holds only RIDs.
+    godot::Ref<godot::SystemFont> symbol_font_;
     weva_font_backend font_table_{};
     uint64_t font_face_ = 0;
     bool use_engine_font_ = true;

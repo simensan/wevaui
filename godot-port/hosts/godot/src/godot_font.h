@@ -3,6 +3,7 @@
 #include "weva_c.h"
 
 #include <godot_cpp/variant/rid.hpp>
+#include <godot_cpp/variant/typed_array.hpp>
 
 #include <cstdint>
 #include <map>
@@ -31,6 +32,11 @@ public:
     // without going through a font file. Returns the handle to hand to
     // weva_document_set_font_backend.
     uint64_t adopt(const godot::RID& font);
+    // A face with fallbacks: the first font is the face, the rest are tried
+    // in order for glyphs it lacks (a symbol or emoji font behind the UI
+    // face). Shaping runs across all of them, and a glyph id carries which
+    // one it came from in its top byte, so the core's opaque ids stay opaque.
+    uint64_t adopt(const godot::TypedArray<godot::RID>& fonts);
 
 private:
     // Every entry point is static so its address fits a C function pointer;
@@ -47,9 +53,10 @@ private:
     static size_t shape(void* self, uint64_t face, const char* utf8, size_t length, double px,
                         uint32_t* glyphs, double* advances, uint32_t* clusters, size_t capacity);
 
-    godot::RID resolve(uint64_t face) const;
+    godot::RID resolve(uint64_t face, uint32_t slot = 0) const;
+    const std::vector<godot::RID>* fonts_of(uint64_t face) const;
 
-    std::map<uint64_t, godot::RID> faces_;
+    std::map<uint64_t, std::vector<godot::RID>> faces_;
     uint64_t next_face_ = 1;
     // The core copies the bitmap before `rasterize` returns, so one reusable
     // buffer is enough and costs no per-glyph allocation.

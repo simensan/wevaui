@@ -60,10 +60,27 @@ void WevaDocument::ensure_font_backend() {
     if (!theme) return;
     const Ref<Font> fallback = theme->get_fallback_font();
     if (fallback.is_null()) return;
-    const TypedArray<RID> rids = fallback->get_rids();
+    TypedArray<RID> rids = fallback->get_rids();
     if (rids.is_empty()) return;
 
-    font_face_ = font_backend_.adopt(rids[0]);
+    // Behind it, whatever the system has for symbols and emoji: the theme
+    // font covers Latin and little else, and a sample's ★ or 🛡 would draw
+    // nothing. Colour emoji rasterise through the coverage atlas as
+    // silhouettes in the text colour — shapes, not colours, for now.
+    if (symbol_font_.is_null()) {
+        symbol_font_.instantiate();
+        PackedStringArray names;
+        for (const char* n : {"Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji",
+                              "Noto Color Emoji", "Noto Sans Symbols2", "Noto Sans Symbols",
+                              "DejaVu Sans", "Symbola"}) {
+            names.push_back(n);
+        }
+        symbol_font_->set_font_names(names);
+    }
+    const TypedArray<RID> symbol_rids = symbol_font_->get_rids();
+    for (int64_t i = 0; i < symbol_rids.size(); ++i) rids.push_back(symbol_rids[i]);
+
+    font_face_ = font_backend_.adopt(rids);
     if (font_face_ == 0) return;
     font_backend_.fill(&font_table_);
     weva_document_set_font_backend(doc_, &font_table_, font_face_);

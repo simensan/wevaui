@@ -50,8 +50,12 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
 // Builds the quads for one text run: one textured quad per glyph, all sharing
 // the atlas, so a run is a single draw. `x` and `y` are the run's origin, and
 // the glyphs sit on the baseline at `baseline_y`.
+// `letter_spacing` is added after every glyph, as layout added it when it
+// measured the run; without it each word draws narrower than the box that
+// was laid out for it and the gaps between words grow.
 void build_text_geometry(std::string_view text, double x, double baseline_y, double font_size,
-                         const LinearColor& color, const PaintContext& paint, Mesh* out);
+                         const LinearColor& color, const PaintContext& paint, Mesh* out,
+                         double letter_spacing = 0);
 
 // Builds the mesh for one box's background and border, without issuing any
 // draw. Exposed because it is far easier to assert geometry than backend calls.
