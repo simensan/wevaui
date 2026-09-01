@@ -176,9 +176,14 @@ namespace {
 
 void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
                     const LayoutContext& ctx, BlockLayout* block) {
-    Box& box = (*tree)[id];
-    const ComputedStyle* style = box.style;
-    const BoxId parent = box.parent;
+    // Deliberately NOT a `Box&` held across the whole function. The relayouts
+    // below create line boxes and anonymous blocks, BoxTree::create appends to a
+    // vector, and any reference into it dies at that point. Holding one here
+    // read a stale `offset_top` and dropped a `position: fixed; inset: 0`
+    // overlay to its static position — the same shape of bug as the one in
+    // layout_inline_items, which is twice now.
+    const ComputedStyle* style = (*tree)[id].style;
+    const BoxId parent = (*tree)[id].parent;
     const ComputedStyle* ps = parent == kNoBox ? nullptr : (*tree)[parent].style;
     const double fs = font_size_px(style, ps, ctx);
 
@@ -187,31 +192,45 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     const auto off = [&](std::string_view property, double basis) {
         return resolve_offset(style, property, ctx, fs, basis);
     };
-    box.offset_left = off("left", cb.width);
-    box.offset_right = off("right", cb.width);
-    box.offset_top = off("top", cb.height);
-    box.offset_bottom = off("bottom", cb.height);
+    (*tree)[id].offset_left = off("left", cb.width);
+    (*tree)[id].offset_right = off("right", cb.width);
+    (*tree)[id].offset_top = off("top", cb.height);
+    (*tree)[id].offset_bottom = off("bottom", cb.height);
 
-    const bool horiz_pinned = box.offset_left.has_value() && box.offset_right.has_value();
-    const bool vert_pinned = box.offset_top.has_value() && box.offset_bottom.has_value();
+    const bool horiz_pinned = (*tree)[id].offset_left.has_value() && (*tree)[id].offset_right.has_value();
+    const bool vert_pinned = (*tree)[id].offset_top.has_value() && (*tree)[id].offset_bottom.has_value();
 
     // Both edges pinned and no explicit size: the box stretches between them.
-    if (horiz_pinned && !has_explicit_size(style, "width")) {
-        const double w = std::max(0.0, cb.width - *box.offset_left - *box.offset_right -
-                                           box.margin_left - box.margin_right);
-        if (block && std::fabs(box.width - w) > 1e-9) {
-            // Block layout sized the children against the PROVISIONAL width —
-            // the containing block's content width — before this pass derived
-            // the pinned one. Without a content relayout they keep the wider
-            // measure and overflow the box.
-            block->relayout_at(id, w);
-        }
-        box.width = w;
+    const bool stretch_w = horiz_pinned && !has_explicit_size(style, "width");
+    const bool stretch_h = vert_pinned && !has_explicit_size(style, "height");
+    const double pinned_w =
+        stretch_w ? std::max(0.0, cb.width - *(*tree)[id].offset_left - *(*tree)[id].offset_right -
+                                      (*tree)[id].margin_left - (*tree)[id].margin_right)
+                  : (*tree)[id].width;
+    const double pinned_h =
+        stretch_h ? std::max(0.0, cb.height - *(*tree)[id].offset_top - *(*tree)[id].offset_bottom -
+                                      (*tree)[id].margin_top - (*tree)[id].margin_bottom)
+                  : (*tree)[id].height;
+
+    if (stretch_h && block) {
+        // Block layout sized the children against the PROVISIONAL width, and
+        // knew nothing of this height at all. Both are imposed here in one
+        // pass, and the height is marked imposed so the auto-height rule does
+        // not collapse it back — which is what a `position: fixed; inset: 0;
+        // display: flex` overlay needs before its justify-content has anything
+        // to centre in.
+        (*tree)[id].width = pinned_w;
+        block->relayout_at_size(id, pinned_w, pinned_h);
+    } else if (stretch_w && block && std::fabs((*tree)[id].width - pinned_w) > 1e-9) {
+        // Width only: without a content relayout the children keep the wider
+        // provisional measure and overflow the box.
+        block->relayout_at(id, pinned_w);
     }
-    if (vert_pinned && !has_explicit_size(style, "height")) {
-        box.height = std::max(0.0, cb.height - *box.offset_top - *box.offset_bottom -
-                                       box.margin_top - box.margin_bottom);
-    }
+    if (stretch_w) (*tree)[id].width = pinned_w;
+    if (stretch_h) (*tree)[id].height = pinned_h;
+
+    // Safe from here: nothing below creates a box.
+    Box& box = (*tree)[id];
 
     // An explicit percentage height could not be resolved during block layout,
     // which does not know the containing block top-down. This is the first

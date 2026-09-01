@@ -31,6 +31,7 @@ add_executable(weva_tests
     test_floats.cpp
     test_inline_layout.cpp
     test_positioning.cpp
+    test_flex.cpp
     test_paint.cpp
     test_software_renderer.cpp
     test_text_render.cpp

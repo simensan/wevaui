@@ -1916,6 +1916,77 @@ reflection and is being replaced, not translated.
 **Exit:** `corpus/text/` green on line-break positions, line counts and line-box
 heights (tolerance per ORACLE.md); surrounding box geometry stays zero-tolerance.
 
+### Phase 6, first slice: single-line flex. 24 → 36/47.
+
+Scoped deliberately: **`flex-wrap` is not ported**, so every container lays out
+as one line, and `flex_wrap_is_ported()` returns false so a caller can refuse
+rather than be quietly wrong. Everything the corpus uses is here — direction,
+gaps, grow/shrink/basis, justify-content, align-items including baseline,
+`order`, and the `flex` shorthand.
+
+That scope was not a guess. Grepping the corpus for what the flex cases
+actually declare showed **no `flex-wrap` at all**, so a single-line
+implementation was the whole addressable set. ~350 lines against the C#'s 3,261
+— most of that difference is wrapping, multi-line cross sizing, and the parts of
+`align-content` that only exist once there is more than one line.
+
+**All 11 remaining corpus failures need grid, multicol, containment, quotes or
+list markers.** Nothing flex-shaped is left.
+
+Four bugs found by grading each step against the reference:
+
+* **`flex: 1` expanded wrongly at first.** The one-number form sets the basis to
+  **0**, not auto — which is what makes three items share space equally
+  regardless of content. `flex: 1px` means the opposite (basis 1px, grow 1). A
+  bare number and a bare length take different branches and it is easy to write
+  one rule for both.
+* **An `position: absolute` child counted as a flex item**, because the filter
+  read `Box::position`, which `apply_box_model` only stamps once layout runs —
+  and layout had not run yet. Its width ate a share of the free space and three
+  `flex: 1` cells came out 126.67 wide instead of 142.67. The style has to be
+  read directly.
+* **A non-stretched item filled its container on the cross axis.** §9.4 sizes it
+  to its content instead. A column container's `align-items: center` item was
+  coming out full width and then being "centred" with nowhere to move.
+* **A stretched item was stamped, not re-laid.** Its content never saw the new
+  size. Invisible until something inside depends on it — a nested column flex
+  container, whose main size IS that height, had nothing for its
+  justify-content to centre in. Fixed with `relayout_at_size` plus a
+  `cross_size_imposed` flag so the auto-height rule does not collapse the
+  imposed value straight back.
+
+The same flag fixed `position: fixed; inset: 0` flex overlays, whose height is
+only known after the positioning pass: that pass now re-lays the content at the
+pinned size instead of stamping the height and moving on.
+
+### The same use-after-free, for the third time
+
+`Box& b = (*tree)[id]` held across a call that lays out a box. `BoxTree::create`
+appends to a `std::vector<Box>`, so every reference into it dies at the next
+create. Three sites now: `layout_inline_items`, `apply_absolute`, and the new
+flex code — where ASan caught it, and where it had also produced a visible
+wrong answer first (a fixed overlay dropped to its static position because a
+stale `offset_top` was read).
+
+It is not a discipline problem any more. Every access is by index —
+`operator[]`, `size()`, `valid()`, the sibling chain — and **nothing takes
+`.data()`**, so the storage does not need to be contiguous at all. Replacing the
+vector with chunked storage that never moves an element would remove the class
+outright.
+
+The obvious `std::deque` swap conflicts with the zero-allocations-per-frame
+target, because `reset()`'s `clear()` would free the blocks and the next frame
+would re-allocate them. The version that keeps both is a deque plus an explicit
+live-count, with `reset()` setting the count to zero and `create()` reusing
+slots — exactly the arena discipline the current `reset()` comment already
+describes, just with stable addresses.
+
+**Not done in this tick, deliberately.** It is a change to the hottest data
+structure in the engine, made at the end of a long session, and it deserves its
+own pass with a perf measurement rather than being bolted onto the flex work.
+The three known sites are fixed; the hazard is recorded here so the next tick
+starts with it.
+
 ## Phase 6 — Flex (~4k LOC)
 
 `Layout/Flex` (3,975). Port the documented deviations deliberately — including

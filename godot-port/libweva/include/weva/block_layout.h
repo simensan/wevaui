@@ -153,6 +153,12 @@ public:
     // provisional one.
     void relayout_at(BoxId id, double width);
 
+    // Re-lays a box's content with BOTH axes imposed from outside — what a flex
+    // line does to a stretched item. The height survives the re-layout, which
+    // relayout_at alone does not guarantee: the auto-height rule would collapse
+    // it back to the content.
+    void relayout_at_size(BoxId id, double width, double height);
+
 private:
     void layout_content(BoxId id, double font_size, double containing_block_width,
                         const ComputedStyle* parent_style);

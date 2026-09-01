@@ -35,6 +35,7 @@ add_library(weva STATIC
     src/tessellate.cpp
     src/paint.cpp
     src/software_renderer.cpp
+    src/flex.cpp
     src/font_interface.cpp
     src/glyph_atlas.cpp
     src/weva_c.cpp

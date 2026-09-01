@@ -167,6 +167,13 @@ struct Box {
     // Inter-character justification, added on top of the CSS letter-spacing.
     double justify_letter_spacing = 0;
 
+    // A flex line stretched this box's cross size, so the auto-height rule must
+    // not collapse it back to its content when its layout is re-run. Without
+    // this a stretched item re-lays at the right size and then immediately
+    // discards it, which is invisible until something inside depends on the
+    // height — a nested column flex container, for instance.
+    bool cross_size_imposed = false;
+
     bool is_float() const { return float_type != FloatType::None; }
     double content_width() const {
         return width - padding_left - padding_right - border_left - border_right;

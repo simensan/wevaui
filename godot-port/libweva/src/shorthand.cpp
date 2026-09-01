@@ -421,6 +421,43 @@ bool expand_shorthand(std::string_view name, std::string_view value,
     if (name == "border-radius") return expand_border_radius(t, out);
 
     // ---- two-value axis shorthands
+    // CSS Flexbox L1 §7.1.1. The one-value forms are the ones that matter and
+    // the ones that are easy to get wrong: a bare NUMBER is flex-grow with
+    // basis 0%, while a bare LENGTH is the basis with grow 1 — `flex: 1` and
+    // `flex: 1px` mean different things in every component.
+    if (name == "flex") {
+        if (t.empty() || t.size() > 3) return true;
+        if (t.size() == 1 && iequals(t[0], "none")) {
+            emit(out, "flex-grow", "0");
+            emit(out, "flex-shrink", "0");
+            emit(out, "flex-basis", "auto");
+            return true;
+        }
+        if (t.size() == 1 && iequals(t[0], "initial")) {
+            emit(out, "flex-grow", "0");
+            emit(out, "flex-shrink", "1");
+            emit(out, "flex-basis", "auto");
+            return true;
+        }
+        std::string_view grow, shrink, basis;
+        for (std::string_view v : t) {
+            if (is_number(v) && grow.empty()) { grow = v; continue; }
+            if (is_number(v) && shrink.empty()) { shrink = v; continue; }
+            if (basis.empty() && (iequals(v, "auto") || iequals(v, "content") || v == "0" ||
+                                  is_length_or_percentage(v) || is_math_function(v))) {
+                basis = v;
+                continue;
+            }
+            return true;   // unrecognised: the whole declaration is invalid
+        }
+        if (grow.empty()) return true;
+        emit(out, "flex-grow", grow);
+        emit(out, "flex-shrink", shrink.empty() ? "1" : shrink);
+        // A one- or two-number form sets the basis to zero, NOT auto: this is
+        // what makes `flex: 1` share space equally regardless of content.
+        emit(out, "flex-basis", basis.empty() ? "0%" : basis);
+        return true;
+    }
     if (name == "gap") return expand_two_axis(t, "row-gap", "column-gap", is_gap_value, out);
     if (name == "overflow") {
         return expand_two_axis(t, "overflow-x", "overflow-y", is_overflow_keyword, out);

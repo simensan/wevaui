@@ -1,5 +1,7 @@
 #include "weva/block_layout.h"
 
+#include "weva/flex.h"
+
 #include "weva/css_properties.h"
 #include "weva/inline_layout.h"
 
@@ -655,6 +657,16 @@ void BlockLayout::relayout_at(BoxId id, double width) {
     relayout_content_at(id, width, fs, parent_style);
 }
 
+void BlockLayout::relayout_at_size(BoxId id, double width, double height) {
+    const BoxId parent = (*tree_)[id].parent;
+    const ComputedStyle* parent_style = parent == kNoBox ? nullptr : (*tree_)[parent].style;
+    const double fs = font_size_px((*tree_)[id].style, parent_style, ctx_);
+    (*tree_)[id].height = height;
+    (*tree_)[id].cross_size_imposed = true;
+    relayout_content_at(id, width, fs, parent_style);
+    (*tree_)[id].height = height;
+}
+
 void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
                                       const ComputedStyle* parent_style) {
     (*tree_)[id].width = width;
@@ -727,6 +739,29 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         // zero content height rather than a number derived from guessing.
         const double inline_h = layout_inline_content(id, content_w, own_style);
         finalize_block_size(id, font_size, top_inner + inline_h);
+        return;
+    }
+
+    // A flex container lays its children out itself. It establishes a block
+    // formatting context, but its items never consult a float context — each
+    // item is a BFC root in its own right — so returning before the float
+    // bookkeeping below is safe rather than an omission.
+    if ((*tree_)[id].display == DisplayKind::Flex ||
+        (*tree_)[id].display == DisplayKind::InlineFlex) {
+        // A definite content height lets the cross axis centre against the
+        // container; a negative one means "content-derived".
+        // parent_height_auto is the existing "this box's height is NOT
+        // author-specified" test; a flex container needs the opposite.
+        // A height imposed by an enclosing flex line counts as definite even
+        // though the style says `auto` — that is the whole point of imposing
+        // it, and without this a nested column container has no main size to
+        // distribute and its justify-content has nothing to centre in.
+        const double definite_h =
+            (*tree_)[id].cross_size_imposed || !parent_height_auto((*tree_)[id], ctx_, font_size)
+                ? (*tree_)[id].content_height()
+                : -1.0;
+        const double h = layout_flex(tree_, id, content_w, definite_h, ctx_, this);
+        finalize_block_size(id, font_size, top_inner + h);
         return;
     }
     // Nothing below this point may return early without restoring the float
@@ -958,6 +993,8 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
 
 void BlockLayout::finalize_block_size(BoxId id, double font_size, double content_bottom_y) {
     Box& box = (*tree_)[id];
+    // A flex line already decided this box's height; keep it.
+    if (box.cross_size_imposed) return;
     if (!box.style) {
         // The synthetic root was seeded with the viewport height so percentage
         // heights had a basis; now that its children are placed it must
