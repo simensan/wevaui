@@ -288,3 +288,34 @@ void test_out_of_flow_relayout() {
     CHECK(lines == 1);
     CHECK(near(f.tree[f.tree.child_at(f.find("a"), 0)].width, 100));
 }
+
+void test_absolute_auto_width_shrinks_to_fit() {
+    // CSS 2.1 §10.3.7: one horizontal edge (or none) and an auto width is
+    // shrink-to-fit. Block layout had sized the box against its containing
+    // block as if in flow, so a `left: 0` label spanned the whole page.
+    {
+        Fixture f;
+        CHECK(f.css("#a { position: absolute; top: 0; left: 0 }"));
+        CHECK(f.layout("<body><div id=w><div id=a>x</div></div></body>"));
+        CHECK(f.box("a").width > 0 && f.box("a").width < 100);
+        CHECK(near(f.box("a").x, 0));
+    }
+    {
+        // Right edge only: same width, placed against the right.
+        Fixture f;
+        CHECK(f.css("#a { position: absolute; top: 0; right: 0; padding: 0 5px }"));
+        CHECK(f.layout("<body><div id=w><div id=a>x</div></div></body>"));
+        const double w = f.box("a").width;
+        CHECK(w > 10 && w < 100);
+        CHECK(near(f.box("a").x, 1000 - w));
+    }
+    {
+        // Both edges pinned still stretches; an explicit width is still kept.
+        Fixture f;
+        CHECK(f.css("#a { position: absolute; top: 0; left: 0; right: 0 }"
+                    "#b { position: absolute; top: 0; left: 0; width: 40px }"));
+        CHECK(f.layout("<body><div id=w><div id=a>x</div><div id=b>x</div></div></body>"));
+        CHECK(near(f.box("a").width, 1000));
+        CHECK(near(f.box("b").width, 40));
+    }
+}

@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -66,7 +67,13 @@ struct Item {
     bool frozen = false;
     double min_main = 0;
     double max_main = -1;   // negative means none
+    // `margin: auto` on the main axis, resolved in §9.5 step 1 before
+    // justify-content sees any free space.
+    bool auto_margin_start = false;
+    bool auto_margin_end = false;
 };
+
+bool is_auto(std::string_view raw) { return iequals(raw, "auto"); }
 
 } // namespace
 
@@ -86,8 +93,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
     // The main axis's available space. A column container with an indefinite
     // height has no main size to distribute, so nothing grows or shrinks.
-    const double available_main = column ? content_height : content_width;
-    const bool definite_main = available_main >= 0;
+    double available_main = column ? content_height : content_width;
+    bool definite_main = available_main >= 0;
 
     // ---- Collect the items ------------------------------------------------
     std::vector<Item> items;
@@ -121,6 +128,10 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     });
 
     // ---- Flex base and hypothetical main sizes (§9.2) ----------------------
+    // Percentages on the main axis resolve against the container's main size
+    // only when it is definite; otherwise they have no basis at all.
+    const std::optional<double> main_basis =
+        definite_main ? std::optional<double>(available_main) : std::nullopt;
     for (Item& it : items) {
         // Laid out once at the container's inner width so its natural sizes and
         // box model are resolved; the main size is corrected below.
@@ -130,6 +141,13 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
         it.grow = std::max(0.0, number_or(is, "flex-grow", 0));
         it.shrink = std::max(0.0, number_or(is, "flex-shrink", 1));
+        // An auto margin on the main axis is resolved by THIS algorithm (§9.5
+        // step 1), not by block layout, which may already have centred the box
+        // with it. Zeroed here so the share below is the whole used value.
+        it.auto_margin_start = is_auto(get(is, column ? "margin-top" : "margin-left"));
+        it.auto_margin_end = is_auto(get(is, column ? "margin-bottom" : "margin-right"));
+        if (it.auto_margin_start) (column ? b.margin_top : b.margin_left) = 0;
+        if (it.auto_margin_end) (column ? b.margin_bottom : b.margin_right) = 0;
         it.main_margins = column ? b.margin_top + b.margin_bottom : b.margin_left + b.margin_right;
         it.cross_margins = column ? b.margin_left + b.margin_right : b.margin_top + b.margin_bottom;
 
@@ -138,9 +156,13 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         double base = column ? b.height : b.width;
         if (!basis_raw.empty() && !iequals(basis_raw, "auto") &&
             !iequals(basis_raw, "content")) {
+            // A percentage against an INDEFINITE main size behaves as
+            // `content` (§7.2.3). The basis is passed as absent, not as -1: a
+            // present basis turns the percentage into a length, and -1 made
+            // `flex: 1` (basis 0%) in an auto-height column resolve to 0.
             const ResolvedLength r =
                 resolve_length(is, "flex-basis", ctx, b.font_size > 0 ? b.font_size : font_size,
-                               column ? content_height : content_width);
+                               main_basis);
             if (r.kind == LengthKind::Length) {
                 base = r.pixels;
             } else if (r.kind == LengthKind::Percent && definite_main) {
@@ -163,15 +185,27 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             }
         }
 
-        const double basis_for_minmax = column ? content_height : content_width;
         const ResolvedLength min_r =
             resolve_length(is, column ? "min-height" : "min-width", ctx,
-                           b.font_size > 0 ? b.font_size : font_size, basis_for_minmax);
-        if (min_r.kind == LengthKind::Length) it.min_main = std::max(0.0, min_r.pixels);
+                           b.font_size > 0 ? b.font_size : font_size, main_basis);
+        // min/max are compared with the BORDER-box main size, so under
+        // content-box sizing they carry the frame — the same correction
+        // flex-basis gets above. Without it `min-width: 38px; padding: 0 10px`
+        // clamped the border box to 38 where Chrome and the reference give 58.
+        const double main_frame =
+            column ? b.padding_top + b.padding_bottom + b.border_top + b.border_bottom
+                   : b.padding_left + b.padding_right + b.border_left + b.border_right;
+        const double minmax_frame = is_border_box(is) ? 0 : main_frame;
+        if (min_r.kind == LengthKind::Length) {
+            it.min_main = std::max(0.0, min_r.pixels) + minmax_frame;
+        }
         const ResolvedLength max_r =
             resolve_length(is, column ? "max-height" : "max-width", ctx,
-                           b.font_size > 0 ? b.font_size : font_size, basis_for_minmax);
-        if (max_r.kind == LengthKind::Length) it.max_main = std::max(0.0, max_r.pixels);
+                           b.font_size > 0 ? b.font_size : font_size, main_basis);
+        if (max_r.kind == LengthKind::Length) {
+            it.max_main = std::max(0.0, max_r.pixels) + minmax_frame;
+        }
+
 
         it.base = std::max(0.0, base);
         it.hypothetical = it.base;
@@ -184,6 +218,33 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     const double total_gap = main_gap * static_cast<double>(items.size() - 1);
     double used = total_gap;
     for (const Item& it : items) used += it.hypothetical + it.main_margins;
+
+    // §9.2 step 4: a container with no definite main size is sized to its
+    // content — and then clamped by its own min/max, which makes that size
+    // definite and the items flex into it. Column containers with
+    // `min-height: 100vh` and a `flex: 1` body are the page-shell idiom this
+    // exists for: without the clamp the body's 0% basis stayed 0.
+    if (!definite_main && column) {
+        const Box& cb = (*tree)[container];
+        const double frame =
+            cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
+        const double own_frame = is_border_box(style) ? frame : 0;
+        const ResolvedLength min_r =
+            resolve_length(style, "min-height", ctx, font_size, std::nullopt);
+        const ResolvedLength max_r =
+            resolve_length(style, "max-height", ctx, font_size, std::nullopt);
+        double clamped = used;
+        if (min_r.kind == LengthKind::Length) {
+            clamped = std::max(clamped, std::max(0.0, min_r.pixels - own_frame));
+        }
+        if (max_r.kind == LengthKind::Length) {
+            clamped = std::min(clamped, std::max(0.0, max_r.pixels - own_frame));
+        }
+        if (std::fabs(clamped - used) > 1e-9) {
+            available_main = clamped;
+            definite_main = true;
+        }
+    }
 
     if (definite_main && std::fabs(available_main - used) > 1e-9) {
         const bool growing = available_main > used;
@@ -249,6 +310,14 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                 block->relayout_at(it.box, it.main);
             }
         } else {
+            // Re-laid, not merely stamped: the flexed main size is definite for
+            // the item's own contents (§9.8), so a nested row flex inside it
+            // stretches its children to this height, and a `margin-top: auto`
+            // child has this height to push against. Stamping alone left a
+            // `flex: 1 1 auto` row 180 tall with a 0-tall stretched child.
+            if (std::fabs((*tree)[it.box].height - it.main) > 1e-9) {
+                block->relayout_at_size(it.box, (*tree)[it.box].width, it.main);
+            }
             (*tree)[it.box].height = it.main;
             // §9.4: an item that is NOT being stretched sizes to fit its own
             // content on the cross axis. In a column that means the width has
@@ -284,10 +353,38 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     for (const Item& it : items) content_main += it.main + it.main_margins;
     const double leftover = definite_main ? available_main - content_main : 0;
 
+    // §9.5 step 1: positive free space goes to the main-axis auto margins
+    // first, split equally; justify-content only sees what is left, which with
+    // any auto margin present is nothing. The margins are written back onto the
+    // boxes so placement below and any later reader see the used values.
+    double leftover_for_justify = leftover;
+    if (leftover > 0) {
+        int auto_count = 0;
+        for (const Item& it : items) {
+            auto_count += (it.auto_margin_start ? 1 : 0) + (it.auto_margin_end ? 1 : 0);
+        }
+        if (auto_count > 0) {
+            const double each = leftover / static_cast<double>(auto_count);
+            for (Item& it : items) {
+                Box& b = (*tree)[it.box];
+                if (it.auto_margin_start) {
+                    (column ? b.margin_top : b.margin_left) += each;
+                    it.main_margins += each;
+                }
+                if (it.auto_margin_end) {
+                    (column ? b.margin_bottom : b.margin_right) += each;
+                    it.main_margins += each;
+                }
+            }
+            leftover_for_justify = 0;
+        }
+    }
+
     const std::string_view justify = get(style, "justify-content");
     double main_pos = 0;
     double between = main_gap;
-    if (leftover > 0) {
+    if (leftover_for_justify > 0) {
+        const double leftover = leftover_for_justify;
         if (iequals(justify, "center")) main_pos = leftover * 0.5;
         else if (iequals(justify, "flex-end") || iequals(justify, "end") ||
                  iequals(justify, "right")) {

@@ -142,6 +142,28 @@ void test_box_builder_blockification() {
         CHECK(f.tree[f.find(root, "plain")].kind == BoxKind::Inline);
     }
     {
+        // Every inline-LEVEL display blockifies when out of flow or floated,
+        // not only `inline`: an absolutely positioned inline-block — a
+        // <button> by the UA sheet — is a block-level box, not an atom on a
+        // line. Left as an atom it sat one level deeper in the tree than the
+        // reference, under a line box, for every positioned button in the
+        // corpus.
+        Fixture f;
+        CHECK(f.css("#ib { display: inline-block; position: absolute }"
+                    "#if { display: inline-flex; float: left }"));
+        const BoxId root = f.build("<div id=w><span id=ib></span><span id=if></span></div>");
+        CHECK(f.tree[f.find(root, "ib")].kind == BoxKind::Block);
+        CHECK(!f.tree[f.find(root, "ib")].is_inline_block);
+        CHECK(f.tree[f.find(root, "ib")].display == DisplayKind::Block);
+        CHECK(f.tree[f.find(root, "if")].display == DisplayKind::Flex);
+        CHECK(!f.tree[f.find(root, "if")].is_inline_block);
+        // Nothing inline-level remains, so the wrapper holds them directly:
+        // no anonymous block and no inline formatting context.
+        const BoxId w = f.find(root, "w");
+        CHECK(f.tree.child_count(w) == 2);
+        CHECK(!f.tree[w].contains_inlines);
+    }
+    {
         // `float: none` is not a float, so the inline stays inline.
         Fixture f;
         CHECK(f.css("#nf { float: none; display: inline }"));

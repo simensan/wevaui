@@ -220,3 +220,211 @@ void test_grid_areas() {
     CHECK(near(f.box("q").x, 100) && near(f.box("q").y, 40));
     CHECK(near(f.box("q").width, 200) && near(f.box("q").height, 60));
 }
+
+void test_grid_line_placement() {
+    // CSS Grid L1 §8.3 line-based placement and §8.5 sparse auto-placement.
+    // Before this, grid-column / grid-row were never read and a page shell's
+    // `grid-column: 3` sidebar landed in column 1.
+    {
+        // `grid-column: 3` locks the column; `1 / 3` spans two; `span 2` is
+        // auto-placed at that width. The cursor rules decide the rows: b's
+        // start (line 1) is before the cursor a left at line 3, so it drops a
+        // row; c does not fit beside b and wraps to an implicit third row.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 300px;"
+                    "     grid-template-columns: 100px 100px 100px;"
+                    "     grid-template-rows: 40px 40px }"
+                    "#a { grid-column: 3 }"
+                    "#b { grid-column: 1 / 3 }"
+                    "#c { grid-column: span 2 }"));
+        CHECK(f.layout("<body><div id=g><div id=a></div><div id=b></div>"
+                       "<div id=c></div></div></body>"));
+        CHECK(near(f.box("a").x, 200) && near(f.box("a").y, 0));
+        CHECK(near(f.box("a").width, 100));
+        CHECK(near(f.box("b").x, 0) && near(f.box("b").y, 40));
+        CHECK(near(f.box("b").width, 200));
+        CHECK(near(f.box("c").x, 0) && near(f.box("c").y, 80));
+        CHECK(near(f.box("c").width, 200));
+    }
+    {
+        // Negative lines count from the end of the explicit grid; the
+        // longhands and the four-part grid-area resolve the same way.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 300px;"
+                    "     grid-template-columns: 100px 100px 100px;"
+                    "     grid-template-rows: 40px 40px }"
+                    "#a { grid-column: -2 / -1 }"
+                    "#b { grid-column-start: 2; grid-row-start: 2 }"
+                    "#c { grid-area: 1 / 1 / 3 / 2 }"));
+        CHECK(f.layout("<body><div id=g><div id=a></div><div id=b></div>"
+                       "<div id=c></div></div></body>"));
+        CHECK(near(f.box("a").x, 200) && near(f.box("a").y, 0));
+        CHECK(near(f.box("a").width, 100));
+        CHECK(near(f.box("b").x, 100) && near(f.box("b").y, 40));
+        CHECK(near(f.box("c").x, 0) && near(f.box("c").y, 0));
+        CHECK(near(f.box("c").height, 80));
+    }
+    {
+        // A row-locked item takes the first free column in its row past what
+        // the step already put there; running past the explicit columns adds
+        // an implicit auto track rather than wrapping.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 200px;"
+                    "     grid-template-columns: 100px 100px; grid-template-rows: 40px }"
+                    "#a { grid-row: 1 } #b { grid-row: 1 } #c { grid-row: 1 }"));
+        CHECK(f.layout("<body><div id=g><div id=a></div><div id=b></div>"
+                       "<div id=c></div></div></body>"));
+        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
+        CHECK(near(f.box("b").x, 100) && near(f.box("b").y, 0));
+        CHECK(near(f.box("c").x, 200) && near(f.box("c").y, 0));
+    }
+    {
+        // A spanning auto item wraps when the remaining columns cannot hold
+        // it, and the next item fills in after it.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 300px;"
+                    "     grid-template-columns: 100px 100px 100px }"
+                    ".c { height: 10px } #b { grid-column: span 2 }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=c></div><div id=a2 class=c></div>"
+                       "<div id=b class=c></div><div id=d class=c></div></div></body>"));
+        CHECK(near(f.box("a2").x, 100) && near(f.box("a2").y, 0));
+        CHECK(near(f.box("b").x, 0) && near(f.box("b").y, 10));
+        CHECK(near(f.box("b").width, 200));
+        CHECK(near(f.box("d").x, 200) && near(f.box("d").y, 10));
+    }
+    {
+        // A named area still wins, and a name that is not in the template
+        // falls back to auto-placement rather than vanishing.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 200px;"
+                    "     grid-template-columns: 100px 100px;"
+                    "     grid-template-areas: \"x y\" }"
+                    "#a { grid-area: y } #b { grid-area: nope }"));
+        CHECK(f.layout("<body><div id=g><div id=a></div><div id=b></div></div></body>"));
+        CHECK(near(f.box("a").x, 100));
+        CHECK(near(f.box("b").x, 0));
+    }
+}
+
+void test_grid_alignment() {
+    // CSS Box Alignment in a grid container: *-items / *-self place an item
+    // within its area, *-content places the tracks within the container.
+    {
+        // The modal idiom: place-items: center on a full-size grid centres a
+        // fixed-size child. Before this the child was stretched to the cell
+        // (an explicit width was overwritten) and sat at the origin.
+        Fixture f;
+        CHECK(f.css("#o { display: grid; place-items: center; width: 800px; height: 600px }"
+                    "#m { width: 200px; height: 100px }"));
+        CHECK(f.layout("<body><div id=o><div id=m></div></div></body>"));
+        CHECK(near(f.box("m").width, 200) && near(f.box("m").height, 100));
+        CHECK(near(f.box("m").x, 300) && near(f.box("m").y, 250));
+    }
+    {
+        // Self overrides items; end and center in either axis.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: 100px; grid-template-rows: 100px;"
+                    "     justify-items: start; align-items: start }"
+                    "#a { width: 50px; height: 20px; justify-self: end; align-self: center }"));
+        CHECK(f.layout("<body><div id=g><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").x, 50) && near(f.box("a").y, 40));
+    }
+    {
+        // Default stretch keeps an explicit width rather than widening it,
+        // and an auto width under `start` fits its content.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: 100px 100px;"
+                    "     grid-template-rows: 30px; justify-items: start }"
+                    "#a { width: 50px }"
+                    "#b { justify-self: stretch }"));
+        CHECK(f.layout("<body><div id=g><div id=a></div><div id=b>ab</div></div></body>"));
+        CHECK(near(f.box("a").width, 50) && near(f.box("a").x, 0));
+        CHECK(near(f.box("a").height, 30));
+        CHECK(near(f.box("b").width, 100));
+        Fixture g;
+        CHECK(g.css("#g { display: grid; grid-template-columns: 100px; justify-items: start }"));
+        CHECK(g.layout("<body><div id=g><div id=b>ab</div></div></body>"));
+        CHECK(g.box("b").width > 0 && g.box("b").width < 100);
+    }
+    {
+        // align-content: space-between against a min-height the rows do not
+        // reach — the clamped height is definite and the rows spread over it.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: repeat(2, 60px);"
+                    "     grid-template-rows: repeat(2, 40px); align-content: space-between;"
+                    "     min-height: 150px }"));
+        CHECK(f.layout("<body><div id=g><div id=a></div><div id=b></div>"
+                       "<div id=c></div><div id=d></div></div></body>"));
+        CHECK(near(f.box("g").height, 150));
+        CHECK(near(f.box("a").y, 0));
+        CHECK(near(f.box("c").y, 110) && near(f.box("d").y, 110));
+    }
+    {
+        // justify-content: center on fixed columns narrower than the container.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 300px; grid-template-columns: 100px 100px;"
+                    "     justify-content: center }"
+                    ".c { height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=c></div><div id=b class=c></div>"
+                       "</div></body>"));
+        CHECK(near(f.box("a").x, 50) && near(f.box("b").x, 150));
+    }
+    {
+        // With free space and no auto tracks, `normal` behaves as start: the
+        // pre-existing case, unchanged.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; width: 300px; grid-template-columns: 100px 100px }"
+                    ".c { height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=c></div><div id=b class=c></div>"
+                       "</div></body>"));
+        CHECK(near(f.box("a").x, 0) && near(f.box("b").x, 100));
+    }
+}
+
+void test_grid_auto_track_contributions() {
+    {
+        // `justify-content: start` keeps auto columns at their content size
+        // instead of stretching them over the free space, and an item's
+        // min-width is part of that content size.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: auto auto; gap: 10px;"
+                    "     justify-content: start; width: 800px }"
+                    ".c { min-width: 200px; display: flex }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=c>x</div><div id=b class=c>y</div>"
+                       "</div></body>"));
+        CHECK(near(f.box("a").width, 200) && near(f.box("a").x, 0));
+        CHECK(near(f.box("b").width, 200) && near(f.box("b").x, 210));
+        // ...while the default `normal` still stretches them.
+        Fixture g;
+        CHECK(g.css("#g { display: grid; grid-template-columns: auto auto; gap: 10px;"
+                    "     width: 810px }"
+                    ".c { min-width: 200px }"));
+        CHECK(g.layout("<body><div id=g><div id=a class=c>x</div><div id=b class=c>y</div>"
+                       "</div></body>"));
+        CHECK(near(g.box("a").width, 400) && near(g.box("b").x, 410));
+    }
+    {
+        // An overflow:hidden item sizes an auto row in an auto-height grid —
+        // the grid is sized under a max-content constraint, so the row grows
+        // to the item's contribution — and a centred sibling centres in it.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: 200px 1fr; align-items: center;"
+                    "     width: 800px }"
+                    "#ctrl { overflow: hidden; height: 28px }"
+                    "#lab { height: 10px }"));
+        CHECK(f.layout("<body><div id=g><div id=lab></div><div id=ctrl></div></div></body>"));
+        CHECK(near(f.box("g").height, 28));
+        CHECK(near(f.box("lab").y, 9));
+        CHECK(near(f.box("ctrl").y, 0));
+    }
+    {
+        // In a DEFINITE-height grid the scroll container's automatic minimum
+        // is zero: the row takes the container's height, not the item's.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-rows: auto; height: 100px; width: 200px }"
+                    "#s { overflow: auto; height: 300px }"));
+        CHECK(f.layout("<body><div id=g><div id=s></div></div></body>"));
+        CHECK(near(f.box("g").height, 100));
+        CHECK(near(f.box("s").y, 0));
+    }
+}

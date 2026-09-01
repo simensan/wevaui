@@ -159,14 +159,16 @@ public:
     // it back to the content.
     void relayout_at_size(BoxId id, double width, double height);
 
+    // CSS 2.1 §10.3.5. Used by floats, inline-block atoms and grid items that
+    // are not stretched, all of which hug their content rather than filling
+    // their containing block. Returns the box's font size.
+    double shrink_to_fit(BoxId id, double available_width, const ComputedStyle* parent_style);
+
 private:
     void layout_content(BoxId id, double font_size, double containing_block_width,
                         const ComputedStyle* parent_style);
     void finalize_block_size(BoxId id, double font_size, double content_bottom_y);
     void layout_float_box(BoxId id, double containing_block_width);
-    // CSS 2.1 §10.3.5. Used by floats and inline-block atoms, both of which
-    // hug their content rather than filling their containing block.
-    double shrink_to_fit(BoxId id, double available_width, const ComputedStyle* parent_style);
     void relayout_content_at(BoxId id, double width, double font_size,
                              const ComputedStyle* parent_style);
     void size_atoms(std::vector<InlineItem>* items, double available_width,

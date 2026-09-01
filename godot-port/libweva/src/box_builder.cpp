@@ -144,8 +144,15 @@ void BoxBuilder::append_node_as_block_child(const Node& node, const ComputedStyl
     //
     // Excluded inside a flex or grid container, whose items cannot float and
     // whose children are blockified below anyway (CSS Flexbox §3, Grid §6.4).
-    if (!blockify && disp == DisplayKind::Inline) {
-        if (is_out_of_flow_position(style) || is_floated(style)) disp = DisplayKind::Block;
+    //
+    // Every inline-LEVEL display blockifies, not only `inline`: a
+    // `position: absolute` <button> is inline-block by the UA sheet, and left
+    // as one it stayed an inline atom, was placed on a line box, and the dump
+    // reported it one level deeper than the reference — for every absolutely
+    // positioned button in the corpus.
+    if (!blockify && (disp == DisplayKind::Inline || is_inline_level_block(disp)) &&
+        (is_out_of_flow_position(style) || is_floated(style))) {
+        disp = disp == DisplayKind::Inline ? DisplayKind::Block : blockified(disp);
     }
 
     if (establishes_block_box(disp) || is_inline_level_block(disp) || is_table_display(disp)) {
@@ -224,8 +231,9 @@ void BoxBuilder::append_inline_child(const Node& node, const ComputedStyle* pare
     // Same §9.7 blockification as the block path: a float nested inside an
     // inline box must still reach float layout rather than being folded into
     // the inline stream.
-    if (disp == DisplayKind::Inline) {
-        if (is_out_of_flow_position(style) || is_floated(style)) disp = DisplayKind::Block;
+    if ((disp == DisplayKind::Inline || is_inline_level_block(disp)) &&
+        (is_out_of_flow_position(style) || is_floated(style))) {
+        disp = disp == DisplayKind::Inline ? DisplayKind::Block : blockified(disp);
     }
 
     if (establishes_block_box(disp) || is_inline_level_block(disp) || is_table_display(disp)) {

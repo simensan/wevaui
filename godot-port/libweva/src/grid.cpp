@@ -6,7 +6,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace weva {
@@ -188,7 +191,150 @@ bool area_rect(const std::vector<std::vector<std::string>>& areas, const std::st
     return true;
 }
 
-void resolve_tracks(std::vector<Track>* tracks, double available, double gap) {
+// One side of a grid-placement property (CSS Grid L1 §8.3): `auto`, a line
+// number (negative counts from the end of the explicit grid), or `span N`.
+// Named lines are not ported and read as `auto`.
+struct LineSpec {
+    bool is_auto = true;
+    bool is_span = false;
+    int n = 0;
+};
+
+std::string_view trim(std::string_view s) {
+    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\n')) {
+        s.remove_prefix(1);
+    }
+    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\n')) {
+        s.remove_suffix(1);
+    }
+    return s;
+}
+
+bool parse_int(std::string_view s, int* out) {
+    s = trim(s);
+    if (s.empty()) return false;
+    size_t i = 0;
+    bool neg = false;
+    if (s[0] == '-' || s[0] == '+') { neg = s[0] == '-'; i = 1; }
+    if (i >= s.size()) return false;
+    long v = 0;
+    for (; i < s.size(); ++i) {
+        if (s[i] < '0' || s[i] > '9') return false;
+        v = v * 10 + (s[i] - '0');
+        if (v > 100000) return false;
+    }
+    *out = static_cast<int>(neg ? -v : v);
+    return true;
+}
+
+LineSpec parse_line_spec(std::string_view raw) {
+    LineSpec spec;
+    raw = trim(raw);
+    if (raw.empty() || iequals(raw, "auto")) return spec;
+    // Split on whitespace: `span 2`, `2 span`, `3`.
+    std::vector<std::string_view> words;
+    size_t start = std::string_view::npos;
+    for (size_t k = 0; k <= raw.size(); ++k) {
+        const bool ws = k == raw.size() || raw[k] == ' ' || raw[k] == '\t';
+        if (ws) {
+            if (start != std::string_view::npos) {
+                words.push_back(raw.substr(start, k - start));
+                start = std::string_view::npos;
+            }
+        } else if (start == std::string_view::npos) {
+            start = k;
+        }
+    }
+    bool span = false;
+    int n = 0;
+    bool have_n = false;
+    for (std::string_view w : words) {
+        if (iequals(w, "span")) span = true;
+        else if (parse_int(w, &n)) have_n = true;
+        else return spec;   // a named line: not ported, behaves as auto
+    }
+    if (span) {
+        spec.is_auto = false;
+        spec.is_span = true;
+        spec.n = have_n ? std::max(1, n) : 1;
+        return spec;
+    }
+    if (!have_n || n == 0) return spec;
+    spec.is_auto = false;
+    spec.n = n;
+    return spec;
+}
+
+// The two sides of one axis, read from the shorthand (`grid-column: 1 / 3`)
+// when it is set and the longhands otherwise. The shorthands are stored raw
+// rather than expanded, so a single value is start-only and the end is auto.
+void read_axis(const ComputedStyle* style, std::string_view shorthand,
+               std::string_view start_prop, std::string_view end_prop,
+               LineSpec* start, LineSpec* end) {
+    const std::string_view raw = trim(get(style, shorthand));
+    if (!raw.empty() && !iequals(raw, "auto")) {
+        const size_t slash = raw.find('/');
+        if (slash == std::string_view::npos) {
+            *start = parse_line_spec(raw);
+            *end = LineSpec{};
+        } else {
+            *start = parse_line_spec(raw.substr(0, slash));
+            *end = parse_line_spec(raw.substr(slash + 1));
+        }
+        return;
+    }
+    *start = parse_line_spec(get(style, start_prop));
+    *end = parse_line_spec(get(style, end_prop));
+}
+
+// §8.3.1: a start line and an end line resolve to a track index and a span.
+// `definite` is false when the axis still needs auto-placement, in which case
+// only the span is meaningful.
+struct AxisPlacement {
+    bool definite = false;
+    int start = 0;   // 0-based track index
+    int span = 1;
+};
+
+AxisPlacement resolve_axis(const LineSpec& s, const LineSpec& e, int explicit_tracks) {
+    // A negative line counts from the end of the explicit grid: -1 is its last
+    // line, which is explicit_tracks + 1 in positive numbering.
+    const auto to_line = [&](int n) { return n > 0 ? n : explicit_tracks + 2 + n; };
+    AxisPlacement out;
+    const bool s_line = !s.is_auto && !s.is_span;
+    const bool e_line = !e.is_auto && !e.is_span;
+    if (s_line && e_line) {
+        int a = to_line(s.n), b = to_line(e.n);
+        if (a == b) b = a + 1;
+        if (b < a) std::swap(a, b);
+        if (a < 1) a = 1;   // implicit tracks before the explicit grid: not ported
+        out.definite = true;
+        out.start = a - 1;
+        out.span = b - a;
+        return out;
+    }
+    if (s_line) {
+        const int a = std::max(1, to_line(s.n));
+        out.definite = true;
+        out.start = a - 1;
+        out.span = e.is_span ? e.n : 1;
+        return out;
+    }
+    if (e_line) {
+        const int span = s.is_span ? s.n : 1;
+        int a = to_line(e.n) - span;
+        if (a < 1) a = 1;
+        out.definite = true;
+        out.start = a - 1;
+        out.span = span;
+        return out;
+    }
+    out.span = s.is_span ? s.n : (e.is_span ? e.n : 1);
+    return out;
+}
+
+void resolve_tracks(std::vector<Track>* tracks, double available, double gap,
+                    std::string_view content_align) {
     if (tracks->empty()) return;
     const double total_gap = gap * static_cast<double>(tracks->size() - 1);
     double fixed = total_gap;
@@ -214,7 +360,12 @@ void resolve_tracks(std::vector<Track>* tracks, double available, double gap) {
     //
     // Only when nothing is flexible: an `fr` track has already absorbed the
     // free space and there is none left to stretch with.
-    if (available >= 0 && fraction_total <= 0) {
+    // ...and only for those two keywords: `justify-content: start` on auto
+    // columns leaves them at their content size, which is what the keyword is
+    // for.
+    const bool stretches = content_align.empty() || iequals(content_align, "normal") ||
+                           iequals(content_align, "stretch");
+    if (available >= 0 && fraction_total <= 0 && stretches) {
         int auto_count = 0;
         for (const Track& t : *tracks) {
             if (t.kind == Track::Kind::Auto) ++auto_count;
@@ -230,6 +381,72 @@ void resolve_tracks(std::vector<Track>* tracks, double available, double gap) {
     for (Track& t : *tracks) {
         t.position = pos;
         pos += t.size + gap;
+    }
+}
+
+// CSS Box Alignment §6: an item's alignment in one axis is its own
+// `*-self` value, falling back to the container's `*-items`; `auto` and
+// `normal` mean `stretch` for a grid item. The place-* shorthands are
+// expanded to these longhands by the cascade.
+std::string_view self_alignment(const ComputedStyle* item, const ComputedStyle* container,
+                                bool block_axis) {
+    std::string_view v = get(item, block_axis ? "align-self" : "justify-self");
+    if (v.empty() || iequals(v, "auto") || iequals(v, "normal")) {
+        v = get(container, block_axis ? "align-items" : "justify-items");
+    }
+    // `legacy` is justify-items' initial value and behaves as normal.
+    if (v.empty() || iequals(v, "auto") || iequals(v, "normal") || iequals(v, "legacy") ||
+        iequals(v, "baseline")) {
+        return "stretch";
+    }
+    if (iequals(v, "flex-start") || iequals(v, "self-start") || iequals(v, "left")) return "start";
+    if (iequals(v, "flex-end") || iequals(v, "self-end") || iequals(v, "right")) return "end";
+    return v;
+}
+
+bool is_stretch(std::string_view v) { return iequals(v, "stretch"); }
+
+// The offset of an outer size within a cell for one alignment keyword.
+double align_offset(std::string_view v, double cell, double outer) {
+    if (iequals(v, "center")) return (cell - outer) * 0.5;
+    if (iequals(v, "end")) return cell - outer;
+    return 0;
+}
+
+// CSS Box Alignment §5: align-content / justify-content distribute the free
+// space of a definite container between the tracks. `normal` and `stretch`
+// have already given that space to the auto tracks in resolve_tracks; when
+// none exist they fall through to `start`, which is why this only ever moves
+// tracks for the other keywords.
+void distribute_content(std::vector<Track>* tracks, double available, double gap,
+                        std::string_view align) {
+    if (available < 0 || tracks->empty()) return;
+    const int n = static_cast<int>(tracks->size());
+    double used = gap * static_cast<double>(n - 1);
+    for (const Track& t : *tracks) used += t.size;
+    const double free_space = available - used;
+    if (free_space <= 0) return;
+    double offset = 0, extra_gap = 0;
+    if (iequals(align, "center")) {
+        offset = free_space * 0.5;
+    } else if (iequals(align, "end") || iequals(align, "flex-end")) {
+        offset = free_space;
+    } else if (iequals(align, "space-between")) {
+        if (n < 2) return;
+        extra_gap = free_space / static_cast<double>(n - 1);
+    } else if (iequals(align, "space-around")) {
+        extra_gap = free_space / static_cast<double>(n);
+        offset = extra_gap * 0.5;
+    } else if (iequals(align, "space-evenly")) {
+        extra_gap = free_space / static_cast<double>(n + 1);
+        offset = extra_gap;
+    } else {
+        return;
+    }
+    double pos = offset;
+    for (Track& t : *tracks) {
+        t.position = pos;
+        pos += t.size + gap + extra_gap;
     }
 }
 
@@ -277,8 +494,18 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     if (columns.empty()) columns.push_back({Track::Kind::Auto, 0, 0, 0});
 
     // ---- Collect and place the items ---------------------------------------
-    std::vector<Placement> items;
-    std::vector<BoxId> auto_placed;
+    // CSS Grid L1 §8.5, sparse `row` flow. Items are grouped by how much of
+    // their position is definite: a named area or two line numbers fixes both
+    // axes; `grid-column: 3` fixes one; the rest take the auto-placement
+    // cursor. Before this, `grid-column` and `grid-row` were never read, so a
+    // page shell's `grid-column: 3` sidebar landed in column 1.
+    struct Pending {
+        BoxId box = kNoBox;
+        AxisPlacement col, row;
+    };
+    std::vector<Pending> pending;
+    const int explicit_columns = static_cast<int>(columns.size());
+    const int explicit_rows = static_cast<int>(rows.size());
     for (BoxId c : tree->children(container)) {
         const Box& cb = (*tree)[c];
         if (cb.kind != BoxKind::Block && cb.kind != BoxKind::AnonymousBlock) continue;
@@ -287,19 +514,45 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             block->layout_block(c, content_width, style);
             continue;
         }
-        Placement p;
+        Pending p;
         p.box = c;
-        const std::string_view area = get(cb.style, "grid-area");
-        if (!area.empty() && !iequals(area, "auto") &&
-            area_rect(areas, std::string(area), &p.column, &p.row, &p.column_span,
-                      &p.row_span)) {
-            items.push_back(p);
+        const std::string_view area = trim(get(cb.style, "grid-area"));
+        int col = 0, row = 0, col_span = 1, row_span = 1;
+        if (!area.empty() && !iequals(area, "auto") && area.find('/') == std::string_view::npos &&
+            area_rect(areas, std::string(area), &col, &row, &col_span, &row_span)) {
+            p.col = {true, col, col_span};
+            p.row = {true, row, row_span};
         } else {
-            auto_placed.push_back(c);
+            LineSpec cs, ce, rs, re;
+            if (area.find('/') != std::string_view::npos) {
+                // `grid-area: <row-start> / <column-start> / <row-end> / <column-end>`;
+                // omitted trailing values are auto.
+                std::vector<std::string_view> parts;
+                size_t from = 0;
+                while (true) {
+                    const size_t slash = area.find('/', from);
+                    parts.push_back(area.substr(from, slash == std::string_view::npos
+                                                          ? std::string_view::npos
+                                                          : slash - from));
+                    if (slash == std::string_view::npos) break;
+                    from = slash + 1;
+                }
+                rs = parse_line_spec(parts[0]);
+                cs = parts.size() > 1 ? parse_line_spec(parts[1]) : LineSpec{};
+                re = parts.size() > 2 ? parse_line_spec(parts[2]) : LineSpec{};
+                ce = parts.size() > 3 ? parse_line_spec(parts[3]) : LineSpec{};
+            } else {
+                read_axis(cb.style, "grid-column", "grid-column-start", "grid-column-end",
+                          &cs, &ce);
+                read_axis(cb.style, "grid-row", "grid-row-start", "grid-row-end", &rs, &re);
+            }
+            p.col = resolve_axis(cs, ce, explicit_columns);
+            p.row = resolve_axis(rs, re, explicit_rows);
         }
+        pending.push_back(p);
     }
 
-    // Row-major auto-placement into the cells the named areas left free.
+    std::vector<Placement> items;
     {
         std::vector<std::vector<bool>> taken;
         const auto occupy = [&](int r, int c) {
@@ -312,30 +565,87 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             return r < static_cast<int>(taken.size()) &&
                    c < static_cast<int>(taken[r].size()) && taken[r][c];
         };
-        for (const Placement& p : items) {
-            for (int r = p.row; r < p.row + p.row_span; ++r) {
-                for (int c = p.column; c < p.column + p.column_span; ++c) occupy(r, c);
-            }
-        }
-        int cursor_row = 0, cursor_col = 0;
-        for (BoxId box : auto_placed) {
-            while (is_taken(cursor_row, cursor_col)) {
-                if (++cursor_col >= static_cast<int>(columns.size())) {
-                    cursor_col = 0;
-                    ++cursor_row;
+        const auto area_free = [&](int r, int c, int rs, int cs) {
+            for (int rr = r; rr < r + rs; ++rr) {
+                for (int cc = c; cc < c + cs; ++cc) {
+                    if (is_taken(rr, cc)) return false;
                 }
             }
-            Placement p;
-            p.box = box;
-            p.column = cursor_col;
-            p.row = cursor_row;
-            items.push_back(p);
-            occupy(cursor_row, cursor_col);
-            if (++cursor_col >= static_cast<int>(columns.size())) {
+            return true;
+        };
+        const auto place = [&](const Pending& p, int r, int c) {
+            Placement out;
+            out.box = p.box;
+            out.column = c;
+            out.row = r;
+            out.column_span = p.col.span;
+            out.row_span = p.row.span;
+            for (int rr = r; rr < r + out.row_span; ++rr) {
+                for (int cc = c; cc < c + out.column_span; ++cc) occupy(rr, cc);
+            }
+            items.push_back(out);
+        };
+
+        // Step 1: anything definite in both axes.
+        for (const Pending& p : pending) {
+            if (p.col.definite && p.row.definite) place(p, p.row.start, p.col.start);
+        }
+        // Step 2: items locked to a row take the first free column in it that
+        // is past anything this step already put there.
+        std::map<int, int> row_cursor;
+        for (const Pending& p : pending) {
+            if (p.col.definite || !p.row.definite) continue;
+            int c = row_cursor.count(p.row.start) ? row_cursor[p.row.start] : 0;
+            while (!area_free(p.row.start, c, p.row.span, p.col.span)) ++c;
+            place(p, p.row.start, c);
+            row_cursor[p.row.start] = c + p.col.span;
+        }
+        // Step 3: the implicit grid's column count — the explicit tracks, plus
+        // whatever definite placements or spans reach past them.
+        int column_count = explicit_columns;
+        for (const Placement& pl : items) {
+            column_count = std::max(column_count, pl.column + pl.column_span);
+        }
+        for (const Pending& p : pending) {
+            if (!p.col.definite && !p.row.definite) {
+                column_count = std::max(column_count, p.col.span);
+            }
+        }
+        // Step 4: the cursor walks the remaining items in row-major order.
+        int cursor_row = 0, cursor_col = 0;
+        for (const Pending& p : pending) {
+            if (p.row.definite) continue;
+            if (p.col.definite) {
+                if (p.col.start < cursor_col) ++cursor_row;
+                cursor_col = p.col.start;
+                while (!area_free(cursor_row, cursor_col, p.row.span, p.col.span)) ++cursor_row;
+                place(p, cursor_row, cursor_col);
+                continue;
+            }
+            while (true) {
+                if (cursor_col + p.col.span > column_count) {
+                    cursor_col = 0;
+                    ++cursor_row;
+                    continue;
+                }
+                if (area_free(cursor_row, cursor_col, p.row.span, p.col.span)) break;
+                ++cursor_col;
+            }
+            place(p, cursor_row, cursor_col);
+            cursor_col += p.col.span;
+            if (cursor_col >= column_count) {
                 cursor_col = 0;
                 ++cursor_row;
             }
         }
+    }
+
+    // Implicit columns: a placement past the explicit grid adds `auto` tracks,
+    // since grid-auto-columns is not ported.
+    int max_column = 0;
+    for (const Placement& p : items) max_column = std::max(max_column, p.column + p.column_span);
+    while (static_cast<int>(columns.size()) < max_column) {
+        columns.push_back({Track::Kind::Auto, 0, 0, 0});
     }
 
     // Implicit rows: a grid with more items than explicit rows grows. Every
@@ -362,30 +672,100 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             const Box& b = (*tree)[p.box];
             const double frame =
                 b.padding_left + b.padding_right + b.border_left + b.border_right;
-            widest = std::max(widest, max_content_width(*tree, p.box) + frame);
+            double contribution = max_content_width(*tree, p.box) + frame;
+            // The item's own min-/max-width bound its contribution: a
+            // `min-width: 200px` cell in an auto column makes the column 200
+            // wide even when its text is narrower.
+            const double item_fs = b.font_size > 0 ? b.font_size : font_size;
+            const double minmax_frame = is_border_box(b.style) ? 0 : frame;
+            const ResolvedLength min_w =
+                resolve_length(b.style, "min-width", ctx, item_fs, content_width);
+            if (min_w.kind == LengthKind::Length) {
+                contribution = std::max(contribution, min_w.pixels + minmax_frame);
+            }
+            const ResolvedLength max_w =
+                resolve_length(b.style, "max-width", ctx, item_fs, content_width);
+            if (max_w.kind == LengthKind::Length) {
+                contribution = std::min(contribution, max_w.pixels + minmax_frame);
+            }
+            widest = std::max(widest, contribution + b.margin_left + b.margin_right);
         }
         columns[c].size = widest;
     }
-    resolve_tracks(&columns, content_width, column_gap);
 
-    // Each item is laid out at its cell's width so its height is known; that
-    // height then sizes any auto row.
-    for (const Placement& p : items) {
+    resolve_tracks(&columns, content_width, column_gap, get(style, "justify-content"));
+    distribute_content(&columns, content_width, column_gap, get(style, "justify-content"));
+
+    // Each item takes its inline size from its cell: a stretched auto-width
+    // item fills it, a `start`/`center`/`end` one fits its content inside it,
+    // and an explicit width is kept — re-resolved against the cell, since the
+    // grid AREA is the item's containing block — rather than overwritten. The
+    // height that falls out then sizes any auto row.
+    const auto size_inline = [&](const Placement& p) {
         const double w = span_size(columns, p.column, p.column_span, column_gap);
-        if (std::fabs((*tree)[p.box].width - w) > 1e-9) block->relayout_at(p.box, w);
-    }
+        const Box& b = (*tree)[p.box];
+        const std::string_view width_raw = get(b.style, "width");
+        const bool auto_width = width_raw.empty() || iequals(width_raw, "auto");
+        if (!auto_width) {
+            block->layout_block(p.box, w, style);
+            return;
+        }
+        if (is_stretch(self_alignment(b.style, style, false))) {
+            if (std::fabs(b.width - w) > 1e-9) block->relayout_at(p.box, w);
+            return;
+        }
+        block->shrink_to_fit(p.box, w, style);
+    };
+    for (const Placement& p : items) size_inline(p);
+    // An auto row's base size is its items' minimum contributions, and a
+    // scroll container's automatic minimum is zero (§6.6) — so in a grid with
+    // a DEFINITE height such an item does not force the row past the space
+    // there is; the row takes its share of that height and the item scrolls.
+    // A grid with an AUTO height is sized under a max-content constraint, and
+    // there every auto track grows to its growth limit, which is the items'
+    // max-content contribution, scroll container or not. Skipping the scroll
+    // container in both cases left an `overflow: hidden` segmented control
+    // out of its own row's height.
     for (size_t r = 0; r < rows.size(); ++r) {
         if (rows[r].kind != Track::Kind::Auto) continue;
-        double tallest = 0;
+        double base = 0, limit = 0;
         for (const Placement& p : items) {
             if (p.row != static_cast<int>(r) || p.row_span != 1) continue;
             const Box& b = (*tree)[p.box];
-            if (clips_overflow(b.style)) continue;
-            tallest = std::max(tallest, b.height + b.margin_top + b.margin_bottom);
+            const double outer = b.height + b.margin_top + b.margin_bottom;
+            limit = std::max(limit, outer);
+            if (!clips_overflow(b.style)) base = std::max(base, outer);
         }
-        rows[r].size = tallest;
+        rows[r].size = content_height >= 0 ? base : limit;
     }
-    resolve_tracks(&rows, content_height, row_gap);
+    // A container with no definite height is sized to its rows and then
+    // clamped by its own min/max-height; the clamped size is definite, so the
+    // rows distribute it (the same rule the flex container applies in §9.2).
+    // `align-content: space-between; min-height: 150px` over two 40px rows
+    // puts the second row at 110, not 40.
+    double rows_available = content_height;
+    if (rows_available < 0 && !rows.empty()) {
+        double natural = row_gap * static_cast<double>(rows.size() - 1);
+        for (const Track& t : rows) natural += t.kind == Track::Kind::Fixed ? t.value : t.size;
+        const Box& cb = (*tree)[container];
+        const double frame =
+            cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
+        const double own_frame = is_border_box(style) ? frame : 0;
+        const ResolvedLength min_r =
+            resolve_length(style, "min-height", ctx, font_size, std::nullopt);
+        const ResolvedLength max_r =
+            resolve_length(style, "max-height", ctx, font_size, std::nullopt);
+        double clamped = natural;
+        if (min_r.kind == LengthKind::Length) {
+            clamped = std::max(clamped, std::max(0.0, min_r.pixels - own_frame));
+        }
+        if (max_r.kind == LengthKind::Length) {
+            clamped = std::min(clamped, std::max(0.0, max_r.pixels - own_frame));
+        }
+        if (std::fabs(clamped - natural) > 1e-9) rows_available = clamped;
+    }
+    resolve_tracks(&rows, rows_available, row_gap, get(style, "align-content"));
+    distribute_content(&rows, rows_available, row_gap, get(style, "align-content"));
 
     // ---- Place ------------------------------------------------------------
     const double left_inner = (*tree)[container].padding_left + (*tree)[container].border_left;
@@ -394,21 +774,29 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     for (const Placement& p : items) {
         const double w = span_size(columns, p.column, p.column_span, column_gap);
         const double h = span_size(rows, p.row, p.row_span, row_gap);
-        // `stretch` is the initial placement in both axes, so an item fills its
-        // cell unless it has a definite size of its own.
+        // `stretch` is the initial alignment in both axes, so an auto-sized
+        // item fills its cell; a definite size, or any other keyword, keeps
+        // the item's own size and offsets it within the cell.
         const Box& before = (*tree)[p.box];
+        const std::string_view justify = self_alignment(before.style, style, false);
+        const std::string_view align = self_alignment(before.style, style, true);
         const std::string_view height_raw = get(before.style, "height");
         const bool auto_height = height_raw.empty() || iequals(height_raw, "auto");
-        if (auto_height && h > 0) {
-            block->relayout_at_size(p.box, w, h);
+        if (auto_height && is_stretch(align) && h > 0) {
+            // At the inline size it already has, not the cell's: a `center`
+            // or explicit-width item must not be widened by the stretch.
+            block->relayout_at_size(p.box, before.width, h);
         }
         Box& b = (*tree)[p.box];
+        const double outer_w = b.width + b.margin_left + b.margin_right;
+        const double outer_h = b.height + b.margin_top + b.margin_bottom;
         b.x = left_inner + (p.column < static_cast<int>(columns.size())
                                 ? columns[p.column].position
                                 : 0) +
-              b.margin_left;
+              b.margin_left + align_offset(justify, w, outer_w);
         b.y = top_inner +
-              (p.row < static_cast<int>(rows.size()) ? rows[p.row].position : 0) + b.margin_top;
+              (p.row < static_cast<int>(rows.size()) ? rows[p.row].position : 0) + b.margin_top +
+              align_offset(align, h, outer_h);
         bottom = std::max(bottom, b.y + b.height + b.margin_bottom - top_inner);
     }
 

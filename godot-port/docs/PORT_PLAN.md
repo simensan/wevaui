@@ -2357,6 +2357,95 @@ groups are selector-combinator and spatial-navigation cases. The rest need
 `flex-wrap`, advanced grid, anchor positioning, transforms, counters and the
 other features the plan already lists as unported.
 
+### Chrome arbitrates the harvested corpus too: 140/212 → 171/210
+
+The harvested corpus had no Chrome captures, so every disagreement counted
+against the port — including the ones where the reference is wrong. The
+capture script now takes a directory (`node Tools/Layout/capture-all-chrome-layouts.mjs
+<corpus> 800 600`), and `run_oracle.py` arbitrates the harvest the way it
+already arbitrated the hand-built cases. Two harness fixes came with it:
+
+* The capture's `@font-face` path pointed at a directory the fonts had left,
+  so Chrome had been measuring with the machine's sans-serif. Fixed to
+  `Runtime/Resources/Fonts`. Text-line heights still do not arbitrate exactly —
+  Inter's `normal` line height is 20 at 16px where the reference's synthetic
+  metric gives 18.29 — but geometry does, which is what settled everything
+  below.
+* `--reuse-reference` skips BaselineGen when a reference dump is newer than
+  its case. The .NET start-up per case was ten minutes of every run; the
+  candidate side is five seconds. Run without the flag after a C# change.
+* The harvester classified a string as HTML on angle brackets alone, so an
+  `@property` block with `syntax: "<length>"` became two bogus cases whose
+  elements were `<length>` tags. It now wants a closing or void tag. 212 → 210.
+
+**Twelve reference bugs surfaced at once**, and the largest group was the
+whole spatial-navigation family: the reference gives an absolutely positioned
+`<button>` with `width: 80px` a width of **0**. Chrome says 80, the port says
+80. The port had its own bug on the same cases — the button was one level
+deeper in the dump — and that one was real.
+
+**What the port got wrong, in the order it was found:**
+
+* **An out-of-flow `inline-block` was not blockified.** §9.7 blockifies every
+  inline-level display, and the box builder only did `inline`. A positioned
+  button (inline-block by the UA sheet) stayed an atom, was placed on a line
+  box, and read one level deeper than the reference on six cases.
+* **Anonymous blocks read `text-align` off their own null style.** The
+  line-height fallback to the parent already existed at the same spot; the
+  alignment did not, so an inline-flex pill that shared a right-aligned
+  parent with a block sibling was flushed left.
+* **Flex `min-/max-width` were compared without the frame.** They are
+  content-box sizes under the default sizing and the algorithm clamps the
+  border box — flex-basis already had this correction, min/max did not.
+  `min-width: 38px; padding: 0 10px` gave 38 where the answer is 58. Six
+  cases.
+* **Flex auto margins on the main axis were never resolved.** §9.5 step 1:
+  free space goes to them before justify-content, split equally. The values
+  are written back onto the boxes, after zeroing whatever block layout had
+  resolved for the same margin.
+* **A column item's flexed height was stamped, not re-laid.** §9.8 makes it
+  definite for the item's own contents; without the relayout a nested row's
+  stretched child was 0 tall inside a 180px row.
+* **A column container's `min-height` never made its main size definite.**
+  §9.2 step 4: content-sized, then clamped, and the clamped size is what the
+  items flex into. The page-shell `min-height: 100vh` + `flex: 1` body was 0
+  tall. And with the main size indefinite, a `0%` basis had been resolving
+  against a basis of -1 — a present basis makes a percentage a length — so it
+  is now passed as absent and falls back to content, per §7.2.3.
+* **Grid read no line placement at all.** `grid-column: 3`, `1 / 3`,
+  `span 2`, negative lines, the longhands and the four-part `grid-area` all
+  auto-placed. §8.3 line resolution and §8.5 sparse placement are in,
+  including the cursor rules (a column-locked item whose start is before the
+  cursor drops a row) and implicit columns.
+* **Grid had no alignment.** `*-items` / `*-self` / `*-content` are in for
+  start, center, end, stretch and the space-* keywords; a non-stretched auto
+  width fits its content, an explicit width is re-resolved against the cell
+  instead of overwritten (the `place-items: center` modal was 800 wide), and
+  `min-height` on the container is definite for `align-content` the way it
+  is for flex.
+* **Auto tracks stretched under `justify-content: start`** and ignored an
+  item's `min-width`; an `overflow: hidden` item was left out of an auto row
+  even in an auto-height grid, where the grid is sized under a max-content
+  constraint and every auto track grows to its growth limit. The zero
+  automatic minimum is right only when the height is definite.
+* **An absolutely positioned auto-width box kept the full containing-block
+  width** unless both horizontal edges were pinned. §10.3.7 says
+  shrink-to-fit, and a `left: 0` label spanned the page.
+
+**Where it stands: 171/210 harvested agree, 27 differ, 12 reference bugs;
+46/47 hand-built.** Of the 27, two use only ported features and are the real
+backlog: `minmax()` tracks (parsed as `auto`) and `aspect-ratio` on a grid
+item stretched in both axes. The rest are anchor positioning (9), subgrid (5),
+transforms (2), `flex-wrap`, `auto-fill`, `grid-auto-rows`, counters — or
+cases the headless reference cannot lay out at all: form controls have no
+boxes there, and an `<img>` with no `src` produces no line (Chrome and the
+port both give the line its strut height; only the text metric keeps that
+from arbitrating).
+
+7,508 checks green across gcc 13 and clang 18 with ASan+UBSan. The Godot host
+was not rebuilt this round — nothing under `hosts/` changed and no Godot
+binary was available where this ran.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),

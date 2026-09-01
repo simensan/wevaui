@@ -187,6 +187,10 @@ void test_flex_min_height_is_not_a_definite_height() {
                 "#rest { flex: 1 1 auto }"));
     CHECK(f.layout("<body><div id=s><div id=bar></div><div id=rest></div></div></body>"));
     CHECK(near(f.box("bar").height, 100));
+    // And once the content (100) is clamped up to the min (600), THAT size is
+    // definite and the flexible item grows into it (§9.2 step 4).
+    CHECK(near(f.box("s").height, 600));
+    CHECK(near(f.box("rest").height, 500));
 }
 
 void test_flex_cross_axis() {
@@ -259,5 +263,158 @@ void test_flex_direction_and_order() {
                        "<div id=b class=c></div></div></body>"));
         CHECK(near(f.box("b").x, 0));
         CHECK(near(f.box("a").x, 50));
+    }
+}
+
+void test_flex_min_max_carry_the_frame() {
+    // min-/max-width are content-box sizes under the default box-sizing, and
+    // the algorithm clamps the BORDER-box main size — so the frame is added,
+    // the same way flex-basis gets it. `min-width: 38px; padding: 0 10px`
+    // clamped the border box to 38 where Chrome and the reference give 58.
+    {
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 400px }"
+                    "#a { min-width: 38px; padding: 0 10px; height: 10px }"));
+        CHECK(f.layout("<body><div id=r><div id=a>x</div></div></body>"));
+        CHECK(near(f.box("a").width, 58));
+    }
+    {
+        // Under border-box the min already IS a border-box size.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 400px }"
+                    "#a { box-sizing: border-box; min-width: 38px; padding: 0 10px;"
+                    "     height: 10px }"));
+        CHECK(f.layout("<body><div id=r><div id=a>x</div></div></body>"));
+        CHECK(near(f.box("a").width, 38));
+    }
+    {
+        // max-width the same way: 30 of content plus 20 of padding.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 400px }"
+                    "#a { flex: 1; max-width: 30px; padding: 0 10px; height: 10px }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").width, 50));
+    }
+    {
+        // Column: min-height carries the vertical frame.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; flex-direction: column; width: 100px; height: 300px }"
+                    "#a { min-height: 40px; padding: 5px 0; width: 10px }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").height, 50));
+    }
+}
+
+void test_flex_auto_margins_on_main_axis() {
+    // §9.5 step 1: positive free space goes to auto margins on the main axis
+    // before justify-content sees any of it.
+    {
+        // margin-left: auto pushes the item to the end and starves
+        // justify-content: center of its space.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 300px; justify-content: center }"
+                    "#a { width: 50px; height: 10px }"
+                    "#b { width: 50px; height: 10px; margin-left: auto }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div><div id=b></div></div></body>"));
+        CHECK(near(f.box("a").x, 0));
+        CHECK(near(f.box("b").x, 250));
+    }
+    {
+        // Two auto margins split the space equally: the item is centred, and
+        // the value block layout may have resolved for the same margin is not
+        // added on top.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 300px }"
+                    "#a { width: 100px; height: 10px; margin-left: auto; margin-right: auto }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").x, 100));
+        CHECK(near(f.box("a").margin_left, 100));
+    }
+    {
+        // Column: margin-top: auto on the footer of a column that a row flex
+        // line stretched to 300 — the stretched height is what it pushes
+        // against, so the footer sits at the bottom.
+        Fixture f;
+        CHECK(f.css("#row { display: flex; align-items: stretch; height: 300px; width: 400px }"
+                    "#col { display: flex; flex-direction: column; flex: 0 0 200px }"
+                    "#top { height: 20px }"
+                    "#foot { margin-top: auto; height: 24px }"));
+        CHECK(f.layout("<body><div id=row><div id=col><div id=top></div>"
+                       "<div id=foot></div></div></div></body>"));
+        CHECK(near(f.box("col").height, 300));
+        CHECK(near(f.box("foot").y, 276));
+    }
+    {
+        // No free space, no effect: an auto margin on an overflowing line is 0.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 100px }"
+                    "#a { width: 80px; height: 10px; flex-shrink: 0 }"
+                    "#b { width: 80px; height: 10px; flex-shrink: 0; margin-left: auto }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div><div id=b></div></div></body>"));
+        CHECK(near(f.box("b").x, 80));
+    }
+}
+
+void test_flex_column_item_height_is_definite_for_its_content() {
+    // §9.8: an item's flexed main size is definite for its own contents, so a
+    // column item is RE-LAID at that height rather than stamped with it — a
+    // nested row flex inside stretches its children into it. Stamping alone
+    // left a `flex: 1 1 auto` row 180 tall holding a 0-tall stretched child.
+    Fixture f;
+    CHECK(f.css("#col { display: flex; flex-direction: column; height: 200px; width: 200px }"
+                "#top { height: 20px }"
+                "#row { display: flex; flex: 1 1 auto; align-items: stretch }"
+                "#bar { flex: 0 0 30px }"));
+    CHECK(f.layout("<body><div id=col><div id=top></div><div id=row><div id=bar></div>"
+                   "</div></div></body>"));
+    CHECK(near(f.box("row").height, 180));
+    CHECK(near(f.box("bar").height, 180));
+    CHECK(near(f.box("bar").width, 30));
+}
+
+void test_flex_container_min_height_makes_the_main_size_definite() {
+    // §9.2 step 4: an auto-height column container is sized to its content
+    // and then clamped by its own min/max-height; the clamped size is definite
+    // and the items flex into it. The page-shell idiom — `min-height: 100vh`
+    // with a `flex: 1` body — is exactly this, and the body's 0% basis stayed
+    // 0 without it.
+    {
+        Fixture f;
+        CHECK(f.css("#app { display: flex; flex-direction: column; min-height: 600px;"
+                    "       width: 800px }"
+                    "#top { height: 60px }"
+                    "#content { flex: 1; display: flex }"
+                    "#side { width: 200px }"
+                    "#main { flex: 1 }"));
+        CHECK(f.layout("<body><div id=app><div id=top></div><div id=content>"
+                       "<div id=side>Side</div><div id=main>Main</div></div></div></body>"));
+        CHECK(near(f.box("app").height, 600));
+        CHECK(near(f.box("content").height, 540));
+        // ...and that height is in turn definite for the nested row, whose
+        // items stretch to it.
+        CHECK(near(f.box("side").height, 540));
+        CHECK(near(f.box("main").height, 540));
+    }
+    {
+        // max-height shrinks the items the same way.
+        Fixture f;
+        CHECK(f.css("#c { display: flex; flex-direction: column; max-height: 100px; width: 100px }"
+                    ".i { height: 80px }"));
+        CHECK(f.layout("<body><div id=c><div id=a class=i></div><div id=b class=i></div>"
+                       "</div></body>"));
+        CHECK(near(f.box("c").height, 100));
+        CHECK(near(f.box("a").height, 50));
+        CHECK(near(f.box("b").y, 50));
+    }
+    {
+        // Content already past the min: nothing changes, the container is its
+        // content height and nothing flexes.
+        Fixture f;
+        CHECK(f.css("#c { display: flex; flex-direction: column; min-height: 50px; width: 100px }"
+                    ".i { height: 80px } #b { flex: 1 }"));
+        CHECK(f.layout("<body><div id=c><div id=a class=i></div><div id=b class=i></div>"
+                       "</div></body>"));
+        CHECK(near(f.box("c").height, 160));
+        CHECK(near(f.box("b").height, 80));
     }
 }

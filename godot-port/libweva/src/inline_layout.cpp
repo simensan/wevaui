@@ -157,7 +157,14 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     const Box& cbox = (*tree)[container];
     const double top_inner = cbox.padding_top + cbox.border_top;
     const double left_inner = cbox.padding_left + cbox.border_left;
-    const std::string_view align = resolve_text_align(cbox.style);
+    // CSS 2.1 §9.2.1.1 again: an anonymous block has no style of its own and
+    // inherits from its parent, so `text-align` is read off the parent when the
+    // container is anonymous — the same fallback line-height takes below. Read
+    // off the null style it resolved to `start`, and an inline-flex pill that
+    // shared its right-aligned parent with a block sibling (so it sat in an
+    // anonymous block) was flushed left.
+    const std::string_view align = resolve_text_align(
+        cbox.style ? cbox.style : (cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr));
     // Copied out, not read through `cbox`: BoxTree::create appends to a vector,
     // so every box reference is invalidated by the next create — and flush_line
     // creates one line box plus one run per fragment. `cbox` stays valid only

@@ -610,3 +610,42 @@ void test_inline_atoms() {
         CHECK(near(f.box("a").y, 0));
     }
 }
+
+void test_anonymous_block_inherits_text_align() {
+    // CSS 2.1 §9.2.1.1: an anonymous block inherits from its parent. It has no
+    // style of its own, so text-align has to be read off the parent — the way
+    // line-height already is. Read off the null style it resolved to `start`,
+    // and an atom that shared a right-aligned parent with a block sibling (so
+    // it sat in an anonymous block) was flushed left.
+    {
+        Fixture f;
+        CHECK(f.css("#w { width: 200px; text-align: right }"
+                    "#blk { height: 10px }"
+                    "#pill { display: inline-block; width: 50px; height: 10px }"));
+        CHECK(f.layout("<body><div id=w><div id=blk></div><span id=pill></span></div></body>"));
+        CHECK(near(f.box("pill").x, 150));
+    }
+    {
+        // center, and text rather than an atom, through the same path.
+        Fixture f;
+        CHECK(f.css("#w { width: 200px; text-align: center }"
+                    "#blk { height: 10px }"));
+        CHECK(f.layout("<body><div id=w><div id=blk></div>ab</div></body>"));
+        // Two 'a'-width mono glyphs, centred: the line's delta is half the slack.
+        const Box& w = f.box("w");
+        BoxId anon = kNoBox;
+        for (BoxId c : f.tree.children(f.find("w"))) {
+            if (f.tree[c].kind == BoxKind::AnonymousBlock) anon = c;
+        }
+        CHECK(anon != kNoBox);
+        BoxId line = kNoBox;
+        for (BoxId c : f.tree.children(anon)) {
+            if (f.tree[c].kind == BoxKind::Line) line = c;
+        }
+        CHECK(line != kNoBox);
+        double text_w = 0;
+        for (BoxId c : f.tree.children(line)) text_w += f.tree[c].width;
+        CHECK(text_w > 0 && text_w < w.width);
+        CHECK(near(f.tree[line].applied_text_align_delta, (w.width - text_w) * 0.5));
+    }
+}

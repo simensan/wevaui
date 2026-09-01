@@ -203,6 +203,16 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     // Both edges pinned and no explicit size: the box stretches between them.
     const bool stretch_w = horiz_pinned && !has_explicit_size(style, "width");
     const bool stretch_h = vert_pinned && !has_explicit_size(style, "height");
+
+    // CSS 2.1 §10.3.7: an auto width with at most one horizontal edge set is
+    // shrink-to-fit. Block layout sized the box against its containing block
+    // as if it were in flow, which left `position: absolute; left: 0` labels
+    // the full width of the page.
+    if (block && !horiz_pinned && !has_explicit_size(style, "width")) {
+        const double avail = std::max(
+            0.0, cb.width - (*tree)[id].margin_left - (*tree)[id].margin_right);
+        block->shrink_to_fit(id, avail, ps);
+    }
     const double pinned_w =
         stretch_w ? std::max(0.0, cb.width - *(*tree)[id].offset_left - *(*tree)[id].offset_right -
                                       (*tree)[id].margin_left - (*tree)[id].margin_right)
