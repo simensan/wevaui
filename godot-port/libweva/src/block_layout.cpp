@@ -1199,10 +1199,21 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
     box.height = computed;
 
     // A <button> vertically centres a single line of content inside an explicit
-    // height, matching Chrome. A button with an author `display: flex/grid` is
-    // laid out elsewhere, so this only ever sees the default display; and for an
-    // auto-height button the delta is zero, making it a no-op.
-    if (box.element && box.element->tag_name() == "button" && box.first_child != kNoBox) {
+    // height, matching Chrome. For an auto-height button the delta is zero,
+    // making it a no-op.
+    //
+    // This models what Chrome does to a button's anonymous FLOW content, so it
+    // must not touch a button that establishes some other formatting context.
+    // The claim that a `display: flex` button "is laid out elsewhere" was
+    // wrong — finish_height still runs for it, and the pass then centred a
+    // second time on top of the flex algorithm's own `justify-content: center`.
+    // audit-validation's `.play-btn` (a column flex, height 64) put its label
+    // at 28.14 instead of 19.43, and the whole button's contents with it.
+    const bool button_flow_content =
+        box.display == DisplayKind::Block || box.display == DisplayKind::FlowRoot ||
+        box.display == DisplayKind::InlineBlock || box.display == DisplayKind::ListItem;
+    if (box.element && box.element->tag_name() == "button" && box.first_child != kNoBox &&
+        button_flow_content) {
         const double content_box_h = computed - frame;
         const double natural_h = content_bottom_y - (box.padding_top + box.border_top);
         const double delta = (content_box_h - natural_h) * 0.5;

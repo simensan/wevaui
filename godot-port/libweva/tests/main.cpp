@@ -139,6 +139,7 @@ void test_grid_subgrid();
 void test_block_in_inline_splitting();
 void test_leading_space_after_an_inline_start_is_dropped();
 void test_preserved_newlines_force_line_breaks();
+void test_button_vertical_centering_is_flow_only();
 void test_intrinsic_width_ignores_auto_margins();
 void test_grid_intrinsic_width_is_its_tracks();
 void test_top_level_comparison_functions();
@@ -352,6 +353,7 @@ int main() {
     test_block_in_inline_splitting();
     test_leading_space_after_an_inline_start_is_dropped();
     test_preserved_newlines_force_line_breaks();
+    test_button_vertical_centering_is_flow_only();
     test_intrinsic_width_ignores_auto_margins();
     test_grid_intrinsic_width_is_its_tracks();
     test_top_level_comparison_functions();

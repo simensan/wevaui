@@ -835,3 +835,64 @@ void test_aspect_ratio_height_respects_box_sizing() {
     CHECK(near(f.box("b").height, 384));
     CHECK(near(f.box("p").height, 383.0 + 1.0 / 3 + 384));
 }
+
+// A <button> vertically centres its anonymous FLOW content inside an explicit
+// height, matching Chrome — and only its flow content. The pass used to run for
+// every button, so a `display: flex` button was centred twice: once by the flex
+// algorithm's own justify-content and again on top of it.
+void test_button_vertical_centering_is_flow_only() {
+    {
+        // The flow case the pass exists for: one line of content in a 64px
+        // button sits at (64 - line_height) / 2.
+        Fixture f;
+        CHECK(f.css("#b { display: inline-block; height: 64px; font-size: 22px;"
+                    "     border-width: 0; padding: 0 }"
+                    "#s { display: block }"));
+        CHECK(f.layout("<body><button id=b><span id=s>PLAY</span></button></body>"));
+        const double h = f.metrics.line_height(22);
+        CHECK(near(f.box("s").height, h));
+        CHECK(near(f.box("s").y, (64 - h) / 2));
+    }
+    {
+        // audit-validation's `.play-btn`: a column flex button whose own
+        // justify-content already centres the items. The button pass must keep
+        // its hands off, or the content is pushed below centre.
+        Fixture f;
+        CHECK(f.css("#b { display: flex; flex-direction: column; align-items: center;"
+                    "     justify-content: center; gap: 2px; height: 64px;"
+                    "     border-width: 0; padding: 0 }"
+                    "#a { font-size: 22px } #c { font-size: 10px }"));
+        CHECK(f.layout("<body><button id=b><span id=a>PLAY</span>"
+                       "<span id=c>PRESS TO START</span></button></body>"));
+        const double ha = f.metrics.line_height(22);
+        const double hc = f.metrics.line_height(10);
+        const double top = (64 - (ha + 2 + hc)) / 2;
+        CHECK(near(f.box("a").y, top));
+        CHECK(near(f.box("c").y, top + ha + 2));
+    }
+    {
+        // The same markup in a plain div is the control: the two must land in
+        // exactly the same place, because nothing about a button changes the
+        // flex algorithm.
+        Fixture f;
+        CHECK(f.css(".fx { display: flex; flex-direction: column; align-items: center;"
+                    "      justify-content: center; height: 64px; border-width: 0;"
+                    "      padding: 0 }"
+                    "#a, #d { font-size: 22px }"));
+        CHECK(f.layout("<body><button id=b class=fx><span id=a>PLAY</span></button>"
+                       "<div id=e class=fx><span id=d>PLAY</span></div></body>"));
+        // Box y is relative to the parent, so the two children's own y values
+        // are directly comparable.
+        CHECK(near(f.box("a").y, f.box("d").y));
+    }
+    {
+        // A grid button is likewise laid out by grid, not by the pass.
+        Fixture f;
+        CHECK(f.css("#b { display: grid; align-content: center; height: 64px;"
+                    "     border-width: 0; padding: 0 }"
+                    "#s { font-size: 22px }"));
+        CHECK(f.layout("<body><button id=b><span id=s>PLAY</span></button></body>"));
+        const double h = f.metrics.line_height(22);
+        CHECK(near(f.box("s").y, (64 - h) / 2));
+    }
+}
