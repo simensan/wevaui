@@ -1371,6 +1371,12 @@ namespace Weva.Layout {
             }
         }
 
+        // An author height wins over any derived one.
+        static bool HasExplicitHeight(BlockBox b) {
+            string h = b.Style?.Get(CssProperties.HeightId);
+            return !string.IsNullOrEmpty(h) && h != "auto";
+        }
+
         LineBreaker.Item MakeAtomItem(BlockBox atom, double availableWidth, ComputedStyle inheritedStyle) {
             if (BlockLayout == null) return null;
 
@@ -1578,6 +1584,27 @@ namespace Weva.Layout {
                     Weva.Layout.Containment.ContainmentResolver.HasInlineSize(atom.Style)) {
                     atom.Width = fitted;
                 }
+            }
+
+            // Flex and grid run as SEPARATE passes over the whole tree
+            // AFTER BlockLayout (LayoutEngine.RunFlexPasses). An inline-level
+            // flex container is measured HERE though, while its line is being
+            // built, so BlockLayout has only block-STACKED its items and the
+            // height is wrong — `<span style="display:inline-flex"><span
+            // class=dot></span>Text</span>` reported the 8px dot stacked ABOVE
+            // the text (36.86) instead of beside it (28.86). The line is sized
+            // from that and keeps it; the later flex pass fixes the container
+            // but never revisits the line, so everything below shifts down.
+            //
+            // Take the cross extent from the same non-destructive helper the
+            // flex code uses for intrinsic sizing rather than re-entering
+            // FlexLayout here: it shares LayoutScratch with this pass, and
+            // calling it re-entrantly corrupts the line currently being built.
+            if (atom is Weva.Layout.Flex.FlexBox atomFlex && !HasExplicitHeight(atom)) {
+                double vFrame = atom.PaddingTop + atom.PaddingBottom
+                              + atom.BorderTop + atom.BorderBottom;
+                double cross = Weva.Layout.Positioning.PositioningPass.FlexIntrinsicCross(atomFlex);
+                if (cross > 0) atom.Height = cross + vFrame;
             }
 
             double itemFs = atom.Style != null ? StyleResolver.FontSizePx(atom.Style, atom.Parent?.Style, ctx) : ctx.RootFontSizePx;

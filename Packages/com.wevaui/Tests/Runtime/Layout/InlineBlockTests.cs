@@ -331,5 +331,42 @@ namespace Weva.Tests.Layout {
             }
         }
 
+        // Flex and grid run as separate passes over the whole tree AFTER
+        // BlockLayout, but an inline-level flex container is measured while its
+        // surrounding LINE is being built — at which point BlockLayout has only
+        // block-stacked its items. The line was sized from that stacked height
+        // and kept it; the later flex pass fixed the container itself but never
+        // revisited the line, so everything below shifted down.
+        //
+        // Chrome puts the line at 28.84 for this markup; the port agrees.
+        [Test]
+        public void Line_holding_an_inline_flex_atom_uses_its_flex_height() {
+            var (root, _, _) = Build(
+                "<div class=\"w\"><span class=\"eb\"><span class=\"dot\"></span>Text</span></div>"
+                + "<div class=\"after\">after</div>",
+                ".eb { display: inline-flex; align-items: center; padding: 6px 13px;"
+                + "      border: 1px solid #333; }"
+                + ".dot { display: inline-block; width: 8px; height: 8px; }",
+                viewportWidth: 800);
+
+            BlockBox Find(string cls) {
+                foreach (var b in AllBoxes(root)) {
+                    if (b is BlockBox bb && bb.Element != null
+                        && (bb.Element.GetAttribute("class") ?? "") == cls) return bb;
+                }
+                return null;
+            }
+            var eb = Find("eb");
+            var w = Find("w");
+            Assert.That(eb, Is.Not.Null);
+            Assert.That(w, Is.Not.Null);
+            // The dot sits BESIDE the text, not above it, so the container is
+            // as tall as the taller item plus its own frame — and the line that
+            // holds it must be exactly that tall, not the stacked height.
+            Assert.That(w.Height, Is.EqualTo(eb.Height).Within(0.001),
+                "the line must be sized from the atom's flex height, not the "
+                + "block-stacked height it had before the flex pass ran");
+        }
+
     }
 }
