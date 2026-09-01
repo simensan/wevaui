@@ -1230,15 +1230,31 @@ namespace Weva.Layout.Positioning {
                 if (c is BlockBox fc && fc.IsFloat) continue;
                 if (c is Weva.Layout.Boxes.LineBox lb) {
                     // line.Width is post-text-align (OffsetLine adds the
-                    // alignment dx onto it). Sum the raw fragment widths
-                    // instead so max-content reflects the natural text
-                    // advance only.
-                    double sum = 0;
+                    // alignment dx onto it), so the line's own width can't be
+                    // used. Take the EXTENT the fragments occupy instead —
+                    // rightmost edge minus leftmost — which is the natural
+                    // advance and, unlike a sum of fragment widths, keeps the
+                    // spacing that sits BETWEEN fragments.
+                    //
+                    // Summing widths dropped one letter-spacing at every
+                    // boundary between inline pieces, because a fragment's own
+                    // width spaces its N glyphs N-1 times and the gap to the
+                    // next fragment lives in that fragment's X. A
+                    // `<span>Press <kbd>J</kbd> to track quest</span>` flex
+                    // item was then measured NARROWER than the text it holds,
+                    // so the item was sized short and its own text wrapped
+                    // inside it — visible as a two-line footer that should be
+                    // one line, on any page that sets letter-spacing.
+                    // Fragment X is line-relative, so this is independent of
+                    // text-align. (quests.html, godot-port oracle.)
+                    double lo = double.MaxValue, hi = double.MinValue;
                     for (int j = 0; j < lb.Children.Count; j++) {
                         var r = lb.Children[j];
                         if (r is Weva.Layout.Boxes.InlineBox) continue;
-                        sum += r.Width;
+                        if (r.X < lo) lo = r.X;
+                        if (r.X + r.Width > hi) hi = r.X + r.Width;
                     }
+                    double sum = hi > lo ? hi - lo : 0;
                     if (sum > max) max = sum;
                     continue;
                 }

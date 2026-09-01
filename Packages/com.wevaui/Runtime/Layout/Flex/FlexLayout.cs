@@ -1205,8 +1205,24 @@ namespace Weva.Layout.Flex {
                 if (c is LineBox lb) {
                     directLines++;
                     if (directLines > 1) return false;
-                    double sum = 0;
-                    for (int j = 0; j < lb.Children.Count; j++) sum += CurrentInlineFragmentWidth(lb.Children[j]);
+                    // The EXTENT the fragments occupy, not the sum of their
+                    // widths: a fragment's width spaces its N glyphs N-1
+                    // times, so the letter-spacing that sits BETWEEN two
+                    // fragments lives in the second fragment's X and a plain
+                    // sum drops it. Measuring short here sizes the flex item
+                    // narrower than its own text, which then wraps inside it
+                    // (see PositioningPass.WalkContent for the same fix and
+                    // the quests.html footer that exposed both).
+                    double lo = double.MaxValue, hi = double.MinValue;
+                    for (int j = 0; j < lb.Children.Count; j++) {
+                        var frag = lb.Children[j];
+                        if (frag is InlineBox) continue;
+                        if (frag.X < lo) lo = frag.X;
+                        if (frag.X + CurrentInlineFragmentWidth(frag) > hi) {
+                            hi = frag.X + CurrentInlineFragmentWidth(frag);
+                        }
+                    }
+                    double sum = hi > lo ? hi - lo : 0;
                     if (sum > max) max = sum;
                     continue;
                 }
