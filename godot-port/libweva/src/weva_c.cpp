@@ -59,32 +59,34 @@ public:
         geometry_[h.id] = {v, i};
         return h;
     }
+    // Delegates, so the two entry points cannot drift apart: what a draw
+    // looks like is decided in one place, below.
     void render_geometry(GeometryHandle g, Vec2 t, TextureHandle tex) override {
         auto it = geometry_.find(g.id);
         if (it == geometry_.end()) return;
+        render_mesh(it->second.first, it->second.second, t, tex);
+    }
+    void release_geometry(GeometryHandle g) override { geometry_.erase(g.id); }
+
+    // The whole of what render_geometry does, minus the map.
+    void render_mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, Vec2 t,
+                     TextureHandle tex) override {
         Draw d;
-        d.vertices = it->second.first;
-        // The translation is baked in here rather than passed through: the ABI
-        // hands over geometry that is ready to upload, so a host is not made to
-        // apply it.
-        for (Vertex& v : d.vertices) {
-            v.position.x += t.x;
-            v.position.y += t.y;
+        d.vertices = std::move(vertices);
+        d.indices = std::move(indices);
+        // Baked in here rather than passed through, as render_geometry does:
+        // the ABI hands over geometry that is ready to upload.
+        if (t.x != 0 || t.y != 0) {
+            for (Vertex& v : d.vertices) {
+                v.position.x += t.x;
+                v.position.y += t.y;
+            }
         }
-        d.indices = it->second.second;
-        // A scissor is applied to the geometry itself, so a host whose canvas
-        // cannot clip per draw (Godot's clips per item, and its compatibility
-        // renderer lost every draw after a clipped sibling) needs nothing. The
-        // rect is still published for hosts that can.
-        // Only geometry that actually CROSSES the scissor needs cutting. A
-        // scissor is in force for very nearly every draw -- the viewport is one
-        // -- and clipping every triangle against it was the single largest cost
-        // in a warm paint pass: a blurred box shadow is up to 48 nested rings,
-        // and match3-endgame spent 9 ms of a 15 ms update in here.
         if (scissor_ && !inside_scissor(d.vertices)) {
             Mesh clipped;
             clip_triangles(d.vertices, d.indices,
-                           Rect(scissor_->x, scissor_->y, scissor_->width, scissor_->height), &clipped);
+                           Rect(scissor_->x, scissor_->y, scissor_->width, scissor_->height),
+                           &clipped);
             if (clipped.empty()) return;
             d.vertices = std::move(clipped.vertices);
             d.indices = std::move(clipped.indices);
@@ -93,7 +95,6 @@ public:
         d.scissor = scissor_;
         draws.push_back(std::move(d));
     }
-    void release_geometry(GeometryHandle g) override { geometry_.erase(g.id); }
 
     void render_rounded_rect(const RoundedRect& shape, const std::vector<Vertex>& v,
                              const std::vector<uint32_t>& i) override {

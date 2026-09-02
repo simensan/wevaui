@@ -84,6 +84,10 @@ size_t g_site_count = 0;
 // happen inside the handler.
 bool g_sampling = false;
 size_t g_samples = 0;
+// Frames kept per sample. One aggregates by SELF time, which says which
+// function is hot; two says which caller chose it. Neither is right for every
+// question, so --sample-depth picks.
+int g_sample_depth = 2;
 
 void record_sample();
 
@@ -128,7 +132,7 @@ void record_sample() {
     // path that reaches it, and the first run of this buried the answer under
     // 648 sites whose largest was 0.4%. Two is enough to tell a libc leaf from
     // the caller that chose it.
-    const int want = 2;
+    const int want = g_sample_depth;
     const int depth = n - start < want ? n - start : want;
     for (size_t i = 0; i < g_site_count; ++i) {
         if (g_sites[i].depth != depth) continue;
@@ -282,6 +286,7 @@ int main(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a.rfind("--target=", 0) == 0) target_selector = a.substr(9);
+        if (a.rfind("--sample-depth=", 0) == 0) g_sample_depth = std::atoi(a.c_str() + 15);
     }
 
     // Arms the profiling timer around the timed region.

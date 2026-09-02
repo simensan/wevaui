@@ -522,6 +522,94 @@ void clip_triangles_polygon(const std::vector<Vertex>& vertices,
         px0 = std::min(px0, p.x); py0 = std::min(py0, p.y);
         px1 = std::max(px1, p.x); py1 = std::max(py1, p.y);
     }
+    // A triangle that lies wholly inside the clip needs none of the work below.
+    //
+    // The clip polygon is TRIANGULATED, and every triangle of the mesh is then
+    // clipped against every piece of it -- a rounded rect is thirty-odd pieces,
+    // so a shadow ring of two hundred triangles costs seven thousand clips and
+    // comes out shattered into as many fragments. Most of those triangles are
+    // nowhere near the boundary. Sampling a paint pass put this function at
+    // over a fifth of it, more than anything else.
+    //
+    // So an axis-aligned rectangle that FITS INSIDE the polygon is found once,
+    // by shrinking the bounding box about its centre until every corner is on
+    // the inward side of every edge -- the polygon's kernel, which is contained
+    // in the polygon for any simple polygon, so a rectangle inside it is inside
+    // the polygon. A triangle whose bounds sit in that rectangle is emitted as
+    // it is.
+    double ix0 = 0, iy0 = 0, ix1 = -1, iy1 = -1;
+    // CONVEX only. For a convex polygon the intersection of the inward
+    // half-planes is the polygon itself, and a triangulation of it covers it
+    // exactly -- so a triangle inside the half-planes is a triangle the loop
+    // below would have reassembled from pieces. Neither holds for a shape with
+    // a reflex vertex, and a `clip-path` may well have one.
+    bool convex = polygon.size() >= 3;
+    if (polygon.size() >= 3) {
+        double area2 = 0;
+        for (size_t k = 0; k < polygon.size(); ++k) {
+            const ClipPoint& a = polygon[k];
+            const ClipPoint& b = polygon[(k + 1) % polygon.size()];
+            area2 += a.x * b.y - b.x * a.y;
+        }
+        const double orient = area2 >= 0 ? 1.0 : -1.0;
+        for (size_t k = 0; k < polygon.size() && convex; ++k) {
+            const ClipPoint& a = polygon[k];
+            const ClipPoint& b = polygon[(k + 1) % polygon.size()];
+            const ClipPoint& c = polygon[(k + 2) % polygon.size()];
+            const double cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+            if (cross * orient < -1e-9) convex = false;
+        }
+    }
+    if (convex) {
+        double area2 = 0;
+        for (size_t k = 0; k < polygon.size(); ++k) {
+            const ClipPoint& a = polygon[k];
+            const ClipPoint& b = polygon[(k + 1) % polygon.size()];
+            area2 += a.x * b.y - b.x * a.y;
+        }
+        const double orient = area2 >= 0 ? 1.0 : -1.0;
+        const double cx = 0.5 * (px0 + px1), cy = 0.5 * (py0 + py1);
+        const double hw = 0.5 * (px1 - px0), hh = 0.5 * (py1 - py0);
+        const auto fits = [&](double s) {
+            const double x0 = cx - hw * s, x1 = cx + hw * s;
+            const double y0 = cy - hh * s, y1 = cy + hh * s;
+            const double qx[4] = {x0, x1, x1, x0};
+            const double qy[4] = {y0, y0, y1, y1};
+            for (size_t k = 0; k < polygon.size(); ++k) {
+                const ClipPoint& a = polygon[k];
+                const ClipPoint& b = polygon[(k + 1) % polygon.size()];
+                const double dx = b.x - a.x, dy = b.y - a.y;
+                for (int c = 0; c < 4; ++c) {
+                    if ((dx * (qy[c] - a.y) - dy * (qx[c] - a.x)) * orient < 0) return false;
+                }
+            }
+            return true;
+        };
+        // Twelve halvings settle the largest fitting scale to a part in 4096,
+        // which is finer than the boundary it is approximating.
+        double lo = 0, hi = 1;
+        if (!fits(hi)) {
+            for (int it = 0; it < 12; ++it) {
+                const double mid = 0.5 * (lo + hi);
+                if (fits(mid)) lo = mid;
+                else hi = mid;
+            }
+        } else {
+            lo = hi;
+        }
+        if (lo > 0) {
+            // A pixel of margin. The shrink search lands on a rectangle whose
+            // corners are only just inside, and a triangle sharing that
+            // boundary is exactly the one whose coverage the clip would have
+            // altered -- keeping such a triangle out of the fast path is what
+            // makes the output identical rather than nearly so.
+            ix0 = cx - hw * lo + 1;
+            ix1 = cx + hw * lo - 1;
+            iy0 = cy - hh * lo + 1;
+            iy1 = cy + hh * lo - 1;
+        }
+    }
+
     std::vector<Vertex> tri(3), poly, scratch;
     for (size_t i = 0; i + 2 < indices.size(); i += 3) {
         tri[0] = vertices[indices[i]];
@@ -532,6 +620,12 @@ void clip_triangles_polygon(const std::vector<Vertex>& vertices,
         const double miny = std::min({tri[0].position.y, tri[1].position.y, tri[2].position.y});
         const double maxy = std::max({tri[0].position.y, tri[1].position.y, tri[2].position.y});
         if (maxx <= px0 || minx >= px1 || maxy <= py0 || miny >= py1) continue;
+        if (minx >= ix0 && maxx <= ix1 && miny >= iy0 && maxy <= iy1) {
+            const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+            out->vertices.insert(out->vertices.end(), tri.begin(), tri.end());
+            out->indices.insert(out->indices.end(), {base, base + 1, base + 2});
+            continue;
+        }
         for (const auto& piece : pieces) {
             clip_to_triangle(tri, piece, &poly, &scratch);
             if (poly.size() < 3) continue;

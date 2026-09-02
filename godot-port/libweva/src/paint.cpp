@@ -302,15 +302,15 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
         if (opacity < 1) {
             for (Vertex& v : cur.vertices) v.color.a *= static_cast<float>(std::max(0.0, opacity));
         }
-        const GeometryHandle g = backend->compile_geometry(cur.vertices, cur.indices);
-        backend->render_geometry(g, {0, 0}, tex);
-        backend->release_geometry(g);
+        backend->render_mesh(std::move(cur.vertices), std::move(cur.indices), {0, 0}, tex);
         return;
     }
     const Mesh& mesh = input;
-    // Compiled and released per draw for now. A backend that batches will want
-    // geometry to outlive a frame; that needs the paint cache, keyed on style
-    // and layout versions, which is a later slice.
+    // Handed over rather than compiled: `cur` and `copy` are this function's
+    // own and are moved, so the backend that keeps the geometry takes it
+    // without a copy. A backend that batches will want geometry to outlive a
+    // frame; that needs the paint cache, keyed on style and layout versions,
+    // which is a later slice.
     if (opacity < 1 || xform) {
         Mesh copy = mesh;
         for (Vertex& v : copy.vertices) {
@@ -321,14 +321,12 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
                 v.position = {static_cast<float>(x), static_cast<float>(y)};
             }
         }
-        const GeometryHandle g = backend->compile_geometry(copy.vertices, copy.indices);
-        backend->render_geometry(g, {0, 0}, tex);
-        backend->release_geometry(g);
+        backend->render_mesh(std::move(copy.vertices), std::move(copy.indices), {0, 0}, tex);
         return;
     }
-    const GeometryHandle g = backend->compile_geometry(mesh.vertices, mesh.indices);
-    backend->render_geometry(g, {0, 0}, tex);
-    backend->release_geometry(g);
+    // The last one copies: the mesh belongs to the caller, and the backend
+    // keeps what it is given.
+    backend->render_mesh(mesh.vertices, mesh.indices, {0, 0}, tex);
 }
 
 // Asks the backend to filter what it has already painted, inside `shape`.

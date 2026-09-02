@@ -113,6 +113,24 @@ public:
                                  TextureHandle texture) = 0;
     virtual void release_geometry(GeometryHandle geometry) = 0;
 
+    // Draws a mesh once, without compiling it first.
+    //
+    // Every caller in the engine compiles a mesh, draws it once at the origin,
+    // and releases it -- so the handle round trip buys nothing and costs two
+    // full copies of the geometry and a map node per draw. A blurred box
+    // shadow alone is up to 48 of them. Taking the vectors BY VALUE lets a
+    // caller hand over a temporary it is finished with, so a backend that
+    // stores the geometry can move rather than copy it.
+    //
+    // The default is the round trip, so a backend that has not heard of this
+    // -- a host's, across the C ABI -- behaves exactly as it did.
+    virtual void render_mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices,
+                             Vec2 translation, TextureHandle texture) {
+        const GeometryHandle g = compile_geometry(vertices, indices);
+        render_geometry(g, translation, texture);
+        release_geometry(g);
+    }
+
     virtual TextureHandle load_texture(std::string_view path, Vec2i* out_size) = 0;
     virtual TextureHandle generate_texture(const std::vector<uint8_t>& rgba, Vec2i size) = 0;
     virtual void release_texture(TextureHandle texture) = 0;
