@@ -1,0 +1,86 @@
+#include "weva/hit_test.h"
+
+#include "weva/computed_style.h"
+#include "weva/dom.h"
+
+namespace weva {
+
+namespace {
+
+std::string_view get(const ComputedStyle* s, std::string_view property) {
+    return s ? s->get(property) : std::string_view();
+}
+
+// A box that clips its overflow confines the hit to its padding box, exactly
+// as it confines the paint.
+bool clips_children(const ComputedStyle* style) {
+    for (const char* prop : {"overflow-x", "overflow-y"}) {
+        const std::string_view v = get(style, prop);
+        if (v == "hidden" || v == "clip" || v == "auto" || v == "scroll") return true;
+    }
+    return false;
+}
+
+// CSS UI L4 §6: `pointer-events: none` makes the box and its descendants
+// invisible to hit testing. A descendant may take it back, so this is asked
+// per box on the way down rather than pruning the subtree.
+bool ignores_pointer(const ComputedStyle* style) {
+    return get(style, "pointer-events") == "none";
+}
+
+// CSS 2.1 §11.2: a hidden box is not a hit target. It still lays out, and its
+// children may set `visible` again, so this too is per box.
+bool is_invisible(const ComputedStyle* style) { return get(style, "visibility") == "hidden"; }
+
+struct Search {
+    const BoxTree& tree;
+    double x, y;
+
+    // Walks a subtree back to front and returns the deepest, latest box that
+    // contains the point. `ox`/`oy` is the box's own origin in document
+    // coordinates.
+    //
+    // Backwards because paint goes forwards: the last box drawn is the one on
+    // top, and the first hit found walking in reverse is that box.
+    BoxId visit(BoxId id, double ox, double oy, bool blocked) const {
+        const Box& b = tree[id];
+        const double bx = ox + b.x, by = oy + b.y;
+        const bool ignore = b.style ? ignores_pointer(b.style) : blocked;
+        // A clipping box stops the search at its padding box, so a scrolled-out
+        // child is not hit where it is not drawn.
+        if (b.style && clips_children(b.style)) {
+            const double px0 = bx + b.border_left, py0 = by + b.border_top;
+            const double px1 = bx + b.width - b.border_right;
+            const double py1 = by + b.height - b.border_bottom;
+            if (x < px0 || x >= px1 || y < py0 || y >= py1) return kNoBox;
+        }
+        // Children sit on the content origin, which is the border box inset by
+        // the border and padding -- the same origin paint lays them out from.
+        const double cx = bx + b.border_left + b.padding_left;
+        const double cy = by + b.border_top + b.padding_top;
+        for (BoxId c = b.last_child; c != kNoBox; c = tree[c].prev_sibling) {
+            const BoxId hit = visit(c, cx, cy, ignore);
+            if (hit != kNoBox) return hit;
+        }
+        if (ignore) return kNoBox;
+        if (b.style && is_invisible(b.style)) return kNoBox;
+        if (b.width <= 0 || b.height <= 0) return kNoBox;
+        if (x < bx || x >= bx + b.width || y < by || y >= by + b.height) return kNoBox;
+        return id;
+    }
+};
+
+}   // namespace
+
+const Element* element_at_point(const BoxTree& tree, BoxId root, double x, double y) {
+    if (root == kNoBox || root >= tree.size()) return nullptr;
+    const Search search{tree, x, y};
+    BoxId hit = search.visit(root, 0, 0, false);
+    // Anonymous boxes, line boxes and text runs are not elements. The element
+    // hit is the nearest one that encloses them, which is why hovering a word
+    // hovers the paragraph it is set in.
+    while (hit != kNoBox && !tree[hit].element) hit = tree[hit].parent;
+    return hit == kNoBox ? nullptr : tree[hit].element;
+}
+
+}   // namespace weva

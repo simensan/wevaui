@@ -6,6 +6,7 @@ add_library(weva STATIC
     src/dom.cpp
     src/html_tables.cpp
     src/html_tokenizer.cpp
+    src/hit_test.cpp
     src/html_parser.cpp
     src/css_tokenizer.cpp
     src/css_parser.cpp

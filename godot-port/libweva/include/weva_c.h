@@ -253,10 +253,51 @@ weva_element_t weva_document_query(weva_document_t doc, const char* selector);
 weva_status weva_element_bounds(weva_document_t doc, weva_element_t element, double* out_x,
                                 double* out_y, double* out_width, double* out_height);
 
+/* ---- Interaction ------------------------------------------------------
+ *
+ * What drives :hover, :active, :focus, :focus-visible and :focus-within. The
+ * cascade has always matched those; until now nothing told it where the
+ * pointer was, so they matched nothing.
+ *
+ * All of these take effect on the next update, like an attribute does.
+ */
+
+/* The topmost element at a point in document coordinates, or
+ * WEVA_ELEMENT_NONE. Valid after an update. Useful on its own, for a host
+ * routing its own clicks. */
+weva_element_t weva_document_element_at(weva_document_t doc, double x, double y);
+
+/* Moves the pointer. `buttons` is a bitmask of the buttons held, so a nonzero
+ * value makes the element under the pointer :active; zero releases it.
+ *
+ * :hover applies to the element AND its ancestors (CSS 2.1 §5.11.3), which is
+ * what makes `.card:hover .title` work with the pointer over the title. The
+ * document works that chain out; a host passes a position. */
+void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t buttons);
+
+/* The pointer left the surface: nothing is hovered or pressed. A host that
+ * stops sending positions without this leaves the last element hovered. */
+void weva_document_clear_pointer(weva_document_t doc);
+
+/* Focus, or WEVA_ELEMENT_NONE to drop it. Sets :focus and :focus-visible on
+ * the element and :focus-within on its ancestors. Focus is the host's to
+ * decide -- the document has no notion of tab order yet. */
+weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element);
+
 /* Sets an attribute, which restyles on the next update. A null value removes
  * it. */
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,
                                        const char* name, const char* value);
+
+/* Copies one attribute's value into `buffer`, with the same convention as
+ * weva_element_text: always null-terminated when capacity allows, and the
+ * length that WOULD have been written is returned. Zero when the attribute is
+ * absent, which is indistinguishable from an empty value -- as it is in HTML.
+ *
+ * A host that hit-tests gets a handle back, and a handle is an index; this is
+ * how it turns that into something its own code can name. */
+size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const char* name,
+                              char* buffer, size_t capacity);
 
 /* Copies the text of an element's descendants into `buffer`, always
  * null-terminating when capacity allows, and returns the length that WOULD

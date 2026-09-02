@@ -8,6 +8,7 @@
 #include "weva/font_metrics.h"
 #include "weva/glyph_atlas.h"
 #include "weva/tessellate.h"
+#include "weva/hit_test.h"
 #include "weva/html.h"
 #include "weva/invalidation.h"
 #include "weva/paint.h"
@@ -201,9 +202,58 @@ private:
     std::optional<Recti> scissor_;
 };
 
+// Which elements are hovered, pressed and focused.
+//
+// The cascade could always MATCH :hover and its relatives -- ElementState
+// carries the bits and the matcher takes a provider -- but the document handed
+// it NullStateProvider, so every one of those rules matched nothing. This is
+// what the host's pointer drives.
+//
+// The states apply to a CHAIN, not an element: CSS 2.1 §5.11.3 puts :hover on
+// the element under the pointer and on every ancestor of it, which is what
+// makes `.card:hover .title` work when the pointer is over the title. :active
+// and :focus-within behave the same way; :focus does not.
+struct InteractionState : ElementStateProvider {
+    std::vector<const Element*> hover_chain;
+    std::vector<const Element*> active_chain;
+    const Element* focused = nullptr;
+    std::vector<const Element*> focus_chain;   // the focused element's ancestors
+    int64_t version_ = 0;
+
+    ElementState state_of(const Element& e) const override {
+        uint32_t bits = 0;
+        for (const Element* h : hover_chain) {
+            if (h == &e) { bits |= static_cast<uint32_t>(ElementState::Hover); break; }
+        }
+        for (const Element* a : active_chain) {
+            if (a == &e) { bits |= static_cast<uint32_t>(ElementState::Active); break; }
+        }
+        if (focused == &e) {
+            // A host that moves focus is doing so deliberately; there is no
+            // heuristic here about whether the ring should show.
+            bits |= static_cast<uint32_t>(ElementState::Focus) |
+                    static_cast<uint32_t>(ElementState::FocusVisible);
+        }
+        for (const Element* f : focus_chain) {
+            if (f == &e) { bits |= static_cast<uint32_t>(ElementState::FocusWithin); break; }
+        }
+        return static_cast<ElementState>(bits);
+    }
+    int64_t version() const override { return version_; }
+
+    // The element and its ancestors, innermost first.
+    static void chain_of(const Element* e, std::vector<const Element*>* out) {
+        out->clear();
+        for (const Node* n = e; n; n = n->parent()) {
+            if (n->node_type() != NodeType::Element) continue;
+            out->push_back(static_cast<const Element*>(n));
+        }
+    }
+};
+
 struct StyleMap : StyleProvider {
     CascadeEngine engine;
-    NullStateProvider state;
+    InteractionState state;
     std::vector<std::unique_ptr<ComputedStyle>> owned;
     std::map<const Element*, ComputedStyle*> by_element;
     // ::before at index 0, ::after at 1 — only for hosts some rule targets.
@@ -962,6 +1012,104 @@ weva_status weva_element_bounds(weva_document_t doc, weva_element_t element, dou
     return WEVA_ERR_NOT_FOUND;
 }
 
+namespace {
+
+// Marks a state change for the next update.
+//
+// The cascade's match cache already folds every element's state bits AND its
+// ancestors' into the shape key, so a hover change lands on a different entry
+// by itself and nothing has to be invalidated. What the UPDATE needs is the
+// list of elements whose style may have moved, which is the union of the chain
+// that was in the state and the chain that is -- and that is exactly the list
+// the scoped restyle takes.
+void note_state_change(weva_document* doc, const std::vector<const Element*>& before,
+                       const std::vector<const Element*>& after) {
+    if (before == after) return;
+    ++doc->styles.state.version_;
+    doc->dom_touched = true;
+    const auto note = [&](const std::vector<const Element*>& chain) {
+        for (const Element* e : chain) {
+            if (doc->touched.size() >= 64) return;
+            doc->touched.push_back(const_cast<Element*>(e));
+        }
+    };
+    note(before);
+    note(after);
+}
+
+}   // namespace
+
+weva_element_t weva_document_element_at(weva_document_t doc, double x, double y) {
+    if (!doc) return WEVA_ELEMENT_NONE;
+    const Element* hit = element_at_point(doc->tree, doc->root, x, y);
+    if (!hit) return WEVA_ELEMENT_NONE;
+    for (size_t i = 0; i < doc->elements.size(); ++i) {
+        if (doc->elements[i] == hit) return static_cast<weva_element_t>(i);
+    }
+    return WEVA_ELEMENT_NONE;
+}
+
+void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t buttons) {
+    if (!doc) return;
+    InteractionState& st = doc->styles.state;
+    const Element* hit = element_at_point(doc->tree, doc->root, x, y);
+
+    std::vector<const Element*> hover;
+    InteractionState::chain_of(hit, &hover);
+    // A press latches onto what was under the pointer; dragging off an element
+    // keeps it pressed, which is what a button does.
+    std::vector<const Element*> active;
+    if (buttons != 0) {
+        active = st.active_chain.empty() ? hover : st.active_chain;
+    }
+
+    const std::vector<const Element*> old_hover = st.hover_chain;
+    const std::vector<const Element*> old_active = st.active_chain;
+    st.hover_chain = hover;
+    st.active_chain = active;
+    note_state_change(doc, old_hover, hover);
+    note_state_change(doc, old_active, active);
+}
+
+void weva_document_clear_pointer(weva_document_t doc) {
+    if (!doc) return;
+    InteractionState& st = doc->styles.state;
+    const std::vector<const Element*> old_hover = st.hover_chain;
+    const std::vector<const Element*> old_active = st.active_chain;
+    st.hover_chain.clear();
+    st.active_chain.clear();
+    note_state_change(doc, old_hover, st.hover_chain);
+    note_state_change(doc, old_active, st.active_chain);
+}
+
+weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    InteractionState& st = doc->styles.state;
+    const Element* target = nullptr;
+    if (element != WEVA_ELEMENT_NONE) {
+        target = doc->element_at(element);
+        if (!target) return WEVA_ERR_NOT_FOUND;
+    }
+    if (st.focused == target) return WEVA_OK;
+    const Element* previous = st.focused;
+    const std::vector<const Element*> old_chain = st.focus_chain;
+    st.focused = target;
+    // :focus-within is the ancestors; the element itself carries :focus.
+    InteractionState::chain_of(target, &st.focus_chain);
+    std::vector<const Element*> changed = old_chain;
+    if (previous) changed.push_back(previous);
+    note_state_change(doc, changed, st.focus_chain);
+    // The focused element's own bits changed even when the chain did not.
+    if (previous || target) {
+        ++st.version_;
+        doc->dom_touched = true;
+        for (const Element* e : {previous, target}) {
+            if (e && doc->touched.size() < 64) doc->touched.push_back(const_cast<Element*>(e));
+        }
+    }
+    return WEVA_OK;
+}
+
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,
                                        const char* name, const char* value) {
     if (!doc || !name) return WEVA_ERR_INVALID_ARGUMENT;
@@ -975,6 +1123,20 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     doc->dom_touched = true;
     if (doc->touched.size() < 64) doc->touched.push_back(e);
     return WEVA_OK;
+}
+
+size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const char* name,
+                              char* buffer, size_t capacity) {
+    if (!doc || !name) return 0;
+    const Element* e = doc->element_at(element);
+    if (!e) return 0;
+    const std::string_view value = e->get_attribute(name);
+    if (buffer && capacity > 0) {
+        const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
+        std::memcpy(buffer, value.data(), n);
+        buffer[n] = ' ';
+    }
+    return value.size();
 }
 
 size_t weva_element_text(weva_document_t doc, weva_element_t element, char* buffer,

@@ -5,6 +5,9 @@
 
 #include <godot_cpp/classes/canvas_item.hpp>
 #include <godot_cpp/classes/image_texture.hpp>
+#include <godot_cpp/classes/input_event.hpp>
+#include <godot_cpp/classes/input_event_mouse_button.hpp>
+#include <godot_cpp/classes/input_event_mouse_motion.hpp>
 #include <godot_cpp/classes/node2d.hpp>
 #include <godot_cpp/classes/system_font.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
@@ -37,6 +40,8 @@ public:
 
     void _ready() override;
     void _draw() override;
+    void _input(const godot::Ref<godot::InputEvent>& event) override;
+    void _notification(int what);
 
     // Loading either of these marks the document dirty; the next frame runs
     // the update. Splitting load from update means a caller can set several
@@ -50,6 +55,21 @@ public:
     // canvas size on first draw.
     void set_document_size(const godot::Vector2& size);
     godot::Vector2 get_document_size() const { return size_; }
+
+    // ---- Interaction ---------------------------------------------------
+    //
+    // The engine matches :hover, :active and :focus; what it cannot know is
+    // where the pointer is. With `interactive` on, the node reads its own
+    // input and tells the document, which is all those rules need.
+    void set_interactive(bool on);
+    bool get_interactive() const { return interactive_; }
+
+    // The element under a point, as a selector-free handle a script can pass
+    // back. Returns an empty string when the point is over nothing named.
+    godot::String element_id_at(const godot::Vector2& point);
+
+    // Focus, by selector; an empty selector drops it.
+    bool set_focus(const godot::String& selector);
 
     // Runs cascade, layout and paint now, rather than waiting for the frame.
     void update_document();
@@ -143,6 +163,12 @@ private:
     godot::String css_;
     godot::Vector2 size_{0, 0};
     bool dirty_ = true;
+    bool interactive_ = true;
+    // The last position handed to the document, so a move that does not change
+    // the element still costs nothing: the document already skips an update
+    // that changes no style, and this skips the call.
+    godot::Vector2 pointer_{-1, -1};
+    uint32_t buttons_ = 0;
     // The atlas texture, rebuilt when the document publishes a new one. Held
     // so it outlives the draw call that references it.
     // Every texture the document published, by the id its draws name: the

@@ -184,6 +184,11 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_use_sdf_rects", "use"), &WevaDocument::set_use_sdf_rects);
     ClassDB::bind_method(D_METHOD("get_use_sdf_rects"), &WevaDocument::get_use_sdf_rects);
     ClassDB::bind_method(D_METHOD("has_engine_font"), &WevaDocument::has_engine_font);
+    ClassDB::bind_method(D_METHOD("set_interactive", "on"), &WevaDocument::set_interactive);
+    ClassDB::bind_method(D_METHOD("get_interactive"), &WevaDocument::get_interactive);
+    ClassDB::bind_method(D_METHOD("element_id_at", "point"), &WevaDocument::element_id_at);
+    ClassDB::bind_method(D_METHOD("set_focus", "selector"), &WevaDocument::set_focus);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interactive"), "set_interactive", "get_interactive");
     ClassDB::bind_method(D_METHOD("get_draw_count"), &WevaDocument::get_draw_count);
     ClassDB::bind_method(D_METHOD("get_triangle_count"), &WevaDocument::get_triangle_count);
 
@@ -208,6 +213,10 @@ void WevaDocument::_ready() {
     // which both softens glyph edges the core drew crisply and samples across
     // shelf boundaries into whatever glyph was packed next door.
     set_texture_filter(TEXTURE_FILTER_NEAREST);
+
+    // Without this the default `interactive` does nothing: the flag is set but
+    // no input arrives, so :hover would be wired up and still never fire.
+    set_process_input(interactive_);
 
     if (size_ == Vector2(0, 0)) {
         // No explicit size: take the viewport's, so a document dropped into a
@@ -242,6 +251,78 @@ void WevaDocument::set_document_size(const Vector2& size) {
     weva_document_set_viewport(doc_, static_cast<int>(size.x), static_cast<int>(size.y));
     dirty_ = true;
     queue_redraw();
+}
+
+void WevaDocument::set_interactive(bool on) {
+    interactive_ = on;
+    set_process_input(on);
+    if (!on && doc_) {
+        weva_document_clear_pointer(doc_);
+        dirty_ = true;
+        queue_redraw();
+    }
+}
+
+// Pointer position in the document's own coordinates, which are the node's
+// local ones: the document is laid out from this node's origin.
+void WevaDocument::_input(const Ref<InputEvent>& event) {
+    if (!interactive_ || !doc_ || event.is_null()) return;
+    const Ref<InputEventMouseMotion> motion = event;
+    const Ref<InputEventMouseButton> button = event;
+    if (motion.is_null() && button.is_null()) return;
+
+    const Vector2 local = get_global_transform().affine_inverse().xform(
+        motion.is_valid() ? motion->get_global_position() : button->get_global_position());
+    uint32_t buttons = buttons_;
+    if (button.is_valid()) {
+        // Only the primary button drives :active, which is what the pseudo
+        // class means; the others are the host's to route.
+        if (button->get_button_index() == MOUSE_BUTTON_LEFT) {
+            buttons = button->is_pressed() ? 1u : 0u;
+        }
+    }
+    if (local == pointer_ && buttons == buttons_) return;
+    pointer_ = local;
+    buttons_ = buttons;
+    weva_document_set_pointer(doc_, local.x, local.y, buttons);
+    // The document decides whether anything actually changed; an update that
+    // finds no style different publishes the frame it already had.
+    dirty_ = true;
+    queue_redraw();
+}
+
+void WevaDocument::_notification(int what) {
+    if (what == NOTIFICATION_EXIT_TREE && doc_) {
+        weva_document_clear_pointer(doc_);
+    }
+}
+
+godot::String WevaDocument::element_id_at(const Vector2& point) {
+    if (!doc_) return String();
+    ensure_updated();
+    const weva_element_t e = weva_document_element_at(doc_, point.x, point.y);
+    if (e == WEVA_ELEMENT_NONE) return String();
+    // The handle is an index; a script wants something it can act on, and an
+    // id is the one stable name the document has.
+    char buffer[128];
+    const size_t n = weva_element_attribute(doc_, e, "id", buffer, sizeof(buffer));
+    if (n == 0 || n >= sizeof(buffer)) return String();
+    return String(buffer);
+}
+
+bool WevaDocument::set_focus(const godot::String& selector) {
+    if (!doc_) return false;
+    ensure_updated();
+    if (selector.is_empty()) {
+        return weva_document_set_focus(doc_, WEVA_ELEMENT_NONE) == WEVA_OK;
+    }
+    const CharString s = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, s.get_data());
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (weva_document_set_focus(doc_, e) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
 }
 
 void WevaDocument::ensure_updated() {

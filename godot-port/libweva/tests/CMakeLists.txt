@@ -42,6 +42,7 @@ add_executable(weva_tests
     test_text_render.cpp
     test_c_abi.cpp
     test_c_abi_incremental.cpp
+    test_c_abi_interaction.cpp
     test_table.cpp
     test_background.cpp
     test_backdrop_filter.cpp
