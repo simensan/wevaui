@@ -298,3 +298,52 @@ void test_abi_hit_testing_opt_out() {
         CHECK(below != a);
     }
 }
+
+
+// Hit testing through PADDED ancestors.
+//
+// Box x/y are relative to the parent's BORDER-BOX origin -- layout has already
+// baked the padding into them, which is what absolute_position assumes when it
+// sums the chain and what paint assumes when it passes its own origin down
+// untouched. Adding the padding again in the hit test double-counted it, and
+// every test here used `margin: 0` markup with no padding, so nothing caught
+// it until a demo panel with `padding: 20px` returned the wrong element for a
+// click on its button.
+void test_abi_hit_testing_through_padding() {
+    Doc doc("html, body { margin: 0 }"
+            "#outer { padding: 40px; border: 5px solid #333 }"
+            "#inner { padding: 30px }"
+            "#target { width: 60px; height: 20px; background: #0f0 }",
+            "<div id=outer><div id=inner><div id=target>x</div></div></div>");
+
+    const weva_element_t target = weva_document_query(doc.d, "#target");
+    CHECK(target != WEVA_ELEMENT_NONE);
+
+    // Wherever layout put it, that is where the hit test must find it. Asking
+    // the document for the bounds and then asking what is at their centre is
+    // the whole invariant, and it holds for any nesting.
+    double x = 0, y = 0, w = 0, h = 0;
+    CHECK(weva_element_bounds(doc.d, target, &x, &y, &w, &h) == WEVA_OK);
+    CHECK(x > 70 && y > 70);   // pushed in by two paddings and a border
+    CHECK(weva_document_element_at(doc.d, x + w / 2, y + h / 2) == target);
+
+    // Just outside it on each side is NOT the target.
+    CHECK(weva_document_element_at(doc.d, x - 2, y + h / 2) != target);
+    CHECK(weva_document_element_at(doc.d, x + w + 2, y + h / 2) != target);
+    CHECK(weva_document_element_at(doc.d, x + w / 2, y - 2) != target);
+
+    // The same invariant on a flex row inside a padded panel, which is how the
+    // failure was actually found.
+    Doc row("html, body { margin: 0 }"
+            "#panel { margin: 24px; padding: 20px; width: 420px }"
+            ".row { display: flex; gap: 10px }"
+            "button { padding: 7px 14px }",
+            "<div id=panel><div class=row>"
+            "<button id=a>one</button><button id=b>two</button></div></div>");
+    for (const char* id : {"#a", "#b"}) {
+        const weva_element_t e = weva_document_query(row.d, id);
+        CHECK(weva_element_bounds(row.d, e, &x, &y, &w, &h) == WEVA_OK);
+        CHECK(w > 0 && h > 0);
+        CHECK(weva_document_element_at(row.d, x + w / 2, y + h / 2) == e);
+    }
+}

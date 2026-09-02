@@ -45,6 +45,7 @@ func _ready() -> void:
 	_test_click_signals()
 	_test_focus_navigation()
 	_test_form_binding()
+	_test_demo_scene_pattern()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -360,4 +361,53 @@ func _test_form_binding() -> void:
 		if change[0] == "box" and change[1] == "on":
 			told = true
 	_check(told, "the change reaches the script as a signal")
+	doc.queue_free()
+
+
+# The demo scene's own markup, driven the way the demo drives it.
+#
+# demo.tscn is the worked example a reader copies from, so it is worth knowing
+# that the pattern in it actually works rather than that it merely parses.
+func _test_demo_scene_pattern() -> void:
+	var demo := preload("res://demo.gd")
+	var doc := _make_doc(demo.HTML, demo.CSS, Vector2(640, 400))
+
+	_check(doc.has_element("#hp-fill"), "the demo's bar is there")
+	_check(doc.get_element_text("#hp-text") == "100 / 100", "the demo's readout starts full")
+
+	var clicked: Array = []
+	doc.element_clicked.connect(func(id): clicked.append(id))
+
+	# What _refresh() does, at 40 hp: the readout, an inline width, and the
+	# state classes the stylesheet animates off.
+	doc.set_element_text("#hp-text", "40 / 100")
+	doc.set_element_attribute("#hp-fill", "style", "width: 40%")
+	doc.toggle_element_class("#hp-fill", "hurt", true)
+	doc.update_document()
+	_check(doc.get_element_text("#hp-text") == "40 / 100", "the readout follows the script")
+
+	var bar := doc.query_bounds("#hp-fill")
+	var track := doc.query_bounds(".bar")
+	# The demo's stylesheet puts a 260ms transition on the bar's width, so it
+	# does NOT jump -- which is the point of driving a UI this way, and means
+	# the test has to let time pass before measuring.
+	_check(bar.size.x == track.size.x, "the bar has not moved yet: it is transitioning")
+	doc.update_document(0.3)
+	bar = doc.query_bounds("#hp-fill")
+	_check(bar.size.x < track.size.x * 0.6, "and lands narrow once the transition runs")
+
+	# Clicking a button reaches the script by id, which is the whole binding.
+	var hit := doc.query_bounds("#hit")
+	var at := hit.position + hit.size * 0.5
+	doc.set_pointer(at, 0)
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(doc.element_id_at(at) == "hit", "hit testing finds the button through the padding")
+	_check(clicked.has("hit"), "clicking the demo's button raises its id")
+
+	# And the form controls the demo exposes.
+	_check(doc.get_element_value("#name") == "Vintner", "the demo's field has its value")
+	_check(doc.set_element_value("#shield", "on"), "the demo's checkbox can be set")
+	_check(doc.get_element_value("#shield") == "on", "and reads back")
 	doc.queue_free()

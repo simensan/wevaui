@@ -54,12 +54,18 @@ struct Search {
             const double py1 = by + b.height - b.border_bottom;
             if (x < px0 || x >= px1 || y < py0 || y >= py1) return kNoBox;
         }
-        // Children sit on the content origin, which is the border box inset by
-        // the border and padding -- the same origin paint lays them out from.
-        const double cx = bx + b.border_left + b.padding_left;
-        const double cy = by + b.border_top + b.padding_top;
+        // Children sit on the parent's BORDER-BOX origin. Layout has already
+        // baked the padding into each child's own x and y -- which is what
+        // absolute_position assumes when it simply sums the chain, and what
+        // paint assumes when it hands its own x and y down untouched.
+        //
+        // Adding the padding here as well double-counted it, so every child of
+        // a padded box was tested at the wrong place. It went unnoticed because
+        // the first tests used `margin: 0` markup with no padding anywhere; the
+        // demo panel has `padding: 20px` and hit testing its button returned
+        // the progress bar thirty pixels above it.
         for (BoxId c = b.last_child; c != kNoBox; c = tree[c].prev_sibling) {
-            const BoxId hit = visit(c, cx, cy, ignore);
+            const BoxId hit = visit(c, bx, by, ignore);
             if (hit != kNoBox) return hit;
         }
         if (ignore) return kNoBox;

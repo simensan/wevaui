@@ -257,3 +257,62 @@ Godot_v4.7.1-stable_mono_win64_console.exe --path . --rendering-driver opengl3 `
 
 or open `project/project.godot` in the editor and press Play, which opens the
 gallery.
+
+
+## Driving a document from GDScript
+
+`demo.tscn` is a worked example -- a health bar, buttons, a checkbox and a text
+field, with the animation left to CSS. Run it:
+
+    godot --path project --scene res://demo.tscn
+
+The whole surface, and it is addressed by SELECTOR throughout, because that is
+the name a script and a stylesheet already share.
+
+**Reading and writing**
+
+    doc.set_element_text("#label", "42 / 100")     # what it says
+    doc.get_element_text("#label")
+    doc.set_element_value("#name", "Vintner")      # form controls
+    doc.get_element_value("#shield")               # "on" or "" for a checkbox
+    doc.set_element_attribute("#bar", "style", "width: 40%")
+    doc.toggle_element_class("#bar", "hurt", hp <= 50)
+    doc.add_element_class(...) / remove_element_class(...)
+    doc.has_element("#thing")
+    doc.query_bounds("#thing")                     # where layout put it
+
+**Hearing about it**
+
+    doc.element_clicked.connect(func(id): ...)     # press and release on one
+    doc.element_pressed / element_released
+    doc.element_entered / element_exited           # pointer in and out
+    doc.element_focused / element_blurred
+    doc.value_changed.connect(func(id, value): ...)
+    doc.key_pressed.connect(func(id, key, mods): ...)
+    doc.text_entered.connect(func(id, text): ...)
+
+An element is named by its `id`. One without an id reports "", which a script
+can still compare against.
+
+**Input**
+
+The node reads its own input while `interactive` is on, which is the default.
+A host routing its own -- a gamepad cursor, a touch surface -- calls
+`set_pointer(point, buttons)` and `clear_pointer()` instead. `focus_next(back)`
+moves focus in tab order; Tab does it by itself and the document reports having
+consumed the key.
+
+**Time**
+
+`paused` stops the clock: transitions and @keyframes hold where they are, and
+the document still updates when something else changes it. `update_document(dt)`
+steps it by hand, which is what a test wants when it needs to see a transition
+partway rather than wait for real frames.
+
+Two things worth knowing, because both have caught someone out:
+
+  * A transition means a change does NOT take effect immediately. Setting a
+    width and measuring in the same breath reads the OLD width, correctly.
+  * The animation belongs in the stylesheet. The demo's script sets a width and
+    toggles a class; the easing and the low-health pulse are CSS. That is the
+    reason to drive a UI this way rather than tweening from GDScript.

@@ -110,7 +110,10 @@ public:
     godot::String focus_next(bool backwards);
 
     // Runs cascade, layout and paint now, rather than waiting for the frame.
-    void update_document();
+    // `dt` advances transitions and animations by that many seconds -- a game
+    // stepping a paused UI, or a test that wants to see a transition partway
+    // rather than wait for real frames to pass.
+    void update_document(double dt = 0.0);
 
     // Whether to draw with the engine's own font. Turning it off falls back to
     // the core's built-in 5x7 face, which is what the backend comparison needs:

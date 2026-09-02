@@ -242,6 +242,7 @@ void test_abi_element_contains();
 void test_abi_set_text();
 void test_abi_hit_testing();
 void test_abi_hit_testing_opt_out();
+void test_abi_hit_testing_through_padding();
 void test_abi_hover_active_focus();
 void test_abi_transition_runs();
 void test_abi_transition_costs_nothing_when_idle();
@@ -499,6 +500,7 @@ int main() {
     test_abi_set_text();
     test_abi_hit_testing();
     test_abi_hit_testing_opt_out();
+    test_abi_hit_testing_through_padding();
     test_abi_hover_active_focus();
     test_abi_transition_runs();
     test_abi_transition_costs_nothing_when_idle();

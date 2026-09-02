@@ -172,7 +172,8 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_css"), &WevaDocument::get_css);
     ClassDB::bind_method(D_METHOD("set_document_size", "size"), &WevaDocument::set_document_size);
     ClassDB::bind_method(D_METHOD("get_document_size"), &WevaDocument::get_document_size);
-    ClassDB::bind_method(D_METHOD("update_document"), &WevaDocument::update_document);
+    ClassDB::bind_method(D_METHOD("update_document", "dt"), &WevaDocument::update_document,
+                         DEFVAL(0.0));
     ClassDB::bind_method(D_METHOD("get_content_size"), &WevaDocument::get_content_size);
     ClassDB::bind_method(D_METHOD("query_bounds", "selector"), &WevaDocument::query_bounds);
     ClassDB::bind_method(D_METHOD("query_text", "selector"), &WevaDocument::query_text);
@@ -625,9 +626,9 @@ void WevaDocument::ensure_updated(double dt) {
     textures_.swap(next);
 }
 
-void WevaDocument::update_document() {
+void WevaDocument::update_document(double dt) {
     dirty_ = true;
-    ensure_updated();
+    ensure_updated(dt);
     // Events raised by whatever the caller just did are delivered here too, so
     // a script that drives the pointer and then updates does not have to wait
     // for a frame to hear about it.
