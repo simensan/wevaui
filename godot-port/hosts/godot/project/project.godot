@@ -15,8 +15,20 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Weva Godot Host"
-run/main_scene="res://test_scene.tscn"
+; The gallery, so that opening the project and pressing Play shows the sample
+; corpus. The other two scenes are for machines and are named explicitly:
+;   --headless --scene res://test_scene.tscn --quit-after 2   (the ABI suite)
+;   --scene res://capture.tscn -- --html ... --out ...        (one page to a file)
+run/main_scene="res://gallery.tscn"
 config/features=PackedStringArray("4.7")
+
+[display]
+
+; Room for a 1280x720 document at 1:1 beside the 220px sample list. The gallery
+; scales the page to fit whatever size the window ends up, so this is a
+; comfortable default rather than a requirement.
+window/size/viewport_width=1520
+window/size/viewport_height=800
 
 [rendering]
 

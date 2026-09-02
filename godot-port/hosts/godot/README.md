@@ -55,13 +55,45 @@ without it the engine loads no GDExtension at all — a headless or CI run then
 fails with `Could not find type "WevaDocument"` and no hint that an extension
 was even meant to load.
 
+## Looking at the samples
+
+```sh
+godot --path hosts/godot/project
+```
+
+`gallery.tscn` is the project's main scene: a list of every page in the oracle's
+sample corpus down the left, the selected one rendered live by the C++ engine on
+the right. It reads the corpus in place rather than copying it in, so what you
+see is the same file both gates measure.
+
+| key | |
+| --- | --- |
+| `←` `→` | previous / next sample |
+| `P` | full page (see below) |
+| `F` | engine font or the core's stub face |
+| wheel, `PgUp` / `PgDn` | scroll, in full-page mode |
+| `Esc` | quit |
+
+Pages are laid out at **1280×720**, which is what the corpus is captured at and
+therefore what the gates measure. Painting stops at the viewport, so a page
+taller than that is not merely scrolled off — it is never drawn, and 18 of the
+35 samples reach past it (`audit-validation` gets to 2767px). `P` lays the page
+out again in a viewport tall enough to hold it and fits it to the width so it
+can be scrolled. That is deliberately a mode you ask for rather than the
+default: a taller viewport is a *different document*, since percentage heights
+and `vh` units all move with it.
+
+The header shows the draw and triangle counts, which face is in use, and how far
+the page reaches when that is past the viewport.
+
 ## Running the render tests
 
 ```sh
-godot --headless --path hosts/godot/project
+godot --headless --path hosts/godot/project --scene res://test_scene.tscn --quit-after 2
 ```
 
-`render_tests.gd` exits non-zero on failure, so it works in CI.
+`render_tests.gd` exits non-zero on failure, so it works in CI. The scene is
+named explicitly because the main scene is the gallery.
 
 These are deliberately **not** a re-test of the layout engine — libweva's own
 suite covers that far better, and duplicating it here would mean two places to
@@ -191,10 +223,12 @@ Keep build directories on a short path: MSBuild's tracker fails with
 Then, from `hosts/godot/project`:
 
 ```powershell
-Godot_v4.7.1-stable_mono_win64_console.exe --headless --path .        # 23 checks
+Godot_v4.7.1-stable_mono_win64_console.exe --headless --path . `
+    --scene res://test_scene.tscn --quit-after 2                     # the ABI suite
 Godot_v4.7.1-stable_mono_win64_console.exe --path . --rendering-driver opengl3 `
     --scene res://capture.tscn -- --html C:/.../Assets/UI/leaderboard.html `
     --css C:/.../Assets/UI/leaderboard.css --size 1280x720 --png C:/tmp/leaderboard.png
 ```
 
-or open `project/project.godot` in the editor and run `test_scene.tscn`.
+or open `project/project.godot` in the editor and press Play, which opens the
+gallery.
