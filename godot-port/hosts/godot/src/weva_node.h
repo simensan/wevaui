@@ -7,6 +7,7 @@
 #include <godot_cpp/classes/image_texture.hpp>
 #include <godot_cpp/classes/input_event.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
+#include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
 #include <godot_cpp/classes/node2d.hpp>
 #include <godot_cpp/classes/system_font.hpp>
@@ -90,6 +91,10 @@ public:
     // primary button is bit 0 and is what makes an element :active.
     void set_pointer(const godot::Vector2& point, int buttons);
     void clear_pointer();
+
+    // Moves focus in tab order and returns the id that now has it, or "" when
+    // the document has nothing focusable in it.
+    godot::String focus_next(bool backwards);
 
     // Runs cascade, layout and paint now, rather than waiting for the frame.
     void update_document();

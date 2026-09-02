@@ -1,5 +1,7 @@
 #include "weva_node.h"
 
+#include <godot_cpp/classes/viewport.hpp>
+
 #include <godot_cpp/classes/font.hpp>
 #include <godot_cpp/classes/font_file.hpp>
 #include <godot_cpp/classes/image.hpp>
@@ -212,6 +214,14 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("element_released", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_entered", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_exited", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("element_focused", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("element_blurred", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("key_pressed", PropertyInfo(Variant::STRING, "id"),
+                          PropertyInfo(Variant::INT, "key"),
+                          PropertyInfo(Variant::INT, "modifiers")));
+    ADD_SIGNAL(MethodInfo("text_entered", PropertyInfo(Variant::STRING, "id"),
+                          PropertyInfo(Variant::STRING, "text")));
+    ClassDB::bind_method(D_METHOD("focus_next", "backwards"), &WevaDocument::focus_next);
     ClassDB::bind_method(D_METHOD("get_draw_count"), &WevaDocument::get_draw_count);
     ClassDB::bind_method(D_METHOD("get_triangle_count"), &WevaDocument::get_triangle_count);
 
@@ -288,8 +298,54 @@ void WevaDocument::set_interactive(bool on) {
 
 // Pointer position in the document's own coordinates, which are the node's
 // local ones: the document is laid out from this node's origin.
+// Godot's key codes, translated to the handful the engine has meaning for.
+// Everything else travels as WEVA_KEY_OTHER and reaches a script unchanged --
+// the engine has no business deciding what `J` means in someone's game.
+static int weva_key_from_godot(Key code) {
+    switch (code) {
+        case KEY_TAB: return WEVA_KEY_TAB;
+        case KEY_ENTER:
+        case KEY_KP_ENTER: return WEVA_KEY_ENTER;
+        case KEY_SPACE: return WEVA_KEY_SPACE;
+        case KEY_ESCAPE: return WEVA_KEY_ESCAPE;
+        case KEY_BACKSPACE: return WEVA_KEY_BACKSPACE;
+        case KEY_DELETE: return WEVA_KEY_DELETE;
+        case KEY_LEFT: return WEVA_KEY_LEFT;
+        case KEY_RIGHT: return WEVA_KEY_RIGHT;
+        case KEY_UP: return WEVA_KEY_UP;
+        case KEY_DOWN: return WEVA_KEY_DOWN;
+        case KEY_HOME: return WEVA_KEY_HOME;
+        case KEY_END: return WEVA_KEY_END;
+        default: return WEVA_KEY_OTHER;
+    }
+}
+
 void WevaDocument::_input(const Ref<InputEvent>& event) {
     if (!interactive_ || !doc_ || event.is_null()) return;
+
+    const Ref<InputEventKey> key = event;
+    if (key.is_valid() && !key->is_echo()) {
+        uint32_t modifiers = 0;
+        if (key->is_shift_pressed()) modifiers |= WEVA_MOD_SHIFT;
+        if (key->is_ctrl_pressed()) modifiers |= WEVA_MOD_CTRL;
+        if (key->is_alt_pressed()) modifiers |= WEVA_MOD_ALT;
+        if (key->is_meta_pressed()) modifiers |= WEVA_MOD_META;
+        const int code = weva_key_from_godot(key->get_keycode());
+        const bool consumed =
+            weva_document_key(doc_, code, modifiers, key->is_pressed() ? 1 : 0) != 0;
+        // The unicode a key produced is a separate thing from the key: Shift+1
+        // is one key and the text "!", and a dead key produces no text at all.
+        if (key->is_pressed() && key->get_unicode() != 0) {
+            const String character = String::chr(key->get_unicode());
+            const CharString utf8 = character.utf8();
+            weva_document_text_input(doc_, utf8.get_data());
+        }
+        dirty_ = true;
+        queue_redraw();
+        if (consumed) get_viewport()->set_input_as_handled();
+        return;
+    }
+
     const Ref<InputEventMouseMotion> motion = event;
     const Ref<InputEventMouseButton> button = event;
     if (motion.is_null() && button.is_null()) return;
@@ -328,6 +384,19 @@ void WevaDocument::set_pointer(const Vector2& point, int buttons) {
     weva_document_set_pointer(doc_, point.x, point.y, buttons_);
     dirty_ = true;
     queue_redraw();
+    pump_events();
+}
+
+godot::String WevaDocument::focus_next(bool backwards) {
+    if (!doc_) return String();
+    ensure_updated();
+    const weva_element_t e = weva_document_focus_next(doc_, backwards ? 1 : 0);
+    dirty_ = true;
+    queue_redraw();
+    // Delivered here rather than next frame: a script that moves focus and
+    // then looks at what happened should not have to wait for a redraw.
+    pump_events();
+    return id_of(e);
 }
 
 void WevaDocument::clear_pointer() {
@@ -337,6 +406,7 @@ void WevaDocument::clear_pointer() {
     buttons_ = 0;
     dirty_ = true;
     queue_redraw();
+    pump_events();
 }
 
 godot::String WevaDocument::id_of(uint32_t element) {
@@ -365,6 +435,12 @@ void WevaDocument::pump_events() {
             case WEVA_EVENT_POINTER_UP: emit_signal("element_released", id); break;
             case WEVA_EVENT_POINTER_ENTER: emit_signal("element_entered", id); break;
             case WEVA_EVENT_POINTER_LEAVE: emit_signal("element_exited", id); break;
+            case WEVA_EVENT_KEY_DOWN:
+                emit_signal("key_pressed", id, e.key, static_cast<int>(e.modifiers));
+                break;
+            case WEVA_EVENT_TEXT_INPUT: emit_signal("text_entered", id, String(e.text)); break;
+            case WEVA_EVENT_FOCUS: emit_signal("element_focused", id); break;
+            case WEVA_EVENT_BLUR: emit_signal("element_blurred", id); break;
             default: break;
         }
     }
@@ -453,6 +529,7 @@ bool WevaDocument::set_focus(const godot::String& selector) {
     if (weva_document_set_focus(doc_, e) != WEVA_OK) return false;
     dirty_ = true;
     queue_redraw();
+    pump_events();
     return true;
 }
 

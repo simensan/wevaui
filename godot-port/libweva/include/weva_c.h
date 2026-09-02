@@ -279,14 +279,55 @@ typedef enum weva_event_kind {
      * actually wants and what neither of the two above is on its own. */
     WEVA_EVENT_CLICK,
     WEVA_EVENT_POINTER_ENTER,
-    WEVA_EVENT_POINTER_LEAVE
+    WEVA_EVENT_POINTER_LEAVE,
+    /* Keyboard. `key` carries the code, `text` the characters it produced --
+     * which are different things: Shift+1 is one key and the text "!", and a
+     * dead key produces no text at all. */
+    WEVA_EVENT_KEY_DOWN,
+    WEVA_EVENT_KEY_UP,
+    WEVA_EVENT_TEXT_INPUT,
+    /* Focus moved. `target` is the element that now has it, or
+     * WEVA_ELEMENT_NONE when it was dropped. */
+    WEVA_EVENT_FOCUS,
+    WEVA_EVENT_BLUR
 } weva_event_kind;
+
+/* Held modifiers, as a bitmask on weva_event.modifiers. */
+typedef enum weva_key_modifier {
+    WEVA_MOD_SHIFT = 1u << 0,
+    WEVA_MOD_CTRL = 1u << 1,
+    WEVA_MOD_ALT = 1u << 2,
+    WEVA_MOD_META = 1u << 3
+} weva_key_modifier;
+
+/* The keys the engine itself acts on. A host passes its own codes through for
+ * everything else; these are the ones with meaning here. */
+typedef enum weva_key {
+    WEVA_KEY_OTHER = 0,
+    WEVA_KEY_TAB = 1,
+    WEVA_KEY_ENTER = 2,
+    WEVA_KEY_SPACE = 3,
+    WEVA_KEY_ESCAPE = 4,
+    WEVA_KEY_BACKSPACE = 5,
+    WEVA_KEY_DELETE = 6,
+    WEVA_KEY_LEFT = 7,
+    WEVA_KEY_RIGHT = 8,
+    WEVA_KEY_UP = 9,
+    WEVA_KEY_DOWN = 10,
+    WEVA_KEY_HOME = 11,
+    WEVA_KEY_END = 12
+} weva_key;
 
 typedef struct weva_event {
     int32_t kind;              /* one of weva_event_kind */
     weva_element_t target;     /* the element it happened on */
     double x, y;               /* document coordinates */
     uint32_t buttons;          /* buttons held at the time */
+    int32_t key;               /* one of weva_key, for the key events */
+    uint32_t modifiers;        /* weva_key_modifier bitmask */
+    /* The text a key produced, UTF-8 and null-terminated. Inline rather than a
+     * pointer so an event stays copyable and outlives nothing. */
+    char text[8];
 } weva_event;
 
 /* Takes the oldest queued event, returning 0 when the queue is empty. A host
@@ -329,6 +370,27 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
 /* The pointer left the surface: nothing is hovered or pressed. A host that
  * stops sending positions without this leaves the last element hovered. */
 void weva_document_clear_pointer(weva_document_t doc);
+
+/* A key went down or came up. `key` is a weva_key; pass WEVA_KEY_OTHER for
+ * anything the engine has no meaning for and it still reaches the host as an
+ * event. Returns 1 when the ENGINE consumed it -- Tab moving focus is the case
+ * that matters -- so a host knows not to act on it as well. */
+int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down);
+
+/* Text the user typed, UTF-8. Separate from the key events because they are
+ * separate things: one key can produce no text, and one character can take
+ * several keys. */
+void weva_document_text_input(weva_document_t doc, const char* utf8);
+
+/* Moves focus to the next focusable element in tab order, or the previous one
+ * when `backwards`. Returns the element that now has focus.
+ *
+ * Focusable means `tabindex` that is not negative, or one of the elements that
+ * is focusable by nature -- a, button, input, select, textarea -- and not
+ * disabled or hidden. Positive tabindex comes first in numeric order, then
+ * everything else in document order, which is what HTML specifies and what
+ * surprises people who expect one or the other alone. */
+weva_element_t weva_document_focus_next(weva_document_t doc, int backwards);
 
 /* Focus, or WEVA_ELEMENT_NONE to drop it. Sets :focus and :focus-visible on
  * the element and :focus-within on its ancestors. Focus is the host's to

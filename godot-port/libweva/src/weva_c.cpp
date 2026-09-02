@@ -903,6 +903,14 @@ struct weva_document {
     // and a release anywhere else is not.
     const Element* press_target = nullptr;
 
+    weva_element_t handle_of(const Element* e) const {
+        if (!e) return WEVA_ELEMENT_NONE;
+        for (size_t i = 0; i < elements.size(); ++i) {
+            if (elements[i] == e) return static_cast<weva_element_t>(i);
+        }
+        return WEVA_ELEMENT_NONE;
+    }
+
     void queue_event(int32_t kind, const Element* target, double x, double y, uint32_t buttons) {
         weva_event e{};
         e.kind = kind;
@@ -1480,6 +1488,128 @@ void weva_document_clear_pointer(weva_document_t doc) {
     note_state_change(doc, old_active, st.active_chain);
 }
 
+namespace {
+
+// Whether an element can take focus, and where it sits in tab order.
+//
+// HTML's rule, which is not the one most people expect: a POSITIVE tabindex
+// comes first, in numeric order, and everything else follows in document
+// order. `tabindex="-1"` is focusable by script but skipped by Tab.
+bool focus_order_of(const Element& e, int* order) {
+    const std::string_view raw = e.get_attribute("tabindex");
+    if (!raw.empty()) {
+        const std::string text(raw);
+        char* end = nullptr;
+        const long v = std::strtol(text.c_str(), &end, 10);
+        if (end != text.c_str() && *end == ' ') {
+            if (v < 0) return false;   // reachable by script, not by Tab
+            *order = static_cast<int>(v);
+            return true;
+        }
+    }
+    // Focusable by nature. An <a> only counts with an href, as in HTML.
+    const std::string_view tag = e.tag_name();
+    if (tag == "button" || tag == "input" || tag == "select" || tag == "textarea") {
+        *order = 0;
+        return true;
+    }
+    if (tag == "a" && !e.get_attribute("href").empty()) {
+        *order = 0;
+        return true;
+    }
+    return false;
+}
+
+bool focus_disabled(const Element& e, const StyleMap& styles) {
+    if (e.has_attribute("disabled")) return true;
+    auto it = styles.by_element.find(&e);
+    if (it == styles.by_element.end()) return true;   // no box, no focus
+    const std::string_view display = it->second->get("display");
+    if (display == "none") return true;
+    return it->second->get("visibility") == "hidden";
+}
+
+void collect_focusables(const Node& n, const StyleMap& styles,
+                        std::vector<std::pair<int, const Element*>>* out) {
+    for (const Ref<Node>& c : n.children()) {
+        if (c->node_type() != NodeType::Element) continue;
+        const auto& e = static_cast<const Element&>(*c);
+        int order = 0;
+        if (focus_order_of(e, &order) && !focus_disabled(e, styles)) {
+            out->emplace_back(order, &e);
+        }
+        collect_focusables(e, styles, out);
+    }
+}
+
+}   // namespace
+
+weva_element_t weva_document_focus_next(weva_document_t doc, int backwards) {
+    if (!doc || !doc->doc) return WEVA_ELEMENT_NONE;
+    std::vector<std::pair<int, const Element*>> found;
+    collect_focusables(*doc->doc, doc->styles, &found);
+    if (found.empty()) return WEVA_ELEMENT_NONE;
+    // Positive tabindex first in numeric order, then the rest in document
+    // order. stable_sort keeps document order within each group, which is what
+    // makes the second half work at all.
+    std::stable_sort(found.begin(), found.end(),
+                     [](const auto& a, const auto& b) {
+                         const bool pa = a.first > 0, pb = b.first > 0;
+                         if (pa != pb) return pa;
+                         if (pa && a.first != b.first) return a.first < b.first;
+                         return false;
+                     });
+    const Element* current = doc->styles.state.focused;
+    size_t index = 0;
+    bool have = false;
+    for (size_t i = 0; i < found.size(); ++i) {
+        if (found[i].second == current) { index = i; have = true; break; }
+    }
+    size_t next = 0;
+    if (!have) {
+        next = backwards ? found.size() - 1 : 0;
+    } else if (backwards) {
+        next = index == 0 ? found.size() - 1 : index - 1;
+    } else {
+        next = index + 1 >= found.size() ? 0 : index + 1;
+    }
+    const weva_element_t handle = doc->handle_of(found[next].second);
+    weva_document_set_focus(doc, handle);
+    return handle;
+}
+
+int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down) {
+    if (!doc) return 0;
+    weva_event e{};
+    e.kind = down ? WEVA_EVENT_KEY_DOWN : WEVA_EVENT_KEY_UP;
+    e.target = doc->handle_of(doc->styles.state.focused);
+    e.key = key;
+    e.modifiers = modifiers;
+    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
+    doc->events.push_back(e);
+
+    // Tab is the one key the engine acts on itself, because focus order is
+    // something only the document knows. Everything else is the host's.
+    if (down && key == WEVA_KEY_TAB && !(modifiers & WEVA_MOD_CTRL)) {
+        weva_document_focus_next(doc, (modifiers & WEVA_MOD_SHIFT) ? 1 : 0);
+        return 1;
+    }
+    return 0;
+}
+
+void weva_document_text_input(weva_document_t doc, const char* utf8) {
+    if (!doc || !utf8 || !*utf8) return;
+    weva_event e{};
+    e.kind = WEVA_EVENT_TEXT_INPUT;
+    e.target = doc->handle_of(doc->styles.state.focused);
+    const size_t n = std::strlen(utf8);
+    const size_t copy = n < sizeof(e.text) - 1 ? n : sizeof(e.text) - 1;
+    std::memcpy(e.text, utf8, copy);
+    e.text[copy] = ' ';
+    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
+    doc->events.push_back(e);
+}
+
 int weva_document_poll_event(weva_document_t doc, weva_event* out) {
     if (!doc || !out || doc->events.empty()) return 0;
     *out = doc->events.front();
@@ -1509,6 +1639,8 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     }
     if (st.focused == target) return WEVA_OK;
     const Element* previous = st.focused;
+    if (previous) doc->queue_event(WEVA_EVENT_BLUR, previous, 0, 0, 0);
+    if (target) doc->queue_event(WEVA_EVENT_FOCUS, target, 0, 0, 0);
     const std::vector<const Element*> old_chain = st.focus_chain;
     st.focused = target;
     // :focus-within is the ancestors; the element itself carries :focus.

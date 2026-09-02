@@ -43,6 +43,7 @@ func _ready() -> void:
 	_test_documents_do_not_disturb_each_other()
 	_test_script_bindings()
 	_test_click_signals()
+	_test_focus_navigation()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -300,4 +301,27 @@ func _test_click_signals() -> void:
 	doc.set_pointer(Vector2(50, 300), 0)
 	doc.update_document()
 	_check(not clicked.has("btn"), "releasing away from the button is not a click")
+	doc.queue_free()
+
+
+# Tab order, from a script. Focus is the one thing only the document can work
+# out, so it is the one key the engine acts on itself.
+func _test_focus_navigation() -> void:
+	var doc := _make_doc(
+		"<body><button id='one'>1</button><div id='plain'>x</div>" +
+		"<button id='two'>2</button><button id='three' disabled>3</button></body>",
+		"button, div { display: block }")
+
+	var focused: Array = []
+	doc.element_focused.connect(func(id): focused.append(id))
+
+	_check(doc.focus_next(false) == "one", "tab lands on the first focusable")
+	# The plain div is not focusable and the disabled button is out of the ring.
+	_check(doc.focus_next(false) == "two", "tab skips what cannot take focus")
+	_check(doc.focus_next(false) == "one", "tab wraps round")
+	_check(doc.focus_next(true) == "two", "shift-tab goes the other way")
+	_check(focused.has("one") and focused.has("two"), "focus changes reach a script")
+
+	# Focus by selector still works, and drives the same signal.
+	_check(doc.set_focus("#one"), "focus can be set by selector")
 	doc.queue_free()
