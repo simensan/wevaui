@@ -754,6 +754,14 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         PreparedGradient prepared;
         double ox, oy, tw, th;
         bool repeat_x, repeat_y;
+        // Whether the tile's repetition can actually be reached inside the
+        // painting area. `background-repeat` is `repeat` unless a sheet says
+        // otherwise, so nearly every layer sets repeat_x and repeat_y -- and
+        // nearly every layer is also a gradient sized to the area it fills,
+        // which puts every sample inside the first tile. The wrap is then two
+        // fmods that cannot change their argument, run for every texel of
+        // every layer: eight of them per texel of a two-layer background.
+        bool wrap_x, wrap_y;
     };
     std::vector<Tile> tiles;
     for (const BackgroundLayer& l : layers) {
@@ -769,6 +777,10 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         t.oy = resolve_position(l.pos_y, height, t.th, false, ctx, font_size);
         t.repeat_x = l.repeat_x;
         t.repeat_y = l.repeat_y;
+        // Covered on an axis means every sample lands in the first tile, so
+        // wrapping is the identity and the bounds test below always passes.
+        t.wrap_x = l.repeat_x && !(t.ox <= 0 && t.ox + t.tw >= width);
+        t.wrap_y = l.repeat_y && !(t.oy <= 0 && t.oy + t.th >= height);
         t.prepared = prepare(l.gradient, t.tw, t.th, ctx, font_size);
         tiles.push_back(std::move(t));
     }
@@ -922,10 +934,10 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                     for (size_t i = tiles.size(); i-- > 0;) {
                         const Tile& t = tiles[i];
                         double lx = x - t.ox, ly = y - t.oy;
-                        if (t.repeat_x) lx = std::fmod(std::fmod(lx, t.tw) + t.tw, t.tw);
-                        else if (lx < 0 || lx >= t.tw) continue;
-                        if (t.repeat_y) ly = std::fmod(std::fmod(ly, t.th) + t.th, t.th);
-                        else if (ly < 0 || ly >= t.th) continue;
+                        if (t.wrap_x) lx = std::fmod(std::fmod(lx, t.tw) + t.tw, t.tw);
+                        else if (!t.repeat_x && (lx < 0 || lx >= t.tw)) continue;
+                        if (t.wrap_y) ly = std::fmod(std::fmod(ly, t.th) + t.th, t.th);
+                        else if (!t.repeat_y && (ly < 0 || ly >= t.th)) continue;
                         const Srgb s = sample_prepared(t.prepared, lx, ly);
                         const float sa = s.a;
                         r = s.r * sa + r * (1 - sa);
@@ -947,10 +959,22 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
             const float a = aa / n;
             uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
             if (a > 0) { r /= a; g /= a; b /= a; }
-            o[0] = static_cast<uint8_t>(std::lround(std::clamp(r, 0.0f, 1.0f) * 255));
-            o[1] = static_cast<uint8_t>(std::lround(std::clamp(g, 0.0f, 1.0f) * 255));
-            o[2] = static_cast<uint8_t>(std::lround(std::clamp(b, 0.0f, 1.0f) * 255));
-            o[3] = static_cast<uint8_t>(std::lround(std::clamp(a, 0.0f, 1.0f) * 255));
+            // std::lround is a libm CALL, and this runs four times for every
+            // texel of every background: 4% of a viewport-sized one. The value
+            // is clamped to [0, 255] first, and for a non-negative float
+            // lround is floor(v + 0.5), which is what the cast does.
+            const auto byte = [](float v) {
+                // The product is taken first and kept, so the compiler cannot
+                // fuse it with the +0.5 into an FMA and round the pair at
+                // higher precision than lround did -- which moved eighteen of
+                // hud's texels by one when it could.
+                const float scaled = std::clamp(v, 0.0f, 1.0f) * 255.0f;
+                return static_cast<uint8_t>(scaled + 0.5f);
+            };
+            o[0] = byte(r);
+            o[1] = byte(g);
+            o[2] = byte(b);
+            o[3] = byte(a);
         }
     }
 }
