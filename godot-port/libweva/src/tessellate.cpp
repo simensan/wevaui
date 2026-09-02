@@ -67,13 +67,36 @@ std::vector<std::pair<double, double>> rounded_outline(const Rect& r, const Bord
 // Which of the four edges a point belongs to, for picking a border colour.
 // Corners fall to whichever side they are nearer, which is a simple stand-in
 // for a proper mitre and is invisible when adjacent colours match.
-int edge_of(double x, double y, const Rect& r) {
+int edge_of(double x, double y, const Rect& r, const double widths[4]) {
     const double dt = y - r.y, db = r.bottom() - y, dl = x - r.x, dr = r.right() - x;
-    const double m = std::min(std::min(dt, db), std::min(dl, dr));
-    if (m == dt) return 0;
-    if (m == dr) return 1;
-    if (m == db) return 2;
-    return 3;
+    // A side that is not DRAWN cannot own a corner.
+    //
+    // Only the sides with width contribute geometry, so a corner assigned to a
+    // zero-width side hands its colour to the strip a drawn side is making --
+    // and an unset side's colour is `currentColor`, the text colour. A table
+    // cell with nothing but `border-bottom: 1px solid <faint>` therefore drew
+    // its rule fading into the text colour along its length: dark at one end
+    // and bright at the other, with a visible step at every cell boundary.
+    const double d[4] = {dt, dr, db, dl};
+    double m = 0;
+    int best = -1;
+    for (int i = 0; i < 4; ++i) {
+        if (widths[i] <= 0) continue;
+        if (best < 0 || d[i] < m) {
+            m = d[i];
+            best = i;
+        }
+    }
+    // Every side zero is not a border at all, but the caller decides that; fall
+    // back to the old nearest-edge answer rather than reading past the array.
+    if (best < 0) {
+        const double n = std::min(std::min(dt, db), std::min(dl, dr));
+        if (n == dt) return 0;
+        if (n == dr) return 1;
+        if (n == db) return 2;
+        return 3;
+    }
+    return best;
 }
 
 } // namespace
@@ -277,6 +300,8 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
     if (outer.is_empty()) return;
     if (top <= 0 && right <= 0 && bottom <= 0 && left <= 0) return;
 
+    // Indexed like `colors`: top, right, bottom, left.
+    const double widths[4] = {top, right, bottom, left};
     const Rect inner(outer.x + left, outer.y + top,
                      std::max(0.0, outer.width - left - right),
                      std::max(0.0, outer.height - top - bottom));
@@ -320,7 +345,7 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
 
     const uint32_t base = static_cast<uint32_t>(out->vertices.size());
     for (uint32_t k = 0; k < n; ++k) {
-        const LinearColor& c = colors[edge_of(o[k].first, o[k].second, outer)];
+        const LinearColor& c = colors[edge_of(o[k].first, o[k].second, outer, widths)];
         out->vertices.push_back(vert(o_solid[k].first, o_solid[k].second, c));
         out->vertices.push_back(vert(i_solid[k].first, i_solid[k].second, c));
     }
@@ -338,7 +363,7 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
     const std::vector<std::pair<double, double>> i_edge = offset_outline(i2, -kAaHalfWidth);
     const uint32_t ramp = static_cast<uint32_t>(out->vertices.size());
     for (uint32_t k = 0; k < n; ++k) {
-        LinearColor c = colors[edge_of(o[k].first, o[k].second, outer)];
+        LinearColor c = colors[edge_of(o[k].first, o[k].second, outer, widths)];
         c.a = 0;
         out->vertices.push_back(vert(o_edge[k].first, o_edge[k].second, c));
         out->vertices.push_back(vert(i_edge[k].first, i_edge[k].second, c));

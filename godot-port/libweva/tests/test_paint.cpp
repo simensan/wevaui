@@ -266,6 +266,38 @@ void test_tessellate_border() {
     Mesh none;
     tessellate_border(Rect(0, 0, 100, 50), BorderRadii::zero(), 0, 0, 0, 0, c, &none);
     CHECK(none.empty());
+
+    // ONE side drawn takes ONE colour, all the way along.
+    //
+    // Corners are assigned to whichever side they are nearest, and a corner
+    // assigned to a side with no width used to hand its colour to the strip a
+    // drawn side was making. An unset border-color is `currentColor`, so a
+    // table cell with nothing but `border-bottom: 1px solid <faint>` drew its
+    // rule fading into the TEXT colour along its length -- dark at one end,
+    // bright at the other, stepping at every cell boundary.
+    const LinearColor sides[4] = {LinearColor(1, 0, 0, 1), LinearColor(0, 1, 0, 1),
+                                  LinearColor(0, 0, 1, 1), LinearColor(1, 1, 0, 1)};
+    Mesh bottom_only;
+    tessellate_border(Rect(0, 0, 100, 50), BorderRadii::zero(), 0, 0, 1, 0, sides, &bottom_only);
+    CHECK(!bottom_only.empty());
+    for (const Vertex& v : bottom_only.vertices) {
+        // sides[2], the bottom: blue.
+        CHECK(v.color.b == 1.0f && v.color.r == 0.0f && v.color.g == 0.0f);
+    }
+
+    // And two adjacent sides still each get their own, so this did not flatten
+    // a real four-colour border into one.
+    Mesh two;
+    tessellate_border(Rect(0, 0, 100, 50), BorderRadii::zero(), 2, 0, 2, 0, sides, &two);
+    bool saw_top = false, saw_bottom = false;
+    for (const Vertex& v : two.vertices) {
+        if (v.color.r == 1.0f && v.color.g == 0.0f) saw_top = true;
+        if (v.color.b == 1.0f) saw_bottom = true;
+        // Never the undrawn left or right.
+        CHECK(!(v.color.g == 1.0f && v.color.r == 0.0f));
+        CHECK(!(v.color.r == 1.0f && v.color.g == 1.0f));
+    }
+    CHECK(saw_top && saw_bottom);
 }
 
 void test_paint_decorations() {
