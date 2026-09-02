@@ -124,6 +124,18 @@ namespace Weva.Layout {
                                   Weva.Layout.Floats.FloatContext floatCtx,
                                   double bfcContentLeft, double bfcContentTop) {
             using (PerfMarkerScope.Auto(UIProfilerMarkers.LayoutInline)) {
+                // CSS 2.1 §9.4.2 / Text §4.1.1: content that is entirely
+                // COLLAPSIBLE whitespace collapses to nothing, so there is no
+                // line box and the container is zero-height. `<div> </div>` and
+                // `<div>\n</div>` measured a full line-height here where Chrome
+                // and the C++ port both say 0 — the newlines in formatted HTML
+                // made that three harvested cases.
+                if (ContentIsAllCollapsibleWhitespace(container)) {
+                    // No line boxes: the caller sizes the container from its
+                    // children, so an empty child list is a zero-height block.
+                    container.ClearChildren();
+                    return;
+                }
                 if (TryLayoutSingleRunFast(container, availableWidth, floatCtx)) return;
 
                 // Stack discipline: an inline-block atom inside this container will
@@ -340,6 +352,79 @@ namespace Weva.Layout {
         // clone that shares Element / Style. This makes background-color,
         // border, and text-decoration paint correctly on every line of a
         // wrapped `<a>` / `<span>` per CSS painting order.
+        // True when every descendant of `container` can only contribute
+        // collapsible whitespace: text runs that are all spaces/tabs/newlines
+        // under a white-space value that collapses them, and inline boxes
+        // holding nothing else. An EMPTY container is excluded — it has no
+        // content to collapse and is already zero-height by another path — as
+        // is anything preserving whitespace.
+        static bool ContentIsAllCollapsibleWhitespace(BlockBox container) {
+            var kids = container.ChildList;
+            if (kids.Count == 0) return false;
+            for (int i = 0; i < kids.Count; i++) {
+                if (!BoxIsCollapsibleWhitespace(kids[i])) return false;
+            }
+            return true;
+        }
+
+        static bool BoxIsCollapsibleWhitespace(Box b) {
+            if (b is TextRun tr) {
+                string t = tr.Text;
+                if (string.IsNullOrEmpty(t)) return true;
+                for (int i = 0; i < t.Length; i++) {
+                    char c = t[i];
+                    if (c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\f') return false;
+                }
+                string ws = tr.Style?.Get(CssProperties.WhiteSpaceId);
+                return ws != "pre" && ws != "pre-wrap" && ws != "pre-line" && ws != "break-spaces";
+            }
+            if (b is InlineBox ib) {
+                // CSS 2.1 §9.4.2 also zero-heights a line holding only an
+                // EMPTY inline box, and Chrome agrees — it gives
+                // `<div><span></span></div>` a height of 0 where this engine
+                // gives 18.29. That case is NOT handled here: returning true
+                // for it changes nothing, so the height comes from somewhere
+                // other than this path and needs its own investigation
+                // (HasSelectorTests-24 and two siblings in harvest are exactly
+                // this shape, with Chrome siding with the C++ port).
+                //
+                // What IS handled: an inline box that HOLDS collapsible
+                // whitespace. It only collapses when the box draws no edge —
+                // margins, padding and borders are visible whatever the
+                // content does, which is §9.4.2's own qualifier.
+                if (ib.Children.Count == 0) return false;
+                if (!InlineEdgeIsZero(ib)) return false;
+                for (int i = 0; i < ib.Children.Count; i++) {
+                    if (!BoxIsCollapsibleWhitespace(ib.Children[i])) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // True when the inline box declares no margin, border or padding — the
+        // §9.4.2 qualifier. Read off the STYLE rather than the box, because
+        // these are resolved during layout and this runs before it.
+        static bool InlineEdgeIsZero(InlineBox ib) {
+            var st = ib.Style;
+            if (st == null) return true;
+            for (int i = 0; i < InlineEdgeProps.Length; i++) {
+                string v = st.Get(InlineEdgeProps[i]);
+                if (string.IsNullOrEmpty(v)) continue;
+                if (v == "0" || v == "0px" || v == "none" || v == "auto") continue;
+                return false;
+            }
+            return true;
+        }
+
+        static readonly int[] InlineEdgeProps = {
+            CssProperties.MarginLeftId, CssProperties.MarginRightId,
+            CssProperties.PaddingLeftId, CssProperties.PaddingRightId,
+            CssProperties.PaddingTopId, CssProperties.PaddingBottomId,
+            CssProperties.BorderLeftWidthId, CssProperties.BorderRightWidthId,
+            CssProperties.BorderTopWidthId, CssProperties.BorderBottomWidthId,
+        };
+
         bool TryLayoutSingleRunFast(BlockBox container, double availableWidth, Weva.Layout.Floats.FloatContext floatCtx) {
             if (container == null || container.ChildList.Count != 1) return false;
             if (floatCtx != null && floatCtx.Count != 0) return false;
