@@ -194,5 +194,59 @@ namespace Weva.Tests.Layout {
             Assert.That(HeightOf(root, "s"), Is.EqualTo(103).Within(1e-9));
         }
 
+
+        static double TopOf(Box root, string cls) {
+            foreach (var b in AllBoxes(root)) {
+                if (b.Element != null && b.Element.ClassName == cls) {
+                    double y = 0;
+                    for (var p = b; p != null; p = p.Parent) y += p.Y;
+                    return y;
+                }
+            }
+            return double.NaN;
+        }
+
+        // A flex container whose cross size comes from `aspect-ratio` derived
+        // that cross as a BORDER-box size and assigned it into the variable
+        // holding the CONTENT cross size. The line then had an extra frame of
+        // free space, and `align-items: center` pushed the item down by half of
+        // it on top of the content-top offset it already had. The error tracked
+        // the border exactly, which is what identified it.
+        [Test]
+        public void Flex_item_centres_in_the_content_box_of_an_aspect_ratio_container() {
+            const string css = @"
+                body { margin: 0 }
+                .s { width: 200px; aspect-ratio: 2 / 1; display: flex;
+                     align-items: center; justify-content: center;
+                     border-width: 1px; border-style: solid }
+                .g { font-size: 28px }
+            ";
+            var (root, _, _) = Build(@"<div class=""s""><span class=""g"">A</span></div>", css);
+            // Border box 202 wide -> content 200 -> content height 100 -> border
+            // box 102. Chrome puts the 32px glyph at 1 + (100 - 32) / 2 = 35.
+            double container = HeightOf(root, "s");
+            Assert.That(container, Is.EqualTo(102).Within(1e-9));
+            double glyph = TopOf(root, "g");
+            double glyphH = HeightOf(root, "g");
+            Assert.That(glyph, Is.EqualTo(1 + (100 - glyphH) / 2).Within(1e-6));
+        }
+
+        [Test]
+        public void The_centring_error_does_not_scale_with_the_border() {
+            // Same shape with a 5px border: the old code was out by the border
+            // width, so this case pins that the frame is not double-counted.
+            const string css = @"
+                body { margin: 0 }
+                .s { width: 200px; aspect-ratio: 2 / 1; display: flex;
+                     align-items: center; justify-content: center;
+                     border-width: 5px; border-style: solid }
+                .g { font-size: 28px }
+            ";
+            var (root, _, _) = Build(@"<div class=""s""><span class=""g"">A</span></div>", css);
+            Assert.That(HeightOf(root, "s"), Is.EqualTo(110).Within(1e-9));
+            double glyphH = HeightOf(root, "g");
+            Assert.That(TopOf(root, "g"), Is.EqualTo(5 + (100 - glyphH) / 2).Within(1e-6));
+        }
+
     }
 }

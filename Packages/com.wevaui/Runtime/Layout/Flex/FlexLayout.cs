@@ -775,7 +775,15 @@ namespace Weva.Layout.Flex {
             if (contentMain <= 0) return 0;
             // aspect-ratio means width : height = ratio : 1 → height = width / ratio.
             double contentCross = isRow ? (contentMain / ratio) : (contentMain * ratio);
-            return contentCross > 0 ? (contentCross + frameCross) : 0;
+            // The CONTENT cross size, because the only caller assigns this into
+            // `containerCrossSize`, which is otherwise `container.ContentHeight`
+            // / `ContentWidth`. Returning the border-box size there handed the
+            // line an extra frame of free space, and `align-items: center` then
+            // pushed the item down by half of it on top of the content-top
+            // offset it already had — a bordered `aspect-ratio: 2/1` box centred
+            // its glyph at 35.998 where Chrome says 35, and at 155.998 against
+            // 151 with a 5px border, the error tracking the border exactly.
+            return contentCross > 0 ? contentCross : 0;
         }
 
         // CSS Sizing L4 §5: derive a flex item's main-axis size from its
