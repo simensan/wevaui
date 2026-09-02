@@ -728,6 +728,17 @@ void test_box_shadow_layer_density() {
         "html, body { margin: 0 } #b { width: 600px; height: 400px; background: #fff;"
         " box-shadow: 0 34px 90px rgba(0, 0, 0, 0.5) }",
         "<body><div id=b></div></body>");
+    // A spread with NO blur must still draw. The layer loop evaluates the
+    // edge coverage at exactly e == 0 there, and a strict `e < 0` test called
+    // that uncovered — `target` came out 0, the single layer failed the
+    // `target <= accumulated` check, and `0 0 0 20px` drew nothing at all.
+    // Chrome renders a hard ring: 115/255 over white, which is 0.55 of black.
+    const int spread_only = shadow_draws(
+        "html, body { margin: 0 } #b { width: 100px; height: 40px; background: #fff;"
+        " box-shadow: 0 0 0 20px rgba(0, 0, 0, 0.55) }",
+        "<body><div id=b></div></body>");
+    CHECK(spread_only >= 1);
+
     CHECK(narrow >= 8 && narrow <= 12);
     // 90px of blur needs many more steps than the old fixed 12, or the
     // falloff bands into visible rings (quests' outer panel).

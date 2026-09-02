@@ -481,7 +481,13 @@ BorderRadii grow_radii(const BorderRadii& r, double d) {
 // Coverage of a Gaussian-blurred straight edge at signed distance `e` outside
 // it, for the blur's sigma (blur radius / 2, the convention Blink uses).
 double blurred_coverage(double e, double sigma) {
-    if (sigma <= 0) return e < 0 ? 1.0 : 0.0;
+    // `e <= 0`, not `e < 0`. With no blur the layer loop evaluates this at
+    // exactly e == 0 — the hard edge itself — and a strict `<` called it
+    // uncovered, so `target` came out 0, the layer failed the
+    // `target <= accumulated` test, and a spread-only shadow like
+    // `0 0 0 20px rgba(0,0,0,0.55)` drew NOTHING. Chrome draws a hard ring
+    // there: 115/255 against white, which is exactly 0.55 of black over it.
+    if (sigma <= 0) return e <= 0 ? 1.0 : 0.0;
     return 0.5 * std::erfc(e / (sigma * 1.4142135623730951));
 }
 
