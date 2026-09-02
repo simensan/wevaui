@@ -80,6 +80,14 @@ struct CaretState {
     const Element* element = nullptr;   // the focused field, or null for none
     int index = 0;                      // characters before the caret
     bool visible = true;                // the blink, off half the time
+    // A <textarea>'s value is laid out as ordinary inline content, so its
+    // cursor lives inside one of the text runs rather than in text paint draws
+    // itself. Which run, and how far into it, is settled once after layout --
+    // paint cannot work it out per run without either missing the cursor at a
+    // line end (the newline belongs to no run) or drawing it twice where two
+    // runs meet.
+    BoxId run = kNoBox;
+    size_t run_offset = 0;   // characters of `run` before the cursor
 };
 
 struct PaintContext {

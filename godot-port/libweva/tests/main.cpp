@@ -253,6 +253,8 @@ void test_abi_caret_is_drawn();
 void test_abi_textarea_edits_its_content();
 void test_abi_textarea_newlines();
 void test_abi_textarea_line_keys();
+void test_abi_textarea_caret();
+void test_abi_textarea_scrolls_to_caret();
 void test_abi_form_pseudo_classes();
 void test_abi_radio_group();
 void test_abi_range_drag();
@@ -537,6 +539,8 @@ int main() {
     test_abi_textarea_edits_its_content();
     test_abi_textarea_newlines();
     test_abi_textarea_line_keys();
+    test_abi_textarea_caret();
+    test_abi_textarea_scrolls_to_caret();
     test_abi_form_pseudo_classes();
     test_abi_radio_group();
     test_abi_range_drag();

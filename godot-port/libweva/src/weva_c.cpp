@@ -1030,6 +1030,10 @@ struct weva_document {
     // box: the box tree is thrown away and rebuilt whenever anything moves, so
     // an offset kept on a box would be lost by every class change.
     std::unordered_map<const Element*, std::pair<double, double>> scroll;
+    // Set when the cursor moved or the text under it changed, so the next
+    // update scrolls it back into view. Not every frame: a reader who has
+    // scrolled away from the cursor should stay there.
+    bool caret_follow = false;
     // What caret the published draws were painted with. The blink is a change
     // no cascade can see, so it is compared against this to ask for a repaint.
     CaretState caret_painted;
@@ -1116,6 +1120,103 @@ struct weva_document {
 };
 
 namespace {
+
+// Finds the run the cursor sits in, in document order, and how far into it.
+//
+// The runs of a textarea's value each VIEW INTO the value's own buffer, so the
+// difference of the pointers says where in the value a run starts. The first
+// run whose span reaches the cursor wins: a cursor at the end of a line is at
+// the end of that line's run, and one at the start of the next is at the start
+// of the next run -- and settling it here rather than per run is what keeps a
+// line end from having no cursor at all, since the newline belongs to no run.
+void resolve_caret_run(weva_document* doc, CaretState* caret) {
+    caret->run = kNoBox;
+    caret->run_offset = 0;
+    if (!caret->element || caret->element->tag_name() != "textarea") return;
+    std::string_view source;
+    for (const Ref<Node>& child : caret->element->children()) {
+        if (child->node_type() == NodeType::Text) {
+            source = static_cast<const TextNode&>(*child).data();
+            break;
+        }
+    }
+    if (source.empty()) return;
+    const size_t idx = static_cast<size_t>(std::max(0, caret->index));
+    const char* base = source.data();
+    BoxId last = kNoBox;
+    size_t last_end = 0;
+    for (int i = 0; i < doc->tree.size(); ++i) {
+        const Box& b = doc->tree[i];
+        if (b.kind != BoxKind::Text || b.text.empty()) continue;
+        // The FRAGMENTS, not the run they were split from. Inline layout keeps
+        // the whole unsplit run in the tree as well, and it spans the entire
+        // value -- so it matches any cursor, and paint never draws it. Only a
+        // fragment sits in a line box, which is also where its baseline comes
+        // from.
+        if (b.parent == kNoBox || doc->tree[b.parent].kind != BoxKind::Line) continue;
+        const char* run = b.text.data();
+        if (run < base || run + b.text.size() > base + source.size()) continue;
+        const size_t off = static_cast<size_t>(run - base);
+        if (idx >= off && idx <= off + b.text.size()) {
+            caret->run = i;
+            caret->run_offset = idx - off;
+            return;
+        }
+        if (off + b.text.size() <= idx) {
+            last = i;
+            last_end = b.text.size();
+        }
+    }
+    // Past every run -- the value ends in a newline, so the cursor is on an
+    // empty last line. The end of the last run is the closest honest place for
+    // it until empty lines carry a run of their own.
+    caret->run = last;
+    caret->run_offset = last_end;
+}
+
+// Scrolls every container above `target` by the least that brings its box into
+// view. Shared by the entry point and by focus, which does it by itself.
+void bring_box_into_view(weva_document* doc, BoxId target) {
+    const BoxTree& tree = doc->tree;
+    if (!tree.valid(target)) return;
+    for (BoxId p = tree[target].parent; p != kNoBox; p = tree[p].parent) {
+        if (!tree[p].element || !clips_overflow(tree[p])) continue;
+        // Where the target sits in this container's padding box, with the
+        // container's own scroll left out -- that is the thing being solved
+        // for -- but with every scroll BETWEEN them taken off, since those
+        // have already moved it.
+        double rx = 0, ry = 0;
+        for (BoxId b = target; b != p && b != kNoBox; b = tree[b].parent) {
+            rx += tree[b].x;
+            ry += tree[b].y;
+            const BoxId parent = tree[b].parent;
+            if (parent != p && parent != kNoBox) {
+                rx -= tree[parent].scroll_x;
+                ry -= tree[parent].scroll_y;
+            }
+        }
+        const Box& c = tree[p];
+        rx -= c.border_left;
+        ry -= c.border_top;
+        const double client_w = c.width - c.border_left - c.border_right;
+        const double client_h = c.height - c.border_top - c.border_bottom;
+        double mx = 0, my = 0;
+        max_scroll(tree, p, &mx, &my);
+        // The nearest edge, not the top: an element already in view does not
+        // move, and one below the fold comes up only far enough to be seen.
+        double sx = c.scroll_x, sy = c.scroll_y;
+        const double w = tree[target].width, h = tree[target].height;
+        if (rx < sx) sx = rx;
+        else if (rx + w > sx + client_w) sx = rx + w - client_w;
+        if (ry < sy) sy = ry;
+        else if (ry + h > sy + client_h) sy = ry + h - client_h;
+        sx = std::clamp(sx, 0.0, mx);
+        sy = std::clamp(sy, 0.0, my);
+        if (sx == c.scroll_x && sy == c.scroll_y) continue;
+        doc->scroll[c.element] = {sx, sy};
+        doc->pending = worst(doc->pending, Invalidation::Paint);
+    }
+}
 
 // The box an element generated, or kNoBox. A linear scan: the tree is small,
 // and the alternative is a map that every rebuild would have to refill.
@@ -1336,7 +1437,7 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     // can see, so it is settled here -- against what was last painted -- and
     // asks for its own repaint before anything decides the pass is a no-op.
     if (dt_seconds > 0) doc->styles.state.caret_age += dt_seconds;
-    const CaretState caret = caret_for(doc->styles.state);
+    CaretState caret = caret_for(doc->styles.state);
     if (caret.element != doc->caret_painted.element ||
         caret.index != doc->caret_painted.index ||
         caret.visible != doc->caret_painted.visible) {
@@ -1463,6 +1564,24 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
         run_positioning(&doc->tree, doc->root, doc->ctx, &block);
     }
     lap("layout");
+
+    // Where the cursor ended up, now that there is a layout, and the scroll
+    // that keeps it in view: typing at the bottom of a textarea has to move
+    // the view, or the text goes on past what you can see. Before the offsets
+    // are applied below, so the scroll this asks for lands in the same frame.
+    resolve_caret_run(doc, &caret);
+    if (doc->caret_follow) {
+        // The LINE, not the run inside it: a run is only as tall as its
+        // glyphs, so scrolling to one leaves the line's leading hanging off
+        // the edge and the last line never quite reaches the bottom.
+        BoxId show = caret.run;
+        if (show != kNoBox && doc->tree[show].parent != kNoBox &&
+            doc->tree[doc->tree[show].parent].kind == BoxKind::Line) {
+            show = doc->tree[show].parent;
+        }
+        if (show != kNoBox) bring_box_into_view(doc, show);
+        doc->caret_follow = false;
+    }
 
     // The offsets go back onto the boxes paint and hit testing read, clamped
     // to what there is to scroll NOW: a list that shrank under a scrolled view
@@ -2092,6 +2211,7 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
             if (caret >= 0) {
                 st.caret = caret;
                 st.caret_age = 0;   // a caret that blinks while you move it is unreadable
+                doc->caret_follow = true;
                 if (edited) {
                     // Through the field, not into an attribute: a <textarea>
                     // keeps what it holds as its CONTENT, and writing the
@@ -2188,6 +2308,7 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
         value.insert(at, utf8);
         st.caret = static_cast<int>(at + std::strlen(utf8));
         st.caret_age = 0;
+        doc->caret_follow = true;
         set_field_value(doc, *focused, value);
         note_value_change(doc, *focused, value);
     }
@@ -2262,54 +2383,6 @@ int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
     return 0;
 }
 
-namespace {
-
-// Scrolls every container above `target` by the least that brings its box into
-// view. Shared by the entry point and by focus, which does it by itself.
-void bring_box_into_view(weva_document* doc, BoxId target) {
-    const BoxTree& tree = doc->tree;
-    if (!tree.valid(target)) return;
-    for (BoxId p = tree[target].parent; p != kNoBox; p = tree[p].parent) {
-        if (!tree[p].element || !clips_overflow(tree[p])) continue;
-        // Where the target sits in this container's padding box, with the
-        // container's own scroll left out -- that is the thing being solved
-        // for -- but with every scroll BETWEEN them taken off, since those
-        // have already moved it.
-        double rx = 0, ry = 0;
-        for (BoxId b = target; b != p && b != kNoBox; b = tree[b].parent) {
-            rx += tree[b].x;
-            ry += tree[b].y;
-            const BoxId parent = tree[b].parent;
-            if (parent != p && parent != kNoBox) {
-                rx -= tree[parent].scroll_x;
-                ry -= tree[parent].scroll_y;
-            }
-        }
-        const Box& c = tree[p];
-        rx -= c.border_left;
-        ry -= c.border_top;
-        const double client_w = c.width - c.border_left - c.border_right;
-        const double client_h = c.height - c.border_top - c.border_bottom;
-        double mx = 0, my = 0;
-        max_scroll(tree, p, &mx, &my);
-        // The nearest edge, not the top: an element already in view does not
-        // move, and one below the fold comes up only far enough to be seen.
-        double sx = c.scroll_x, sy = c.scroll_y;
-        const double w = tree[target].width, h = tree[target].height;
-        if (rx < sx) sx = rx;
-        else if (rx + w > sx + client_w) sx = rx + w - client_w;
-        if (ry < sy) sy = ry;
-        else if (ry + h > sy + client_h) sy = ry + h - client_h;
-        sx = std::clamp(sx, 0.0, mx);
-        sy = std::clamp(sy, 0.0, my);
-        if (sx == c.scroll_x && sy == c.scroll_y) continue;
-        doc->scroll[c.element] = {sx, sy};
-        doc->pending = worst(doc->pending, Invalidation::Paint);
-    }
-}
-
-}   // namespace
-
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     InteractionState& st = doc->styles.state;
@@ -2323,6 +2396,7 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     // is where a user expects to carry on typing.
     st.caret = target ? static_cast<int>(field_value(*target).size()) : 0;
     st.caret_age = 0;
+    doc->caret_follow = target != nullptr;
     const Element* previous = st.focused;
     if (previous) doc->queue_event(WEVA_EVENT_BLUR, previous, 0, 0, 0);
     if (target) doc->queue_event(WEVA_EVENT_FOCUS, target, 0, 0, 0);

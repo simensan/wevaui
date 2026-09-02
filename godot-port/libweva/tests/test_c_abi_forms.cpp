@@ -8,7 +8,9 @@
 #include "check.h"
 #include "weva_c.h"
 
+#include <cmath>
 #include <cstdlib>
+#include <utility>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -513,4 +515,119 @@ void test_abi_textarea_line_keys() {
     weva_document_key(ragged.d, WEVA_KEY_UP, 0, 1);
     weva_document_text_input(ragged.d, "^");
     CHECK(ragged.value("#t") == "^longer line\nab!");
+}
+
+// The caret in a textarea. An <input> draws its own text, so paint knows where
+// the cursor goes; a textarea's value is laid out as ordinary inline content,
+// and the cursor has to be found among the runs.
+void test_abi_textarea_caret() {
+    // A tiny 1px bar is hard to find among draws, so it is located by what it
+    // does to the frame: the leftmost and topmost ink of the thinnest draw.
+    const auto caret_of = [](weva_document_t d) {
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        double best_w = 1e9, cx = -1, cy = -1;
+        for (size_t i = 0; i < count; ++i) {
+            double x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+            for (size_t v = 0; v < draws[i].vertex_count; ++v) {
+                const weva_vertex& p = draws[i].vertices[v];
+                x0 = std::fmin(x0, p.x); x1 = std::fmax(x1, p.x);
+                y0 = std::fmin(y0, p.y); y1 = std::fmax(y1, p.y);
+            }
+            // The caret is the one draw that is a pixel wide and taller than
+            // it is broad.
+            const double w = x1 - x0, h = y1 - y0;
+            if (w > 1.5 || h < w || w >= best_w) continue;
+            best_w = w;
+            cx = x0;
+            cy = y0;
+        }
+        return std::pair<double, double>(cx, cy);
+    };
+
+    Doc doc("html, body { margin: 0 }"
+            "textarea { display: block; width: 300px; height: 90px; padding: 0; border: 0;"
+            "           font-size: 16px }",
+            "<textarea id=t>ab\ncd</textarea>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+
+    // Nothing focused, no caret.
+    CHECK(caret_of(doc.d).first < 0);
+
+    // Focused, the caret sits after the last character: on the second line,
+    // two characters in.
+    weva_document_set_focus(doc.d, t);
+    weva_document_update(doc.d, 0);
+    const std::pair<double, double> at_end = caret_of(doc.d);
+    CHECK(at_end.first > 0);
+    CHECK(at_end.second > 0);   // the second line, not the first
+
+    // Home moves it to the start of that line: same line, hard left.
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_update(doc.d, 0);
+    const std::pair<double, double> line_start = caret_of(doc.d);
+    CHECK(line_start.first < at_end.first);
+    CHECK(std::fabs(line_start.second - at_end.second) < 0.5);   // still line two
+
+    // Up puts it on the first line, at the same column -- higher, and no
+    // further right.
+    weva_document_key(doc.d, WEVA_KEY_UP, 0, 1);
+    weva_document_update(doc.d, 0);
+    const std::pair<double, double> line_one = caret_of(doc.d);
+    CHECK(line_one.second < line_start.second);
+
+    // Typing moves it along: the cursor is where the next character goes.
+    weva_document_key(doc.d, WEVA_KEY_END, 0, 1);
+    weva_document_update(doc.d, 0);
+    const std::pair<double, double> before = caret_of(doc.d);
+    weva_document_text_input(doc.d, "xyz");
+    weva_document_update(doc.d, 0);
+    const std::pair<double, double> after = caret_of(doc.d);
+    CHECK(after.first > before.first);
+    CHECK(std::fabs(after.second - before.second) < 0.5);   // same line
+
+    // And it blinks, like the one in an input.
+    weva_document_update(doc.d, 0.6);
+    CHECK(caret_of(doc.d).first < 0);
+    weva_document_update(doc.d, 0.5);
+    CHECK(caret_of(doc.d).first > 0);
+}
+
+// The view follows the cursor. Typing at the bottom of a textarea has to move
+// what you can see, or the text goes on past the end of the box and you are
+// writing blind.
+void test_abi_textarea_scrolls_to_caret() {
+    // Six lines of 20 in a box 50 tall: three fit, three do not.
+    std::string many = "one\ntwo\nthree\nfour\nfive\nsix";
+    const std::string html = "<textarea id=t>" + many + "</textarea>";
+    Doc doc("html, body { margin: 0 }"
+            "textarea { display: block; width: 300px; height: 50px; padding: 0; border: 0;"
+            "           font-size: 14px; line-height: 20px }",
+            html.c_str());
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    double y = 0, most = 0;
+    weva_element_scroll(doc.d, t, nullptr, &y, nullptr, &most);
+    CHECK(most > 0);   // there is more text than box
+    CHECK(y == 0);
+
+    // Focusing puts the cursor at the end, which is on the last line -- so the
+    // view goes there with it.
+    weva_document_set_focus(doc.d, t);
+    weva_document_update(doc.d, 0);
+    weva_element_scroll(doc.d, t, nullptr, &y, nullptr, &most);
+    CHECK(y == most);
+
+    // And back up when the cursor goes back up.
+    for (int i = 0; i < 5; ++i) weva_document_key(doc.d, WEVA_KEY_UP, 0, 1);
+    weva_document_update(doc.d, 0);
+    weva_element_scroll(doc.d, t, nullptr, &y, nullptr, nullptr);
+    CHECK(y == 0);
+
+    // A reader who scrolls away stays there: the view follows the CURSOR, not
+    // every frame.
+    weva_element_set_scroll(doc.d, t, 0, most);
+    weva_document_update(doc.d, 0);
+    weva_document_update(doc.d, 0.016);
+    weva_element_scroll(doc.d, t, nullptr, &y, nullptr, nullptr);
+    CHECK(y == most);
 }

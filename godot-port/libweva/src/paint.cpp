@@ -1838,6 +1838,15 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
     return true;
 }
 
+// The element a box belongs to: itself if it has one, otherwise the nearest
+// ancestor that does. A text run has none of its own.
+const Element* owner_element(const BoxTree& tree, BoxId id) {
+    for (BoxId b = id; b != kNoBox; b = tree[b].parent) {
+        if (tree[b].element) return tree[b].element;
+    }
+    return nullptr;
+}
+
 void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, double origin_x,
                      double origin_y, const PaintContext& paint, TextureHandle atlas_texture,
                      BoxId canvas_owner, PaintState state) {
@@ -2161,6 +2170,31 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         // The handle from the single up-front upload, never a fresh one: see
         // prepare_glyphs.
         draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+    }
+
+    // The caret, in the run that was found to hold it. Which run, and how far
+    // into it, was settled after layout: paint cannot work that out per run
+    // without missing the cursor at a line end, where the newline belongs to
+    // no run at all.
+    if (b.kind == BoxKind::Text && id == paint.caret.run && paint.caret.visible && !hidden &&
+        paint.font && paint.atlas) {
+        const LinearColor caret_color = resolve_color(b.style, "color");
+        const FaceHandle caret_face = face_for_run(b, paint);
+        const double caret_spacing =
+            letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;
+        double advance = 0;
+        if (paint.caret.run_offset > 0 && paint.caret.run_offset <= b.text.size()) {
+            Mesh measure;
+            build_text_geometry(b.text.substr(0, paint.caret.run_offset), 0, 0, b.font_size,
+                                caret_color, paint, &measure, caret_spacing, &caret_face);
+            for (const Vertex& v : measure.vertices) {
+                advance = std::max<double>(advance, v.position.x);
+            }
+        }
+        Mesh bar;
+        tessellate_rect(Rect(x + advance, y, 1.0, b.height > 0 ? b.height : b.font_size),
+                        caret_color, &bar, false);
+        draw_mesh(bar, paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
     }
 
     // `overflow` other than visible clips the children to the padding box
