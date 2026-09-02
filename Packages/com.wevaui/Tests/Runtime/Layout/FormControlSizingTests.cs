@@ -307,5 +307,47 @@ namespace Weva.Tests.Layout {
             Assert.That(double.Parse(raw, System.Globalization.CultureInfo.InvariantCulture),
                 Is.EqualTo(0.5).Within(0.001));
         }
+
+        // Chrome's UA scrolls a textarea, and CSS 2.1 §10.8.1 puts an
+        // inline-block's baseline at its bottom MARGIN edge once overflow is
+        // not `visible` — instead of at its last line box. Without that rule
+        // the baseline moved with the wrapped content, so a textarea holding
+        // text that wraps past its rows dragged the controls beside it off by a
+        // line, and the two engines disagreed about which line.
+        [Test]
+        public void Textarea_baseline_does_not_move_with_its_content() {
+            const string css = @"
+                body { margin: 0 }
+                .i { width: 120px; height: 28px }
+                .t { width: 120px }
+            ";
+            const string shortText =
+                @"<div><input class=""i"" type=""text"" value=""x""><textarea class=""t"" rows=""2"">hi</textarea></div>";
+            // The same box, but holding text long enough to wrap well past two
+            // rows and overflow.
+            const string longText =
+                @"<div><input class=""i"" type=""text"" value=""x""><textarea class=""t"" rows=""2"">" +
+                "one two three four five six seven eight nine ten eleven twelve" +
+                @"</textarea></div>";
+
+            // The real UA pair, so `textarea` is the inline-block the form
+            // sheet makes it — the shared LayoutTestHelpers.Build omits the
+            // form sheet, and without it this test cannot see the rule at all.
+            double InputY(string html) {
+                var (root, _) = BuildWithRealUA(html, css);
+                foreach (var b in Walk(root)) {
+                    if (b is BlockBox bb && bb.Element?.TagName == "input") {
+                        double y = 0;
+                        for (var p = (Box)bb; p != null; p = p.Parent) y += p.Y;
+                        return y;
+                    }
+                }
+                return double.NaN;
+            }
+
+            Assert.That(InputY(longText), Is.EqualTo(InputY(shortText)).Within(1e-9),
+                "the input beside a textarea must not shift when the textarea's text wraps");
+        }
+
     }
 }
