@@ -529,19 +529,25 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             c.a = static_cast<float>(std::min(1.0, alpha));
 
             // CSS Backgrounds L3 §7.1 says an outer shadow is drawn outside the
-            // border edge only, and this used to knock the border box out by
-            // tessellating the ring between the shadow rect and the box. That
-            // is the right RULE — under a translucent background the shadow
-            // otherwise shows through, and vendor.html's cards were tinted per
-            // rarity because of it — but the ring geometry was wrong: measured
-            // against Chrome on a plain `0 0 40px` shadow it removed most of
-            // the falloff (white at 15-35px out where Chrome has 249, 240,
-            // 222) and dropped a blur-less spread shadow entirely.
+            // border edge only, and filling the rect lets it show through a
+            // translucent background — vendor's cards are `rgba(..., 0.92)` and
+            // Chrome renders their interiors flat where this tints them.
             //
-            // Filling the rect is the lesser of the two errors: it is invisible
-            // under an opaque background, which is most of them, whereas the
-            // ring lost shadows outright. Restored until the ring can be built
-            // correctly — see PORT_PLAN for what was measured.
+            // Knocking the border box out by tessellating the ring between the
+            // shadow rect and the box has now been tried TWICE and reverted
+            // twice. It fixes the interiors exactly (144,141,151 against
+            // Chrome's 144,142,151) and loses the shadow OUTSIDE the box
+            // entirely: white at 15, 25 and 35px out where Chrome has 249, 240
+            // and 222, and a spread-only ring gone completely. Losing shadows
+            // outright is the worse error, since the bleed is invisible under
+            // an opaque background.
+            //
+            // What is NOT the cause: tessellate_border itself. Called directly
+            // with these parameters it returns a correct annulus — 8 vertices,
+            // 8 triangles, bounds exactly the outer rect, for grows of 39, 20,
+            // 5 and 1. Whatever breaks it happens between there and the
+            // rasteriser; the grown radii passed as `outer_radii` are the next
+            // thing to eliminate, since the isolated probe passed ZERO radii.
             Mesh mesh;
             tessellate_rounded_rect(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
                                     c, &mesh);
