@@ -38,6 +38,7 @@ func _ready() -> void:
 	_test_text_produces_textured_geometry()
 	_test_restyle_round_trips()
 	_test_empty_and_malformed_input()
+	_test_backdrop_filter_crosses_the_boundary()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -142,3 +143,31 @@ func _test_empty_and_malformed_input() -> void:
 	doc.update_document()
 	_check(true, "malformed html and css do not crash the host")
 	doc.queue_free()
+
+func _test_backdrop_filter_crosses_the_boundary() -> void:
+	# backdrop-filter travels as its own draw kind, because it is the one
+	# effect the core cannot decompose into triangles -- it reads the
+	# destination. All this can check headless is that the extra draw crosses
+	# the ABI, since --headless does not run _draw at all; that the host then
+	# paints it correctly is what hosts/godot/compare_render.py measures.
+	var plain := _make_doc(
+		"<body><div id='a'></div></body>",
+		"#a { display: block; width: 100px; height: 50px; background-color: #ff0000 }")
+	var filtered := _make_doc(
+		"<body><div id='a'></div></body>",
+		"#a { display: block; width: 100px; height: 50px; background-color: #ff0000;" +
+		" backdrop-filter: blur(8px) saturate(1.5) }")
+	_check(filtered.get_draw_count() == plain.get_draw_count() + 1,
+		"backdrop-filter adds exactly one draw")
+
+	# And a list that resolves to no change costs nothing, so a host is never
+	# asked to read back its framebuffer in order to multiply by one.
+	var identity := _make_doc(
+		"<body><div id='a'></div></body>",
+		"#a { display: block; width: 100px; height: 50px; background-color: #ff0000;" +
+		" backdrop-filter: saturate(1) }")
+	_check(identity.get_draw_count() == plain.get_draw_count(),
+		"an identity backdrop-filter adds no draw")
+	plain.queue_free()
+	filtered.queue_free()
+	identity.queue_free()

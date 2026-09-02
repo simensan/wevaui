@@ -9,8 +9,11 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
+#include <godot_cpp/variant/rect2.hpp>
+#include <godot_cpp/variant/vector3.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#include <algorithm>
 #include <cstring>
 #include <vector>
 
@@ -106,6 +109,20 @@ void WevaDocument::ensure_font_backend() {
 
 WevaDocument::~WevaDocument() {
     if (doc_) weva_document_destroy(doc_);
+    release_layers();
+    if (backdrop_shader_.is_valid()) RenderingServer::get_singleton()->free_rid(backdrop_shader_);
+}
+
+void WevaDocument::release_layers() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    for (const RID& r : layer_items_) {
+        if (r.is_valid()) rs->free_rid(r);
+    }
+    layer_items_.clear();
+    for (const RID& r : layer_materials_) {
+        if (r.is_valid()) rs->free_rid(r);
+    }
+    layer_materials_.clear();
 }
 
 void WevaDocument::_bind_methods() {
@@ -223,61 +240,202 @@ void WevaDocument::update_document() {
     queue_redraw();
 }
 
+void WevaDocument::add_triangles(const RID& item, const weva_draw& d) {
+    // draw_polygon takes a polygon OUTLINE and triangulates it, so feeding it a
+    // triangle soup produces garbage where it does not fail outright ("Invalid
+    // polygon data, triangulation failed"). canvas_item_add_triangle_array
+    // takes the index buffer directly, which is exactly the shape the core
+    // already produces — no expansion, and no triangulator second-guessing
+    // geometry that is already triangles.
+    PackedVector2Array points;
+    PackedColorArray colors;
+    PackedVector2Array uvs;
+    points.resize(static_cast<int64_t>(d.vertex_count));
+    colors.resize(static_cast<int64_t>(d.vertex_count));
+    uvs.resize(static_cast<int64_t>(d.vertex_count));
+    Vector2* pw = points.ptrw();
+    Color* cw = colors.ptrw();
+    Vector2* uw = uvs.ptrw();
+    for (size_t k = 0; k < d.vertex_count; ++k) {
+        const weva_vertex& v = d.vertices[k];
+        pw[k] = Vector2(v.x, v.y);
+        // The core works in linear space; Godot's canvas expects sRGB, so the
+        // conversion happens here rather than in the core, where it would be
+        // wrong for a backend that wants linear.
+        cw[k] = Color(v.r, v.g, v.b, v.a).linear_to_srgb();
+        uw[k] = Vector2(v.u, v.v);
+    }
+
+    PackedInt32Array indices;
+    indices.resize(static_cast<int64_t>(d.index_count));
+    int32_t* iw = indices.ptrw();
+    for (size_t k = 0; k < d.index_count; ++k) {
+        iw[k] = static_cast<int32_t>(d.indices[k]);
+    }
+
+    RID texture;
+    if (d.texture_id != 0) {
+        const auto it = textures_.find(d.texture_id);
+        if (it != textures_.end() && it->second.is_valid()) texture = it->second->get_rid();
+    }
+    RenderingServer::get_singleton()->canvas_item_add_triangle_array(
+        item, indices, points, colors, uvs, PackedInt32Array(), PackedFloat32Array(), texture);
+}
+
+// The shader behind `backdrop-filter`. It reads the back buffer, which is what
+// the core cannot do, blurs it and applies the colour matrix the core composed
+// — so nothing here parses CSS, and the matrix arrives as three row vectors
+// rather than a mat3 because Godot's mat3 uniform binding leaves the row/column
+// convention ambiguous and a transposed saturate is not obviously wrong on
+// screen.
+//
+// `blend_disabled` because a backdrop filter REPLACES what is behind the
+// element rather than drawing over it; the element's own background is a
+// separate draw that lands on top.
+static const char* kBackdropShader = R"(shader_type canvas_item;
+render_mode blend_disabled, unshaded;
+
+uniform sampler2D screen_tex : hint_screen_texture, repeat_disable, filter_linear;
+uniform float sigma = 0.0;
+uniform vec3 mat_r = vec3(1.0, 0.0, 0.0);
+uniform vec3 mat_g = vec3(0.0, 1.0, 0.0);
+uniform vec3 mat_b = vec3(0.0, 0.0, 1.0);
+uniform vec3 mat_add = vec3(0.0);
+uniform float out_alpha = 1.0;
+
+void fragment() {
+    vec3 c;
+    if (sigma <= 0.0) {
+        c = texture(screen_tex, SCREEN_UV).rgb;
+    } else {
+        // A 7x7 Gaussian, spaced so the taps span about two sigma: enough of
+        // the kernel to look like a blur rather than a smear, in one pass.
+        // The reference rasteriser runs three box passes instead, so the two
+        // agree on shape and not to the last few units.
+        float d = sigma * 0.66;
+        vec3 acc = vec3(0.0);
+        float wsum = 0.0;
+        for (int y = -3; y <= 3; y++) {
+            for (int x = -3; x <= 3; x++) {
+                vec2 o = vec2(float(x), float(y)) * d;
+                float w = exp(-dot(o, o) / (2.0 * sigma * sigma));
+                acc += texture(screen_tex, SCREEN_UV + o * SCREEN_PIXEL_SIZE).rgb * w;
+                wsum += w;
+            }
+        }
+        c = acc / wsum;
+    }
+    c = vec3(dot(mat_r, c), dot(mat_g, c), dot(mat_b, c)) + mat_add;
+    COLOR = vec4(clamp(c, vec3(0.0), vec3(1.0)), out_alpha);
+}
+)";
+
+RID WevaDocument::backdrop_material() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    if (!backdrop_shader_.is_valid()) {
+        backdrop_shader_ = rs->shader_create();
+        rs->shader_set_code(backdrop_shader_, String(kBackdropShader));
+    }
+    const RID m = rs->material_create();
+    rs->material_set_shader(m, backdrop_shader_);
+    layer_materials_.push_back(m);
+    return m;
+}
+
+void WevaDocument::draw_layered(const weva_draw* draws, size_t count) {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    release_layers();
+
+    // One item per run of ordinary geometry, and one per backdrop filter, in z
+    // order. The node's own item draws nothing: children render after their
+    // parent's commands, so anything left on it would land under everything.
+    const auto new_layer = [&](bool backdrop) {
+        const RID item = rs->canvas_item_create();
+        rs->canvas_item_set_parent(item, get_canvas_item());
+        rs->canvas_item_set_z_index(item, static_cast<int32_t>(layer_items_.size()));
+        rs->canvas_item_set_draw_index(item, static_cast<int32_t>(layer_items_.size()));
+        (void)backdrop;
+        layer_items_.push_back(item);
+        return item;
+    };
+
+    RID current = new_layer(false);
+    for (size_t i = 0; i < count; ++i) {
+        const weva_draw& d = draws[i];
+        if (d.vertex_count == 0 || d.index_count == 0) continue;
+
+        if (d.kind != WEVA_DRAW_BACKDROP_FILTER) {
+            add_triangles(current, d);
+            continue;
+        }
+
+        // The region to copy: the shape, grown by the blur's reach, because a
+        // pixel at the shape's edge is blurred against its neighbours OUTSIDE
+        // it. Copying only the shape would blur it against nothing and rim the
+        // panel with a dark halo.
+        double lo_x = d.vertices[0].x, hi_x = lo_x;
+        double lo_y = d.vertices[0].y, hi_y = lo_y;
+        for (size_t k = 1; k < d.vertex_count; ++k) {
+            lo_x = std::min<double>(lo_x, d.vertices[k].x);
+            hi_x = std::max<double>(hi_x, d.vertices[k].x);
+            lo_y = std::min<double>(lo_y, d.vertices[k].y);
+            hi_y = std::max<double>(hi_y, d.vertices[k].y);
+        }
+        const double sigma = d.backdrop.blur_radius / 2.0;
+        const double pad = sigma > 0 ? sigma * 3.0 + 1.0 : 0.0;
+        const Rect2 region(static_cast<real_t>(lo_x - pad), static_cast<real_t>(lo_y - pad),
+                           static_cast<real_t>(hi_x - lo_x + 2 * pad),
+                           static_cast<real_t>(hi_y - lo_y + 2 * pad));
+
+        const RID item = new_layer(true);
+        rs->canvas_item_set_copy_to_backbuffer(item, true, region);
+        const RID mat = backdrop_material();
+        rs->material_set_param(mat, "sigma", sigma);
+        rs->material_set_param(mat, "mat_r",
+                               Vector3(d.backdrop.color_matrix[0], d.backdrop.color_matrix[1],
+                                       d.backdrop.color_matrix[2]));
+        rs->material_set_param(mat, "mat_g",
+                               Vector3(d.backdrop.color_matrix[3], d.backdrop.color_matrix[4],
+                                       d.backdrop.color_matrix[5]));
+        rs->material_set_param(mat, "mat_b",
+                               Vector3(d.backdrop.color_matrix[6], d.backdrop.color_matrix[7],
+                                       d.backdrop.color_matrix[8]));
+        rs->material_set_param(mat, "mat_add",
+                               Vector3(d.backdrop.color_offset[0], d.backdrop.color_offset[1],
+                                       d.backdrop.color_offset[2]));
+        rs->material_set_param(mat, "out_alpha", d.backdrop.color_alpha);
+        rs->canvas_item_set_material(item, mat);
+        add_triangles(item, d);
+
+        current = new_layer(false);
+    }
+}
+
 void WevaDocument::_draw() {
     ensure_updated();
     if (!doc_) return;
 
     size_t count = 0;
     const weva_draw* draws = weva_document_draws(doc_, &count);
-    RenderingServer* rs = RenderingServer::get_singleton();
+
+    bool any_backdrop = false;
+    for (size_t i = 0; i < count && !any_backdrop; ++i) {
+        any_backdrop = draws[i].kind == WEVA_DRAW_BACKDROP_FILTER;
+    }
+    if (any_backdrop) {
+        draw_layered(draws, count);
+        return;
+    }
+    release_layers();
+
+    // The core clips scissored geometry before publishing it, so every draw
+    // goes on this one canvas item in order. (Per-item clipping via
+    // canvas_item_set_clip was tried: the compatibility renderer dropped every
+    // draw after a clipped sibling item.)
     for (size_t i = 0; i < count; ++i) {
         const weva_draw& d = draws[i];
         if (d.vertex_count == 0 || d.index_count == 0) continue;
-
-        // The core clips scissored geometry before publishing it, so every
-        // draw goes on this one canvas item in order. (Per-item clipping via
-        // canvas_item_set_clip was tried: the compatibility renderer dropped
-        // every draw after a clipped sibling item.)
-        //
-        // draw_polygon takes a polygon OUTLINE and triangulates it, so feeding
-        // it a triangle soup produces garbage where it does not fail outright
-        // ("Invalid polygon data, triangulation failed"). canvas_item_add_
-        // triangle_array takes the index buffer directly, which is exactly the
-        // shape the core already produces — no expansion, and no triangulator
-        // second-guessing geometry that is already triangles.
-        PackedVector2Array points;
-        PackedColorArray colors;
-        PackedVector2Array uvs;
-        points.resize(static_cast<int64_t>(d.vertex_count));
-        colors.resize(static_cast<int64_t>(d.vertex_count));
-        uvs.resize(static_cast<int64_t>(d.vertex_count));
-        Vector2* pw = points.ptrw();
-        Color* cw = colors.ptrw();
-        Vector2* uw = uvs.ptrw();
-        for (size_t k = 0; k < d.vertex_count; ++k) {
-            const weva_vertex& v = d.vertices[k];
-            pw[k] = Vector2(v.x, v.y);
-            // The core works in linear space; Godot's canvas expects sRGB, so
-            // the conversion happens here rather than in the core, where it
-            // would be wrong for a backend that wants linear.
-            cw[k] = Color(v.r, v.g, v.b, v.a).linear_to_srgb();
-            uw[k] = Vector2(v.u, v.v);
-        }
-
-        PackedInt32Array indices;
-        indices.resize(static_cast<int64_t>(d.index_count));
-        int32_t* iw = indices.ptrw();
-        for (size_t k = 0; k < d.index_count; ++k) {
-            iw[k] = static_cast<int32_t>(d.indices[k]);
-        }
-
-        RID texture;
-        if (d.texture_id != 0) {
-            const auto it = textures_.find(d.texture_id);
-            if (it != textures_.end() && it->second.is_valid()) texture = it->second->get_rid();
-        }
-        rs->canvas_item_add_triangle_array(get_canvas_item(), indices, points, colors, uvs,
-                                           PackedInt32Array(), PackedFloat32Array(), texture);
+        add_triangles(get_canvas_item(), d);
     }
 }
 

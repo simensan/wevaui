@@ -91,6 +91,17 @@ protected:
 private:
     void ensure_updated();
 
+    // Adds one published draw's triangles to a canvas item.
+    void add_triangles(const godot::RID& item, const weva_draw& d);
+    // Draws a document that contains at least one backdrop-filter. Godot copies
+    // to the back buffer ONCE per canvas item, before that item's commands, so
+    // interleaving "copy what is behind me" with geometry means splitting the
+    // draw list across items in z order. Documents without one keep the single
+    // item, which is every sample but two.
+    void draw_layered(const weva_draw* draws, size_t count);
+    godot::RID backdrop_material();
+    void release_layers();
+
     weva_document_t doc_ = nullptr;
     godot::String html_;
     godot::String css_;
@@ -110,6 +121,11 @@ private:
     weva_font_backend font_table_{};
     uint64_t font_face_ = 0;
     bool use_engine_font_ = true;
+
+    // Only allocated for a document that uses backdrop-filter.
+    std::vector<godot::RID> layer_items_;
+    std::vector<godot::RID> layer_materials_;
+    godot::RID backdrop_shader_;
 };
 
 } // namespace weva_godot
