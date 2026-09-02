@@ -55,6 +55,31 @@ without it the engine loads no GDExtension at all — a headless or CI run then
 fails with `Could not find type "WevaDocument"` and no hint that an extension
 was even meant to load.
 
+## Rebuilding while Godot is open
+
+On Windows a mapped DLL cannot be overwritten, so a rebuild fails with
+`LNK1104: cannot open file` while anything has the extension loaded. Linux
+never has this: replacing a mapped `.so` is legal, which is why the same
+workflow only ever bites on Windows.
+
+`weva.gdextension` sets `reloadable = true`, so the **editor** drops the
+library when it loses focus. Alt-tab to a terminal, rebuild, alt-tab back, and
+the editor picks up the new binary. That is the whole workflow.
+
+A **running game** is different and no flag changes it: the process has the
+library mapped until it exits, so `F5` or `godot --path project` has to be
+closed before a rebuild. Which is fine, because that is also the thing you were
+about to restart to see the change.
+
+If a build fails and no Godot window is visible, something still has it open --
+a project manager, or an editor for another project that once loaded this
+extension. This finds it:
+
+```powershell
+Get-Process | Where-Object { $_.Modules.FileName -contains
+    'C:/.../project/addons/weva/bin/weva_godot.dll' }
+```
+
 ## Looking at the samples
 
 ```sh
