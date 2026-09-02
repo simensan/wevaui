@@ -3313,6 +3313,29 @@ share a page colour" for `#181228` vs `#181229`, a one-unit sRGB rounding
 difference. That verdict line is too strict to be useful and should compare the
 page colour with the same tolerance it applies to everything else.
 
+**The backend baseline, worst first** (ink disagreement, then software vs Godot
+ink coverage). **18 of 35 samples are already under 1%** — the two backends
+agree closely on half the corpus, which is what makes the outliers worth
+reading as bugs rather than as noise:
+
+| sample | disagree | software ink | godot ink |
+|---|---|---|---|
+| inventory | 58.8% | 887,436 | 414,071 |
+| hud | 50.2% | 749,230 | 359,674 |
+| episode-stats | 41.3% | 444,653 | 600,895 |
+| dialogue | 29.1% | 335,754 | 459,866 |
+| vendor | 29.0% | 363,193 | 133,102 |
+| quests | 27.1% | 616,561 | 401,140 |
+| grid-playground | 23.4% | 602,220 | 386,689 |
+| flex-playground | 22.4% | 623,058 | 416,609 |
+| match3 | 16.7% | 876,468 | 812,496 |
+| neon | 11.7% | 798,870 | 690,899 |
+
+The direction is not uniform, which is itself a clue: inventory, hud, vendor and
+quests have Godot drawing far LESS ink than the software backend, while
+episode-stats and dialogue have it drawing MORE. Two different bugs at least,
+not one missing feature.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
