@@ -54,6 +54,17 @@ private:
     void blend(int x, int y, const LinearColor& src);
 
     int width_, height_;
+    // sRGB-ENCODED components with straight alpha, despite the element type.
+    //
+    // Compositing happens in whatever space the framebuffer is in, and the
+    // browsers composite in gamma sRGB — as does the Godot host, which feeds
+    // Godot's canvas `linear_to_srgb()` colours (hosts/godot/src/weva_node.cpp).
+    // Blending here in linear made this backend disagree with BOTH: on the neon
+    // sample a pink blob over the dark page read #700f41 where Chrome and Godot
+    // agreed on #2d0925, and the whole difference was the one pow().
+    //
+    // clear() encodes on the way in and pixel() decodes on the way out, so the
+    // public interface still speaks LinearColor.
     std::vector<LinearColor> pixels_;
     std::map<uint64_t, Geometry> geometry_;
     std::map<uint64_t, Texture> textures_;

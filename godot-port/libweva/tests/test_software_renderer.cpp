@@ -9,6 +9,7 @@
 #include "weva/software_renderer.h"
 #include "weva/tessellate.h"
 #include "weva/user_agent_stylesheet.h"
+#include <array>
 #include <cmath>
 #include <map>
 #include <memory>
@@ -96,8 +97,22 @@ void test_software_gradient() {
                              vtx(0, 4, left)};
     draw(&r, v, {0, 1, 2, 0, 2, 3});
 
-    CHECK(r.pixel(0, 1).r > 0.9f && r.pixel(0, 1).b < 0.1f);
-    CHECK(r.pixel(9, 1).b > 0.8f && r.pixel(9, 1).r < 0.2f);
+    // Read the ends from the OUTPUT, where the arithmetic is checkable: the
+    // gradient interpolates in sRGB, the pixel centre at x=0 is 5% along the
+    // 10px span, so red is 95% of the way and lands on 0.95*255 = 242.
+    //
+    // The same probe used to read pixel().r > 0.9 in linear. That was measuring
+    // the interpolation SPACE, not the gradient: a 5%-inset sample is 0.887 in
+    // linear once the ramp runs in sRGB, so the check went red for a renderer
+    // that had just been corrected. Chrome ramps `linear-gradient(red, blue)`
+    // in sRGB too.
+    const std::vector<uint8_t> out = r.to_srgb_rgba();
+    const auto at = [&](int x, int y) {
+        const size_t i = (static_cast<size_t>(y) * r.width() + x) * 4;
+        return std::array<int, 3>{out[i], out[i + 1], out[i + 2]};
+    };
+    CHECK(at(0, 1)[0] == 242 && at(0, 1)[2] == 13);
+    CHECK(at(9, 1)[2] == 242 && at(9, 1)[0] == 13);
     // Monotonic across the span, which is what makes it a gradient rather than
     // two flat halves.
     for (int x = 1; x < 9; ++x) {
@@ -108,13 +123,22 @@ void test_software_gradient() {
 
 void test_software_blending_and_scissor() {
     {
-        // Source-over: a half-alpha white over opaque black lands halfway.
+        // Source-over: a half-alpha white over opaque black lands halfway —
+        // halfway in the space the compositing happens in, which is sRGB. So
+        // the byte is 128, exactly what a browser paints for
+        // `rgba(255,255,255,0.5)` over black.
+        //
+        // Compositing in linear instead gives 0.5 linear = 188 out of 255, a
+        // visibly lighter grey and the reason this renderer used to disagree
+        // with both Chrome and the Godot host on every translucent overlay.
         SoftwareRenderer r(4, 4);
         r.clear(LinearColor::black());
         Mesh m;
         tessellate_rect(Rect(0, 0, 4, 4), LinearColor(1, 1, 1, 0.5f), &m);
         draw(&r, m.vertices, m.indices);
-        CHECK(near(r.pixel(1, 1).r, 0.5));
+        CHECK(r.to_srgb_rgba()[(1 * 4 + 1) * 4] == 128);
+        // pixel() still speaks linear, and 128/255 sRGB decodes to 0.2140.
+        CHECK(near(r.pixel(1, 1).r, 0.2140));
         CHECK(near(r.pixel(1, 1).a, 1.0));
     }
     {
@@ -152,7 +176,29 @@ void test_software_texture_and_robustness() {
                                  vtx(0, 4, LinearColor(1, 0, 0, 1))};
         draw(&r, v, {0, 1, 2, 0, 2, 3}, t);
         CHECK(near(r.pixel(1, 1).a, 128.0 / 255.0));
-        CHECK(r.pixel(1, 1).r > 0.4f);
+        // A white texel modulates the ALPHA and nothing else: the colour is
+        // still pure red, with nothing in green or blue. (The old check here
+        // read r > 0.4, which was really asserting that the blend ran in
+        // linear — the same red over the same transparent ground is 0.214 once
+        // it runs in sRGB, as a browser does it.)
+        CHECK(r.pixel(1, 1).r > 0.0f);
+        CHECK(r.pixel(1, 1).g == 0.0f && r.pixel(1, 1).b == 0.0f);
+        r.release_texture(t);
+    }
+    {
+        // And a COLOURED texel modulates the colour — in the same space the
+        // result is composited in, so a mid-grey texel halves the BYTE rather
+        // than halving the light. Modulating in linear and blending in sRGB
+        // would put this at 188.
+        SoftwareRenderer r(4, 4);
+        r.clear(LinearColor::black());
+        std::vector<uint8_t> texel = {128, 128, 128, 255};
+        const TextureHandle t = r.generate_texture(texel, {1, 1});
+        CHECK(static_cast<bool>(t));
+        std::vector<Vertex> v = {vtx(0, 0, LinearColor::white()), vtx(4, 0, LinearColor::white()),
+                                 vtx(4, 4, LinearColor::white()), vtx(0, 4, LinearColor::white())};
+        draw(&r, v, {0, 1, 2, 0, 2, 3}, t);
+        CHECK(r.to_srgb_rgba()[(1 * 4 + 1) * 4] == 128);
         r.release_texture(t);
     }
     {

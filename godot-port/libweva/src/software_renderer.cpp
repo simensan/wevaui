@@ -31,6 +31,20 @@ float srgb_from_linear(float c) {
                            : 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
 }
 
+float linear_from_srgb(float c) {
+    if (c <= 0.0f) return 0.0f;
+    if (c >= 1.0f) return 1.0f;
+    return c <= 0.04045f ? c / 12.92f
+                         : std::pow((c + 0.055f) / 1.055f, 2.4f);
+}
+
+// A colour ready for the framebuffer: the components encoded, the alpha left
+// alone. Straight alpha is a coverage fraction, not a light intensity, so
+// gamma has nothing to say about it — which is also what Chrome does.
+LinearColor encoded(const LinearColor& c) {
+    return LinearColor(srgb_from_linear(c.r), srgb_from_linear(c.g), srgb_from_linear(c.b), c.a);
+}
+
 } // namespace
 
 SoftwareRenderer::SoftwareRenderer(int width, int height)
@@ -38,12 +52,14 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
       pixels_(static_cast<size_t>(std::max(0, width) * std::max(0, height))) {}
 
 void SoftwareRenderer::clear(const LinearColor& color) {
-    std::fill(pixels_.begin(), pixels_.end(), color);
+    std::fill(pixels_.begin(), pixels_.end(), encoded(color));
 }
 
 LinearColor SoftwareRenderer::pixel(int x, int y) const {
     if (x < 0 || y < 0 || x >= width_ || y >= height_) return LinearColor::transparent();
-    return pixels_[static_cast<size_t>(y) * width_ + x];
+    const LinearColor& c = pixels_[static_cast<size_t>(y) * width_ + x];
+    // The buffer is sRGB-encoded; the interface promises linear, so decode.
+    return LinearColor(linear_from_srgb(c.r), linear_from_srgb(c.g), linear_from_srgb(c.b), c.a);
 }
 
 std::vector<uint8_t> SoftwareRenderer::to_srgb_rgba() const {
@@ -53,9 +69,10 @@ std::vector<uint8_t> SoftwareRenderer::to_srgb_rgba() const {
         const auto b = [](float v) {
             return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255.0f));
         };
-        out[i * 4 + 0] = b(srgb_from_linear(c.r));
-        out[i * 4 + 1] = b(srgb_from_linear(c.g));
-        out[i * 4 + 2] = b(srgb_from_linear(c.b));
+        // Already encoded — see the note on pixels_ — so this only quantises.
+        out[i * 4 + 0] = b(c.r);
+        out[i * 4 + 1] = b(c.g);
+        out[i * 4 + 2] = b(c.b);
         out[i * 4 + 3] = b(c.a);
     }
     return out;
@@ -106,7 +123,8 @@ void SoftwareRenderer::blend(int x, int y, const LinearColor& src) {
         }
     }
     LinearColor& dst = pixels_[static_cast<size_t>(y) * width_ + x];
-    // Source-over with straight alpha.
+    // Source-over with straight alpha, in the ENCODED space — `src` arrives
+    // already encoded from raster_triangle. See the note on pixels_.
     const float inv = 1.0f - src.a;
     dst.r = src.r * src.a + dst.r * inv;
     dst.g = src.g * src.a + dst.g * inv;
@@ -142,6 +160,11 @@ void SoftwareRenderer::raster_triangle(const Vertex& v0, const Vertex& v1, const
     const bool tl1 = is_top_left(q2, q0);
     const bool tl2 = is_top_left(q0, q1);
 
+    // Encode the three corners ONCE, then interpolate between the encoded
+    // values — which is where a gradient's midpoint is decided, so it has to
+    // happen in the same space the blend does.
+    const LinearColor c0 = encoded(p0.color), c1 = encoded(p1.color), c2 = encoded(p2.color);
+
     for (int y = min_y; y <= max_y; ++y) {
         for (int x = min_x; x <= max_x; ++x) {
             // Sampled at the pixel CENTRE, which is what makes a rect from
@@ -157,10 +180,10 @@ void SoftwareRenderer::raster_triangle(const Vertex& v0, const Vertex& v1, const
 
             const double l0 = w0 / dbl_area, l1 = w1 / dbl_area, l2 = w2 / dbl_area;
             LinearColor col;
-            col.r = static_cast<float>(l0 * p0.color.r + l1 * p1.color.r + l2 * p2.color.r);
-            col.g = static_cast<float>(l0 * p0.color.g + l1 * p1.color.g + l2 * p2.color.g);
-            col.b = static_cast<float>(l0 * p0.color.b + l1 * p1.color.b + l2 * p2.color.b);
-            col.a = static_cast<float>(l0 * p0.color.a + l1 * p1.color.a + l2 * p2.color.a);
+            col.r = static_cast<float>(l0 * c0.r + l1 * c1.r + l2 * c2.r);
+            col.g = static_cast<float>(l0 * c0.g + l1 * c1.g + l2 * c2.g);
+            col.b = static_cast<float>(l0 * c0.b + l1 * c1.b + l2 * c2.b);
+            col.a = static_cast<float>(l0 * c0.a + l1 * c1.a + l2 * c2.a);
 
             if (tex) {
                 const double u = l0 * p0.tex_coord.x + l1 * p1.tex_coord.x + l2 * p2.tex_coord.x;
@@ -169,10 +192,13 @@ void SoftwareRenderer::raster_triangle(const Vertex& v0, const Vertex& v1, const
                 const int ty = std::clamp(static_cast<int>(v * tex->size.y), 0, tex->size.y - 1);
                 const size_t o = (static_cast<size_t>(ty) * tex->size.x + tx) * 4;
                 // The texture modulates the vertex colour, which is what lets
-                // one path serve both a glyph mask and a tinted image.
-                col.r *= srgb_byte_to_linear(tex->rgba[o + 0]);
-                col.g *= srgb_byte_to_linear(tex->rgba[o + 1]);
-                col.b *= srgb_byte_to_linear(tex->rgba[o + 2]);
+                // one path serve both a glyph mask and a tinted image. The
+                // texel bytes ARE sRGB, and `col` is now encoded too, so they
+                // multiply directly — decoding the texel first would modulate
+                // in a different space from the one the result is blended in.
+                col.r *= tex->rgba[o + 0] / 255.0f;
+                col.g *= tex->rgba[o + 1] / 255.0f;
+                col.b *= tex->rgba[o + 2] / 255.0f;
                 col.a *= tex->rgba[o + 3] / 255.0f;
             }
             blend(x, y, col);
