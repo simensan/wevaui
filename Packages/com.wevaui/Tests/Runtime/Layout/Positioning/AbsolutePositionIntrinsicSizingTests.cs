@@ -206,5 +206,53 @@ namespace Weva.Tests.Layout.Positioning {
             }
             return null;
         }
+
+        // CSS 2.1 §10.3.7: shrink-to-fit is
+        // min(preferred, max(preferred minimum, available)) — and the `max` is
+        // the point. A box may not be squeezed below the width its content
+        // needs, so the result legitimately EXCEEDS the available space when
+        // min-content does. A second unconditional clamp to `available` undid
+        // that: combat-hud's `.buff-time` holding "12s" sits in a 36px circle at
+        // `left: 50%`, leaving 18px of available space, and came out 18 wide
+        // where Chrome measures 20.16.
+        [Test]
+        public void Abspos_shrink_to_fit_is_never_narrower_than_min_content() {
+            const string css = @"
+                body { margin: 0 }
+                .cb { position: relative; width: 36px; height: 36px }
+                .t { position: absolute; left: 50%; font-size: 9px;
+                     padding-left: 4px; padding-right: 4px }
+            ";
+            var (root, _, _) = Build(@"<div class=""cb""><span class=""t"">12s</span></div>", css);
+            var t = FindByClass(root, "t");
+            Assert.That(t, Is.Not.Null);
+            // One unbreakable word, so min-content == max-content. Available is
+            // only 36 - 18 = 18, and the box must still be wider than that.
+            Assert.That(t.Width, Is.GreaterThan(18),
+                "shrink-to-fit must not clamp below min-content");
+        }
+
+        [Test]
+        public void Abspos_shrink_to_fit_still_clamps_when_the_minimum_allows() {
+            // The clamp is conditioned, not removed: content that CAN fit is
+            // still bounded by the available space.
+            const string css = @"
+                body { margin: 0 }
+                .cb { position: relative; width: 400px; height: 36px }
+                .t { position: absolute; left: 50%; font-size: 9px }
+            ";
+            var (root, _, _) = Build(@"<div class=""cb""><span class=""t"">12s</span></div>", css);
+            var t = FindByClass(root, "t");
+            Assert.That(t, Is.Not.Null);
+            Assert.That(t.Width, Is.LessThanOrEqualTo(200));
+        }
+
+        static Weva.Layout.Boxes.BlockBox FindByClass(Weva.Layout.Boxes.Box root, string cls) {
+            foreach (var b in AllBoxes(root)) {
+                if (b is Weva.Layout.Boxes.BlockBox bb && bb.Element?.ClassName == cls) return bb;
+            }
+            return null;
+        }
+
     }
 }

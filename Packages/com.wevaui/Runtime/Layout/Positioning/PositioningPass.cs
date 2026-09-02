@@ -650,7 +650,17 @@ namespace Weva.Layout.Positioning {
                         }
                     }
                     double fitted = System.Math.Min(maxContent, System.Math.Max(minContent, effectiveAvail));
-                    if (fitted > avail) fitted = avail;
+                    // CSS 2.1 §10.3.7's formula already bounds the result by the
+                    // available space, through the `max(minContent, avail)` above
+                    // — and deliberately lets it EXCEED avail when min-content
+                    // does, because a box may not be squeezed below the width its
+                    // content needs. Clamping again unconditionally undid that
+                    // `max`: combat-hud's `.buff-time` holding "12s" sits in a
+                    // 36px circle at `left: 50%`, so avail is 18, and it came out
+                    // 18 wide where Chrome and the C++ port both measure 20.16.
+                    // The clamp still applies whenever it does not violate the
+                    // minimum.
+                    if (fitted > avail && avail >= minContent) fitted = avail;
                     // CSS Sizing L3: clamp shrink-to-fit by min-width / max-width.
                     // Without this, `.hud-top { min-width: 280px }` ended up at
                     // ~218 px (its max-content) in map.html. Honor only definite
