@@ -22,6 +22,7 @@ add_executable(weva_tests
     test_env_attr.cpp
     test_logical.cpp
     test_at_property.cpp
+    test_css_properties.cpp
     test_keywords.cpp
     test_box.cpp
     test_box_builder.cpp

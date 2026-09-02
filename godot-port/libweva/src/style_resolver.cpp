@@ -5,6 +5,8 @@
 #include "weva/css_calc.h"
 
 #include <cctype>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -372,6 +374,43 @@ double resolve_border_width(std::string_view raw, double font_size, const Layout
     if (raw == "thin") return 1;
     if (raw == "medium") return 3;
     if (raw == "thick") return 5;
+
+    // `1px` and `0` are nearly every border in a real stylesheet, and this runs
+    // for every bordered box on every layout pass. Building a CssValue for them
+    // was 828 of vendor.html's heap allocations a pass, so the plain
+    // `<number>px` and bare-zero forms are read straight off the string. Any
+    // other unit, a calc() or a var() falls through to the parser below.
+    {
+        std::string_view v = raw;
+        while (!v.empty() && (v.front() == ' ' || v.front() == '	')) v.remove_prefix(1);
+        while (!v.empty() && (v.back() == ' ' || v.back() == '	')) v.remove_suffix(1);
+        std::string_view digits = v;
+        bool px = false;
+        if (digits.size() > 2 && (digits.substr(digits.size() - 2) == "px" ||
+                                  digits.substr(digits.size() - 2) == "PX")) {
+            digits.remove_suffix(2);
+            px = true;
+        }
+        if (!digits.empty() && digits.size() < 32) {
+            bool plain = true;
+            for (const char c : digits) {
+                if (!((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+')) {
+                    plain = false;
+                    break;
+                }
+            }
+            if (plain) {
+                char buf[32];
+                std::memcpy(buf, digits.data(), digits.size());
+                buf[digits.size()] = ' ';
+                char* end = nullptr;
+                const double n = std::strtod(buf, &end);
+                // A bare number is only a width when it is zero; `border-width:
+                // 2` is invalid CSS, and the parser below decides what it means.
+                if (end && *end == ' ' && (px || n == 0)) return n;
+            }
+        }
+    }
 
     CssParseError err;
     CssValuePtr v = parse_css_value(raw, &err);

@@ -8,6 +8,7 @@
 #include "weva/css_properties.h"
 
 #include <algorithm>
+#include <memory>
 
 namespace weva {
 
@@ -45,20 +46,21 @@ struct Token {
     std::string_view word;
 };
 
-std::vector<Token> tokenize_collapsing(std::string_view text) {
-    std::vector<Token> out;
+// Fills `out` rather than returning a vector: this runs once per text segment
+// on every line, and the buffer belongs to the pass.
+void tokenize_collapsing(std::string_view text, std::vector<Token>* out) {
+    out->clear();
     size_t i = 0;
     while (i < text.size()) {
         if (is_collapsible_ws(text[i])) {
             while (i < text.size() && is_collapsible_ws(text[i])) ++i;
-            out.push_back({true, {}});
+            out->push_back({true, {}});
         } else {
             const size_t start = i;
             while (i < text.size() && !is_collapsible_ws(text[i])) ++i;
-            out.push_back({false, text.substr(start, i - start)});
+            out->push_back({false, text.substr(start, i - start)});
         }
     }
-    return out;
 }
 
 // CSS 2.1 §9.4.2's qualifier: an inline box only keeps its line box alive when
@@ -285,6 +287,94 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
                                available_width, ctx, metrics);
 }
 
+namespace {
+
+// One fragment of text placed on the line being built.
+struct Fragment {
+    const InlineItem* item;
+    std::string_view text;
+    bool is_space;
+    double x;
+    double width;
+};
+
+// One inline box's extent on the line being flushed.
+struct Span {
+    BoxId box;
+    BoxId fragment;
+    double x0;
+    double x1;
+    bool covers_content;
+};
+
+// The buffers one call to layout_inline_items works in.
+//
+// All of them were locals, so every inline formatting context built its
+// vectors from nothing and freed them again -- and three of them are per LINE,
+// not per call. That was the largest remaining source of heap traffic in a
+// layout pass: vendor.html's 8,162 boxes cost 18,961 allocations, better than
+// a third of them here, against a plan that asks for none.
+//
+// Nothing here outlives the call, so the buffers are borrowed and handed back
+// with their capacity, and the second pass over a document allocates nothing
+// for them at all.
+struct InlineScratch {
+    std::vector<Fragment> line;
+    std::vector<BoxId> line_boxes;
+    std::vector<BoxId> attached_inlines;
+    std::vector<BoxId> boxes_with_content;
+    std::vector<Fragment> trailing_markers;
+    std::vector<Fragment> carried;
+    std::vector<Span> spans;
+    std::vector<Token> tokens;
+
+    void reset() {
+        line.clear();
+        line_boxes.clear();
+        attached_inlines.clear();
+        boxes_with_content.clear();
+        trailing_markers.clear();
+        carried.clear();
+        spans.clear();
+        tokens.clear();
+    }
+};
+
+// A pool rather than one buffer set: an inline-block atom is laid out while its
+// container's own line is being built, so a call can be inside another one.
+// Thread-local, so two documents laying out at once do not share it.
+std::vector<std::unique_ptr<InlineScratch>>& scratch_pool() {
+    thread_local std::vector<std::unique_ptr<InlineScratch>> pool;
+    return pool;
+}
+
+class ScratchLease {
+public:
+    ScratchLease() {
+        auto& pool = scratch_pool();
+        if (pool.empty()) {
+            owned_ = std::make_unique<InlineScratch>();
+        } else {
+            owned_ = std::move(pool.back());
+            pool.pop_back();
+        }
+        owned_->reset();
+    }
+    ~ScratchLease() {
+        // Capacity is the point, so the buffers go back full-sized; reset()
+        // empties them when the next call borrows them.
+        scratch_pool().push_back(std::move(owned_));
+    }
+    ScratchLease(const ScratchLease&) = delete;
+    ScratchLease& operator=(const ScratchLease&) = delete;
+    InlineScratch& operator*() const { return *owned_; }
+
+private:
+    std::unique_ptr<InlineScratch> owned_;
+};
+
+}   // namespace
+
 double layout_inline_items(BoxTree* tree, BoxId container,
                            const std::vector<InlineItem>& items, double available_width,
                            const LayoutContext& ctx, const FontMetrics& metrics,
@@ -365,18 +455,12 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     const double strut_leading =
         declared_line_height ? *declared_line_height : strut_fm.line_height(strut_font_size);
 
-    // One fragment of text placed on the line being built.
-    struct Fragment {
-        const InlineItem* item;
-        std::string_view text;
-        bool is_space;
-        double x;
-        double width;
-    };
     // An atom contributes above- and below-baseline extents like a glyph does,
     // so the line grows around it instead of clipping it.
-    std::vector<Fragment> line;
-    std::vector<BoxId> line_boxes;
+    ScratchLease lease;
+    InlineScratch& scratch = *lease;
+    std::vector<Fragment>& line = scratch.line;
+    std::vector<BoxId>& line_boxes = scratch.line_boxes;
 
     double y = top_inner;
     double pen = 0;
@@ -401,7 +485,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     // whenever a line starts.
     // Inline boxes already given their first fragment; a second line covering
     // the same box clones it rather than moving it.
-    std::vector<BoxId> attached_inlines;
+    std::vector<BoxId>& attached_inlines = scratch.attached_inlines;
 
     // Inline boxes that enclose some content somewhere in the stream. A box
     // that opens at the very end of a line and whose text wraps gets NO
@@ -409,7 +493,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     // what the reference emits. A box with no content on ANY line (the
     // block-in-inline `<a>`) still gets its zero-width fragment where it
     // opens. Computed here, while the ancestor chain is still intact.
-    std::vector<BoxId> boxes_with_content;
+    std::vector<BoxId>& boxes_with_content = scratch.boxes_with_content;
     for (const InlineItem& it : items) {
         if (it.is_marker() || it.is_break()) continue;
         for (BoxId b = it.inline_parent; b != kNoBox && b != container; b = (*tree)[b].parent) {
@@ -464,7 +548,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // Zero-width inline-box markers ride along: a marker sitting after a
         // trailing space must end up at the TRIMMED pen, not keep the position
         // the removed space had pushed it to.
-        std::vector<Fragment> trailing_markers;
+        std::vector<Fragment>& trailing_markers = scratch.trailing_markers;
+        trailing_markers.clear();
         double trimmed_space = 0;
         while (!line.empty()) {
             if (line.back().item->is_marker()) {
@@ -488,7 +573,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // further on belongs to the next line: the box's first fragment is
         // where its content is, which is what the reference emits. Only a
         // box with no content anywhere keeps its zero-width fragment here.
-        std::vector<Fragment> carried;
+        std::vector<Fragment>& carried = scratch.carried;
+        carried.clear();
         for (auto it = trailing_markers.rbegin(); it != trailing_markers.rend(); ++it) {
             Fragment m = *it;
             const bool has_content_later =
@@ -629,8 +715,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // `<a><b>x</b></a>` gives both a box. The chain is walked through the
         // tree because it is still intact here — clear_children runs once, at
         // the very end, and only detaches the container's direct children.
-        struct Span { BoxId box; BoxId fragment; double x0; double x1; bool covers_content; };
-        std::vector<Span> spans;
+        std::vector<Span>& spans = scratch.spans;
+        spans.clear();
         const auto contribute = [&](BoxId from, double x0, double x1, bool content) {
             for (BoxId b = from; b != kNoBox && b != container; b = (*tree)[b].parent) {
                 if ((*tree)[b].kind != BoxKind::Inline) break;
@@ -913,7 +999,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     pen += w;
                 }
             } else {
-            for (const Token& t : tokenize_collapsing(seg)) {
+            tokenize_collapsing(seg, &scratch.tokens);
+            for (const Token& t : scratch.tokens) {
                 if (t.is_space) {
                     // A collapsed space at the very start of a line is dropped:
                     // it would indent every wrapped line by a space. A line that

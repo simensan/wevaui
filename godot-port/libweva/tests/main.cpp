@@ -36,6 +36,7 @@ void test_logical_axes();
 void test_logical_in_cascade();
 void test_logical_vs_physical_order();
 void test_logical_before_substitution();
+void test_css_property_index();
 void test_at_property_descriptor();
 void test_at_property_validate();
 void test_at_property_in_cascade();
@@ -263,6 +264,7 @@ int main() {
     test_logical_in_cascade();
     test_logical_vs_physical_order();
     test_logical_before_substitution();
+    test_css_property_index();
     test_at_property_descriptor();
     test_at_property_validate();
     test_at_property_in_cascade();

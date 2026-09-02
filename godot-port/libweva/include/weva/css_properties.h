@@ -53,7 +53,25 @@ public:
 private:
     CssPropertyRegistry();
     std::vector<CssProperty> properties_;                 // indexed by id
-    std::vector<std::pair<std::string, int>> sorted_;      // name -> id, sorted for lookup
+    std::vector<std::pair<std::string, int>> sorted_;      // name -> id, sorted; keeps order
+    // Open-addressed name -> id index. id_of ran a binary search over
+    // `sorted_`, so every `get(style, "border-top-width")` cost about eight
+    // string comparisons -- and layout does nothing but that. Sampling a
+    // layout pass of vendor.html put roughly a third of it inside id_of, more
+    // than any other function by a wide margin. A hash lookup is one probe and
+    // one comparison.
+    //
+    // Power-of-two sized and kept under half full, so a probe chain is short;
+    // the table is rebuilt whenever a property is registered.
+    std::vector<int> hash_slots_;   // -1 when empty, else an id
+    size_t hash_mask_ = 0;
+    static size_t hash_name(std::string_view name);
+
+public:
+    // Diagnostic: the longest probe chain the name index holds.
+    int max_probe() const;
+
+private:
     void rebuild_index();
 };
 

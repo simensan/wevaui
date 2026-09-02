@@ -6,6 +6,7 @@
 #include "weva/inline_layout.h"
 
 #include <algorithm>
+#include <memory>
 #include <cmath>
 #include <optional>
 #include <string>
@@ -75,11 +76,61 @@ struct Item {
 
 bool is_auto(std::string_view raw) { return iequals(raw, "auto"); }
 
+struct Line {
+    size_t begin = 0, end = 0;
+    double cross = 0;       // the line's cross size
+    double cross_pos = 0;   // offset of the line's cross-start from the content edge
+    double main_pos = 0;    // where the first item starts (justify-content)
+    double between = 0;     // main gap between items, justify included
+};
+
+// The buffers one call to layout_flex works in. Locals before, so every flex
+// container in the tree built three vectors and freed them again -- 870 of
+// vendor.html's heap allocations a pass. Nothing here outlives the call.
+struct FlexScratch {
+    std::vector<Item> items;
+    std::vector<BoxId> out_of_flow;
+    std::vector<Line> lines;
+};
+
+// A pool, because a flex item can itself be a flex container and is laid out
+// inside its parent's call. Thread-local, so two documents do not share it.
+std::vector<std::unique_ptr<FlexScratch>>& flex_scratch_pool() {
+    thread_local std::vector<std::unique_ptr<FlexScratch>> pool;
+    return pool;
+}
+
+class FlexScratchLease {
+public:
+    FlexScratchLease() {
+        auto& pool = flex_scratch_pool();
+        if (pool.empty()) {
+            owned_ = std::make_unique<FlexScratch>();
+        } else {
+            owned_ = std::move(pool.back());
+            pool.pop_back();
+        }
+        owned_->items.clear();
+        owned_->out_of_flow.clear();
+        owned_->lines.clear();
+    }
+    // Handed back with capacity intact; the next borrower empties them.
+    ~FlexScratchLease() { flex_scratch_pool().push_back(std::move(owned_)); }
+    FlexScratchLease(const FlexScratchLease&) = delete;
+    FlexScratchLease& operator=(const FlexScratchLease&) = delete;
+    FlexScratch& operator*() const { return *owned_; }
+
+private:
+    std::unique_ptr<FlexScratch> owned_;
+};
+
 } // namespace
 
 double layout_flex(BoxTree* tree, BoxId container, double content_width, double content_height,
                    const LayoutContext& ctx, BlockLayout* block) {
     if (!tree || !block || container == kNoBox) return 0;
+    FlexScratchLease lease;
+    FlexScratch& scratch = *lease;
     const ComputedStyle* style = (*tree)[container].style;
     const double font_size = (*tree)[container].font_size > 0 ? (*tree)[container].font_size
                                                               : ctx.root_font_size_px;
@@ -97,8 +148,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     bool definite_main = available_main >= 0;
 
     // ---- Collect the items ------------------------------------------------
-    std::vector<Item> items;
-    std::vector<BoxId> out_of_flow;
+    std::vector<Item>& items = scratch.items;
+    std::vector<BoxId>& out_of_flow = scratch.out_of_flow;
     int source_index = 0;
     for (BoxId c : tree->children(container)) {
         const Box& cb = (*tree)[c];
@@ -344,14 +395,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         }
     }
 
-    struct Line {
-        size_t begin = 0, end = 0;
-        double cross = 0;       // the line's cross size
-        double cross_pos = 0;   // offset of the line's cross-start from the content edge
-        double main_pos = 0;    // where the first item starts (justify-content)
-        double between = 0;     // main gap between items, justify included
-    };
-    std::vector<Line> lines;
+    std::vector<Line>& lines = scratch.lines;
+    lines.clear();
     if (wraps && definite_main) {
         size_t begin = 0;
         double line_used = 0;

@@ -32,6 +32,8 @@
 #include <algorithm>
 #include <chrono>
 #include <execinfo.h>
+#include <sys/time.h>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -69,6 +71,28 @@ struct Site {
 Site g_sites[4096];
 size_t g_site_count = 0;
 
+// ---- sampling profiler ---------------------------------------------------
+//
+// Where a pass spends its TIME, which the allocation counter cannot answer and
+// which no profiler on this machine can either: neither perf, gdb nor valgrind
+// is installed, and the allocation work showed why the question matters --
+// cutting 83% of a layout pass's allocations moved its wall clock by 5%.
+//
+// A profiling timer signals at 1 kHz of CPU time and the handler records where
+// it landed, into the same site table the allocation counter uses. backtrace()
+// is called once before the timer starts so its lazy initialisation does not
+// happen inside the handler.
+bool g_sampling = false;
+size_t g_samples = 0;
+
+void record_sample();
+
+void on_sigprof(int) {
+    if (!g_sampling) return;
+    ++g_samples;
+    record_sample();
+}
+
 void record_site(size_t size) {
     void* frames[kFrames + 2];
     const int n = backtrace(frames, kFrames + 2);
@@ -93,6 +117,53 @@ void record_site(size_t size) {
     for (int f = 0; f < depth; ++f) site.frames[f] = frames[start + f];
     site.count = 1;
     site.bytes = size;
+}
+
+void record_sample() {
+    void* frames[kFrames + 3];
+    const int n = backtrace(frames, kFrames + 3);
+    // Frames 0 and 1 are the handler and the signal trampoline.
+    const int start = n > 2 ? 2 : 0;
+    // Two frames, not six: a full stack splits one hot function across every
+    // path that reaches it, and the first run of this buried the answer under
+    // 648 sites whose largest was 0.4%. Two is enough to tell a libc leaf from
+    // the caller that chose it.
+    const int want = 2;
+    const int depth = n - start < want ? n - start : want;
+    for (size_t i = 0; i < g_site_count; ++i) {
+        if (g_sites[i].depth != depth) continue;
+        bool same = true;
+        for (int f = 0; f < depth; ++f) {
+            if (g_sites[i].frames[f] != frames[start + f]) { same = false; break; }
+        }
+        if (same) {
+            ++g_sites[i].count;
+            return;
+        }
+    }
+    if (g_site_count >= 4096) return;
+    Site& site = g_sites[g_site_count++];
+    site.depth = depth;
+    for (int f = 0; f < depth; ++f) site.frames[f] = frames[start + f];
+    site.count = 1;
+    site.bytes = 0;
+}
+
+void report_sites(const char* what, size_t total, int top) {
+    std::printf("\n  %s (top %d of %zu sites), innermost frame first:\n", what, top, g_site_count);
+    std::vector<size_t> order(g_site_count);
+    for (size_t i = 0; i < g_site_count; ++i) order[i] = i;
+    std::sort(order.begin(), order.end(),
+              [](size_t a, size_t b) { return g_sites[a].count > g_sites[b].count; });
+    for (size_t rank = 0; rank < order.size() && rank < static_cast<size_t>(top); ++rank) {
+        const Site& site = g_sites[order[rank]];
+        std::printf("  %6zu (%4.1f%%)\n", site.count, total ? 100.0 * site.count / total : 0.0);
+        char** names = backtrace_symbols(site.frames, site.depth);
+        for (int f = 0; f < site.depth && f < 4; ++f) {
+            std::printf("        %s\n", names ? names[f] : "?");
+        }
+        std::free(names);
+    }
 }
 
 }   // namespace
@@ -186,9 +257,36 @@ int main(int argc, char** argv) {
     if (g_profile && passes > 20) passes = 20;
 
     bool full = false;
+    bool sample = false;
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--full") full = true;
+        if (std::string(argv[i]) == "--sample") sample = true;
     }
+
+    // Arms the profiling timer around the timed region.
+    const auto start_sampling = [&] {
+        if (!sample) return;
+        void* warm[4];
+        backtrace(warm, 4);   // force the lazy init out of the handler
+        struct sigaction sa{};
+        sa.sa_handler = on_sigprof;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = SA_RESTART;
+        sigaction(SIGPROF, &sa, nullptr);
+        itimerval t{};
+        t.it_interval.tv_usec = 1000;
+        t.it_value.tv_usec = 1000;
+        setitimer(ITIMER_PROF, &t, nullptr);
+        g_site_count = 0;
+        g_samples = 0;
+        g_sampling = true;
+    };
+    const auto stop_sampling = [&] {
+        if (!sample) return;
+        g_sampling = false;
+        itimerval off{};
+        setitimer(ITIMER_PROF, &off, nullptr);
+    };
 
     // `--full` times what a HOST actually pays when something changes: the
     // whole of weva_document_update, cascade and paint included. The default
@@ -214,6 +312,7 @@ int main(int argc, char** argv) {
         }
         weva_document_update(d, 0);   // warm the atlas and the arenas
         double best = 1e300, total = 0;
+        start_sampling();
         for (int i = 0; i < passes; ++i) {
             const auto t0 = std::chrono::steady_clock::now();
             weva_document_update(d, 0);
@@ -222,11 +321,13 @@ int main(int argc, char** argv) {
             total += ms;
             if (ms < best) best = ms;
         }
+        stop_sampling();
         size_t draws = 0, textures = 0;
         weva_document_draws(d, &draws);
         weva_document_textures(d, &textures);
         std::printf("%-24s full update  best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures\n",
                     argv[1], best, total / passes, draws, textures);
+        if (sample) report_sites("time samples", g_samples, 16);
         weva_document_destroy(d);
         return 0;
     }
@@ -277,6 +378,7 @@ int main(int argc, char** argv) {
     size_t steady_allocations = 0;
     size_t steady_bytes = 0;
 
+    start_sampling();
     for (int i = 0; i < passes; ++i) {
         // The first passes grow the arena; the steady-state numbers are what
         // the target is about, so counting starts once it has settled.
@@ -307,9 +409,11 @@ int main(int argc, char** argv) {
         boxes = tree.size();
     }
 
+    stop_sampling();
     std::printf("%-28s %6d boxes  best %7.3f ms  mean %7.3f ms  "
                 "steady-state allocations %zu (%zu bytes)\n",
                 argv[1], boxes, best_ms, total_ms / passes, steady_allocations, steady_bytes);
+    if (sample) report_sites("time samples", g_samples, 16);
     if (g_profile) {
         std::printf("\n  allocation sites (top 12 of %zu), innermost frame first:\n",
                     g_site_count);
