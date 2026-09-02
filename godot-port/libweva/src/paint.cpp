@@ -521,9 +521,32 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             if (r.width <= 0 || r.height <= 0) continue;
             LinearColor c = sh.color;
             c.a = static_cast<float>(std::min(1.0, alpha));
+
+            // CSS Backgrounds L3 §7.1: an outer shadow is drawn OUTSIDE the
+            // border edge only — the border box is knocked out of it. Filling
+            // the whole rect instead is invisible under an opaque background
+            // and wrong under anything else: vendor.html's cards are
+            // `rgba(22, 16, 40, 0.92)`, so 8% of the shadow showed through and
+            // tinted every card's interior, differently per rarity because the
+            // glow colours differ. Chrome renders those interiors flat, and so
+            // does the Godot host — which skips these layers entirely today, so
+            // this backend was the one that was wrong.
+            //
+            // The knockout is the same ring a border is, so it tessellates as
+            // one: the widths are how far the shadow rect extends past the
+            // border box on each side, which the offset makes asymmetric and
+            // can drive to zero on the side the shadow moves away from.
+            const double left = std::max(0.0, (border_box.x) - r.x);
+            const double top = std::max(0.0, (border_box.y) - r.y);
+            const double right =
+                std::max(0.0, (r.x + r.width) - (border_box.x + border_box.width));
+            const double bottom =
+                std::max(0.0, (r.y + r.height) - (border_box.y + border_box.height));
+            if (left <= 0 && top <= 0 && right <= 0 && bottom <= 0) continue;
+            const LinearColor ring[4] = {c, c, c, c};
             Mesh mesh;
-            tessellate_rounded_rect(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
-                                    c, &mesh);
+            tessellate_border(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
+                              top, right, bottom, left, ring, &mesh);
             draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
         }
     }
