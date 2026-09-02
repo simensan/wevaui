@@ -72,7 +72,7 @@ def differs(buf, i, page, tolerance):
             or abs(buf[i + 2] - page[2]) > tolerance)
 
 
-def compare(a_path, b_path, tolerance, coverage_tolerance):
+def compare(a_path, b_path, tolerance, coverage_tolerance, structural_tolerance):
     aw, ah, a = read_ppm(a_path)
     bw, bh, b = read_ppm(b_path)
     if (aw, ah) != (bw, bh):
@@ -89,21 +89,30 @@ def compare(a_path, b_path, tolerance, coverage_tolerance):
     # a box drawn in the wrong place (catastrophic, and what this is for) from
     # anti-aliasing along its edges (expected, and uninteresting).
     #
-    # ONE reference page colour, taken from the software side and applied to
-    # both. Letting each image pick its own modal pixel is only sound when the
-    # page has a large flat background: on a gradient the mode is an arbitrary
-    # point along it, the two backends land on different points, and every
-    # derived number is then nonsense. inventory.html reported 58.8% ink
-    # disagreement that way — software's mode was #56407e and Godot's #0b0816,
-    # two places on the same gradient — while only 12.7% of its pixels were
-    # actually over tolerance, and the real difference was one slot's glow.
+    # There is deliberately no "page colour" here any more, and no ink.
+    #
+    # Ink was "pixels differing from the page behind them", which needs a page
+    # colour, and no choice of one survives these documents. Each image's own
+    # modal pixel breaks on a gradient — the two backends land on different
+    # points along it, and inventory reported 58.8% disagreement when the images
+    # differ almost nowhere. One shared modal pixel fixes that but moves when
+    # the RENDERER changes: fixing the outer box-shadow shifted it and
+    # inventory's ink went 3.4% -> 9.6% while its over-tolerance stayed at
+    # exactly 12.66%, i.e. not one pixel had changed. The corner pixel is stable
+    # but calls most of a gradient page "ink", so vendor read 18% while looking
+    # identical.
+    #
+    # What the ink number was FOR is worth keeping: separating geometry landing
+    # in the wrong place from two rasterisers disagreeing along an edge. The
+    # difference image gives that directly, with no notion of a page at all — an
+    # edge pixel differs a little, a missing or misplaced shape differs a lot.
+    # So: `differing` counts pixels past the ordinary tolerance, `structural`
+    # counts pixels past a much larger one, and only the second gates.
     total = aw * ah
-    a_page = modal_pixel(a, total)
-    b_page = a_page
     differing = 0
+    structural = 0
     worst = 0
     error_sum = 0
-    a_ink = b_ink = ink_agree = 0
     worst_at = None
 
     for p in range(total):
@@ -114,35 +123,24 @@ def compare(a_path, b_path, tolerance, coverage_tolerance):
             worst, worst_at = d, (p % aw, p // aw)
         if d > tolerance:
             differing += 1
-        a_on = differs(a, i, a_page, tolerance)
-        b_on = differs(b, i, b_page, tolerance)
-        a_ink += a_on
-        b_ink += b_on
-        ink_agree += a_on == b_on
+        if d > structural_tolerance:
+            structural += 1
 
     mean = error_sum / total
     differing_pct = 100.0 * differing / total
-    ink_pct = 100.0 * (total - ink_agree) / total
+    structural_pct = 100.0 * structural / total
 
     print(f"  size            {aw}x{ah} ({total} px)")
     print(f"  mean channel Δ  {mean:.2f}/255")
     print(f"  worst channel Δ {worst}/255 at {worst_at}")
     print(f"  over tolerance  {differing} px ({differing_pct:.2f}%), tolerance {tolerance}")
-    print(f"  page colour     #{a_page[0]:02x}{a_page[1]:02x}{a_page[2]:02x} "
-          f"(software's, used for both)")
-    print(f"  ink coverage    software {a_ink} px, godot {b_ink} px")
-    print(f"  ink disagrees   {total - ink_agree} px ({ink_pct:.2f}%)")
+    print(f"  structural      {structural} px ({structural_pct:.2f}%), tolerance {structural_tolerance}")
 
-    # A clear colour the two disagree on means the whole composite differs, and
-    # every derived number is then measuring the wrong thing — worth failing on
-    # its own. Compared at the SAME tolerance as everything else, though: this
-    # used to demand exact equality and failed a document on #181228 against
-    # #181229, one unit of sRGB rounding.
-    # The CORNER, not the mode. What this check is for is "did the clear colour
-    # or the whole composite differ", and the corner is background in every
-    # document here. The mode is not: on a gradient page the two backends pick
-    # different points along the same gradient and the check fails on a
-    # document that renders correctly.
+    # A clear colour the two disagree on means the whole composite differs.
+    # Read from the CORNER, which is background in every document here — the
+    # modal pixel is not, on a page with a gradient — and compared at the same
+    # tolerance as everything else, since this once demanded exact equality and
+    # failed a document on #181228 against #181229.
     a_corner = (a[0], a[1], a[2])
     b_corner = (b[0], b[1], b[2])
     if max(abs(x - y) for x, y in zip(a_corner, b_corner)) > tolerance:
@@ -151,10 +149,12 @@ def compare(a_path, b_path, tolerance, coverage_tolerance):
               f"godot #{b_corner[0]:02x}{b_corner[1]:02x}{b_corner[2]:02x}")
         return False
 
-    # Only the coverage check gates. Channel error inside shared ink is a
-    # rasteriser difference; ink in the wrong place is a bug.
-    if ink_pct > coverage_tolerance:
-        print(f"FAIL  ink disagrees on {ink_pct:.2f}% of pixels (limit {coverage_tolerance}%)")
+    # Only the structural count gates. A pixel differing a LITTLE is two
+    # rasterisers disagreeing along an edge, which they are entitled to do; a
+    # pixel differing a LOT is a shape drawn wrongly or not at all.
+    if structural_pct > coverage_tolerance:
+        print(f"FAIL  {structural_pct:.2f}% of pixels differ structurally "
+              f"(limit {coverage_tolerance}%)")
         return False
     print("OK    the two backends agree on where the geometry lands")
     return True
@@ -175,6 +175,10 @@ def main():
     ap.add_argument("--engine-font", action="store_true",
                     help="let Godot use its own font; the two sides then render "
                          "different text and only the non-text geometry is comparable")
+    ap.add_argument("--structural-tolerance", type=int, default=64,
+                    help="a per-channel difference past this is a shape drawn "
+                         "wrongly rather than an edge two rasterisers round "
+                         "differently")
     ap.add_argument("--coverage-tolerance", type=float, default=2.0,
                     help="percentage of pixels allowed to disagree on ink at all")
     args = ap.parse_args()
@@ -215,7 +219,8 @@ def main():
         return 1
 
     print("comparison:")
-    ok = compare(soft, godot, args.tolerance, args.coverage_tolerance)
+    ok = compare(soft, godot, args.tolerance, args.coverage_tolerance,
+                 args.structural_tolerance)
     print(f"images in {tmp}")
     return 0 if ok else 1
 
