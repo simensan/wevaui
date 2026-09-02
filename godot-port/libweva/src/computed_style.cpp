@@ -32,8 +32,18 @@ std::string_view ComputedStyle::get(int id) const {
     if (contains(id)) return values_[static_cast<std::size_t>(id)];
     // Not set here: walk the inherit chain for inherited properties, then fall
     // back to the registry's shared initial value. Neither path copies.
+    //
+    // ITERATIVELY. Recursing into parent_->get() asked the registry whether the
+    // property inherits once per ancestor, and reached the singleton through
+    // its guard each time -- so reading an inherited property on a leaf ten
+    // deep did ten of both. Whether a property inherits is a fact about the
+    // property, so it is settled once and the chain is then just a walk.
     const auto& reg = CssPropertyRegistry::instance();
-    if (parent_ && reg.is_inherited(id)) return parent_->get(id);
+    if (parent_ && reg.is_inherited(id)) {
+        for (const ComputedStyle* p = parent_; p; p = p->parent_) {
+            if (p->contains(id)) return p->values_[static_cast<std::size_t>(id)];
+        }
+    }
     return reg.initial_value(id);
 }
 

@@ -64,6 +64,10 @@ private:
     // Power-of-two sized and kept under half full, so a probe chain is short;
     // the table is rebuilt whenever a property is registered.
     std::vector<int> hash_slots_;   // -1 when empty, else an id
+    // Indexed by id. is_inherited() is asked on every property read that falls
+    // through to the inherit chain, and reaching it through by_id() is a bounds
+    // check and a pointer chase to fetch one bool.
+    std::vector<bool> inherited_;
     size_t hash_mask_ = 0;
     static size_t hash_name(std::string_view name);
 

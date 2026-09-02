@@ -67,6 +67,12 @@ void CssPropertyRegistry::rebuild_index() {
 
     size_t cap = 16;
     while (cap < properties_.size() * 4) cap *= 2;
+    inherited_.assign(properties_.size(), false);
+    for (const CssProperty& p : properties_) {
+        if (p.is_inherited && p.id >= 0 && p.id < static_cast<int>(inherited_.size())) {
+            inherited_[static_cast<std::size_t>(p.id)] = p.is_inherited;
+        }
+    }
     hash_slots_.assign(cap, -1);
     hash_mask_ = cap - 1;
     for (const CssProperty& p : properties_) {
@@ -122,8 +128,8 @@ std::string_view CssPropertyRegistry::name_of(int id) const {
 }
 
 bool CssPropertyRegistry::is_inherited(int id) const {
-    const CssProperty* p = by_id(id);
-    return p && p->is_inherited;
+    if (id < 0 || id >= static_cast<int>(inherited_.size())) return false;
+    return inherited_[static_cast<std::size_t>(id)];
 }
 
 std::string_view CssPropertyRegistry::initial_value(int id) const {
