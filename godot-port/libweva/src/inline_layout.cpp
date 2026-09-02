@@ -480,6 +480,33 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             if (!f.item->is_marker()) { only_markers = false; break; }
         }
 
+        // CSS 2.1 §9.2.1.1: the empty anonymous blocks a block-in-inline split
+        // leaves on either side of the block are NOT generated. The fragment
+        // box still has to exist — the element is there, and paint and hit
+        // testing walk it — so the line is emitted at ZERO height rather than
+        // dropped, which is also what the reference produces:
+        // `<span><div>block</div></span>` gives the span a zero-height fragment
+        // and a container exactly as tall as the block. Without this the port
+        // made that container THREE line-heights tall (an empty line, the
+        // block, another empty line) where Chrome and the reference both say
+        // one, and card-component.html's whole page sat 18.29 too low.
+        //
+        // Deliberately NOT the same as an empty `<span></span>` the author
+        // wrote, which does form a line of strut height; `is_split_fragment` is
+        // what tells the manufactured fragments apart.
+        bool only_empty_split_fragments = only_markers;
+        if (only_empty_split_fragments) {
+            for (const Fragment& f : line) {
+                const BoxId b = f.item->is_inline_start() ? f.item->inline_box_start
+                                                          : f.item->inline_box_end;
+                if (b == kNoBox || !(*tree)[b].is_split_fragment ||
+                    (*tree)[b].first_child != kNoBox) {
+                    only_empty_split_fragments = false;
+                    break;
+                }
+            }
+        }
+
         if (line.empty() && !is_final) {
             reset_line_metrics();
             pen = 0;
@@ -497,7 +524,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // line-height larger than the text centred on it — and, when the
         // declared line-height is smaller than the content, pulls it up.
         const double natural_baseline = (natural_height - content_height) * 0.5 + max_ascent;
-        const double line_height = declared_line_height.value_or(natural_height);
+        const double line_height =
+            only_empty_split_fragments ? 0.0 : declared_line_height.value_or(natural_height);
         const double baseline = natural_baseline + (line_height - natural_height) * 0.5;
 
         double dx = line_left;
@@ -554,6 +582,13 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // the chain for every fragment after the first, and an outer
         // `<a><b>x</b></a>` stopped enclosing its inner box.
         for (const Fragment& f : line) {
+            // A marker-only line earns no fragment: an inline box covers
+            // content on the line, or it covers nothing. (The empty fragment a
+            // block-in-inline split leaves behind is the one case where the
+            // reference DOES emit a zero-size box; routing it through this
+            // span machinery produced a fragment at a negative y and stole the
+            // block's own geometry, so it is left out for now and recorded in
+            // PORT_PLAN as the last card-component difference.)
             if (only_markers) break;
             if (f.item->is_inline_start()) {
                 const double x0 = f.x + dx + f.item->margin_edge;

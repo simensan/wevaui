@@ -101,6 +101,14 @@ struct Box {
     // decorated by paint.
     const Element* pseudo_host = nullptr;
 
+    // CSS 2.1 §9.2.1.1. Set on the inline fragments a block-in-inline split
+    // manufactures around the block. It matters because an EMPTY fragment of
+    // this kind must not form a line box — the spec does not generate the
+    // empty anonymous blocks either side of the block — while an empty inline
+    // the AUTHOR wrote (`<div><span></span></div>`) still forms a line of
+    // strut height. Only the provenance tells the two apart.
+    bool is_split_fragment = false;
+
     // Border-box geometry, relative to the parent box's content origin.
     double x = 0, y = 0, width = 0, height = 0;
 

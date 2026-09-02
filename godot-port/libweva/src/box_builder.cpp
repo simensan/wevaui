@@ -681,10 +681,13 @@ void BoxBuilder::split_inline_around_blocks(BoxId inline_box, std::vector<BoxId>
     tree_->clear_children(inline_box);
 
     BoxId piece = inline_box;
+    // Every piece is a product of the split, the reused original included.
+    (*tree_)[inline_box].is_split_fragment = true;
     const auto new_piece = [&] {
         const BoxId clone = tree_->create(BoxKind::Inline, (*tree_)[inline_box].element,
                                           (*tree_)[inline_box].style);
         (*tree_)[clone].display = (*tree_)[inline_box].display;
+        (*tree_)[clone].is_split_fragment = true;
         return clone;
     };
     for (BoxId k : kids) {
