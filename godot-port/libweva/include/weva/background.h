@@ -95,6 +95,13 @@ void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
                                  const LayoutContext& ctx, double font_size,
                                  std::vector<uint8_t>* out_rgba);
 
+// Coverage of a rounded rectangle at a point, with the box's origin at (0,0)
+// and `radii` its corners. Antialiased: half a texel either side of the edge,
+// which is exact for a circular corner and within a percent for the
+// eccentricities a border-radius produces. Null radii means square corners.
+double rounded_rect_coverage(double px, double py, double w, double h,
+                             const struct BorderRadii* radii);
+
 // A Gaussian blur of straight-alpha RGBA8 texels (blurred premultiplied, so
 // colour does not bleed from transparent texels), sigma in texels. Three box
 // passes per axis.

@@ -668,14 +668,139 @@ struct ProfileScope {
     }
 };
 
+// One blurred outer shadow, as a single textured quad.
+//
+// The alternative below draws it as up to 48 nested rings, each tessellated,
+// clipped and copied into a draw of its own. That was over half of a paint
+// pass on a page with shadows -- hud spends 1.0 ms of its 1.9 ms there, and 80
+// of its 187 draws are shadow rings -- and it BANDS, which is why the ring
+// count had to be raised until quests' `0 34px 90px` stopped showing twelve
+// grey steps.
+//
+// A real Gaussian costs one rasterize, one blur and one quad, and the result is
+// cached on everything that decides its texels, so a repaint that did not
+// change the shadow does not redo any of it.
+//
+// Returns false when it cannot -- no backend, a degenerate box, a texture that
+// would be absurd -- and the ring path takes over.
+bool paint_blurred_box_shadow(const Shadow& sh, const Rect& border_box, const BorderRadii& radii,
+                              const LayoutContext& ctx, double font_size,
+                              const PaintContext& paint, double opacity, const Transform2D* xf,
+                              const ClipNode* clip, const ColorFilter* filter) {
+    if (!paint.backend || sh.blur <= 0) return false;
+    if (border_box.width <= 0 || border_box.height <= 0) return false;
+
+    // The shape the shadow is cast from: the border box, moved by the offset
+    // and grown by the spread, with its radii grown to match.
+    const double grow = sh.spread;
+    const Rect shape(border_box.x + sh.x - grow, border_box.y + sh.y - grow,
+                     border_box.width + 2 * grow, border_box.height + 2 * grow);
+    if (shape.width <= 0 || shape.height <= 0) return false;
+    const BorderRadii shape_radii =
+        clamp_radii_to_rect(grow_radii(radii, grow), shape.width, shape.height);
+    // And the shape that gets punched out of it, clamped to the box it belongs
+    // to. Clamping is not a tidy-up here: a radius larger than the box -- a
+    // pill states `border-radius: 999px` -- makes the corner ellipse enormous,
+    // and the coverage test then reports the box's own CENTRE as outside it.
+    // Nothing was knocked out at all, and every neon panel wore its glow as a
+    // flat wash across its face.
+    const BorderRadii box_radii =
+        clamp_radii_to_rect(radii, border_box.width, border_box.height);
+
+    // A filter rewrites the shadow's colour; it is flat, so filtering it here
+    // is the same as filtering every texel and costs one call.
+    LinearColor col = sh.color;
+    if (filter) {
+        float a = col.a;
+        filter->apply_srgb(&col.r, &col.g, &col.b, &a);
+        col.a = a;
+    }
+    if (col.a <= 0) return true;   // nothing to draw, but handled
+
+    const double sigma = sh.blur * 0.5;
+    const double pad_px = std::ceil(3 * sigma);
+    const double full_w = shape.width + 2 * pad_px, full_h = shape.height + 2 * pad_px;
+    const double scale = std::min(1.0, 1024.0 / std::max(full_w, full_h));
+    const int tex_w = std::max(1, static_cast<int>(std::ceil(full_w * scale)));
+    const int tex_h = std::max(1, static_cast<int>(std::ceil(full_h * scale)));
+    const int pad = static_cast<int>(std::round(pad_px * scale));
+    if (tex_w - 2 * pad < 1 || tex_h - 2 * pad < 1) return false;
+
+    std::string key;
+    TextureHandle tex;
+    if (paint.texture_cache) {
+        char buf[256];
+        std::snprintf(buf, sizeof(buf),
+                      "bs|%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.4f;%.4f;%.4f;%.4f;%d;%d;%d|",
+                      border_box.width, border_box.height, sh.x, sh.y, sh.blur, sh.spread, col.r,
+                      col.g, col.b, col.a, tex_w, tex_h, pad);
+        key = buf;
+        for (const CornerRadius* c : {&radii.top_left, &radii.top_right, &radii.bottom_right,
+                                      &radii.bottom_left}) {
+            std::snprintf(buf, sizeof(buf), "%.3f,%.3f;", c->x_radius, c->y_radius);
+            key += buf;
+        }
+        tex = paint.texture_cache->get(key);
+    }
+
+    if (!tex) {
+        std::vector<uint8_t> rgba;
+        rasterize_background_padded({}, col, shape.width, shape.height, tex_w, tex_h, pad,
+                                    &shape_radii, ctx, font_size, &rgba);
+        blur_rgba(&rgba, tex_w, tex_h, sigma * scale);
+
+        // CSS Backgrounds L3 §7.1: an outer shadow is not painted inside the
+        // border box. The ring path did this by never drawing there; here the
+        // blurred image is punched through, which is the same thing and keeps
+        // the soft edge the blur put on it.
+        const double inv = scale > 0 ? 1.0 / scale : 0.0;
+        for (int ty = 0; ty < tex_h; ++ty) {
+            const double sy = (ty - pad + 0.5) * inv;
+            const double by = sy + sh.y - grow;
+            if (by < -1 || by > border_box.height + 1) continue;
+            for (int tx = 0; tx < tex_w; ++tx) {
+                const double sx = (tx - pad + 0.5) * inv;
+                const double bx = sx + sh.x - grow;
+                const double cov = rounded_rect_coverage(bx, by, border_box.width,
+                                                         border_box.height, &box_radii);
+                if (cov <= 0) continue;
+                uint8_t& a = rgba[(static_cast<size_t>(ty) * tex_w + tx) * 4 + 3];
+                a = static_cast<uint8_t>(a * (1.0 - cov) + 0.5);
+            }
+        }
+
+        tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+        if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
+        else if (paint.owned_textures) paint.owned_textures->push_back(tex);
+    }
+
+    const Rect area(shape.x - pad_px, shape.y - pad_px, full_w, full_h);
+    Mesh mesh;
+    // The blurred image carries its own soft edge; a feather would blur an
+    // already blurred boundary.
+    tessellate_rect(area, LinearColor::white(), &mesh, false);
+    for (Vertex& v : mesh.vertices) {
+        v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
+                       static_cast<float>((v.position.y - area.y) / area.height)};
+    }
+    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip, nullptr);
+    return true;
+}
+
 void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_box,
-                         const BorderRadii& radii, RenderInterface* backend, double opacity,
+                         const BorderRadii& radii, const LayoutContext& ctx, double font_size,
+                         const PaintContext& paint, double opacity,
                          const Transform2D* xf = nullptr, const ClipNode* clip = nullptr,
                          const ColorFilter* filter = nullptr) {
+    RenderInterface* backend = paint.backend;
     ProfileScope prof(&g_paint_profile.shadows);
     for (size_t s = shadows.size(); s-- > 0;) {   // first shadow on top
         const Shadow& sh = shadows[s];
         if (sh.inset) continue;
+        if (paint_blurred_box_shadow(sh, border_box, radii, ctx, font_size, paint, opacity, xf,
+                                     clip, filter)) {
+            continue;
+        }
         const double sigma = sh.blur * 0.5;
         const int layers = shadow_layers(sh.blur);
         double accumulated = 0;
@@ -1775,10 +1900,11 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     if (decorated && b.style && !hidden && !blurred && b.width > 0 && b.height > 0) {
         shadows = parse_box_shadows(b.style, ctx, fs, resolve_color(b.style, "color"));
         if (!drop_shadows.empty()) {
-            paint_outer_shadows(drop_shadows, border_box, radii, paint.backend, state.opacity, xf,
+            paint_outer_shadows(drop_shadows, border_box, radii, ctx, fs, paint, state.opacity, xf,
                                 state.clip.get(), state.filter.get());
         }
-        paint_outer_shadows(shadows, border_box, radii, paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
+        paint_outer_shadows(shadows, border_box, radii, ctx, fs, paint, state.opacity, xf,
+                            state.clip.get(), state.filter.get());
     }
 
     // `backdrop-filter` (Filter Effects L2 §2): filter everything already

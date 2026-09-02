@@ -1027,6 +1027,11 @@ double rounded_coverage(double px, double py, double w, double h, const BorderRa
 
 } // namespace
 
+double rounded_rect_coverage(double px, double py, double w, double h,
+                             const BorderRadii* radii) {
+    return rounded_coverage(px, py, w, h, radii);
+}
+
 void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
                                  const LinearColor& color, double width, double height,
                                  int tex_w, int tex_h, int pad, const BorderRadii* radii,

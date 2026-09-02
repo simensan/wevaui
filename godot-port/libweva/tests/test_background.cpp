@@ -724,7 +724,16 @@ void test_paint_color_filters() {
         if (std::fabs(c.r - half) < 0.01f && c.g == 0 && c.b == 0) ++dim;
         if (std::fabs(c.r - luma) < 0.01f && std::fabs(c.g - luma) < 0.01f && std::fabs(c.b - luma) < 0.01f) ++grey;
         if (std::fabs(c.r - q) < 0.01f && std::fabs(c.g - q) < 0.01f && std::fabs(c.b - q) < 0.01f) ++quarter;
-        if (c.g > 0.9f && c.r == 0 && c.b == 0 && c.a < 0.6f) ++green_shadow;
+        (void)c;
+    }
+    // The drop-shadow's colour used to ride on the vertices, one ring at a
+    // time. It is a blurred texture now, so it is looked for where it went.
+    for (const auto& kv : backend.texture_bytes) {
+        const std::vector<uint8_t>& px = kv.second;
+        for (size_t i = 0; i + 3 < px.size(); i += 4) {
+            if (px[i + 3] == 0) continue;
+            if (px[i] == 0 && px[i + 1] > 200 && px[i + 2] == 0) { ++green_shadow; break; }
+        }
     }
     CHECK(dim == 1);
     CHECK(grey == 1);
@@ -732,59 +741,163 @@ void test_paint_color_filters() {
     CHECK(green_shadow >= 1);
 }
 
-// The blur falloff gets one layer per ~2px, so a wide shadow does not band.
-void test_box_shadow_layer_density() {
-    const auto shadow_draws = [](const char* css, const char* html) {
-        Fixture f;
-        CHECK(f.css(css));
-        CHECK(f.layout(html));
-        RecordingBackend backend;
-        PaintContext paint;
-        paint.backend = &backend;
-        paint_tree(f.tree, f.root, f.ctx, paint);
-        int n = 0;
-        for (const RecordingBackend::Draw& d : backend.draws) {
-            if (d.geometry.vertices.empty() || d.texture != 0) continue;
-            // The shadow layers are the translucent black draws.
-            const LinearColor c = d.geometry.vertices[0].color;
-            if (c.r == 0 && c.g == 0 && c.b == 0 && c.a > 0 && c.a < 1) ++n;
-        }
-        return n;
-    };
-    const int narrow = shadow_draws(
-        "html, body { margin: 0 } #b { width: 100px; height: 40px; background: #fff;"
-        " box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) }",
-        "<body><div id=b></div></body>");
-    // Big enough that no layer collapses to a zero-sized rect (the inner
-    // extents shrink the shape by 2e on each axis).
-    const int wide = shadow_draws(
-        "html, body { margin: 0 } #b { width: 600px; height: 400px; background: #fff;"
-        " box-shadow: 0 34px 90px rgba(0, 0, 0, 0.5) }",
-        "<body><div id=b></div></body>");
-    // A spread with NO blur must still draw. The layer loop evaluates the
-    // edge coverage at exactly e == 0 there, and a strict `e < 0` test called
-    // that uncovered — `target` came out 0, the single layer failed the
-    // `target <= accumulated` check, and `0 0 0 20px` drew nothing at all.
-    // Chrome renders a hard ring: 115/255 over white, which is 0.55 of black.
-    const int spread_only = shadow_draws(
-        "html, body { margin: 0 } #b { width: 100px; height: 40px; background: #fff;"
-        " box-shadow: 0 0 0 20px rgba(0, 0, 0, 0.55) }",
-        "<body><div id=b></div></body>");
-    CHECK(spread_only >= 1);
+// A blurred box-shadow is ONE draw, and its falloff is a real Gaussian.
+//
+// It used to be a stack of up to 48 nested rings, and the test here counted
+// them: enough steps that the banding did not show. There are no steps now --
+// the shape is rasterized once, blurred, and drawn as a single textured quad --
+// so what is checked is the property the ring count was standing in for. The
+// alpha must fall away smoothly, through many distinct levels rather than a
+// dozen, and it must be knocked out under the box, which is the one thing the
+// ring path got for free by never drawing there.
+void test_box_shadow_blur_falloff() {
+    // The knockout rests on this, and a wrong answer here is silent -- the
+    // shadow simply keeps its interior and washes across the box it belongs to.
+    //
+    // The last case is the one that actually went wrong. A radius LARGER than
+    // the box is ordinary CSS (`border-radius: 999px` is how a pill is
+    // written), and the corner test measures against an ellipse that big, so
+    // the box's own centre reads as OUTSIDE it. Whoever calls this has to clamp
+    // the radii to the box first, which is what the shadow now does.
+    BorderRadii r20{};
+    r20.top_left = r20.top_right = r20.bottom_right = r20.bottom_left = CornerRadius{20, 20};
+    BorderRadii pill{};
+    pill.top_left = pill.top_right = pill.bottom_right = pill.bottom_left = CornerRadius{999, 999};
+    CHECK(near(rounded_rect_coverage(50, 20, 100, 40, nullptr), 1.0));
+    CHECK(near(rounded_rect_coverage(50, 20, 100, 40, &r20), 1.0));
+    CHECK(near(rounded_rect_coverage(-5, 20, 100, 40, nullptr), 0.0));
+    CHECK(rounded_rect_coverage(50, 20, 100, 40, &pill) < 0.01);
+    const BorderRadii clamped = clamp_radii_to_rect(pill, 100, 40);
+    CHECK(near(rounded_rect_coverage(50, 20, 100, 40, &clamped), 1.0));
 
-    // These count the layers that actually DRAW, which is fewer than
-    // shadow_layers() returns: an outer shadow knocks the border box out of
-    // itself, so a layer whose rect has shrunk inside the box contributes
-    // nothing and is skipped. Roughly the inner third goes that way for an
-    // offset shadow. What matters for banding is the count of VISIBLE steps,
-    // and those are all still here — the ones that vanished were hidden under
-    // the element.
-    CHECK(narrow >= 6 && narrow <= 12);
-    // 90px of blur still needs many more steps than the old fixed 12, or the
-    // falloff bands into visible rings (quests' outer panel).
-    CHECK(wide >= 28);
-    CHECK(wide <= 48);
-    CHECK(wide > narrow);
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 } #b { width: 100px; height: 40px; background: #fff;"
+                " box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) }"));
+    CHECK(f.layout("<body><div id=b></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+
+    // One textured draw for the shadow, not a stack of translucent rings.
+    int rings = 0;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty() || d.texture != 0) continue;
+        const LinearColor c = d.geometry.vertices[0].color;
+        if (c.r == 0 && c.g == 0 && c.b == 0 && c.a > 0 && c.a < 1) ++rings;
+    }
+    CHECK(rings == 0);
+
+    // The shadow's texture: the one whose texels are black with a soft alpha.
+    const std::vector<uint8_t>* shadow = nullptr;
+    Vec2i size{0, 0};
+    for (const auto& kv : backend.texture_bytes) {
+        const std::vector<uint8_t>& px = kv.second;
+        int soft = 0;
+        for (size_t i = 0; i + 3 < px.size(); i += 4) {
+            if (px[i] == 0 && px[i + 1] == 0 && px[i + 2] == 0 && px[i + 3] > 0 &&
+                px[i + 3] < 255) {
+                if (++soft > 64) break;
+            }
+        }
+        if (soft > 64) {
+            shadow = &px;
+            size = backend.textures[kv.first];
+        }
+    }
+    CHECK(shadow != nullptr);
+    if (!shadow) return;
+
+    // Down the middle: alpha rises into the shadow and is punched back to
+    // nothing where the box sits over it.
+    const int cx = size.x / 2;
+    std::vector<int> column;
+    for (int y = 0; y < size.y; ++y) {
+        column.push_back((*shadow)[(static_cast<size_t>(y) * size.x + cx) * 4 + 3]);
+    }
+    int distinct = 0;
+    for (size_t i = 1; i < column.size(); ++i) {
+        if (column[i] != column[i - 1]) ++distinct;
+    }
+    // Twelve rings gave twelve steps down a column. A Gaussian gives a new
+    // value at nearly every texel of its falloff.
+    CHECK(distinct > 30);
+    CHECK(column.front() == 0);          // outside the blur entirely
+    CHECK(*std::max_element(column.begin(), column.end()) > 40);
+
+    // The knockout: the box's own area takes none of the shadow. The box is
+    // 100x40 and the shadow is offset 8px down, so a little above the middle
+    // of the texture is inside it.
+    const int knock_y = size.y / 2 - 4;
+    if (knock_y > 0 && knock_y < size.y) {
+        CHECK((*shadow)[(static_cast<size_t>(knock_y) * size.x + cx) * 4 + 3] == 0);
+    }
+
+    // The falloff is the one the spec names: a Gaussian of sigma = blur/2,
+    // so the alpha outside a straight edge is A * 0.5 * erfc(d / (sigma * root
+    // 2)). The ring path evaluated exactly that expression to pick each ring's
+    // alpha; the texture has to land on the same curve, or the shadow is the
+    // right shape and the wrong weight.
+    {
+        Fixture e;
+        CHECK(e.css("html, body { margin: 0 } #b { width: 200px; height: 80px; background: #fff;"
+                    " box-shadow: 0 0 20px rgba(0, 0, 0, 1) }"));
+        CHECK(e.layout("<body><div id=b></div></body>"));
+        RecordingBackend eb;
+        PaintContext ep;
+        ep.backend = &eb;
+        paint_tree(e.tree, e.root, e.ctx, ep);
+        const std::vector<uint8_t>* tex = nullptr;
+        Vec2i tsize{0, 0};
+        for (const auto& kv : eb.texture_bytes) {
+            int soft = 0;
+            for (size_t i = 3; i < kv.second.size(); i += 4) {
+                if (kv.second[i] > 0 && kv.second[i] < 255 && ++soft > 64) break;
+            }
+            if (soft > 64) { tex = &kv.second; tsize = eb.textures[kv.first]; }
+        }
+        CHECK(tex != nullptr);
+        if (tex) {
+            const double sigma = 10.0;                  // blur 20 / 2
+            const int pad = static_cast<int>(std::ceil(3 * sigma));
+            const int cx = tsize.x / 2;
+            // Straight down from the box's bottom edge, which sits `pad` texels
+            // from the bottom of the texture.
+            const int edge = tsize.y - pad;
+            int worst = 0;
+            for (int d = 2; d < static_cast<int>(3 * sigma) - 2; ++d) {
+                const int y = edge + d;
+                if (y < 0 || y >= tsize.y) break;
+                const int got = (*tex)[(static_cast<size_t>(y) * tsize.x + cx) * 4 + 3];
+                const double want =
+                    255.0 * 0.5 * std::erfc(d / (sigma * 1.4142135623730951));
+                const int err = static_cast<int>(std::fabs(got - want));
+                if (err > worst) worst = err;
+            }
+            if (worst > 12) std::printf("  shadow falloff off by %d of 255\n", worst);
+            CHECK(worst <= 12);
+        }
+    }
+
+    // A spread with NO blur must still draw. That path keeps the ring, and it
+    // regressed once: the layer loop evaluated edge coverage at exactly e == 0
+    // and a strict `e < 0` test called it uncovered, so `0 0 0 20px` drew
+    // nothing. Chrome renders a hard ring, 115/255 over white.
+    Fixture g;
+    CHECK(g.css("html, body { margin: 0 } #b { width: 100px; height: 40px; background: #fff;"
+                " box-shadow: 0 0 0 20px rgba(0, 0, 0, 0.55) }"));
+    CHECK(g.layout("<body><div id=b></div></body>"));
+    RecordingBackend gb;
+    PaintContext gp;
+    gp.backend = &gb;
+    paint_tree(g.tree, g.root, g.ctx, gp);
+    int spread_only = 0;
+    for (const RecordingBackend::Draw& d : gb.draws) {
+        if (d.geometry.vertices.empty() || d.texture != 0) continue;
+        const LinearColor c = d.geometry.vertices[0].color;
+        if (c.r == 0 && c.g == 0 && c.b == 0 && c.a > 0 && c.a < 1) ++spread_only;
+    }
+    CHECK(spread_only >= 1);
 }
 
 void test_font_weight_resolution() {
