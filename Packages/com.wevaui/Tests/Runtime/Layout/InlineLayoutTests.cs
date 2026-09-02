@@ -646,12 +646,15 @@ namespace Weva.Tests.Layout {
             Assert.That(w.Height, Is.EqualTo(0).Within(1e-9));
         }
 
-        // NOT asserted here, deliberately: `<div><span> </span></div>` is 0 in
-        // Chrome and 0 through BaselineGen's pipeline, but 19.2 through this
-        // helper on the same markup. Two paths that should agree do not, and
-        // asserting either value would pin the discrepancy rather than expose
-        // it. Recorded in PORT_PLAN; the empty-`<span></span>` case below it is
-        // open for the same reason.
+        [Test]
+        public void An_inline_holding_only_whitespace_collapses_with_its_block() {
+            // A div whose only content is a span holding one space is 0 in
+            // Chrome: the span contributes nothing and draws no edge.
+            var (root, _, _) = Build(
+                "<div id=w><span> </span></div>", "#w { display: block }", 800);
+            var w = FindFirstBlock(root, "div");
+            Assert.That(w.Height, Is.EqualTo(0).Within(1e-9));
+        }
 
         [Test]
         public void An_inline_with_padding_still_makes_a_line_even_holding_whitespace() {

@@ -379,20 +379,16 @@ namespace Weva.Layout {
                 return ws != "pre" && ws != "pre-wrap" && ws != "pre-line" && ws != "break-spaces";
             }
             if (b is InlineBox ib) {
-                // CSS 2.1 §9.4.2 also zero-heights a line holding only an
-                // EMPTY inline box, and Chrome agrees — it gives
-                // `<div><span></span></div>` a height of 0 where this engine
-                // gives 18.29. That case is NOT handled here: returning true
-                // for it changes nothing, so the height comes from somewhere
-                // other than this path and needs its own investigation
-                // (HasSelectorTests-24 and two siblings in harvest are exactly
-                // this shape, with Chrome siding with the C++ port).
+                // CSS 2.1 §9.4.2: a line box holding no text, no preserved
+                // whitespace and no inline element with non-zero margins,
+                // padding or borders is treated as ZERO-HEIGHT. An EMPTY
+                // `<span></span>` qualifies as squarely as one holding a
+                // space — Chrome gives a div wrapping either of them, or a
+                // nested empty pair, a height of 0.
                 //
-                // What IS handled: an inline box that HOLDS collapsible
-                // whitespace. It only collapses when the box draws no edge —
-                // margins, padding and borders are visible whatever the
-                // content does, which is §9.4.2's own qualifier.
-                if (ib.Children.Count == 0) return false;
+                // The edge test is §9.4.2's own qualifier: margins, padding and
+                // borders are painted whatever the content does, so an inline
+                // that draws one keeps its line.
                 if (!InlineEdgeIsZero(ib)) return false;
                 for (int i = 0; i < ib.Children.Count; i++) {
                     if (!BoxIsCollapsibleWhitespace(ib.Children[i])) return false;
@@ -409,20 +405,37 @@ namespace Weva.Layout {
             var st = ib.Style;
             if (st == null) return true;
             for (int i = 0; i < InlineEdgeProps.Length; i++) {
-                string v = st.Get(InlineEdgeProps[i]);
-                if (string.IsNullOrEmpty(v)) continue;
-                if (v == "0" || v == "0px" || v == "none" || v == "auto") continue;
-                return false;
+                if (!IsZeroLength(st.Get(InlineEdgeProps[i]))) return false;
+            }
+            // A border only takes space when it has a STYLE. `border-width`
+            // computes to the keyword `medium` by default, which is not zero as
+            // a string but paints nothing while `border-style` is `none` — a
+            // UA sheet that spells the widths out as 0 hid this, and one that
+            // leaves them at their initial did not.
+            for (int i = 0; i < BorderSides.Length; i++) {
+                string style = st.Get(BorderSides[i].styleId);
+                if (string.IsNullOrEmpty(style) || style == "none" || style == "hidden") continue;
+                if (!IsZeroLength(st.Get(BorderSides[i].widthId))) return false;
             }
             return true;
+        }
+
+        static bool IsZeroLength(string v) {
+            if (string.IsNullOrEmpty(v)) return true;
+            return v == "0" || v == "0px" || v == "0%" || v == "none" || v == "auto";
         }
 
         static readonly int[] InlineEdgeProps = {
             CssProperties.MarginLeftId, CssProperties.MarginRightId,
             CssProperties.PaddingLeftId, CssProperties.PaddingRightId,
             CssProperties.PaddingTopId, CssProperties.PaddingBottomId,
-            CssProperties.BorderLeftWidthId, CssProperties.BorderRightWidthId,
-            CssProperties.BorderTopWidthId, CssProperties.BorderBottomWidthId,
+        };
+
+        static readonly (int styleId, int widthId)[] BorderSides = {
+            (CssProperties.BorderLeftStyleId, CssProperties.BorderLeftWidthId),
+            (CssProperties.BorderRightStyleId, CssProperties.BorderRightWidthId),
+            (CssProperties.BorderTopStyleId, CssProperties.BorderTopWidthId),
+            (CssProperties.BorderBottomStyleId, CssProperties.BorderBottomWidthId),
         };
 
         bool TryLayoutSingleRunFast(BlockBox container, double availableWidth, Weva.Layout.Floats.FloatContext floatCtx) {

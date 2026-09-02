@@ -61,6 +61,33 @@ std::vector<Token> tokenize_collapsing(std::string_view text) {
     return out;
 }
 
+// CSS 2.1 §9.4.2's qualifier: an inline box only keeps its line box alive when
+// it paints an edge. Margins, padding and a STYLED border all do; `border-width`
+// on its own does not, because it computes to the keyword `medium` by default
+// and paints nothing while `border-style` is `none`.
+bool is_zero_length(std::string_view v) {
+    return v.empty() || v == "0" || v == "0px" || v == "0%" || v == "none" || v == "auto";
+}
+
+bool inline_edge_is_zero(const ComputedStyle* st) {
+    if (!st) return true;
+    static const char* kEdges[] = {"margin-left", "margin-right",  "padding-left",
+                                   "padding-right", "padding-top", "padding-bottom"};
+    for (const char* p : kEdges) {
+        if (!is_zero_length(st->get(p))) return false;
+    }
+    static const char* kBorderStyle[] = {"border-left-style", "border-right-style",
+                                         "border-top-style", "border-bottom-style"};
+    static const char* kBorderWidth[] = {"border-left-width", "border-right-width",
+                                         "border-top-width", "border-bottom-width"};
+    for (int i = 0; i < 4; ++i) {
+        const std::string_view style = st->get(kBorderStyle[i]);
+        if (style.empty() || style == "none" || style == "hidden") continue;
+        if (!is_zero_length(st->get(kBorderWidth[i]))) return false;
+    }
+    return true;
+}
+
 double letter_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
     const std::string_view raw = get(style, "letter-spacing");
     if (raw.empty() || iequals(raw, "normal")) return 0;
@@ -497,6 +524,26 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // Of those, the trailing one — the only empty fragment that earns a
         // box (see the fragment loop below).
         bool emits_trailing_split_fragment = false;
+        // CSS 2.1 §9.4.2: a line box holding no text, no preserved whitespace
+        // and no inline element with non-zero margins, padding or borders is
+        // treated as ZERO-HEIGHT. So a line carrying only empty inline boxes
+        // collapses whether or not a split manufactured them — Chrome gives
+        // `<div><span></span></div>`, `<div><span> </span></div>` and a nested
+        // empty pair a height of 0 alike. The edge test is the spec's own
+        // qualifier: an inline that paints a margin, padding or border keeps
+        // its line.
+        bool only_edgeless_inlines = only_markers;
+        if (only_edgeless_inlines) {
+            for (const Fragment& f : line) {
+                const BoxId b = f.item->is_inline_start() ? f.item->inline_box_start
+                                                          : f.item->inline_box_end;
+                if (b == kNoBox || !inline_edge_is_zero((*tree)[b].style)) {
+                    only_edgeless_inlines = false;
+                    break;
+                }
+            }
+        }
+
         bool only_empty_split_fragments = only_markers;
         if (only_empty_split_fragments) {
             for (const Fragment& f : line) {
@@ -535,8 +582,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // line-height larger than the text centred on it — and, when the
         // declared line-height is smaller than the content, pulls it up.
         const double natural_baseline = (natural_height - content_height) * 0.5 + max_ascent;
-        const double line_height =
-            only_empty_split_fragments ? 0.0 : declared_line_height.value_or(natural_height);
+        const double line_height = (only_empty_split_fragments || only_edgeless_inlines)
+                                       ? 0.0
+                                       : declared_line_height.value_or(natural_height);
         const double baseline = natural_baseline + (line_height - natural_height) * 0.5;
 
         double dx = line_left;

@@ -536,13 +536,19 @@ void test_inline_fragment_edges() {
         CHECK(span_index < atom_index);
     }
     {
-        // An empty inline box still gives its container a line box, so the
-        // container has the strut's height rather than none.
+        // CSS 2.1 §9.4.2: a line box holding no text, no preserved whitespace
+        // and no inline with a margin, padding or border is ZERO-HEIGHT, so an
+        // empty inline gives its container no height at all.
+        //
+        // This asserted 16 — "the strut's height rather than none" — until
+        // Chrome was captured on the markup: it gives this div, one holding
+        // `<span> </span>`, and one holding a nested empty pair, a height of 0
+        // apiece. Three harvested cases were exactly this shape.
         Fixture f;
         CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
                     "     line-height: 1 }"));
         CHECK(f.layout("<body><div id=w><span id=s></span></div></body>"));
-        CHECK(near(f.box("w").height, 16));
+        CHECK(near(f.box("w").height, 0));
     }
     {
         // ...but it gets no fragment box, because a fragment is earned by
@@ -1016,13 +1022,19 @@ void test_block_in_inline_empty_fragments() {
         CHECK(near(f.box("w").height, f.metrics.line_height(16) * 3));
     }
     {
-        // An empty `<span></span>` the AUTHOR wrote still forms a line of strut
-        // height. Only provenance separates it from a split's fragment, which
-        // is why the box carries a flag rather than being judged by shape.
+        // An empty `<span></span>` collapses its line too (§9.4.2, and Chrome
+        // agrees), so this is zero — but one that PAINTS an edge does not,
+        // which is the distinction the rule actually turns on.
         Fixture f;
         CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
                     "#c { display: inline }"));
         CHECK(f.layout("<body><div id=w><span id=c></span></div></body>"));
-        CHECK(near(f.box("w").height, f.metrics.line_height(16)));
+        CHECK(near(f.box("w").height, 0));
+
+        Fixture g;
+        CHECK(g.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#c { display: inline; padding-left: 4px }"));
+        CHECK(g.layout("<body><div id=w><span id=c></span></div></body>"));
+        CHECK(near(g.box("w").height, g.metrics.line_height(16)));
     }
 }
