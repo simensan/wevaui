@@ -27,6 +27,7 @@
 #include "weva/positioning.h"
 #include "weva/style_resolver.h"
 #include "weva/user_agent_stylesheet.h"
+#include "weva_c.h"
 
 #include <algorithm>
 #include <chrono>
@@ -183,6 +184,52 @@ int main(int argc, char** argv) {
     // Attribution needs only one measured pass, and the capture makes the
     // timings meaningless anyway.
     if (g_profile && passes > 20) passes = 20;
+
+    bool full = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--full") full = true;
+    }
+
+    // `--full` times what a HOST actually pays when something changes: the
+    // whole of weva_document_update, cascade and paint included. The default
+    // mode times box building and layout alone, which is the narrower question
+    // of whether a layout data structure got faster.
+    //
+    // A game redraws a static document for free -- the host only updates when
+    // it marks the document dirty -- so this number is the cost of a change,
+    // and it is the one that decides whether a health bar can move every frame.
+    if (full) {
+        weva_config cfg{};
+        cfg.viewport_width = 1280;
+        cfg.viewport_height = 720;
+        cfg.use_user_agent_stylesheet = 1;
+        weva_document_t d = weva_document_create(&cfg);
+        if (!css.empty() && weva_document_add_css(d, css.data(), css.size()) != WEVA_OK) {
+            std::fprintf(stderr, "weva_bench: css rejected\n");
+            return 1;
+        }
+        if (weva_document_load_html(d, html.data(), html.size()) != WEVA_OK) {
+            std::fprintf(stderr, "weva_bench: html rejected\n");
+            return 1;
+        }
+        weva_document_update(d, 0);   // warm the atlas and the arenas
+        double best = 1e300, total = 0;
+        for (int i = 0; i < passes; ++i) {
+            const auto t0 = std::chrono::steady_clock::now();
+            weva_document_update(d, 0);
+            const auto t1 = std::chrono::steady_clock::now();
+            const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+            total += ms;
+            if (ms < best) best = ms;
+        }
+        size_t draws = 0, textures = 0;
+        weva_document_draws(d, &draws);
+        weva_document_textures(d, &textures);
+        std::printf("%-24s full update  best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures\n",
+                    argv[1], best, total / passes, draws, textures);
+        weva_document_destroy(d);
+        return 0;
+    }
 
     SymbolTable symbols;
     ParseOptions opts;

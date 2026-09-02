@@ -6,6 +6,9 @@
 #include "weva/glyph_atlas.h"
 #include "weva/tessellate.h"
 
+#include <map>
+#include <string>
+
 namespace weva {
 
 // Walks a laid-out box tree and issues draws through the render interface.
@@ -30,6 +33,43 @@ LinearColor resolve_color(const ComputedStyle* style, std::string_view property)
 // Everything paint needs beyond the box tree. A null font or atlas means text
 // is skipped and the rest still paints, so a host without a font backend gets
 // boxes rather than nothing.
+// Rasterized background and blur textures, kept ACROSS updates.
+//
+// A gradient layer is rasterized on the CPU into a texture and uploaded. Doing
+// that every update is what made a document expensive to change at all: the
+// canvas background alone is viewport-sized, so a page with nothing but a
+// `linear-gradient` body re-sampled 921,600 texels to move a number in a
+// corner. Measured on the sample corpus, layout was 0.1-3 ms and the whole
+// update 46-1361 ms, essentially all of it here.
+//
+// So a texture is keyed by everything that decides its pixels, and an entry
+// asked for again is reused -- which also spares the host a re-upload, since
+// the id it caches by does not change. Entries nothing asked for are released
+// at the end of the pass.
+class TextureCache {
+public:
+    // Null when absent. A hit marks the entry used for this pass.
+    TextureHandle get(const std::string& key);
+    void put(const std::string& key, TextureHandle texture);
+    // Called around a paint pass; end_pass releases whatever went unused.
+    void begin_pass();
+    void end_pass(RenderInterface* backend);
+    void release_all(RenderInterface* backend);
+    size_t size() const { return entries_.size(); }
+    // Diagnostics: how much of a pass the cache actually saved.
+    int hits() const { return hits_; }
+    int misses() const { return misses_; }
+
+private:
+    struct Entry {
+        TextureHandle texture;
+        bool used = false;
+    };
+    std::map<std::string, Entry> entries_;
+    int hits_ = 0;
+    int misses_ = 0;
+};
+
 struct PaintContext {
     RenderInterface* backend = nullptr;
     FontInterface* font = nullptr;
@@ -40,6 +80,9 @@ struct PaintContext {
     // that reference them, typically at the start of the next pass. Null
     // means paint leaks nothing it can avoid and generates them anyway.
     std::vector<TextureHandle>* owned_textures = nullptr;
+    // When set, rasterized backgrounds and blurs are cached here instead of
+    // being regenerated and released every pass.
+    TextureCache* texture_cache = nullptr;
 };
 
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,

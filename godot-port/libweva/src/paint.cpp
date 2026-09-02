@@ -16,6 +16,49 @@
 
 namespace weva {
 
+TextureHandle TextureCache::get(const std::string& key) {
+    auto it = entries_.find(key);
+    if (it == entries_.end()) {
+        ++misses_;
+        return {};
+    }
+    it->second.used = true;
+    ++hits_;
+    return it->second.texture;
+}
+
+void TextureCache::put(const std::string& key, TextureHandle texture) {
+    entries_[key] = Entry{texture, true};
+}
+
+void TextureCache::begin_pass() {
+    hits_ = 0;
+    misses_ = 0;
+    for (auto& kv : entries_) kv.second.used = false;
+}
+
+void TextureCache::end_pass(RenderInterface* backend) {
+    if (std::getenv("WEVA_CACHE_LOG"))
+        std::fprintf(stderr, "[cache] hits %d misses %d entries %zu\n", hits_, misses_,
+                     entries_.size());
+
+    for (auto it = entries_.begin(); it != entries_.end();) {
+        if (it->second.used) {
+            ++it;
+            continue;
+        }
+        if (backend) backend->release_texture(it->second.texture);
+        it = entries_.erase(it);
+    }
+}
+
+void TextureCache::release_all(RenderInterface* backend) {
+    if (backend) {
+        for (auto& kv : entries_) backend->release_texture(kv.second.texture);
+    }
+    entries_.clear();
+}
+
 // A clip in force for a subtree: `clip-path`, or the rounded padding box of an
 // `overflow: hidden` box. Chained through the parent so nested clips all
 // apply; shared by the PaintState copies below rather than copied per box.
@@ -646,6 +689,55 @@ bool clips_children(const ComputedStyle* style) {
     return false;
 }
 
+
+// Everything that decides a rasterized layer's pixels, as a string. Cheap
+// beside the rasterization it avoids -- which is a texel per pixel of the box,
+// and viewport-sized for the canvas.
+std::string background_key(const ComputedStyle* style, const LinearColor& color, double w,
+                           double h, const BorderRadii& radii, double font_size, double blur,
+                           const ColorFilter* filter) {
+    std::string k;
+    k.reserve(128);
+    const auto num = [&](double v) {
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%.3f;", v);
+        k += buf;
+    };
+    num(w);
+    num(h);
+    num(font_size);
+    num(blur);
+    num(color.r);
+    num(color.g);
+    num(color.b);
+    num(color.a);
+    const CornerRadius corners[4] = {radii.top_left, radii.top_right, radii.bottom_right,
+                                     radii.bottom_left};
+    for (const CornerRadius& c : corners) {
+        num(c.x_radius);
+        num(c.y_radius);
+    }
+    // The raw CSS decides the layers, and it is already a string. Keying on the
+    // parsed form would mean serialising every gradient stop by hand and
+    // getting it wrong the first time a property grew a field.
+    for (const char* prop : {"background-image", "background-position", "background-size",
+                             "background-repeat", "color"}) {
+        k += get(style, prop);
+        k += '|';
+    }
+    // A colour filter rewrites the texels, so two boxes alike but for their
+    // filter are not the same texture.
+    if (filter) {
+        for (int r = 0; r < 3; ++r) {
+            for (int c = 0; c < 3; ++c) num(filter->m[r][c]);
+            num(filter->add[r]);
+        }
+        num(filter->alpha);
+    }
+    return k;
+}
+
+
 // Where paint is: the accumulated opacity and the scissor in force.
 struct PaintState {
     double opacity = 1;
@@ -1273,17 +1365,30 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
                               const Rect& area, const BorderRadii& radii, const LayoutContext& ctx,
                               double font_size, const PaintContext& paint, double opacity = 1,
                               const Transform2D* xf = nullptr, const ClipNode* clip = nullptr,
-                              const ColorFilter* filter = nullptr) {
+                              const ColorFilter* filter = nullptr,
+                              const ComputedStyle* style = nullptr) {
     if (!has_gradient_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
         return false;
     }
     const int tex_w = static_cast<int>(std::min(1024.0, std::ceil(area.width)));
     const int tex_h = static_cast<int>(std::min(1024.0, std::ceil(area.height)));
-    std::vector<uint8_t> rgba;
-    rasterize_background(layers, color, area.width, area.height, tex_w, tex_h, ctx, font_size, &rgba);
-    if (filter) filter_rgba(&rgba, *filter);
-    const TextureHandle tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
-    if (paint.owned_textures) paint.owned_textures->push_back(tex);
+    // Rasterizing is a texel per pixel of the box, so an unchanged background
+    // is looked up rather than redrawn. See TextureCache.
+    std::string key;
+    TextureHandle tex;
+    if (paint.texture_cache && style) {
+        key = background_key(style, color, area.width, area.height, radii, font_size, 0, filter);
+        tex = paint.texture_cache->get(key);
+    }
+    if (!tex) {
+        std::vector<uint8_t> rgba;
+        rasterize_background(layers, color, area.width, area.height, tex_w, tex_h, ctx, font_size,
+                             &rgba);
+        if (filter) filter_rgba(&rgba, *filter);
+        tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+        if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
+        else if (paint.owned_textures) paint.owned_textures->push_back(tex);
+    }
 
     Mesh mesh;
     // Antialiased like any other fill. It is tempting to think the rasterized
@@ -1330,6 +1435,32 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
                                const Transform2D* xf, const ClipNode* clip,
                                const ColorFilter* filter) {
     if (!paint.font || !paint.atlas || !paint.backend || text.empty()) return false;
+
+    // The blurred image depends on the run and the shadow, not on where the
+    // run sits, so a glow that has not changed is blurred once. Neon-style
+    // pages stack several of these and they were the whole cost of a pass.
+    std::string key;
+    if (paint.texture_cache) {
+        char buf[128];
+        std::snprintf(buf, sizeof(buf), "ts|%.3f;%.3f;%llu;%.3f;%.4f;%.4f;%.4f;%.4f;%.3f;%.3f|",
+                      font_size, letter_spacing, static_cast<unsigned long long>(face.id), sh.blur,
+                      sh.color.r, sh.color.g, sh.color.b, sh.color.a, sh.x, sh.y);
+        key = buf;
+        if (filter) {
+            for (int r = 0; r < 3; ++r) {
+                for (int c = 0; c < 3; ++c) {
+                    std::snprintf(buf, sizeof(buf), "%.4f;", filter->m[r][c]);
+                    key += buf;
+                }
+                std::snprintf(buf, sizeof(buf), "%.4f;", filter->add[r]);
+                key += buf;
+            }
+            std::snprintf(buf, sizeof(buf), "%.4f|", filter->alpha);
+            key += buf;
+        }
+        key.append(text);
+    }
+
     std::vector<ShapedGlyph> glyphs;
     paint.font->shape(face, text, font_size, &glyphs);
     if (glyphs.empty()) return false;
@@ -1362,6 +1493,20 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
     // A run wider than the atlas is not worth a buffer this size; the caller's
     // fallback is wrong but bounded, which is better than a huge allocation.
     if (w <= 0 || h <= 0 || static_cast<long long>(w) * h > 16LL * 1024 * 1024) return false;
+
+    TextureHandle cached;
+    if (!key.empty()) cached = paint.texture_cache->get(key);
+    if (cached) {
+        const Rect area(x + sh.x + lo_x - pad, baseline_y + sh.y + lo_y - pad, w, h);
+        Mesh mesh;
+        tessellate_rect(area, LinearColor::white(), &mesh, false);
+        for (Vertex& v : mesh.vertices) {
+            v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
+                           static_cast<float>((v.position.y - area.y) / area.height)};
+        }
+        draw_mesh(mesh, paint.backend, cached, opacity, xf, clip, nullptr);
+        return true;
+    }
 
     std::vector<uint8_t> rgba(static_cast<size_t>(w) * h * 4, 0);
     const std::vector<uint8_t>& atlas = paint.atlas->pixels();
@@ -1404,7 +1549,8 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
     blur_rgba(&rgba, w, h, sigma);
 
     const TextureHandle tex = paint.backend->generate_texture(rgba, {w, h});
-    if (paint.owned_textures) paint.owned_textures->push_back(tex);
+    if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
+    else if (paint.owned_textures) paint.owned_textures->push_back(tex);
     const Rect area(x + sh.x + lo_x - pad, baseline_y + sh.y + lo_y - pad, w, h);
     Mesh mesh;
     tessellate_rect(area, LinearColor::white(), &mesh, false);
@@ -1479,12 +1625,23 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             const int tex_w = std::max(1, static_cast<int>(std::ceil(full_w * scale)));
             const int tex_h = std::max(1, static_cast<int>(std::ceil(full_h * scale)));
             const int pad = static_cast<int>(std::round(pad_px * scale));
-            std::vector<uint8_t> rgba;
-            rasterize_background_padded(layers, bg, b.width, b.height, tex_w, tex_h, pad, &radii, ctx,
-                                        fs, &rgba);
-            blur_rgba(&rgba, tex_w, tex_h, blur * scale);
-            const TextureHandle tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
-            if (paint.owned_textures) paint.owned_textures->push_back(tex);
+            // Blurring is the most expensive thing paint does, so a box whose
+            // blurred image has not changed reuses it. See TextureCache.
+            std::string key;
+            TextureHandle tex;
+            if (paint.texture_cache && b.style) {
+                key = background_key(b.style, bg, b.width, b.height, radii, fs, blur, nullptr);
+                tex = paint.texture_cache->get(key);
+            }
+            if (!tex) {
+                std::vector<uint8_t> rgba;
+                rasterize_background_padded(layers, bg, b.width, b.height, tex_w, tex_h, pad, &radii,
+                                            ctx, fs, &rgba);
+                blur_rgba(&rgba, tex_w, tex_h, blur * scale);
+                tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+                if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
+                else if (paint.owned_textures) paint.owned_textures->push_back(tex);
+            }
             const Rect area(x - pad_px, y - pad_px, full_w, full_h);
             Mesh mesh;
             // The blurred image supplies its own soft edge; a feather would
@@ -1575,7 +1732,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         if (has_gradient_layer(layers)) {
             background_done = paint_layered_background(
                 layers, resolve_color(b.style, "background-color"), border_box, radii, ctx, fs, paint,
-                state.opacity, xf, state.clip.get(), state.filter.get());
+                state.opacity, xf, state.clip.get(), state.filter.get(), b.style);
         }
     }
 
@@ -1860,7 +2017,11 @@ BoxId paint_canvas(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     const double fs = font_size_px(b.style, ps, ctx);
     const Rect canvas(0, 0, ctx.viewport_width_px, ctx.viewport_height_px);
     const LinearColor color = resolve_color(b.style, "background-color");
-    if (!paint_layered_background(layers_of(b), color, canvas, BorderRadii::zero(), ctx, fs, paint) &&
+    // The style is passed so the canvas can be cached: it is the one texture
+    // that is always viewport-sized, and re-rasterizing it was the single
+    // largest cost in an update on every page that has a gradient body.
+    if (!paint_layered_background(layers_of(b), color, canvas, BorderRadii::zero(), ctx, fs, paint,
+                                  1, nullptr, nullptr, nullptr, b.style) &&
         color.a > 0) {
         Mesh mesh;
         tessellate_rect(canvas, color, &mesh);

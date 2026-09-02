@@ -17,6 +17,9 @@
 #include <algorithm>
 
 #include <cstring>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <map>
 #include <tuple>
 #include <memory>
@@ -400,6 +403,11 @@ struct weva_document {
     // layers). Released at the start of the next update, once the host has
     // had the frame.
     std::vector<TextureHandle> transient_textures;
+    // Rasterized gradient and blur textures, kept across updates and released
+    // when a pass stops asking for them. Without this a document costs its
+    // whole background rasterization on every change, which is most of what an
+    // update costs at all.
+    TextureCache textures;
 
     RenderInterface* render_backend() {
         return host_render ? static_cast<RenderInterface*>(host_render.get()) : &backend;
@@ -513,7 +521,15 @@ weva_document_t weva_document_create(const weva_config* config) {
     return d;
 }
 
-void weva_document_destroy(weva_document_t doc) { delete doc; }
+void weva_document_destroy(weva_document_t doc) {
+    // Cached textures outlive a pass, so the host is told to drop them here
+    // rather than leaking them for the life of the process.
+    if (doc) {
+        doc->textures.release_all(doc->render_backend());
+        for (TextureHandle t : doc->transient_textures) doc->render_backend()->release_texture(t);
+    }
+    delete doc;
+}
 
 weva_status weva_document_load_html(weva_document_t doc, const char* html, size_t length) {
     if (!doc || (!html && length > 0)) return WEVA_ERR_INVALID_ARGUMENT;
@@ -551,10 +567,16 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
 
 void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     if (!doc || width <= 0 || height <= 0) return;
+    if (width == doc->config.viewport_width && height == doc->config.viewport_height) return;
     doc->config.viewport_width = width;
     doc->config.viewport_height = height;
     doc->ctx.viewport_width_px = width;
     doc->ctx.viewport_height_px = height;
+    // A cached texture is keyed by the box's own size and style, which does not
+    // capture a viewport unit INSIDE a gradient -- a `50vw` stop on a
+    // fixed-width box would survive a resize it should not. Dropping the cache
+    // on a resize is exact and costs one pass.
+    doc->textures.release_all(doc->render_backend());
 }
 
 weva_status weva_document_content_size(weva_document_t doc, double* out_width,
@@ -569,21 +591,38 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     if (!doc->doc) return WEVA_ERR_NOT_FOUND;
 
+    // WEVA_STAGE_LOG breaks an update into its four stages. A whole-update
+    // number says a change is slow; it does not say which half to look at, and
+    // the answer moved once the texture cache landed.
+    const bool stage_log = std::getenv("WEVA_STAGE_LOG") != nullptr;
+    const auto now = [] { return std::chrono::steady_clock::now(); };
+    auto t0 = now();
+    const auto lap = [&](const char* what) {
+        if (!stage_log) return;
+        const auto t = now();
+        std::fprintf(stderr, "  %-12s %7.3f ms\n", what,
+                     std::chrono::duration<double, std::milli>(t - t0).count());
+        t0 = t;
+    };
+
     doc->styles.clear();
     for (const Ref<Node>& c : doc->doc->children()) {
         if (c->node_type() == NodeType::Element) {
             doc->styles.walk(static_cast<const Element&>(*c), nullptr);
         }
     }
+    lap("cascade");
 
     doc->tree.reset();
     BoxBuilder builder(&doc->tree, &doc->styles);
     doc->root = builder.build_document(*doc->doc);
     if (doc->root == kNoBox) return WEVA_ERR_INTERNAL;
+    lap("boxes");
 
     BlockLayout block(&doc->tree, doc->ctx, &doc->metrics_backend());
     block.layout_root(doc->root, doc->ctx.viewport_width_px, doc->ctx.viewport_height_px);
     run_positioning(&doc->tree, doc->root, doc->ctx, &block);
+    lap("layout");
 
     for (TextureHandle t : doc->transient_textures) doc->render_backend()->release_texture(t);
     doc->transient_textures.clear();
@@ -594,7 +633,11 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     paint.atlas = &doc->atlas;
     paint.face = doc->face;
     paint.owned_textures = &doc->transient_textures;
+    paint.texture_cache = &doc->textures;
+    doc->textures.begin_pass();
     paint_tree(doc->tree, doc->root, doc->ctx, paint);
+    doc->textures.end_pass(doc->render_backend());
+    lap("paint");
 
     // With a host backend registered the host issued its own draws, so there
     // is no collected list to publish and the accessors correctly report none.
