@@ -528,29 +528,34 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             LinearColor c = sh.color;
             c.a = static_cast<float>(std::min(1.0, alpha));
 
-            // CSS Backgrounds L3 §7.1 says an outer shadow is drawn outside the
-            // border edge only, and filling the rect lets it show through a
-            // translucent background — vendor's cards are `rgba(..., 0.92)` and
-            // Chrome renders their interiors flat where this tints them.
+            // CSS Backgrounds L3 §7.1: an outer shadow is drawn OUTSIDE the
+            // border edge only. Filling the whole rect is invisible under an
+            // opaque background but wrong under anything else — vendor's cards
+            // are `rgba(22, 16, 40, 0.92)`, so 8% of the shadow showed through
+            // and tinted each one by its rarity glow, where Chrome renders them
+            // flat.
             //
-            // Knocking the border box out by tessellating the ring between the
-            // shadow rect and the box has now been tried TWICE and reverted
-            // twice. It fixes the interiors exactly (144,141,151 against
-            // Chrome's 144,142,151) and loses the shadow OUTSIDE the box
-            // entirely: white at 15, 25 and 35px out where Chrome has 249, 240
-            // and 222, and a spread-only ring gone completely. Losing shadows
-            // outright is the worse error, since the bleed is invisible under
-            // an opaque background.
+            // The knockout is the ring a border already tessellates. The widths
+            // are how far the shadow rect reaches past the border box on each
+            // side, which an offset makes asymmetric and can drive to zero on
+            // the side the shadow moves away from.
             //
-            // What is NOT the cause: tessellate_border itself. Called directly
-            // with these parameters it returns a correct annulus — 8 vertices,
-            // 8 triangles, bounds exactly the outer rect, for grows of 39, 20,
-            // 5 and 1. Whatever breaks it happens between there and the
-            // rasteriser; the grown radii passed as `outer_radii` are the next
-            // thing to eliminate, since the isolated probe passed ZERO radii.
+            // This failed twice before, losing every shadow OUTSIDE the box as
+            // well. The cause was not here: tessellate_border returned an EMPTY
+            // mesh whenever a corner was rounded on the outer outline and square
+            // on the inner one, which is exactly this shape, since the grown
+            // radius equals the width. Fixed in tessellate.cpp.
+            const double left = std::max(0.0, border_box.x - r.x);
+            const double top = std::max(0.0, border_box.y - r.y);
+            const double right =
+                std::max(0.0, (r.x + r.width) - (border_box.x + border_box.width));
+            const double bottom =
+                std::max(0.0, (r.y + r.height) - (border_box.y + border_box.height));
+            if (left <= 0 && top <= 0 && right <= 0 && bottom <= 0) continue;
+            const LinearColor ring[4] = {c, c, c, c};
             Mesh mesh;
-            tessellate_rounded_rect(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
-                                    c, &mesh);
+            tessellate_border(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
+                              top, right, bottom, left, ring, &mesh);
             draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
         }
     }

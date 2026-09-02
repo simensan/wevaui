@@ -739,11 +739,19 @@ void test_box_shadow_layer_density() {
         "<body><div id=b></div></body>");
     CHECK(spread_only >= 1);
 
-    CHECK(narrow >= 8 && narrow <= 12);
-    // 90px of blur needs many more steps than the old fixed 12, or the
+    // These count the layers that actually DRAW, which is fewer than
+    // shadow_layers() returns: an outer shadow knocks the border box out of
+    // itself, so a layer whose rect has shrunk inside the box contributes
+    // nothing and is skipped. Roughly the inner third goes that way for an
+    // offset shadow. What matters for banding is the count of VISIBLE steps,
+    // and those are all still here — the ones that vanished were hidden under
+    // the element.
+    CHECK(narrow >= 6 && narrow <= 12);
+    // 90px of blur still needs many more steps than the old fixed 12, or the
     // falloff bands into visible rings (quests' outer panel).
-    CHECK(wide >= 40);
+    CHECK(wide >= 28);
     CHECK(wide <= 48);
+    CHECK(wide > narrow);
 }
 
 void test_font_weight_resolution() {
@@ -761,4 +769,40 @@ void test_font_weight_resolution() {
     CHECK(resolve_font_italic(style("d")));
     CHECK(resolve_font_italic(style("e")));
     CHECK(!resolve_font_italic(style("n")));
+}
+
+// A border as thick as its own radius. Ordinary CSS, and it used to draw
+// NOTHING: tessellate_border zips an outer and an inner outline, the inner
+// radius collapses to zero when the width eats it, a zero radius emitted one
+// point where a rounded corner emits `segments + 1`, and the mismatched counts
+// made the function bail. The same shape is what an outer box-shadow's knockout
+// ring asks for, so the two were broken together.
+void test_border_as_thick_as_its_radius() {
+    const auto border_draws = [](const char* css, const char* html) {
+        Fixture f;
+        CHECK(f.css(css));
+        CHECK(f.layout(html));
+        RecordingBackend backend;
+        PaintContext paint;
+        paint.backend = &backend;
+        paint_tree(f.tree, f.root, f.ctx, paint);
+        int n = 0;
+        for (const RecordingBackend::Draw& d : backend.draws) {
+            if (d.geometry.vertices.empty() || d.texture != 0) continue;
+            const LinearColor c = d.geometry.vertices[0].color;
+            // The border is the opaque red one.
+            if (c.r > 0.4f && c.g == 0 && c.b == 0 && c.a == 1) ++n;
+        }
+        return n;
+    };
+    CHECK(border_draws(
+              "html, body { margin: 0 } #b { width: 200px; height: 120px;"
+              " border-radius: 20px; border: 20px solid #c00 }",
+              "<body><div id=b></div></body>") >= 1);
+    // And the ordinary case, where the radius is larger than the border, keeps
+    // working — that one always zipped cleanly.
+    CHECK(border_draws(
+              "html, body { margin: 0 } #b { width: 200px; height: 120px;"
+              " border-radius: 40px; border: 10px solid #c00 }",
+              "<body><div id=b></div></body>") >= 1);
 }

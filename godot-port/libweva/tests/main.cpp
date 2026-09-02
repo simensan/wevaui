@@ -158,6 +158,7 @@ void test_table_row_groups_and_captions();
 void test_table_visibility_collapse_and_column_hints();
 void test_grid_stretched_rows_feed_back_into_columns();
 void test_background_shorthand();
+void test_border_as_thick_as_its_radius();
 void test_gradient_parsing();
 void test_gradient_sampling();
 void test_background_rasterize_layers();
@@ -376,6 +377,7 @@ int main() {
     test_table_visibility_collapse_and_column_hints();
     test_grid_stretched_rows_feed_back_into_columns();
     test_background_shorthand();
+    test_border_as_thick_as_its_radius();
     test_gradient_parsing();
     test_gradient_sampling();
     test_background_rasterize_layers();

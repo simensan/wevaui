@@ -21,11 +21,20 @@ Vertex vert(double x, double y, const LinearColor& c) {
 // Points along one corner's arc, from `start_angle` sweeping 90 degrees.
 // `cx, cy` is the ellipse centre and `rx, ry` its radii.
 void arc_points(double cx, double cy, double rx, double ry, double start_angle, int segments,
-                std::vector<std::pair<double, double>>* out) {
+                std::vector<std::pair<double, double>>* out, bool uniform_corner_points = false) {
     if (rx <= 0 || ry <= 0) {
         // A square corner is a single point, so a zero radius costs nothing
         // extra — which matters because most boxes have no radius at all.
-        out->emplace_back(cx, cy);
+        //
+        // `uniform_corner_points` overrides that for a caller zipping two
+        // outlines together: it needs both to have the SAME point count, and a
+        // square corner opposite a rounded one otherwise breaks the pairing.
+        // The extra points are coincident, so the shape is identical.
+        if (!uniform_corner_points) {
+            out->emplace_back(cx, cy);
+            return;
+        }
+        for (int i = 0; i <= segments; ++i) out->emplace_back(cx, cy);
         return;
     }
     for (int i = 0; i <= segments; ++i) {
@@ -37,19 +46,21 @@ void arc_points(double cx, double cy, double rx, double ry, double start_angle, 
 // The outline of a rounded rect, clockwise from the top-left corner in screen
 // coordinates (y down).
 std::vector<std::pair<double, double>> rounded_outline(const Rect& r, const BorderRadii& radii,
-                                                       int segments) {
+                                                       int segments,
+                                                       bool uniform_corner_points = false) {
     const BorderRadii c = clamp_radii_to_rect(radii, r.width, r.height);
     std::vector<std::pair<double, double>> pts;
     pts.reserve(static_cast<size_t>(4 * (segments + 1)));
+    const bool u = uniform_corner_points;
     // Angles run from pi (left) round to pi/2 (down) because y grows downward.
     arc_points(r.x + c.top_left.x_radius, r.y + c.top_left.y_radius, c.top_left.x_radius,
-               c.top_left.y_radius, kPi, segments, &pts);
+               c.top_left.y_radius, kPi, segments, &pts, u);
     arc_points(r.right() - c.top_right.x_radius, r.y + c.top_right.y_radius,
-               c.top_right.x_radius, c.top_right.y_radius, -kPi * 0.5, segments, &pts);
+               c.top_right.x_radius, c.top_right.y_radius, -kPi * 0.5, segments, &pts, u);
     arc_points(r.right() - c.bottom_right.x_radius, r.bottom() - c.bottom_right.y_radius,
-               c.bottom_right.x_radius, c.bottom_right.y_radius, 0, segments, &pts);
+               c.bottom_right.x_radius, c.bottom_right.y_radius, 0, segments, &pts, u);
     arc_points(r.x + c.bottom_left.x_radius, r.bottom() - c.bottom_left.y_radius,
-               c.bottom_left.x_radius, c.bottom_left.y_radius, kPi * 0.5, segments, &pts);
+               c.bottom_left.x_radius, c.bottom_left.y_radius, kPi * 0.5, segments, &pts, u);
     return pts;
 }
 
@@ -147,11 +158,22 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
                                                                    outer.height),
                                                 top, right, bottom, left);
 
-    const std::vector<std::pair<double, double>> o = rounded_outline(outer, outer_radii, segments);
-    const std::vector<std::pair<double, double>> i2 =
-        rounded_outline(inner, inner_radii, segments);
+    std::vector<std::pair<double, double>> o = rounded_outline(outer, outer_radii, segments);
+    std::vector<std::pair<double, double>> i2 = rounded_outline(inner, inner_radii, segments);
     // Both outlines walk the same corners with the same segment count, so they
-    // have matching vertex counts and can be zipped into a ring.
+    // normally have matching vertex counts and zip straight into a ring.
+    //
+    // They do NOT match when a corner is rounded on one outline and square on
+    // the other, because a zero radius collapses to a single point. That
+    // happens whenever the border is as thick as the radius — `border-radius:
+    // 20px; border: 20px` is ordinary CSS — and the mismatch used to return
+    // here, drawing NO BORDER AT ALL. Re-walk both with a uniform point count
+    // instead; the extra points on a square corner are coincident, so the shape
+    // is unchanged and only this path pays for them.
+    if (o.size() != i2.size()) {
+        o = rounded_outline(outer, outer_radii, segments, true);
+        i2 = rounded_outline(inner, inner_radii, segments, true);
+    }
     if (o.size() != i2.size() || o.empty()) return;
 
     const uint32_t base = static_cast<uint32_t>(out->vertices.size());
