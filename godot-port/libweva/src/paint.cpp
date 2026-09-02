@@ -220,6 +220,32 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
     backend->release_geometry(g);
 }
 
+// Asks the backend to filter what it has already painted, inside `shape`.
+//
+// The shape goes through the same transform and the same clip stack a fill
+// would, so a backdrop-filtered panel is confined by an ancestor's overflow
+// exactly as its background is. Opacity is deliberately NOT folded in: it
+// scales what the element paints, and the backdrop is not that.
+void filter_backdrop(const Mesh& shape, RenderInterface* backend, const BackdropEffect& effect,
+                     const Transform2D* xform = nullptr, const ClipNode* clip = nullptr) {
+    if (shape.empty()) return;
+    Mesh cur = shape;
+    if (xform) {
+        for (Vertex& v : cur.vertices) {
+            double x = 0, y = 0;
+            xform->apply(v.position.x, v.position.y, &x, &y);
+            v.position = {static_cast<float>(x), static_cast<float>(y)};
+        }
+    }
+    for (const ClipNode* n = clip; n; n = n->parent.get()) {
+        Mesh tmp;
+        clip_triangles_polygon(cur.vertices, cur.indices, n->polygon, &tmp);
+        cur = std::move(tmp);
+        if (cur.empty()) return;
+    }
+    backend->filter_backdrop(cur.vertices, cur.indices, effect);
+}
+
 // ---- transform (CSS Transforms L1) ---------------------------------------
 
 // `<transform-list>` applied about `transform-origin`, as a matrix in the
@@ -395,8 +421,10 @@ bool clips_background_to_text(const ComputedStyle* style) {
 }
 
 // `filter: blur(<length>)` — the one filter painted; the rest pass through.
-double blur_filter_radius(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
-    const std::string_view raw = get(style, "filter");
+// `property` is "filter" or "backdrop-filter", which share a grammar.
+double blur_filter_radius(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+                          const char* property = "filter") {
+    const std::string_view raw = get(style, property);
     const size_t at = raw.find("blur(");
     if (at == std::string_view::npos) return 0;
     const size_t close = raw.find(')', at);
@@ -634,8 +662,9 @@ std::vector<std::string_view> split_ws(std::string_view s);
 // The colour functions and drop-shadow()s of a `filter` list, in order.
 // Returns false when the list has none of them.
 bool parse_color_filter(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
-                        ColorFilter* out, std::vector<Shadow>* drop_shadows) {
-    const std::string_view raw = get(style, "filter");
+                        ColorFilter* out, std::vector<Shadow>* drop_shadows,
+                        const char* property = "filter") {
+    const std::string_view raw = get(style, property);
     if (raw.empty() || ci_equal(raw, "none")) return false;
     bool any = false;
     size_t i = 0;
@@ -1373,6 +1402,34 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                                 state.clip.get(), state.filter.get());
         }
         paint_outer_shadows(shadows, border_box, radii, paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
+    }
+
+    // `backdrop-filter` (Filter Effects L2 §2): filter everything already
+    // painted behind the box, inside its border box, then let the box paint
+    // over the result. It goes here — after the shadows, before the background
+    // — because the shadows are cast onto the backdrop and the background is
+    // the first thing that sits ON the filtered image.
+    //
+    // This is the only effect the core cannot decompose into triangles, since
+    // it reads the destination; see RenderInterface::filter_backdrop. A backend
+    // that does not implement it renders the box without its material.
+    if (decorated && b.style && !hidden && b.width > 0 && b.height > 0) {
+        BackdropEffect effect;
+        effect.blur_radius = blur_filter_radius(b.style, ctx, fs, "backdrop-filter");
+        ColorFilter cf;
+        std::vector<Shadow> ignored;   // drop-shadow() in a backdrop-filter is not painted
+        if (parse_color_filter(b.style, ctx, fs, &cf, &ignored, "backdrop-filter")) {
+            for (int r = 0; r < 3; ++r) {
+                for (int c = 0; c < 3; ++c) effect.color.m[r][c] = cf.m[r][c];
+                effect.color.add[r] = cf.add[r];
+            }
+            effect.color.alpha = cf.alpha;
+        }
+        if (effect.blur_radius > 0 || !effect.color.is_identity()) {
+            Mesh shape;
+            tessellate_rounded_rect(border_box, radii, LinearColor::white(), &shape);
+            filter_backdrop(shape, paint.backend, effect, xf, state.clip.get());
+        }
     }
 
     // A box whose background went onto the canvas (§14.2) does not paint it

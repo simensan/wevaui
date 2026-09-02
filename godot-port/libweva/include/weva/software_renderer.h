@@ -40,6 +40,10 @@ public:
     void set_scissor(const Recti* rect) override;
     void set_transform(const Transform2D* transform) override;
 
+    void filter_backdrop(const std::vector<Vertex>& vertices,
+                         const std::vector<uint32_t>& indices,
+                         const BackdropEffect& effect) override;
+
 private:
     struct Geometry {
         std::vector<Vertex> vertices;
@@ -52,6 +56,13 @@ private:
 
     void raster_triangle(const Vertex& a, const Vertex& b, const Vertex& c, const Texture* tex);
     void blend(int x, int y, const LinearColor& src);
+
+    // While this is set, the triangle walk accumulates COVERAGE into it over
+    // `coverage_rect_` instead of painting. It is how filter_backdrop reuses
+    // the rasterizer to find the shape it has to stay inside, rather than
+    // carrying a second, subtly different one.
+    std::vector<float>* coverage_ = nullptr;
+    Recti coverage_rect_;
 
     int width_, height_;
     // sRGB-ENCODED, PREMULTIPLIED components, despite the element type.

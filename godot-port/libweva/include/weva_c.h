@@ -71,6 +71,27 @@ typedef struct weva_vertex {
     float u, v;
 } weva_vertex;
 
+/* What a draw asks the host to do. A host that only handles GEOMETRY still
+ * renders: skipping the others loses an effect, not the page. */
+typedef enum weva_draw_kind {
+    WEVA_DRAW_GEOMETRY = 0,
+    /* `backdrop-filter`. The vertices and indices are the SHAPE to filter
+     * inside rather than geometry to paint, and `backdrop` says what to do to
+     * what is already in the target there. See RenderInterface::filter_backdrop
+     * for why this cannot be expressed as triangles. */
+    WEVA_DRAW_BACKDROP_FILTER = 1
+} weva_draw_kind;
+
+/* The colour functions of a filter list composed into one affine transform in
+ * sRGB, so a host never parses CSS. Row-major 3x3, then the offsets. */
+typedef struct weva_backdrop_effect {
+    /* A CSS blur RADIUS, not a sigma; the sigma is half of it. */
+    double blur_radius;
+    float color_matrix[9];
+    float color_offset[3];
+    float color_alpha;
+} weva_backdrop_effect;
+
 typedef struct weva_draw {
     const weva_vertex* vertices;
     size_t vertex_count;
@@ -81,6 +102,11 @@ typedef struct weva_draw {
     /* Set when this draw is clipped; all four are zero otherwise. */
     int32_t scissor_x, scissor_y, scissor_width, scissor_height;
     int32_t has_scissor;
+    /* One of weva_draw_kind. Zero, so a host reading an older layout of this
+     * struct sees every draw as ordinary geometry. */
+    int32_t kind;
+    /* Only meaningful when kind is WEVA_DRAW_BACKDROP_FILTER. */
+    weva_backdrop_effect backdrop;
 } weva_draw;
 
 /* A texture the host must create before issuing the draws that reference it.

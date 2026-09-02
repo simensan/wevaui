@@ -1,5 +1,7 @@
 #include "weva/software_renderer.h"
 
+#include "weva/background.h"
+
 #include <algorithm>
 #include <cmath>
 
@@ -135,6 +137,22 @@ void SoftwareRenderer::blend(int x, int y, const LinearColor& src) {
             return;
         }
     }
+    if (coverage_) {
+        // Coverage pass: the same walk, the same fill rule and the same scissor,
+        // recording where the shape lands instead of painting it. Taking the
+        // max rather than accumulating matters because the core's meshes share
+        // edges — a fan and a ring are both built from them — and a seam pixel
+        // claimed by two triangles must not read as twice covered.
+        if (x < coverage_rect_.x || y < coverage_rect_.y ||
+            x >= coverage_rect_.x + coverage_rect_.width ||
+            y >= coverage_rect_.y + coverage_rect_.height) {
+            return;
+        }
+        float& c = (*coverage_)[static_cast<size_t>(y - coverage_rect_.y) * coverage_rect_.width +
+                                (x - coverage_rect_.x)];
+        c = std::max(c, std::min(1.0f, src.a));
+        return;
+    }
     LinearColor& dst = pixels_[static_cast<size_t>(y) * width_ + x];
     // Source-over onto a PREMULTIPLIED destination, in the ENCODED space —
     // `src` arrives encoded and straight-alpha from raster_triangle, and
@@ -217,6 +235,110 @@ void SoftwareRenderer::raster_triangle(const Vertex& v0, const Vertex& v1, const
                 col.a *= tex->rgba[o + 3] / 255.0f;
             }
             blend(x, y, col);
+        }
+    }
+}
+
+void SoftwareRenderer::filter_backdrop(const std::vector<Vertex>& vertices,
+                                       const std::vector<uint32_t>& indices,
+                                       const BackdropEffect& effect) {
+    if (vertices.empty() || indices.size() < 3) return;
+    if (effect.blur_radius <= 0 && effect.color.is_identity()) return;
+
+    // The shape's device bounds, clamped to the target and to any scissor.
+    double lo_x = vertices[0].position.x, hi_x = lo_x;
+    double lo_y = vertices[0].position.y, hi_y = lo_y;
+    for (const Vertex& v : vertices) {
+        lo_x = std::min<double>(lo_x, v.position.x);
+        hi_x = std::max<double>(hi_x, v.position.x);
+        lo_y = std::min<double>(lo_y, v.position.y);
+        hi_y = std::max<double>(hi_y, v.position.y);
+    }
+    int x0 = std::max(0, static_cast<int>(std::floor(lo_x)));
+    int y0 = std::max(0, static_cast<int>(std::floor(lo_y)));
+    int x1 = std::min(width_, static_cast<int>(std::ceil(hi_x)));
+    int y1 = std::min(height_, static_cast<int>(std::ceil(hi_y)));
+    if (scissor_) {
+        x0 = std::max(x0, scissor_->x);
+        y0 = std::max(y0, scissor_->y);
+        x1 = std::min(x1, scissor_->x + scissor_->width);
+        y1 = std::min(y1, scissor_->y + scissor_->height);
+    }
+    if (x1 <= x0 || y1 <= y0) return;
+
+    const Recti shape{x0, y0, x1 - x0, y1 - y0};
+    std::vector<float> coverage(static_cast<size_t>(shape.width) * shape.height, 0.0f);
+
+    // Rasterize the shape into the mask through the ordinary triangle walk, so
+    // the corners it stays inside are the ones a fill would have produced.
+    coverage_ = &coverage;
+    coverage_rect_ = shape;
+    for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+        if (indices[i] >= vertices.size() || indices[i + 1] >= vertices.size() ||
+            indices[i + 2] >= vertices.size()) {
+            continue;
+        }
+        raster_triangle(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]],
+                        nullptr);
+    }
+    coverage_ = nullptr;
+
+    // A blur reaches beyond the shape, and the source for the pixels near its
+    // edge is OUTSIDE it. Read a padded region so the edge is not blurred
+    // against nothing, which would darken it into a halo.
+    const double sigma = effect.blur_radius / 2.0;
+    const int pad = effect.blur_radius > 0
+                        ? std::max(1, static_cast<int>(std::ceil(sigma * 3.0)))
+                        : 0;
+    const int rx0 = std::max(0, shape.x - pad);
+    const int ry0 = std::max(0, shape.y - pad);
+    const int rx1 = std::min(width_, shape.x + shape.width + pad);
+    const int ry1 = std::min(height_, shape.y + shape.height + pad);
+    const int rw = rx1 - rx0, rh = ry1 - ry0;
+    if (rw <= 0 || rh <= 0) return;
+
+    // The buffer is already sRGB-encoded and premultiplied, which is exactly
+    // what blur_rgba wants back after it un-premultiplies — and it is the space
+    // `filter: blur()` blurs in, so the two agree by construction.
+    std::vector<uint8_t> rgba(static_cast<size_t>(rw) * rh * 4);
+    const auto to_byte = [](float v) {
+        return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255.0f));
+    };
+    for (int y = 0; y < rh; ++y) {
+        for (int x = 0; x < rw; ++x) {
+            const LinearColor c = unpremultiply(pixels_[static_cast<size_t>(y + ry0) * width_ + (x + rx0)]);
+            uint8_t* p = rgba.data() + (static_cast<size_t>(y) * rw + x) * 4;
+            p[0] = to_byte(c.r);
+            p[1] = to_byte(c.g);
+            p[2] = to_byte(c.b);
+            p[3] = to_byte(c.a);
+        }
+    }
+    if (effect.blur_radius > 0) blur_rgba(&rgba, rw, rh, sigma);
+
+    // Then the colour transform, in sRGB, on the blurred result — the order
+    // `backdrop-filter: blur(26px) saturate(1.7)` asks for.
+    for (int y = shape.y; y < shape.y + shape.height; ++y) {
+        for (int x = shape.x; x < shape.x + shape.width; ++x) {
+            const float cov = coverage[static_cast<size_t>(y - shape.y) * shape.width + (x - shape.x)];
+            if (cov <= 0) continue;
+            const uint8_t* p = rgba.data() + (static_cast<size_t>(y - ry0) * rw + (x - rx0)) * 4;
+            float in[3] = {p[0] / 255.0f, p[1] / 255.0f, p[2] / 255.0f};
+            float out[3];
+            for (int i = 0; i < 3; ++i) {
+                out[i] = effect.color.m[i][0] * in[0] + effect.color.m[i][1] * in[1] +
+                         effect.color.m[i][2] * in[2] + effect.color.add[i];
+                out[i] = std::clamp(out[i], 0.0f, 1.0f);
+            }
+            const float a = std::clamp(p[3] / 255.0f * effect.color.alpha, 0.0f, 1.0f);
+            // Blend the filtered backdrop back over the original by coverage,
+            // so an antialiased edge does not step.
+            LinearColor& dst = pixels_[static_cast<size_t>(y) * width_ + x];
+            const LinearColor filtered(out[0] * a, out[1] * a, out[2] * a, a);
+            dst.r += (filtered.r - dst.r) * cov;
+            dst.g += (filtered.g - dst.g) * cov;
+            dst.b += (filtered.b - dst.b) * cov;
+            dst.a += (filtered.a - dst.a) * cov;
         }
     }
 }

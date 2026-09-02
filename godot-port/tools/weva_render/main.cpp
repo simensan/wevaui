@@ -151,6 +151,18 @@ int main(int argc, char** argv) {
         } else {
             renderer.set_scissor(nullptr);
         }
+        if (d.kind == WEVA_DRAW_BACKDROP_FILTER) {
+            // The vertices are the shape to filter inside, not geometry to paint.
+            weva::BackdropEffect effect;
+            effect.blur_radius = d.backdrop.blur_radius;
+            for (int r = 0; r < 3; ++r) {
+                for (int c = 0; c < 3; ++c) effect.color.m[r][c] = d.backdrop.color_matrix[r * 3 + c];
+                effect.color.add[r] = d.backdrop.color_offset[r];
+            }
+            effect.color.alpha = d.backdrop.color_alpha;
+            renderer.filter_backdrop(vertices, indices, effect);
+            continue;
+        }
         const weva::GeometryHandle geometry = renderer.compile_geometry(vertices, indices);
         renderer.render_geometry(geometry, {0, 0}, texture);
         renderer.release_geometry(geometry);

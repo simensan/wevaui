@@ -37,6 +37,8 @@ public:
         std::vector<uint32_t> indices;
         uint64_t texture = 0;
         std::optional<Recti> scissor;
+        int32_t kind = WEVA_DRAW_GEOMETRY;
+        BackdropEffect backdrop;
     };
 
     void begin_frame() {
@@ -81,6 +83,28 @@ public:
         draws.push_back(std::move(d));
     }
     void release_geometry(GeometryHandle g) override { geometry_.erase(g.id); }
+
+    void filter_backdrop(const std::vector<Vertex>& v, const std::vector<uint32_t>& i,
+                         const BackdropEffect& effect) override {
+        Draw d;
+        d.kind = WEVA_DRAW_BACKDROP_FILTER;
+        d.vertices = v;
+        d.indices = i;
+        d.backdrop = effect;
+        // Clipped into the shape the same way geometry is, so a host that
+        // cannot scissor still confines the effect correctly.
+        if (scissor_) {
+            Mesh clipped;
+            clip_triangles(d.vertices, d.indices,
+                           Rect(scissor_->x, scissor_->y, scissor_->width, scissor_->height),
+                           &clipped);
+            if (clipped.empty()) return;
+            d.vertices = std::move(clipped.vertices);
+            d.indices = std::move(clipped.indices);
+        }
+        d.scissor = scissor_;
+        draws.push_back(std::move(d));
+    }
 
     TextureHandle load_texture(std::string_view, Vec2i* out_size) override {
         if (out_size) *out_size = {0, 0};
@@ -547,6 +571,15 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
             v.scissor_y = d.scissor->y;
             v.scissor_width = d.scissor->width;
             v.scissor_height = d.scissor->height;
+        }
+        v.kind = d.kind;
+        if (d.kind == WEVA_DRAW_BACKDROP_FILTER) {
+            v.backdrop.blur_radius = d.backdrop.blur_radius;
+            for (int r = 0; r < 3; ++r) {
+                for (int c = 0; c < 3; ++c) v.backdrop.color_matrix[r * 3 + c] = d.backdrop.color.m[r][c];
+                v.backdrop.color_offset[r] = d.backdrop.color.add[r];
+            }
+            v.backdrop.color_alpha = d.backdrop.color.alpha;
         }
         doc->draw_views.push_back(v);
     }

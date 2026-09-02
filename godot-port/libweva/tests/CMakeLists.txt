@@ -42,6 +42,7 @@ add_executable(weva_tests
     test_c_abi.cpp
     test_table.cpp
     test_background.cpp
+    test_backdrop_filter.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)

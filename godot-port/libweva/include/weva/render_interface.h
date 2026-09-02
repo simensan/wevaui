@@ -54,6 +54,33 @@ struct FilterParams {
     LinearColor color;
 };
 
+// The colour functions of a `filter` list composed into one affine transform in
+// sRGB — brightness, contrast, grayscale, sepia, saturate, invert and opacity
+// all reduce to this (Filter Effects L1 §8), and the core composes them so a
+// backend never parses a filter list.
+struct ColorMatrix {
+    float m[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    float add[3] = {0, 0, 0};
+    float alpha = 1;
+
+    bool is_identity() const {
+        for (int r = 0; r < 3; ++r) {
+            for (int c = 0; c < 3; ++c) {
+                if (m[r][c] != (r == c ? 1.0f : 0.0f)) return false;
+            }
+            if (add[r] != 0) return false;
+        }
+        return alpha == 1;
+    }
+};
+
+// What `backdrop-filter` asks of a backend.
+struct BackdropEffect {
+    // A CSS blur RADIUS, not a sigma; the sigma is half of it, as for a shadow.
+    double blur_radius = 0;
+    ColorMatrix color;
+};
+
 class RenderInterface {
 public:
     virtual ~RenderInterface() = default;
@@ -87,6 +114,28 @@ public:
         return {};
     }
     virtual void release_filter(FilterHandle filter) { (void)filter; }
+
+    // Filters what has ALREADY been painted, within a shape.
+    //
+    // The one operation here that cannot be reduced to triangles. Everything
+    // else the core decomposes — a blur becomes a padded rasterize, a shadow
+    // becomes layers, a gradient becomes vertex colours — because it knows the
+    // shape being drawn. `backdrop-filter` reads the DESTINATION, which only
+    // the backend has, so the core can only say what to do and where.
+    //
+    // The where is a mesh in absolute coordinates, transformed and clipped by
+    // the core exactly like the mesh of any other draw, so a backend confines
+    // the effect to it the same way it fills it. The coverage is the shape's
+    // vertex alpha, which carries the rounded corners.
+    //
+    // A backend that does not implement this leaves the backdrop alone: the
+    // element then renders without its material rather than not at all, which
+    // is what every backend did before this existed.
+    virtual void filter_backdrop(const std::vector<Vertex>& vertices,
+                                 const std::vector<uint32_t>& indices,
+                                 const BackdropEffect& effect) {
+        (void)vertices; (void)indices; (void)effect;
+    }
 };
 
 } // namespace weva
