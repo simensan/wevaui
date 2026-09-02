@@ -90,6 +90,14 @@ public:
     void reset_cache_stats() { stats_ = CacheStats{}; }
     void invalidate_cache() { shape_cache_.clear(); }
 
+    // Whether any compiled selector can match on something other than the
+    // element's own subtree. Both are already tracked for the shape cache;
+    // they answer a second question too, which is how far an attribute change
+    // can reach. A sibling combinator lets it reach the elements after it; a
+    // :has() lets it reach its ancestors, and then anything they select.
+    bool has_sibling_selectors() const { return cache_unsafe_sibling_composition_; }
+    bool has_has_selectors() const { return cache_unsafe_has_; }
+
     // Collects every declaration matching `e`, already sorted so the last
     // entry wins. Exposed for DevTools-style cascade traces and for tests.
     std::vector<MatchedDeclaration> collect_matches(

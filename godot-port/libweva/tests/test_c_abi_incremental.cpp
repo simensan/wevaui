@@ -214,7 +214,102 @@ void check_mutation(const char* label, const char* attr_name, const char* attr_v
     weva_document_destroy(d);
 }
 
+// Mutates `selector` and checks the result against the same document built
+// from nothing, with a stylesheet of the caller's choosing.
+void check_with_sheet(const char* label, const char* html, const char* css, const char* selector,
+                      const char* attr, const char* value) {
+    weva_config c = config();
+    weva_document_t d = weva_document_create(&c);
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+    const weva_element_t e = weva_document_query(d, selector);
+    CHECK(e != WEVA_ELEMENT_NONE);
+    weva_element_set_attribute(d, e, attr, value);
+    weva_document_update(d, 0);
+    const Frame got = capture(d);
+
+    const Frame want = build(html, css, [&](weva_document_t f) {
+        weva_element_set_attribute(f, weva_document_query(f, selector), attr, value);
+    });
+    if (got != want) std::printf("  reach mismatch [%s]: %s\n", label, got.diff(want).c_str());
+    CHECK(got == want);
+    CHECK(!got.draws.empty());
+    weva_document_destroy(d);
+}
+
 }   // namespace
+
+// How far an attribute change is allowed to reach.
+//
+// A restyle confined to the touched element's subtree is only sound while no
+// selector can carry the change further. Two kinds can, and each gets a sheet
+// here that would leave a visibly stale document if the scope were wrong: a
+// sibling combinator, which reaches the elements AFTER the one that changed,
+// and :has(), which lets a descendant decide an ancestor's match and so puts
+// the whole document back in play.
+void test_abi_incremental_selector_reach() {
+    const char* html =
+        "<div id=wrap>"
+        "<p id=one>One</p><p id=two>Two</p><p id=three>Three</p>"
+        "<div id=host><span id=inner>Inner</span></div>"
+        "</div>";
+
+    // ---- `+` and `~`: changing `one` restyles what comes after it
+    {
+        const char* css =
+            "p { background: #222; color: #ddd; padding: 3px }"
+            ".mark + p { background: #b30 }"
+            ".mark ~ p { color: #ff0 }";
+        check_with_sheet("adjacent sibling", html, css, "#one", "class", "mark");
+        check_with_sheet("sibling from middle", html, css, "#two", "class", "mark");
+    }
+
+    // ---- :has(): changing a descendant restyles its ancestor
+    {
+        const char* css =
+            "div { padding: 4px; background: #123 }"
+            "span { background: #345; color: #eee }"
+            "#wrap:has(.lit) { background: #703 }"
+            "div:has(> .lit) { padding: 20px }";
+        check_with_sheet("has, from a descendant", html, css, "#inner", "class", "lit");
+    }
+
+    // ---- both at once, and a change deep in the tree
+    {
+        const char* css =
+            "p { padding: 2px } span { padding: 1px }"
+            ".on + p { background: #0a0 }"
+            "#wrap:has(.on) { border: 3px solid #f0f }";
+        check_with_sheet("sibling and has together", html, css, "#three", "class", "on");
+        check_with_sheet("deep element", html, css, "#inner", "class", "on");
+    }
+
+    // ---- several elements touched before one update
+    {
+        const char* css =
+            "p { background: #222; color: #ddd }"
+            ".a { background: #900 } .b { color: #0f0 }"
+            ".a + p { padding: 9px }";
+        weva_config c = config();
+        weva_document_t d = weva_document_create(&c);
+        weva_document_add_css(d, css, std::strlen(css));
+        weva_document_load_html(d, html, std::strlen(html));
+        weva_document_update(d, 0);
+        weva_element_set_attribute(d, weva_document_query(d, "#one"), "class", "a");
+        weva_element_set_attribute(d, weva_document_query(d, "#three"), "class", "b");
+        weva_document_update(d, 0);
+        const Frame got = capture(d);
+
+        const Frame want = build(html, css, [&](weva_document_t f) {
+            weva_element_set_attribute(f, weva_document_query(f, "#one"), "class", "a");
+            weva_element_set_attribute(f, weva_document_query(f, "#three"), "class", "b");
+        });
+        if (got != want) std::printf("  multi mismatch: %s\n", got.diff(want).c_str());
+        CHECK(got == want);
+        weva_document_destroy(d);
+    }
+}
 
 void test_abi_incremental_matches_fresh() {
     // ---- an update that changes nothing publishes the same frame

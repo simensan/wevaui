@@ -512,6 +512,12 @@ struct weva_document {
     // tell what an attribute did, but nothing can have changed if none was
     // touched -- and then even running the cascade is waste.
     bool dom_touched = false;
+    // The elements whose attributes were set since the last update. An
+    // attribute change reaches its own subtree, and -- when the sheets contain
+    // a sibling combinator -- the siblings after it. Nothing else, unless a
+    // :has() is about, which lets a descendant decide an ancestor's match and
+    // puts the whole document back in play.
+    std::vector<Element*> touched;
 
     RenderInterface* render_backend() {
         return host_render ? static_cast<RenderInterface*>(host_render.get()) : &backend;
@@ -667,6 +673,9 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     // can be reused and the walk would otherwise see a page of new elements.
     doc->styles.clear();
     doc->pending = Invalidation::Boxes;
+    // Those point at elements of the document just replaced.
+    doc->touched.clear();
+    doc->dom_touched = false;
     return WEVA_OK;
 }
 
@@ -746,16 +755,53 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     // have changed everything. `pending` comes back as the most invalidating
     // difference it found across the document.
     doc->styles.begin_pass();
-    for (const Ref<Node>& c : doc->doc->children()) {
-        if (c->node_type() == NodeType::Element) {
-            doc->styles.walk(static_cast<const Element&>(*c), nullptr);
+
+    // When the only thing that happened is that a host set some attributes,
+    // the walk can be confined to what those attributes can reach. Whether
+    // they can reach past their own subtree is a property of the SHEETS, and
+    // the cascade already knows it: it works the same fact out to decide
+    // whether its match cache is sound.
+    const bool scoped = doc->pending == Invalidation::None && !doc->touched.empty() &&
+                        doc->touched.size() < 64 && !doc->styles.engine.has_has_selectors();
+    if (scoped) {
+        const bool siblings_matter = doc->styles.engine.has_sibling_selectors();
+        for (Element* e : doc->touched) {
+            // The subtree, and from it whatever the sheets can carry forward.
+            const Node* from = e;
+            const Node* parent = e->parent();
+            const ComputedStyle* parent_style = nullptr;
+            if (parent && parent->node_type() == NodeType::Element) {
+                auto it = doc->styles.by_element.find(static_cast<const Element*>(parent));
+                if (it != doc->styles.by_element.end()) parent_style = it->second;
+            }
+            if (!parent) {
+                doc->styles.note_structural();   // detached: fall back
+                break;
+            }
+            bool started = false;
+            for (const Ref<Node>& c : parent->children()) {
+                if (c.get() == from) started = true;
+                if (!started) continue;
+                if (c->node_type() != NodeType::Element) continue;
+                doc->styles.walk(static_cast<const Element&>(*c), parent_style);
+                // Without a sibling combinator in the sheets, nothing after the
+                // touched element can have changed.
+                if (!siblings_matter) break;
+            }
+        }
+    } else {
+        for (const Ref<Node>& c : doc->doc->children()) {
+            if (c->node_type() == NodeType::Element) {
+                doc->styles.walk(static_cast<const Element&>(*c), nullptr);
+            }
+        }
+        // An element that was styled last pass and was not visited this one is
+        // gone from the DOM, which the walk cannot see from the inside.
+        if (doc->styles.visited != static_cast<int>(doc->styles.by_element.size())) {
+            doc->styles.note_structural();
         }
     }
-    // An element that was styled last pass and was not visited this one is
-    // gone from the DOM, which the walk cannot see from the inside.
-    if (doc->styles.visited != static_cast<int>(doc->styles.by_element.size())) {
-        doc->styles.note_structural();
-    }
+    doc->touched.clear();
     Invalidation pending = doc->styles.pending;
     // Anything a host did that the cascade cannot see -- a new stylesheet, a
     // resized viewport, a backend swap, the first update of all -- is recorded
@@ -926,6 +972,7 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     // function's. The selector match cache is keyed on element shape, so the
     // change lands on a different entry without being invalidated here.
     doc->dom_touched = true;
+    if (doc->touched.size() < 64) doc->touched.push_back(e);
     return WEVA_OK;
 }
 

@@ -274,6 +274,15 @@ int main(int argc, char** argv) {
         const std::string a = argv[i];
         if (a.rfind("--mutate=", 0) == 0) mutate = a.substr(9);
     }
+    // Which element the mutation lands on. It matters more than it looks: a
+    // restyle is confined to what the change can reach, so touching the
+    // outermost element restyles the document and touching a leaf restyles a
+    // leaf. `*` is the honest worst case; a real host moves a health bar.
+    std::string target_selector = "*";
+    for (int i = 1; i < argc; ++i) {
+        const std::string a = argv[i];
+        if (a.rfind("--target=", 0) == 0) target_selector = a.substr(9);
+    }
 
     // Arms the profiling timer around the timed region.
     const auto start_sampling = [&] {
@@ -328,7 +337,7 @@ int main(int argc, char** argv) {
         // sample works without knowing its markup.
         weva_element_t target = WEVA_ELEMENT_NONE;
         if (mutate != "none") {
-            target = weva_document_query(d, "*");
+            target = weva_document_query(d, target_selector.c_str());
             if (target == WEVA_ELEMENT_NONE) {
                 std::fprintf(stderr, "weva_bench: --mutate found no element\n");
                 return 1;
@@ -356,8 +365,8 @@ int main(int argc, char** argv) {
         size_t draws = 0, textures = 0;
         weva_document_draws(d, &draws);
         weva_document_textures(d, &textures);
-        std::printf("%-24s %-7s best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures\n",
-                    argv[1], mutate.c_str(), best, total / passes, draws, textures);
+        std::printf("%-20s %-7s %-10s best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures\n",
+                    argv[1], mutate.c_str(), target_selector.c_str(), best, total / passes, draws, textures);
         if (sample) report_sites("time samples", g_samples, 16);
         weva_document_destroy(d);
         return 0;
