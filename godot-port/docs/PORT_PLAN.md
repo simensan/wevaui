@@ -3344,6 +3344,48 @@ which points at gamma or a blend mode rather than geometry. All four hard
 failures also sit above 76% over-tolerance, so they may well share that cause
 on top of their own.
 
+### Seventeenth pass: the failing side of the render gate is the SOFTWARE one
+
+The backend gate compares weva_render against the Godot host, and it is easy to
+read a failure as a host bug. On these samples it is mostly the reverse.
+
+**paint.cpp linearises every colour into the draw list.** The Godot host then
+converts each vertex back with `linear_to_srgb()` before handing it over, so
+Godot interpolates and blends in sRGB — which is where CSS defines compositing
+and gradient interpolation, and what Chrome does. weva_render keeps the linear
+values, interpolates in linear and converts once at the end, so every gradient
+and every translucent overlay lands on different midtones.
+
+Measured against Chrome at 140 sampled points per page (mean per-channel
+difference, coarse but the contrast is not subtle):
+
+| sample | software vs Chrome | godot vs Chrome |
+|---|---|---|
+| neon | 41.6 | **1.2** |
+| hud | 18.0 | **2.1** |
+| match3 | 33.2 | **6.4** |
+| glass | 44.2 | 23.3 |
+| quests | 55.6 | 49.0 |
+
+So the host is already close to Chrome on most of the corpus, and the "differs
+a little almost everywhere" group — hud at 0.08% structural against 69.4%
+over-tolerance, and its four siblings — is weva_render's colour space, not
+anything the host does wrong. The transfer curve says the same: sampling hud by
+luminance, the two agree at the bright end (167->166.8, 184->184.1, 229->229.1)
+and diverge through the dark and middle (39->24.2, 87->48.7), which is what
+blending in the wrong space looks like.
+
+**Two things are genuinely open on the Godot side**, and only two:
+
+* `glass` (23.3 against Chrome) — backdrop-filter, which the host does not
+  implement. Known, and it needs BackBufferCopy plus a screen-texture shader.
+* `quests` (49.0) — BOTH backends are far from Chrome, so this is upstream of
+  the rasteriser rather than a backend difference. It has not been diagnosed.
+
+Fixing weva_render's colour space is the larger job — its framebuffer is linear
+end to end and its render tests carry expected values — so it is worth doing
+deliberately rather than as a side effect of chasing a sample.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
