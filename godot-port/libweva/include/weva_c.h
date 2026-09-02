@@ -79,8 +79,20 @@ typedef enum weva_draw_kind {
      * inside rather than geometry to paint, and `backdrop` says what to do to
      * what is already in the target there. See RenderInterface::filter_backdrop
      * for why this cannot be expressed as triangles. */
-    WEVA_DRAW_BACKDROP_FILTER = 1
+    WEVA_DRAW_BACKDROP_FILTER = 1,
+    /* A rounded rectangle, described as well as tessellated. The vertices are
+     * still a complete tessellation, so a host that ignores this kind draws
+     * the shape correctly; one that can evaluate a rounded box per pixel uses
+     * `rounded_rect` instead and gets exact coverage off two triangles. */
+    WEVA_DRAW_ROUNDED_RECT = 2
 } weva_draw_kind;
+
+/* Corner radii run clockwise from top-left, x then y. */
+typedef struct weva_rounded_rect {
+    double x, y, width, height;
+    double radii[4][2];
+    float r, g, b, a;
+} weva_rounded_rect;
 
 /* The colour functions of a filter list composed into one affine transform in
  * sRGB, so a host never parses CSS. Row-major 3x3, then the offsets. */
@@ -110,6 +122,8 @@ typedef struct weva_draw {
     int32_t kind;
     /* Only meaningful when kind is WEVA_DRAW_BACKDROP_FILTER. */
     weva_backdrop_effect backdrop;
+    /* Only meaningful when kind is WEVA_DRAW_ROUNDED_RECT. */
+    weva_rounded_rect rounded_rect;
 } weva_draw;
 
 /* A texture the host must create before issuing the draws that reference it.

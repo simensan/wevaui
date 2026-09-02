@@ -92,6 +92,12 @@ void WevaDocument::set_use_engine_font(bool use) {
     queue_redraw();
 }
 
+void WevaDocument::set_use_sdf_rects(bool use) {
+    if (use == use_sdf_rects_) return;
+    use_sdf_rects_ = use;
+    queue_redraw();
+}
+
 void WevaDocument::ensure_font_backend() {
     // Deliberately lazy rather than done in the constructor: ThemeDB may not be
     // up that early, and use_engine_font has to be settable before the first
@@ -137,7 +143,12 @@ void WevaDocument::ensure_font_backend() {
 WevaDocument::~WevaDocument() {
     if (doc_) weva_document_destroy(doc_);
     release_layers();
-    if (backdrop_shader_.is_valid()) RenderingServer::get_singleton()->free_rid(backdrop_shader_);
+    RenderingServer* rs_ = RenderingServer::get_singleton();
+    if (backdrop_shader_.is_valid()) rs_->free_rid(backdrop_shader_);
+    for (const RID& r : rounded_materials_) {
+        if (r.is_valid()) rs_->free_rid(r);
+    }
+    if (rounded_shader_.is_valid()) rs_->free_rid(rounded_shader_);
 }
 
 void WevaDocument::release_layers() {
@@ -170,6 +181,8 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_use_engine_font", "use"),
                          &WevaDocument::set_use_engine_font);
     ClassDB::bind_method(D_METHOD("get_use_engine_font"), &WevaDocument::get_use_engine_font);
+    ClassDB::bind_method(D_METHOD("set_use_sdf_rects", "use"), &WevaDocument::set_use_sdf_rects);
+    ClassDB::bind_method(D_METHOD("get_use_sdf_rects"), &WevaDocument::get_use_sdf_rects);
     ClassDB::bind_method(D_METHOD("has_engine_font"), &WevaDocument::has_engine_font);
     ClassDB::bind_method(D_METHOD("get_draw_count"), &WevaDocument::get_draw_count);
     ClassDB::bind_method(D_METHOD("get_triangle_count"), &WevaDocument::get_triangle_count);
@@ -184,6 +197,8 @@ void WevaDocument::_bind_methods() {
                  "get_document_size");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_engine_font"), "set_use_engine_font",
                  "get_use_engine_font");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_sdf_rects"), "set_use_sdf_rects",
+                 "get_use_sdf_rects");
 }
 
 void WevaDocument::_ready() {
@@ -266,6 +281,133 @@ void WevaDocument::update_document() {
     dirty_ = true;
     ensure_updated();
     queue_redraw();
+}
+
+// Evaluating a rounded box per pixel, which is what a rasterizer that only
+// takes triangles cannot do.
+//
+// The core's coverage ramp approximates the edge with a one-pixel band of
+// interpolated alpha. This computes the real thing: the signed distance to the
+// rounded box, divided by its own screen-space derivative, which is the exact
+// fractional coverage to well under a percent -- the same quantity Skia builds
+// its coverage mask from. It is also correct under any scale, where a baked
+// ramp is only correct at the scale it was baked for.
+static const char* kRoundedShader = R"(shader_type canvas_item;
+render_mode unshaded;
+
+uniform vec2 half_size;
+uniform vec4 radii;        // top-left, top-right, bottom-right, bottom-left
+uniform vec4 fill;
+
+varying vec2 local;
+
+void vertex() {
+    // UV carries the position within the quad, so the fragment stage can work
+    // in the shape's own coordinates whatever the canvas transform is.
+    local = (UV - vec2(0.5)) * (half_size * 2.0);
+}
+
+float sd_round_box(vec2 p, vec2 b, vec4 r) {
+    r.xy = (p.x > 0.0) ? r.xy : r.zw;
+    r.x = (p.y > 0.0) ? r.x : r.y;
+    vec2 q = abs(p) - b + r.x;
+    return min(max(q.x, q.y), 0.0) + length(max(q, vec2(0.0))) - r.x;
+}
+
+void fragment() {
+    float d = sd_round_box(local, half_size, radii);
+    // fwidth is how far d moves across one pixel, so d/fwidth(d) is the
+    // distance to the edge measured IN pixels however the quad is scaled.
+    float w = fwidth(d);
+    float cov = w > 0.0 ? clamp(0.5 - d / w, 0.0, 1.0) : (d <= 0.0 ? 1.0 : 0.0);
+    COLOR = vec4(fill.rgb, fill.a * cov);
+}
+)";
+
+RID WevaDocument::rounded_rect_material(const weva_rounded_rect& s) {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    if (!rounded_shader_.is_valid()) {
+        rounded_shader_ = rs->shader_create();
+        rs->shader_set_code(rounded_shader_, String(kRoundedShader));
+    }
+    // Pooled across frames: a material per rounded box per frame would churn
+    // hundreds of RIDs on a dashboard.
+    if (rounded_used_ >= rounded_materials_.size()) {
+        const RID m = rs->material_create();
+        rs->material_set_shader(m, rounded_shader_);
+        rounded_materials_.push_back(m);
+    }
+    const RID m = rounded_materials_[rounded_used_++];
+
+    rs->material_set_param(m, "half_size",
+                           Vector2(static_cast<real_t>(s.width * 0.5),
+                                   static_cast<real_t>(s.height * 0.5)));
+    // One radius per corner: the SDF takes a circular corner, so an elliptical
+    // one is approximated by its smaller axis. CSS rarely asks for an ellipse
+    // and this path declines the shape when it does (see draw_rounded_rect).
+    rs->material_set_param(m, "radii",
+                           Color(static_cast<real_t>(s.radii[0][0]), static_cast<real_t>(s.radii[1][0]),
+                                 static_cast<real_t>(s.radii[2][0]), static_cast<real_t>(s.radii[3][0])));
+    rs->material_set_param(m, "fill", Color(s.r, s.g, s.b, s.a).linear_to_srgb());
+    return m;
+}
+
+bool WevaDocument::draw_rounded_rect(const RID& item, const weva_draw& d) {
+    if (!use_sdf_rects_) return false;
+    const weva_rounded_rect& s = d.rounded_rect;
+    if (s.width <= 0 || s.height <= 0) return false;
+    // Elliptical corners are not what the SDF computes; hand those back so the
+    // tessellation draws them correctly rather than nearly.
+    for (int i = 0; i < 4; ++i) {
+        if (std::fabs(s.radii[i][0] - s.radii[i][1]) > 0.01) return false;
+    }
+
+    // One pixel of margin so the coverage ramp has somewhere to land.
+    const real_t pad = 1.0f;
+    const real_t x0 = static_cast<real_t>(s.x) - pad, y0 = static_cast<real_t>(s.y) - pad;
+    const real_t x1 = static_cast<real_t>(s.x + s.width) + pad;
+    const real_t y1 = static_cast<real_t>(s.y + s.height) + pad;
+    // UV runs 0..1 over the PADDED quad, and the shader maps it back through
+    // half_size, so the padding has to be part of the size it is told.
+    const real_t hx = (x1 - x0) * 0.5f, hy = (y1 - y0) * 0.5f;
+
+    RenderingServer* rs = RenderingServer::get_singleton();
+    const RID m = rounded_rect_material(s);
+    rs->material_set_param(m, "half_size", Vector2(hx - pad, hy - pad));
+
+    PackedVector2Array points;
+    PackedColorArray colors;
+    PackedVector2Array uvs;
+    points.resize(4);
+    colors.resize(4);
+    uvs.resize(4);
+    Vector2* pw = points.ptrw();
+    Color* cw = colors.ptrw();
+    Vector2* uw = uvs.ptrw();
+    const Vector2 corners[4] = {Vector2(x0, y0), Vector2(x1, y0), Vector2(x1, y1), Vector2(x0, y1)};
+    const Vector2 uv[4] = {Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)};
+    for (int i = 0; i < 4; ++i) {
+        pw[i] = corners[i];
+        cw[i] = Color(1, 1, 1, 1);
+        uw[i] = uv[i];
+    }
+    PackedInt32Array idx;
+    idx.resize(6);
+    int32_t* iw = idx.ptrw();
+    const int32_t order[6] = {0, 1, 2, 0, 2, 3};
+    for (int i = 0; i < 6; ++i) iw[i] = order[i];
+
+    // Its own canvas item, because a material is per item and the document is
+    // otherwise one item. That is the cost of this path and what the
+    // measurement has to weigh against the triangles it saves.
+    const RID quad = rs->canvas_item_create();
+    rs->canvas_item_set_parent(quad, item);
+    rs->canvas_item_set_material(quad, m);
+    rs->canvas_item_set_draw_index(quad, static_cast<int32_t>(layer_items_.size()));
+    layer_items_.push_back(quad);
+    rs->canvas_item_add_triangle_array(quad, idx, points, colors, uvs, PackedInt32Array(),
+                                       PackedFloat32Array(), RID());
+    return true;
 }
 
 void WevaDocument::add_triangles(const RID& item, const weva_draw& d) {
@@ -446,6 +588,7 @@ void WevaDocument::_draw() {
     size_t count = 0;
     const weva_draw* draws = weva_document_draws(doc_, &count);
 
+    rounded_used_ = 0;
     bool any_backdrop = false;
     for (size_t i = 0; i < count && !any_backdrop; ++i) {
         any_backdrop = draws[i].kind == WEVA_DRAW_BACKDROP_FILTER;
@@ -463,6 +606,7 @@ void WevaDocument::_draw() {
     for (size_t i = 0; i < count; ++i) {
         const weva_draw& d = draws[i];
         if (d.vertex_count == 0 || d.index_count == 0) continue;
+        if (d.kind == WEVA_DRAW_ROUNDED_RECT && draw_rounded_rect(get_canvas_item(), d)) continue;
         add_triangles(get_canvas_item(), d);
     }
 }

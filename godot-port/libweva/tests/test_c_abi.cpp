@@ -5,6 +5,7 @@
 #include "weva_c.h"
 
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <vector>
 #include <string>
@@ -512,6 +513,79 @@ void test_abi_content_size() {
         weva_config cfg = default_config();
         weva_document_t d = weva_document_create(&cfg);
         CHECK(weva_document_content_size(d, nullptr, nullptr) == WEVA_OK);
+        weva_document_destroy(d);
+    }
+}
+
+void test_abi_rounded_rect_primitive() {
+    // A plain rounded box travels as a SHAPE as well as triangles, so a backend
+    // that can evaluate a rounded box per pixel gets exact coverage from it and
+    // one that cannot still uploads a correct tessellation.
+    {
+        weva_config cfg = default_config(200, 100);
+        weva_document_t d = weva_document_create(&cfg);
+        // Given a margin so it is not flush against the viewport: a shape whose
+        // coverage ramp would spill past the clip in force is cut into
+        // triangles instead, which is the conservative half of the contract.
+        CHECK(add_css(d, "html, body { margin: 0 }"
+                         "#a { display: block; margin: 10px; width: 80px; height: 40px;"
+                         "     border-radius: 10px; background: #ff0000 }") == WEVA_OK);
+        CHECK(load(d, "<body><div id=a></div></body>") == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        int shapes = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].kind != WEVA_DRAW_ROUNDED_RECT) continue;
+            ++shapes;
+            const weva_rounded_rect& s = draws[i].rounded_rect;
+            CHECK(near(s.width, 80) && near(s.height, 40));
+            CHECK(near(s.radii[0][0], 10) && near(s.radii[0][1], 10));
+            CHECK(s.r > 0.9f && s.g == 0.0f);
+            // The tessellation travels with it, or a host that ignores the kind
+            // would draw nothing at all.
+            CHECK(draws[i].vertex_count > 0 && draws[i].index_count > 0);
+        }
+        CHECK(shapes == 1);
+        weva_document_destroy(d);
+    }
+    {
+        // A square box is not offered as a shape: it has no curve, so a
+        // per-pixel evaluation would buy nothing over two triangles.
+        weva_config cfg = default_config(200, 100);
+        weva_document_t d = weva_document_create(&cfg);
+        CHECK(load(d, "<body><div id=a></div></body>") == WEVA_OK);
+        CHECK(add_css(d, "html, body { margin: 0 }"
+                         "#a { display: block; width: 80px; height: 40px;"
+                         "     background: #ff0000 }") == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        int shapes = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].kind == WEVA_DRAW_ROUNDED_RECT) ++shapes;
+        }
+        CHECK(shapes == 0);
+        weva_document_destroy(d);
+    }
+    {
+        // Nor is a box with a border: the background and the border are one
+        // mesh, and describing only half of it would be a lie.
+        weva_config cfg = default_config(200, 100);
+        weva_document_t d = weva_document_create(&cfg);
+        CHECK(load(d, "<body><div id=a></div></body>") == WEVA_OK);
+        CHECK(add_css(d, "html, body { margin: 0 }"
+                         "#a { display: block; width: 80px; height: 40px; border-radius: 10px;"
+                         "     border: 2px solid #00f; background: #ff0000 }") == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        int shapes = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].kind == WEVA_DRAW_ROUNDED_RECT) ++shapes;
+        }
+        CHECK(shapes == 0);
         weva_document_destroy(d);
     }
 }

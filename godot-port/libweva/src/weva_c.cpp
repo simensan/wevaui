@@ -15,6 +15,7 @@
 #include "weva/user_agent_stylesheet.h"
 
 #include <algorithm>
+
 #include <cstring>
 #include <map>
 #include <tuple>
@@ -39,6 +40,7 @@ public:
         std::optional<Recti> scissor;
         int32_t kind = WEVA_DRAW_GEOMETRY;
         BackdropEffect backdrop;
+        RoundedRect rounded_rect;
     };
 
     void begin_frame() {
@@ -83,6 +85,42 @@ public:
         draws.push_back(std::move(d));
     }
     void release_geometry(GeometryHandle g) override { geometry_.erase(g.id); }
+
+    void render_rounded_rect(const RoundedRect& shape, const std::vector<Vertex>& v,
+                             const std::vector<uint32_t>& i) override {
+        // The tessellation still travels, so a host that does not know this
+        // kind uploads it and draws the same shape.
+        Draw d;
+        d.kind = WEVA_DRAW_ROUNDED_RECT;
+        d.rounded_rect = shape;
+        d.vertices = v;
+        d.indices = i;
+        if (scissor_) {
+            // Only a shape that actually CROSSES the scissor needs cutting. A
+            // scissor is in force for very nearly every box -- the viewport is
+            // one -- so clipping unconditionally would downgrade every shape to
+            // triangles and the description would never survive to a host.
+            const double sx0 = scissor_->x, sy0 = scissor_->y;
+            const double sx1 = sx0 + scissor_->width, sy1 = sy0 + scissor_->height;
+            // A pixel of slack for the coverage ramp the tessellation carries.
+            const bool inside = shape.x - 1 >= sx0 && shape.y - 1 >= sy0 &&
+                                shape.x + shape.width + 1 <= sx1 &&
+                                shape.y + shape.height + 1 <= sy1;
+            if (!inside) {
+                Mesh clipped;
+                clip_triangles(d.vertices, d.indices, Rect(sx0, sy0, scissor_->width,
+                                                           scissor_->height), &clipped);
+                if (clipped.empty()) return;
+                d.vertices = std::move(clipped.vertices);
+                d.indices = std::move(clipped.indices);
+                // Cut triangles no longer match the description, so the host
+                // must use them rather than the shape.
+                d.kind = WEVA_DRAW_GEOMETRY;
+            }
+        }
+        d.scissor = scissor_;
+        draws.push_back(std::move(d));
+    }
 
     void filter_backdrop(const std::vector<Vertex>& v, const std::vector<uint32_t>& i,
                          const BackdropEffect& effect) override {
@@ -580,6 +618,20 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
             v.scissor_height = d.scissor->height;
         }
         v.kind = d.kind;
+        if (d.kind == WEVA_DRAW_ROUNDED_RECT) {
+            v.rounded_rect.x = d.rounded_rect.x;
+            v.rounded_rect.y = d.rounded_rect.y;
+            v.rounded_rect.width = d.rounded_rect.width;
+            v.rounded_rect.height = d.rounded_rect.height;
+            for (int r = 0; r < 4; ++r) {
+                v.rounded_rect.radii[r][0] = d.rounded_rect.radii[r][0];
+                v.rounded_rect.radii[r][1] = d.rounded_rect.radii[r][1];
+            }
+            v.rounded_rect.r = d.rounded_rect.color.r;
+            v.rounded_rect.g = d.rounded_rect.color.g;
+            v.rounded_rect.b = d.rounded_rect.color.b;
+            v.rounded_rect.a = d.rounded_rect.color.a;
+        }
         if (d.kind == WEVA_DRAW_BACKDROP_FILTER) {
             v.backdrop.blur_radius = d.backdrop.blur_radius;
             for (int r = 0; r < 3; ++r) {

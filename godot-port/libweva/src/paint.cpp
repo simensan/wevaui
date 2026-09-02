@@ -1474,6 +1474,49 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     }
 
     if (decorated && !hidden && !blurred) {
+        // A plain rounded box -- a background colour, a radius, no border --
+        // is offered to the backend as a SHAPE as well as triangles. It is the
+        // commonest thing in any document, and a backend that can evaluate a
+        // rounded box per pixel gets exact coverage from it instead of the
+        // half-pixel ramp, off two triangles rather than a fan and a ring.
+        //
+        // Only where the geometry is the whole story: a transform or a clip
+        // means the triangles have been moved or cut and the description no
+        // longer matches them, so those keep the mesh. (Passing the transform
+        // through is what would let a backend beat the mesh under rotation
+        // too, which the ramp cannot antialias at all.)
+        const LinearColor bg_color =
+            b.style ? resolve_color(b.style, "background-color") : LinearColor::transparent();
+        const bool no_border = b.border_top <= 0 && b.border_right <= 0 &&
+                               b.border_bottom <= 0 && b.border_left <= 0;
+        if (!background_done && no_border && !xf && !state.clip && bg_color.a > 0 &&
+            !radii.is_zero() && b.width > 0 && b.height > 0) {
+            LinearColor c = bg_color;
+            c.a *= static_cast<float>(std::max(0.0, state.opacity));
+            if (state.filter) {
+                float a = c.a;
+                state.filter->apply_srgb(&c.r, &c.g, &c.b, &a);
+                c.a = a;
+            }
+            RoundedRect shape;
+            shape.x = border_box.x;
+            shape.y = border_box.y;
+            shape.width = border_box.width;
+            shape.height = border_box.height;
+            const BorderRadii cr = clamp_radii_to_rect(radii, b.width, b.height);
+            const CornerRadius corners[4] = {cr.top_left, cr.top_right, cr.bottom_right,
+                                             cr.bottom_left};
+            for (int i = 0; i < 4; ++i) {
+                shape.radii[i][0] = corners[i].x_radius;
+                shape.radii[i][1] = corners[i].y_radius;
+            }
+            shape.color = c;
+            Mesh fallback;
+            tessellate_rounded_rect(border_box, radii, c, &fallback);
+            paint.backend->render_rounded_rect(shape, fallback.vertices, fallback.indices);
+            background_done = true;
+        }
+
         Mesh mesh;
         paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done);
         draw_mesh(mesh, paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());

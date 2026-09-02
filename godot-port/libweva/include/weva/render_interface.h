@@ -81,6 +81,25 @@ struct BackdropEffect {
     ColorMatrix color;
 };
 
+// A rounded rectangle, described rather than tessellated.
+//
+// The core normally hands a backend triangles, which is what keeps every host
+// small and keeps two backends comparable. But a rounded rect is the single
+// commonest shape in a document, and a backend that can evaluate it per pixel
+// does strictly better than triangles can: exact coverage instead of the
+// half-pixel ramp, correct under any transform, and two triangles instead of a
+// fan plus a ring.
+//
+// So it is offered BOTH ways. render_rounded_rect() carries the description
+// and the tessellation; a backend that cannot use the first falls through to
+// the second and nothing changes for it.
+struct RoundedRect {
+    double x = 0, y = 0, width = 0, height = 0;
+    // Per corner, clockwise from top-left, x then y radius.
+    double radii[4][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}};
+    LinearColor color;
+};
+
 class RenderInterface {
 public:
     virtual ~RenderInterface() = default;
@@ -137,6 +156,19 @@ public:
                                  const std::vector<uint32_t>& indices,
                                  const BackdropEffect& effect) {
         (void)vertices; (void)indices; (void)effect;
+    }
+
+    // Draws a rounded rectangle. The default uploads the tessellation, so a
+    // backend gets the shape whether or not it overrides this; one that can
+    // evaluate the rounded box per pixel overrides it and gets exact coverage.
+    virtual void render_rounded_rect(const RoundedRect& shape,
+                                     const std::vector<Vertex>& vertices,
+                                     const std::vector<uint32_t>& indices) {
+        (void)shape;
+        if (vertices.empty() || indices.empty()) return;
+        const GeometryHandle g = compile_geometry(vertices, indices);
+        render_geometry(g, {0, 0}, {});
+        release_geometry(g);
     }
 };
 

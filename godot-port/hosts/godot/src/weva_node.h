@@ -61,6 +61,24 @@ public:
     void set_use_engine_font(bool use);
     bool get_use_engine_font() const { return use_engine_font_; }
 
+    // Whether to evaluate rounded rectangles in a shader instead of uploading
+    // the core's tessellation.
+    //
+    // OFF by default, on the measurement rather than the theory. Per-pixel
+    // evaluation does give a better edge -- 39 distinct shades along a circle
+    // against the tessellation's 30 -- but two things stop that being a win
+    // here. A material is per canvas item in Godot, so every shape drawn this
+    // way needs its own item and stops batching with its neighbours; and the
+    // core only offers the shape for a SOLID fill with no border, which on the
+    // sample corpus is 5 draws out of 191 on advanced-dashboard and 0 out of 75
+    // on todo. Real boxes have borders and gradients.
+    //
+    // Kept because it is the seam the argument needs: making it pay means
+    // describing the border and the gradient too, and passing the parameters
+    // per vertex so one material can serve every shape.
+    void set_use_sdf_rects(bool use);
+    bool get_use_sdf_rects() const { return use_sdf_rects_; }
+
     // How far the document reaches, which is not the viewport: half the sample
     // corpus lays out taller than the box it is given. A host scrolling a
     // document needs this to know whether there is anywhere to scroll to.
@@ -112,6 +130,12 @@ private:
     // item, which is every sample but two.
     void draw_layered(const weva_draw* draws, size_t count);
     godot::RID backdrop_material();
+    // Draws a rounded rect by EVALUATING it per pixel rather than uploading its
+    // tessellation: exact coverage instead of the core's half-pixel ramp, off
+    // two triangles instead of a fan and a ring. Returns false when the shape
+    // is not one this path handles, and the caller uploads the triangles.
+    bool draw_rounded_rect(const godot::RID& item, const weva_draw& d);
+    godot::RID rounded_rect_material(const weva_rounded_rect& s);
     void release_layers();
 
     weva_document_t doc_ = nullptr;
@@ -135,6 +159,11 @@ private:
     std::vector<godot::RID> layer_items_;
     std::vector<godot::RID> layer_materials_;
     godot::RID backdrop_shader_;
+    // The SDF path. Materials are pooled per frame, like the backdrop ones.
+    godot::RID rounded_shader_;
+    std::vector<godot::RID> rounded_materials_;
+    size_t rounded_used_ = 0;
+    bool use_sdf_rects_ = false;
 };
 
 } // namespace weva_godot
