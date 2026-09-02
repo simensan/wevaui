@@ -114,6 +114,13 @@ public:
     godot::Vector2 get_element_scroll_max(const godot::String& selector);
     bool scroll_into_view(const godot::String& selector);
 
+    // Building the document from data. Rows are addressed the way CSS
+    // addresses them, so a script that can style a list can also fill it.
+    bool set_element_html(const godot::String& selector, const godot::String& html);
+    bool append_html(const godot::String& selector, const godot::String& html);
+    bool remove_element(const godot::String& selector);
+    int count_elements(const godot::String& selector);
+
     // Moves focus in tab order and returns the id that now has it, or "" when
     // the document has nothing focusable in it.
     godot::String focus_next(bool backwards);

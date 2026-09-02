@@ -224,6 +224,12 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::get_element_scroll_max);
     ClassDB::bind_method(D_METHOD("scroll_into_view", "selector"),
                          &WevaDocument::scroll_into_view);
+    ClassDB::bind_method(D_METHOD("set_element_html", "selector", "html"),
+                         &WevaDocument::set_element_html);
+    ClassDB::bind_method(D_METHOD("append_html", "selector", "html"),
+                         &WevaDocument::append_html);
+    ClassDB::bind_method(D_METHOD("remove_element", "selector"), &WevaDocument::remove_element);
+    ClassDB::bind_method(D_METHOD("count_elements", "selector"), &WevaDocument::count_elements);
 
     // The element is named by its `id`, because that is the handle a script
     // and a stylesheet already share. An element with no id reports an empty
@@ -499,6 +505,62 @@ Vector2 WevaDocument::get_element_scroll_max(const String& selector) {
     double mx = 0, my = 0;
     if (weva_element_scroll(doc_, e, nullptr, nullptr, &mx, &my) != WEVA_OK) return Vector2();
     return Vector2(static_cast<real_t>(mx), static_cast<real_t>(my));
+}
+
+// ---- Building the document from data ------------------------------------
+//
+// Setting text and classes lets a script update a panel; these let it build
+// one. Rows are addressed the way CSS addresses them -- `#list .row:nth-child(2)`
+// -- so a script that can style a list can also fill it, without inventing a
+// second naming scheme for the same elements.
+
+bool WevaDocument::set_element_html(const String& selector, const String& html) {
+    if (!doc_) return false;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return false;
+    const CharString body = html.utf8();
+    if (weva_element_set_html(doc_, e, body.get_data(),
+                              static_cast<size_t>(body.length())) != WEVA_OK) {
+        return false;
+    }
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::append_html(const String& selector, const String& html) {
+    if (!doc_) return false;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return false;
+    const CharString body = html.utf8();
+    const weva_element_t added =
+        weva_element_append_html(doc_, e, body.get_data(), static_cast<size_t>(body.length()));
+    dirty_ = true;
+    queue_redraw();
+    return added != WEVA_ELEMENT_NONE;
+}
+
+bool WevaDocument::remove_element(const String& selector) {
+    if (!doc_) return false;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (weva_element_remove(doc_, e) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+int WevaDocument::count_elements(const String& selector) {
+    if (!doc_) return 0;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    return static_cast<int>(weva_document_query_all(doc_, sel.get_data(), nullptr, 0));
 }
 
 bool WevaDocument::scroll_into_view(const String& selector) {

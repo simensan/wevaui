@@ -47,6 +47,7 @@ func _ready() -> void:
 	_test_form_binding()
 	_test_demo_scene_pattern()
 	_test_scrolling()
+	_test_building_from_data()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -468,4 +469,49 @@ func _test_scrolling() -> void:
 	_check(doc.get_element_scroll("#list") == Vector2(0, 100),
 		"by the least that shows it: it sits against the bottom edge")
 	_check(not doc.scroll_into_view("#nope"), "and an unmatched selector moves nothing")
+	doc.queue_free()
+
+
+func _test_building_from_data() -> void:
+	# The binding a game actually needs: a list whose length is the game state,
+	# not the markup. None of this can be written in advance.
+	var doc := _make_doc(
+		"<body><div id='log'></div></body>",
+		"html, body { margin: 0 } #log { width: 200px } .line { height: 20px }")
+	_check(doc.count_elements(".line") == 0, "an empty list starts empty")
+
+	for message in ["found a key", "the door opens", "something moves"]:
+		_check(doc.append_html("#log", "<div class='line'>%s</div>" % message),
+			"a row can be appended")
+	doc.update_document()
+	_check(doc.count_elements(".line") == 3, "one row per message")
+	_check(doc.query_bounds("#log").size.y == 60, "and the list is as tall as its rows")
+
+	# Rows are addressed the way CSS addresses them, so a script that can style
+	# a list can fill it without a second naming scheme.
+	_check(doc.query_text("#log .line:nth-child(2)") == "the door opens",
+		"a row can be read back by position")
+	doc.set_element_text("#log .line:nth-child(2)", "the door slams")
+	doc.update_document()
+	_check(doc.query_text("#log .line:nth-child(2)") == "the door slams",
+		"and written the same way")
+
+	# Trimming the log from the top, which is what a bounded log does.
+	_check(doc.remove_element("#log .line:nth-child(1)"), "the oldest row can go")
+	doc.update_document()
+	_check(doc.count_elements(".line") == 2, "leaving the rest")
+	_check(doc.query_text("#log .line:nth-child(1)") == "the door slams",
+		"and the next one moves up")
+
+	# And a wholesale redraw of the panel.
+	_check(doc.set_element_html("#log", "<div class='line'>a</div><div class='line'>b</div>"),
+		"the whole list can be replaced")
+	doc.update_document()
+	_check(doc.count_elements(".line") == 2, "with what was given")
+	_check(doc.query_text("#log .line:nth-child(1)") == "a", "in order")
+
+	# Misses report a miss rather than doing something surprising.
+	_check(not doc.append_html("#nope", "<div></div>"), "appending to nothing fails")
+	_check(not doc.remove_element("#nope"), "removing nothing fails")
+	_check(doc.count_elements("#nope") == 0, "and counting nothing is zero")
 	doc.queue_free()

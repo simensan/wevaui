@@ -401,6 +401,41 @@ weva_element_t weva_document_focus_next(weva_document_t doc, int backwards);
  * decide -- the document has no notion of tab order yet. */
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element);
 
+/* ---- Building the document from data ----------------------------------
+ *
+ * Setting text and attributes lets a host update a document; these let it
+ * BUILD one. An inventory, a quest log, a chat pane are all a list whose
+ * length is the game's business, and none of them can be expressed by editing
+ * markup that was written in advance.
+ *
+ * Each takes effect on the next update, which rebuilds the box tree and lays
+ * the document out again -- adding a row can move everything after it, so
+ * there is nothing cheaper to be honest about. The cascade still walks the
+ * whole document, but an element whose style comes out the same keeps the one
+ * it had, address and all, so nothing downstream of it is disturbed.
+ */
+
+/* Replaces an element's children with `html` (what `innerHTML` does). Pass an
+ * empty string to empty it. */
+weva_status weva_element_set_html(weva_document_t doc, weva_element_t element, const char* html,
+                                  size_t length);
+
+/* Appends `html` as further children, and returns the FIRST element it
+ * created -- so a caller can fill the row it just added without inventing a
+ * selector to find it again. WEVA_ELEMENT_NONE when the html held no element. */
+weva_element_t weva_element_append_html(weva_document_t doc, weva_element_t element,
+                                        const char* html, size_t length);
+
+/* Removes an element and everything under it. Handles for them stop resolving,
+ * and every handle that is not in the removed subtree keeps working. */
+weva_status weva_element_remove(weva_document_t doc, weva_element_t element);
+
+/* Every element the selector matches, in document order, written into `out`
+ * up to `capacity`. Returns how many there ARE, which may be more than were
+ * written -- the two-call pattern the rest of the ABI uses. */
+size_t weva_document_query_all(weva_document_t doc, const char* selector, weva_element_t* out,
+                               size_t capacity);
+
 /* ---- Scrolling --------------------------------------------------------
  *
  * A box with `overflow` other than `visible` clips what does not fit. These

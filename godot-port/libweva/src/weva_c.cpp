@@ -601,6 +601,21 @@ struct StyleMap : StyleProvider {
     // The element set changed, so which boxes exist did too.
     void note_structural() { pending = worst(pending, Invalidation::Boxes); }
 
+    // Everything this map holds about one element, dropped. Called when an
+    // element leaves the DOM: every one of these is keyed on the POINTER, and
+    // the node is freed the moment its parent lets go of it, so an entry left
+    // behind is a stale key that a later allocation at the same address would
+    // silently inherit.
+    void forget(const Element* e) {
+        by_element.erase(e);
+        pseudo_by_element.erase({e, 0});
+        pseudo_by_element.erase({e, 1});
+        transitions.erase(e);
+        animation_clock.erase(e);
+        animated.erase(e);
+        animation_saved.erase(e);
+    }
+
     void clear() {
         owned.clear();
         by_element.clear();
@@ -1500,6 +1515,9 @@ weva_element_t weva_document_query(weva_document_t doc, const char* selector) {
     if (!parse_selector(selector, &compiled, &err)) return WEVA_ELEMENT_NONE;
     NullStateProvider state;
     for (size_t i = 0; i < doc->elements.size(); ++i) {
+        // A removed element leaves a hole rather than renumbering the ones
+        // after it, so every walk of this table steps over nulls.
+        if (!doc->elements[i]) continue;
         if (selector_matches(compiled, *doc->elements[i], state)) {
             return static_cast<weva_element_t>(i);
         }
@@ -2218,6 +2236,166 @@ weva_status weva_element_scroll_into_view(weva_document_t doc, weva_element_t el
     if (id == kNoBox) return WEVA_ERR_NOT_FOUND;
     bring_box_into_view(doc, id);
     return WEVA_OK;
+}
+
+namespace {
+
+// Everything the document holds ABOUT an element, dropped: its style, its
+// scroll offset, its place in the hover, press and focus state. All of it is
+// keyed on the pointer, and the node dies with its last reference.
+void forget_element(weva_document* doc, const Element* e) {
+    doc->styles.forget(e);
+    doc->scroll.erase(e);
+    if (doc->press_target == e) doc->press_target = nullptr;
+    if (doc->styles.state.focused == e) {
+        doc->styles.state.focused = nullptr;
+        doc->styles.state.caret = 0;
+    }
+    if (doc->caret_painted.element == e) doc->caret_painted = CaretState{};
+    if (doc->scroll_drag.element == e) doc->scroll_drag = weva_document::ScrollDrag{};
+    const auto drop = [e](std::vector<const Element*>* chain) {
+        chain->erase(std::remove(chain->begin(), chain->end(), e), chain->end());
+    };
+    drop(&doc->styles.state.hover_chain);
+    drop(&doc->styles.state.active_chain);
+    drop(&doc->styles.state.focus_chain);
+    // Tombstoned rather than erased: a handle is an INDEX, and erasing would
+    // renumber every element after it under a host that is still holding
+    // handles for the ones it did not touch.
+    for (Element*& slot : doc->elements) {
+        if (slot == e) slot = nullptr;
+    }
+}
+
+void forget_subtree(weva_document* doc, const Element& e) {
+    for (const Ref<Node>& c : e.children()) {
+        if (c->node_type() == NodeType::Element) {
+            forget_subtree(doc, static_cast<const Element&>(*c));
+        }
+    }
+    forget_element(doc, &e);
+}
+
+// Parses a fragment and hands back the nodes to put in the document. The
+// parser builds a whole document, html and body included, so the fragment is
+// what ends up under the body it made.
+std::vector<Ref<Node>> parse_fragment(weva_document* doc, const char* html, size_t length) {
+    std::vector<Ref<Node>> out;
+    if (!html && length > 0) return out;
+    HtmlParseError err;
+    ParseOptions opts;
+    opts.strict = false;
+    Ref<Document> parsed =
+        parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
+    if (!parsed) return out;
+    // Components expand before the cascade sees them, exactly as they do on
+    // load, so appended markup gets the expansion the same markup would have
+    // got in the page source.
+    expand_components(parsed.get());
+    Node* body = nullptr;
+    for (const Ref<Node>& top : parsed->children()) {
+        if (top->node_type() != NodeType::Element) continue;
+        const Element& e = static_cast<const Element&>(*top);
+        if (e.tag_name() != "html") continue;
+        for (const Ref<Node>& c : e.children()) {
+            if (c->node_type() == NodeType::Element &&
+                static_cast<const Element&>(*c).tag_name() == "body") {
+                body = c.get();
+            }
+        }
+    }
+    Node* from = body ? body : static_cast<Node*>(parsed.get());
+    // Copied out before detaching: removing a child mutates the vector the
+    // loop would otherwise be walking.
+    std::vector<Ref<Node>> taken(from->children().begin(), from->children().end());
+    for (const Ref<Node>& c : taken) {
+        from->remove_child(c.get());
+        out.push_back(c);
+    }
+    return out;
+}
+
+// Indexes what was just added and marks the document structurally changed.
+weva_element_t adopt(weva_document* doc, const std::vector<Ref<Node>>& added) {
+    weva_element_t first = WEVA_ELEMENT_NONE;
+    for (const Ref<Node>& c : added) {
+        if (c->node_type() != NodeType::Element) continue;
+        Element& e = static_cast<Element&>(const_cast<Node&>(*c));
+        if (first == WEVA_ELEMENT_NONE) first = static_cast<weva_element_t>(doc->elements.size());
+        doc->index_elements(e);
+    }
+    // A new element has no style yet, so the cascade has to reach it and boxes
+    // have to be built for it. The scoped restyle is not the path: it starts
+    // from an element that already has one.
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    doc->touched.clear();
+    doc->dom_touched = false;
+    return first;
+}
+
+}   // namespace
+
+weva_status weva_element_set_html(weva_document_t doc, weva_element_t element, const char* html,
+                                  size_t length) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    const std::vector<Ref<Node>> old(e->children().begin(), e->children().end());
+    for (const Ref<Node>& c : old) {
+        if (c->node_type() == NodeType::Element) {
+            forget_subtree(doc, static_cast<const Element&>(*c));
+        }
+        e->remove_child(c.get());
+    }
+    const std::vector<Ref<Node>> added = parse_fragment(doc, html, length);
+    for (const Ref<Node>& c : added) e->append_child(c.get());
+    adopt(doc, added);
+    return WEVA_OK;
+}
+
+weva_element_t weva_element_append_html(weva_document_t doc, weva_element_t element,
+                                        const char* html, size_t length) {
+    if (!doc) return WEVA_ELEMENT_NONE;
+    Element* e = doc->element_at(element);
+    if (!e) return WEVA_ELEMENT_NONE;
+    const std::vector<Ref<Node>> added = parse_fragment(doc, html, length);
+    for (const Ref<Node>& c : added) e->append_child(c.get());
+    return adopt(doc, added);
+}
+
+weva_status weva_element_remove(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    Node* parent = e->parent();
+    if (!parent) return WEVA_ERR_INVALID_ARGUMENT;   // the root is not removable
+    // A reference held across the detach, so the subtree is still alive while
+    // the caches pointing into it are emptied. `retain`, not the constructor:
+    // that one ADOPTS a reference the caller owns, and this caller owns none,
+    // so it released one too many and freed the node early.
+    const Ref<Node> keep = Ref<Node>::retain(e);
+    forget_subtree(doc, *e);
+    parent->remove_child(e);
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    doc->touched.clear();
+    doc->dom_touched = false;
+    return WEVA_OK;
+}
+
+size_t weva_document_query_all(weva_document_t doc, const char* selector, weva_element_t* out,
+                               size_t capacity) {
+    if (!doc || !doc->doc || !selector) return 0;
+    CompiledSelector compiled;
+    SelectorParseError err;
+    if (!parse_selector(selector, &compiled, &err)) return 0;
+    size_t found = 0;
+    for (size_t i = 0; i < doc->elements.size(); ++i) {
+        const Element* e = doc->elements[i];
+        if (!e || !selector_matches(compiled, *e, doc->styles.state)) continue;
+        if (out && found < capacity) out[found] = static_cast<weva_element_t>(i);
+        ++found;
+    }
+    return found;
 }
 
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,
