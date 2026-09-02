@@ -38,6 +38,48 @@ WevaDocument::WevaDocument() {
     doc_ = weva_document_create(&cfg);
 }
 
+// The system symbol faces, loaded ONCE for the whole extension.
+//
+// They used to be per document, and that quietly corrupted any application
+// that shows more than one. A SystemFont hands out TextServer RIDs that do not
+// belong to it alone, so releasing one document's faces invalidated RIDs a
+// LATER document was still drawing with: the errors start at the second
+// document, and by the fourth a page came out with no text at all. Cycling the
+// 35 samples produced 59,664 "font is null" errors and several empty pages;
+// shared, it produces none.
+//
+// Loading eight system fonts per document was also simply wasteful — the faces
+// are immutable and identical every time.
+static std::vector<Ref<SystemFont>>& symbol_font_cache() {
+    static std::vector<Ref<SystemFont>> cache;
+    return cache;
+}
+
+const std::vector<Ref<SystemFont>>& shared_symbol_fonts() {
+    std::vector<Ref<SystemFont>>& cache = symbol_font_cache();
+    static bool built = false;
+    if (built) return cache;
+    built = true;
+    PackedStringArray installed;
+    if (OS* os = OS::get_singleton()) installed = os->get_system_fonts();
+    for (const char* n : {"Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji",
+                          "Noto Color Emoji", "Noto Sans Symbols2", "Noto Sans Symbols",
+                          "DejaVu Sans", "Symbola"}) {
+        if (installed.size() > 0 && !installed.has(String(n))) continue;
+        Ref<SystemFont> sf;
+        sf.instantiate();
+        PackedStringArray names;
+        names.push_back(n);
+        sf->set_font_names(names);
+        cache.push_back(sf);
+    }
+    return cache;
+}
+
+// Dropped at module shutdown rather than by a static destructor, which would
+// run after the engine has gone and free RIDs into nothing.
+void release_shared_symbol_fonts() { symbol_font_cache().clear(); }
+
 void WevaDocument::set_use_engine_font(bool use) {
     if (use == use_engine_font_) return;
     use_engine_font_ = use;
@@ -75,22 +117,7 @@ void WevaDocument::ensure_font_backend() {
     // present the emoji face after it was never reached. Names the system
     // lacks are skipped rather than left to fall back to the default face,
     // which would shadow every name behind them.
-    if (symbol_fonts_.empty()) {
-        PackedStringArray installed;
-        if (OS* os = OS::get_singleton()) installed = os->get_system_fonts();
-        for (const char* n : {"Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji",
-                              "Noto Color Emoji", "Noto Sans Symbols2", "Noto Sans Symbols",
-                              "DejaVu Sans", "Symbola"}) {
-            if (installed.size() > 0 && !installed.has(String(n))) continue;
-            Ref<SystemFont> sf;
-            sf.instantiate();
-            PackedStringArray names;
-            names.push_back(n);
-            sf->set_font_names(names);
-            symbol_fonts_.push_back(sf);
-        }
-    }
-    for (const Ref<SystemFont>& sf : symbol_fonts_) {
+    for (const Ref<SystemFont>& sf : shared_symbol_fonts()) {
         const TypedArray<RID> symbol_rids = sf->get_rids();
         for (int64_t i = 0; i < symbol_rids.size(); ++i) rids.push_back(symbol_rids[i]);
     }

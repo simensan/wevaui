@@ -40,6 +40,7 @@ func _ready() -> void:
 	_test_empty_and_malformed_input()
 	_test_backdrop_filter_crosses_the_boundary()
 	_test_content_size()
+	_test_documents_do_not_disturb_each_other()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -197,3 +198,37 @@ func _test_content_size() -> void:
 	_check(_approx(reach.x, 200.0), "width did not overflow, so it stays the viewport's")
 	short_doc.queue_free()
 	tall_doc.queue_free()
+
+
+func _test_documents_do_not_disturb_each_other() -> void:
+	# Creating and destroying documents must leave the survivors alone.
+	#
+	# It did not. Each document built its own SystemFont faces for the symbols
+	# and emoji the theme font lacks, and a SystemFont's TextServer RIDs are not
+	# its alone -- so releasing one document's faces invalidated fonts a LATER
+	# document was still drawing with. Clicking through the sample gallery hit
+	# it within four documents: 59,664 "font is null" errors and pages that came
+	# out with no text at all.
+	const HTML := "<body><p id=t>Text with a star</p></body>"
+	const CSS := "#t { font-size: 16px; color: #fff }"
+
+	var first := _make_doc(HTML, CSS)
+	var want := first.get_triangle_count()
+	_check(want > 0, "the reference document draws something")
+
+	# Enough churn to have broken it: build and destroy several documents while
+	# the first is still alive.
+	for i in 6:
+		var scratch := _make_doc(HTML, CSS)
+		_check(scratch.get_triangle_count() == want,
+			"a later document draws the same as the first")
+		remove_child(scratch)
+		scratch.free()
+
+	# And the survivor is untouched, which is the half that actually broke: the
+	# glyphs it had already rasterized came from fonts another document freed.
+	first.update_document()
+	_check(first.get_triangle_count() == want,
+		"the surviving document still draws the same after others were freed")
+	remove_child(first)
+	first.free()

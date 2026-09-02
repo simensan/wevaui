@@ -21,6 +21,13 @@
 
 namespace weva_godot {
 
+// The system faces behind the theme font, for the symbols and emoji it lacks
+// (★, ⚔, 🛡). Shared by every document: a SystemFont's TextServer RIDs are not
+// its alone, so per-document copies invalidated each other's fonts as
+// documents came and went. Released at module shutdown.
+const std::vector<godot::Ref<godot::SystemFont>>& shared_symbol_fonts();
+void release_shared_symbol_fonts();
+
 class WevaDocument : public godot::Node2D {
     GDCLASS(WevaDocument, godot::Node2D)
 
@@ -120,9 +127,6 @@ private:
     // The font backend must outlive the document: the core holds the table by
     // pointer and calls into it on every update.
     GodotFontBackend font_backend_;
-    // System faces behind the theme font for the symbols and emoji it lacks
-    // (★, ⚔, 🛡). Kept alive here because the backend holds only RIDs.
-    std::vector<godot::Ref<godot::SystemFont>> symbol_fonts_;
     weva_font_backend font_table_{};
     uint64_t font_face_ = 0;
     bool use_engine_font_ = true;
