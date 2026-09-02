@@ -29,13 +29,13 @@ for html in "$CORPUS"/*.html; do
             "$html" "$css" --size "$SIZE" \
             --weva-render "$RENDER" --godot "$GODOT" \
             --project "$ROOT/hosts/godot/project" 2>&1)
-    ink=$(printf '%s\n' "$out" | sed -n 's/.*ink disagrees *\([0-9]*\) px (\([0-9.]*\)%).*/\2/p')
+    ink=$(printf '%s\n' "$out" | sed -n 's/.*structural *\([0-9]*\) px (\([0-9.]*\)%).*/\2/p')
     over=$(printf '%s\n' "$out" | sed -n 's/.*over tolerance *\([0-9]*\) px (\([0-9.]*\)%).*/\2/p')
     [ -n "$ink" ] || ink="ERR"
     [ -n "$over" ] || over="ERR"
-    # Ink is the gate — geometry landing in the wrong place. Over-tolerance is
-    # reported beside it because edge antialiasing lands there and nowhere
-    # else, so a sample high in one and low in the other is two rasterisers
-    # disagreeing at edges rather than a bug worth chasing.
-    printf '%-24s ink %6s%%  over-tol %6s%%\n' "$base" "$ink" "$over"
+    # Structural is the gate — a shape drawn wrongly or not at all.
+    # Over-tolerance is reported beside it because edge antialiasing lands
+    # there and nowhere else, so a sample high in one and low in the other is
+    # two rasterisers disagreeing at edges rather than a bug worth chasing.
+    printf '%-24s struct %6s%%  over-tol %6s%%\n' "$base" "$ink" "$over"
 done
