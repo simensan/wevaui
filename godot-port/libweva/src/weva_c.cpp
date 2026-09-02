@@ -1056,6 +1056,20 @@ struct weva_document {
     }
 };
 
+namespace {
+
+// The box an element generated, or kNoBox. A linear scan: the tree is small,
+// and the alternative is a map that every rebuild would have to refill.
+BoxId box_of(const weva_document* doc, const Element* e) {
+    if (!e) return kNoBox;   // every anonymous box has a null element
+    for (int i = 0; i < doc->tree.size(); ++i) {
+        if (doc->tree[i].element == e) return i;
+    }
+    return kNoBox;
+}
+
+}   // namespace
+
 extern "C" {
 
 uint32_t weva_abi_version(void) {
@@ -1982,6 +1996,67 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
         }
     }
 
+    // Scrolling from the keyboard. Reached only when a text field did not want
+    // the key, because in one they move the caret instead.
+    if (down) {
+        const auto target = [&](bool vertical) -> BoxId {
+            const InteractionState& st = doc->styles.state;
+            // What has focus, or failing that what the pointer is over --
+            // which is what a browser scrolls when you have clicked nothing.
+            const Element* from = st.focused;
+            if (!from && !st.hover_chain.empty()) from = st.hover_chain.front();
+            if (!from) return kNoBox;
+            for (BoxId id = box_of(doc, from); id != kNoBox; id = doc->tree[id].parent) {
+                const Box& b = doc->tree[id];
+                if (!b.element || !scrollable_on_axis(b, vertical)) continue;
+                double mx = 0, my = 0;
+                max_scroll(doc->tree, id, &mx, &my);
+                if ((vertical ? my : mx) > 0) return id;
+            }
+            return kNoBox;
+        };
+        // A line is 40px, as it is for the wheel; a page is what you can see,
+        // less a line of overlap so the eye keeps its place.
+        const bool vertical = key != WEVA_KEY_LEFT && key != WEVA_KEY_RIGHT;
+        BoxId id = kNoBox;
+        switch (key) {
+            case WEVA_KEY_PAGE_UP:
+            case WEVA_KEY_PAGE_DOWN:
+            case WEVA_KEY_UP:
+            case WEVA_KEY_DOWN:
+            case WEVA_KEY_LEFT:
+            case WEVA_KEY_RIGHT:
+            case WEVA_KEY_HOME:
+            case WEVA_KEY_END: id = target(vertical); break;
+            default: break;
+        }
+        if (id != kNoBox) {
+            const Box& b = doc->tree[id];
+            double mx = 0, my = 0;
+            max_scroll(doc->tree, id, &mx, &my);
+            const double page =
+                std::max(40.0, (vertical ? b.height - b.border_top - b.border_bottom
+                                         : b.width - b.border_left - b.border_right) - 40.0);
+            double to = vertical ? b.scroll_y : b.scroll_x;
+            switch (key) {
+                case WEVA_KEY_PAGE_UP: to -= page; break;
+                case WEVA_KEY_PAGE_DOWN: to += page; break;
+                case WEVA_KEY_UP: to -= 40; break;
+                case WEVA_KEY_DOWN: to += 40; break;
+                case WEVA_KEY_LEFT: to -= 40; break;
+                case WEVA_KEY_RIGHT: to += 40; break;
+                case WEVA_KEY_HOME: to = 0; break;
+                case WEVA_KEY_END: to = vertical ? my : mx; break;
+                default: break;
+            }
+            to = std::clamp(to, 0.0, vertical ? my : mx);
+            auto& at = doc->scroll[b.element];
+            at = {vertical ? b.scroll_x : to, vertical ? to : b.scroll_y};
+            doc->pending = worst(doc->pending, Invalidation::Paint);
+            return 1;
+        }
+    }
+
     // Tab is the one key the engine acts on itself, because focus order is
     // something only the document knows. Everything else is the host's.
     if (down && key == WEVA_KEY_TAB && !(modifiers & WEVA_MOD_CTRL)) {
@@ -2122,13 +2197,6 @@ void bring_box_into_view(weva_document* doc, BoxId target) {
         doc->scroll[c.element] = {sx, sy};
         doc->pending = worst(doc->pending, Invalidation::Paint);
     }
-}
-
-BoxId box_of(const weva_document* doc, const Element* e) {
-    for (int i = 0; i < doc->tree.size(); ++i) {
-        if (doc->tree[i].element == e) return i;
-    }
-    return kNoBox;
 }
 
 }   // namespace

@@ -3,8 +3,9 @@ extends Node2D
 # A worked example of driving a Weva document from GDScript.
 #
 # Everything a game needs is here and nothing else: read and write what the
-# document says, toggle a class to restyle it, hear about clicks and edits, and
-# let CSS do the animation. Open demo.tscn and use it.
+# document says, toggle a class to restyle it, BUILD a list from game state,
+# hear about clicks and edits, and let CSS do the animation. Open demo.tscn and
+# use it.
 #
 #   godot --path project --scene res://demo.tscn
 
@@ -26,6 +27,10 @@ const HTML := """
     <label><input id='shield' type='checkbox'> Shield</label>
     <input id='name' type='text' value='Vintner' placeholder='name'>
   </div>
+
+  <!-- Empty on purpose: the log is built from what happens, not written
+       here. Wheel over it, drag its bar, or press Page Down. -->
+  <div id='log' class='log'></div>
 
   <div id='status' class='status'>ready</div>
 </div>
@@ -67,9 +72,21 @@ input[type=text]:focus { border-color: #388bfd }
 input:placeholder-shown { color: #6e7681 }
 input[type=checkbox]:checked { accent-color: #3fb950 }
 
+/* A fixed height and `overflow-y: auto` is the whole of a scrollable panel:
+   the wheel, the bar, the keyboard and a finger drag all follow from it. */
+.log { height: 96px; overflow-y: auto; margin-bottom: 14px;
+       padding: 6px 8px; background: #0d1117; border-radius: 6px;
+       scrollbar-color: #30363d transparent }
+.entry { padding: 3px 0; color: #8b949e; font-size: 12px;
+         border-bottom: 1px solid #161b22 }
+.entry.hurt { color: #f85149 }
+.entry.good { color: #3fb950 }
+
 .status { padding: 8px 10px; border-radius: 6px; background: #0d1117;
           color: #8b949e; font-size: 12px }
 """
+
+const MAX_ENTRIES := 40
 
 var _doc: WevaDocument
 var _hp := 100
@@ -89,13 +106,20 @@ func _ready() -> void:
 	_doc.text_entered.connect(func(id, _text): _say("typing in %s" % id))
 
 	_refresh()
+	_log("ready", "")
 
 
 func _on_clicked(id: String) -> void:
 	match id:
-		"hit": _hp = max(0, _hp - 10)
-		"heal": _hp = min(100, _hp + 10)
-		"revive": _hp = 100
+		"hit":
+			_hp = max(0, _hp - 10)
+			_log("took 10 damage (%d hp)" % _hp, "hurt")
+		"heal":
+			_hp = min(100, _hp + 10)
+			_log("healed 10 (%d hp)" % _hp, "good")
+		"revive":
+			_hp = 100
+			_log("revived", "good")
 		_: return
 	_say("%s -> %d hp" % [id, _hp])
 	_refresh()
@@ -104,6 +128,7 @@ func _on_clicked(id: String) -> void:
 func _on_value_changed(id: String, value: String) -> void:
 	if id == "shield":
 		_say("shield " + ("up" if value == "on" else "down"))
+		_log("shield " + ("up" if value == "on" else "down"), "")
 	elif id == "name":
 		_say("name is now '%s'" % value)
 
@@ -117,12 +142,23 @@ func _refresh() -> void:
 	_doc.toggle_element_class("#hp-fill", "low", _hp <= 20)
 
 
+# The log is the part that cannot be written as markup in advance: its length
+# is the game's business. A row is appended, the oldest are dropped, and the
+# newest is scrolled to -- which is what every chat pane and quest log does.
+func _log(message: String, kind: String) -> void:
+	var classes := "entry" if kind.is_empty() else "entry " + kind
+	_doc.append_html("#log", "<div class='%s'>%s</div>" % [classes, message.xml_escape()])
+	while _doc.count_elements("#log .entry") > MAX_ENTRIES:
+		_doc.remove_element("#log .entry:nth-child(1)")
+	# Rows are addressed the way CSS addresses them, so the newest is simply
+	# the last child.
+	_doc.scroll_into_view("#log .entry:last-child")
+
+
 func _say(message: String) -> void:
 	_doc.set_element_text("#status", message)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Tab moves focus inside the document, so a keyboard user reaches the
-	# controls. The document consumes it and says so.
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		get_tree().quit()

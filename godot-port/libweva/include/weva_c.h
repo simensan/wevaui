@@ -319,7 +319,9 @@ typedef enum weva_key {
     WEVA_KEY_UP = 9,
     WEVA_KEY_DOWN = 10,
     WEVA_KEY_HOME = 11,
-    WEVA_KEY_END = 12
+    WEVA_KEY_END = 12,
+    WEVA_KEY_PAGE_UP = 13,
+    WEVA_KEY_PAGE_DOWN = 14
 } weva_key;
 
 typedef struct weva_event {
@@ -444,6 +446,16 @@ size_t weva_document_query_all(weva_document_t doc, const char* selector, weva_e
  * class change or a resize forces, and it is clamped to what there is to
  * scroll every time -- a list that shrinks under a scrolled view scrolls back
  * up by itself rather than showing empty space.
+ */
+
+/* Page Up, Page Down, the arrows, Home and End scroll the nearest scroll
+ * container around whatever has focus -- or, with nothing focused, around
+ * whatever the pointer is over. weva_document_key does it and reports the key
+ * consumed, so a keyboard user can reach the bottom of a list. A text field
+ * takes those keys first: in one, they move the caret.
+ *
+ * Nothing scrollable means the key is NOT consumed, so a host is free to use
+ * the arrows for its own menu.
  */
 
 /* Scrolls by (`dx`, `dy`) the nearest scroll container at a point in document

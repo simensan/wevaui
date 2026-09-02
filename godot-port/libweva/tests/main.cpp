@@ -247,6 +247,8 @@ void test_abi_scrollbar_drag();
 void test_abi_scrollbar_track_click();
 void test_abi_scrollbar_drag_does_not_click();
 void test_abi_hidden_is_not_a_scroller();
+void test_abi_scroll_keys();
+void test_abi_scroll_keys_yield();
 void test_abi_caret_is_drawn();
 void test_abi_form_pseudo_classes();
 void test_abi_radio_group();
@@ -526,6 +528,8 @@ int main() {
     test_abi_scrollbar_track_click();
     test_abi_scrollbar_drag_does_not_click();
     test_abi_hidden_is_not_a_scroller();
+    test_abi_scroll_keys();
+    test_abi_scroll_keys_yield();
     test_abi_caret_is_drawn();
     test_abi_form_pseudo_classes();
     test_abi_radio_group();

@@ -9,6 +9,7 @@
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
 #include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
+#include <godot_cpp/classes/input_event_screen_drag.hpp>
 #include <godot_cpp/classes/node2d.hpp>
 #include <godot_cpp/classes/system_font.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
@@ -120,6 +121,11 @@ public:
     bool append_html(const godot::String& selector, const godot::String& html);
     bool remove_element(const godot::String& selector);
     int count_elements(const godot::String& selector);
+
+    // For a host that routes input itself: a controller mapped onto the
+    // document, or a scene that decides who gets the keyboard.
+    bool send_key(int keycode, bool pressed = true, bool shift = false, bool ctrl = false);
+    void send_text(const godot::String& text);
 
     // Moves focus in tab order and returns the id that now has it, or "" when
     // the document has nothing focusable in it.

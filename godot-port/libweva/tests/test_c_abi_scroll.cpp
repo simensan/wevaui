@@ -47,6 +47,11 @@ struct Doc {
         weva_element_scroll(d, at(selector), nullptr, nullptr, nullptr, &m);
         return m;
     }
+    std::string value(const char* selector) {
+        char buf[128] = {0};
+        weva_element_attribute(d, at(selector), "value", buf, sizeof(buf));
+        return buf;
+    }
     // Which element is drawn at a point, by id.
     std::string id_at(double x, double y) {
         const weva_element_t e = weva_document_element_at(d, x, y);
@@ -473,4 +478,83 @@ void test_abi_hidden_is_not_a_scroller() {
                  "<div class=card></div></div>");
     CHECK(weva_document_scroll(sideways.d, 100, 30, 0, 40) == 0);
     CHECK(weva_document_scroll(sideways.d, 100, 30, 40, 0) == 1);
+}
+
+// Scrolling from the keyboard, which is the only way a keyboard user reaches
+// the bottom of a list.
+void test_abi_scroll_keys() {
+    Doc doc("html, body { margin: 0 }"
+            ".list { width: 200px; height: 100px; overflow: auto }"
+            ".row { height: 40px }",
+            "<div id=list class=list tabindex=0>"
+            "<div id=r0 class=row></div><div id=r1 class=row></div><div id=r2 class=row></div>"
+            "<div id=r3 class=row></div><div id=r4 class=row></div></div>");
+    // Around whatever has focus: here the list itself.
+    weva_document_set_focus(doc.d, doc.at("#list"));
+    CHECK(weva_document_key(doc.d, WEVA_KEY_DOWN, 0, 1) == 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 40);   // a line, as for the wheel
+
+    // A page is what you can see less a line, so the eye keeps its place.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_PAGE_DOWN, 0, 1) == 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 100);   // 40 + 60, and that is the end
+    CHECK(weva_document_key(doc.d, WEVA_KEY_PAGE_UP, 0, 1) == 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 40);
+
+    // End and Home go the whole way.
+    weva_document_key(doc.d, WEVA_KEY_END, 0, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 100);
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 0);
+
+    // Focus inside the list scrolls the list: the key belongs to the nearest
+    // container that can take it, not to the element that has focus.
+    weva_document_set_focus(doc.d, doc.at("#r0"));
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_key(doc.d, WEVA_KEY_DOWN, 0, 1) == 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 40);
+
+    // With nothing focused it is what the pointer is over -- what a browser
+    // scrolls when you have clicked nothing.
+    weva_document_set_focus(doc.d, WEVA_ELEMENT_NONE);
+    weva_document_set_pointer(doc.d, 100, 50, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_key(doc.d, WEVA_KEY_DOWN, 0, 1) == 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 80);
+}
+
+// The keys a text field wants are the field's, and a key with nothing to
+// scroll is left for the host.
+void test_abi_scroll_keys_yield() {
+    Doc doc("html, body { margin: 0 }"
+            ".list { width: 200px; height: 100px; overflow: auto }"
+            ".row { height: 40px }"
+            "input { display: block; width: 100px }",
+            "<div id=list class=list>"
+            "<input id=f type=text value=abc>"
+            "<div class=row></div><div class=row></div><div class=row></div></div>");
+    weva_document_set_focus(doc.d, doc.at("#f"));
+    // Home in a field is the start of the value, not the top of the list.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1) == 1);
+    weva_document_text_input(doc.d, "z");
+    CHECK(doc.value("#f") == "zabc");
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 0);
+
+    // Nothing scrollable: the key is NOT consumed, so a host can use the
+    // arrows for its own menu.
+    Doc plain("html, body { margin: 0 } .box { width: 100px; height: 50px }",
+              "<div id=box class=box></div>");
+    weva_document_set_focus(plain.d, plain.at("#box"));
+    CHECK(weva_document_key(plain.d, WEVA_KEY_DOWN, 0, 1) == 0);
+    CHECK(weva_document_key(plain.d, WEVA_KEY_PAGE_DOWN, 0, 1) == 0);
+
+    // And a key that is nobody's is nobody's.
+    CHECK(weva_document_key(plain.d, WEVA_KEY_ESCAPE, 0, 1) == 0);
 }

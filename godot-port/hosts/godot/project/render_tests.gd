@@ -48,6 +48,7 @@ func _ready() -> void:
 	_test_demo_scene_pattern()
 	_test_scrolling()
 	_test_building_from_data()
+	_test_keyboard_scrolling()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -514,4 +515,44 @@ func _test_building_from_data() -> void:
 	_check(not doc.append_html("#nope", "<div></div>"), "appending to nothing fails")
 	_check(not doc.remove_element("#nope"), "removing nothing fails")
 	_check(doc.count_elements("#nope") == 0, "and counting nothing is zero")
+	doc.queue_free()
+
+
+func _test_keyboard_scrolling() -> void:
+	# A host with its own input map hands keys over one at a time: a controller
+	# whose d-pad should move a list, a menu that decides who gets the keyboard.
+	var doc := _make_doc(
+		"<body><div id='list'><div class='row'></div><div class='row'></div>" +
+		"<div class='row'></div><div class='row'></div><div class='row'></div></div></body>",
+		"html, body { margin: 0 } " +
+		"#list { width: 200px; height: 100px; overflow: auto } .row { height: 40px }")
+	doc.set_focus("#list")
+	_check(doc.send_key(KEY_DOWN), "the document takes the key")
+	doc.update_document()
+	_check(doc.get_element_scroll("#list") == Vector2(0, 40), "and scrolls a line")
+
+	_check(doc.send_key(KEY_PAGEDOWN), "page down is taken too")
+	doc.update_document()
+	_check(doc.get_element_scroll("#list") == Vector2(0, 100), "to the end of the list")
+	doc.send_key(KEY_HOME)
+	doc.update_document()
+	_check(doc.get_element_scroll("#list") == Vector2(), "and home is the top")
+
+	# A key with nothing to scroll is NOT consumed, so the game behind still
+	# gets its own arrows.
+	var plain := _make_doc("<body><div id='b'></div></body>",
+		"html, body { margin: 0 } #b { width: 50px; height: 20px }")
+	plain.set_focus("#b")
+	_check(not plain.send_key(KEY_DOWN), "a key with nowhere to scroll is left alone")
+	plain.queue_free()
+
+	# Typing, for a host that owns the keyboard.
+	var form := _make_doc("<body><input id='f' type='text' value='ab'></body>",
+		"html, body { margin: 0 } input { display: block; width: 120px }")
+	form.set_focus("#f")
+	form.send_text("c")
+	_check(form.get_element_value("#f") == "abc", "text can be handed over directly")
+	_check(form.send_key(KEY_BACKSPACE), "and so can an editing key")
+	_check(form.get_element_value("#f") == "ab", "which edits at the caret")
+	form.queue_free()
 	doc.queue_free()

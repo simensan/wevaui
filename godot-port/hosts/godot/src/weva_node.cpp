@@ -230,6 +230,9 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::append_html);
     ClassDB::bind_method(D_METHOD("remove_element", "selector"), &WevaDocument::remove_element);
     ClassDB::bind_method(D_METHOD("count_elements", "selector"), &WevaDocument::count_elements);
+    ClassDB::bind_method(D_METHOD("send_key", "keycode", "pressed", "shift", "ctrl"),
+                         &WevaDocument::send_key, DEFVAL(true), DEFVAL(false), DEFVAL(false));
+    ClassDB::bind_method(D_METHOD("send_text", "text"), &WevaDocument::send_text);
 
     // The element is named by its `id`, because that is the handle a script
     // and a stylesheet already share. An element with no id reports an empty
@@ -343,6 +346,8 @@ static int weva_key_from_godot(Key code) {
         case KEY_DOWN: return WEVA_KEY_DOWN;
         case KEY_HOME: return WEVA_KEY_HOME;
         case KEY_END: return WEVA_KEY_END;
+        case KEY_PAGEUP: return WEVA_KEY_PAGE_UP;
+        case KEY_PAGEDOWN: return WEVA_KEY_PAGE_DOWN;
         default: return WEVA_KEY_OTHER;
     }
 }
@@ -370,6 +375,25 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
         dirty_ = true;
         queue_redraw();
         if (consumed) get_viewport()->set_input_as_handled();
+        return;
+    }
+
+    // A finger dragging pans what is under it. There is no mouse equivalent --
+    // a browser does not pan on drag, and doing so would fight every button
+    // and slider in the document -- but on a touchscreen it is the only way to
+    // scroll at all.
+    const Ref<InputEventScreenDrag> touch = event;
+    if (touch.is_valid()) {
+        const Vector2 at = get_global_transform().affine_inverse().xform(touch->get_position());
+        const Vector2 by = touch->get_relative();
+        ensure_updated();
+        // Negated: the content follows the finger, so dragging UP moves the
+        // list down through the view.
+        if (weva_document_scroll(doc_, at.x, at.y, -by.x, -by.y)) {
+            dirty_ = true;
+            queue_redraw();
+            get_viewport()->set_input_as_handled();
+        }
         return;
     }
 
@@ -513,6 +537,38 @@ Vector2 WevaDocument::get_element_scroll_max(const String& selector) {
 // one. Rows are addressed the way CSS addresses them -- `#list .row:nth-child(2)`
 // -- so a script that can style a list can also fill it, without inventing a
 // second naming scheme for the same elements.
+
+// ---- Input a host routes itself ----------------------------------------
+//
+// `interactive` makes the document read the mouse and keyboard straight from
+// the viewport, which is what most scenes want. A game with its own input map
+// -- a controller whose d-pad should scroll a list, a pause menu that decides
+// who gets the keys -- wants to hand events over one at a time instead. These
+// are that: the same path _input takes, reachable from a script.
+
+bool WevaDocument::send_key(int keycode, bool pressed, bool shift, bool ctrl) {
+    if (!doc_) return false;
+    ensure_updated();
+    uint32_t modifiers = 0;
+    if (shift) modifiers |= WEVA_MOD_SHIFT;
+    if (ctrl) modifiers |= WEVA_MOD_CTRL;
+    const int code = weva_key_from_godot(static_cast<Key>(keycode));
+    const bool consumed = weva_document_key(doc_, code, modifiers, pressed ? 1 : 0) != 0;
+    dirty_ = true;
+    queue_redraw();
+    pump_events();
+    return consumed;
+}
+
+void WevaDocument::send_text(const String& text) {
+    if (!doc_ || text.is_empty()) return;
+    ensure_updated();
+    const CharString utf8 = text.utf8();
+    weva_document_text_input(doc_, utf8.get_data());
+    dirty_ = true;
+    queue_redraw();
+    pump_events();
+}
 
 bool WevaDocument::set_element_html(const String& selector, const String& html) {
     if (!doc_) return false;
