@@ -3271,6 +3271,48 @@ each, which is one letter-spacing unit at this page's size — the same quantity
 dialogue turned on, so the reference's flex main-size sum is likely measuring
 its items through a path that counts spacings the way the port used to.
 
+### Sixteenth pass: the render side needs a different mirror than Chrome
+
+With the layout gate at 35/35 the remaining half of "the samples work in Godot"
+is rendering, and the first attempt to measure it was wrong twice over. Both
+mistakes are worth keeping, because neither failed loudly.
+
+**Chrome cannot referee the rasteriser.** Captured with `--metrics=mono` — the
+setting the layout capture needs — its screenshots draw the synthetic face,
+whose glyphs are solid BOXES; the diff is then text everywhere and says nothing
+about rendering. Captured without it, Chrome uses its own faces and its own UA
+sheet, and the diff is the font mismatch instead. There is no setting that
+matches both metrics and glyph shapes, so a pixel comparison against the
+browser is not the render gate.
+
+**The right mirror is the port's own software backend.** `tools/weva_render`
+and the Godot host consume the IDENTICAL draw list from the same build, so a
+difference is a difference between the backends with cascade, layout and
+tessellation held fixed — which is what ARCHITECTURE.md §1 asks for.
+`hosts/godot/compare_render.py` already did this for one document;
+`hosts/godot/compare_all.sh` now runs it over a corpus.
+
+Two flags that silently produce nonsense, both now documented where they are
+used:
+
+* `--headless` DISABLES rendering. Every capture exits 0 and writes no file, so
+  35 samples "failed" in a way that looks like a Godot problem rather than a
+  flag.
+* `--engine-font` puts Godot on the engine's real face while weva_render stays
+  on the core's stub. Every glyph then disagrees and the backend comparison is
+  swamped. For a backend check both sides must use the stub.
+
+**First real finding.** With fonts matched, quests disagrees on 27% of ink —
+software draws 616,561 ink pixels, Godot 401,140. It is not a vertical offset
+(the best shift is dy=0) and it is not the font; the two render the same text
+in the same places, and the missing coverage is in the card fills. That is the
+next thing to chase.
+
+Also worth noting: compare_render reports FAIL "the two images do not even
+share a page colour" for `#181228` vs `#181229`, a one-unit sRGB rounding
+difference. That verdict line is too strict to be useful and should compare the
+page colour with the same tolerance it applies to everything else.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
