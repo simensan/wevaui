@@ -289,7 +289,11 @@ typedef enum weva_event_kind {
     /* Focus moved. `target` is the element that now has it, or
      * WEVA_ELEMENT_NONE when it was dropped. */
     WEVA_EVENT_FOCUS,
-    WEVA_EVENT_BLUR
+    WEVA_EVENT_BLUR,
+    /* A form control's value changed because the user changed it. `text`
+     * carries the new value when it is short enough; read it back with
+     * weva_element_value for anything longer. */
+    WEVA_EVENT_VALUE_CHANGED
 } weva_event_kind;
 
 /* Held modifiers, as a bitmask on weva_event.modifiers. */
@@ -401,6 +405,26 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
  * it. */
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,
                                        const char* name, const char* value);
+
+/* ---- Form controls ----------------------------------------------------
+ *
+ * The engine already PAINTS these from their attributes -- a checkbox from
+ * `checked`, a range from `value` -- so what these add is the part a user
+ * does: clicking a checkbox toggles it, typing into a focused field edits it,
+ * dragging a range moves it. The state stays in the attributes, so a script
+ * can set it the same way it reads it, and a stylesheet can select on it.
+ */
+
+/* The current value of a form control, with the same buffer convention as
+ * weva_element_text. A checkbox reports "on" or "", which is what a form
+ * submission would carry. */
+size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buffer,
+                          size_t capacity);
+
+/* Sets it, as the user would. Raises no event: a host that just set the value
+ * already knows. */
+weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
+                                   const char* value);
 
 /* Replaces an element's text with `text`.
  *

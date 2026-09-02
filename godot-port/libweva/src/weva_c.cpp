@@ -226,6 +226,31 @@ struct InteractionState : ElementStateProvider {
 
     ElementState state_of(const Element& e) const override {
         uint32_t bits = 0;
+
+        // Form state. The matcher reads :checked, :disabled and
+        // :placeholder-shown off this provider -- it has no other channel --
+        // and its own comment said they were waiting for a forms layer. They
+        // are facts about the DOM rather than about the pointer, but this is
+        // where the cascade asks for them, and the shape cache already folds
+        // every attribute into its key so caching stays sound.
+        const std::string_view tag = e.tag_name();
+        const bool form_element = tag == "input" || tag == "button" || tag == "select" ||
+                                  tag == "textarea" || tag == "option" || tag == "optgroup" ||
+                                  tag == "fieldset";
+        if (form_element && e.has_attribute("disabled")) {
+            bits |= static_cast<uint32_t>(ElementState::Disabled);
+        }
+        if ((tag == "input" && e.has_attribute("checked")) ||
+            (tag == "option" && e.has_attribute("selected"))) {
+            bits |= static_cast<uint32_t>(ElementState::Checked);
+        }
+        // :placeholder-shown is true only while the field is EMPTY, which is
+        // the whole point of it -- it is how a floating label knows to float.
+        if ((tag == "input" || tag == "textarea") && !e.get_attribute("placeholder").empty() &&
+            e.get_attribute("value").empty()) {
+            bits |= static_cast<uint32_t>(ElementState::PlaceholderShown);
+        }
+
         for (const Element* h : hover_chain) {
             if (h == &e) { bits |= static_cast<uint32_t>(ElementState::Hover); break; }
         }
@@ -1433,6 +1458,107 @@ weva_element_t weva_document_element_at(weva_document_t doc, double x, double y)
     return WEVA_ELEMENT_NONE;
 }
 
+namespace {
+
+std::string input_type_of(const Element& e) {
+    std::string t(e.get_attribute("type"));
+    for (char& c : t) c = static_cast<char>(c >= 'A' && c <= 'Z' ? c - 'A' + 'a' : c);
+    if (e.tag_name() != "input") return std::string(e.tag_name());
+    return t.empty() ? "text" : t;
+}
+
+// Whether typing into this control edits it. Buttons and marks do not take
+// text however focused they are.
+bool is_text_field(const Element& e) {
+    const std::string_view tag = e.tag_name();
+    if (tag == "textarea") return true;
+    if (tag != "input") return false;
+    const std::string type = input_type_of(e);
+    return type == "text" || type == "password" || type == "search" || type == "email" ||
+           type == "url" || type == "tel" || type == "number";
+}
+
+void note_value_change(weva_document* doc, Element& e, std::string_view value) {
+    doc->dom_touched = true;
+    if (doc->touched.size() < 64) doc->touched.push_back(&e);
+    weva_event ev{};
+    ev.kind = WEVA_EVENT_VALUE_CHANGED;
+    ev.target = doc->handle_of(&e);
+    const size_t copy = value.size() < sizeof(ev.text) - 1 ? value.size() : sizeof(ev.text) - 1;
+    std::memcpy(ev.text, value.data(), copy);
+    ev.text[copy] = ' ';
+    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
+    doc->events.push_back(ev);
+}
+
+// A radio button turns its group off before turning itself on. The group is
+// every radio with the same `name` in the document, which is what makes the
+// exclusivity work at all.
+void clear_radio_group(Node& root, std::string_view name, const Element* except) {
+    for (const Ref<Node>& c : root.children()) {
+        if (c->node_type() != NodeType::Element) continue;
+        auto& e = static_cast<Element&>(const_cast<Node&>(*c));
+        if (&e != except && e.tag_name() == "input" && input_type_of(e) == "radio" &&
+            e.get_attribute("name") == name) {
+            e.remove_attribute("checked");
+        }
+        clear_radio_group(e, name, except);
+    }
+}
+
+// What a click does to a control. Returns true when it changed something.
+bool activate_control(weva_document* doc, Element& e, double x) {
+    const std::string type = input_type_of(e);
+    if (e.tag_name() == "input" && (type == "checkbox" || type == "radio")) {
+        if (type == "radio") {
+            // A radio cannot be turned off by clicking it, only by another in
+            // its group being turned on.
+            if (e.has_attribute("checked")) return false;
+            clear_radio_group(*doc->doc, e.get_attribute("name"), &e);
+            e.set_attribute("checked", "");
+        } else {
+            if (e.has_attribute("checked")) e.remove_attribute("checked");
+            else e.set_attribute("checked", "");
+        }
+        note_value_change(doc, e, e.has_attribute("checked") ? "on" : "");
+        return true;
+    }
+    if (e.tag_name() == "input" && type == "range") {
+        // The value comes from where in the track the pointer landed.
+        double ex = 0, ey = 0, ew = 0, eh = 0;
+        if (weva_element_bounds(doc, doc->handle_of(&e), &ex, &ey, &ew, &eh) != WEVA_OK) {
+            return false;
+        }
+        if (ew <= 0) return false;
+        const auto number = [&](const char* attr, double fallback) {
+            const std::string raw(e.get_attribute(attr));
+            if (raw.empty()) return fallback;
+            char* end = nullptr;
+            const double v = std::strtod(raw.c_str(), &end);
+            return end == raw.c_str() ? fallback : v;
+        };
+        const double lo = number("min", 0);
+        double hi = number("max", 100);
+        if (hi <= lo) hi = lo + 1;
+        const double step = number("step", 1);
+        double frac = (x - ex) / ew;
+        frac = frac < 0 ? 0 : frac > 1 ? 1 : frac;
+        double value = lo + frac * (hi - lo);
+        if (step > 0) value = lo + std::round((value - lo) / step) * step;
+        if (value < lo) value = lo;
+        if (value > hi) value = hi;
+        char buf[32];
+        std::snprintf(buf, sizeof(buf), "%g", value);
+        if (e.get_attribute("value") == buf) return false;
+        e.set_attribute("value", buf);
+        note_value_change(doc, e, buf);
+        return true;
+    }
+    return false;
+}
+
+}   // namespace
+
 void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t buttons) {
     if (!doc) return;
     InteractionState& st = doc->styles.state;
@@ -1449,6 +1575,19 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
     if (buttons != 0 && !was_down) {
         doc->press_target = hit;
         doc->queue_event(WEVA_EVENT_POINTER_DOWN, hit, x, y, buttons);
+        // A range follows the pointer from the moment it goes down, and a
+        // click on a field takes focus -- both are what makes a control feel
+        // like one rather than like a picture of one.
+        if (hit) {
+            Element& e = const_cast<Element&>(*hit);
+            if (input_type_of(e) == "range") activate_control(doc, e, x);
+            if (is_text_field(e)) weva_document_set_focus(doc, doc->handle_of(hit));
+        }
+    } else if (buttons != 0 && was_down && doc->press_target &&
+               input_type_of(const_cast<Element&>(*doc->press_target)) == "range") {
+        // Held and moving: the range keeps following, even once the pointer
+        // has left it, which is how a slider behaves everywhere.
+        activate_control(doc, const_cast<Element&>(*doc->press_target), x);
     } else if (buttons == 0 && was_down) {
         doc->queue_event(WEVA_EVENT_POINTER_UP, hit, x, y, buttons);
         // A click is a press and a release on the SAME element. Releasing
@@ -1456,6 +1595,9 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
         // the behaviour every button in every toolkit has.
         if (hit && hit == doc->press_target) {
             doc->queue_event(WEVA_EVENT_CLICK, hit, x, y, buttons);
+            // A checkbox toggles on the click, not the press, so dragging off
+            // it and back changes nothing -- as it does not in any toolkit.
+            activate_control(doc, const_cast<Element&>(*hit), x);
         }
         doc->press_target = nullptr;
     }
@@ -1588,6 +1730,25 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(e);
 
+    // Backspace in a focused field, which no host can do for itself without
+    // knowing where the text is kept.
+    if (down && key == WEVA_KEY_BACKSPACE) {
+        Element* focused = const_cast<Element*>(doc->styles.state.focused);
+        if (focused && is_text_field(*focused)) {
+            std::string value(focused->get_attribute("value"));
+            if (!value.empty()) {
+                // One CHARACTER, not one byte: trailing continuation bytes go
+                // with the codepoint that owns them.
+                size_t n = value.size() - 1;
+                while (n > 0 && (static_cast<unsigned char>(value[n]) & 0xC0) == 0x80) --n;
+                value.resize(n);
+                focused->set_attribute("value", value);
+                note_value_change(doc, *focused, value);
+            }
+            return 1;
+        }
+    }
+
     // Tab is the one key the engine acts on itself, because focus order is
     // something only the document knows. Everything else is the host's.
     if (down && key == WEVA_KEY_TAB && !(modifiers & WEVA_MOD_CTRL)) {
@@ -1599,6 +1760,16 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
 
 void weva_document_text_input(weva_document_t doc, const char* utf8) {
     if (!doc || !utf8 || !*utf8) return;
+    // Typing into a focused field edits it. Control characters are not text,
+    // whatever a platform hands over for Enter or Tab.
+    const unsigned char lead = static_cast<unsigned char>(utf8[0]);
+    Element* focused = const_cast<Element*>(doc->styles.state.focused);
+    if (focused && lead >= 0x20 && lead != 0x7f && is_text_field(*focused)) {
+        std::string value(focused->get_attribute("value"));
+        value += utf8;
+        focused->set_attribute("value", value);
+        note_value_change(doc, *focused, value);
+    }
     weva_event e{};
     e.kind = WEVA_EVENT_TEXT_INPUT;
     e.target = doc->handle_of(doc->styles.state.focused);
@@ -1608,6 +1779,45 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     e.text[copy] = ' ';
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(e);
+}
+
+size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buffer,
+                          size_t capacity) {
+    if (!doc) return 0;
+    const Element* e = doc->element_at(element);
+    if (!e) return 0;
+    std::string value;
+    const std::string type = input_type_of(*e);
+    if (e->tag_name() == "input" && (type == "checkbox" || type == "radio")) {
+        value = e->has_attribute("checked") ? "on" : "";
+    } else {
+        value = std::string(e->get_attribute("value"));
+    }
+    if (buffer && capacity > 0) {
+        const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
+        std::memcpy(buffer, value.data(), n);
+        buffer[n] = ' ';
+    }
+    return value.size();
+}
+
+weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
+                                   const char* value) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    const std::string_view v(value ? value : "");
+    const std::string type = input_type_of(*e);
+    if (e->tag_name() == "input" && (type == "checkbox" || type == "radio")) {
+        const bool on = !v.empty() && v != "0" && v != "off" && v != "false";
+        if (on) e->set_attribute("checked", "");
+        else e->remove_attribute("checked");
+    } else {
+        e->set_attribute("value", v);
+    }
+    doc->dom_touched = true;
+    if (doc->touched.size() < 64) doc->touched.push_back(e);
+    return WEVA_OK;
 }
 
 int weva_document_poll_event(weva_document_t doc, weva_event* out) {

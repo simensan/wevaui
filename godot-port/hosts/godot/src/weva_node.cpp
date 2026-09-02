@@ -203,6 +203,10 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("toggle_element_class", "selector", "name", "on"),
                          &WevaDocument::toggle_element_class);
     ClassDB::bind_method(D_METHOD("has_element", "selector"), &WevaDocument::has_element);
+    ClassDB::bind_method(D_METHOD("get_element_value", "selector"),
+                         &WevaDocument::get_element_value);
+    ClassDB::bind_method(D_METHOD("set_element_value", "selector", "value"),
+                         &WevaDocument::set_element_value);
     ClassDB::bind_method(D_METHOD("set_pointer", "point", "buttons"), &WevaDocument::set_pointer);
     ClassDB::bind_method(D_METHOD("clear_pointer"), &WevaDocument::clear_pointer);
 
@@ -216,6 +220,8 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("element_exited", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_focused", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_blurred", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("value_changed", PropertyInfo(Variant::STRING, "id"),
+                          PropertyInfo(Variant::STRING, "value")));
     ADD_SIGNAL(MethodInfo("key_pressed", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::INT, "key"),
                           PropertyInfo(Variant::INT, "modifiers")));
@@ -441,6 +447,11 @@ void WevaDocument::pump_events() {
             case WEVA_EVENT_TEXT_INPUT: emit_signal("text_entered", id, String(e.text)); break;
             case WEVA_EVENT_FOCUS: emit_signal("element_focused", id); break;
             case WEVA_EVENT_BLUR: emit_signal("element_blurred", id); break;
+            case WEVA_EVENT_VALUE_CHANGED:
+                // The value rides in the event when it is short; anything
+                // longer is read back, so a script never sees a truncated one.
+                emit_signal("value_changed", id, get_element_value("#" + id));
+                break;
             default: break;
         }
     }
@@ -463,6 +474,25 @@ godot::String WevaDocument::get_element_text(const godot::String& selector) {
     std::vector<char> buffer(needed + 1, ' ');
     weva_element_text(doc_, e, buffer.data(), buffer.size());
     return String(buffer.data());
+}
+
+godot::String WevaDocument::get_element_value(const godot::String& selector) {
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return String();
+    const size_t needed = weva_element_value(doc_, e, nullptr, 0);
+    std::vector<char> buffer(needed + 1, ' ');
+    weva_element_value(doc_, e, buffer.data(), buffer.size());
+    return String(buffer.data());
+}
+
+bool WevaDocument::set_element_value(const godot::String& selector, const godot::String& value) {
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return false;
+    const CharString v = value.utf8();
+    if (weva_element_set_value(doc_, e, v.get_data()) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
 }
 
 bool WevaDocument::has_element(const godot::String& selector) {

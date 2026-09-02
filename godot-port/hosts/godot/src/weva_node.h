@@ -86,6 +86,11 @@ public:
                               bool on);
     bool has_element(const godot::String& selector);
 
+    // A form control's value. A checkbox reports "on" or "", which is what a
+    // form submission would carry, and takes the same on the way in.
+    godot::String get_element_value(const godot::String& selector);
+    bool set_element_value(const godot::String& selector, const godot::String& value);
+
     // Drives the pointer directly, for a host routing its own input -- a
     // gamepad cursor, a touch surface, a test. `buttons` is a bitmask; the
     // primary button is bit 0 and is what makes an element :active.

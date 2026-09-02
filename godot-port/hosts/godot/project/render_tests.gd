@@ -44,6 +44,7 @@ func _ready() -> void:
 	_test_script_bindings()
 	_test_click_signals()
 	_test_focus_navigation()
+	_test_form_binding()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -324,4 +325,39 @@ func _test_focus_navigation() -> void:
 
 	# Focus by selector still works, and drives the same signal.
 	_check(doc.set_focus("#one"), "focus can be set by selector")
+	doc.queue_free()
+
+
+# Two-way binding to a form control: a script sets it, a user changes it, and
+# the script hears about it. These painted correctly from their attributes
+# before and behaved like pictures.
+func _test_form_binding() -> void:
+	var doc := _make_doc(
+		"<body><input id='box' type='checkbox'>" +
+		"<input id='field' type='text' value='start'></body>",
+		"html, body { margin: 0 } input { display: block; width: 60px; height: 20px }")
+
+	var changes: Array = []
+	doc.value_changed.connect(func(id, value): changes.append([id, value]))
+
+	_check(doc.get_element_value("#field") == "start", "a field's value reads back")
+	_check(doc.get_element_value("#box") == "", "an unchecked box reads empty")
+
+	_check(doc.set_element_value("#field", "bound"), "a value can be set")
+	doc.update_document()
+	_check(doc.get_element_value("#field") == "bound", "the value round-trips")
+
+	# Clicking the box toggles it, and the script is told.
+	var box := doc.query_bounds("#box")
+	doc.set_pointer(Vector2(box.position.x + 5, box.position.y + 5), 0)
+	doc.set_pointer(Vector2(box.position.x + 5, box.position.y + 5), 1)
+	doc.set_pointer(Vector2(box.position.x + 5, box.position.y + 5), 0)
+	doc.update_document()
+	_check(doc.get_element_value("#box") == "on", "clicking the box checks it")
+
+	var told := false
+	for change in changes:
+		if change[0] == "box" and change[1] == "on":
+			told = true
+	_check(told, "the change reaches the script as a signal")
 	doc.queue_free()
