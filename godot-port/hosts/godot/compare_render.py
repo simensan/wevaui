@@ -88,9 +88,18 @@ def compare(a_path, b_path, tolerance, coverage_tolerance):
     # Comparing ink coverage separately from channel error is what distinguishes
     # a box drawn in the wrong place (catastrophic, and what this is for) from
     # anti-aliasing along its edges (expected, and uninteresting).
+    #
+    # ONE reference page colour, taken from the software side and applied to
+    # both. Letting each image pick its own modal pixel is only sound when the
+    # page has a large flat background: on a gradient the mode is an arbitrary
+    # point along it, the two backends land on different points, and every
+    # derived number is then nonsense. inventory.html reported 58.8% ink
+    # disagreement that way — software's mode was #56407e and Godot's #0b0816,
+    # two places on the same gradient — while only 12.7% of its pixels were
+    # actually over tolerance, and the real difference was one slot's glow.
     total = aw * ah
     a_page = modal_pixel(a, total)
-    b_page = modal_pixel(b, total)
+    b_page = a_page
     differing = 0
     worst = 0
     error_sum = 0
@@ -119,16 +128,27 @@ def compare(a_path, b_path, tolerance, coverage_tolerance):
     print(f"  mean channel Δ  {mean:.2f}/255")
     print(f"  worst channel Δ {worst}/255 at {worst_at}")
     print(f"  over tolerance  {differing} px ({differing_pct:.2f}%), tolerance {tolerance}")
-    print(f"  page colour     software #{a_page[0]:02x}{a_page[1]:02x}{a_page[2]:02x}, "
-          f"godot #{b_page[0]:02x}{b_page[1]:02x}{b_page[2]:02x}")
+    print(f"  page colour     #{a_page[0]:02x}{a_page[1]:02x}{a_page[2]:02x} "
+          f"(software's, used for both)")
     print(f"  ink coverage    software {a_ink} px, godot {b_ink} px")
     print(f"  ink disagrees   {total - ink_agree} px ({ink_pct:.2f}%)")
 
-    # A page colour the two disagree on means the clear colour or the whole
-    # composite differs, and every derived number below is then measuring the
-    # wrong thing — worth failing on its own rather than explaining away.
-    if a_page != b_page:
-        print("FAIL  the two images do not even share a page colour")
+    # A clear colour the two disagree on means the whole composite differs, and
+    # every derived number is then measuring the wrong thing — worth failing on
+    # its own. Compared at the SAME tolerance as everything else, though: this
+    # used to demand exact equality and failed a document on #181228 against
+    # #181229, one unit of sRGB rounding.
+    # The CORNER, not the mode. What this check is for is "did the clear colour
+    # or the whole composite differ", and the corner is background in every
+    # document here. The mode is not: on a gradient page the two backends pick
+    # different points along the same gradient and the check fails on a
+    # document that renders correctly.
+    a_corner = (a[0], a[1], a[2])
+    b_corner = (b[0], b[1], b[2])
+    if max(abs(x - y) for x, y in zip(a_corner, b_corner)) > tolerance:
+        print("FAIL  the two images do not share a page colour: "
+              f"software #{a_corner[0]:02x}{a_corner[1]:02x}{a_corner[2]:02x} vs "
+              f"godot #{b_corner[0]:02x}{b_corner[1]:02x}{b_corner[2]:02x}")
         return False
 
     # Only the coverage check gates. Channel error inside shared ink is a
