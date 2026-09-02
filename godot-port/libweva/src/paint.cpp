@@ -522,31 +522,23 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             LinearColor c = sh.color;
             c.a = static_cast<float>(std::min(1.0, alpha));
 
-            // CSS Backgrounds L3 §7.1: an outer shadow is drawn OUTSIDE the
-            // border edge only — the border box is knocked out of it. Filling
-            // the whole rect instead is invisible under an opaque background
-            // and wrong under anything else: vendor.html's cards are
-            // `rgba(22, 16, 40, 0.92)`, so 8% of the shadow showed through and
-            // tinted every card's interior, differently per rarity because the
-            // glow colours differ. Chrome renders those interiors flat, and so
-            // does the Godot host — which skips these layers entirely today, so
-            // this backend was the one that was wrong.
+            // CSS Backgrounds L3 §7.1 says an outer shadow is drawn outside the
+            // border edge only, and this used to knock the border box out by
+            // tessellating the ring between the shadow rect and the box. That
+            // is the right RULE — under a translucent background the shadow
+            // otherwise shows through, and vendor.html's cards were tinted per
+            // rarity because of it — but the ring geometry was wrong: measured
+            // against Chrome on a plain `0 0 40px` shadow it removed most of
+            // the falloff (white at 15-35px out where Chrome has 249, 240,
+            // 222) and dropped a blur-less spread shadow entirely.
             //
-            // The knockout is the same ring a border is, so it tessellates as
-            // one: the widths are how far the shadow rect extends past the
-            // border box on each side, which the offset makes asymmetric and
-            // can drive to zero on the side the shadow moves away from.
-            const double left = std::max(0.0, (border_box.x) - r.x);
-            const double top = std::max(0.0, (border_box.y) - r.y);
-            const double right =
-                std::max(0.0, (r.x + r.width) - (border_box.x + border_box.width));
-            const double bottom =
-                std::max(0.0, (r.y + r.height) - (border_box.y + border_box.height));
-            if (left <= 0 && top <= 0 && right <= 0 && bottom <= 0) continue;
-            const LinearColor ring[4] = {c, c, c, c};
+            // Filling the rect is the lesser of the two errors: it is invisible
+            // under an opaque background, which is most of them, whereas the
+            // ring lost shadows outright. Restored until the ring can be built
+            // correctly — see PORT_PLAN for what was measured.
             Mesh mesh;
-            tessellate_border(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
-                              top, right, bottom, left, ring, &mesh);
+            tessellate_rounded_rect(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
+                                    c, &mesh);
             draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
         }
     }
