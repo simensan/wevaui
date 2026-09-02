@@ -3226,6 +3226,51 @@ configurations, so the oracle sees a difference where both are wrong:
 
 Both need to be fixed against Chrome rather than against each other.
 
+### Fifteenth pass: 34/35. What the last four turned out to be
+
+Every one of the four samples left after the aspect-ratio work had been written
+off in this document as "sub-pixel text measurement, Chrome sides with neither".
+Three of them were ordinary spec bugs, and the pattern in all three was that a
+number landed on a UNIT rather than drifting:
+
+* **combat-hud.** `.buff-time` holding "12s" came out exactly 18 wide in a
+  36px circle at `left: 50%` — exactly the available space. Its two siblings
+  ("8s", "4s") fit in 18 and agreed, so only one of three identical elements
+  differed, which is what marks a clamp rather than a measurement. CSS 2.1
+  §10.3.7's shrink-to-fit is `min(preferred, max(preferred minimum, available))`
+  and the `max` is the point: a box may not be squeezed below what its content
+  needs. The formula was right and an unconditional clamp after it undid the
+  `max`.
+* **audit-validation.** Chrome's UA scrolls a `textarea`, which by §10.8.1 pins
+  its baseline to the bottom MARGIN edge instead of its last line box. Neither
+  UA sheet had `overflow: auto`, so the baseline moved with the wrapped content
+  and dragged the inputs beside it off by a line. Bisecting the section found
+  it: removing the textarea took the difference to zero, its attributes changed
+  nothing, and emptying its text also took it to zero — multi-line CONTENT
+  mattering is only consistent with a content-derived baseline.
+* **dialogue.** `<strong>` sat 0.16 to the right, and at 16px with
+  `letter-spacing: 0.01em` that is exactly ONE spacing. Letter-spacing sits
+  BETWEEN characters, so a run of n characters carries n-1 — and a line break
+  restarts the count, because the spacing that would follow a line's last
+  character has nowhere to sit. The port carried the count across the break.
+
+**Method note.** Twice the first synthetic repro showed the two engines
+AGREEING, which would have read as "no bug" if taken at face value: the
+textarea repro's content did not wrap, and the dialogue repro initially omitted
+the page's `letter-spacing`. Extracting the real section with the real
+stylesheet reproduced both. Prefer bisecting the actual page over rebuilding it
+from memory.
+
+**randhtml, the last one.** `.party` is a column flex whose height the
+reference reports as 107.706 while its own placed children span 108.026 — the
+container does not contain its children, which is internally inconsistent
+whatever Chrome says (107.94, between the two, and unable to arbitrate because
+its letter-spacing convention differs from both engines). The port's value is
+the self-consistent one. The shortfall is 0.32 across two children, i.e. 0.16
+each, which is one letter-spacing unit at this page's size — the same quantity
+dialogue turned on, so the reference's flex main-size sum is likely measuring
+its items through a path that counts spacings the way the port used to.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
