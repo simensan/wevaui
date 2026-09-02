@@ -109,6 +109,12 @@ struct Box {
     // strut height. Only the provenance tells the two apart.
     bool is_split_fragment = false;
 
+    // The LAST piece of a block-in-inline split. The reference gives that one
+    // a zero-size box even when it is empty, and gives the leading pieces
+    // none — so this is the only empty fragment that gets emitted, and the
+    // element's box then lands AFTER the block, where the reference puts it.
+    bool is_last_split_fragment = false;
+
     // Border-box geometry, relative to the parent box's content origin.
     double x = 0, y = 0, width = 0, height = 0;
 

@@ -973,3 +973,56 @@ void test_preserved_newlines_force_line_breaks() {
         CHECK_EQ(f.line_text(ls[0]), "a b");
     }
 }
+
+
+// CSS 2.1 §9.2.1.1. A block inside an inline box breaks that box, and the
+// EMPTY fragments left either side of the block do not generate anonymous
+// blocks. Once every line box carried a strut those phantom blocks were a full
+// line-height each, so `<div><span><div>block</div></span></div>` measured
+// three line-heights where Chrome and the reference both say one.
+void test_block_in_inline_empty_fragments() {
+    {
+        // The bare case, verified against Chrome: one line-height, not three.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#c { display: inline } #b { display: block }"));
+        CHECK(f.layout("<body><div id=w><span id=c><div id=b>block</div></span></div></body>"));
+        const double line = f.metrics.line_height(16);
+        CHECK(near(f.box("w").height, line));
+        CHECK(near(f.box("b").height, line));
+        CHECK(near(f.box("b").y, 0));
+    }
+    {
+        // The same with the source whitespace real formatting has. The
+        // fragments then hold a whitespace text node rather than nothing, so
+        // emptiness has to be judged by what reaches the LINE, not by the
+        // fragment's child list — testing the child list left card-component
+        // a line-height low.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#c { display: inline } #b { display: block }"));
+        CHECK(f.layout("<body><div id=w>\n  <span id=c>\n    <div id=b>block</div>\n  </span>"
+                       "\n</div></body>"));
+        CHECK(near(f.box("w").height, f.metrics.line_height(16)));
+    }
+    {
+        // Content either side of the block is NOT empty, so both fragments are
+        // real lines and the container is three of them.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#c { display: inline } #b { display: block }"));
+        CHECK(f.layout("<body><div id=w><span id=c>lead<div id=b>block</div>tail</span>"
+                       "</div></body>"));
+        CHECK(near(f.box("w").height, f.metrics.line_height(16) * 3));
+    }
+    {
+        // An empty `<span></span>` the AUTHOR wrote still forms a line of strut
+        // height. Only provenance separates it from a split's fragment, which
+        // is why the box carries a flag rather than being judged by shape.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
+                    "#c { display: inline }"));
+        CHECK(f.layout("<body><div id=w><span id=c></span></div></body>"));
+        CHECK(near(f.box("w").height, f.metrics.line_height(16)));
+    }
+}

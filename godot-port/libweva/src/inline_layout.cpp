@@ -494,16 +494,27 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // Deliberately NOT the same as an empty `<span></span>` the author
         // wrote, which does form a line of strut height; `is_split_fragment` is
         // what tells the manufactured fragments apart.
+        // Of those, the trailing one — the only empty fragment that earns a
+        // box (see the fragment loop below).
+        bool emits_trailing_split_fragment = false;
         bool only_empty_split_fragments = only_markers;
         if (only_empty_split_fragments) {
             for (const Fragment& f : line) {
                 const BoxId b = f.item->is_inline_start() ? f.item->inline_box_start
                                                           : f.item->inline_box_end;
-                if (b == kNoBox || !(*tree)[b].is_split_fragment ||
-                    (*tree)[b].first_child != kNoBox) {
+                // Emptiness is judged by what reached THIS LINE, not by the
+                // fragment's child list: a split piece routinely holds a
+                // whitespace text node (a cloned template body brings its own
+                // indentation with it), and that whitespace collapses away at
+                // the line's start so the fragment still covers nothing.
+                // Testing first_child instead left card-component.html's page
+                // a line-height low.
+                if (b == kNoBox || !(*tree)[b].is_split_fragment) {
                     only_empty_split_fragments = false;
+                    emits_trailing_split_fragment = false;
                     break;
                 }
+                if ((*tree)[b].is_last_split_fragment) emits_trailing_split_fragment = true;
             }
         }
 
@@ -583,13 +594,16 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // `<a><b>x</b></a>` stopped enclosing its inner box.
         for (const Fragment& f : line) {
             // A marker-only line earns no fragment: an inline box covers
-            // content on the line, or it covers nothing. (The empty fragment a
-            // block-in-inline split leaves behind is the one case where the
-            // reference DOES emit a zero-size box; routing it through this
-            // span machinery produced a fragment at a negative y and stole the
-            // block's own geometry, so it is left out for now and recorded in
-            // PORT_PLAN as the last card-component difference.)
-            if (only_markers) break;
+            // content on the line, or it covers nothing.
+            //
+            // One exception, and it is asymmetric: a block-in-inline split
+            // leaves an empty fragment on EACH side of the block, and the
+            // reference emits a zero-size box for the trailing one only. That
+            // asymmetry is load-bearing rather than incidental — the dump, like
+            // paint, takes the FIRST box an element owns, so emitting the
+            // leading fragment too would report the `<span>` before the block
+            // instead of after it.
+            if (only_markers && !emits_trailing_split_fragment) break;
             if (f.item->is_inline_start()) {
                 const double x0 = f.x + dx + f.item->margin_edge;
                 contribute(f.item->inline_box_start, x0, x0 + f.item->decoration, false);
@@ -681,6 +695,17 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             // Attached during the loop above, at the point the box opened.
             if (sp.fragment == kNoBox) continue;
             Box& fb = (*tree)[sp.fragment];
+            if (only_empty_split_fragments) {
+                // A zero-height line has no baseline to hang a content area
+                // from, so the fragment is a point at the line's start.
+                // Through the stamp below it landed half a line ABOVE the line
+                // with a full line's height.
+                fb.x = sp.x0;
+                fb.y = 0;
+                fb.width = 0;
+                fb.height = 0;
+                continue;
+            }
             const double fs = fb.font_size > 0 ? fb.font_size : ctx.root_font_size_px;
             fb.x = sp.x0;
             // An inline box's content area sits on the baseline and is as tall

@@ -665,6 +665,27 @@ bool is_in_flow_block(const BoxTree& tree, BoxId id) {
     return true;
 }
 
+// True when a box can only ever contribute collapsible whitespace — a text run
+// that is all spaces/tabs/newlines, or an inline box holding nothing but such
+// runs. CSS 2.1 §9.2.1.1: whitespace between block-level siblings collapses
+// away, and an anonymous block that would hold only that is not generated.
+bool is_collapsible_whitespace_only(const BoxTree& tree, BoxId id) {
+    const Box& b = tree[id];
+    if (b.kind == BoxKind::Text) {
+        for (char c : b.text) {
+            if (c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\f') return false;
+        }
+        // `white-space: pre` and friends preserve it, so it is real content.
+        const std::string_view ws = b.style ? b.style->get("white-space") : std::string_view();
+        return !(ws == "pre" || ws == "pre-wrap" || ws == "pre-line" || ws == "break-spaces");
+    }
+    if (b.kind != BoxKind::Inline && b.kind != BoxKind::AnonymousInline) return false;
+    for (BoxId c : tree.children(id)) {
+        if (!is_collapsible_whitespace_only(tree, c)) return false;
+    }
+    return true;
+}
+
 bool holds_in_flow_block(const BoxTree& tree, BoxId inline_box) {
     for (BoxId c : tree.children(inline_box)) {
         if (is_in_flow_block(tree, c)) return true;
@@ -713,6 +734,7 @@ void BoxBuilder::split_inline_around_blocks(BoxId inline_box, std::vector<BoxId>
         }
         tree_->append_child(piece, k);
     }
+    (*tree_)[piece].is_last_split_fragment = true;
     out->push_back(piece);
 }
 
@@ -797,22 +819,51 @@ void BoxBuilder::finalize_block_children(BoxId parent) {
     for (BoxId c : tree_->children(parent)) existing_.push_back(c);
     tree_->clear_children(parent);
 
+    // CSS 2.1 §9.2.1.1: a run of inline content between block-level siblings
+    // that can only collapse away gets NO anonymous block — the run is
+    // whitespace, and whitespace between blocks is not rendered. The boxes are
+    // still attached, so the elements keep their place in the tree (a
+    // block-in-inline split leaves an empty `<span>` fragment either side of
+    // the block and the reference reports the trailing one), but they hang off
+    // the parent directly rather than under an anonymous block and its line.
+    // Wrapping them instead put that fragment two levels deeper than the
+    // reference has it, which was card-component.html's last difference.
+    const auto flush_run = [&](std::vector<BoxId>* run) {
+        if (run->empty()) return;
+        bool all_collapsible = true;
+        for (BoxId c : *run) {
+            if (!is_collapsible_whitespace_only(*tree_, c)) {
+                all_collapsible = false;
+                break;
+            }
+        }
+        if (all_collapsible) {
+            // The whitespace itself is discarded, which is what flush_anonymous
+            // already did for a pure-whitespace run (the newlines between block
+            // siblings in formatted HTML must not each become a box). What has
+            // to survive is a block-in-inline split's empty fragment: the
+            // element is real, the reference reports it, and it belongs to the
+            // PARENT rather than to an anonymous block — which is the level the
+            // reference puts it at.
+            for (BoxId c : *run) {
+                if ((*tree_)[c].is_split_fragment) tree_->append_child(parent, c);
+            }
+        } else {
+            flush_anonymous(parent, run);
+        }
+        run->clear();
+    };
+
     current_inlines_.clear();
     for (BoxId c : existing_) {
         if (is_block_level(c)) {
-            if (!current_inlines_.empty()) {
-                flush_anonymous(parent, &current_inlines_);
-                current_inlines_.clear();
-            }
+            flush_run(&current_inlines_);
             tree_->append_child(parent, c);
         } else {
             current_inlines_.push_back(c);
         }
     }
-    if (!current_inlines_.empty()) {
-        flush_anonymous(parent, &current_inlines_);
-        current_inlines_.clear();
-    }
+    flush_run(&current_inlines_);
     existing_.clear();
     (*tree_)[parent].contains_inlines = false;
 }
