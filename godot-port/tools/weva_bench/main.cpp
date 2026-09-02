@@ -282,11 +282,16 @@ int main(int argc, char** argv) {
     // restyle is confined to what the change can reach, so touching the
     // outermost element restyles the document and touching a leaf restyles a
     // leaf. `*` is the honest worst case; a real host moves a health bar.
+    // Seconds handed to each timed update. Nonzero is what an ANIMATING
+    // document costs: transitions and @keyframes advance, and a page that
+    // animates layout relays out every frame.
+    double frame_dt = 0;
     std::string target_selector = "*";
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a.rfind("--target=", 0) == 0) target_selector = a.substr(9);
         if (a.rfind("--sample-depth=", 0) == 0) g_sample_depth = std::atoi(a.c_str() + 15);
+        if (a.rfind("--dt=", 0) == 0) frame_dt = std::atof(a.c_str() + 5);
     }
 
     // Arms the profiling timer around the timed region.
@@ -360,7 +365,7 @@ int main(int argc, char** argv) {
                 weva_element_set_attribute(d, target, "style", values[i & 1]);
             }
             const auto t0 = std::chrono::steady_clock::now();
-            weva_document_update(d, 0);
+            weva_document_update(d, frame_dt);
             const auto t1 = std::chrono::steady_clock::now();
             const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
             total += ms;

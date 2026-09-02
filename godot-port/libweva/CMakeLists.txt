@@ -35,6 +35,7 @@ add_library(weva STATIC
     src/font_metrics.cpp
     src/inline_layout.cpp
     src/invalidation.cpp
+    src/keyframes.cpp
     src/positioning.cpp
     src/tessellate.cpp
     src/paint.cpp

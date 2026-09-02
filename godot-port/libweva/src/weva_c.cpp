@@ -12,6 +12,7 @@
 #include "weva/hit_test.h"
 #include "weva/html.h"
 #include "weva/invalidation.h"
+#include "weva/keyframes.h"
 #include "weva/paint.h"
 #include "weva/positioning.h"
 #include "weva/selector.h"
@@ -24,6 +25,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <map>
+#include <set>
 #include <tuple>
 #include <memory>
 #include <optional>
@@ -308,11 +310,134 @@ struct StyleMap : StyleProvider {
     // to, since both are keyed on elements of the current document.
     std::map<const Element*, std::vector<RunningTransition>> transitions;
 
+    // @keyframes by name, collected from every sheet as it is added, and the
+    // clock each element's animation is running against.
+    std::map<std::string, KeyframeAnimation> keyframes;
+    std::map<const Element*, double> animation_clock;
+    // Only the elements that actually name an animation. Walking every element
+    // every frame to ask would give a document with nothing moving a per-frame
+    // cost again, which is the whole thing the incremental work removed.
+    std::set<const Element*> animated;
+    // What the cascade said, for every property an animation has overwritten.
+    //
+    // An animating document does not restyle -- time cannot change what the
+    // cascade would produce -- so when an animation stops holding a property
+    // there is nothing to put the declared value back. This is that. Cleared
+    // for an element whenever the cascade DOES run for it, since the values
+    // are then freshly correct in the style itself.
+    std::map<const Element*, std::map<int, std::string>> animation_saved;
+
+    void restore_animated(const Element& e, ComputedStyle* live) {
+        auto it = animation_saved.find(&e);
+        if (it == animation_saved.end()) return;
+        for (const auto& kv : it->second) {
+            live->set(kv.first, kv.second);
+            pending = worst(pending, invalidation_for_property(kv.first));
+        }
+        animation_saved.erase(it);
+    }
+    bool any_animation = false;   // whether any element named one this pass
+
     bool animating() const {
+        if (any_animation) return true;
         for (const auto& kv : transitions) {
             if (!kv.second.empty()) return true;
         }
         return false;
+    }
+
+    // Applies every @keyframes animation an element names.
+    //
+    // Animations sit ABOVE transitions in the cascade (CSS Cascade L5 §6.1),
+    // so this runs after them and overwrites what they wrote -- an element
+    // doing both shows the animation, which is what a browser does.
+    void apply_animations(const Element& e, ComputedStyle* live, double dt) {
+        const std::string_view names = live->get("animation-name");
+        if (names.empty() || names == "none") {
+            animation_clock.erase(&e);
+            restore_animated(e, live);
+            return;
+        }
+        double& clock = animation_clock[&e];
+        clock += dt;
+
+        for (size_t i = 0; i < 8; ++i) {
+            const std::string_view name = nth(names, i);
+            if (name.empty() || name == "none") break;
+            auto it = keyframes.find(std::string(name));
+            if (it == keyframes.end()) {
+                if (nth(names, i + 1) == name) break;
+                continue;
+            }
+            double duration = 0;
+            if (!parse_time_seconds(nth(live->get("animation-duration"), i), &duration) ||
+                duration <= 0) {
+                if (nth(names, i + 1) == name) break;
+                continue;
+            }
+            double delay = 0;
+            parse_time_seconds(nth(live->get("animation-delay"), i), &delay);
+            Easing easing;
+            if (!parse_easing(nth(live->get("animation-timing-function"), i), &easing)) {
+                parse_easing("ease", &easing);
+            }
+            const std::string_view direction = nth(live->get("animation-direction"), i);
+            const std::string_view fill = nth(live->get("animation-fill-mode"), i);
+            const std::string_view count_raw = nth(live->get("animation-iteration-count"), i);
+            const double iterations =
+                count_raw == "infinite" ? 1e30 : std::max(0.0, std::atof(std::string(count_raw).c_str()));
+
+            const double elapsed = clock - delay;
+            double progress = 0;
+            bool active = true;
+            if (elapsed < 0) {
+                // Before it starts: `backwards` and `both` show the first
+                // frame, everything else leaves the cascaded value alone.
+                if (fill != "backwards" && fill != "both") active = false;
+                progress = 0;
+            } else {
+                const double cycles = elapsed / duration;
+                if (cycles >= iterations) {
+                    // After the last iteration: `forwards` and `both` hold the
+                    // end, everything else snaps back to the cascaded value.
+                    if (fill != "forwards" && fill != "both") active = false;
+                    progress = 1;
+                    // Which END, though, depends on where an alternating
+                    // animation stopped.
+                    const double whole = std::floor(iterations);
+                    const bool odd = std::fmod(whole, 2.0) >= 1.0;
+                    if ((direction == "alternate" && odd) ||
+                        (direction == "alternate-reverse" && !odd) || direction == "reverse") {
+                        progress = 0;
+                    }
+                } else {
+                    progress = cycles - std::floor(cycles);
+                    const bool odd_cycle = std::fmod(std::floor(cycles), 2.0) >= 1.0;
+                    if (direction == "reverse") progress = 1 - progress;
+                    else if (direction == "alternate" && odd_cycle) progress = 1 - progress;
+                    else if (direction == "alternate-reverse" && !odd_cycle) progress = 1 - progress;
+                }
+            }
+            if (active) {
+                const double eased = easing(progress);
+                std::map<int, std::string>& saved = animation_saved[&e];
+                for (const std::string& property : it->second.properties) {
+                    std::string value;
+                    if (!keyframe_value_at(it->second, property, eased, &value)) continue;
+                    const int id = CssPropertyRegistry::instance().id_of(property);
+                    if (id < 0) continue;
+                    // The declared value, kept the first time it is overwritten
+                    // so the end of the animation has something to go back to.
+                    if (saved.find(id) == saved.end()) saved[id] = std::string(live->get(id));
+                    live->set(id, value);
+                    pending = worst(pending, invalidation_for_property(id));
+                }
+            } else {
+                restore_animated(e, live);
+            }
+            any_animation = any_animation || (active && elapsed < iterations * duration);
+            if (nth(names, i + 1) == name) break;
+        }
     }
 
     // The nth entry of a comma-separated transition longhand, and the LAST
@@ -376,6 +501,14 @@ struct StyleMap : StyleProvider {
     // live style, so layout and paint read the animated value rather than the
     // cascaded one it is travelling towards.
     void advance(double dt) {
+        // Animations run whether or not the clock moved: a paused frame must
+        // still SHOW the value its animation is holding, and a fill mode holds
+        // one before the animation has even started.
+        any_animation = false;
+        for (const Element* e : animated) {
+            auto it = by_element.find(e);
+            if (it != by_element.end()) apply_animations(*e, it->second, dt);
+        }
         if (dt <= 0) return;
         for (auto& kv : transitions) {
             auto it = by_element.find(kv.first);
@@ -407,6 +540,9 @@ struct StyleMap : StyleProvider {
         by_element.clear();
         pseudo_by_element.clear();
         transitions.clear();
+        animation_clock.clear();
+        animated.clear();
+        animation_saved.clear();
         pending = Invalidation::Boxes;
     }
 
@@ -468,6 +604,9 @@ struct StyleMap : StyleProvider {
         // The address has to survive -- every box holds it -- so the contents
         // move rather than the object.
         std::swap(*live, *fresh);
+        // The style now holds what the cascade just said, so anything an
+        // animation had put aside describes an older answer.
+        if (owner) animation_saved.erase(owner);
 
         // And the cascaded value is put back to what is actually on screen for
         // anything still in flight, or the first frame of a transition would
@@ -505,6 +644,10 @@ struct StyleMap : StyleProvider {
             engine.compute(e, state, parent, &scratch);
             merge(raw, &scratch, &e);
         }
+        const std::string_view animation = raw->get("animation-name");
+        if (!animation.empty() && animation != "none") animated.insert(&e);
+        else animated.erase(&e);
+
         static constexpr std::string_view kPseudos[2] = {"before", "after"};
         for (int i = 0; i < 2; ++i) {
             auto pit = pseudo_by_element.find({&e, i});
@@ -922,6 +1065,7 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
     // The cascade caches selector matches by element shape, and the shapes did
     // not change -- the rules did.
     doc->styles.engine.invalidate_cache();
+    collect_keyframes(*doc->sheets.back(), &doc->styles.keyframes);
     return WEVA_OK;
 }
 
@@ -997,6 +1141,12 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     // difference it found across the document.
     doc->styles.begin_pass();
 
+    // Time passing cannot change what the cascade would produce, so a document
+    // that is merely animating does not restyle to be told so. Without this an
+    // animating page paid a full walk every frame -- 5.2 ms of layout-stress's
+    // 16.5, to discover nothing.
+    const bool only_time = !touched_anything && !structural_pending;
+
     // When the only thing that happened is that a host set some attributes,
     // the walk can be confined to what those attributes can reach. Whether
     // they can reach past their own subtree is a property of the SHEETS, and
@@ -1030,7 +1180,7 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
                 if (!siblings_matter) break;
             }
         }
-    } else {
+    } else if (!only_time) {
         for (const Ref<Node>& c : doc->doc->children()) {
             if (c->node_type() == NodeType::Element) {
                 doc->styles.walk(static_cast<const Element&>(*c), nullptr);
@@ -1043,17 +1193,21 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
         }
     }
     doc->touched.clear();
+    lap("cascade");
+
     // Time passes after the cascade has set the targets, so a transition that
     // started this very pass gets its first step in the same frame rather than
-    // showing its start value for one.
+    // showing its start value for one. Timed separately: charging it to the
+    // cascade made an animating page look as though it were restyling, which
+    // is exactly what it is NOT doing.
     doc->styles.advance(dt_seconds);
+    lap("animate");
     Invalidation pending = doc->styles.pending;
     // Anything a host did that the cascade cannot see -- a new stylesheet, a
     // resized viewport, a backend swap, the first update of all -- is recorded
     // by the entry point that did it.
     pending = worst(pending, doc->pending);
     doc->pending = Invalidation::None;
-    lap("cascade");
 
     if (pending == Invalidation::None) {
         // Nothing an element can see is different, so the draws already

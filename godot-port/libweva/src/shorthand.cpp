@@ -273,6 +273,19 @@ bool expand_border_radius(const std::vector<std::string_view>& t,
 } // namespace
 
 // Splits on commas at paren depth 0, so `rgba(0, 0, 0, .5)` stays one piece.
+// A bare number, which `animation` uses for its iteration count.
+bool is_number_token(std::string_view s) {
+    if (s.empty()) return false;
+    bool digit = false;
+    for (size_t i = 0; i < s.size(); ++i) {
+        const char c = s[i];
+        if (c >= '0' && c <= '9') { digit = true; continue; }
+        if (c == '.' || ((c == '+' || c == '-') && i == 0)) continue;
+        return false;
+    }
+    return digit;
+}
+
 std::vector<std::string_view> split_commas(std::string_view v) {
     std::vector<std::string_view> out;
     int depth = 0;
@@ -699,6 +712,64 @@ bool expand_shorthand(std::string_view name, std::string_view value,
         emit(out, "transition-duration", durations);
         emit(out, "transition-timing-function", easings);
         emit(out, "transition-delay", delays);
+        return true;
+    }
+
+    // ---- animation: like transition, but with more keywords competing for
+    // the same slot. Order decides only the two times; everything else is told
+    // apart by what it looks like, and whatever is left over is the name.
+    if (name == "animation") {
+        std::string names, durations, easings, delays, counts, directions, fills, states;
+        for (std::string_view part : split_commas(value)) {
+            std::string_view nm = "none", dur = "0s", ease = "ease", delay = "0s";
+            std::string_view count = "1", dir = "normal", fill = "none", play = "running";
+            int times = 0;
+            for (std::string_view tok : tokenize_shorthand(part)) {
+                double seconds = 0;
+                if (parse_time_seconds(tok, &seconds)) {
+                    if (times == 0) dur = tok;
+                    else if (times == 1) delay = tok;
+                    ++times;
+                    continue;
+                }
+                Easing curve;
+                if (parse_easing(tok, &curve)) { ease = tok; continue; }
+                if (tok == "infinite" || is_number_token(tok)) { count = tok; continue; }
+                if (tok == "normal" || tok == "reverse" || tok == "alternate" ||
+                    tok == "alternate-reverse") {
+                    dir = tok;
+                    continue;
+                }
+                if (tok == "forwards" || tok == "backwards" || tok == "both") {
+                    fill = tok;
+                    continue;
+                }
+                if (tok == "running" || tok == "paused") { play = tok; continue; }
+                if (tok == "none") continue;   // the initial name; keep looking
+                nm = tok;
+            }
+            const auto add = [](std::string* dst, std::string_view v) {
+                if (!dst->empty()) *dst += ", ";
+                dst->append(v);
+            };
+            add(&names, nm);
+            add(&durations, dur);
+            add(&easings, ease);
+            add(&delays, delay);
+            add(&counts, count);
+            add(&directions, dir);
+            add(&fills, fill);
+            add(&states, play);
+        }
+        if (names.empty()) return true;
+        emit(out, "animation-name", names);
+        emit(out, "animation-duration", durations);
+        emit(out, "animation-timing-function", easings);
+        emit(out, "animation-delay", delays);
+        emit(out, "animation-iteration-count", counts);
+        emit(out, "animation-direction", directions);
+        emit(out, "animation-fill-mode", fills);
+        emit(out, "animation-play-state", states);
         return true;
     }
 

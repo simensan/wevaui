@@ -256,6 +256,27 @@ bool looks_like_nested_selector(const Ctx& ctx) {
             return true;
         }
     }
+    // A keyframe selector: `0%`, `50%, 100%`. A percentage cannot begin a
+    // declaration, so anything that reaches a `{` before a `;` is a rule --
+    // and this is the only place in CSS where one starts with a number.
+    // Without it a @keyframes body of percentages parsed as a run of
+    // malformed declarations and the animation had no frames at all.
+    if (t.kind == CssTokenKind::Percentage) {
+        int depth = 0;
+        for (std::size_t i = ctx.index + 1; i < toks.size(); ++i) {
+            const CssToken& tk = toks[i];
+            if (tk.kind == CssTokenKind::LParen || tk.kind == CssTokenKind::Function) ++depth;
+            else if (tk.kind == CssTokenKind::RParen) --depth;
+            else if (depth == 0) {
+                if (tk.kind == CssTokenKind::LBrace) return true;
+                if (tk.kind == CssTokenKind::Semicolon || tk.kind == CssTokenKind::RBrace ||
+                    tk.kind == CssTokenKind::Eof) {
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
     if (t.kind != CssTokenKind::Ident) return false;
 
     std::size_t peek = ctx.index + 1;
