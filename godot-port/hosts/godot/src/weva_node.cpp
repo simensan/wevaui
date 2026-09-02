@@ -475,7 +475,7 @@ godot::String WevaDocument::get_element_text(const godot::String& selector) {
     const uint32_t e = resolve(selector);
     if (e == WEVA_ELEMENT_NONE) return String();
     const size_t needed = weva_element_text(doc_, e, nullptr, 0);
-    std::vector<char> buffer(needed + 1, ' ');
+    std::vector<char> buffer(needed + 1, '\0');
     weva_element_text(doc_, e, buffer.data(), buffer.size());
     return String(buffer.data());
 }
@@ -484,7 +484,7 @@ godot::String WevaDocument::get_element_value(const godot::String& selector) {
     const uint32_t e = resolve(selector);
     if (e == WEVA_ELEMENT_NONE) return String();
     const size_t needed = weva_element_value(doc_, e, nullptr, 0);
-    std::vector<char> buffer(needed + 1, ' ');
+    std::vector<char> buffer(needed + 1, '\0');
     weva_element_value(doc_, e, buffer.data(), buffer.size());
     return String(buffer.data());
 }

@@ -70,6 +70,18 @@ private:
     int misses_ = 0;
 };
 
+// Where the text cursor is, for the one field that has focus.
+//
+// The caret is not a property of the document -- nothing in the DOM says where
+// a cursor sits -- so it arrives with the paint pass rather than being found in
+// the tree. A field a user can type into with no visible cursor reads as
+// broken, whatever else is right about it.
+struct CaretState {
+    const Element* element = nullptr;   // the focused field, or null for none
+    int index = 0;                      // characters before the caret
+    bool visible = true;                // the blink, off half the time
+};
+
 struct PaintContext {
     RenderInterface* backend = nullptr;
     FontInterface* font = nullptr;
@@ -83,6 +95,7 @@ struct PaintContext {
     // When set, rasterized backgrounds and blurs are cached here instead of
     // being regenerated and released every pass.
     TextureCache* texture_cache = nullptr;
+    CaretState caret;
 };
 
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,

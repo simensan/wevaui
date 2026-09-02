@@ -301,3 +301,106 @@ void test_abi_form_pseudo_classes() {
     box.bounds("#a", &x, &y, &w, &h);
     CHECK(w == 222);
 }
+
+
+// The caret: where typing lands, and what the field draws to show it.
+//
+// A field you can type into with no visible cursor reads as broken, and one
+// that always appends is not a text field -- it is a log. Both are here.
+void test_abi_caret() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 30px }",
+            "<input id=t type=text value=abcd>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    CHECK(weva_document_set_focus(doc.d, t) == WEVA_OK);
+
+    // Focus puts the cursor after what the field holds, where a user expects
+    // to carry on typing.
+    weva_document_text_input(doc.d, "X");
+    CHECK(doc.value("#t") == "abcdX");
+
+    // Home, then typing goes at the FRONT -- which is the whole difference
+    // between a caret and an append.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1) == 1);
+    weva_document_text_input(doc.d, "0");
+    CHECK(doc.value("#t") == "0abcdX");
+
+    // One Right -- the caret is already after the '0' it just typed -- then
+    // insert in the middle.
+    weva_document_key(doc.d, WEVA_KEY_RIGHT, 0, 1);
+    weva_document_text_input(doc.d, "-");
+    CHECK(doc.value("#t") == "0a-bcdX");
+
+    // Backspace takes the character BEFORE the cursor, Delete the one after.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_BACKSPACE, 0, 1) == 1);
+    CHECK(doc.value("#t") == "0abcdX");
+    CHECK(weva_document_key(doc.d, WEVA_KEY_DELETE, 0, 1) == 1);
+    CHECK(doc.value("#t") == "0acdX");
+
+    // End, and Delete there does nothing rather than running off.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_END, 0, 1) == 1);
+    weva_document_key(doc.d, WEVA_KEY_DELETE, 0, 1);
+    CHECK(doc.value("#t") == "0acdX");
+    // Home, and Backspace there likewise.
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_BACKSPACE, 0, 1);
+    CHECK(doc.value("#t") == "0acdX");
+
+    // Multi-byte text moves by CHARACTER. A cursor between the bytes of one
+    // codepoint is not a position at all, and deleting there would corrupt it.
+    Doc utf("html, body { margin: 0 } input { display: block; width: 200px }",
+            "<input id=t type=text value=''>");
+    const weva_element_t u = weva_document_query(utf.d, "#t");
+    weva_document_set_focus(utf.d, u);
+    weva_document_text_input(utf.d, "a");
+    weva_document_text_input(utf.d, "é");   // e-acute, two bytes
+    weva_document_text_input(utf.d, "b");
+    CHECK(utf.value("#t") == "aé" "b");
+    weva_document_key(utf.d, WEVA_KEY_LEFT, 0, 1);    // before 'b'
+    weva_document_key(utf.d, WEVA_KEY_BACKSPACE, 0, 1);
+    CHECK(utf.value("#t") == "ab");                   // the whole codepoint went
+
+    // Editing keys reach a field only when one has focus.
+    Doc other("html, body { margin: 0 } input { display: block }",
+              "<input id=t type=text value=abc><input id=c type=checkbox>");
+    weva_document_set_focus(other.d, weva_document_query(other.d, "#c"));
+    CHECK(weva_document_key(other.d, WEVA_KEY_BACKSPACE, 0, 1) == 0);
+    CHECK(other.value("#t") == "abc");
+}
+
+// The caret is drawn, and it blinks.
+void test_abi_caret_is_drawn() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 30px }",
+            "<input id=t type=text value=abc>");
+    size_t unfocused = 0;
+    weva_document_draws(doc.d, &unfocused);
+
+    weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+    weva_document_update(doc.d, 0);
+    size_t focused = 0;
+    weva_document_draws(doc.d, &focused);
+    CHECK(focused > unfocused);       // the bar is an extra draw
+
+    // A focused field keeps the document animating, or a host that stops
+    // handing over time freezes the cursor mid-blink.
+    CHECK(weva_document_is_animating(doc.d) == 1);
+
+    // Half a second on, half off.
+    weva_document_update(doc.d, 0.6);
+    size_t dark = 0;
+    weva_document_draws(doc.d, &dark);
+    CHECK(dark == unfocused);
+    weva_document_update(doc.d, 0.5);
+    size_t lit = 0;
+    weva_document_draws(doc.d, &lit);
+    CHECK(lit == focused);
+
+    // Moving it restarts the blink: a cursor that winks out while you are
+    // moving it is worse than none.
+    weva_document_update(doc.d, 0.6);
+    weva_document_draws(doc.d, &dark);
+    CHECK(dark == unfocused);
+    weva_document_key(doc.d, WEVA_KEY_LEFT, 0, 1);
+    weva_document_update(doc.d, 0);
+    weva_document_draws(doc.d, &lit);
+    CHECK(lit == focused);
+}

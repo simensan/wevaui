@@ -217,12 +217,35 @@ private:
 // the element under the pointer and on every ancestor of it, which is what
 // makes `.card:hover .title` work when the pointer is over the title. :active
 // and :focus-within behave the same way; :focus does not.
+std::string input_type_of(const Element& e) {
+    std::string t(e.get_attribute("type"));
+    for (char& c : t) c = static_cast<char>(c >= 'A' && c <= 'Z' ? c - 'A' + 'a' : c);
+    if (e.tag_name() != "input") return std::string(e.tag_name());
+    return t.empty() ? "text" : t;
+}
+
+// Whether typing into this control edits it. Buttons and marks do not take
+// text however focused they are.
+bool is_text_field(const Element& e) {
+    const std::string_view tag = e.tag_name();
+    if (tag == "textarea") return true;
+    if (tag != "input") return false;
+    const std::string type = input_type_of(e);
+    return type == "text" || type == "password" || type == "search" || type == "email" ||
+           type == "url" || type == "tel" || type == "number";
+}
+
 struct InteractionState : ElementStateProvider {
     std::vector<const Element*> hover_chain;
     std::vector<const Element*> active_chain;
     const Element* focused = nullptr;
     std::vector<const Element*> focus_chain;   // the focused element's ancestors
     int64_t version_ = 0;
+    // Where the cursor sits in the focused field, in BYTES, and how long since
+    // it last changed -- the blink restarts on every edit and every move, which
+    // is what makes a caret readable while you type.
+    int caret = 0;
+    double caret_age = 0;
 
     ElementState state_of(const Element& e) const override {
         uint32_t bits = 0;
@@ -279,6 +302,21 @@ struct InteractionState : ElementStateProvider {
         }
     }
 };
+
+CaretState caret_for(const InteractionState& st) {
+    CaretState c;
+    if (st.focused && is_text_field(*st.focused)) {
+        c.element = st.focused;
+        c.index = std::max(0, st.caret);
+        // Half a second lit, half dark. Moving it resets the age, so the
+        // cursor is never invisible at the moment you are steering it.
+        c.visible = std::fmod(st.caret_age, 1.0) < 0.5;
+    } else {
+        c.visible = false;
+    }
+    return c;
+}
+
 
 // One property on its way from one value to another.
 //
@@ -903,6 +941,9 @@ struct weva_document {
     // whole background rasterization on every change, which is most of what an
     // update costs at all.
     TextureCache textures;
+    // What caret the published draws were painted with. The blink is a change
+    // no cascade can see, so it is compared against this to ask for a repaint.
+    CaretState caret_painted;
 
     // What a host did that no element's style records: a stylesheet added, the
     // viewport resized, a backend swapped, the document loaded. Cleared by the
@@ -1156,7 +1197,12 @@ weva_status weva_document_content_size(weva_document_t doc, double* out_width,
 }
 
 int weva_document_is_animating(weva_document_t doc) {
-    return doc && doc->styles.animating() ? 1 : 0;
+    if (!doc) return 0;
+    // A blinking caret is a moving document: a host that stops handing over
+    // time because "nothing is animating" freezes the cursor mid-blink.
+    const InteractionState& st = doc->styles.state;
+    if (st.focused && is_text_field(*st.focused)) return 1;
+    return doc->styles.animating() ? 1 : 0;
 }
 
 weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
@@ -1181,6 +1227,16 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     // the cascade to find. A host that drives update() from its frame loop
     // pays this and no more for a screen that is merely being looked at --
     // unless something is moving, in which case time itself is the change.
+    // The caret runs on the clock alone. A blink changes nothing an element
+    // can see, so it is settled here -- against what was last painted -- and
+    // asks for its own repaint before anything decides the pass is a no-op.
+    if (dt_seconds > 0) doc->styles.state.caret_age += dt_seconds;
+    const CaretState caret = caret_for(doc->styles.state);
+    if (caret.element != doc->caret_painted.element ||
+        caret.index != doc->caret_painted.index ||
+        caret.visible != doc->caret_painted.visible) {
+        doc->pending = worst(doc->pending, Invalidation::Paint);
+    }
     if (doc->pending == Invalidation::None && !doc->dom_touched &&
         !(dt_seconds > 0 && doc->styles.animating())) {
         lap("cascade");
@@ -1313,6 +1369,8 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     paint.face = doc->face;
     paint.owned_textures = &doc->transient_textures;
     paint.texture_cache = &doc->textures;
+    paint.caret = caret;
+    doc->caret_painted = caret;
     doc->textures.begin_pass();
     paint_tree(doc->tree, doc->root, doc->ctx, paint);
     doc->textures.end_pass(doc->render_backend());
@@ -1460,24 +1518,6 @@ weva_element_t weva_document_element_at(weva_document_t doc, double x, double y)
 
 namespace {
 
-std::string input_type_of(const Element& e) {
-    std::string t(e.get_attribute("type"));
-    for (char& c : t) c = static_cast<char>(c >= 'A' && c <= 'Z' ? c - 'A' + 'a' : c);
-    if (e.tag_name() != "input") return std::string(e.tag_name());
-    return t.empty() ? "text" : t;
-}
-
-// Whether typing into this control edits it. Buttons and marks do not take
-// text however focused they are.
-bool is_text_field(const Element& e) {
-    const std::string_view tag = e.tag_name();
-    if (tag == "textarea") return true;
-    if (tag != "input") return false;
-    const std::string type = input_type_of(e);
-    return type == "text" || type == "password" || type == "search" || type == "email" ||
-           type == "url" || type == "tel" || type == "number";
-}
-
 void note_value_change(weva_document* doc, Element& e, std::string_view value) {
     doc->dom_touched = true;
     if (doc->touched.size() < 64) doc->touched.push_back(&e);
@@ -1486,7 +1526,7 @@ void note_value_change(weva_document* doc, Element& e, std::string_view value) {
     ev.target = doc->handle_of(&e);
     const size_t copy = value.size() < sizeof(ev.text) - 1 ? value.size() : sizeof(ev.text) - 1;
     std::memcpy(ev.text, value.data(), copy);
-    ev.text[copy] = ' ';
+    ev.text[copy] = '\0';
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(ev);
 }
@@ -1643,7 +1683,7 @@ bool focus_order_of(const Element& e, int* order) {
         const std::string text(raw);
         char* end = nullptr;
         const long v = std::strtol(text.c_str(), &end, 10);
-        if (end != text.c_str() && *end == ' ') {
+        if (end != text.c_str() && *end == '\0') {
             if (v < 0) return false;   // reachable by script, not by Tab
             *order = static_cast<int>(v);
             return true;
@@ -1730,22 +1770,68 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(e);
 
-    // Backspace in a focused field, which no host can do for itself without
-    // knowing where the text is kept.
-    if (down && key == WEVA_KEY_BACKSPACE) {
+    // Editing keys in a focused field. No host can do these for itself: where
+    // the text is kept and where the cursor sits are both the document's.
+    if (down) {
         Element* focused = const_cast<Element*>(doc->styles.state.focused);
         if (focused && is_text_field(*focused)) {
+            InteractionState& st = doc->styles.state;
             std::string value(focused->get_attribute("value"));
-            if (!value.empty()) {
-                // One CHARACTER, not one byte: trailing continuation bytes go
-                // with the codepoint that owns them.
-                size_t n = value.size() - 1;
-                while (n > 0 && (static_cast<unsigned char>(value[n]) & 0xC0) == 0x80) --n;
-                value.resize(n);
-                focused->set_attribute("value", value);
-                note_value_change(doc, *focused, value);
+            int caret = std::min(static_cast<int>(value.size()), std::max(0, st.caret));
+            // Character boundaries, not byte ones: a continuation byte belongs
+            // to the codepoint that owns it, and a cursor between them is not
+            // a position at all.
+            const auto prev = [&](int i) {
+                if (i <= 0) return 0;
+                int n = i - 1;
+                while (n > 0 && (static_cast<unsigned char>(value[static_cast<size_t>(n)]) & 0xC0) ==
+                                    0x80) {
+                    --n;
+                }
+                return n;
+            };
+            const auto next = [&](int i) {
+                const int end = static_cast<int>(value.size());
+                if (i >= end) return end;
+                int n = i + 1;
+                while (n < end && (static_cast<unsigned char>(value[static_cast<size_t>(n)]) &
+                                   0xC0) == 0x80) {
+                    ++n;
+                }
+                return n;
+            };
+            bool edited = false;
+            switch (key) {
+                case WEVA_KEY_BACKSPACE:
+                    if (caret > 0) {
+                        const int from = prev(caret);
+                        value.erase(static_cast<size_t>(from), static_cast<size_t>(caret - from));
+                        caret = from;
+                        edited = true;
+                    }
+                    break;
+                case WEVA_KEY_DELETE:
+                    if (caret < static_cast<int>(value.size())) {
+                        const int to = next(caret);
+                        value.erase(static_cast<size_t>(caret), static_cast<size_t>(to - caret));
+                        edited = true;
+                    }
+                    break;
+                case WEVA_KEY_LEFT: caret = prev(caret); break;
+                case WEVA_KEY_RIGHT: caret = next(caret); break;
+                case WEVA_KEY_HOME: caret = 0; break;
+                case WEVA_KEY_END: caret = static_cast<int>(value.size()); break;
+                default: caret = -1; break;   // not ours
             }
-            return 1;
+            if (caret >= 0) {
+                st.caret = caret;
+                st.caret_age = 0;   // a caret that blinks while you move it is unreadable
+                if (edited) {
+                    focused->set_attribute("value", value);
+                    note_value_change(doc, *focused, value);
+                }
+                return 1;
+            }
         }
     }
 
@@ -1766,7 +1852,11 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     Element* focused = const_cast<Element*>(doc->styles.state.focused);
     if (focused && lead >= 0x20 && lead != 0x7f && is_text_field(*focused)) {
         std::string value(focused->get_attribute("value"));
-        value += utf8;
+        InteractionState& st = doc->styles.state;
+        const size_t at = std::min(static_cast<size_t>(std::max(0, st.caret)), value.size());
+        value.insert(at, utf8);
+        st.caret = static_cast<int>(at + std::strlen(utf8));
+        st.caret_age = 0;
         focused->set_attribute("value", value);
         note_value_change(doc, *focused, value);
     }
@@ -1776,7 +1866,7 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     const size_t n = std::strlen(utf8);
     const size_t copy = n < sizeof(e.text) - 1 ? n : sizeof(e.text) - 1;
     std::memcpy(e.text, utf8, copy);
-    e.text[copy] = ' ';
+    e.text[copy] = '\0';
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(e);
 }
@@ -1796,7 +1886,7 @@ size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buf
     if (buffer && capacity > 0) {
         const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
         std::memcpy(buffer, value.data(), n);
-        buffer[n] = ' ';
+        buffer[n] = '\0';
     }
     return value.size();
 }
@@ -1848,6 +1938,10 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
         if (!target) return WEVA_ERR_NOT_FOUND;
     }
     if (st.focused == target) return WEVA_OK;
+    // A field you have just focused puts the cursor after what it holds, which
+    // is where a user expects to carry on typing.
+    st.caret = target ? static_cast<int>(target->get_attribute("value").size()) : 0;
+    st.caret_age = 0;
     const Element* previous = st.focused;
     if (previous) doc->queue_event(WEVA_EVENT_BLUR, previous, 0, 0, 0);
     if (target) doc->queue_event(WEVA_EVENT_FOCUS, target, 0, 0, 0);
@@ -1930,7 +2024,7 @@ size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const
     if (buffer && capacity > 0) {
         const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
         std::memcpy(buffer, value.data(), n);
-        buffer[n] = ' ';
+        buffer[n] = '\0';
     }
     return value.size();
 }

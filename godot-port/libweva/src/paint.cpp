@@ -1563,6 +1563,30 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
         build_text_geometry(t.text, cl, baseline, fs, color, paint, &text,
                             letter_spacing_of(b.style, ctx, fs), &face);
         draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+
+        // The caret, at the character the cursor sits before. Its x is the
+        // width of the text up to that point, measured the same way the run
+        // was laid out -- anything else and the bar drifts from the glyphs as
+        // the value grows.
+        if (paint.caret.visible && paint.caret.element == &e && !t.placeholder) {
+            const size_t at = std::min(static_cast<size_t>(std::max(0, paint.caret.index)),
+                                       t.text.size());
+            const std::string_view prefix(t.text.data(), at);
+            Mesh measure;
+            build_text_geometry(prefix, 0, 0, fs, color, paint, &measure,
+                                letter_spacing_of(b.style, ctx, fs), &face);
+            double advance = 0;
+            for (const Vertex& v : measure.vertices) {
+                advance = std::max<double>(advance, v.position.x);
+            }
+            // An empty prefix measures nothing, which is the left edge.
+            const double caret_x = cl + (at == 0 ? 0.0 : advance);
+            const double top = t.centered ? ct + std::max(0.0, (ch - line_h) * 0.5) : ct;
+            Mesh bar;
+            tessellate_rect(Rect(caret_x, top, 1.0, std::min(ch, line_h)), color, &bar, false);
+            draw_mesh(bar, paint.backend, {}, state.opacity, xf, state.clip.get(),
+                      state.filter.get());
+        }
         paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
     }
     if (tag == "select" && !e.has_attribute("multiple") && !e.has_attribute("size")) {

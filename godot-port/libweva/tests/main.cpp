@@ -227,6 +227,8 @@ void test_abi_incremental_matches_fresh();
 void test_abi_incremental_selector_reach();
 void test_abi_events();
 void test_abi_checkbox();
+void test_abi_caret();
+void test_abi_caret_is_drawn();
 void test_abi_form_pseudo_classes();
 void test_abi_radio_group();
 void test_abi_range_drag();
@@ -485,6 +487,8 @@ int main() {
     test_abi_incremental_selector_reach();
     test_abi_events();
     test_abi_checkbox();
+    test_abi_caret();
+    test_abi_caret_is_drawn();
     test_abi_form_pseudo_classes();
     test_abi_radio_group();
     test_abi_range_drag();
