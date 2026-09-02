@@ -3313,38 +3313,36 @@ share a page colour" for `#181228` vs `#181229`, a one-unit sRGB rounding
 difference. That verdict line is too strict to be useful and should compare the
 page colour with the same tolerance it applies to everything else.
 
-**The backend baseline, worst first.** This table is the SECOND one; the first
-was wrong and is worth saying why. "Ink" is any pixel differing from the page
-behind it, and each image supplied its own modal pixel as that page colour —
-sound only when the page has a large flat background. On a gradient the mode is
-an arbitrary point along it and the two backends land on different points, so
-inventory reported 58.8% disagreement (software's mode `#56407e` against
-Godot's `#0b0816`) when the images differ almost nowhere. With one reference
-colour applied to both it is 3.4%, and the only real difference on that page is
-one slot's glow. hud fell 50.2% -> 18.7% and dialogue and episode-stats came off
-the list entirely.
+**The backend baseline.** Two earlier tables here were measured wrong and the
+reason is the reusable part: "ink" meant pixels differing from the page behind
+them, and no choice of page colour survives these documents. Each image's own
+modal pixel breaks on a gradient (inventory read 58.8% when the images differ
+almost nowhere); one shared modal pixel moves when the RENDERER changes (the
+box-shadow fix shifted it and inventory went 3.4% -> 9.6% while its
+over-tolerance stayed at exactly 12.66%, so not one pixel had changed); the
+corner pixel is stable but calls most of a gradient page ink (vendor read 18%
+while looking identical).
 
-**19 of 35 samples are now under the 2% gate.**
+The difference image answers the question directly, with no page colour at all:
+an edge pixel differs a LITTLE, a shape drawn wrongly differs a LOT. The report
+carries both counts and gates on the second.
 
-| sample | ink | over-tol |
+**31 of 35 samples pass the 2% structural gate.** The four that do not:
+
+| sample | structural | over-tol |
 |---|---|---|
-| vendor | 29.0% | 30.9% |
-| quests | 27.1% | 32.1% |
-| grid-playground | 23.4% | 24.6% |
-| flex-playground | 22.4% | 43.6% |
-| hud | 18.7% | 69.4% |
-| glass | 17.0% | 87.0% |
-| stats | 14.0% | 31.8% |
-| neon | 11.7% | 82.7% |
-| episode-stats | 11.6% | 3.5% |
-| map | 8.9% | 5.1% |
+| glass | 39.9% | 87.7% |
+| quests | 16.9% | 82.7% |
+| match3 | 7.0% | 76.7% |
+| neon | 3.9% | 82.6% |
 
-Reading the two columns together is the point. glass and neon are 17% and 12%
-ink but 87% and 83% over tolerance — nearly every pixel differs a LITTLE, which
-is a blur or a composite being applied differently, not geometry going missing.
-episode-stats and map are the mirror image: 11.6% and 8.9% ink against 3.5% and
-5.1% over tolerance, so a small number of pixels differ a LOT and something is
-drawn in the wrong place. Those are different bugs and want different fixes.
+And a second group that passes structurally while differing a little almost
+everywhere — flex-playground (0.00% / 43.6%), hud (0.08% / 69.4%), stats
+(0.01% / 31.8%), leaderboard (0.00% / 30.1%), grid-playground (0.01% / 24.6%).
+Nothing is in the wrong place on those; the whole composite is a shade off,
+which points at gamma or a blend mode rather than geometry. All four hard
+failures also sit above 76% over-tolerance, so they may well share that cause
+on top of their own.
 
 ## Phase 8 — Remaining layout (~8k LOC)
 
