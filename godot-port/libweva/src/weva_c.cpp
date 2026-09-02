@@ -226,6 +226,57 @@ std::string input_type_of(const Element& e) {
     return t.empty() ? "text" : t;
 }
 
+// An element's text content, as one string. A <textarea> keeps what it holds
+// HERE rather than in a `value` attribute -- the markup's content IS the
+// value, as it is in a browser -- so editing one edits its text.
+std::string text_content_of(const Element& e) {
+    std::string out;
+    for (const Ref<Node>& c : e.children()) {
+        if (c->node_type() == NodeType::Text) out += static_cast<const TextNode&>(*c).data();
+    }
+    return out;
+}
+
+// Replaces an element's text, leaving its other children where they are. The
+// new text goes back WHERE THE OLD TEXT WAS, not at the end: for
+// `<div>label<span>*</span></div>` appending would put the label after the
+// icon and quietly reorder the row.
+void replace_text(Element& e, std::string_view text) {
+    // Collected first: removing while iterating the child list steps off it.
+    std::vector<Node*> stale;
+    Node* anchor = nullptr;
+    bool seen_text = false;
+    for (const Ref<Node>& c : e.children()) {
+        if (c->node_type() == NodeType::Text) {
+            stale.push_back(c.get());
+            seen_text = true;
+        } else if (seen_text && !anchor) {
+            anchor = c.get();
+        }
+    }
+    for (Node* n : stale) e.remove_child(n);
+    if (text.empty()) return;
+    Ref<TextNode> node = make_ref<TextNode>(text);
+    if (anchor) e.insert_before(node.get(), anchor);
+    else e.append_child(node.get());
+}
+
+// Where the line holding `at` begins and ends, in bytes. Only a <textarea>
+// has more than one, which is why Home and End mean something narrower there.
+int line_start(const std::string& s, int at) {
+    for (int i = std::min(at, static_cast<int>(s.size())) - 1; i >= 0; --i) {
+        if (s[static_cast<size_t>(i)] == '\n') return i + 1;
+    }
+    return 0;
+}
+
+int line_end(const std::string& s, int at) {
+    for (int i = std::max(0, at); i < static_cast<int>(s.size()); ++i) {
+        if (s[static_cast<size_t>(i)] == '\n') return i;
+    }
+    return static_cast<int>(s.size());
+}
+
 // Whether typing into this control edits it. Buttons and marks do not take
 // text however focused they are.
 bool is_text_field(const Element& e) {
@@ -235,6 +286,14 @@ bool is_text_field(const Element& e) {
     const std::string type = input_type_of(e);
     return type == "text" || type == "password" || type == "search" || type == "email" ||
            type == "url" || type == "tel" || type == "number";
+}
+
+// What a field holds, wherever it keeps it. An <input> keeps it in `value`;
+// a <textarea> keeps it as its content, which is also what gets laid out --
+// so editing one has to write there or the typing goes somewhere invisible.
+std::string field_value(const Element& e) {
+    if (e.tag_name() == "textarea") return text_content_of(e);
+    return std::string(e.get_attribute("value"));
 }
 
 struct InteractionState : ElementStateProvider {
@@ -1602,6 +1661,18 @@ weva_element_t weva_document_element_at(weva_document_t doc, double x, double y)
 
 namespace {
 
+// Writes what a field holds, to wherever that field keeps it. A <textarea>
+// keeps it as content, so this rebuilds its text node -- which is a structural
+// change, and the reason a keystroke in one costs a box rebuild.
+void set_field_value(weva_document* doc, Element& e, std::string_view value) {
+    if (e.tag_name() == "textarea") {
+        replace_text(e, value);
+        doc->pending = worst(doc->pending, Invalidation::Boxes);
+        return;
+    }
+    e.set_attribute("value", value);
+}
+
 void note_value_change(weva_document* doc, Element& e, std::string_view value) {
     doc->dom_touched = true;
     if (doc->touched.size() < 64) doc->touched.push_back(&e);
@@ -1937,7 +2008,8 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
         Element* focused = const_cast<Element*>(doc->styles.state.focused);
         if (focused && is_text_field(*focused)) {
             InteractionState& st = doc->styles.state;
-            std::string value(focused->get_attribute("value"));
+            std::string value = field_value(*focused);
+            const bool multiline = focused->tag_name() == "textarea";
             int caret = std::min(static_cast<int>(value.size()), std::max(0, st.caret));
             // Character boundaries, not byte ones: a continuation byte belongs
             // to the codepoint that owns it, and a cursor between them is not
@@ -1980,15 +2052,52 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                     break;
                 case WEVA_KEY_LEFT: caret = prev(caret); break;
                 case WEVA_KEY_RIGHT: caret = next(caret); break;
-                case WEVA_KEY_HOME: caret = 0; break;
-                case WEVA_KEY_END: caret = static_cast<int>(value.size()); break;
+                case WEVA_KEY_HOME: caret = multiline ? line_start(value, caret) : 0; break;
+                case WEVA_KEY_END:
+                    caret = multiline ? line_end(value, caret) : static_cast<int>(value.size());
+                    break;
+                case WEVA_KEY_ENTER:
+                    // The one key that means something different in a box you
+                    // can write paragraphs in.
+                    if (!multiline) { caret = -1; break; }
+                    value.insert(static_cast<size_t>(caret), 1, '\n');
+                    ++caret;
+                    edited = true;
+                    break;
+                case WEVA_KEY_UP:
+                case WEVA_KEY_DOWN: {
+                    // By line, keeping the column: in a textarea these move the
+                    // caret rather than scrolling, and scrolling follows from
+                    // the caret being brought back into view.
+                    if (!multiline) { caret = -1; break; }
+                    const int start = line_start(value, caret);
+                    const int column = caret - start;
+                    if (key == WEVA_KEY_UP) {
+                        if (start == 0) { caret = 0; break; }
+                        const int above = line_start(value, start - 1);
+                        caret = std::min(above + column, start - 1);
+                    } else {
+                        const int end = line_end(value, caret);
+                        if (end >= static_cast<int>(value.size())) {
+                            caret = static_cast<int>(value.size());
+                            break;
+                        }
+                        const int below = end + 1;
+                        caret = std::min(below + column, line_end(value, below));
+                    }
+                    break;
+                }
                 default: caret = -1; break;   // not ours
             }
             if (caret >= 0) {
                 st.caret = caret;
                 st.caret_age = 0;   // a caret that blinks while you move it is unreadable
                 if (edited) {
-                    focused->set_attribute("value", value);
+                    // Through the field, not into an attribute: a <textarea>
+                    // keeps what it holds as its CONTENT, and writing the
+                    // attribute put every backspace and newline somewhere
+                    // nothing displays.
+                    set_field_value(doc, *focused, value);
                     note_value_change(doc, *focused, value);
                 }
                 return 1;
@@ -2073,13 +2182,13 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     const unsigned char lead = static_cast<unsigned char>(utf8[0]);
     Element* focused = const_cast<Element*>(doc->styles.state.focused);
     if (focused && lead >= 0x20 && lead != 0x7f && is_text_field(*focused)) {
-        std::string value(focused->get_attribute("value"));
+        std::string value = field_value(*focused);
         InteractionState& st = doc->styles.state;
         const size_t at = std::min(static_cast<size_t>(std::max(0, st.caret)), value.size());
         value.insert(at, utf8);
         st.caret = static_cast<int>(at + std::strlen(utf8));
         st.caret_age = 0;
-        focused->set_attribute("value", value);
+        set_field_value(doc, *focused, value);
         note_value_change(doc, *focused, value);
     }
     weva_event e{};
@@ -2103,7 +2212,7 @@ size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buf
     if (e->tag_name() == "input" && (type == "checkbox" || type == "radio")) {
         value = e->has_attribute("checked") ? "on" : "";
     } else {
-        value = std::string(e->get_attribute("value"));
+        value = field_value(*e);
     }
     if (buffer && capacity > 0) {
         const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
@@ -2127,7 +2236,7 @@ weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
         if (on) e->set_attribute("checked", "");
         else e->remove_attribute("checked");
     } else {
-        e->set_attribute("value", v);
+        set_field_value(doc, *e, v);
     }
     doc->dom_touched = true;
     if (doc->touched.size() < 64) doc->touched.push_back(e);
@@ -2212,7 +2321,7 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     if (st.focused == target) return WEVA_OK;
     // A field you have just focused puts the cursor after what it holds, which
     // is where a user expects to carry on typing.
-    st.caret = target ? static_cast<int>(target->get_attribute("value").size()) : 0;
+    st.caret = target ? static_cast<int>(field_value(*target).size()) : 0;
     st.caret_age = 0;
     const Element* previous = st.focused;
     if (previous) doc->queue_event(WEVA_EVENT_BLUR, previous, 0, 0, 0);
@@ -2486,29 +2595,7 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
-
-    // Collect first: removing while iterating the child list would step off it.
-    // The new text goes back WHERE THE OLD TEXT WAS, not at the end -- for
-    // `<div>label<span>*</span></div>` appending would put the label after the
-    // icon and quietly reorder the row.
-    std::vector<Node*> stale;
-    Node* anchor = nullptr;
-    bool seen_text = false;
-    for (const Ref<Node>& c : e->children()) {
-        if (c->node_type() == NodeType::Text) {
-            stale.push_back(c.get());
-            seen_text = true;
-        } else if (seen_text && !anchor) {
-            anchor = c.get();
-        }
-    }
-    for (Node* n : stale) e->remove_child(n);
-    const std::string_view value(text ? text : "");
-    if (!value.empty()) {
-        Ref<TextNode> node = make_ref<TextNode>(value);
-        if (anchor) e->insert_before(node.get(), anchor);
-        else e->append_child(node.get());
-    }
+    replace_text(*e, text ? text : "");
     // The DOM changed, so which boxes exist may have too -- a row that was
     // empty now has a line in it. The ELEMENTS did not change, though, so the
     // styles keyed on them stand: dropping them would also drop every

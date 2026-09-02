@@ -404,3 +404,113 @@ void test_abi_caret_is_drawn() {
     weva_document_draws(doc.d, &lit);
     CHECK(lit == focused);
 }
+
+// A <textarea> keeps what it holds as its CONTENT, not in a `value`
+// attribute -- the markup between the tags is the value, as it is in a
+// browser. Typing used to write an attribute nothing displayed, so the box
+// stayed empty while the keystrokes went somewhere invisible.
+void test_abi_textarea_edits_its_content() {
+    Doc doc("html, body { margin: 0 } textarea { display: block; width: 200px; height: 80px }",
+            "<textarea id=t>hello</textarea>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    CHECK(doc.value("#t") == "hello");   // read from the content
+
+    weva_document_set_focus(doc.d, t);
+    weva_document_text_input(doc.d, "!");
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#t") == "hello!");
+    // And it is the TEXT that changed, which is what gets laid out: an
+    // attribute nobody reads would leave the box showing the old string.
+    char buf[64] = {0};
+    weva_element_text(doc.d, t, buf, sizeof(buf));
+    CHECK(std::string(buf) == "hello!");
+
+    // A host setting it writes to the same place.
+    CHECK(weva_element_set_value(doc.d, t, "typed by the game") == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    weva_element_text(doc.d, t, buf, sizeof(buf));
+    CHECK(std::string(buf) == "typed by the game");
+    CHECK(doc.value("#t") == "typed by the game");
+}
+
+// Enter is the one key that means something different in a box you can write
+// paragraphs in.
+void test_abi_textarea_newlines() {
+    Doc doc("html, body { margin: 0 } textarea { display: block; width: 200px; height: 80px }"
+            "input { display: block }",
+            "<textarea id=t></textarea><input id=one type=text value=x>");
+    weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+    weva_document_text_input(doc.d, "a");
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1) == 1);
+    weva_document_text_input(doc.d, "b");
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#t") == "a\nb");
+
+    // A one-line field does not take Enter: there is nowhere to put it, and a
+    // host wants that key for whatever the form does.
+    weva_document_set_focus(doc.d, weva_document_query(doc.d, "#one"));
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1) == 0);
+    CHECK(doc.value("#one") == "x");
+
+    // More lines make it taller, which is the proof the value reached layout.
+    Doc grow("html, body { margin: 0 }"
+             "textarea { display: block; width: 200px; height: auto; padding: 0; border: 0 }",
+             "<textarea id=t>one</textarea>");
+    double x = 0, y = 0, w = 0, one_line = 0;
+    weva_element_bounds(grow.d, weva_document_query(grow.d, "#t"), &x, &y, &w, &one_line);
+    weva_document_set_focus(grow.d, weva_document_query(grow.d, "#t"));
+    weva_document_key(grow.d, WEVA_KEY_ENTER, 0, 1);
+    weva_document_text_input(grow.d, "two");
+    weva_document_update(grow.d, 0);
+    double two_lines = 0;
+    weva_element_bounds(grow.d, weva_document_query(grow.d, "#t"), &x, &y, &w, &two_lines);
+    CHECK(two_lines > one_line);
+}
+
+// Home, End and the up and down arrows work by LINE in a textarea, and the
+// column is kept across a move -- which is what makes arrowing through a
+// paragraph feel like a text box rather than a list.
+void test_abi_textarea_line_keys() {
+    Doc doc("html, body { margin: 0 } textarea { display: block; width: 300px; height: 80px }",
+            "<textarea id=t>alpha\nbeta\ngamma</textarea>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);   // caret at the end, after "gamma"
+
+    // Home is the start of THIS line, not of the whole value.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1) == 1);
+    weva_document_text_input(doc.d, ">");
+    CHECK(doc.value("#t") == "alpha\nbeta\n>gamma");
+
+    // End is the end of this line.
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_END, 0, 1);
+    weva_document_text_input(doc.d, "<");
+    CHECK(doc.value("#t") == "alpha\nbeta\n>gamma<");
+
+    // Up keeps the column: from column 1 of the third line to column 1 of the
+    // second.
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_RIGHT, 0, 1);   // after the '>'
+    CHECK(weva_document_key(doc.d, WEVA_KEY_UP, 0, 1) == 1);
+    weva_document_text_input(doc.d, "*");
+    CHECK(doc.value("#t") == "alpha\nb*eta\n>gamma<");
+
+    // Down from a long line onto a short one lands at the end of the short
+    // one rather than past it.
+    Doc ragged("html, body { margin: 0 } textarea { display: block; width: 300px; height: 80px }",
+               "<textarea id=t>longer line\nab</textarea>");
+    weva_document_set_focus(ragged.d, weva_document_query(ragged.d, "#t"));
+    weva_document_key(ragged.d, WEVA_KEY_HOME, 0, 1);   // start of "ab"
+    weva_document_key(ragged.d, WEVA_KEY_UP, 0, 1);     // start of "longer line"
+    weva_document_key(ragged.d, WEVA_KEY_END, 0, 1);    // after "longer line"
+    weva_document_key(ragged.d, WEVA_KEY_DOWN, 0, 1);   // clamped to after "ab"
+    weva_document_text_input(ragged.d, "!");
+    CHECK(ragged.value("#t") == "longer line\nab!");
+
+    // Up on the first line goes to the very start; down on the last goes to
+    // the very end, rather than doing nothing.
+    weva_document_key(ragged.d, WEVA_KEY_UP, 0, 1);
+    weva_document_key(ragged.d, WEVA_KEY_UP, 0, 1);
+    weva_document_text_input(ragged.d, "^");
+    CHECK(ragged.value("#t") == "^longer line\nab!");
+}
