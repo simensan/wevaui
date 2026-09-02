@@ -142,6 +142,43 @@ void test_software_blending_and_scissor() {
         CHECK(near(r.pixel(1, 1).a, 1.0));
     }
     {
+        // What comes OUT is straight alpha, whatever the buffer keeps inside.
+        //
+        // Source-over produces a premultiplied destination — the blend writes
+        // src.rgb * src.a — so handing that out unchanged makes any caller that
+        // composites it over a page multiply by alpha a second time. The result
+        // is a translucent pixel darkened towards nothing, and it cancels
+        // wherever alpha has reached 1, which is why it hid on every opaque
+        // page and showed up only in quests' glass margin: 216 against Chrome's
+        // 239, from a single draw.
+        //
+        // Half-alpha RED on an empty page is the whole story in one pixel.
+        SoftwareRenderer r(4, 4);
+        r.clear(LinearColor::transparent());
+        Mesh m;
+        tessellate_rect(Rect(0, 0, 4, 4), LinearColor(1, 0, 0, 0.5f), &m);
+        draw(&r, m.vertices, m.indices);
+
+        // Full red at half coverage, NOT half-strength red at half coverage.
+        const std::vector<uint8_t> out = r.to_srgb_rgba();
+        const size_t i = (1 * 4 + 1) * 4;
+        CHECK(out[i] == 255 && out[i + 1] == 0 && out[i + 2] == 0);
+        CHECK(out[i + 3] == 128);
+        CHECK(near(r.pixel(1, 1).r, 1.0) && near(r.pixel(1, 1).a, 0.5));
+
+        // And composited over a white page the way weva_render does it, that
+        // is the pink a browser paints for rgba(255,0,0,0.5) — one unit off,
+        // because the alpha has been through a byte first: 0.5 becomes
+        // 128/255 = 0.50196, so the exact 127.5 that Chrome rounds up to 128
+        // arrives here as 127.0 and rounds down. That is the PPM round trip,
+        // not the blend, and it is inside the comparison's tolerance.
+        const auto over_white = [&](int c) {
+            const double a = out[i + 3] / 255.0;
+            return static_cast<int>(out[i + c] * a + 255.0 * (1.0 - a) + 0.5);
+        };
+        CHECK(over_white(0) == 255 && over_white(1) == 127 && over_white(2) == 127);
+    }
+    {
         // The scissor clips, and clearing it restores full drawing.
         SoftwareRenderer r(10, 10);
         r.clear(LinearColor::transparent());

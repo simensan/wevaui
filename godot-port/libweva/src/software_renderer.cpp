@@ -45,6 +45,17 @@ LinearColor encoded(const LinearColor& c) {
     return LinearColor(srgb_from_linear(c.r), srgb_from_linear(c.g), srgb_from_linear(c.b), c.a);
 }
 
+// The framebuffer keeps its components multiplied by alpha; these two put a
+// straight-alpha colour in and take one back out.
+LinearColor premultiply(const LinearColor& c) {
+    return LinearColor(c.r * c.a, c.g * c.a, c.b * c.a, c.a);
+}
+
+LinearColor unpremultiply(const LinearColor& c) {
+    if (c.a <= 0.0f) return LinearColor::transparent();
+    return LinearColor(c.r / c.a, c.g / c.a, c.b / c.a, c.a);
+}
+
 } // namespace
 
 SoftwareRenderer::SoftwareRenderer(int width, int height)
@@ -52,12 +63,12 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
       pixels_(static_cast<size_t>(std::max(0, width) * std::max(0, height))) {}
 
 void SoftwareRenderer::clear(const LinearColor& color) {
-    std::fill(pixels_.begin(), pixels_.end(), encoded(color));
+    std::fill(pixels_.begin(), pixels_.end(), premultiply(encoded(color)));
 }
 
 LinearColor SoftwareRenderer::pixel(int x, int y) const {
     if (x < 0 || y < 0 || x >= width_ || y >= height_) return LinearColor::transparent();
-    const LinearColor& c = pixels_[static_cast<size_t>(y) * width_ + x];
+    const LinearColor c = unpremultiply(pixels_[static_cast<size_t>(y) * width_ + x]);
     // The buffer is sRGB-encoded; the interface promises linear, so decode.
     return LinearColor(linear_from_srgb(c.r), linear_from_srgb(c.g), linear_from_srgb(c.b), c.a);
 }
@@ -65,7 +76,9 @@ LinearColor SoftwareRenderer::pixel(int x, int y) const {
 std::vector<uint8_t> SoftwareRenderer::to_srgb_rgba() const {
     std::vector<uint8_t> out(pixels_.size() * 4);
     for (size_t i = 0; i < pixels_.size(); ++i) {
-        const LinearColor& c = pixels_[i];
+        // Straight alpha on the way out, which is what an RGBA image means and
+        // what a caller compositing it over a page expects.
+        const LinearColor c = unpremultiply(pixels_[i]);
         const auto b = [](float v) {
             return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255.0f));
         };
@@ -123,8 +136,10 @@ void SoftwareRenderer::blend(int x, int y, const LinearColor& src) {
         }
     }
     LinearColor& dst = pixels_[static_cast<size_t>(y) * width_ + x];
-    // Source-over with straight alpha, in the ENCODED space — `src` arrives
-    // already encoded from raster_triangle. See the note on pixels_.
+    // Source-over onto a PREMULTIPLIED destination, in the ENCODED space —
+    // `src` arrives encoded and straight-alpha from raster_triangle, and
+    // multiplying it by its own alpha here is what premultiplies it. See the
+    // note on pixels_.
     const float inv = 1.0f - src.a;
     dst.r = src.r * src.a + dst.r * inv;
     dst.g = src.g * src.a + dst.g * inv;

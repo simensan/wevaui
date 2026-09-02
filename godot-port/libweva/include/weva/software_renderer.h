@@ -54,7 +54,7 @@ private:
     void blend(int x, int y, const LinearColor& src);
 
     int width_, height_;
-    // sRGB-ENCODED components with straight alpha, despite the element type.
+    // sRGB-ENCODED, PREMULTIPLIED components, despite the element type.
     //
     // Compositing happens in whatever space the framebuffer is in, and the
     // browsers composite in gamma sRGB — as does the Godot host, which feeds
@@ -63,8 +63,17 @@ private:
     // sample a pink blob over the dark page read #700f41 where Chrome and Godot
     // agreed on #2d0925, and the whole difference was the one pow().
     //
-    // clear() encodes on the way in and pixel() decodes on the way out, so the
-    // public interface still speaks LinearColor.
+    // Premultiplied because that is what source-over produces: blend() writes
+    // src.rgb * src.a + dst.rgb * (1 - src.a). Calling that "straight alpha"
+    // and handing it to a caller that composited it AGAIN over its page —
+    // which is what write_ppm does — multiplied by alpha twice and darkened
+    // every partly-transparent pixel. On quests it read 216 against Chrome's
+    // 239 in the panel margin, and only there, because the double multiply
+    // cancels wherever alpha has reached 1.
+    //
+    // clear() encodes and premultiplies on the way in; pixel() and
+    // to_srgb_rgba() undo both on the way out, so the public interface still
+    // speaks straight-alpha LinearColor.
     std::vector<LinearColor> pixels_;
     std::map<uint64_t, Geometry> geometry_;
     std::map<uint64_t, Texture> textures_;
