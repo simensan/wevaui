@@ -457,3 +457,61 @@ void test_abi_host_font_backend() {
 
     weva_document_destroy(d);
 }
+
+void test_abi_content_size() {
+    // The viewport is the floor: a page that fits reports the box it was laid
+    // out in, so a host asking "is there anything to scroll to" gets no.
+    {
+        weva_config cfg = default_config(200, 100);
+        weva_document_t d = weva_document_create(&cfg);
+        CHECK(load(d, "<body><div id=a></div></body>") == WEVA_OK);
+        CHECK(add_css(d, "html, body { margin: 0 } #a { display: block; height: 30px }") == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        double w = 0, h = 0;
+        CHECK(weva_document_content_size(d, &w, &h) == WEVA_OK);
+        CHECK(near(w, 200) && near(h, 100));
+        weva_document_destroy(d);
+    }
+    {
+        // And a page that overflows reports how far it actually reaches, which
+        // is the number a scrollbar is made of. Three 80px blocks in a 100px
+        // viewport reach 240.
+        weva_config cfg = default_config(200, 100);
+        weva_document_t d = weva_document_create(&cfg);
+        CHECK(load(d, "<body><div></div><div></div><div></div></body>") == WEVA_OK);
+        CHECK(add_css(d, "html, body { margin: 0 } div { display: block; height: 80px }") == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        double w = 0, h = 0;
+        CHECK(weva_document_content_size(d, &w, &h) == WEVA_OK);
+        CHECK(near(h, 240));
+        // Width did not overflow, so it stays the viewport's.
+        CHECK(near(w, 200));
+        weva_document_destroy(d);
+    }
+    {
+        // An absolutely positioned box counts too: it is painted, so it is
+        // reachable, and a host that scrolled only to the in-flow extent would
+        // cut it off.
+        weva_config cfg = default_config(200, 100);
+        weva_document_t d = weva_document_create(&cfg);
+        CHECK(load(d, "<body><div id=a></div></body>") == WEVA_OK);
+        CHECK(add_css(d, "html, body { margin: 0 }"
+                         "#a { position: absolute; top: 400px; left: 0;"
+                         "     width: 50px; height: 50px }") == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        double w = 0, h = 0;
+        CHECK(weva_document_content_size(d, &w, &h) == WEVA_OK);
+        CHECK(near(h, 450));
+        weva_document_destroy(d);
+    }
+    {
+        // Null document is rejected rather than crashing, and the
+        // out-parameters are optional, like every other query here.
+        double w = 0;
+        CHECK(weva_document_content_size(nullptr, &w, nullptr) == WEVA_ERR_INVALID_ARGUMENT);
+        weva_config cfg = default_config();
+        weva_document_t d = weva_document_create(&cfg);
+        CHECK(weva_document_content_size(d, nullptr, nullptr) == WEVA_OK);
+        weva_document_destroy(d);
+    }
+}

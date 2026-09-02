@@ -126,6 +126,27 @@ void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y) {
     *y = ay;
 }
 
+void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx, double* out_width,
+                  double* out_height) {
+    // The viewport is the floor: a page shorter than the box it was laid out in
+    // still occupies that box, and a host asking "is there anything to scroll
+    // to" wants no for that case rather than a number smaller than its window.
+    double w = ctx.viewport_width_px;
+    double h = ctx.viewport_height_px;
+    if (tree.valid(root)) {
+        for (int i = 0; i < tree.size(); ++i) {
+            const Box& b = tree[i];
+            if (b.width <= 0 && b.height <= 0) continue;
+            double ax = 0, ay = 0;
+            absolute_position(tree, i, &ax, &ay);
+            w = std::max(w, ax + b.width);
+            h = std::max(h, ay + b.height);
+        }
+    }
+    if (out_width) *out_width = w;
+    if (out_height) *out_height = h;
+}
+
 bool establishes_absolute_containing_block(const Box& b) {
     if (b.position != PositionType::Static) return true;
     return has_containing_block_property(b);

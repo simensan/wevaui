@@ -54,6 +54,11 @@ public:
     void set_use_engine_font(bool use);
     bool get_use_engine_font() const { return use_engine_font_; }
 
+    // How far the document reaches, which is not the viewport: half the sample
+    // corpus lays out taller than the box it is given. A host scrolling a
+    // document needs this to know whether there is anywhere to scroll to.
+    godot::Vector2 get_content_size();
+
     // The border box of the first element matching `selector`, in document
     // coordinates. A zero-size rect means no match — Godot has no natural
     // "absent rect", and a caller checking `size == 0` is the same test they

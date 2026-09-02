@@ -133,6 +133,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_document_size", "size"), &WevaDocument::set_document_size);
     ClassDB::bind_method(D_METHOD("get_document_size"), &WevaDocument::get_document_size);
     ClassDB::bind_method(D_METHOD("update_document"), &WevaDocument::update_document);
+    ClassDB::bind_method(D_METHOD("get_content_size"), &WevaDocument::get_content_size);
     ClassDB::bind_method(D_METHOD("query_bounds", "selector"), &WevaDocument::query_bounds);
     ClassDB::bind_method(D_METHOD("query_text", "selector"), &WevaDocument::query_text);
     ClassDB::bind_method(D_METHOD("set_element_attribute", "selector", "name", "value"),
@@ -437,6 +438,14 @@ void WevaDocument::_draw() {
         if (d.vertex_count == 0 || d.index_count == 0) continue;
         add_triangles(get_canvas_item(), d);
     }
+}
+
+Vector2 WevaDocument::get_content_size() {
+    if (!doc_) return Vector2();
+    ensure_updated();
+    double w = 0, h = 0;
+    if (weva_document_content_size(doc_, &w, &h) != WEVA_OK) return Vector2();
+    return Vector2(static_cast<real_t>(w), static_cast<real_t>(h));
 }
 
 Rect2 WevaDocument::query_bounds(const String& selector) {

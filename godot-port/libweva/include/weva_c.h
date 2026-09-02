@@ -212,6 +212,13 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
 
 void weva_document_set_viewport(weva_document_t doc, int width, int height);
 
+/* How far the laid-out document reaches, which is not the viewport: half of the
+ * sample corpus is taller than the box it is laid out in. A host that wants to
+ * scroll a document needs this to know whether there is anywhere to scroll to.
+ * Never smaller than the viewport. Valid after weva_document_update. */
+weva_status weva_document_content_size(weva_document_t doc, double* out_width,
+                                       double* out_height);
+
 /* Runs cascade, layout and paint. `dt_seconds` advances animations; pass 0 for
  * a static document. */
 weva_status weva_document_update(weva_document_t doc, double dt_seconds);

@@ -218,6 +218,7 @@ void test_abi_load_and_update();
 void test_abi_query_and_bounds();
 void test_abi_attributes_and_text();
 void test_abi_viewport_and_restyle();
+void test_abi_content_size();
 void test_abi_texture_ids_are_all_published();
 void test_abi_host_render_backend();
 void test_abi_partial_backend_degrades();
@@ -442,6 +443,7 @@ int main() {
     test_abi_query_and_bounds();
     test_abi_attributes_and_text();
     test_abi_viewport_and_restyle();
+    test_abi_content_size();
     test_abi_texture_ids_are_all_published();
     test_abi_host_render_backend();
     test_abi_partial_backend_degrades();

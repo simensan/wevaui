@@ -519,6 +519,13 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     doc->ctx.viewport_height_px = height;
 }
 
+weva_status weva_document_content_size(weva_document_t doc, double* out_width,
+                                       double* out_height) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    content_size(doc->tree, doc->root, doc->ctx, out_width, out_height);
+    return WEVA_OK;
+}
+
 weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     (void)dt_seconds;   // animations are not ported yet
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;

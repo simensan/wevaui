@@ -39,6 +39,7 @@ func _ready() -> void:
 	_test_restyle_round_trips()
 	_test_empty_and_malformed_input()
 	_test_backdrop_filter_crosses_the_boundary()
+	_test_content_size()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -171,3 +172,28 @@ func _test_backdrop_filter_crosses_the_boundary() -> void:
 	plain.queue_free()
 	filtered.queue_free()
 	identity.queue_free()
+
+
+func _test_content_size() -> void:
+	# What a host needs in order to scroll a document: how far it reaches, which
+	# is not the viewport. Half the sample corpus lays out past the box it is
+	# given, and painting stops at that box -- so a host that wants the rest has
+	# to lay the page out again at this height.
+	var short_doc := _make_doc(
+		"<body><div id='a'></div></body>",
+		"html, body { margin: 0 } #a { display: block; height: 30px }",
+		Vector2(200, 100))
+	# The viewport is the floor: a page that fits reports the box it fits in, so
+	# "is there anything to scroll to" answers no.
+	_check(short_doc.get_content_size() == Vector2(200, 100),
+		"a page inside its viewport reports the viewport")
+
+	var tall_doc := _make_doc(
+		"<body><div></div><div></div><div></div></body>",
+		"html, body { margin: 0 } div { display: block; height: 80px }",
+		Vector2(200, 100))
+	var reach := tall_doc.get_content_size()
+	_check(_approx(reach.y, 240.0), "three 80px blocks reach 240px, not the 100px viewport")
+	_check(_approx(reach.x, 200.0), "width did not overflow, so it stays the viewport's")
+	short_doc.queue_free()
+	tall_doc.queue_free()

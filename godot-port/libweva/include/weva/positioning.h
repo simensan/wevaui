@@ -39,6 +39,16 @@ bool establishes_absolute_containing_block(const Box& b);
 // Root-relative origin, summing local offsets up the tree.
 void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y);
 
+// How far the laid-out document actually reaches, as the union of every box's
+// border box in root-relative coordinates.
+//
+// This is not the viewport, and on half of the sample corpus it is much taller
+// than one: a host that embeds a document needs it to know whether there is
+// anything to scroll to, and how far. Never smaller than the viewport, so a
+// short page reports the box it was laid out in rather than the ink in it.
+void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
+                  double* out_width, double* out_height);
+
 // Reads `top`/`right`/`bottom`/`left` and `z-index` onto every box. An absent
 // offset stays absent — `auto` is not zero, and the two lead to different
 // placement.
