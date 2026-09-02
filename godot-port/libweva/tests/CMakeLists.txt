@@ -14,6 +14,7 @@ add_executable(weva_tests
     test_selector_match.cpp
     test_cascade_store.cpp
     test_cascade.cpp
+    test_components.cpp
     test_variables.cpp
     test_media.cpp
     test_pseudo.cpp

@@ -16,6 +16,7 @@
 // its behalf. It counts only what happens INSIDE a timed pass — setup and
 // parsing are excluded, since those are per-document rather than per-frame.
 
+#include "weva/components.h"
 #include "weva/block_layout.h"
 #include "weva/box_builder.h"
 #include "weva/cascade.h"
@@ -192,6 +193,11 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "weva_bench: html did not parse\n");
         return 1;
     }
+
+    // Components (`<template id="card">` + `<card>` + `<slot>`) expand BEFORE
+    // the cascade, as UIDocumentBuilder does, so selectors match the expanded
+    // subtree and not the un-rendered host.
+    expand_components(doc.get());
 
     CascadeEngine cascade;
     Stylesheet ua, author;

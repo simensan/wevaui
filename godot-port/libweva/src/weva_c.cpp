@@ -1,5 +1,6 @@
 #include "weva_c.h"
 
+#include "weva/components.h"
 #include "weva/block_layout.h"
 #include "weva/box_builder.h"
 #include "weva/cascade.h"
@@ -459,6 +460,11 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     opts.strict = false;
     doc->doc = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
     if (!doc->doc) return WEVA_ERR_PARSE;
+
+    // Components (`<template id="card">` + `<card>` + `<slot>`) expand BEFORE
+    // the cascade, as UIDocumentBuilder does, so selectors match the expanded
+    // subtree and not the un-rendered host.
+    expand_components(doc->doc.get());
 
     doc->elements.clear();
     for (const Ref<Node>& c : doc->doc->children()) {

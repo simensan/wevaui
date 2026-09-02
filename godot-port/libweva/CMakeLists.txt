@@ -17,6 +17,7 @@ add_library(weva STATIC
     src/css_properties.cpp
     src/computed_style.cpp
     src/cascade.cpp
+    src/components.cpp
     src/variable_resolver.cpp
     src/media.cpp
     src/env_attr.cpp

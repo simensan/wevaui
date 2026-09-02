@@ -11,6 +11,7 @@
 // and only the FIRST box for an element is emitted, because a box that
 // fragments produces several and the C# keys on the principal one.
 
+#include "weva/components.h"
 #include "weva/block_layout.h"
 #include "weva/box.h"
 #include "weva/box_builder.h"
@@ -352,6 +353,11 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "weva_dump: html did not parse\n");
         return 1;
     }
+
+    // Components (`<template id="card">` + `<card>` + `<slot>`) expand BEFORE
+    // the cascade, as UIDocumentBuilder does, so selectors match the expanded
+    // subtree and not the un-rendered host.
+    weva::expand_components(document.get());
 
     // The UA sheet first, then the author sheet, in the same order and with the
     // same origins the C# uses — origin ordering is half of the cascade, so a
