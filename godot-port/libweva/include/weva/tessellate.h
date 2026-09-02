@@ -2,6 +2,7 @@
 #include "weva/geometry.h"
 #include "weva/render_interface.h"
 
+#include <array>
 #include <vector>
 
 // The geometry the core builds so backends do not have to. Everything here
@@ -64,6 +65,31 @@ struct ClipPoint {
 // output covers exactly the intersection. Attributes interpolate as for the
 // rectangle form. This is what `clip-path` and a rounded `overflow: hidden`
 // resolve to, since the backends know only rectangular scissors.
+// A clip polygon with everything about it that does not depend on what is
+// being clipped, worked out once.
+//
+// clip_triangles_polygon needs the polygon triangulated, its bounds, and the
+// largest axis-aligned rectangle that fits inside it. All three are properties
+// of the POLYGON, and computing them per draw meant a rounded scroller paid
+// for them once for every box inside it -- 268 times on layout-stress, which
+// put the function back at the top of the profile even though the clipping
+// itself had already been skipped for most triangles.
+struct PreparedClip {
+    std::vector<ClipPoint> polygon;
+    std::vector<std::array<ClipPoint, 3>> pieces;
+    double x0 = 0, y0 = 0, x1 = 0, y1 = 0;          // bounds
+    double ix0 = 0, iy0 = 0, ix1 = -1, iy1 = -1;    // the rectangle that fits inside
+    bool convex = false;
+
+    void prepare();
+};
+
+// Clips against a polygon prepared in advance. The overload taking a bare
+// polygon prepares one and throws it away, which is right for a one-off.
+void clip_triangles_polygon(const std::vector<Vertex>& vertices,
+                            const std::vector<uint32_t>& indices, const PreparedClip& clip,
+                            Mesh* out);
+
 void clip_triangles_polygon(const std::vector<Vertex>& vertices,
                             const std::vector<uint32_t>& indices,
                             const std::vector<ClipPoint>& polygon, Mesh* out);

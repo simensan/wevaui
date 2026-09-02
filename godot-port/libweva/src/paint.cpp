@@ -71,6 +71,25 @@ void TextureCache::release_all(RenderInterface* backend) {
 struct ClipNode {
     std::vector<ClipPoint> polygon;
     std::shared_ptr<const ClipNode> parent;
+    // The polygon triangulated, bounded, and with its inscribed rectangle
+    // found -- all of which depend on the polygon alone, so a rounded scroller
+    // works them out once rather than once per box inside it.
+    //
+    // LAZILY, though, and that is not a detail. contains_box already turns
+    // most draws away before any of this is needed, so preparing eagerly in
+    // push_clip made layout-stress SLOWER -- 13.7 ms to 14.9 -- by paying for
+    // work the common path never asks for. Measured both ways.
+    mutable PreparedClip prepared;
+    mutable bool prepared_ready = false;
+
+    const PreparedClip& clip_shape() const {
+        if (!prepared_ready) {
+            prepared.polygon = polygon;
+            prepared.prepare();
+            prepared_ready = true;
+        }
+        return prepared;
+    }
 
     // Bounds and winding, so a mesh that plainly needs no clipping can skip it.
     // A rounded `overflow: hidden` clips every descendant draw, and a blurred
@@ -104,6 +123,11 @@ struct ClipNode {
     // region is the polygon's kernel, which is contained in the polygon for any
     // simple polygon -- so a true answer is sound, and a false one only means
     // the clip runs as before.
+    //
+    // The inscribed rectangle prepare() found would answer this in O(1) rather
+    // than O(edges). Measured, and it is not worth it: the rectangle is the
+    // more conservative test, so more meshes fall through to the per-triangle
+    // path, and layout-stress came out very slightly SLOWER.
     bool contains_box(double x0, double y0, double x1, double y1) const {
         if (x0 < min_x || x1 > max_x || y0 < min_y || y1 > max_y) return false;
         const double cx[4] = {x0, x1, x1, x0};
@@ -294,7 +318,7 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
             if (!n->intersects_box(x0, y0, x1, y1)) return;
             if (n->contains_box(x0 - 1, y0 - 1, x1 + 1, y1 + 1)) continue;
             Mesh tmp;
-            clip_triangles_polygon(cur.vertices, cur.indices, n->polygon, &tmp);
+            clip_triangles_polygon(cur.vertices, cur.indices, n->clip_shape(), &tmp);
             cur = std::move(tmp);
             if (cur.empty()) return;
             bounds();
@@ -348,7 +372,7 @@ void filter_backdrop(const Mesh& shape, RenderInterface* backend, const Backdrop
     }
     for (const ClipNode* n = clip; n; n = n->parent.get()) {
         Mesh tmp;
-        clip_triangles_polygon(cur.vertices, cur.indices, n->polygon, &tmp);
+        clip_triangles_polygon(cur.vertices, cur.indices, n->clip_shape(), &tmp);
         cur = std::move(tmp);
         if (cur.empty()) return;
     }
