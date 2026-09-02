@@ -24,6 +24,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <deque>
 #include <map>
 #include <set>
 #include <tuple>
@@ -893,6 +894,31 @@ struct weva_document {
     // puts the whole document back in play.
     std::vector<Element*> touched;
 
+    // Events waiting for the host to pump them. Bounded: a host that never
+    // reads gets the oldest dropped rather than unbounded growth, because a
+    // queue that can starve a process is worse than a lost click.
+    std::deque<weva_event> events;
+    static constexpr size_t kMaxEvents = 256;
+    // The element a press started on, so a release on the SAME one is a click
+    // and a release anywhere else is not.
+    const Element* press_target = nullptr;
+
+    void queue_event(int32_t kind, const Element* target, double x, double y, uint32_t buttons) {
+        weva_event e{};
+        e.kind = kind;
+        e.target = WEVA_ELEMENT_NONE;
+        if (target) {
+            for (size_t i = 0; i < elements.size(); ++i) {
+                if (elements[i] == target) { e.target = static_cast<weva_element_t>(i); break; }
+            }
+        }
+        e.x = x;
+        e.y = y;
+        e.buttons = buttons;
+        if (events.size() >= kMaxEvents) events.pop_front();
+        events.push_back(e);
+    }
+
     RenderInterface* render_backend() {
         return host_render ? static_cast<RenderInterface*>(host_render.get()) : &backend;
     }
@@ -1050,6 +1076,8 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     // Those point at elements of the document just replaced.
     doc->touched.clear();
     doc->dom_touched = false;
+    doc->events.clear();
+    doc->press_target = nullptr;
     return WEVA_OK;
 }
 
@@ -1402,6 +1430,28 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
     InteractionState& st = doc->styles.state;
     const Element* hit = element_at_point(doc->tree, doc->root, x, y);
 
+    // Enter and leave are reported against the innermost element, which is
+    // where the hover chain starts.
+    const Element* was = st.hover_chain.empty() ? nullptr : st.hover_chain.front();
+    if (was != hit) {
+        if (was) doc->queue_event(WEVA_EVENT_POINTER_LEAVE, was, x, y, buttons);
+        if (hit) doc->queue_event(WEVA_EVENT_POINTER_ENTER, hit, x, y, buttons);
+    }
+    const uint32_t was_down = st.active_chain.empty() ? 0u : 1u;
+    if (buttons != 0 && !was_down) {
+        doc->press_target = hit;
+        doc->queue_event(WEVA_EVENT_POINTER_DOWN, hit, x, y, buttons);
+    } else if (buttons == 0 && was_down) {
+        doc->queue_event(WEVA_EVENT_POINTER_UP, hit, x, y, buttons);
+        // A click is a press and a release on the SAME element. Releasing
+        // somewhere else is a drag that ended, and is not a click -- which is
+        // the behaviour every button in every toolkit has.
+        if (hit && hit == doc->press_target) {
+            doc->queue_event(WEVA_EVENT_CLICK, hit, x, y, buttons);
+        }
+        doc->press_target = nullptr;
+    }
+
     std::vector<const Element*> hover;
     InteractionState::chain_of(hit, &hover);
     // A press latches onto what was under the pointer; dragging off an element
@@ -1428,6 +1478,25 @@ void weva_document_clear_pointer(weva_document_t doc) {
     st.active_chain.clear();
     note_state_change(doc, old_hover, st.hover_chain);
     note_state_change(doc, old_active, st.active_chain);
+}
+
+int weva_document_poll_event(weva_document_t doc, weva_event* out) {
+    if (!doc || !out || doc->events.empty()) return 0;
+    *out = doc->events.front();
+    doc->events.pop_front();
+    return 1;
+}
+
+int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
+                          weva_element_t descendant) {
+    if (!doc) return 0;
+    const Element* a = doc->element_at(ancestor);
+    const Element* d = doc->element_at(descendant);
+    if (!a || !d) return 0;
+    for (const Node* n = d; n; n = n->parent()) {
+        if (n == a) return 1;
+    }
+    return 0;
 }
 
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element) {
@@ -1470,6 +1539,43 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     // change lands on a different entry without being invalidated here.
     doc->dom_touched = true;
     if (doc->touched.size() < 64) doc->touched.push_back(e);
+    return WEVA_OK;
+}
+
+weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
+                                  const char* text) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+
+    // Collect first: removing while iterating the child list would step off it.
+    // The new text goes back WHERE THE OLD TEXT WAS, not at the end -- for
+    // `<div>label<span>*</span></div>` appending would put the label after the
+    // icon and quietly reorder the row.
+    std::vector<Node*> stale;
+    Node* anchor = nullptr;
+    bool seen_text = false;
+    for (const Ref<Node>& c : e->children()) {
+        if (c->node_type() == NodeType::Text) {
+            stale.push_back(c.get());
+            seen_text = true;
+        } else if (seen_text && !anchor) {
+            anchor = c.get();
+        }
+    }
+    for (Node* n : stale) e->remove_child(n);
+    const std::string_view value(text ? text : "");
+    if (!value.empty()) {
+        Ref<TextNode> node = make_ref<TextNode>(value);
+        if (anchor) e->insert_before(node.get(), anchor);
+        else e->append_child(node.get());
+    }
+    // The DOM changed, so which boxes exist may have too -- a row that was
+    // empty now has a line in it. The ELEMENTS did not change, though, so the
+    // styles keyed on them stand: dropping them would also drop every
+    // transition mid-flight, and a value bound to a label updating each frame
+    // would cancel the animation next to it.
+    doc->pending = Invalidation::Boxes;
     return WEVA_OK;
 }
 

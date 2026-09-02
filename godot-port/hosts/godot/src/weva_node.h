@@ -72,6 +72,25 @@ public:
     // Focus, by selector; an empty selector drops it.
     bool set_focus(const godot::String& selector);
 
+    // ---- Data binding ---------------------------------------------------
+    //
+    // What a script needs to drive a document: change what it says, change how
+    // it looks, and hear when it is used. Everything is addressed by SELECTOR,
+    // because that is the name a script and a stylesheet already share.
+    bool set_element_text(const godot::String& selector, const godot::String& text);
+    godot::String get_element_text(const godot::String& selector);
+    bool add_element_class(const godot::String& selector, const godot::String& name);
+    bool remove_element_class(const godot::String& selector, const godot::String& name);
+    bool toggle_element_class(const godot::String& selector, const godot::String& name,
+                              bool on);
+    bool has_element(const godot::String& selector);
+
+    // Drives the pointer directly, for a host routing its own input -- a
+    // gamepad cursor, a touch surface, a test. `buttons` is a bitmask; the
+    // primary button is bit 0 and is what makes an element :active.
+    void set_pointer(const godot::Vector2& point, int buttons);
+    void clear_pointer();
+
     // Runs cascade, layout and paint now, rather than waiting for the frame.
     void update_document();
 
@@ -174,6 +193,13 @@ private:
     // Time owed to the document. An update consumes it; a frame in which
     // nothing is moving hands over nothing and costs nothing.
     double pending_dt_ = 0;
+
+    // Drains the document's event queue into signals.
+    void pump_events();
+    godot::String id_of(uint32_t element);
+    // Resolves a selector to a handle, updating the document first so the
+    // answer reflects what a script has just changed.
+    uint32_t resolve(const godot::String& selector);
     // The atlas texture, rebuilt when the document publishes a new one. Held
     // so it outlives the draw call that references it.
     // Every texture the document published, by the id its draws name: the

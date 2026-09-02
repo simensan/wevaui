@@ -43,6 +43,7 @@ add_executable(weva_tests
     test_software_renderer.cpp
     test_text_render.cpp
     test_c_abi.cpp
+    test_c_abi_events.cpp
     test_c_abi_incremental.cpp
     test_c_abi_interaction.cpp
     test_c_abi_transitions.cpp

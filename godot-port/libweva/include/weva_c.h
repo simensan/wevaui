@@ -261,6 +261,49 @@ weva_element_t weva_document_query(weva_document_t doc, const char* selector);
 weva_status weva_element_bounds(weva_document_t doc, weva_element_t element, double* out_x,
                                 double* out_y, double* out_width, double* out_height);
 
+/* ---- Events ------------------------------------------------------------
+ *
+ * What a host reads back after driving the pointer, so a script can act on a
+ * click without re-implementing hit testing or press tracking.
+ *
+ * Events are QUEUED, not called back. A callback across the C boundary would
+ * have to run while the document is mid-update, and a handler that mutated the
+ * document there would be doing so under the pass that is reading it. Polling
+ * puts the host in charge of when that happens.
+ */
+typedef enum weva_event_kind {
+    WEVA_EVENT_NONE = 0,
+    WEVA_EVENT_POINTER_DOWN,
+    WEVA_EVENT_POINTER_UP,
+    /* A press and a release on the same element, which is what a script
+     * actually wants and what neither of the two above is on its own. */
+    WEVA_EVENT_CLICK,
+    WEVA_EVENT_POINTER_ENTER,
+    WEVA_EVENT_POINTER_LEAVE
+} weva_event_kind;
+
+typedef struct weva_event {
+    int32_t kind;              /* one of weva_event_kind */
+    weva_element_t target;     /* the element it happened on */
+    double x, y;               /* document coordinates */
+    uint32_t buttons;          /* buttons held at the time */
+} weva_event;
+
+/* Takes the oldest queued event, returning 0 when the queue is empty. A host
+ * pumps this in a loop after each update:
+ *
+ *     weva_event e;
+ *     while (weva_document_poll_event(doc, &e)) { ... }
+ *
+ * The queue is bounded; if a host never pumps it, the oldest events are
+ * dropped rather than the memory growing without limit. */
+int weva_document_poll_event(weva_document_t doc, weva_event* out);
+
+/* Whether an element is `target` or a descendant of it. What a host needs to
+ * answer "was this click inside my panel?" without walking the tree itself. */
+int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
+                          weva_element_t descendant);
+
 /* ---- Interaction ------------------------------------------------------
  *
  * What drives :hover, :active, :focus, :focus-visible and :focus-within. The
@@ -296,6 +339,15 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
  * it. */
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,
                                        const char* name, const char* value);
+
+/* Replaces an element's text with `text`.
+ *
+ * Every text node under the element goes, and one carrying `text` takes their
+ * place; child ELEMENTS are left where they are, so setting the text of a row
+ * does not throw away the icon inside it. This is what data binding is made
+ * of, and until now the ABI had no way to do it at all -- a host could style a
+ * document but never change what it said. */
+weva_status weva_element_set_text(weva_document_t doc, weva_element_t element, const char* text);
 
 /* Copies one attribute's value into `buffer`, with the same convention as
  * weva_element_text: always null-terminated when capacity allows, and the

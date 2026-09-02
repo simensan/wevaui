@@ -41,6 +41,8 @@ func _ready() -> void:
 	_test_backdrop_filter_crosses_the_boundary()
 	_test_content_size()
 	_test_documents_do_not_disturb_each_other()
+	_test_script_bindings()
+	_test_click_signals()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -232,3 +234,70 @@ func _test_documents_do_not_disturb_each_other() -> void:
 		"the surviving document still draws the same after others were freed")
 	remove_child(first)
 	first.free()
+
+
+# What a GDScript author actually does with this: change what the document
+# says, toggle a class to restyle it, and hear about a click. None of it was
+# reachable from a script before.
+func _test_script_bindings() -> void:
+	var doc := _make_doc(
+		"<body><div id='label'>before</div><div id='row'>name<span id='icon'>*</span></div></body>",
+		"#label { width: 100px; height: 20px } .hot { background-color: #ff0000 }")
+
+	_check(doc.has_element("#label"), "has_element finds one that is there")
+	_check(not doc.has_element("#nothing"), "has_element rejects one that is not")
+	_check(doc.get_element_text("#label") == "before", "text reads back")
+
+	_check(doc.set_element_text("#label", "after"), "setting text succeeds")
+	doc.update_document()
+	_check(doc.get_element_text("#label") == "after", "text round-trips through the binding")
+
+	# Child elements survive a text change, so a row keeps its icon.
+	_check(doc.set_element_text("#row", "renamed"), "a row's text can be set")
+	doc.update_document()
+	_check(doc.has_element("#icon"), "setting a row's text keeps the element inside it")
+
+	# A class toggle is the ordinary way to drive a restyle from game logic.
+	var before := doc.get_draw_count()
+	_check(doc.add_element_class("#label", "hot"), "a class can be added")
+	doc.update_document()
+	_check(doc.get_draw_count() > before, "the added class paints something new")
+	_check(doc.remove_element_class("#label", "hot"), "a class can be removed")
+	doc.update_document()
+	_check(doc.get_draw_count() == before, "removing it puts the document back")
+
+	# Toggling to the state it is already in is not an error.
+	_check(doc.toggle_element_class("#label", "hot", false), "toggling off an absent class is fine")
+	doc.queue_free()
+
+
+# A click reaches a script as a signal naming the element.
+func _test_click_signals() -> void:
+	var doc := _make_doc(
+		"<body><div id='btn'></div></body>",
+		"html, body { margin: 0 } #btn { width: 100px; height: 40px; background-color: #0f0 }")
+
+	var clicked: Array = []
+	var entered: Array = []
+	doc.element_clicked.connect(func(id): clicked.append(id))
+	doc.element_entered.connect(func(id): entered.append(id))
+
+	# Driving the document directly, since a headless run has no real pointer.
+	_check(doc.element_id_at(Vector2(50, 20)) == "btn", "hit testing finds the button")
+
+	doc.set_pointer(Vector2(50, 20), 0)
+	doc.set_pointer(Vector2(50, 20), 1)
+	doc.set_pointer(Vector2(50, 20), 0)
+	doc.update_document()
+
+	_check(entered.has("btn"), "entering the button raises element_entered")
+	_check(clicked.has("btn"), "pressing and releasing on it raises element_clicked")
+
+	# Pressing on it and releasing elsewhere is a drag, not a click.
+	clicked.clear()
+	doc.set_pointer(Vector2(50, 20), 1)
+	doc.set_pointer(Vector2(50, 300), 1)
+	doc.set_pointer(Vector2(50, 300), 0)
+	doc.update_document()
+	_check(not clicked.has("btn"), "releasing away from the button is not a click")
+	doc.queue_free()

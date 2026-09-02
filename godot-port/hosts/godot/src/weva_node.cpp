@@ -189,6 +189,29 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("element_id_at", "point"), &WevaDocument::element_id_at);
     ClassDB::bind_method(D_METHOD("set_focus", "selector"), &WevaDocument::set_focus);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interactive"), "set_interactive", "get_interactive");
+
+    ClassDB::bind_method(D_METHOD("set_element_text", "selector", "text"),
+                         &WevaDocument::set_element_text);
+    ClassDB::bind_method(D_METHOD("get_element_text", "selector"),
+                         &WevaDocument::get_element_text);
+    ClassDB::bind_method(D_METHOD("add_element_class", "selector", "name"),
+                         &WevaDocument::add_element_class);
+    ClassDB::bind_method(D_METHOD("remove_element_class", "selector", "name"),
+                         &WevaDocument::remove_element_class);
+    ClassDB::bind_method(D_METHOD("toggle_element_class", "selector", "name", "on"),
+                         &WevaDocument::toggle_element_class);
+    ClassDB::bind_method(D_METHOD("has_element", "selector"), &WevaDocument::has_element);
+    ClassDB::bind_method(D_METHOD("set_pointer", "point", "buttons"), &WevaDocument::set_pointer);
+    ClassDB::bind_method(D_METHOD("clear_pointer"), &WevaDocument::clear_pointer);
+
+    // The element is named by its `id`, because that is the handle a script
+    // and a stylesheet already share. An element with no id reports an empty
+    // string, which a script can still compare against.
+    ADD_SIGNAL(MethodInfo("element_clicked", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("element_pressed", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("element_released", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("element_entered", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("element_exited", PropertyInfo(Variant::STRING, "id")));
     ClassDB::bind_method(D_METHOD("get_draw_count"), &WevaDocument::get_draw_count);
     ClassDB::bind_method(D_METHOD("get_triangle_count"), &WevaDocument::get_triangle_count);
 
@@ -297,6 +320,114 @@ void WevaDocument::_notification(int what) {
     }
 }
 
+void WevaDocument::set_pointer(const Vector2& point, int buttons) {
+    if (!doc_) return;
+    ensure_updated();
+    pointer_ = point;
+    buttons_ = static_cast<uint32_t>(buttons);
+    weva_document_set_pointer(doc_, point.x, point.y, buttons_);
+    dirty_ = true;
+    queue_redraw();
+}
+
+void WevaDocument::clear_pointer() {
+    if (!doc_) return;
+    weva_document_clear_pointer(doc_);
+    pointer_ = Vector2(-1, -1);
+    buttons_ = 0;
+    dirty_ = true;
+    queue_redraw();
+}
+
+godot::String WevaDocument::id_of(uint32_t element) {
+    if (!doc_ || element == WEVA_ELEMENT_NONE) return String();
+    char buffer[128];
+    const size_t n = weva_element_attribute(doc_, element, "id", buffer, sizeof(buffer));
+    if (n == 0 || n >= sizeof(buffer)) return String();
+    return String(buffer);
+}
+
+uint32_t WevaDocument::resolve(const godot::String& selector) {
+    if (!doc_ || selector.is_empty()) return WEVA_ELEMENT_NONE;
+    ensure_updated();
+    const CharString s = selector.utf8();
+    return weva_document_query(doc_, s.get_data());
+}
+
+void WevaDocument::pump_events() {
+    if (!doc_) return;
+    weva_event e{};
+    while (weva_document_poll_event(doc_, &e)) {
+        const String id = id_of(e.target);
+        switch (e.kind) {
+            case WEVA_EVENT_CLICK: emit_signal("element_clicked", id); break;
+            case WEVA_EVENT_POINTER_DOWN: emit_signal("element_pressed", id); break;
+            case WEVA_EVENT_POINTER_UP: emit_signal("element_released", id); break;
+            case WEVA_EVENT_POINTER_ENTER: emit_signal("element_entered", id); break;
+            case WEVA_EVENT_POINTER_LEAVE: emit_signal("element_exited", id); break;
+            default: break;
+        }
+    }
+}
+
+bool WevaDocument::set_element_text(const godot::String& selector, const godot::String& text) {
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return false;
+    const CharString t = text.utf8();
+    if (weva_element_set_text(doc_, e, t.get_data()) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+godot::String WevaDocument::get_element_text(const godot::String& selector) {
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return String();
+    const size_t needed = weva_element_text(doc_, e, nullptr, 0);
+    std::vector<char> buffer(needed + 1, ' ');
+    weva_element_text(doc_, e, buffer.data(), buffer.size());
+    return String(buffer.data());
+}
+
+bool WevaDocument::has_element(const godot::String& selector) {
+    return resolve(selector) != WEVA_ELEMENT_NONE;
+}
+
+// The class list, read-modify-write. A script toggling a state class is the
+// ordinary way to drive a :hover-style rule from game logic, and doing it by
+// hand through set_attribute means every caller reimplements the split.
+bool WevaDocument::toggle_element_class(const godot::String& selector, const godot::String& name,
+                                        bool on) {
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE || name.is_empty()) return false;
+    char buffer[512];
+    const size_t n = weva_element_attribute(doc_, e, "class", buffer, sizeof(buffer));
+    if (n >= sizeof(buffer)) return false;
+    PackedStringArray tokens = String(buffer).split(" ", false);
+    PackedStringArray kept;
+    bool present = false;
+    for (int i = 0; i < tokens.size(); ++i) {
+        if (tokens[i] == name) { present = true; continue; }
+        kept.push_back(tokens[i]);
+    }
+    if (on) kept.push_back(name);
+    if (present == on) return true;   // already as asked
+    const String joined = String(" ").join(kept);
+    const CharString value = joined.utf8();
+    if (weva_element_set_attribute(doc_, e, "class", value.get_data()) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::add_element_class(const godot::String& selector, const godot::String& name) {
+    return toggle_element_class(selector, name, true);
+}
+
+bool WevaDocument::remove_element_class(const godot::String& selector, const godot::String& name) {
+    return toggle_element_class(selector, name, false);
+}
+
 godot::String WevaDocument::element_id_at(const Vector2& point) {
     if (!doc_) return String();
     ensure_updated();
@@ -338,6 +469,7 @@ void WevaDocument::_process(double delta) {
     const double dt = pending_dt_;
     pending_dt_ = 0;
     ensure_updated(dt);
+    pump_events();
     // A document with something in flight has to be drawn again next frame;
     // the draw list changed under it.
     if (weva_document_is_animating(doc_)) queue_redraw();
@@ -379,6 +511,10 @@ void WevaDocument::ensure_updated(double dt) {
 void WevaDocument::update_document() {
     dirty_ = true;
     ensure_updated();
+    // Events raised by whatever the caller just did are delivered here too, so
+    // a script that drives the pointer and then updates does not have to wait
+    // for a frame to hear about it.
+    pump_events();
     queue_redraw();
 }
 
