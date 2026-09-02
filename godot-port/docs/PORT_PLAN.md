@@ -3408,39 +3408,46 @@ Fixing weva_render's colour space is the larger job — its framebuffer is linea
 end to end and its render tests carry expected values — so it is worth doing
 deliberately rather than as a side effect of chasing a sample.
 
-### Eighteenth pass: the host double-darkens shadow rings
+### Eighteenth pass: two wrong conclusions, and the shadow knockout reverted
 
-quests narrows to one declaration and then to the HOST, which is the opposite of
-the previous pass's conclusion and worth stating plainly: for colour and
-gradients weva_render is the wrong side, for box-shadow the Godot host is.
-"Which backend is wrong" is per-feature, not per-backend.
+This pass produced no fix and two retractions, both from the same root cause.
 
-The reproduction is two divs over a white canvas, each `rgba(13, 8, 28, 0.46)`
-with a shadow — one `0 34px 90px`, one `0 0 12px`:
+**The knockout is reverted.** CSS Backgrounds L3 §7.1 is right that an outer
+shadow is drawn outside the border edge only, but the ring geometry was wrong.
+Measured against Chrome on a plain `0 0 40px` shadow it removed most of the
+falloff — white at 15, 25 and 35px out where Chrome has 249, 240 and 222 — and
+dropped a blur-less spread shadow entirely (255 against 115). Filling the rect
+is the lesser error: invisible under an opaque background, which is most of
+them, where the ring lost shadows outright. The interior bleed it was fixing is
+still real (vendor's cards are `rgba(..., 0.92)` and Chrome renders their
+interiors flat) and still wants a ring that keeps the falloff.
 
-| point | software | godot | Chrome |
-|---|---|---|---|
-| interior (large blur) | (141,140,145) | **(71,68,78)** | (144,142,151) |
-| interior (small blur) | (141,140,145) | **(71,68,78)** | (144,142,151) |
-| clear of the shadow | (255,255,255) | (231,231,231) | (255,255,255) |
+**"vendor 29% -> 1.08%" measured the wrong thing.** That was the two BACKENDS
+agreeing, and they agreed because both had lost the same shadow. Neither was
+checked against Chrome.
 
-So the border-box knockout added in the sixteenth pass is CORRECT — the
-software backend proves it, landing within 3/255 of Chrome — and the host
-darkens the interior anyway from the same draw list. It also puts shadow where
-there is none, 231 against 255 well clear of the box.
+**"the host double-darkens shadow rings" was a stale binary.** The Godot host's
+`.so` had not been rebuilt since before the knockout, so it ran the old paint
+code while weva_render ran the new one — which is exactly the shape of a real
+backend bug, and read as one for a whole pass. Rebuilt, the two agree on 0.00%
+of pixels; the host does nothing wrong here.
 
-Both symptoms fit one cause: the falloff is a stack of ~12 to 45 nested
-translucent rings, and something in the host's path composites them more than
-once — overlapping triangles inside a ring mesh being alpha-blended per
-triangle would do it, and so would a modulate alpha applied on top of the vertex
-alpha. Neither is confirmed.
+**Three stale-build traps in one session, all the same shape.** `dotnet run
+--project Tools/TestVerifyAll` rebuilds the package sources but not BaselineGen,
+so the corpora ran against an old binary. `ninja -C ~/weva/build-gcc` rebuilds
+weva_render but not `~/weva/build-godot`, so the host ran old paint code. Each
+time the stale artefact produced a plausible, wrong story that survived a full
+pass. **A comparison between two artefacts is worthless unless both were built
+from the tree under test** — rebuild every consumer before believing a
+comparison, and treat "one side changed and the other did not" as a build
+question first.
 
-**This also corrects a claim in the sixteenth pass.** vendor's 29% -> 1.08% was
-the two BACKENDS agreeing better, since the knockout changed both. It did not
-establish that vendor now matches Chrome, and on this evidence its card
-interiors are probably still wrong in the host. A backend-agreement gate cannot
-see an error both sides share, and cannot see one it introduces symmetrically
-either — Chrome has to be checked directly whenever a paint change lands.
+**Still open on shadows**, both verified against Chrome:
+
+* the interior bleed under a translucent background (needs a correct ring);
+* a blur-less spread shadow (`0 0 0 20px`) draws NOTHING in either backend,
+  where Chrome draws a hard ring — `blurred_coverage(0, 0)` returning zero
+  makes the first layer fail the `target <= accumulated` test.
 
 ## Phase 8 — Remaining layout (~8k LOC)
 
