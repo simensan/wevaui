@@ -20,6 +20,7 @@
 #include "weva/user_agent_stylesheet.h"
 
 #include <algorithm>
+#include <cctype>
 #include <unordered_map>
 
 #include <cstring>
@@ -1256,6 +1257,60 @@ BoxId box_of(const weva_document* doc, const Element* e) {
     return kNoBox;
 }
 
+// A paint context with only what MEASURING needs. Text is mapped back to
+// characters with the same shaping, face and letter-spacing it was drawn with;
+// anything less and a click lands a character off.
+PaintContext measuring_context(weva_document* doc) {
+    PaintContext paint;
+    paint.font = doc->font_backend();
+    paint.atlas = &doc->atlas;
+    paint.face = doc->face;
+    return paint;
+}
+
+size_t field_offset_at(weva_document* doc, const Element& e, double x, double y) {
+    const BoxId box = box_of(doc, &e);
+    if (box == kNoBox) return 0;
+    const PaintContext paint = measuring_context(doc);
+    if (e.tag_name() != "textarea") {
+        return control_text_offset_at(doc->tree, box, doc->ctx, paint, x);
+    }
+    std::string_view source;
+    for (const Ref<Node>& child : e.children()) {
+        if (child->node_type() == NodeType::Text) {
+            source = static_cast<const TextNode&>(*child).data();
+            break;
+        }
+    }
+    if (source.empty()) return 0;
+    double ox = 0, oy = 0;
+    visual_position(doc->tree, box, &ox, &oy);
+    return run_text_offset_at(doc->tree, box, doc->ctx, paint, source, ox, oy, x, y);
+}
+
+// Where the word around `at` begins and ends. A word is a run of letters,
+// digits and underscores; anything else is a separator, and double-clicking
+// one of those takes just it -- which is what a browser does.
+void word_around(const std::string& value, size_t at, size_t* from, size_t* to) {
+    const auto wordish = [](unsigned char c) {
+        return std::isalnum(c) != 0 || c == '_' || c >= 0x80;
+    };
+    const size_t n = value.size();
+    size_t i = std::min(at, n);
+    if (i == n && i > 0) --i;
+    if (n == 0) {
+        *from = *to = 0;
+        return;
+    }
+    const bool inside = wordish(static_cast<unsigned char>(value[i]));
+    size_t start = i, end = i + 1;
+    while (start > 0 && wordish(static_cast<unsigned char>(value[start - 1])) == inside) --start;
+    while (end < n && wordish(static_cast<unsigned char>(value[end])) == inside) ++end;
+    *from = start;
+    *to = end;
+}
+
+
 }   // namespace
 
 extern "C" {
@@ -2000,7 +2055,29 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
         if (hit) {
             Element& e = const_cast<Element&>(*hit);
             if (input_type_of(e) == "range") activate_control(doc, e, x);
-            if (is_text_field(e)) weva_document_set_focus(doc, doc->handle_of(hit));
+            if (is_text_field(e)) {
+                weva_document_set_focus(doc, doc->handle_of(hit));
+                // The cursor goes where you pressed, not to the end of the
+                // value: a field you can only ever click into at the end is
+                // one you cannot edit the middle of.
+                InteractionState& state = doc->styles.state;
+                state.caret = static_cast<int>(field_offset_at(doc, e, x, y));
+                state.anchor = -1;
+                state.caret_age = 0;
+                doc->pending = worst(doc->pending, Invalidation::Paint);
+            }
+        }
+    } else if (buttons != 0 && was_down && doc->press_target &&
+               is_text_field(*doc->press_target)) {
+        // Dragging from a press inside a field selects, and keeps selecting
+        // once the pointer has left the field -- as it does everywhere.
+        InteractionState& state = doc->styles.state;
+        const int to = static_cast<int>(field_offset_at(doc, *doc->press_target, x, y));
+        if (to != state.caret) {
+            if (state.anchor < 0) state.anchor = state.caret;
+            state.caret = to;
+            state.caret_age = 0;
+            doc->pending = worst(doc->pending, Invalidation::Paint);
         }
     } else if (buttons != 0 && was_down && doc->press_target &&
                input_type_of(const_cast<Element&>(*doc->press_target)) == "range") {
@@ -2383,6 +2460,24 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     e.text[copy] = '\0';
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(e);
+}
+
+int weva_document_select_word_at(weva_document_t doc, double x, double y) {
+    if (!doc) return 0;
+    const Element* hit = element_at_point(doc->tree, doc->root, x, y);
+    if (!hit || !is_text_field(*hit)) return 0;
+    weva_document_set_focus(doc, doc->handle_of(hit));
+    const std::string value = field_value(*hit);
+    if (value.empty()) return 0;
+    size_t from = 0, to = 0;
+    word_around(value, field_offset_at(doc, *hit, x, y), &from, &to);
+    if (from >= to) return 0;
+    InteractionState& st = doc->styles.state;
+    st.anchor = static_cast<int>(from);
+    st.caret = static_cast<int>(to);
+    st.caret_age = 0;
+    doc->pending = worst(doc->pending, Invalidation::Paint);
+    return 1;
 }
 
 int weva_document_select_all(weva_document_t doc) {

@@ -129,6 +129,31 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
                          const LinearColor& color, const PaintContext& paint, Mesh* out,
                          double letter_spacing = 0, const FaceHandle* face = nullptr);
 
+// Which character of a field's value sits under a point -- the inverse of
+// putting the cursor at an index, and what a click in a text box needs.
+//
+// Both live here rather than beside the input handling because the answer
+// depends on the same shaping, face and letter-spacing the text was DRAWN
+// with; working it out anywhere else means guessing at those and putting the
+// cursor a character off. `paint` needs only its font, atlas and face.
+//
+// Returns the byte offset into the control's value, rounded to the nearest
+// character boundary -- clicking the right half of a glyph puts the cursor
+// after it, as it does everywhere.
+
+// For a form control whose text paint draws itself (an <input>). `x` is in
+// document coordinates.
+size_t control_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                              const PaintContext& paint, double x);
+
+// For a <textarea>, whose value is laid out as runs: the offset into `source`
+// nearest the point, taking the line under `y` and then the character under
+// `x`. `origin_x`/`origin_y` is the textarea box's border-box origin in
+// document coordinates, already shifted by any scroll.
+size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                          const PaintContext& paint, std::string_view source, double origin_x,
+                          double origin_y, double x, double y);
+
 // Builds the mesh for one box's background and border, without issuing any
 // draw. Exposed because it is far easier to assert geometry than backend calls.
 void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& ctx,

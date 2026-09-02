@@ -3,6 +3,7 @@
 #include "weva/background.h"
 #include "weva/block_layout.h"
 #include "weva/css_value.h"
+#include "weva/positioning.h"
 #include "weva/scrollbar.h"
 
 #include <algorithm>
@@ -11,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -2562,6 +2564,103 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     PaintContext p;
     p.backend = backend;
     paint_tree(tree, root, ctx, p);
+}
+
+namespace {
+
+// The character boundary in `text` nearest `dx` pixels from its start, where
+// `dx` is measured the way the run was drawn. Rounds to the nearer edge of the
+// character it lands in: clicking the right half of a glyph puts the cursor
+// after it, which is what every text box does.
+size_t offset_nearest(std::string_view text, double dx, double font_size, double spacing,
+                      const FaceHandle& face, const PaintContext& paint) {
+    if (dx <= 0 || text.empty()) return 0;
+    const LinearColor ignored;
+    double previous = 0;
+    size_t i = 0;
+    while (i < text.size()) {
+        // One codepoint at a time: a cursor between the bytes of one is not a
+        // position at all.
+        size_t next = i + 1;
+        while (next < text.size() && (static_cast<unsigned char>(text[next]) & 0xC0) == 0x80) {
+            ++next;
+        }
+        Mesh measure;
+        build_text_geometry(text.substr(0, next), 0, 0, font_size, ignored, paint, &measure,
+                            spacing, &face);
+        double width = 0;
+        for (const Vertex& v : measure.vertices) width = std::max<double>(width, v.position.x);
+        if (dx < width) return dx - previous < width - dx ? i : next;
+        previous = width;
+        i = next;
+    }
+    return text.size();
+}
+
+}   // namespace
+
+size_t control_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                              const PaintContext& paint, double x) {
+    if (!tree.valid(box)) return 0;
+    const Box& b = tree[box];
+    ControlText t;
+    if (!form_control_text(b, &t) || t.placeholder) return 0;
+    const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
+    const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
+    double ox = 0, oy = 0;
+    visual_position(tree, box, &ox, &oy);
+    const double content_left = ox + b.border_left + b.padding_left;
+    return offset_nearest(t.text, x - content_left, fs, letter_spacing_of(b.style, ctx, fs),
+                          face_for_run(b, paint), paint);
+}
+
+size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                          const PaintContext& paint, std::string_view source, double origin_x,
+                          double origin_y, double x, double y) {
+    if (!tree.valid(box) || source.empty()) return 0;
+    // The runs of this element, with where each sits: fragments in line boxes,
+    // never the unsplit run they came from.
+    struct Candidate {
+        BoxId id;
+        double x, y, height;
+        size_t offset;
+    };
+    std::vector<Candidate> runs;
+    const std::function<void(BoxId, double, double)> collect = [&](BoxId id, double ox, double oy) {
+        for (BoxId c = tree[id].first_child; c != kNoBox; c = tree[c].next_sibling) {
+            const Box& cb = tree[c];
+            const double cx = ox + cb.x, cy = oy + cb.y;
+            if (cb.kind == BoxKind::Text && !cb.text.empty() && tree[cb.parent].kind == BoxKind::Line &&
+                cb.text.data() >= source.data() &&
+                cb.text.data() + cb.text.size() <= source.data() + source.size()) {
+                runs.push_back({c, cx, cy, cb.height,
+                                static_cast<size_t>(cb.text.data() - source.data())});
+            }
+            collect(c, cx - cb.scroll_x, cy - cb.scroll_y);
+        }
+    };
+    const Box& b = tree[box];
+    collect(box, origin_x - b.scroll_x, origin_y - b.scroll_y);
+    if (runs.empty()) return 0;
+
+    // The line first: the run whose band of the page the point is in, or the
+    // nearest one above or below when the point is past the text.
+    const Candidate* best = &runs.front();
+    double best_distance = 1e300;
+    for (const Candidate& r : runs) {
+        const double centre = r.y + r.height * 0.5;
+        const double distance = std::fabs(y - centre);
+        if (distance < best_distance) {
+            best_distance = distance;
+            best = &r;
+        }
+    }
+    // Then the character within that line's run, or the one nearest on it.
+    const Box& run = tree[best->id];
+    return best->offset + offset_nearest(run.text, x - best->x, run.font_size,
+                                         letter_spacing_of(run.style, ctx, run.font_size) +
+                                             run.justify_letter_spacing,
+                                         face_for_run(run, paint), paint);
 }
 
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,

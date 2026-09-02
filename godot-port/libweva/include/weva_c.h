@@ -368,6 +368,10 @@ weva_element_t weva_document_element_at(weva_document_t doc, double x, double y)
 /* Moves the pointer. `buttons` is a bitmask of the buttons held, so a nonzero
  * value makes the element under the pointer :active; zero releases it.
  *
+ * Pressing inside a text field puts the cursor at the character under the
+ * pointer, and dragging from there selects -- so a field behaves like one
+ * without a host doing anything about it.
+ *
  * :hover applies to the element AND its ancestors (CSS 2.1 §5.11.3), which is
  * what makes `.card:hover .title` work with the pointer over the title. The
  * document works that chain out; a host passes a position. */
@@ -412,6 +416,12 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
  * letters and so cannot see Ctrl+A, and reading the selected text, because the
  * clipboard belongs to the platform and not to the document.
  */
+
+/* Selects the word under a point, which is what a double click does. The
+ * platform decides what counts as a double click -- the document is never told
+ * the time -- so a host calls this when it sees one. Returns 0 when the point
+ * is not over a field's text. */
+int weva_document_select_word_at(weva_document_t doc, double x, double y);
 
 /* Selects everything in the focused field. Returns 0 when nothing is focused
  * or what is focused takes no text. */

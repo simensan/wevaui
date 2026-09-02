@@ -793,3 +793,123 @@ void test_abi_selection_is_drawn() {
     weva_document_update(area.d, 0);
     CHECK(band_width(area.d) > 0);
 }
+
+// Clicking into a field puts the cursor where you clicked. Until this, a click
+// focused the field and dropped the cursor at the end, so the middle of a
+// value could not be reached with the mouse at all.
+void test_abi_click_places_caret() {
+    Doc doc("html, body { margin: 0 }"
+            "input { display: block; width: 300px; height: 30px; font-size: 16px;"
+            "        padding: 0; border: 0 }",
+            "<input id=t type=text value=abcdefghij>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    double x = 0, y = 0, w = 0, h = 0;
+    doc.bounds("#t", &x, &y, &w, &h);
+
+    // Hard left is before the first character.
+    weva_document_set_pointer(doc.d, x + 1, y + h / 2, 1);
+    weva_document_set_pointer(doc.d, x + 1, y + h / 2, 0);
+    weva_document_update(doc.d, 0);
+    int start = 0, end = 0;
+    weva_element_selection(doc.d, t, &start, &end);
+    CHECK(end == 0);
+
+    // Far to the right of the text is after the last character.
+    weva_document_set_pointer(doc.d, x + w - 1, y + h / 2, 1);
+    weva_document_set_pointer(doc.d, x + w - 1, y + h / 2, 0);
+    weva_document_update(doc.d, 0);
+    weva_element_selection(doc.d, t, &start, &end);
+    CHECK(end == 10);
+
+    // And somewhere in the middle lands in the middle -- typing there goes
+    // where the click was, which is the whole point.
+    const double middle = x + (x + w - 1 - x) * 0.0;
+    (void)middle;
+    weva_document_set_pointer(doc.d, x + 40, y + h / 2, 1);
+    weva_document_set_pointer(doc.d, x + 40, y + h / 2, 0);
+    weva_document_update(doc.d, 0);
+    weva_element_selection(doc.d, t, &start, &end);
+    CHECK(end > 0);
+    CHECK(end < 10);
+    const int clicked = end;
+    weva_document_text_input(doc.d, "-");
+    CHECK(doc.value("#t").substr(static_cast<size_t>(clicked), 1) == "-");
+
+    // A click also drops whatever was selected.
+    weva_document_select_all(doc.d);
+    weva_document_set_pointer(doc.d, x + 40, y + h / 2, 1);
+    weva_document_update(doc.d, 0);
+    weva_element_selection(doc.d, t, &start, &end);
+    CHECK(start == end);
+}
+
+// Dragging from a press selects, and keeps selecting once the pointer has left
+// the field.
+void test_abi_drag_selects() {
+    Doc doc("html, body { margin: 0 }"
+            "input { display: block; width: 300px; height: 30px; font-size: 16px;"
+            "        padding: 0; border: 0 }",
+            "<input id=t type=text value=abcdefghij>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    double x = 0, y = 0, w = 0, h = 0;
+    doc.bounds("#t", &x, &y, &w, &h);
+
+    weva_document_set_pointer(doc.d, x + 1, y + h / 2, 1);      // press at the start
+    weva_document_set_pointer(doc.d, x + 40, y + h / 2, 1);     // drag right
+    weva_document_update(doc.d, 0);
+    int start = 0, end = 0;
+    weva_element_selection(doc.d, t, &start, &end);
+    CHECK(start == 0);
+    CHECK(end > 0);
+    const std::string dragged = selected(doc.d);
+    CHECK(!dragged.empty());
+    CHECK(doc.value("#t").rfind(dragged, 0) == 0);   // from the beginning
+
+    // Further right takes more, and past the end takes everything.
+    weva_document_set_pointer(doc.d, x + w + 200, y + h / 2, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(selected(doc.d) == "abcdefghij");
+
+    // Releasing leaves the selection where it was; moving after that does not
+    // extend it.
+    weva_document_set_pointer(doc.d, x + w + 200, y + h / 2, 0);
+    weva_document_set_pointer(doc.d, x + 20, y + h / 2, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(selected(doc.d) == "abcdefghij");
+}
+
+// A double click takes the word. The platform decides what a double click IS
+// -- the document is never told the time -- so a host says when one happened.
+void test_abi_double_click_selects_word() {
+    Doc doc("html, body { margin: 0 }"
+            "input { display: block; width: 300px; height: 30px; font-size: 16px;"
+            "        padding: 0; border: 0 }",
+            "<input id=t type=text value='hello brave world'>");
+    double x = 0, y = 0, w = 0, h = 0;
+    doc.bounds("#t", &x, &y, &w, &h);
+
+    // Over the first word.
+    CHECK(weva_document_select_word_at(doc.d, x + 10, y + h / 2) == 1);
+    CHECK(selected(doc.d) == "hello");
+
+    // Over a later one: the word, not the line.
+    CHECK(weva_document_select_word_at(doc.d, x + 60, y + h / 2) == 1);
+    const std::string word = selected(doc.d);
+    CHECK(word == "brave" || word == "world");
+    CHECK(word.find(' ') == std::string::npos);
+
+    // Over nothing that takes text, nothing happens.
+    Doc plain("html, body { margin: 0 } .box { width: 100px; height: 40px }",
+              "<div id=b class=box></div>");
+    CHECK(weva_document_select_word_at(plain.d, 20, 20) == 0);
+
+    // In a textarea, a word on the second line is the word on that line.
+    Doc area("html, body { margin: 0 }"
+             "textarea { display: block; width: 300px; height: 90px; font-size: 16px;"
+             "           padding: 0; border: 0; line-height: 20px }",
+             "<textarea id=a>alpha beta\ngamma delta</textarea>");
+    double ax = 0, ay = 0, aw = 0, ah = 0;
+    area.bounds("#a", &ax, &ay, &aw, &ah);
+    CHECK(weva_document_select_word_at(area.d, ax + 10, ay + 30) == 1);
+    CHECK(selected(area.d) == "gamma");
+}

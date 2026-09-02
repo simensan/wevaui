@@ -234,6 +234,7 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::send_key, DEFVAL(true), DEFVAL(false), DEFVAL(false));
     ClassDB::bind_method(D_METHOD("send_text", "text"), &WevaDocument::send_text);
     ClassDB::bind_method(D_METHOD("select_all"), &WevaDocument::select_all);
+    ClassDB::bind_method(D_METHOD("select_word_at", "point"), &WevaDocument::select_word_at);
     ClassDB::bind_method(D_METHOD("get_selected_text"), &WevaDocument::get_selected_text);
     ClassDB::bind_method(D_METHOD("set_element_selection", "selector", "start", "end"),
                          &WevaDocument::set_element_selection);
@@ -437,6 +438,21 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
         }
     }
 
+    // A double click takes the word under it. The platform decides what counts
+    // as one -- the document is never told the time -- so this is where that
+    // knowledge enters.
+    if (button.is_valid() && button->is_pressed() && button->is_double_click() &&
+        button->get_button_index() == MOUSE_BUTTON_LEFT) {
+        ensure_updated();
+        if (weva_document_select_word_at(doc_, local.x, local.y)) {
+            dirty_ = true;
+            queue_redraw();
+            pump_events();
+            get_viewport()->set_input_as_handled();
+            return;
+        }
+    }
+
     uint32_t buttons = buttons_;
     if (button.is_valid()) {
         // Only the primary button drives :active, which is what the pseudo
@@ -582,6 +598,15 @@ void WevaDocument::send_text(const String& text) {
 // those the document does by itself. These are the two it cannot: select-all,
 // because the ABI's key enum has no letters and so never sees Ctrl+A, and
 // reading the selected text, because the clipboard belongs to the platform.
+
+bool WevaDocument::select_word_at(const Vector2& point) {
+    if (!doc_) return false;
+    ensure_updated();
+    if (!weva_document_select_word_at(doc_, point.x, point.y)) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
 
 bool WevaDocument::select_all() {
     if (!doc_) return false;

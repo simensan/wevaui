@@ -590,4 +590,17 @@ func _test_selection() -> void:
 	_check(doc.get_selected_text() == "bcd", "and read it back")
 	_check(doc.send_key(KEY_BACKSPACE), "backspace over a selection takes the selection")
 	_check(doc.get_element_value("#f") == "aef", "not one character")
+	# Clicking into a field puts the cursor where the click was, and a double
+	# click takes the word -- the platform knows what a double click IS, so the
+	# host is what says one happened.
+	doc.set_element_value("#f", "hello brave world")
+	var box := doc.query_bounds("#f")
+	doc.set_pointer(box.position + Vector2(4, box.size.y * 0.5), 1)
+	doc.set_pointer(box.position + Vector2(4, box.size.y * 0.5), 0)
+	doc.update_document()
+	_check(doc.get_element_selection("#f").y == 0,
+		"a click at the left edge puts the cursor before the first character")
+	_check(doc.select_word_at(box.position + Vector2(10, box.size.y * 0.5)),
+		"a double click reaches the document")
+	_check(doc.get_selected_text() == "hello", "and takes the word under it")
 	doc.queue_free()

@@ -132,6 +132,7 @@ public:
     // has to drive -- Ctrl+A, which the key enum cannot express, and the
     // clipboard, which belongs to the platform.
     bool select_all();
+    bool select_word_at(const godot::Vector2& point);
     godot::String get_selected_text();
     bool set_element_selection(const godot::String& selector, int start, int end);
     godot::Vector2i get_element_selection(const godot::String& selector);
