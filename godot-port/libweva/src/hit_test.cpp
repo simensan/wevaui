@@ -2,6 +2,7 @@
 
 #include "weva/computed_style.h"
 #include "weva/dom.h"
+#include "weva/positioning.h"
 
 namespace weva {
 
@@ -9,16 +10,6 @@ namespace {
 
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
-}
-
-// A box that clips its overflow confines the hit to its padding box, exactly
-// as it confines the paint.
-bool clips_children(const ComputedStyle* style) {
-    for (const char* prop : {"overflow-x", "overflow-y"}) {
-        const std::string_view v = get(style, prop);
-        if (v == "hidden" || v == "clip" || v == "auto" || v == "scroll") return true;
-    }
-    return false;
 }
 
 // CSS UI L4 §6: `pointer-events: none` makes the box and its descendants
@@ -48,7 +39,7 @@ struct Search {
         const bool ignore = b.style ? ignores_pointer(b.style) : blocked;
         // A clipping box stops the search at its padding box, so a scrolled-out
         // child is not hit where it is not drawn.
-        if (b.style && clips_children(b.style)) {
+        if (clips_overflow(b)) {
             const double px0 = bx + b.border_left, py0 = by + b.border_top;
             const double px1 = bx + b.width - b.border_right;
             const double py1 = by + b.height - b.border_bottom;

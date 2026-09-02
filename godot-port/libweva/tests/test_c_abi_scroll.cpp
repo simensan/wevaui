@@ -8,8 +8,10 @@
 #include "check.h"
 #include "weva_c.h"
 
+#include <cmath>
 #include <cstring>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -54,6 +56,41 @@ struct Doc {
         return buf;
     }
 };
+
+// Every distinct opaque-ish vertex colour in the frame, as sRGB hex. The
+// engine works in linear light; the stylesheet is written in sRGB.
+std::vector<uint32_t> colours(weva_document_t d) {
+    std::vector<uint32_t> out;
+    size_t count = 0;
+    const weva_draw* draws = weva_document_draws(d, &count);
+    for (size_t i = 0; i < count; ++i) {
+        for (size_t v = 0; v < draws[i].vertex_count; ++v) {
+            const weva_vertex& vert = draws[i].vertices[v];
+            if (vert.a < 0.4f) continue;
+            const auto q = [](float f) {
+                const float c = f < 0 ? 0 : (f > 1 ? 1 : f);
+                const float srgb =
+                    c <= 0.0031308f ? c * 12.92f : 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
+                return static_cast<uint32_t>(srgb * 255 + 0.5f);
+            };
+            const uint32_t key = (q(vert.r) << 16) | (q(vert.g) << 8) | q(vert.b);
+            bool seen = false;
+            for (uint32_t k : out) seen = seen || k == key;
+            if (!seen) out.push_back(key);
+        }
+    }
+    return out;
+}
+
+bool near_colour(const std::vector<uint32_t>& set, uint32_t rgb) {
+    for (uint32_t k : set) {
+        const int dr = static_cast<int>((k >> 16) & 0xff) - static_cast<int>((rgb >> 16) & 0xff);
+        const int dg = static_cast<int>((k >> 8) & 0xff) - static_cast<int>((rgb >> 8) & 0xff);
+        const int db = static_cast<int>(k & 0xff) - static_cast<int>(rgb & 0xff);
+        if (dr * dr + dg * dg + db * db <= 300) return true;
+    }
+    return false;
+}
 
 // A 100px-tall viewport onto 5 rows of 40px: 200 of content, 100 of room.
 const char* kListCss =
@@ -290,4 +327,150 @@ void test_abi_scroll_into_view_nested() {
     // show the part of the list the row is now in.
     CHECK(doc.top("#list") == 100);
     CHECK(doc.top("#page") == 200);
+}
+
+// The scrollbar: the thing that says there is more of the list.
+//
+// Overlay, so it takes no layout space -- a classic bar reserves a gutter and
+// would move every box inside a scroller, which is not what a UI laid out to a
+// designer's sizes should do when its content happens to grow.
+void test_abi_scrollbar_appears() {
+    Doc doc(kListCss, kListHtml);
+    size_t with_bar = 0;
+    weva_document_draws(doc.d, &with_bar);
+
+    // The same list with nothing to scroll draws one thing less.
+    Doc fits(kListCss, "<div id=list class=list><div id=r0 class=row></div></div>");
+    size_t without = 0;
+    weva_document_draws(fits.d, &without);
+    CHECK(with_bar > without);
+
+    // The layout is untouched by it: the rows are the width they were.
+    double x = 0, y = 0, w = 0, h = 0;
+    weva_element_bounds(doc.d, doc.at("#r0"), &x, &y, &w, &h);
+    CHECK(w == 200);
+
+    // `scrollbar-width: none` is how a game keeps the scrolling and drops the
+    // furniture.
+    Doc bare("html, body { margin: 0 }"
+             ".list { width: 200px; height: 100px; overflow: auto; scrollbar-width: none }"
+             ".row { height: 40px }",
+             kListHtml);
+    size_t hidden = 0;
+    weva_document_draws(bare.d, &hidden);
+    CHECK(hidden < with_bar);
+    CHECK(bare.max_top("#list") == 100);   // and it still scrolls
+
+    // `scrollbar-color: <thumb> <track>` paints it in the page's own colours.
+    Doc coloured("html, body { margin: 0 }"
+                 ".list { width: 200px; height: 100px; overflow: auto;"
+                 "        scrollbar-color: #ff00ff #003300 }"
+                 ".row { height: 40px }",
+                 kListHtml);
+    const std::vector<uint32_t> set = colours(coloured.d);
+    CHECK(near_colour(set, 0xff00ff));
+    CHECK(near_colour(set, 0x003300));
+}
+
+// Dragging the thumb, which is the other half of having one.
+void test_abi_scrollbar_drag() {
+    Doc doc(kListCss, kListHtml);
+    // 100 of view onto 200: the thumb is half the 100px track, so it has 50px
+    // of travel worth 100 of scroll -- two units of list per pixel of thumb.
+    // It sits at the right edge, 9px wide.
+    weva_document_set_pointer(doc.d, 195, 25, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 0);   // taking hold moves nothing
+
+    weva_document_set_pointer(doc.d, 195, 45, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 40);
+
+    // The pointer wandering off the bar does not drop the drag: it is held
+    // until the button comes up, which is what every scrollbar does.
+    weva_document_set_pointer(doc.d, 20, 60, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 70);
+
+    // And past the end stops at the end.
+    weva_document_set_pointer(doc.d, 20, 400, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 100);
+
+    // Let go, and the pointer is the pointer again.
+    weva_document_set_pointer(doc.d, 100, 20, 0);
+    weva_document_update(doc.d, 0);
+    weva_document_set_pointer(doc.d, 100, 20, 1);
+    weva_document_set_pointer(doc.d, 100, 20, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 100);   // a click on the content scrolls nothing
+}
+
+// Clicking the track beside the thumb pages along it.
+void test_abi_scrollbar_track_click() {
+    Doc doc(kListCss, kListHtml);
+    // Below the thumb, which spans the top half of the track.
+    weva_document_set_pointer(doc.d, 195, 80, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 100);   // a page is 100, and that is the end
+    weva_document_set_pointer(doc.d, 195, 80, 0);
+
+    // And back: the thumb is now at the bottom, so above it pages up.
+    weva_document_set_pointer(doc.d, 195, 10, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 0);
+}
+
+// A drag is not a click: whatever the pointer passes over is not pressed, and
+// nothing under it is left hovered when the drag ends.
+void test_abi_scrollbar_drag_does_not_click() {
+    Doc doc("html, body { margin: 0 }"
+            ".list { width: 200px; height: 100px; overflow: auto }"
+            ".row { height: 40px }",
+            "<div id=list class=list>"
+            "<div id=r0 class=row></div><div id=r1 class=row></div><div id=r2 class=row></div>"
+            "<div id=r3 class=row></div><div id=r4 class=row></div></div>");
+    weva_document_set_pointer(doc.d, 195, 25, 1);
+    weva_document_set_pointer(doc.d, 100, 30, 1);   // over a row, mid-drag
+    weva_document_set_pointer(doc.d, 100, 30, 0);
+    weva_document_update(doc.d, 0);
+
+    weva_event e{};
+    while (weva_document_poll_event(doc.d, &e)) {
+        CHECK(e.kind != WEVA_EVENT_CLICK);
+    }
+}
+
+// `overflow: hidden` clips, and a script can still move it, but it is not a
+// scroller: no bar, and the wheel goes past it to whatever is. Half a page's
+// decoration is a clipped box, and every one of them would have worn a
+// scrollbar without this.
+void test_abi_hidden_is_not_a_scroller() {
+    Doc doc("html, body { margin: 0 }"
+            ".list { width: 200px; height: 100px; overflow: hidden }"
+            ".row { height: 40px }",
+            kListHtml);
+    Doc shown(kListCss, kListHtml);
+    size_t hidden_draws = 0, shown_draws = 0;
+    weva_document_draws(doc.d, &hidden_draws);
+    weva_document_draws(shown.d, &shown_draws);
+    CHECK(hidden_draws < shown_draws);   // no bar on the clipped one
+
+    // The wheel over it is not consumed, so the page behind it gets it.
+    CHECK(weva_document_scroll(doc.d, 100, 50, 0, 40) == 0);
+    // But a script can still put it where it likes, as in a browser.
+    weva_element_set_scroll(doc.d, doc.at("#list"), 0, 40);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 40);
+
+    // One axis at a time: a row of cards that scrolls sideways and clips
+    // vertically takes a horizontal wheel and not a vertical one.
+    Doc sideways("html, body { margin: 0 }"
+                 ".strip { width: 200px; height: 60px; overflow-x: auto; overflow-y: hidden;"
+                 "         white-space: nowrap }"
+                 ".card { display: inline-block; width: 120px; height: 100px }",
+                 "<div id=strip class=strip><div class=card></div><div class=card></div>"
+                 "<div class=card></div></div>");
+    CHECK(weva_document_scroll(sideways.d, 100, 30, 0, 40) == 0);
+    CHECK(weva_document_scroll(sideways.d, 100, 30, 40, 0) == 1);
 }

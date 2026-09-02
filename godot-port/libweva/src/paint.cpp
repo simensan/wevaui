@@ -3,6 +3,7 @@
 #include "weva/background.h"
 #include "weva/block_layout.h"
 #include "weva/css_value.h"
+#include "weva/scrollbar.h"
 
 #include <algorithm>
 #include <cctype>
@@ -2252,6 +2253,22 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         for (const ChildEntry& e : *bucket) {
             paint_recursive(tree, e.id, ctx, child_x, child_y, paint, atlas_texture, canvas_owner,
                             state);
+        }
+    }
+
+    // The scrollbars, over the content and inside the container's own clip:
+    // a list you can scroll with no bar on it gives no sign that there is more
+    // of it, which reads as a list that is simply cut off.
+    if (decorated && b.style && clips_children(b.style)) {
+        for (const bool vertical : {false, true}) {
+            const Scrollbar bar = scrollbar_of(tree, id, vertical, x, y);
+            if (!bar.visible) continue;
+            if (bar.track_color.a > 0) {
+                fill_rounded(bar.track, 0, bar.track_color, paint.backend, state.opacity, xf,
+                             state.clip.get(), state.filter.get());
+            }
+            fill_rounded(bar.thumb, bar.radius, bar.thumb_color, paint.backend, state.opacity, xf,
+                         state.clip.get(), state.filter.get());
         }
     }
 

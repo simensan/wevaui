@@ -37,6 +37,7 @@ add_library(weva STATIC
     src/invalidation.cpp
     src/keyframes.cpp
     src/positioning.cpp
+    src/scrollbar.cpp
     src/tessellate.cpp
     src/paint.cpp
     src/background.cpp

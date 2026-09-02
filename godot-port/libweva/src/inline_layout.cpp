@@ -245,6 +245,14 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.metrics = metrics_for_style(ctx, item.style);
             item.line_height = line_height_px(item.style, item.font_size, ctx,
                                               item.metrics ? item.metrics : metrics);
+            // CSS Text L3 3: whether a line may break BETWEEN two inline-level
+            // boxes is the containing block's business, not the atom's -- and
+            // `nowrap` there forbids it. Without this a row of cards under
+            // `white-space: nowrap` stacked into a column the moment it grew
+            // past its box, instead of overflowing it to be scrolled, which is
+            // exactly what such a row is for.
+            const std::string_view ws = get(inherited ? inherited : item.style, "white-space");
+            item.allow_wrap = !(iequals(ws, "nowrap") || iequals(ws, "pre"));
             out->push_back(item);
         }
     }
@@ -936,7 +944,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         if (it.is_atom()) {
             // An atom wraps as a unit: it moves to the next line when it does
             // not fit, but is never split.
-            if (line_has_content() && pen + it.atom_outer_width > line_width + kFitEpsilon) {
+            if (it.allow_wrap && line_has_content() &&
+                pen + it.atom_outer_width > line_width + kFitEpsilon) {
                 flush_line(false);
             }
             grow_line_metrics(it);

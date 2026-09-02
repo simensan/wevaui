@@ -15,6 +15,7 @@
 #include "weva/keyframes.h"
 #include "weva/paint.h"
 #include "weva/positioning.h"
+#include "weva/scrollbar.h"
 #include "weva/selector.h"
 #include "weva/user_agent_stylesheet.h"
 
@@ -942,6 +943,15 @@ struct weva_document {
     // whole background rasterization on every change, which is most of what an
     // update costs at all.
     TextureCache textures;
+    // A scrollbar thumb being dragged. Held by element, like the offsets, so
+    // a relayout mid-drag does not drop the grab.
+    struct ScrollDrag {
+        const Element* element = nullptr;
+        bool vertical = false;
+        double grab = 0;        // where along the axis the pointer took hold
+        double from = 0;        // the offset at that moment
+        double per_pixel = 0;   // what a pixel of thumb travel is worth
+    } scroll_drag;
     // Where each scroll container is scrolled to. Kept per ELEMENT, not per
     // box: the box tree is thrown away and rebuilt whenever anything moves, so
     // an offset kept on a box would be lost by every class change.
@@ -1505,8 +1515,11 @@ weva_status weva_element_bounds(weva_document_t doc, weva_element_t element, dou
     for (int i = 0; i < doc->tree.size(); ++i) {
         const Box& b = doc->tree[i];
         if (b.element != e) continue;
+        // Where it is drawn, not where layout put it: a host placing a
+        // tooltip beside an element in a scrolled list wants the position it
+        // can see.
         double ax = 0, ay = 0;
-        absolute_position(doc->tree, i, &ax, &ay);
+        visual_position(doc->tree, i, &ax, &ay);
         if (out_x) *out_x = ax;
         if (out_y) *out_y = ay;
         if (out_width) *out_width = b.width;
@@ -1638,9 +1651,86 @@ bool activate_control(weva_document* doc, Element& e, double x) {
 
 }   // namespace
 
+namespace {
+
+// The scrollbar under a point, if any: from the innermost box there, up
+// through the scroll containers that enclose it. The bar overlays the content,
+// so the box AT the point is a row rather than the scroller -- the walk up is
+// what finds the thing the bar belongs to.
+bool scrollbar_under(const weva_document* doc, double x, double y, Scrollbar* out, BoxId* out_box,
+                     bool* out_vertical, bool* out_on_thumb) {
+    for (BoxId id = box_at_point(doc->tree, doc->root, x, y); id != kNoBox;
+         id = doc->tree[id].parent) {
+        if (!doc->tree[id].element || !clips_overflow(doc->tree[id])) continue;
+        double ox = 0, oy = 0;
+        visual_position(doc->tree, id, &ox, &oy);
+        for (const bool vertical : {true, false}) {
+            const Scrollbar bar = scrollbar_of(doc->tree, id, vertical, ox, oy);
+            if (!bar.visible || !bar.track.contains(x, y)) continue;
+            *out = bar;
+            *out_box = id;
+            *out_vertical = vertical;
+            *out_on_thumb = bar.thumb.contains(x, y);
+            return true;
+        }
+    }
+    return false;
+}
+
+}   // namespace
+
 void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t buttons) {
     if (!doc) return;
     InteractionState& st = doc->styles.state;
+
+    // A thumb being dragged owns the pointer until it is let go: the content
+    // slides under it, and whatever the pointer happens to be over takes
+    // neither :hover nor a click.
+    if (doc->scroll_drag.element) {
+        if (buttons == 0) {
+            doc->scroll_drag = weva_document::ScrollDrag{};
+        } else {
+            const double along = doc->scroll_drag.vertical ? y : x;
+            const double moved = (along - doc->scroll_drag.grab) * doc->scroll_drag.per_pixel;
+            auto& at = doc->scroll[doc->scroll_drag.element];
+            const double to = std::max(0.0, doc->scroll_drag.from + moved);
+            if (doc->scroll_drag.vertical) at.second = to;
+            else at.first = to;
+            doc->pending = worst(doc->pending, Invalidation::Paint);
+            return;
+        }
+    }
+
+    // Taking hold of one, or clicking the track beside it to page along.
+    if (buttons != 0 && st.active_chain.empty()) {
+        Scrollbar bar;
+        BoxId box = kNoBox;
+        bool vertical = false, on_thumb = false;
+        if (scrollbar_under(doc, x, y, &bar, &box, &vertical, &on_thumb)) {
+            const Box& b = doc->tree[box];
+            const double at = vertical ? b.scroll_y : b.scroll_x;
+            if (on_thumb) {
+                doc->scroll_drag.element = b.element;
+                doc->scroll_drag.vertical = vertical;
+                doc->scroll_drag.grab = vertical ? y : x;
+                doc->scroll_drag.from = at;
+                doc->scroll_drag.per_pixel = bar.scroll_per_pixel;
+            } else {
+                // A page in the direction clicked, which is what a track click
+                // does everywhere.
+                const double page = vertical ? b.height - b.border_top - b.border_bottom
+                                             : b.width - b.border_left - b.border_right;
+                const double point = vertical ? y : x;
+                const double thumb_start = vertical ? bar.thumb.y : bar.thumb.x;
+                const double to = std::max(0.0, at + (point < thumb_start ? -page : page));
+                auto& offset = doc->scroll[b.element];
+                offset = {vertical ? b.scroll_x : to, vertical ? to : b.scroll_y};
+            }
+            doc->pending = worst(doc->pending, Invalidation::Paint);
+            return;
+        }
+    }
+
     const Element* hit = element_at_point(doc->tree, doc->root, x, y);
 
     // Enter and leave are reported against the innermost element, which is
@@ -2074,6 +2164,10 @@ int weva_document_scroll(weva_document_t doc, double x, double y, double dx, dou
         if (!b.element || !clips_overflow(b)) continue;
         double mx = 0, my = 0;
         max_scroll(doc->tree, id, &mx, &my);
+        // `hidden` clips and a script can still scroll it, but it is not a
+        // scroller to the user: the wheel goes past it to whatever is.
+        if (!scrollable_on_axis(b, true)) my = 0;
+        if (!scrollable_on_axis(b, false)) mx = 0;
         const double cx = b.scroll_x, cy = b.scroll_y;
         const double nx = std::clamp(cx + dx, 0.0, mx), ny = std::clamp(cy + dy, 0.0, my);
         if (nx == cx && ny == cy) continue;   // no room this way: the next one up

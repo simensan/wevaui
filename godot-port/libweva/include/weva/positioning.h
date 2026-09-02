@@ -36,6 +36,11 @@ ContainingBlock resolve_fixed_containing_block(const BoxTree& tree, BoxId box,
 // filling the viewport instead of its parent.
 bool establishes_absolute_containing_block(const Box& b);
 
+// Where a box is DRAWN: the same sum with every ancestor's scroll offset taken
+// off. A host asking where an element is on screen wants this one; layout, which
+// runs before anything is scrolled, wants the other.
+void visual_position(const BoxTree& tree, BoxId box, double* x, double* y);
+
 // Root-relative origin, summing local offsets up the tree.
 void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y);
 
@@ -52,6 +57,12 @@ void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
 // True when this box clips what overflows it, and so can be scrolled: any
 // `overflow` other than `visible`.
 bool clips_overflow(const Box& b);
+
+// True when this axis is `auto` or `scroll` -- the two that a wheel drives and
+// that grow a scrollbar. `hidden` clips and can still be scrolled by a script
+// (as it can in a browser), but it is not a scroller to the user, and painting
+// a bar on every clipped box would put one on half of a page's decoration.
+bool scrollable_on_axis(const Box& b, bool vertical);
 
 // How far the contents of one scroll container reach, measured from its
 // PADDING box -- CSS Overflow L3 §3, which is what `scrollWidth`/`scrollHeight`

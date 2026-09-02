@@ -126,6 +126,21 @@ void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y) {
     *y = ay;
 }
 
+void visual_position(const BoxTree& tree, BoxId box, double* x, double* y) {
+    double ax = 0, ay = 0;
+    for (BoxId b = box; b != kNoBox; b = tree[b].parent) {
+        ax += tree[b].x;
+        ay += tree[b].y;
+        const BoxId parent = tree[b].parent;
+        if (parent != kNoBox) {
+            ax -= tree[parent].scroll_x;
+            ay -= tree[parent].scroll_y;
+        }
+    }
+    *x = ax;
+    *y = ay;
+}
+
 void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx, double* out_width,
                   double* out_height) {
     // The viewport is the floor: a page shorter than the box it was laid out in
@@ -149,11 +164,23 @@ void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx, dou
 
 bool clips_overflow(const Box& b) {
     if (!b.style) return false;
+    // A line box, and every anonymous box, carries its CONTAINER's style so
+    // that inline layout can read the inherited properties off it. Asking one
+    // about `overflow` therefore gets the container's answer -- and a walk
+    // that believed it stopped at the first line inside every scroller, which
+    // is how a row of cards 360 wide reported nothing to scroll.
+    if (b.kind != BoxKind::Block || (!b.element && !b.pseudo_host)) return false;
     for (const char* prop : {"overflow-x", "overflow-y"}) {
         const std::string_view v = get(b.style, prop);
         if (v == "hidden" || v == "clip" || v == "auto" || v == "scroll") return true;
     }
     return false;
+}
+
+bool scrollable_on_axis(const Box& b, bool vertical) {
+    if (!clips_overflow(b)) return false;
+    const std::string_view v = get(b.style, vertical ? "overflow-y" : "overflow-x");
+    return v == "auto" || v == "scroll";
 }
 
 namespace {
