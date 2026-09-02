@@ -185,6 +185,25 @@ void test_text_geometry() {
     Mesh empty;
     build_text_geometry("A", 0, 0, 16, LinearColor::white(), none, &empty);
     CHECK(empty.empty());
+
+    // Glyph quads land on WHOLE PIXELS, however fractional the origin.
+    //
+    // The atlas holds one bitmap per glyph, rasterised on the pixel grid, and
+    // the quad spans exactly its texels. Start that quad at x.5 and every texel
+    // column straddles two pixels; a backend sampling with nearest filtering --
+    // which is what keeps text crisp, and what both of ours do -- then drops
+    // some columns and doubles others. It looks like stems at different weights
+    // inside one word, and it is what the Godot gallery was showing.
+    Mesh frac;
+    build_text_geometry("AB", 10.37, 20.62, 16, LinearColor::white(), p, &frac);
+    CHECK(!frac.vertices.empty());
+    for (const Vertex& v : frac.vertices) {
+        CHECK(v.position.x == std::floor(v.position.x));
+        CHECK(v.position.y == std::floor(v.position.y));
+    }
+    // Snapped, not truncated to the run's origin: the second glyph is still an
+    // advance away, so the pen keeps its precision and only the bitmap moves.
+    CHECK(near(frac.vertices[4].position.x - frac.vertices[0].position.x, 8, 1e-4));
 }
 
 void test_text_end_to_end() {

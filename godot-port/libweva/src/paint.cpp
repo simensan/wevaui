@@ -1765,10 +1765,22 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
         // still advances the pen. Skipping the advance would close the gaps
         // between words.
         if (slot) {
-            const double gx = pen + g.x_offset + slot->bearing_x;
+            // SNAPPED to whole pixels. The atlas holds one bitmap per glyph,
+            // rasterised on the pixel grid, and the quad spans exactly its
+            // texels — so if the quad starts at a fraction, every texel column
+            // straddles two pixels. A backend sampling the atlas with nearest
+            // filtering (which is what keeps text crisp, and what both of ours
+            // do) then drops some columns and doubles others: stems come out
+            // 1px here and 2px there inside one word, and diagonals break up.
+            //
+            // Placing it at a fraction would only be right with a bitmap per
+            // subpixel phase, which is what a browser rasterises and this atlas
+            // does not. The pen keeps its full precision, so spacing is still
+            // accumulated exactly; only the bitmap is snapped.
+            const double gx = std::round(pen + g.x_offset + slot->bearing_x);
             // bearing_y measures UP from the baseline, so the quad's top edge
             // is above it.
-            const double gy = baseline_y - g.y_offset - slot->bearing_y;
+            const double gy = std::round(baseline_y - g.y_offset - slot->bearing_y);
             const uint32_t base = static_cast<uint32_t>(out->vertices.size());
             // A colour glyph carries its own colours in the atlas; only the
             // text's alpha applies to it (CSS Fonts 4 §5.2 — `color` does not
