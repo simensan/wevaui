@@ -697,6 +697,24 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                                             (*tree)[sp.box].style);
                     } else {
                         attached_inlines.push_back(sp.box);
+                        // Reusing the box means its ORIGINAL children come with
+                        // it, and its text children are exactly what the line's
+                        // runs have just replaced. Left attached they are
+                        // painted a second time -- and the box builder stamps no
+                        // font size on a text box, so they came out at size
+                        // ZERO: a pile of 3x3 glyph blobs at the container's
+                        // origin, which reads as a stray 1px dash above the
+                        // real text. Every `<b>` and `<code>` on a page had
+                        // one.
+                        //
+                        // Only the TEXT children go. A nested inline box is
+                        // still walked as an ancestor by later lines, and
+                        // clearing it wholesale severed `<a><b>x</b></a>`.
+                        std::vector<BoxId> stale;
+                        for (BoxId c : tree->children(sp.box)) {
+                            if ((*tree)[c].kind == BoxKind::Text) stale.push_back(c);
+                        }
+                        for (BoxId c : stale) tree->remove_child(c);
                     }
                     // The box builder never stamps a font size on an inline
                     // box, so without this the fragment's height came from
