@@ -381,6 +381,19 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     double y = top_inner;
     double pen = 0;
     double max_ascent = 0, max_descent = 0, max_leading = 0;
+    // CSS Text L3 §8.2, and the shape the reference measures in. A run's width
+    // is `text + spacing x (characters - 1)` — the spacing sits BETWEEN
+    // characters, so a run of n characters carries n-1 of them. Placing a run
+    // piece by piece reproduces that by charging n per piece and n-1 for the
+    // run's first piece.
+    //
+    // A LINE BREAK restarts that count: the piece opening the next line is a
+    // first piece again, because the spacing that would have followed the last
+    // character of the previous line has nowhere to sit. Carrying the flag
+    // across the break charged one spacing too many for every wrapped run —
+    // dialogue.html's `<strong>` sat 0.16 to the right, which at its 16px font
+    // and `letter-spacing: 0.01em` is exactly one.
+    bool first_piece = true;
 
     // CSS 2.1 §9.5: a line box beside a float is shortened to make room for it.
     // This has to be known while the line is being FILLED, not only when it is
@@ -765,6 +778,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
 
         line_boxes.push_back(lb);
         y += line_height;
+        first_piece = true;
         line.clear();
         pen = 0;
         reset_line_metrics();
@@ -826,7 +840,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             pen += it.atom_outer_width;
             continue;
         }
-        bool first_piece = true;
+        first_piece = true;
         // Largest prefix of `word` from `from` whose measured width fits, never
         // splitting a UTF-8 sequence. Zero when not even one character fits.
         const auto prefix_that_fits = [&](std::string_view word, size_t from,

@@ -21,6 +21,7 @@ void test_cascade_compute();
 void test_cascade_layers();
 void test_component_expansion();
 void test_block_in_inline_empty_fragments();
+void test_letter_spacing_restarts_at_a_line_break();
 void test_variables();
 void test_variables_in_cascade();
 void test_media_queries();
@@ -238,6 +239,7 @@ int main() {
     test_cascade_layers();
     test_component_expansion();
     test_block_in_inline_empty_fragments();
+    test_letter_spacing_restarts_at_a_line_break();
     test_variables();
     test_variables_in_cascade();
     test_media_queries();

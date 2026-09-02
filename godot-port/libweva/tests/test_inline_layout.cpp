@@ -1038,3 +1038,41 @@ void test_block_in_inline_empty_fragments() {
         CHECK(near(g.box("w").height, g.metrics.line_height(16)));
     }
 }
+
+
+// CSS Text L3 §8.2. Letter-spacing sits BETWEEN characters, so a run of n
+// characters carries n-1 of them — and a LINE BREAK restarts that count,
+// because the spacing that would follow the last character of a line has
+// nowhere to sit. Carrying the count across the break charged one spacing too
+// many for every wrapped run.
+void test_letter_spacing_restarts_at_a_line_break() {
+    {
+        // Two lines of four characters each. With spacing s, each line carries
+        // three gaps, so the second line's content starts at the container's
+        // edge and its width is 4 glyphs + 3 gaps — not 4 gaps.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 40px; font-size: 16px;"
+                    "     letter-spacing: 4px }"
+                    "#b { display: inline }"));
+        // "aaaa bbbb": the space gives the only break opportunity.
+        CHECK(f.layout("<body><div id=w>aaaa <span id=b>bbbb</span></div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        const Box& b = f.tree[f.find_kind("b", BoxKind::Inline)];
+        // The second line opens at the content edge, with no leading spacing.
+        CHECK(near(b.x, 0));
+        const double glyph = f.metrics.measure("bbbb", 16);
+        CHECK(near(b.width, glyph + 3 * 4));
+    }
+    {
+        // The same run unwrapped carries exactly the same n-1 gaps, so a wide
+        // container and a narrow one agree on the run's width.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 4000px; font-size: 16px;"
+                    "     letter-spacing: 4px }"
+                    "#b { display: inline }"));
+        CHECK(f.layout("<body><div id=w><span id=b>bbbb</span></div></body>"));
+        const Box& b = f.tree[f.find_kind("b", BoxKind::Inline)];
+        CHECK(near(b.width, f.metrics.measure("bbbb", 16) + 3 * 4));
+    }
+}
