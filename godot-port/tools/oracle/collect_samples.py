@@ -17,6 +17,7 @@ Usage: collect_samples.py <wevaui-root> --out <corpus-dir>
 import argparse
 import os
 import re
+import io
 import shutil
 import sys
 
@@ -31,6 +32,11 @@ def sources(root):
             for name in sorted(names):
                 if name.endswith(".html"):
                     yield os.path.join(dirpath, name)
+
+
+# Any stylesheet link at all — used to decide whether a copied sample needs one
+# injected, not to parse the document.
+STYLESHEET_LINK = re.compile(r"<link[^>]+rel=[\"']?stylesheet", re.IGNORECASE)
 
 
 def main():
@@ -51,9 +57,37 @@ def main():
             stem = "sample-" + stem
         seen.add(stem)
         dst = os.path.join(args.out, stem + ".html")
-        shutil.copyfile(html, dst)
         css_src = os.path.splitext(html)[0] + ".css"
         css_dst = os.path.join(args.out, stem + ".css")
+        source_stem = os.path.splitext(os.path.basename(html))[0]
+
+        # The corpus is FLAT, so a sample's own markup can end up pointing at a
+        # different sample's stylesheet. Two ways that happened, and both made
+        # the browser render one page while the engines rendered another —
+        # which is worse than a missing case, because the comparison still
+        # produces numbers:
+        #
+        #   * A renamed stem (`menu` -> `sample-menu`) left the original
+        #     `menu.css` link in the copy, and menu.css in the output
+        #     directory is the OTHER menu sample's 6KB stylesheet, not the
+        #     500-byte one collected beside it. Chrome loaded that; the engines
+        #     were passed sample-menu.css.
+        #   * A sample with no `<link>` at all but a sibling .css relies on the
+        #     host's pair-by-basename convention, which a browser knows nothing
+        #     about — the engines styled the page and Chrome did not.
+        #
+        # Both are fixed by making the copied HTML link the stylesheet that
+        # travels with it, by its new name.
+        with io.open(html, encoding="utf-8", errors="replace") as f:
+            markup = f.read()
+        if os.path.exists(css_src):
+            if stem != source_stem:
+                markup = markup.replace(source_stem + ".css", stem + ".css")
+            if not STYLESHEET_LINK.search(markup):
+                markup = '<link rel="stylesheet" href="%s.css" />\n' % stem + markup
+        with io.open(dst, "w", encoding="utf-8", newline="\n") as f:
+            f.write(markup)
+
         if os.path.exists(css_src):
             shutil.copyfile(css_src, css_dst)
         else:
