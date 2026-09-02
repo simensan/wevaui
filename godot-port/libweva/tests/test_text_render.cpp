@@ -294,3 +294,107 @@ void test_text_end_to_end() {
         for (int x = 0; x < r.width(); ++x) CHECK(r.pixel(x, y).a == 0.0f);
     }
 }
+
+// A blurred text-shadow is BLURRED, not a stack of copies of the glyph.
+//
+// It used to be drawn 25 times on a 5x5 grid spaced one sigma apart. At a small
+// blur that passes for a Gaussian; at a large one the copies stop overlapping
+// and the glow becomes a visible lattice of ghost letters, which is what a
+// 110px glyph with a 24px shadow looked like in the dialogue sample.
+void test_blurred_text_shadow_is_one_blurred_run() {
+    SymbolTable symbols;
+    std::vector<std::unique_ptr<Stylesheet>> sheets;
+    struct Styles : StyleProvider {
+        CascadeEngine engine;
+        NullStateProvider state;
+        std::vector<std::unique_ptr<ComputedStyle>> owned;
+        std::map<const Element*, ComputedStyle*> by_element;
+        void walk(const Element& e, const ComputedStyle* p) {
+            auto cs = std::make_unique<ComputedStyle>();
+            engine.compute(e, state, p, cs.get());
+            ComputedStyle* raw = cs.get();
+            owned.push_back(std::move(cs));
+            by_element[&e] = raw;
+            for (const Ref<Node>& c : e.children()) {
+                if (c->node_type() == NodeType::Element) {
+                    walk(static_cast<const Element&>(*c), raw);
+                }
+            }
+        }
+        const ComputedStyle* style_of(const Element& e) override {
+            auto it = by_element.find(&e);
+            return it == by_element.end() ? nullptr : it->second;
+        }
+    } styles;
+
+    auto ua = std::make_unique<Stylesheet>();
+    CssParseError pe;
+    parse_stylesheet(user_agent_stylesheet_source(), false, ua.get(), &pe);
+    styles.engine.add_stylesheet(ua.get(), DeclarationOrigin::UserAgent);
+    sheets.push_back(std::move(ua));
+    auto author = std::make_unique<Stylesheet>();
+    CHECK(parse_stylesheet("#a { display: block; font-size: 16px; color: #ffffff;"
+                           "     text-shadow: 0 0 12px #ffffff }",
+                           false, author.get(), &pe));
+    styles.engine.add_stylesheet(author.get(), DeclarationOrigin::Author);
+    sheets.push_back(std::move(author));
+
+    HtmlParseError he;
+    ParseOptions o;
+    o.strict = false;
+    Ref<Document> doc = parse_html("<body><div id=a>Hi</div></body>", &symbols, o, &he);
+    CHECK(static_cast<bool>(doc));
+    for (const Ref<Node>& c : doc->children()) {
+        if (c->node_type() == NodeType::Element) {
+            styles.walk(static_cast<const Element&>(*c), nullptr);
+        }
+    }
+
+    BoxTree tree;
+    BoxBuilder builder(&tree, &styles);
+    const BoxId root = builder.build_document(*doc);
+    LayoutContext ctx;
+    MonoFontMetrics metrics;
+    BlockLayout bl(&tree, ctx, &metrics);
+    bl.layout_root(root, 120, 60);
+
+    // Counts draws rather than looking at pixels: the lattice and the blur can
+    // both put ink in the same places, but one of them costs twenty-five draws.
+    struct Counter : RenderInterface {
+        int draws = 0;
+        int textured = 0;
+        uint64_t next = 1;
+        std::map<uint64_t, int> pending;
+        GeometryHandle compile_geometry(const std::vector<Vertex>&,
+                                        const std::vector<uint32_t>&) override {
+            return GeometryHandle{next++};
+        }
+        void render_geometry(GeometryHandle, Vec2, TextureHandle t) override {
+            ++draws;
+            if (t.id != 0) ++textured;
+        }
+        void release_geometry(GeometryHandle) override {}
+        TextureHandle load_texture(std::string_view, Vec2i*) override { return {}; }
+        TextureHandle generate_texture(const std::vector<uint8_t>&, Vec2i) override {
+            return TextureHandle{next++};
+        }
+        void release_texture(TextureHandle) override {}
+        void set_scissor(const Recti*) override {}
+    } counter;
+
+    StubFont font;
+    GlyphAtlas atlas;
+    PaintContext p;
+    p.backend = &counter;
+    p.font = &font;
+    p.atlas = &atlas;
+    p.face = StubFont::builtin();
+    paint_tree(tree, root, ctx, p);
+
+    // The shadow is one blurred image plus the glyphs themselves. The old stack
+    // alone was twenty-five, so anything near that many is the lattice back.
+    CHECK(counter.draws > 0);
+    CHECK(counter.draws < 8);
+    // And it is textured: the blurred run is an image, not geometry.
+    CHECK(counter.textured > 0);
+}

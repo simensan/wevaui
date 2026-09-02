@@ -1310,6 +1310,111 @@ std::vector<BackgroundLayer> layers_of(const Box& b) {
     return resolve_background_layers(b.style, resolve_color(b.style, "color"));
 }
 
+// A blurred text-shadow, done by blurring the run rather than stacking copies
+// of it.
+//
+// This used to draw the glyphs 25 times on a 5x5 grid spaced one sigma apart,
+// weighted like a Gaussian. At a small blur that passes for one; at a large one
+// the copies simply do not overlap, and a 110px glyph with a 24px blur came out
+// as a visible lattice of ghosts around the letter rather than a glow.
+//
+// So the run is composited into its own buffer from the glyph atlas, blurred
+// with the same blur_rgba() that `filter: blur()` uses, and drawn as ONE
+// textured quad. Better and cheaper: one draw instead of twenty-five.
+//
+// Returns false when the run has no ink to blur, and the caller falls back.
+bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_y,
+                               double font_size, double letter_spacing, const FaceHandle& face,
+                               const TextShadow& sh, const PaintContext& paint, double opacity,
+                               const Transform2D* xf, const ClipNode* clip,
+                               const ColorFilter* filter) {
+    if (!paint.font || !paint.atlas || !paint.backend || text.empty()) return false;
+    std::vector<ShapedGlyph> glyphs;
+    paint.font->shape(face, text, font_size, &glyphs);
+    if (glyphs.empty()) return false;
+
+    // Where the run's ink actually is, so the buffer is the run's size rather
+    // than the page's.
+    struct Placed { const GlyphSlot* slot; double gx, gy; };
+    std::vector<Placed> placed;
+    double lo_x = 1e300, lo_y = 1e300, hi_x = -1e300, hi_y = -1e300;
+    double pen = 0;
+    for (const ShapedGlyph& g : glyphs) {
+        const GlyphSlot* slot = paint.atlas->get(paint.font, face, g.glyph, font_size);
+        if (slot && slot->width > 0 && slot->height > 0) {
+            const double gx = pen + g.x_offset + slot->bearing_x;
+            const double gy = -g.y_offset - slot->bearing_y;
+            placed.push_back({slot, gx, gy});
+            lo_x = std::min(lo_x, gx);
+            lo_y = std::min(lo_y, gy);
+            hi_x = std::max(hi_x, gx + slot->width);
+            hi_y = std::max(hi_y, gy + slot->height);
+        }
+        pen += g.x_advance + letter_spacing;
+    }
+    if (placed.empty()) return false;
+
+    const double sigma = sh.blur * 0.5;
+    const int pad = std::max(1, static_cast<int>(std::ceil(sigma * 3.0)));
+    const int w = static_cast<int>(std::ceil(hi_x - lo_x)) + 2 * pad;
+    const int h = static_cast<int>(std::ceil(hi_y - lo_y)) + 2 * pad;
+    // A run wider than the atlas is not worth a buffer this size; the caller's
+    // fallback is wrong but bounded, which is better than a huge allocation.
+    if (w <= 0 || h <= 0 || static_cast<long long>(w) * h > 16LL * 1024 * 1024) return false;
+
+    std::vector<uint8_t> rgba(static_cast<size_t>(w) * h * 4, 0);
+    const std::vector<uint8_t>& atlas = paint.atlas->pixels();
+    const int aw = paint.atlas->width();
+    LinearColor col = sh.color;
+    if (filter) {
+        float a = col.a;
+        filter->apply_srgb(&col.r, &col.g, &col.b, &a);
+        col.a = a;
+    }
+    const auto byte = [](float v) {
+        return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255.0f));
+    };
+    // Straight alpha, which is what blur_rgba expects; the shadow's colour is
+    // flat and only its coverage varies.
+    const uint8_t cr = byte(col.r), cg = byte(col.g), cb = byte(col.b);
+    for (const Placed& p : placed) {
+        for (int gy = 0; gy < p.slot->height; ++gy) {
+            const int dy = static_cast<int>(std::lround(p.gy - lo_y)) + pad + gy;
+            if (dy < 0 || dy >= h) continue;
+            for (int gx = 0; gx < p.slot->width; ++gx) {
+                const int dx = static_cast<int>(std::lround(p.gx - lo_x)) + pad + gx;
+                if (dx < 0 || dx >= w) continue;
+                const size_t src = (static_cast<size_t>(p.slot->y + gy) * aw + p.slot->x + gx) * 4;
+                if (src + 3 >= atlas.size()) continue;
+                const uint8_t cov = atlas[src + 3];
+                if (cov == 0) continue;
+                uint8_t* d = rgba.data() + (static_cast<size_t>(dy) * w + dx) * 4;
+                // Overlapping glyphs keep the strongest coverage rather than
+                // summing, or a kerned pair darkens where it overlaps.
+                const uint8_t a = static_cast<uint8_t>(cov * col.a);
+                if (a <= d[3]) continue;
+                d[0] = cr;
+                d[1] = cg;
+                d[2] = cb;
+                d[3] = a;
+            }
+        }
+    }
+    blur_rgba(&rgba, w, h, sigma);
+
+    const TextureHandle tex = paint.backend->generate_texture(rgba, {w, h});
+    if (paint.owned_textures) paint.owned_textures->push_back(tex);
+    const Rect area(x + sh.x + lo_x - pad, baseline_y + sh.y + lo_y - pad, w, h);
+    Mesh mesh;
+    tessellate_rect(area, LinearColor::white(), &mesh, false);
+    for (Vertex& v : mesh.vertices) {
+        v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
+                       static_cast<float>((v.position.y - area.y) / area.height)};
+    }
+    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip, nullptr);
+    return true;
+}
+
 void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, double origin_x,
                      double origin_y, const PaintContext& paint, TextureHandle atlas_texture,
                      BoxId canvas_owner, PaintState state) {
@@ -1565,6 +1670,14 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
                 continue;
             }
+            if (paint_blurred_text_shadow(b.text, x, baseline, b.font_size, spacing, run_face, sh,
+                                          paint, state.opacity, xf, state.clip.get(),
+                                          state.filter.get())) {
+                continue;
+            }
+            // Fallback for a run with no ink to blur, or one too large to
+            // buffer: the old stack of copies, which is a poor blur but never
+            // nothing.
             const double sigma = sh.blur * 0.5;
             double weights[5][5];
             double total = 0;

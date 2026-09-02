@@ -40,6 +40,10 @@ public:
 
     int width() const { return width_; }
     int height() const { return height_; }
+    // The packed pixels, RGBA. Read access so a caller can composite a run
+    // into its own buffer -- which is what a blurred text-shadow needs, since
+    // blurring means having the run's coverage somewhere it can be filtered.
+    const std::vector<uint8_t>& pixels() const { return pixels_; }
     int slot_count() const { return static_cast<int>(slots_.size()); }
 
 private:

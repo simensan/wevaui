@@ -213,6 +213,7 @@ void test_stub_shaping();
 void test_glyph_atlas();
 void test_text_geometry();
 void test_text_end_to_end();
+void test_blurred_text_shadow_is_one_blurred_run();
 void test_abi_version_and_lifecycle();
 void test_abi_load_and_update();
 void test_abi_query_and_bounds();
@@ -439,6 +440,7 @@ int main() {
     test_glyph_atlas();
     test_text_geometry();
     test_text_end_to_end();
+    test_blurred_text_shadow_is_one_blurred_run();
     test_abi_version_and_lifecycle();
     test_abi_load_and_update();
     test_abi_query_and_bounds();
