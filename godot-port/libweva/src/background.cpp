@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstring>
 #include <cstdlib>
 
 namespace weva {
@@ -591,7 +593,8 @@ PreparedGradient prepare(const Gradient& g, double w, double h, const LayoutCont
     return p;
 }
 
-Srgb sample_prepared(const PreparedGradient& p, double x, double y) {
+// The gradient's parameter at a point, before any stop is consulted.
+double gradient_t(const PreparedGradient& p, double x, double y) {
     double t = 0;
     switch (p.g->kind) {
         case Gradient::Kind::Linear:
@@ -612,7 +615,11 @@ Srgb sample_prepared(const PreparedGradient& p, double x, double y) {
             break;
         }
     }
-    return sample_stops(p.stops, p.colors, t, p.g->repeating);
+    return t;
+}
+
+Srgb sample_prepared(const PreparedGradient& p, double x, double y) {
+    return sample_stops(p.stops, p.colors, gradient_t(p, x, y), p.g->repeating);
 }
 
 } // namespace
@@ -779,16 +786,135 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     for (const Tile& t : tiles) {
         if (t.prepared.has_hard_edge) samples = 3;
     }
-    const double inv = 1.0 / samples;
 
+    // A `linear-gradient(180deg, ...)` has the same colour all the way across a
+    // row, so all but one texel of that row is a copy. Rasterizing it anyway is
+    // the whole cost of opening a page: a viewport-sized gradient with a hard
+    // edge is 1024x1024x9 samples, and episode-stats spent 581 ms of its first
+    // update in here. 180deg and 90deg are 105 of the 186 linear gradients in
+    // the sample corpus.
+    //
+    // A tile is constant along an axis when its gradient does not vary along
+    // it AND it covers the whole area on it -- an edge where the tile stops
+    // varies whatever the gradient does. The colour underneath is flat, so the
+    // composite is constant exactly when every tile is.
+    const auto constant_along = [&](bool horizontal) {
+        for (const Tile& t : tiles) {
+            const PreparedGradient& g = t.prepared;
+            if (!g.g || g.g->kind != Gradient::Kind::Linear) return false;
+            if (std::abs(horizontal ? g.dx : g.dy) > 1e-9) return false;
+            const bool repeats = horizontal ? t.repeat_x : t.repeat_y;
+            if (repeats) continue;
+            const double o = horizontal ? t.ox : t.oy;
+            const double span = horizontal ? t.tw : t.th;
+            const double extent = horizontal ? width : height;
+            if (o > 0 || o + span < extent) return false;
+        }
+        return !tiles.empty();
+    };
+    const bool flat_x = constant_along(true);
+    const bool flat_y = !flat_x && constant_along(false);
+
+    // A texel only needs more than one sample where the gradient actually
+    // steps. Everywhere else the ramp is linear across the texel, so the nine
+    // samples average to the one at the centre and the extra eight are waste
+    // -- and it is nearly all of it: episode-stats' page background is a
+    // 1024x720 texture of three layers, 20 million samples, 600 ms of its first
+    // update, of which the banded `repeating-linear-gradient(118deg, ...)`
+    // steps on a few percent.
+    //
+    // A linear gradient's parameter is affine, so the half-width of a texel's
+    // t-range is the same everywhere and comes out of prepare(). Radial and
+    // conic have no such constant -- their gradient of t blows up at the centre
+    // -- so they keep sampling as before.
+    struct EdgeTest {
+        double half_width = 0;
+        double span = 0;        // repeating period, 0 when not repeating
+        std::vector<double> positions;
+    };
+    std::vector<EdgeTest> edges;
+    bool adaptive = samples > 1;
+    for (const Tile& t : tiles) {
+        const PreparedGradient& g = t.prepared;
+        if (!g.g || g.g->kind != Gradient::Kind::Linear || g.stops.size() < 2) {
+            adaptive = false;
+            break;
+        }
+        // A tile that stops short of the area has a hard edge at its own
+        // boundary, which this test does not model.
+        if (!t.repeat_x && (t.ox > 0 || t.ox + t.tw < width)) { adaptive = false; break; }
+        if (!t.repeat_y && (t.oy > 0 || t.oy + t.th < height)) { adaptive = false; break; }
+        EdgeTest e;
+        e.half_width = 0.5 * (std::abs(g.dx) * (width / tex_w) + std::abs(g.dy) * (height / tex_h)) /
+                       g.line_length;
+        const double first = g.stops.front().position, last = g.stops.back().position;
+        if (g.g->repeating && last > first) e.span = last - first;
+        for (const GradientStop& st : g.stops) e.positions.push_back(st.position);
+        edges.push_back(std::move(e));
+    }
+    if (!adaptive) edges.clear();
+
+    // True when the texel's t-range reaches a stop, so the value across it is
+    // not one straight ramp.
+    const auto steps_here = [&](size_t i, double t) {
+        const EdgeTest& e = edges[i];
+        const double lo = t - e.half_width, hi = t + e.half_width;
+        if (e.span > 0) {
+            if (2 * e.half_width >= e.span) return true;
+            const double base = e.positions.front();
+            const double w = base + std::fmod(std::fmod(t - base, e.span) + e.span, e.span);
+            for (const double pos : e.positions) {
+                for (int k = -1; k <= 1; ++k) {
+                    const double q = pos + k * e.span;
+                    if (q >= w - e.half_width && q <= w + e.half_width) return true;
+                }
+            }
+            return false;
+        }
+        // Outside the first and last stop the colour is flat, but the knee at
+        // each end is itself a corner in the ramp.
+        for (const double pos : e.positions) {
+            if (pos >= lo && pos <= hi) return true;
+        }
+        return false;
+    };
+
+    if (std::getenv("WEVA_GRADIENT_LOG")) {
+        std::fprintf(stderr, "  [grad] %dx%d tex, %zu tiles, %d^2 samples, flat_x %d flat_y %d\n",
+                     tex_w, tex_h, tiles.size(), samples, flat_x ? 1 : 0, flat_y ? 1 : 0);
+    }
     const double sx = width / tex_w, sy = height / tex_h;
     for (int py = 0; py < tex_h; ++py) {
+        if (flat_y && py > 0) {
+            // Every row is the row above it.
+            std::memcpy(out_rgba->data() + static_cast<size_t>(py) * tex_w * 4, out_rgba->data(),
+                        static_cast<size_t>(tex_w) * 4);
+            continue;
+        }
         for (int px = 0; px < tex_w; ++px) {
+            if (flat_x && px > 0) {
+                std::memcpy(out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4,
+                            out_rgba->data() + static_cast<size_t>(py) * tex_w * 4, 4);
+                continue;
+            }
             float ar = 0, ag = 0, ab = 0, aa = 0;
-            for (int oy = 0; oy < samples; ++oy) {
-                const double y = (py + (oy + 0.5) * inv) * sy;
-                for (int ox = 0; ox < samples; ++ox) {
-                    const double x = (px + (ox + 0.5) * inv) * sx;
+            int texel_samples = samples;
+            if (!edges.empty()) {
+                const double cx = (px + 0.5) * sx, cy = (py + 0.5) * sy;
+                texel_samples = 1;
+                for (size_t i = 0; i < edges.size(); ++i) {
+                    if (steps_here(i, gradient_t(tiles[i].prepared, cx - tiles[i].ox,
+                                                 cy - tiles[i].oy))) {
+                        texel_samples = samples;
+                        break;
+                    }
+                }
+            }
+            const double tinv = 1.0 / texel_samples;
+            for (int oy = 0; oy < texel_samples; ++oy) {
+                const double y = (py + (oy + 0.5) * tinv) * sy;
+                for (int ox = 0; ox < texel_samples; ++ox) {
+                    const double x = (px + (ox + 0.5) * tinv) * sx;
                     // Premultiplied source-over, bottom layer (the last) first.
                     float r = base.r * base.a, g = base.g * base.a, b = base.b * base.a;
                     float a = base.a;
@@ -815,7 +941,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                     aa += a;
                 }
             }
-            const float n = static_cast<float>(samples * samples);
+            const float n = static_cast<float>(texel_samples * texel_samples);
             float r = ar / n, g = ag / n, b = ab / n;
             const float a = aa / n;
             uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
@@ -915,35 +1041,54 @@ void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) 
     const int box = std::max(1, static_cast<int>(std::sqrt(12.0 * sigma * sigma / 3.0 + 1.0)));
     const int r = box / 2;
     std::vector<float> tmp(n * 4);
+    // A box blur is a sliding window: moving one pixel adds one sample and
+    // drops one, so a pass costs the same whatever the radius. Re-summing the
+    // whole window per pixel instead made every blur O(width * radius), and a
+    // page of large glows paid for it -- neon spent 1.1 s of its first update
+    // blurring text shadows, at a box width of ~2 sigma per pass, three passes
+    // each way.
+    //
+    // Edges extend the outermost pixel, which is what the window did when it
+    // clamped its index, so the divisor stays 2r+1 everywhere.
+    const int taps = 2 * r + 1;
     const auto pass_h = [&](const std::vector<float>& in, std::vector<float>* out) {
         for (int y = 0; y < height; ++y) {
             const float* row = in.data() + static_cast<size_t>(y) * width * 4;
             float* orow = out->data() + static_cast<size_t>(y) * width * 4;
+            double acc[4] = {0, 0, 0, 0};
+            for (int k = -r; k <= r; ++k) {
+                const int xx = std::clamp(k, 0, width - 1);
+                for (int c = 0; c < 4; ++c) acc[c] += row[xx * 4 + c];
+            }
             for (int x = 0; x < width; ++x) {
-                float acc[4] = {0, 0, 0, 0};
-                int count = 0;
-                for (int k = -r; k <= r; ++k) {
-                    const int xx = std::clamp(x + k, 0, width - 1);
-                    for (int c = 0; c < 4; ++c) acc[c] += row[xx * 4 + c];
-                    ++count;
-                }
-                for (int c = 0; c < 4; ++c) orow[x * 4 + c] = acc[c] / count;
+                for (int c = 0; c < 4; ++c) orow[x * 4 + c] = static_cast<float>(acc[c] / taps);
+                const int add = std::clamp(x + r + 1, 0, width - 1);
+                const int drop = std::clamp(x - r, 0, width - 1);
+                for (int c = 0; c < 4; ++c) acc[c] += row[add * 4 + c] - row[drop * 4 + c];
             }
         }
     };
     const auto pass_v = [&](const std::vector<float>& in, std::vector<float>* out) {
+        // Column-major over a row-major buffer, so the window walks down one
+        // column at a time and the stride is the row.
+        const size_t stride = static_cast<size_t>(width) * 4;
         for (int x = 0; x < width; ++x) {
+            const float* col = in.data() + static_cast<size_t>(x) * 4;
+            float* ocol = out->data() + static_cast<size_t>(x) * 4;
+            double acc[4] = {0, 0, 0, 0};
+            for (int k = -r; k <= r; ++k) {
+                const int yy = std::clamp(k, 0, height - 1);
+                for (int c = 0; c < 4; ++c) acc[c] += col[yy * stride + c];
+            }
             for (int y = 0; y < height; ++y) {
-                float acc[4] = {0, 0, 0, 0};
-                int count = 0;
-                for (int k = -r; k <= r; ++k) {
-                    const int yy = std::clamp(y + k, 0, height - 1);
-                    const float* px = in.data() + (static_cast<size_t>(yy) * width + x) * 4;
-                    for (int c = 0; c < 4; ++c) acc[c] += px[c];
-                    ++count;
+                for (int c = 0; c < 4; ++c) {
+                    ocol[static_cast<size_t>(y) * stride + c] = static_cast<float>(acc[c] / taps);
                 }
-                float* o = out->data() + (static_cast<size_t>(y) * width + x) * 4;
-                for (int c = 0; c < 4; ++c) o[c] = acc[c] / count;
+                const int add = std::clamp(y + r + 1, 0, height - 1);
+                const int drop = std::clamp(y - r, 0, height - 1);
+                for (int c = 0; c < 4; ++c) {
+                    acc[c] += col[add * stride + c] - col[drop * stride + c];
+                }
             }
         }
     };
