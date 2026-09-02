@@ -114,40 +114,166 @@ BorderRadii inset_radii(const BorderRadii& r, double top, double right, double b
                                     in(r.bottom_left.y_radius, bottom)));
 }
 
-void tessellate_rect(const Rect& r, const LinearColor& color, Mesh* out) {
-    if (r.is_empty() || color.a <= 0) return;
+// ---- antialiasing ---------------------------------------------------------
+//
+// A rasterizer that tests the pixel CENTRE against a triangle produces coverage
+// of 0 or 1 and nothing between, so every non-axis-aligned edge comes out as a
+// staircase. Chrome does not have this problem because Skia computes each
+// pixel's exact fractional coverage into a mask; we cannot, because the seam
+// with a backend is triangles.
+//
+// So the coverage is carried IN the geometry: the shape is drawn inset by half
+// a pixel at full alpha, with a one-pixel band around it whose outer edge is
+// alpha zero. The rasterizer interpolates that band, which gives 256 levels of
+// coverage on any backend, with no multisampling and nothing for a host to
+// implement — and both of ours stay pixel-identical, so the render gate keeps
+// meaning what it meant.
+//
+// A band centred on the edge is exact for the case that matters most: an edge
+// lying on a pixel boundary. Alpha runs 1 at boundary-0.5 to 0 at boundary+0.5,
+// and the two pixel centres either side land on exactly 1 and exactly 0. So an
+// axis-aligned rect on whole pixels stays as crisp as it was.
+constexpr double kAaHalfWidth = 0.5;
+
+// Offsets a convex outline by `d`, measured PERPENDICULAR TO EACH EDGE —
+// outward for positive. The displacement at a corner is longer than `d` (it
+// runs along the mitre), which is what keeps both of that corner's edges
+// exactly `d` away rather than only the corner point.
+std::vector<std::pair<double, double>> offset_outline(
+    const std::vector<std::pair<double, double>>& pts, double d) {
+    const size_t n = pts.size();
+    std::vector<std::pair<double, double>> out(n);
+    for (size_t i = 0; i < n; ++i) {
+        // The neighbours have to be DISTINCT points: a square corner walked
+        // with a uniform point count repeats itself, and a zero-length edge has
+        // no normal.
+        size_t prev = i;
+        for (size_t k = 1; k <= n; ++k) {
+            prev = (i + n - k) % n;
+            if (pts[prev] != pts[i]) break;
+        }
+        size_t next = i;
+        for (size_t k = 1; k <= n; ++k) {
+            next = (i + k) % n;
+            if (pts[next] != pts[i]) break;
+        }
+        const double ax = pts[i].first - pts[prev].first, ay = pts[i].second - pts[prev].second;
+        const double bx = pts[next].first - pts[i].first, by = pts[next].second - pts[i].second;
+        const double la = std::sqrt(ax * ax + ay * ay), lb = std::sqrt(bx * bx + by * by);
+        if (la <= 0 || lb <= 0) {
+            out[i] = pts[i];
+            continue;
+        }
+        // Outward normal of each edge, for an outline wound so that the
+        // interior is to the left.
+        const double n1x = ay / la, n1y = -ax / la;
+        const double n2x = by / lb, n2y = -bx / lb;
+        double mx = n1x + n2x, my = n1y + n2y;
+        const double lm = std::sqrt(mx * mx + my * my);
+        if (lm <= 1e-9) {
+            out[i] = pts[i];
+            continue;
+        }
+        mx /= lm;
+        my /= lm;
+        // Scale along the mitre so each edge moves by exactly `d`. Capped
+        // because a very sharp corner sends the mitre off to infinity.
+        const double cos_half = mx * n1x + my * n1y;
+        const double scale = cos_half > 0.2 ? d / cos_half : d * 5.0;
+        out[i] = {pts[i].first + mx * scale, pts[i].second + my * scale};
+    }
+    return out;
+}
+
+// Fills a convex outline with a one-pixel coverage ramp around it.
+void fill_outline_aa(const std::vector<std::pair<double, double>>& pts, double cx, double cy,
+                     const LinearColor& color, bool antialias, Mesh* out) {
+    if (pts.size() < 3) return;
+    const uint32_t n = static_cast<uint32_t>(pts.size());
+
+    if (!antialias) {
+        const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+        out->vertices.push_back(vert(cx, cy, color));
+        for (const auto& p : pts) out->vertices.push_back(vert(p.first, p.second, color));
+        for (uint32_t i = 0; i < n; ++i) {
+            out->indices.push_back(base);
+            out->indices.push_back(base + 1 + i);
+            out->indices.push_back(base + 1 + ((i + 1) % n));
+        }
+        return;
+    }
+
+    const std::vector<std::pair<double, double>> in = offset_outline(pts, -kAaHalfWidth);
+    const std::vector<std::pair<double, double>> ex = offset_outline(pts, kAaHalfWidth);
+    LinearColor clear = color;
+    clear.a = 0;
+
+    // Centre, then the inset ring, then the expanded ring.
     const uint32_t base = static_cast<uint32_t>(out->vertices.size());
-    out->vertices.push_back(vert(r.x, r.y, color));
-    out->vertices.push_back(vert(r.right(), r.y, color));
-    out->vertices.push_back(vert(r.right(), r.bottom(), color));
-    out->vertices.push_back(vert(r.x, r.bottom(), color));
-    for (uint32_t i : {0u, 1u, 2u, 0u, 2u, 3u}) out->indices.push_back(base + i);
+    out->vertices.push_back(vert(cx, cy, color));
+    for (const auto& p : in) out->vertices.push_back(vert(p.first, p.second, color));
+    for (const auto& p : ex) out->vertices.push_back(vert(p.first, p.second, clear));
+
+    const uint32_t inner = base + 1;
+    const uint32_t outer = inner + n;
+    for (uint32_t i = 0; i < n; ++i) {
+        const uint32_t j = (i + 1) % n;
+        out->indices.push_back(base);
+        out->indices.push_back(inner + i);
+        out->indices.push_back(inner + j);
+        // The ramp.
+        for (uint32_t idx : {inner + i, outer + i, inner + j}) out->indices.push_back(idx);
+        for (uint32_t idx : {inner + j, outer + i, outer + j}) out->indices.push_back(idx);
+    }
+}
+
+// Too small to inset half a pixel from both sides without turning inside out.
+bool too_thin_to_feather(const Rect& r) {
+    return r.width < 2 * kAaHalfWidth + 0.5 || r.height < 2 * kAaHalfWidth + 0.5;
+}
+
+void tessellate_rect(const Rect& r, const LinearColor& color, Mesh* out, bool antialias) {
+    if (r.is_empty() || color.a <= 0) return;
+    // A plain rect is never feathered. Its edges are axis-aligned, so a
+    // pixel-centre rasterizer already gets their coverage exactly right when
+    // they sit on whole pixels — which is the overwhelmingly common case, since
+    // layout rounds to them — and a ramp would only cost vertices to reproduce
+    // the same result. The staircase this whole mechanism exists for comes from
+    // edges that are NOT axis-aligned: arcs, and anything under a rotation.
+    (void)antialias;
+    {
+        // Two triangles from four corners, with no centre vertex — this is the
+        // commonest shape in any document and it should not pay for a fan.
+        const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+        out->vertices.push_back(vert(r.x, r.y, color));
+        out->vertices.push_back(vert(r.right(), r.y, color));
+        out->vertices.push_back(vert(r.right(), r.bottom(), color));
+        out->vertices.push_back(vert(r.x, r.bottom(), color));
+        for (uint32_t i : {0u, 1u, 2u, 0u, 2u, 3u}) out->indices.push_back(base + i);
+        return;
+    }
+    const std::vector<std::pair<double, double>> pts = {
+        {r.x, r.y}, {r.right(), r.y}, {r.right(), r.bottom()}, {r.x, r.bottom()}};
+    fill_outline_aa(pts, r.x + r.width * 0.5, r.y + r.height * 0.5, color, true, out);
 }
 
 void tessellate_rounded_rect(const Rect& r, const BorderRadii& radii, const LinearColor& color,
-                             Mesh* out, int segments) {
+                             Mesh* out, int segments, bool antialias) {
     if (r.is_empty() || color.a <= 0) return;
     if (radii.is_zero()) {
-        tessellate_rect(r, color, out);
+        tessellate_rect(r, color, out, antialias);
         return;
     }
-    const std::vector<std::pair<double, double>> pts = rounded_outline(r, radii, segments);
-    const uint32_t base = static_cast<uint32_t>(out->vertices.size());
     // A centre vertex plus a fan. Correct for any convex outline, which a
-    // rounded rect always is.
-    out->vertices.push_back(vert(r.x + r.width * 0.5, r.y + r.height * 0.5, color));
-    for (const auto& p : pts) out->vertices.push_back(vert(p.first, p.second, color));
-    const uint32_t n = static_cast<uint32_t>(pts.size());
-    for (uint32_t i = 0; i < n; ++i) {
-        out->indices.push_back(base);
-        out->indices.push_back(base + 1 + i);
-        out->indices.push_back(base + 1 + ((i + 1) % n));
-    }
+    // rounded rect always is — and the coverage ramp rides the same fan.
+    const std::vector<std::pair<double, double>> pts = rounded_outline(r, radii, segments);
+    fill_outline_aa(pts, r.x + r.width * 0.5, r.y + r.height * 0.5, color,
+                    antialias && !too_thin_to_feather(r), out);
 }
 
 void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double top,
                        double right, double bottom, double left, const LinearColor colors[4],
-                       Mesh* out, int segments) {
+                       Mesh* out, int segments, bool antialias) {
     if (outer.is_empty()) return;
     if (top <= 0 && right <= 0 && bottom <= 0 && left <= 0) return;
 
@@ -176,12 +302,27 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
     }
     if (o.size() != i2.size() || o.empty()) return;
 
-    const uint32_t base = static_cast<uint32_t>(out->vertices.size());
     const uint32_t n = static_cast<uint32_t>(o.size());
+    // A ring is TWO boundaries, so it gets two coverage ramps: one outside the
+    // outer outline and one inside the inner. The solid part is what is left
+    // between them. Skipped when the ring is thinner than the two half-pixel
+    // insets, which would turn it inside out.
+    // Square corners need no ramp, for the same reason a plain rect does not:
+    // every edge is axis-aligned and a pixel-centre rasterizer already resolves
+    // it exactly. Only a radius puts a curve in the outline.
+    const bool feather = antialias && !outer_radii.is_zero() && !too_thin_to_feather(outer) &&
+                         std::min(std::min(top, right), std::min(bottom, left)) > 2 * kAaHalfWidth;
+
+    const std::vector<std::pair<double, double>> o_solid =
+        feather ? offset_outline(o, -kAaHalfWidth) : o;
+    const std::vector<std::pair<double, double>> i_solid =
+        feather ? offset_outline(i2, kAaHalfWidth) : i2;
+
+    const uint32_t base = static_cast<uint32_t>(out->vertices.size());
     for (uint32_t k = 0; k < n; ++k) {
         const LinearColor& c = colors[edge_of(o[k].first, o[k].second, outer)];
-        out->vertices.push_back(vert(o[k].first, o[k].second, c));
-        out->vertices.push_back(vert(i2[k].first, i2[k].second, c));
+        out->vertices.push_back(vert(o_solid[k].first, o_solid[k].second, c));
+        out->vertices.push_back(vert(i_solid[k].first, i_solid[k].second, c));
     }
     for (uint32_t k = 0; k < n; ++k) {
         const uint32_t a = base + k * 2;
@@ -190,6 +331,30 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
         const uint32_t d = c + 1;
         for (uint32_t idx : {a, c, b}) out->indices.push_back(idx);
         for (uint32_t idx : {b, c, d}) out->indices.push_back(idx);
+    }
+    if (!feather) return;
+
+    const std::vector<std::pair<double, double>> o_edge = offset_outline(o, kAaHalfWidth);
+    const std::vector<std::pair<double, double>> i_edge = offset_outline(i2, -kAaHalfWidth);
+    const uint32_t ramp = static_cast<uint32_t>(out->vertices.size());
+    for (uint32_t k = 0; k < n; ++k) {
+        LinearColor c = colors[edge_of(o[k].first, o[k].second, outer)];
+        c.a = 0;
+        out->vertices.push_back(vert(o_edge[k].first, o_edge[k].second, c));
+        out->vertices.push_back(vert(i_edge[k].first, i_edge[k].second, c));
+    }
+    for (uint32_t k = 0; k < n; ++k) {
+        const uint32_t k2 = (k + 1) % n;
+        // Outside the outer boundary: solid outer -> transparent.
+        for (uint32_t idx : {base + k * 2, ramp + k * 2, base + k2 * 2}) out->indices.push_back(idx);
+        for (uint32_t idx : {base + k2 * 2, ramp + k * 2, ramp + k2 * 2}) out->indices.push_back(idx);
+        // Inside the inner boundary: solid inner -> transparent.
+        for (uint32_t idx : {base + k * 2 + 1, base + k2 * 2 + 1, ramp + k * 2 + 1}) {
+            out->indices.push_back(idx);
+        }
+        for (uint32_t idx : {base + k2 * 2 + 1, ramp + k2 * 2 + 1, ramp + k * 2 + 1}) {
+            out->indices.push_back(idx);
+        }
     }
 }
 

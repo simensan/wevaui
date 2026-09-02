@@ -20,7 +20,8 @@ struct Mesh {
 };
 
 // A solid rectangle: two triangles.
-void tessellate_rect(const Rect& r, const LinearColor& color, Mesh* out);
+void tessellate_rect(const Rect& r, const LinearColor& color, Mesh* out,
+                     bool antialias = true);
 
 // A rounded rectangle, approximating each corner with an arc. `segments` is
 // per corner; a zero radius emits the sharp corner with no extra vertices, so
@@ -29,7 +30,7 @@ void tessellate_rect(const Rect& r, const LinearColor& color, Mesh* out);
 // Fanned from the centre rather than strip-triangulated: a fan is correct for
 // any convex outline, and a rounded rect always is.
 void tessellate_rounded_rect(const Rect& r, const BorderRadii& radii, const LinearColor& color,
-                             Mesh* out, int segments = 8);
+                             Mesh* out, int segments = 8, bool antialias = true);
 
 // The ring between an outer and an inner rounded rect — the shape of a border.
 // Emitted as one mesh rather than four edges so a mitred corner between two
@@ -39,7 +40,8 @@ void tessellate_rounded_rect(const Rect& r, const BorderRadii& radii, const Line
 // edge it belongs to, and a corner blends between its two.
 void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double top,
                        double right, double bottom, double left,
-                       const LinearColor colors[4], Mesh* out, int segments = 8);
+                       const LinearColor colors[4], Mesh* out, int segments = 8,
+                       bool antialias = true);
 
 // Shrinks a rounded rect's radii inward by the border widths, which is what
 // gives the inner edge of a border its correct curvature. A radius never goes

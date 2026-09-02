@@ -160,11 +160,20 @@ Rect bounds(const Mesh& m) {
 } // namespace
 
 void test_tessellate_rect() {
+    // Without antialiasing: two triangles from four corners — an indexed quad,
+    // not six vertices.
+    Mesh plain;
+    tessellate_rect(Rect(10, 20, 30, 40), LinearColor::white(), &plain, false);
+    CHECK(plain.vertices.size() == 4);
+    CHECK(plain.indices.size() == 6);
+    CHECK(bounds(plain) == Rect(10, 20, 30, 40));
+
+    // And WITH it, a plain rect is still the same four vertices: its edges are
+    // axis-aligned, so a pixel-centre rasterizer already resolves them exactly
+    // and a coverage ramp would buy nothing. Only curves carry one.
     Mesh m;
     tessellate_rect(Rect(10, 20, 30, 40), LinearColor::white(), &m);
-    // Two triangles from four corners — an indexed quad, not six vertices.
     CHECK(m.vertices.size() == 4);
-    CHECK(m.indices.size() == 6);
     CHECK(bounds(m) == Rect(10, 20, 30, 40));
 
     // Nothing is emitted for an empty rect or a fully transparent colour, so a
@@ -175,6 +184,9 @@ void test_tessellate_rect() {
     CHECK(e.empty());
 
     // append() shifts the second mesh's indices so two shapes become one draw.
+    // A 1x1 rect is too thin to inset half a pixel from both sides without
+    // turning inside out, so it keeps the plain four-vertex quad — which also
+    // keeps this checking what it is about, the index shifting.
     Mesh a, b;
     tessellate_rect(Rect(0, 0, 1, 1), LinearColor::white(), &a);
     tessellate_rect(Rect(5, 5, 1, 1), LinearColor::black(), &b);
@@ -188,19 +200,30 @@ void test_tessellate_rounded() {
     // which is the common case for most boxes.
     Mesh sharp;
     tessellate_rounded_rect(Rect(0, 0, 100, 50), BorderRadii::zero(), LinearColor::white(),
-                            &sharp);
+                            &sharp, 8, false);
     CHECK(sharp.vertices.size() == 4);
 
-    // A radius adds arc vertices but never leaves the rect's bounds.
+    // A radius adds arc vertices but never leaves the rect's bounds — beyond
+    // the half-pixel coverage ramp, which every antialiased shape carries.
     Mesh round;
     tessellate_rounded_rect(Rect(0, 0, 100, 50), BorderRadii::uniform(10), LinearColor::white(),
-                            &round, 4);
+                            &round, 4, false);
     CHECK(round.vertices.size() > 4);
     const Rect bb = bounds(round);
     CHECK(near(bb.x, 0) && near(bb.y, 0));
     CHECK(near(bb.width, 100) && near(bb.height, 50));
     // A fan: one centre vertex plus the outline, three indices per edge.
     CHECK(round.indices.size() == (round.vertices.size() - 1) * 3);
+
+    // Antialiased, it is the same outline twice — inset and expanded — around
+    // the same centre, so the vertex count doubles less the shared centre.
+    Mesh aa;
+    tessellate_rounded_rect(Rect(0, 0, 100, 50), BorderRadii::uniform(10), LinearColor::white(),
+                            &aa, 4);
+    CHECK(aa.vertices.size() == (round.vertices.size() - 1) * 2 + 1);
+    const Rect ab = bounds(aa);
+    CHECK(near(ab.x, -0.5) && near(ab.y, -0.5));
+    CHECK(near(ab.width, 101) && near(ab.height, 51));
 }
 
 void test_radii_clamping() {

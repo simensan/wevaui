@@ -1285,7 +1285,11 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     if (paint.owned_textures) paint.owned_textures->push_back(tex);
 
     Mesh mesh;
-    tessellate_rounded_rect(area, radii, LinearColor::white(), &mesh);
+    // No geometric antialiasing here: the rasterized layer already carries the
+    // rounded corner's coverage in its own alpha (see rounded_coverage in
+    // background.cpp), and feathering the quad on top of that would apply it
+    // twice and eat the edge.
+    tessellate_rounded_rect(area, radii, LinearColor::white(), &mesh, 8, false);
     for (Vertex& v : mesh.vertices) {
         v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                        static_cast<float>((v.position.y - area.y) / area.height)};
@@ -1371,7 +1375,9 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             if (paint.owned_textures) paint.owned_textures->push_back(tex);
             const Rect area(x - pad_px, y - pad_px, full_w, full_h);
             Mesh mesh;
-            tessellate_rect(area, LinearColor::white(), &mesh);
+            // The blurred image supplies its own soft edge; a feather would
+            // only blur an already-blurred boundary.
+            tessellate_rect(area, LinearColor::white(), &mesh, false);
             for (Vertex& v : mesh.vertices) {
                 v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                                static_cast<float>((v.position.y - area.y) / area.height)};
@@ -1435,8 +1441,12 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             // Tessellated opaque and cleared afterwards, because the
             // tessellator declines to build a mesh for an invisible fill —
             // which is right for a fill and would leave this with no shape.
+            // No coverage ramp: this is a REGION, and a backend reads its
+            // coverage from where the triangles land rather than from their
+            // alpha. A ramp would only push the filter half a pixel past the
+            // border box.
             Mesh shape;
-            tessellate_rounded_rect(border_box, radii, LinearColor::white(), &shape);
+            tessellate_rounded_rect(border_box, radii, LinearColor::white(), &shape, 8, false);
             for (Vertex& v : shape.vertices) v.color = LinearColor::transparent();
             filter_backdrop(shape, paint.backend, effect, xf, state.clip.get());
         }

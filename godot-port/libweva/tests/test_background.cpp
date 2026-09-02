@@ -162,6 +162,34 @@ Rect bounds_of(const RecordingBackend::Geometry& g) {
     return Rect(x0, y0, x1 - x0, y1 - y0);
 }
 
+// The bounds of the SHAPE a mesh describes, discounting the coverage ramp an
+// antialiased fill carries around it.
+//
+// A curved fill is emitted as the outline inset half a pixel at full alpha plus
+// the same outline expanded half a pixel at zero, so neither ring is the shape:
+// it lies exactly between them. Measuring the raw vertices would report every
+// rounded box a pixel bigger than it is and turn "a 12px check mark" into 13.
+Rect shape_bounds(const RecordingBackend::Geometry& g) {
+    bool ramped = false;
+    for (const Vertex& v : g.vertices) {
+        if (v.color.a == 0.0f) ramped = true;
+    }
+    if (!ramped) return bounds_of(g);
+    double x0 = 1e300, y0 = 1e300, x1 = -1e300, y1 = -1e300;
+    for (const Vertex& v : g.vertices) {
+        if (v.color.a == 0.0f) continue;
+        x0 = std::min<double>(x0, v.position.x);
+        y0 = std::min<double>(y0, v.position.y);
+        x1 = std::max<double>(x1, v.position.x);
+        y1 = std::max<double>(y1, v.position.y);
+    }
+    // The solid ring is the inset one, so the shape is half a pixel outside it
+    // -- to within the arc approximation. On a curve the inset runs along the
+    // mitre, which is 0.5/cos(half a segment) long rather than 0.5, so this
+    // recovers the shape to a few thousandths of a pixel and not exactly.
+    return Rect(x0 - 0.5, y0 - 0.5, (x1 - x0) + 1.0, (y1 - y0) + 1.0);
+}
+
 } // namespace
 
 void test_background_shorthand() {
@@ -475,16 +503,21 @@ void test_paint_form_control_marks() {
     int check = 0, red_dot = 0, thumb = 0, caret = 0;
     for (const RecordingBackend::Draw& d : backend.draws) {
         if (d.geometry.vertices.empty() || d.texture != 0) continue;
-        const Rect r = bounds_of(d.geometry);
+        // The marks are rounded, so they carry a coverage ramp; measure the
+        // shape rather than the ramp, or every size below reads a pixel large.
+        const Rect r = shape_bounds(d.geometry);
         const LinearColor c = d.geometry.vertices[0].color;
+        // Sizes to a hundredth of a pixel, which is all shape_bounds can
+        // recover through the arc approximation; the marks are all round.
+        const double e = 0.01;
         // indigo check mark: 16 - 2*2 = 12 square
-        if (near(r.width, 12) && near(r.height, 12) && near(c.b, 0.671f)) ++check;
+        if (near(r.width, 12, e) && near(r.height, 12, e) && near(c.b, 0.671f)) ++check;
         // radio dot in the author's accent colour: half the 16px box
-        if (near(r.width, 8) && near(r.height, 8) && near(c.r, 1) && near(c.g, 0)) ++red_dot;
+        if (near(r.width, 8, e) && near(r.height, 8, e) && near(c.r, 1) && near(c.g, 0)) ++red_dot;
         // range thumb: content height 16 → a 14px knob
-        if (near(r.width, 14) && near(r.height, 14)) ++thumb;
+        if (near(r.width, 14, e) && near(r.height, 14, e)) ++thumb;
         // select caret: 6x3 grey bar
-        if (near(r.width, 6) && near(r.height, 3) && near(c.r, 0.6f)) ++caret;
+        if (near(r.width, 6, e) && near(r.height, 3, e) && near(c.r, 0.6f)) ++caret;
     }
     CHECK(check == 1);     // the unchecked box draws no mark
     CHECK(red_dot == 1);
