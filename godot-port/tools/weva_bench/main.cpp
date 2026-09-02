@@ -263,6 +263,18 @@ int main(int argc, char** argv) {
         if (std::string(argv[i]) == "--sample") sample = true;
     }
 
+    // What each timed pass changes about the document.
+    //
+    // Without this, --full now measures nothing: an update that finds no change
+    // publishes the frame it already had, so a loop over an untouched document
+    // times the cascade and an early return. That is the honest number for a
+    // static screen and useless for anything else, so the cases are named.
+    std::string mutate = "none";
+    for (int i = 1; i < argc; ++i) {
+        const std::string a = argv[i];
+        if (a.rfind("--mutate=", 0) == 0) mutate = a.substr(9);
+    }
+
     // Arms the profiling timer around the timed region.
     const auto start_sampling = [&] {
         if (!sample) return;
@@ -311,9 +323,28 @@ int main(int argc, char** argv) {
             return 1;
         }
         weva_document_update(d, 0);   // warm the atlas and the arenas
+
+        // The element a mutation lands on: the first the document has, so any
+        // sample works without knowing its markup.
+        weva_element_t target = WEVA_ELEMENT_NONE;
+        if (mutate != "none") {
+            target = weva_document_query(d, "*");
+            if (target == WEVA_ELEMENT_NONE) {
+                std::fprintf(stderr, "weva_bench: --mutate found no element\n");
+                return 1;
+            }
+        }
+        const char* const paint_values[2] = {"background-color:#123456",
+                                             "background-color:#123457"};
+        const char* const layout_values[2] = {"padding-left:11px", "padding-left:12px"};
+
         double best = 1e300, total = 0;
         start_sampling();
         for (int i = 0; i < passes; ++i) {
+            if (target != WEVA_ELEMENT_NONE) {
+                const char* const* values = mutate == "paint" ? paint_values : layout_values;
+                weva_element_set_attribute(d, target, "style", values[i & 1]);
+            }
             const auto t0 = std::chrono::steady_clock::now();
             weva_document_update(d, 0);
             const auto t1 = std::chrono::steady_clock::now();
@@ -325,8 +356,8 @@ int main(int argc, char** argv) {
         size_t draws = 0, textures = 0;
         weva_document_draws(d, &draws);
         weva_document_textures(d, &textures);
-        std::printf("%-24s full update  best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures\n",
-                    argv[1], best, total / passes, draws, textures);
+        std::printf("%-24s %-7s best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures\n",
+                    argv[1], mutate.c_str(), best, total / passes, draws, textures);
         if (sample) report_sites("time samples", g_samples, 16);
         weva_document_destroy(d);
         return 0;

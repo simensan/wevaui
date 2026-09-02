@@ -217,6 +217,7 @@ void test_text_end_to_end();
 void test_blurred_text_shadow_is_one_blurred_run();
 void test_abi_version_and_lifecycle();
 void test_abi_load_and_update();
+void test_abi_incremental_matches_fresh();
 void test_abi_query_and_bounds();
 void test_abi_attributes_and_text();
 void test_abi_viewport_and_restyle();
@@ -445,6 +446,7 @@ int main() {
     test_blurred_text_shadow_is_one_blurred_run();
     test_abi_version_and_lifecycle();
     test_abi_load_and_update();
+    test_abi_incremental_matches_fresh();
     test_abi_query_and_bounds();
     test_abi_attributes_and_text();
     test_abi_viewport_and_restyle();

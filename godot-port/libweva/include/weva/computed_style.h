@@ -102,6 +102,20 @@ public:
     // Ids set DIRECTLY on this style (not inherited, not initial), ascending.
     std::vector<int> set_ids() const;
 
+    // Compares against a freshly computed style for the same element.
+    //
+    // An update recomputes every element's style whether or not anything about
+    // it changed, and then rebuilds the box tree and lays the document out
+    // again on the assumption that it did. This is how a pass finds out: the
+    // ids whose value differs are appended to `changed_ids`, and *unattributed
+    // is set when something differs that no id names -- a custom property, or
+    // the inheritance parent -- which a caller must treat as the broadest kind
+    // of change it knows, since it cannot tell what the difference reaches.
+    //
+    // Returns true when anything at all differs.
+    bool differs_from(const ComputedStyle& other, std::vector<int>* changed_ids,
+                      bool* unattributed) const;
+
 private:
     void ensure_capacity(int id);
 

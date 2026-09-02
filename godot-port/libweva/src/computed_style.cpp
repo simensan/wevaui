@@ -1,5 +1,7 @@
 #include "weva/computed_style.h"
 
+#include <algorithm>
+
 namespace weva {
 
 namespace {
@@ -168,6 +170,36 @@ void ComputedStyle::clear() {
     custom_.clear();
     set_count_ = 0;
     version_ = next_version();
+}
+
+bool ComputedStyle::differs_from(const ComputedStyle& other, std::vector<int>* changed_ids,
+                                 bool* unattributed) const {
+    bool any = false;
+    // Neither of these names a property, so a caller cannot narrow what the
+    // difference affects. A custom property reaches whatever var() read it,
+    // and those reads were substituted during the cascade -- so a change that
+    // mattered also shows up as a changed value below, and one that did not
+    // still has to be reported, because nothing here can prove it did not.
+    if (parent_ != other.parent_ || custom_ != other.custom_) {
+        any = true;
+        if (unattributed) *unattributed = true;
+    }
+    const std::size_t n = std::max(values_.size(), other.values_.size());
+    for (std::size_t i = 0; i < n; ++i) {
+        const bool a = i < occupied_.size() && occupied_[i];
+        const bool b = i < other.occupied_.size() && other.occupied_[i];
+        if (!a && !b) continue;
+        bool same = a == b;
+        if (same) {
+            same = values_[i] == other.values_[i] &&
+                   (i < important_.size() && important_[i]) ==
+                       (i < other.important_.size() && other.important_[i]);
+        }
+        if (same) continue;
+        any = true;
+        if (changed_ids) changed_ids->push_back(static_cast<int>(i));
+    }
+    return any;
 }
 
 std::vector<int> ComputedStyle::set_ids() const {

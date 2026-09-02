@@ -9,6 +9,7 @@
 #include "weva/glyph_atlas.h"
 #include "weva/tessellate.h"
 #include "weva/html.h"
+#include "weva/invalidation.h"
 #include "weva/paint.h"
 #include "weva/positioning.h"
 #include "weva/selector.h"
@@ -207,23 +208,94 @@ struct StyleMap : StyleProvider {
     // ::before at index 0, ::after at 1 — only for hosts some rule targets.
     std::map<std::pair<const Element*, int>, ComputedStyle*> pseudo_by_element;
 
+    // ---- incremental state -------------------------------------------------
+    //
+    // Styles are kept ACROSS updates, and each element's style object keeps its
+    // address, because the box tree points at it. A pass computes into
+    // `scratch` and swaps only when the result actually differs, so an element
+    // nothing touched keeps its style, its version and its parsed-value cache.
+    //
+    // What the pass learned is left in `pending`, which is how the update
+    // decides whether to rebuild the box tree, lay out again, or only repaint.
+    ComputedStyle scratch;
+    Invalidation pending = Invalidation::Boxes;
+    int visited = 0;
+
+    void begin_pass() {
+        pending = Invalidation::None;
+        visited = 0;
+    }
+
+    // The element set changed, so which boxes exist did too.
+    void note_structural() { pending = worst(pending, Invalidation::Boxes); }
+
     void clear() {
         owned.clear();
         by_element.clear();
         pseudo_by_element.clear();
+        pending = Invalidation::Boxes;
     }
+
+    // Computes into `into`, and reports what the difference forces.
+    void compute_into(ComputedStyle* into, const Element& e, const ComputedStyle* parent) {
+        engine.compute(e, state, parent, &scratch);
+        merge(into, &scratch);
+    }
+
+    void merge(ComputedStyle* live, ComputedStyle* fresh) {
+        std::vector<int> changed;
+        bool unattributed = false;
+        if (!live->differs_from(*fresh, &changed, &unattributed)) return;
+        // The address has to survive -- every box holds it -- so the contents
+        // move rather than the object.
+        std::swap(*live, *fresh);
+        if (unattributed) {
+            pending = worst(pending, Invalidation::Boxes);
+            return;
+        }
+        for (const int id : changed) {
+            pending = worst(pending, invalidation_for_property(id));
+            if (pending == Invalidation::Boxes) return;
+        }
+    }
+
     void walk(const Element& e, const ComputedStyle* parent) {
-        auto cs = std::make_unique<ComputedStyle>();
-        engine.compute(e, state, parent, cs.get());
-        ComputedStyle* raw = cs.get();
-        owned.push_back(std::move(cs));
-        by_element[&e] = raw;
+        ++visited;
+        ComputedStyle* raw = nullptr;
+        auto it = by_element.find(&e);
+        if (it == by_element.end()) {
+            auto cs = std::make_unique<ComputedStyle>();
+            raw = cs.get();
+            owned.push_back(std::move(cs));
+            by_element[&e] = raw;
+            note_structural();   // an element that was not here before
+            engine.compute(e, state, parent, raw);
+        } else {
+            raw = it->second;
+            compute_into(raw, e, parent);
+        }
         static constexpr std::string_view kPseudos[2] = {"before", "after"};
         for (int i = 0; i < 2; ++i) {
-            auto ps = std::make_unique<ComputedStyle>();
-            if (!engine.compute_pseudo_element(e, kPseudos[i], state, *raw, ps.get())) continue;
-            pseudo_by_element[{&e, i}] = ps.get();
-            owned.push_back(std::move(ps));
+            auto pit = pseudo_by_element.find({&e, i});
+            const bool had = pit != pseudo_by_element.end();
+            const bool has = engine.compute_pseudo_element(e, kPseudos[i], state, *raw, &scratch);
+            if (!has) {
+                // A pseudo that stopped being generated takes its box with it.
+                if (had) {
+                    pseudo_by_element.erase(pit);
+                    note_structural();
+                }
+                continue;
+            }
+            if (!had) {
+                auto ps = std::make_unique<ComputedStyle>();
+                std::swap(*ps, scratch);
+                pseudo_by_element[{&e, i}] = ps.get();
+                owned.push_back(std::move(ps));
+                note_structural();
+                continue;
+            }
+            merge(pit->second, &scratch);
         }
         for (const Ref<Node>& c : e.children()) {
             if (c->node_type() == NodeType::Element) {
@@ -432,6 +504,15 @@ struct weva_document {
     // update costs at all.
     TextureCache textures;
 
+    // What a host did that no element's style records: a stylesheet added, the
+    // viewport resized, a backend swapped, the document loaded. Cleared by the
+    // update that acts on it.
+    Invalidation pending = Invalidation::Boxes;
+    // Whether an attribute was set since the last update. Only the cascade can
+    // tell what an attribute did, but nothing can have changed if none was
+    // touched -- and then even running the cascade is waste.
+    bool dom_touched = false;
+
     RenderInterface* render_backend() {
         return host_render ? static_cast<RenderInterface*>(host_render.get()) : &backend;
     }
@@ -473,6 +554,13 @@ uint32_t weva_abi_version(void) {
 
 void weva_document_set_render_backend(weva_document_t doc, const weva_render_backend* backend) {
     if (!doc) return;
+    // Cached textures are handles the OLD backend issued, and the draws that
+    // reference them went to it too. Both have to be given up here, while the
+    // backend that owns them is still the one installed.
+    doc->textures.release_all(doc->render_backend());
+    for (TextureHandle t : doc->transient_textures) doc->render_backend()->release_texture(t);
+    doc->transient_textures.clear();
+    doc->pending = Invalidation::Boxes;
     if (!backend) { doc->host_render.reset(); return; }
     doc->host_render = std::make_unique<HostRenderBackend>(*backend, &doc->backend);
 }
@@ -506,6 +594,8 @@ void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend
                                     uint64_t face) {
     if (!doc) return;
     doc->variant_metrics.clear();
+    // A different face measures differently, so every line box is suspect.
+    doc->pending = Invalidation::Boxes;
     if (!backend) {
         doc->host_font.reset();
         doc->host_metrics.reset();
@@ -573,6 +663,10 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
             doc->index_elements(static_cast<Element&>(const_cast<Node&>(*c)));
         }
     }
+    // Every style is keyed on an element of the old document, so none of them
+    // can be reused and the walk would otherwise see a page of new elements.
+    doc->styles.clear();
+    doc->pending = Invalidation::Boxes;
     return WEVA_OK;
 }
 
@@ -585,6 +679,9 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
     }
     doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
     doc->sheets.push_back(std::move(sheet));
+    // The cascade caches selector matches by element shape, and the shapes did
+    // not change -- the rules did.
+    doc->styles.engine.invalidate_cache();
     return WEVA_OK;
 }
 
@@ -600,6 +697,10 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     // fixed-width box would survive a resize it should not. Dropping the cache
     // on a resize is exact and costs one pass.
     doc->textures.release_all(doc->render_backend());
+    // Computed styles do not mention the viewport -- percentages and viewport
+    // units are resolved at layout -- so the cascade would report no change at
+    // all while every size on the page may be different.
+    doc->pending = worst(doc->pending, Invalidation::Layout);
 }
 
 weva_status weva_document_content_size(weva_document_t doc, double* out_width,
@@ -628,23 +729,72 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
         t0 = t;
     };
 
-    doc->styles.clear();
+    // Nothing has been touched since the last update, so there is nothing for
+    // the cascade to find. A host that drives update() from its frame loop
+    // pays this and no more for a screen that is merely being looked at.
+    if (doc->pending == Invalidation::None && !doc->dom_touched) {
+        lap("cascade");
+        lap("boxes");
+        lap("layout");
+        lap("paint");
+        return WEVA_OK;
+    }
+    doc->dom_touched = false;
+
+    // The cascade runs whatever changed -- it is the only thing that can tell
+    // what did -- but it now reports its findings rather than being assumed to
+    // have changed everything. `pending` comes back as the most invalidating
+    // difference it found across the document.
+    doc->styles.begin_pass();
     for (const Ref<Node>& c : doc->doc->children()) {
         if (c->node_type() == NodeType::Element) {
             doc->styles.walk(static_cast<const Element&>(*c), nullptr);
         }
     }
+    // An element that was styled last pass and was not visited this one is
+    // gone from the DOM, which the walk cannot see from the inside.
+    if (doc->styles.visited != static_cast<int>(doc->styles.by_element.size())) {
+        doc->styles.note_structural();
+    }
+    Invalidation pending = doc->styles.pending;
+    // Anything a host did that the cascade cannot see -- a new stylesheet, a
+    // resized viewport, a backend swap, the first update of all -- is recorded
+    // by the entry point that did it.
+    pending = worst(pending, doc->pending);
+    doc->pending = Invalidation::None;
     lap("cascade");
 
-    doc->tree.reset();
-    BoxBuilder builder(&doc->tree, &doc->styles);
-    doc->root = builder.build_document(*doc->doc);
-    if (doc->root == kNoBox) return WEVA_ERR_INTERNAL;
+    if (pending == Invalidation::None) {
+        // Nothing an element can see is different, so the draws already
+        // published are the right ones. The ABI says they stay valid until the
+        // next update, and this IS the next update.
+        lap("boxes");
+        lap("layout");
+        lap("paint");
+        return WEVA_OK;
+    }
+
+    // Laying out is not something a tree can be put through twice: inline
+    // layout CREATES boxes -- line boxes, the fragments an inline box is split
+    // into -- so a second pass over an already laid-out tree does not reproduce
+    // the first. (Tried: it published 18 draws where a fresh document published
+    // 24.) So a change that moves anything rebuilds the tree, which is cheap
+    // beside the layout it feeds: box building is 0.1 ms against 1-3 ms.
+    //
+    // That leaves the tiers that matter as None, Paint, and everything else.
+    if (pending >= Invalidation::Layout) {
+        doc->tree.reset();
+        BoxBuilder builder(&doc->tree, &doc->styles);
+        doc->root = builder.build_document(*doc->doc);
+        if (doc->root == kNoBox) return WEVA_ERR_INTERNAL;
+    }
     lap("boxes");
 
-    BlockLayout block(&doc->tree, doc->ctx, &doc->metrics_backend());
-    block.layout_root(doc->root, doc->ctx.viewport_width_px, doc->ctx.viewport_height_px);
-    run_positioning(&doc->tree, doc->root, doc->ctx, &block);
+    if (pending >= Invalidation::Layout) {
+        BlockLayout block(&doc->tree, doc->ctx, &doc->metrics_backend());
+        block.layout_root(doc->root, doc->ctx.viewport_width_px, doc->ctx.viewport_height_px);
+        run_positioning(&doc->tree, doc->root, doc->ctx, &block);
+    }
     lap("layout");
 
     for (TextureHandle t : doc->transient_textures) doc->render_backend()->release_texture(t);
@@ -772,6 +922,10 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     if (!e) return WEVA_ERR_NOT_FOUND;
     if (value) e->set_attribute(name, value);
     else e->remove_attribute(name);
+    // What it reaches is the cascade's business; that it must run is this
+    // function's. The selector match cache is keyed on element shape, so the
+    // change lands on a different entry without being invalidated here.
+    doc->dom_touched = true;
     return WEVA_OK;
 }
 
