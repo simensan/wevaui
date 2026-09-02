@@ -275,6 +275,10 @@ namespace Weva.Layout.Flex {
             double? inlineBasis = container.ContentWidth > 0 ? container.ContentWidth : (double?)null;
             double? blockBasis = container.ContentHeight > 0 ? container.ContentHeight : (double?)null;
             var props = FlexProperties.From(container.Style, lengthCtx, inlineBasis, blockBasis);
+            // Publish the resolved gaps for PositioningPass's intrinsic
+            // helpers, which have no LengthContext of their own.
+            container.ResolvedRowGap = props.RowGap;
+            container.ResolvedColumnGap = props.ColumnGap;
 
             // Native <button> (and button-like <input>) renders its content
             // CENTERED on the main axis as well as the cross axis (Chrome's UA

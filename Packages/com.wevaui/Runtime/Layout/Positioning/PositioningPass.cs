@@ -1387,10 +1387,18 @@ namespace Weva.Layout.Positioning {
             if (container.Style != null) {
                 string dir = container.Style.Get("flex-direction");
                 if (dir == "column" || dir == "column-reverse") isRow = false;
-                string g = isRow ? container.Style.Get("column-gap") : container.Style.Get("row-gap");
-                if (string.IsNullOrEmpty(g) || g == "normal") g = container.Style.Get("gap");
-                if (!string.IsNullOrEmpty(g)) {
-                    if (TryReadFirstCssNumber(g, out double parsedGap)) gap = parsedGap;
+                // Prefer the gap FlexLayout already resolved with a real
+                // LengthContext; the scan below cannot evaluate a computed
+                // value and reads `clamp(4px, 0.6vmin, 7px)` as 4.
+                double stamped = isRow ? container.ResolvedColumnGap : container.ResolvedRowGap;
+                if (!double.IsNaN(stamped)) {
+                    gap = stamped;
+                } else {
+                    string g = isRow ? container.Style.Get("column-gap") : container.Style.Get("row-gap");
+                    if (string.IsNullOrEmpty(g) || g == "normal") g = container.Style.Get("gap");
+                    if (!string.IsNullOrEmpty(g)) {
+                        if (TryReadFirstCssNumber(g, out double parsedGap)) gap = parsedGap;
+                    }
                 }
             }
             double sum = 0, maxItem = 0; int n = 0;
@@ -1490,10 +1498,18 @@ namespace Weva.Layout.Positioning {
             if (container.Style != null) {
                 string dir = container.Style.Get("flex-direction");
                 if (dir == "column" || dir == "column-reverse") isRow = false;
-                string g = isRow ? container.Style.Get("row-gap") : container.Style.Get("column-gap");
-                if (string.IsNullOrEmpty(g) || g == "normal") g = container.Style.Get("gap");
-                if (!string.IsNullOrEmpty(g)) {
-                    if (TryReadFirstCssNumber(g, out double parsedGap)) gap = parsedGap;
+                // Same as FlexIntrinsicInline: the resolved stamp first, the
+                // first-number scan only as a fallback for a box flex layout
+                // has not reached yet.
+                double stamped = isRow ? container.ResolvedRowGap : container.ResolvedColumnGap;
+                if (!double.IsNaN(stamped)) {
+                    gap = stamped;
+                } else {
+                    string g = isRow ? container.Style.Get("row-gap") : container.Style.Get("column-gap");
+                    if (string.IsNullOrEmpty(g) || g == "normal") g = container.Style.Get("gap");
+                    if (!string.IsNullOrEmpty(g)) {
+                        if (TryReadFirstCssNumber(g, out double parsedGap)) gap = parsedGap;
+                    }
                 }
             }
             double sum = 0, maxItem = 0; int n = 0;
