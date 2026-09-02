@@ -233,9 +233,17 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height);
 weva_status weva_document_content_size(weva_document_t doc, double* out_width,
                                        double* out_height);
 
-/* Runs cascade, layout and paint. `dt_seconds` advances animations; pass 0 for
- * a static document. */
+/* Runs cascade, layout and paint. `dt_seconds` advances transitions; pass 0
+ * for a static document.
+ *
+ * An update that finds nothing changed -- no attribute set, no pointer moved,
+ * nothing in flight -- returns having done nothing, and the draws already
+ * published stay valid. A host may therefore call this every frame. */
 weva_status weva_document_update(weva_document_t doc, double dt_seconds);
+
+/* Whether any transition is still running, so a host knows to keep handing
+ * over time and redrawing. False for a document that has settled. */
+int weva_document_is_animating(weva_document_t doc);
 
 /* The draw list from the last update. Valid until the next update or destroy,
  * and NOT owned by the caller — this is the one place the "explicit free" rule

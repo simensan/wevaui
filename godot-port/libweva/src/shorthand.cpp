@@ -1,5 +1,7 @@
 #include "weva/shorthand.h"
 
+#include "weva/animation.h"
+
 #include "weva/css_value.h"
 
 #include <array>
@@ -269,6 +271,23 @@ bool expand_border_radius(const std::vector<std::string_view>& t,
 }
 
 } // namespace
+
+// Splits on commas at paren depth 0, so `rgba(0, 0, 0, .5)` stays one piece.
+std::vector<std::string_view> split_commas(std::string_view v) {
+    std::vector<std::string_view> out;
+    int depth = 0;
+    size_t start = 0;
+    for (size_t i = 0; i < v.size(); ++i) {
+        if (v[i] == '(') ++depth;
+        else if (v[i] == ')') { if (depth > 0) --depth; }
+        else if (v[i] == ',' && depth == 0) {
+            out.push_back(v.substr(start, i - start));
+            start = i + 1;
+        }
+    }
+    out.push_back(v.substr(start));
+    return out;
+}
 
 std::vector<std::string_view> tokenize_shorthand(std::string_view v) {
     std::vector<std::string_view> out;
@@ -636,6 +655,51 @@ bool expand_shorthand(std::string_view name, std::string_view value,
     }
     if (name == "place-self") {
         return expand_two_axis(t, "align-self", "justify-self", is_place_value, out);
+    }
+
+    // ---- transition: a comma-separated list, each piece in any order
+    //
+    // `transition: background-color 200ms ease, width .3s` -- and the two times
+    // are told apart by ORDER, not by form: the first is the duration and the
+    // second the delay. Every piece is optional, so each longhand collects one
+    // entry per comma group and the list lengths line up.
+    if (name == "transition") {
+        std::string props, durations, easings, delays;
+        for (std::string_view part : split_commas(value)) {
+            std::string_view prop = "all", dur = "0s", ease = "ease", delay = "0s";
+            int times = 0;
+            bool bad = false;
+            for (std::string_view tok : tokenize_shorthand(part)) {
+                double seconds = 0;
+                if (parse_time_seconds(tok, &seconds)) {
+                    if (times == 0) dur = tok;
+                    else if (times == 1) delay = tok;
+                    else { bad = true; break; }
+                    ++times;
+                    continue;
+                }
+                Easing curve;
+                if (parse_easing(tok, &curve)) { ease = tok; continue; }
+                // Whatever is left is the property name. `none` is legal and
+                // means the entry transitions nothing.
+                prop = tok;
+            }
+            if (bad) return true;   // a malformed entry drops the declaration
+            const auto add = [](std::string* dst, std::string_view v) {
+                if (!dst->empty()) *dst += ", ";
+                dst->append(v);
+            };
+            add(&props, prop);
+            add(&durations, dur);
+            add(&easings, ease);
+            add(&delays, delay);
+        }
+        if (props.empty()) return true;
+        emit(out, "transition-property", props);
+        emit(out, "transition-duration", durations);
+        emit(out, "transition-timing-function", easings);
+        emit(out, "transition-delay", delays);
+        return true;
     }
 
     // ---- outline: the border triplet with `invert` as the initial colour

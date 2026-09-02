@@ -41,6 +41,7 @@ public:
     void _ready() override;
     void _draw() override;
     void _input(const godot::Ref<godot::InputEvent>& event) override;
+    void _process(double delta) override;
     void _notification(int what);
 
     // Loading either of these marks the document dirty; the next frame runs
@@ -139,7 +140,8 @@ private:
 protected:
 
 private:
-    void ensure_updated();
+    // `dt` advances transitions; zero means "only if something is dirty".
+    void ensure_updated(double dt = 0);
 
     // Adds one published draw's triangles to a canvas item.
     void add_triangles(const godot::RID& item, const weva_draw& d);
@@ -169,6 +171,9 @@ private:
     // that changes no style, and this skips the call.
     godot::Vector2 pointer_{-1, -1};
     uint32_t buttons_ = 0;
+    // Time owed to the document. An update consumes it; a frame in which
+    // nothing is moving hands over nothing and costs nothing.
+    double pending_dt_ = 0;
     // The atlas texture, rebuilt when the document publishes a new one. Held
     // so it outlives the draw call that references it.
     // Every texture the document published, by the id its draws name: the

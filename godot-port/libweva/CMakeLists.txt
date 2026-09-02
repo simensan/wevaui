@@ -23,6 +23,7 @@ add_library(weva STATIC
     src/media.cpp
     src/env_attr.cpp
     src/logical.cpp
+    src/animation.cpp
     src/at_property.cpp
     src/keyword_resolver.cpp
     src/box.cpp

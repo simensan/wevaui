@@ -325,12 +325,30 @@ bool WevaDocument::set_focus(const godot::String& selector) {
     return true;
 }
 
-void WevaDocument::ensure_updated() {
-    if (!doc_ || !dirty_) return;
+// The clock, which transitions need and nothing else does.
+//
+// A transition is the one thing that changes a document without anyone
+// touching it, so the node has to keep asking -- but only while something is
+// actually running. weva_document_update returns immediately when no
+// transition is in flight, so the cost of asking is a branch.
+void WevaDocument::_process(double delta) {
+    if (!doc_) return;
+    pending_dt_ += delta;
+    if (!dirty_ && pending_dt_ <= 0) return;
+    const double dt = pending_dt_;
+    pending_dt_ = 0;
+    ensure_updated(dt);
+    // A document with something in flight has to be drawn again next frame;
+    // the draw list changed under it.
+    if (weva_document_is_animating(doc_)) queue_redraw();
+}
+
+void WevaDocument::ensure_updated(double dt) {
+    if (!doc_ || (!dirty_ && dt <= 0)) return;
     ensure_font_backend();
     // Not an error to update an empty document: a scene may set css before
     // html, and the next update picks both up.
-    weva_document_update(doc_, 0.0);
+    weva_document_update(doc_, dt);
     dirty_ = false;
 
     // Mirror the document's textures by id: a texture already held is kept

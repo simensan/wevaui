@@ -21,6 +21,7 @@ add_executable(weva_tests
     test_cache.cpp
     test_env_attr.cpp
     test_logical.cpp
+    test_animation.cpp
     test_at_property.cpp
     test_css_properties.cpp
     test_keywords.cpp
@@ -43,6 +44,7 @@ add_executable(weva_tests
     test_c_abi.cpp
     test_c_abi_incremental.cpp
     test_c_abi_interaction.cpp
+    test_c_abi_transitions.cpp
     test_table.cpp
     test_background.cpp
     test_backdrop_filter.cpp

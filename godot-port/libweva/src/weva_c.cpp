@@ -3,6 +3,7 @@
 #include "weva/components.h"
 #include "weva/block_layout.h"
 #include "weva/box_builder.h"
+#include "weva/animation.h"
 #include "weva/cascade.h"
 #include "weva/font_interface.h"
 #include "weva/font_metrics.h"
@@ -251,6 +252,37 @@ struct InteractionState : ElementStateProvider {
     }
 };
 
+// One property on its way from one value to another.
+//
+// CSS Transitions L1. The engine already knows precisely which properties
+// changed on which element -- ComputedStyle::differs_from reports the ids, and
+// the incremental update holds both the old style and the new one at the
+// moment of the swap. That is exactly the event a transition starts on, so
+// this hangs off the machinery already there rather than watching for changes
+// of its own.
+struct RunningTransition {
+    int property_id = -1;
+    std::string from;      // the displayed value when it started, mid-flight or not
+    std::string to;        // the cascaded value it is heading for
+    double elapsed = 0;
+    double delay = 0;
+    double duration = 0;
+    Easing easing;
+
+    // Where it is now. Before the delay it holds `from`; after the duration it
+    // IS `to`, exactly -- a transition that lands near its declared value
+    // rather than on it leaves the document subtly wrong for good.
+    std::string value_now(bool* finished) const {
+        const double t = elapsed - delay;
+        if (t <= 0) { *finished = false; return from; }
+        if (t >= duration) { *finished = true; return to; }
+        std::string out;
+        if (!interpolate_css(from, to, easing(t / duration), &out)) { *finished = true; return to; }
+        *finished = false;
+        return out;
+    }
+};
+
 struct StyleMap : StyleProvider {
     CascadeEngine engine;
     InteractionState state;
@@ -272,6 +304,96 @@ struct StyleMap : StyleProvider {
     Invalidation pending = Invalidation::Boxes;
     int visited = 0;
 
+    // Transitions in flight, by element. Cleared with the styles they belong
+    // to, since both are keyed on elements of the current document.
+    std::map<const Element*, std::vector<RunningTransition>> transitions;
+
+    bool animating() const {
+        for (const auto& kv : transitions) {
+            if (!kv.second.empty()) return true;
+        }
+        return false;
+    }
+
+    // The nth entry of a comma-separated transition longhand, and the LAST
+    // entry for anything past the end -- which is what lets one duration serve
+    // three properties, as every stylesheet assumes it does.
+    static std::string_view nth(std::string_view list, size_t index) {
+        size_t start = 0, count = 0;
+        int depth = 0;
+        std::string_view last;
+        for (size_t i = 0; i <= list.size(); ++i) {
+            if (i < list.size()) {
+                if (list[i] == '(') ++depth;
+                else if (list[i] == ')') { if (depth > 0) --depth; }
+                if (list[i] != ',' || depth != 0) continue;
+            }
+            std::string_view piece = list.substr(start, i - start);
+            while (!piece.empty() && (piece.front() == ' ' || piece.front() == '	')) {
+                piece.remove_prefix(1);
+            }
+            while (!piece.empty() && (piece.back() == ' ' || piece.back() == '	')) {
+                piece.remove_suffix(1);
+            }
+            last = piece;
+            if (count == index) return piece;
+            ++count;
+            start = i + 1;
+        }
+        return last;
+    }
+
+    // How this property transitions on this style, or false when it does not.
+    // The properties are read off the style being transitioned TO, which is
+    // what CSS Transitions L1 §3 specifies -- so turning a transition on in a
+    // :hover rule makes the way IN animate and the way out snap, exactly as it
+    // does in a browser.
+    static bool transition_for(const ComputedStyle& style, int id, double* duration,
+                               double* delay, Easing* easing) {
+        const std::string_view names = style.get("transition-property");
+        if (names.empty() || names == "none") return false;
+        const std::string_view want = CssPropertyRegistry::instance().name_of(id);
+        if (want.empty()) return false;
+        size_t index = 0;
+        bool found = false;
+        for (size_t i = 0; i < 32; ++i) {
+            const std::string_view entry = nth(names, i);
+            if (entry.empty()) break;
+            if (entry == "all" || entry == want) { index = i; found = true; }
+            if (nth(names, i + 1) == entry) break;   // past the end: nth repeats
+        }
+        if (!found) return false;
+        if (!parse_time_seconds(nth(style.get("transition-duration"), index), duration)) return false;
+        if (*duration <= 0) return false;
+        if (!parse_time_seconds(nth(style.get("transition-delay"), index), delay)) *delay = 0;
+        if (!parse_easing(nth(style.get("transition-timing-function"), index), easing)) {
+            parse_easing("ease", easing);
+        }
+        return true;
+    }
+
+    // Advances every transition and writes what it currently shows into the
+    // live style, so layout and paint read the animated value rather than the
+    // cascaded one it is travelling towards.
+    void advance(double dt) {
+        if (dt <= 0) return;
+        for (auto& kv : transitions) {
+            auto it = by_element.find(kv.first);
+            if (it == by_element.end()) { kv.second.clear(); continue; }
+            ComputedStyle* live = it->second;
+            std::vector<RunningTransition>& list = kv.second;
+            for (size_t i = 0; i < list.size();) {
+                list[i].elapsed += dt;
+                bool finished = false;
+                const std::string now = list[i].value_now(&finished);
+                live->set(list[i].property_id, now);
+                pending = worst(pending, invalidation_for_property(list[i].property_id));
+                if (finished) list.erase(list.begin() + static_cast<long>(i));
+                else ++i;
+            }
+        }
+    }
+
     void begin_pass() {
         pending = Invalidation::None;
         visited = 0;
@@ -284,6 +406,7 @@ struct StyleMap : StyleProvider {
         owned.clear();
         by_element.clear();
         pseudo_by_element.clear();
+        transitions.clear();
         pending = Invalidation::Boxes;
     }
 
@@ -293,13 +416,69 @@ struct StyleMap : StyleProvider {
         merge(into, &scratch);
     }
 
-    void merge(ComputedStyle* live, ComputedStyle* fresh) {
+    void merge(ComputedStyle* live, ComputedStyle* fresh, const Element* owner = nullptr) {
         std::vector<int> changed;
         bool unattributed = false;
         if (!live->differs_from(*fresh, &changed, &unattributed)) return;
+
+        // A transition starts here, where the value the element is SHOWING and
+        // the value the cascade just produced are both in hand. Nothing else
+        // in the engine has both.
+        std::vector<RunningTransition>* running = nullptr;
+        if (owner && !changed.empty()) {
+            for (const int id : changed) {
+                double duration = 0, delay = 0;
+                Easing easing;
+                if (!transition_for(*fresh, id, &duration, &delay, &easing)) continue;
+                const std::string_view target = fresh->get(id);
+                if (!running) running = &transitions[owner];
+                // A property already travelling to this exact value is not a
+                // new change -- it is the one in flight, seen from the outside.
+                // Without this every frame would restart it and it would crawl
+                // towards its target and never arrive.
+                bool retarget = true;
+                for (RunningTransition& t : *running) {
+                    if (t.property_id != id) continue;
+                    if (t.to == target) { retarget = false; break; }
+                    // Reversed or redirected mid-flight: it carries on from
+                    // where it is, which is what stops a hover flicker from
+                    // snapping.
+                    bool finished = false;
+                    t.from = t.value_now(&finished);
+                    t.to = std::string(target);
+                    t.elapsed = 0;
+                    t.delay = delay;
+                    t.duration = duration;
+                    t.easing = easing;
+                    retarget = false;
+                    break;
+                }
+                if (!retarget) continue;
+                RunningTransition t;
+                t.property_id = id;
+                t.from = std::string(live->get(id));
+                t.to = std::string(target);
+                t.delay = delay;
+                t.duration = duration;
+                t.easing = easing;
+                running->push_back(std::move(t));
+            }
+        }
+
         // The address has to survive -- every box holds it -- so the contents
         // move rather than the object.
         std::swap(*live, *fresh);
+
+        // And the cascaded value is put back to what is actually on screen for
+        // anything still in flight, or the first frame of a transition would
+        // show its destination.
+        if (running) {
+            for (const RunningTransition& t : *running) {
+                bool finished = false;
+                live->set(t.property_id, t.value_now(&finished));
+            }
+        }
+
         if (unattributed) {
             pending = worst(pending, Invalidation::Boxes);
             return;
@@ -323,7 +502,8 @@ struct StyleMap : StyleProvider {
             engine.compute(e, state, parent, raw);
         } else {
             raw = it->second;
-            compute_into(raw, e, parent);
+            engine.compute(e, state, parent, &scratch);
+            merge(raw, &scratch, &e);
         }
         static constexpr std::string_view kPseudos[2] = {"before", "after"};
         for (int i = 0; i < 2; ++i) {
@@ -770,8 +950,11 @@ weva_status weva_document_content_size(weva_document_t doc, double* out_width,
     return WEVA_OK;
 }
 
+int weva_document_is_animating(weva_document_t doc) {
+    return doc && doc->styles.animating() ? 1 : 0;
+}
+
 weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
-    (void)dt_seconds;   // animations are not ported yet
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     if (!doc->doc) return WEVA_ERR_NOT_FOUND;
 
@@ -791,14 +974,21 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
 
     // Nothing has been touched since the last update, so there is nothing for
     // the cascade to find. A host that drives update() from its frame loop
-    // pays this and no more for a screen that is merely being looked at.
-    if (doc->pending == Invalidation::None && !doc->dom_touched) {
+    // pays this and no more for a screen that is merely being looked at --
+    // unless something is moving, in which case time itself is the change.
+    if (doc->pending == Invalidation::None && !doc->dom_touched &&
+        !(dt_seconds > 0 && doc->styles.animating())) {
         lap("cascade");
         lap("boxes");
         lap("layout");
         lap("paint");
         return WEVA_OK;
     }
+    // Captured before the flag is cleared: whether anything other than the
+    // clock moved. Time on its own cannot change what the cascade would
+    // produce, so an animating document does not restyle to be told so.
+    const bool touched_anything = doc->dom_touched;
+    const bool structural_pending = doc->pending != Invalidation::None;
     doc->dom_touched = false;
 
     // The cascade runs whatever changed -- it is the only thing that can tell
@@ -853,6 +1043,10 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
         }
     }
     doc->touched.clear();
+    // Time passes after the cascade has set the targets, so a transition that
+    // started this very pass gets its first step in the same frame rather than
+    // showing its start value for one.
+    doc->styles.advance(dt_seconds);
     Invalidation pending = doc->styles.pending;
     // Anything a host did that the cascade cannot see -- a new stylesheet, a
     // resized viewport, a backend swap, the first update of all -- is recorded
