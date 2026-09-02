@@ -3313,28 +3313,38 @@ share a page colour" for `#181228` vs `#181229`, a one-unit sRGB rounding
 difference. That verdict line is too strict to be useful and should compare the
 page colour with the same tolerance it applies to everything else.
 
-**The backend baseline, worst first** (ink disagreement, then software vs Godot
-ink coverage). **18 of 35 samples are already under 1%** — the two backends
-agree closely on half the corpus, which is what makes the outliers worth
-reading as bugs rather than as noise:
+**The backend baseline, worst first.** This table is the SECOND one; the first
+was wrong and is worth saying why. "Ink" is any pixel differing from the page
+behind it, and each image supplied its own modal pixel as that page colour —
+sound only when the page has a large flat background. On a gradient the mode is
+an arbitrary point along it and the two backends land on different points, so
+inventory reported 58.8% disagreement (software's mode `#56407e` against
+Godot's `#0b0816`) when the images differ almost nowhere. With one reference
+colour applied to both it is 3.4%, and the only real difference on that page is
+one slot's glow. hud fell 50.2% -> 18.7% and dialogue and episode-stats came off
+the list entirely.
 
-| sample | disagree | software ink | godot ink |
-|---|---|---|---|
-| inventory | 58.8% | 887,436 | 414,071 |
-| hud | 50.2% | 749,230 | 359,674 |
-| episode-stats | 41.3% | 444,653 | 600,895 |
-| dialogue | 29.1% | 335,754 | 459,866 |
-| vendor | 29.0% | 363,193 | 133,102 |
-| quests | 27.1% | 616,561 | 401,140 |
-| grid-playground | 23.4% | 602,220 | 386,689 |
-| flex-playground | 22.4% | 623,058 | 416,609 |
-| match3 | 16.7% | 876,468 | 812,496 |
-| neon | 11.7% | 798,870 | 690,899 |
+**19 of 35 samples are now under the 2% gate.**
 
-The direction is not uniform, which is itself a clue: inventory, hud, vendor and
-quests have Godot drawing far LESS ink than the software backend, while
-episode-stats and dialogue have it drawing MORE. Two different bugs at least,
-not one missing feature.
+| sample | ink | over-tol |
+|---|---|---|
+| vendor | 29.0% | 30.9% |
+| quests | 27.1% | 32.1% |
+| grid-playground | 23.4% | 24.6% |
+| flex-playground | 22.4% | 43.6% |
+| hud | 18.7% | 69.4% |
+| glass | 17.0% | 87.0% |
+| stats | 14.0% | 31.8% |
+| neon | 11.7% | 82.7% |
+| episode-stats | 11.6% | 3.5% |
+| map | 8.9% | 5.1% |
+
+Reading the two columns together is the point. glass and neon are 17% and 12%
+ink but 87% and 83% over tolerance — nearly every pixel differs a LITTLE, which
+is a blur or a composite being applied differently, not geometry going missing.
+episode-stats and map are the mirror image: 11.6% and 8.9% ink against 3.5% and
+5.1% over tolerance, so a small number of pixels differ a LOT and something is
+drawn in the wrong place. Those are different bugs and want different fixes.
 
 ## Phase 8 — Remaining layout (~8k LOC)
 
