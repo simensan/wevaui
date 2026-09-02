@@ -39,7 +39,8 @@ void TextureCache::begin_pass() {
 }
 
 void TextureCache::end_pass(RenderInterface* backend) {
-    if (std::getenv("WEVA_CACHE_LOG"))
+    static const bool cache_log = std::getenv("WEVA_CACHE_LOG") != nullptr;
+    if (cache_log)
         std::fprintf(stderr, "[cache] hits %d misses %d entries %zu\n", hits_, misses_,
                      entries_.size());
 
@@ -2254,7 +2255,8 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     if (!paint.backend || root == kNoBox) return;
 
     g_paint_profile = PaintProfile{};
-    g_paint_profile.on = std::getenv("WEVA_PAINT_LOG") != nullptr;
+    static const bool paint_log = std::getenv("WEVA_PAINT_LOG") != nullptr;
+    g_paint_profile.on = paint_log;
     const auto pass_start = std::chrono::steady_clock::now();
 
     TextureHandle atlas_texture{};

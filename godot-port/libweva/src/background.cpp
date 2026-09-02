@@ -879,7 +879,8 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         return false;
     };
 
-    if (std::getenv("WEVA_GRADIENT_LOG")) {
+    static const bool gradient_log = std::getenv("WEVA_GRADIENT_LOG") != nullptr;
+    if (gradient_log) {
         std::fprintf(stderr, "  [grad] %dx%d tex, %zu tiles, %d^2 samples, flat_x %d flat_y %d\n",
                      tex_w, tex_h, tiles.size(), samples, flat_x ? 1 : 0, flat_y ? 1 : 0);
     }

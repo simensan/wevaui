@@ -617,7 +617,7 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     // WEVA_STAGE_LOG breaks an update into its four stages. A whole-update
     // number says a change is slow; it does not say which half to look at, and
     // the answer moved once the texture cache landed.
-    const bool stage_log = std::getenv("WEVA_STAGE_LOG") != nullptr;
+    static const bool stage_log = std::getenv("WEVA_STAGE_LOG") != nullptr;
     const auto now = [] { return std::chrono::steady_clock::now(); };
     auto t0 = now();
     const auto lap = [&](const char* what) {
