@@ -87,3 +87,45 @@ standalone and should be culled as they surface.
 
 **`run.sh` requires the .NET SDK.** BaselineGen is the oracle, so without it
 the script exits 2 rather than reporting a vacuous pass over zero entries.
+
+
+## What the Chrome survey can and cannot tell you
+
+`chrome_survey.py` compares the software render against the corpus's Chrome
+captures over the cells that are flat in both. Its numbers look like a
+visual-quality score and are not one, and the difference is worth stating
+because chasing them costs a day and finds nothing.
+
+The captures were made under a synthetic metrics font whose glyphs are SOLID
+BOXES. The engine renders its own 5x7 stub. So:
+
+  * A block of text is a run of solid rectangles in Chrome and real glyphs
+    here. A solid rectangle IS flat, and a dense patch of stub glyphs can be
+    flat too, so text leaks past the flatness filter and reports deltas in the
+    200s. Every large disagreement in the survey traces to this.
+  * Text also drives LAYOUT. grid-playground's `1fr` columns size to their
+    content, so a different glyph width moves the column edges -- the survey
+    reports a colour difference where the truth is that a bar is 45px wider.
+  * A sample with `@keyframes` is at a different INSTANT in the two images:
+    Chrome captured whatever moment it captured, and the engine renders the
+    first frame. match3-endgame reads 31.8% for this reason alone.
+
+So the survey is useful for finding a shape or a colour that is plainly wrong,
+and useless as a score. The measurement that IS meaningful is the backend
+comparison (`hosts/godot/compare_render.py`): both sides consume the identical
+draw list from the identical build, so a difference there is a difference
+between the two rasterisers and nothing else.
+
+Audited 2026-09-02, and this is what the backend numbers mean:
+
+  * a broad difference of <= 8 across a gradient-filled panel, in diagonal
+    bands -- the two samplers filtering the same texture slightly differently;
+  * up to 32 along a rounded border -- edge antialiasing;
+  * over 32 only on SINGLE ROWS at the edge of thin elements. quests' worst
+    pixel is one such: at y=447 the software renderer is mid-ramp on a
+    progress bar's top edge and Godot has already resolved it to full
+    coverage, and by y=448 they agree exactly.
+
+None of that is a defect. Two rasterisers resolving a half-pixel differently
+is what the structural tolerance of 64 exists to permit, and the 0.34% figure
+for quests is a count of those edge rows.
