@@ -1058,6 +1058,11 @@ struct weva_document {
     // box: the box tree is thrown away and rebuilt whenever anything moves, so
     // an offset kept on a box would be lost by every class change.
     std::unordered_map<const Element*, std::pair<double, double>> scroll;
+    // The open dropdown, and which of its options the pointer or the keys are
+    // on. Held here rather than in the DOM because being open is not a
+    // property of the document -- reload the same markup and nothing is open.
+    const Element* open_select = nullptr;
+    int highlighted_option = -1;
     // Set when the cursor moved or the text under it changed, so the next
     // update scrolls it back into view. Not every frame: a reader who has
     // scrolled away from the cursor should stay there.
@@ -1257,6 +1262,72 @@ BoxId box_of(const weva_document* doc, const Element* e) {
     return kNoBox;
 }
 
+void note_value_change(weva_document* doc, Element& e, std::string_view value) {
+    doc->dom_touched = true;
+    if (doc->touched.size() < 64) doc->touched.push_back(&e);
+    weva_event ev{};
+    ev.kind = WEVA_EVENT_VALUE_CHANGED;
+    ev.target = doc->handle_of(&e);
+    const size_t copy = value.size() < sizeof(ev.text) - 1 ? value.size() : sizeof(ev.text) - 1;
+    std::memcpy(ev.text, value.data(), copy);
+    ev.text[copy] = '\0';
+    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
+    doc->events.push_back(ev);
+}
+
+std::string trimmed(std::string text) {
+    static const char* kSpace = " \t\r\n";
+    const size_t first = text.find_first_not_of(kSpace);
+    if (first == std::string::npos) return std::string();
+    const size_t last = text.find_last_not_of(kSpace);
+    return text.substr(first, last - first + 1);
+}
+
+// The row of the open list under a point, or -1 when the point is not on the
+// list at all. The geometry comes from the same function paint uses, so a row
+// you can see is a row you can click.
+int select_row_at(weva_document* doc, double x, double y) {
+    if (!doc->open_select) return -1;
+    const BoxId box = box_of(doc, doc->open_select);
+    if (box == kNoBox) return -1;
+    const SelectListGeometry g =
+        select_list_geometry(doc->tree, box, doc->ctx, *doc->open_select);
+    if (!g.visible || !g.box.contains(x, y)) return -1;
+    const int row = static_cast<int>((y - g.box.y) / g.row_height);
+    return row >= 0 && row < g.count ? row : -1;
+}
+
+// Chooses an option: `selected` moves onto it and off its siblings, so the DOM
+// holds the answer and :checked, the paint and a script all read the same
+// thing.
+void choose_option(weva_document* doc, Element& select, int index) {
+    const std::vector<const Element*> options = select_options(select);
+    if (index < 0 || index >= static_cast<int>(options.size())) return;
+    for (size_t i = 0; i < options.size(); ++i) {
+        Element& option = const_cast<Element&>(*options[i]);
+        if (static_cast<int>(i) == index) option.set_attribute("selected", "");
+        else option.remove_attribute("selected");
+    }
+    doc->dom_touched = true;
+    if (doc->touched.size() < 64) doc->touched.push_back(&select);
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    const Element* chosen = options[static_cast<size_t>(index)];
+    // An option's value is its `value` attribute, or its own text when it has
+    // none -- which is how the markup for a plain list of choices works.
+    std::string value(chosen->get_attribute("value"));
+    if (value.empty()) value = trimmed(text_content_of(*chosen));
+    note_value_change(doc, select, value);
+}
+
+// Which option is chosen now, or -1.
+int chosen_index(const Element& select) {
+    const std::vector<const Element*> options = select_options(select);
+    for (size_t i = 0; i < options.size(); ++i) {
+        if (options[i]->has_attribute("selected")) return static_cast<int>(i);
+    }
+    return options.empty() ? -1 : 0;
+}
+
 // A paint context with only what MEASURING needs. Text is mapped back to
 // characters with the same shaping, face and letter-spacing it was drawn with;
 // anything less and a click lands a character off.
@@ -1440,6 +1511,8 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->events.clear();
     doc->press_target = nullptr;
     doc->scroll.clear();   // keyed on elements of the document just replaced
+    doc->open_select = nullptr;
+    doc->highlighted_option = -1;
     doc->caret_painted = CaretState{};
     return WEVA_OK;
 }
@@ -1709,6 +1782,8 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     paint.owned_textures = &doc->transient_textures;
     paint.texture_cache = &doc->textures;
     paint.caret = caret;
+    paint.popup.element = doc->open_select;
+    paint.popup.highlighted = doc->highlighted_option;
     doc->caret_painted = caret;
     doc->textures.begin_pass();
     paint_tree(doc->tree, doc->root, doc->ctx, paint);
@@ -1875,19 +1950,6 @@ void set_field_value(weva_document* doc, Element& e, std::string_view value) {
     e.set_attribute("value", value);
 }
 
-void note_value_change(weva_document* doc, Element& e, std::string_view value) {
-    doc->dom_touched = true;
-    if (doc->touched.size() < 64) doc->touched.push_back(&e);
-    weva_event ev{};
-    ev.kind = WEVA_EVENT_VALUE_CHANGED;
-    ev.target = doc->handle_of(&e);
-    const size_t copy = value.size() < sizeof(ev.text) - 1 ? value.size() : sizeof(ev.text) - 1;
-    std::memcpy(ev.text, value.data(), copy);
-    ev.text[copy] = '\0';
-    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
-    doc->events.push_back(ev);
-}
-
 // A radio button turns its group off before turning itself on. The group is
 // every radio with the same `name` in the document, which is what makes the
 // exclusivity work at all.
@@ -1988,6 +2050,27 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
     if (!doc) return;
     InteractionState& st = doc->styles.state;
 
+    // An open list is above the document, so it takes the pointer before the
+    // tree does: what is under a dropdown is not what you are pointing at.
+    if (doc->open_select) {
+        const int row = select_row_at(doc, x, y);
+        if (row != doc->highlighted_option && row >= 0) {
+            doc->highlighted_option = row;
+            doc->pending = worst(doc->pending, Invalidation::Paint);
+        }
+        if (buttons != 0 && st.active_chain.empty()) {
+            Element& select = const_cast<Element&>(*doc->open_select);
+            if (row >= 0) choose_option(doc, select, row);
+            // A press anywhere -- on a row or off the list -- closes it, which
+            // is what makes clicking away cancel.
+            doc->open_select = nullptr;
+            doc->highlighted_option = -1;
+            doc->pending = worst(doc->pending, Invalidation::Boxes);
+            return;
+        }
+        if (row >= 0) return;   // over the list: the page beneath is not hovered
+    }
+
     // A thumb being dragged owns the pointer until it is let go: the content
     // slides under it, and whatever the pointer happens to be over takes
     // neither :hover nor a click.
@@ -2054,6 +2137,14 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
         // like one rather than like a picture of one.
         if (hit) {
             Element& e = const_cast<Element&>(*hit);
+            if (e.tag_name() == "select" && !e.has_attribute("multiple") &&
+                !e.has_attribute("size") && !e.has_attribute("disabled")) {
+                weva_document_set_focus(doc, doc->handle_of(hit));
+                doc->open_select = &e;
+                doc->highlighted_option = chosen_index(e);
+                doc->pending = worst(doc->pending, Invalidation::Paint);
+                return;
+            }
             if (input_type_of(e) == "range") activate_control(doc, e, x);
             if (is_text_field(e)) {
                 weva_document_set_focus(doc, doc->handle_of(hit));
@@ -2356,6 +2447,71 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
         }
     }
 
+    // An open list takes the keys before anything else: the arrows walk it,
+    // Enter takes what is highlighted, Escape leaves it as it was.
+    if (down && doc->open_select) {
+        Element& select = const_cast<Element&>(*doc->open_select);
+        const int count = static_cast<int>(select_options(select).size());
+        switch (key) {
+            case WEVA_KEY_UP:
+            case WEVA_KEY_DOWN: {
+                if (count == 0) return 1;
+                const int step = key == WEVA_KEY_DOWN ? 1 : -1;
+                const int from = doc->highlighted_option < 0 ? chosen_index(select)
+                                                             : doc->highlighted_option;
+                doc->highlighted_option = std::clamp(from + step, 0, count - 1);
+                doc->pending = worst(doc->pending, Invalidation::Paint);
+                return 1;
+            }
+            case WEVA_KEY_HOME:
+                doc->highlighted_option = 0;
+                doc->pending = worst(doc->pending, Invalidation::Paint);
+                return 1;
+            case WEVA_KEY_END:
+                doc->highlighted_option = count - 1;
+                doc->pending = worst(doc->pending, Invalidation::Paint);
+                return 1;
+            case WEVA_KEY_ENTER:
+            case WEVA_KEY_SPACE:
+                if (doc->highlighted_option >= 0) choose_option(doc, select, doc->highlighted_option);
+                doc->open_select = nullptr;
+                doc->highlighted_option = -1;
+                doc->pending = worst(doc->pending, Invalidation::Boxes);
+                return 1;
+            case WEVA_KEY_ESCAPE:
+            case WEVA_KEY_TAB:
+                // Escape leaves the value alone, which is the difference
+                // between cancelling and choosing.
+                doc->open_select = nullptr;
+                doc->highlighted_option = -1;
+                doc->pending = worst(doc->pending, Invalidation::Paint);
+                return key == WEVA_KEY_ESCAPE ? 1 : 0;
+            default: break;
+        }
+    }
+
+    // A focused select that is CLOSED opens on Enter or Space, and changes
+    // value with the arrows without opening -- both as a browser does.
+    if (down) {
+        const Element* focused = doc->styles.state.focused;
+        if (focused && !doc->open_select && focused->tag_name() == "select" &&
+            !focused->has_attribute("multiple") && !focused->has_attribute("size")) {
+            Element& select = const_cast<Element&>(*focused);
+            const int count = static_cast<int>(select_options(select).size());
+            if (key == WEVA_KEY_ENTER || key == WEVA_KEY_SPACE) {
+                doc->open_select = &select;
+                doc->highlighted_option = chosen_index(select);
+                doc->pending = worst(doc->pending, Invalidation::Paint);
+                return 1;
+            }
+            if ((key == WEVA_KEY_UP || key == WEVA_KEY_DOWN) && count > 0) {
+                const int step = key == WEVA_KEY_DOWN ? 1 : -1;
+                choose_option(doc, select, std::clamp(chosen_index(select) + step, 0, count - 1));
+                return 1;
+            }
+        }
+    }
+
     // Scrolling from the keyboard. Reached only when a text field did not want
     // the key, because in one they move the caret instead.
     if (down) {
@@ -2462,6 +2618,27 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     doc->events.push_back(e);
 }
 
+int weva_document_open_select(weva_document_t doc, weva_element_t element) {
+    if (!doc) return 0;
+    if (element == WEVA_ELEMENT_NONE) {
+        doc->open_select = nullptr;
+        doc->highlighted_option = -1;
+        doc->pending = worst(doc->pending, Invalidation::Paint);
+        return 1;
+    }
+    Element* e = doc->element_at(element);
+    if (!e || e->tag_name() != "select") return 0;
+    doc->open_select = e;
+    doc->highlighted_option = chosen_index(*e);
+    doc->pending = worst(doc->pending, Invalidation::Paint);
+    return 1;
+}
+
+weva_element_t weva_document_open_select_element(weva_document_t doc) {
+    if (!doc || !doc->open_select) return WEVA_ELEMENT_NONE;
+    return doc->handle_of(doc->open_select);
+}
+
 int weva_document_select_word_at(weva_document_t doc, double x, double y) {
     if (!doc) return 0;
     const Element* hit = element_at_point(doc->tree, doc->root, x, y);
@@ -2550,6 +2727,16 @@ size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buf
     const std::string type = input_type_of(*e);
     if (e->tag_name() == "input" && (type == "checkbox" || type == "radio")) {
         value = e->has_attribute("checked") ? "on" : "";
+    } else if (e->tag_name() == "select") {
+        // A select's value is the chosen option's, which is where the DOM
+        // keeps it: there is no `value` attribute on the select itself.
+        const std::vector<const Element*> options = select_options(*e);
+        const int index = chosen_index(*e);
+        if (index >= 0 && index < static_cast<int>(options.size())) {
+            const Element& chosen = *options[static_cast<size_t>(index)];
+            value = std::string(chosen.get_attribute("value"));
+            if (value.empty()) value = trimmed(text_content_of(chosen));
+        }
     } else {
         value = field_value(*e);
     }
@@ -2723,6 +2910,10 @@ void forget_element(weva_document* doc, const Element* e) {
     }
     if (doc->caret_painted.element == e) doc->caret_painted = CaretState{};
     if (doc->scroll_drag.element == e) doc->scroll_drag = weva_document::ScrollDrag{};
+    if (doc->open_select == e) {
+        doc->open_select = nullptr;
+        doc->highlighted_option = -1;
+    }
     const auto drop = [e](std::vector<const Element*>* chain) {
         chain->erase(std::remove(chain->begin(), chain->end(), e), chain->end());
     };

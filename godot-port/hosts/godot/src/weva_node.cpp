@@ -235,6 +235,9 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("send_text", "text"), &WevaDocument::send_text);
     ClassDB::bind_method(D_METHOD("select_all"), &WevaDocument::select_all);
     ClassDB::bind_method(D_METHOD("select_word_at", "point"), &WevaDocument::select_word_at);
+    ClassDB::bind_method(D_METHOD("open_select", "selector"), &WevaDocument::open_select);
+    ClassDB::bind_method(D_METHOD("close_select"), &WevaDocument::close_select);
+    ClassDB::bind_method(D_METHOD("get_open_select"), &WevaDocument::get_open_select);
     ClassDB::bind_method(D_METHOD("get_selected_text"), &WevaDocument::get_selected_text);
     ClassDB::bind_method(D_METHOD("set_element_selection", "selector", "start", "end"),
                          &WevaDocument::set_element_selection);
@@ -606,6 +609,36 @@ bool WevaDocument::select_word_at(const Vector2& point) {
     dirty_ = true;
     queue_redraw();
     return true;
+}
+
+// ---- Dropdowns -----------------------------------------------------------
+//
+// Clicking a <select> opens it and clicking an option chooses it, all through
+// the pointer the node already forwards. These are for a host that routes its
+// own input -- a controller opening the list, a menu closing it.
+
+bool WevaDocument::open_select(const String& selector) {
+    if (!doc_) return false;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (!weva_document_open_select(doc_, e)) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+void WevaDocument::close_select() {
+    if (!doc_) return;
+    weva_document_open_select(doc_, WEVA_ELEMENT_NONE);
+    dirty_ = true;
+    queue_redraw();
+}
+
+String WevaDocument::get_open_select() {
+    if (!doc_) return String();
+    return id_of(weva_document_open_select_element(doc_));
 }
 
 bool WevaDocument::select_all() {

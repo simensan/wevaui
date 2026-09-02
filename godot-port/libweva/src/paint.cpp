@@ -2663,6 +2663,118 @@ size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& c
                                          face_for_run(run, paint), paint);
 }
 
+std::vector<const Element*> select_options(const Element& select) {
+    std::vector<const Element*> out;
+    for (const Ref<Node>& c : select.children()) {
+        if (c->node_type() != NodeType::Element) continue;
+        const auto& e = static_cast<const Element&>(*c);
+        if (e.tag_name() == "option") {
+            out.push_back(&e);
+        } else if (e.tag_name() == "optgroup") {
+            for (const Ref<Node>& g : e.children()) {
+                if (g->node_type() == NodeType::Element &&
+                    static_cast<const Element&>(*g).tag_name() == "option") {
+                    out.push_back(&static_cast<const Element&>(*g));
+                }
+            }
+        }
+    }
+    return out;
+}
+
+SelectListGeometry select_list_geometry(const BoxTree& tree, BoxId select_box,
+                                        const LayoutContext& ctx, const Element& select) {
+    SelectListGeometry g;
+    if (!tree.valid(select_box)) return g;
+    const Box& b = tree[select_box];
+    const std::vector<const Element*> options = select_options(select);
+    if (options.empty()) return g;
+    const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
+    const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
+    const FontMetrics* m = control_metrics(ctx, b.style);
+    const double line = m ? m->line_height(fs) : fs * kDefaultLineHeightFactor;
+    g.row_height = std::ceil(line) + 6;   // a little air, as a native list has
+    g.count = static_cast<int>(options.size());
+    double x = 0, y = 0;
+    visual_position(tree, select_box, &x, &y);
+    // Below the control, its width, and as tall as it needs -- capped so a
+    // hundred options do not run off the bottom of the world.
+    const double height = std::min(g.row_height * g.count, 320.0);
+    g.box = Rect(x, y + b.height, b.width, height);
+    // Flipped above when there is no room below, the way a native list does.
+    if (g.box.bottom() > ctx.viewport_height_px && y - height >= 0) {
+        g.box.y = y - height;
+    }
+    g.visible = true;
+    return g;
+}
+
+// The open list, painted after the tree so it covers what it opens over.
+void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const PaintContext& paint) {
+    const Element* select = paint.popup.element;
+    if (!select || !paint.backend) return;
+    BoxId box = kNoBox;
+    for (int i = 0; i < tree.size(); ++i) {
+        if (tree[i].element == select && tree[i].kind == BoxKind::Block) {
+            box = i;
+            break;
+        }
+    }
+    if (box == kNoBox) return;
+    const SelectListGeometry g = select_list_geometry(tree, box, ctx, *select);
+    if (!g.visible) return;
+    const std::vector<const Element*> options = select_options(*select);
+
+    // Nothing above it clips it: the list is drawn over whatever it opens on
+    // top of, which is the whole point of a dropdown.
+    paint.backend->set_scissor(nullptr);
+    const Box& b = tree[box];
+    const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
+    const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
+    const FontMetrics* m = control_metrics(ctx, b.style);
+    const double ascent = m ? m->ascent(fs) : fs * 0.8;
+    const FaceHandle face = paint.face;
+    // The control's own colours, so a styled select gets a list that matches
+    // rather than a white box in the middle of a dark page.
+    LinearColor background = resolve_color(b.style, "background-color");
+    if (background.a < 0.9f) background = LinearColor::from_srgb(255, 255, 255, 1.0f);
+    const LinearColor text = resolve_color(b.style, "color");
+    const LinearColor border = LinearColor(text.r, text.g, text.b, 0.35f);
+
+    Mesh panel;
+    tessellate_rect(g.box, background, &panel, false);
+    draw_mesh(panel, paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
+    // A hairline border, so the list reads as being above the page.
+    for (const Rect& edge : {Rect(g.box.x, g.box.y, g.box.width, 1),
+                             Rect(g.box.x, g.box.bottom() - 1, g.box.width, 1),
+                             Rect(g.box.x, g.box.y, 1, g.box.height),
+                             Rect(g.box.right() - 1, g.box.y, 1, g.box.height)}) {
+        Mesh line;
+        tessellate_rect(edge, border, &line, false);
+        draw_mesh(line, paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
+    }
+
+    const int visible_rows = static_cast<int>(g.box.height / g.row_height);
+    for (int i = 0; i < g.count && i < visible_rows; ++i) {
+        const double row_y = g.box.y + i * g.row_height;
+        if (i == paint.popup.highlighted) {
+            Mesh band;
+            tessellate_rect(Rect(g.box.x + 1, row_y, g.box.width - 2, g.row_height),
+                            LinearColor::from_srgb(51, 144, 255, 0.85f), &band, false);
+            draw_mesh(band, paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
+        }
+        const std::string label = trimmed_text_of(*options[static_cast<size_t>(i)]);
+        if (label.empty()) continue;
+        Mesh glyphs;
+        build_text_geometry(label, g.box.x + 6, row_y + (g.row_height - fs) * 0.5 + ascent, fs,
+                            i == paint.popup.highlighted ? LinearColor::from_srgb(255, 255, 255, 1.f)
+                                                         : text,
+                            paint, &glyphs, letter_spacing_of(b.style, ctx, fs), &face);
+        draw_mesh(glyphs, paint.backend, paint.atlas ? paint.atlas->texture(paint.backend) : TextureHandle{},
+                  1.0, nullptr, nullptr, nullptr);
+    }
+}
+
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
                 const PaintContext& paint) {
     if (!paint.backend || root == kNoBox) return;
@@ -2683,6 +2795,8 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     }
     const BoxId canvas_owner = paint_canvas(tree, root, ctx, paint);
     paint_recursive(tree, root, ctx, 0, 0, paint, atlas_texture, canvas_owner, PaintState{});
+    // Last, and over everything: an open dropdown is not in the box tree.
+    paint_select_popup(tree, ctx, paint);
 
     if (g_paint_profile.on) {
         const double total =

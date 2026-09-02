@@ -913,3 +913,167 @@ void test_abi_double_click_selects_word() {
     CHECK(weva_document_select_word_at(area.d, ax + 10, ay + 30) == 1);
     CHECK(selected(area.d) == "gamma");
 }
+
+namespace {
+
+const char* kSelectCss =
+    "html, body { margin: 0 }"
+    "select { display: block; width: 160px; height: 28px; font-size: 14px }";
+const char* kSelectHtml =
+    "<select id=s>"
+    "<option value=low>Low</option>"
+    "<option value=med selected>Medium</option>"
+    "<option value=high>High</option>"
+    "</select>";
+
+}   // namespace
+
+// A <select> rendered its chosen option and a little caret bar, and clicking
+// it did nothing -- so a settings screen could show a choice but never offer
+// one. The list is not in the box tree: it covers whatever it opens over, so
+// it is painted after everything and hit tested before everything.
+void test_abi_select_opens_and_chooses() {
+    Doc doc(kSelectCss, kSelectHtml);
+    const weva_element_t s = weva_document_query(doc.d, "#s");
+    CHECK(doc.value("#s") == "med");   // the value is the chosen option's
+
+    double x = 0, y = 0, w = 0, h = 0;
+    doc.bounds("#s", &x, &y, &w, &h);
+    size_t closed_draws = 0;
+    weva_document_draws(doc.d, &closed_draws);
+
+    // Pressing it opens the list, and the list is drawn.
+    weva_document_set_pointer(doc.d, x + w / 2, y + h / 2, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_open_select_element(doc.d) == s);
+    size_t open_draws = 0;
+    weva_document_draws(doc.d, &open_draws);
+    CHECK(open_draws > closed_draws);
+
+    // The rows sit under the control. Clicking the third chooses it, and the
+    // choice lands in the DOM as `selected` -- so the paint, a stylesheet and
+    // a script all read the same thing.
+    weva_document_set_pointer(doc.d, x + w / 2, y + h + 2, 0);          // release
+    const double row = y + h + 12;                                       // first row
+    weva_document_set_pointer(doc.d, x + w / 2, row + 28 * 2, 1);        // third row
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#s") == "high");
+    CHECK(weva_document_open_select_element(doc.d) == WEVA_ELEMENT_NONE);   // and it closed
+
+    // The list is gone from the frame with it.
+    size_t after = 0;
+    weva_document_draws(doc.d, &after);
+    CHECK(after == closed_draws);
+
+    // The change reaches the host, which is what a script binds to.
+    bool announced = false;
+    for (const weva_event& e : doc.drain()) {
+        if (e.kind == WEVA_EVENT_VALUE_CHANGED && e.target == s) {
+            announced = true;
+            CHECK(std::string(e.text) == "high");
+        }
+    }
+    CHECK(announced);
+}
+
+// Clicking away cancels, and Escape leaves the value alone -- the difference
+// between cancelling and choosing.
+void test_abi_select_cancels() {
+    Doc doc(kSelectCss, kSelectHtml);
+    double x = 0, y = 0, w = 0, h = 0;
+    doc.bounds("#s", &x, &y, &w, &h);
+
+    weva_document_set_pointer(doc.d, x + w / 2, y + h / 2, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_open_select_element(doc.d) != WEVA_ELEMENT_NONE);
+
+    // A press well away from the list closes it and changes nothing.
+    weva_document_set_pointer(doc.d, x + w / 2, y + h / 2, 0);
+    weva_document_set_pointer(doc.d, 350, 260, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_open_select_element(doc.d) == WEVA_ELEMENT_NONE);
+    CHECK(doc.value("#s") == "med");
+
+    // Escape does the same from the keyboard.
+    weva_document_set_pointer(doc.d, 350, 260, 0);
+    weva_document_open_select(doc.d, weva_document_query(doc.d, "#s"));
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 1);
+    CHECK(weva_document_open_select_element(doc.d) == WEVA_ELEMENT_NONE);
+    CHECK(doc.value("#s") == "med");
+}
+
+// The keyboard drives it: a closed select changes value with the arrows, an
+// open one walks its list and takes what is highlighted on Enter.
+void test_abi_select_keys() {
+    Doc doc(kSelectCss, kSelectHtml);
+    const weva_element_t s = weva_document_query(doc.d, "#s");
+    weva_document_set_focus(doc.d, s);
+
+    // Closed: the arrows move through the options, as they do in a browser.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_DOWN, 0, 1) == 1);
+    CHECK(doc.value("#s") == "high");
+    CHECK(weva_document_key(doc.d, WEVA_KEY_UP, 0, 1) == 1);
+    CHECK(doc.value("#s") == "med");
+    // And stop at the ends rather than wrapping.
+    weva_document_key(doc.d, WEVA_KEY_UP, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_UP, 0, 1);
+    CHECK(doc.value("#s") == "low");
+
+    // Enter opens it.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1) == 1);
+    CHECK(weva_document_open_select_element(doc.d) == s);
+
+    // Open: the arrows walk the list WITHOUT changing the value until Enter.
+    weva_document_key(doc.d, WEVA_KEY_DOWN, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_DOWN, 0, 1);
+    CHECK(doc.value("#s") == "low");
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1) == 1);
+    CHECK(doc.value("#s") == "high");
+    CHECK(weva_document_open_select_element(doc.d) == WEVA_ELEMENT_NONE);
+
+    // Home and End reach the ends of the list.
+    weva_document_open_select(doc.d, s);
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+    CHECK(doc.value("#s") == "low");
+    weva_document_open_select(doc.d, s);
+    weva_document_key(doc.d, WEVA_KEY_END, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+    CHECK(doc.value("#s") == "high");
+}
+
+// What the document shows follows the choice, and options inside an
+// <optgroup> are part of the same list.
+void test_abi_select_reflects_choice() {
+    Doc doc(kSelectCss,
+            "<select id=s>"
+            "<optgroup label=Speed><option value=slow>Slow</option>"
+            "<option value=fast>Fast</option></optgroup>"
+            "<option value=other selected>Other</option>"
+            "</select>");
+    CHECK(doc.value("#s") == "other");
+
+    // Three options, the two in the group included: choosing the second by
+    // index reaches into the group.
+    weva_document_open_select(doc.d, weva_document_query(doc.d, "#s"));
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_DOWN, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#s") == "fast");
+
+    // An option with no `value` reports its own text, which is how the markup
+    // for a plain list of choices works.
+    Doc plain(kSelectCss,
+              "<select id=s><option>First</option><option selected>Second</option></select>");
+    CHECK(plain.value("#s") == "Second");
+
+    // A host can open and close it directly, for its own input routing.
+    CHECK(weva_document_open_select(plain.d, weva_document_query(plain.d, "#s")) == 1);
+    CHECK(weva_document_open_select_element(plain.d) != WEVA_ELEMENT_NONE);
+    CHECK(weva_document_open_select(plain.d, WEVA_ELEMENT_NONE) == 1);
+    CHECK(weva_document_open_select_element(plain.d) == WEVA_ELEMENT_NONE);
+    // And asking to open something that is not a select is a no.
+    Doc div(kSelectCss, "<div id=d></div>");
+    CHECK(weva_document_open_select(div.d, weva_document_query(div.d, "#d")) == 0);
+}

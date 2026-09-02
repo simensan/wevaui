@@ -50,6 +50,7 @@ func _ready() -> void:
 	_test_building_from_data()
 	_test_keyboard_scrolling()
 	_test_selection()
+	_test_select_dropdown()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -603,4 +604,41 @@ func _test_selection() -> void:
 	_check(doc.select_word_at(box.position + Vector2(10, box.size.y * 0.5)),
 		"a double click reaches the document")
 	_check(doc.get_selected_text() == "hello", "and takes the word under it")
+	doc.queue_free()
+
+
+func _test_select_dropdown() -> void:
+	# A settings screen offering a choice: clicking the select opens its list,
+	# clicking a row chooses it, and the choice lands in the DOM -- so the
+	# stylesheet, the paint and the script all read the same thing.
+	var doc := _make_doc(
+		"<body><select id='q'><option value='low'>Low</option>" +
+		"<option value='med' selected>Medium</option>" +
+		"<option value='high'>High</option></select></body>",
+		"html, body { margin: 0 } select { display: block; width: 160px; height: 28px }")
+	_check(doc.get_element_value("#q") == "med", "the value is the chosen option's")
+
+	var box := doc.query_bounds("#q")
+	var closed := doc.get_draw_count()
+	doc.set_pointer(box.position + box.size * 0.5, 1)
+	doc.update_document()
+	_check(doc.get_open_select() == "q", "pressing it opens the list")
+	_check(doc.get_draw_count() > closed, "and the list is drawn over the page")
+
+	# The rows sit under the control, in order.
+	doc.set_pointer(box.position + Vector2(box.size.x * 0.5, box.size.y + 4), 0)
+	doc.set_pointer(box.position + Vector2(box.size.x * 0.5, box.size.y + 4), 1)
+	doc.update_document()
+	_check(doc.get_element_value("#q") == "low", "clicking the first row chooses it")
+	_check(doc.get_open_select() == "", "and closes the list")
+	_check(doc.get_draw_count() == closed, "which takes the list out of the frame")
+
+	# A host can drive it, for a controller or its own menu routing.
+	_check(doc.open_select("#q"), "a script can open it")
+	_check(doc.get_open_select() == "q", "and see that it is open")
+	doc.send_key(KEY_DOWN)
+	doc.send_key(KEY_ENTER)
+	_check(doc.get_element_value("#q") == "med", "the keyboard walks the list and takes one")
+	doc.close_select()
+	_check(doc.get_open_select() == "", "and a script can close it")
 	doc.queue_free()

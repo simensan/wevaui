@@ -133,6 +133,11 @@ public:
     // clipboard, which belongs to the platform.
     bool select_all();
     bool select_word_at(const godot::Vector2& point);
+
+    // Dropdowns, for a host routing its own input.
+    bool open_select(const godot::String& selector);
+    void close_select();
+    godot::String get_open_select();
     godot::String get_selected_text();
     bool set_element_selection(const godot::String& selector, int start, int end);
     godot::Vector2i get_element_selection(const godot::String& selector);

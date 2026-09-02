@@ -1,5 +1,6 @@
 #pragma once
 #include "weva/box.h"
+#include <vector>
 #include "weva/render_interface.h"
 #include "weva/style_resolver.h"
 #include "weva/font_interface.h"
@@ -98,6 +99,14 @@ struct CaretState {
     std::string_view source;
 };
 
+// The open <select>'s list. A dropdown is the one piece of a document that is
+// NOT in the box tree: it covers whatever it happens to open over, so it is
+// painted after the tree rather than in it, and hit tested before it.
+struct SelectPopup {
+    const Element* element = nullptr;   // the open select, or null for none
+    int highlighted = -1;               // the option under the pointer or the keys
+};
+
 struct PaintContext {
     RenderInterface* backend = nullptr;
     FontInterface* font = nullptr;
@@ -112,7 +121,23 @@ struct PaintContext {
     // being regenerated and released every pass.
     TextureCache* texture_cache = nullptr;
     CaretState caret;
+    SelectPopup popup;
 };
+
+// Where the open list goes, and how tall each row is: shared by paint and by
+// the hit testing, so a row you can see is a row you can click.
+struct SelectListGeometry {
+    bool visible = false;
+    Rect box;             // the whole list, in document coordinates
+    double row_height = 0;
+    int count = 0;        // options in it
+};
+
+SelectListGeometry select_list_geometry(const BoxTree& tree, BoxId select_box,
+                                        const LayoutContext& ctx, const Element& select);
+
+// Every option of a select, in order, including those inside an <optgroup>.
+std::vector<const Element*> select_options(const Element& select);
 
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
                 RenderInterface* backend);

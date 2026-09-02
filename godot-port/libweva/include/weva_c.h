@@ -407,6 +407,25 @@ weva_element_t weva_document_focus_next(weva_document_t doc, int backwards);
  * decide -- the document has no notion of tab order yet. */
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element);
 
+/* ---- Dropdowns --------------------------------------------------------
+ *
+ * Clicking a <select> opens its list, clicking an option chooses it, and the
+ * choice is written back to the DOM as `selected` on that option -- so a
+ * stylesheet sees it through :checked and a script reads it as the element's
+ * value, with no separate state to keep in step.
+ *
+ * The list is painted after everything else and hit tested before everything
+ * else, because a dropdown covers whatever it opens over and is not in the box
+ * tree at all. A host that routes its own input can drive it with these.
+ */
+
+/* Opens the list of the <select> at `element`, or closes whatever is open when
+ * passed WEVA_ELEMENT_NONE. Returns 0 when the element is not a select. */
+int weva_document_open_select(weva_document_t doc, weva_element_t element);
+
+/* Which select is open, or WEVA_ELEMENT_NONE. */
+weva_element_t weva_document_open_select_element(weva_document_t doc);
+
 /* ---- Selection --------------------------------------------------------
  *
  * Shift with any of the movement keys extends a selection from where the
