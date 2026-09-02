@@ -23,6 +23,7 @@ var _use_engine_font := true
 var _full_page := false
 var _doc_size := GATE_SIZE
 var _pan := 0.0
+var _scroll_span := 0.0
 
 @onready var _list: ItemList = %List
 @onready var _title: Label = %Title
@@ -117,26 +118,38 @@ func _show(i: int) -> void:
 
 
 func _fit() -> void:
-	# The page keeps its own coordinates and is SCALED into whatever room the
-	# window leaves, rather than being laid out at the window's size -- that
-	# would be a different document, and no longer the one the gates measure.
+	# ONE TO ONE, and scrolled when it does not fit.
+	#
+	# The obvious thing is to scale the page into whatever room the window
+	# leaves. Do not: the glyph atlas is sampled with nearest filtering, on
+	# purpose, because that is what keeps text crisp at 1:1 -- and under any
+	# other scale it drops and doubles pixel columns instead. A window 20px
+	# wider than the page was enough to put it at 1.015625, which is invisible
+	# as a size and ruinous as text: stems came out at different weights within
+	# a single word.
+	#
+	# So the page keeps its own coordinates AND its own pixels. Anything the
+	# window cannot show is scrolled to, not shrunk.
 	if _doc == null:
 		return
 	var room := _stage.size
 	if room.x <= 0 or room.y <= 0:
 		return
-	# Full-page mode fits the WIDTH and scrolls, since fitting a 2500px page
-	# into the window would shrink its text past reading.
-	var s: float = room.x / _doc_size.x
-	if not _full_page:
-		s = minf(s, room.y / _doc_size.y)
+	# The one case with no good answer: a window narrower than the page. Scaling
+	# down at least shows all of it, and the alternative -- scrolling sideways
+	# through a UI -- is worse. Widen the window and it snaps back to 1:1.
+	var s := 1.0
+	if room.x < _doc_size.x:
+		s = room.x / _doc_size.x
 
-	var span: float = maxf(0.0, _doc_size.y * s - room.y)
+	_scroll_span = maxf(0.0, _doc_size.y * s - room.y)
 	# Clamped here rather than where the wheel is read, because this also runs
 	# on resize and would otherwise restore a pan the new size cannot afford.
-	_pan = clampf(_pan, 0.0, span)
+	_pan = clampf(_pan, 0.0, _scroll_span)
 	var origin := (room - _doc_size * s) * 0.5
 	_doc.scale = Vector2(s, s)
+	# Floored so the page lands on whole pixels; a half-pixel offset resamples
+	# every glyph just as surely as a fractional scale does.
 	_doc.position = Vector2(origin.x, minf(origin.y, 0.0) - _pan).floor()
 
 
@@ -147,7 +160,9 @@ func _read(path: String) -> String:
 
 
 func _scroll_by(dy: float) -> void:
-	if not _full_page:
+	# Scrolls whenever there is anything below the fold, which is no longer only
+	# full-page mode: at 1:1 a short window has some too.
+	if _scroll_span <= 0.0:
 		return
 	_pan += dy
 	_fit()
