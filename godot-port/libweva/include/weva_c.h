@@ -430,6 +430,13 @@ weva_status weva_element_set_scroll(weva_document_t doc, weva_element_t element,
 weva_status weva_element_scroll(weva_document_t doc, weva_element_t element, double* out_x,
                                 double* out_y, double* out_max_x, double* out_max_y);
 
+/* Scrolls every container between this element and the root by the least that
+ * brings it into view -- what a chat pane does with a new message, and what a
+ * list does when the keyboard moves the selection past its edge. Focusing an
+ * element does this by itself, so a tab that lands off screen brings its
+ * target with it. */
+weva_status weva_element_scroll_into_view(weva_document_t doc, weva_element_t element);
+
 /* Sets an attribute, which restyles on the next update. A null value removes
  * it. */
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,

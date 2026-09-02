@@ -112,6 +112,7 @@ public:
     void set_element_scroll(const godot::String& selector, const godot::Vector2& offset);
     godot::Vector2 get_element_scroll(const godot::String& selector);
     godot::Vector2 get_element_scroll_max(const godot::String& selector);
+    bool scroll_into_view(const godot::String& selector);
 
     // Moves focus in tab order and returns the id that now has it, or "" when
     // the document has nothing focusable in it.

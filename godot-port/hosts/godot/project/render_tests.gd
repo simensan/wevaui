@@ -459,4 +459,13 @@ func _test_scrolling() -> void:
 		"a click lands on the row that scrolled under the pointer")
 	_check(doc.element_id_at(Vector2(100, 95)) == "r3",
 		"and on the right one at the other end")
+	# Bringing something into view, which is what a chat pane does with a
+	# new message and a list does when the selection moves past its edge.
+	doc.set_element_scroll("#list", Vector2())
+	doc.update_document()
+	_check(doc.scroll_into_view("#r4"), "the last row can be brought into view")
+	doc.update_document()
+	_check(doc.get_element_scroll("#list") == Vector2(0, 100),
+		"by the least that shows it: it sits against the bottom edge")
+	_check(not doc.scroll_into_view("#nope"), "and an unmatched selector moves nothing")
 	doc.queue_free()

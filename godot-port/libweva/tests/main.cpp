@@ -234,6 +234,8 @@ void test_abi_scroll_moves_content();
 void test_abi_scroll_nested();
 void test_abi_scroll_set_and_clamp();
 void test_abi_scroll_repaints();
+void test_abi_scroll_into_view();
+void test_abi_scroll_into_view_nested();
 void test_abi_caret_is_drawn();
 void test_abi_form_pseudo_classes();
 void test_abi_radio_group();
@@ -500,6 +502,8 @@ int main() {
     test_abi_scroll_nested();
     test_abi_scroll_set_and_clamp();
     test_abi_scroll_repaints();
+    test_abi_scroll_into_view();
+    test_abi_scroll_into_view_nested();
     test_abi_caret_is_drawn();
     test_abi_form_pseudo_classes();
     test_abi_radio_group();

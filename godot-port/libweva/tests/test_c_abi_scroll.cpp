@@ -244,3 +244,50 @@ void test_abi_scroll_repaints() {
     weva_document_update(doc.d, 0);
     CHECK(first_colour(doc.d) == 'r');
 }
+
+// Bringing something into view: the least scrolling that shows it.
+void test_abi_scroll_into_view() {
+    Doc doc(kListCss, kListHtml);
+    // Row 4 lies from 160 to 200 in a 100-tall window: it comes up just far
+    // enough to sit against the bottom edge, not to the top.
+    CHECK(weva_element_scroll_into_view(doc.d, doc.at("#r4")) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 100);
+
+    // Something already in view does not move anything.
+    CHECK(weva_element_scroll_into_view(doc.d, doc.at("#r3")) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 100);
+
+    // And one above the view comes down only to the top edge.
+    weva_element_scroll_into_view(doc.d, doc.at("#r1"));
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 40);
+
+    // Focus does it by itself, or a tab into a list appears to go nowhere.
+    weva_element_set_scroll(doc.d, doc.at("#list"), 0, 0);
+    weva_document_update(doc.d, 0);
+    weva_document_set_focus(doc.d, doc.at("#r4"));
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 100);
+}
+
+// Nested containers each scroll by their own share.
+void test_abi_scroll_into_view_nested() {
+    Doc doc("html, body { margin: 0 }"
+            ".page { width: 300px; height: 100px; overflow: auto }"
+            ".pad { height: 200px }"
+            ".list { width: 200px; height: 100px; overflow: auto }"
+            ".row { height: 40px }",
+            "<div id=page class=page>"
+            "<div class=pad></div>"
+            "<div id=list class=list>"
+            "<div class=row></div><div class=row></div><div class=row></div>"
+            "<div class=row></div><div id=r4 class=row></div></div></div>");
+    CHECK(weva_element_scroll_into_view(doc.d, doc.at("#r4")) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    // The list scrolls to its end to show the row, and the page scrolls to
+    // show the part of the list the row is now in.
+    CHECK(doc.top("#list") == 100);
+    CHECK(doc.top("#page") == 200);
+}

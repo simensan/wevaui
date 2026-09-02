@@ -222,6 +222,8 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::get_element_scroll);
     ClassDB::bind_method(D_METHOD("get_element_scroll_max", "selector"),
                          &WevaDocument::get_element_scroll_max);
+    ClassDB::bind_method(D_METHOD("scroll_into_view", "selector"),
+                         &WevaDocument::scroll_into_view);
 
     // The element is named by its `id`, because that is the handle a script
     // and a stylesheet already share. An element with no id reports an empty
@@ -497,6 +499,18 @@ Vector2 WevaDocument::get_element_scroll_max(const String& selector) {
     double mx = 0, my = 0;
     if (weva_element_scroll(doc_, e, nullptr, nullptr, &mx, &my) != WEVA_OK) return Vector2();
     return Vector2(static_cast<real_t>(mx), static_cast<real_t>(my));
+}
+
+bool WevaDocument::scroll_into_view(const String& selector) {
+    if (!doc_) return false;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (weva_element_scroll_into_view(doc_, e) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
 }
 
 void WevaDocument::clear_pointer() {

@@ -1970,6 +1970,61 @@ int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
     return 0;
 }
 
+namespace {
+
+// Scrolls every container above `target` by the least that brings its box into
+// view. Shared by the entry point and by focus, which does it by itself.
+void bring_box_into_view(weva_document* doc, BoxId target) {
+    const BoxTree& tree = doc->tree;
+    if (!tree.valid(target)) return;
+    for (BoxId p = tree[target].parent; p != kNoBox; p = tree[p].parent) {
+        if (!tree[p].element || !clips_overflow(tree[p])) continue;
+        // Where the target sits in this container's padding box, with the
+        // container's own scroll left out -- that is the thing being solved
+        // for -- but with every scroll BETWEEN them taken off, since those
+        // have already moved it.
+        double rx = 0, ry = 0;
+        for (BoxId b = target; b != p && b != kNoBox; b = tree[b].parent) {
+            rx += tree[b].x;
+            ry += tree[b].y;
+            const BoxId parent = tree[b].parent;
+            if (parent != p && parent != kNoBox) {
+                rx -= tree[parent].scroll_x;
+                ry -= tree[parent].scroll_y;
+            }
+        }
+        const Box& c = tree[p];
+        rx -= c.border_left;
+        ry -= c.border_top;
+        const double client_w = c.width - c.border_left - c.border_right;
+        const double client_h = c.height - c.border_top - c.border_bottom;
+        double mx = 0, my = 0;
+        max_scroll(tree, p, &mx, &my);
+        // The nearest edge, not the top: an element already in view does not
+        // move, and one below the fold comes up only far enough to be seen.
+        double sx = c.scroll_x, sy = c.scroll_y;
+        const double w = tree[target].width, h = tree[target].height;
+        if (rx < sx) sx = rx;
+        else if (rx + w > sx + client_w) sx = rx + w - client_w;
+        if (ry < sy) sy = ry;
+        else if (ry + h > sy + client_h) sy = ry + h - client_h;
+        sx = std::clamp(sx, 0.0, mx);
+        sy = std::clamp(sy, 0.0, my);
+        if (sx == c.scroll_x && sy == c.scroll_y) continue;
+        doc->scroll[c.element] = {sx, sy};
+        doc->pending = worst(doc->pending, Invalidation::Paint);
+    }
+}
+
+BoxId box_of(const weva_document* doc, const Element* e) {
+    for (int i = 0; i < doc->tree.size(); ++i) {
+        if (doc->tree[i].element == e) return i;
+    }
+    return kNoBox;
+}
+
+}   // namespace
+
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     InteractionState& st = doc->styles.state;
@@ -2001,6 +2056,9 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
             if (e && doc->touched.size() < 64) doc->touched.push_back(const_cast<Element*>(e));
         }
     }
+    // A tab that lands off screen brings its target into view, or keyboard
+    // navigation walks into a list and appears to go nowhere.
+    if (target) bring_box_into_view(doc, box_of(doc, target));
     return WEVA_OK;
 }
 
@@ -2056,6 +2114,16 @@ weva_status weva_element_scroll(weva_document_t doc, weva_element_t element, dou
         return WEVA_OK;
     }
     return WEVA_ERR_NOT_FOUND;
+}
+
+weva_status weva_element_scroll_into_view(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    const Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    const BoxId id = box_of(doc, e);
+    if (id == kNoBox) return WEVA_ERR_NOT_FOUND;
+    bring_box_into_view(doc, id);
+    return WEVA_OK;
 }
 
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,
