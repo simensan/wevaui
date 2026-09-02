@@ -73,6 +73,16 @@ namespace Weva.BaselineGen {
 
         static List<ElementRect> BuildUnityBoxes(string html, string css, int width, int height) {
             var doc = HtmlParser.Parse(html ?? string.Empty, new ParseOptions { ThrowOnError = false });
+            // Component registration + expansion, in UIDocumentBuilder's order:
+            // BEFORE the cascade, so expanded subtrees are present when
+            // selectors run. Skipping it left a `<card>` sitting un-expanded
+            // with its slot content as ordinary inline children, which is not
+            // what this engine renders — and the oracle was then comparing the
+            // port against a page the reference never actually produces.
+            var components = new Weva.Components.ComponentRegistry();
+            components.RegisterAllFromDocument(doc);
+            new Weva.Components.ComponentExpander(components).Expand(doc);
+
             // Same UA origin as UIDocumentBuilder: base sheet, then the form
             // control sheet (input/select/textarea sizes, option display:none).
             var sheets = new List<OriginatedStylesheet> {
@@ -82,6 +92,12 @@ namespace Weva.BaselineGen {
             if (!string.IsNullOrEmpty(css)) {
                 var authorSheet = CssParser.Parse(css, new ParseOptions { ThrowOnError = false });
                 sheets.Add(OriginatedStylesheet.Author(authorSheet));
+            }
+            // Component-scoped author sheets join after author sheets, so
+            // specificity ties resolve in registration order.
+            foreach (var os in Weva.Components.Scoping.ComponentStyleIntegration
+                         .RewrittenStylesheets(components)) {
+                sheets.Add(os);
             }
 
             var media = MediaContext.Default(width, height);
