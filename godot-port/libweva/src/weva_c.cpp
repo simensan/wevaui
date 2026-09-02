@@ -75,7 +75,12 @@ public:
         // cannot clip per draw (Godot's clips per item, and its compatibility
         // renderer lost every draw after a clipped sibling) needs nothing. The
         // rect is still published for hosts that can.
-        if (scissor_) {
+        // Only geometry that actually CROSSES the scissor needs cutting. A
+        // scissor is in force for very nearly every draw -- the viewport is one
+        // -- and clipping every triangle against it was the single largest cost
+        // in a warm paint pass: a blurred box shadow is up to 48 nested rings,
+        // and match3-endgame spent 9 ms of a 15 ms update in here.
+        if (scissor_ && !inside_scissor(d.vertices)) {
             Mesh clipped;
             clip_triangles(d.vertices, d.indices,
                            Rect(scissor_->x, scissor_->y, scissor_->width, scissor_->height), &clipped);
@@ -134,7 +139,7 @@ public:
         d.backdrop = effect;
         // Clipped into the shape the same way geometry is, so a host that
         // cannot scissor still confines the effect correctly.
-        if (scissor_) {
+        if (scissor_ && !inside_scissor(d.vertices)) {
             Mesh clipped;
             clip_triangles(d.vertices, d.indices,
                            Rect(scissor_->x, scissor_->y, scissor_->width, scissor_->height),
@@ -170,6 +175,24 @@ public:
     std::map<uint64_t, std::pair<std::vector<uint8_t>, Vec2i>> textures;
 
 private:
+    // True when every vertex is within the scissor, so clipping would return
+    // the triangles unchanged. The margin covers the coverage ramp a feathered
+    // edge carries past its nominal bounds.
+    bool inside_scissor(const std::vector<Vertex>& v) const {
+        if (!scissor_) return true;
+        const float x0 = static_cast<float>(scissor_->x) - 1;
+        const float y0 = static_cast<float>(scissor_->y) - 1;
+        const float x1 = static_cast<float>(scissor_->x + scissor_->width) + 1;
+        const float y1 = static_cast<float>(scissor_->y + scissor_->height) + 1;
+        for (const Vertex& vert : v) {
+            if (vert.position.x < x0 || vert.position.x > x1 || vert.position.y < y0 ||
+                vert.position.y > y1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     std::map<uint64_t, std::pair<std::vector<Vertex>, std::vector<uint32_t>>> geometry_;
     uint64_t next_ = 1;
     uint64_t next_texture_ = 1;

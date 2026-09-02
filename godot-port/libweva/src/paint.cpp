@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -69,6 +70,53 @@ void TextureCache::release_all(RenderInterface* backend) {
 struct ClipNode {
     std::vector<ClipPoint> polygon;
     std::shared_ptr<const ClipNode> parent;
+
+    // Bounds and winding, so a mesh that plainly needs no clipping can skip it.
+    // A rounded `overflow: hidden` clips every descendant draw, and a blurred
+    // box shadow inside one is up to 48 nested rings each cut against a
+    // hundred-vertex polygon -- 90us a ring, and 10 ms of match3-endgame's
+    // 15 ms update.
+    double min_x = 0, min_y = 0, max_x = 0, max_y = 0;
+    double orient = 1;   // sign of the signed area: which side of an edge is in
+
+    void prepare() {
+        min_x = min_y = 1e300;
+        max_x = max_y = -1e300;
+        double area2 = 0;
+        for (size_t i = 0; i < polygon.size(); ++i) {
+            const ClipPoint& a = polygon[i];
+            const ClipPoint& b = polygon[(i + 1) % polygon.size()];
+            min_x = std::min(min_x, a.x);
+            min_y = std::min(min_y, a.y);
+            max_x = std::max(max_x, a.x);
+            max_y = std::max(max_y, a.y);
+            area2 += a.x * b.y - b.x * a.y;
+        }
+        orient = area2 >= 0 ? 1.0 : -1.0;
+    }
+
+    bool intersects_box(double x0, double y0, double x1, double y1) const {
+        return !(x1 < min_x || x0 > max_x || y1 < min_y || y0 > max_y);
+    }
+
+    // True when the whole box lies inside every edge's inward half-plane. That
+    // region is the polygon's kernel, which is contained in the polygon for any
+    // simple polygon -- so a true answer is sound, and a false one only means
+    // the clip runs as before.
+    bool contains_box(double x0, double y0, double x1, double y1) const {
+        if (x0 < min_x || x1 > max_x || y0 < min_y || y1 > max_y) return false;
+        const double cx[4] = {x0, x1, x1, x0};
+        const double cy[4] = {y0, y0, y1, y1};
+        for (size_t i = 0; i < polygon.size(); ++i) {
+            const ClipPoint& a = polygon[i];
+            const ClipPoint& b = polygon[(i + 1) % polygon.size()];
+            const double dx = b.x - a.x, dy = b.y - a.y;
+            for (int c = 0; c < 4; ++c) {
+                if ((dx * (cy[c] - a.y) - dy * (cx[c] - a.x)) * orient < 0) return false;
+            }
+        }
+        return true;
+    }
 };
 
 // The colour half of `filter` (Filter Effects L1 §8): brightness, contrast,
@@ -226,11 +274,29 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
                 v.position = {static_cast<float>(x), static_cast<float>(y)};
             }
         }
+        double x0 = 1e300, y0 = 1e300, x1 = -1e300, y1 = -1e300;
+        const auto bounds = [&] {
+            x0 = y0 = 1e300;
+            x1 = y1 = -1e300;
+            for (const Vertex& v : cur.vertices) {
+                x0 = std::min<double>(x0, v.position.x);
+                y0 = std::min<double>(y0, v.position.y);
+                x1 = std::max<double>(x1, v.position.x);
+                y1 = std::max<double>(y1, v.position.y);
+            }
+        };
+        bounds();
         for (const ClipNode* n = clip; n; n = n->parent.get()) {
+            // Nothing of the mesh survives, or all of it does: either way the
+            // per-triangle cut is skipped. A pixel of slack for the coverage
+            // ramp a feathered edge carries past its nominal bounds.
+            if (!n->intersects_box(x0, y0, x1, y1)) return;
+            if (n->contains_box(x0 - 1, y0 - 1, x1 + 1, y1 + 1)) continue;
             Mesh tmp;
             clip_triangles_polygon(cur.vertices, cur.indices, n->polygon, &tmp);
             cur = std::move(tmp);
             if (cur.empty()) return;
+            bounds();
         }
         if (opacity < 1) {
             for (Vertex& v : cur.vertices) v.color.a *= static_cast<float>(std::max(0.0, opacity));
@@ -576,10 +642,38 @@ int shadow_layers(double blur) {
     return std::min(48, std::max(12, k));
 }
 
+// WEVA_PAINT_LOG attributes a paint pass to its parts. Paint stayed the whole
+// cost of an update after the texture cache landed, and a per-pass total does
+// not say which part -- shadows, text or the backend -- to look at.
+struct PaintProfile {
+    double shadows = 0, text = 0, backgrounds = 0, other = 0;
+    double shadow_tess = 0, shadow_draw = 0;
+    int shadow_layers = 0;
+    bool on = false;
+};
+// Thread-local: two documents can paint at once, and a diagnostic must not
+// introduce a data race to collect its numbers.
+thread_local PaintProfile g_paint_profile;
+
+struct ProfileScope {
+    double* slot;
+    std::chrono::steady_clock::time_point t0;
+    explicit ProfileScope(double* s)
+        : slot(g_paint_profile.on ? s : nullptr) {
+        if (slot) t0 = std::chrono::steady_clock::now();
+    }
+    ~ProfileScope() {
+        if (!slot) return;
+        *slot += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0)
+                     .count();
+    }
+};
+
 void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_box,
                          const BorderRadii& radii, RenderInterface* backend, double opacity,
                          const Transform2D* xf = nullptr, const ClipNode* clip = nullptr,
                          const ColorFilter* filter = nullptr) {
+    ProfileScope prof(&g_paint_profile.shadows);
     for (size_t s = shadows.size(); s-- > 0;) {   // first shadow on top
         const Shadow& sh = shadows[s];
         if (sh.inset) continue;
@@ -626,9 +720,16 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             if (left <= 0 && top <= 0 && right <= 0 && bottom <= 0) continue;
             const LinearColor ring[4] = {c, c, c, c};
             Mesh mesh;
-            tessellate_border(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
-                              top, right, bottom, left, ring, &mesh);
-            draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
+            ++g_paint_profile.shadow_layers;
+            {
+                ProfileScope t(&g_paint_profile.shadow_tess);
+                tessellate_border(r, clamp_radii_to_rect(grow_radii(radii, grow), r.width, r.height),
+                                  top, right, bottom, left, ring, &mesh);
+            }
+            {
+                ProfileScope d(&g_paint_profile.shadow_draw);
+                draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
+            }
         }
     }
 }
@@ -880,6 +981,7 @@ void push_clip(PaintState* state, std::vector<ClipPoint> polygon) {
     }
     auto n = std::make_shared<ClipNode>();
     n->polygon = std::move(polygon);
+    n->prepare();
     n->parent = state->clip;
     state->clip = std::move(n);
 }
@@ -1370,6 +1472,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     if (!has_gradient_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
         return false;
     }
+    ProfileScope prof(&g_paint_profile.backgrounds);
     const int tex_w = static_cast<int>(std::min(1024.0, std::ceil(area.width)));
     const int tex_h = static_cast<int>(std::min(1024.0, std::ceil(area.height)));
     // Rasterizing is a texel per pixel of the box, so an unchanged background
@@ -2087,6 +2190,7 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
 void build_text_geometry(std::string_view text, double x, double baseline_y, double font_size,
                          const LinearColor& color, const PaintContext& paint, Mesh* out,
                          double letter_spacing, const FaceHandle* face_override) {
+    ProfileScope prof(&g_paint_profile.text);
     if (!paint.font || !paint.atlas || text.empty()) return;
     const FaceHandle face = face_override ? *face_override : paint.face;
     std::vector<ShapedGlyph> glyphs;
@@ -2149,13 +2253,33 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
                 const PaintContext& paint) {
     if (!paint.backend || root == kNoBox) return;
 
+    g_paint_profile = PaintProfile{};
+    g_paint_profile.on = std::getenv("WEVA_PAINT_LOG") != nullptr;
+    const auto pass_start = std::chrono::steady_clock::now();
+
     TextureHandle atlas_texture{};
+    double glyphs_ms = 0;
     if (paint.atlas && paint.font) {
+        const auto t0 = std::chrono::steady_clock::now();
         prepare_glyphs(tree, root, ctx, paint);
         atlas_texture = paint.atlas->texture(paint.backend);
+        glyphs_ms =
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     }
     const BoxId canvas_owner = paint_canvas(tree, root, ctx, paint);
     paint_recursive(tree, root, ctx, 0, 0, paint, atlas_texture, canvas_owner, PaintState{});
+
+    if (g_paint_profile.on) {
+        const double total =
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pass_start)
+                .count();
+        const PaintProfile& p = g_paint_profile;
+        std::fprintf(stderr,
+                     "    paint: glyphs %6.2f  shadows %6.2f (tess %5.2f draw %5.2f over %d "
+                     "layers)  text %6.2f  backgrounds %6.2f  rest %6.2f  (total %6.2f ms)\n",
+                     glyphs_ms, p.shadows, p.shadow_tess, p.shadow_draw, p.shadow_layers, p.text,
+                     p.backgrounds, total - glyphs_ms - p.shadows - p.text - p.backgrounds, total);
+    }
 }
 
 } // namespace weva
