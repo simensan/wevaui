@@ -191,6 +191,9 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("element_id_at", "point"), &WevaDocument::element_id_at);
     ClassDB::bind_method(D_METHOD("set_focus", "selector"), &WevaDocument::set_focus);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interactive"), "set_interactive", "get_interactive");
+    ClassDB::bind_method(D_METHOD("set_paused", "on"), &WevaDocument::set_paused);
+    ClassDB::bind_method(D_METHOD("get_paused"), &WevaDocument::get_paused);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "paused"), "set_paused", "get_paused");
 
     ClassDB::bind_method(D_METHOD("set_element_text", "selector", "text"),
                          &WevaDocument::set_element_text);
@@ -571,6 +574,13 @@ bool WevaDocument::set_focus(const godot::String& selector) {
 // transition is in flight, so the cost of asking is a branch.
 void WevaDocument::_process(double delta) {
     if (!doc_) return;
+    if (paused_) {
+        // Still update if something else made the document dirty; just do not
+        // let time be the thing that moved.
+        if (dirty_) ensure_updated(0);
+        pump_events();
+        return;
+    }
     pending_dt_ += delta;
     if (!dirty_ && pending_dt_ <= 0) return;
     const double dt = pending_dt_;

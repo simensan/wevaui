@@ -47,6 +47,12 @@ func _ready() -> void:
 	# rendering one side with the engine's face and the other with the core's
 	# stub compares two different documents, not two rasterisers.
 	doc.use_engine_font = not _args.has("stub-font")
+	# The clock is held at zero. This scene waits two frames for the viewport
+	# to become readable, and without this the animations would have run on for
+	# those frames while the reference renderer stayed at the start -- the two
+	# sides would then be compared at different INSTANTS, which says nothing
+	# about the backends.
+	doc.paused = true
 	doc.document_size = Vector2(w, h)
 	doc.css = _read(_args.get("css", ""))
 	doc.html = _read(_args.get("html", ""))

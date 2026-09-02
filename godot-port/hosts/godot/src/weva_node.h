@@ -66,6 +66,14 @@ public:
     void set_interactive(bool on);
     bool get_interactive() const { return interactive_; }
 
+    // Stops the clock. Transitions and @keyframes hold where they are, which
+    // a game wants when it pauses and a CAPTURE requires: comparing two
+    // backends means comparing them at the same instant, and a renderer that
+    // waits two frames for the viewport to be readable has otherwise let the
+    // animation run on while the other side stayed at zero.
+    void set_paused(bool on) { paused_ = on; }
+    bool get_paused() const { return paused_; }
+
     // The element under a point, as a selector-free handle a script can pass
     // back. Returns an empty string when the point is over nothing named.
     godot::String element_id_at(const godot::Vector2& point);
@@ -195,6 +203,7 @@ private:
     godot::Vector2 size_{0, 0};
     bool dirty_ = true;
     bool interactive_ = true;
+    bool paused_ = false;
     // The last position handed to the document, so a move that does not change
     // the element still costs nothing: the document already skips an update
     // that changes no style, and this skips the call.
