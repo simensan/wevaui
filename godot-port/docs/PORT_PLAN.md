@@ -3380,7 +3380,29 @@ blending in the wrong space looks like.
 * `glass` (23.3 against Chrome) — backdrop-filter, which the host does not
   implement. Known, and it needs BackBufferCopy plus a screen-texture shader.
 * `quests` (49.0) — BOTH backends are far from Chrome, so this is upstream of
-  the rasteriser rather than a backend difference. It has not been diagnosed.
+  the rasteriser. Diagnosed: it is the outer `box-shadow` on `.log`, still
+  darkening the panel it sits under even after the border-box knockout.
+  Deleting that one declaration makes the Godot render match Chrome almost
+  exactly — panel margin (232,231,233) against (232,232,234), card interior
+  (35,30,52) against (35,30,52) EXACTLY, right margin (162,160,168) against
+  (163,161,168) — against a baseline that reads (122,121,123) at the panel
+  margin.
+
+  Two things were ruled out on the way. The composite itself is right: that
+  gradient (`linear-gradient(135deg, rgba(255,255,255,0.12),
+  rgba(13,8,28,0.46))`) over a white canvas renders (199,198,203) against
+  Chrome's (199,198,202) in isolation. And `backdrop-filter` is not the cause —
+  removing it makes the panel DARKER, not lighter, so the port's partial
+  implementation is currently compensating for this bug.
+
+  The knockout arithmetic looks right for this shape on paper: the declaration
+  is `0 34px 90px rgba(0,0,0,0.55), 0 10px 28px rgba(0,0,0,0.34), inset 0 1px 0
+  rgba(255,255,255,0.16)`, and for a layer whose grow is smaller than the 34px
+  offset the un-knocked band sits ABOVE the shadow rect and so is not drawn
+  anyway. Something else in that path is covering the interior — the inset
+  layer, or the multi-shadow loop, are the two candidates not yet eliminated.
+  The reproduction is exact and cheap: render quests with and without the one
+  declaration and sample (80,400).
 
 Fixing weva_render's colour space is the larger job — its framebuffer is linear
 end to end and its render tests carry expected values — so it is worth doing
