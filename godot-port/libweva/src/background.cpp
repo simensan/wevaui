@@ -540,6 +540,10 @@ struct PreparedGradient {
     std::vector<Srgb> colors;
     double angle_rad = 0, dx = 0, dy = 0, line_length = 1, cx = 0, cy = 0;
     RadialGeometry radial{};
+    // Whether this gradient has a discontinuity, which decides whether the
+    // texel needs more than one sample. A ramp antialiases itself; an edge
+    // does not.
+    bool has_hard_edge = false;
 };
 
 PreparedGradient prepare(const Gradient& g, double w, double h, const LayoutContext& ctx,
@@ -569,6 +573,21 @@ PreparedGradient prepare(const Gradient& g, double w, double h, const LayoutCont
     }
     normalize_stops(&p.stops, length);
     for (const GradientStop& s : p.stops) p.colors.push_back(to_srgb(s.color));
+
+    // A conic gradient always closes on itself, so its first and last stops
+    // meet along a radius whatever they are; the others only have an edge
+    // where two stops share a position, which is how `#a 72%, #b 0` states a
+    // hard band.
+    if (g.kind == Gradient::Kind::Conic) {
+        p.has_hard_edge = true;
+    } else {
+        for (size_t i = 1; i < p.stops.size(); ++i) {
+            if (std::fabs(p.stops[i].position - p.stops[i - 1].position) < 1e-6) {
+                p.has_hard_edge = true;
+                break;
+            }
+        }
+    }
     return p;
 }
 
@@ -747,27 +766,58 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         tiles.push_back(std::move(t));
     }
 
+    // One sample per texel is enough for a gradient that only ever ramps: the
+    // ramp IS the antialiasing. It is not enough where a gradient has an edge
+    // -- a conic one always does, since its start and end meet, and any stop
+    // that repeats a position is a hard band boundary. Those come out as a
+    // staircase, which on a conic progress ring is the step across the arc.
+    //
+    // So the sample count is chosen from the content rather than turned up
+    // everywhere: this runs on every update, and a viewport-sized gradient is
+    // already the most expensive thing here.
+    int samples = 1;
+    for (const Tile& t : tiles) {
+        if (t.prepared.has_hard_edge) samples = 3;
+    }
+    const double inv = 1.0 / samples;
+
     const double sx = width / tex_w, sy = height / tex_h;
     for (int py = 0; py < tex_h; ++py) {
-        const double y = (py + 0.5) * sy;
         for (int px = 0; px < tex_w; ++px) {
-            const double x = (px + 0.5) * sx;
-            // Premultiplied source-over, bottom layer (the last) first.
-            float r = base.r * base.a, g = base.g * base.a, b = base.b * base.a, a = base.a;
-            for (size_t i = tiles.size(); i-- > 0;) {
-                const Tile& t = tiles[i];
-                double lx = x - t.ox, ly = y - t.oy;
-                if (t.repeat_x) lx = std::fmod(std::fmod(lx, t.tw) + t.tw, t.tw);
-                else if (lx < 0 || lx >= t.tw) continue;
-                if (t.repeat_y) ly = std::fmod(std::fmod(ly, t.th) + t.th, t.th);
-                else if (ly < 0 || ly >= t.th) continue;
-                const Srgb s = sample_prepared(t.prepared, lx, ly);
-                const float sa = s.a;
-                r = s.r * sa + r * (1 - sa);
-                g = s.g * sa + g * (1 - sa);
-                b = s.b * sa + b * (1 - sa);
-                a = sa + a * (1 - sa);
+            float ar = 0, ag = 0, ab = 0, aa = 0;
+            for (int oy = 0; oy < samples; ++oy) {
+                const double y = (py + (oy + 0.5) * inv) * sy;
+                for (int ox = 0; ox < samples; ++ox) {
+                    const double x = (px + (ox + 0.5) * inv) * sx;
+                    // Premultiplied source-over, bottom layer (the last) first.
+                    float r = base.r * base.a, g = base.g * base.a, b = base.b * base.a;
+                    float a = base.a;
+                    for (size_t i = tiles.size(); i-- > 0;) {
+                        const Tile& t = tiles[i];
+                        double lx = x - t.ox, ly = y - t.oy;
+                        if (t.repeat_x) lx = std::fmod(std::fmod(lx, t.tw) + t.tw, t.tw);
+                        else if (lx < 0 || lx >= t.tw) continue;
+                        if (t.repeat_y) ly = std::fmod(std::fmod(ly, t.th) + t.th, t.th);
+                        else if (ly < 0 || ly >= t.th) continue;
+                        const Srgb s = sample_prepared(t.prepared, lx, ly);
+                        const float sa = s.a;
+                        r = s.r * sa + r * (1 - sa);
+                        g = s.g * sa + g * (1 - sa);
+                        b = s.b * sa + b * (1 - sa);
+                        a = sa + a * (1 - sa);
+                    }
+                    // Accumulated PREMULTIPLIED, or a sample that is barely
+                    // covered drags the colour of a fully covered neighbour
+                    // towards whatever its own undefined colour happens to be.
+                    ar += r;
+                    ag += g;
+                    ab += b;
+                    aa += a;
+                }
             }
+            const float n = static_cast<float>(samples * samples);
+            float r = ar / n, g = ag / n, b = ab / n;
+            const float a = aa / n;
             uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
             if (a > 0) { r /= a; g /= a; b /= a; }
             o[0] = static_cast<uint8_t>(std::lround(std::clamp(r, 0.0f, 1.0f) * 255));
@@ -794,7 +844,21 @@ double rounded_coverage(double px, double py, double w, double h, const BorderRa
         if (dx < 0 || dy < 0) return 1.0;
         const double ex = dx / r.x_radius, ey = dy / r.y_radius;
         (void)cx; (void)cy;
-        return ex * ex + ey * ey <= 1.0 ? 1.0 : 0.0;
+        // How much of the PIXEL the corner covers, not whether its centre is
+        // inside. This returned 1 or 0, which is why every gradient-filled
+        // rounded box came out with a staircase edge — the alpha mask baked
+        // into the layer had no intermediate values at all.
+        //
+        // s is 1 exactly on the ellipse, so (s - 1) divided by the length of
+        // its gradient is the distance to the edge in pixels. Coverage is half
+        // a pixel either side of that, which is exact for a circle and within
+        // a percent for the eccentricities a border-radius produces.
+        const double s = std::sqrt(ex * ex + ey * ey);
+        if (s <= 0) return 1.0;
+        const double gx = ex / (s * r.x_radius), gy = ey / (s * r.y_radius);
+        const double grad = std::sqrt(gx * gx + gy * gy);
+        if (grad <= 0) return 1.0;
+        return std::clamp(0.5 - (s - 1.0) / grad, 0.0, 1.0);
     };
     double c = 1;
     c = std::min(c, corner(radii->top_left, radii->top_left.x_radius, radii->top_left.y_radius,

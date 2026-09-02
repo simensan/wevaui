@@ -1285,11 +1285,17 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     if (paint.owned_textures) paint.owned_textures->push_back(tex);
 
     Mesh mesh;
-    // No geometric antialiasing here: the rasterized layer already carries the
-    // rounded corner's coverage in its own alpha (see rounded_coverage in
-    // background.cpp), and feathering the quad on top of that would apply it
-    // twice and eat the edge.
-    tessellate_rounded_rect(area, radii, LinearColor::white(), &mesh, 8, false);
+    // Antialiased like any other fill. It is tempting to think the rasterized
+    // layer already carries the corner's coverage in its own alpha -- it is
+    // what rounded_coverage() exists for -- but that only happens in
+    // rasterize_background_PADDED, and this path calls the plain one. The
+    // corner here is the mesh's, so it needs the mesh's coverage ramp, and
+    // without it every gradient-filled rounded box had a hard staircase edge.
+    // A conic-gradient ring showed it worst, having nothing but curve.
+    //
+    // The feather vertices take their UVs from position like the rest, so they
+    // land just outside [0,1]; both backends clamp.
+    tessellate_rounded_rect(area, radii, LinearColor::white(), &mesh);
     for (Vertex& v : mesh.vertices) {
         v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                        static_cast<float>((v.position.y - area.y) / area.height)};
