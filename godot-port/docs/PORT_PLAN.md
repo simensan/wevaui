@@ -3408,6 +3408,40 @@ Fixing weva_render's colour space is the larger job — its framebuffer is linea
 end to end and its render tests carry expected values — so it is worth doing
 deliberately rather than as a side effect of chasing a sample.
 
+### Eighteenth pass: the host double-darkens shadow rings
+
+quests narrows to one declaration and then to the HOST, which is the opposite of
+the previous pass's conclusion and worth stating plainly: for colour and
+gradients weva_render is the wrong side, for box-shadow the Godot host is.
+"Which backend is wrong" is per-feature, not per-backend.
+
+The reproduction is two divs over a white canvas, each `rgba(13, 8, 28, 0.46)`
+with a shadow — one `0 34px 90px`, one `0 0 12px`:
+
+| point | software | godot | Chrome |
+|---|---|---|---|
+| interior (large blur) | (141,140,145) | **(71,68,78)** | (144,142,151) |
+| interior (small blur) | (141,140,145) | **(71,68,78)** | (144,142,151) |
+| clear of the shadow | (255,255,255) | (231,231,231) | (255,255,255) |
+
+So the border-box knockout added in the sixteenth pass is CORRECT — the
+software backend proves it, landing within 3/255 of Chrome — and the host
+darkens the interior anyway from the same draw list. It also puts shadow where
+there is none, 231 against 255 well clear of the box.
+
+Both symptoms fit one cause: the falloff is a stack of ~12 to 45 nested
+translucent rings, and something in the host's path composites them more than
+once — overlapping triangles inside a ring mesh being alpha-blended per
+triangle would do it, and so would a modulate alpha applied on top of the vertex
+alpha. Neither is confirmed.
+
+**This also corrects a claim in the sixteenth pass.** vendor's 29% -> 1.08% was
+the two BACKENDS agreeing better, since the knockout changed both. It did not
+establish that vendor now matches Chrome, and on this evidence its card
+interiors are probably still wrong in the host. A backend-agreement gate cannot
+see an error both sides share, and cannot see one it introduces symmetrically
+either — Chrome has to be checked directly whenever a paint change lands.
+
 ## Phase 8 — Remaining layout (~8k LOC)
 
 `Positioning` (2,603), `Scrolling` (4,071), `Tables` (1,431),
