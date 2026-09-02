@@ -147,6 +147,67 @@ void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx, dou
     if (out_height) *out_height = h;
 }
 
+bool clips_overflow(const Box& b) {
+    if (!b.style) return false;
+    for (const char* prop : {"overflow-x", "overflow-y"}) {
+        const std::string_view v = get(b.style, prop);
+        if (v == "hidden" || v == "clip" || v == "auto" || v == "scroll") return true;
+    }
+    return false;
+}
+
+namespace {
+
+// Every descendant's border box, in coordinates relative to `ox`/`oy`.
+void reach_of(const BoxTree& tree, BoxId id, double ox, double oy, double* w, double* h) {
+    for (BoxId c = tree[id].first_child; c != kNoBox; c = tree[c].next_sibling) {
+        const Box& b = tree[c];
+        // A fixed box is anchored to the viewport, not to what it sits in, so
+        // it neither moves with the scroll nor makes anything scrollable.
+        if (b.position == PositionType::Fixed) continue;
+        const double x = ox + b.x, y = oy + b.y;
+        if (b.width > 0 || b.height > 0) {
+            *w = std::max(*w, x + b.width);
+            *h = std::max(*h, y + b.height);
+        }
+        if (clips_overflow(b)) continue;
+        reach_of(tree, c, x, y, w, h);
+    }
+}
+
+}   // namespace
+
+void scrollable_overflow(const BoxTree& tree, BoxId box, double* out_width, double* out_height) {
+    double w = 0, h = 0;
+    if (tree.valid(box)) {
+        const Box& b = tree[box];
+        // Children sit on the BORDER-box origin, so stepping in by the border
+        // puts the measure in the padding box where the spec wants it.
+        reach_of(tree, box, -b.border_left, -b.border_top, &w, &h);
+        // End padding counts as part of the scrollable area (§3), which is why
+        // a padded list does not end flush against its last row.
+        if (w > 0) w += b.padding_right;
+        if (h > 0) h += b.padding_bottom;
+        w = std::max(w, b.width - b.border_left - b.border_right);
+        h = std::max(h, b.height - b.border_top - b.border_bottom);
+    }
+    if (out_width) *out_width = w;
+    if (out_height) *out_height = h;
+}
+
+void max_scroll(const BoxTree& tree, BoxId box, double* out_x, double* out_y) {
+    double sw = 0, sh = 0;
+    scrollable_overflow(tree, box, &sw, &sh);
+    double mx = 0, my = 0;
+    if (tree.valid(box)) {
+        const Box& b = tree[box];
+        mx = std::max(0.0, sw - (b.width - b.border_left - b.border_right));
+        my = std::max(0.0, sh - (b.height - b.border_top - b.border_bottom));
+    }
+    if (out_x) *out_x = mx;
+    if (out_y) *out_y = my;
+}
+
 bool establishes_absolute_containing_block(const Box& b) {
     if (b.position != PositionType::Static) return true;
     return has_containing_block_property(b);

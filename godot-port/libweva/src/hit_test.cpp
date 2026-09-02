@@ -64,8 +64,12 @@ struct Search {
         // the first tests used `margin: 0` markup with no padding anywhere; the
         // demo panel has `padding: 20px` and hit testing its button returned
         // the progress bar thirty pixels above it.
+        //
+        // A scroll container's children are drawn shifted by its offset, so
+        // they are hit there too: the point is over what you can SEE at it.
+        const double cx = bx - b.scroll_x, cy = by - b.scroll_y;
         for (BoxId c = b.last_child; c != kNoBox; c = tree[c].prev_sibling) {
-            const BoxId hit = visit(c, bx, by, ignore);
+            const BoxId hit = visit(c, cx, cy, ignore);
             if (hit != kNoBox) return hit;
         }
         if (ignore) return kNoBox;
@@ -78,10 +82,14 @@ struct Search {
 
 }   // namespace
 
-const Element* element_at_point(const BoxTree& tree, BoxId root, double x, double y) {
-    if (root == kNoBox || root >= tree.size()) return nullptr;
+BoxId box_at_point(const BoxTree& tree, BoxId root, double x, double y) {
+    if (root == kNoBox || root >= tree.size()) return kNoBox;
     const Search search{tree, x, y};
-    BoxId hit = search.visit(root, 0, 0, false);
+    return search.visit(root, 0, 0, false);
+}
+
+const Element* element_at_point(const BoxTree& tree, BoxId root, double x, double y) {
+    BoxId hit = box_at_point(tree, root, x, y);
     // Anonymous boxes, line boxes and text runs are not elements. The element
     // hit is the nearest one that encloses them, which is why hovering a word
     // hovers the paragraph it is set in.

@@ -213,6 +213,15 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::set_element_value);
     ClassDB::bind_method(D_METHOD("set_pointer", "point", "buttons"), &WevaDocument::set_pointer);
     ClassDB::bind_method(D_METHOD("clear_pointer"), &WevaDocument::clear_pointer);
+    ClassDB::bind_method(D_METHOD("scroll_at", "point", "delta"), &WevaDocument::scroll_at);
+    ClassDB::bind_method(D_METHOD("scroll_element", "selector", "delta"),
+                         &WevaDocument::scroll_element);
+    ClassDB::bind_method(D_METHOD("set_element_scroll", "selector", "offset"),
+                         &WevaDocument::set_element_scroll);
+    ClassDB::bind_method(D_METHOD("get_element_scroll", "selector"),
+                         &WevaDocument::get_element_scroll);
+    ClassDB::bind_method(D_METHOD("get_element_scroll_max", "selector"),
+                         &WevaDocument::get_element_scroll_max);
 
     // The element is named by its `id`, because that is the handle a script
     // and a stylesheet already share. An element with no id reports an empty
@@ -362,6 +371,34 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
 
     const Vector2 local = get_global_transform().affine_inverse().xform(
         motion.is_valid() ? motion->get_global_position() : button->get_global_position());
+    // The wheel, before the pointer bookkeeping: a wheel event carries no
+    // movement, so the "nothing moved" early return below would swallow it.
+    if (button.is_valid() && button->is_pressed()) {
+        // Godot reports a wheel notch as a button press with a factor; a line
+        // is the 40px a browser scrolls per notch.
+        const double factor = button->get_factor() > 0 ? button->get_factor() : 1.0;
+        const double step = 40.0 * factor;
+        double dx = 0, dy = 0;
+        switch (button->get_button_index()) {
+            case MOUSE_BUTTON_WHEEL_UP: dy = -step; break;
+            case MOUSE_BUTTON_WHEEL_DOWN: dy = step; break;
+            case MOUSE_BUTTON_WHEEL_LEFT: dx = -step; break;
+            case MOUSE_BUTTON_WHEEL_RIGHT: dx = step; break;
+            default: break;
+        }
+        if (dx != 0 || dy != 0) {
+            ensure_updated();
+            // Handled only when something actually scrolled, so a wheel over a
+            // document with nowhere to go still reaches the game behind it.
+            if (weva_document_scroll(doc_, local.x, local.y, dx, dy)) {
+                dirty_ = true;
+                queue_redraw();
+                get_viewport()->set_input_as_handled();
+            }
+            return;
+        }
+    }
+
     uint32_t buttons = buttons_;
     if (button.is_valid()) {
         // Only the primary button drives :active, which is what the pseudo
@@ -407,6 +444,59 @@ godot::String WevaDocument::focus_next(bool backwards) {
     // then looks at what happened should not have to wait for a redraw.
     pump_events();
     return id_of(e);
+}
+
+bool WevaDocument::scroll_at(const Vector2& point, const Vector2& delta) {
+    if (!doc_) return false;
+    ensure_updated();
+    if (!weva_document_scroll(doc_, point.x, point.y, delta.x, delta.y)) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::scroll_element(const String& selector, const Vector2& delta) {
+    if (!doc_) return false;
+    ensure_updated();
+    const Vector2 at = get_element_scroll(selector);
+    const Vector2 most = get_element_scroll_max(selector);
+    const Vector2 to(CLAMP(at.x + delta.x, 0.0f, most.x), CLAMP(at.y + delta.y, 0.0f, most.y));
+    if (to == at) return false;
+    set_element_scroll(selector, to);
+    return true;
+}
+
+void WevaDocument::set_element_scroll(const String& selector, const Vector2& offset) {
+    if (!doc_) return;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return;
+    weva_element_set_scroll(doc_, e, offset.x, offset.y);
+    dirty_ = true;
+    queue_redraw();
+}
+
+Vector2 WevaDocument::get_element_scroll(const String& selector) {
+    if (!doc_) return Vector2();
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return Vector2();
+    double x = 0, y = 0;
+    if (weva_element_scroll(doc_, e, &x, &y, nullptr, nullptr) != WEVA_OK) return Vector2();
+    return Vector2(static_cast<real_t>(x), static_cast<real_t>(y));
+}
+
+Vector2 WevaDocument::get_element_scroll_max(const String& selector) {
+    if (!doc_) return Vector2();
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return Vector2();
+    double mx = 0, my = 0;
+    if (weva_element_scroll(doc_, e, nullptr, nullptr, &mx, &my) != WEVA_OK) return Vector2();
+    return Vector2(static_cast<real_t>(mx), static_cast<real_t>(my));
 }
 
 void WevaDocument::clear_pointer() {

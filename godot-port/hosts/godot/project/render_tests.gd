@@ -46,6 +46,7 @@ func _ready() -> void:
 	_test_focus_navigation()
 	_test_form_binding()
 	_test_demo_scene_pattern()
+	_test_scrolling()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -410,4 +411,52 @@ func _test_demo_scene_pattern() -> void:
 	_check(doc.get_element_value("#name") == "Vintner", "the demo's field has its value")
 	_check(doc.set_element_value("#shield", "on"), "the demo's checkbox can be set")
 	_check(doc.get_element_value("#shield") == "on", "and reads back")
+	doc.queue_free()
+
+
+func _test_scrolling() -> void:
+	# A list too long for its box: 5 rows of 40 in 100 of room.
+	var doc := _make_doc(
+		"<body><div id='list'><div id='r0' class='row'></div><div id='r1' class='row'></div>" +
+		"<div id='r2' class='row'></div><div id='r3' class='row'></div>" +
+		"<div id='r4' class='row'></div></div></body>",
+		"html, body { margin: 0 } " +
+		"#list { width: 200px; height: 100px; overflow: auto } " +
+		".row { height: 40px; background: #445566 }")
+	_check(doc.get_element_scroll_max("#list") == Vector2(0, 100),
+		"a list taller than its box reports how far it can go")
+	_check(doc.get_element_scroll("#list") == Vector2(), "and starts at the top")
+
+	# What a wheel over it does. The point is in document coordinates, which is
+	# what _input converts a mouse position into.
+	_check(doc.scroll_at(Vector2(100, 50), Vector2(0, 60)), "a wheel over the list scrolls it")
+	doc.update_document()
+	_check(doc.get_element_scroll("#list") == Vector2(0, 60), "by as much as it was given")
+	# Past the end stops at the end, and then says it has nothing left.
+	doc.scroll_at(Vector2(100, 50), Vector2(0, 500))
+	doc.update_document()
+	_check(doc.get_element_scroll("#list") == Vector2(0, 100), "and stops at the bottom")
+	_check(not doc.scroll_at(Vector2(100, 50), Vector2(0, 10)),
+		"a wheel with nowhere to go is not consumed, so the game behind gets it")
+	# Nothing scrollable under the point is the same answer.
+	_check(not doc.scroll_at(Vector2(380, 190), Vector2(0, 40)),
+		"nor is one over something that does not scroll")
+
+	# By name, which is what a script that owns a panel does.
+	doc.set_element_scroll("#list", Vector2(0, 20))
+	doc.update_document()
+	_check(doc.get_element_scroll("#list") == Vector2(0, 20), "a script can set the position")
+	_check(doc.scroll_element("#list", Vector2(0, 25)), "and nudge it")
+	doc.update_document()
+	_check(doc.get_element_scroll("#list") == Vector2(0, 45), "relative to where it was")
+	_check(not doc.scroll_element("#nope", Vector2(0, 10)),
+		"an unmatched selector scrolls nothing rather than erroring")
+
+	# Hit testing follows the scroll: 45 down, row 1 (which lies from 40 to
+	# 80) is what covers the top of the list, and it is what a click there
+	# has to reach -- you click what you can SEE.
+	_check(doc.element_id_at(Vector2(100, 5)) == "r1",
+		"a click lands on the row that scrolled under the pointer")
+	_check(doc.element_id_at(Vector2(100, 95)) == "r3",
+		"and on the right one at the other end")
 	doc.queue_free()

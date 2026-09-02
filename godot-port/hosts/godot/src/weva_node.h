@@ -105,6 +105,14 @@ public:
     void set_pointer(const godot::Vector2& point, int buttons);
     void clear_pointer();
 
+    // Scrolling. `scroll_at` is what a wheel does -- it finds the innermost
+    // scroll container under the point -- while the rest name one directly.
+    bool scroll_at(const godot::Vector2& point, const godot::Vector2& delta);
+    bool scroll_element(const godot::String& selector, const godot::Vector2& delta);
+    void set_element_scroll(const godot::String& selector, const godot::Vector2& offset);
+    godot::Vector2 get_element_scroll(const godot::String& selector);
+    godot::Vector2 get_element_scroll_max(const godot::String& selector);
+
     // Moves focus in tab order and returns the id that now has it, or "" when
     // the document has nothing focusable in it.
     godot::String focus_next(bool backwards);

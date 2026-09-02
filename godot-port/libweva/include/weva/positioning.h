@@ -49,6 +49,23 @@ void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y);
 void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
                   double* out_width, double* out_height);
 
+// True when this box clips what overflows it, and so can be scrolled: any
+// `overflow` other than `visible`.
+bool clips_overflow(const Box& b);
+
+// How far the contents of one scroll container reach, measured from its
+// PADDING box -- CSS Overflow L3 §3, which is what `scrollWidth`/`scrollHeight`
+// report. Never smaller than the padding box itself, so a container with room
+// to spare reports no room to scroll rather than a negative one.
+//
+// The walk stops at a nested scroll container: what IT clips is its own
+// business, and its border box is the whole of its contribution.
+void scrollable_overflow(const BoxTree& tree, BoxId box, double* out_width, double* out_height);
+
+// The furthest this container can be scrolled, in each axis. Zero when its
+// contents fit, and never negative.
+void max_scroll(const BoxTree& tree, BoxId box, double* out_x, double* out_y);
+
 // Reads `top`/`right`/`bottom`/`left` and `z-index` onto every box. An absent
 // offset stays absent — `auto` is not zero, and the two lead to different
 // placement.

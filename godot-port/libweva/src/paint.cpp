@@ -2244,9 +2244,14 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     };
     std::stable_sort(negative.begin(), negative.end(), by_z);
     std::stable_sort(positive.begin(), positive.end(), by_z);
+    // A scroll container draws its own background and border where it sits and
+    // its contents shifted by the offset -- which is the whole of scrolling,
+    // the clip above being what makes the shifted-away part disappear.
+    const double child_x = x - b.scroll_x, child_y = y - b.scroll_y;
     for (const auto* bucket : {&negative, &in_flow, &positioned, &positive}) {
         for (const ChildEntry& e : *bucket) {
-            paint_recursive(tree, e.id, ctx, x, y, paint, atlas_texture, canvas_owner, state);
+            paint_recursive(tree, e.id, ctx, child_x, child_y, paint, atlas_texture, canvas_owner,
+                            state);
         }
     }
 

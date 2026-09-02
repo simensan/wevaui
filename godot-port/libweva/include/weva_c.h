@@ -401,6 +401,35 @@ weva_element_t weva_document_focus_next(weva_document_t doc, int backwards);
  * decide -- the document has no notion of tab order yet. */
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element);
 
+/* ---- Scrolling --------------------------------------------------------
+ *
+ * A box with `overflow` other than `visible` clips what does not fit. These
+ * move what it clips: an inventory, a quest log, a chat pane. The offset lives
+ * on the element rather than on the box, so it survives the relayout that a
+ * class change or a resize forces, and it is clamped to what there is to
+ * scroll every time -- a list that shrinks under a scrolled view scrolls back
+ * up by itself rather than showing empty space.
+ */
+
+/* Scrolls by (`dx`, `dy`) the nearest scroll container at a point in document
+ * coordinates -- what a wheel does. Walks up from the point until it finds one
+ * with room to move in the direction asked, so a wheel over a list inside a
+ * scrolled page moves the list until it hits the end and then the page.
+ *
+ * Returns 1 when something scrolled, 0 when nothing there could -- which is
+ * the answer a host needs to decide whether to handle the wheel itself. */
+int weva_document_scroll(weva_document_t doc, double x, double y, double dx, double dy);
+
+/* One element's scroll offset. Clamped on the next update. */
+weva_status weva_element_set_scroll(weva_document_t doc, weva_element_t element, double x,
+                                    double y);
+
+/* Where an element is scrolled to and how far it can go. Any out pointer may
+ * be null. Valid after an update; an element that generates no box, or one
+ * that does not clip, reports zeroes. */
+weva_status weva_element_scroll(weva_document_t doc, weva_element_t element, double* out_x,
+                                double* out_y, double* out_max_x, double* out_max_y);
+
 /* Sets an attribute, which restyles on the next update. A null value removes
  * it. */
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,

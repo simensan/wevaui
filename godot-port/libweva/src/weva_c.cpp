@@ -19,6 +19,7 @@
 #include "weva/user_agent_stylesheet.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 #include <cstring>
 #include <chrono>
@@ -941,6 +942,10 @@ struct weva_document {
     // whole background rasterization on every change, which is most of what an
     // update costs at all.
     TextureCache textures;
+    // Where each scroll container is scrolled to. Kept per ELEMENT, not per
+    // box: the box tree is thrown away and rebuilt whenever anything moves, so
+    // an offset kept on a box would be lost by every class change.
+    std::unordered_map<const Element*, std::pair<double, double>> scroll;
     // What caret the published draws were painted with. The blink is a change
     // no cascade can see, so it is compared against this to ask for a repaint.
     CaretState caret_painted;
@@ -1152,6 +1157,8 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->dom_touched = false;
     doc->events.clear();
     doc->press_target = nullptr;
+    doc->scroll.clear();   // keyed on elements of the document just replaced
+    doc->caret_painted = CaretState{};
     return WEVA_OK;
 }
 
@@ -1358,6 +1365,38 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
         run_positioning(&doc->tree, doc->root, doc->ctx, &block);
     }
     lap("layout");
+
+    // The offsets go back onto the boxes paint and hit testing read, clamped
+    // to what there is to scroll NOW: a list that shrank under a scrolled view
+    // scrolls back up by itself rather than showing the empty space past its
+    // end. An element scrolled to zero is forgotten, so the map stays the size
+    // of what is actually scrolled rather than of what was ever touched.
+    if (!doc->scroll.empty()) {
+        for (int i = 0; i < doc->tree.size(); ++i) {
+            Box& b = doc->tree[i];
+            if (!b.element) continue;
+            const auto it = doc->scroll.find(b.element);
+            if (it == doc->scroll.end()) continue;
+            // Only a box that CLIPS can be scrolled: moving the contents of
+            // one that does not would slide them out from under it in plain
+            // view. A host that scrolls the wrong element gets nothing, which
+            // is the honest answer.
+            if (!clips_overflow(b)) {
+                b.scroll_x = b.scroll_y = 0;
+                it->second = {0, 0};
+                continue;
+            }
+            double mx = 0, my = 0;
+            max_scroll(doc->tree, i, &mx, &my);
+            b.scroll_x = std::clamp(it->second.first, 0.0, mx);
+            b.scroll_y = std::clamp(it->second.second, 0.0, my);
+            it->second = {b.scroll_x, b.scroll_y};
+        }
+        for (auto it = doc->scroll.begin(); it != doc->scroll.end();) {
+            it = (it->second.first == 0 && it->second.second == 0) ? doc->scroll.erase(it)
+                                                                  : std::next(it);
+        }
+    }
 
     for (TextureHandle t : doc->transient_textures) doc->render_backend()->release_texture(t);
     doc->transient_textures.clear();
@@ -1885,7 +1924,9 @@ size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buf
     }
     if (buffer && capacity > 0) {
         const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
-        std::memcpy(buffer, value.data(), n);
+        // Guarded: an absent attribute is an empty string_view whose data() is
+        // null, and memcpy from null is undefined even for zero bytes.
+        if (n > 0) std::memcpy(buffer, value.data(), n);
         buffer[n] = '\0';
     }
     return value.size();
@@ -1963,6 +2004,60 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     return WEVA_OK;
 }
 
+int weva_document_scroll(weva_document_t doc, double x, double y, double dx, double dy) {
+    if (!doc || (dx == 0 && dy == 0)) return 0;
+    // Up from the point, not down from the root: the wheel belongs to the
+    // innermost thing under it that can move. One that has hit its end passes
+    // the wheel on, which is what makes a scrolled list inside a page stop
+    // catching it once it is at the bottom.
+    for (BoxId id = box_at_point(doc->tree, doc->root, x, y); id != kNoBox;
+         id = doc->tree[id].parent) {
+        const Box& b = doc->tree[id];
+        if (!b.element || !clips_overflow(b)) continue;
+        double mx = 0, my = 0;
+        max_scroll(doc->tree, id, &mx, &my);
+        const double cx = b.scroll_x, cy = b.scroll_y;
+        const double nx = std::clamp(cx + dx, 0.0, mx), ny = std::clamp(cy + dy, 0.0, my);
+        if (nx == cx && ny == cy) continue;   // no room this way: the next one up
+        doc->scroll[b.element] = {nx, ny};
+        doc->pending = worst(doc->pending, Invalidation::Paint);
+        return 1;
+    }
+    return 0;
+}
+
+weva_status weva_element_set_scroll(weva_document_t doc, weva_element_t element, double x,
+                                    double y) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    const Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    // Clamped by the update, which is the only thing that knows how far there
+    // is to go -- and it may not have laid this element out yet.
+    doc->scroll[e] = {std::max(0.0, x), std::max(0.0, y)};
+    doc->pending = worst(doc->pending, Invalidation::Paint);
+    return WEVA_OK;
+}
+
+weva_status weva_element_scroll(weva_document_t doc, weva_element_t element, double* out_x,
+                                double* out_y, double* out_max_x, double* out_max_y) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    const Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    if (out_x) *out_x = 0;
+    if (out_y) *out_y = 0;
+    if (out_max_x) *out_max_x = 0;
+    if (out_max_y) *out_max_y = 0;
+    for (int i = 0; i < doc->tree.size(); ++i) {
+        const Box& b = doc->tree[i];
+        if (b.element != e) continue;
+        if (out_x) *out_x = b.scroll_x;
+        if (out_y) *out_y = b.scroll_y;
+        if (clips_overflow(b)) max_scroll(doc->tree, i, out_max_x, out_max_y);
+        return WEVA_OK;
+    }
+    return WEVA_ERR_NOT_FOUND;
+}
+
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,
                                        const char* name, const char* value) {
     if (!doc || !name) return WEVA_ERR_INVALID_ARGUMENT;
@@ -2023,7 +2118,9 @@ size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const
     const std::string_view value = e->get_attribute(name);
     if (buffer && capacity > 0) {
         const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
-        std::memcpy(buffer, value.data(), n);
+        // Guarded: an absent attribute is an empty string_view whose data() is
+        // null, and memcpy from null is undefined even for zero bytes.
+        if (n > 0) std::memcpy(buffer, value.data(), n);
         buffer[n] = '\0';
     }
     return value.size();

@@ -26,4 +26,9 @@ class Element;
 // confines the search to what it does not clip away.
 const Element* element_at_point(const BoxTree& tree, BoxId root, double x, double y);
 
+// The same search, stopping at the box rather than the element that owns it.
+// A wheel needs this: what it scrolls is the nearest scroll container ABOVE
+// the point, which is a walk up the box tree from here.
+BoxId box_at_point(const BoxTree& tree, BoxId root, double x, double y);
+
 }   // namespace weva
