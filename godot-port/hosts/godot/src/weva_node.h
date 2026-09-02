@@ -14,6 +14,7 @@
 #include <godot_cpp/classes/system_font.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
+#include <godot_cpp/variant/vector2i.hpp>
 
 #include "godot_font.h"
 #include "weva_c.h"
@@ -126,6 +127,14 @@ public:
     // document, or a scene that decides who gets the keyboard.
     bool send_key(int keycode, bool pressed = true, bool shift = false, bool ctrl = false);
     void send_text(const godot::String& text);
+
+    // Selection. The document does the selecting; these are the parts a host
+    // has to drive -- Ctrl+A, which the key enum cannot express, and the
+    // clipboard, which belongs to the platform.
+    bool select_all();
+    godot::String get_selected_text();
+    bool set_element_selection(const godot::String& selector, int start, int end);
+    godot::Vector2i get_element_selection(const godot::String& selector);
 
     // Moves focus in tab order and returns the id that now has it, or "" when
     // the document has nothing focusable in it.

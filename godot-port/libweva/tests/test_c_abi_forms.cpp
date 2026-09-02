@@ -631,3 +631,165 @@ void test_abi_textarea_scrolls_to_caret() {
     weva_element_scroll(doc.d, t, nullptr, &y, nullptr, nullptr);
     CHECK(y == most);
 }
+
+namespace {
+
+std::string selected(weva_document_t d) {
+    char buf[256] = {0};
+    weva_document_selected_text(d, buf, sizeof(buf));
+    return buf;
+}
+
+}   // namespace
+
+// Selecting with the keyboard: shift holds on to where the cursor started,
+// and an unshifted move lets go.
+void test_abi_selection_keys() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 30px }",
+            "<input id=t type=text value=abcdef>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);   // cursor after "abcdef"
+    CHECK(selected(doc.d).empty());
+
+    // Shift+Left twice takes the last two characters.
+    weva_document_key(doc.d, WEVA_KEY_LEFT, WEVA_MOD_SHIFT, 1);
+    weva_document_key(doc.d, WEVA_KEY_LEFT, WEVA_MOD_SHIFT, 1);
+    CHECK(selected(doc.d) == "ef");
+
+    // Shift+Home reaches back to the start from the ANCHOR, not from where
+    // the cursor happens to be: the selection is still the one that started
+    // at the end of the value, so it now covers all of it.
+    weva_document_key(doc.d, WEVA_KEY_HOME, WEVA_MOD_SHIFT, 1);
+    CHECK(selected(doc.d) == "abcdef");
+
+    // An unshifted move drops it and leaves a plain cursor.
+    weva_document_key(doc.d, WEVA_KEY_RIGHT, 0, 1);
+    CHECK(selected(doc.d).empty());
+
+    // The reported range says which end the user started from, so a host
+    // knows which way the selection runs.
+    weva_document_key(doc.d, WEVA_KEY_END, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_LEFT, WEVA_MOD_SHIFT, 1);
+    int start = 0, end = 0;
+    CHECK(weva_element_selection(doc.d, t, &start, &end) == WEVA_OK);
+    CHECK(start == 6);
+    CHECK(end == 5);   // backwards, because it was dragged left
+
+    // Select-all is the host's to trigger: the key enum has no letters, so
+    // the document cannot see Ctrl+A for itself.
+    CHECK(weva_document_select_all(doc.d) == 1);
+    CHECK(selected(doc.d) == "abcdef");
+    // And a host can set one outright, for its own selection UI.
+    CHECK(weva_element_set_selection(doc.d, t, 1, 3) == WEVA_OK);
+    CHECK(selected(doc.d) == "bc");
+    CHECK(weva_element_set_selection(doc.d, t, 2, 2) == WEVA_OK);
+    CHECK(selected(doc.d).empty());   // the two ends together is a cursor
+}
+
+// What editing does to a selection: replaces it.
+void test_abi_selection_replaces() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 200px }",
+            "<input id=t type=text value=hello>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);
+
+    // Select-all then type is the commonest edit there is.
+    weva_document_select_all(doc.d);
+    weva_document_text_input(doc.d, "x");
+    CHECK(doc.value("#t") == "x");
+    CHECK(selected(doc.d).empty());
+
+    // Backspace over a selection takes the selection, not one character.
+    weva_element_set_value(doc.d, t, "abcdef");
+    weva_element_set_selection(doc.d, t, 1, 4);
+    CHECK(selected(doc.d) == "bcd");
+    CHECK(weva_document_key(doc.d, WEVA_KEY_BACKSPACE, 0, 1) == 1);
+    CHECK(doc.value("#t") == "aef");
+    CHECK(selected(doc.d).empty());
+
+    // As does Delete.
+    weva_element_set_value(doc.d, t, "abcdef");
+    weva_element_set_selection(doc.d, t, 2, 5);
+    CHECK(weva_document_key(doc.d, WEVA_KEY_DELETE, 0, 1) == 1);
+    CHECK(doc.value("#t") == "abf");
+
+    // Typing after a replacement carries on from where the text went in.
+    weva_element_set_value(doc.d, t, "abcdef");
+    weva_element_set_selection(doc.d, t, 0, 3);
+    weva_document_text_input(doc.d, "X");
+    weva_document_text_input(doc.d, "Y");
+    CHECK(doc.value("#t") == "XYdef");
+
+    // A selection in a textarea works the same, over lines.
+    Doc area("html, body { margin: 0 } textarea { display: block; width: 300px; height: 90px }",
+             "<textarea id=a>one\ntwo\nthree</textarea>");
+    const weva_element_t a = weva_document_query(area.d, "#a");
+    weva_document_set_focus(area.d, a);
+    weva_element_set_selection(area.d, a, 4, 11);
+    CHECK(selected(area.d) == "two\nthr");
+    weva_document_text_input(area.d, "-");
+    weva_document_update(area.d, 0);
+    CHECK(area.value("#a") == "one\n-ee");
+}
+
+// A selection you cannot see is not one. The band goes behind the glyphs, in
+// both kinds of field.
+void test_abi_selection_is_drawn() {
+    // The band is the widest blue-ish draw in the frame.
+    const auto band_width = [](weva_document_t d) {
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        double widest = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].vertex_count == 0) continue;
+            const weva_vertex& v = draws[i].vertices[0];
+            // Blue, and more blue than red: the selection band and nothing
+            // else in these documents.
+            if (!(v.b > 0.2f && v.b > v.r * 2)) continue;
+            double x0 = 1e9, x1 = -1e9;
+            for (size_t k = 0; k < draws[i].vertex_count; ++k) {
+                x0 = std::fmin(x0, draws[i].vertices[k].x);
+                x1 = std::fmax(x1, draws[i].vertices[k].x);
+            }
+            widest = std::fmax(widest, x1 - x0);
+        }
+        return widest;
+    };
+
+    Doc doc("html, body { margin: 0 }"
+            "input { display: block; width: 200px; height: 30px; font-size: 16px;"
+            "        color: #000000; background: #ffffff }",
+            "<input id=t type=text value=abcdef>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);
+    weva_document_update(doc.d, 0);
+    CHECK(band_width(doc.d) == 0);   // a cursor alone paints no band
+
+    weva_element_set_selection(doc.d, t, 0, 2);
+    weva_document_update(doc.d, 0);
+    const double two = band_width(doc.d);
+    CHECK(two > 0);
+
+    // Wider selection, wider band.
+    weva_element_set_selection(doc.d, t, 0, 5);
+    weva_document_update(doc.d, 0);
+    CHECK(band_width(doc.d) > two);
+
+    // Dropping the selection takes the band with it.
+    weva_element_set_selection(doc.d, t, 3, 3);
+    weva_document_update(doc.d, 0);
+    CHECK(band_width(doc.d) == 0);
+
+    // And in a textarea, where the value is laid out as runs.
+    Doc area("html, body { margin: 0 }"
+             "textarea { display: block; width: 300px; height: 90px; font-size: 16px;"
+             "           color: #000000; background: #ffffff }",
+             "<textarea id=a>alpha beta</textarea>");
+    const weva_element_t a = weva_document_query(area.d, "#a");
+    weva_document_set_focus(area.d, a);
+    weva_document_update(area.d, 0);
+    CHECK(band_width(area.d) == 0);
+    weva_element_set_selection(area.d, a, 0, 5);
+    weva_document_update(area.d, 0);
+    CHECK(band_width(area.d) > 0);
+}

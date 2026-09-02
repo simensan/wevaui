@@ -49,6 +49,7 @@ func _ready() -> void:
 	_test_scrolling()
 	_test_building_from_data()
 	_test_keyboard_scrolling()
+	_test_selection()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -555,4 +556,38 @@ func _test_keyboard_scrolling() -> void:
 	_check(form.send_key(KEY_BACKSPACE), "and so can an editing key")
 	_check(form.get_element_value("#f") == "ab", "which edits at the caret")
 	form.queue_free()
+	doc.queue_free()
+
+
+func _test_selection() -> void:
+	# Shift with the movement keys selects; the document does that itself. What
+	# a host has to drive is select-all -- the ABI key enum has no letters, so
+	# it never sees Ctrl+A -- and the clipboard, which is the platform's.
+	var doc := _make_doc("<body><input id='f' type='text' value='hello world'></body>",
+		"html, body { margin: 0 } input { display: block; width: 200px }")
+	doc.set_focus("#f")
+	_check(doc.get_selected_text() == "", "a fresh field has nothing selected")
+
+	_check(doc.send_key(KEY_LEFT, true, true), "shift and a movement key select")
+	_check(doc.send_key(KEY_LEFT, true, true), "and keep going")
+	_check(doc.get_selected_text() == "ld", "back over the last two characters")
+
+	# The range says which end it started from, so a host knows the direction.
+	var range := doc.get_element_selection("#f")
+	_check(range.x == 11 and range.y == 9, "the range runs from the anchor to the cursor")
+
+	_check(doc.select_all(), "select-all is the host's to trigger")
+	_check(doc.get_selected_text() == "hello world", "and takes the lot")
+
+	# Typing replaces what is selected, which is the commonest edit there is.
+	doc.send_text("x")
+	_check(doc.get_element_value("#f") == "x", "typing over a selection replaces it")
+	_check(doc.get_selected_text() == "", "and leaves a plain cursor")
+
+	# A script can set one, for its own selection UI.
+	doc.set_element_value("#f", "abcdef")
+	_check(doc.set_element_selection("#f", 1, 4), "a script can select a range")
+	_check(doc.get_selected_text() == "bcd", "and read it back")
+	_check(doc.send_key(KEY_BACKSPACE), "backspace over a selection takes the selection")
+	_check(doc.get_element_value("#f") == "aef", "not one character")
 	doc.queue_free()

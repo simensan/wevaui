@@ -277,6 +277,13 @@ int line_end(const std::string& s, int at) {
     return static_cast<int>(s.size());
 }
 
+// The selected range of a field's value, low end first. Empty when there is no
+// selection, which is the usual case.
+struct Selection {
+    int from = 0, to = 0;
+    bool empty() const { return from >= to; }
+};
+
 // Whether typing into this control edits it. Buttons and marks do not take
 // text however focused they are.
 bool is_text_field(const Element& e) {
@@ -307,6 +314,11 @@ struct InteractionState : ElementStateProvider {
     // is what makes a caret readable while you type.
     int caret = 0;
     double caret_age = 0;
+    // The other end of the selection, or -1 when there is none. A selection is
+    // a caret that remembers where it started: every move either drags this
+    // along (unshifted) or leaves it where it was (shifted), which is the whole
+    // of the behaviour.
+    int anchor = -1;
 
     ElementState state_of(const Element& e) const override {
         uint32_t bits = 0;
@@ -364,6 +376,17 @@ struct InteractionState : ElementStateProvider {
     }
 };
 
+// The selected range of a value of this length, low end first.
+Selection selection_of(const InteractionState& st, size_t length) {
+    Selection sel;
+    if (st.anchor < 0) return sel;
+    const int a = std::clamp(st.anchor, 0, static_cast<int>(length));
+    const int b = std::clamp(st.caret, 0, static_cast<int>(length));
+    sel.from = std::min(a, b);
+    sel.to = std::max(a, b);
+    return sel;
+}
+
 CaretState caret_for(const InteractionState& st) {
     CaretState c;
     if (st.focused && is_text_field(*st.focused)) {
@@ -372,6 +395,10 @@ CaretState caret_for(const InteractionState& st) {
         // Half a second lit, half dark. Moving it resets the age, so the
         // cursor is never invisible at the moment you are steering it.
         c.visible = std::fmod(st.caret_age, 1.0) < 0.5;
+        const std::string value = field_value(*st.focused);
+        const Selection sel = selection_of(st, value.size());
+        c.selection_from = static_cast<size_t>(sel.from);
+        c.selection_to = static_cast<size_t>(sel.to);
     } else {
         c.visible = false;
     }
@@ -1141,6 +1168,7 @@ void resolve_caret_run(weva_document* doc, CaretState* caret) {
         }
     }
     if (source.empty()) return;
+    caret->source = source;
     const size_t idx = static_cast<size_t>(std::max(0, caret->index));
     const char* base = source.data();
     BoxId last = kNoBox;
@@ -2153,9 +2181,24 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                 return n;
             };
             bool edited = false;
+            // A shifted move extends the selection from where it started; an
+            // unshifted one drops it. Ctrl+A takes the lot.
+            const bool extend = (modifiers & WEVA_MOD_SHIFT) != 0;
+            const Selection sel = selection_of(st, value.size());
+            const int anchor_before = st.anchor;
+            // Deleting the selection, wherever a key would have deleted one
+            // character: that is what Backspace and Delete mean while
+            // something is selected, and what typing does before it inserts.
+            const auto erase_selection = [&]() {
+                value.erase(static_cast<size_t>(sel.from), static_cast<size_t>(sel.to - sel.from));
+                caret = sel.from;
+                edited = true;
+            };
             switch (key) {
                 case WEVA_KEY_BACKSPACE:
-                    if (caret > 0) {
+                    if (!sel.empty()) {
+                        erase_selection();
+                    } else if (caret > 0) {
                         const int from = prev(caret);
                         value.erase(static_cast<size_t>(from), static_cast<size_t>(caret - from));
                         caret = from;
@@ -2163,7 +2206,9 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                     }
                     break;
                 case WEVA_KEY_DELETE:
-                    if (caret < static_cast<int>(value.size())) {
+                    if (!sel.empty()) {
+                        erase_selection();
+                    } else if (caret < static_cast<int>(value.size())) {
                         const int to = next(caret);
                         value.erase(static_cast<size_t>(caret), static_cast<size_t>(to - caret));
                         edited = true;
@@ -2209,6 +2254,15 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                 default: caret = -1; break;   // not ours
             }
             if (caret >= 0) {
+                // An unshifted move puts the cursor down and lets go of what
+                // was selected; a shifted one keeps hold of where it started.
+                // An edit always collapses: the text that was selected is gone.
+                if (edited || !extend) {
+                    st.anchor = -1;
+                } else if (anchor_before < 0) {
+                    // The selection starts where the cursor WAS.
+                    st.anchor = std::min(static_cast<int>(value.size()), std::max(0, st.caret));
+                }
                 st.caret = caret;
                 st.caret_age = 0;   // a caret that blinks while you move it is unreadable
                 doc->caret_follow = true;
@@ -2304,6 +2358,14 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     if (focused && lead >= 0x20 && lead != 0x7f && is_text_field(*focused)) {
         std::string value = field_value(*focused);
         InteractionState& st = doc->styles.state;
+        // Typing over a selection replaces it, which is what every text box
+        // does and the reason select-all-then-type works.
+        const Selection sel = selection_of(st, value.size());
+        if (!sel.empty()) {
+            value.erase(static_cast<size_t>(sel.from), static_cast<size_t>(sel.to - sel.from));
+            st.caret = sel.from;
+        }
+        st.anchor = -1;
         const size_t at = std::min(static_cast<size_t>(std::max(0, st.caret)), value.size());
         value.insert(at, utf8);
         st.caret = static_cast<int>(at + std::strlen(utf8));
@@ -2321,6 +2383,67 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     e.text[copy] = '\0';
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(e);
+}
+
+int weva_document_select_all(weva_document_t doc) {
+    if (!doc) return 0;
+    InteractionState& st = doc->styles.state;
+    if (!st.focused || !is_text_field(*st.focused)) return 0;
+    st.anchor = 0;
+    st.caret = static_cast<int>(field_value(*st.focused).size());
+    st.caret_age = 0;
+    doc->caret_follow = true;
+    doc->pending = worst(doc->pending, Invalidation::Paint);
+    return 1;
+}
+
+size_t weva_document_selected_text(weva_document_t doc, char* buffer, size_t capacity) {
+    if (!doc) return 0;
+    const InteractionState& st = doc->styles.state;
+    if (!st.focused || !is_text_field(*st.focused)) return 0;
+    const std::string value = field_value(*st.focused);
+    const Selection sel = selection_of(st, value.size());
+    if (sel.empty()) return 0;
+    const std::string text = value.substr(static_cast<size_t>(sel.from),
+                                          static_cast<size_t>(sel.to - sel.from));
+    if (buffer && capacity > 0) {
+        const size_t n = text.size() < capacity - 1 ? text.size() : capacity - 1;
+        if (n > 0) std::memcpy(buffer, text.data(), n);
+        buffer[n] = '\0';
+    }
+    return text.size();
+}
+
+weva_status weva_element_selection(weva_document_t doc, weva_element_t element, int* out_start,
+                                   int* out_end) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    const Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    const InteractionState& st = doc->styles.state;
+    // Only the focused field has one: the cursor and its anchor belong to
+    // whatever is being typed into, not to every field on the page.
+    const bool mine = st.focused == e;
+    const int caret = mine ? st.caret : 0;
+    if (out_start) *out_start = mine && st.anchor >= 0 ? st.anchor : caret;
+    if (out_end) *out_end = caret;
+    return WEVA_OK;
+}
+
+weva_status weva_element_set_selection(weva_document_t doc, weva_element_t element, int start,
+                                       int end) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    if (!is_text_field(*e)) return WEVA_ERR_INVALID_ARGUMENT;
+    InteractionState& st = doc->styles.state;
+    if (st.focused != e) weva_document_set_focus(doc, element);
+    const int length = static_cast<int>(field_value(*e).size());
+    st.caret = std::clamp(end, 0, length);
+    st.anchor = start == end ? -1 : std::clamp(start, 0, length);
+    st.caret_age = 0;
+    doc->caret_follow = true;
+    doc->pending = worst(doc->pending, Invalidation::Paint);
+    return WEVA_OK;
 }
 
 size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buffer,
@@ -2395,6 +2518,7 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     // A field you have just focused puts the cursor after what it holds, which
     // is where a user expects to carry on typing.
     st.caret = target ? static_cast<int>(field_value(*target).size()) : 0;
+    st.anchor = -1;
     st.caret_age = 0;
     doc->caret_follow = target != nullptr;
     const Element* previous = st.focused;

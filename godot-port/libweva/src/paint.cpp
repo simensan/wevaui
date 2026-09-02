@@ -1560,9 +1560,36 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
                    static_cast<int>(std::ceil(ct + ch)) - static_cast<int>(std::floor(ct))};
         if (state.scissor) clip = intersect(*state.scissor, clip);
         paint.backend->set_scissor(&clip);
+        // The selection band, behind the glyphs. An <input> draws its own text,
+        // so the range indexes it directly -- there are no runs to map through.
+        const double spacing = letter_spacing_of(b.style, ctx, fs);
+        if (!t.placeholder && paint.caret.element == &e &&
+            paint.caret.selection_to > paint.caret.selection_from) {
+            const size_t from = std::min(paint.caret.selection_from, t.text.size());
+            const size_t to = std::min(paint.caret.selection_to, t.text.size());
+            if (to > from) {
+                Mesh before;
+                build_text_geometry(t.text.substr(0, from), 0, 0, fs, color, paint, &before,
+                                    spacing, &face);
+                Mesh through;
+                build_text_geometry(t.text.substr(0, to), 0, 0, fs, color, paint, &through, spacing,
+                                    &face);
+                double start = 0, end = 0;
+                for (const Vertex& v : before.vertices) start = std::max<double>(start, v.position.x);
+                for (const Vertex& v : through.vertices) end = std::max<double>(end, v.position.x);
+                if (from == 0) start = 0;
+                if (end > start) {
+                    const double top = t.centered ? ct + std::max(0.0, (ch - line_h) * 0.5) : ct;
+                    Mesh band;
+                    tessellate_rect(Rect(cl + start, top, end - start, std::min(ch, line_h)),
+                                    LinearColor::from_srgb(51, 144, 255, 0.45f), &band, false);
+                    draw_mesh(band, paint.backend, {}, state.opacity, xf, state.clip.get(),
+                              state.filter.get());
+                }
+            }
+        }
         Mesh text;
-        build_text_geometry(t.text, cl, baseline, fs, color, paint, &text,
-                            letter_spacing_of(b.style, ctx, fs), &face);
+        build_text_geometry(t.text, cl, baseline, fs, color, paint, &text, spacing, &face);
         draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
 
         // The caret, at the character the cursor sits before. Its x is the
@@ -1838,6 +1865,40 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
     return true;
 }
 
+// How wide `text` is when laid out the way `run` was. Used for both ends of a
+// selection band and for where the cursor sits: measuring rather than guessing
+// keeps the band on the glyphs at any letter-spacing.
+double measured_width(std::string_view text, const Box& run, const LinearColor& color,
+                      const PaintContext& paint, const FaceHandle& face, double spacing) {
+    if (text.empty()) return 0;
+    Mesh measure;
+    build_text_geometry(text, 0, 0, run.font_size, color, paint, &measure, spacing, &face);
+    double advance = 0;
+    for (const Vertex& v : measure.vertices) advance = std::max<double>(advance, v.position.x);
+    return advance;
+}
+
+// The band behind the selected part of one run. `from`/`to` are byte offsets
+// into the run's own text, already clipped to it.
+void paint_selection_band(const Box& b, double x, double y, size_t from, size_t to,
+                          const LinearColor& text_color, const PaintContext& paint,
+                          const FaceHandle& face, double spacing, RenderInterface* backend,
+                          double opacity, const Transform2D* xf, const ClipNode* clip,
+                          const ColorFilter* filter) {
+    if (from >= to || to > b.text.size()) return;
+    const double start = measured_width(b.text.substr(0, from), b, text_color, paint, face, spacing);
+    const double end = measured_width(b.text.substr(0, to), b, text_color, paint, face, spacing);
+    if (end <= start) return;
+    // A blue a browser would recognise, at an alpha that leaves the glyphs
+    // readable: the band goes BEHIND them, and the engine has no ::selection to
+    // ask for a colour yet.
+    const LinearColor band = LinearColor::from_srgb(51, 144, 255, 0.45f);
+    Mesh mesh;
+    tessellate_rect(Rect(x + start, y, end - start, b.height > 0 ? b.height : b.font_size), band,
+                    &mesh, false);
+    draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
+}
+
 // The element a box belongs to: itself if it has one, otherwise the nearest
 // ancestor that does. A text run has none of its own.
 const Element* owner_element(const BoxTree& tree, BoxId id) {
@@ -2088,6 +2149,31 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     if (decorated && !hidden && paint.backend && is_form_control(b) && b.width > 0 &&
         b.height > 0) {
         paint_form_control(b, ctx, x, y, fs, paint, atlas_texture, state, xf);
+    }
+
+    // The selection band, behind the glyphs of this run. Each run views into
+    // the value's own buffer, so the difference of the pointers says which
+    // slice of the value it holds, and the part of that slice inside the
+    // selected range is the part to paint.
+    if (b.kind == BoxKind::Text && !b.text.empty() && !hidden && paint.font && paint.atlas &&
+        paint.caret.selection_to > paint.caret.selection_from && !paint.caret.source.empty()) {
+        const char* base = paint.caret.source.data();
+        const char* run = b.text.data();
+        if (run >= base && run + b.text.size() <= base + paint.caret.source.size() &&
+            owner_element(tree, id) == paint.caret.element) {
+            const size_t off = static_cast<size_t>(run - base);
+            const size_t from = paint.caret.selection_from > off ? paint.caret.selection_from - off
+                                                                 : 0;
+            const size_t to = paint.caret.selection_to > off
+                                  ? std::min(paint.caret.selection_to - off, b.text.size())
+                                  : 0;
+            paint_selection_band(b, x, y, from, to, resolve_color(b.style, "color"), paint,
+                                 face_for_run(b, paint),
+                                 letter_spacing_of(b.style, ctx, b.font_size) +
+                                     b.justify_letter_spacing,
+                                 paint.backend, state.opacity, xf, state.clip.get(),
+                                 state.filter.get());
+        }
     }
 
     // A text run's own y is its top; the baseline is where the glyphs sit, and

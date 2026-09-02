@@ -88,6 +88,14 @@ struct CaretState {
     // runs meet.
     BoxId run = kNoBox;
     size_t run_offset = 0;   // characters of `run` before the cursor
+
+    // The selected range, in bytes into the field's value, low end first --
+    // empty when there is only a cursor. Drawn as a band behind the glyphs,
+    // which is why paint needs the value the runs view into: each run covers a
+    // slice of it, and the part of that slice inside the range is the part to
+    // highlight.
+    size_t selection_from = 0, selection_to = 0;
+    std::string_view source;
 };
 
 struct PaintContext {

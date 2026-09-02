@@ -403,6 +403,36 @@ weva_element_t weva_document_focus_next(weva_document_t doc, int backwards);
  * decide -- the document has no notion of tab order yet. */
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element);
 
+/* ---- Selection --------------------------------------------------------
+ *
+ * Shift with any of the movement keys extends a selection from where the
+ * cursor was; an unshifted move drops it. Typing, Backspace and Delete replace
+ * what is selected. These are the parts a host cannot do for itself, plus the
+ * two a host DOES have to drive: select-all, because the ABI's key enum has no
+ * letters and so cannot see Ctrl+A, and reading the selected text, because the
+ * clipboard belongs to the platform and not to the document.
+ */
+
+/* Selects everything in the focused field. Returns 0 when nothing is focused
+ * or what is focused takes no text. */
+int weva_document_select_all(weva_document_t doc);
+
+/* The selected text of the focused field, for a host putting it on the
+ * clipboard. Follows the two-call pattern: returns the length, and fills
+ * `buffer` when there is one. Zero when nothing is selected. */
+size_t weva_document_selected_text(weva_document_t doc, char* buffer, size_t capacity);
+
+/* Where the selection is, in BYTES into the field's value, with `start` the
+ * end the user began from -- so a backwards selection reports start > end.
+ * Both equal when there is only a cursor. */
+weva_status weva_element_selection(weva_document_t doc, weva_element_t element, int* out_start,
+                                   int* out_end);
+
+/* Sets it, for a host driving its own selection UI. `start` is the end that
+ * stays put; passing the two equal leaves a plain cursor. */
+weva_status weva_element_set_selection(weva_document_t doc, weva_element_t element, int start,
+                                       int end);
+
 /* ---- Building the document from data ----------------------------------
  *
  * Setting text and attributes lets a host update a document; these let it

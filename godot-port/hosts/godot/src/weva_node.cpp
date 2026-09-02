@@ -233,6 +233,12 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("send_key", "keycode", "pressed", "shift", "ctrl"),
                          &WevaDocument::send_key, DEFVAL(true), DEFVAL(false), DEFVAL(false));
     ClassDB::bind_method(D_METHOD("send_text", "text"), &WevaDocument::send_text);
+    ClassDB::bind_method(D_METHOD("select_all"), &WevaDocument::select_all);
+    ClassDB::bind_method(D_METHOD("get_selected_text"), &WevaDocument::get_selected_text);
+    ClassDB::bind_method(D_METHOD("set_element_selection", "selector", "start", "end"),
+                         &WevaDocument::set_element_selection);
+    ClassDB::bind_method(D_METHOD("get_element_selection", "selector"),
+                         &WevaDocument::get_element_selection);
 
     // The element is named by its `id`, because that is the handle a script
     // and a stylesheet already share. An element with no id reports an empty
@@ -568,6 +574,55 @@ void WevaDocument::send_text(const String& text) {
     dirty_ = true;
     queue_redraw();
     pump_events();
+}
+
+// ---- Selection -----------------------------------------------------------
+//
+// Shift with the movement keys selects, and typing replaces what is selected;
+// those the document does by itself. These are the two it cannot: select-all,
+// because the ABI's key enum has no letters and so never sees Ctrl+A, and
+// reading the selected text, because the clipboard belongs to the platform.
+
+bool WevaDocument::select_all() {
+    if (!doc_) return false;
+    ensure_updated();
+    if (!weva_document_select_all(doc_)) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+String WevaDocument::get_selected_text() {
+    if (!doc_) return String();
+    ensure_updated();
+    const size_t n = weva_document_selected_text(doc_, nullptr, 0);
+    if (n == 0) return String();
+    std::vector<char> buffer(n + 1, 0);
+    weva_document_selected_text(doc_, buffer.data(), buffer.size());
+    return String::utf8(buffer.data());
+}
+
+bool WevaDocument::set_element_selection(const String& selector, int start, int end) {
+    if (!doc_) return false;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (weva_element_set_selection(doc_, e, start, end) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+Vector2i WevaDocument::get_element_selection(const String& selector) {
+    if (!doc_) return Vector2i();
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return Vector2i();
+    int start = 0, end = 0;
+    if (weva_element_selection(doc_, e, &start, &end) != WEVA_OK) return Vector2i();
+    return Vector2i(start, end);
 }
 
 bool WevaDocument::set_element_html(const String& selector, const String& html) {
