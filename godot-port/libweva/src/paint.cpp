@@ -1426,8 +1426,18 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             effect.color.alpha = cf.alpha;
         }
         if (effect.blur_radius > 0 || !effect.color.is_identity()) {
+            // The shape is emitted TRANSPARENT on purpose. It is a region, not
+            // something to paint, and a host that does not know this draw kind
+            // will hand it to its rasterizer like any other: transparent, that
+            // draws nothing, which is the degradation the interface promises.
+            // Opaque, it painted 20 white rectangles over glass.
+            //
+            // Tessellated opaque and cleared afterwards, because the
+            // tessellator declines to build a mesh for an invisible fill —
+            // which is right for a fill and would leave this with no shape.
             Mesh shape;
             tessellate_rounded_rect(border_box, radii, LinearColor::white(), &shape);
+            for (Vertex& v : shape.vertices) v.color = LinearColor::transparent();
             filter_backdrop(shape, paint.backend, effect, xf, state.clip.get());
         }
     }

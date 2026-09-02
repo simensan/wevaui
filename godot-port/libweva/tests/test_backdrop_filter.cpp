@@ -295,14 +295,16 @@ void test_backdrop_filter_reaches_the_backend() {
         paint_tree(f.tree, f.root, f.ctx, &spy);
 
         CHECK(spy.calls.size() == 1);
-        // A CSS radius, not a sigma.
-        CHECK(std::fabs(spy.calls[0].effect.blur_radius - 10.0) < 1e-6);
-        CHECK(std::fabs(spy.calls[0].effect.color.m[0][0] - 2.0f) < 1e-6);
-        CHECK(!spy.calls[0].effect.color.is_identity());
-        // The shape is the border box, in absolute coordinates.
-        const Rect r = bounds_of(spy.calls[0].vertices);
-        CHECK(std::fabs(r.x - 40) < 0.5 && std::fabs(r.y - 20) < 0.5);
-        CHECK(std::fabs(r.width - 80) < 0.5 && std::fabs(r.height - 60) < 0.5);
+        if (spy.calls.size() == 1) {
+            // A CSS radius, not a sigma.
+            CHECK(std::fabs(spy.calls[0].effect.blur_radius - 10.0) < 1e-6);
+            CHECK(std::fabs(spy.calls[0].effect.color.m[0][0] - 2.0f) < 1e-6);
+            CHECK(!spy.calls[0].effect.color.is_identity());
+            // The shape is the border box, in absolute coordinates.
+            const Rect r = bounds_of(spy.calls[0].vertices);
+            CHECK(std::fabs(r.x - 40) < 0.5 && std::fabs(r.y - 20) < 0.5);
+            CHECK(std::fabs(r.width - 80) < 0.5 && std::fabs(r.height - 60) < 0.5);
+        }
     }
     {
         // `none` is the initial value and must not cost a call. The box is
@@ -346,6 +348,28 @@ void test_backdrop_filter_reaches_the_backend() {
         paint_tree(f.tree, f.root, f.ctx, &spy);
         CHECK(spy.calls.size() == 1);
         CHECK(spy.geometry_draws > 0);
+    }
+    {
+        // The shape must be TRANSPARENT. It is a region, and a host that does
+        // not branch on the draw kind will hand it to its rasterizer like any
+        // other geometry — where transparent paints nothing, which is the
+        // degradation the interface promises.
+        //
+        // This is not hypothetical. With an opaque shape the Godot host, which
+        // does not implement the operation yet, painted twenty white
+        // rectangles over the glass sample and 53.7% of the page differed.
+        BackdropSpy spy;
+        Fixture f;
+        CHECK(f.css(std::string(kPage) +
+                    "#g { position: absolute; left: 40px; top: 20px; width: 80px; height: 60px;"
+                    "     backdrop-filter: blur(10px) }"));
+        CHECK(f.layout("<body><div id=g></div></body>", 200, 120));
+        paint_tree(f.tree, f.root, f.ctx, &spy);
+        CHECK(spy.calls.size() == 1);
+        if (spy.calls.size() == 1) {
+            CHECK(!spy.calls[0].vertices.empty());
+            for (const Vertex& v : spy.calls[0].vertices) CHECK(v.color.a == 0.0f);
+        }
     }
 }
 

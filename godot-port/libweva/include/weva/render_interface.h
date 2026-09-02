@@ -125,8 +125,10 @@ public:
     //
     // The where is a mesh in absolute coordinates, transformed and clipped by
     // the core exactly like the mesh of any other draw, so a backend confines
-    // the effect to it the same way it fills it. The coverage is the shape's
-    // vertex alpha, which carries the rounded corners.
+    // the effect to it the same way it fills it — rounded corners included,
+    // since they are in the tessellation. It is a REGION, not something to
+    // paint, and its vertices are transparent so that a backend which routes
+    // it to its rasterizer by mistake draws nothing.
     //
     // A backend that does not implement this leaves the backdrop alone: the
     // element then renders without its material rather than not at all, which

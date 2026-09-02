@@ -138,19 +138,21 @@ void SoftwareRenderer::blend(int x, int y, const LinearColor& src) {
         }
     }
     if (coverage_) {
-        // Coverage pass: the same walk, the same fill rule and the same scissor,
-        // recording where the shape lands instead of painting it. Taking the
-        // max rather than accumulating matters because the core's meshes share
-        // edges — a fan and a ring are both built from them — and a seam pixel
-        // claimed by two triangles must not read as twice covered.
+        // Coverage pass: the same walk, the same fill rule and the same
+        // scissor, recording WHERE the shape lands instead of painting it.
+        //
+        // Geometric, not the vertex alpha — the shape of a backdrop-filter is
+        // a region rather than a colour, and it is emitted transparent so that
+        // a host which does not recognise the draw kind renders nothing
+        // instead of a filled rectangle.
         if (x < coverage_rect_.x || y < coverage_rect_.y ||
             x >= coverage_rect_.x + coverage_rect_.width ||
             y >= coverage_rect_.y + coverage_rect_.height) {
             return;
         }
-        float& c = (*coverage_)[static_cast<size_t>(y - coverage_rect_.y) * coverage_rect_.width +
-                                (x - coverage_rect_.x)];
-        c = std::max(c, std::min(1.0f, src.a));
+        (void)src;
+        (*coverage_)[static_cast<size_t>(y - coverage_rect_.y) * coverage_rect_.width +
+                     (x - coverage_rect_.x)] = 1.0f;
         return;
     }
     LinearColor& dst = pixels_[static_cast<size_t>(y) * width_ + x];

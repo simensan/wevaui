@@ -102,8 +102,11 @@ typedef struct weva_draw {
     /* Set when this draw is clipped; all four are zero otherwise. */
     int32_t scissor_x, scissor_y, scissor_width, scissor_height;
     int32_t has_scissor;
-    /* One of weva_draw_kind. Zero, so a host reading an older layout of this
-     * struct sees every draw as ordinary geometry. */
+    /* One of weva_draw_kind. A host SHOULD branch on it; one that does not is
+     * safe anyway, because a non-geometry draw carries a transparent shape and
+     * uploading it paints nothing. (It is worth saying because getting this
+     * wrong is not subtle: with an opaque shape, a host that ignored the field
+     * painted twenty white rectangles over the glass sample.) */
     int32_t kind;
     /* Only meaningful when kind is WEVA_DRAW_BACKDROP_FILTER. */
     weva_backdrop_effect backdrop;
