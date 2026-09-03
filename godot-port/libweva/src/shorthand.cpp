@@ -457,6 +457,54 @@ bool expand_shorthand(std::string_view name, std::string_view value,
     }
     if (name == "border-radius") return expand_border_radius(t, out);
 
+    // CSS Text Decoration L4 §2.5: `text-decoration` is
+    // `<line> || <style> || <color>`, and the line part is itself a
+    // space-separated set. `text-decoration: underline dotted red` is the
+    // natural way to write one, and without this expansion only the LINE
+    // arrived -- the style and the colour were dropped, so every rule came out
+    // solid and in the text's own colour.
+    if (name == "text-decoration") {
+        if (t.empty()) return true;
+        const auto is_line = [](std::string_view v) {
+            return iequals(v, "none") || iequals(v, "underline") || iequals(v, "overline") ||
+                   iequals(v, "line-through") || iequals(v, "blink");
+        };
+        const auto is_style = [](std::string_view v) {
+            return iequals(v, "solid") || iequals(v, "double") || iequals(v, "dotted") ||
+                   iequals(v, "dashed") || iequals(v, "wavy");
+        };
+        std::string line;
+        std::string_view style = "solid";
+        std::string_view color = "currentcolor";
+        bool has_line = false, has_style = false, has_color = false;
+        for (std::string_view v : t) {
+            if (is_line(v)) {
+                // `none` cannot join a set: it is the absence of one.
+                if (iequals(v, "none") ? has_line : (line == "none")) return true;
+                if (!line.empty()) line += ' ';
+                line += std::string(v);
+                has_line = true;
+                continue;
+            }
+            if (!has_style && is_style(v)) {
+                style = v;
+                has_style = true;
+                continue;
+            }
+            if (!has_color && is_color_token(v)) {
+                color = v;
+                has_color = true;
+                continue;
+            }
+            // A token belonging to none of the three drops the declaration.
+            return true;
+        }
+        emit(out, "text-decoration-line", has_line ? std::string_view(line) : "none");
+        emit(out, "text-decoration-style", style);
+        emit(out, "text-decoration-color", color);
+        return true;
+    }
+
     // CSS Flexbox L1 §5.1: `flex-flow` is `flex-direction || flex-wrap`, in
     // either order and either alone. Unexpanded, `flex-flow: column wrap` set
     // neither -- a column layout came out a row, which is not a subtle wrong.

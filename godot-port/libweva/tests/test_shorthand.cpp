@@ -244,3 +244,41 @@ void test_shorthand_flex_flow() {
     // And two of the same kind is not a valid pair either.
     CHECK_EQ(expand("flex-flow", "row column"), "<none>");
 }
+
+// CSS Text Decoration L4 2.5. `text-decoration: underline dotted red` is the
+// natural way to write one, and without this expansion only the LINE arrived:
+// every rule came out solid and in the text's own colour.
+void test_shorthand_text_decoration() {
+    // The three parts, in any order.
+    CHECK_EQ(expand("text-decoration", "underline dotted red"),
+             "text-decoration-line=underline;text-decoration-style=dotted;"
+             "text-decoration-color=red");
+    CHECK_EQ(expand("text-decoration", "red dotted underline"),
+             "text-decoration-line=underline;text-decoration-style=dotted;"
+             "text-decoration-color=red");
+
+    // The parts left out take their initial values, which is what makes a
+    // bare `text-decoration: underline` mean solid and currentcolor.
+    CHECK_EQ(expand("text-decoration", "underline"),
+             "text-decoration-line=underline;text-decoration-style=solid;"
+             "text-decoration-color=currentcolor");
+
+    // The line part is itself a SET: two lines at once is one declaration.
+    CHECK_EQ(expand("text-decoration", "underline overline"),
+             "text-decoration-line=underline overline;text-decoration-style=solid;"
+             "text-decoration-color=currentcolor");
+
+    // `none` cannot join that set -- it is the absence of one -- so it is
+    // valid alone and invalid beside another line.
+    CHECK_EQ(expand("text-decoration", "none"),
+             "text-decoration-line=none;text-decoration-style=solid;"
+             "text-decoration-color=currentcolor");
+    CHECK_EQ(expand("text-decoration", "none underline"), "<none>");
+    CHECK_EQ(expand("text-decoration", "underline none"), "<none>");
+
+    // A token belonging to none of the three drops the declaration rather
+    // than setting part of it.
+    CHECK_EQ(expand("text-decoration", "underline 4px"), "<none>");
+    // And a second of the same kind is not a valid pair.
+    CHECK_EQ(expand("text-decoration", "dotted dashed"), "<none>");
+}

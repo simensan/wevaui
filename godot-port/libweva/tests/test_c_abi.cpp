@@ -807,3 +807,48 @@ void test_abi_text_decoration_styles() {
     CHECK(rules_of("text-decoration-style: wavy").size() == dashed.size());
     weva_document_destroy(d);
 }
+
+// The shorthand has to reach PAINT, not just the expander: three longhands
+// produced correctly and then read from the wrong place is the same bug from
+// the author's side.
+void test_abi_text_decoration_shorthand_paints() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0; background: #fff }"
+                      " div { display: block; font-size: 20px; color: #000; width: 300px }";
+    weva_document_add_css(d, css, std::strlen(css));
+
+    const auto red_rules = [&](const char* decoration) {
+        const std::string html =
+            std::string("<div style='text-decoration: ") + decoration + "'>a word or two</div>";
+        weva_document_load_html(d, html.c_str(), html.size());
+        weva_document_update(d, 0);
+        std::vector<SolidRect> rules;
+        for (const SolidRect& r : solid_rects(d)) {
+            if (r.r > 0.5f && r.g < 0.1f && r.b < 0.1f) rules.push_back(r);
+        }
+        return rules;
+    };
+
+    // One declaration carrying all three: the line appears, in red, broken
+    // into dots. Every part of that comes from the shorthand alone.
+    const std::vector<SolidRect> dotted = red_rules("underline dotted red");
+    CHECK(!dotted.empty());
+
+    const std::vector<SolidRect> solid = red_rules("underline red");
+    CHECK(!solid.empty());
+    // Dotted lays down less ink than solid over the same run, which is what
+    // says the STYLE arrived and not just the line and the colour.
+    double dotted_ink = 0, solid_ink = 0;
+    for (const SolidRect& r : dotted) dotted_ink += r.w;
+    for (const SolidRect& r : solid) solid_ink += r.w;
+    CHECK(dotted_ink < solid_ink);
+
+    // And with no colour in the shorthand the rule is NOT red: it takes the
+    // text's colour, so the red filter finds nothing.
+    CHECK(red_rules("underline dotted").empty());
+    weva_document_destroy(d);
+}
