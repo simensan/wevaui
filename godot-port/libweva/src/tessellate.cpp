@@ -596,6 +596,23 @@ void PreparedClip::prepare() {
     }
 }
 
+// Where the time actually goes here, sampled on layout-stress at 1 kHz with
+// the update dominated by a repaint (2026-09-03), so the next person does not
+// have to rediscover it:
+//
+//   ~28%  copying the emitted triangles out -- the per-triangle inserts, NOT
+//         reallocation. Recycling the output buffers across calls (a
+//         thread_local scratch, swapped rather than moved) changed nothing
+//         measurable: 9.75 ms against 9.66. Reverted.
+//   ~45%  the cutting itself: clip_edge's two half-plane tests and lerp_vertex.
+//   rest  the per-triangle bounds and the piece walk.
+//
+// Cutting a straddling triangle against the clip polygon's EDGES rather than
+// its triangulated pieces is faster still -- 8.6 ms against 9.7, since a
+// rounded rectangle is convex -- but it moves pixels: eight corpus samples
+// changed, one by 6,324 of them. Thirty-two sequential clips do not accumulate
+// the same interpolation error as three, so it is not the same picture. If it
+// is ever wanted, it needs the error accounted for, not just the speed.
 void clip_triangles_polygon(const std::vector<Vertex>& vertices,
                             const std::vector<uint32_t>& indices, const PreparedClip& clip,
                             Mesh* out) {
