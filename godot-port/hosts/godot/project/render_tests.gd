@@ -58,6 +58,7 @@ func _ready() -> void:
 	_test_cjk_text()
 	_test_details_disclosure()
 	_test_modal_dialog()
+	_test_popovers()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -1035,4 +1036,65 @@ func _test_modal_dialog() -> void:
 
 	# Only a <dialog> takes these.
 	_check(not doc.show_modal_dialog("#page"), "a plain div is not a dialog")
+	doc.queue_free()
+
+
+func _test_popovers() -> void:
+	# A `<button popovertarget="menu">` works its popover with no script at
+	# all -- the port recognised `data-popover-open` for the backdrop and had
+	# nothing that ever set it.
+	var doc := _make_doc(
+		"<body><button id='b' popovertarget='menu'>Open</button>" +
+		"<div id='menu' popover><span id='item'>Item</span></div>" +
+		"<div id='page'>Page</div></body>",
+		"html, body { margin: 0 } button { display: block; width: 100px; height: 30px }" +
+		" #page { height: 200px }" +
+		# Positioned, so "inside" and "outside" are unambiguous: an
+		# unpositioned fixed popover sits on top of the page div it is
+		# supposed to be tested against.
+		" [popover] { top: 100px; left: 150px; width: 120px; height: 60px }")
+	_check(not doc.has_element_attribute("#menu", "data-popover-open"), "starts closed")
+
+	var box := doc.query_bounds("#b")
+	var at := box.position + box.size * 0.5
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(doc.has_element_attribute("#menu", "data-popover-open"),
+		"the trigger button opens it, with no script")
+
+	# A click inside it leaves it open: choosing from a menu must not dismiss
+	# the menu before the choice lands.
+	box = doc.query_bounds("#item")
+	at = box.position + box.size * 0.5
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(doc.has_element_attribute("#menu", "data-popover-open"), "a click inside keeps it")
+
+	# One outside closes it. This is also the regression guard for the
+	# backdrop: it fills the viewport, and until it was made click-through
+	# every click anywhere landed on <body> instead of what was under it.
+	# The page's top-left, which is inside the page and clear of the popover
+	# at (150, 100). Its BOTTOM is below the 400x200 test viewport, and a click
+	# that lands on nothing is not a click at all -- no hit, no dismiss.
+	box = doc.query_bounds("#page")
+	at = box.position + Vector2(10, 10)
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(not doc.has_element_attribute("#menu", "data-popover-open"), "a click outside closes it")
+
+	# Escape closes it too.
+	_check(doc.show_popover("#menu"), "a script can open one")
+	doc.update_document()
+	doc.send_key(KEY_ESCAPE)
+	doc.update_document()
+	_check(not doc.has_element_attribute("#menu", "data-popover-open"), "Escape closes it")
+
+	# And an open popover is a top-layer host, so it dims like a modal dialog.
+	var plain := doc.get_triangle_count()
+	_check(doc.toggle_popover("#menu"), "toggle opens it")
+	doc.update_document()
+	_check(doc.get_triangle_count() > plain, "an open popover draws its backdrop")
 	doc.queue_free()

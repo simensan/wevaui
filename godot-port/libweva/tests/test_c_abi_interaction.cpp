@@ -347,3 +347,65 @@ void test_abi_hit_testing_through_padding() {
         CHECK(weva_document_element_at(row.d, x + w / 2, y + h / 2) == e);
     }
 }
+
+// What you click must be what is drawn on top. Paint follows CSS 2.1 Appendix
+// E -- in-flow children first, positioned ones over them -- and hit testing
+// used to walk the child list backwards instead, so the two disagreed for
+// every positioned element declared BEFORE an in-flow sibling it overlaps.
+//
+// Found through a popover: a `position: fixed` menu drawn over a later <div>
+// could not be clicked anywhere the two overlapped. Every click went to the
+// div underneath, which also made light-dismiss fire on clicks inside the menu.
+void test_abi_hit_follows_paint_order() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css =
+        "html, body { margin: 0 }"
+        // Declared FIRST, drawn LAST, because it is positioned.
+        " #over { position: absolute; top: 20px; left: 20px; width: 100px; height: 100px }"
+        " #under { height: 200px }";
+    const char* html = "<div id=over></div><div id=under></div>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    const auto at = [&](double x, double y) {
+        weva_document_set_pointer(d, x, y, 0);
+        weva_document_set_pointer(d, x, y, 1);
+        weva_document_set_pointer(d, x, y, 0);
+        weva_document_update(d, 0);
+        std::string id;
+        weva_event e{};
+        while (weva_document_poll_event(d, &e)) {
+            if (e.kind != WEVA_EVENT_CLICK) continue;
+            char buf[64] = {0};
+            weva_element_attribute(d, e.target, "id", buf, sizeof(buf));
+            id = buf;
+        }
+        return id;
+    };
+
+    // Over the overlap: the positioned one, because that is what is drawn.
+    CHECK(at(70, 70) == "over");
+    // Outside it: the in-flow one.
+    CHECK(at(200, 70) == "under");
+    // Below it, still inside the in-flow box.
+    CHECK(at(70, 180) == "under");
+
+    // z-index orders positioned siblings against each other, and hit testing
+    // has to follow that too.
+    const char* more = "#a { position: absolute; top: 0; left: 0; width: 100px; height: 100px;"
+                       " z-index: 5 } #b { position: absolute; top: 0; left: 0; width: 100px;"
+                       " height: 100px; z-index: 1 }";
+    weva_document_add_css(d, more, std::strlen(more));
+    const char* two = "<div id=a></div><div id=b></div>";
+    weva_document_load_html(d, two, std::strlen(two));
+    weva_document_update(d, 0);
+    // `a` is declared first but has the higher z-index, so it is on top --
+    // reverse tree order would have answered `b`.
+    CHECK(at(50, 50) == "a");
+    weva_document_destroy(d);
+}

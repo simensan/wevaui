@@ -1140,6 +1140,12 @@ struct weva_document {
     };
     static constexpr size_t kUndoDepth = 100;
     std::unordered_map<const Element*, EditHistory> history;
+    // The open popovers, innermost last. A stack rather than a flag because
+    // popovers nest -- a menu opens a submenu -- and Escape closes one per
+    // press rather than all of them. The open state itself lives in the
+    // `data-popover-open` attribute, so a stylesheet can select on it and a
+    // script can read it; this only remembers the ORDER.
+    std::vector<const Element*> popovers;
     // Where `{{ path }}` gets its values, and the attribute templates the
     // substitution would otherwise have eaten.
     weva_binding_source binding_source{};
@@ -1436,6 +1442,74 @@ BoxId box_of(const weva_document* doc, const Element* e) {
         if (doc->tree[i].element == e) return i;
     }
     return kNoBox;
+}
+
+// The element with this id. `popovertarget` names its popover by id, the way
+// `for` names a label's control, so this is the lookup that turns one into the
+// other.
+Element* element_by_id(weva_document* doc, const std::string& id) {
+    if (id.empty()) return nullptr;
+    for (Element* e : doc->elements) {
+        if (e && e->get_attribute("id") == id) return e;
+    }
+    return nullptr;
+}
+
+// A popover is `auto` unless it says `manual`. The difference is what closes
+// it: an auto one goes away when you click elsewhere or press Escape, a manual
+// one only when something asks.
+bool popover_is_auto(const Element& e) {
+    return e.get_attribute("popover") != "manual";
+}
+
+// Opening and closing, which is only ever these three lines plus the stack.
+void popover_show(weva_document* doc, Element& e) {
+    if (!e.has_attribute("popover") || e.has_attribute("data-popover-open")) return;
+    e.set_attribute("data-popover-open", "");
+    doc->popovers.push_back(&e);
+    // It joins the top layer, so a ::backdrop box appears: boxes, not paint.
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    doc->queue_event(WEVA_EVENT_TOGGLE, &e, 0, 0, 0);
+}
+
+void popover_hide(weva_document* doc, Element& e) {
+    if (!e.has_attribute("data-popover-open")) return;
+    e.remove_attribute("data-popover-open");
+    doc->popovers.erase(std::remove(doc->popovers.begin(), doc->popovers.end(), &e),
+                        doc->popovers.end());
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    doc->queue_event(WEVA_EVENT_TOGGLE, &e, 0, 0, 0);
+}
+
+// Escape closes ONE, the topmost auto one -- so a submenu closes before the
+// menu it opened from, and a manual popover in between is stepped over rather
+// than closed.
+bool popover_hide_top_auto(weva_document* doc) {
+    for (size_t i = doc->popovers.size(); i-- > 0;) {
+        Element& e = const_cast<Element&>(*doc->popovers[i]);
+        if (!popover_is_auto(e)) continue;
+        popover_hide(doc, e);
+        return true;
+    }
+    return false;
+}
+
+// The nearest ancestor (or self) carrying `popovertarget`, so a click on the
+// label or the icon inside a trigger button still counts as the trigger.
+const Element* popover_trigger_at(const Element* target) {
+    for (const Node* n = target; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        const Element& e = static_cast<const Element&>(*n);
+        if (e.has_attribute("popovertarget")) return &e;
+    }
+    return nullptr;
+}
+
+bool is_within(const Element* candidate, const Element* ancestor) {
+    for (const Node* n = candidate; n; n = n->parent()) {
+        if (n == ancestor) return true;
+    }
+    return false;
 }
 
 // The <details> a click should toggle: the one whose own <summary> was hit.
@@ -1779,6 +1853,23 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->binding_templates.clear();
     doc->binding_repeats.clear();
     doc->caret_painted = CaretState{};
+    doc->scroll_drag = weva_document::ScrollDrag{};
+    doc->popovers.clear();
+    doc->history.clear();
+    doc->value_at_focus.clear();
+    // The interaction state too, which is what the pointer is OVER and what
+    // has the focus. StyleMap::clear() left it alone, so after a reload the
+    // hover chain still named elements of the replaced document -- and the
+    // next pointer move raised a leave event on one of them, reading a freed
+    // Node's vtable. UBSan caught it the first time a test reloaded HTML into
+    // a live document and then moved the pointer.
+    InteractionState& st = doc->styles.state;
+    st.hover_chain.clear();
+    st.active_chain.clear();
+    st.focused = nullptr;
+    st.caret = 0;
+    st.anchor = -1;
+    st.caret_age = 0;
     return WEVA_OK;
 }
 
@@ -2518,6 +2609,32 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
                     }
                 }
             }
+            // Popovers, before anything else a click might mean.
+            //
+            // Two passes, as the reference has them. First: was this a click
+            // on a `popovertarget` trigger? Then it works that popover and
+            // nothing else. Otherwise: light dismiss -- an open `auto`
+            // popover closes when a click lands outside it, which is what
+            // makes a menu behave like a menu.
+            if (const Element* trigger = popover_trigger_at(hit)) {
+                const std::string target_id(trigger->get_attribute("popovertarget"));
+                if (Element* target = element_by_id(doc, target_id)) {
+                    const std::string_view action =
+                        trigger->get_attribute("popovertargetaction");
+                    if (action == "show") popover_show(doc, *target);
+                    else if (action == "hide") popover_hide(doc, *target);
+                    else if (target->has_attribute("data-popover-open")) {
+                        popover_hide(doc, *target);
+                    } else {
+                        popover_show(doc, *target);
+                    }
+                }
+            } else if (!doc->popovers.empty()) {
+                const Element* top = doc->popovers.back();
+                if (popover_is_auto(*top) && !is_within(hit, top)) {
+                    popover_hide(doc, const_cast<Element&>(*top));
+                }
+            }
             // A click on a <details>'s own <summary> opens or closes it. The
             // UA sheet already hides the body of a closed one and shows an
             // open one's, so toggling the attribute is the whole behaviour --
@@ -2834,6 +2951,12 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
         }
     }
 
+    // Escape closes the topmost auto popover, one per press -- so a submenu
+    // closes before the menu it came from. Checked before the open <select>,
+    // because a popover opened over a dropdown is what the user sees.
+    if (down && key == WEVA_KEY_ESCAPE && !doc->popovers.empty()) {
+        if (popover_hide_top_auto(doc)) return 1;
+    }
     // An open list takes the keys before anything else: the arrows walk it,
     // Enter takes what is highlighted, Escape leaves it as it was.
     if (down && doc->open_select) {
@@ -3470,6 +3593,8 @@ void forget_element(weva_document* doc, const Element* e) {
     doc->binding_templates.erase(e);
     doc->binding_repeats.erase(e);
     doc->history.erase(e);
+    doc->popovers.erase(std::remove(doc->popovers.begin(), doc->popovers.end(), e),
+                        doc->popovers.end());
     const auto drop = [e](std::vector<const Element*>* chain) {
         chain->erase(std::remove(chain->begin(), chain->end(), e), chain->end());
     };
@@ -3642,6 +3767,31 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     // transition mid-flight, and a value bound to a label updating each frame
     // would cancel the animation next to it.
     doc->pending = Invalidation::Boxes;
+    return WEVA_OK;
+}
+
+weva_status weva_element_show_popover(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || !e->has_attribute("popover")) return WEVA_ERR_NOT_FOUND;
+    popover_show(doc, *e);
+    return WEVA_OK;
+}
+
+weva_status weva_element_hide_popover(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || !e->has_attribute("popover")) return WEVA_ERR_NOT_FOUND;
+    popover_hide(doc, *e);
+    return WEVA_OK;
+}
+
+weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || !e->has_attribute("popover")) return WEVA_ERR_NOT_FOUND;
+    if (e->has_attribute("data-popover-open")) popover_hide(doc, *e);
+    else popover_show(doc, *e);
     return WEVA_OK;
 }
 

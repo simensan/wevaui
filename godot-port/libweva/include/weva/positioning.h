@@ -3,6 +3,8 @@
 #include "weva/box.h"
 #include "weva/style_resolver.h"
 
+#include <vector>
+
 namespace weva {
 
 // Ports Runtime/Layout/Positioning — `position: relative | absolute | fixed`.
@@ -86,5 +88,17 @@ void stamp_offsets(BoxTree* tree, BoxId root, const LayoutContext& ctx);
 // out-of-flow box's content once its width is known.
 void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx,
                      BlockLayout* block);
+
+// The order a container's children are PAINTED in, per CSS 2.1 Appendix E:
+// negative z-index stacking contexts, then in-flow children in tree order,
+// then positioned children with z-index auto or 0 in tree order, then positive
+// z ascending, ties by tree order.
+//
+// Shared rather than reimplemented because paint and HIT TESTING have to agree
+// on it. They did not: paint sorted, hit testing walked the child list
+// backwards, so a `position: fixed` popover declared before an in-flow sibling
+// was drawn on top of it and could not be clicked -- every click over it went
+// to the element underneath.
+void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out);
 
 } // namespace weva

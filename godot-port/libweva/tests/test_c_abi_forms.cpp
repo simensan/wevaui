@@ -1817,3 +1817,167 @@ void test_abi_popover_backdrop() {
     weva_document_update(doc.d, 0);
     CHECK(doc.backdrops() == 0);
 }
+
+namespace {
+
+bool open_popover(weva_document_t d, const char* selector) {
+    return weva_element_has_attribute(d, weva_document_query(d, selector),
+                                      "data-popover-open") != 0;
+}
+
+}   // namespace
+
+// A `<button popovertarget=menu>` works its popover with no script at all --
+// which is the point of the attribute. The port recognised `data-popover-open`
+// for the backdrop and had nothing that ever set it.
+void test_abi_popover_trigger() {
+    Doc doc("html, body { margin: 0 } button { display: block; width: 100px; height: 30px }"
+            " [popover] { width: 120px; height: 60px }",
+            "<button id=b popovertarget=menu><span id=lbl>Open</span></button>"
+            "<div id=menu popover>Menu</div>"
+            "<div id=elsewhere>Page</div>");
+    double x = 0, y = 0, w = 0, h = 0;
+    CHECK(!open_popover(doc.d, "#menu"));
+
+    // A click on the trigger opens it -- and a click on the LABEL inside the
+    // trigger counts, since that is what a button's text is.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#lbl"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(open_popover(doc.d, "#menu"));
+
+    // Clicking it again closes it: the default action is toggle.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#b"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(!open_popover(doc.d, "#menu"));
+}
+
+// `popovertargetaction` pins the direction, for a trigger that only ever
+// opens (or only ever closes) rather than flipping.
+void test_abi_popover_target_action() {
+    Doc doc("html, body { margin: 0 } button { display: block; width: 100px; height: 30px }"
+            " [popover] { width: 120px; height: 60px }",
+            "<button id=open popovertarget=menu popovertargetaction=show>Open</button>"
+            "<button id=shut popovertarget=menu popovertargetaction=hide>Close</button>"
+            "<div id=menu popover>Menu</div>");
+    double x = 0, y = 0, w = 0, h = 0;
+    const auto press = [&](const char* sel) {
+        weva_element_bounds(doc.d, weva_document_query(doc.d, sel), &x, &y, &w, &h);
+        doc.click(x + w / 2, y + h / 2);
+        weva_document_update(doc.d, 0);
+    };
+
+    press("#open");
+    CHECK(open_popover(doc.d, "#menu"));
+    press("#open");
+    CHECK(open_popover(doc.d, "#menu"));   // show twice is still open, not closed
+    press("#shut");
+    CHECK(!open_popover(doc.d, "#menu"));
+    press("#shut");
+    CHECK(!open_popover(doc.d, "#menu"));
+}
+
+// The same light-dismiss question, but with the popover opened by its TRIGGER
+// rather than by the ABI -- which is how a user opens one, and a different
+// path through the click handler.
+void test_abi_popover_light_dismiss_after_trigger() {
+    Doc doc("html, body { margin: 0 } button { display: block; width: 100px; height: 30px }"
+            " #page { height: 200px }"
+            " [popover] { top: 100px; left: 150px; width: 120px; height: 60px }",
+            "<button id=b popovertarget=menu>Open</button>"
+            "<div id=menu popover><span id=item>Item</span></div>"
+            "<div id=page>Page</div>");
+    double x = 0, y = 0, w = 0, h = 0;
+    const auto press = [&](const char* sel) {
+        weva_element_bounds(doc.d, weva_document_query(doc.d, sel), &x, &y, &w, &h);
+        doc.click(x + w / 2, y + h / 2);
+        weva_document_update(doc.d, 0);
+    };
+
+    press("#b");
+    CHECK(open_popover(doc.d, "#menu"));
+    press("#item");
+    CHECK(open_popover(doc.d, "#menu"));   // a click inside keeps it
+}
+
+// Light dismiss: the behaviour that makes a menu a menu.
+void test_abi_popover_light_dismiss() {
+    Doc doc("html, body { margin: 0 } #page { height: 200px }"
+            " [popover] { top: 10px; left: 10px; width: 120px; height: 60px }",
+            "<div id=page>Page</div>"
+            "<div id=menu popover><span id=item>Item</span></div>"
+            "<div id=manual popover=manual>Pinned</div>");
+    const weva_element_t menu = weva_document_query(doc.d, "#menu");
+    double x = 0, y = 0, w = 0, h = 0;
+
+    CHECK(weva_element_show_popover(doc.d, menu) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(open_popover(doc.d, "#menu"));
+
+    // A click INSIDE it leaves it open -- choosing from a menu must not
+    // dismiss the menu before the choice lands.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#item"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(open_popover(doc.d, "#menu"));
+
+    // A click outside closes it.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#page"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h - 5);
+    weva_document_update(doc.d, 0);
+    CHECK(!open_popover(doc.d, "#menu"));
+
+    // A `manual` popover ignores all of that: it closes when asked and not
+    // before, which is what a pinned panel needs.
+    const weva_element_t manual = weva_document_query(doc.d, "#manual");
+    CHECK(weva_element_show_popover(doc.d, manual) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#page"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h - 5);
+    weva_document_update(doc.d, 0);
+    CHECK(open_popover(doc.d, "#manual"));
+    CHECK(weva_element_hide_popover(doc.d, manual) == WEVA_OK);
+    CHECK(!open_popover(doc.d, "#manual"));
+}
+
+// Escape closes ONE, and it nests: a submenu goes before the menu it came
+// from, and a manual popover in between is stepped over rather than closed.
+void test_abi_popover_escape_walks_the_stack() {
+    Doc doc("html, body { margin: 0 } [popover] { width: 120px; height: 60px }",
+            "<div id=menu popover>Menu</div>"
+            "<div id=pinned popover=manual>Pinned</div>"
+            "<div id=submenu popover>Submenu</div>");
+    weva_element_show_popover(doc.d, weva_document_query(doc.d, "#menu"));
+    weva_element_show_popover(doc.d, weva_document_query(doc.d, "#pinned"));
+    weva_element_show_popover(doc.d, weva_document_query(doc.d, "#submenu"));
+    weva_document_update(doc.d, 0);
+
+    // Innermost first.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 1);
+    CHECK(!open_popover(doc.d, "#submenu"));
+    CHECK(open_popover(doc.d, "#pinned"));
+    CHECK(open_popover(doc.d, "#menu"));
+
+    // The manual one is skipped, not closed.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 1);
+    CHECK(open_popover(doc.d, "#pinned"));
+    CHECK(!open_popover(doc.d, "#menu"));
+
+    // With no auto popover left, Escape is not ours to take.
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 0);
+    CHECK(open_popover(doc.d, "#pinned"));
+}
+
+// An open popover is a top-layer host, so it gets the same backdrop a modal
+// dialog does -- one mechanism, two shapes.
+void test_abi_popover_joins_the_top_layer() {
+    Doc doc("html, body { margin: 0; height: 300px }"
+            " [popover] { width: 120px; height: 60px }",
+            "<div id=menu popover>Menu</div>");
+    CHECK(doc.backdrops() == 0);
+    weva_element_show_popover(doc.d, weva_document_query(doc.d, "#menu"));
+    CHECK(doc.backdrops() == 1);
+    weva_element_hide_popover(doc.d, weva_document_query(doc.d, "#menu"));
+    CHECK(doc.backdrops() == 0);
+}

@@ -521,6 +521,21 @@ transformed or filtered ancestor that establishes a containing block would
 capture the dialog rather than letting it escape. The reference makes the same
 simplification and says so.
 
+**Popovers**
+
+A `<button popovertarget="menu">` works its popover with no script at all, and
+`popovertargetaction="show"` or `"hide"` pins the direction instead of
+flipping. An `auto` popover light-dismisses -- a click outside it closes it, a
+click inside does not -- and Escape closes the topmost one, one per press, so a
+submenu goes before the menu it came from. `popover="manual"` opts out of both
+and closes only when asked.
+
+    doc.show_popover("#menu")
+    doc.hide_popover("#menu")
+    doc.toggle_popover("#menu")
+    doc.has_element_attribute("#menu", "data-popover-open")
+    doc.element_toggled.connect(func(id, open): ...)
+
 **Dropdowns**
 
 Clicking a `<select>` opens its list and clicking a row chooses it, through the

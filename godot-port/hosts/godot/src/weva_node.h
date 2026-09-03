@@ -135,6 +135,13 @@ public:
     bool show_modal_dialog(const godot::String& selector);
     bool close_dialog(const godot::String& selector);
 
+    // Popovers. A `<button popovertarget="menu">` works its own with no script
+    // at all, an `auto` one closes on a click outside it or on Escape -- these
+    // are for opening a menu from something other than a click.
+    bool show_popover(const godot::String& selector);
+    bool hide_popover(const godot::String& selector);
+    bool toggle_popover(const godot::String& selector);
+
     // HTML's boolean attributes carry no value, so reading one back cannot
     // say whether it is set. This can.
     bool has_element_attribute(const godot::String& selector, const godot::String& name);
@@ -280,6 +287,10 @@ private:
     godot::Vector2 size_{0, 0};
     bool dirty_ = true;
     godot::Dictionary data_;
+    // The three popover calls differ only in which ABI entry they take.
+    bool run_popover(const godot::String& selector,
+                     weva_status (*fn)(weva_document_t, weva_element_t));
+
     godot::Callable data_source_;
     godot::ObjectID controller_;
     bool interactive_ = true;

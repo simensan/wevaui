@@ -4,6 +4,8 @@
 #include "weva/dom.h"
 #include "weva/positioning.h"
 
+#include <vector>
+
 namespace weva {
 
 namespace {
@@ -59,8 +61,16 @@ struct Search {
         // A scroll container's children are drawn shifted by its offset, so
         // they are hit there too: the point is over what you can SEE at it.
         const double cx = bx - b.scroll_x, cy = by - b.scroll_y;
-        for (BoxId c = b.last_child; c != kNoBox; c = tree[c].prev_sibling) {
-            const BoxId hit = visit(c, cx, cy, ignore);
+        // The REVERSE of paint order, not the reverse of tree order: what you
+        // click is what is drawn on top, and the two are different whenever a
+        // positioned element is declared before an in-flow sibling. Walking
+        // the child list backwards meant a `position: fixed` popover drawn
+        // over a later <div> was not clickable anywhere it overlapped it --
+        // every click went to the div underneath.
+        std::vector<BoxId> order;
+        paint_order_children(tree, id, &order);
+        for (size_t i = order.size(); i-- > 0;) {
+            const BoxId hit = visit(order[i], cx, cy, ignore);
             if (hit != kNoBox) return hit;
         }
         if (ignore) return kNoBox;

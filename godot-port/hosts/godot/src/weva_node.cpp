@@ -198,6 +198,9 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_content_size"), &WevaDocument::get_content_size);
     ClassDB::bind_method(D_METHOD("query_bounds", "selector"), &WevaDocument::query_bounds);
     ClassDB::bind_method(D_METHOD("query_text", "selector"), &WevaDocument::query_text);
+    ClassDB::bind_method(D_METHOD("show_popover", "selector"), &WevaDocument::show_popover);
+    ClassDB::bind_method(D_METHOD("hide_popover", "selector"), &WevaDocument::hide_popover);
+    ClassDB::bind_method(D_METHOD("toggle_popover", "selector"), &WevaDocument::toggle_popover);
     ClassDB::bind_method(D_METHOD("show_dialog", "selector"), &WevaDocument::show_dialog);
     ClassDB::bind_method(D_METHOD("show_modal_dialog", "selector"),
                          &WevaDocument::show_modal_dialog);
@@ -846,6 +849,30 @@ static size_t weva_binding_read(void* user, const char* path, char* buffer, size
         buffer[n] = 0;
     }
     return length;
+}
+
+bool WevaDocument::run_popover(const String& selector,
+                              weva_status (*fn)(weva_document_t, weva_element_t)) {
+    if (!doc_) return false;
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (fn(doc_, e) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::show_popover(const String& selector) {
+    return run_popover(selector, &weva_element_show_popover);
+}
+
+bool WevaDocument::hide_popover(const String& selector) {
+    return run_popover(selector, &weva_element_hide_popover);
+}
+
+bool WevaDocument::toggle_popover(const String& selector) {
+    return run_popover(selector, &weva_element_toggle_popover);
 }
 
 bool WevaDocument::show_dialog(const String& selector) {

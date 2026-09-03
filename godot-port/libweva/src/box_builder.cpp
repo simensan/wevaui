@@ -296,7 +296,20 @@ bool top_layer_host(const Element& e) {
 }
 
 // The synthetic box behind a top-layer host. It has no element -- it is not
-// one, and hit testing and the dump must not find it -- and carries the
+// one, and hit testing and the dump must not find it.
+//
+// `pointer-events: none` in the UA sheet is what keeps it out of hit testing,
+// and it is load-bearing rather than decorative: a hit on an element-less box
+// walks up to the nearest box that HAS an element, which for a viewport-
+// filling backdrop is <body>. Without it every click anywhere in the document
+// landed on <body>, so a popover's trigger button could never be clicked a
+// second time and light-dismiss fired on every click instead.
+//
+// A browser stops clicks reaching the page under a MODAL dialog by making the
+// page inert, which is a separate mechanism neither engine models; blocking
+// them with the backdrop instead would break popovers, which are not modal.
+//
+// The box carries the
 // cascaded `::backdrop` style, which the UA sheet gives a half-transparent
 // black and `position: fixed`.
 //

@@ -460,4 +460,49 @@ void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx, BlockL
     run_recursive(tree, root, ctx, block);
 }
 
+void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out) {
+    out->clear();
+    if (!tree.valid(container)) return;
+    struct Entry {
+        BoxId id;
+        int z;
+        int order;
+    };
+    std::vector<Entry> negative, in_flow, positioned, positive;
+    const Box& b = tree[container];
+    const DisplayKind pd = b.display;
+    // A flex or grid item stacks by z-index without being positioned
+    // (Flexbox 4.3, Grid 6.4); layout stamps z only on the positioned, so it
+    // is read from the style here.
+    const bool items_stack = pd == DisplayKind::Flex || pd == DisplayKind::InlineFlex ||
+                             pd == DisplayKind::Grid || pd == DisplayKind::InlineGrid;
+    int order = 0;
+    for (BoxId c : tree.children(container)) {
+        const Box& cb = tree[c];
+        const bool is_positioned =
+            cb.style && cb.kind == BoxKind::Block && cb.position != PositionType::Static;
+        int z = 0;
+        if (cb.z_index && is_positioned) {
+            z = *cb.z_index;
+        } else if (items_stack && cb.style && cb.kind == BoxKind::Block) {
+            const std::string_view zr = cb.style->get("z-index");
+            if (!zr.empty() && zr != "auto") z = std::atoi(std::string(zr).c_str());
+        }
+        const Entry e{c, z, order++};
+        if (z < 0) negative.push_back(e);
+        else if (z > 0) positive.push_back(e);
+        else if (is_positioned) positioned.push_back(e);
+        else in_flow.push_back(e);
+    }
+    const auto by_z = [](const Entry& a, const Entry& c) {
+        return a.z != c.z ? a.z < c.z : a.order < c.order;
+    };
+    std::stable_sort(negative.begin(), negative.end(), by_z);
+    std::stable_sort(positive.begin(), positive.end(), by_z);
+    out->reserve(negative.size() + in_flow.size() + positioned.size() + positive.size());
+    for (const auto* bucket : {&negative, &in_flow, &positioned, &positive}) {
+        for (const Entry& e : *bucket) out->push_back(e.id);
+    }
+}
+
 } // namespace weva
