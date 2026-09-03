@@ -164,6 +164,12 @@ public:
     godot::Dictionary get_data() const;
     void set_data_source(const godot::Callable& resolver);
     int refresh_bindings();
+    // Two-way binding. `data-model="Path"` on a control makes the traffic go
+    // both ways: the data lands in the control, and what the user does to the
+    // control lands back in the data.
+    int apply_models();
+    bool write_data_path(const godot::String& path, const godot::String& text);
+    void write_back_model(uint32_t element);
 
     // `on-click="OnStart"` calls OnStart on the controller. The markup names
     // the method; the script supplies the object.
@@ -321,6 +327,13 @@ private:
     // Drains the document's event queue into signals.
     void pump_events();
     godot::String id_of(uint32_t element);
+    // By HANDLE, not by selector. A row a `data-each` produced has no id, so
+    // "#" + id_of(e) finds nothing and reads back an empty value.
+    godot::String value_of(uint32_t element);
+    godot::String attribute_of(uint32_t element, const char* name);
+    // Set while a model is being pushed into its control, so the change that
+    // causes does not bounce straight back into the data.
+    bool applying_models_ = false;
     // Resolves a selector to a handle, updating the document first so the
     // answer reflects what a script has just changed.
     uint32_t resolve(const godot::String& selector);

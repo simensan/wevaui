@@ -309,6 +309,10 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("value_committed", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::STRING, "value")));
     ADD_SIGNAL(MethodInfo("form_submitted", PropertyInfo(Variant::STRING, "id")));
+    // A `data-model` control wrote its value back into `data`. The path, not
+    // the element, because the path is what a script keyed its own state on.
+    ADD_SIGNAL(MethodInfo("data_changed", PropertyInfo(Variant::STRING, "path"),
+                          PropertyInfo(Variant::STRING, "value")));
     ADD_SIGNAL(MethodInfo("element_toggled", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::BOOL, "open")));
     ADD_SIGNAL(MethodInfo("context_menu_requested", PropertyInfo(Variant::STRING, "id"),
@@ -1027,12 +1031,106 @@ int WevaDocument::refresh_bindings() {
     source.value = &weva_binding_read;
     source.count = &weva_binding_count;
     weva_document_set_binding_source(doc_, &source);
-    const int changed = weva_document_refresh_bindings(doc_);
+    int changed = weva_document_refresh_bindings(doc_);
+    // The controls come last, because `data-each` may only just have produced
+    // the rows the models live on.
+    changed += apply_models();
     if (changed > 0) {
         dirty_ = true;
         queue_redraw();
     }
     return changed;
+}
+
+godot::String WevaDocument::value_of(uint32_t element) {
+    if (!doc_ || element == WEVA_ELEMENT_NONE) return String();
+    const size_t n = weva_element_value(doc_, element, nullptr, 0);
+    if (n == 0) return String();
+    std::vector<char> buffer(n + 1, 0);
+    weva_element_value(doc_, element, buffer.data(), buffer.size());
+    return String::utf8(buffer.data());
+}
+
+godot::String WevaDocument::attribute_of(uint32_t element, const char* name) {
+    if (!doc_ || element == WEVA_ELEMENT_NONE) return String();
+    const size_t n = weva_element_attribute(doc_, element, name, nullptr, 0);
+    if (n == 0) return String();
+    std::vector<char> buffer(n + 1, 0);
+    weva_element_attribute(doc_, element, name, buffer.data(), buffer.size());
+    return String::utf8(buffer.data());
+}
+
+// Data -> control. Only where they disagree: writing a field's own value back
+// into it would move the caret to the end while someone is typing in it.
+int WevaDocument::apply_models() {
+    if (!doc_) return 0;
+    size_t count = weva_document_query_all(doc_, "[data-model]", nullptr, 0);
+    if (count == 0) return 0;
+    std::vector<weva_element_t> elements(count);
+    count = weva_document_query_all(doc_, "[data-model]", elements.data(), elements.size());
+
+    applying_models_ = true;
+    int changed = 0;
+    for (size_t i = 0; i < count; ++i) {
+        const String path = attribute_of(elements[i], "data-model");
+        if (path.is_empty()) continue;
+        String wanted;
+        if (!resolve_binding(path, &wanted)) continue;
+        if (value_of(elements[i]) == wanted) continue;
+        const CharString v = wanted.utf8();
+        weva_element_set_value(doc_, elements[i], v.get_data());
+        ++changed;
+    }
+    applying_models_ = false;
+    return changed;
+}
+
+// Control -> data. The type already at the path wins: a script that put a
+// float in `data.Volume` gets a float back, not the "0.7" the control reports,
+// so its own arithmetic keeps working after the first drag.
+bool WevaDocument::write_data_path(const godot::String& path, const godot::String& text) {
+    const PackedStringArray parts = path.split(".");
+    if (parts.is_empty()) return false;
+
+    // Walk to the container that holds the last segment, making the
+    // dictionaries a path names but that the data does not have yet.
+    Variant current = data_;
+    for (int i = 0; i < parts.size() - 1; ++i) {
+        Variant next;
+        if (!step(current, parts[i], &next) || next.get_type() == Variant::NIL) {
+            if (current.get_type() != Variant::DICTIONARY) return false;
+            next = Dictionary();
+            Dictionary holder = current;
+            holder[parts[i]] = next;
+        }
+        current = next;
+    }
+    const String leaf = parts[parts.size() - 1];
+
+    Variant value = text;
+    Variant existing;
+    if (step(current, leaf, &existing)) {
+        switch (existing.get_type()) {
+            case Variant::BOOL: value = text.to_lower() == "true" || text == "1"; break;
+            case Variant::INT: value = static_cast<int64_t>(text.to_int()); break;
+            case Variant::FLOAT: value = text.to_float(); break;
+            default: break;
+        }
+    }
+
+    if (current.get_type() == Variant::DICTIONARY) {
+        Dictionary holder = current;
+        holder[leaf] = value;
+        return true;
+    }
+    if (current.get_type() == Variant::ARRAY && leaf.is_valid_int()) {
+        Array a = current;
+        const int at = leaf.to_int();
+        if (at < 0 || at >= a.size()) return false;
+        a[at] = value;
+        return true;
+    }
+    return false;
 }
 
 bool WevaDocument::set_element_html(const String& selector, const String& html) {
@@ -1160,15 +1258,18 @@ void WevaDocument::pump_events() {
             case WEVA_EVENT_FOCUS: emit_signal("element_focused", id); break;
             case WEVA_EVENT_BLUR: emit_signal("element_blurred", id); break;
             case WEVA_EVENT_VALUE_CHANGED:
-                // The value rides in the event when it is short; anything
-                // longer is read back, so a script never sees a truncated one.
-                emit_signal("value_changed", id, get_element_value("#" + id));
+                // Read from the HANDLE, not from "#" + id: a row a `data-each`
+                // produced has no id, and a selector built from an empty one
+                // matches nothing and reports an empty value.
+                emit_signal("value_changed", id, value_of(e.target));
+                write_back_model(e.target);
                 break;
             case WEVA_EVENT_CHANGE:
                 // The value the user settled on, once. A search field that
                 // hits the disk on every keystroke wants this and not
                 // `value_changed`.
-                emit_signal("value_committed", id, get_element_value("#" + id));
+                emit_signal("value_committed", id, value_of(e.target));
+                write_back_model(e.target);
                 break;
             case WEVA_EVENT_SUBMIT: emit_signal("form_submitted", id); break;
             case WEVA_EVENT_CONTEXT_MENU:
@@ -1192,6 +1293,22 @@ void WevaDocument::pump_events() {
             default: break;
         }
     }
+}
+
+// One control's value into the data it is modelled on. Skipped while a model
+// is being pushed the other way, so the two directions cannot chase each
+// other, and skipped entirely when a resolver owns the data -- a Callable can
+// answer a path but has nowhere to put an answer.
+void WevaDocument::write_back_model(uint32_t element) {
+    if (applying_models_ || data_source_.is_valid()) return;
+    const String path = attribute_of(element, "data-model");
+    if (path.is_empty()) return;
+    const String value = value_of(element);
+    if (!write_data_path(path, value)) return;
+    emit_signal("data_changed", path, value);
+    // Anything else bound to the same path follows it -- a label beside the
+    // slider, a class that turns on past a threshold.
+    refresh_bindings();
 }
 
 bool WevaDocument::set_element_text(const godot::String& selector, const godot::String& text) {

@@ -347,6 +347,40 @@ one survive a value changing next to it. The rows are SIBLINGS of the template
 -- `#quests > .row` addresses them, since the template keeps its own children
 as the pattern.
 
+**Both ways: `data-model`**
+
+Everything above pushes data at the markup. A control that a player edits has
+to send it back, and `data-model` is the return path -- the same dotted path,
+on an `<input>`, `<textarea>` or `<select>`:
+
+    <input type="text"  data-model="Player.Name">
+    <input type="range" data-model="Settings.Volume" min="0" max="100">
+    <input type="checkbox" data-model="Settings.Music">
+
+    doc.data = {"Player": {"Name": "Ada"}, "Settings": {"Volume": 40, "Music": true}}
+    doc.data_changed.connect(func(path, value): _save(path, value))
+
+The field starts filled from the data, and what the player types, drags or
+ticks lands back in `doc.data` at that path. Anything else bound to the same
+path follows it in the same frame -- a label beside a slider, a class that
+turns on past a threshold -- so a settings panel needs no script at all beyond
+the dictionary it started with.
+
+Three things worth knowing:
+
+  * **The type at the path wins.** A path holding an int gets an int back, not
+    the `"62"` the control reports, so a script's own arithmetic keeps working
+    after the first drag. Floats and bools likewise.
+  * **A missing branch is created.** `data-model="Fresh.Field"` writes into a
+    `Fresh` dictionary the data did not have.
+  * **Only a player's edit writes back.** `set_element_value()` from a script
+    raises no input event, here as in a browser, and neither does a value the
+    data itself pushed in -- so the two directions cannot chase each other. And
+    a `set_data_source()` resolver is read-only: a Callable can answer a path
+    but has nowhere to put an answer, so the write-back stays out of its way.
+
+`binding_tests.gd` is this, executable; `check.sh` runs it.
+
 **Building it from data**
 
 A list whose length is the game's business cannot be written as markup in

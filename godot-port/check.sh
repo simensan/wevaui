@@ -144,6 +144,14 @@ if [ -x "$GODOT" ]; then
         "$GODOT" --headless --path . demo_smoke.tscn 2>&1 | grep "godot demo:" | tail -1)
     echo "${line:-no result}"
     case "$line" in *", 0 failures"*) ;; *) fail "demo" ;; esac
+
+    # Two-way binding, from GDScript. The return path -- a `data-model`
+    # control's value arriving back in the script's own dictionary -- is the
+    # half no C++ test can reach, because the dictionary is Godot's.
+    step "bindings"
+    line=$(cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300         "$GODOT" --headless --path . binding_tests.tscn 2>&1 | grep "godot bindings:" | tail -1)
+    echo "${line:-no result}"
+    case "$line" in *", 0 failures"*) ;; *) fail "bindings" ;; esac
 else
     skip "host tests (no godot at $GODOT)"
 fi
