@@ -137,7 +137,21 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
     const std::string_view direction = get(style, "flex-direction");
     const bool column = iequals(direction, "column") || iequals(direction, "column-reverse");
-    const bool reverse = iequals(direction, "row-reverse") || iequals(direction, "column-reverse");
+    bool reverse = iequals(direction, "row-reverse") || iequals(direction, "column-reverse");
+
+    // `direction: rtl` reverses the INLINE axis, so it swaps row and
+    // row-reverse and leaves a column container alone. Only in a horizontal
+    // writing mode: in a vertical one the inline axis is the other one, and
+    // `direction` is already spoken for there.
+    //
+    // Ports FlexProperties.ApplyDirectionality. Without it a right-to-left
+    // flex row packed itself from the left, which is what the oracle's
+    // cov-logical case caught -- Chrome and the reference agreed against us on
+    // all three items.
+    if (!column && iequals(get(style, "direction"), "rtl")) {
+        const std::string_view writing_mode = get(style, "writing-mode");
+        if (writing_mode.empty() || iequals(writing_mode, "horizontal-tb")) reverse = !reverse;
+    }
 
     const double main_gap = column ? gap_px(style, "row-gap", ctx, font_size, content_height)
                                    : gap_px(style, "column-gap", ctx, font_size, content_width);

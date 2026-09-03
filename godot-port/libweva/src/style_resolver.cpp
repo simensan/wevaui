@@ -402,12 +402,12 @@ double resolve_border_width(std::string_view raw, double font_size, const Layout
             if (plain) {
                 char buf[32];
                 std::memcpy(buf, digits.data(), digits.size());
-                buf[digits.size()] = ' ';
+                buf[digits.size()] = '\0';
                 char* end = nullptr;
                 const double n = std::strtod(buf, &end);
                 // A bare number is only a width when it is zero; `border-width:
                 // 2` is invalid CSS, and the parser below decides what it means.
-                if (end && *end == ' ' && (px || n == 0)) return n;
+                if (end && *end == '\0' && (px || n == 0)) return n;
             }
         }
     }

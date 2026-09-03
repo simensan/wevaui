@@ -254,7 +254,16 @@ cmake --build C:\Users\<you>\weva-build\godot-msvc --config Release -j 8
 ```
 
 That lands `project/addons/weva/bin/weva_godot.dll`, the name
-`weva.gdextension` expects. Three things the CMake files already take care
+`weva.gdextension` expects.
+
+**Rebuild it after pulling.** `check.sh` builds and gates the Linux `.so`
+only, so a Windows DLL can sit a day behind every fix while every gate reads
+green -- and the symptom is not a crash, it is a feature quietly behaving the
+way it used to. It has already cost one round of "hover isn't working": the
+DLL predated `a7e75b6b`, where hit testing started following paint order, so
+the pointer was picking the wrong element. `Get-ChildItem` the two files in
+`addons/weva/bin` and compare their dates before believing a bug report about
+either platform. Three things the CMake files already take care
 of, recorded because each one cost a build: godot-cpp's `method_bind.hpp`
 needs `/Zc:__cplusplus` (MSVC reports 199711L otherwise) and `/vmg`
 (pointer-to-member casts across an incomplete class); godot-cpp links the

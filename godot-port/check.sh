@@ -152,6 +152,22 @@ if [ -x "$GODOT" ]; then
     line=$(cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300         "$GODOT" --headless --path . binding_tests.tscn 2>&1 | grep "godot bindings:" | tail -1)
     echo "${line:-no result}"
     case "$line" in *", 0 failures"*) ;; *) fail "bindings" ;; esac
+
+    # Hover, through the input path a WINDOW uses rather than set_pointer.
+    # The interactive gate drives the engine in document coordinates, which is
+    # the one path that cannot get a transform wrong -- so it would stay green
+    # while a scaled, panned document in a Control hovered nothing.
+    step "hover"
+    line=$(cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300         "$GODOT" --headless --path . hover_tests.tscn 2>&1 | grep "godot hover:" | tail -1)
+    echo "${line:-no result}"
+    case "$line" in *", 0 failures"*) ;; *) fail "hover" ;; esac
+
+    # And in the gallery itself, which is the scene a person looks at samples
+    # in: a Node2D inside a clipped Control inside two containers.
+    step "gallery hover"
+    line=$(cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300         "$GODOT" --headless --path . gallery_hover_test.tscn 2>&1         | grep "godot gallery hover:" | tail -1)
+    echo "${line:-no result}"
+    case "$line" in *", 0 failures"*) ;; *) fail "gallery hover" ;; esac
 else
     skip "host tests (no godot at $GODOT)"
 fi
