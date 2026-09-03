@@ -59,8 +59,16 @@ func _ready() -> void:
 	# un-hovered one while the document, correctly, said otherwise.
 	doc.interactive = false
 	doc.document_size = Vector2(w, h)
+	# A relative url() resolves against the DOCUMENT, the way weva_render and
+	# weva_dump resolve one -- and the way a browser does. Without it Godot
+	# cannot open a corpus image at all, so it draws no backgrounds, no <img>
+	# and no border images, while the software renderer draws all three: the
+	# backend comparison then reports a difference between the two hosts that
+	# is really a difference between what they were told.
+	var html_path: String = _args.get("html", "")
+	doc.base_path = html_path.get_base_dir()
 	doc.css = _read(_args.get("css", ""))
-	doc.html = _read(_args.get("html", ""))
+	doc.html = _read(html_path)
 	add_child(doc)
 	doc.update_document()
 

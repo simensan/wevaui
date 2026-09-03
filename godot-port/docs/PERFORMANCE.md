@@ -76,6 +76,17 @@ changed set on every pointer move -- and a touched-subtree walk from `<body>`
 is the whole document. Only the elements that actually flipped are marked now.
 66.6 ms -> 11.3 ms on layout-stress, 10.5 -> 0.46 on stats.
 
+**A border image re-sliced itself every frame.** The nine pieces were
+rasterized into a fresh texture on every paint, where a layered background has
+always gone through the texture cache. Twelve 9-sliced panels on a page with
+an animation running cost **5.014 ms a frame**; an ordinary border on the same
+page cost 0.072. Cached on the resolved slice, width, repeat and destination
+size -- the RESOLVED values, because `border-image-width` is a multiple of the
+used border width, so two boxes with identical declarations and different
+borders are different pictures. 5.014 ms -> 0.072, which is the plain border's
+number. The first paint halved too, since same-sized panels now share one
+texture.
+
 **A ComputedStyle sized itself 334 times.** `ensure_capacity` grew six vectors
 by one slot per property set, three of them `vector<bool>`. It takes the
 registry's full size at once now.
