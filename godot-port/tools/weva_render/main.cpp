@@ -140,6 +140,16 @@ int main(int argc, char** argv) {
     weva_document_t doc = weva_document_create(&cfg);
     if (!doc) return 1;
 
+    // A relative `url(...)` resolves against the DOCUMENT, the way a browser
+    // resolves one -- not against whatever directory the tool was run from.
+    {
+        const std::string html_path = argv[1];
+        const size_t slash = html_path.find_last_of("/\\");
+        weva_document_set_base_path(doc, slash == std::string::npos
+                                             ? "."
+                                             : html_path.substr(0, slash).c_str());
+    }
+
     if (!css.empty() && weva_document_add_css(doc, css.data(), css.size()) != WEVA_OK) {
         std::fprintf(stderr, "weva_render: css rejected\n");
         weva_document_destroy(doc);

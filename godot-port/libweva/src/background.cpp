@@ -334,6 +334,23 @@ double resolve_position(std::string_view raw, double area, double tile, bool hor
     else if (iequals(raw, horizontal ? "left" : "top")) pct = 0;
     else if (iequals(raw, horizontal ? "right" : "bottom")) pct = 100;
     if (pct >= 0) return (area - tile) * pct * 0.01;
+
+    // Asked WITHOUT a basis first, so a percentage comes back as one.
+    //
+    // A background position's percentage aligns the same point of the tile
+    // with that point of the area -- 50% centres it -- which is
+    // (area - tile) * pct, not area * pct. Resolving it against `area` up
+    // front made every percentage arrive as a plain length and take the
+    // branch below, so the tile was pushed half the area to the right instead
+    // of being centred. It stayed invisible for as long as backgrounds were
+    // only gradients: a gradient sizes to the area, and (area - tile) is then
+    // zero, so both readings agree at every position. An image has a size of
+    // its own and does not.
+    const ResolvedLength percent = resolve_length(raw, ctx, font_size, std::nullopt);
+    if (percent.kind == LengthKind::Percent) return (area - tile) * percent.percent * 0.01;
+
+    // Anything else -- a length, a calc() that needs the basis to become one
+    // at all -- resolves against the area as before.
     const ResolvedLength r = resolve_length(raw, ctx, font_size, area);
     if (r.kind == LengthKind::Percent) return (area - tile) * r.percent * 0.01;
     if (r.kind == LengthKind::Length) return r.pixels;
@@ -836,6 +853,14 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         // wrapping is the identity and the bounds test below always passes.
         t.wrap_x = l.repeat_x && !(t.ox <= 0 && t.ox + t.tw >= width);
         t.wrap_y = l.repeat_y && !(t.oy <= 0 && t.oy + t.th >= height);
+        if (t.image && std::getenv("WEVA_IMAGE_LOG")) {
+            std::fprintf(stderr,
+                         "  [img] area %.1fx%.1f  intrinsic %dx%d  tile %.1fx%.1f  at %.1f,%.1f"
+                         "  size_x '%s' size_y '%s'  pos '%s','%s'\n",
+                         width, height, t.image->width, t.image->height, t.tw, t.th, t.ox, t.oy,
+                         std::string(l.size_x).c_str(), std::string(l.size_y).c_str(),
+                         std::string(l.pos_x).c_str(), std::string(l.pos_y).c_str());
+        }
         if (!t.image) t.prepared = prepare(l.gradient, t.tw, t.th, ctx, font_size);
         tiles.push_back(std::move(t));
     }

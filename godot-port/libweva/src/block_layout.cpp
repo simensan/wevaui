@@ -703,6 +703,38 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
 // LayoutContext and so no way to reach the store -- and this is the only place
 // the answer is needed, since a replaced element's `auto` size IS its
 // intrinsic size and nothing else in layout can supply one.
+// Sizes a replaced element from its intrinsic size, and says whether it did.
+//
+// CSS 2.2 s10.3.2 and s10.6.2: an `auto` width is the intrinsic width, an
+// `auto` height the intrinsic height, and when exactly one is stated the other
+// follows through the intrinsic ratio.
+//
+// Shared, because an <img> reaches layout through more than one door: a block
+// or inline-block shrinking to fit, and a FLEX ITEM, which flex measures
+// through layout_block and never through shrink_to_fit. Sizing it in only one
+// of them left every image inside a flex row at zero height while the same
+// image in a plain div was right -- the shape of bug that survives a unit
+// suite and dies the moment someone renders a page and looks at it.
+bool size_replaced_box(Box& b, const DecodedImage& image, const LayoutContext& ctx,
+                       double font_size) {
+    const double iw = std::max(1, image.width);
+    const double ih = std::max(1, image.height);
+    const ResolvedLength w = resolve_length(b.style, "width", ctx, font_size, std::nullopt);
+    const ResolvedLength h = resolve_length(b.style, "height", ctx, font_size, std::nullopt);
+    const bool have_w = w.kind == LengthKind::Length;
+    const bool have_h = h.kind == LengthKind::Length;
+    if (have_w && have_h) return false;   // both stated; nothing to infer
+    if (have_w) {
+        b.height = b.width * (ih / iw);
+    } else if (have_h) {
+        b.width = b.height * (iw / ih);
+    } else {
+        b.width = iw;
+        b.height = ih;
+    }
+    return true;
+}
+
 const DecodedImage* replaced_image(const Box& box, const LayoutContext& ctx) {
     if (!ctx.images || !box.element) return nullptr;
     if (box.element->tag_name() != "img") return nullptr;
@@ -722,13 +754,7 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
         // height from the intrinsic ratio -- the case every `img { width: 100% }`
         // in every stylesheet relies on.
         if (const DecodedImage* image = replaced_image((*tree_)[id], ctx_)) {
-            const ResolvedLength h = resolve_length(style, "height", ctx_, fs, std::nullopt);
-            if (h.kind != LengthKind::Length) {
-                Box& rb = (*tree_)[id];
-                const double iw = std::max(1, image->width);
-                const double ih = std::max(1, image->height);
-                rb.height = rb.width * (ih / iw);
-            }
+            size_replaced_box((*tree_)[id], *image, ctx_, fs);
             return fs;
         }
         // An explicit width needs no probing: apply_box_model already resolved
@@ -744,18 +770,7 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     // empty box and laid every <img> out at zero, which is why none of them
     // have ever been visible.
     if (const DecodedImage* image = replaced_image((*tree_)[id], ctx_)) {
-        Box& rb = (*tree_)[id];
-        const double iw = std::max(1, image->width);
-        const double ih = std::max(1, image->height);
-        const ResolvedLength h = resolve_length(style, "height", ctx_, fs, std::nullopt);
-        if (h.kind == LengthKind::Length) {
-            // A stated height and an auto width: the ratio supplies the width.
-            rb.width = h.pixels * (iw / ih);
-            rb.height = h.pixels;
-        } else {
-            rb.width = iw;
-            rb.height = ih;
-        }
+        size_replaced_box((*tree_)[id], *image, ctx_, fs);
         return fs;
     }
 
@@ -871,6 +886,15 @@ void BlockLayout::layout_block(BoxId id, double available_width,
         (*tree_)[id].width = available_width;
         fs = ctx_.root_font_size_px;
     }
+
+    // A replaced element has no contents to lay out; its size comes from the
+    // image. This is the path a FLEX ITEM takes -- flex measures its items
+    // through layout_block, never through shrink_to_fit.
+    if (const DecodedImage* image = replaced_image((*tree_)[id], ctx_)) {
+        size_replaced_box((*tree_)[id], *image, ctx_, fs);
+        return;
+    }
+
     const Box& b = (*tree_)[id];
     if (b.first_child == kNoBox) {
         finalize_block_size(id, fs, b.padding_top + b.border_top);
