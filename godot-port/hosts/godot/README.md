@@ -261,8 +261,9 @@ gallery.
 
 ## Driving a document from GDScript
 
-`demo.tscn` is a worked example -- a health bar, buttons, a checkbox and a text
-field, with the animation left to CSS. Run it:
+`demo.tscn` is a worked example -- a health bar, buttons, a checkbox, a text
+field and a quest log BUILT from what happens rather than written in advance,
+with the animation left to CSS. Run it:
 
     godot --path project --scene res://demo.tscn
 
@@ -281,6 +282,18 @@ the name a script and a stylesheet already share.
     doc.has_element("#thing")
     doc.query_bounds("#thing")                     # where layout put it
 
+**Building it from data**
+
+A list whose length is the game's business cannot be written as markup in
+advance -- an inventory, a quest log, a chat pane. Rows are addressed the way
+CSS addresses them, so a script that can style a list can also fill it.
+
+    doc.append_html("#log", "<div class='line'>found a key</div>")
+    doc.set_element_html("#log", rows)             # replace the lot
+    doc.remove_element("#log .line:nth-child(1)")  # trim the oldest
+    doc.count_elements("#log .line")
+    doc.query_text("#log .line:nth-child(2)")      # read one back by position
+
 **Hearing about it**
 
     doc.element_clicked.connect(func(id): ...)     # press and release on one
@@ -294,13 +307,62 @@ the name a script and a stylesheet already share.
 An element is named by its `id`. One without an id reports "", which a script
 can still compare against.
 
+**Scrolling**
+
+A box with `overflow` other than `visible` scrolls, and the wheel, the bar, the
+keyboard and a finger drag all follow from that one declaration -- the node
+routes them. What a script drives is where the view sits.
+
+    doc.scroll_element("#log", Vector2(0, 40))     # by this much
+    doc.set_element_scroll("#log", Vector2(0, 0))  # to here
+    doc.get_element_scroll("#log")
+    doc.get_element_scroll_max("#log")             # how far there is to go
+    doc.scroll_into_view("#log .line:last-child")  # the least that shows it
+    doc.scroll_at(point, delta)                    # what a wheel does
+
+Focusing an element scrolls it into view by itself, so keyboard navigation
+never moves the focus ring somewhere you cannot see.
+
+**Text fields**
+
+Typing, the caret, the editing keys and selection are the document's. What a
+host has to drive is the two things it alone knows: Ctrl+A, which the ABI's key
+enum has no letter for, and the clipboard, which belongs to the platform.
+
+    doc.select_all()
+    doc.get_selected_text()                        # for DisplayServer.clipboard_set
+    doc.send_text(DisplayServer.clipboard_get())   # paste
+    doc.set_element_selection("#name", 0, 5)
+    doc.get_element_selection("#name")             # anchor first, so you know
+                                                   # which way it runs
+    doc.select_word_at(point)                      # what a double click does
+
+**Dropdowns**
+
+Clicking a `<select>` opens its list and clicking a row chooses it, through the
+pointer the node already forwards. The choice lands in the DOM as `selected` on
+the option, so `:checked`, the paint and `get_element_value` all agree.
+
+    doc.open_select("#quality")
+    doc.close_select()
+    doc.get_open_select()                          # the id, or ""
+
 **Input**
 
 The node reads its own input while `interactive` is on, which is the default.
-A host routing its own -- a gamepad cursor, a touch surface -- calls
-`set_pointer(point, buttons)` and `clear_pointer()` instead. `focus_next(back)`
-moves focus in tab order; Tab does it by itself and the document reports having
-consumed the key.
+A host routing its own -- a gamepad cursor, a touch surface, a menu that
+decides who gets the keyboard -- calls these instead.
+
+    doc.set_pointer(point, buttons) / doc.clear_pointer()
+    doc.send_key(KEY_DOWN)                         # true when the document
+                                                   # took it, so an unused key
+                                                   # stays yours
+    doc.send_text("x")
+    doc.focus_next(false)                          # tab order
+
+Tab moves focus by itself and the document reports having consumed the key. A
+key with nothing to scroll and no field to edit is NOT consumed, so a game
+keeps its own arrows.
 
 **Time**
 
