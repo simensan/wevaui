@@ -111,6 +111,27 @@ and `vh` units all move with it.
 The header shows the draw and triangle counts, which face is in use, and how far
 the page reaches when that is past the viewport.
 
+## Running everything
+
+`godot-port/check.sh` runs every gate in the order that fails fastest, and
+exits non-zero when any of them does:
+
+    bash godot-port/check.sh            # or --clean to rebuild from scratch
+
+    === unit tests ===            10124 checks, 0 failures
+    === sanitizers ===            10124 checks, 0 failures
+    === layout oracle ===         21/37 agree, 0 differ, 16 reference bugs
+    === backend gate ===          37 samples, 0 over the structural gate
+    === interactive gate ===      five states, all 0.00%
+    === host tests ===            165 checks, 0 failures
+
+A build directory it cannot find is SKIPPED with a line saying so rather than
+passing quietly, and `WEVA_BUILD_GCC`, `WEVA_BUILD_CLANG`, `WEVA_BUILD_GODOT`
+and `GODOT_BIN` point it at yours. Each gate catches what the others cannot,
+which is why they are all here: the sanitizers alone caught a double free, a
+premature free and a use-after-free in the element table in one session, none
+of which the ordinary tests noticed.
+
 ## Running the render tests
 
 ```sh
