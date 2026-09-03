@@ -521,13 +521,15 @@ void CascadeEngine::add_stylesheet(const Stylesheet* sheet, DeclarationOrigin or
     shape_cache_.clear();
 }
 
-std::vector<MatchedDeclaration> CascadeEngine::collect_matches(
+const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
     const Element& e, const ElementStateProvider& state) const {
     const uint64_t key = try_compute_shape_key(e, state);
     if (key != 0) {
         auto it = shape_cache_.find(key);
         if (it != shape_cache_.end()) {
             ++stats_.hits;
+            // By reference. Returning by value here copied the whole match
+            // list on every hit, which is most of what the cache was for.
             return it->second;
         }
         ++stats_.misses;
@@ -535,7 +537,8 @@ std::vector<MatchedDeclaration> CascadeEngine::collect_matches(
         ++stats_.skipped;
     }
 
-    std::vector<MatchedDeclaration> out;
+    std::vector<MatchedDeclaration>& out = uncached_matches_;
+    out.clear();
     for (const CompiledRule& cr : rules_) {
         if (!selector_matches(cr.selector, e, state)) continue;
         const Specificity spec = cr.selector.specificity();
@@ -561,8 +564,9 @@ std::vector<MatchedDeclaration> CascadeEngine::collect_matches(
                      [](const MatchedDeclaration& a, const MatchedDeclaration& b) {
                          return compare_for_cascade(a, b) < 0;
                      });
-    if (key != 0) shape_cache_.emplace(key, out);
-    return out;
+    if (key == 0) return out;
+    // Moved in, not copied: the caller reads it through the map either way.
+    return shape_cache_.emplace(key, std::move(out)).first->second;
 }
 
 void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,

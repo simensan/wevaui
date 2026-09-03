@@ -100,7 +100,12 @@ public:
 
     // Collects every declaration matching `e`, already sorted so the last
     // entry wins. Exposed for DevTools-style cascade traces and for tests.
-    std::vector<MatchedDeclaration> collect_matches(
+    //
+    // Returns a REFERENCE into storage the engine owns, valid until the next
+    // call. It used to return by value, which made every cache hit pay for a
+    // heap allocation and a copy of the whole match list -- so the shape cache
+    // charged for itself on every element it was supposed to be saving.
+    const std::vector<MatchedDeclaration>& collect_matches(
         const Element& e, const ElementStateProvider& state) const;
 
     // Computes the element's style. `parent` supplies inherited values; pass
@@ -177,6 +182,10 @@ private:
 
     std::vector<CompiledRule> rules_;
     mutable std::map<uint64_t, std::vector<MatchedDeclaration>> shape_cache_;
+    // Where an UNCACHEABLE element's matches live: an element with an inline
+    // style, or any element at all when the sheets use sibling combinators or
+    // :has(). Reused rather than allocated per element.
+    mutable std::vector<MatchedDeclaration> uncached_matches_;
     mutable CacheStats stats_;
     // Sheet-wide opt-outs, computed once at rule-compile time.
     bool cache_unsafe_sibling_composition_ = false;  // `p + p`, :nth-of-type, ...
