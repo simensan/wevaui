@@ -55,6 +55,7 @@ func _ready() -> void:
 	_test_event_handlers()
 	_test_commit_submit_and_scroll_signals()
 	_test_word_editing_and_undo()
+	_test_cjk_text()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -892,3 +893,62 @@ func _test_word_editing_and_undo() -> void:
 	doc.update_document()
 	_check(doc.get_selected_text() == "beta ", "Shift+Ctrl+Left selects a word")
 	doc.queue_free()
+
+
+func _test_cjk_text() -> void:
+	# Japanese has no spaces, so a line that can only break at one cannot break
+	# at all. The core breaks between characters instead; this checks it
+	# through the host, with Godot's own font rather than the core's ASCII stub.
+	var doc := _make_doc(
+		"<body><div id='a'>日本語のテキストです</div></body>",
+		"html, body { margin: 0 } #a { display: block; width: 60px; font-size: 24px;" +
+		" line-height: 1.5 }")
+	var one_line := 24.0 * 1.5
+	var height := doc.query_bounds("#a").size.y
+	_check(height > one_line * 1.5, "a CJK paragraph wraps instead of overflowing")
+
+	doc.queue_free()
+
+	# `nowrap` proves the wrap came from the break rule and not from something
+	# else deciding the box's height. A second document, because `css` ADDS a
+	# stylesheet rather than replacing one -- reusing this one would leave both
+	# rules live and test the cascade instead of the break.
+	var fixed := _make_doc(
+		"<body><div id='a'>日本語のテキストです</div></body>",
+		"html, body { margin: 0 } #a { display: block; width: 60px; font-size: 24px;" +
+		" line-height: 1.5; white-space: nowrap }")
+	_check(fixed.query_bounds("#a").size.y < one_line * 1.5, "nowrap still forbids the break")
+	fixed.queue_free()
+
+	# And whether the characters DRAW is the font's question, not the layout's.
+	# The core's built-in face is a 5x7 ASCII bitmap with no CJK glyphs, and
+	# Godot's default theme font has none either -- so this reports what the
+	# host's font covers rather than asserting a coverage it does not have.
+	var drawn := _make_doc(
+		"<body><div id='a'>日本語</div></body>",
+		"html, body { margin: 0 } #a { display: inline-block; font-size: 24px }")
+	var latin := _make_doc(
+		"<body><div id='a'>abc</div></body>",
+		"html, body { margin: 0 } #a { display: inline-block; font-size: 24px }")
+	_check(latin.get_triangle_count() >= 6, "Latin draws, so the text path itself works")
+
+	# Godot's theme font has no CJK glyphs, so drawing them depends on the
+	# system fallback chain the host builds. Assert it only where the machine
+	# actually has one of those faces -- a build box with no Japanese font
+	# installed cannot draw Japanese, and failing there would be reporting the
+	# machine rather than the code.
+	var installed := OS.get_system_fonts()
+	var cjk_face := ""
+	for name in ["Yu Gothic UI", "Yu Gothic", "Meiryo", "MS Gothic", "Hiragino Sans",
+			"Noto Sans CJK JP", "Noto Sans JP", "Microsoft YaHei", "Malgun Gothic",
+			"Noto Sans CJK SC", "WenQuanYi Micro Hei", "Droid Sans Fallback"]:
+		if installed.has(name):
+			cjk_face = name
+			break
+	if cjk_face.is_empty():
+		print("godot host: no CJK font installed, glyph coverage not checked")
+	else:
+		_check(drawn.get_triangle_count() >= 6,
+			"CJK draws through the system fallback (%s)" % cjk_face)
+	drawn.queue_free()
+	latin.queue_free()

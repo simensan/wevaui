@@ -465,11 +465,16 @@ never ends one, and `line-break: loose` lifts the relaxable half so a narrow
 column can still set. A break needs CJK on both sides, so a Latin word inside a
 Japanese sentence is never split between its letters.
 
-Drawing those characters is a separate question, and it is the host's. The
-software renderer's built-in face is a 5x7 ASCII bitmap -- it has no glyphs for
-any script but Latin, by design -- so `weva_render` lays a Japanese paragraph
-out correctly and draws nothing. Through Godot the face is whatever font the
-node was given, and the text draws if that font covers the characters.
+Drawing those characters is a separate question. Godot's theme font has no CJK
+glyphs, so the node reaches past it into the system fallback chain -- the same
+chain that draws emoji -- and picks up Yu Gothic, Meiryo, Noto Sans CJK, PingFang,
+Malgun Gothic or whatever the machine has. Without those names in the chain a
+Japanese paragraph laid out correctly and drew nothing at all.
+
+The software renderer is the exception: its built-in face is a 5x7 ASCII bitmap
+with no glyphs for any script but Latin, by design, so `weva_render` lays CJK
+out correctly and draws none of it. That is the renderer's scope, not a gap in
+the layout.
 
 Undo groups a run of typing into ONE step -- undoing a sentence a letter at a
 time is not undo -- and anything that is not typing ends the run. Each field

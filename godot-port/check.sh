@@ -115,10 +115,12 @@ fi
 step "host tests"
 if [ -x "$GODOT" ]; then
     if [ -f "$GODOT_BUILD/build.ninja" ]; then
+        # The extension links straight into project/addons/weva/bin, so there
+        # is nothing to copy afterwards. The `cp` that used to be here named a
+        # file the build never writes and was silenced with `|| true` -- a good
+        # way to hide a real staleness bug behind a no-op.
         ( cd "$GODOT_BUILD" && ninja ) > /tmp/weva-host-build.log 2>&1 ||
             { fail "godot host build"; grep -E "error:|FAILED" /tmp/weva-host-build.log | head -5; }
-        cp "$GODOT_BUILD"/libweva_godot.so \
-           "$ROOT/hosts/godot/project/addons/weva/bin/" 2> /dev/null || true
     fi
     line=$(cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
         "$GODOT" --headless --path . test_scene.tscn 2>&1 | grep "godot host:" | tail -1)

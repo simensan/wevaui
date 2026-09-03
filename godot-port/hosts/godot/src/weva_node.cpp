@@ -65,9 +65,29 @@ const std::vector<Ref<SystemFont>>& shared_symbol_fonts() {
     built = true;
     PackedStringArray installed;
     if (OS* os = OS::get_singleton()) installed = os->get_system_fonts();
+    // Symbols and emoji first, then CJK. The order only decides who wins when
+    // two faces both have a character, and the primary theme font is ahead of
+    // all of them -- so Latin never comes from a fallback.
+    //
+    // CJK is the same problem emoji are: a codepoint the theme font has no
+    // glyph for. Without these names a Japanese paragraph lays out correctly
+    // and draws NOTHING, which is what it did. Every desktop ships at least
+    // one of these; a name the machine does not have costs nothing, because
+    // the list is filtered against what is installed.
     for (const char* n : {"Segoe UI Symbol", "Segoe UI Emoji", "Apple Color Emoji",
                           "Noto Color Emoji", "Noto Sans Symbols2", "Noto Sans Symbols",
-                          "DejaVu Sans", "Symbola"}) {
+                          "DejaVu Sans", "Symbola",
+                          // Japanese
+                          "Yu Gothic UI", "Yu Gothic", "Meiryo", "MS Gothic", "Hiragino Sans",
+                          "Noto Sans CJK JP", "Noto Sans JP",
+                          // Simplified and traditional Chinese
+                          "Microsoft YaHei", "Microsoft JhengHei", "PingFang SC", "PingFang TC",
+                          "Noto Sans CJK SC", "Noto Sans SC", "WenQuanYi Micro Hei",
+                          // Korean
+                          "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR",
+                          "Noto Sans KR",
+                          // The catch-all Android and some Linux images ship
+                          "Droid Sans Fallback"}) {
         if (installed.size() > 0 && !installed.has(String(n))) continue;
         Ref<SystemFont> sf;
         sf.instantiate();
