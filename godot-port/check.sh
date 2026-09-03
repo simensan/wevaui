@@ -18,6 +18,8 @@
 #                       doing something: a cursor, a selection, a scrolled
 #                       list, an open dropdown
 #   host tests          the GDScript surface, driven from Godot
+#   demo                the demo scene's own markup and script, so the
+#                       explanation of how to use this cannot rot unnoticed
 #
 # Build directories are the ones the README sets up; anything missing is
 # skipped with a line saying so, rather than passing quietly.
@@ -126,6 +128,16 @@ if [ -x "$GODOT" ]; then
         "$GODOT" --headless --path . test_scene.tscn 2>&1 | grep "godot host:" | tail -1)
     echo "${line:-no result}"
     case "$line" in *", 0 failures"*) ;; *) fail "host tests" ;; esac
+
+    # The demo, driven through its OWN markup and script. It is the
+    # explanation of how to use this from GDScript, and nothing else in the
+    # suite reads it -- so without this it rots silently while every other
+    # gate stays green.
+    step "demo"
+    line=$(cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+        "$GODOT" --headless --path . demo_smoke.tscn 2>&1 | grep "godot demo:" | tail -1)
+    echo "${line:-no result}"
+    case "$line" in *", 0 failures"*) ;; *) fail "demo" ;; esac
 else
     skip "host tests (no godot at $GODOT)"
 fi

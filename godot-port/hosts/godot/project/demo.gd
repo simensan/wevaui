@@ -24,15 +24,22 @@ const HTML := """
          data-class-hurt='Hurt' data-class-low='Low'></div>
   </div>
 
+  <!-- `title` draws a tooltip after the pointer rests on it. One attribute,
+       no script. -->
   <div class='row'>
-    <button on-click='take_damage'>Take 10</button>
-    <button on-click='heal' data-class-off='AtFullHealth'>Heal 10</button>
-    <button class='ghost' on-click='revive' data-class-off='Alive'>Revive</button>
+    <button on-click='take_damage' title='Lose 10 health'>Take 10</button>
+    <button on-click='heal' data-class-off='AtFullHealth'
+            title='Recover 10, up to 100'>Heal 10</button>
+    <button class='ghost' on-click='confirm_revive' data-class-off='Alive'
+            title='Back to full health'>Revive</button>
   </div>
 
+  <!-- `on-change`, not `on-input`: this fires ONCE, when the focus leaves a
+       field whose value moved. `on-input` fires per keystroke, which is what
+       you want for a live filter and not for anything that costs something. -->
   <div class='row'>
     <span class='label'>Name</span>
-    <input id='name' type='text' value='Vintner of Halden' on-input='rename'>
+    <input id='name' type='text' value='Vintner of Halden' on-change='rename'>
   </div>
 
   <div class='row'>
@@ -47,16 +54,29 @@ const HTML := """
   </div>
 
   <!-- One row per entry, straight from the data. Wheel over it, drag its bar,
-       or press Page Down. -->
+       or press Page Down. Click a row: `row_activated` says WHICH one, by the
+       `data-key` field, so the script never has to thread an id through the
+       markup. -->
   <div id='log' class='log'>
     <template data-each='Log as entry' data-key='Id'>
-      <div class='entry' data-class-good='entry.Good' data-class-hurt='entry.Bad'>
+      <div class='entry' on-click='inspect'
+           data-class-good='entry.Good' data-class-hurt='entry.Bad'>
         {{ entry.Text }}
       </div>
     </template>
   </div>
 
   <div class='status'>{{ Status }}</div>
+
+  <!-- A modal dialog. `show_modal_dialog` dims what is behind it with a
+       `::backdrop`; a plain `show_dialog` would not. -->
+  <dialog id='confirm'>
+    <p>Revive to full health?</p>
+    <div class='row'>
+      <button on-click='do_revive'>Yes</button>
+      <button class='ghost' on-click='dismiss'>Cancel</button>
+    </div>
+  </dialog>
 </div>
 """
 
@@ -112,6 +132,16 @@ select { width: 130px; height: 30px; padding: 4px 8px; background: #21262d;
 
 .status { padding: 8px 10px; border-radius: 6px; background: #0d1117;
           color: #8b949e; font-size: 12px }
+
+.entry { cursor: pointer }
+.entry:hover { background: #161b22; color: #e6edf3 }
+
+/* The dialog's own frame. `::backdrop` is the dim behind a MODAL one -- a
+   plain `show_dialog` never creates it. */
+dialog { padding: 20px; border: 1px solid #30363d; border-radius: 10px;
+         background: #171b23; color: #e6edf3 }
+dialog p { margin: 0 0 14px 0 }
+::backdrop { background: rgba(0, 0, 0, 0.6) }
 """
 
 const MAX_ENTRIES := 40
@@ -134,6 +164,9 @@ func _ready() -> void:
 	# which object has it. Nothing else connects a button to anything.
 	_doc.set_controller(self)
 	_doc.value_changed.connect(_on_value_changed)
+	# Which row a click landed in, by the `data-key` field. The script never
+	# sees an element id -- the rows have none, and do not need any.
+	_doc.row_activated.connect(_on_row_activated)
 
 	_say("ready")
 
@@ -192,10 +225,37 @@ func heal(_id: String) -> void:
 	_say("%d hp" % _hp)
 
 
-func revive(_id: String) -> void:
+# Asking, rather than doing. The dialog is markup; this only opens it.
+func confirm_revive(_id: String) -> void:
+	_doc.show_modal_dialog("#confirm")
+
+
+func do_revive(_id: String) -> void:
+	_doc.close_dialog("#confirm")
 	_hp = 100
 	_log_entry("revived", "good")
 	_say("revived")
+
+
+func dismiss(_id: String) -> void:
+	_doc.close_dialog("#confirm")
+
+
+# Named by `on-click` on the row. The id is empty -- a repeated row has none --
+# so the row's identity arrives through `row_activated` below instead.
+func inspect(_id: String) -> void:
+	pass
+
+
+func _on_row_activated(handler: String, index: int, key: String) -> void:
+	if handler != "inspect":
+		return
+	# `key` is the entry's `Id`, so it names the same entry however the list is
+	# sorted or trimmed -- which `index` alone would not.
+	for entry in _log:
+		if str(entry["Id"]) == key:
+			_say("entry %d: %s" % [index + 1, entry["Text"]])
+			return
 
 
 func rename(_id: String) -> void:
