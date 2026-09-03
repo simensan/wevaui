@@ -189,6 +189,9 @@ size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& c
 // draw. Exposed because it is far easier to assert geometry than backend calls.
 void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
                            double origin_x, double origin_y, Mesh* out,
-                           bool with_background = true);
+                           bool with_background = true,
+                           // Set when a border image has already been drawn over
+                           // this border and replaces it.
+                           bool skip_border = false);
 
 } // namespace weva

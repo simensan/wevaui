@@ -1,6 +1,7 @@
 #include "weva/paint.h"
 
 #include "weva/background.h"
+#include "weva/border_image.h"
 #include "weva/block_layout.h"
 #include "weva/css_value.h"
 #include "weva/positioning.h"
@@ -1918,6 +1919,61 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     return true;
 }
 
+// The image a `border-image-source` names, or null.
+const DecodedImage* border_image_source(const Box& b, const PaintContext& paint) {
+    if (!paint.images || !b.style) return nullptr;
+    std::string_view raw = trim_view(get(b.style, "border-image-source"));
+    if (raw.empty() || raw == "none") return nullptr;
+    if (raw.size() > 5 && raw.substr(0, 4) == "url(") {
+        raw = trim_view(raw.substr(4, raw.size() - 5));
+        if (raw.size() >= 2 && (raw.front() == '"' || raw.front() == '\'')) {
+            raw = raw.substr(1, raw.size() - 2);
+        }
+    }
+    if (raw.empty()) return nullptr;
+    return paint.images->get(raw);
+}
+
+// A nine-sliced border image over the border box, as one textured quad.
+//
+// CSS Backgrounds L3 s6.1: when a border image is drawn it REPLACES the border
+// style beneath it, which is why the idiom is `border: 16px solid transparent`
+// -- the border reserves the space and the image fills it.
+//
+// Returns false when there is nothing to draw, and the caller paints the
+// ordinary border instead.
+bool paint_border_image(const Box& b, const Rect& border_box, const LayoutContext& ctx,
+                        double font_size, const PaintContext& paint, double opacity,
+                        const Transform2D* xf, const ClipNode* clip, const ColorFilter* filter) {
+    const DecodedImage* source = border_image_source(b, paint);
+    if (!source || !paint.backend || border_box.width <= 0 || border_box.height <= 0) return false;
+
+    BorderImage bi;
+    if (!resolve_border_image(b.style, source, b.border_top, b.border_right, b.border_bottom,
+                              b.border_left, b.width, b.height, ctx, font_size, &bi)) {
+        return false;
+    }
+
+    const int tex_w = static_cast<int>(std::min(1024.0, std::ceil(border_box.width)));
+    const int tex_h = static_cast<int>(std::min(1024.0, std::ceil(border_box.height)));
+    std::vector<uint8_t> rgba;
+    rasterize_border_image(bi, border_box.width, border_box.height, tex_w, tex_h, &rgba);
+    if (rgba.empty()) return false;
+    const TextureHandle tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+    if (paint.owned_textures) paint.owned_textures->push_back(tex);
+
+    Mesh mesh;
+    // Square corners: the border image carries its own shape in its alpha, and
+    // a rounded mesh would cut the sprite's corners off.
+    tessellate_rounded_rect(border_box, BorderRadii::zero(), LinearColor::white(), &mesh);
+    for (Vertex& v : mesh.vertices) {
+        v.tex_coord = {static_cast<float>((v.position.x - border_box.x) / border_box.width),
+                       static_cast<float>((v.position.y - border_box.y) / border_box.height)};
+    }
+    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip, filter);
+    return true;
+}
+
 // An <img>'s pixels, expressed as a background layer on its content box.
 //
 // Deliberately not a new painting path. `object-fit` and `background-size` are
@@ -2428,6 +2484,12 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
     }
 
+    // A border image, which replaces the border drawn below.
+    const bool border_image_drawn =
+        decorated && !hidden && !blurred && b.width > 0 && b.height > 0 &&
+        paint_border_image(b, border_box, ctx, fs, paint, state.opacity, xf, state.clip.get(),
+                           state.filter.get());
+
     // The <img>'s own content. Above the background, below the border, and
     // inside the CONTENT box rather than the border box -- padding on an
     // image insets the picture, it does not scale it.
@@ -2493,7 +2555,8 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
 
         Mesh mesh;
-        paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done);
+        paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done,
+                              border_image_drawn);
         draw_mesh(mesh, paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
         // Outside the border box, and taking no layout space -- so it is drawn
         // from this box's own geometry, over its border.
@@ -2813,7 +2876,8 @@ BorderRadii resolve_border_radii(const ComputedStyle* style, double width, doubl
 }
 
 void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
-                           double origin_x, double origin_y, Mesh* out, bool with_background) {
+                           double origin_x, double origin_y, Mesh* out, bool with_background,
+                           bool skip_border) {
     const Box& b = tree[id];
     if (!b.style || b.width <= 0 || b.height <= 0) return;
 
@@ -2828,7 +2892,13 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
     const LinearColor bg = resolve_color(b.style, "background-color");
     if (with_background && bg.a > 0) tessellate_rounded_rect(border_box, radii, bg, out);
 
-    if (b.border_top > 0 || b.border_right > 0 || b.border_bottom > 0 || b.border_left > 0) {
+    // A border image has already been drawn over this border and replaces it
+    // (CSS Backgrounds L3 s6.1). Painting both would show the border's colour
+    // through every transparent texel of the sprite -- and the idiom is
+    // `border: 16px solid transparent`, so it would usually be invisible and
+    // occasionally not.
+    if (!skip_border &&
+        (b.border_top > 0 || b.border_right > 0 || b.border_bottom > 0 || b.border_left > 0)) {
         // An unset border-color is `currentColor`, which is what makes a
         // border follow the text colour by default.
         const auto side = [&](std::string_view property) {

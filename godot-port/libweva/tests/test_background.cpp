@@ -3,6 +3,7 @@
 // draw per gradient box; the body's background on the canvas).
 #include "check.h"
 #include "weva/background.h"
+#include "weva/border_image.h"
 #include "weva/image_store.h"
 #include "weva/block_layout.h"
 #include "weva/box_builder.h"
@@ -404,6 +405,102 @@ void test_replaced_img() {
         const Sized s = lay_out("", "<body><img></body>");
         CHECK(near(s.w, 0) && near(s.h, 0));
     }
+}
+
+
+// ---- border-image -------------------------------------------------------
+//
+// A 9x9 source with a different colour in each of its nine 3x3 blocks, so a
+// piece drawn from the wrong slice names itself instead of merely looking
+// odd. Sliced 3, every piece is one block.
+const uint8_t k_nine_png[] = {
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
+    0, 0, 0, 9, 0, 0, 0, 9, 8, 6, 0, 0, 0, 224, 145, 6,
+    16, 0, 0, 0, 51, 73, 68, 65, 84, 120, 156, 173, 202, 49, 1, 0,
+    48, 8, 3, 193, 23, 134, 48, 36, 226, 138, 178, 164, 32, 32, 195, 45,
+    201, 83, 208, 66, 29, 212, 50, 70, 51, 124, 51, 200, 28, 151, 43, 202,
+    160, 37, 114, 17, 185, 108, 209, 3, 158, 234, 162, 244, 35, 248, 215, 209,
+    0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+};
+
+namespace {
+
+weva::DecodedImage nine() { return weva::decode_png(k_nine_png, sizeof(k_nine_png)); }
+
+// The colour at a texel of a rasterized border image.
+struct Px { int r, g, b, a; };
+Px at(const std::vector<uint8_t>& rgba, int w, int x, int y) {
+    const size_t o = (static_cast<size_t>(y) * w + x) * 4;
+    return {rgba[o], rgba[o + 1], rgba[o + 2], rgba[o + 3]};
+}
+bool is(const Px& p, int r, int g, int b) {
+    return p.a == 255 && p.r == r && p.g == g && p.b == b;
+}
+
+} // namespace
+
+void test_border_image() {
+    const weva::DecodedImage image = nine();
+    CHECK(image.valid());
+    CHECK(image.width == 9 && image.height == 9);
+    if (!image.valid()) return;
+
+    // The nine pieces, into a 60x40 box with 12px borders. Each corner must
+    // carry its own block's colour, each edge the block between them, and the
+    // centre nothing at all without `fill`.
+    BorderImage bi;
+    bi.image = &image;
+    bi.slice = {3, 3, 3, 3, false};
+    bi.width = {12, 12, 12, 12};
+    std::vector<uint8_t> rgba;
+    rasterize_border_image(bi, 60, 40, 60, 40, &rgba);
+
+    CHECK(is(at(rgba, 60, 5, 5), 200, 0, 0));       // top-left
+    CHECK(is(at(rgba, 60, 30, 5), 0, 200, 0));      // top edge
+    CHECK(is(at(rgba, 60, 54, 5), 0, 0, 200));      // top-right
+    CHECK(is(at(rgba, 60, 5, 20), 200, 200, 0));    // left edge
+    CHECK(is(at(rgba, 60, 54, 20), 0, 200, 200));   // right edge
+    CHECK(is(at(rgba, 60, 5, 35), 120, 60, 0));     // bottom-left
+    CHECK(is(at(rgba, 60, 30, 35), 60, 120, 0));    // bottom edge
+    CHECK(is(at(rgba, 60, 54, 35), 0, 60, 120));    // bottom-right
+
+    // The middle is left alone: a frame sits OVER whatever the box already
+    // has, which is the whole point of not filling by default.
+    CHECK(at(rgba, 60, 30, 20).a == 0);
+
+    // With `fill`, the centre block is painted.
+    bi.slice.fill = true;
+    rasterize_border_image(bi, 60, 40, 60, 40, &rgba);
+    CHECK(is(at(rgba, 60, 30, 20), 200, 0, 200));   // the centre block
+
+    // A slice bigger than the source is clamped so opposing pairs cannot
+    // overlap -- otherwise the two corners would read past each other.
+    BorderImage big = bi;
+    big.slice = {90, 90, 90, 90, false};
+    rasterize_border_image(big, 60, 40, 60, 40, &rgba);
+    CHECK(is(at(rgba, 60, 5, 5), 200, 0, 0));       // still the top-left block
+
+    // Widths that would overlap are clamped the same way, and the result must
+    // still be drawn rather than abandoned.
+    BorderImage fat = bi;
+    fat.width = {100, 100, 100, 100};
+    rasterize_border_image(fat, 60, 40, 60, 40, &rgba);
+    CHECK(at(rgba, 60, 5, 5).a == 255);
+
+    // A repeating edge tiles the source at its natural size instead of
+    // stretching it, so the same colour recurs along the run.
+    BorderImage tiled = bi;
+    tiled.repeat_x = BorderImageRepeat::Repeat;
+    rasterize_border_image(tiled, 60, 40, 60, 40, &rgba);
+    CHECK(is(at(rgba, 60, 30, 5), 0, 200, 0));      // the top edge is still its block
+
+    // Nothing to draw is not a crash.
+    BorderImage empty;
+    rasterize_border_image(empty, 60, 40, 60, 40, &rgba);
+    CHECK(rgba.size() == 60u * 40u * 4u);
+    bool all_clear = true;
+    for (uint8_t v : rgba) all_clear = all_clear && v == 0;
+    CHECK(all_clear);
 }
 
 void test_background_shorthand() {
