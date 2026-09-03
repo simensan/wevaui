@@ -500,7 +500,7 @@ void test_paint_form_control_marks() {
     paint.backend = &backend;
     paint_tree(f.tree, f.root, f.ctx, paint);
 
-    int check = 0, red_dot = 0, thumb = 0, caret = 0;
+    int check = 0, tick = 0, red_dot = 0, thumb = 0, caret = 0;
     for (const RecordingBackend::Draw& d : backend.draws) {
         if (d.geometry.vertices.empty() || d.texture != 0) continue;
         // The marks are rounded, so they carry a coverage ramp; measure the
@@ -510,8 +510,13 @@ void test_paint_form_control_marks() {
         // Sizes to a hundredth of a pixel, which is all shape_bounds can
         // recover through the arc approximation; the marks are all round.
         const double e = 0.01;
-        // indigo check mark: 16 - 2*2 = 12 square
-        if (near(r.width, 12, e) && near(r.height, 12, e) && near(c.b, 0.671f)) ++check;
+        // The checked box: the accent colour edge to edge, as Chrome fills it,
+        // with the tick drawn over it in a contrasting colour.
+        if (near(r.width, 16, e) && near(r.height, 16, e) && near(c.b, 0.671f)) ++check;
+        // The tick itself: two angled strokes, lighter than the box under
+        // them, and ONE draw -- both strokes go into the same mesh, or a
+        // checkbox would cost two draws for the sake of a corner.
+        if (r.width < 12 && r.height < 12 && c.r > 0.8f && c.g > 0.8f && c.b > 0.8f) ++tick;
         // radio dot in the author's accent colour: half the 16px box
         if (near(r.width, 8, e) && near(r.height, 8, e) && near(c.r, 1) && near(c.g, 0)) ++red_dot;
         // range thumb: content height 16 → a 14px knob
@@ -520,6 +525,7 @@ void test_paint_form_control_marks() {
         if (near(r.width, 6, e) && near(r.height, 3, e) && near(c.r, 0.6f)) ++caret;
     }
     CHECK(check == 1);     // the unchecked box draws no mark
+    CHECK(tick == 1);      // both strokes, in one mesh
     CHECK(red_dot == 1);
     CHECK(thumb == 1);
     CHECK(caret == 1);

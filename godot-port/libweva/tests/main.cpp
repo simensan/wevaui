@@ -268,6 +268,7 @@ void test_abi_select_keys();
 void test_abi_select_reflects_choice();
 void test_abi_disabled_controls_are_inert();
 void test_abi_select_long_list_scrolls();
+void test_abi_checkbox_draws_a_tick();
 void test_abi_form_pseudo_classes();
 void test_abi_radio_group();
 void test_abi_range_drag();
@@ -567,6 +568,7 @@ int main() {
     test_abi_select_reflects_choice();
     test_abi_disabled_controls_are_inert();
     test_abi_select_long_list_scrolls();
+    test_abi_checkbox_draws_a_tick();
     test_abi_form_pseudo_classes();
     test_abi_radio_group();
     test_abi_range_drag();

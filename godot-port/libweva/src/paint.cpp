@@ -1322,6 +1322,41 @@ FaceHandle face_for_run(const Box& b, const PaintContext& paint) {
     return paint.font->variant(paint.face, weight, italic);
 }
 
+// A thick line as one quad: the segment's direction, its normal, and the four
+// corners half a thickness either side. The engine tessellates rectangles and
+// rounded rectangles and nothing else, and a checkmark is two strokes at an
+// angle.
+void stroke_segment(const Vec2& from, const Vec2& to, double thickness,
+                    const LinearColor& color, Mesh* out) {
+    const double dx = to.x - from.x, dy = to.y - from.y;
+    const double length = std::sqrt(dx * dx + dy * dy);
+    if (length <= 0 || thickness <= 0) return;
+    const double nx = -dy / length * thickness * 0.5;
+    const double ny = dx / length * thickness * 0.5;
+    // Extended half a thickness at each end, so the two strokes of a tick meet
+    // in a filled corner rather than a notch.
+    const double ex = dx / length * thickness * 0.5;
+    const double ey = dy / length * thickness * 0.5;
+    const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+    const auto at = [](double px, double py) {
+        return Vec2{static_cast<float>(px), static_cast<float>(py)};
+    };
+    const Vec2 corners[4] = {at(from.x + nx - ex, from.y + ny - ey),
+                             at(to.x + nx + ex, to.y + ny + ey),
+                             at(to.x - nx + ex, to.y - ny + ey),
+                             at(from.x - nx - ex, from.y - ny - ey)};
+    for (const Vec2& p : corners) out->vertices.push_back(Vertex{p, color, {0, 0}});
+    for (uint32_t i : {0u, 1u, 2u, 0u, 2u, 3u}) out->indices.push_back(base + i);
+}
+
+// White on a dark accent, near-black on a light one -- so a tick stays visible
+// whatever `accent-color` the page chose.
+LinearColor tick_color_on(const LinearColor& accent) {
+    const double luminance = 0.2126 * accent.r + 0.7152 * accent.g + 0.0722 * accent.b;
+    return luminance > 0.35 ? LinearColor::from_srgb(20, 22, 26, 1.0f)
+                            : LinearColor::from_srgb(255, 255, 255, 1.0f);
+}
+
 // ---- Form controls (Runtime/Forms/InputRenderer.cs) -----------------------
 //
 // An <input>'s value, a <select>'s chosen option and a placeholder are not in
@@ -1501,9 +1536,30 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
         const std::string type = input_type(e);
         if (type == "checkbox") {
             if (!e.has_attribute("checked")) return;
-            const double inset = 2;
-            fill_rounded(Rect(x + inset, y + inset, b.width - 2 * inset, b.height - 2 * inset), 1,
-                         accent_color_of(b.style), paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
+            // Chrome fills the whole box with the accent colour and puts a
+            // white tick on it. An accent-coloured square with nothing in it
+            // reads as "some state", not as "checked" -- at 13px there is
+            // nothing to tell it from an unchecked box that happens to be
+            // filled, which is what this looked like before.
+            const LinearColor accent = accent_color_of(b.style);
+            fill_rounded(Rect(x, y, b.width, b.height), 2, accent, paint.backend, state.opacity,
+                         xf, state.clip.get(), state.filter.get());
+            const double w = b.width, h = b.height;
+            const double thickness = std::max(1.5, w * 0.12);
+            // Two strokes, in the proportions a checkmark is drawn in: down to
+            // the low point, then up and out past it.
+            const auto point = [](double px, double py) {
+                return Vec2{static_cast<float>(px), static_cast<float>(py)};
+            };
+            const Vec2 a = point(x + w * 0.24, y + h * 0.52);
+            const Vec2 mid = point(x + w * 0.42, y + h * 0.70);
+            const Vec2 c = point(x + w * 0.76, y + h * 0.30);
+            Mesh tick;
+            const LinearColor ink = tick_color_on(accent);
+            stroke_segment(a, mid, thickness, ink, &tick);
+            stroke_segment(mid, c, thickness, ink, &tick);
+            draw_mesh(tick, paint.backend, {}, state.opacity, xf, state.clip.get(),
+                      state.filter.get());
             return;
         }
         if (type == "radio") {

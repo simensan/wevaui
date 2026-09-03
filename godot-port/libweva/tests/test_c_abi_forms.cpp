@@ -1184,3 +1184,45 @@ void test_abi_select_long_list_scrolls() {
     weva_document_update(doc.d, 0);
     CHECK(doc.value("#s") == chosen);
 }
+
+// A checked checkbox has a TICK on it, not just a coloured square. At 13px an
+// accent-coloured box with nothing in it reads as "some state" rather than as
+// checked -- there is nothing to tell it from an unchecked box that happens to
+// be filled.
+void test_abi_checkbox_draws_a_tick() {
+    const auto ink = [](weva_document_t d, bool light) {
+        // The lightest, or darkest, opaque vertex in the frame: the tick is
+        // drawn to contrast with the accent under it.
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        double best = light ? 0.0 : 1.0;
+        for (size_t i = 0; i < count; ++i) {
+            for (size_t v = 0; v < draws[i].vertex_count; ++v) {
+                const weva_vertex& p = draws[i].vertices[v];
+                if (p.a < 0.9f) continue;
+                const double l = 0.2126 * p.r + 0.7152 * p.g + 0.0722 * p.b;
+                best = light ? std::fmax(best, l) : std::fmin(best, l);
+            }
+        }
+        return best;
+    };
+
+    const char* css = "html, body { margin: 0; background: #202020 }"
+                      "input { display: block; margin: 4px }"
+                      "input:checked { accent-color: #2ea043 }";
+    Doc off(css, "<input id=c type=checkbox>");
+    Doc on(css, "<input id=c type=checkbox checked>");
+    size_t off_draws = 0, on_draws = 0;
+    weva_document_draws(off.d, &off_draws);
+    weva_document_draws(on.d, &on_draws);
+    CHECK(on_draws > off_draws);          // the fill and the tick
+    CHECK(ink(on.d, true) > 0.8);         // a white tick on the green
+
+    // The tick turns dark on a light accent, so it stays visible whatever
+    // colour the page chose.
+    Doc pale("html, body { margin: 0; background: #202020 }"
+             "input { display: block; margin: 4px }"
+             "input:checked { accent-color: #f5f5f5 }",
+             "<input id=c type=checkbox checked>");
+    CHECK(ink(pale.d, false) < 0.1);
+}
