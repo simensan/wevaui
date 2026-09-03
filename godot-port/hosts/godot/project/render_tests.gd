@@ -411,8 +411,59 @@ func _test_demo_scene_pattern() -> void:
 	_check(doc.element_id_at(at) == "hit", "hit testing finds the button through the padding")
 	_check(clicked.has("hit"), "clicking the demo's button raises its id")
 
+	# `disabled` is set from the script the way the demo sets it on the heal
+	# button at full health -- an attribute with an empty value, which is
+	# how the markup spells "present". The control then takes nothing at
+	# all, which is the difference between disabled and merely grey.
+	doc.set_element_attribute("#heal", "disabled", "")
+	doc.update_document()
+	var heal := doc.query_bounds("#heal")
+	var at_heal := heal.position + heal.size * 0.5
+	clicked.clear()
+	doc.set_pointer(at_heal, 0)
+	doc.set_pointer(at_heal, 1)
+	doc.set_pointer(at_heal, 0)
+	doc.update_document()
+	_check(not clicked.has("heal"), "a disabled button reports no click")
+	doc.remove_element_attribute("#heal", "disabled")
+	doc.update_document()
+	doc.set_pointer(at_heal, 0)
+	doc.set_pointer(at_heal, 1)
+	doc.set_pointer(at_heal, 0)
+	doc.update_document()
+	_check(clicked.has("heal"), "and takes them again once it is enabled")
+
+	# The log the demo builds: appended, trimmed, and the newest shown.
+	for i in range(6):
+		doc.append_html("#log", "<div class='entry'>line %d</div>" % i)
+	doc.update_document()
+	_check(doc.count_elements("#log .entry") == 6, "the log takes what happens")
+	doc.remove_element("#log .entry:nth-child(1)")
+	doc.update_document()
+	_check(doc.count_elements("#log .entry") == 5, "and drops the oldest")
+	_check(doc.query_text("#log .entry:nth-child(1)") == "line 1",
+		"leaving the next one at the top")
+	doc.scroll_into_view("#log .entry:last-child")
+	doc.update_document()
+	# Visible, not "scrolled to the maximum": nearest-edge stops as soon as
+	# the row is in view, which leaves the container's bottom padding
+	# unscrolled -- and the row being visible is what a log actually wants.
+	var log_box := doc.query_bounds("#log")
+	var newest := doc.query_bounds("#log .entry:last-child")
+	_check(newest.position.y >= log_box.position.y - 0.5
+		and newest.end.y <= log_box.end.y + 0.5,
+		"and the newest row is inside the box you can see")
+
+	# The quality dropdown, which is how a settings screen offers a choice.
+	_check(doc.get_element_value("#quality") == "med", "the select starts on its choice")
+	doc.set_focus("#quality")
+	doc.send_key(KEY_DOWN)
+	_check(doc.get_element_value("#quality") == "high",
+		"and the arrows move through the options")
+
 	# And the form controls the demo exposes.
-	_check(doc.get_element_value("#name") == "Vintner", "the demo's field has its value")
+	_check(doc.get_element_value("#name") == "Vintner of Halden",
+		"the demo's field has its value")
 	_check(doc.set_element_value("#shield", "on"), "the demo's checkbox can be set")
 	_check(doc.get_element_value("#shield") == "on", "and reads back")
 	doc.queue_free()
