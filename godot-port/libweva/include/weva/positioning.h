@@ -101,4 +101,13 @@ void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx,
 // to the element underneath.
 void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out);
 
+// Fills every box's visual-overflow rectangle: the area it and its descendants
+// can paint into, relative to its own origin. One bottom-up pass, run after
+// layout and positioning have placed everything.
+//
+// Paint uses it to skip a subtree that cannot reach the current clip, which is
+// what keeps a long scrolled list cheap: the work is the number of boxes you
+// can SEE rather than the number that exist.
+void compute_visual_overflow(BoxTree* tree, BoxId root);
+
 } // namespace weva

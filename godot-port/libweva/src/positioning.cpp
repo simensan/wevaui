@@ -3,7 +3,10 @@
 #include "weva/inline_layout.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <cstdlib>
+#include <string>
 
 namespace weva {
 
@@ -458,6 +461,78 @@ void run_recursive(BoxTree* tree, BoxId id, const LayoutContext& ctx, BlockLayou
 void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx, BlockLayout* block) {
     stamp_offsets(tree, root, ctx);
     run_recursive(tree, root, ctx, block);
+}
+
+// How far this box's own decoration can reach past its border box.
+//
+// A cull that is slightly too generous costs a few boxes of work; one that is
+// too tight loses pixels. So this OVER-estimates deliberately: it sums every
+// length in the shadow and filter declarations rather than parsing them into
+// offset, blur and spread, which bounds the true reach from above without
+// needing the paint code's parser here.
+double decoration_reach(const ComputedStyle* style) {
+    if (!style) return 0;
+    double reach = 0;
+    const auto sum_lengths = [](std::string_view raw, double scale) {
+        double total = 0;
+        for (std::size_t i = 0; i < raw.size();) {
+            if (!(std::isdigit(static_cast<unsigned char>(raw[i])) || raw[i] == '-' ||
+                  raw[i] == '.')) {
+                ++i;
+                continue;
+            }
+            char* end = nullptr;
+            const std::string text(raw.substr(i));
+            const double v = std::strtod(text.c_str(), &end);
+            if (end == text.c_str()) {
+                ++i;
+                continue;
+            }
+            total += std::abs(v);
+            i += static_cast<std::size_t>(end - text.c_str());
+        }
+        return total * scale;
+    };
+    for (const char* prop : {"box-shadow", "text-shadow"}) {
+        const std::string_view raw = style->get(prop);
+        if (!raw.empty() && raw != "none") reach += sum_lengths(raw, 1.0);
+    }
+    const std::string_view outline = style->get("outline-width");
+    if (!outline.empty()) reach += sum_lengths(outline, 1.0) + 4;
+    const std::string_view filter = style->get("filter");
+    // A blur reaches about three sigma, and the declaration's own numbers
+    // already carry the radius.
+    if (!filter.empty() && filter != "none") reach += sum_lengths(filter, 3.0);
+    return reach;
+}
+
+void compute_visual_overflow(BoxTree* tree, BoxId root) {
+    if (!tree || !tree->valid(root)) return;
+    Box& b = (*tree)[root];
+    // Its own border box, always: a box paints its background and border there
+    // whatever its children do.
+    double x0 = 0, y0 = 0, x1 = b.width, y1 = b.height;
+    // A shadow, an outline or a filter reaches past the border box, and a box
+    // with none of them needs no slack at all.
+    const double slack = decoration_reach(b.style);
+    const bool clips = clips_overflow(b);
+    for (BoxId c : tree->children(root)) {
+        compute_visual_overflow(tree, c);
+        const Box& cb = (*tree)[c];
+        // A clipping box's children are drawn shifted by its scroll offset,
+        // and the offset moves -- so the union is taken UNSHIFTED and the clip
+        // below bounds it to what the box can show. Otherwise every scroll
+        // would invalidate the rect.
+        if (clips) continue;
+        x0 = std::min(x0, cb.x + cb.vis_x0);
+        y0 = std::min(y0, cb.y + cb.vis_y0);
+        x1 = std::max(x1, cb.x + cb.vis_x1);
+        y1 = std::max(y1, cb.y + cb.vis_y1);
+    }
+    b.vis_x0 = x0 - slack;
+    b.vis_y0 = y0 - slack;
+    b.vis_x1 = x1 + slack;
+    b.vis_y1 = y1 + slack;
 }
 
 void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out) {

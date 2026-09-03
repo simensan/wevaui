@@ -132,6 +132,18 @@ struct Box {
     // Scroll offset on a scroll container. Paint shifts descendants by
     // (-scroll_x, -scroll_y); hit testing does the inverse.
     double scroll_x = 0, scroll_y = 0;
+    // The rectangle this box and everything under it can paint into, relative
+    // to the box's own origin. A box that clips its overflow stops the union
+    // at its own padding box, which is what makes this useful: paint tests it
+    // against the current clip and skips the whole subtree when it misses.
+    //
+    // Without it, painting a scrolled list walked every box in it -- 46,000
+    // for a 2,000-row list -- to produce the twenty draws you can see, and a
+    // scroll cost 100 ms a frame. The draw-level clip already threw the meshes
+    // away; the walk that built them is what had to stop.
+    //
+    // Filled by a single bottom-up pass after layout (compute_visual_overflow).
+    double vis_x0 = 0, vis_y0 = 0, vis_x1 = 0, vis_y1 = 0;
     // Written by the sticky resolver on top of the natural origin. x/y stay at
     // the in-flow position so other passes still reason about static placement.
     double sticky_offset_x = 0, sticky_offset_y = 0;

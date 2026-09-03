@@ -2001,6 +2001,7 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     // produce, so an animating document does not restyle to be told so.
     const bool touched_anything = doc->dom_touched;
     const bool structural_pending = doc->pending != Invalidation::None;
+    const Invalidation pending_at_entry = doc->pending;
     doc->dom_touched = false;
 
     // The cascade runs whatever changed -- it is the only thing that can tell
@@ -2013,7 +2014,16 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     // that is merely animating does not restyle to be told so. Without this an
     // animating page paid a full walk every frame -- 5.2 ms of layout-stress's
     // 16.5, to discover nothing.
-    const bool only_time = !touched_anything && !structural_pending;
+    //
+    // Nor can a REPAINT. Scrolling, a blinking caret and a tooltip sliding
+    // along all ask for Invalidation::Paint, and none of them can change a
+    // computed style: what could -- an attribute, a class, hover, focus, the
+    // active chain -- goes through note_state_change or the DOM and arrives as
+    // `touched` instead. Without this a scroll restyled the whole document,
+    // and scrolling a 2,000-row list cost 80 ms a frame in the cascade alone
+    // to discover that nothing had changed.
+    const bool only_time = !touched_anything &&
+                           (!structural_pending || pending_at_entry == Invalidation::Paint);
 
     // When the only thing that happened is that a host set some attributes,
     // the walk can be confined to what those attributes can reach. Whether
@@ -2107,6 +2117,9 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
         BlockLayout block(&doc->tree, doc->ctx, &doc->metrics_backend());
         block.layout_root(doc->root, doc->ctx.viewport_width_px, doc->ctx.viewport_height_px);
         run_positioning(&doc->tree, doc->root, doc->ctx, &block);
+        // After positioning, because an absolutely positioned child is not
+        // where layout first put it and the rect has to cover where it ended.
+        compute_visual_overflow(&doc->tree, doc->root);
     }
     lap("layout");
 

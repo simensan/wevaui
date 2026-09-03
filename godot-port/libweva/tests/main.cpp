@@ -303,6 +303,7 @@ void test_abi_popover_joins_the_top_layer();
 void test_abi_hit_follows_paint_order();
 void test_abi_title_shows_a_tooltip();
 void test_abi_tooltip_dismissal();
+void test_abi_paint_cull_keeps_reaching_shadows();
 void test_abi_selection_replaces();
 void test_abi_selection_is_drawn();
 void test_abi_click_places_caret();
@@ -653,6 +654,7 @@ int main() {
     test_abi_hit_follows_paint_order();
     test_abi_title_shows_a_tooltip();
     test_abi_tooltip_dismissal();
+    test_abi_paint_cull_keeps_reaching_shadows();
     test_abi_selection_replaces();
     test_abi_selection_is_drawn();
     test_abi_click_places_caret();

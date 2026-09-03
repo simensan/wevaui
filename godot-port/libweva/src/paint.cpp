@@ -2058,6 +2058,33 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     const double x = origin_x + b.x;
     const double y = origin_y + b.y;
 
+    // Nothing this box or anything under it can paint reaches the clip it is
+    // inside, so the whole subtree is skipped here rather than walked and
+    // thrown away a mesh at a time.
+    //
+    // This is what makes a long list cheap. The clip already rejected the
+    // meshes, but building them cost 2 microseconds a box -- so scrolling a
+    // 2,000-row list, 46,000 boxes to show twenty of them, took 100 ms a frame.
+    // The rectangle comes from compute_visual_overflow, which stops the union
+    // at a clipping box so a scroll never invalidates it.
+    if (state.scissor || state.clip) {
+        const double cx0 = x + b.vis_x0;
+        const double cy0 = y + b.vis_y0;
+        const double cx1 = x + b.vis_x1;
+        const double cy1 = y + b.vis_y1;
+        // The scissor first, because a plain rectangular scroller is ONLY a
+        // scissor -- the ClipNode chain is pushed for rounded corners, so a
+        // test that looked at the clip alone never fired for the ordinary
+        // case, which is the one that matters.
+        if (state.scissor) {
+            const Recti& r = *state.scissor;
+            if (cx1 < r.x || cx0 > r.x + r.width || cy1 < r.y || cy0 > r.y + r.height) return;
+        }
+        for (const ClipNode* n = state.clip.get(); n; n = n->parent.get()) {
+            if (!n->intersects_box(cx0, cy0, cx1, cy1)) return;
+        }
+    }
+
     // Line boxes carry their container's style for inline layout's sake and
     // anonymous boxes are not elements: neither has a background or border of
     // its own to paint. Painting a line box with its <th>'s background drew a

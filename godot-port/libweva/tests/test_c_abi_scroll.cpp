@@ -558,3 +558,58 @@ void test_abi_scroll_keys_yield() {
     // And a key that is nobody's is nobody's.
     CHECK(weva_document_key(plain.d, WEVA_KEY_ESCAPE, 0, 1) == 0);
 }
+
+namespace {
+
+size_t draw_count_of(const char* css, const char* html, double scroll_to) {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+    weva_element_set_scroll(d, weva_document_query(d, "#list"), 0, scroll_to);
+    weva_document_update(d, 0);
+    size_t n = 0;
+    weva_document_draws(d, &n);
+    weva_document_destroy(d);
+    return n;
+}
+
+}   // namespace
+
+// Painting skips a subtree that cannot reach the clip it is inside, which is
+// what makes a long list cheap -- scrolling a 2,000-row one went from 100 ms a
+// frame to 4. The risk is culling something whose DECORATION still reaches in:
+// a row scrolled out of view whose shadow falls back into it.
+void test_abi_paint_cull_keeps_reaching_shadows() {
+    const char* html = "<div id=list>"
+                       "<div class=row id=first></div>"
+                       "<div class=row></div><div class=row></div><div class=row></div>"
+                       "<div class=row></div><div class=row></div><div class=row></div>"
+                       "</div>";
+    const char* plain = "html, body { margin: 0 }"
+                        " #list { width: 200px; height: 60px; overflow-y: auto }"
+                        " .row { height: 40px; background: #eee }";
+    // The same document, with a shadow on the row that scrolling puts above
+    // the visible area -- reaching 50px down, back into it.
+    const char* shadowed = "html, body { margin: 0 }"
+                           " #list { width: 200px; height: 60px; overflow-y: auto }"
+                           " .row { height: 40px; background: #eee }"
+                           " #first { box-shadow: 0 50px 0 0 #f00 }";
+
+    // Scrolled past the first row: its own box is outside the clip.
+    const size_t without = draw_count_of(plain, html, 80);
+    const size_t with = draw_count_of(shadowed, html, 80);
+    CHECK(with > without);   // the shadow is still drawn
+
+    // And the cull is doing something: a list scrolled to the top draws fewer
+    // things than one with no clipping at all, because the rows below the
+    // 60px viewport are skipped rather than built and thrown away.
+    const char* unclipped = "html, body { margin: 0 }"
+                            " #list { width: 200px; height: 60px; overflow-y: visible }"
+                            " .row { height: 40px; background: #eee }";
+    CHECK(draw_count_of(plain, html, 0) < draw_count_of(unclipped, html, 0));
+}
