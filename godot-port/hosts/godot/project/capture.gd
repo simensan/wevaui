@@ -59,6 +59,31 @@ func _ready() -> void:
 	add_child(doc)
 	doc.update_document()
 
+	# The same interaction weva_render can be asked for, so the parts that
+	# only exist while a user is doing something -- a cursor, a selection, a
+	# hovered row, an open dropdown -- are compared between the backends too.
+	# Without this the whole popup path, which draws AFTER the tree and with
+	# no scissor, is verified on one side only.
+	var focus: String = _args.get("focus", "")
+	if not focus.is_empty():
+		doc.set_focus(focus)
+		var selection: String = _args.get("selection", "")
+		if not selection.is_empty():
+			var ends := selection.split(",")
+			doc.set_element_selection(focus, int(ends[0]), int(ends[1]))
+		var scroll: String = _args.get("scroll", "")
+		if not scroll.is_empty():
+			doc.set_element_scroll(focus, Vector2(0, float(scroll)))
+	var hover: String = _args.get("hover", "")
+	if not hover.is_empty():
+		var box := doc.query_bounds(hover)
+		doc.set_pointer(box.position + box.size * 0.5, 0)
+	var open_select: String = _args.get("open", "")
+	if not open_select.is_empty():
+		doc.open_select(open_select)
+	if not focus.is_empty() or not hover.is_empty() or not open_select.is_empty():
+		doc.update_document()
+
 	# The document composites over an opaque white page, matching what
 	# weva_render writes; comparing against a transparent or engine-default
 	# clear colour would report a difference in every untouched pixel.

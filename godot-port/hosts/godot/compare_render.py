@@ -179,6 +179,15 @@ def main():
                     help="a per-channel difference past this is a shape drawn "
                          "wrongly rather than an edge two rasterisers round "
                          "differently")
+    # The same interaction flags weva_render takes, forwarded to both sides so
+    # the caret, the selection band and the open dropdown are compared as the
+    # rest of the document is. They are the paths a corpus of static pages
+    # never reaches.
+    ap.add_argument("--focus", default=None, help="selector to focus")
+    ap.add_argument("--selection", default=None, help="A,B on the focused field")
+    ap.add_argument("--scroll", default=None, help="pixels to scroll the focused element")
+    ap.add_argument("--hover", default=None, help="selector to put the pointer over")
+    ap.add_argument("--open", dest="open_select", default=None, help="a <select> to open")
     ap.add_argument("--coverage-tolerance", type=float, default=2.0,
                     help="percentage of pixels allowed to disagree on ink at all")
     args = ap.parse_args()
@@ -193,7 +202,26 @@ def main():
     png = os.path.join(tmp, "godot.png")
 
     print("software backend:")
-    subprocess.run([args.weva_render, args.html, args.css, width, height, soft], check=True)
+    # One list of flags, spelled the way each side spells it.
+    soft_flags, godot_flags = [], []
+    if args.focus:
+        soft_flags.append("--focus=" + args.focus)
+        godot_flags += ["--focus", args.focus]
+    if args.selection:
+        soft_flags.append("--selection=" + args.selection)
+        godot_flags += ["--selection", args.selection]
+    if args.scroll:
+        soft_flags.append("--scroll=" + args.scroll)
+        godot_flags += ["--scroll", args.scroll]
+    if args.hover:
+        soft_flags.append("--hover=" + args.hover)
+        godot_flags += ["--hover", args.hover]
+    if args.open_select:
+        soft_flags.append("--open=" + args.open_select)
+        godot_flags += ["--open", args.open_select]
+
+    subprocess.run([args.weva_render, args.html, args.css, width, height, soft] + soft_flags,
+                   check=True)
 
     print("godot backend:")
     css_arg = "" if args.css == "-" else os.path.abspath(args.css)
@@ -201,7 +229,7 @@ def main():
         [args.godot, "--path", args.project, "--rendering-driver", "opengl3",
          "--scene", "res://capture.tscn", "--",
          "--html", os.path.abspath(args.html), "--css", css_arg,
-         "--size", f"{width}x{height}", "--out", godot, "--png", png]
+         "--size", f"{width}x{height}", "--out", godot, "--png", png] + godot_flags
         # The reference rasteriser has no access to the engine's fonts, so the
         # comparison holds the font fixed on the core's built-in face. Without
         # this the two sides render different text and every glyph differs.
