@@ -176,6 +176,7 @@ void test_table_cells_stretch_and_vertical_align();
 void test_table_row_groups_and_captions();
 void test_table_visibility_collapse_and_column_hints();
 void test_grid_stretched_rows_feed_back_into_columns();
+void test_image_decode();
 void test_background_shorthand();
 void test_backdrop_filter_colour();
 void test_backdrop_filter_extent();
@@ -553,6 +554,7 @@ int main() {
     test_table_row_groups_and_captions();
     test_table_visibility_collapse_and_column_hints();
     test_grid_stretched_rows_feed_back_into_columns();
+    test_image_decode();
     test_background_shorthand();
     test_backdrop_filter_colour();
     test_backdrop_filter_extent();
