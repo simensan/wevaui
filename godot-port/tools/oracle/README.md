@@ -129,3 +129,37 @@ Audited 2026-09-02, and this is what the backend numbers mean:
 None of that is a defect. Two rasterisers resolving a half-pixel differently
 is what the structural tolerance of 64 exists to permit, and the 0.34% figure
 for quests is a count of those edge rows.
+
+## What the form-control metrics actually say
+
+`corpus/samples/form-metrics.html` exists to pin the UA's form-control box
+model against Chrome, since the ordinary samples style their controls and hide
+the defaults. Captured at 1280x720 with `--metrics=mono`, Chrome and this
+engine agree exactly on:
+
+  * `input[type=text]` 218x34, `textarea` 218x90, both unstyled
+  * `select` 218 wide whatever its option's length -- and 218 EVEN WITH an
+    author `width: 90px`, which Chrome refuses to shrink below its intrinsic
+    minimum while honouring the same declaration on an input, a textarea and a
+    button. The UA's `min-width: 218px` on select is not a divergence from
+    Chrome; it is Chrome.
+  * checkbox and radio at 16x16
+
+One control does NOT agree, and it is worth writing down rather than half
+fixing. An unstyled `<button>`:
+
+    weva    46 x 20     (after adding a 1px border: 46 x 22)
+    chrome  46 x 23.2
+
+The width is a missing 1px border on each side. The remaining ~1.2px of height
+is the content box: Chrome resolves `line-height: normal` inside a button to
+17.2px where this engine gets 16, and the difference shows again in
+`sample-menu`, where a styled button is 32.002 in the C# reference, 34.002 with
+the border added here, and 36 in Chrome.
+
+Adding the border alone therefore makes things WORSE by the oracle's rules --
+it moves the port off the reference without landing on Chrome, which the
+harness counts as a real difference rather than a reference bug. The fix has to
+be the button's whole intrinsic box, in the C# engine and the port together,
+since the reference is what the port is measured against. Left undone
+deliberately, with the numbers here so it can be picked up.
