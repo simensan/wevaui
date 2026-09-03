@@ -127,6 +127,91 @@ func _reading_back(_unused: WevaDocument) -> void:
 	_check(doc.query_all_text(".nothing-here").size() == 0, "no match is an empty list")
 	doc.queue_free()
 
+# One inline declaration at a time. Setting the whole `style` attribute is what
+# a script had to do to change one property, and getting that splice wrong
+# loses every other declaration on the element.
+func _inline_styles() -> void:
+	var doc := WevaDocument.new()
+	add_child(doc)
+	doc.document_size = Vector2(400, 300)
+	doc.css = ".panel { color: rgb(1, 2, 3); }"
+	doc.html = """
+	<div id="a" class="panel" style="width: 100px; height: 40px; color: rgb(9, 9, 9)">a</div>
+	<div id="b" class="panel">b</div>
+	<div id="c" style="background-image: url(x;y.png); width: 50px">c</div>
+	"""
+	doc.update_document()
+
+	_check(doc.get_element_style("#a", "width") == "100px", "an inline value reads back")
+	_check(doc.get_element_style("#a", "margin") == "", "and one that is not set is empty")
+
+	# Changing one leaves the others alone, which is the whole point.
+	doc.set_element_style("#a", "width", "200px")
+	doc.update_document()
+	_check(doc.get_element_style("#a", "width") == "200px", "setting one changes it")
+	_check(doc.get_element_style("#a", "height") == "40px", "and leaves its neighbours")
+	_check(doc.query_bounds("#a").size.x == 200, "and layout follows")
+
+	# Adding a property the element did not have.
+	doc.set_element_style("#b", "width", "120px")
+	doc.update_document()
+	_check(doc.query_bounds("#b").size.x == 120, "a property can be added")
+
+	# Removing hands the property back to the stylesheet rather than blanking
+	# it: #a's class says rgb(1,2,3) and its inline style overrode it.
+	_check(doc.get_computed_style("#a", "color").contains("9"), "inline wins while it is set")
+	doc.set_element_style("#a", "color", "")
+	doc.update_document()
+	_check(doc.get_element_style("#a", "color") == "", "removing clears the declaration")
+	_check(doc.get_computed_style("#a", "color").contains("1"),
+			"and the stylesheet takes it back")
+
+	# A semicolon inside url() is part of the value. Splitting on every
+	# semicolon would truncate it and leave `y.png)` behind as a declaration.
+	_check(doc.get_element_style("#c", "background-image") == "url(x;y.png)",
+			"a semicolon inside url() is not a separator")
+	doc.set_element_style("#c", "width", "80px")
+	doc.update_document()
+	_check(doc.get_element_style("#c", "background-image") == "url(x;y.png)",
+			"and survives a write to another property")
+
+	doc.queue_free()
+
+# An element's box in the space a sibling Node2D lives in.
+func _screen_rects() -> void:
+	var stage := Node2D.new()
+	add_child(stage)
+	var doc := WevaDocument.new()
+	doc.document_size = Vector2(400, 300)
+	doc.html = "<div id='t' style='width: 100px; height: 50px; margin: 20px'>t</div>"
+	stage.add_child(doc)
+	doc.update_document()
+
+	var local := doc.query_bounds("#t")
+	_check(local.position == Vector2(20, 20), "the document box is in document space")
+
+	# Untransformed, the two agree.
+	_check(doc.get_element_screen_rect("#t") == local, "and matches the screen rect at 1:1")
+
+	# Scaled and offset -- the way a gallery or a scaled HUD shows a document.
+	# A caller anchoring a portrait over a panel needs THIS, and composing it
+	# by hand is the mistake the node already made once for hit testing.
+	doc.scale = Vector2(0.5, 0.5)
+	doc.position = Vector2(100, 60)
+	var screen := doc.get_element_screen_rect("#t")
+	_check(screen.position == Vector2(110, 70), "a scale and offset are applied")
+	_check(screen.size == Vector2(50, 25), "including to the size")
+
+	# A transform on an ancestor counts too.
+	doc.scale = Vector2.ONE
+	doc.position = Vector2.ZERO
+	stage.position = Vector2(7, 9)
+	_check(doc.get_element_screen_rect("#t").position == Vector2(27, 29),
+			"and an ancestor's transform")
+
+	_check(doc.get_element_screen_rect("#nothing") == Rect2(), "a miss is an empty rect")
+	doc.queue_free()
+
 # Focus by DIRECTION, which is the one a gamepad asks and the tab order cannot
 # answer: what is to the left of this? In a grid, source order says "the
 # previous one", which at the end of every row is the element above-right.
@@ -291,6 +376,8 @@ func _ready() -> void:
 	_reading_back(doc)
 
 	_gamepad_focus()
+	_inline_styles()
+	_screen_rects()
 
 	doc.queue_free()
 	print("godot bindings: %d checks, %d failures" % [checks, failures])

@@ -347,6 +347,19 @@ public:
     // a page that simply has no icon.
     godot::PackedStringArray get_missing_assets();
 
+    // One inline declaration, leaving the rest of the element's `style` alone.
+    // An empty value removes it, handing the property back to the stylesheet.
+    bool set_element_style(const godot::String& selector, const godot::String& property,
+                           const godot::String& value);
+    // What the element sets INLINE, which is not what the cascade decided --
+    // get_computed_style answers that.
+    godot::String get_element_style(const godot::String& selector,
+                                    const godot::String& property);
+
+    // An element's box in the same coordinates a sibling Node2D lives in, so
+    // something can be parented over it.
+    godot::Rect2 get_element_screen_rect(const godot::String& selector);
+
 private:
     godot::String base_path_;
     // Handed to the core so an asset is read through Godot: res:// resolves,

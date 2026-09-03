@@ -90,6 +90,52 @@ void WevaDocument::set_base_path(const String& path) {
 
 String WevaDocument::get_base_path() const { return base_path_; }
 
+bool WevaDocument::set_element_style(const String& selector, const String& property,
+                                     const String& value) {
+    if (!doc_) return false;
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return false;
+    const CharString p = property.utf8();
+    const CharString v = value.utf8();
+    // An empty value REMOVES the declaration rather than setting it empty, so
+    // a script can hand a property back to the stylesheet.
+    if (weva_element_set_style(doc_, e, p.get_data(), value.is_empty() ? nullptr : v.get_data()) !=
+        WEVA_OK) {
+        return false;
+    }
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+String WevaDocument::get_element_style(const String& selector, const String& property) {
+    if (!doc_) return String();
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return String();
+    const CharString p = property.utf8();
+    const size_t n = weva_element_style(doc_, e, p.get_data(), nullptr, 0);
+    if (n == 0) return String();
+    std::vector<char> buffer(n + 1, 0);
+    weva_element_style(doc_, e, p.get_data(), buffer.data(), buffer.size());
+    return String::utf8(buffer.data());
+}
+
+// Document coordinates through this node's own transform, so the answer is in
+// the space a sibling Node2D lives in.
+//
+// The document's box is not it: the gallery scales its stage to fit and offsets
+// it by a scroll pan, and a caller anchoring a portrait or a particle emitter
+// over a panel would land it somewhere else entirely. Composing that transform
+// by hand is what a script would otherwise have to do, and it is the same
+// mistake this node already makes internally for hit testing.
+Rect2 WevaDocument::get_element_screen_rect(const String& selector) {
+    const Rect2 local = query_bounds(selector);
+    if (local.size == Vector2()) return local;
+    return get_global_transform().xform(local);
+}
+
 PackedStringArray WevaDocument::get_missing_assets() {
     PackedStringArray out;
     if (!doc_) return out;
@@ -333,6 +379,12 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_base_path", "path"), &WevaDocument::set_base_path);
     ClassDB::bind_method(D_METHOD("get_base_path"), &WevaDocument::get_base_path);
     ClassDB::bind_method(D_METHOD("get_missing_assets"), &WevaDocument::get_missing_assets);
+    ClassDB::bind_method(D_METHOD("set_element_style", "selector", "property", "value"),
+                         &WevaDocument::set_element_style);
+    ClassDB::bind_method(D_METHOD("get_element_style", "selector", "property"),
+                         &WevaDocument::get_element_style);
+    ClassDB::bind_method(D_METHOD("get_element_screen_rect", "selector"),
+                         &WevaDocument::get_element_screen_rect);
     ADD_PROPERTY(PropertyInfo(Variant::STRING, "base_path"), "set_base_path", "get_base_path");
     ClassDB::bind_method(D_METHOD("get_computed_style", "selector", "property"),
                          &WevaDocument::get_computed_style);

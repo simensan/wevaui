@@ -430,6 +430,29 @@ what every image did before this existed.
 size, one of them gives the other through the intrinsic ratio, and
 `object-fit` and `object-position` place it in the content box.
 
+**Changing one property, and finding a box on screen**
+
+    doc.set_element_style("#bar", "width", "62%")     # one declaration
+    doc.set_element_style("#bar", "width", "")        # back to the stylesheet
+    doc.get_element_style("#bar", "width")            # what it sets INLINE
+
+The rest of the element's `style` is left alone, which is the point: changing
+one property used to mean reading the attribute, splicing it and writing the
+rest back, and a splice that goes wrong takes every other declaration with it.
+An empty value REMOVES the declaration rather than setting it empty, so a
+property can be handed back to the stylesheet without a script having to know
+what the stylesheet said. `get_element_style` reports what the element sets
+inline; `get_computed_style` reports what the cascade decided, and the two
+differ whenever a stylesheet is involved at all.
+
+    doc.get_element_screen_rect("#portrait")   # Rect2, in the parent's space
+
+An element's box through this node's own transform, so a Node2D, a particle
+emitter or a 3D viewport can be parented over it. `query_bounds` answers in
+DOCUMENT space, which is not where anything else in the scene lives once the
+document is scaled to fit or offset by a scroll -- composing that by hand is
+the mistake this node itself already made once, for hit testing.
+
 **Driving it with a gamepad**
 
 A tab order cannot answer the question a stick asks. `focus_next` walks the

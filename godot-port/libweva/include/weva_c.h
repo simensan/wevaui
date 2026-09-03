@@ -680,6 +680,28 @@ weva_status weva_element_scroll_into_view(weva_document_t doc, weva_element_t el
 
 /* Sets an attribute, which restyles on the next update. A null value removes
  * it. */
+/* One declaration of an element's inline `style`, left alone otherwise.
+ *
+ * Setting the whole attribute is what a script had to do to change one
+ * property, which means reading it, finding the declaration, splicing it and
+ * writing the rest back -- and getting the splice wrong loses every other
+ * declaration on the element. This does that once, here.
+ *
+ * A null or empty `value` REMOVES the declaration, so a script can put a
+ * property back under the stylesheet's control rather than having to guess
+ * what the stylesheet said. The declaration list is split at top level, so a
+ * semicolon inside `url(...)` or a quoted string does not cut a value in
+ * half. */
+weva_status weva_element_set_style(weva_document_t doc, weva_element_t element,
+                                   const char* property, const char* value);
+
+/* That element's inline value for one property -- what its `style` attribute
+ * says, NOT what the cascade decided. weva_element_computed_style answers the
+ * second question, and they differ whenever a stylesheet is involved at all.
+ * Returns 0 when the element does not set it inline. */
+size_t weva_element_style(weva_document_t doc, weva_element_t element, const char* property,
+                          char* buffer, size_t capacity);
+
 weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t element,
                                        const char* name, const char* value);
 

@@ -4219,6 +4219,131 @@ weva_status weva_document_set_asset_reader(weva_document_t doc, weva_asset_reade
     return WEVA_OK;
 }
 
+namespace {
+
+// An inline style's declarations, split at TOP LEVEL: a semicolon inside
+// url(...) or inside a quoted string is part of a value, not a separator, and
+// cutting there would truncate the value and leave a fragment behind as a
+// declaration of its own.
+std::vector<std::string> split_declarations(std::string_view style) {
+    std::vector<std::string> out;
+    int depth = 0;
+    char quote = 0;
+    size_t start = 0;
+    for (size_t i = 0; i < style.size(); ++i) {
+        const char c = style[i];
+        if (quote) {
+            if (c == '\\' && i + 1 < style.size()) ++i;
+            else if (c == quote) quote = 0;
+            continue;
+        }
+        if (c == '"' || c == '\'') { quote = c; continue; }
+        if (c == '(') ++depth;
+        else if (c == ')') { if (depth > 0) --depth; }
+        else if (c == ';' && depth == 0) {
+            out.emplace_back(style.substr(start, i - start));
+            start = i + 1;
+        }
+    }
+    out.emplace_back(style.substr(start));
+    return out;
+}
+
+std::string_view trim_decl(std::string_view s) {
+    const auto ws = [](char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; };
+    while (!s.empty() && ws(s.front())) s.remove_prefix(1);
+    while (!s.empty() && ws(s.back())) s.remove_suffix(1);
+    return s;
+}
+
+// The property a declaration sets, lowercased, or empty when it is not one.
+std::string declaration_property(std::string_view decl) {
+    const size_t colon = decl.find(':');
+    if (colon == std::string_view::npos) return {};
+    std::string name(trim_decl(decl.substr(0, colon)));
+    for (char& c : name) {
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    return name;
+}
+
+} // namespace
+
+weva_status weva_element_set_style(weva_document_t doc, weva_element_t element,
+                                   const char* property, const char* value) {
+    if (!doc || !property || !*property) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+
+    std::string wanted(property);
+    for (char& c : wanted) {
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    const bool removing = !value || !*value;
+
+    std::string rebuilt;
+    bool replaced = false;
+    for (const std::string& decl : split_declarations(e->get_attribute("style"))) {
+        const std::string_view trimmed = trim_decl(decl);
+        if (trimmed.empty()) continue;
+        if (declaration_property(trimmed) == wanted) {
+            // Replaced IN PLACE rather than removed and appended, so a script
+            // setting a property twice does not shuffle the declaration order
+            // under it -- and order decides the winner between two that set
+            // the same longhand through different shorthands.
+            replaced = true;
+            if (removing) continue;
+            rebuilt += wanted;
+            rebuilt += ": ";
+            rebuilt += value;
+            rebuilt += "; ";
+            continue;
+        }
+        rebuilt.append(trimmed);
+        rebuilt += "; ";
+    }
+    if (!replaced && !removing) {
+        rebuilt += wanted;
+        rebuilt += ": ";
+        rebuilt += value;
+        rebuilt += "; ";
+    }
+    while (!rebuilt.empty() && (rebuilt.back() == ' ' || rebuilt.back() == ';')) rebuilt.pop_back();
+
+    if (rebuilt.empty()) e->remove_attribute("style");
+    else e->set_attribute("style", rebuilt);
+    // The same invalidation an attribute write does: the cascade must re-run,
+    // and the selector match cache is keyed on element shape so the change
+    // lands on a different entry without being invalidated here.
+    doc->dom_touched = true;
+    if (doc->touched.size() < 64) doc->touched.push_back(e);
+    return WEVA_OK;
+}
+
+size_t weva_element_style(weva_document_t doc, weva_element_t element, const char* property,
+                          char* buffer, size_t capacity) {
+    if (buffer && capacity > 0) buffer[0] = '\0';
+    if (!doc || !property) return 0;
+    const Element* e = doc->element_at(element);
+    if (!e) return 0;
+    std::string wanted(property);
+    for (char& c : wanted) {
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    for (const std::string& decl : split_declarations(e->get_attribute("style"))) {
+        const std::string_view trimmed = trim_decl(decl);
+        if (declaration_property(trimmed) != wanted) continue;
+        const std::string_view v = trim_decl(trimmed.substr(trimmed.find(':') + 1));
+        if (buffer && capacity > 0) {
+            const size_t n = v.size() < capacity - 1 ? v.size() : capacity - 1;
+            if (n > 0) std::memcpy(buffer, v.data(), n);
+            buffer[n] = '\0';
+        }
+        return v.size();
+    }
+    return 0;
+}
+
 size_t weva_element_computed_style(weva_document_t doc, weva_element_t element,
                                    const char* property, char* buffer, size_t capacity) {
     if (buffer && capacity > 0) buffer[0] = '\0';
