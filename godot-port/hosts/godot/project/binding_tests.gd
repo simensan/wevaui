@@ -27,6 +27,17 @@ const HTML := """
 </div>
 """
 
+const ROWS_HTML := """
+<ul id="quests">
+  <template data-each="Quests as quest" data-key="Id">
+    <li class="row">
+      <span>{{ quest.Title }}</span>
+      <input type="text" data-model="quest.Note">
+    </li>
+  </template>
+</ul>
+"""
+
 # The three gestures the write-back is reached through, as a player makes them.
 
 func _type_into(doc: WevaDocument, selector: String, text: String) -> void:
@@ -120,6 +131,37 @@ func _ready() -> void:
 	_check(doc.get_element_value("#plain") == "untouched", "an unmodelled field is untouched")
 	_type_into(doc, "#plain", "typed")
 	_check(doc.data.size() == 3, "typing an unmodelled field adds nothing to the data")
+
+	# A control INSIDE a repeated row. The author writes the row's alias, which
+	# means nothing at the top of the data, so the path has to be unwound
+	# against the item that row actually is.
+	var rows := WevaDocument.new()
+	add_child(rows)
+	rows.document_size = Vector2(600, 400)
+	rows.html = ROWS_HTML
+	rows.data = {"Quests": [
+		{"Id": "a", "Title": "Find the key", "Note": "under the mat", "Done": false},
+		{"Id": "b", "Title": "Open the gate", "Note": "rusted", "Done": false},
+	]}
+	rows.update_document()
+	_check(rows.count_elements("#quests > .row") == 2, "the repeat made its rows")
+	_check(rows.get_element_value("#quests > .row:nth-of-type(2) input[type=text]") == "rusted",
+			"a model inside a row is filled from that row's item")
+
+	var row_paths := []
+	rows.data_changed.connect(func(path, _v): row_paths.append(path))
+	_type_into(rows, "#quests > .row:nth-of-type(2) input[type=text]", "oiled")
+	_check(rows.data["Quests"][1]["Note"] == "oiled", "and writes back into that item")
+	_check(rows.data["Quests"][0]["Note"] == "under the mat", "leaving its neighbour alone")
+	if row_paths.size() > 0:
+		_check(row_paths[0] == "Quests.1.Note", "by the unwound path, not the alias")
+	else:
+		_check(false, "by the unwound path, not the alias")
+
+	# A path inside a row that names no alias is global, and stays global.
+	_check(rows.query_text("#quests > .row:nth-of-type(2)").contains("Open the gate"),
+			"the row still reads its own fields")
+	rows.queue_free()
 
 	# A resolver owns its own data and has nowhere to put an answer, so the
 	# write-back must stay out of its way rather than guess.

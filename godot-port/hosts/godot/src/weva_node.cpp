@@ -1051,6 +1051,21 @@ godot::String WevaDocument::value_of(uint32_t element) {
     return String::utf8(buffer.data());
 }
 
+// An element's `data-model`, resolved against the whole document. Inside a
+// repeated row the author writes the row's alias -- `quest.Done` -- and only
+// the core knows which item that row is, so it does the unwinding.
+godot::String WevaDocument::model_path_of(uint32_t element) {
+    if (!doc_ || element == WEVA_ELEMENT_NONE) return String();
+    const String written = attribute_of(element, "data-model");
+    if (written.is_empty()) return String();
+    const CharString raw = written.utf8();
+    const size_t n = weva_element_model_path(doc_, element, raw.get_data(), nullptr, 0);
+    if (n == 0) return written;
+    std::vector<char> buffer(n + 1, 0);
+    weva_element_model_path(doc_, element, raw.get_data(), buffer.data(), buffer.size());
+    return String::utf8(buffer.data());
+}
+
 godot::String WevaDocument::attribute_of(uint32_t element, const char* name) {
     if (!doc_ || element == WEVA_ELEMENT_NONE) return String();
     const size_t n = weva_element_attribute(doc_, element, name, nullptr, 0);
@@ -1072,7 +1087,7 @@ int WevaDocument::apply_models() {
     applying_models_ = true;
     int changed = 0;
     for (size_t i = 0; i < count; ++i) {
-        const String path = attribute_of(elements[i], "data-model");
+        const String path = model_path_of(elements[i]);
         if (path.is_empty()) continue;
         String wanted;
         if (!resolve_binding(path, &wanted)) continue;
@@ -1301,7 +1316,7 @@ void WevaDocument::pump_events() {
 // answer a path but has nowhere to put an answer.
 void WevaDocument::write_back_model(uint32_t element) {
     if (applying_models_ || data_source_.is_valid()) return;
-    const String path = attribute_of(element, "data-model");
+    const String path = model_path_of(element);
     if (path.is_empty()) return;
     const String value = value_of(element);
     if (!write_data_path(path, value)) return;

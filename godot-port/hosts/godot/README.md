@@ -373,6 +373,11 @@ Three things worth knowing:
     after the first drag. Floats and bools likewise.
   * **A missing branch is created.** `data-model="Fresh.Field"` writes into a
     `Fresh` dictionary the data did not have.
+  * **A row's alias is unwound.** Inside a `data-each`, markup writes the
+    row's own name -- `data-model="quest.Note"` -- and the write lands at
+    `Quests.1.Note`, in the item that row actually is. Nested repeats unwind
+    the whole way up, and `data_changed` reports the resolved path. A path
+    that names no alias is global, in a row as anywhere else.
   * **Only a player's edit writes back.** `set_element_value()` from a script
     raises no input event, here as in a browser, and neither does a value the
     data itself pushed in -- so the two directions cannot chase each other. And

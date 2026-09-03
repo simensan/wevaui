@@ -4091,6 +4091,57 @@ weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t elemen
     return WEVA_OK;
 }
 
+size_t weva_element_model_path(weva_document_t doc, weva_element_t element, const char* path,
+                               char* buffer, size_t capacity) {
+    std::string resolved(path ? path : "");
+    const Element* e = doc ? doc->element_at(element) : nullptr;
+
+    // Outward from the element. Each repeated row on the way up may own the
+    // alias the path currently starts with, and rewriting innermost-first is
+    // what makes a nested repeat unwind: once `step.Done` has become
+    // `quest.Steps.2.Done`, the row above it owns `quest`.
+    for (const Node* n = e; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        const Element& row = static_cast<const Element&>(*n);
+        if (!row.has_attribute("data-weva-row")) continue;
+
+        // `data-weva-row` holds the `data-each` the row was made from.
+        const std::string each(row.get_attribute("data-weva-row"));
+        const std::size_t as = each.find(" as ");
+        if (as == std::string::npos) continue;
+        std::string list = each.substr(0, as);
+        std::string alias = each.substr(as + 4);
+        const auto trim_ws = [](std::string& v) {
+            while (!v.empty() && std::isspace(static_cast<unsigned char>(v.front()))) v.erase(v.begin());
+            while (!v.empty() && std::isspace(static_cast<unsigned char>(v.back()))) v.pop_back();
+        };
+        trim_ws(list);
+        trim_ws(alias);
+        if (alias.empty() || list.empty()) continue;
+
+        // Only when the path actually names this alias. `Player.Name` inside a
+        // quest row is a global path the author meant globally.
+        std::string rest;
+        if (resolved == alias) {
+            rest.clear();
+        } else if (resolved.size() > alias.size() && resolved.compare(0, alias.size(), alias) == 0 &&
+                   resolved[alias.size()] == '.') {
+            rest = resolved.substr(alias.size());
+        } else {
+            continue;
+        }
+        const std::string index(row.get_attribute("data-weva-index"));
+        resolved = list + "." + (index.empty() ? std::string("0") : index) + rest;
+    }
+
+    if (buffer && capacity > 0) {
+        const size_t n = resolved.size() < capacity - 1 ? resolved.size() : capacity - 1;
+        if (n > 0) std::memcpy(buffer, resolved.data(), n);
+        buffer[n] = ' ';
+    }
+    return resolved.size();
+}
+
 int weva_element_row(weva_document_t doc, weva_element_t element, int* out_index,
                      char* key_buffer, size_t key_capacity) {
     if (key_buffer && key_capacity > 0) key_buffer[0] = '\0';

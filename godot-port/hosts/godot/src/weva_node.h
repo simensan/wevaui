@@ -331,6 +331,7 @@ private:
     // "#" + id_of(e) finds nothing and reads back an empty value.
     godot::String value_of(uint32_t element);
     godot::String attribute_of(uint32_t element, const char* name);
+    godot::String model_path_of(uint32_t element);
     // Set while a model is being pushed into its control, so the change that
     // causes does not bounce straight back into the data.
     bool applying_models_ = false;

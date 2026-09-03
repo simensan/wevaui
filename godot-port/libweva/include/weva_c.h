@@ -744,6 +744,20 @@ weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t elem
  * then `out_index` is untouched and the key buffer gets an empty string). The
  * key follows the usual two-call convention: pass a null buffer to ask for the
  * length. */
+/* A binding path written INSIDE a repeated row, resolved against the whole
+ * document.
+ *
+ * `data-each="Quests as quest"` gives the rows an alias, so markup inside one
+ * says `quest.Done` -- which means nothing at the top of the data. This turns
+ * it into `Quests.3.Done`. Nested repeats are unwound too, innermost first, so
+ * a step inside a quest resolves the whole way up.
+ *
+ * A path that names no alias is copied through unchanged, and so is one on an
+ * element that is not in a row: the caller can always use the result. Follows
+ * the usual two-call convention. */
+size_t weva_element_model_path(weva_document_t doc, weva_element_t element, const char* path,
+                               char* buffer, size_t capacity);
+
 int weva_element_row(weva_document_t doc, weva_element_t element, int* out_index, char* key_buffer,
                      size_t key_capacity);
 
