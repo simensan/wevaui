@@ -15,6 +15,17 @@ const std::string kEmpty;
 void ComputedStyle::ensure_capacity(int id) {
     auto need = static_cast<std::size_t>(id) + 1;
     if (values_.size() >= need) return;
+    // To the FULL registry, not to the one property that asked. Growing by one
+    // meant a style filled in ascending id order resized six vectors 334
+    // times: three of them std::vector<bool>, whose resize is a bit-level
+    // fill. Cascading 10,000 rows spent 3 million calls in that one function
+    // -- the single largest cost in a first layout, ahead of layout itself.
+    //
+    // The registry's size is fixed at startup, so this is the size every style
+    // reaches anyway; taking it at once costs one allocation each instead of
+    // hundreds, and the memory was going to be used.
+    const auto full = static_cast<std::size_t>(CssPropertyRegistry::instance().count());
+    if (full > need) need = full;
     values_.resize(need);
     parsed_.resize(need);
     parsed_ready_.resize(need, false);
