@@ -1632,3 +1632,85 @@ void test_abi_undo_is_per_field() {
     CHECK(weva_document_undo(doc.d) == 1);
     CHECK(doc.value("#a").empty());
 }
+
+// <details> was styled and never opened: the UA sheet hides a closed one's
+// body and shows an open one's, but nothing toggled the attribute.
+void test_abi_details_toggles() {
+    Doc doc("html, body { margin: 0 } summary { height: 20px } p { height: 40px }",
+            "<details id=d><summary id=s>More</summary><p id=body>Hidden</p></details>");
+    const weva_element_t d = weva_document_query(doc.d, "#d");
+    const weva_element_t body = weva_document_query(doc.d, "#body");
+
+    // Closed: the body has no box at all, because the UA sheet says
+    // `display: none` on a closed details' children.
+    double x = 0, y = 0, w = 0, h = 0;
+    CHECK(weva_element_bounds(doc.d, body, &x, &y, &w, &h) != WEVA_OK || h == 0);
+
+    // A click on the summary opens it.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#s"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_query(doc.d, "#d[open]") == d);
+    CHECK(weva_element_bounds(doc.d, body, &x, &y, &w, &h) == WEVA_OK);
+    CHECK(h == 40);   // the body has a box now
+
+    // And clicking it again closes it, which is the half that a
+    // "set open when clicked" implementation gets wrong.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#s"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_query(doc.d, "#d[open]") == WEVA_ELEMENT_NONE);
+}
+
+// Which clicks count, and which must not.
+void test_abi_details_only_its_own_summary() {
+    Doc doc("html, body { margin: 0 } summary { height: 20px } p { height: 40px }"
+            " details { display: block }",
+            "<details id=outer open><summary id=os>Outer</summary>"
+            "<p id=text>Body text</p>"
+            "<details id=inner><summary id=is>Inner</summary><p id=ibody>Deep</p></details>"
+            "</details>");
+    const weva_element_t outer = weva_document_query(doc.d, "#outer");
+    const weva_element_t inner = weva_document_query(doc.d, "#inner");
+    double x = 0, y = 0, w = 0, h = 0;
+
+    // A click in the open body is not a click on the summary, so it must not
+    // collapse what the reader is reading.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#text"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_query(doc.d, "#outer[open]") == outer);
+
+    // The inner summary toggles the INNER one. Its own <details> is the
+    // nearest, not the outermost.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#is"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_query(doc.d, "#inner[open]") == inner);
+    CHECK(weva_document_query(doc.d, "#outer[open]") == outer);   // untouched
+}
+
+// The event a script hangs "load this section the first time it opens" on.
+void test_abi_details_reports_the_toggle() {
+    Doc doc("html, body { margin: 0 } summary { height: 20px }",
+            "<details id=d on-toggle=OnDisclose><summary id=s>More</summary>"
+            "<p>Body</p></details>");
+    double x = 0, y = 0, w = 0, h = 0;
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#s"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+
+    int toggles = 0;
+    std::string handler;
+    weva_element_t target = WEVA_ELEMENT_NONE;
+    weva_event e{};
+    while (weva_document_poll_event(doc.d, &e)) {
+        if (e.kind != WEVA_EVENT_TOGGLE) continue;
+        ++toggles;
+        handler = e.handler;
+        target = e.target;
+    }
+    CHECK(toggles == 1);
+    CHECK(handler == "OnDisclose");
+    CHECK(target == weva_document_query(doc.d, "#d"));   // the <details>, not the summary
+}

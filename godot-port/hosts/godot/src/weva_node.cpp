@@ -198,6 +198,8 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_content_size"), &WevaDocument::get_content_size);
     ClassDB::bind_method(D_METHOD("query_bounds", "selector"), &WevaDocument::query_bounds);
     ClassDB::bind_method(D_METHOD("query_text", "selector"), &WevaDocument::query_text);
+    ClassDB::bind_method(D_METHOD("has_element_attribute", "selector", "name"),
+                         &WevaDocument::has_element_attribute);
     ClassDB::bind_method(D_METHOD("set_element_attribute", "selector", "name", "value"),
                          &WevaDocument::set_element_attribute);
     ClassDB::bind_method(D_METHOD("remove_element_attribute", "selector", "name"),
@@ -293,6 +295,8 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("value_committed", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::STRING, "value")));
     ADD_SIGNAL(MethodInfo("form_submitted", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("element_toggled", PropertyInfo(Variant::STRING, "id"),
+                          PropertyInfo(Variant::BOOL, "open")));
     ADD_SIGNAL(MethodInfo("element_scrolled", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::FLOAT, "x"), PropertyInfo(Variant::FLOAT, "y")));
     ADD_SIGNAL(MethodInfo("value_changed", PropertyInfo(Variant::STRING, "id"),
@@ -840,6 +844,15 @@ static size_t weva_binding_read(void* user, const char* path, char* buffer, size
     return length;
 }
 
+bool WevaDocument::has_element_attribute(const String& selector, const String& name) {
+    if (!doc_) return false;
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return false;
+    const CharString n = name.utf8();
+    return weva_element_has_attribute(doc_, e, n.get_data()) != 0;
+}
+
 String WevaDocument::get_element_attribute(const String& selector, const String& name) {
     if (!doc_) return String();
     ensure_updated();
@@ -1031,6 +1044,13 @@ void WevaDocument::pump_events() {
                 emit_signal("value_committed", id, get_element_value("#" + id));
                 break;
             case WEVA_EVENT_SUBMIT: emit_signal("form_submitted", id); break;
+            case WEVA_EVENT_TOGGLE:
+                // A <details> opened or closed. `open` says which way, so a
+                // script that fills a section the first time it is opened has
+                // somewhere to hang.
+                emit_signal("element_toggled", id,
+                            weva_element_has_attribute(doc_, e.target, "open") != 0);
+                break;
             case WEVA_EVENT_SCROLL:
                 // Where it scrolled TO, so a script can load more when a list
                 // nears its end without asking the document again.

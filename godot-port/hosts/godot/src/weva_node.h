@@ -128,6 +128,9 @@ public:
 
     // Data binding: `{{ path }}` in the markup, filled from a Dictionary, an
     // Object's properties, or anything a Callable can look up.
+    // HTML's boolean attributes carry no value, so reading one back cannot
+    // say whether it is set. This can.
+    bool has_element_attribute(const godot::String& selector, const godot::String& name);
     godot::String get_element_attribute(const godot::String& selector,
                                         const godot::String& name);
     void set_data(const godot::Dictionary& data);

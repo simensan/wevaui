@@ -56,6 +56,7 @@ func _ready() -> void:
 	_test_commit_submit_and_scroll_signals()
 	_test_word_editing_and_undo()
 	_test_cjk_text()
+	_test_details_disclosure()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -952,3 +953,42 @@ func _test_cjk_text() -> void:
 			"CJK draws through the system fallback (%s)" % cjk_face)
 	drawn.queue_free()
 	latin.queue_free()
+
+
+func _test_details_disclosure() -> void:
+	# <details> was styled and never opened: the UA sheet hides a closed one's
+	# body, but nothing toggled the attribute, so the arrow did nothing.
+	var doc := _make_doc(
+		"<body><details id='d'><summary id='s'>More</summary>" +
+		"<p id='body'>Hidden</p></details></body>",
+		"html, body { margin: 0 } summary { height: 20px } p { height: 40px }")
+	_check(not doc.has_element_attribute("#d", "open"), "starts closed")
+	_check(doc.query_bounds("#body").size.y == 0, "and its body has no box")
+
+	var toggles: Array = []
+	doc.element_toggled.connect(func(id, open): toggles.append([id, open]))
+
+	var box := doc.query_bounds("#s")
+	var at := box.position + box.size * 0.5
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(doc.has_element_attribute("#d", "open"), "a click on the summary opens it")
+	_check(doc.query_bounds("#body").size.y == 40, "and the body gets a box")
+	_check(toggles.size() == 1 and toggles[0][0] == "d" and toggles[0][1],
+		"the signal names the <details> and says it opened")
+
+	# Clicking again closes it -- the half a "set open on click" version misses.
+	box = doc.query_bounds("#s")
+	at = box.position + box.size * 0.5
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(not doc.has_element_attribute("#d", "open"), "and closes it again")
+	_check(toggles.size() == 2 and not toggles[1][1], "reported as closed")
+
+	# `has_element_attribute` exists because reading the value cannot answer
+	# this: `open` is written with no value, so a read returns "" either way.
+	_check(doc.get_element_attribute("#d", "open") == "",
+		"the value is empty whether it is set or not")
+	doc.queue_free()

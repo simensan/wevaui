@@ -376,7 +376,8 @@ breaking it.
 The lookup runs towards the root, so a handler on a panel catches whatever
 happens inside it. `on-click`, `on-pointerdown`, `on-pointerup`,
 `on-pointerenter`, `on-pointerleave`, `on-input`, `on-change`, `on-submit`,
-`on-scroll`, `on-keydown`, `on-keyup`, `on-textinput`, `on-focus`, `on-blur`.
+`on-scroll`, `on-toggle`, `on-keydown`, `on-keyup`, `on-textinput`, `on-focus`,
+`on-blur`.
 
 `on-input` and `on-change` are not the same event, and the difference is the
 one that matters for anything expensive. `on-input` fires per keystroke;
@@ -480,6 +481,24 @@ Undo groups a run of typing into ONE step -- undoing a sentence a letter at a
 time is not undo -- and anything that is not typing ends the run. Each field
 keeps its own history, and a script writing a value clears that field's, since
 the stack no longer describes what the field holds.
+
+**Disclosure**
+
+`<details>` opens and closes on a click on its own `<summary>` -- its own, so a
+click in an open body does not collapse it and a nested one is worked by its
+own summary rather than its parent's. The UA sheet does the showing and hiding;
+the click just moves the attribute.
+
+    doc.has_element_attribute("#section", "open")
+    doc.element_toggled.connect(func(id, open): ...)   # or on-toggle="Method"
+
+`has_element_attribute` is separate from `get_element_attribute` because HTML's
+boolean attributes -- `open`, `checked`, `disabled`, `selected`, `required` --
+are written with no value, so reading one back returns "" whether it is set or
+not.
+
+Like the reference, a `<summary>` is not in the tab order and Enter does not
+work it; a browser does both, and neither engine does yet.
 
 **Dropdowns**
 

@@ -307,7 +307,11 @@ typedef enum weva_event_kind {
     WEVA_EVENT_SUBMIT,
     /* A scroll container moved, however it was moved -- wheel, bar, keyboard,
      * a finger, or a script. `on-scroll`. */
-    WEVA_EVENT_SCROLL
+    WEVA_EVENT_SCROLL,
+    /* A <details> opened or closed. The target is the <details>, and its
+     * `open` attribute already says which way -- so a handler that loads the
+     * contents on first open has somewhere to hang. `on-toggle`. */
+    WEVA_EVENT_TOGGLE
 } weva_event_kind;
 
 /* Held modifiers, as a bitmask on weva_event.modifiers. */
@@ -667,6 +671,13 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element, c
  * how it turns that into something its own code can name. */
 size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const char* name,
                               char* buffer, size_t capacity);
+
+/* Whether the attribute is THERE, which reading its value cannot tell you.
+ * HTML's boolean attributes -- `open`, `checked`, `disabled`, `selected`,
+ * `required`, `readonly` -- are usually written with no value at all, so
+ * weva_element_attribute returns 0 for a present one exactly as it does for an
+ * absent one. Returns 1 when present, 0 when absent or the element is gone. */
+int weva_element_has_attribute(weva_document_t doc, weva_element_t element, const char* name);
 
 /* Copies the text of an element's descendants into `buffer`, always
  * null-terminating when capacity allows, and returns the length that WOULD

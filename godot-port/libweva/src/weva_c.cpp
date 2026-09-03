@@ -1207,6 +1207,7 @@ struct weva_document {
             case WEVA_EVENT_CHANGE: return "on-change";
             case WEVA_EVENT_SUBMIT: return "on-submit";
             case WEVA_EVENT_SCROLL: return "on-scroll";
+            case WEVA_EVENT_TOGGLE: return "on-toggle";
             case WEVA_EVENT_KEY_DOWN: return "on-keydown";
             case WEVA_EVENT_KEY_UP: return "on-keyup";
             case WEVA_EVENT_TEXT_INPUT: return "on-textinput";
@@ -1430,6 +1431,22 @@ BoxId box_of(const weva_document* doc, const Element* e) {
         if (doc->tree[i].element == e) return i;
     }
     return kNoBox;
+}
+
+// The <details> a click should toggle: the one whose own <summary> was hit.
+// Walks up from the target, so a click on text or an icon inside the summary
+// counts as a click on the summary.
+Element* details_for_summary_click(const Element* target) {
+    for (const Node* n = target; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        const Element& e = static_cast<const Element&>(*n);
+        if (e.tag_name() != "summary") continue;
+        const Node* parent = e.parent();
+        if (!parent || parent->node_type() != NodeType::Element) return nullptr;
+        Element& owner = const_cast<Element&>(static_cast<const Element&>(*parent));
+        return owner.tag_name() == "details" ? &owner : nullptr;
+    }
+    return nullptr;
 }
 
 // The <form> an element is inside, if any. A submit is reported against the
@@ -2495,6 +2512,24 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
                         doc->queue_event(WEVA_EVENT_SUBMIT, form, x, y, buttons);
                     }
                 }
+            }
+            // A click on a <details>'s own <summary> opens or closes it. The
+            // UA sheet already hides the body of a closed one and shows an
+            // open one's, so toggling the attribute is the whole behaviour --
+            // without it the port styled <details> perfectly and it never
+            // opened.
+            //
+            // Only a <summary> that is a DIRECT child counts, so a click
+            // inside the open body does not collapse it, and a nested
+            // <details> is toggled by its own summary rather than its
+            // parent's.
+            if (Element* details = details_for_summary_click(hit)) {
+                if (details->has_attribute("open")) details->remove_attribute("open");
+                else details->set_attribute("open", "");
+                // `display` changes on the children, so the boxes go, not
+                // just the paint.
+                doc->pending = worst(doc->pending, Invalidation::Boxes);
+                doc->queue_event(WEVA_EVENT_TOGGLE, details, x, y, buttons);
             }
             // A checkbox toggles on the click, not the press, so dragging off
             // it and back changes nothing -- as it does not in any toolkit.
@@ -3603,6 +3638,12 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     // would cancel the animation next to it.
     doc->pending = Invalidation::Boxes;
     return WEVA_OK;
+}
+
+int weva_element_has_attribute(weva_document_t doc, weva_element_t element, const char* name) {
+    if (!doc || !name) return 0;
+    const Element* e = doc->element_at(element);
+    return e && e->has_attribute(name) ? 1 : 0;
 }
 
 size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const char* name,
