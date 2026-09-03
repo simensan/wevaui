@@ -26,7 +26,14 @@ STYLE = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
 
 def sources(root):
     dirs = [os.path.join(root, "Assets", "UI"),
-            os.path.join(root, "Packages", "com.wevaui", "Samples~")]
+            os.path.join(root, "Packages", "com.wevaui", "Samples~"),
+            # Cases written for the ORACLE rather than to be shipped. The
+            # sample pages are game UI and exercise what game UI uses, which
+            # left 87 of the 334 registered properties with no case at all --
+            # floats, the line-breaking controls, logical sizing, the writing
+            # modes. These fill that in, and live here rather than in the
+            # package because nobody wants them in Samples~.
+            os.path.join(root, "godot-port", "tools", "oracle", "cases")]
     for d in dirs:
         for dirpath, _, names in os.walk(d):
             for name in sorted(names):

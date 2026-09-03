@@ -1,0 +1,32 @@
+/* Line breaking and indentation: text-indent, word-break, line-break,
+   word-wrap/overflow-wrap, white-space nowrap, tab-size, word-spacing,
+   text-justify and text-wrap. Each on its own box so a disagreement names
+   which one. */
+
+body { margin: 0; font-family: sans-serif; font-size: 14px; }
+
+.page { width: 640px; padding: 16px; }
+
+p, .box, pre { margin: 0 0 10px; border: 1px solid #444; padding: 4px; }
+
+.indent  { text-indent: 40px; }
+.hanging { text-indent: -24px; padding-left: 28px; }
+
+/* The narrow measure is the point: a long word only reveals its breaking
+   rule when it cannot fit. */
+.box { width: 200px; }
+
+.breakall  { word-break: break-all; }
+.breakword { word-break: break-word; }
+.keepall   { word-break: keep-all; }
+.wrapword  { overflow-wrap: break-word; }
+.nowrap    { white-space: nowrap; }
+
+.tabs      { tab-size: 4; white-space: pre; width: 300px; }
+.tabs.wide { tab-size: 12; }
+
+.spaced    { word-spacing: 8px; }
+
+.justified { text-align: justify; text-justify: inter-word; width: 300px; }
+
+.balance   { text-wrap: balance; width: 260px; }
