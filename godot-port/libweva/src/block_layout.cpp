@@ -35,6 +35,9 @@ const int kId_min_height = CssPropertyRegistry::instance().id_of("min-height");
 const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
 const int kId_width = CssPropertyRegistry::instance().id_of("width");
 
+const int kId_padding = CssPropertyRegistry::instance().id_of("padding");
+const int kId_margin = CssPropertyRegistry::instance().id_of("margin");
+
 std::string_view get(const ComputedStyle* s, int id) {
     return s ? s->get(id) : std::string_view();
 }
@@ -85,6 +88,13 @@ double resolve_side_px(std::string_view raw, const LayoutContext& ctx, double fo
 ResolvedSides resolve_box_sides_px(const ComputedStyle* style, std::string_view shorthand,
                                    const LayoutContext& ctx, double font_size,
                                    double containing_block_width, double line_height) {
+    return resolve_box_sides_px(style, CssPropertyRegistry::instance().id_of(shorthand), ctx,
+                                font_size, containing_block_width, line_height);
+}
+
+ResolvedSides resolve_box_sides_px(const ComputedStyle* style, int shorthand_id,
+                                   const LayoutContext& ctx, double font_size,
+                                   double containing_block_width, double line_height) {
     // A box with no style has no margins and no padding, and answering that
     // costs nothing. It was costing four parses: box_sides substitutes "0" for
     // every absent value, "0" is not a keyword, and with a null style there is
@@ -92,7 +102,7 @@ ResolvedSides resolve_box_sides_px(const ComputedStyle* style, std::string_view 
     // same four zeroes on every layout pass. On randhtml that was 3,192 of the
     // pass's allocations, more than a fifth of the whole.
     if (!style) return ResolvedSides{};
-    const BoxSideValues sides = box_sides(style, shorthand);
+    const BoxSideValues sides = box_sides(style, shorthand_id);
 
     // Nearly every box declares no margin and no padding, and box_sides
     // substitutes "0" for an absent side -- so the common case is four zeroes
@@ -189,7 +199,7 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     const double lh = line_height_px(style, fs, ctx);
 
     const ResolvedSides pad =
-        resolve_box_sides_px(style, "padding", ctx, fs, containing_block_width, lh);
+        resolve_box_sides_px(style, kId_padding, ctx, fs, containing_block_width, lh);
     box.padding_top = pad.top;
     box.padding_right = pad.right;
     box.padding_bottom = pad.bottom;
@@ -202,7 +212,7 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     box.border_left = borders.left;
 
     const ResolvedSides mar =
-        resolve_box_sides_px(style, "margin", ctx, fs, containing_block_width, lh);
+        resolve_box_sides_px(style, kId_margin, ctx, fs, containing_block_width, lh);
     box.margin_top = mar.top;
     box.margin_right = mar.right;
     box.margin_bottom = mar.bottom;

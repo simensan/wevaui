@@ -27,6 +27,10 @@ struct ResolvedSides {
 
 // Percentage padding and margin resolve against the containing block's WIDTH on
 // every edge, top and bottom included (CSS 2.1 §8.3, §8.4).
+ResolvedSides resolve_box_sides_px(const ComputedStyle* style, int shorthand_id,
+                                   const LayoutContext& ctx, double font_size,
+                                   double containing_block_width, double line_height = 0);
+
 ResolvedSides resolve_box_sides_px(const ComputedStyle* style, std::string_view shorthand,
                                    const LayoutContext& ctx, double font_size,
                                    double containing_block_width, double line_height);

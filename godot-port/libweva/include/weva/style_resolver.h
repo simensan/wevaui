@@ -189,6 +189,9 @@ struct BoxSideValues {
 // Longhands win; the shorthand is consulted only when all four longhands are
 // at their initial value. Returned views borrow the style's storage.
 BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand);
+// By the shorthand's id, which is what the layout uses: the name form hashes
+// the name and then walks a cache comparing strings, twice per box per pass.
+BoxSideValues box_sides(const ComputedStyle* style, int shorthand_id);
 
 // CSS Sizing L4 §5. True for `<number>` or `<number> / <number>` with a
 // positive result; false for `auto`, empty, and non-positive ratios. v1 ignores

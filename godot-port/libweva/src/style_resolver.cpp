@@ -538,27 +538,40 @@ double resolve_border_width(std::string_view raw, double font_size, const Layout
 // than per call. Building the names here cost four std::string concatenations
 // and four registry lookups on every box for margin AND padding — the same trap
 // the logical-property tables already exist to avoid.
-const BoxSideValues& box_side_ids(std::string_view shorthand) {
+const BoxSideValues& box_side_ids(int shorthand_id) {
+    // Keyed by the shorthand's OWN id, so the lookup is an index rather than a
+    // walk comparing strings. It was a deque scanned linearly and compared by
+    // name, run twice per box per pass -- and the name it compared had to be
+    // hashed to get here in the first place.
+    //
     // A deque, not a vector: the returned reference has to survive a later
     // insertion, and a vector would move its elements out from under one.
-    struct Entry { std::string name; BoxSideValues ids; };
+    struct Entry { int id; BoxSideValues ids; };
     static std::deque<Entry> cache;
     for (const Entry& e : cache) {
-        if (e.name == shorthand) return e.ids;
+        if (e.id == shorthand_id) return e.ids;
     }
     auto& reg = CssPropertyRegistry::instance();
-    const std::string sh(shorthand);
+    const std::string sh(reg.name_of(shorthand_id));
     BoxSideValues ids;
     ids.top_id = reg.id_of(sh + "-top");
     ids.right_id = reg.id_of(sh + "-right");
     ids.bottom_id = reg.id_of(sh + "-bottom");
     ids.left_id = reg.id_of(sh + "-left");
-    cache.push_back({sh, ids});
+    cache.push_back({shorthand_id, ids});
     return cache.back().ids;
 }
 
+const BoxSideValues& box_side_ids(std::string_view shorthand) {
+    return box_side_ids(CssPropertyRegistry::instance().id_of(shorthand));
+}
+
 BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand) {
-    BoxSideValues r = box_side_ids(shorthand);
+    return box_sides(style, CssPropertyRegistry::instance().id_of(shorthand));
+}
+
+BoxSideValues box_sides(const ComputedStyle* style, int shorthand_id) {
+    BoxSideValues r = box_side_ids(shorthand_id);
     r.top = style ? style->get(r.top_id) : std::string_view();
     r.right = style ? style->get(r.right_id) : std::string_view();
     r.bottom = style ? style->get(r.bottom_id) : std::string_view();
@@ -569,7 +582,7 @@ BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand) 
     // done at cascade time, which is why this exists at all.
     const auto is_initial = [](std::string_view v) { return v.empty() || v == "0"; };
     if (is_initial(r.top) && is_initial(r.right) && is_initial(r.bottom) && is_initial(r.left)) {
-        const std::string_view sh = get(style, shorthand);
+        const std::string_view sh = style ? style->get(shorthand_id) : std::string_view();
         if (!sh.empty() && sh != "0") {
             const std::vector<std::string_view> parts = split_top_level(sh);
             // The strings still come back, because callers that want the raw
@@ -578,7 +591,7 @@ BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand) 
             // wants a number can take it from the memoised parse instead of
             // parsing the substring again on every pass.
             BoxSideValues from_shorthand = r;
-            from_shorthand.shorthand_id = CssPropertyRegistry::instance().id_of(shorthand);
+            from_shorthand.shorthand_id = shorthand_id;
             const auto fill = [&](int t, int rr, int b, int l) {
                 from_shorthand.top = parts[static_cast<size_t>(t)];
                 from_shorthand.right = parts[static_cast<size_t>(rr)];
