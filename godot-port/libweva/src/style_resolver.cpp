@@ -141,14 +141,21 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
     const double parent_fs =
         parent_style ? font_size_px(parent_style, nullptr, ctx) : ctx.root_font_size_px;
 
-    const std::string_view raw = get(style, "font-size");
+    // The id, resolved once for the whole program.
+    //
+    // `get(name)` and `parsed(name)` each hash the name, so this hashed
+    // "font-size" twice per call -- and it is called several times for every
+    // box, recursively for the parent as well. The registry keeps an id stable
+    // across re-registration precisely so a cache like this is safe.
+    static const int kFontSize = CssPropertyRegistry::instance().id_of("font-size");
+    const std::string_view raw = style ? style->get(kFontSize) : std::string_view();
     const double fallback = parent_fs > 0 ? parent_fs : ctx.root_font_size_px;
     if (raw.empty()) return fallback;
 
     // Through the style's parsed cache: font_size_px is called for every box
     // several times over, and re-parsing its declaration was the single largest
     // remaining source of per-frame allocation.
-    const CssValue* v = style->parsed("font-size");
+    const CssValue* v = style->parsed(kFontSize);
     if (!v) return fallback;
 
     if (const std::string_view id = identifier_of(*v); !id.empty()) {
@@ -337,6 +344,21 @@ ResolvedLength resolve_length(std::string_view raw, const LayoutContext& ctx, do
     return resolve_length_value(v.get(), ctx, font_size, basis_px, line_height);
 }
 
+// One component of a shorthand that has already been parsed and memoised.
+//
+// `margin: 10px 20px` parses to a two-item list; `padding: 8px` to a single
+// value that every side shares. Either way the parse happens once per style
+// rather than once per side per layout pass.
+const CssValue* shorthand_component(const ComputedStyle* style, int shorthand_id, int part) {
+    if (!style || shorthand_id == kCustomPropertyId || part < 0) return nullptr;
+    const CssValue* v = style->parsed(shorthand_id);
+    if (!v) return nullptr;
+    if (v->kind() != CssValueKind::List) return part == 0 ? v : nullptr;
+    const auto& list = static_cast<const CssValueList&>(*v);
+    if (static_cast<size_t>(part) >= list.items.size()) return nullptr;
+    return list.items[static_cast<size_t>(part)].get();
+}
+
 ResolvedLength resolve_length_cached(const ComputedStyle* style, int property_id,
                                      std::string_view raw, const LayoutContext& ctx,
                                      double font_size, std::optional<double> basis_px,
@@ -356,10 +378,27 @@ ResolvedLength resolve_length(const ComputedStyle* style, std::string_view prope
                               const LayoutContext& ctx, double font_size,
                               std::optional<double> basis_px, double line_height) {
     if (!style) return ResolvedLength::automatic();
-    const std::string_view raw = style->get(property);
+    // The name is hashed ONCE and the id used for both reads.
+    //
+    // get(name) and parsed(name) each resolve the name themselves, so every
+    // length in the document hashed its property twice -- and a layout pass
+    // resolves a length for every width, height, margin, padding and gap on
+    // every box. Sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+    // together at better than a third of a pass on randhtml, ahead of any
+    // layout algorithm.
+    const int id = CssPropertyRegistry::instance().id_of(property);
+    if (id == kCustomPropertyId) {
+        // A custom property has no slot; it resolves through the name.
+        const std::string_view raw = style->get(property);
+        ResolvedLength keyword;
+        if (resolve_length_keyword(raw, &keyword)) return keyword;
+        return resolve_length_value(style->parsed(property), ctx, font_size, basis_px,
+                                    line_height);
+    }
+    const std::string_view raw = style->get(id);
     ResolvedLength keyword;
     if (resolve_length_keyword(raw, &keyword)) return keyword;
-    return resolve_length_value(style->parsed(property), ctx, font_size, basis_px, line_height);
+    return resolve_length_value(style->parsed(id), ctx, font_size, basis_px, line_height);
 }
 
 double resolve_length_px(std::string_view raw, double fallback, const LayoutContext& ctx,
@@ -483,13 +522,34 @@ BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand) 
         const std::string_view sh = get(style, shorthand);
         if (!sh.empty() && sh != "0") {
             const std::vector<std::string_view> parts = split_top_level(sh);
-            // These came from the shorthand, so they have no longhand slot to
-            // memoise against; the default ids say so.
+            // The strings still come back, because callers that want the raw
+            // text (auto-margin centring) read them. But the shorthand's own
+            // slot and each side's COMPONENT INDEX come too, so a caller that
+            // wants a number can take it from the memoised parse instead of
+            // parsing the substring again on every pass.
+            BoxSideValues from_shorthand = r;
+            from_shorthand.shorthand_id = CssPropertyRegistry::instance().id_of(shorthand);
+            const auto fill = [&](int t, int rr, int b, int l) {
+                from_shorthand.top = parts[static_cast<size_t>(t)];
+                from_shorthand.right = parts[static_cast<size_t>(rr)];
+                from_shorthand.bottom = parts[static_cast<size_t>(b)];
+                from_shorthand.left = parts[static_cast<size_t>(l)];
+                from_shorthand.top_part = t;
+                from_shorthand.right_part = rr;
+                from_shorthand.bottom_part = b;
+                from_shorthand.left_part = l;
+                // The longhand ids no longer describe these values.
+                from_shorthand.top_id = kCustomPropertyId;
+                from_shorthand.right_id = kCustomPropertyId;
+                from_shorthand.bottom_id = kCustomPropertyId;
+                from_shorthand.left_id = kCustomPropertyId;
+                return from_shorthand;
+            };
             switch (parts.size()) {
-                case 1: return {parts[0], parts[0], parts[0], parts[0]};
-                case 2: return {parts[0], parts[1], parts[0], parts[1]};
-                case 3: return {parts[0], parts[1], parts[2], parts[1]};
-                case 4: return {parts[0], parts[1], parts[2], parts[3]};
+                case 1: return fill(0, 0, 0, 0);
+                case 2: return fill(0, 1, 0, 1);
+                case 3: return fill(0, 1, 2, 1);
+                case 4: return fill(0, 1, 2, 3);
                 default: break;
             }
         }

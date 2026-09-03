@@ -542,8 +542,47 @@ double gaps_within(const std::vector<Track>& tracks, int start, int span, double
 // `available` is the definite space in that axis or negative when there is
 // none — a max-content constraint, under which every free-space step treats
 // the space as infinite and the tracks grow to their limits.
+// A pooled buffer for the sorted copy size_tracks needs.
+//
+// It sorts the contributions, so it cannot take them by reference and work in
+// place -- a caller reuses the same list for a probe and then for the real
+// pass. Taking them BY VALUE allocated a fresh vector on every call, seven per
+// grid, and a page of grids does that thousands of times a pass.
+//
+// A pool rather than one thread_local buffer, because a grid item can itself
+// be a grid and is sized inside its parent's call.
+std::vector<std::unique_ptr<std::vector<Contribution>>>& contribution_pool() {
+    thread_local std::vector<std::unique_ptr<std::vector<Contribution>>> pool;
+    return pool;
+}
+
+class ContributionLease {
+public:
+    ContributionLease() {
+        auto& pool = contribution_pool();
+        if (pool.empty()) {
+            owned_ = std::make_unique<std::vector<Contribution>>();
+        } else {
+            owned_ = std::move(pool.back());
+            pool.pop_back();
+        }
+        owned_->clear();
+    }
+    // Handed back with its capacity, which is the point.
+    ~ContributionLease() { contribution_pool().push_back(std::move(owned_)); }
+    ContributionLease(const ContributionLease&) = delete;
+    ContributionLease& operator=(const ContributionLease&) = delete;
+    std::vector<Contribution>& operator*() const { return *owned_; }
+
+private:
+    std::unique_ptr<std::vector<Contribution>> owned_;
+};
+
 void size_tracks(std::vector<Track>* tracks, double available, double gap,
-                 std::vector<Contribution> items, std::string_view content_align) {
+                 const std::vector<Contribution>& items_in, std::string_view content_align) {
+    ContributionLease lease;
+    std::vector<Contribution>& items = *lease;
+    items.assign(items_in.begin(), items_in.end());
     if (tracks->empty()) return;
     const int n = static_cast<int>(tracks->size());
     const bool definite = available >= 0;

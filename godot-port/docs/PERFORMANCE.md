@@ -76,6 +76,50 @@ changed set on every pointer move -- and a touched-subtree walk from `<body>`
 is the whole document. Only the elements that actually flipped are marked now.
 66.6 ms -> 11.3 ms on layout-stress, 10.5 -> 0.46 on stats.
 
+**A layout pass hashed its property names over and over.** `get(name)` and
+`parsed(name)` each resolve the name themselves, so `resolve_length` and
+`font_size_px` hashed the same property twice per call -- and font_size_px runs
+several times for every box, recursively for the parent as well. Sampling put
+`ComputedStyle::get` and `CssPropertyRegistry::id_of` together at 28% of a pass
+on randhtml, ahead of any layout algorithm. The ids are resolved once now,
+which is safe because the registry keeps an id stable across re-registration
+for exactly this reason.
+
+**An anonymous box parsed four zeroes per pass.** `resolve_box_sides_px`
+substitutes "0" for every absent side; "0" is not a keyword, and with a null
+style there is no memo to hold the parsed result, so a box with no style
+re-parsed the same four zeroes on every layout. 3,192 allocations on randhtml,
+more than a fifth of the pass. It answers zero directly now.
+
+**A shorthand's sides were re-parsed per side per pass.** `margin: 10px`'s
+parts have no longhand slot to memoise against, so each side parsed its
+substring again every layout. They read components of the shorthand's own
+memoised parse now.
+
+**size_tracks copied its contributions.** It sorts them, so it cannot take
+them by reference -- but taking them by value allocated a fresh vector on
+every call, seven per grid. It copies into a pooled buffer now, the same
+pattern flex and inline layout already use.
+
+Together, measured at 40 passes so the numbers are outside the +-0.5% noise:
+
+| page | before | after |
+|---|---|---|
+| match3 | 1.507 ms | **1.349** |
+| flex-playground | 1.828 | **1.658** |
+| layout-stress | 4.721 | **4.336** |
+| randhtml | 3.395 | **3.143** |
+| glass | 1.648 | **1.586** |
+| vendor | 3.265 | **3.191** |
+
+randhtml's allocations fell 16,663 -> 12,195 with it.
+
+Worth recording because it cost an hour: the first three of these were chosen
+from a 258-sample profile, which cannot resolve a 5% effect, and measured at
+20 passes, where the run-to-run spread is +-3% and hid every one of them. The
+same measurements at 2,340 samples and 40 passes are unambiguous. Sample first,
+and check the noise floor before believing a null result.
+
 **A border image re-sliced itself every frame.** The nine pieces were
 rasterized into a fresh texture on every paint, where a layered background has
 always gone through the texture cache. Twelve 9-sliced panels on a page with

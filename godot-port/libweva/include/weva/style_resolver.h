@@ -139,6 +139,13 @@ ResolvedLength resolve_length(const ComputedStyle* style, std::string_view prope
 
 // By id, which also skips the registry name lookup. kCustomPropertyId reads as
 // "no cached slot" and falls back to parsing `raw`.
+// One component of a box shorthand that has already been parsed and memoised
+// on the style. `margin: 10px 20px` parses to a two-item list and `padding:
+// 8px` to a single value every side shares; either way the parse happens once
+// per style rather than once per side on every layout pass. Null when the
+// side did not come from a shorthand.
+const CssValue* shorthand_component(const ComputedStyle* style, int shorthand_id, int part);
+
 ResolvedLength resolve_length_cached(const ComputedStyle* style, int property_id,
                                      std::string_view raw, const LayoutContext& ctx,
                                      double font_size,
@@ -159,6 +166,16 @@ struct BoxSideValues {
     // read the style's PARSED cache rather than re-parsing the string.
     int top_id = kCustomPropertyId, right_id = kCustomPropertyId;
     int bottom_id = kCustomPropertyId, left_id = kCustomPropertyId;
+
+    // Set when the four values came from the SHORTHAND instead. The shorthand
+    // has a slot of its own, so it can be parsed once and memoised like any
+    // other property and each side taken from a component of the result --
+    // which is what stops `margin: 10px` being re-parsed four times per box on
+    // every layout pass.
+    int shorthand_id = kCustomPropertyId;
+    // Which component of the parsed shorthand each side is, after the 1-to-4
+    // mirroring. -1 when the side came from its own longhand.
+    int top_part = -1, right_part = -1, bottom_part = -1, left_part = -1;
 };
 // Longhands win; the shorthand is consulted only when all four longhands are
 // at their initial value. Returned views borrow the style's storage.

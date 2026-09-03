@@ -56,21 +56,41 @@ double resolve_side_px(std::string_view raw, const LayoutContext& ctx, double fo
 ResolvedSides resolve_box_sides_px(const ComputedStyle* style, std::string_view shorthand,
                                    const LayoutContext& ctx, double font_size,
                                    double containing_block_width, double line_height) {
+    // A box with no style has no margins and no padding, and answering that
+    // costs nothing. It was costing four parses: box_sides substitutes "0" for
+    // every absent value, "0" is not a keyword, and with a null style there is
+    // no memo to put the parsed result in -- so an anonymous box re-parsed the
+    // same four zeroes on every layout pass. On randhtml that was 3,192 of the
+    // pass's allocations, more than a fifth of the whole.
+    if (!style) return ResolvedSides{};
     const BoxSideValues sides = box_sides(style, shorthand);
     ResolvedSides r;
     // The containing block's WIDTH is the basis on all four edges — a
     // percentage margin-top resolves against width, not height.
-    const auto side = [&](std::string_view raw, int id) {
-        const ResolvedLength v = resolve_length_cached(style, id, raw, ctx, font_size,
-                                                       containing_block_width, line_height);
+    const auto side = [&](std::string_view raw, int id, int part) {
+        ResolvedLength v;
+        // A side from the shorthand reads the shorthand's memoised parse; a
+        // side from its own longhand reads that longhand's. Only a keyword or
+        // a value with neither -- which the fallback below covers -- is parsed
+        // at all, and never twice.
+        if (const CssValue* component = shorthand_component(style, sides.shorthand_id, part)) {
+            // A keyword component -- `margin: auto` -- parses to a Keyword and
+            // resolve_length_value answers `auto` for it, so there is no
+            // separate keyword branch to keep in step with the other path.
+            v = resolve_length_value(component, ctx, font_size, containing_block_width,
+                                     line_height);
+        } else {
+            v = resolve_length_cached(style, id, raw, ctx, font_size, containing_block_width,
+                                      line_height);
+        }
         // Auto and unparseable both give 0: an auto margin contributes no space
         // of its own, and the centring rule reads the raw text instead.
         return v.kind == LengthKind::Length ? v.pixels : 0.0;
     };
-    r.top = side(sides.top, sides.top_id);
-    r.right = side(sides.right, sides.right_id);
-    r.bottom = side(sides.bottom, sides.bottom_id);
-    r.left = side(sides.left, sides.left_id);
+    r.top = side(sides.top, sides.top_id, sides.top_part);
+    r.right = side(sides.right, sides.right_id, sides.right_part);
+    r.bottom = side(sides.bottom, sides.bottom_id, sides.bottom_part);
+    r.left = side(sides.left, sides.left_id, sides.left_part);
     r.right_raw = sides.right;
     r.left_raw = sides.left;
     return r;
@@ -96,7 +116,10 @@ ResolvedSides resolve_border_edges(const ComputedStyle* style, const LayoutConte
 }
 
 bool is_border_box(const ComputedStyle* style) {
-    return get(style, "box-sizing") == "border-box";
+    // Once per program rather than once per box. apply_box_model asks this for
+    // every box on every pass.
+    static const int kBoxSizing = CssPropertyRegistry::instance().id_of("box-sizing");
+    return style && style->get(kBoxSizing) == "border-box";
 }
 
 PositionType parse_position_type(std::string_view raw) {
@@ -138,7 +161,9 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     box.margin_bottom = mar.bottom;
     box.margin_left = mar.left;
 
-    box.position = parse_position_type(get(style, "position"));
+    static const int kPosition = CssPropertyRegistry::instance().id_of("position");
+    box.position =
+        parse_position_type(style ? style->get(kPosition) : std::string_view());
 
     const bool border_box = is_border_box(style);
     const double width_frame =
