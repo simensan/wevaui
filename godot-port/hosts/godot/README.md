@@ -376,8 +376,8 @@ breaking it.
 The lookup runs towards the root, so a handler on a panel catches whatever
 happens inside it. `on-click`, `on-pointerdown`, `on-pointerup`,
 `on-pointerenter`, `on-pointerleave`, `on-input`, `on-change`, `on-submit`,
-`on-scroll`, `on-toggle`, `on-keydown`, `on-keyup`, `on-textinput`, `on-focus`,
-`on-blur`.
+`on-scroll`, `on-toggle`, `on-contextmenu`, `on-keydown`, `on-keyup`,
+`on-textinput`, `on-focus`, `on-blur`.
 
 `on-input` and `on-change` are not the same event, and the difference is the
 one that matters for anything expensive. `on-input` fires per keystroke;
@@ -499,6 +499,25 @@ not.
 
 Like the reference, a `<summary>` is not in the tab order and Enter does not
 work it; a browser does both, and neither engine does yet.
+
+**Pointer buttons**
+
+The node forwards all three as a mask, matching the web's
+`MouseEvent.buttons`: 1 primary, 2 secondary, 4 middle. Only the PRIMARY
+button activates anything -- a right-click does not toggle a checkbox, submit
+a form, open a `<details>` or work a popover, exactly as it does not in a
+browser.
+
+The secondary button asks for a context menu instead:
+
+    doc.context_menu_requested.connect(func(id, position): ...)
+
+or `on-contextmenu="OnMenu"` in the markup. The signal names the element the
+click landed ON, so a menu knows which row was right-clicked, while the
+handler is found by walking towards the root as every handler is.
+
+There is no context-menu widget, and that is deliberate: a menu is markup, and
+the popover machinery above already opens, positions and light-dismisses one.
 
 **Tooltips**
 

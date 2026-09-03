@@ -1161,6 +1161,9 @@ struct weva_document {
         double y = 0;
     } tooltip;
     double tooltip_delay = 0.6;
+    // What was held at the last set_pointer, so the SECONDARY button's press
+    // edge can be told from it being kept down while the pointer moves.
+    uint32_t buttons_last = 0;
     // Where `{{ path }}` gets its values, and the attribute templates the
     // substitution would otherwise have eaten.
     weva_binding_source binding_source{};
@@ -1234,6 +1237,7 @@ struct weva_document {
             case WEVA_EVENT_SUBMIT: return "on-submit";
             case WEVA_EVENT_SCROLL: return "on-scroll";
             case WEVA_EVENT_TOGGLE: return "on-toggle";
+            case WEVA_EVENT_CONTEXT_MENU: return "on-contextmenu";
             case WEVA_EVENT_KEY_DOWN: return "on-keydown";
             case WEVA_EVENT_KEY_UP: return "on-keyup";
             case WEVA_EVENT_TEXT_INPUT: return "on-textinput";
@@ -2595,7 +2599,7 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
             doc->highlighted_option = row;
             doc->pending = worst(doc->pending, Invalidation::Paint);
         }
-        if (buttons != 0 && st.active_chain.empty()) {
+        if ((buttons & WEVA_BUTTON_PRIMARY) && st.active_chain.empty()) {
             Element& select = const_cast<Element&>(*doc->open_select);
             if (row >= 0) choose_option(doc, select, row);
             // A press anywhere -- on a row or off the list -- closes it, which
@@ -2627,7 +2631,7 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
     }
 
     // Taking hold of one, or clicking the track beside it to page along.
-    if (buttons != 0 && st.active_chain.empty()) {
+    if ((buttons & WEVA_BUTTON_PRIMARY) && st.active_chain.empty()) {
         Scrollbar bar;
         BoxId box = kNoBox;
         bool vertical = false, on_thumb = false;
@@ -2670,8 +2674,21 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
         if (was) doc->queue_event(WEVA_EVENT_POINTER_LEAVE, was, x, y, buttons);
         if (hit) doc->queue_event(WEVA_EVENT_POINTER_ENTER, hit, x, y, buttons);
     }
+    // Only the PRIMARY button presses. Everything here keyed off "any button
+    // held", so a right-click toggled checkboxes, submitted forms, opened
+    // <details> and worked popovers -- none of which a right-click does in a
+    // browser.
+    const uint32_t primary = buttons & WEVA_BUTTON_PRIMARY;
+    // The secondary button going down is a context-menu request and nothing
+    // else. The engine has no menu of its own to show: a menu is markup, and
+    // this says where the user asked for one.
+    if ((buttons & WEVA_BUTTON_SECONDARY) && !(doc->buttons_last & WEVA_BUTTON_SECONDARY)) {
+        doc->queue_event(WEVA_EVENT_CONTEXT_MENU, hit, x, y, buttons);
+    }
+    doc->buttons_last = buttons;
+
     const uint32_t was_down = st.active_chain.empty() ? 0u : 1u;
-    if (buttons != 0 && !was_down) {
+    if (primary != 0 && !was_down) {
         doc->press_target = hit;
         doc->queue_event(WEVA_EVENT_POINTER_DOWN, hit, x, y, buttons);
         // A range follows the pointer from the moment it goes down, and a
@@ -2726,7 +2743,7 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
                 doc->pending = worst(doc->pending, Invalidation::Paint);
             }
         }
-    } else if (buttons != 0 && was_down && doc->press_target &&
+    } else if (primary != 0 && was_down && doc->press_target &&
                is_text_field(*doc->press_target)) {
         // Dragging from a press inside a field selects, and keeps selecting
         // once the pointer has left the field -- as it does everywhere.
@@ -2738,12 +2755,12 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
             state.caret_age = 0;
             doc->pending = worst(doc->pending, Invalidation::Paint);
         }
-    } else if (buttons != 0 && was_down && doc->press_target &&
+    } else if (primary != 0 && was_down && doc->press_target &&
                input_type_of(const_cast<Element&>(*doc->press_target)) == "range") {
         // Held and moving: the range keeps following, even once the pointer
         // has left it, which is how a slider behaves everywhere.
         activate_control(doc, const_cast<Element&>(*doc->press_target), x);
-    } else if (buttons == 0 && was_down) {
+    } else if (primary == 0 && was_down) {
         doc->queue_event(WEVA_EVENT_POINTER_UP, hit, x, y, buttons);
         // A click is a press and a release on the SAME element. Releasing
         // somewhere else is a drag that ended, and is not a click -- which is
@@ -2876,7 +2893,8 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
     // A press latches onto what was under the pointer; dragging off an element
     // keeps it pressed, which is what a button does.
     std::vector<const Element*> active;
-    if (buttons != 0) {
+    // :active follows the primary button only, as it does in a browser.
+    if (primary != 0) {
         active = st.active_chain.empty() ? hover : st.active_chain;
     }
 

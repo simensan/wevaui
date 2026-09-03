@@ -61,6 +61,7 @@ func _ready() -> void:
 	_test_popovers()
 	_test_label_activates_control()
 	_test_title_tooltip()
+	_test_right_click()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -1167,4 +1168,48 @@ func _test_title_tooltip() -> void:
 	doc.set_pointer(Vector2(50, 20), 0)
 	doc.update_document(1.0)
 	_check(doc.query_bounds("[data-weva-tooltip]").size == Vector2.ZERO, "and keeps them off")
+	doc.queue_free()
+
+
+func _test_right_click() -> void:
+	# A right-click is not a click. The core treated any held button as a
+	# press, and the node dropped the right button before it got there -- so
+	# a document could neither be right-clicked nor protected from one.
+	var doc := _make_doc(
+		"<body><div id='panel' on-contextmenu='OnMenu'>" +
+		"<input id='cb' type='checkbox'></div></body>",
+		"html, body { margin: 0 } #panel { width: 200px; height: 60px }" +
+		" input { display: block; width: 30px; height: 30px }")
+
+	var menus: Array = []
+	doc.context_menu_requested.connect(func(id, pos): menus.append([id, pos]))
+
+	var box := doc.query_bounds("#cb")
+	var at := box.position + box.size * 0.5
+
+	# The mask is the web's MouseEvent.buttons: 1 primary, 2 secondary, 4
+	# middle. Written out because GDScript's parser cannot see constants an
+	# extension binds.
+	const PRIMARY := 1
+	const SECONDARY := 2
+
+	# The secondary button asks for a menu and toggles nothing.
+	doc.set_pointer(at, SECONDARY)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(not doc.has_element_attribute("#cb", "checked"), "a right-click toggles nothing")
+	_check(menus.size() == 1, "and asks for a context menu")
+	# The element the click landed ON, not the one whose handler catches it:
+	# a menu wants to know which row was right-clicked, while the
+	# on-contextmenu handler on the panel is what routes it to a method.
+	_check(menus[0][0] == "cb", "named by the element under the pointer")
+	_check(menus[0][1] == at, "at the point it was asked for")
+
+	# The primary button still does what it always did.
+	menus.clear()
+	doc.set_pointer(at, PRIMARY)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(doc.has_element_attribute("#cb", "checked"), "a left-click still toggles")
+	_check(menus.is_empty(), "and asks for no menu")
 	doc.queue_free()

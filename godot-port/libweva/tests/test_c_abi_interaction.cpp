@@ -519,3 +519,108 @@ void test_abi_tooltip_dismissal() {
     CHECK(under == weva_document_query(d, "#a"));
     weva_document_destroy(d);
 }
+
+// A right-click is not a click. The engine treated any held button as a
+// press, so the secondary button toggled checkboxes, submitted forms, opened
+// <details> and worked popovers -- none of which it does in a browser.
+void test_abi_secondary_button_does_not_activate() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0 } input, button, summary { display: block;"
+                      " width: 120px; height: 30px }";
+    const char* html = "<input id=cb type=checkbox>"
+                       "<details id=dd><summary id=sum>More</summary><p>Body</p></details>"
+                       "<form id=f on-submit=OnSubmit><button id=go>Go</button></form>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    const auto press_release = [&](const char* sel, uint32_t button) {
+        double x = 0, y = 0, w = 0, h = 0;
+        weva_element_bounds(d, weva_document_query(d, sel), &x, &y, &w, &h);
+        weva_document_set_pointer(d, x + w / 2, y + h / 2, 0);
+        weva_document_set_pointer(d, x + w / 2, y + h / 2, button);
+        weva_document_set_pointer(d, x + w / 2, y + h / 2, 0);
+        weva_document_update(d, 0);
+    };
+    const auto has = [&](const char* sel, const char* attr) {
+        return weva_element_has_attribute(d, weva_document_query(d, sel), attr) != 0;
+    };
+    const auto count_kind = [&](int kind) {
+        int n = 0;
+        weva_event e{};
+        while (weva_document_poll_event(d, &e)) {
+            if (e.kind == kind) ++n;
+        }
+        return n;
+    };
+
+    // The secondary button changes nothing.
+    press_release("#cb", WEVA_BUTTON_SECONDARY);
+    CHECK(!has("#cb", "checked"));
+    press_release("#sum", WEVA_BUTTON_SECONDARY);
+    CHECK(!has("#dd", "open"));
+    count_kind(WEVA_EVENT_SUBMIT);
+    press_release("#go", WEVA_BUTTON_SECONDARY);
+    CHECK(count_kind(WEVA_EVENT_SUBMIT) == 0);
+
+    // The primary button does all three, so the difference is the button and
+    // not the test failing to reach anything.
+    press_release("#cb", WEVA_BUTTON_PRIMARY);
+    CHECK(has("#cb", "checked"));
+    press_release("#sum", WEVA_BUTTON_PRIMARY);
+    CHECK(has("#dd", "open"));
+    count_kind(WEVA_EVENT_SUBMIT);
+    press_release("#go", WEVA_BUTTON_PRIMARY);
+    CHECK(count_kind(WEVA_EVENT_SUBMIT) == 1);
+    weva_document_destroy(d);
+}
+
+// What the secondary button DOES do: ask for a context menu, once per press.
+void test_abi_context_menu_event() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0 } #row { width: 200px; height: 40px }";
+    const char* html = "<div id=panel on-contextmenu=OnMenu><div id=row>Item</div></div>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    const auto menus = [&]() {
+        std::vector<std::pair<std::string, double>> out;
+        weva_event e{};
+        while (weva_document_poll_event(d, &e)) {
+            if (e.kind == WEVA_EVENT_CONTEXT_MENU) out.emplace_back(e.handler, e.x);
+        }
+        return out;
+    };
+
+    weva_document_set_pointer(d, 50, 20, 0);
+    menus();
+    weva_document_set_pointer(d, 50, 20, WEVA_BUTTON_SECONDARY);
+    const auto asked = menus();
+    CHECK(asked.size() == 1);
+    CHECK(asked[0].first == "OnMenu");   // found on the ancestor, as handlers are
+    CHECK(asked[0].second == 50);        // where the menu should open
+
+    // Holding it while moving does not ask again: it is the press that asks.
+    weva_document_set_pointer(d, 60, 24, WEVA_BUTTON_SECONDARY);
+    CHECK(menus().empty());
+
+    // Releasing and pressing again does.
+    weva_document_set_pointer(d, 60, 24, 0);
+    weva_document_set_pointer(d, 60, 24, WEVA_BUTTON_SECONDARY);
+    CHECK(menus().size() == 1);
+
+    // The primary button never asks.
+    weva_document_set_pointer(d, 60, 24, 0);
+    weva_document_set_pointer(d, 60, 24, WEVA_BUTTON_PRIMARY);
+    CHECK(menus().empty());
+    weva_document_destroy(d);
+}

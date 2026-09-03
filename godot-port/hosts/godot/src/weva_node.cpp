@@ -310,6 +310,8 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("form_submitted", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_toggled", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::BOOL, "open")));
+    ADD_SIGNAL(MethodInfo("context_menu_requested", PropertyInfo(Variant::STRING, "id"),
+                          PropertyInfo(Variant::VECTOR2, "position")));
     ADD_SIGNAL(MethodInfo("element_scrolled", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::FLOAT, "x"), PropertyInfo(Variant::FLOAT, "y")));
     ADD_SIGNAL(MethodInfo("value_changed", PropertyInfo(Variant::STRING, "id"),
@@ -516,10 +518,22 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
 
     uint32_t buttons = buttons_;
     if (button.is_valid()) {
-        // Only the primary button drives :active, which is what the pseudo
-        // class means; the others are the host's to route.
-        if (button->get_button_index() == MOUSE_BUTTON_LEFT) {
-            buttons = button->is_pressed() ? 1u : 0u;
+        // All three buttons now, as a mask. The right button used to be
+        // dropped here -- "the host's to route" -- which meant a document
+        // could never hear a right-click at all and no context menu could be
+        // built on top of one. The core keeps activation to the primary
+        // button, so forwarding the others changes nothing about what a
+        // click does.
+        uint32_t bit = 0;
+        switch (button->get_button_index()) {
+            case MOUSE_BUTTON_LEFT: bit = WEVA_BUTTON_PRIMARY; break;
+            case MOUSE_BUTTON_RIGHT: bit = WEVA_BUTTON_SECONDARY; break;
+            case MOUSE_BUTTON_MIDDLE: bit = WEVA_BUTTON_MIDDLE; break;
+            default: break;   // the wheel is handled above
+        }
+        if (bit != 0) {
+            if (button->is_pressed()) buttons |= bit;
+            else buttons &= ~bit;
         }
     }
     if (local == pointer_ && buttons == buttons_) return;
@@ -1130,6 +1144,12 @@ void WevaDocument::pump_events() {
                 emit_signal("value_committed", id, get_element_value("#" + id));
                 break;
             case WEVA_EVENT_SUBMIT: emit_signal("form_submitted", id); break;
+            case WEVA_EVENT_CONTEXT_MENU:
+                // Where the user asked for a menu. The engine has none of its
+                // own to show -- a menu is markup -- so this is the signal to
+                // position one and open it.
+                emit_signal("context_menu_requested", id, Vector2(e.x, e.y));
+                break;
             case WEVA_EVENT_TOGGLE:
                 // A <details> opened or closed. `open` says which way, so a
                 // script that fills a section the first time it is opened has

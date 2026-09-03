@@ -311,7 +311,11 @@ typedef enum weva_event_kind {
     /* A <details> opened or closed. The target is the <details>, and its
      * `open` attribute already says which way -- so a handler that loads the
      * contents on first open has somewhere to hang. `on-toggle`. */
-    WEVA_EVENT_TOGGLE
+    WEVA_EVENT_TOGGLE,
+    /* The secondary button went down on an element -- what a right-click
+     * means. The engine does nothing else with it: a context menu is markup,
+     * and this is the signal to show it. `on-contextmenu`. */
+    WEVA_EVENT_CONTEXT_MENU
 } weva_event_kind;
 
 /* Held modifiers, as a bitmask on weva_event.modifiers. */
@@ -394,8 +398,23 @@ int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
  * routing its own clicks. */
 weva_element_t weva_document_element_at(weva_document_t doc, double x, double y);
 
-/* Moves the pointer. `buttons` is a bitmask of the buttons held, so a nonzero
- * value makes the element under the pointer :active; zero releases it.
+/* Which pointer buttons are held, as a bitmask on `buttons`. Matching the
+ * web's MouseEvent.buttons, so a host that already speaks that needs no
+ * translation.
+ *
+ * Only the PRIMARY button activates anything: a right-click does not toggle a
+ * checkbox, submit a form, open a <details> or work a popover, exactly as it
+ * does not in a browser. Passing a bare 1 -- as every host did before these
+ * names existed -- is the primary button, so nothing changes for one that has
+ * not thought about it. */
+typedef enum weva_pointer_button {
+    WEVA_BUTTON_PRIMARY = 1u << 0,
+    WEVA_BUTTON_SECONDARY = 1u << 1,
+    WEVA_BUTTON_MIDDLE = 1u << 2
+} weva_pointer_button;
+
+/* Moves the pointer. `buttons` is a bitmask of weva_pointer_button, so a
+ * nonzero value makes the element under the pointer :active; zero releases it.
  *
  * Pressing inside a text field puts the cursor at the character under the
  * pointer, and dragging from there selects -- so a field behaves like one
