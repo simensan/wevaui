@@ -76,6 +76,14 @@ struct Interaction {
     std::string dialog;     // --dialog=<selector>, shown MODALLY (::backdrop)
     std::string popover;    // --popover=<selector>, opened
     std::string tooltip;    // --tooltip=<selector>, hovered until its title shows
+    // --advance=<seconds>, run the clock before capturing.
+    //
+    // A page with an entrance animation renders at its START at t=0, and a
+    // browser's screenshot is taken after it has settled -- so comparing the
+    // two measures the clock rather than the renderer. match3-endgame's cards
+    // begin at `opacity: 0`, and it read as the worst page in the corpus by
+    // three times until this existed.
+    double advance = 0;
 };
 
 int main(int argc, char** argv) {
@@ -83,7 +91,8 @@ int main(int argc, char** argv) {
         std::fprintf(stderr,
                      "usage: weva_render <html> <css> <width> <height> <out.ppm> [flags]\n"
                      "  --focus=SEL --open=SEL --hover=SEL --selection=A,B --scroll=PX\n"
-                     "  --press=SEL --dialog=SEL --popover=SEL --tooltip=SEL\n");
+                     "  --press=SEL --dialog=SEL --popover=SEL --tooltip=SEL\n"
+                     "  --advance=SECONDS (settle animations before capturing)\n");
         return 2;
     }
     Interaction act;
@@ -97,6 +106,7 @@ int main(int argc, char** argv) {
         else if (a.rfind("--dialog=", 0) == 0) act.dialog = a.substr(9);
         else if (a.rfind("--popover=", 0) == 0) act.popover = a.substr(10);
         else if (a.rfind("--tooltip=", 0) == 0) act.tooltip = a.substr(10);
+        else if (a.rfind("--advance=", 0) == 0) act.advance = std::atof(a.c_str() + 10);
         else if (a.rfind("--selection=", 0) == 0) {
             const std::string v = a.substr(12);
             const size_t comma = v.find(',');
@@ -196,6 +206,12 @@ int main(int argc, char** argv) {
     if (!act.focus.empty() || !act.open.empty() || !act.hover.empty() || !act.press.empty() ||
         !act.dialog.empty() || !act.popover.empty() || !act.tooltip.empty()) {
         weva_document_update(doc, 0.0);
+    }
+    if (act.advance > 0) {
+        // In steps, not one jump: an animation is integrated per update, and a
+        // single enormous delta is not the same journey.
+        const double step = 1.0 / 60.0;
+        for (double t = 0; t < act.advance; t += step) weva_document_update(doc, step);
     }
 
     weva::SoftwareRenderer renderer(width, height);
