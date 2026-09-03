@@ -39,6 +39,9 @@ struct InlineItem {
     // letter_spacing × (characters − 1), so a lone space or a single glyph
     // gains nothing and a word gains one gap per boundary inside it.
     double letter_spacing = 0;
+    // CSS Text L3 8.1: extra space at each word separator, on top of the
+    // space's own advance.
+    double word_spacing = 0;
     // `normal` collapses runs of whitespace and allows breaks; `nowrap`
     // collapses but forbids them; `pre` preserves both.
     bool collapse_whitespace = true;

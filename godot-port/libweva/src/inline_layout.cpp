@@ -167,6 +167,36 @@ double measure_spaced(const FontMetrics& default_metrics, std::string_view text,
     return w;
 }
 
+// CSS Text L3 8.1 `word-spacing`, in pixels. `normal` is zero extra; a
+// percentage resolves against the font size, as the reference has it.
+double word_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
+    const std::string_view raw = get(style, "word-spacing");
+    if (raw.empty() || iequals(raw, "normal")) return 0;
+    const ResolvedLength r = resolve_length(raw, ctx, font_size, font_size);
+    if (r.kind == LengthKind::Length) return r.pixels;
+    if (r.kind == LengthKind::Percent) return font_size * r.percent * 0.01;
+    return 0;
+}
+
+// CSS Text L3 7.1 `text-indent`, in pixels: the first line's leading offset.
+// A percentage is of the containing block's width. The trailing `hanging` and
+// `each-line` keywords are accepted and ignored -- neither semantic is
+// implemented, and dropping the whole declaration over them would lose the
+// indent an author did write, which is the reference's reasoning too.
+double text_indent_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+                      double containing_width) {
+    std::string_view raw = get(style, "text-indent");
+    if (raw.empty()) return 0;
+    // Take the leading term; the rest is keywords or nothing.
+    const std::size_t space = raw.find(' ');
+    if (space != std::string_view::npos) raw = raw.substr(0, space);
+    if (iequals(raw, "hanging") || iequals(raw, "each-line")) return 0;
+    const ResolvedLength r = resolve_length(raw, ctx, font_size, containing_width);
+    if (r.kind == LengthKind::Length) return r.pixels;
+    if (r.kind == LengthKind::Percent) return containing_width * r.percent * 0.01;
+    return 0;
+}
+
 // The face a run measures with: the family's registered metrics, then the
 // weight/italic variant of it when the host provides one.
 const FontMetrics* metrics_for_style(const LayoutContext& ctx, const ComputedStyle* style) {
@@ -219,6 +249,10 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // `line-break` decides which kinsoku prohibitions apply between
             // CJK characters -- whether a small kana may start a line.
             item.line_break = line_break_level(get(item.style, "line-break"));
+            // CSS Text L3 8.1: extra space added at each word separator, on
+            // top of the space's own advance. Unread until now, so a heading
+            // set with `word-spacing: 4px` came out at its natural spacing.
+            item.word_spacing = word_spacing_px(item.style, ctx, item.font_size);
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline && b.element &&
                    b.element->tag_name() == "br") {
@@ -654,6 +688,21 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         if (line_width < 0) line_width = 0;
     };
     begin_line_at(y);
+    // CSS Text L3 7.1: the FIRST line starts inset. Applied after
+    // begin_line_at so a float's own inset is not lost, and only once --
+    // every later line starts at the float edge as before.
+    {
+        const ComputedStyle* container_style =
+            tree->valid(container) ? (*tree)[container].style : nullptr;
+        const double indent = text_indent_px(container_style, ctx,
+                                             font_size_px(container_style, nullptr, ctx),
+                                             available_width);
+        if (indent != 0) {
+            line_left += indent;
+            line_width -= indent;
+            if (line_width < 0) line_width = 0;
+        }
+    }
 
     const auto reset_line_metrics = [&] {
         // Seeded with the strut, not with zero: the containing block's own
@@ -1156,7 +1205,13 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                         ++end;
                     }
                     const std::string_view piece = seg.substr(at, end - at);
-                    const double w = measure_spaced(metrics, piece, it, first_piece);
+                    // A preserved run of spaces is charged word-spacing per
+                    // space, the same as a collapsed one is charged for the
+                    // single space it becomes.
+                    double w = measure_spaced(metrics, piece, it, first_piece);
+                    if (spaces && it.word_spacing != 0) {
+                        w += it.word_spacing * static_cast<double>(piece.size());
+                    }
                     first_piece = false;
                     if (!spaces && line_has_content() && pen + w > line_width + kFitEpsilon) {
                         flush_line(false);
@@ -1175,7 +1230,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     // holds only inline-box markers counts as its start — the
                     // whitespace after `<card>` is not a 7px indent.
                     if (!line_has_content()) continue;
-                    const double w = measure_spaced(metrics, " ", it, first_piece);
+                    const double w = measure_spaced(metrics, " ", it, first_piece) + it.word_spacing;
                     first_piece = false;
                     grow_line_metrics(it);
                     line.push_back({&it, " ", true, pen, w});

@@ -1395,3 +1395,102 @@ void test_list_marker_ordinals() {
         CHECK(mark(f, "b") == "AA.");
     }
 }
+
+// CSS Text L3 8.1 `word-spacing`: extra space at each word separator, on top
+// of the space's own advance. Unread until now, so a heading set with
+// `word-spacing: 4px` came out at its natural spacing.
+//
+// The fixture's font is 0.5em per codepoint, so at 20px every character is
+// 10px and the arithmetic below is exact.
+void test_word_spacing() {
+    const auto width_of = [](const char* css) {
+        Fixture f;
+        CHECK(f.css(css));
+        CHECK(f.layout("<body><div id=w><span id=s>a b c</span></div></body>"));
+        return f.tree[f.find_kind("s", BoxKind::Inline)].width;
+    };
+    // "a b c" is five characters: 50px with no extra spacing.
+    const double plain = width_of("#w { display: block; width: 400px; font-size: 20px }");
+    CHECK(near(plain, 50));
+
+    // Two separators, so +4px each.
+    const double spaced = width_of("#w { display: block; width: 400px; font-size: 20px;"
+                                   "     word-spacing: 4px }");
+    CHECK(near(spaced, 58));
+
+    // `normal` is the initial value and adds nothing.
+    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
+                        "     word-spacing: normal }"), 50));
+
+    // A percentage is of the font size: 10% of 20px is 2px per separator.
+    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
+                        "     word-spacing: 10% }"), 54));
+
+    // It is inherited, so setting it on the block reaches the span's text --
+    // which the two cases above already rely on.
+}
+
+// `word-spacing` also decides where a line breaks, because it makes the line
+// wider.
+void test_word_spacing_affects_wrapping() {
+    // "aaa bbb" is 70px plain and fits a 80px box; with 20px of word-spacing
+    // it is 90px and does not.
+    Fixture f;
+    CHECK(f.css("#w { display: block; width: 80px; font-size: 20px }"));
+    CHECK(f.layout("<body><div id=w>aaa bbb</div></body>"));
+    CHECK(f.lines("w").size() == 1);
+
+    Fixture g;
+    CHECK(g.css("#w { display: block; width: 80px; font-size: 20px; word-spacing: 20px }"));
+    CHECK(g.layout("<body><div id=w>aaa bbb</div></body>"));
+    CHECK(g.lines("w").size() == 2);
+}
+
+// CSS Text L3 7.1 `text-indent`: the FIRST line starts inset, and no other.
+void test_text_indent() {
+    // The x of a line's first run. The child range is a forward-only view, so
+    // this takes the first thing it yields rather than comparing iterators.
+    const auto run_x = [](Fixture& f, BoxId line) {
+        for (BoxId c : f.tree.children(line)) return f.tree[c].x;
+        return -1.0;
+    };
+    const auto first_x = [&](Fixture& f) {
+        const std::vector<BoxId> ls = f.lines("w");
+        return ls.empty() ? -1.0 : run_x(f, ls[0]);
+    };
+    {
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 200px; font-size: 20px }"));
+        CHECK(f.layout("<body><div id=w>aaaa bbbb cccc dddd</div></body>"));
+        CHECK(near(first_x(f), 0));
+    }
+    {
+        // Indented: the first run starts 40px in.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 200px; font-size: 20px; text-indent: 40px }"));
+        CHECK(f.layout("<body><div id=w>aaaa bbbb cccc dddd</div></body>"));
+        CHECK(near(first_x(f), 40));
+        // And the SECOND line is not indented, which is the whole point of
+        // the property being first-line only.
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() >= 2);
+        if (ls.size() >= 2) CHECK(near(run_x(f, ls[1]), 0));
+    }
+    {
+        // A percentage is of the containing block's width: 10% of 200 is 20.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 200px; font-size: 20px; text-indent: 10% }"));
+        CHECK(f.layout("<body><div id=w>aaaa bbbb cccc dddd</div></body>"));
+        CHECK(near(first_x(f), 20));
+    }
+    {
+        // The `hanging` and `each-line` keywords are accepted and ignored;
+        // the length before them is still honoured rather than the whole
+        // declaration being dropped.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 200px; font-size: 20px;"
+                    "     text-indent: 30px hanging }"));
+        CHECK(f.layout("<body><div id=w>aaaa bbbb cccc dddd</div></body>"));
+        CHECK(near(first_x(f), 30));
+    }
+}
