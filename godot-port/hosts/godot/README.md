@@ -277,10 +277,32 @@ the name a script and a stylesheet already share.
     doc.set_element_value("#name", "Vintner")      # form controls
     doc.get_element_value("#shield")               # "on" or "" for a checkbox
     doc.set_element_attribute("#bar", "style", "width: 40%")
+    doc.get_element_attribute("#bar", "style")
     doc.toggle_element_class("#bar", "hurt", hp <= 50)
     doc.add_element_class(...) / remove_element_class(...)
     doc.has_element("#thing")
     doc.query_bounds("#thing")                     # where layout put it
+
+**Binding it to data**
+
+`{{ path }}` in the markup, filled from a Dictionary. The script says WHAT
+changed; the markup says where it is shown, which is the reason to write a UI
+in HTML rather than in setter calls.
+
+    <p>{{ Player.Name }} — {{ Player.Gold }}g</p>
+    <div class="bar" style="width: {{ Player.Hp }}%" data-class-hurt="Player.Hurt"></div>
+
+    doc.data = {"Player": {"Name": "Vintner", "Gold": 120, "Hp": 40, "Hurt": true}}
+    doc.refresh_bindings()                         # after mutating in place
+
+A dotted path walks nested Dictionaries, Arrays (`Items.0.Name`) and Objects,
+so a Resource or a Node can be bound as directly as a Dictionary.
+`data-class-<name>` puts one class on or off and leaves the rest of the
+element's `class` alone. A path the data does not have shows nothing.
+
+    doc.set_data_source(func(path): return my_state.lookup(path))
+
+takes over entirely when the state lives somewhere a Dictionary cannot reach.
 
 **Building it from data**
 

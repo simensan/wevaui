@@ -15,6 +15,8 @@
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <godot_cpp/variant/vector2i.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/callable.hpp>
 
 #include "godot_font.h"
 #include "weva_c.h"
@@ -122,6 +124,19 @@ public:
     bool append_html(const godot::String& selector, const godot::String& html);
     bool remove_element(const godot::String& selector);
     int count_elements(const godot::String& selector);
+
+    // Data binding: `{{ path }}` in the markup, filled from a Dictionary, an
+    // Object's properties, or anything a Callable can look up.
+    godot::String get_element_attribute(const godot::String& selector,
+                                        const godot::String& name);
+    void set_data(const godot::Dictionary& data);
+    godot::Dictionary get_data() const;
+    void set_data_source(const godot::Callable& resolver);
+    int refresh_bindings();
+
+    // Resolves one path against whatever source is set. Public because the C
+    // callback has to reach it.
+    bool resolve_binding(const godot::String& path, godot::String* out) const;
 
     // For a host that routes input itself: a controller mapped onto the
     // document, or a scene that decides who gets the keyboard.
@@ -242,6 +257,8 @@ private:
     godot::String css_;
     godot::Vector2 size_{0, 0};
     bool dirty_ = true;
+    godot::Dictionary data_;
+    godot::Callable data_source_;
     bool interactive_ = true;
     bool paused_ = false;
     // The last position handed to the document, so a move that does not change

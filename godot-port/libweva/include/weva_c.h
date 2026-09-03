@@ -462,6 +462,37 @@ weva_status weva_element_selection(weva_document_t doc, weva_element_t element, 
 weva_status weva_element_set_selection(weva_document_t doc, weva_element_t element, int start,
                                        int end);
 
+/* ---- Data binding ------------------------------------------------------
+ *
+ * `{{ path }}` in text or in an attribute, filled in from the host's data, and
+ * `data-class-<name>="path"` to put one class on or off. It is the same markup
+ * the Unity engine binds a C# controller to; a host here has no objects to
+ * reflect over, so the document asks for a path and is handed text.
+ *
+ * The markup stays the template. A text node keeps what it was parsed with and
+ * an attribute's template is remembered the first time it is filled, so the
+ * same document can be refilled every time the data moves.
+ */
+
+typedef struct weva_binding_source {
+    void* user;
+    /* Fills `buffer` with the value at `path` and returns its length, the way
+     * every other string accessor here does. Set `*found` to 0 for a path the
+     * host does not know: the binding then shows nothing, rather than the
+     * host having to invent a value for it. */
+    size_t (*value)(void* user, const char* path, char* buffer, size_t capacity, int* found);
+} weva_binding_source;
+
+/* Where the values come from. Null clears it, which leaves the document
+ * showing whatever it last resolved. */
+void weva_document_set_binding_source(weva_document_t doc, const weva_binding_source* source);
+
+/* Re-reads every binding in the document and writes what changed into the DOM.
+ * Returns how many nodes it changed, so a host can tell a refresh that did
+ * something from one that did not. Call it when the data moves; nothing else
+ * can know that it has. */
+int weva_document_refresh_bindings(weva_document_t doc);
+
 /* ---- Building the document from data ----------------------------------
  *
  * Setting text and attributes lets a host update a document; these let it

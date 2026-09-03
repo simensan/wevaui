@@ -10,6 +10,7 @@
 #include <godot_cpp/classes/theme_db.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
+#include <godot_cpp/variant/typed_array.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
 #include <godot_cpp/variant/rect2.hpp>
 #include <godot_cpp/variant/vector3.hpp>
@@ -230,6 +231,14 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::append_html);
     ClassDB::bind_method(D_METHOD("remove_element", "selector"), &WevaDocument::remove_element);
     ClassDB::bind_method(D_METHOD("count_elements", "selector"), &WevaDocument::count_elements);
+    ClassDB::bind_method(D_METHOD("get_element_attribute", "selector", "name"),
+                         &WevaDocument::get_element_attribute);
+    ClassDB::bind_method(D_METHOD("set_data", "data"), &WevaDocument::set_data);
+    ClassDB::bind_method(D_METHOD("get_data"), &WevaDocument::get_data);
+    ClassDB::bind_method(D_METHOD("set_data_source", "resolver"),
+                         &WevaDocument::set_data_source);
+    ClassDB::bind_method(D_METHOD("refresh_bindings"), &WevaDocument::refresh_bindings);
+    ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data"), "set_data", "get_data");
     ClassDB::bind_method(D_METHOD("send_key", "keycode", "pressed", "shift", "ctrl"),
                          &WevaDocument::send_key, DEFVAL(true), DEFVAL(false), DEFVAL(false));
     ClassDB::bind_method(D_METHOD("send_text", "text"), &WevaDocument::send_text);
@@ -681,6 +690,136 @@ Vector2i WevaDocument::get_element_selection(const String& selector) {
     int start = 0, end = 0;
     if (weva_element_selection(doc_, e, &start, &end) != WEVA_OK) return Vector2i();
     return Vector2i(start, end);
+}
+
+// ---- Data binding --------------------------------------------------------
+//
+// `{{ Player.Gold }}` in the markup and a Dictionary in the script. A dotted
+// path walks nested Dictionaries and Objects, so `{{ Player.Gold }}` reads
+// data["Player"]["Gold"] whether Player is a Dictionary, a Resource or a Node.
+// A Callable takes over entirely when a game keeps its state somewhere this
+// cannot reach.
+
+namespace {
+
+// One step of a dotted path.
+bool step(const Variant& from, const String& key, Variant* out) {
+    switch (from.get_type()) {
+        case Variant::DICTIONARY: {
+            const Dictionary d = from;
+            if (!d.has(key)) return false;
+            *out = d[key];
+            return true;
+        }
+        case Variant::OBJECT: {
+            Object* o = from;
+            if (o == nullptr) return false;
+            // has_method is not the question -- a property is what a binding
+            // path names -- so the property list is what decides.
+            bool has = false;
+            const TypedArray<Dictionary> properties = o->get_property_list();
+            for (int i = 0; i < properties.size() && !has; ++i) {
+                const Dictionary p = properties[i];
+                has = String(p.get("name", "")) == key;
+            }
+            if (!has) return false;
+            *out = o->get(key);
+            return true;
+        }
+        case Variant::ARRAY: {
+            // `Items.0` indexes a list, which is what a repeat will want.
+            if (!key.is_valid_int()) return false;
+            const Array a = from;
+            const int i = key.to_int();
+            if (i < 0 || i >= a.size()) return false;
+            *out = a[i];
+            return true;
+        }
+        default: return false;
+    }
+}
+
+}   // namespace
+
+bool WevaDocument::resolve_binding(const String& path, String* out) const {
+    if (data_source_.is_valid()) {
+        const Variant v = data_source_.call(path);
+        if (v.get_type() == Variant::NIL) return false;
+        *out = v.stringify();
+        return true;
+    }
+    Variant current = data_;
+    const PackedStringArray parts = path.split(".");
+    for (int i = 0; i < parts.size(); ++i) {
+        Variant next;
+        if (!step(current, parts[i], &next)) return false;
+        current = next;
+    }
+    if (current.get_type() == Variant::NIL) return false;
+    // A bool arrives as "true"/"false", which `data-class-` and an attribute
+    // selector both read the way they read the "True"/"False" the Unity engine
+    // produces.
+    *out = current.stringify();
+    return true;
+}
+
+static size_t weva_binding_read(void* user, const char* path, char* buffer, size_t capacity,
+                                int* found) {
+    WevaDocument* node = static_cast<WevaDocument*>(user);
+    String value;
+    if (!node->resolve_binding(String::utf8(path), &value)) {
+        *found = 0;
+        return 0;
+    }
+    *found = 1;
+    const CharString utf8 = value.utf8();
+    const size_t length = static_cast<size_t>(utf8.length());
+    if (buffer && capacity > 0) {
+        const size_t n = length < capacity - 1 ? length : capacity - 1;
+        if (n > 0) memcpy(buffer, utf8.get_data(), n);
+        buffer[n] = 0;
+    }
+    return length;
+}
+
+String WevaDocument::get_element_attribute(const String& selector, const String& name) {
+    if (!doc_) return String();
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    if (e == WEVA_ELEMENT_NONE) return String();
+    const CharString key = name.utf8();
+    const size_t n = weva_element_attribute(doc_, e, key.get_data(), nullptr, 0);
+    if (n == 0) return String();
+    std::vector<char> buffer(n + 1, 0);
+    weva_element_attribute(doc_, e, key.get_data(), buffer.data(), buffer.size());
+    return String::utf8(buffer.data());
+}
+
+void WevaDocument::set_data(const Dictionary& data) {
+    data_ = data;
+    refresh_bindings();
+}
+
+Dictionary WevaDocument::get_data() const { return data_; }
+
+void WevaDocument::set_data_source(const Callable& resolver) {
+    data_source_ = resolver;
+    refresh_bindings();
+}
+
+int WevaDocument::refresh_bindings() {
+    if (!doc_) return 0;
+    weva_binding_source source{};
+    source.user = this;
+    source.value = &weva_binding_read;
+    weva_document_set_binding_source(doc_, &source);
+    const int changed = weva_document_refresh_bindings(doc_);
+    if (changed > 0) {
+        dirty_ = true;
+        queue_redraw();
+    }
+    return changed;
 }
 
 bool WevaDocument::set_element_html(const String& selector, const String& html) {

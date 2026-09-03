@@ -9,6 +9,7 @@
 #include "weva/font_metrics.h"
 #include "weva/glyph_atlas.h"
 #include "weva/tessellate.h"
+#include "weva/binding.h"
 #include "weva/hit_test.h"
 #include "weva/html.h"
 #include "weva/invalidation.h"
@@ -1113,6 +1114,11 @@ struct weva_document {
     // box: the box tree is thrown away and rebuilt whenever anything moves, so
     // an offset kept on a box would be lost by every class change.
     std::unordered_map<const Element*, std::pair<double, double>> scroll;
+    // Where `{{ path }}` gets its values, and the attribute templates the
+    // substitution would otherwise have eaten.
+    weva_binding_source binding_source{};
+    bool has_binding_source = false;
+    BindingTemplates binding_templates;
     // The open dropdown, and which of its options the pointer or the keys are
     // on. Held here rather than in the DOM because being open is not a
     // property of the document -- reload the same markup and nothing is open.
@@ -1623,6 +1629,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->scroll.clear();   // keyed on elements of the document just replaced
     doc->open_select = nullptr;
     doc->highlighted_option = -1;
+    doc->binding_templates.clear();
     doc->caret_painted = CaretState{};
     return WEVA_OK;
 }
@@ -2788,6 +2795,60 @@ weva_element_t weva_document_open_select_element(weva_document_t doc) {
     return doc->handle_of(doc->open_select);
 }
 
+namespace {
+
+// The host's callback, wearing the interface the substitution wants.
+class AbiBindingResolver : public BindingResolver {
+public:
+    explicit AbiBindingResolver(const weva_binding_source& source) : source_(source) {}
+
+    bool resolve(std::string_view path, std::string* out) const override {
+        if (!source_.value) return false;
+        const std::string key(path);
+        int found = 0;
+        // The two-call pattern the rest of the ABI uses: ask for the length,
+        // then fill. Most values are short, so the first call usually answers
+        // both questions.
+        char stack[128];
+        const size_t n = source_.value(source_.user, key.c_str(), stack, sizeof(stack), &found);
+        if (!found) return false;
+        if (n < sizeof(stack)) {
+            out->assign(stack, n);
+            return true;
+        }
+        std::vector<char> heap(n + 1, 0);
+        source_.value(source_.user, key.c_str(), heap.data(), heap.size(), &found);
+        out->assign(heap.data(), n);
+        return found != 0;
+    }
+
+private:
+    const weva_binding_source& source_;
+};
+
+}   // namespace
+
+void weva_document_set_binding_source(weva_document_t doc, const weva_binding_source* source) {
+    if (!doc) return;
+    doc->has_binding_source = source != nullptr && source->value != nullptr;
+    doc->binding_source = doc->has_binding_source ? *source : weva_binding_source{};
+}
+
+int weva_document_refresh_bindings(weva_document_t doc) {
+    if (!doc || !doc->doc || !doc->has_binding_source) return 0;
+    const AbiBindingResolver resolver(doc->binding_source);
+    const int changed = apply_bindings(*doc->doc, resolver, &doc->binding_templates);
+    if (changed > 0) {
+        // Text that changed changes what boxes exist; an attribute that
+        // changed can change what matches. Both are the same tier a host's own
+        // set_text and set_attribute ask for.
+        doc->pending = worst(doc->pending, Invalidation::Boxes);
+        doc->touched.clear();
+        doc->dom_touched = false;
+    }
+    return changed;
+}
+
 int weva_document_select_word_at(weva_document_t doc, double x, double y) {
     if (!doc) return 0;
     const Element* hit = element_at_point(doc->tree, doc->root, x, y);
@@ -3085,6 +3146,7 @@ void forget_element(weva_document* doc, const Element* e) {
         doc->open_select = nullptr;
         doc->highlighted_option = -1;
     }
+    doc->binding_templates.erase(e);
     const auto drop = [e](std::vector<const Element*>* chain) {
         chain->erase(std::remove(chain->begin(), chain->end(), e), chain->end());
     };

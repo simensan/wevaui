@@ -26,6 +26,7 @@ add_library(weva STATIC
     src/animation.cpp
     src/at_property.cpp
     src/keyword_resolver.cpp
+    src/binding.cpp
     src/box.cpp
     src/box_builder.cpp
     src/style_resolver.cpp

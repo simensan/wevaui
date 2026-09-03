@@ -51,6 +51,7 @@ func _ready() -> void:
 	_test_keyboard_scrolling()
 	_test_selection()
 	_test_select_dropdown()
+	_test_data_binding()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -697,4 +698,48 @@ func _test_select_dropdown() -> void:
 	_check(doc.get_element_value("#q") == "med", "the keyboard walks the list and takes one")
 	doc.close_select()
 	_check(doc.get_open_select() == "", "and a script can close it")
+	doc.queue_free()
+
+
+func _test_data_binding() -> void:
+	# `{{ path }}` in the markup and a Dictionary in the script. The script says
+	# WHAT changed; the markup says where it is shown -- which is the point of
+	# writing a UI in HTML rather than in setter calls.
+	var doc := _make_doc(
+		"<body><p id='label'>{{ Player.Name }} — {{ Player.Gold }}g</p>" +
+		"<div id='bar' class='bar' style='width: {{ Player.Hp }}%'" +
+		" data-class-hurt='Player.Hurt'></div></body>",
+		"html, body { margin: 0 } .bar { height: 10px }")
+	doc.data = {
+		"Player": {"Name": "Vintner", "Gold": 120, "Hp": 40, "Hurt": true}
+	}
+	doc.update_document()
+	_check(doc.query_text("#label") == "Vintner — 120g", "text follows the data")
+	_check(doc.get_element_attribute("#bar", "style") == "width: 40%",
+		"and so does an attribute")
+	_check(doc.get_element_attribute("#bar", "class") == "bar hurt",
+		"data-class- adds its one class and leaves the rest")
+
+	# The markup stays the template: setting the data again refills it.
+	doc.data = {
+		"Player": {"Name": "Halden", "Gold": 5, "Hp": 90, "Hurt": false}
+	}
+	doc.update_document()
+	_check(doc.query_text("#label") == "Halden — 5g", "and again when the data moves")
+	_check(doc.get_element_attribute("#bar", "style") == "width: 90%", "the attribute refills")
+	_check(doc.get_element_attribute("#bar", "class") == "bar", "and the class comes off")
+
+	# A Callable takes over when the state lives somewhere a Dictionary cannot
+	# reach -- a singleton, a resource, a computed value.
+	var doc2 := _make_doc("<body><p id='t'>{{ Score }} / {{ Best }}</p></body>",
+		"html, body { margin: 0 }")
+	var scores := {"Score": 40, "Best": 99}
+	doc2.set_data_source(func(path): return scores.get(path))
+	doc2.update_document()
+	_check(doc2.query_text("#t") == "40 / 99", "a Callable resolves the paths")
+	scores["Score"] = 41
+	_check(doc2.refresh_bindings() > 0, "and a refresh picks up what it now returns")
+	doc2.update_document()
+	_check(doc2.query_text("#t") == "41 / 99", "which lands in the document")
+	doc2.queue_free()
 	doc.queue_free()
