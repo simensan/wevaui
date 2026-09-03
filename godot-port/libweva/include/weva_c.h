@@ -744,6 +744,21 @@ weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t elem
  * then `out_index` is untouched and the key buffer gets an empty string). The
  * key follows the usual two-call convention: pass a null buffer to ask for the
  * length. */
+/* The value the cascade settled on for one property, as a string.
+ *
+ * What a script cannot otherwise find out: the stylesheet is the authority on
+ * an element's colour, its font size, and whether it is displayed at all, and
+ * a game that wants to tint a particle to match a panel has no way to ask.
+ * This is that question. The answer is the COMPUTED value -- inheritance and
+ * the initial value already resolved -- so a property the element never set
+ * still answers with what it is actually using.
+ *
+ * Layout results are not here: an element's position and size come from
+ * weva_element_bounds, because they are the layout's answer rather than the
+ * cascade's. Returns 0 for an unknown property name. Two-call convention. */
+size_t weva_element_computed_style(weva_document_t doc, weva_element_t element,
+                                   const char* property, char* buffer, size_t capacity);
+
 /* A binding path written INSIDE a repeated row, resolved against the whole
  * document.
  *

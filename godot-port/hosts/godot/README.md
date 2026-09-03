@@ -398,6 +398,32 @@ CSS addresses them, so a script that can style a list can also fill it.
     doc.count_elements("#log .line")
     doc.query_text("#log .line:nth-child(2)")      # read one back by position
 
+**Reading the document back**
+
+Two questions a script could not previously ask.
+
+What the STYLESHEET decided, which no other call reports -- a game that tints
+a particle or a 3D material to match a panel has to get the colour from the
+same place the panel did:
+
+    doc.get_computed_style("#panel", "color")        # "rgb(200, 100, 50)"
+    doc.get_computed_style("#tip", "display")        # "none"
+
+It is the COMPUTED value: inheritance and the initial value are already
+resolved, so a property the element never set still answers with the one it is
+actually using. An unknown property answers empty rather than guessing.
+Position and size are not here -- those are the layout's answer, and
+`query_bounds` gives them.
+
+And every match of a selector, rather than only the first:
+
+    doc.query_all_text("#log .line")        # PackedStringArray, document order
+    doc.query_all_bounds(".card")           # Array[Rect2]
+    doc.query_all_ids(".card")              # "" where a row has no id
+
+`count_elements` plus one `:nth-of-type` selector per row still works, and is
+still the way to address ONE of them; these are for reading the lot.
+
 **Which row was clicked**
 
 A repeated row usually has no id: the template writes one element and the data

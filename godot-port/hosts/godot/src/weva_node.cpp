@@ -267,6 +267,12 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::append_html);
     ClassDB::bind_method(D_METHOD("remove_element", "selector"), &WevaDocument::remove_element);
     ClassDB::bind_method(D_METHOD("count_elements", "selector"), &WevaDocument::count_elements);
+    ClassDB::bind_method(D_METHOD("get_computed_style", "selector", "property"),
+                         &WevaDocument::get_computed_style);
+    ClassDB::bind_method(D_METHOD("query_all_text", "selector"), &WevaDocument::query_all_text);
+    ClassDB::bind_method(D_METHOD("query_all_bounds", "selector"),
+                         &WevaDocument::query_all_bounds);
+    ClassDB::bind_method(D_METHOD("query_all_ids", "selector"), &WevaDocument::query_all_ids);
     ClassDB::bind_method(D_METHOD("get_element_attribute", "selector", "name"),
                          &WevaDocument::get_element_attribute);
     ClassDB::bind_method(D_METHOD("set_data", "data"), &WevaDocument::set_data);
@@ -1054,6 +1060,69 @@ godot::String WevaDocument::value_of(uint32_t element) {
 // An element's `data-model`, resolved against the whole document. Inside a
 // repeated row the author writes the row's alias -- `quest.Done` -- and only
 // the core knows which item that row is, so it does the unwinding.
+String WevaDocument::get_computed_style(const String& selector, const String& property) {
+    if (!doc_) return String();
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return String();
+    const CharString prop = property.utf8();
+    const size_t n = weva_element_computed_style(doc_, e, prop.get_data(), nullptr, 0);
+    if (n == 0) return String();
+    std::vector<char> buffer(n + 1, 0);
+    weva_element_computed_style(doc_, e, prop.get_data(), buffer.data(), buffer.size());
+    return String::utf8(buffer.data());
+}
+
+// The matches, in document order. Shared by the three query_all_* below so the
+// two-call convention is written once.
+std::vector<uint32_t> WevaDocument::matches(const String& selector) {
+    std::vector<uint32_t> out;
+    if (!doc_) return out;
+    ensure_updated();
+    const CharString sel = selector.utf8();
+    const size_t count = weva_document_query_all(doc_, sel.get_data(), nullptr, 0);
+    if (count == 0) return out;
+    out.resize(count);
+    const size_t written = weva_document_query_all(doc_, sel.get_data(), out.data(), out.size());
+    out.resize(written);
+    return out;
+}
+
+PackedStringArray WevaDocument::query_all_text(const String& selector) {
+    PackedStringArray out;
+    for (uint32_t e : matches(selector)) {
+        const size_t n = weva_element_text(doc_, e, nullptr, 0);
+        if (n == 0) {
+            out.push_back(String());
+            continue;
+        }
+        std::vector<char> buffer(n + 1, 0);
+        weva_element_text(doc_, e, buffer.data(), buffer.size());
+        out.push_back(String::utf8(buffer.data()));
+    }
+    return out;
+}
+
+Array WevaDocument::query_all_bounds(const String& selector) {
+    Array out;
+    for (uint32_t e : matches(selector)) {
+        double x = 0, y = 0, w = 0, h = 0;
+        if (weva_element_bounds(doc_, e, &x, &y, &w, &h) != WEVA_OK) {
+            out.push_back(Rect2());
+            continue;
+        }
+        out.push_back(Rect2(static_cast<real_t>(x), static_cast<real_t>(y),
+                            static_cast<real_t>(w), static_cast<real_t>(h)));
+    }
+    return out;
+}
+
+PackedStringArray WevaDocument::query_all_ids(const String& selector) {
+    PackedStringArray out;
+    for (uint32_t e : matches(selector)) out.push_back(id_of(e));
+    return out;
+}
+
 godot::String WevaDocument::model_path_of(uint32_t element) {
     if (!doc_ || element == WEVA_ELEMENT_NONE) return String();
     const String written = attribute_of(element, "data-model");

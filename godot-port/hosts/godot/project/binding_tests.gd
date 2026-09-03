@@ -64,6 +64,69 @@ func _drag_range(doc: WevaDocument, selector: String, fraction: float) -> void:
 	doc.set_pointer(at, 0)
 	doc.update_document()
 
+# Reading the document back: what the cascade decided, and every match of a
+# selector rather than only the first.
+func _reading_back(_unused: WevaDocument) -> void:
+	var doc := WevaDocument.new()
+	add_child(doc)
+	doc.document_size = Vector2(600, 400)
+	doc.css = """
+	.tile { color: rgb(10, 20, 30); font-size: 21px; }
+	#dim { display: none; }
+	.panel { color: rgb(200, 100, 50); }
+	"""
+	doc.html = """
+	<div class="panel">
+	  <span class="tile" id="one">alpha</span>
+	  <span class="tile" id="two">beta</span>
+	  <span class="tile">gamma</span>
+	  <span id="dim">hidden</span>
+	  <span class="inherits">delta</span>
+	</div>
+	"""
+	doc.update_document()
+
+	# What the stylesheet decided, which no other call reports.
+	_check(doc.get_computed_style("#one", "font-size") == "21px", "a computed length reads back")
+	_check(doc.get_computed_style("#dim", "display") == "none", "and a keyword")
+
+	# Computed, not declared: `.inherits` sets no colour of its own and answers
+	# with the panel's, because that is the value it is actually using.
+	# Against the VALUE as well as against the panel: comparing the two alone
+	# passed with the whole feature disabled, because "" equals "".
+	var inherited := doc.get_computed_style(".inherits", "color")
+	_check(inherited.contains("200"), "an unset inherited property answers with a real value")
+	_check(inherited == doc.get_computed_style(".panel", "color"),
+			"and it is the one it inherited")
+
+	# A property the element never set and nothing above it set either still
+	# answers -- with the initial value.
+	_check(doc.get_computed_style("#one", "position") == "static",
+			"and an unset non-inherited one with its initial value")
+	_check(doc.get_computed_style("#one", "not-a-property") == "",
+			"an unknown property is empty rather than a guess")
+	_check(doc.get_computed_style("#nothing", "color") == "", "so is a selector that matches nothing")
+
+	# Every match, not just the first.
+	var texts := doc.query_all_text(".tile")
+	_check(texts.size() == 3, "query_all_text sees every match")
+	if texts.size() == 3:
+		_check(texts[0] == "alpha" and texts[2] == "gamma", "in document order")
+
+	var boxes := doc.query_all_bounds(".tile")
+	_check(boxes.size() == 3, "and so does query_all_bounds")
+	if boxes.size() == 3:
+		_check(boxes[0].position.x < boxes[1].position.x, "with the boxes laid out across")
+		_check(boxes[0].size.x > 0, "and given real widths")
+
+	var ids := doc.query_all_ids(".tile")
+	_check(ids.size() == 3, "query_all_ids answers for every match")
+	if ids.size() == 3:
+		_check(ids[0] == "one" and ids[2] == "", "naming the ones that have an id")
+
+	_check(doc.query_all_text(".nothing-here").size() == 0, "no match is an empty list")
+	doc.queue_free()
+
 func _ready() -> void:
 	var doc := WevaDocument.new()
 	add_child(doc)
@@ -176,6 +239,8 @@ func _ready() -> void:
 	other.update_document()
 	_check(true, "and writing it back does not crash")
 	other.queue_free()
+
+	_reading_back(doc)
 
 	doc.queue_free()
 	print("godot bindings: %d checks, %d failures" % [checks, failures])

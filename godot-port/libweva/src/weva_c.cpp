@@ -4091,6 +4091,29 @@ weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t elemen
     return WEVA_OK;
 }
 
+size_t weva_element_computed_style(weva_document_t doc, weva_element_t element,
+                                   const char* property, char* buffer, size_t capacity) {
+    if (buffer && capacity > 0) buffer[0] = '\0';
+    if (!doc || !property) return 0;
+    const Element* e = doc->element_at(element);
+    if (!e) return 0;
+    const int id = CssPropertyRegistry::instance().id_of(property);
+    if (id < 0) return 0;
+    const ComputedStyle* style = doc->styles.style_of(*e);
+    if (!style) return 0;
+    // get() resolves through the inherit chain and then the initial-value
+    // table, so an element that never set the property still answers with the
+    // value it is actually using -- which is what "computed" means and what a
+    // script asking the question wants.
+    const std::string_view value = style->get(id);
+    if (buffer && capacity > 0) {
+        const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
+        if (n > 0) std::memcpy(buffer, value.data(), n);
+        buffer[n] = '\0';
+    }
+    return value.size();
+}
+
 size_t weva_element_model_path(weva_document_t doc, weva_element_t element, const char* path,
                                char* buffer, size_t capacity) {
     std::string resolved(path ? path : "");
@@ -4137,7 +4160,7 @@ size_t weva_element_model_path(weva_document_t doc, weva_element_t element, cons
     if (buffer && capacity > 0) {
         const size_t n = resolved.size() < capacity - 1 ? resolved.size() : capacity - 1;
         if (n > 0) std::memcpy(buffer, resolved.data(), n);
-        buffer[n] = ' ';
+        buffer[n] = '\0';
     }
     return resolved.size();
 }

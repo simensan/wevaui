@@ -332,6 +332,20 @@ private:
     godot::String value_of(uint32_t element);
     godot::String attribute_of(uint32_t element, const char* name);
     godot::String model_path_of(uint32_t element);
+    std::vector<uint32_t> matches(const godot::String& selector);
+
+public:
+    // What the CASCADE settled on, which a script has no other way to ask.
+    godot::String get_computed_style(const godot::String& selector,
+                                     const godot::String& property);
+    // Every match, not just the first. The ABI has always had query_all; the
+    // node only ever exposed the first hit, so a script iterating a list had
+    // to count it and then build one :nth-of-type selector per row.
+    godot::PackedStringArray query_all_text(const godot::String& selector);
+    godot::Array query_all_bounds(const godot::String& selector);
+    godot::PackedStringArray query_all_ids(const godot::String& selector);
+
+private:
     // Set while a model is being pushed into its control, so the change that
     // causes does not bounce straight back into the data.
     bool applying_models_ = false;
