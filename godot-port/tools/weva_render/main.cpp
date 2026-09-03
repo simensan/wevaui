@@ -57,10 +57,41 @@ bool write_ppm(const char* path, const std::vector<uint8_t>& rgba, int w, int h)
 
 } // namespace
 
+// Interaction the renderer can be asked to put the document into, so the parts
+// that only exist while a user is doing something -- a cursor, a selection, a
+// hovered row, an open dropdown -- can be LOOKED at rather than only asserted
+// about through the draw list.
+struct Interaction {
+    std::string focus;      // --focus=<selector>
+    std::string open;       // --open=<selector>, a <select> to open
+    std::string hover;      // --hover=<selector>, pointer over its middle
+    int selection_from = -1;
+    int selection_to = -1;  // --selection=A,B on the focused field
+    double scroll = 0;      // --scroll=<px> on the focused element
+};
+
 int main(int argc, char** argv) {
     if (argc < 6) {
-        std::fprintf(stderr, "usage: weva_render <html> <css> <width> <height> <out.ppm>\n");
+        std::fprintf(stderr,
+                     "usage: weva_render <html> <css> <width> <height> <out.ppm> [flags]\n"
+                     "  --focus=SEL --open=SEL --hover=SEL --selection=A,B --scroll=PX\n");
         return 2;
+    }
+    Interaction act;
+    for (int i = 6; i < argc; ++i) {
+        const std::string a = argv[i];
+        if (a.rfind("--focus=", 0) == 0) act.focus = a.substr(8);
+        else if (a.rfind("--open=", 0) == 0) act.open = a.substr(7);
+        else if (a.rfind("--hover=", 0) == 0) act.hover = a.substr(8);
+        else if (a.rfind("--scroll=", 0) == 0) act.scroll = std::atof(a.c_str() + 9);
+        else if (a.rfind("--selection=", 0) == 0) {
+            const std::string v = a.substr(12);
+            const size_t comma = v.find(',');
+            if (comma != std::string::npos) {
+                act.selection_from = std::atoi(v.substr(0, comma).c_str());
+                act.selection_to = std::atoi(v.substr(comma + 1).c_str());
+            }
+        }
     }
     std::string html, css;
     if (!read_file(argv[1], &html)) {
@@ -100,6 +131,30 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "weva_render: update failed\n");
         weva_document_destroy(doc);
         return 1;
+    }
+
+    // Put it into the state that was asked for, then update again so the frame
+    // holds it.
+    if (!act.focus.empty()) {
+        const weva_element_t e = weva_document_query(doc, act.focus.c_str());
+        weva_document_set_focus(doc, e);
+        if (act.selection_from >= 0) {
+            weva_element_set_selection(doc, e, act.selection_from, act.selection_to);
+        }
+        if (act.scroll != 0) weva_element_set_scroll(doc, e, 0, act.scroll);
+    }
+    if (!act.hover.empty()) {
+        double hx = 0, hy = 0, hw = 0, hh = 0;
+        if (weva_element_bounds(doc, weva_document_query(doc, act.hover.c_str()), &hx, &hy, &hw,
+                                &hh) == WEVA_OK) {
+            weva_document_set_pointer(doc, hx + hw * 0.5, hy + hh * 0.5, 0);
+        }
+    }
+    if (!act.open.empty()) {
+        weva_document_open_select(doc, weva_document_query(doc, act.open.c_str()));
+    }
+    if (!act.focus.empty() || !act.open.empty() || !act.hover.empty()) {
+        weva_document_update(doc, 0.0);
     }
 
     weva::SoftwareRenderer renderer(width, height);

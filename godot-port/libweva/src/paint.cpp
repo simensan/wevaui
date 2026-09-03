@@ -1652,6 +1652,28 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
     for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, ctx, paint);
 }
 
+// The open list's labels, into the same up-front upload. Without this the
+// popup's glyphs go into the atlas AFTER the tree's draws have referenced it,
+// and the re-pack turns every word on the page into a smear of the wrong
+// texels -- which is exactly what a screenshot with a dropdown open showed.
+void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
+                          const PaintContext& paint) {
+    const Element* select = paint.popup.element;
+    if (!select || !paint.font || !paint.atlas) return;
+    for (int i = 0; i < tree.size(); ++i) {
+        const Box& b = tree[i];
+        if (b.element != select || b.kind != BoxKind::Block) continue;
+        const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
+        const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
+        for (const Element* option : select_options(*select)) {
+            std::vector<ShapedGlyph> glyphs;
+            paint.font->shape(paint.face, trimmed_text_of(*option), fs, &glyphs);
+            for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, paint.face, g.glyph, fs);
+        }
+        return;
+    }
+}
+
 bool has_gradient_layer(const std::vector<BackgroundLayer>& layers) {
     for (const BackgroundLayer& l : layers) {
         if (l.is_gradient) return true;
@@ -2710,7 +2732,8 @@ SelectListGeometry select_list_geometry(const BoxTree& tree, BoxId select_box,
 }
 
 // The open list, painted after the tree so it covers what it opens over.
-void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const PaintContext& paint) {
+void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const PaintContext& paint,
+                        TextureHandle atlas_texture) {
     const Element* select = paint.popup.element;
     if (!select || !paint.backend) return;
     BoxId box = kNoBox;
@@ -2770,8 +2793,7 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
                             i == paint.popup.highlighted ? LinearColor::from_srgb(255, 255, 255, 1.f)
                                                          : text,
                             paint, &glyphs, letter_spacing_of(b.style, ctx, fs), &face);
-        draw_mesh(glyphs, paint.backend, paint.atlas ? paint.atlas->texture(paint.backend) : TextureHandle{},
-                  1.0, nullptr, nullptr, nullptr);
+        draw_mesh(glyphs, paint.backend, atlas_texture, 1.0, nullptr, nullptr, nullptr);
     }
 }
 
@@ -2789,6 +2811,7 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     if (paint.atlas && paint.font) {
         const auto t0 = std::chrono::steady_clock::now();
         prepare_glyphs(tree, root, ctx, paint);
+        prepare_popup_glyphs(tree, ctx, paint);
         atlas_texture = paint.atlas->texture(paint.backend);
         glyphs_ms =
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
@@ -2796,7 +2819,7 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     const BoxId canvas_owner = paint_canvas(tree, root, ctx, paint);
     paint_recursive(tree, root, ctx, 0, 0, paint, atlas_texture, canvas_owner, PaintState{});
     // Last, and over everything: an open dropdown is not in the box tree.
-    paint_select_popup(tree, ctx, paint);
+    paint_select_popup(tree, ctx, paint, atlas_texture);
 
     if (g_paint_profile.on) {
         const double total =

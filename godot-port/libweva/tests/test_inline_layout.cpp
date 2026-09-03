@@ -986,6 +986,54 @@ void test_preserved_newlines_force_line_breaks() {
 // blocks. Once every line box carried a strut those phantom blocks were a full
 // line-height each, so `<div><span><div>block</div></span></div>` measured
 // three line-heights where Chrome and the reference both say one.
+// CSS Text L3 3.1. `pre-wrap` preserves whitespace AND still wraps -- the two
+// are separate axes, and treating preserved whitespace as "one unbreakable
+// piece" is only right for `pre`.
+//
+// Every <textarea> is `pre-wrap` (Chrome's UA sheet, and ours), so while this
+// was wrong not one of them soft-wrapped: a value ran off the side of the box
+// and grew a horizontal scrollbar where a browser puts a second line.
+void test_pre_wrap_soft_wraps() {
+    {
+        // Narrow enough for two words per line, and the text is preserved
+        // rather than collapsed.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 90px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre-wrap }"));
+        CHECK(f.layout("<body><div id=w>one two three four</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() > 1);
+    }
+    {
+        // `pre` in the same box does NOT wrap: one line, however long.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 90px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre }"));
+        CHECK(f.layout("<body><div id=w>one two three four</div></body>"));
+        CHECK(f.lines("w").size() == 1);
+    }
+    {
+        // The whitespace is still preserved: a run of spaces keeps its width,
+        // which is the difference from `normal`.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 4000px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre-wrap }"));
+        CHECK(f.layout("<body><div id=w>a     b</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 1);
+        CHECK_EQ(f.line_text(ls[0]), "a     b");
+    }
+    {
+        // Newlines still break, and each of those lines wraps on its own.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 90px; font-size: 16px;"
+                    "     line-height: 20px; white-space: pre-wrap }"));
+        CHECK(f.layout("<body><div id=w>short\none two three four</div></body>"));
+        CHECK(f.lines("w").size() > 2);
+    }
+}
+
+
 void test_block_in_inline_empty_fragments() {
     {
         // The bare case, verified against Chrome: one line-height, not three.

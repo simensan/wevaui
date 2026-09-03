@@ -994,18 +994,53 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             // Each segment opens a line of its own, so it is a first piece
             // again for the letter-spacing at its leading edge.
             first_piece = true;
-            if (!it.collapse_whitespace) {
-                // Preserved whitespace is a later slice; the text is placed
-                // as one unbreakable fragment so its width is still accounted
-                // for. An EMPTY segment still pushes its (zero-width) fragment
-                // when the line holds nothing, because a blank line inside a
-                // `pre` is a line: without a fragment flush_line drops it and
-                // the block comes up one line-height short.
+            if (!it.collapse_whitespace && !it.allow_wrap) {
+                // `pre`: whitespace preserved AND no wrapping, so the segment
+                // is one unbreakable fragment and its width is accounted for
+                // whatever it is. An EMPTY segment still pushes its
+                // (zero-width) fragment when the line holds nothing, because a
+                // blank line inside a `pre` is a line: without a fragment
+                // flush_line drops it and the block comes up one line-height
+                // short.
                 const double w = measure_spaced(metrics, seg, it, true);
                 if (!seg.empty() || line.empty()) {
                     grow_line_metrics(it);
                     line.push_back({&it, seg, false, pen, w});
                     pen += w;
+                }
+            } else if (!it.collapse_whitespace) {
+                // `pre-wrap` and `break-spaces`: whitespace is preserved and
+                // the line STILL wraps (CSS Text L3 3.1). Placing the segment
+                // as one fragment, as `pre` does, is why no textarea in the
+                // engine soft-wrapped -- the value ran off the side of the box
+                // and grew a horizontal scrollbar instead of a second line.
+                //
+                // Spaces keep their width and stay where they are; a word that
+                // does not fit starts a new line. The spaces before that break
+                // hang past the edge, as they do in a browser, rather than
+                // pushing the word down a line early.
+                size_t at = 0;
+                if (seg.empty() && line.empty()) {
+                    grow_line_metrics(it);
+                    line.push_back({&it, seg, false, pen, 0});
+                }
+                while (at < seg.size()) {
+                    const bool spaces = seg[at] == ' ' || seg[at] == '\t';
+                    size_t end = at;
+                    while (end < seg.size() &&
+                           ((seg[end] == ' ' || seg[end] == '\t') == spaces)) {
+                        ++end;
+                    }
+                    const std::string_view piece = seg.substr(at, end - at);
+                    const double w = measure_spaced(metrics, piece, it, first_piece);
+                    first_piece = false;
+                    if (!spaces && line_has_content() && pen + w > line_width + kFitEpsilon) {
+                        flush_line(false);
+                    }
+                    grow_line_metrics(it);
+                    line.push_back({&it, piece, spaces, pen, w});
+                    pen += w;
+                    at = end;
                 }
             } else {
             tokenize_collapsing(seg, &scratch.tokens);
