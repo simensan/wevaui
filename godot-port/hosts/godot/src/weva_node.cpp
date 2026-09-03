@@ -198,6 +198,10 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_content_size"), &WevaDocument::get_content_size);
     ClassDB::bind_method(D_METHOD("query_bounds", "selector"), &WevaDocument::query_bounds);
     ClassDB::bind_method(D_METHOD("query_text", "selector"), &WevaDocument::query_text);
+    ClassDB::bind_method(D_METHOD("show_dialog", "selector"), &WevaDocument::show_dialog);
+    ClassDB::bind_method(D_METHOD("show_modal_dialog", "selector"),
+                         &WevaDocument::show_modal_dialog);
+    ClassDB::bind_method(D_METHOD("close_dialog", "selector"), &WevaDocument::close_dialog);
     ClassDB::bind_method(D_METHOD("has_element_attribute", "selector", "name"),
                          &WevaDocument::has_element_attribute);
     ClassDB::bind_method(D_METHOD("set_element_attribute", "selector", "name", "value"),
@@ -842,6 +846,39 @@ static size_t weva_binding_read(void* user, const char* path, char* buffer, size
         buffer[n] = 0;
     }
     return length;
+}
+
+bool WevaDocument::show_dialog(const String& selector) {
+    if (!doc_) return false;
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (weva_element_show_dialog(doc_, e, 0) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::show_modal_dialog(const String& selector) {
+    if (!doc_) return false;
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (weva_element_show_dialog(doc_, e, 1) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::close_dialog(const String& selector) {
+    if (!doc_) return false;
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return false;
+    if (weva_element_close_dialog(doc_, e) != WEVA_OK) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
 }
 
 bool WevaDocument::has_element_attribute(const String& selector, const String& name) {

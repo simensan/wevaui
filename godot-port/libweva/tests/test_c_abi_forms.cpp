@@ -35,6 +35,44 @@ struct Doc {
         weva_document_update(d, 0);
     }
     ~Doc() { weva_document_destroy(d); }
+    // How many viewport-filling half-transparent black rects the document
+    // draws: the `::backdrop` behind a modal dialog or an open popover.
+    // Counted from the DRAWS rather than from a box query, because a backdrop
+    // has no element and `weva_document_query` can never find it -- and
+    // because what matters is that it covers the viewport, not that a box
+    // exists somewhere.
+    int backdrops() {
+        weva_document_update(d, 0);
+        const weva_config c = config();
+        const int viewport_w = c.viewport_width;
+        const int viewport_h = c.viewport_height;
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        int found = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].texture_id != 0 || draws[i].vertex_count == 0) continue;
+            double min_x = 1e9, min_y = 1e9, max_x = -1e9, max_y = -1e9;
+            bool dim = true;
+            for (size_t v = 0; v < draws[i].vertex_count; ++v) {
+                const weva_vertex& vt = draws[i].vertices[v];
+                min_x = std::min(min_x, static_cast<double>(vt.x));
+                min_y = std::min(min_y, static_cast<double>(vt.y));
+                max_x = std::max(max_x, static_cast<double>(vt.x));
+                max_y = std::max(max_y, static_cast<double>(vt.y));
+                // Half-transparent black, which is what the UA sheet gives it.
+                if (vt.r > 0.05f || vt.g > 0.05f || vt.b > 0.05f ||
+                    vt.a < 0.4f || vt.a > 0.6f) {
+                    dim = false;
+                }
+            }
+            if (!dim) continue;
+            if (min_x <= 0.5 && min_y <= 0.5 && max_x >= viewport_w - 0.5 &&
+                max_y >= viewport_h - 0.5) {
+                ++found;
+            }
+        }
+        return found;
+    }
     Doc(const Doc&) = delete;
     Doc& operator=(const Doc&) = delete;
 
@@ -1713,4 +1751,69 @@ void test_abi_details_reports_the_toggle() {
     CHECK(toggles == 1);
     CHECK(handler == "OnDisclose");
     CHECK(target == weva_document_query(doc.d, "#d"));   // the <details>, not the summary
+}
+
+// A modal <dialog> gets a `::backdrop` behind it. The UA sheet has carried a
+// `::backdrop` rule all along and nothing ever built the box it styles, so the
+// rule matched nothing and a modal dialog looked exactly like a non-modal one.
+void test_abi_dialog_backdrop() {
+    Doc doc("html, body { margin: 0; height: 600px }"
+            " dialog { width: 200px; height: 100px; box-sizing: border-box }",
+            "<dialog id=d><p>Are you sure?</p></dialog><div id=page>Behind</div>");
+    const weva_element_t d = weva_document_query(doc.d, "#d");
+
+    // Closed: no dialog box and no backdrop.
+    weva_document_update(doc.d, 0);
+    CHECK(doc.backdrops() == 0);
+    double x = 0, y = 0, w = 0, h = 0;
+    CHECK(weva_element_bounds(doc.d, d, &x, &y, &w, &h) != WEVA_OK || h == 0);
+
+    // Non-modal: the dialog shows and there is still no backdrop. That is the
+    // whole difference between show() and showModal().
+    CHECK(weva_element_show_dialog(doc.d, d, 0) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_element_bounds(doc.d, d, &x, &y, &w, &h) == WEVA_OK);
+    CHECK(h == 100);
+    CHECK(doc.backdrops() == 0);
+
+    // Modal: now there is one.
+    CHECK(weva_element_show_dialog(doc.d, d, 1) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.backdrops() == 1);
+
+    // Reopening non-modally takes it away again -- the backdrop must not
+    // outlive the modality that asked for it.
+    CHECK(weva_element_show_dialog(doc.d, d, 0) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.backdrops() == 0);
+
+    // And closing puts everything back.
+    CHECK(weva_element_close_dialog(doc.d, d) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.backdrops() == 0);
+    CHECK(weva_element_has_attribute(doc.d, d, "open") == 0);
+    CHECK(weva_element_has_attribute(doc.d, d, "data-modal") == 0);
+
+    // Only a <dialog> takes these.
+    CHECK(weva_element_show_dialog(doc.d, weva_document_query(doc.d, "#page"), 1) ==
+          WEVA_ERR_NOT_FOUND);
+}
+
+// An open popover is the other top-layer shape, and shares the machinery.
+void test_abi_popover_backdrop() {
+    Doc doc("html, body { margin: 0; height: 600px }"
+            " [popover] { width: 120px; height: 60px }",
+            "<div id=p popover>Menu</div>");
+    const weva_element_t p = weva_document_query(doc.d, "#p");
+    weva_document_update(doc.d, 0);
+    CHECK(doc.backdrops() == 0);
+
+    // The attribute pair is the whole state: no controller, no stored flag.
+    CHECK(weva_element_set_attribute(doc.d, p, "data-popover-open", "") == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.backdrops() == 1);
+
+    CHECK(weva_element_set_attribute(doc.d, p, "data-popover-open", nullptr) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.backdrops() == 0);
 }

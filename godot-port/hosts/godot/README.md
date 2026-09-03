@@ -500,6 +500,27 @@ not.
 Like the reference, a `<summary>` is not in the tab order and Enter does not
 work it; a browser does both, and neither engine does yet.
 
+**Dialogs**
+
+A `<dialog>` opens plainly or modally, and the difference is the dim behind it:
+a modal one joins the top layer and gets a `::backdrop` -- a viewport-filling
+half-transparent black box, styleable with `::backdrop { ... }`. An element
+with `popover` and `data-popover-open` is the other top-layer shape and shares
+the machinery.
+
+    doc.show_dialog("#confirm")           # no backdrop
+    doc.show_modal_dialog("#confirm")     # with one
+    doc.close_dialog("#confirm")
+    doc.has_element_attribute("#confirm", "open")
+
+Escape is the host's to bind, as in the reference: which key cancels a dialog
+is a platform question, so bind it and call `close_dialog`.
+
+The top layer here is `position: fixed`, not the real CSS top layer, so a
+transformed or filtered ancestor that establishes a containing block would
+capture the dialog rather than letting it escape. The reference makes the same
+simplification and says so.
+
 **Dropdowns**
 
 Clicking a `<select>` opens its list and clicking a row chooses it, through the

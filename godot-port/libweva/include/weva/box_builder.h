@@ -60,6 +60,8 @@ private:
     // CSS 2.1 §12.1: generates `host`'s ::before or ::after box as a child of
     // `parent`, when the pseudo has a style and its `content` resolves to
     // something other than none/normal.
+    // The `::backdrop` behind a modal dialog or an open popover.
+    void maybe_inject_backdrop(const Element& host, BoxId parent);
     void inject_pseudo(const Element& host, const ComputedStyle* host_style, BoxId parent,
                        std::string_view name);
 

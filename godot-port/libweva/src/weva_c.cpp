@@ -752,6 +752,7 @@ struct StyleMap : StyleProvider {
         by_element.erase(e);
         pseudo_by_element.erase({e, 0});
         pseudo_by_element.erase({e, 1});
+        pseudo_by_element.erase({e, 2});
         transitions.erase(e);
         animation_clock.erase(e);
         animated.erase(e);
@@ -874,8 +875,12 @@ struct StyleMap : StyleProvider {
         if (!animation.empty() && animation != "none") animated.insert(&e);
         else animated.erase(&e);
 
-        static constexpr std::string_view kPseudos[2] = {"before", "after"};
-        for (int i = 0; i < 2; ++i) {
+        // `backdrop` alongside the two content pseudos: it is computed the
+        // same way, cached the same way, and the box builder asks for it by
+        // the same call. Without it here the UA sheet's `::backdrop` rule
+        // matched nothing and a modal dialog had no dim behind it.
+        static constexpr std::string_view kPseudos[3] = {"before", "after", "backdrop"};
+        for (int i = 0; i < 3; ++i) {
             auto pit = pseudo_by_element.find({&e, i});
             const bool had = pit != pseudo_by_element.end();
             const bool has = engine.compute_pseudo_element(e, kPseudos[i], state, *raw, &scratch);
@@ -908,7 +913,7 @@ struct StyleMap : StyleProvider {
         return it == by_element.end() ? nullptr : it->second;
     }
     const ComputedStyle* pseudo_style_of(const Element& e, std::string_view name) override {
-        const int i = name == "before" ? 0 : name == "after" ? 1 : -1;
+        const int i = name == "before" ? 0 : name == "after" ? 1 : name == "backdrop" ? 2 : -1;
         if (i < 0) return nullptr;
         auto it = pseudo_by_element.find({&e, i});
         return it == pseudo_by_element.end() ? nullptr : it->second;
@@ -3637,6 +3642,33 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     // transition mid-flight, and a value bound to a label updating each frame
     // would cancel the animation next to it.
     doc->pending = Invalidation::Boxes;
+    return WEVA_OK;
+}
+
+weva_status weva_element_show_dialog(weva_document_t doc, weva_element_t element, int modal) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || e->tag_name() != "dialog") return WEVA_ERR_NOT_FOUND;
+    e->set_attribute("open", "");
+    // `data-modal` is what puts it in the top layer, so a dialog reopened
+    // non-modally after a modal show must lose it -- otherwise the backdrop
+    // outlives the modality that asked for it.
+    if (modal) e->set_attribute("data-modal", "");
+    else e->remove_attribute("data-modal");
+    // The backdrop is a BOX, so this is a box-level change, not a repaint.
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    return WEVA_OK;
+}
+
+weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || e->tag_name() != "dialog") return WEVA_ERR_NOT_FOUND;
+    const bool was_open = e->has_attribute("open");
+    e->remove_attribute("open");
+    e->remove_attribute("data-modal");
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    if (was_open) doc->queue_event(WEVA_EVENT_TOGGLE, e, 0, 0, 0);
     return WEVA_OK;
 }
 

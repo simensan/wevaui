@@ -128,6 +128,13 @@ public:
 
     // Data binding: `{{ path }}` in the markup, filled from a Dictionary, an
     // Object's properties, or anything a Callable can look up.
+    // <dialog>. `show_modal` is the one that dims what is behind it: it joins
+    // the top layer and gets a ::backdrop. Escape is the host's to bind --
+    // which key cancels a dialog is a platform question.
+    bool show_dialog(const godot::String& selector);
+    bool show_modal_dialog(const godot::String& selector);
+    bool close_dialog(const godot::String& selector);
+
     // HTML's boolean attributes carry no value, so reading one back cannot
     // say whether it is set. This can.
     bool has_element_attribute(const godot::String& selector, const godot::String& name);

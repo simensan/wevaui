@@ -194,6 +194,14 @@ void BoxBuilder::append_node_as_block_child(const Node& node, const ComputedStyl
     DisplayKind disp = parse_display(get(style, "display"));
     if (disp == DisplayKind::None) return;
 
+    // A modal dialog or an open popover gets a `::backdrop` behind it,
+    // injected BEFORE the host's own box: paint order in the parent's child
+    // list is what puts the dim behind the dialog rather than over it.
+    //
+    // The block path only. Both shapes are `position: fixed` by the UA sheet,
+    // so a top-layer host arrives here whatever its author `display` said.
+    maybe_inject_backdrop(e, parent);
+
     const bool blockify = blockifies_children((*tree_)[parent].display);
 
     // CSS 2.1 §9.7: an out-of-flow or floated element with an inline outer
@@ -275,6 +283,42 @@ void BoxBuilder::build_inline_children(const Element& element, const ComputedSty
     inject_pseudo(element, style, parent, "after");
     close_counters(element_depth_);
     --element_depth_;
+}
+
+// The elements the CSS top layer promotes, and the only two shapes v1
+// recognises: a <dialog> opened MODALLY, and an element with a `popover`
+// attribute that is open. Attribute-driven rather than a stored flag, so
+// opening or closing one takes effect on the next box build with no other
+// wiring -- the same shape the reference's TopLayer uses.
+bool top_layer_host(const Element& e) {
+    if (e.tag_name() == "dialog" && e.has_attribute("data-modal")) return true;
+    return e.has_attribute("popover") && e.has_attribute("data-popover-open");
+}
+
+// The synthetic box behind a top-layer host. It has no element -- it is not
+// one, and hit testing and the dump must not find it -- and carries the
+// cascaded `::backdrop` style, which the UA sheet gives a half-transparent
+// black and `position: fixed`.
+//
+// v1 simplification, and the same one the reference makes and documents: the
+// real top-layer model paints these above ALL content whatever the stacking
+// contexts say, while here `position: fixed` promotes them within their own.
+// The visual result is the same unless an ancestor establishes a containing
+// block with a transform, a filter or will-change.
+// The geometry that makes it a backdrop -- `position: fixed` and zero insets,
+// so it fills the viewport -- comes from the UA stylesheet here, while the
+// reference bakes the same properties in AFTER the author cascade. The only
+// observable difference is that an author writing `::backdrop { position:
+// static }` is obeyed here and ignored there; every stylesheet that does not
+// fight the UA sheet lays out identically.
+void BoxBuilder::maybe_inject_backdrop(const Element& host, BoxId parent) {
+    if (!styles_ || !top_layer_host(host)) return;
+    const ComputedStyle* backdrop = styles_->pseudo_style_of(host, "backdrop");
+    if (!backdrop) return;
+    const BoxId bb = tree_->create(BoxKind::Block, nullptr, backdrop);
+    (*tree_)[bb].display = DisplayKind::Block;
+    (*tree_)[bb].pseudo_host = &host;
+    tree_->append_child(parent, bb);
 }
 
 // ---- counters and quotes -----------------------------------------------------

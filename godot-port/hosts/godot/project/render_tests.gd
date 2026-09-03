@@ -57,6 +57,7 @@ func _ready() -> void:
 	_test_word_editing_and_undo()
 	_test_cjk_text()
 	_test_details_disclosure()
+	_test_modal_dialog()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -991,4 +992,47 @@ func _test_details_disclosure() -> void:
 	# this: `open` is written with no value, so a read returns "" either way.
 	_check(doc.get_element_attribute("#d", "open") == "",
 		"the value is empty whether it is set or not")
+	doc.queue_free()
+
+
+func _test_modal_dialog() -> void:
+	# The UA stylesheet has carried a `::backdrop` rule all along and nothing
+	# built the box it styles, so a modal dialog looked exactly like a
+	# non-modal one. The dim behind it IS the difference.
+	var doc := _make_doc(
+		"<body><dialog id='d'><p>Are you sure?</p></dialog>" +
+		"<div id='page'>Behind</div></body>",
+		"html, body { margin: 0 } dialog { width: 200px; height: 100px;" +
+		" box-sizing: border-box }")
+	var closed_triangles := doc.get_triangle_count()
+	_check(not doc.has_element_attribute("#d", "open"), "a dialog starts closed")
+	_check(doc.query_bounds("#d").size.y == 0, "with no box")
+
+	_check(doc.show_dialog("#d"), "show() opens it")
+	doc.update_document()
+	_check(doc.has_element_attribute("#d", "open"), "and it is open")
+	_check(doc.query_bounds("#d").size.y == 100, "with a box")
+	var shown_triangles := doc.get_triangle_count()
+	_check(not doc.has_element_attribute("#d", "data-modal"), "but not modal")
+
+	# showModal adds exactly one more rect: the backdrop.
+	_check(doc.show_modal_dialog("#d"), "showModal() opens it modally")
+	doc.update_document()
+	_check(doc.has_element_attribute("#d", "data-modal"), "and marks it so")
+	_check(doc.get_triangle_count() == shown_triangles + 2,
+		"a modal dialog draws one more quad than a plain one: the backdrop")
+
+	# Going back to non-modal takes the dim away, so a backdrop never outlives
+	# the modality that asked for it.
+	_check(doc.show_dialog("#d"), "reopening non-modally")
+	doc.update_document()
+	_check(doc.get_triangle_count() == shown_triangles, "drops the backdrop")
+
+	_check(doc.close_dialog("#d"), "close() closes it")
+	doc.update_document()
+	_check(not doc.has_element_attribute("#d", "open"), "and it is closed")
+	_check(doc.get_triangle_count() == closed_triangles, "with nothing left behind")
+
+	# Only a <dialog> takes these.
+	_check(not doc.show_modal_dialog("#page"), "a plain div is not a dialog")
 	doc.queue_free()

@@ -672,6 +672,19 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element, c
 size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const char* name,
                               char* buffer, size_t capacity);
 
+/* Opens a <dialog>. `modal` non-zero shows it MODALLY: it joins the top layer
+ * and gets a `::backdrop` behind it, which is the whole visible difference and
+ * the reason showModal exists. Returns WEVA_ERR_NOT_FOUND for anything that is
+ * not a <dialog>.
+ *
+ * Escape is deliberately NOT wired here, matching the reference: what key
+ * cancels a dialog is a platform question, so a host binds it and calls
+ * weva_element_close_dialog itself. */
+weva_status weva_element_show_dialog(weva_document_t doc, weva_element_t element, int modal);
+
+/* Closes it, modal or not, and takes it back out of the top layer. */
+weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t element);
+
 /* Whether the attribute is THERE, which reading its value cannot tell you.
  * HTML's boolean attributes -- `open`, `checked`, `disabled`, `selected`,
  * `required`, `readonly` -- are usually written with no value at all, so

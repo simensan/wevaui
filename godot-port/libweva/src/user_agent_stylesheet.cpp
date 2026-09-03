@@ -185,7 +185,7 @@ dialog { display: none; position: fixed; padding: 16px; border: 1px solid #ccc; 
 dialog[open] { display: block; }
 [popover] { display: none; position: fixed; padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: white; }
 [popover][data-popover-open] { display: block; }
-::backdrop { background: rgba(0, 0, 0, 0.5); }
+::backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; display: block; box-sizing: border-box; background: rgba(0, 0, 0, 0.5); }
 :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 :disabled { opacity: 0.5; cursor: not-allowed; }
 /* range slider: the track footprint; paint adds the fill and the thumb. */

@@ -290,6 +290,8 @@ void test_abi_undo_is_per_field();
 void test_abi_details_toggles();
 void test_abi_details_only_its_own_summary();
 void test_abi_details_reports_the_toggle();
+void test_abi_dialog_backdrop();
+void test_abi_popover_backdrop();
 void test_abi_selection_replaces();
 void test_abi_selection_is_drawn();
 void test_abi_click_places_caret();
@@ -627,6 +629,8 @@ int main() {
     test_abi_details_toggles();
     test_abi_details_only_its_own_summary();
     test_abi_details_reports_the_toggle();
+    test_abi_dialog_backdrop();
+    test_abi_popover_backdrop();
     test_abi_selection_replaces();
     test_abi_selection_is_drawn();
     test_abi_click_places_caret();
