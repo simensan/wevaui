@@ -214,6 +214,8 @@ void test_text_overflow_conditions();
 void test_list_markers();
 void test_list_marker_ordinals();
 void test_text_indent();
+void test_tabs_are_expanded_not_measured();
+void test_tab_size();
 void test_break_word_keeps_words_whole_when_they_fit();
 void test_overflow_wrap_break_word();
 void test_word_spacing_affects_wrapping();
@@ -581,6 +583,8 @@ int main() {
     test_list_markers();
     test_list_marker_ordinals();
     test_text_indent();
+    test_tabs_are_expanded_not_measured();
+    test_tab_size();
     test_break_word_keeps_words_whole_when_they_fit();
     test_overflow_wrap_break_word();
     test_word_spacing_affects_wrapping();

@@ -5,6 +5,7 @@
 // For FloatContext, which line-box narrowing queries.
 #include "weva/block_layout.h"
 
+#include <cmath>
 #include <optional>
 
 #include "weva/css_properties.h"
@@ -167,6 +168,32 @@ double measure_spaced(const FontMetrics& default_metrics, std::string_view text,
     return w;
 }
 
+// CSS Text L3 7.2 `tab-size`, as a COUNT OF SPACES. A plain number is that
+// count; a length is converted through the space's own width, since a tab stop
+// is only ever expressed here in spaces.
+//
+// A tab in preserved text had no width control at all before this: `\t` was
+// measured as whatever the face gives it, which for the built-in one is
+// nothing, so a code listing in a <pre> lost every level of its indentation.
+double tab_size_spaces(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+                       double space_width) {
+    const std::string_view raw = get(style, "tab-size");
+    if (raw.empty()) return 8;
+    // A bare number first: `tab-size: 4` is the common form and is NOT a
+    // length.
+    const std::string text(raw);
+    char* end = nullptr;
+    const double number = std::strtod(text.c_str(), &end);
+    if (end != text.c_str() && (*end == '\0' || *end == ' ')) {
+        return number > 0 ? number : 8;
+    }
+    const ResolvedLength r = resolve_length(raw, ctx, font_size, font_size);
+    if (r.kind == LengthKind::Length && r.pixels > 0 && space_width > 0) {
+        return r.pixels / space_width;
+    }
+    return 8;
+}
+
 // CSS Text L3 8.1 `word-spacing`, in pixels. `normal` is zero extra; a
 // percentage resolves against the font size, as the reference has it.
 double word_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
@@ -259,6 +286,13 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // top of the space's own advance. Unread until now, so a heading
             // set with `word-spacing: 4px` came out at its natural spacing.
             item.word_spacing = word_spacing_px(item.style, ctx, item.font_size);
+            // Only preserved text can contain a tab: a collapsing run turns
+            // one into a single space long before it reaches layout.
+            if (!item.collapse_whitespace) {
+                const FontMetrics& fm = item.metrics ? *item.metrics : *metrics;
+                const double space_w = fm.measure(" ", item.font_size);
+                item.tab_spaces = tab_size_spaces(item.style, ctx, item.font_size, space_w);
+            }
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline && b.element &&
                    b.element->tag_name() == "br") {
@@ -1163,6 +1197,40 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // block reported one line-height of height (weva-landing's `.code-body`
         // came out 242.55 -> 58.95). Cut the text at each newline and place the
         // pieces through the normal machinery, flushing a line between them.
+        // Tabs, expanded to the spaces that reach the next stop.
+        //
+        // EXPANDED rather than measured wide, because layout and paint each
+        // measure the text they are given: a fragment whose width said "tab
+        // stop" while its text still held a `	` would draw its glyphs
+        // somewhere the layout did not put them. With the tab replaced by
+        // spaces the two cannot disagree, which is also what the reference
+        // does.
+        const auto expand_tabs = [&](std::string_view text, double pen_at_start) {
+            if (text.find('	') == std::string_view::npos) return text;
+            const FontMetrics& fm = it.metrics ? *it.metrics : metrics;
+            double space_w = fm.measure(" ", it.font_size);
+            if (space_w <= 0) space_w = it.font_size * 0.5;
+            const double stop = space_w * (it.tab_spaces > 0 ? it.tab_spaces : 8);
+            std::string out;
+            out.reserve(text.size() + 8);
+            double x = pen_at_start;
+            for (const char c : text) {
+                if (c != '	') {
+                    out.push_back(c);
+                    x += fm.measure(std::string_view(&c, 1), it.font_size);
+                    continue;
+                }
+                // To the next multiple of the stop, never zero: a tab always
+                // advances at least one stop.
+                const double next = (std::floor(x / stop) + 1) * stop;
+                int spaces = static_cast<int>(std::lround((next - x) / space_w));
+                if (spaces < 1) spaces = 1;
+                out.append(static_cast<size_t>(spaces), ' ');
+                x = next;
+            }
+            return std::string_view(tree->own_text(std::move(out)));
+        };
+
         size_t seg_begin = 0;
         while (true) {
             const size_t nl =
@@ -1181,10 +1249,11 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 // blank line inside a `pre` is a line: without a fragment
                 // flush_line drops it and the block comes up one line-height
                 // short.
-                const double w = measure_spaced(metrics, seg, it, true);
-                if (!seg.empty() || line.empty()) {
+                const std::string_view text = expand_tabs(seg, pen);
+                const double w = measure_spaced(metrics, text, it, true);
+                if (!text.empty() || line.empty()) {
                     grow_line_metrics(it);
-                    line.push_back({&it, seg, false, pen, w});
+                    line.push_back({&it, text, false, pen, w});
                     pen += w;
                 }
             } else if (!it.collapse_whitespace) {
@@ -1210,7 +1279,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                            ((seg[end] == ' ' || seg[end] == '\t') == spaces)) {
                         ++end;
                     }
-                    const std::string_view piece = seg.substr(at, end - at);
+                    const std::string_view piece = expand_tabs(seg.substr(at, end - at), pen);
                     // A preserved run of spaces is charged word-spacing per
                     // space, the same as a collapsed one is charged for the
                     // single space it becomes.

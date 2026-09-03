@@ -42,6 +42,9 @@ struct InlineItem {
     // CSS Text L3 8.1: extra space at each word separator, on top of the
     // space's own advance.
     double word_spacing = 0;
+    // CSS Text L3 7.2 `tab-size`, as a count of spaces. Only preserved text
+    // can contain a tab, so this is left at its initial 8 for everything else.
+    double tab_spaces = 8;
     // `normal` collapses runs of whitespace and allows breaks; `nowrap`
     // collapses but forbids them; `pre` preserves both.
     bool collapse_whitespace = true;

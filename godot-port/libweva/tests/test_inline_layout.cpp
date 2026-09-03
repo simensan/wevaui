@@ -1565,3 +1565,70 @@ void test_break_word_keeps_words_whole_when_they_fit() {
         if (!ls.empty()) CHECK(f.line_text(ls[0]) != "aaaa");
     }
 }
+
+// CSS Text L3 7.2 `tab-size`. A tab in preserved text had no width control at
+// all: it was measured as whatever the face gives it, which for the built-in
+// one is nothing, so a code listing in a <pre> lost every level of its
+// indentation.
+//
+// The fixture's font is 0.5em per character, so at 20px a space is 10px and a
+// default 8-space tab stop is 80px.
+void test_tab_size() {
+    // How far the RUNS reach, not how wide the line box is: a line box in a
+    // 400px block is 400px wide whatever it holds.
+    const auto width_of = [](const char* css, const char* html) {
+        Fixture f;
+        CHECK(f.css(css));
+        CHECK(f.layout(html));
+        const std::vector<BoxId> ls = f.lines("w");
+        if (ls.empty()) return -1.0;
+        double reach = 0;
+        for (BoxId c : f.tree.children(ls[0])) {
+            reach = std::max(reach, f.tree[c].x + f.tree[c].width);
+        }
+        return reach;
+    };
+    // One leading tab, then a letter. The tab reaches the first stop at 80px
+    // and the letter follows, so the line is 90px.
+    const char* html = "<body><pre id=w>	x</pre></body>";
+    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
+                        "     white-space: pre }", html), 90));
+
+    // `tab-size: 4` puts the stop at 40px.
+    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
+                        "     white-space: pre; tab-size: 4 }", html), 50));
+
+    // A tab STOPS at a multiple, it does not add a fixed width: two tabs from
+    // zero reach 40 then 80 at tab-size 4, not 40 and 80 either way -- so the
+    // difference shows with text between them.
+    const char* mixed = "<body><pre id=w>ab	x</pre></body>";
+    // "ab" is 20px; the tab reaches 40, then "x" -> 50.
+    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
+                        "     white-space: pre; tab-size: 4 }", mixed), 50));
+
+    // A length resolves through the space's width: 20px is two spaces here.
+    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
+                        "     white-space: pre; tab-size: 20px }", html), 30));
+
+    // And `pre-wrap` gets the same treatment, since it preserves tabs too.
+    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
+                        "     white-space: pre-wrap; tab-size: 4 }", html), 50));
+}
+
+// The tab must not survive into the painted text: layout and paint each
+// measure what they are given, so a fragment holding a raw tab would draw its
+// glyphs somewhere layout did not put them.
+void test_tabs_are_expanded_not_measured() {
+    Fixture f;
+    CHECK(f.css("#w { display: block; width: 400px; font-size: 20px;"
+                "     white-space: pre; tab-size: 4 }"));
+    CHECK(f.layout("<body><pre id=w>	x</pre></body>"));
+    const std::vector<BoxId> ls = f.lines("w");
+    CHECK(!ls.empty());
+    if (!ls.empty()) {
+        const std::string text = f.line_text(ls[0]);
+        CHECK(text.find('	') == std::string::npos);
+        // Four spaces to the stop, then the letter.
+        CHECK(text == "    x");
+    }
+}
