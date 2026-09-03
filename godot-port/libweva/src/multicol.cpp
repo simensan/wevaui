@@ -102,9 +102,17 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
     // second — where a browser puts three and two. Both are 30 tall, so the
     // distinction is invisible in the totals and visible in every child's x.
     //
-    // The reachable heights are the prefix sums of the children's outer
-    // heights, so the smallest feasible one is found by trying them in order.
-    // At most N of them, and N is small.
+    // Feasibility is monotone in the height -- a taller column never needs
+    // MORE of them -- so the smallest feasible height is a binary search.
+    //
+    // It used to try the PREFIX SUMS in order, which quietly assumes the
+    // answer is one of them. It need not be: three children of 54, 38 and 38
+    // have prefix sums 54, 92 and 130, and the smallest height that fits them
+    // in two columns is 76 -- a contiguous run that is not a prefix. Taking 92
+    // instead packed two children into the first column where a browser puts
+    // one, which is invisible in the total height and visible in every child's
+    // x. The oracle's cov-multicol case caught it against both Chrome and the
+    // reference.
     std::vector<double> outer(children.size());
     for (size_t i = 0; i < children.size(); ++i) {
         const Box& b = (*tree)[children[i]];
@@ -124,18 +132,17 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
     };
     double target = total;
     {
-        std::vector<double> candidates;
-        double running = 0;
-        for (double h : outer) {
-            running += h;
-            candidates.push_back(running);
+        // A column is at least as tall as the tallest child, since nothing is
+        // split; and `total` always fits, so it is a feasible upper bound.
+        double low = 0;
+        for (double h : outer) low = std::max(low, h);
+        double high = total;
+        for (int i = 0; i < 64 && high - low > 1e-6; ++i) {
+            const double mid = 0.5 * (low + high);
+            if (columns_needed(mid) <= count) high = mid;
+            else low = mid;
         }
-        for (double candidate : candidates) {
-            if (columns_needed(candidate) <= count) {
-                target = candidate;
-                break;
-            }
-        }
+        target = columns_needed(low) <= count ? low : high;
     }
 
     // A child is never split, so one taller than the target takes a column to

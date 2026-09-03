@@ -1,0 +1,38 @@
+<!-- Multi-column. multicol.cpp exists and nothing in the corpus reaches it:
+     no sample writes column-count or column-width, so the whole file was
+     unexercised by the oracle. -->
+<div class="page">
+  <section class="col count">
+    <p>Multi-column flows its content down one column and then into the next,
+    so the box positions depend on where the engine decides each column ends.
+    That makes it a good oracle case and a bad one to eyeball.</p>
+    <p>A second paragraph, which may begin in the same column as the first
+    ends or in the one after it.</p>
+    <p>A third, to give the fill rule something to balance.</p>
+  </section>
+
+  <section class="col width">
+    <p>Sized by column-width rather than count, so the number of columns falls
+    out of the available inline size instead of being stated.</p>
+    <p>More text, so that more than one column is actually used.</p>
+  </section>
+
+  <section class="col ruled">
+    <p>A rule is drawn between columns and takes no space of its own, which is
+    the part most likely to be got wrong.</p>
+    <p>Text after it.</p>
+  </section>
+
+  <section class="col spanned">
+    <h3 class="span-all">A heading that spans every column</h3>
+    <p>Content below the spanning element resumes in columns.</p>
+    <p>And continues.</p>
+  </section>
+
+  <section class="col unbroken">
+    <div class="card">A block that must not be split across a column
+    break, however the content around it falls.</div>
+    <div class="card">A second one.</div>
+    <div class="card">A third.</div>
+  </section>
+</div>
