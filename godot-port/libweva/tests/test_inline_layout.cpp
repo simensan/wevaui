@@ -1229,3 +1229,71 @@ void test_cjk_does_not_break_latin_runs() {
     CHECK(f.line_text(ls[0]) == "日");
     CHECK(f.line_text(ls[1]) == "本abc語");
 }
+
+// `text-overflow: ellipsis` (CSS Text Overflow L3). The port read the property
+// nowhere, so a fixed-width label with a long value spilled past its box -- or,
+// inside a clipping one, was sliced mid-letter with no sign that anything was
+// missing.
+void test_text_overflow_ellipsis() {
+    // 0.5em per character at 20px is 10px each, so the arithmetic below is
+    // exact: 100px holds ten characters, and the ellipsis is one of them.
+    const char* html = "<body><div id=w>abcdefghijklmnop</div></body>";
+    {
+        // Without it: the run keeps every character and overflows.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 100px; font-size: 20px;"
+                    "     white-space: nowrap; overflow: hidden }"));
+        CHECK(f.layout(html));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 1);
+        CHECK(f.line_text(ls[0]) == "abcdefghijklmnop");
+    }
+    {
+        // With it: nine characters and an ellipsis, which is ten -- exactly
+        // what fits.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 100px; font-size: 20px;"
+                    "     white-space: nowrap; overflow: hidden;"
+                    "     text-overflow: ellipsis }"));
+        CHECK(f.layout(html));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 1);
+        CHECK(f.line_text(ls[0]) == "abcdefghi…");
+    }
+}
+
+// The three conditions, each of which alone suppresses it.
+void test_text_overflow_conditions() {
+    const char* html = "<body><div id=w>abcdefghijklmnop</div></body>";
+    const auto text_of = [&](const char* css) {
+        Fixture f;
+        CHECK(f.css(css));
+        CHECK(f.layout(html));
+        const std::vector<BoxId> ls = f.lines("w");
+        return ls.empty() ? std::string() : f.line_text(ls[0]);
+    };
+    const std::string full = "abcdefghijklmnop";
+
+    // A line that can WRAP does not overflow, so there is nothing to cut --
+    // it becomes two lines instead.
+    CHECK(text_of("#w { display: block; width: 100px; font-size: 20px; overflow: hidden;"
+                  "     text-overflow: ellipsis }") != "abcdefghi…");
+    // A box that does not clip lets the text spill, which is what `visible`
+    // asks for.
+    CHECK(text_of("#w { display: block; width: 100px; font-size: 20px; white-space: nowrap;"
+                  "     overflow: visible; text-overflow: ellipsis }") == full);
+    // And `clip`, the default, cuts without a mark.
+    CHECK(text_of("#w { display: block; width: 100px; font-size: 20px; white-space: nowrap;"
+                  "     overflow: hidden; text-overflow: clip }") == full);
+
+    // `overflow-x` alone is enough: this is an inline-axis question.
+    CHECK(text_of("#w { display: block; width: 100px; font-size: 20px; white-space: nowrap;"
+                  "     overflow-x: hidden; text-overflow: ellipsis }") == "abcdefghi…");
+
+    // Text that already fits is left alone -- no ellipsis on a short label.
+    Fixture f;
+    CHECK(f.css("#w { display: block; width: 300px; font-size: 20px; white-space: nowrap;"
+                "     overflow: hidden; text-overflow: ellipsis }"));
+    CHECK(f.layout(html));
+    CHECK(f.line_text(f.lines("w")[0]) == full);
+}

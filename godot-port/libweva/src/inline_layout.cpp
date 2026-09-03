@@ -328,6 +328,89 @@ std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId containe
                       metrics, &out);
     return out;
 }
+// ---- text-overflow: ellipsis (CSS Text Overflow L3) ----------------------
+//
+// A single line that overflows its box is cut and given a "..." rather than
+// running past the edge. The port read `text-overflow` nowhere at all, so a
+// fixed-width label with a long value simply spilled -- or, inside a clipping
+// box, was sliced mid-letter.
+//
+// The conditions are the reference's, and they are the spec's: `text-overflow:
+// ellipsis`, `white-space: nowrap` (a line that can wrap does not overflow in
+// the first place), and an inline axis that clips.
+bool wants_ellipsis(const ComputedStyle* style) {
+    if (!style) return false;
+    if (!iequals(get(style, "text-overflow"), "ellipsis")) return false;
+    if (!iequals(get(style, "white-space"), "nowrap")) return false;
+    for (const char* prop : {"overflow-x", "overflow"}) {
+        const std::string_view v = get(style, prop);
+        if (iequals(v, "hidden") || iequals(v, "scroll") || iequals(v, "clip") ||
+            iequals(v, "auto")) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Cuts the line down so that what is left plus the ellipsis fits, and drops
+// every run after the cut.
+void truncate_line_with_ellipsis(BoxTree* tree, BoxId line, double content_width,
+                                 const LayoutContext& ctx, const FontMetrics& fallback) {
+    // Written as BYTES, not as a character: this literal went through a
+    // rewrite that double-encoded it once already, and one that silently
+    // becomes three Latin-1 characters measures three times too wide
+    // without ever looking wrong in the source.
+    static constexpr std::string_view kEllipsis = "…";   // U+2026
+    std::vector<BoxId> runs;
+    for (BoxId c : tree->children(line)) runs.push_back(c);
+    if (runs.empty()) return;
+
+    // The last run's face draws the ellipsis, as it is the one the eye was
+    // following when the text ran out.
+    const Box& last = (*tree)[runs.back()];
+    const FontMetrics* fm = metrics_for_style(ctx, last.style);
+    const FontMetrics& metrics = fm ? *fm : fallback;
+    const double font_size = last.font_size > 0 ? last.font_size : 16;
+    const double ellipsis_width = metrics.measure(kEllipsis, font_size);
+    const double budget = std::max(0.0, content_width - ellipsis_width);
+
+    for (std::size_t i = 0; i < runs.size(); ++i) {
+        Box& r = (*tree)[runs[i]];
+        if (r.x + r.width <= budget + 1e-9) continue;
+
+        // This run crosses the budget. Keep the longest prefix of it that
+        // still fits, never splitting a character.
+        const FontMetrics* rm = metrics_for_style(ctx, r.style);
+        const FontMetrics& run_metrics = rm ? *rm : fallback;
+        const double run_size = r.font_size > 0 ? r.font_size : font_size;
+        std::string_view text = r.text;
+        std::size_t keep = 0;
+        double kept_width = 0;
+        while (keep < text.size()) {
+            std::size_t next = keep + 1;
+            while (next < text.size() &&
+                   (static_cast<unsigned char>(text[next]) & 0xC0) == 0x80) {
+                ++next;
+            }
+            const double w = run_metrics.measure(text.substr(0, next), run_size);
+            if (r.x + w > budget) break;
+            kept_width = w;
+            keep = next;
+        }
+        // The text is not owned by the box, so the truncated form plus the
+        // ellipsis has to live somewhere that outlives this call. The tree's
+        // arena is where every other generated string goes.
+        std::string cut(text.substr(0, keep));
+        cut += kEllipsis;
+        r.text = tree->own_text(std::move(cut));
+        r.width = kept_width + ellipsis_width;
+
+        // Everything after it is gone: it was past the edge anyway.
+        for (std::size_t j = runs.size(); j-- > i + 1;) tree->remove_child(runs[j]);
+        return;
+    }
+}
+
 
 double layout_inline(BoxTree* tree, BoxId container, double available_width,
                      const LayoutContext& ctx, const FontMetrics& metrics) {
@@ -1179,6 +1262,13 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         }
     }
     flush_line(true);
+
+    // `text-overflow: ellipsis`, once the line is final: the cut needs the
+    // measured runs, and nothing before this point has them.
+    if (wants_ellipsis(tree->valid(container) ? (*tree)[container].style : nullptr) &&
+        line_boxes.size() == 1) {
+        truncate_line_with_ellipsis(tree, line_boxes.front(), line_width, ctx, metrics);
+    }
 
     // The container's children become its line boxes. The original text boxes
     // stay allocated in the arena but are no longer reachable from the tree —
