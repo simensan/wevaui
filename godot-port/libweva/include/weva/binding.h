@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <vector>
 
 // `{{ path }}` in the markup, filled in from the host's data.
 //
@@ -26,6 +27,9 @@ public:
     // Fills `out` with the value at `path`. False means the host does not know
     // the path, and the binding is left showing nothing rather than guessing.
     virtual bool resolve(std::string_view path, std::string* out) const = 0;
+    // How many items are in the list at `path`, or -1 when it is not a list.
+    // Only `data-each` asks, and a host with no lists can leave it alone.
+    virtual int count(std::string_view path) const { (void)path; return -1; }
 };
 
 // Where an attribute's template is kept once its value has been filled in.
@@ -39,9 +43,17 @@ bool has_binding(std::string_view text);
 // what a missing value looks like in every template language worth copying.
 std::string substitute_bindings(std::string_view text, const BindingResolver& resolver);
 
-// Applies every binding under `root`: text nodes, attribute values, and
-// `data-class-<name>` toggles. Returns how many nodes it changed, so a caller
-// can tell a refresh that did something from one that did not.
-int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates* templates);
+// What a `<template data-each>` has produced, so a refresh can tell a list that
+// merely changed its values from one whose ITEMS changed. Keyed on the
+// template element; the keys are `data-key`'s value per row, or the index when
+// there is no `data-key`.
+using BindingRepeats = std::map<const Element*, std::vector<std::string>>;
+
+// Applies every binding under `root`: `data-each` repeats, text nodes,
+// attribute values, and `data-class-<name>` toggles. Returns how many nodes it
+// changed, so a caller can tell a refresh that did something from one that did
+// not.
+int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates* templates,
+                   BindingRepeats* repeats = nullptr);
 
 }   // namespace weva

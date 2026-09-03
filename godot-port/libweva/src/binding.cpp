@@ -27,6 +27,90 @@ bool truthy(std::string_view value) {
 }
 
 const char* kClassPrefix = "data-class-";
+// Stamped on every row a repeat produced, so the next refresh knows which
+// siblings are its and which the author wrote.
+const char* kCloneMark = "data-weva-row";
+
+// `Items as alias`, or just `Items`, in which case there is no alias and only
+// `$index` and absolute paths resolve inside the row.
+void parse_each(std::string_view spec, std::string* list, std::string* alias) {
+    const std::string_view s = trim(spec);
+    const size_t at = s.find(" as ");
+    if (at == std::string_view::npos) {
+        *list = std::string(trim(s));
+        alias->clear();
+        return;
+    }
+    *list = std::string(trim(s.substr(0, at)));
+    *alias = std::string(trim(s.substr(at + 4)));
+}
+
+// One row's view of the data: `stage.Name` is `Stages.3.Name`, `$index` is 3,
+// and everything else falls through to the controller's own paths -- which is
+// what lets a row read a global setting beside its own fields.
+class RowResolver : public BindingResolver {
+public:
+    RowResolver(const BindingResolver& base, std::string alias, std::string prefix, int index)
+        : base_(base), alias_(std::move(alias)), prefix_(std::move(prefix)), index_(index) {}
+
+    bool resolve(std::string_view path, std::string* out) const override {
+        if (path == "$index") {
+            *out = std::to_string(index_);
+            return true;
+        }
+        if (!alias_.empty()) {
+            if (path == alias_) return base_.resolve(prefix_, out);
+            if (path.size() > alias_.size() + 1 && path.compare(0, alias_.size(), alias_) == 0 &&
+                path[alias_.size()] == '.') {
+                return base_.resolve(prefix_ + std::string(path.substr(alias_.size())), out);
+            }
+        }
+        return base_.resolve(path, out);
+    }
+
+    int count(std::string_view path) const override {
+        if (!alias_.empty() && path.size() > alias_.size() + 1 &&
+            path.compare(0, alias_.size(), alias_) == 0 && path[alias_.size()] == '.') {
+            return base_.count(prefix_ + std::string(path.substr(alias_.size())));
+        }
+        return base_.count(path);
+    }
+
+private:
+    const BindingResolver& base_;
+    std::string alias_;
+    std::string prefix_;
+    int index_;
+};
+
+Ref<Node> clone_node(const Node& source);
+
+void clone_children(const Node& source, Node* into) {
+    for (const Ref<Node>& c : source.children()) {
+        Ref<Node> copy = clone_node(*c);
+        if (copy) into->append_child(copy.get());
+    }
+}
+
+Ref<Node> clone_node(const Node& source) {
+    if (source.node_type() == NodeType::Text) {
+        const TextNode& t = static_cast<const TextNode&>(source);
+        // The SOURCE, so the copy is a template like its original and refills
+        // rather than freezing whatever the first pass produced.
+        return Ref<Node>(new TextNode(t.source()));
+    }
+    if (source.node_type() != NodeType::Element) return Ref<Node>(nullptr);
+    const Element& e = static_cast<const Element&>(source);
+    Ref<Element> copy = make_ref<Element>(e.tag_name());
+    const AttributeMap& attrs = e.attributes();
+    for (std::size_t i = 0; i < attrs.size(); ++i) {
+        copy->set_attribute(attrs.name_at(i), attrs.value_at(i));
+    }
+    clone_children(source, copy.get());
+    // `retain`, not the constructor: that one ADOPTS a reference the caller
+    // owns, and `copy` already owns the only one there is.
+    return Ref<Node>::retain(copy.get());
+}
 
 }   // namespace
 
@@ -60,7 +144,99 @@ std::string substitute_bindings(std::string_view text, const BindingResolver& re
     return out;
 }
 
-int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates* templates) {
+namespace {
+
+// Expands one `<template data-each>` into rows beside it. Returns how many
+// nodes it changed; zero means the list is the same list it was.
+int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplates* templates,
+                  BindingRepeats* repeats) {
+    Node* parent = tmpl.parent();
+    if (!parent) return 0;
+    std::string list, alias;
+    parse_each(tmpl.get_attribute("data-each"), &list, &alias);
+    if (list.empty()) return 0;
+    const std::string key_field(tmpl.get_attribute("data-key"));
+    const int n = std::max(0, resolver.count(list));
+
+    // The identity of each row, so a list whose VALUES moved is refilled in
+    // place and one whose items moved is rebuilt. Rebuilding unconditionally
+    // would throw away the focus, the scroll and the selection inside a row
+    // every time a number next to it changed.
+    std::vector<std::string> keys;
+    keys.reserve(static_cast<size_t>(n));
+    for (int i = 0; i < n; ++i) {
+        const std::string item = list + "." + std::to_string(i);
+        std::string key;
+        if (key_field.empty() || !resolver.resolve(item + "." + key_field, &key)) {
+            key = std::to_string(i);
+        }
+        keys.push_back(key);
+    }
+
+    std::vector<std::string>* previous = repeats ? &(*repeats)[&tmpl] : nullptr;
+    const bool same = previous && *previous == keys;
+
+    // The rows this template made last time, in order.
+    std::vector<Element*> rows;
+    for (const Ref<Node>& c : parent->children()) {
+        if (c->node_type() != NodeType::Element) continue;
+        Element& e = static_cast<Element&>(const_cast<Node&>(*c));
+        if (e.get_attribute(kCloneMark) == tmpl.get_attribute("data-each")) rows.push_back(&e);
+    }
+
+    int changed = 0;
+    if (!same) {
+        for (Element* row : rows) {
+            if (templates) templates->erase(row);
+            parent->remove_child(row);
+            ++changed;
+        }
+        rows.clear();
+        // Appended after the template, in order, so the rows read in the
+        // document the way they read in the data.
+        for (int i = 0; i < n; ++i) {
+            Ref<Element> row = make_ref<Element>(tmpl.tag_name() == "template" ? "div"
+                                                                              : tmpl.tag_name());
+            // A single element in the template body IS the row; anything else
+            // is wrapped, which is the only way to keep the count right.
+            const Element* only = nullptr;
+            int elements = 0;
+            for (const Ref<Node>& c : tmpl.children()) {
+                if (c->node_type() != NodeType::Element) continue;
+                only = static_cast<const Element*>(c.get());
+                ++elements;
+            }
+            Ref<Node> made;
+            if (elements == 1 && only) {
+                made = clone_node(*only);
+            } else {
+                clone_children(tmpl, row.get());
+                made = Ref<Node>::retain(row.get());
+            }
+            if (!made) continue;
+            static_cast<Element&>(*made).set_attribute(kCloneMark,
+                                                       tmpl.get_attribute("data-each"));
+            parent->append_child(made.get());
+            rows.push_back(&static_cast<Element&>(*made));
+            ++changed;
+        }
+        if (previous) *previous = keys;
+    }
+
+    // Filled either way: the values inside a row change far more often than
+    // the list does.
+    for (size_t i = 0; i < rows.size(); ++i) {
+        const RowResolver row_resolver(resolver, alias, list + "." + std::to_string(i),
+                                       static_cast<int>(i));
+        changed += apply_bindings(*rows[i], row_resolver, templates, repeats);
+    }
+    return changed;
+}
+
+}   // namespace
+
+int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates* templates,
+                   BindingRepeats* repeats) {
     int changed = 0;
     if (root.node_type() == NodeType::Text) {
         TextNode& text = static_cast<TextNode&>(root);
@@ -77,6 +253,11 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
     }
     if (root.node_type() == NodeType::Element) {
         Element& e = static_cast<Element&>(root);
+        // A template is not content: it is the shape of the rows beside it,
+        // and nothing inside it is filled in place.
+        if (e.has_attribute("data-each")) {
+            return expand_repeat(e, resolver, templates, repeats);
+        }
         AttributeMap& attrs = e.attributes();
         // Collected first: setting an attribute while walking the map is a
         // mutation of the thing being walked.
@@ -160,8 +341,19 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
             ++changed;
         }
     }
-    for (const Ref<Node>& child : root.children()) {
-        changed += apply_bindings(const_cast<Node&>(*child), resolver, templates);
+    // Copied first: a repeat appends its rows to this very list.
+    std::vector<Ref<Node>> children(root.children().begin(), root.children().end());
+    for (const Ref<Node>& child : children) {
+        // A row belongs to the template that made it, and is filled by the
+        // template's pass with the row's own scope. Walking into one here
+        // would fill it a second time with the CONTROLLER's scope, where
+        // `quest.Title` and `$index` mean nothing -- which emptied every row
+        // it had just filled.
+        if (child->node_type() == NodeType::Element &&
+            static_cast<const Element&>(*child).has_attribute(kCloneMark)) {
+            continue;
+        }
+        changed += apply_bindings(const_cast<Node&>(*child), resolver, templates, repeats);
     }
     return changed;
 }

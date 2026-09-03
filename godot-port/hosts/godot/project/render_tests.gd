@@ -741,5 +741,39 @@ func _test_data_binding() -> void:
 	_check(doc2.refresh_bindings() > 0, "and a refresh picks up what it now returns")
 	doc2.update_document()
 	_check(doc2.query_text("#t") == "41 / 99", "which lands in the document")
+
+	# `data-each` binds a LIST: one row per item, from an Array in the data.
+	# Until this an inventory or a quest log had to be built by hand with
+	# append_html, the script deciding what shape the markup should take.
+	var list := _make_doc(
+		"<body><ul id='quests'>" +
+		"<template data-each='Quests as quest' data-key='Id'>" +
+		"<li class='row'>{{ $index }}. {{ quest.Title }}</li>" +
+		"</template></ul></body>",
+		"html, body { margin: 0 } li { height: 12px }")
+	list.data = {"Quests": [
+		{"Id": "a", "Title": "Find the key"},
+		{"Id": "b", "Title": "Open the door"},
+	]}
+	list.update_document()
+	_check(list.count_elements("#quests > .row") == 2, "one row per item")
+	_check(list.query_text("#quests > .row:nth-of-type(1)") == "0. Find the key",
+		"filled from the item, with its index")
+	_check(list.query_text("#quests > .row:nth-of-type(2)") == "1. Open the door",
+		"and so is the second")
+	_check(list.query_bounds("#quests").size.y == 24, "and they are laid out")
+
+	# The list growing adds a row; shrinking takes one away.
+	list.data = {"Quests": [
+		{"Id": "a", "Title": "Find the key"},
+		{"Id": "b", "Title": "Open the door"},
+		{"Id": "c", "Title": "Leave"},
+	]}
+	list.update_document()
+	_check(list.count_elements("#quests > .row") == 3, "a new item makes a new row")
+	list.data = {"Quests": []}
+	list.update_document()
+	_check(list.count_elements("#quests > .row") == 0, "and an empty list is empty")
+	list.queue_free()
 	doc2.queue_free()
 	doc.queue_free()

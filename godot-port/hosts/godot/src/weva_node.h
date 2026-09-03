@@ -137,6 +137,7 @@ public:
     // Resolves one path against whatever source is set. Public because the C
     // callback has to reach it.
     bool resolve_binding(const godot::String& path, godot::String* out) const;
+    int resolve_binding_count(const godot::String& path) const;
 
     // For a host that routes input itself: a controller mapped onto the
     // document, or a scene that decides who gets the keyboard.

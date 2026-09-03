@@ -763,6 +763,14 @@ bool WevaDocument::resolve_binding(const String& path, String* out) const {
     return true;
 }
 
+// How long the list at `path` is, or -1 when it is not one. `data-each` is the
+// only caller: an Array answers, and so does anything with a size() a script
+// exposed, but a String is deliberately NOT a list of characters.
+static int weva_binding_count(void* user, const char* path) {
+    WevaDocument* node = static_cast<WevaDocument*>(user);
+    return node->resolve_binding_count(String::utf8(path));
+}
+
 static size_t weva_binding_read(void* user, const char* path, char* buffer, size_t capacity,
                                 int* found) {
     WevaDocument* node = static_cast<WevaDocument*>(user);
@@ -796,6 +804,21 @@ String WevaDocument::get_element_attribute(const String& selector, const String&
     return String::utf8(buffer.data());
 }
 
+int WevaDocument::resolve_binding_count(const String& path) const {
+    if (data_source_.is_valid()) {
+        const Variant v = data_source_.call(path);
+        return v.get_type() == Variant::ARRAY ? static_cast<int>(Array(v).size()) : -1;
+    }
+    Variant current = data_;
+    const PackedStringArray parts = path.split(".");
+    for (int i = 0; i < parts.size(); ++i) {
+        Variant next;
+        if (!step(current, parts[i], &next)) return -1;
+        current = next;
+    }
+    return current.get_type() == Variant::ARRAY ? static_cast<int>(Array(current).size()) : -1;
+}
+
 void WevaDocument::set_data(const Dictionary& data) {
     data_ = data;
     refresh_bindings();
@@ -813,6 +836,7 @@ int WevaDocument::refresh_bindings() {
     weva_binding_source source{};
     source.user = this;
     source.value = &weva_binding_read;
+    source.count = &weva_binding_count;
     weva_document_set_binding_source(doc_, &source);
     const int changed = weva_document_refresh_bindings(doc_);
     if (changed > 0) {

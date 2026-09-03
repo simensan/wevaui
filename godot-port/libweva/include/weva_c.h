@@ -481,6 +481,18 @@ typedef struct weva_binding_source {
      * host does not know: the binding then shows nothing, rather than the
      * host having to invent a value for it. */
     size_t (*value)(void* user, const char* path, char* buffer, size_t capacity, int* found);
+    /* How many items are in the list at `path`, or -1 when it is not a list.
+     * Only `data-each` asks; a host with no lists can leave this null.
+     *
+     *     <template data-each="Quests as quest" data-key="Id">
+     *       <li>{{ $index }}. {{ quest.Title }}</li>
+     *     </template>
+     *
+     * makes one row per item beside the template, resolving `quest.Title`
+     * against `Quests.<i>.Title` and `$index` against the row number. A row
+     * whose KEY is unchanged is refilled where it stands, so the focus, the
+     * scroll and the selection inside it survive a value changing. */
+    int (*count)(void* user, const char* path);
 } weva_binding_source;
 
 /* Where the values come from. Null clears it, which leaves the document

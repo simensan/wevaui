@@ -304,6 +304,25 @@ element's `class` alone. A path the data does not have shows nothing.
 
 takes over entirely when the state lives somewhere a Dictionary cannot reach.
 
+A list binds with `data-each`, which makes one row per item beside the
+template:
+
+    <ul id="quests">
+      <template data-each="Quests as quest" data-key="Id">
+        <li class="row">{{ $index }}. {{ quest.Title }}</li>
+      </template>
+    </ul>
+
+    doc.data = {"Quests": [{"Id": "a", "Title": "Find the key"}, ...]}
+
+Inside a row, `quest.Title` reads that item, `$index` is its position, and the
+controller's own paths still resolve, so a row can read a global beside its own
+fields. `data-key` gives a row its identity: while the keys hold, rows are
+refilled where they stand, so the focus, the scroll and the selection inside
+one survive a value changing next to it. The rows are SIBLINGS of the template
+-- `#quests > .row` addresses them, since the template keeps its own children
+as the pattern.
+
 **Building it from data**
 
 A list whose length is the game's business cannot be written as markup in

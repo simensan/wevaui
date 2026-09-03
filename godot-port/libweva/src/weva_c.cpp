@@ -30,6 +30,7 @@
 #include <cstdlib>
 #include <deque>
 #include <map>
+#include <functional>
 #include <set>
 #include <tuple>
 #include <memory>
@@ -1119,6 +1120,7 @@ struct weva_document {
     weva_binding_source binding_source{};
     bool has_binding_source = false;
     BindingTemplates binding_templates;
+    BindingRepeats binding_repeats;
     // The open dropdown, and which of its options the pointer or the keys are
     // on. Held here rather than in the DOM because being open is not a
     // property of the document -- reload the same markup and nothing is open.
@@ -1202,6 +1204,43 @@ struct weva_document {
     // call that returns them and are replaced wholesale on the next update.
     std::vector<weva_draw> draw_views;
     std::vector<weva_texture> texture_views;
+
+    // Every element still in the document. A binding repeat is the one thing
+    // that makes and destroys elements without going through the ABI, so a
+    // refresh has to work out for itself what is still there.
+    void collect_live(std::set<const Element*>* out) const {
+        const std::function<void(const Element&)> visit = [&](const Element& e) {
+            out->insert(&e);
+            for (const Ref<Node>& c : e.children()) {
+                if (c->node_type() == NodeType::Element) {
+                    visit(static_cast<const Element&>(*c));
+                }
+            }
+        };
+        for (const Ref<Node>& c : doc->children()) {
+            if (c->node_type() == NodeType::Element) visit(static_cast<const Element&>(*c));
+        }
+    }
+
+    // Every element in the document that has no handle yet gets one, keeping
+    // the handles already handed out. A binding repeat is the one thing that
+    // makes elements without going through the ABI.
+    void reindex_new_elements() {
+        std::set<const Element*> known(elements.begin(), elements.end());
+        const std::function<void(Element&)> visit = [&](Element& e) {
+            if (!known.count(&e)) elements.push_back(&e);
+            for (const Ref<Node>& c : e.children()) {
+                if (c->node_type() == NodeType::Element) {
+                    visit(static_cast<Element&>(const_cast<Node&>(*c)));
+                }
+            }
+        };
+        for (const Ref<Node>& c : doc->children()) {
+            if (c->node_type() == NodeType::Element) {
+                visit(static_cast<Element&>(const_cast<Node&>(*c)));
+            }
+        }
+    }
 
     void index_elements(Element& e) {
         elements.push_back(&e);
@@ -1630,6 +1669,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->open_select = nullptr;
     doc->highlighted_option = -1;
     doc->binding_templates.clear();
+    doc->binding_repeats.clear();
     doc->caret_painted = CaretState{};
     return WEVA_OK;
 }
@@ -2797,6 +2837,8 @@ weva_element_t weva_document_open_select_element(weva_document_t doc) {
 
 namespace {
 
+void forget_element(weva_document* doc, const Element* e);
+
 // The host's callback, wearing the interface the substitution wants.
 class AbiBindingResolver : public BindingResolver {
 public:
@@ -2822,6 +2864,11 @@ public:
         return found != 0;
     }
 
+    int count(std::string_view path) const override {
+        if (!source_.count) return -1;
+        return source_.count(source_.user, std::string(path).c_str());
+    }
+
 private:
     const weva_binding_source& source_;
 };
@@ -2837,8 +2884,22 @@ void weva_document_set_binding_source(weva_document_t doc, const weva_binding_so
 int weva_document_refresh_bindings(weva_document_t doc) {
     if (!doc || !doc->doc || !doc->has_binding_source) return 0;
     const AbiBindingResolver resolver(doc->binding_source);
-    const int changed = apply_bindings(*doc->doc, resolver, &doc->binding_templates);
+    const int changed = apply_bindings(*doc->doc, resolver, &doc->binding_templates,
+                                      &doc->binding_repeats);
     if (changed > 0) {
+        // A repeat makes elements AND destroys them -- a rebuilt list drops
+        // every row it had. The new ones need handles, or a script cannot
+        // address them; the gone ones must lose theirs and everything else
+        // keyed on the pointer, or a later query walks into freed memory.
+        // UBSan found exactly that, as an invalid vptr inside the selector
+        // matcher.
+        std::set<const Element*> live;
+        doc->collect_live(&live);
+        for (size_t i = 0; i < doc->elements.size(); ++i) {
+            const Element* e = doc->elements[i];
+            if (e && !live.count(e)) forget_element(doc, e);
+        }
+        doc->reindex_new_elements();
         // Text that changed changes what boxes exist; an attribute that
         // changed can change what matches. Both are the same tier a host's own
         // set_text and set_attribute ask for.
@@ -3147,6 +3208,7 @@ void forget_element(weva_document* doc, const Element* e) {
         doc->highlighted_option = -1;
     }
     doc->binding_templates.erase(e);
+    doc->binding_repeats.erase(e);
     const auto drop = [e](std::vector<const Element*>* chain) {
         chain->erase(std::remove(chain->begin(), chain->end(), e), chain->end());
     };
