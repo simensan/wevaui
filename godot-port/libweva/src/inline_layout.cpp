@@ -246,6 +246,12 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // reference makes, and it says so.
             item.break_anywhere =
                 item.allow_wrap && (iequals(wb, "break-all") || iequals(ow, "anywhere"));
+            // CSS Text L3 5.5: `break-word` on either property. Both spellings,
+            // because `word-wrap: break-word` is the older name and still the
+            // one in most stylesheets.
+            item.break_word = item.allow_wrap && !item.break_anywhere &&
+                              (iequals(ow, "break-word") || iequals(wb, "break-word") ||
+                               iequals(get(item.style, "word-wrap"), "break-word"));
             // `line-break` decides which kinsoku prohibitions apply between
             // CJK characters -- whether a small kana may start a line.
             item.line_break = line_break_level(get(item.style, "line-break"));
@@ -1237,7 +1243,25 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     pen += w;
                     continue;
                 }
-                if (it.break_anywhere) {
+                // `overflow-wrap: break-word` is the value authors actually
+                // write to stop a long name blowing out a panel, and the port
+                // read neither spelling of it. It is NOT `break-all`: a word
+                // is kept whole and moved to the next line as usual, and only
+                // broken when it is alone on a line and STILL does not fit.
+                //
+                // So the decision needs the width, which is measured below --
+                // this only records that the option is open.
+                bool slice_word = it.break_anywhere;
+                if (!slice_word && it.break_word && it.allow_wrap) {
+                    const double whole = measure_spaced(metrics, t.word, it, first_piece);
+                    if (line_has_content() && pen + whole > line_width + kFitEpsilon) {
+                        flush_line(false);
+                    }
+                    // On a line of its own now. Wider than the line itself is
+                    // the only case break-word breaks.
+                    slice_word = whole > line_width + kFitEpsilon;
+                }
+                if (slice_word) {
                     // Every character boundary is a break opportunity, so the word
                     // is placed a slice at a time: fill the rest of this line, wrap,
                     // repeat. A slice is a view into the same source buffer, so no

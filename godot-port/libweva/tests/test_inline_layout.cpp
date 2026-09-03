@@ -1494,3 +1494,74 @@ void test_text_indent() {
         CHECK(near(first_x(f), 30));
     }
 }
+
+// CSS Text L3 5.5 `overflow-wrap: break-word`. The port read neither spelling
+// of it, so the value authors actually write to stop a long name blowing out
+// a panel did nothing at all.
+//
+// It is NOT `break-all`: a word is kept whole and moved to the next line as
+// usual, and broken only when it is alone on a line and still does not fit.
+void test_overflow_wrap_break_word() {
+    // 0.5em per character at 20px, so a 100px box holds ten.
+    const char* html = "<body><div id=w>ab supercalifragilistic</div></body>";
+    {
+        // Without it, the long word moves to its own line and overflows.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 100px; font-size: 20px }"));
+        CHECK(f.layout(html));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        if (ls.size() == 2) CHECK(f.line_text(ls[1]) == "supercalifragilistic");
+    }
+    {
+        // With it, the word that cannot fit a line of its own is split.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 100px; font-size: 20px;"
+                    "     overflow-wrap: break-word }"));
+        CHECK(f.layout(html));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() > 2);
+        // Every line after the first fits, which is the whole point.
+        for (std::size_t i = 1; i < ls.size(); ++i) {
+            CHECK(f.tree[ls[i]].width <= 100 + 0.01);
+        }
+    }
+    {
+        // `word-wrap` is the older name for the same thing and is still what
+        // most stylesheets say.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 100px; font-size: 20px;"
+                    "     word-wrap: break-word }"));
+        CHECK(f.layout(html));
+        CHECK(f.lines("w").size() > 2);
+    }
+}
+
+// What break-word must NOT do, which is what separates it from break-all.
+void test_break_word_keeps_words_whole_when_they_fit() {
+    // "aaaa bbbb" at 20px is 40px each. In a 60px box, break-all would split
+    // the first word across the line end; break-word moves it down whole.
+    const char* html = "<body><div id=w>aaaa bbbb</div></body>";
+    {
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 60px; font-size: 20px;"
+                    "     overflow-wrap: break-word }"));
+        CHECK(f.layout(html));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        if (ls.size() == 2) {
+            CHECK(f.line_text(ls[0]) == "aaaa");
+            CHECK(f.line_text(ls[1]) == "bbbb");
+        }
+    }
+    {
+        // break-all does split it, which is the difference.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 60px; font-size: 20px;"
+                    "     word-break: break-all }"));
+        CHECK(f.layout(html));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() >= 2);
+        if (!ls.empty()) CHECK(f.line_text(ls[0]) != "aaaa");
+    }
+}

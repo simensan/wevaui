@@ -56,6 +56,10 @@ struct InlineItem {
     // make every character boundary a break opportunity, so a word longer than
     // the line is split rather than left to overflow.
     bool break_anywhere = false;
+    // CSS Text L3 5.5 `overflow-wrap: break-word`: unlike break-all, the word
+    // is kept whole and moved to the next line as usual, and broken only when
+    // it is alone on a line and still does not fit.
+    bool break_word = false;
     // CSS Text L3 §5.3: which kinsoku prohibitions hold between two CJK
     // characters. Only `loose` and `anywhere` differ from the default.
     LineBreakLevel line_break = LineBreakLevel::Normal;
