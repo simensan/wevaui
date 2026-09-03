@@ -46,6 +46,8 @@ docs/
   ARCHITECTURE.md   Layering, the re-cut render backend, the C ABI shape
   CONVENTIONS.md    C++ rules — decided up front, not per-file
   ORACLE.md         How the C# engine guards the C++ one
+  PERFORMANCE.md    What a frame costs, what a load costs, and what is
+                    still slow with the reason it has not been fixed
 ```
 
 The repo is named for its first deliverable; the core inside it is deliberately
