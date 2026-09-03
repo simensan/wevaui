@@ -109,6 +109,12 @@ if [ -x "$GODOT" ] && [ -x "$GCC/tools/weva_render/weva_render" ]; then
     cat /tmp/weva-live.txt
     grep -q 'ERR' /tmp/weva-live.txt && fail "interactive gate"
     grep -qE 'struct +[1-9]' /tmp/weva-live.txt && fail "interactive gate"
+    # The colour figure too, not only the structural one. A missing FILL is a
+    # colour difference and barely moves the structural number: the hover bug
+    # this gate was added to catch read 0.11% structural and 4.18% colour, so
+    # the structural rule alone would have passed it. Every state is 0.00% on
+    # both now, so anything reaching one percent is a real change.
+    grep -qE 'over-tol +[1-9]' /tmp/weva-live.txt && fail "interactive gate"
 else
     skip "backend gates (needs godot and weva_render)"
 fi

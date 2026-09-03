@@ -53,6 +53,11 @@ func _ready() -> void:
 	# sides would then be compared at different INSTANTS, which says nothing
 	# about the backends.
 	doc.paused = true
+	# The scene drives the pointer itself. Left interactive, the node also
+	# takes LIVE input, and a mouse event on the first frame overwrote the
+	# hover this scene had just set -- the captured frame was then the
+	# un-hovered one while the document, correctly, said otherwise.
+	doc.interactive = false
 	doc.document_size = Vector2(w, h)
 	doc.css = _read(_args.get("css", ""))
 	doc.html = _read(_args.get("html", ""))
