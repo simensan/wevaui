@@ -1169,6 +1169,45 @@ struct weva_document {
         return WEVA_ELEMENT_NONE;
     }
 
+    // `on-click` for a click, `on-input` for a value change, and so on. The
+    // names are the ones the Unity engine's markup already uses, since the
+    // whole point is that the same document works on both.
+    static std::string_view handler_attribute_for(int32_t kind) {
+        switch (kind) {
+            case WEVA_EVENT_CLICK: return "on-click";
+            case WEVA_EVENT_POINTER_DOWN: return "on-pointerdown";
+            case WEVA_EVENT_POINTER_UP: return "on-pointerup";
+            case WEVA_EVENT_POINTER_ENTER: return "on-pointerenter";
+            case WEVA_EVENT_POINTER_LEAVE: return "on-pointerleave";
+            case WEVA_EVENT_VALUE_CHANGED: return "on-input";
+            case WEVA_EVENT_KEY_DOWN: return "on-keydown";
+            case WEVA_EVENT_KEY_UP: return "on-keyup";
+            case WEVA_EVENT_TEXT_INPUT: return "on-textinput";
+            case WEVA_EVENT_FOCUS: return "on-focus";
+            case WEVA_EVENT_BLUR: return "on-blur";
+            default: return {};
+        }
+    }
+
+    // Towards the root, so `on-submit` on a form catches a button inside it
+    // and a row's `on-click` catches whatever the click actually landed on.
+    static void fill_handler(weva_event* e, const Element* target) {
+        e->handler[0] = '\0';
+        const std::string_view attribute = handler_attribute_for(e->kind);
+        if (attribute.empty()) return;
+        for (const Node* n = target; n; n = n->parent()) {
+            if (n->node_type() != NodeType::Element) continue;
+            const std::string_view named =
+                static_cast<const Element&>(*n).get_attribute(attribute);
+            if (named.empty()) continue;
+            const size_t copy = named.size() < sizeof(e->handler) - 1 ? named.size()
+                                                                     : sizeof(e->handler) - 1;
+            std::memcpy(e->handler, named.data(), copy);
+            e->handler[copy] = '\0';
+            return;
+        }
+    }
+
     void queue_event(int32_t kind, const Element* target, double x, double y, uint32_t buttons) {
         weva_event e{};
         e.kind = kind;
@@ -1181,6 +1220,7 @@ struct weva_document {
         e.x = x;
         e.y = y;
         e.buttons = buttons;
+        fill_handler(&e, target);
         if (events.size() >= kMaxEvents) events.pop_front();
         events.push_back(e);
     }
@@ -1371,6 +1411,7 @@ void note_value_change(weva_document* doc, Element& e, std::string_view value) {
     weva_event ev{};
     ev.kind = WEVA_EVENT_VALUE_CHANGED;
     ev.target = doc->handle_of(&e);
+    weva_document::fill_handler(&ev, &e);
     const size_t copy = value.size() < sizeof(ev.text) - 1 ? value.size() : sizeof(ev.text) - 1;
     std::memcpy(ev.text, value.data(), copy);
     ev.text[copy] = '\0';
@@ -2503,6 +2544,7 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
     e.target = doc->handle_of(doc->styles.state.focused);
     e.key = key;
     e.modifiers = modifiers;
+    weva_document::fill_handler(&e, doc->styles.state.focused);
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(e);
 
@@ -2804,6 +2846,7 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     weva_event e{};
     e.kind = WEVA_EVENT_TEXT_INPUT;
     e.target = doc->handle_of(doc->styles.state.focused);
+    weva_document::fill_handler(&e, doc->styles.state.focused);
     const size_t n = std::strlen(utf8);
     const size_t copy = n < sizeof(e.text) - 1 ? n : sizeof(e.text) - 1;
     std::memcpy(e.text, utf8, copy);

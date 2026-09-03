@@ -52,6 +52,7 @@ func _ready() -> void:
 	_test_selection()
 	_test_select_dropdown()
 	_test_data_binding()
+	_test_event_handlers()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -776,4 +777,40 @@ func _test_data_binding() -> void:
 	_check(list.count_elements("#quests > .row") == 0, "and an empty list is empty")
 	list.queue_free()
 	doc2.queue_free()
+	doc.queue_free()
+
+
+func _test_event_handlers() -> void:
+	# `on-click="OnStart"` names the method; the script supplies the object. The
+	# markup can then be rearranged, renamed or wrapped without the script
+	# hearing about it -- which is why it beats matching on element ids.
+	var doc := _make_doc(
+		"<body><div id='panel' on-click='OnAnything'>" +
+		"<button id='go' on-click='OnStart'>Start</button>" +
+		"<button id='plain'>Plain</button></div></body>",
+		"html, body { margin: 0 } button { display: block; width: 100px; height: 30px }")
+
+	var seen: Array = []
+	doc.handler_invoked.connect(func(handler, id): seen.append([handler, id]))
+	var box := doc.query_bounds("#go")
+	var at := box.position + box.size * 0.5
+	doc.set_pointer(at, 0)
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(seen.size() > 0 and seen[0][0] == "OnStart",
+		"the handler the markup named arrives with the event")
+	_check(seen[0][1] == "go", "beside the element it happened on")
+
+	# A button with no handler of its own takes the container's, so a whole
+	# panel can be handled in one place.
+	seen.clear()
+	box = doc.query_bounds("#plain")
+	at = box.position + box.size * 0.5
+	doc.set_pointer(at, 0)
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(seen.size() > 0 and seen[0][0] == "OnAnything",
+		"a handler on an ancestor catches what happens inside it")
 	doc.queue_free()

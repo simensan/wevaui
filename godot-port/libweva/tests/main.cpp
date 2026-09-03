@@ -237,6 +237,7 @@ void test_abi_binding_long_values();
 void test_abi_binding_repeat();
 void test_abi_binding_repeat_keeps_rows();
 void test_abi_binding_repeat_scope();
+void test_abi_event_handlers();
 void test_abi_append_html();
 void test_abi_set_html();
 void test_abi_remove_element();
@@ -549,6 +550,7 @@ int main() {
     test_abi_binding_repeat();
     test_abi_binding_repeat_keeps_rows();
     test_abi_binding_repeat_scope();
+    test_abi_event_handlers();
     test_abi_append_html();
     test_abi_set_html();
     test_abi_remove_element();

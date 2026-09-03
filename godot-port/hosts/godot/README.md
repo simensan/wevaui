@@ -335,6 +335,25 @@ CSS addresses them, so a script that can style a list can also fill it.
     doc.count_elements("#log .line")
     doc.query_text("#log .line:nth-child(2)")      # read one back by position
 
+**Handlers the markup names**
+
+`on-<event>="Method"` says what a control is FOR, so the script stops matching
+on element ids and a designer can rename, move or wrap a button without
+breaking it.
+
+    <div on-click="OnAnything">
+      <button on-click="OnStart">Start</button>
+      <input type="text" on-input="OnRename">
+    </div>
+
+    doc.set_controller(self)                       # OnStart(id) gets called
+    doc.handler_invoked.connect(func(handler, id): ...)   # or handle it here
+
+The lookup runs towards the root, so a handler on a panel catches whatever
+happens inside it. `on-click`, `on-pointerdown`, `on-pointerup`,
+`on-pointerenter`, `on-pointerleave`, `on-input`, `on-keydown`, `on-keyup`,
+`on-textinput`, `on-focus`, `on-blur`.
+
 **Hearing about it**
 
     doc.element_clicked.connect(func(id): ...)     # press and release on one

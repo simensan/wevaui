@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 1
+#define WEVA_ABI_VERSION_MINOR 2
 
 uint32_t weva_abi_version(void);
 
@@ -334,6 +334,17 @@ typedef struct weva_event {
     /* The text a key produced, UTF-8 and null-terminated. Inline rather than a
      * pointer so an event stays copyable and outlives nothing. */
     char text[8];
+    /* What the markup called this: the value of `on-<event>` on the element or
+     * the nearest ancestor that has one, empty when nobody named a handler.
+     *
+     *     <button on-click="OnStart">Start</button>
+     *
+     * Reporting the NAME lets a script dispatch by what the markup asked for
+     * rather than by which element it happened on, so a designer can move a
+     * button, rename its id, or wrap it in something without the script
+     * hearing about it. Looked up towards the root, so `on-submit` on a form
+     * catches a button inside it. */
+    char handler[48];
 } weva_event;
 
 /* Takes the oldest queued event, returning 0 when the queue is empty. A host

@@ -17,6 +17,7 @@
 #include <godot_cpp/variant/vector2i.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/callable.hpp>
+#include <godot_cpp/core/object_id.hpp>
 
 #include "godot_font.h"
 #include "weva_c.h"
@@ -133,6 +134,11 @@ public:
     godot::Dictionary get_data() const;
     void set_data_source(const godot::Callable& resolver);
     int refresh_bindings();
+
+    // `on-click="OnStart"` calls OnStart on the controller. The markup names
+    // the method; the script supplies the object.
+    void set_controller(godot::Object* controller);
+    godot::Object* get_controller() const;
 
     // Resolves one path against whatever source is set. Public because the C
     // callback has to reach it.
@@ -260,6 +266,7 @@ private:
     bool dirty_ = true;
     godot::Dictionary data_;
     godot::Callable data_source_;
+    godot::ObjectID controller_;
     bool interactive_ = true;
     bool paused_ = false;
     // The last position handed to the document, so a move that does not change

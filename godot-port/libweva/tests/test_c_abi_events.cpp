@@ -198,3 +198,86 @@ void test_abi_set_text() {
         CHECK(bw > 240 && bw < 260);
     }
 }
+
+// `on-click="OnStart"` in the markup, reported with the event.
+//
+// Until this, a script matched events by element `id`: the markup could not
+// say what a control was FOR, so renaming a button or wrapping it in something
+// broke the script. The name travels with the event instead.
+void test_abi_event_handlers() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0 } button { display: block; width: 100px;"
+                      " height: 30px } input { display: block; width: 100px }";
+    const char* html = "<div id=form on-click=OnAnything>"
+                       "<button id=go on-click=OnStart>Start</button>"
+                       "<button id=plain>Plain</button>"
+                       "<input id=name type=text value='' on-input=OnRename>"
+                       "</div>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    const auto click = [&](const char* selector) {
+        double x = 0, y = 0, w = 0, h = 0;
+        weva_element_bounds(d, weva_document_query(d, selector), &x, &y, &w, &h);
+        weva_document_set_pointer(d, x + w / 2, y + h / 2, 0);
+        weva_document_set_pointer(d, x + w / 2, y + h / 2, 1);
+        weva_document_set_pointer(d, x + w / 2, y + h / 2, 0);
+        weva_document_update(d, 0);
+    };
+    const auto handler_of_click = [&]() {
+        std::string found;
+        weva_event e{};
+        while (weva_document_poll_event(d, &e)) {
+            if (e.kind == WEVA_EVENT_CLICK) found = e.handler;
+        }
+        return found;
+    };
+
+    click("#go");
+    CHECK(handler_of_click() == "OnStart");
+
+    // A button with no handler of its own takes the one on the container --
+    // towards the root, which is what makes `on-submit` on a form work.
+    click("#plain");
+    CHECK(handler_of_click() == "OnAnything");
+
+    // A value change reads `on-input`, not `on-click`.
+    weva_document_set_focus(d, weva_document_query(d, "#name"));
+    while (weva_document_poll_event(d, nullptr)) {}
+    weva_document_text_input(d, "x");
+    weva_document_update(d, 0);
+    std::string on_input;
+    weva_event e{};
+    while (weva_document_poll_event(d, &e)) {
+        if (e.kind == WEVA_EVENT_VALUE_CHANGED) on_input = e.handler;
+    }
+    CHECK(on_input == "OnRename");
+
+    // A document that names no handlers reports none, which is how a host
+    // knows to fall back to ids.
+    weva_document_t plain = weva_document_create(&c);
+    const char* bare = "<button id=b>Go</button>";
+    weva_document_add_css(plain, css, std::strlen(css));
+    weva_document_load_html(plain, bare, std::strlen(bare));
+    weva_document_update(plain, 0);
+    double x = 0, y = 0, w = 0, h = 0;
+    weva_element_bounds(plain, weva_document_query(plain, "#b"), &x, &y, &w, &h);
+    weva_document_set_pointer(plain, x + w / 2, y + h / 2, 1);
+    weva_document_set_pointer(plain, x + w / 2, y + h / 2, 0);
+    weva_document_update(plain, 0);
+    weva_event pe{};
+    bool clicked = false;
+    while (weva_document_poll_event(plain, &pe)) {
+        if (pe.kind != WEVA_EVENT_CLICK) continue;
+        clicked = true;
+        CHECK(pe.handler[0] == 0);
+    }
+    CHECK(clicked);
+    weva_document_destroy(plain);
+    weva_document_destroy(d);
+}

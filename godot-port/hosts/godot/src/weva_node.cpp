@@ -238,6 +238,9 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_data_source", "resolver"),
                          &WevaDocument::set_data_source);
     ClassDB::bind_method(D_METHOD("refresh_bindings"), &WevaDocument::refresh_bindings);
+    ClassDB::bind_method(D_METHOD("set_controller", "controller"),
+                         &WevaDocument::set_controller);
+    ClassDB::bind_method(D_METHOD("get_controller"), &WevaDocument::get_controller);
     ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data"), "set_data", "get_data");
     ClassDB::bind_method(D_METHOD("send_key", "keycode", "pressed", "shift", "ctrl"),
                          &WevaDocument::send_key, DEFVAL(true), DEFVAL(false), DEFVAL(false));
@@ -256,6 +259,8 @@ void WevaDocument::_bind_methods() {
     // The element is named by its `id`, because that is the handle a script
     // and a stylesheet already share. An element with no id reports an empty
     // string, which a script can still compare against.
+    ADD_SIGNAL(MethodInfo("handler_invoked", PropertyInfo(Variant::STRING, "handler"),
+                          PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_clicked", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_pressed", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_released", PropertyInfo(Variant::STRING, "id")));
@@ -804,6 +809,14 @@ String WevaDocument::get_element_attribute(const String& selector, const String&
     return String::utf8(buffer.data());
 }
 
+void WevaDocument::set_controller(Object* controller) {
+    controller_ = controller ? controller->get_instance_id() : ObjectID();
+}
+
+Object* WevaDocument::get_controller() const {
+    return controller_.is_valid() ? ObjectDB::get_instance(controller_) : nullptr;
+}
+
 int WevaDocument::resolve_binding_count(const String& path) const {
     if (data_source_.is_valid()) {
         const Variant v = data_source_.call(path);
@@ -937,6 +950,18 @@ void WevaDocument::pump_events() {
     weva_event e{};
     while (weva_document_poll_event(doc_, &e)) {
         const String id = id_of(e.target);
+        // What the MARKUP called it, before what the element is called. A
+        // controller with that method gets it, and `handler_invoked` carries
+        // it either way -- so a script can dispatch by the name the designer
+        // wrote rather than by which element it happened on.
+        if (e.handler[0] != 0) {
+            const String handler = String::utf8(e.handler);
+            Object* controller = get_controller();
+            if (controller && controller->has_method(handler)) {
+                controller->call(handler, id);
+            }
+            emit_signal("handler_invoked", handler, id);
+        }
         switch (e.kind) {
             case WEVA_EVENT_CLICK: emit_signal("element_clicked", id); break;
             case WEVA_EVENT_POINTER_DOWN: emit_signal("element_pressed", id); break;
