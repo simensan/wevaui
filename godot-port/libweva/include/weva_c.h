@@ -293,7 +293,21 @@ typedef enum weva_event_kind {
     /* A form control's value changed because the user changed it. `text`
      * carries the new value when it is short enough; read it back with
      * weva_element_value for anything longer. */
-    WEVA_EVENT_VALUE_CHANGED
+    WEVA_EVENT_VALUE_CHANGED,
+    /* The value COMMITTED, which is a different question from the value
+     * changing. A text field commits when the focus leaves it and what it
+     * holds is not what it held when the focus arrived, so a search box can
+     * run once instead of once per keystroke. A checkbox, a radio and a
+     * select have no editing state to leave, so for them the two are the same
+     * moment. `on-change`. */
+    WEVA_EVENT_CHANGE,
+    /* A form submitted: Enter in a field inside one, or a click on a submit
+     * button in one. The target is the FORM, not what was pressed, since that
+     * is what a handler wants. `on-submit`. */
+    WEVA_EVENT_SUBMIT,
+    /* A scroll container moved, however it was moved -- wheel, bar, keyboard,
+     * a finger, or a script. `on-scroll`. */
+    WEVA_EVENT_SCROLL
 } weva_event_kind;
 
 /* Held modifiers, as a bitmask on weva_event.modifiers. */

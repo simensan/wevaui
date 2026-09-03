@@ -375,8 +375,21 @@ breaking it.
 
 The lookup runs towards the root, so a handler on a panel catches whatever
 happens inside it. `on-click`, `on-pointerdown`, `on-pointerup`,
-`on-pointerenter`, `on-pointerleave`, `on-input`, `on-keydown`, `on-keyup`,
-`on-textinput`, `on-focus`, `on-blur`.
+`on-pointerenter`, `on-pointerleave`, `on-input`, `on-change`, `on-submit`,
+`on-scroll`, `on-keydown`, `on-keyup`, `on-textinput`, `on-focus`, `on-blur`.
+
+`on-input` and `on-change` are not the same event, and the difference is the
+one that matters for anything expensive. `on-input` fires per keystroke;
+`on-change` fires when the user is DONE -- when the focus leaves a text field
+holding something other than what it held when the focus arrived. A search box
+that hits the disk wants `on-change` and would run four times a word on
+`on-input`. A checkbox, a radio and a `<select>` have no editing state to
+leave, so for them both fire at the same moment.
+
+`on-submit` is reported against the FORM, not against whatever was pressed --
+which is what the handler is written for. Enter in a one-line field inside a
+form submits it, and so does a `<button>` in one: HTML says a button in a form
+submits unless its `type` says otherwise.
 
 **Hearing about it**
 
@@ -384,9 +397,16 @@ happens inside it. `on-click`, `on-pointerdown`, `on-pointerup`,
     doc.element_pressed / element_released
     doc.element_entered / element_exited           # pointer in and out
     doc.element_focused / element_blurred
-    doc.value_changed.connect(func(id, value): ...)
+    doc.value_changed.connect(func(id, value): ...)     # every keystroke
+    doc.value_committed.connect(func(id, value): ...)   # once, when done
+    doc.form_submitted.connect(func(id): ...)           # the form's id
+    doc.element_scrolled.connect(func(id, x, y): ...)   # where it landed
     doc.key_pressed.connect(func(id, key, mods): ...)
     doc.text_entered.connect(func(id, text): ...)
+
+`element_scrolled` carries the offset it scrolled TO, however it got there --
+a wheel, a bar, the keyboard, a finger, or the script itself -- so a list that
+pages in more rows near its end never has to ask the document each frame.
 
 An element is named by its `id`. One without an id reports "", which a script
 can still compare against.

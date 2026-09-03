@@ -268,6 +268,11 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("element_exited", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_focused", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_blurred", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("value_committed", PropertyInfo(Variant::STRING, "id"),
+                          PropertyInfo(Variant::STRING, "value")));
+    ADD_SIGNAL(MethodInfo("form_submitted", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("element_scrolled", PropertyInfo(Variant::STRING, "id"),
+                          PropertyInfo(Variant::FLOAT, "x"), PropertyInfo(Variant::FLOAT, "y")));
     ADD_SIGNAL(MethodInfo("value_changed", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::STRING, "value")));
     ADD_SIGNAL(MethodInfo("key_pressed", PropertyInfo(Variant::STRING, "id"),
@@ -978,6 +983,18 @@ void WevaDocument::pump_events() {
                 // The value rides in the event when it is short; anything
                 // longer is read back, so a script never sees a truncated one.
                 emit_signal("value_changed", id, get_element_value("#" + id));
+                break;
+            case WEVA_EVENT_CHANGE:
+                // The value the user settled on, once. A search field that
+                // hits the disk on every keystroke wants this and not
+                // `value_changed`.
+                emit_signal("value_committed", id, get_element_value("#" + id));
+                break;
+            case WEVA_EVENT_SUBMIT: emit_signal("form_submitted", id); break;
+            case WEVA_EVENT_SCROLL:
+                // Where it scrolled TO, so a script can load more when a list
+                // nears its end without asking the document again.
+                emit_signal("element_scrolled", id, e.x, e.y);
                 break;
             default: break;
         }

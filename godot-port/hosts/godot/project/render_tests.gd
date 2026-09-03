@@ -53,6 +53,7 @@ func _ready() -> void:
 	_test_select_dropdown()
 	_test_data_binding()
 	_test_event_handlers()
+	_test_commit_submit_and_scroll_signals()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -792,4 +793,63 @@ func _test_event_handlers() -> void:
 	doc.update_document()
 	_check(seen.size() > 0 and seen[0][0] == "OnAnything",
 		"a handler on an ancestor catches what happens inside it")
+	doc.queue_free()
+
+
+func _test_commit_submit_and_scroll_signals() -> void:
+	# Three things a script needs that a raw `value_changed` cannot say: the
+	# user is DONE editing, a form was submitted, and a list has been scrolled.
+	var doc := _make_doc(
+		"<body><form id='search' on-submit='OnSearch'>" +
+		"<input id='q' type='text' value='' on-change='OnCommit'>" +
+		"<button id='go'>Go</button></form>" +
+		"<div id='list'><div class='row'></div><div class='row'></div>" +
+		"<div class='row'></div></div></body>",
+		"html, body { margin: 0 } input, button { display: block; width: 100px; height: 24px }" +
+		" #list { width: 120px; height: 50px; overflow: auto } .row { height: 40px }")
+
+	var committed: Array = []
+	var submitted: Array = []
+	var scrolled: Array = []
+	doc.value_committed.connect(func(id, value): committed.append([id, value]))
+	doc.form_submitted.connect(func(id): submitted.append(id))
+	doc.element_scrolled.connect(func(id, x, y): scrolled.append([id, x, y]))
+
+	# Typing raises `value_changed` every keystroke and commits nothing.
+	doc.set_focus("#q")
+	doc.send_text("ale")
+	doc.update_document()
+	_check(committed.is_empty(), "typing does not commit")
+
+	# The focus leaving does, once, with what the field ended up holding.
+	doc.set_focus("#go")
+	doc.update_document()
+	_check(committed.size() == 1 and committed[0][0] == "q" and committed[0][1] == "ale",
+		"leaving a field commits what it holds")
+
+	# Enter in the field submits the form around it, and the signal carries
+	# the FORM's id -- which is what a handler is written against.
+	doc.set_focus("#q")
+	doc.send_key(KEY_ENTER)
+	doc.update_document()
+	_check(submitted.size() == 1 and submitted[0] == "search",
+		"Enter in a field submits the form it is in")
+
+	# So does the button in it, with no `type` needed: HTML says a button in a
+	# form submits unless it says otherwise.
+	submitted.clear()
+	var box := doc.query_bounds("#go")
+	var at := box.position + box.size * 0.5
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(submitted.size() == 1 and submitted[0] == "search", "a button in a form submits it")
+
+	# And a scrolled list says where it ended up, so a script can page in more
+	# rows without asking the document every frame.
+	box = doc.query_bounds("#list")
+	doc.scroll_at(box.position + box.size * 0.5, Vector2(0, 20))
+	doc.update_document()
+	_check(scrolled.size() == 1 and scrolled[0][0] == "list" and _approx(scrolled[0][2], 20),
+		"a scroll reports the offset it landed on")
 	doc.queue_free()

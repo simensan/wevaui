@@ -1129,6 +1129,10 @@ struct weva_document {
     // The row the open list is scrolled to. A list longer than the cap has to
     // move, or its last options can be neither seen nor clicked.
     int select_first_row = 0;
+    // What the focused field held when the focus arrived. A blur compares
+    // against it to decide whether anything was committed: `on-change` fires
+    // for an edit, and not for a visit.
+    std::string value_at_focus;
     // Set when the cursor moved or the text under it changed, so the next
     // update scrolls it back into view. Not every frame: a reader who has
     // scrolled away from the cursor should stay there.
@@ -1180,6 +1184,9 @@ struct weva_document {
             case WEVA_EVENT_POINTER_ENTER: return "on-pointerenter";
             case WEVA_EVENT_POINTER_LEAVE: return "on-pointerleave";
             case WEVA_EVENT_VALUE_CHANGED: return "on-input";
+            case WEVA_EVENT_CHANGE: return "on-change";
+            case WEVA_EVENT_SUBMIT: return "on-submit";
+            case WEVA_EVENT_SCROLL: return "on-scroll";
             case WEVA_EVENT_KEY_DOWN: return "on-keydown";
             case WEVA_EVENT_KEY_UP: return "on-keyup";
             case WEVA_EVENT_TEXT_INPUT: return "on-textinput";
@@ -1405,6 +1412,29 @@ BoxId box_of(const weva_document* doc, const Element* e) {
     return kNoBox;
 }
 
+// The <form> an element is inside, if any. A submit is reported against the
+// form rather than against whatever was pressed, since that is what a handler
+// is written for.
+Element* form_of(const Element* e) {
+    for (const Node* n = e; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        Element& candidate = const_cast<Element&>(static_cast<const Element&>(*n));
+        if (candidate.tag_name() == "form") return &candidate;
+    }
+    return nullptr;
+}
+
+// True for a control whose value is chosen rather than typed: there is no
+// editing state to leave, so `input` and `change` are the same moment.
+bool commits_immediately(const Element& e) {
+    const std::string_view tag = e.tag_name();
+    if (tag == "select") return true;
+    if (tag != "input") return false;
+    const std::string type = input_type_of(const_cast<Element&>(e));
+    return type == "checkbox" || type == "radio" || type == "range" || type == "color" ||
+           type == "file";
+}
+
 void note_value_change(weva_document* doc, Element& e, std::string_view value) {
     doc->dom_touched = true;
     if (doc->touched.size() < 64) doc->touched.push_back(&e);
@@ -1417,6 +1447,13 @@ void note_value_change(weva_document* doc, Element& e, std::string_view value) {
     ev.text[copy] = '\0';
     if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
     doc->events.push_back(ev);
+    if (commits_immediately(e)) {
+        weva_event committed = ev;
+        committed.kind = WEVA_EVENT_CHANGE;
+        weva_document::fill_handler(&committed, &e);
+        if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
+        doc->events.push_back(committed);
+    }
 }
 
 std::string trimmed(std::string text) {
@@ -2412,6 +2449,30 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
         // the behaviour every button in every toolkit has.
         if (hit && hit == doc->press_target) {
             doc->queue_event(WEVA_EVENT_CLICK, hit, x, y, buttons);
+            // A submit button submits the form it is in. `type` decides:
+            // a <button> in a form submits by default, as HTML says.
+            {
+                // `input_type_of` answers with the TAG for anything that is
+                // not an <input>, so a <button>'s `type` has to be read
+                // directly -- reading it through that helper said every
+                // button was type="button" and submitted none of them.
+                Element& pressed = const_cast<Element&>(*hit);
+                const std::string_view tag = pressed.tag_name();
+                bool submits = false;
+                if (tag == "button") {
+                    // HTML: a button in a form submits unless it says
+                    // otherwise.
+                    const std::string_view declared = pressed.get_attribute("type");
+                    submits = declared.empty() || declared == "submit";
+                } else if (tag == "input") {
+                    submits = input_type_of(pressed) == "submit";
+                }
+                if (submits) {
+                    if (Element* form = form_of(hit)) {
+                        doc->queue_event(WEVA_EVENT_SUBMIT, form, x, y, buttons);
+                    }
+                }
+            }
             // A checkbox toggles on the click, not the press, so dragging off
             // it and back changes nothing -- as it does not in any toolkit.
             activate_control(doc, const_cast<Element&>(*hit), x);
@@ -2621,8 +2682,18 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                     break;
                 case WEVA_KEY_ENTER:
                     // The one key that means something different in a box you
-                    // can write paragraphs in.
-                    if (!multiline) { caret = -1; break; }
+                    // can write paragraphs in. In a one-line field it submits
+                    // the form around it, if there is one -- which is what
+                    // Enter has meant in a login box since forms existed.
+                    if (!multiline) {
+                        if (Element* form = form_of(focused)) {
+                            doc->queue_event(WEVA_EVENT_SUBMIT, form, 0, 0, 0);
+                            st.caret = caret;
+                            return 1;
+                        }
+                        caret = -1;
+                        break;
+                    }
                     value.insert(static_cast<size_t>(caret), 1, '\n');
                     ++caret;
                     edited = true;
@@ -3119,13 +3190,21 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
         if (disabled_ancestor(target)) return WEVA_ERR_INVALID_ARGUMENT;
     }
     if (st.focused == target) return WEVA_OK;
+    const Element* previous_focus = st.focused;
     // A field you have just focused puts the cursor after what it holds, which
     // is where a user expects to carry on typing.
+    // A text field that is losing the focus commits what it holds, if what it
+    // holds has moved. Nothing else can tell an edit from a visit.
+    if (previous_focus && is_text_field(*previous_focus) &&
+        field_value(*previous_focus) != doc->value_at_focus) {
+        doc->queue_event(WEVA_EVENT_CHANGE, previous_focus, 0, 0, 0);
+    }
+    doc->value_at_focus = target && is_text_field(*target) ? field_value(*target) : std::string();
     st.caret = target ? static_cast<int>(field_value(*target).size()) : 0;
     st.anchor = -1;
     st.caret_age = 0;
     doc->caret_follow = target != nullptr;
-    const Element* previous = st.focused;
+    const Element* previous = previous_focus;
     if (previous) doc->queue_event(WEVA_EVENT_BLUR, previous, 0, 0, 0);
     if (target) doc->queue_event(WEVA_EVENT_FOCUS, target, 0, 0, 0);
     const std::vector<const Element*> old_chain = st.focus_chain;
@@ -3183,6 +3262,7 @@ int weva_document_scroll(weva_document_t doc, double x, double y, double dx, dou
         const double nx = std::clamp(cx + dx, 0.0, mx), ny = std::clamp(cy + dy, 0.0, my);
         if (nx == cx && ny == cy) continue;   // no room this way: the next one up
         doc->scroll[b.element] = {nx, ny};
+        doc->queue_event(WEVA_EVENT_SCROLL, b.element, nx, ny, 0);
         doc->pending = worst(doc->pending, Invalidation::Paint);
         return 1;
     }
@@ -3197,6 +3277,7 @@ weva_status weva_element_set_scroll(weva_document_t doc, weva_element_t element,
     // Clamped by the update, which is the only thing that knows how far there
     // is to go -- and it may not have laid this element out yet.
     doc->scroll[e] = {std::max(0.0, x), std::max(0.0, y)};
+    doc->queue_event(WEVA_EVENT_SCROLL, e, std::max(0.0, x), std::max(0.0, y), 0);
     doc->pending = worst(doc->pending, Invalidation::Paint);
     return WEVA_OK;
 }
