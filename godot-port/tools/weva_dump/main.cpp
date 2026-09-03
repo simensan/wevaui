@@ -11,6 +11,7 @@
 // and only the FIRST box for an element is emitted, because a box that
 // fragments produces several and the C# keys on the principal one.
 
+#include "weva/image_store.h"
 #include "weva/components.h"
 #include "weva/block_layout.h"
 #include "weva/box.h"
@@ -394,7 +395,20 @@ int main(int argc, char** argv) {
     // <code> run measures at 0.6em per glyph there; without the same
     // registration every code snippet on a page was 25% narrower here.
     const weva::MonoFontMetrics monospace = weva::MonoFontMetrics::chrome_monospace();
+    // Images, resolved against the DOCUMENT's directory the way a browser
+    // resolves them. Without this the dump cannot load one, an <img> has no
+    // intrinsic size and lays out at zero -- and since the C# reference reads
+    // the same corpus, both sides agree on the wrong answer and the oracle
+    // reports a case that measures nothing.
+    weva::ImageStore images;
+    {
+        const size_t slash = html_path.find_last_of("/\\");
+        images.set_base_path(slash == std::string::npos ? std::string(".")
+                                                        : html_path.substr(0, slash));
+    }
+
     weva::LayoutContext ctx;
+    ctx.images = &images;
     ctx.viewport_width_px = width;
     ctx.viewport_height_px = height;
     ctx.register_font("monospace", &monospace);

@@ -15,6 +15,33 @@ case; the numbers below say what to expect.
     python3 run_oracle.py corpus/samples --width 1280 --height 720 \
         --weva-dump <build>/tools/weva_dump/weva_dump --reuse-reference
 
+## An inline image sits flush, with no room for the strut
+
+Not a parked case -- a finding, from `cov-image`, worth writing down before it
+is rediscovered.
+
+CSS 2.1 s10.8: every line box begins with a strut, a zero-width inline box
+carrying the containing block's own font metrics, and its descent counts
+toward the line's height whatever else is on the line. An inline image's
+baseline is its bottom margin edge, so the strut's descender leaves a few
+pixels of space UNDER it -- the gap every web developer has met and worked
+around with `display: block` or `vertical-align: middle`.
+
+This engine puts the image flush. A `<div style="padding: 8px; border: 1px">`
+holding a 90px inline image measures:
+
+| | height |
+|---|---|
+| C++ | 110 |
+| Chrome | **114.84** |
+| C# reference | 20 (it loads no image at all) |
+
+4.84px is the strut's descent at the 13px font the case uses. `reset_line_metrics`
+already seeds the line with `strut_descent`, so the seeding is right; what is
+missing is somewhere further along, and it did not show up until an inline box
+was taller than the text beside it -- which before images essentially never
+happened, since the corpus's inline-blocks all contain text of their own.
+
 ## cov-gutter — scrollbar-gutter reserves nothing
 
 Neither engine reads `scrollbar-gutter`. Both leave the content box at its

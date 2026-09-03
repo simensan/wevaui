@@ -41,6 +41,17 @@ def sources(root):
                     yield os.path.join(dirpath, name)
 
 
+# An image a document points at, from `url(...)` in CSS or `src="..."` in the
+# markup. Deliberately loose: it only has to find files worth copying.
+ASSET = re.compile(r'''url\(\s*['"]?([^)'"]+\.(?:png|jpg|jpeg|webp))['"]?\s*\)'''
+                   r'''|src\s*=\s*["']([^"']+\.(?:png|jpg|jpeg|webp))["']''',
+                   re.IGNORECASE)
+
+
+def _asset_names(text):
+    return [a or b for a, b in ASSET.findall(text)]
+
+
 # Any stylesheet link at all — used to decide whether a copied sample needs one
 # injected, not to parse the document.
 STYLESHEET_LINK = re.compile(r"<link[^>]+rel=[\"']?stylesheet", re.IGNORECASE)
@@ -105,6 +116,23 @@ def main():
                     f.write("\n".join(blocks))
             elif os.path.exists(css_dst):
                 os.remove(css_dst)
+        # Any image the pair references travels with it. The corpus is FLAT
+        # and the engines resolve a relative url() against the document, so an
+        # asset left behind is not a broken link that shows up as a warning --
+        # it is an image that silently draws nothing, in every engine at once,
+        # which is exactly the kind of agreement the oracle cannot see through.
+        referenced = set()
+        for text in (markup, open(css_dst, encoding="utf-8", errors="replace").read()
+                     if os.path.exists(css_dst) else ""):
+            referenced.update(_asset_names(text))
+        for name in sorted(referenced):
+            if "://" in name or name.startswith("data:"):
+                continue
+            src = os.path.join(os.path.dirname(html), name)
+            if not os.path.exists(src):
+                continue
+            shutil.copyfile(src, os.path.join(args.out, os.path.basename(name)))
+
         count += 1
     print(f"collected {count} samples into {args.out}")
     return 0
