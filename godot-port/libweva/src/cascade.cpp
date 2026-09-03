@@ -352,6 +352,19 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
         anc ^= hash_str(a->id()) * 257ULL;
         anc ^= hash_class_tokens(a->class_name());
         anc ^= static_cast<uint64_t>(state.state_of(*a)) * 2654435761ULL;
+        // An ancestor's OTHER attributes, for the same reason the element's own
+        // are folded: `select[size] option` matches on the parent's attribute,
+        // so a <select> and a <select size=3> that fold alike hand their
+        // options the same match set. That is what made a list box's options
+        // vanish -- they took `display: none` from a plain select's option,
+        // computed earlier in the same document, and generated no boxes at all.
+        const AttributeMap& ancestor_attrs = a->attributes();
+        for (std::size_t i = 0; i < ancestor_attrs.size(); ++i) {
+            const std::string_view n = ancestor_attrs.name_at(i);
+            if (n == "class" || n == "id") continue;   // folded above
+            anc ^= hash_str(n) * 2654435761ULL;
+            anc ^= hash_str(ancestor_attrs.value_at(i)) * kFnvOffset;
+        }
         h ^= anc;
         h *= kFnvPrime;
     }

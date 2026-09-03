@@ -168,7 +168,18 @@ select { display: inline-block; box-sizing: border-box; min-width: 218px; height
    paint path; its <option> children are not laid out in flow. */
 option { display: none; }
 optgroup { display: none; }
-select[size] option, select[multiple] option { display: block; }
+select[size] option, select[multiple] option { display: block; padding: 2px 4px; }
+/* More rows than fit is the normal case for a keybind or server list, so it
+   scrolls rather than hiding the rest behind an edge -- the wheel, the bar and
+   the keyboard all follow from this one declaration. */
+select[size], select[multiple] { overflow-y: auto; }
+/* A list box shows its selection in the row itself -- there is no closed
+   control to display it in, so without this a chosen row looks like every
+   other one. Chrome uses the system highlight; this is a blue an author can
+   override with `option:checked`, since the engine has no system colours. */
+select[size] option:checked, select[multiple] option:checked {
+  background: #3390ff; color: #ffffff;
+}
 select[size] optgroup, select[multiple] optgroup { display: block; }
 dialog { display: none; position: fixed; padding: 16px; border: 1px solid #ccc; border-radius: 8px; background: white; }
 dialog[open] { display: block; }

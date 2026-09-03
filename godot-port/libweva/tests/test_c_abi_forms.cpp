@@ -57,6 +57,13 @@ struct Doc {
         while (weva_document_poll_event(d, &e)) out.push_back(e);
         return out;
     }
+    double height(const char* selector) {
+        double x = 0, y = 0, w = 0, h = 0;
+        if (weva_element_bounds(d, weva_document_query(d, selector), &x, &y, &w, &h) != WEVA_OK) {
+            return -1;
+        }
+        return h;
+    }
     void bounds(const char* selector, double* x, double* y, double* w, double* h) {
         weva_element_bounds(d, weva_document_query(d, selector), x, y, w, h);
     }
@@ -1225,4 +1232,171 @@ void test_abi_checkbox_draws_a_tick() {
              "input:checked { accent-color: #f5f5f5 }",
              "<input id=c type=checkbox checked>");
     CHECK(ink(pale.d, false) < 0.1);
+}
+
+// A list box -- a <select> with `size` or `multiple` -- lays its options out
+// in flow instead of hiding them behind a closed control. They rendered and
+// nothing more: a keybind list or a server list could be shown and never used.
+void test_abi_list_box_selects() {
+    Doc doc("html, body { margin: 0 }"
+            "select { display: block; width: 180px; height: 90px; padding: 0; border: 0 }"
+            "option { font-size: 14px }",
+            "<select id=s size=4>"
+            "<option value=a>Alpha</option>"
+            "<option value=b selected>Bravo</option>"
+            "<option value=c>Charlie</option>"
+            "</select>");
+    CHECK(doc.value("#s") == "b");
+
+    // Clicking a row chooses it, and only it.
+    double x = 0, y = 0, w = 0, h = 0;
+    doc.bounds("#s option:nth-child(3)", &x, &y, &w, &h);
+    CHECK(w > 0);
+    doc.click(x + w / 2, y + h / 2);
+    CHECK(doc.value("#s") == "c");
+    // Which the DOM holds, so `:checked` can style the chosen row.
+    char buf[8] = {0};
+    CHECK(weva_element_attribute(doc.d, weva_document_query(doc.d, "#s option:nth-child(2)"),
+                                 "selected", buf, sizeof(buf)) == 0);
+
+    // The change reaches the host against the SELECT, not the option: that is
+    // the control a script binds to.
+    doc.drain();
+    doc.bounds("#s option:nth-child(1)", &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    bool announced = false;
+    for (const weva_event& e : doc.drain()) {
+        if (e.kind == WEVA_EVENT_VALUE_CHANGED &&
+            e.target == weva_document_query(doc.d, "#s")) {
+            announced = true;
+            CHECK(std::string(e.text) == "a");
+        }
+    }
+    CHECK(announced);
+}
+
+// A `multiple` list toggles, and reports everything chosen. The ABI carries
+// buttons and not modifiers, so there is no Ctrl+click to tell a toggle from a
+// replace -- and toggling is what a settings list wants anyway.
+void test_abi_list_box_multiple() {
+    Doc doc("html, body { margin: 0 }"
+            "select { display: block; width: 180px; height: 90px; padding: 0; border: 0 }"
+            "option { font-size: 14px }",
+            "<select id=s multiple>"
+            "<option value=a>Alpha</option>"
+            "<option value=b>Bravo</option>"
+            "<option value=c>Charlie</option>"
+            "</select>");
+    CHECK(doc.value("#s").empty());
+
+    double x = 0, y = 0, w = 0, h = 0;
+    doc.bounds("#s option:nth-child(1)", &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    CHECK(doc.value("#s") == "a");
+
+    doc.bounds("#s option:nth-child(3)", &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    CHECK(doc.value("#s") == "a,c");     // both, in document order
+
+    // And clicking one again lets it go.
+    doc.click(x + w / 2, y + h / 2);
+    CHECK(doc.value("#s") == "a");
+
+    // A disabled list takes nothing at all, like every other disabled control.
+    Doc off("html, body { margin: 0 }"
+            "select { display: block; width: 180px; height: 90px; padding: 0; border: 0 }"
+            "option { font-size: 14px }",
+            "<select id=s multiple disabled><option value=a>Alpha</option></select>");
+    off.bounds("#s option:nth-child(1)", &x, &y, &w, &h);
+    off.click(x + w / 2, y + h / 2);
+    CHECK(off.value("#s").empty());
+}
+
+// The cascade shares one element's match set with another that hashes the
+// same, and an ANCESTOR's attributes are part of what makes two elements
+// different: `select[size] option { display: block }` matches on the parent's
+// attribute, so a plain <select> and a <select size> that fold alike hand
+// their options the same rules.
+//
+// It was quiet and total: a list box AFTER a plain select showed nothing. Its
+// options took `display: none` from the earlier select's option, computed
+// under the same key, so the rows were not merely unstyled -- they generated
+// no boxes at all.
+//
+// This lives here rather than beside the cascade's own tests because it only
+// appears through a whole document: the fixture there computes an element at a
+// time, which does not share a match set between two of them.
+void test_abi_ancestor_attribute_reaches_the_cascade() {
+    // No ids anywhere on the elements being compared, and none on their
+    // parents: an id is folded into the key too, so giving the two selects
+    // different ones would separate them for a reason that has nothing to do
+    // with the attribute this is about -- which is exactly how the first
+    // attempt at this test passed against the bug it was written for.
+    Doc doc("html, body { margin: 0 }"
+            "select { display: block; width: 200px; height: 80px; padding: 0; border: 0 }",
+            "<select><option>Only</option></select>"
+            "<select size=3><option>Alpha</option><option>Bravo</option></select>");
+    double x = 0, y = 0, w = 0, h = 0;
+    // The closed select's option is `display: none` and generates no box.
+    CHECK(weva_element_bounds(doc.d,
+                              weva_document_query(doc.d, "select:nth-of-type(1) option"),
+                              &x, &y, &w, &h) == WEVA_ERR_NOT_FOUND);
+    // The list box's are laid out in flow and generate one each -- which they
+    // did not while they shared the closed select's option's match set.
+    CHECK(weva_element_bounds(doc.d,
+                              weva_document_query(doc.d, "select:nth-of-type(2) option"),
+                              &x, &y, &w, &h) == WEVA_OK);
+    CHECK(h > 0);
+
+    // The other order, since a cache is only wrong one way at a time.
+    Doc other("html, body { margin: 0 }"
+              "select { display: block; width: 200px; height: 80px; padding: 0; border: 0 }",
+              "<select size=3><option>Alpha</option></select>"
+              "<select><option>Only</option></select>");
+    CHECK(weva_element_bounds(other.d,
+                              weva_document_query(other.d, "select:nth-of-type(1) option"),
+                              &x, &y, &w, &h) == WEVA_OK);
+    CHECK(weva_element_bounds(other.d,
+                              weva_document_query(other.d, "select:nth-of-type(2) option"),
+                              &x, &y, &w, &h) == WEVA_ERR_NOT_FOUND);
+
+    // And the general shape, with nothing to do with form controls: two
+    // identical children whose parents differ only by an attribute a rule
+    // selects on.
+    Doc generic("html, body { margin: 0 }"
+                "span { display: block; height: 10px }"
+                "div[data-open] span { height: 30px }",
+                "<div><span></span></div><div data-open><span></span></div>");
+    CHECK(generic.height("div:nth-of-type(1) span") == 10);
+    CHECK(generic.height("div:nth-of-type(2) span") == 30);
+}
+
+// More rows than fit is the normal case for a keybind or a server list, so a
+// list box scrolls: without it the rows past the edge can be neither seen nor
+// clicked, which is the same hole the dropdown had.
+void test_abi_list_box_scrolls() {
+    Doc doc("html, body { margin: 0 }"
+            "select { display: block; width: 200px; height: 60px; padding: 0; border: 0 }"
+            "option { font-size: 14px }",
+            "<select id=s size=3>"
+            "<option value=a>Alpha</option><option value=b>Bravo</option>"
+            "<option value=c>Charlie</option><option value=d>Delta</option>"
+            "<option value=e>Echo</option></select>");
+    double y = 0, most = 0;
+    weva_element_scroll(doc.d, weva_document_query(doc.d, "#s"), nullptr, &y, nullptr, &most);
+    CHECK(most > 0);   // five rows in a box that holds three
+
+    // The wheel over it moves it, and the rows move with it.
+    double x = 0, top = 0, w = 0, h = 0;
+    doc.bounds("#s option:nth-child(1)", &x, &top, &w, &h);
+    CHECK(weva_document_scroll(doc.d, 100, 30, 0, h) == 1);
+    weva_document_update(doc.d, 0);
+    double moved = 0;
+    doc.bounds("#s option:nth-child(1)", &x, &moved, &w, &h);
+    CHECK(moved < top);   // the first row has gone up out of the way
+
+    // And a click still lands on the row you can SEE, not the one that used to
+    // be there.
+    doc.click(100, 30 + h * 0.5);
+    CHECK(doc.value("#s") != "a");
 }

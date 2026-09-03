@@ -1337,6 +1337,38 @@ void reveal_highlighted_option(weva_document* doc) {
     doc->select_first_row = std::clamp(first, 0, last);
 }
 
+// What a list box holds: the chosen options' values, comma separated, since a
+// `multiple` one can have several and a host needs all of them.
+std::string list_box_value(const Element& select) {
+    std::string out;
+    for (const Element* option : select_options(select)) {
+        if (!option->has_attribute("selected")) continue;
+        std::string value(option->get_attribute("value"));
+        if (value.empty()) value = trimmed(text_content_of(*option));
+        if (!out.empty()) out += ",";
+        out += value;
+    }
+    return out;
+}
+
+// The <select> a clicked <option> belongs to, when that select is a LIST box
+// -- one with `size` or `multiple`, whose options are laid out in flow rather
+// than hidden behind a closed control. A click on a row of one of those is a
+// choice; a click on an option anywhere else cannot happen, because they are
+// `display: none`.
+Element* list_box_of(const Element* option) {
+    if (!option || option->tag_name() != "option") return nullptr;
+    for (const Node* n = option->parent(); n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        Element& e = const_cast<Element&>(static_cast<const Element&>(*n));
+        if (e.tag_name() == "optgroup") continue;   // a group is not the control
+        if (e.tag_name() != "select") return nullptr;
+        const bool list = e.has_attribute("size") || e.has_attribute("multiple");
+        return list ? &e : nullptr;
+    }
+    return nullptr;
+}
+
 // Chooses an option: `selected` moves onto it and off its siblings, so the DOM
 // holds the answer and :checked, the paint and a script all read the same
 // thing.
@@ -2183,6 +2215,30 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
         // like one rather than like a picture of one.
         if (hit) {
             Element& e = const_cast<Element&>(*hit);
+            // A row of a list box. `multiple` toggles, because the ABI carries
+            // buttons and not modifiers -- there is no Ctrl+click to tell a
+            // toggle from a replace, and toggling is what a settings list
+            // wants. A single-selection list replaces, as it does everywhere.
+            if (Element* list = list_box_of(&e)) {
+                weva_document_set_focus(doc, doc->handle_of(list));
+                if (list->has_attribute("multiple")) {
+                    if (e.has_attribute("selected")) e.remove_attribute("selected");
+                    else e.set_attribute("selected", "");
+                    doc->dom_touched = true;
+                    if (doc->touched.size() < 64) doc->touched.push_back(&e);
+                    doc->pending = worst(doc->pending, Invalidation::Boxes);
+                    note_value_change(doc, *list, list_box_value(*list));
+                } else {
+                    const std::vector<const Element*> options = select_options(*list);
+                    for (size_t i = 0; i < options.size(); ++i) {
+                        if (options[i] == &e) {
+                            choose_option(doc, *list, static_cast<int>(i));
+                            break;
+                        }
+                    }
+                }
+                return;
+            }
             if (e.tag_name() == "select" && !e.has_attribute("multiple") &&
                 !e.has_attribute("size") && !e.has_attribute("disabled")) {
                 weva_document_set_focus(doc, doc->handle_of(hit));
@@ -2784,13 +2840,18 @@ size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buf
         value = e->has_attribute("checked") ? "on" : "";
     } else if (e->tag_name() == "select") {
         // A select's value is the chosen option's, which is where the DOM
-        // keeps it: there is no `value` attribute on the select itself.
-        const std::vector<const Element*> options = select_options(*e);
-        const int index = chosen_index(*e);
-        if (index >= 0 && index < static_cast<int>(options.size())) {
-            const Element& chosen = *options[static_cast<size_t>(index)];
-            value = std::string(chosen.get_attribute("value"));
-            if (value.empty()) value = trimmed(text_content_of(chosen));
+        // keeps it: there is no `value` attribute on the select itself. A
+        // `multiple` one can have several, and reports them all.
+        if (e->has_attribute("multiple")) {
+            value = list_box_value(*e);
+        } else {
+            const std::vector<const Element*> options = select_options(*e);
+            const int index = chosen_index(*e);
+            if (index >= 0 && index < static_cast<int>(options.size())) {
+                const Element& chosen = *options[static_cast<size_t>(index)];
+                value = std::string(chosen.get_attribute("value"));
+                if (value.empty()) value = trimmed(text_content_of(chosen));
+            }
         }
     } else {
         value = field_value(*e);
