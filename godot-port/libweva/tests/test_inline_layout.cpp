@@ -1124,3 +1124,108 @@ void test_letter_spacing_restarts_at_a_line_break() {
         CHECK(near(b.width, f.metrics.measure("bbbb", 16) + 3 * 4));
     }
 }
+
+// Japanese and Chinese are written without spaces. A tokeniser that only
+// breaks at spaces hands the whole sentence to the line as one word, and the
+// line runs off the side of its box -- which is what this port did.
+//
+// The fixture's font is 0.5em per CODEPOINT, so at 20px every character below
+// is 10px wide and the arithmetic in each case is exact.
+void test_cjk_lines_break_between_characters() {
+    {
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 40px; font-size: 20px }"));
+        CHECK(f.layout("<body><div id=w>日本語テスト</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        // Six characters at 10px in a 40px box: four, then two.
+        CHECK(ls.size() == 2);
+        CHECK(f.line_text(ls[0]) == "日本語テ");
+        CHECK(f.line_text(ls[1]) == "スト");
+    }
+    {
+        // Without the rule this is one line 60px wide in a 40px box. The
+        // block's height is the proof that it wrapped.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 40px; font-size: 20px }"));
+        CHECK(f.layout("<body><div id=w>日本語テスト</div></body>"));
+        CHECK(near(f.box("w").height, 2 * 20 * 1.2));
+    }
+    {
+        // `nowrap` still forbids it: CJK is a break OPPORTUNITY, not a break.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 40px; font-size: 20px; white-space: nowrap }"));
+        CHECK(f.layout("<body><div id=w>日本語テスト</div></body>"));
+        CHECK(f.lines("w").size() == 1);
+    }
+}
+
+// Kinsoku: the prohibitions that stop a line ending or starting on the wrong
+// character. Without them a Japanese paragraph breaks in places a reader
+// reads as a typesetting error.
+void test_cjk_kinsoku_prohibitions() {
+    {
+        // A full stop cannot START a line, so it stays with the character
+        // before it even when that pushes both down.
+        // 35px holds three characters; the piece "語。" is 20px and
+        // will not fit after two, so it wraps whole.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 35px; font-size: 20px }"));
+        CHECK(f.layout("<body><div id=w>日本語。あ</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        CHECK(f.line_text(ls[0]) == "日本");
+        CHECK(f.line_text(ls[1]) == "語。あ");
+    }
+    {
+        // An opening bracket cannot END one, so it goes down with what it
+        // opens rather than dangling at the edge.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 20px; font-size: 20px }"));
+        CHECK(f.layout("<body><div id=w>あ「い</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        CHECK(f.line_text(ls[0]) == "あ");
+        CHECK(f.line_text(ls[1]) == "「い");
+    }
+    {
+        // `line-break: loose` lifts the relaxable half: a small kana MAY start
+        // a line, which is what lets a narrow column set at all.
+        // Normal first: っ is small tsu, so the break before it is refused
+        // and the pair moves down together.
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 20px; font-size: 20px }"));
+        CHECK(f.layout("<body><div id=w>あいっ</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        CHECK(ls.size() == 2);
+        CHECK(f.line_text(ls[0]) == "あ");
+        CHECK(f.line_text(ls[1]) == "いっ");
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#w { display: block; width: 20px; font-size: 20px; line-break: loose }"));
+        CHECK(f.layout("<body><div id=w>あいっ</div></body>"));
+        const std::vector<BoxId> ls = f.lines("w");
+        // Now every seam is a break, so two fit on the first line and the
+        // small kana starts the second.
+        CHECK(ls.size() == 2);
+        CHECK(f.line_text(ls[0]) == "あい");
+        CHECK(f.line_text(ls[1]) == "っ");
+    }
+}
+
+// A break needs CJK on BOTH sides. A Latin word inside a Japanese sentence is
+// still a word, and splitting it between letters would be wrong in a way no
+// reader would forgive.
+void test_cjk_does_not_break_latin_runs() {
+    Fixture f;
+    // 55px, because at 60 the whole six characters fit on one line and the
+    // case tests nothing.
+    CHECK(f.css("#w { display: block; width: 55px; font-size: 20px }"));
+    CHECK(f.layout("<body><div id=w>日本abc語</div></body>"));
+    const std::vector<BoxId> ls = f.lines("w");
+    // "本abc語" is one piece: no seam inside it has CJK on both
+    // sides. It is 50px, so it goes down whole rather than splitting.
+    CHECK(ls.size() == 2);
+    CHECK(f.line_text(ls[0]) == "日");
+    CHECK(f.line_text(ls[1]) == "本abc語");
+}

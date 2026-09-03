@@ -1,5 +1,6 @@
 #pragma once
 #include "weva/box.h"
+#include "weva/text_classes.h"
 #include "weva/font_metrics.h"
 #include "weva/style_resolver.h"
 
@@ -52,6 +53,9 @@ struct InlineItem {
     // make every character boundary a break opportunity, so a word longer than
     // the line is split rather than left to overflow.
     bool break_anywhere = false;
+    // CSS Text L3 §5.3: which kinsoku prohibitions hold between two CJK
+    // characters. Only `loose` and `anywhere` differ from the default.
+    LineBreakLevel line_break = LineBreakLevel::Normal;
 
     // An inline-level block (inline-block, inline-flex, ...) embedded in the
     // line. An atom is placed whole: never split, broken, or tokenised. The

@@ -57,6 +57,29 @@ bool is_kinsoku_open(int codepoint);
 // that breaks between characters".
 bool is_cjk_flow_char(int codepoint);
 
+// ---- line breaking -------------------------------------------------------
+//
+// Japanese and Chinese are written without spaces, so a line that can only
+// break at a space cannot break at all -- it runs off the side of its box. The
+// rule is the opposite of Latin's: a break is allowed between any two
+// characters EXCEPT where kinsoku forbids it.
+
+// The `line-break` levels. `auto` and `strict` behave as `normal` for now,
+// which is the simplification the reference makes and says so.
+enum class LineBreakLevel { Normal, Loose, Strict, Anywhere };
+
+// Reads the CSS keyword. Anything unrecognised is Normal.
+LineBreakLevel line_break_level(std::string_view keyword);
+
+// Whether a break BEFORE `codepoint` is forbidden at this level. `loose` lifts
+// the relaxable half of the close set; `anywhere` lifts all of it.
+bool is_kinsoku_close_for_level(int codepoint, LineBreakLevel level);
+
+// Whether a line may break between these two characters. Both have to be part
+// of CJK flow -- between a Latin word and anything else the ordinary
+// space-based tokeniser decides, and this says no so the two do not disagree.
+bool is_cjk_break_opportunity(int before, int after, LineBreakLevel level);
+
 // ---- word boundaries -----------------------------------------------------
 //
 // The simplified model browsers use for Ctrl+Arrow, not full UAX #29:

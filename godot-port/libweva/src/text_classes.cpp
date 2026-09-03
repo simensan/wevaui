@@ -162,6 +162,34 @@ bool is_cjk_flow_char(int cp) {
            is_kinsoku_open(cp) || is_loose_only_kinsoku_close(cp);
 }
 
+// ---- line breaking -------------------------------------------------------
+
+LineBreakLevel line_break_level(std::string_view keyword) {
+    if (keyword == "loose") return LineBreakLevel::Loose;
+    if (keyword == "strict") return LineBreakLevel::Strict;
+    if (keyword == "anywhere") return LineBreakLevel::Anywhere;
+    return LineBreakLevel::Normal;   // including `auto`
+}
+
+bool is_kinsoku_close_for_level(int cp, LineBreakLevel level) {
+    if (level == LineBreakLevel::Anywhere) return false;
+    if (is_kinsoku_close(cp)) return true;
+    // `loose` is the level that lets a small kana or a sound mark start a
+    // line, which is what makes a narrow column set at all.
+    if (level == LineBreakLevel::Loose) return false;
+    return is_loose_only_kinsoku_close(cp);
+}
+
+bool is_cjk_break_opportunity(int before, int after, LineBreakLevel level) {
+    if (!is_cjk_flow_char(before) || !is_cjk_flow_char(after)) return false;
+    if (level == LineBreakLevel::Anywhere) return true;
+    // A closing bracket or a full stop cannot start a line...
+    if (is_kinsoku_close_for_level(after, level)) return false;
+    // ...and an opening one cannot end it.
+    if (is_kinsoku_open(before)) return false;
+    return true;
+}
+
 // ---- word boundaries -----------------------------------------------------
 
 bool is_word_char(int cp) {

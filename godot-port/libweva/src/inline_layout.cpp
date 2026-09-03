@@ -1,5 +1,7 @@
 #include "weva/inline_layout.h"
 
+#include "weva/text_classes.h"
+
 // For FloatContext, which line-box narrowing queries.
 #include "weva/block_layout.h"
 
@@ -48,6 +50,42 @@ struct Token {
 
 // Fills `out` rather than returning a vector: this runs once per text segment
 // on every line, and the buffer belongs to the pass.
+// Whether a token holds anything that breaks between characters. Cheap: the
+// answer is no for every Latin word, and the scan stops at the first byte that
+// is not ASCII when it is.
+bool has_cjk(std::string_view word) {
+    for (std::size_t i = 0; i < word.size();) {
+        if (static_cast<unsigned char>(word[i]) < 0x80) {
+            ++i;
+            continue;
+        }
+        std::size_t n = 0;
+        const int cp = utf8_at(word, i, &n);
+        if (is_cjk_flow_char(cp)) return true;
+        i += n;
+    }
+    return false;
+}
+
+// The end of the piece starting at `from`: the next legal break, or the end of
+// the token. A piece is one CJK character when kinsoku allows, and longer when
+// it does not -- 「日 stays together because a break after an opening bracket
+// is forbidden, and a Latin run inside a CJK sentence stays whole because a
+// break needs CJK on BOTH sides.
+std::size_t cjk_piece_end(std::string_view word, std::size_t from, LineBreakLevel level) {
+    std::size_t n = 0;
+    int previous = utf8_at(word, from, &n);
+    std::size_t i = from + n;
+    while (i < word.size()) {
+        std::size_t next_len = 0;
+        const int cp = utf8_at(word, i, &next_len);
+        if (is_cjk_break_opportunity(previous, cp, level)) return i;
+        previous = cp;
+        i += next_len;
+    }
+    return word.size();
+}
+
 void tokenize_collapsing(std::string_view text, std::vector<Token>* out) {
     out->clear();
     size_t i = 0;
@@ -178,6 +216,9 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // reference makes, and it says so.
             item.break_anywhere =
                 item.allow_wrap && (iequals(wb, "break-all") || iequals(ow, "anywhere"));
+            // `line-break` decides which kinsoku prohibitions apply between
+            // CJK characters -- whether a small kana may start a line.
+            item.line_break = line_break_level(get(item.style, "line-break"));
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline && b.element &&
                    b.element->tag_name() == "br") {
@@ -1093,6 +1134,29 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                         pen += sw;
                         idx += take;
                         if (idx < t.word.size()) flush_line(false);
+                    }
+                    continue;
+                }
+                // Japanese and Chinese have no spaces, so the tokeniser hands
+                // this loop the whole sentence as one word. Placed whole it
+                // runs off the side of the box -- the port could not wrap a
+                // CJK line at all. Break it at the opportunities kinsoku
+                // allows: between any two CJK characters except before a
+                // closing mark or after an opening one.
+                if (it.allow_wrap && !it.break_anywhere && has_cjk(t.word)) {
+                    size_t idx = 0;
+                    while (idx < t.word.size()) {
+                        const size_t stop = cjk_piece_end(t.word, idx, it.line_break);
+                        const std::string_view piece = t.word.substr(idx, stop - idx);
+                        const double pw = measure_spaced(metrics, piece, it, first_piece);
+                        first_piece = false;
+                        if (line_has_content() && pen + pw > line_width + kFitEpsilon) {
+                            flush_line(false);
+                        }
+                        grow_line_metrics(it);
+                        line.push_back({&it, piece, false, pen, pw});
+                        pen += pw;
+                        idx = stop;
                     }
                     continue;
                 }

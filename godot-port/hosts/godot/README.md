@@ -455,6 +455,22 @@ character on its own, so Ctrl+Right through Japanese stops at every character
 instead of skipping the sentence. That classifier is also what a double click
 selects by.
 
+**Text that is not English**
+
+Japanese and Chinese are written without spaces, so a line that can only break
+at a space cannot break at all. Lines break between CJK characters instead,
+with the kinsoku prohibitions that stop a line ending or starting on the wrong
+one: a full stop or a closing bracket never starts a line, an opening bracket
+never ends one, and `line-break: loose` lifts the relaxable half so a narrow
+column can still set. A break needs CJK on both sides, so a Latin word inside a
+Japanese sentence is never split between its letters.
+
+Drawing those characters is a separate question, and it is the host's. The
+software renderer's built-in face is a 5x7 ASCII bitmap -- it has no glyphs for
+any script but Latin, by design -- so `weva_render` lays a Japanese paragraph
+out correctly and draws nothing. Through Godot the face is whatever font the
+node was given, and the text draws if that font covers the characters.
+
 Undo groups a run of typing into ONE step -- undoing a sentence a letter at a
 time is not undo -- and anything that is not typing ends the run. Each field
 keeps its own history, and a script writing a value clears that field's, since
