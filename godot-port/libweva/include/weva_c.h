@@ -759,6 +759,17 @@ weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t elem
  * gets the core's decoder, so both backends see identical pixels. */
 weva_status weva_document_set_base_path(weva_document_t doc, const char* path);
 
+/* Every asset the document asked for and could not load, newline-separated.
+ *
+ * Worth asking, because the failure mode is silence: a document whose images
+ * do not load draws no backgrounds, no <img> and no border images, and looks
+ * exactly like a page that has none. Three tools shipped without a base path
+ * and each was found only when somebody eventually looked at a picture.
+ *
+ * Returns how many there are; the buffer follows the usual two-call
+ * convention. Zero is the answer a working document gives. */
+size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t capacity);
+
 /* How the core obtains an asset's bytes. Returns the number of bytes the asset
  * HAS, writing up to `capacity` of them -- the two-call convention the rest of
  * the ABI uses -- or 0 when there is no such asset. Passing a null function

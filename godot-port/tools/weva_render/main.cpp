@@ -145,9 +145,8 @@ int main(int argc, char** argv) {
     {
         const std::string html_path = argv[1];
         const size_t slash = html_path.find_last_of("/\\");
-        weva_document_set_base_path(doc, slash == std::string::npos
-                                             ? "."
-                                             : html_path.substr(0, slash).c_str());
+        weva_document_set_base_path(
+            doc, slash == std::string::npos ? "." : html_path.substr(0, slash).c_str());
     }
 
     if (!css.empty() && weva_document_add_css(doc, css.data(), css.size()) != WEVA_OK) {
@@ -222,6 +221,15 @@ int main(int argc, char** argv) {
         // single enormous delta is not the same journey.
         const double step = 1.0 / 60.0;
         for (double t = 0; t < act.advance; t += step) weva_document_update(doc, step);
+    }
+
+    // An asset that did not load draws nothing and looks like a page that has
+    // none, so it is said out loud rather than left to be noticed in a picture.
+    if (const size_t missing = weva_document_missing_assets(doc, nullptr, 0)) {
+        std::vector<char> names(4096, 0);
+        weva_document_missing_assets(doc, names.data(), names.size());
+        std::fprintf(stderr, "weva_render: %zu asset(s) did not load:\n%s\n", missing,
+                     names.data());
     }
 
     weva::SoftwareRenderer renderer(width, height);

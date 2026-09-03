@@ -4106,6 +4106,23 @@ weva_status weva_document_set_base_path(weva_document_t doc, const char* path) {
     return WEVA_OK;
 }
 
+size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t capacity) {
+    if (buffer && capacity > 0) buffer[0] = '\0';
+    if (!doc) return 0;
+    const std::vector<std::string> missing = doc->images.missing();
+    if (buffer && capacity > 0) {
+        std::string joined;
+        for (const std::string& m : missing) {
+            if (!joined.empty()) joined += '\n';
+            joined += m;
+        }
+        const size_t n = joined.size() < capacity - 1 ? joined.size() : capacity - 1;
+        if (n > 0) std::memcpy(buffer, joined.data(), n);
+        buffer[n] = '\0';
+    }
+    return missing.size();
+}
+
 weva_status weva_document_set_asset_reader(weva_document_t doc, weva_asset_reader reader,
                                            void* user_data) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;

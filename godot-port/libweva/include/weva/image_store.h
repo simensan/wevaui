@@ -50,6 +50,39 @@ public:
     void clear() { cache_.clear(); }
     size_t size() const { return cache_.size(); }
 
+    // Every URL that was asked for and could not be produced.
+    //
+    // Worth surfacing rather than swallowing, because the failure mode is
+    // silence: a document whose images do not load draws no backgrounds, no
+    // <img> and no border images, looks like a page that simply has none, and
+    // agrees perfectly with any other engine doing the same. Three separate
+    // tools shipped without a base path -- weva_render, weva_dump and the
+    // Godot capture scene -- and each was found only when someone eventually
+    // looked at a picture. A count nobody has to remember to ask for is
+    // cheaper than a fourth.
+    std::vector<std::string> missing() const {
+        std::vector<std::string> out;
+        for (const auto& entry : cache_) {
+            if (!entry.second.valid()) out.push_back(entry.first);
+        }
+        return out;
+    }
+    size_t missing_count() const {
+        size_t n = 0;
+        for (const auto& entry : cache_) {
+            if (!entry.second.valid()) ++n;
+        }
+        return n;
+    }
+
+    // The directory a document lives in, as its base. The three tools each
+    // hand-rolled this split; one of them can now be wrong in one place.
+    void set_base_path_from_file(std::string_view file_path) {
+        const size_t slash = file_path.find_last_of("/\\");
+        set_base_path(slash == std::string_view::npos ? std::string(".")
+                                                      : std::string(file_path.substr(0, slash)));
+    }
+
 private:
     std::string base_;
     Reader reader_;

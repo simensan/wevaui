@@ -339,6 +339,10 @@ public:
     // beside it, the way a browser resolves one.
     void set_base_path(const godot::String& path);
     godot::String get_base_path() const;
+    // Every asset the document asked for and could not load. The answer to
+    // "why is my icon not showing", which is otherwise indistinguishable from
+    // a page that simply has no icon.
+    godot::PackedStringArray get_missing_assets();
 
 private:
     godot::String base_path_;

@@ -401,11 +401,7 @@ int main(int argc, char** argv) {
     // the same corpus, both sides agree on the wrong answer and the oracle
     // reports a case that measures nothing.
     weva::ImageStore images;
-    {
-        const size_t slash = html_path.find_last_of("/\\");
-        images.set_base_path(slash == std::string::npos ? std::string(".")
-                                                        : html_path.substr(0, slash));
-    }
+    images.set_base_path_from_file(html_path);
 
     weva::LayoutContext ctx;
     ctx.images = &images;

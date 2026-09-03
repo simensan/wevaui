@@ -90,6 +90,20 @@ void WevaDocument::set_base_path(const String& path) {
 
 String WevaDocument::get_base_path() const { return base_path_; }
 
+PackedStringArray WevaDocument::get_missing_assets() {
+    PackedStringArray out;
+    if (!doc_) return out;
+    ensure_updated();
+    const size_t count = weva_document_missing_assets(doc_, nullptr, 0);
+    if (count == 0) return out;
+    std::vector<char> names(count * 512 + 64, 0);
+    weva_document_missing_assets(doc_, names.data(), names.size());
+    for (const String& line : String::utf8(names.data()).split("\n", false)) {
+        if (!line.is_empty()) out.push_back(line);
+    }
+    return out;
+}
+
 // The system symbol faces, loaded ONCE for the whole extension.
 //
 // They used to be per document, and that quietly corrupted any application
@@ -318,6 +332,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("count_elements", "selector"), &WevaDocument::count_elements);
     ClassDB::bind_method(D_METHOD("set_base_path", "path"), &WevaDocument::set_base_path);
     ClassDB::bind_method(D_METHOD("get_base_path"), &WevaDocument::get_base_path);
+    ClassDB::bind_method(D_METHOD("get_missing_assets"), &WevaDocument::get_missing_assets);
     ADD_PROPERTY(PropertyInfo(Variant::STRING, "base_path"), "set_base_path", "get_base_path");
     ClassDB::bind_method(D_METHOD("get_computed_style", "selector", "property"),
                          &WevaDocument::get_computed_style);

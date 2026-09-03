@@ -94,6 +94,36 @@ else
     skip "layout oracle (needs python3 and weva_dump)"
 fi
 
+# ---- assets that silently drew nothing -----------------------------------
+#
+# An image that does not load is not an error anywhere: the box draws no
+# background, no picture and no border image, and looks exactly like a box
+# that has none -- and it agrees perfectly with any other engine failing the
+# same way. That is how three separate tools shipped without a base path, each
+# found only when somebody eventually looked at a picture.
+#
+# Reported rather than failed, because 9slice-demo legitimately names sprites
+# that live in a Unity project rather than in this corpus. A NEW name in this
+# list is a case that is not testing what it looks like it is testing.
+step "assets"
+if [ -x "$GCC/tools/weva_render/weva_render" ]; then
+    missed=0
+    for html in "$SAMPLES"/*.html; do
+        css="${html%.html}.css"
+        [ -f "$css" ] || css="-"
+        names=$("$GCC/tools/weva_render/weva_render" "$html" "$css" 1280 720 /dev/null 2>&1                 >/dev/null | grep -v "did not load" || true)
+        if [ -n "$names" ]; then
+            printf '  %-22s %s
+' "$(basename "$html" .html)"                 "$(printf '%s' "$names" | tr '
+' ' ')"
+            missed=$((missed + 1))
+        fi
+    done
+    echo "$missed sample(s) reference an asset that did not load"
+else
+    skip "assets (needs weva_render)"
+fi
+
 # ---- the two rasterisers, on the same draw list --------------------------
 step "backend gate"
 if [ -x "$GODOT" ] && [ -x "$GCC/tools/weva_render/weva_render" ]; then
