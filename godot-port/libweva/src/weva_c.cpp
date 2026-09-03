@@ -4068,6 +4068,30 @@ weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t elemen
     return WEVA_OK;
 }
 
+int weva_element_row(weva_document_t doc, weva_element_t element, int* out_index,
+                     char* key_buffer, size_t key_capacity) {
+    if (key_buffer && key_capacity > 0) key_buffer[0] = ' ';
+    if (!doc) return 0;
+    const Element* e = doc->element_at(element);
+    for (const Node* n = e; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        const Element& candidate = static_cast<const Element&>(*n);
+        if (!candidate.has_attribute("data-weva-row")) continue;
+        if (out_index) {
+            const std::string raw(candidate.get_attribute("data-weva-index"));
+            *out_index = raw.empty() ? 0 : std::atoi(raw.c_str());
+        }
+        const std::string_view key = candidate.get_attribute("data-weva-key");
+        if (key_buffer && key_capacity > 0) {
+            const size_t n_copy = key.size() < key_capacity - 1 ? key.size() : key_capacity - 1;
+            if (n_copy > 0) std::memcpy(key_buffer, key.data(), n_copy);
+            key_buffer[n_copy] = ' ';
+        }
+        return 1;
+    }
+    return 0;
+}
+
 int weva_element_has_attribute(weva_document_t doc, weva_element_t element, const char* name) {
     if (!doc || !name) return 0;
     const Element* e = doc->element_at(element);

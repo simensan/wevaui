@@ -732,6 +732,21 @@ weva_status weva_element_show_popover(weva_document_t doc, weva_element_t elemen
 weva_status weva_element_hide_popover(weva_document_t doc, weva_element_t element);
 weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t element);
 
+/* The `data-each` row an element is in: its 0-based position in the list and
+ * its `data-key` identity. Walks up from `element`, so a click on a button
+ * deep inside a row still finds the row.
+ *
+ * A repeated row usually has no id -- the template wrote one element and the
+ * data decides how many there are -- so an event from inside one arrives with
+ * nothing to say WHICH row it was. This is that answer.
+ *
+ * Returns 1 when the element is inside a repeated row, 0 when it is not (and
+ * then `out_index` is untouched and the key buffer gets an empty string). The
+ * key follows the usual two-call convention: pass a null buffer to ask for the
+ * length. */
+int weva_element_row(weva_document_t doc, weva_element_t element, int* out_index, char* key_buffer,
+                     size_t key_capacity);
+
 /* Whether the attribute is THERE, which reading its value cannot tell you.
  * HTML's boolean attributes -- `open`, `checked`, `disabled`, `selected`,
  * `required`, `readonly` -- are usually written with no value at all, so

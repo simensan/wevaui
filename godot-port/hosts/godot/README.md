@@ -359,6 +359,21 @@ CSS addresses them, so a script that can style a list can also fill it.
     doc.count_elements("#log .line")
     doc.query_text("#log .line:nth-child(2)")      # read one back by position
 
+**Which row was clicked**
+
+A repeated row usually has no id: the template writes one element and the data
+decides how many there are. So a click inside one reports the button, and the
+row it belongs to is a separate question -- which the engine answers.
+
+    doc.row_activated.connect(func(handler, index, key): _open(key))
+    doc.get_row("#list > .row:nth-of-type(2) > button")   # {"index": 1, "key": "b8"}
+
+`key` is the value of the row's `data-key` field, so it follows the DATA rather
+than the position -- sort the list and the key still names the same item.
+Without `data-key` it falls back to the position, so a row is addressable
+either way. Both are also on the row as `data-weva-index` and `data-weva-key`,
+which a stylesheet can select on.
+
 **Handlers the markup names**
 
 `on-<event>="Method"` says what a control is FOR, so the script stops matching

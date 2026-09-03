@@ -30,6 +30,10 @@ const char* kClassPrefix = "data-class-";
 // Stamped on every row a repeat produced, so the next refresh knows which
 // siblings are its and which the author wrote.
 const char* kCloneMark = "data-weva-row";
+// A row's position in the list, and its identity from `data-key` (or its
+// position again, when the template names no key).
+const char* kRowIndex = "data-weva-index";
+const char* kRowKey = "data-weva-key";
 
 // `Items as alias`, or just `Items`, in which case there is no alias and only
 // `$index` and absolute paths resolve inside the row.
@@ -214,8 +218,18 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
                 made = Ref<Node>::retain(row.get());
             }
             if (!made) continue;
-            static_cast<Element&>(*made).set_attribute(kCloneMark,
-                                                       tmpl.get_attribute("data-each"));
+            Element& made_row = static_cast<Element&>(*made);
+            made_row.set_attribute(kCloneMark, tmpl.get_attribute("data-each"));
+            // Its position and its identity, stamped on the row itself.
+            //
+            // A repeated row usually has no id -- the template wrote one
+            // element and the data decides how many there are -- so a click on
+            // one arrived at a script with nothing to say WHICH row it was.
+            // These make the row addressable without the author having to
+            // thread an id through the data, and a stylesheet can select on
+            // them too.
+            made_row.set_attribute(kRowIndex, std::to_string(i));
+            made_row.set_attribute(kRowKey, keys[static_cast<size_t>(i)]);
             parent->append_child(made.get());
             rows.push_back(&static_cast<Element&>(*made));
             ++changed;
@@ -223,6 +237,9 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
         if (previous) *previous = keys;
     }
 
+    // Reused rows keep the stamps they were built with, which stay correct:
+    // `same` means the key list matched in ORDER, so no row moved.
+    //
     // Filled either way: the values inside a row change far more often than
     // the list does.
     for (size_t i = 0; i < rows.size(); ++i) {

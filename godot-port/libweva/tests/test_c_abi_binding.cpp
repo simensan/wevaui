@@ -358,3 +358,94 @@ void test_abi_binding_repeat_scope() {
     scalar.refresh();
     CHECK(weva_document_query_all(scalar.d, "#list > .row", nullptr, 0) == 0);
 }
+
+// A repeated row usually has no id -- the template writes one element and the
+// data decides how many there are -- so an event from inside one used to
+// arrive with nothing to say WHICH row it was.
+void test_abi_row_identity() {
+    Doc doc("html, body { margin: 0 } .row { height: 30px }"
+            " button { display: block; width: 80px; height: 20px }",
+            "<div id=list>"
+            "<template data-each='Items as it' data-key='Id'>"
+            "<div class=row><button on-click='Pick'>{{ it.Name }}</button></div>"
+            "</template></div>");
+    doc.data.lists["Items"] = 3;
+    const char* names[] = {"alpha", "beta", "gamma"};
+    const char* ids[] = {"a7", "b8", "c9"};
+    for (int i = 0; i < 3; ++i) {
+        const std::string base = "Items." + std::to_string(i);
+        doc.data.values[base + ".Name"] = names[i];
+        doc.data.values[base + ".Id"] = ids[i];
+    }
+    CHECK(doc.refresh() > 0);
+    weva_document_update(doc.d, 0);
+
+    // Every row is stamped with where it is and what it is.
+    for (int i = 0; i < 3; ++i) {
+        const std::string sel = "[data-weva-index='" + std::to_string(i) + "']";
+        CHECK(weva_document_query(doc.d, sel.c_str()) != WEVA_ELEMENT_NONE);
+    }
+
+    int index = -1;
+    char key[64] = {0};
+    CHECK(weva_element_row(doc.d, weva_document_query(doc.d, "[data-weva-index='1']"), &index, key,
+                           sizeof(key)) == 1);
+    CHECK(index == 1);
+    CHECK(std::string(key) == "b8");
+
+    // The walk goes UP: a click lands on the button, not on the row.
+    weva_element_t buttons[3] = {WEVA_ELEMENT_NONE, WEVA_ELEMENT_NONE, WEVA_ELEMENT_NONE};
+    CHECK(weva_document_query_all(doc.d, "#list > .row > button", buttons, 3) == 3);
+    index = -1;
+    key[0] = 0;
+    CHECK(weva_element_row(doc.d, buttons[2], &index, key, sizeof(key)) == 1);
+    CHECK(index == 2);
+    CHECK(std::string(key) == "c9");
+
+    // An element outside any row says so rather than guessing.
+    index = -1;
+    key[0] = 'x';
+    CHECK(weva_element_row(doc.d, weva_document_query(doc.d, "#list"), &index, key, sizeof(key)) ==
+          0);
+    CHECK(index == -1);
+    CHECK(key[0] == 0);
+
+    // What a handler gets: the click reports the button, and the row lookup
+    // turns that into the row's own identity -- which is the whole point.
+    double x = 0, y = 0, w = 0, h = 0;
+    weva_element_bounds(doc.d, buttons[2], &x, &y, &w, &h);
+    weva_document_set_pointer(doc.d, x + w / 2, y + h / 2, 0);
+    weva_document_set_pointer(doc.d, x + w / 2, y + h / 2, 1);
+    weva_document_set_pointer(doc.d, x + w / 2, y + h / 2, 0);
+    weva_document_update(doc.d, 0);
+    std::string handler;
+    weva_element_t target = WEVA_ELEMENT_NONE;
+    weva_event e{};
+    while (weva_document_poll_event(doc.d, &e)) {
+        if (e.kind != WEVA_EVENT_CLICK) continue;
+        handler = e.handler;
+        target = e.target;
+    }
+    CHECK(handler == "Pick");
+    index = -1;
+    key[0] = 0;
+    CHECK(weva_element_row(doc.d, target, &index, key, sizeof(key)) == 1);
+    CHECK(index == 2);
+    CHECK(std::string(key) == "c9");
+
+    // Without `data-key` the identity falls back to the position, so a row is
+    // still addressable when the data carries no id of its own.
+    Doc plain("html, body { margin: 0 }",
+              "<div id=list><template data-each='Items as it'>"
+              "<div class=row>{{ it.Name }}</div></template></div>");
+    plain.data.lists["Items"] = 2;
+    plain.data.values["Items.0.Name"] = "one";
+    plain.data.values["Items.1.Name"] = "two";
+    CHECK(plain.refresh() > 0);
+    int plain_index = -1;
+    char plain_key[16] = {0};
+    CHECK(weva_element_row(plain.d, weva_document_query(plain.d, "[data-weva-index='1']"),
+                           &plain_index, plain_key, sizeof(plain_key)) == 1);
+    CHECK(plain_index == 1);
+    CHECK(std::string(plain_key) == "1");
+}

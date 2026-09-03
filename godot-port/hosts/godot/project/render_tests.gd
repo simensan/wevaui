@@ -62,6 +62,7 @@ func _ready() -> void:
 	_test_label_activates_control()
 	_test_title_tooltip()
 	_test_right_click()
+	_test_row_identity()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -1212,4 +1213,47 @@ func _test_right_click() -> void:
 	doc.update_document()
 	_check(doc.has_element_attribute("#cb", "checked"), "a left-click still toggles")
 	_check(menus.is_empty(), "and asks for no menu")
+	doc.queue_free()
+
+
+func _test_row_identity() -> void:
+	# A repeated row usually has no id -- the template writes one element and
+	# the data decides how many there are -- so a click on one used to reach
+	# a script with nothing to say WHICH row it was.
+	var doc := _make_doc(
+		"<body><div id='list'>" +
+		"<template data-each='Items as it' data-key='Id'>" +
+		"<div class='row'><button on-click='pick'>{{ it.Name }}</button></div>" +
+		"</template></div></body>",
+		"html, body { margin: 0 } .row { height: 30px }" +
+		" button { display: block; width: 80px; height: 20px }")
+	doc.data = {
+		"Items": [
+			{"Id": "a7", "Name": "alpha"},
+			{"Id": "b8", "Name": "beta"},
+			{"Id": "c9", "Name": "gamma"},
+		]
+	}
+	doc.update_document()
+
+	var rows: Array = []
+	doc.row_activated.connect(func(handler, index, key): rows.append([handler, index, key]))
+
+	# Click the third row's button.
+	var box := doc.query_bounds("#list > .row:nth-of-type(3) > button")
+	var at := box.position + box.size * 0.5
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(rows.size() == 1, "a click inside a row reports the row")
+	if rows.size() == 1:
+		_check(rows[0][0] == "pick", "with the handler the markup named")
+		_check(rows[0][1] == 2, "its position")
+		_check(rows[0][2] == "c9", "and its data-key identity")
+
+	# And the same answer on demand, without an event.
+	var row: Dictionary = doc.get_row("#list > .row:nth-of-type(2) > button")
+	_check(row.get("index", -1) == 1, "get_row walks up from any descendant")
+	_check(row.get("key", "") == "b8", "and reports the key")
+	_check(doc.get_row("#list").is_empty(), "an element outside a row reports nothing")
 	doc.queue_free()

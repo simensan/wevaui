@@ -222,6 +222,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("element_id_at", "point"), &WevaDocument::element_id_at);
     ClassDB::bind_method(D_METHOD("set_focus", "selector"), &WevaDocument::set_focus);
     ClassDB::bind_method(D_METHOD("get_focused_id"), &WevaDocument::get_focused_id);
+    ClassDB::bind_method(D_METHOD("get_row", "selector"), &WevaDocument::get_row);
     ClassDB::bind_method(D_METHOD("set_tooltip_delay", "seconds"),
                          &WevaDocument::set_tooltip_delay);
     ClassDB::bind_method(D_METHOD("get_tooltip_delay"), &WevaDocument::get_tooltip_delay);
@@ -312,6 +313,9 @@ void WevaDocument::_bind_methods() {
                           PropertyInfo(Variant::BOOL, "open")));
     ADD_SIGNAL(MethodInfo("context_menu_requested", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::VECTOR2, "position")));
+    ADD_SIGNAL(MethodInfo("row_activated", PropertyInfo(Variant::STRING, "handler"),
+                          PropertyInfo(Variant::INT, "index"),
+                          PropertyInfo(Variant::STRING, "key")));
     ADD_SIGNAL(MethodInfo("element_scrolled", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::FLOAT, "x"), PropertyInfo(Variant::FLOAT, "y")));
     ADD_SIGNAL(MethodInfo("value_changed", PropertyInfo(Variant::STRING, "id"),
@@ -893,6 +897,20 @@ void WevaDocument::set_tooltip_delay(double seconds) {
 
 double WevaDocument::get_tooltip_delay() const { return tooltip_delay_; }
 
+Dictionary WevaDocument::get_row(const String& selector) {
+    Dictionary out;
+    if (!doc_) return out;
+    ensure_updated();
+    const uint32_t e = resolve(selector);
+    if (e == WEVA_ELEMENT_NONE) return out;
+    int index = 0;
+    char key[128] = {0};
+    if (!weva_element_row(doc_, e, &index, key, sizeof(key))) return out;
+    out["index"] = index;
+    out["key"] = String::utf8(key);
+    return out;
+}
+
 String WevaDocument::get_focused_id() {
     if (!doc_) return String();
     ensure_updated();
@@ -1119,6 +1137,15 @@ void WevaDocument::pump_events() {
                 controller->call(handler, id);
             }
             emit_signal("handler_invoked", handler, id);
+            // A repeated row usually has no id, so `handler_invoked` alone
+            // cannot say WHICH row was worked. This carries the row's
+            // position and its `data-key` identity, which is what a list
+            // handler actually wants.
+            int row_index = 0;
+            char row_key[128] = {0};
+            if (weva_element_row(doc_, e.target, &row_index, row_key, sizeof(row_key))) {
+                emit_signal("row_activated", handler, row_index, String::utf8(row_key));
+            }
         }
         switch (e.kind) {
             case WEVA_EVENT_CLICK: emit_signal("element_clicked", id); break;

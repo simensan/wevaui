@@ -90,6 +90,10 @@ public:
     // control it names -- so a host mirroring it has to be able to read it.
     godot::String get_focused_id();
 
+    // The `data-each` row an element is in, as {"index": int, "key": String},
+    // or an empty Dictionary when it is not in one.
+    godot::Dictionary get_row(const godot::String& selector);
+
     // `title="..."` draws as a tooltip after the pointer rests on an element.
     // Negative turns that off, for a game that presents its own.
     void set_tooltip_delay(double seconds);
