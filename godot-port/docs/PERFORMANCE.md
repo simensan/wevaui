@@ -76,6 +76,13 @@ changed set on every pointer move -- and a touched-subtree walk from `<body>`
 is the whole document. Only the elements that actually flipped are marked now.
 66.6 ms -> 11.3 ms on layout-stress, 10.5 -> 0.46 on stats.
 
+**Every box resolved four zeroes it did not have.** `resolve_box_sides_px`
+substitutes "0" for an absent side, so a box declaring no margin and no padding
+-- which is most of them -- put four zeroes through keyword matching, a
+parsed-value lookup and a length resolution to arrive back at zero, twice per
+box per pass. Recognising them costs four string compares and was worth 5 to
+16 per cent on its own, the largest single change in this sequence.
+
 **font_size_px re-derived a number that had not changed.** It runs several
 times for every box and again for the parent, and a `calc()` font-size was
 evaluated afresh on each -- CssCalc::evaluate was the second-largest cost in a
@@ -137,6 +144,21 @@ baseline:
 | vendor | 3.265 | **2.758** |
 
 About a fifth to a third of a layout pass, depending on the page.
+
+And with the zero fast path on top, against that same baseline:
+
+| page | before | after |
+|---|---|---|
+| match3 | 1.507 ms | **0.893** |
+| stock-dashboard | 1.205 | **0.793** |
+| layout-stress | 4.721 | **3.249** |
+| flex-playground | 1.828 | **1.268** |
+| randhtml | 3.395 | **2.413** |
+| vendor | 3.265 | **2.463** |
+| glass | 1.648 | **1.242** |
+| stats | 1.807 | **1.391** |
+
+A quarter to two fifths of a layout pass.
 
 Worth recording because it cost an hour: the first three of these were chosen
 from a 258-sample profile, which cannot resolve a 5% effect, and measured at

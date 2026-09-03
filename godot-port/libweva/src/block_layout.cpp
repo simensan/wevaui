@@ -93,6 +93,24 @@ ResolvedSides resolve_box_sides_px(const ComputedStyle* style, std::string_view 
     // pass's allocations, more than a fifth of the whole.
     if (!style) return ResolvedSides{};
     const BoxSideValues sides = box_sides(style, shorthand);
+
+    // Nearly every box declares no margin and no padding, and box_sides
+    // substitutes "0" for an absent side -- so the common case is four zeroes
+    // that each go through keyword matching, a parsed-value lookup and a
+    // length resolution to arrive back at zero. Recognising them costs four
+    // string compares.
+    //
+    // `0` and `` only: `0px` and `0%` go the long way, because reading a unit
+    // off a string is how the border-width fast path below grew subtle, and
+    // the two forms that matter here carry no unit at all.
+    const auto is_zero = [](std::string_view v) { return v.empty() || v == "0"; };
+    if (is_zero(sides.top) && is_zero(sides.right) && is_zero(sides.bottom) &&
+        is_zero(sides.left)) {
+        ResolvedSides zero;
+        zero.right_raw = sides.right;
+        zero.left_raw = sides.left;
+        return zero;
+    }
     ResolvedSides r;
     // The containing block's WIDTH is the basis on all four edges — a
     // percentage margin-top resolves against width, not height.
