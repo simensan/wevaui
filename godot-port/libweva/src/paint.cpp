@@ -1676,10 +1676,28 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
         paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
     }
     if (tag == "select" && !e.has_attribute("multiple") && !e.has_attribute("size")) {
-        // The runtime's v1 caret: a 6x3 grey bar 8px from the right edge.
-        const double margin = 8, w = 6, h = 3;
-        fill_rounded(Rect(x + b.width - margin - w, y + (b.height - h) * 0.5, w, h), 1,
-                     LinearColor(0.6f, 0.6f, 0.6f, 1.f), paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
+        // The mark that says a list drops out of this: a triangle pointing
+        // down, as every platform draws it. A grey dash -- which is what the
+        // runtime's v1 drew and this inherited -- says nothing at all, and now
+        // that the list really does open, the control should look like it.
+        //
+        // It takes the control's own text colour at three-quarter weight, so a
+        // dark select gets a light arrow rather than a grey smudge.
+        const double margin = 9, w = 9, h = 5;
+        const double ax = x + b.width - margin - w, ay = y + (b.height - h) * 0.5;
+        LinearColor ink = resolve_color(b.style, "color");
+        if (ink.a <= 0) ink = LinearColor(0.6f, 0.6f, 0.6f, 1.f);
+        ink.a *= 0.75f;
+        const auto point = [](double px, double py) {
+            return Vec2{static_cast<float>(px), static_cast<float>(py)};
+        };
+        Mesh arrow;
+        arrow.vertices.push_back(Vertex{point(ax, ay), ink, {0, 0}});
+        arrow.vertices.push_back(Vertex{point(ax + w, ay), ink, {0, 0}});
+        arrow.vertices.push_back(Vertex{point(ax + w * 0.5, ay + h), ink, {0, 0}});
+        arrow.indices = {0, 1, 2};
+        draw_mesh(arrow, paint.backend, {}, state.opacity, xf, state.clip.get(),
+                  state.filter.get());
     }
 }
 

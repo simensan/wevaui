@@ -521,8 +521,9 @@ void test_paint_form_control_marks() {
         if (near(r.width, 8, e) && near(r.height, 8, e) && near(c.r, 1) && near(c.g, 0)) ++red_dot;
         // range thumb: content height 16 → a 14px knob
         if (near(r.width, 14, e) && near(r.height, 14, e)) ++thumb;
-        // select caret: 6x3 grey bar
-        if (near(r.width, 6, e) && near(r.height, 3, e) && near(c.r, 0.6f)) ++caret;
+        // The select's arrow: a 9x5 triangle pointing down, in the control's
+        // own text colour at three-quarter weight.
+        if (near(r.width, 9, e) && near(r.height, 5, e) && c.a > 0.7f && c.a < 0.8f) ++caret;
     }
     CHECK(check == 1);     // the unchecked box draws no mark
     CHECK(tick == 1);      // both strokes, in one mesh
