@@ -29,6 +29,12 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
 // together at a quarter of a layout pass, ahead of any layout
 // algorithm. Safe because the registry keeps an id stable across
 // re-registration, which is what its header promises it for.
+const int kId_max_height = CssPropertyRegistry::instance().id_of("max-height");
+const int kId_max_width = CssPropertyRegistry::instance().id_of("max-width");
+const int kId_min_height = CssPropertyRegistry::instance().id_of("min-height");
+const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
+const int kId_width = CssPropertyRegistry::instance().id_of("width");
+
 std::string_view get(const ComputedStyle* s, int id) {
     return s ? s->get(id) : std::string_view();
 }
@@ -195,12 +201,12 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
         box.padding_top + box.padding_bottom + box.border_top + box.border_bottom;
 
     const ResolvedLength width_r =
-        resolve_length(style, "width", ctx, fs, containing_block_width, lh);
+        resolve_length(style, kId_width, ctx, fs, containing_block_width, lh);
     // The height is resolved WITHOUT a basis here, so a percentage surfaces as
     // Percent and is handled separately below — its basis is the parent's
     // height, not the containing block's width.
     const ResolvedLength height_r =
-        resolve_length(style, "height", ctx, fs, std::nullopt, lh);
+        resolve_length(style, kId_height, ctx, fs, std::nullopt, lh);
 
     double avail = containing_block_width - (box.margin_left + box.margin_right);
     if (avail < 0) avail = 0;
@@ -242,9 +248,9 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     const double auto_fill_width = resolved_width;
 
     const ResolvedLength min_r =
-        resolve_length(style, "min-width", ctx, fs, containing_block_width, lh);
+        resolve_length(style, kId_min_width, ctx, fs, containing_block_width, lh);
     const ResolvedLength max_r =
-        resolve_length(style, "max-width", ctx, fs, containing_block_width, lh);
+        resolve_length(style, kId_max_width, ctx, fs, containing_block_width, lh);
 
     // CSS Sizing L3 §5.2: when min exceeds max, MIN wins. Applying max first
     // and min second gets that for free — the min clamp raises the value back
@@ -478,7 +484,7 @@ double definite_flow_content_height(const BoxTree& tree, const Box& b, const Lay
         }
         return -1;
     }
-    const ResolvedLength r = resolve_length(b.style, "height", ctx, font_size, std::nullopt);
+    const ResolvedLength r = resolve_length(b.style, kId_height, ctx, font_size, std::nullopt);
     if (r.kind == LengthKind::Percent) {
         // CSS 2.1 §10.5: a percentage against an indefinite parent computes to
         // auto. Reading the box's own (not yet computed) height here handed a
@@ -767,8 +773,8 @@ bool size_replaced_box(Box& b, const DecodedImage& image, const LayoutContext& c
                        double font_size) {
     const double iw = std::max(1, image.width);
     const double ih = std::max(1, image.height);
-    const ResolvedLength w = resolve_length(b.style, "width", ctx, font_size, std::nullopt);
-    const ResolvedLength h = resolve_length(b.style, "height", ctx, font_size, std::nullopt);
+    const ResolvedLength w = resolve_length(b.style, kId_width, ctx, font_size, std::nullopt);
+    const ResolvedLength h = resolve_length(b.style, kId_height, ctx, font_size, std::nullopt);
     const bool have_w = w.kind == LengthKind::Length;
     const bool have_h = h.kind == LengthKind::Length;
     if (have_w && have_h) return false;   // both stated; nothing to infer
@@ -796,7 +802,7 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     const double fs = apply_box_model(tree_, id, available_width, parent_style, ctx_);
     const ComputedStyle* style = (*tree_)[id].style;
     const ResolvedLength w =
-        resolve_length(style, "width", ctx_, fs, available_width);
+        resolve_length(style, kId_width, ctx_, fs, available_width);
     if (w.kind != LengthKind::Auto) {
         // A replaced element with a stated width and an auto height takes its
         // height from the intrinsic ratio -- the case every `img { width: 100% }`
@@ -850,9 +856,9 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     // which share width's box-sizing basis.
     const bool border_box = is_border_box(style);
     const ResolvedLength min_r =
-        resolve_length(style, "min-width", ctx_, fs, available_width);
+        resolve_length(style, kId_min_width, ctx_, fs, available_width);
     const ResolvedLength max_r =
-        resolve_length(style, "max-width", ctx_, fs, available_width);
+        resolve_length(style, kId_max_width, ctx_, fs, available_width);
     const auto to_border_box = [&](const ResolvedLength& r) {
         double px = r.kind == LengthKind::Percent ? available_width * r.percent * 0.01
                                                   : r.pixels;
@@ -1276,7 +1282,7 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
     const std::optional<double> basis =
         is_out_of_flow(box) ? std::nullopt : definite_content_height(*tree_, box.parent);
     const ResolvedLength height_r =
-        resolve_length(box.style, "height", ctx_, font_size, basis);
+        resolve_length(box.style, kId_height, ctx_, font_size, basis);
 
     const bool border_box = is_border_box(box.style);
     const double frame =
@@ -1307,9 +1313,9 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
     // min-/max-height share height's box-sizing basis, so a content-box bound
     // needs the frame added before it is compared with the border-box value.
     const ResolvedLength min_r =
-        resolve_length(box.style, "min-height", ctx_, font_size, std::nullopt);
+        resolve_length(box.style, kId_min_height, ctx_, font_size, std::nullopt);
     const ResolvedLength max_r =
-        resolve_length(box.style, "max-height", ctx_, font_size, std::nullopt);
+        resolve_length(box.style, kId_max_height, ctx_, font_size, std::nullopt);
     if (min_r.kind == LengthKind::Length) {
         const double px = border_box ? min_r.pixels : min_r.pixels + frame;
         if (computed < px) computed = px;

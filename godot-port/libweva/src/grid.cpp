@@ -27,6 +27,11 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
 // together at a quarter of a layout pass, ahead of any layout
 // algorithm. Safe because the registry keeps an id stable across
 // re-registration, which is what its header promises it for.
+const int kId_max_height = CssPropertyRegistry::instance().id_of("max-height");
+const int kId_max_width = CssPropertyRegistry::instance().id_of("max-width");
+const int kId_min_height = CssPropertyRegistry::instance().id_of("min-height");
+const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
+
 std::string_view get(const ComputedStyle* s, int id) {
     return s ? s->get(id) : std::string_view();
 }
@@ -916,13 +921,13 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     const double own_column_gap = [&] {
         const std::string_view raw = get(style, kId_column_gap);
         if (raw.empty() || iequals(raw, "normal")) return 0.0;
-        const ResolvedLength r = resolve_length(style, "column-gap", ctx, font_size, content_width);
+        const ResolvedLength r = resolve_length(style, kId_column_gap, ctx, font_size, content_width);
         return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : 0.0;
     }();
     const double own_row_gap = [&] {
         const std::string_view raw = get(style, kId_row_gap);
         if (raw.empty() || iequals(raw, "normal")) return 0.0;
-        const ResolvedLength r = resolve_length(style, "row-gap", ctx, font_size, content_width);
+        const ResolvedLength r = resolve_length(style, kId_row_gap, ctx, font_size, content_width);
         return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : 0.0;
     }();
 
@@ -1261,13 +1266,13 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             const double item_fs = b.font_size > 0 ? b.font_size : font_size;
             const double minmax_frame = is_border_box(b.style) ? 0 : frame;
             const ResolvedLength min_w =
-                resolve_length(b.style, "min-width", ctx, item_fs, content_width);
+                resolve_length(b.style, kId_min_width, ctx, item_fs, content_width);
             if (min_w.kind == LengthKind::Length) {
                 min_c = std::max(min_c, min_w.pixels + minmax_frame);
                 max_c = std::max(max_c, min_w.pixels + minmax_frame);
             }
             const ResolvedLength max_w =
-                resolve_length(b.style, "max-width", ctx, item_fs, content_width);
+                resolve_length(b.style, kId_max_width, ctx, item_fs, content_width);
             if (max_w.kind == LengthKind::Length) {
                 min_c = std::min(min_c, max_w.pixels + minmax_frame);
                 max_c = std::min(max_c, max_w.pixels + minmax_frame);
@@ -1424,9 +1429,9 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
         const double own_frame = is_border_box(style) ? frame : 0;
         const ResolvedLength min_r =
-            resolve_length(style, "min-height", ctx, font_size, std::nullopt);
+            resolve_length(style, kId_min_height, ctx, font_size, std::nullopt);
         const ResolvedLength max_r =
-            resolve_length(style, "max-height", ctx, font_size, std::nullopt);
+            resolve_length(style, kId_max_height, ctx, font_size, std::nullopt);
         double clamped = natural;
         if (min_r.kind == LengthKind::Length) {
             clamped = std::max(clamped, std::max(0.0, min_r.pixels - own_frame));

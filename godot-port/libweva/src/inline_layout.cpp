@@ -34,6 +34,9 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
 // together at a quarter of a layout pass, ahead of any layout
 // algorithm. Safe because the registry keeps an id stable across
 // re-registration, which is what its header promises it for.
+const int kId_max_width = CssPropertyRegistry::instance().id_of("max-width");
+const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
+
 std::string_view get(const ComputedStyle* s, int id) {
     return s ? s->get(id) : std::string_view();
 }
@@ -168,7 +171,7 @@ bool inline_edge_is_zero(const ComputedStyle* st) {
 double letter_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
     const std::string_view raw = get(style, kId_letter_spacing);
     if (raw.empty() || iequals(raw, "normal")) return 0;
-    const ResolvedLength r = resolve_length(style, "letter-spacing", ctx, font_size, std::nullopt);
+    const ResolvedLength r = resolve_length(style, kId_letter_spacing, ctx, font_size, std::nullopt);
     if (r.kind == LengthKind::Length) return r.pixels;
     // A percentage is of the font size (css-text-4), the same reading the
     // reference takes.
@@ -1529,8 +1532,8 @@ double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContex
         if (ctx && b.style) {
             const double fs = b.font_size > 0 ? b.font_size : ctx->root_font_size_px;
             const double minmax_frame = is_border_box(b.style) ? 0 : frame;
-            const ResolvedLength min_w = resolve_length(b.style, "min-width", *ctx, fs, std::nullopt);
-            const ResolvedLength max_w = resolve_length(b.style, "max-width", *ctx, fs, std::nullopt);
+            const ResolvedLength min_w = resolve_length(b.style, kId_min_width, *ctx, fs, std::nullopt);
+            const ResolvedLength max_w = resolve_length(b.style, kId_max_width, *ctx, fs, std::nullopt);
             if (min_w.kind == LengthKind::Length) w = std::max(w, min_w.pixels + minmax_frame);
             if (max_w.kind == LengthKind::Length) w = std::min(w, max_w.pixels + minmax_frame);
         }
@@ -1667,7 +1670,7 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
             const std::string_view raw = get(self.style, kId_column_gap);
             if (!raw.empty() && !iequals(raw, "normal")) {
                 const double fs = self.font_size > 0 ? self.font_size : ctx->root_font_size_px;
-                const ResolvedLength r = resolve_length(self.style, "column-gap", *ctx, fs, std::nullopt);
+                const ResolvedLength r = resolve_length(self.style, kId_column_gap, *ctx, fs, std::nullopt);
                 if (r.kind == LengthKind::Length) gap = std::max(0.0, r.pixels);
             }
         }

@@ -76,6 +76,14 @@ changed set on every pointer move -- and a touched-subtree walk from `<body>`
 is the whole document. Only the elements that actually flipped are marked now.
 66.6 ms -> 11.3 ms on layout-stress, 10.5 -> 0.46 on stats.
 
+**font_size_px re-derived a number that had not changed.** It runs several
+times for every box and again for the parent, and a `calc()` font-size was
+evaluated afresh on each -- CssCalc::evaluate was the second-largest cost in a
+randhtml pass, behind only grid layout. The style now remembers the answer with
+the parent size it was resolved against, keyed on the style's VERSION so any
+write invalidates it automatically. The first attempt invalidated by hand at
+each mutation and missed the main `set()`; tying it to the version cannot miss.
+
 **A layout pass hashed its property names over and over.** `get(name)` and
 `parsed(name)` each resolve the name themselves, so `resolve_length` and
 `font_size_px` hashed the same property twice per call -- and font_size_px runs
@@ -113,6 +121,22 @@ Together, measured at 40 passes so the numbers are outside the +-0.5% noise:
 | vendor | 3.265 | **3.191** |
 
 randhtml's allocations fell 16,663 -> 12,195 with it.
+
+With the id conversion and the font-size memo on top, against the same
+baseline:
+
+| page | before | after |
+|---|---|---|
+| match3 | 1.507 ms | **1.057** |
+| randhtml | 3.395 | **2.600** |
+| stock-dashboard | 1.205 | **0.934** |
+| flex-playground | 1.828 | **1.425** |
+| layout-stress | 4.721 | **3.738** |
+| glass | 1.648 | **1.310** |
+| stats | 1.807 | **1.484** |
+| vendor | 3.265 | **2.758** |
+
+About a fifth to a third of a layout pass, depending on the page.
 
 Worth recording because it cost an hour: the first three of these were chosen
 from a 258-sample profile, which cannot resolve a 5% effect, and measured at

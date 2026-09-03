@@ -1,3 +1,4 @@
+#include "weva/css_properties.h"
 #include "weva/positioning.h"
 
 #include "weva/inline_layout.h"
@@ -11,6 +12,9 @@
 namespace weva {
 
 namespace {
+
+const int kId_height = CssPropertyRegistry::instance().id_of("height");
+
 
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
@@ -358,7 +362,7 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     // which does not know the containing block top-down. This is the first
     // point at which it can be.
     if (has_explicit_size(style, "height") && cb.height > 0) {
-        const ResolvedLength r = resolve_length(style, "height", ctx, fs, cb.height);
+        const ResolvedLength r = resolve_length(style, kId_height, ctx, fs, cb.height);
         if (r.kind == LengthKind::Length) {
             double h = r.pixels;
             if (!is_border_box(style)) {

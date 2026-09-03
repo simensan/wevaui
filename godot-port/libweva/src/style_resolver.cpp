@@ -170,16 +170,37 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
     const double fallback = parent_fs > 0 ? parent_fs : ctx.root_font_size_px;
     if (raw.empty()) return fallback;
 
+    // Answered from the style when the parent size has not moved.
+    //
+    // The result depends on nothing but this style and its parent's size, and
+    // font_size_px runs several times for every box and again for its parent.
+    // A `calc()` font-size was being evaluated afresh each time: CssCalc
+    // evaluate was the second-largest cost in a randhtml pass, behind only
+    // grid layout, purely from re-deriving a number that had not changed.
+    if (style->font_size_memo_version == style->version() &&
+        style->font_size_memo_parent == parent_fs) {
+        return style->font_size_memo_px;
+    }
+    // Everything below derives the answer; this records it on the way out.
+    // A lambda rather than a write before each of the seven returns, so a
+    // later branch cannot forget.
+    const auto remember = [&](double px) {
+        style->font_size_memo_parent = parent_fs;
+        style->font_size_memo_px = px;
+        style->font_size_memo_version = style->version();
+        return px;
+    };
+
     // Through the style's parsed cache: font_size_px is called for every box
     // several times over, and re-parsing its declaration was the single largest
     // remaining source of per-frame allocation.
     const CssValue* v = style->parsed(kFontSize);
-    if (!v) return fallback;
+    if (!v) return remember(fallback);
 
     if (const std::string_view id = identifier_of(*v); !id.empty()) {
         double px = 0;
-        if (font_size_keyword(id, parent_fs, &px)) return px;
-        return fallback;
+        if (font_size_keyword(id, parent_fs, &px)) return remember(px);
+        return remember(fallback);
     }
     switch (v->kind()) {
         case CssValueKind::Length: {
@@ -188,16 +209,16 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
             // the parent, not against any containing block.
             if (static_cast<const CssLength&>(*v).to_pixels(
                     ctx.to_length_context(parent_fs, parent_fs), &px)) {
-                return px;
+                return remember(px);
             }
-            return fallback;
+            return remember(fallback);
         }
         case CssValueKind::Percentage:
-            return parent_fs * static_cast<const CssPercentage&>(*v).value * 0.01;
+            return remember(parent_fs * static_cast<const CssPercentage&>(*v).value * 0.01);
         case CssValueKind::Number:
             // A unitless font-size is read as pixels. Not valid CSS, but the
             // reference accepts it.
-            return static_cast<const CssNumber&>(*v).value;
+            return remember(static_cast<const CssNumber&>(*v).value);
         case CssValueKind::Calc: {
             // CSS Values L4 §10: a math function resolves to a length when its
             // inputs do. Without this branch `font-size: clamp(12px, 1.5vmin,
@@ -206,12 +227,12 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
             std::string why;
             if (static_cast<const CssCalc&>(*v).evaluate(
                     ctx.to_length_context(parent_fs, parent_fs), &px, &why)) {
-                return px;
+                return remember(px);
             }
-            return fallback;
+            return remember(fallback);
         }
         default:
-            return fallback;
+            return remember(fallback);
     }
 }
 
@@ -388,6 +409,17 @@ ResolvedLength resolve_length_cached(const ComputedStyle* style, int property_id
         const CssValuePtr v = parse_css_value(raw, &err);
         return resolve_length_value(v.get(), ctx, font_size, basis_px, line_height);
     }
+    return resolve_length_value(style->parsed(property_id), ctx, font_size, basis_px,
+                                line_height);
+}
+
+ResolvedLength resolve_length(const ComputedStyle* style, int property_id,
+                              const LayoutContext& ctx, double font_size,
+                              std::optional<double> basis_px, double line_height) {
+    if (!style || property_id == kCustomPropertyId) return ResolvedLength::automatic();
+    const std::string_view raw = style->get(property_id);
+    ResolvedLength keyword;
+    if (resolve_length_keyword(raw, &keyword)) return keyword;
     return resolve_length_value(style->parsed(property_id), ctx, font_size, basis_px,
                                 line_height);
 }

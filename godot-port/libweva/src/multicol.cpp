@@ -59,7 +59,7 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
         const std::string_view raw = get(style, kId_column_gap);
         if (!raw.empty() && !iequals(raw, "normal")) {
             const ResolvedLength r =
-                resolve_length(style, "column-gap", ctx, font_size, content_width);
+                resolve_length(style, kId_column_gap, ctx, font_size, content_width);
             if (r.kind == LengthKind::Length) gap = std::max(0.0, r.pixels);
         }
     }
@@ -70,7 +70,7 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
     int count = 0;
     const std::string_view count_raw = get(style, kId_column_count);
     if (!count_raw.empty() && !iequals(count_raw, "auto")) {
-        const ResolvedLength r = resolve_length(style, "column-count", ctx, font_size,
+        const ResolvedLength r = resolve_length(style, kId_column_count, ctx, font_size,
                                                 std::nullopt);
         if (r.kind == LengthKind::Length) count = static_cast<int>(r.pixels);
     }
@@ -78,7 +78,7 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
         const std::string_view width_raw = get(style, kId_column_width);
         if (!width_raw.empty() && !iequals(width_raw, "auto")) {
             const ResolvedLength r =
-                resolve_length(style, "column-width", ctx, font_size, content_width);
+                resolve_length(style, kId_column_width, ctx, font_size, content_width);
             if (r.kind == LengthKind::Length && r.pixels > 0) {
                 count = static_cast<int>(std::floor((content_width + gap) / (r.pixels + gap)));
             }

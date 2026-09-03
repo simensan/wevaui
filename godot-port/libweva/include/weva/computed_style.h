@@ -47,6 +47,20 @@ public:
     // style lives in the caller's frame above the child's, which satisfies
     // that naturally — but a style that outlives its walk must not keep the
     // pointer.
+    // The resolved font-size, remembered with the parent size it was resolved
+    // against. font_size_px is called several times per box and again for the
+    // parent, and a calc() font-size was re-evaluated on every one of them.
+    // Mutable and public because it is pure memoisation of a pure function --
+    // it changes no answer, only how often the answer is derived. Invalidated
+    // by the cascade writing a new value, like the parsed-value memo beside it.
+    mutable double font_size_memo_px = 0;
+    mutable double font_size_memo_parent = -1;
+    // Tied to the style's VERSION rather than invalidated by hand at each
+    // mutation. Every write already bumps the version, so the memo cannot
+    // outlive the value it describes -- which the by-hand version got wrong on
+    // its first attempt by missing the main set().
+    mutable int64_t font_size_memo_version = -1;
+
     void set_inherit_parent(const ComputedStyle* parent) { parent_ = parent; }
     const ComputedStyle* inherit_parent() const { return parent_; }
 

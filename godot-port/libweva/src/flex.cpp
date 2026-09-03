@@ -27,6 +27,8 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
 // together at a quarter of a layout pass, ahead of any layout
 // algorithm. Safe because the registry keeps an id stable across
 // re-registration, which is what its header promises it for.
+const int kId_max_height = CssPropertyRegistry::instance().id_of("max-height");
+
 std::string_view get(const ComputedStyle* s, int id) {
     return s ? s->get(id) : std::string_view();
 }
@@ -306,7 +308,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             // present basis turns the percentage into a length, and -1 made
             // `flex: 1` (basis 0%) in an auto-height column resolve to 0.
             const ResolvedLength r =
-                resolve_length(is, "flex-basis", ctx, b.font_size > 0 ? b.font_size : font_size,
+                resolve_length(is, kId_flex_basis, ctx, b.font_size > 0 ? b.font_size : font_size,
                                main_basis);
             if (r.kind == LengthKind::Length) {
                 base = r.pixels;
@@ -423,9 +425,9 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
         const double own_frame = is_border_box(style) ? frame : 0;
         const ResolvedLength min_r =
-            resolve_length(style, "min-height", ctx, font_size, std::nullopt);
+            resolve_length(style, kId_min_height, ctx, font_size, std::nullopt);
         const ResolvedLength max_r =
-            resolve_length(style, "max-height", ctx, font_size, std::nullopt);
+            resolve_length(style, kId_max_height, ctx, font_size, std::nullopt);
         double clamped = used;
         if (min_r.kind == LengthKind::Length) {
             clamped = std::max(clamped, std::max(0.0, min_r.pixels - own_frame));
@@ -613,9 +615,9 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                 cb.padding_top + cb.padding_bottom + cb.border_top + cb.border_bottom;
             const double own_frame = is_border_box(style) ? frame : 0;
             const ResolvedLength min_r =
-                resolve_length(style, "min-height", ctx, font_size, std::nullopt);
+                resolve_length(style, kId_min_height, ctx, font_size, std::nullopt);
             const ResolvedLength max_r =
-                resolve_length(style, "max-height", ctx, font_size, std::nullopt);
+                resolve_length(style, kId_max_height, ctx, font_size, std::nullopt);
             if (min_r.kind == LengthKind::Length) {
                 ln.cross = std::max(ln.cross, std::max(0.0, min_r.pixels - own_frame));
             }

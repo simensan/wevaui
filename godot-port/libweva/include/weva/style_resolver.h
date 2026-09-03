@@ -132,6 +132,15 @@ ResolvedLength resolve_length_value(const CssValue* value, const LayoutContext& 
 
 // The form layout should use: reads the property through the style's parsed
 // cache, so a value is parsed once per style rather than once per read.
+// The same, by property id. Every caller in the layout passes a literal, and
+// the id can be resolved once for the program -- see the note on
+// shorthand_component for why that is safe, and check_cached_ids.py for the
+// one way it is not.
+ResolvedLength resolve_length(const ComputedStyle* style, int property_id,
+                              const LayoutContext& ctx, double font_size,
+                              std::optional<double> basis_px = std::nullopt,
+                              double line_height = 0);
+
 ResolvedLength resolve_length(const ComputedStyle* style, std::string_view property,
                               const LayoutContext& ctx, double font_size,
                               std::optional<double> basis_px = std::nullopt,
