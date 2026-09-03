@@ -1,0 +1,41 @@
+<!-- Grid and box alignment. The game-UI samples use grid heavily but only
+     ever with `gap` and the default alignment, so the separate axis gaps, the
+     grid-template shorthand, implicit column sizing and the place-* pairs
+     were all untested. -->
+<div class="page">
+  <section class="g gaps">
+    <div class="c">1</div><div class="c">2</div><div class="c">3</div>
+    <div class="c">4</div><div class="c">5</div><div class="c">6</div>
+  </section>
+
+  <section class="g template">
+    <div class="c">a</div><div class="c">b</div>
+    <div class="c">c</div><div class="c">d</div>
+  </section>
+
+  <section class="g implicit">
+    <div class="c">p</div><div class="c">q</div><div class="c">r</div>
+    <div class="c">s</div><div class="c">t</div>
+  </section>
+
+  <section class="g placed">
+    <div class="c start">start</div>
+    <div class="c center">center</div>
+    <div class="c end">end</div>
+    <div class="c stretch">stretch</div>
+  </section>
+
+  <section class="g content-packed">
+    <div class="c">x</div><div class="c">y</div>
+  </section>
+
+  <section class="g content-spread">
+    <div class="c">x</div><div class="c">y</div>
+  </section>
+
+  <section class="g areas">
+    <div class="c head">head</div>
+    <div class="c side">side</div>
+    <div class="c main">main</div>
+  </section>
+</div>

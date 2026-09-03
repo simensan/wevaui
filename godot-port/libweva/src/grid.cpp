@@ -44,6 +44,53 @@ struct SubgridTracks {
 };
 thread_local std::map<BoxId, SubgridTracks> g_subgrid_tracks;
 
+// Defined further down, beside the other track-list parsing.
+std::string_view trim(std::string_view s);
+
+// A template value is at its initial value when it says nothing: absent, or
+// the `none` the registry hands back for an unset track list.
+bool is_template_initial(std::string_view raw) {
+    const std::string_view v = trim(raw);
+    return v.empty() || iequals(v, "none");
+}
+
+// `grid-template: <rows> / <columns>`, split at the TOP-LEVEL slash. A slash
+// inside parentheses belongs to a minmax() or a repeat(), one inside brackets
+// to a line name, and one inside a string to an area row -- none of them
+// separate the two halves.
+//
+// Ports GridShorthand.SplitTemplate. Without it `grid-template` set nothing at
+// all: both longhands stayed at `none`, the grid fell back to one implicit
+// column, and every item came out the container's full width. The oracle's
+// cov-grid case caught it with Chrome and the reference agreeing against us on
+// all 36 values.
+void split_template(std::string_view text, std::string* rows, std::string* columns) {
+    rows->clear();
+    columns->clear();
+    if (text.empty()) return;
+    int parens = 0, brackets = 0;
+    char in_string = '\0';
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        const char c = text[i];
+        if (in_string != '\0') {
+            if (c == in_string) in_string = '\0';
+            continue;
+        }
+        if (c == '"' || c == '\'') { in_string = c; continue; }
+        else if (c == '(') ++parens;
+        else if (c == ')') --parens;
+        else if (c == '[') ++brackets;
+        else if (c == ']') --brackets;
+        else if (c == '/' && parens == 0 && brackets == 0) {
+            *rows = std::string(trim(text.substr(0, i)));
+            *columns = std::string(trim(text.substr(i + 1)));
+            return;
+        }
+    }
+    // No slash: the whole value is the rows half.
+    *rows = std::string(trim(text));
+}
+
 bool wants_subgrid(const ComputedStyle* style, std::string_view property) {
     std::string_view v = get(style, property);
     while (!v.empty() && (v.front() == ' ' || v.front() == '\t')) v.remove_prefix(1);
@@ -810,10 +857,28 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : 0.0;
     }();
 
-    std::vector<Track> columns = parse_track_list(get(style, "grid-template-columns"), ctx,
+    // The longhands win; the shorthands are consulted only when NEITHER was
+    // set, which is what makes `grid-template-columns` after `grid-template`
+    // behave the way the cascade says it should. `grid` is checked after
+    // `grid-template` for the same reason and in the same way.
+    std::string_view columns_raw = get(style, "grid-template-columns");
+    std::string_view rows_raw = get(style, "grid-template-rows");
+    std::string from_rows, from_columns;
+    if (is_template_initial(columns_raw) && is_template_initial(rows_raw)) {
+        for (const char* shorthand : {"grid-template", "grid"}) {
+            const std::string_view raw = get(style, shorthand);
+            if (is_template_initial(raw)) continue;
+            split_template(raw, &from_rows, &from_columns);
+            if (!from_rows.empty()) rows_raw = from_rows;
+            if (!from_columns.empty()) columns_raw = from_columns;
+            break;
+        }
+    }
+
+    std::vector<Track> columns = parse_track_list(columns_raw, ctx,
                                                   font_size, content_width, own_column_gap);
     std::vector<Track> rows =
-        parse_track_list(get(style, "grid-template-rows"), ctx, font_size,
+        parse_track_list(rows_raw, ctx, font_size,
                          content_height >= 0 ? content_height : 0, own_row_gap);
     // Implicit tracks take their sizing from grid-auto-columns/rows, cycling
     // through the list; the initial `auto` when there is none.
