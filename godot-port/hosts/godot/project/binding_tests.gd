@@ -127,6 +127,41 @@ func _reading_back(_unused: WevaDocument) -> void:
 	_check(doc.query_all_text(".nothing-here").size() == 0, "no match is an empty list")
 	doc.queue_free()
 
+# A state pseudo-class through the single-match path.
+#
+# query_all used the document's real state and query used a null one, so
+# `.cell:focus` counted one element and resolved to none -- and every
+# selector-taking method on the node resolves through query.
+func _state_selectors() -> void:
+	var doc := WevaDocument.new()
+	add_child(doc)
+	doc.document_size = Vector2(400, 300)
+	doc.css = "input { width: 80px; } .row { display: flex; gap: 8px; }"
+	doc.html = """
+	<div class="row">
+	  <input id="one" type="text" value="first">
+	  <input id="two" type="text" value="second">
+	  <input id="three" type="checkbox" checked>
+	</div>
+	"""
+	doc.update_document()
+
+	doc.set_focus("#two")
+	_check(doc.count_elements("input:focus") == 1, "one input is focused")
+	_check(doc.query_bounds("input:focus").size.x == 80, "and query_bounds resolves it")
+	_check(doc.get_element_value("input:focus") == "second", "and reads its value")
+	_check(doc.get_element_attribute("input:focus", "id") == "two", "and it is the right one")
+
+	# :checked too, which is the same hole.
+	_check(doc.get_element_attribute("input:checked", "id") == "three",
+			"a checked pseudo-class resolves")
+
+	# And the negative case still answers nothing rather than the first input.
+	doc.set_focus("")
+	_check(doc.get_element_attribute("input:focus", "id") == "",
+			"nothing focused resolves to nothing")
+	doc.queue_free()
+
 # One inline declaration at a time. Setting the whole `style` attribute is what
 # a script had to do to change one property, and getting that splice wrong
 # loses every other declaration on the element.
@@ -376,6 +411,7 @@ func _ready() -> void:
 	_reading_back(doc)
 
 	_gamepad_focus()
+	_state_selectors()
 	_inline_styles()
 	_screen_rects()
 

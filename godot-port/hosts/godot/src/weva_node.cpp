@@ -331,6 +331,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("element_id_at", "point"), &WevaDocument::element_id_at);
     ClassDB::bind_method(D_METHOD("set_focus", "selector"), &WevaDocument::set_focus);
     ClassDB::bind_method(D_METHOD("get_focused_id"), &WevaDocument::get_focused_id);
+    ClassDB::bind_method(D_METHOD("get_focused_row"), &WevaDocument::get_focused_row);
     ClassDB::bind_method(D_METHOD("get_row", "selector"), &WevaDocument::get_row);
     ClassDB::bind_method(D_METHOD("set_tooltip_delay", "seconds"),
                          &WevaDocument::set_tooltip_delay);
@@ -402,6 +403,12 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_controller", "controller"),
                          &WevaDocument::set_controller);
     ClassDB::bind_method(D_METHOD("get_controller"), &WevaDocument::get_controller);
+    // A property like every other configurable thing on the node. It was
+    // bound as a method pair only, so `doc.controller = self` -- which is how
+    // `html`, `css`, `data` and `base_path` are all set -- failed outright.
+    ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "controller", PROPERTY_HINT_NONE, "",
+                              PROPERTY_USAGE_NONE),
+                 "set_controller", "get_controller");
     ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data"), "set_data", "get_data");
     ClassDB::bind_method(D_METHOD("send_key", "keycode", "pressed", "shift", "ctrl"),
                          &WevaDocument::send_key, DEFVAL(true), DEFVAL(false), DEFVAL(false));
@@ -1035,6 +1042,20 @@ void WevaDocument::set_tooltip_delay(double seconds) {
 }
 
 double WevaDocument::get_tooltip_delay() const { return tooltip_delay_; }
+
+Dictionary WevaDocument::get_focused_row() {
+    Dictionary out;
+    if (!doc_) return out;
+    ensure_updated();
+    const weva_element_t e = weva_document_focus(doc_);
+    if (e == WEVA_ELEMENT_NONE) return out;
+    int index = 0;
+    char key[128] = {0};
+    if (!weva_element_row(doc_, e, &index, key, sizeof(key))) return out;
+    out["index"] = index;
+    out["key"] = String::utf8(key);
+    return out;
+}
 
 Dictionary WevaDocument::get_row(const String& selector) {
     Dictionary out;

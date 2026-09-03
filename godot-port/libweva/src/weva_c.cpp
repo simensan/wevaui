@@ -2284,12 +2284,20 @@ weva_element_t weva_document_query(weva_document_t doc, const char* selector) {
     CompiledSelector compiled;
     SelectorParseError err;
     if (!parse_selector(selector, &compiled, &err)) return WEVA_ELEMENT_NONE;
-    NullStateProvider state;
     for (size_t i = 0; i < doc->elements.size(); ++i) {
         // A removed element leaves a hole rather than renumbering the ones
         // after it, so every walk of this table steps over nulls.
         if (!doc->elements[i]) continue;
-        if (selector_matches(compiled, *doc->elements[i], state)) {
+        // The document's OWN state, not a null one.
+        //
+        // With a null provider no state pseudo-class could ever match here --
+        // `:focus`, `:hover`, `:checked`, `:active` all silently found
+        // nothing -- while query_all, three thousand lines away, used the real
+        // state and found them. So `.cell:focus` counted one element and
+        // resolved to none, and every selector-taking method on the node
+        // (query_bounds, query_text, get_row, set_element_style, set_focus)
+        // inherited the hole, since all of them resolve through here.
+        if (selector_matches(compiled, *doc->elements[i], doc->styles.state)) {
             return static_cast<weva_element_t>(i);
         }
     }

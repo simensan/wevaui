@@ -360,6 +360,14 @@ public:
     // something can be parented over it.
     godot::Rect2 get_element_screen_rect(const godot::String& selector);
 
+    // Which repeated row holds the focus, by index and data-key.
+    //
+    // get_focused_id answers with an ATTRIBUTE, and a row a data-each
+    // produced has no id -- the template writes one element and the data
+    // decides how many there are. So in the one place a data-driven UI most
+    // needs to know what is focused, the id is always empty.
+    godot::Dictionary get_focused_row();
+
 private:
     godot::String base_path_;
     // Handed to the core so an asset is read through Godot: res:// resolves,

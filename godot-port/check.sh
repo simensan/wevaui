@@ -175,6 +175,16 @@ if [ -x "$GODOT" ]; then
     echo "${line:-no result}"
     case "$line" in *", 0 failures"*) ;; *) fail "demo" ;; esac
 
+    # A whole screen, built the way someone would actually build one: a
+    # gamepad-navigable grid, live data, a detail pane following the
+    # selection, an equip action and a filter. It exists to find gaps in the
+    # BINDING SURFACE that adding one method at a time never surfaces -- it
+    # found three on its first run.
+    step "inventory"
+    line=$(cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300         "$GODOT" --headless --path . inventory_demo.tscn 2>&1 | grep "godot inventory:" | tail -1)
+    echo "${line:-no result}"
+    case "$line" in *", 0 failures"*) ;; *) fail "inventory" ;; esac
+
     # Two-way binding, from GDScript. The return path -- a `data-model`
     # control's value arriving back in the script's own dictionary -- is the
     # half no C++ test can reach, because the dictionary is Godot's.
