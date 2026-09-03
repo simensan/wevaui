@@ -1,0 +1,13 @@
+<!-- Form-control intrinsic widths. Parked: all three engines disagree, and
+     the disagreement starts before field-sizing does — the DEFAULT width of
+     an unstyled text input is different in each. See README.md. -->
+<div class="page">
+  <form class="fields">
+    <input class="f default" type="text" value="ab">
+    <input class="f content" type="text" value="ab">
+    <input class="f content" type="text" value="a much longer value than the one above">
+    <input class="f content sized" type="text" value="ab">
+    <select class="f content"><option>one</option><option>a longer option</option></select>
+    <textarea class="f content">two words</textarea>
+  </form>
+</div>

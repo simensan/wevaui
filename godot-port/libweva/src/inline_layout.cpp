@@ -426,6 +426,30 @@ bool wants_ellipsis(const ComputedStyle* style) {
     return false;
 }
 
+// How many lines `-webkit-line-clamp` allows, or 0 for no clamp.
+//
+// The PREFIXED property only, and only inside a `-webkit-box`, because that is
+// what Chrome implements. Unprefixed `line-clamp` it ignores outright -- the
+// oracle case shows Chrome leaving a `line-clamp: 2` block at its full 130px
+// while the C# reference clamps it to 50 -- so implementing that here would
+// mean matching the reference by diverging from the browser.
+int line_clamp_of(const ComputedStyle* style) {
+    if (!style) return 0;
+    const std::string_view display = get(style, "display");
+    if (!iequals(display, "-webkit-box") && !iequals(display, "-webkit-inline-box")) return 0;
+    std::string_view raw = get(style, "-webkit-line-clamp");
+    while (!raw.empty() && (raw.front() == ' ' || raw.front() == '\t')) raw.remove_prefix(1);
+    while (!raw.empty() && (raw.back() == ' ' || raw.back() == '\t')) raw.remove_suffix(1);
+    if (raw.empty() || iequals(raw, "none")) return 0;
+    int n = 0;
+    for (char c : raw) {
+        if (c < '0' || c > '9') return 0;
+        n = n * 10 + (c - '0');
+        if (n > 1000000) return 0;
+    }
+    return n;
+}
+
 // Cuts the line down so that what is left plus the ellipsis fits, and drops
 // every run after the cut.
 void truncate_line_with_ellipsis(BoxTree* tree, BoxId line, double content_width,
@@ -667,6 +691,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     InlineScratch& scratch = *lease;
     std::vector<Fragment>& line = scratch.line;
     std::vector<BoxId>& line_boxes = scratch.line_boxes;
+    const int line_clamp = line_clamp_of(container_style);
+    int lines_flushed = 0;
+    double clamp_bottom = 0;
 
     double y = top_inner;
     double pen = 0;
@@ -1103,6 +1130,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
 
         line_boxes.push_back(lb);
         y += line_height;
+        // Where the clamp's last allowed line ends. Recorded as it goes rather
+        // than re-derived: line heights vary down a block, so the answer is
+        // not count * line_height.
+        if (++lines_flushed == line_clamp) clamp_bottom = y;
         first_piece = true;
         line.clear();
         pen = 0;
@@ -1413,9 +1444,19 @@ double layout_inline_items(BoxTree* tree, BoxId container,
 
     // `text-overflow: ellipsis`, once the line is final: the cut needs the
     // measured runs, and nothing before this point has them.
-    if (wants_ellipsis(tree->valid(container) ? (*tree)[container].style : nullptr) &&
-        line_boxes.size() == 1) {
+    if (wants_ellipsis(container_style) && line_boxes.size() == 1) {
         truncate_line_with_ellipsis(tree, line_boxes.front(), line_width, ctx, metrics);
+    }
+
+    // `-webkit-line-clamp`: keep the first N lines and end the last of them
+    // with an ellipsis, the way a browser does. The lines past the clamp are
+    // simply not attached to the container below -- they stay in the arena,
+    // like the text boxes the lines replaced.
+    if (line_clamp > 0 && static_cast<int>(line_boxes.size()) > line_clamp) {
+        truncate_line_with_ellipsis(tree, line_boxes[static_cast<size_t>(line_clamp) - 1],
+                                    line_width, ctx, metrics);
+        line_boxes.resize(static_cast<size_t>(line_clamp));
+        y = clamp_bottom;
     }
 
     // The container's children become its line boxes. The original text boxes

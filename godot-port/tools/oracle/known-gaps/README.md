@@ -9,11 +9,65 @@ once.
 They live here so the finding is not lost. Run one the same way as any other
 case; the numbers below say what to expect.
 
-    cp known-gaps/cov-table.* corpus/samples/
+    cp known-gaps/cov-table.* corpus/samples/       # or any case here
     (cd ../../../Tools/Layout && node capture-all-chrome-layouts.mjs \
         ../../godot-port/tools/oracle/corpus/samples 1280 720 --metrics=mono)
     python3 run_oracle.py corpus/samples --width 1280 --height 720 \
         --weva-dump <build>/tools/weva_dump/weva_dump --reuse-reference
+
+## cov-gutter — scrollbar-gutter reserves nothing
+
+Neither engine reads `scrollbar-gutter`. Both leave the content box at its
+full width; Chrome holds the scrollbar's width open inside it.
+
+Measured through a block child, because the property never changes the scroll
+container's own box — only the space left inside it. (The first version of
+this case had no such child and therefore measured nothing at all, while
+appearing to pass.)
+
+| pane | child width, C++ and C# | Chrome |
+|---|---|---|
+| `overflow-y: auto`, no gutter | 210 | 210 |
+| `scrollbar-gutter: stable` | 210 | **195** |
+| `stable both-edges` | 210 | **180**, and shifted +15 |
+
+Note this case PASSES the oracle: the two engines agree with each other
+exactly. That is why it is filed here rather than left in the gating corpus —
+a green `cov-gutter` would read as "scrollbar-gutter works".
+
+Closing it needs a scrollbar width to reserve, and that is the catch. Chrome's
+15px is its classic scrollbar; this engine draws a 7px overlay one. Reserving
+7px would honour the property and still not match Chrome, turning a case that
+passes into one that fails. So the width has to be decided first — the same
+decision as the form-control defaults above.
+
+## cov-field-sizing — form-control intrinsic widths
+
+`field-sizing: content` makes an input take the width of the value it holds
+instead of the UA's fixed default. The port ignores it entirely; the reference
+implements something, but not what a browser does.
+
+And the disagreement starts one step earlier, which is why this is parked
+rather than fixed: the DEFAULT width of an unstyled `<input type=text>` is
+different in all three engines.
+
+| input | C++ | C# reference | Chrome |
+|---|---|---|---|
+| no `field-sizing` | 102.7 | 161.8 | **143** |
+| `content`, value `"ab"` | 102.7 | 16.8 | **45.25** |
+| `content`, long value | 102.7 | 185.1 | **218** |
+| `content` + `width: 160px` | 75.3 | 16.8 | **34.5** |
+
+The port's column is constant, which is the signature of the property being
+unread. But fixing only that would leave the default wrong, and the default is
+a UA-stylesheet number that the whole form corpus is calibrated against —
+`form-demo`, `forms-live`, `inputtest` and `form-metrics` all agree with the
+reference today and would move. It is the same open question as the unstyled
+`<button>` box, and it wants deciding once, for every control, against Chrome.
+
+The last row is worth its own note: an explicit `width` must win over content
+sizing, and Chrome's 34.5 says it does not simply win — the port's 75.3 is not
+160 either. Whatever replaces this should pin that case deliberately.
 
 ## cov-table — a table is not shrink-to-fit
 

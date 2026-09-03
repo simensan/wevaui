@@ -158,6 +158,15 @@ constexpr DisplayEntry kDisplays[] = {
     {"inline-flex", DisplayKind::InlineFlex},
     {"inline-grid", DisplayKind::InlineGrid},
     {"inline-table", DisplayKind::InlineTable},
+    // The legacy flexbox, which survives for one reason: it is the only
+    // context Chrome applies `-webkit-line-clamp` in, and clamping a card
+    // description to two lines is written that way in every stylesheet that
+    // does it. With `-webkit-box-orient: vertical` -- the only orientation a
+    // clamp is ever used with -- it stacks its children like a block, so a
+    // block is what it becomes here. Treated as an unknown display it fell
+    // back to `inline`, and a clamped div came out 490x16 instead of 250x50.
+    {"-webkit-box", DisplayKind::Block},
+    {"-webkit-inline-box", DisplayKind::InlineBlock},
 };
 
 } // namespace

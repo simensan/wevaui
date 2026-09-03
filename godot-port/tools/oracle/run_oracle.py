@@ -275,10 +275,27 @@ def arbitrate(reference, candidate, chrome):
             real.append(f"[{i}] {_identity(ea)}: only in the reference")
             continue
         eb = b[rc[i]]
-        for key in ("depth", "tag", "id", "cls"):
-            if ea.get(key) != eb.get(key):
-                real.append(f"[{i}] {key}: reference {ea.get(key)!r}, candidate {eb.get(key)!r}")
         ec = c[ac[i]] if i in ac else None
+        # Chrome's geometry for this very element, when it has an opinion.
+        backs_candidate = ec is not None and all(
+            chrome_agrees(ec.get(k), eb.get(k)) for k in ("x", "y", "w", "h"))
+        for key in ("depth", "tag", "id", "cls"):
+            if ea.get(key) == eb.get(key):
+                continue
+            line = f"[{i}] {key}: reference {ea.get(key)!r}, candidate {eb.get(key)!r}"
+            # `depth` is the BOX tree's, not the element tree's, and the two
+            # engines legitimately build different box trees where one
+            # implements a display the other does not -- `-webkit-box` builds
+            # a block here and an inline plus anonymous wrappers there. When
+            # Chrome's geometry backs the candidate on the very element whose
+            # depth differs, the shape difference is the reference's.
+            #
+            # Only `depth`: a differing tag, id or class means the two dumps
+            # were aligned wrongly, and that has to stay loud.
+            if key == "depth" and backs_candidate:
+                reference_bugs.append(line + ", chrome's geometry agrees with us")
+            else:
+                real.append(line)
         label = f"{ea.get('tag')}#{ea.get('id')}.{ea.get('cls')}".rstrip("#.")
         for key in ("x", "y", "w", "h"):
             if same_value(ea.get(key), eb.get(key)):
