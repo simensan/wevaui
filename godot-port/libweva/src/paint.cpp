@@ -1851,9 +1851,13 @@ void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
     }
 }
 
-bool has_gradient_layer(const std::vector<BackgroundLayer>& layers) {
+// Whether anything here needs a texture rasterized. Named for what it asks
+// rather than for gradients: an image layer needs one just as much, and while
+// this only counted gradients a `background-image: url(...)` took the plain
+// colour path and never reached the rasterizer at all.
+bool has_paintable_layer(const std::vector<BackgroundLayer>& layers) {
     for (const BackgroundLayer& l : layers) {
-        if (l.is_gradient) return true;
+        if (l.is_gradient || l.image) return true;
     }
     return false;
 }
@@ -1870,7 +1874,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
                               const Transform2D* xf = nullptr, const ClipNode* clip = nullptr,
                               const ColorFilter* filter = nullptr,
                               const ComputedStyle* style = nullptr) {
-    if (!has_gradient_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
+    if (!has_paintable_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
         return false;
     }
     ProfileScope prof(&g_paint_profile.backgrounds);
@@ -1914,10 +1918,19 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     return true;
 }
 
-// The box's background image layers, resolved against its own colour.
-std::vector<BackgroundLayer> layers_of(const Box& b) {
+// The box's background image layers, resolved against its own colour -- and
+// against the image store, which is what turns a `url(...)` from a string the
+// parser kept into pixels the rasterizer can composite.
+std::vector<BackgroundLayer> layers_of(const Box& b, const PaintContext& paint) {
     if (!b.style) return {};
-    return resolve_background_layers(b.style, resolve_color(b.style, "color"));
+    std::vector<BackgroundLayer> layers =
+        resolve_background_layers(b.style, resolve_color(b.style, "color"));
+    if (paint.images) {
+        for (BackgroundLayer& l : layers) {
+            if (!l.is_gradient && !l.url.empty()) l.image = paint.images->get(l.url);
+        }
+    }
+    return layers;
 }
 
 // A blurred text-shadow, done by blurring the run rather than stacking copies
@@ -2235,9 +2248,9 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     const double blur = decorated && b.style ? blur_filter_radius(b.style, ctx, fs) : 0;
     bool blurred = false;
     if (blur > 0 && !hidden && b.width > 0 && b.height > 0 && paint.backend && id != canvas_owner) {
-        const std::vector<BackgroundLayer> layers = layers_of(b);
+        const std::vector<BackgroundLayer> layers = layers_of(b, paint);
         const LinearColor bg = resolve_color(b.style, "background-color");
-        if (bg.a > 0 || has_gradient_layer(layers)) {
+        if (bg.a > 0 || has_paintable_layer(layers)) {
             const double pad_px = 3 * blur;
             const double full_w = b.width + 2 * pad_px, full_h = b.height + 2 * pad_px;
             const double scale = std::min(1.0, 1024.0 / std::max(full_w, full_h));
@@ -2348,8 +2361,8 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     const bool clip_text = decorated && b.style && clips_background_to_text(b.style);
     bool background_done = id == canvas_owner || !decorated || hidden || blurred || clip_text;
     if (!background_done && b.style && b.width > 0 && b.height > 0) {
-        const std::vector<BackgroundLayer> layers = layers_of(b);
-        if (has_gradient_layer(layers)) {
+        const std::vector<BackgroundLayer> layers = layers_of(b, paint);
+        if (has_paintable_layer(layers)) {
             background_done = paint_layered_background(
                 layers, resolve_color(b.style, "background-color"), border_box, radii, ctx, fs, paint,
                 state.opacity, xf, state.clip.get(), state.filter.get(), b.style);
@@ -2517,7 +2530,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         // at its position over the run — right for a run-wide gradient,
         // approximate for a multi-line one.
         if (clips_background_to_text(b.style)) {
-            const std::vector<BackgroundLayer> layers = layers_of(b);
+            const std::vector<BackgroundLayer> layers = layers_of(b, paint);
             const BackgroundLayer* grad = nullptr;
             for (const BackgroundLayer& l : layers) if (l.is_gradient) { grad = &l; break; }
             if (grad) {
@@ -2661,10 +2674,10 @@ BoxId child_element(const BoxTree& tree, BoxId parent, std::string_view tag) {
     return kNoBox;
 }
 
-bool has_background(const Box& b) {
+bool has_background(const Box& b, const PaintContext& paint) {
     if (!b.style) return false;
     if (resolve_color(b.style, "background-color").a > 0) return true;
-    return has_gradient_layer(layers_of(b));
+    return has_paintable_layer(layers_of(b, paint));
 }
 
 // CSS 2.1 §14.2: the root element's background covers the whole canvas; when
@@ -2676,8 +2689,8 @@ BoxId paint_canvas(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     if (html == kNoBox && tree[root].element && tree[root].element->tag_name() == "html") html = root;
     const BoxId body = child_element(tree, html, "body");
     BoxId owner = kNoBox;
-    if (html != kNoBox && has_background(tree[html])) owner = html;
-    else if (body != kNoBox && has_background(tree[body])) owner = body;
+    if (html != kNoBox && has_background(tree[html], paint)) owner = html;
+    else if (body != kNoBox && has_background(tree[body], paint)) owner = body;
     if (owner == kNoBox) return kNoBox;
 
     const Box& b = tree[owner];
@@ -2689,7 +2702,7 @@ BoxId paint_canvas(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     // The style is passed so the canvas can be cached: it is the one texture
     // that is always viewport-sized, and re-rasterizing it was the single
     // largest cost in an update on every page that has a gradient body.
-    if (!paint_layered_background(layers_of(b), color, canvas, BorderRadii::zero(), ctx, fs, paint,
+    if (!paint_layered_background(layers_of(b, paint), color, canvas, BorderRadii::zero(), ctx, fs, paint,
                                   1, nullptr, nullptr, nullptr, b.style) &&
         color.a > 0) {
         Mesh mesh;

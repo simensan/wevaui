@@ -1,5 +1,6 @@
 #pragma once
 #include "weva/color.h"
+#include "weva/image_decode.h"
 #include "weva/computed_style.h"
 #include "weva/geometry.h"
 #include "weva/style_resolver.h"
@@ -67,7 +68,12 @@ bool parse_gradient(std::string_view raw, const LinearColor& current_color, Grad
 struct BackgroundLayer {
     bool is_gradient = false;
     Gradient gradient;
-    std::string url;                            // an image layer, not yet painted
+    std::string url;                            // an image layer's source
+    // Resolved from `url` before rasterizing, by whoever owns the ImageStore.
+    // Null means the file was missing or is not a format the decoder knows,
+    // and the layer paints nothing -- which is what the whole engine did with
+    // an image before this existed.
+    const DecodedImage* image = nullptr;
     std::string pos_x = "0%", pos_y = "0%";     // background-position, raw
     std::string size_x = "auto", size_y = "auto";   // background-size, raw
     bool repeat_x = true, repeat_y = true;

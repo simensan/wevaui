@@ -739,6 +739,26 @@ void sample_gradient(const Gradient& g, double x, double y, double width, double
     out_srgb[3] = c.a;
 }
 
+// One texel of a background image, nearest.
+//
+// Nearest and not bilinear, deliberately and to match the rest of the engine:
+// the software renderer samples its textures nearest and the Godot host sets
+// TEXTURE_FILTER_NEAREST for the glyph atlas, so smoothing here would be the
+// only smooth sampling in the pipeline -- and would put the two backends on
+// different footing the moment one of them changed. `image-rendering` is where
+// that choice belongs, and it is not implemented yet either.
+Srgb sample_image(const DecodedImage& image, double lx, double ly, double tw, double th) {
+    const int ix = std::clamp(static_cast<int>(lx / tw * image.width), 0, image.width - 1);
+    const int iy = std::clamp(static_cast<int>(ly / th * image.height), 0, image.height - 1);
+    const uint8_t* p = image.rgba.data() + (static_cast<size_t>(iy) * image.width + ix) * 4;
+    Srgb s;
+    s.r = p[0] / 255.0f;
+    s.g = p[1] / 255.0f;
+    s.b = p[2] / 255.0f;
+    s.a = p[3] / 255.0f;
+    return s;
+}
+
 void rasterize_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
                           double width, double height, int tex_w, int tex_h,
                           const LayoutContext& ctx, double font_size,
@@ -752,6 +772,10 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     // `auto`, `cover` and `contain` all mean the painting area (§3.9).
     struct Tile {
         PreparedGradient prepared;
+        // Set instead of `prepared` for a url layer. Unlike a gradient an
+        // image has an INTRINSIC size, which is what `auto`, `cover` and
+        // `contain` are all measured against.
+        const DecodedImage* image = nullptr;
         double ox, oy, tw, th;
         bool repeat_x, repeat_y;
         // Whether the tile's repetition can actually be reached inside the
@@ -765,14 +789,45 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     };
     std::vector<Tile> tiles;
     for (const BackgroundLayer& l : layers) {
-        if (!l.is_gradient) continue;
+        if (!l.is_gradient && !l.image) continue;
         Tile t;
+        t.image = l.is_gradient ? nullptr : l.image;
         t.tw = width;
         t.th = height;
-        const bool auto_x = iequals(l.size_x, "auto") || iequals(l.size_x, "cover") || iequals(l.size_x, "contain");
+        const bool cover = iequals(l.size_x, "cover");
+        const bool contain = iequals(l.size_x, "contain");
+        const bool auto_x = iequals(l.size_x, "auto") || cover || contain;
         const bool auto_y = iequals(l.size_y, "auto");
+        if (t.image) {
+            // CSS Backgrounds L3 s3.9, the half a gradient never reaches: an
+            // image has a size of its own, so `auto` is that size, `cover` and
+            // `contain` scale it to the area keeping its aspect ratio, and one
+            // explicit axis sets the other from the same ratio.
+            const double iw = std::max(1, t.image->width);
+            const double ih = std::max(1, t.image->height);
+            if (cover || contain) {
+                const double sx_scale = width / iw, sy_scale = height / ih;
+                const double scale = cover ? std::max(sx_scale, sy_scale)
+                                           : std::min(sx_scale, sy_scale);
+                t.tw = iw * scale;
+                t.th = ih * scale;
+            } else if (auto_x && auto_y) {
+                t.tw = iw;
+                t.th = ih;
+            } else if (auto_x) {
+                t.th = std::max(1e-6, resolve_size_component(l.size_y, height, ctx, font_size));
+                t.tw = t.th * (iw / ih);
+            } else if (auto_y) {
+                t.tw = std::max(1e-6, resolve_size_component(l.size_x, width, ctx, font_size));
+                t.th = t.tw * (ih / iw);
+            } else {
+                t.tw = std::max(1e-6, resolve_size_component(l.size_x, width, ctx, font_size));
+                t.th = std::max(1e-6, resolve_size_component(l.size_y, height, ctx, font_size));
+            }
+        } else {
         if (!auto_x) t.tw = std::max(1e-6, resolve_size_component(l.size_x, width, ctx, font_size));
         if (!auto_y) t.th = std::max(1e-6, resolve_size_component(l.size_y, height, ctx, font_size));
+        }
         t.ox = resolve_position(l.pos_x, width, t.tw, true, ctx, font_size);
         t.oy = resolve_position(l.pos_y, height, t.th, false, ctx, font_size);
         t.repeat_x = l.repeat_x;
@@ -781,7 +836,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         // wrapping is the identity and the bounds test below always passes.
         t.wrap_x = l.repeat_x && !(t.ox <= 0 && t.ox + t.tw >= width);
         t.wrap_y = l.repeat_y && !(t.oy <= 0 && t.oy + t.th >= height);
-        t.prepared = prepare(l.gradient, t.tw, t.th, ctx, font_size);
+        if (!t.image) t.prepared = prepare(l.gradient, t.tw, t.th, ctx, font_size);
         tiles.push_back(std::move(t));
     }
 
@@ -938,7 +993,8 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                         else if (!t.repeat_x && (lx < 0 || lx >= t.tw)) continue;
                         if (t.wrap_y) ly = std::fmod(std::fmod(ly, t.th) + t.th, t.th);
                         else if (!t.repeat_y && (ly < 0 || ly >= t.th)) continue;
-                        const Srgb s = sample_prepared(t.prepared, lx, ly);
+                        const Srgb s = t.image ? sample_image(*t.image, lx, ly, t.tw, t.th)
+                                               : sample_prepared(t.prepared, lx, ly);
                         const float sa = s.a;
                         r = s.r * sa + r * (1 - sa);
                         g = s.g * sa + g * (1 - sa);

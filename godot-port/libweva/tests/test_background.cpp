@@ -3,6 +3,7 @@
 // draw per gradient box; the body's background on the canvas).
 #include "check.h"
 #include "weva/background.h"
+#include "weva/image_store.h"
 #include "weva/block_layout.h"
 #include "weva/box_builder.h"
 #include "weva/cascade.h"
@@ -190,7 +191,158 @@ Rect shape_bounds(const RecordingBackend::Geometry& g) {
     return Rect(x0 - 0.5, y0 - 0.5, (x1 - x0) + 1.0, (y1 - y0) + 1.0);
 }
 
+
+// ---- background-image ---------------------------------------------------
+//
+// A 2x2 image with four unequal colours, so a flip or a transpose in the
+// sampler shows up rather than cancelling out:
+//     red   green
+//     blue  white
+const uint8_t k_quad_png[] = {
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
+    0, 0, 0, 2, 0, 0, 0, 2, 8, 6, 0, 0, 0, 114, 182, 13,
+    36, 0, 0, 0, 18, 73, 68, 65, 84, 120, 156, 99, 248, 207, 192, 240,
+    31, 12, 129, 52, 24, 0, 0, 73, 200, 9, 247, 249, 171, 182, 13, 0,
+    0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+};
+
+// The store, fed from memory rather than from disk: the test is about
+// sampling and sizing, and a fixture on disk would make it about paths too.
+weva::ImageStore quad_store() {
+    weva::ImageStore store;
+    store.set_reader([](const std::string& path, std::vector<uint8_t>* out) {
+        if (path != "quad.png") return false;
+        out->assign(k_quad_png, k_quad_png + sizeof(k_quad_png));
+        return true;
+    });
+    return store;
+}
+
+// The texel at (x, y) of a rasterized background, as RGBA.
+struct Texel { int r, g, b, a; };
+Texel texel_at(const std::vector<uint8_t>& rgba, int tex_w, int x, int y) {
+    const size_t o = (static_cast<size_t>(y) * tex_w + x) * 4;
+    return {rgba[o], rgba[o + 1], rgba[o + 2], rgba[o + 3]};
+}
+
 } // namespace
+
+void test_background_image() {
+    weva::ImageStore store = quad_store();
+    const weva::DecodedImage* image = store.get("quad.png");
+    CHECK(image != nullptr);
+    if (!image) return;
+    CHECK(image->width == 2 && image->height == 2);
+
+    // A miss is cached as a miss, and answers null rather than reopening.
+    CHECK(store.get("missing.png") == nullptr);
+    CHECK(store.get("missing.png") == nullptr);
+
+    LayoutContext ctx;
+    ctx.viewport_width_px = 400;
+    ctx.viewport_height_px = 300;
+
+    // ---- `background-size: cover` on a square box ----------------------
+    //
+    // The image is square and so is the box, so cover scales it to exactly
+    // the box: each of the four texels is one quadrant, and which colour
+    // lands in which corner is the whole assertion.
+    {
+        BackgroundLayer layer;
+        layer.is_gradient = false;
+        layer.image = image;
+        layer.size_x = "cover";
+        layer.repeat_x = layer.repeat_y = false;
+        std::vector<uint8_t> rgba;
+        rasterize_background({layer}, LinearColor{0, 0, 0, 0}, 40, 40, 40, 40, ctx, 16, &rgba);
+
+        const Texel tl = texel_at(rgba, 40, 5, 5);
+        const Texel tr = texel_at(rgba, 40, 35, 5);
+        const Texel bl = texel_at(rgba, 40, 5, 35);
+        const Texel br = texel_at(rgba, 40, 35, 35);
+        CHECK(tl.r > 200 && tl.g < 50 && tl.b < 50);                 // red, top left
+        CHECK(tr.g > 200 && tr.r < 50 && tr.b < 50);                 // green, top right
+        CHECK(bl.b > 200 && bl.r < 50 && bl.g < 50);                 // blue, bottom left
+        CHECK(br.r > 200 && br.g > 200 && br.b > 200);               // white, bottom right
+    }
+
+    // ---- the intrinsic size, when nothing says otherwise ---------------
+    //
+    // `auto` means the image's OWN size, so a 2x2 image in a 40x40 box
+    // occupies four texels in the corner and leaves the rest transparent --
+    // which is exactly what distinguishes it from a gradient, whose `auto` is
+    // the painting area.
+    {
+        BackgroundLayer layer;
+        layer.image = image;
+        layer.repeat_x = layer.repeat_y = false;
+        std::vector<uint8_t> rgba;
+        rasterize_background({layer}, LinearColor{0, 0, 0, 0}, 40, 40, 40, 40, ctx, 16, &rgba);
+        CHECK(texel_at(rgba, 40, 0, 0).r > 200);        // the image is here
+        CHECK(texel_at(rgba, 40, 20, 20).a == 0);       // and nowhere else
+    }
+
+    // ---- repeat tiles it ------------------------------------------------
+    {
+        BackgroundLayer layer;
+        layer.image = image;
+        layer.repeat_x = layer.repeat_y = true;
+        std::vector<uint8_t> rgba;
+        rasterize_background({layer}, LinearColor{0, 0, 0, 0}, 40, 40, 40, 40, ctx, 16, &rgba);
+        // Every texel is covered, and the pattern repeats every 2px.
+        CHECK(texel_at(rgba, 40, 20, 20).a == 255);
+        CHECK(texel_at(rgba, 40, 0, 0).r == texel_at(rgba, 40, 2, 2).r);
+        CHECK(texel_at(rgba, 40, 1, 0).g == texel_at(rgba, 40, 3, 0).g);
+    }
+
+    // ---- one explicit axis sets the other from the aspect ratio ---------
+    {
+        BackgroundLayer layer;
+        layer.image = image;
+        layer.size_x = "20px";
+        layer.repeat_x = layer.repeat_y = false;
+        std::vector<uint8_t> rgba;
+        rasterize_background({layer}, LinearColor{0, 0, 0, 0}, 40, 40, 40, 40, ctx, 16, &rgba);
+        // Square image, so a 20px width is a 20px height: covered at (19,19),
+        // clear just past it.
+        CHECK(texel_at(rgba, 40, 19, 19).a == 255);
+        CHECK(texel_at(rgba, 40, 21, 21).a == 0);
+    }
+
+    // ---- an image layer composites OVER the background colour ----------
+    {
+        BackgroundLayer layer;
+        layer.image = image;
+        layer.size_x = "cover";
+        layer.repeat_x = layer.repeat_y = false;
+        std::vector<uint8_t> rgba;
+        // Opaque black underneath; the image is opaque, so it wins everywhere.
+        rasterize_background({layer}, LinearColor{0, 0, 0, 1}, 40, 40, 40, 40, ctx, 16, &rgba);
+        CHECK(texel_at(rgba, 40, 5, 5).r > 200);
+    }
+
+    // ---- a layer whose image failed to load paints nothing --------------
+    //
+    // The engine drew a flat fill for every image before this existed, and a
+    // missing file has to keep doing exactly that rather than a black box.
+    {
+        BackgroundLayer layer;
+        layer.image = nullptr;
+        layer.url = "missing.png";
+        std::vector<uint8_t> rgba;
+        rasterize_background({layer}, LinearColor{0, 0, 0, 0}, 8, 8, 8, 8, ctx, 16, &rgba);
+        CHECK(texel_at(rgba, 8, 4, 4).a == 0);
+    }
+
+    // ---- the base path ---------------------------------------------------
+    weva::ImageStore paths;
+    paths.set_base_path("/assets/ui");
+    CHECK_EQ(paths.resolve("gem.png"), std::string("/assets/ui/gem.png"));
+    CHECK_EQ(paths.resolve("res://icons/gem.png"), std::string("res://icons/gem.png"));
+    CHECK_EQ(paths.resolve("/absolute/gem.png"), std::string("/absolute/gem.png"));
+    paths.set_base_path("/assets/ui/");
+    CHECK_EQ(paths.resolve("gem.png"), std::string("/assets/ui/gem.png"));
+}
 
 void test_background_shorthand() {
     {

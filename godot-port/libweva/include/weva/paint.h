@@ -1,4 +1,5 @@
 #pragma once
+#include "weva/image_store.h"
 #include "weva/box.h"
 #include <vector>
 #include "weva/render_interface.h"
@@ -121,6 +122,9 @@ struct PaintContext {
     // When set, rasterized backgrounds and blurs are cached here instead of
     // being regenerated and released every pass.
     TextureCache* texture_cache = nullptr;
+    // Where a `url(...)` in a background gets its pixels. Null means images
+    // do not paint, which is what the engine did before it existed.
+    ImageStore* images = nullptr;
     CaretState caret;
     SelectPopup popup;
 };

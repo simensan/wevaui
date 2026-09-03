@@ -744,6 +744,31 @@ weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t elem
  * then `out_index` is untouched and the key buffer gets an empty string). The
  * key follows the usual two-call convention: pass a null buffer to ask for the
  * length. */
+/* Where a relative `url(...)` resolves from -- the document's own directory,
+ * normally, so `background-image: url(icons/gem.png)` beside the HTML finds
+ * the file the way a browser would.
+ *
+ * A path with a scheme (`res://`, `user://`, `http://`) or an absolute path is
+ * left alone, because joining a base onto one produces something no host could
+ * open. Changing this drops every decoded image, so set it before the first
+ * update rather than per frame.
+ *
+ * Without it, only absolute paths load. With it, the built-in reader opens
+ * ordinary files; a host whose assets are not files -- Godot's `res://` inside
+ * an exported .pck -- wants weva_document_set_asset_reader instead, and still
+ * gets the core's decoder, so both backends see identical pixels. */
+weva_status weva_document_set_base_path(weva_document_t doc, const char* path);
+
+/* How the core obtains an asset's bytes. Returns the number of bytes the asset
+ * HAS, writing up to `capacity` of them -- the two-call convention the rest of
+ * the ABI uses -- or 0 when there is no such asset. Passing a null function
+ * restores the built-in filesystem reader. Changing it drops every decoded
+ * image. */
+typedef size_t (*weva_asset_reader)(void* user_data, const char* path, uint8_t* buffer,
+                                    size_t capacity);
+weva_status weva_document_set_asset_reader(weva_document_t doc, weva_asset_reader reader,
+                                           void* user_data);
+
 /* The value the cascade settled on for one property, as a string.
  *
  * What a script cannot otherwise find out: the stylesheet is the authority on

@@ -1,3 +1,4 @@
+#include "weva/image_store.h"
 #include "weva_c.h"
 
 #include "weva/components.h"
@@ -1113,6 +1114,10 @@ struct weva_document {
     // whole background rasterization on every change, which is most of what an
     // update costs at all.
     TextureCache textures;
+    // Decoded background images, kept across updates. Rasterizing a
+    // background re-samples the image every time its box changes, so decoding
+    // per update would be the most expensive thing in the engine.
+    ImageStore images;
     // A scrollbar thumb being dragged. Held by element, like the offsets, so
     // a relayout mid-drag does not drop the grab.
     struct ScrollDrag {
@@ -2192,6 +2197,7 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     paint.face = doc->face;
     paint.owned_textures = &doc->transient_textures;
     paint.texture_cache = &doc->textures;
+    paint.images = &doc->images;
     paint.caret = caret;
     paint.popup.element = doc->open_select;
     paint.popup.highlighted = doc->highlighted_option;
@@ -4088,6 +4094,31 @@ weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t elemen
     e->remove_attribute("data-modal");
     doc->pending = worst(doc->pending, Invalidation::Boxes);
     if (was_open) doc->queue_event(WEVA_EVENT_TOGGLE, e, 0, 0, 0);
+    return WEVA_OK;
+}
+
+weva_status weva_document_set_base_path(weva_document_t doc, const char* path) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    doc->images.set_base_path(path ? path : "");
+    return WEVA_OK;
+}
+
+weva_status weva_document_set_asset_reader(weva_document_t doc, weva_asset_reader reader,
+                                           void* user_data) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    if (!reader) {
+        doc->images.set_reader({});
+        return WEVA_OK;
+    }
+    doc->images.set_reader([reader, user_data](const std::string& path,
+                                               std::vector<uint8_t>* out) {
+        // Two calls: the size, then the bytes. A host that cannot answer the
+        // first returns 0 and the image is a miss, cached as one.
+        const size_t size = reader(user_data, path.c_str(), nullptr, 0);
+        if (size == 0) return false;
+        out->resize(size);
+        return reader(user_data, path.c_str(), out->data(), out->size()) == size;
+    });
     return WEVA_OK;
 }
 
