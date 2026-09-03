@@ -86,7 +86,31 @@ func _ready() -> void:
 	var open_select: String = _args.get("open", "")
 	if not open_select.is_empty():
 		doc.open_select(open_select)
-	if not focus.is_empty() or not hover.is_empty() or not open_select.is_empty():
+	# The states this session added. None of them had ever been asked of the
+	# Godot side by any gate, which is the same shape of gap that hid the
+	# hover bug: geometry that one backend drew and the other was never asked
+	# to.
+	var dialog: String = _args.get("dialog", "")
+	if not dialog.is_empty():
+		doc.show_modal_dialog(dialog)
+	var popover: String = _args.get("popover", "")
+	if not popover.is_empty():
+		doc.show_popover(popover)
+	var press: String = _args.get("press", "")
+	if not press.is_empty():
+		var pbox := doc.query_bounds(press)
+		var pat := pbox.position + pbox.size * 0.5
+		doc.set_pointer(pat, 0)
+		doc.set_pointer(pat, 1)   # down and HELD, which is what :active means
+	var tooltip: String = _args.get("tooltip", "")
+	if not tooltip.is_empty():
+		var tbox := doc.query_bounds(tooltip)
+		doc.set_pointer(tbox.position + tbox.size * 0.5, 0)
+		doc.update_document()
+		# A tooltip is the one piece of this that time alone brings on, so the
+		# clock is advanced past its delay even though the scene is paused.
+		doc.update_document(1.0)
+	if not focus.is_empty() or not hover.is_empty() or not open_select.is_empty() 			or not dialog.is_empty() or not popover.is_empty() or not press.is_empty() 			or not tooltip.is_empty():
 		doc.update_document()
 
 	# The document composites over an opaque white page, matching what

@@ -187,6 +187,10 @@ def main():
     ap.add_argument("--selection", default=None, help="A,B on the focused field")
     ap.add_argument("--scroll", default=None, help="pixels to scroll the focused element")
     ap.add_argument("--hover", default=None, help="selector to put the pointer over")
+    ap.add_argument("--press", default=None, help="selector to hold the pointer down on")
+    ap.add_argument("--dialog", default=None, help="selector of a <dialog> to show modally")
+    ap.add_argument("--popover", default=None, help="selector of a popover to open")
+    ap.add_argument("--tooltip", default=None, help="selector to rest on until its title shows")
     ap.add_argument("--open", dest="open_select", default=None, help="a <select> to open")
     ap.add_argument("--coverage-tolerance", type=float, default=2.0,
                     help="percentage of pixels allowed to disagree on ink at all")
@@ -219,6 +223,11 @@ def main():
     if args.open_select:
         soft_flags.append("--open=" + args.open_select)
         godot_flags += ["--open", args.open_select]
+    for name, value in (("press", args.press), ("dialog", args.dialog),
+                        ("popover", args.popover), ("tooltip", args.tooltip)):
+        if value:
+            soft_flags.append("--%s=%s" % (name, value))
+            godot_flags += ["--" + name, value]
 
     subprocess.run([args.weva_render, args.html, args.css, width, height, soft] + soft_flags,
                    check=True)

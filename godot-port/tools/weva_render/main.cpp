@@ -68,13 +68,22 @@ struct Interaction {
     int selection_from = -1;
     int selection_to = -1;  // --selection=A,B on the focused field
     double scroll = 0;      // --scroll=<px> on the focused element
+    // The states this session added, none of which any gate had ever asked
+    // either backend to DRAW. A modal dialog's backdrop, a popover in the top
+    // layer and a tooltip are all geometry the Godot host had never been
+    // compared on -- the same shape of gap that hid the hover bug.
+    std::string press;      // --press=<selector>, pointer down on it (:active)
+    std::string dialog;     // --dialog=<selector>, shown MODALLY (::backdrop)
+    std::string popover;    // --popover=<selector>, opened
+    std::string tooltip;    // --tooltip=<selector>, hovered until its title shows
 };
 
 int main(int argc, char** argv) {
     if (argc < 6) {
         std::fprintf(stderr,
                      "usage: weva_render <html> <css> <width> <height> <out.ppm> [flags]\n"
-                     "  --focus=SEL --open=SEL --hover=SEL --selection=A,B --scroll=PX\n");
+                     "  --focus=SEL --open=SEL --hover=SEL --selection=A,B --scroll=PX\n"
+                     "  --press=SEL --dialog=SEL --popover=SEL --tooltip=SEL\n");
         return 2;
     }
     Interaction act;
@@ -84,6 +93,10 @@ int main(int argc, char** argv) {
         else if (a.rfind("--open=", 0) == 0) act.open = a.substr(7);
         else if (a.rfind("--hover=", 0) == 0) act.hover = a.substr(8);
         else if (a.rfind("--scroll=", 0) == 0) act.scroll = std::atof(a.c_str() + 9);
+        else if (a.rfind("--press=", 0) == 0) act.press = a.substr(8);
+        else if (a.rfind("--dialog=", 0) == 0) act.dialog = a.substr(9);
+        else if (a.rfind("--popover=", 0) == 0) act.popover = a.substr(10);
+        else if (a.rfind("--tooltip=", 0) == 0) act.tooltip = a.substr(10);
         else if (a.rfind("--selection=", 0) == 0) {
             const std::string v = a.substr(12);
             const size_t comma = v.find(',');
@@ -153,7 +166,35 @@ int main(int argc, char** argv) {
     if (!act.open.empty()) {
         weva_document_open_select(doc, weva_document_query(doc, act.open.c_str()));
     }
-    if (!act.focus.empty() || !act.open.empty() || !act.hover.empty()) {
+    if (!act.dialog.empty()) {
+        weva_element_show_dialog(doc, weva_document_query(doc, act.dialog.c_str()), 1);
+    }
+    if (!act.popover.empty()) {
+        weva_element_show_popover(doc, weva_document_query(doc, act.popover.c_str()));
+    }
+    if (!act.press.empty()) {
+        // Down and held, which is what `:active` means. Released would put the
+        // document back where it started and draw nothing new.
+        double px = 0, py = 0, pw = 0, ph = 0;
+        if (weva_element_bounds(doc, weva_document_query(doc, act.press.c_str()), &px, &py, &pw,
+                                &ph) == WEVA_OK) {
+            weva_document_set_pointer(doc, px + pw * 0.5, py + ph * 0.5, 0);
+            weva_document_set_pointer(doc, px + pw * 0.5, py + ph * 0.5, WEVA_BUTTON_PRIMARY);
+        }
+    }
+    if (!act.tooltip.empty()) {
+        // The pointer rests on it and the clock is advanced past the delay:
+        // a tooltip is the one piece of this that time alone brings on.
+        double tx = 0, ty = 0, tw = 0, th = 0;
+        if (weva_element_bounds(doc, weva_document_query(doc, act.tooltip.c_str()), &tx, &ty, &tw,
+                                &th) == WEVA_OK) {
+            weva_document_set_pointer(doc, tx + tw * 0.5, ty + th * 0.5, 0);
+            weva_document_update(doc, 0.0);
+            weva_document_update(doc, 1.0);
+        }
+    }
+    if (!act.focus.empty() || !act.open.empty() || !act.hover.empty() || !act.press.empty() ||
+        !act.dialog.empty() || !act.popover.empty() || !act.tooltip.empty()) {
         weva_document_update(doc, 0.0);
     }
 

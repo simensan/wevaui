@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The backend comparison for the states that only exist while a user is doing
 # something -- a cursor, a selection, a scrolled list, an open dropdown, a
-# hovered row.
+# hovered row, a pressed button, a modal dialog, a popover, a tooltip.
 #
 # compare_all.sh covers the corpus, but a corpus of static pages never reaches
 # those paths: the dropdown in particular is painted AFTER the tree and with no
@@ -42,3 +42,11 @@ run scrolled-list   --focus='#log' --scroll=40
 run hovered-row     --hover='.entry'
 run hovered-parent  --hover='.panel'
 run hovered-sibling --hover='#name'
+# The states this session added. Every one of them DRAWS something -- a dim
+# behind a dialog, a popover in the top layer, a tooltip beside the cursor, a
+# pressed button -- and none had ever been asked of the Godot backend. That is
+# the gap that hid the hover bug, so it is closed for all of them at once.
+run pressed         --press='#act'
+run modal-dialog    --dialog='#ask'
+run open-popover    --popover='#menu'
+run tooltip         --tooltip='#act'
