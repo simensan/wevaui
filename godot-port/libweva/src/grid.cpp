@@ -878,8 +878,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         AxisPlacement col, row;
     };
     std::vector<Pending> pending;
-    const int explicit_columns = static_cast<int>(columns.size());
-    const int explicit_rows = static_cast<int>(rows.size());
+    int explicit_columns = static_cast<int>(columns.size());
+    int explicit_rows = static_cast<int>(rows.size());
     for (BoxId c : tree->children(container)) {
         const Box& cb = (*tree)[c];
         if (cb.kind != BoxKind::Block && cb.kind != BoxKind::AnonymousBlock) continue;
@@ -924,6 +924,29 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             p.row = resolve_axis(rs, re, explicit_rows);
         }
         pending.push_back(p);
+    }
+
+    // `grid-auto-flow` (CSS Grid L1 8.5). Two independent things live in one
+    // property: which axis the cursor walks, and whether it packs densely.
+    //
+    // The port read neither, so `grid-auto-flow: column` laid out in rows --
+    // a toolbar of buttons meant to run down the side came out across the top.
+    bool flow_column = false;
+    bool flow_dense = false;
+    {
+        const std::string_view raw = get((*tree)[container].style, "grid-auto-flow");
+        flow_column = raw.find("column") != std::string_view::npos;
+        flow_dense = raw.find("dense") != std::string_view::npos;
+    }
+
+    // COLUMN FLOW IS ROW FLOW TRANSPOSED. Rather than a second copy of the
+    // placement algorithm with the axes swapped -- two chances to get the
+    // spec wrong, and two to fix whenever it changes -- the pending items go
+    // in transposed, the row-major algorithm runs unchanged, and the results
+    // come back out transposed.
+    if (flow_column) {
+        for (Pending& p : pending) std::swap(p.col, p.row);
+        std::swap(explicit_columns, explicit_rows);
     }
 
     std::vector<Placement> items;
@@ -996,6 +1019,14 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
                 place(p, cursor_row, cursor_col);
                 continue;
             }
+            // `dense` starts the search over for every item, so a later
+            // small one backfills a hole an earlier large one left. The
+            // sparse default never looks backwards, which is what keeps
+            // document order and visual order together.
+            if (flow_dense) {
+                cursor_row = 0;
+                cursor_col = 0;
+            }
             while (true) {
                 if (cursor_col + p.col.span > column_count) {
                     cursor_col = 0;
@@ -1012,6 +1043,15 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
                 ++cursor_row;
             }
         }
+    }
+
+    // Back to real axes, now that placement is done.
+    if (flow_column) {
+        for (Placement& pl : items) {
+            std::swap(pl.column, pl.row);
+            std::swap(pl.column_span, pl.row_span);
+        }
+        std::swap(explicit_columns, explicit_rows);
     }
 
     // Implicit columns: a placement past the explicit grid adds `auto` tracks,

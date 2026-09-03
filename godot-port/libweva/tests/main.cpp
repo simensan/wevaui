@@ -154,6 +154,8 @@ void test_grid_track_sizing_functions();
 void test_inline_box_edges_take_space_on_the_line();
 void test_grid_aspect_ratio_item_takes_the_larger_transfer();
 void test_grid_subgrid();
+void test_grid_auto_flow_column();
+void test_grid_auto_flow_dense();
 void test_block_in_inline_splitting();
 void test_leading_space_after_an_inline_start_is_dropped();
 void test_preserved_newlines_force_line_breaks();
@@ -509,6 +511,8 @@ int main() {
     test_inline_box_edges_take_space_on_the_line();
     test_grid_aspect_ratio_item_takes_the_larger_transfer();
     test_grid_subgrid();
+    test_grid_auto_flow_column();
+    test_grid_auto_flow_dense();
     test_block_in_inline_splitting();
     test_leading_space_after_an_inline_start_is_dropped();
     test_preserved_newlines_force_line_breaks();

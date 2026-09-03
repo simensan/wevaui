@@ -662,3 +662,82 @@ void test_grid_stretched_rows_feed_back_into_columns() {
     CHECK(near(g.box("a").height, 100));
     CHECK(near(g.box("g").height, 100));
 }
+
+// `grid-auto-flow` (CSS Grid L1 8.5). The port read neither half of it, so
+// `column` laid out in rows -- a toolbar meant to run down the side came out
+// across the top -- and `dense` packed sparsely.
+void test_grid_auto_flow_column() {
+    {
+        // Row flow, the default: four items across two columns fill left to
+        // right, wrapping to a second row.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: 100px 100px;"
+                    "     grid-template-rows: 40px 40px; width: 400px }"
+                    ".i { height: 40px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div>"
+                       "<div id=c class=i></div><div id=d class=i></div></div></body>"));
+        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
+        CHECK(near(f.box("b").x, 100) && near(f.box("b").y, 0));    // across first
+        CHECK(near(f.box("c").x, 0) && near(f.box("c").y, 40));
+        CHECK(near(f.box("d").x, 100) && near(f.box("d").y, 40));
+    }
+    {
+        // Column flow: the same four fill top to bottom, wrapping to a second
+        // COLUMN. Every position differs from the case above except the first.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-auto-flow: column;"
+                    "     grid-template-columns: 100px 100px;"
+                    "     grid-template-rows: 40px 40px; width: 400px }"
+                    ".i { height: 40px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div>"
+                       "<div id=c class=i></div><div id=d class=i></div></div></body>"));
+        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
+        CHECK(near(f.box("b").x, 0) && near(f.box("b").y, 40));     // down first
+        CHECK(near(f.box("c").x, 100) && near(f.box("c").y, 0));
+        CHECK(near(f.box("d").x, 100) && near(f.box("d").y, 40));
+    }
+    {
+        // A single-row template with column flow: items keep adding implicit
+        // COLUMNS rather than wrapping, which is the toolbar case.
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-auto-flow: column;"
+                    "     grid-template-rows: 40px; width: 400px }"
+                    ".i { height: 40px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div>"
+                       "<div id=c class=i></div></div></body>"));
+        CHECK(near(f.box("a").y, 0) && near(f.box("b").y, 0) && near(f.box("c").y, 0));
+        CHECK(f.box("b").x > f.box("a").x);
+        CHECK(f.box("c").x > f.box("b").x);
+    }
+}
+
+// `dense` backfills; the sparse default does not.
+void test_grid_auto_flow_dense() {
+    // A wide item in the middle leaves a hole on the first row. Sparse leaves
+    // it; dense puts the next item that fits into it.
+    const char* html = "<body><div id=g><div id=a class=i></div>"
+                       "<div id=wide class=i></div><div id=c class=i></div></div></body>";
+    {
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-template-columns: 50px 50px 50px; width: 300px }"
+                    ".i { height: 20px } #wide { grid-column: span 3 }"));
+        CHECK(f.layout(html));
+        // `a` at (0,0); `wide` needs three columns so it drops to row 2;
+        // `c` follows it on row 3 rather than filling the hole beside `a`.
+        CHECK(near(f.box("a").y, 0));
+        CHECK(near(f.box("wide").y, 20));
+        CHECK(near(f.box("c").y, 40));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#g { display: grid; grid-auto-flow: row dense;"
+                    "     grid-template-columns: 50px 50px 50px; width: 300px }"
+                    ".i { height: 20px } #wide { grid-column: span 3 }"));
+        CHECK(f.layout(html));
+        CHECK(near(f.box("a").y, 0));
+        CHECK(near(f.box("wide").y, 20));
+        // Dense looks back: `c` fills the hole on the first row.
+        CHECK(near(f.box("c").y, 0));
+        CHECK(near(f.box("c").x, 50));
+    }
+}
