@@ -181,6 +181,26 @@ texture.
 by one slot per property set, three of them `vector<bool>`. It takes the
 registry's full size at once now.
 
+## Measuring it
+
+    tools/layoutbench.sh              # median of 3 sweeps, worst page first
+    tools/layoutbench.sh --ab A B     # two binaries, interleaved
+
+Use `--ab` for anything under about ten per cent, and do not compare two
+separate runs. The same binary measured twenty minutes apart read 3.052 ms and
+3.262 on layout-stress -- seven per cent of drift with no code between them,
+larger than most single optimisations. A median defends against variance
+within a sweep and not at all against drift between invocations; `--ab`
+alternates the two binaries sample by sample, in both orders, so they see the
+same machine.
+
+That distinction has already changed two conclusions. Making box sides look
+themselves up by id read 1 to 8 per cent SLOWER on its first sweep and was
+nearly reverted; it is a small win. Pooling the grid's occupancy vector looked
+like a small win by the same loose method and is a consistent 1 to 6 per cent
+LOSS under `--ab` -- clearing the borrowed rows costs more than the allocations
+it saves, so the grid still builds them fresh.
+
 ## What is still slow, and why it has not been fixed
 
 **Rasterising gradients on the CPU, in the first paint.** This is the whole of
