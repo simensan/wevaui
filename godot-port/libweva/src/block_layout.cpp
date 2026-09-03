@@ -1,3 +1,4 @@
+#include "weva/image_store.h"
 #include "weva/block_layout.h"
 
 #include "weva/flex.h"
@@ -696,6 +697,20 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
     }
 }
 
+// The image an <img> shows, or null.
+//
+// Resolved here rather than in the box builder because the builder has no
+// LayoutContext and so no way to reach the store -- and this is the only place
+// the answer is needed, since a replaced element's `auto` size IS its
+// intrinsic size and nothing else in layout can supply one.
+const DecodedImage* replaced_image(const Box& box, const LayoutContext& ctx) {
+    if (!ctx.images || !box.element) return nullptr;
+    if (box.element->tag_name() != "img") return nullptr;
+    const std::string_view src = box.element->get_attribute("src");
+    if (src.empty()) return nullptr;
+    return ctx.images->get(src);
+}
+
 double BlockLayout::shrink_to_fit(BoxId id, double available_width,
                                   const ComputedStyle* parent_style) {
     const double fs = apply_box_model(tree_, id, available_width, parent_style, ctx_);
@@ -703,9 +718,44 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     const ResolvedLength w =
         resolve_length(style, "width", ctx_, fs, available_width);
     if (w.kind != LengthKind::Auto) {
+        // A replaced element with a stated width and an auto height takes its
+        // height from the intrinsic ratio -- the case every `img { width: 100% }`
+        // in every stylesheet relies on.
+        if (const DecodedImage* image = replaced_image((*tree_)[id], ctx_)) {
+            const ResolvedLength h = resolve_length(style, "height", ctx_, fs, std::nullopt);
+            if (h.kind != LengthKind::Length) {
+                Box& rb = (*tree_)[id];
+                const double iw = std::max(1, image->width);
+                const double ih = std::max(1, image->height);
+                rb.height = rb.width * (ih / iw);
+            }
+            return fs;
+        }
         // An explicit width needs no probing: apply_box_model already resolved
         // it, so just lay the contents out inside it.
         layout_content(id, fs, available_width, parent_style);
+        return fs;
+    }
+
+    // A replaced element does not shrink to fit its contents; it has none.
+    // CSS 2.2 §10.3.2: an `auto` width on a replaced element with an
+    // intrinsic width IS that width, and an `auto` height follows from the
+    // used width through the intrinsic ratio. Probing instead measured an
+    // empty box and laid every <img> out at zero, which is why none of them
+    // have ever been visible.
+    if (const DecodedImage* image = replaced_image((*tree_)[id], ctx_)) {
+        Box& rb = (*tree_)[id];
+        const double iw = std::max(1, image->width);
+        const double ih = std::max(1, image->height);
+        const ResolvedLength h = resolve_length(style, "height", ctx_, fs, std::nullopt);
+        if (h.kind == LengthKind::Length) {
+            // A stated height and an auto width: the ratio supplies the width.
+            rb.width = h.pixels * (iw / ih);
+            rb.height = h.pixels;
+        } else {
+            rb.width = iw;
+            rb.height = ih;
+        }
         return fs;
     }
 

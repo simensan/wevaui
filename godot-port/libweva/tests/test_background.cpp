@@ -344,6 +344,68 @@ void test_background_image() {
     CHECK_EQ(paths.resolve("gem.png"), std::string("/assets/ui/gem.png"));
 }
 
+
+// ---- <img> as a replaced element ---------------------------------------
+//
+// A replaced element's `auto` width is its INTRINSIC width, and nothing else
+// in layout can supply one -- so before the image store reached layout, every
+// <img> laid out at zero and was invisible whatever its src said.
+void test_replaced_img() {
+    weva::ImageStore store = quad_store();   // the 2x2 red/green/blue/white PNG
+
+    struct Sized { double w, h; };
+    const auto lay_out = [&](const char* css, const char* html) -> Sized {
+        Fixture f;
+        f.ctx.images = &store;
+        if (css[0] != 0) f.css(css);
+        if (!f.layout(html, 400, 300)) return {-2, -2};
+        for (BoxId i = 0; i < static_cast<BoxId>(f.tree.size()); ++i) {
+            const Box& b = f.tree[i];
+            if (b.element && b.element->tag_name() == "img") return {b.width, b.height};
+        }
+        return {-1, -1};
+    };
+
+    // No width or height: the image's own size.
+    {
+        const Sized s = lay_out("", "<body><img src='quad.png'></body>");
+        CHECK(near(s.w, 2) && near(s.h, 2));
+    }
+
+    // A stated width, auto height: the height follows the intrinsic ratio.
+    // Every `img { width: 100% }` in every stylesheet relies on this, and it
+    // is the case most likely to be got wrong.
+    {
+        const Sized s = lay_out("img { width: 40px }", "<body><img src='quad.png'></body>");
+        CHECK(near(s.w, 40));
+        CHECK(near(s.h, 40));   // a square image, so the ratio is 1
+    }
+
+    // A stated height, auto width: the ratio supplies the width.
+    {
+        const Sized s = lay_out("img { height: 30px }", "<body><img src='quad.png'></body>");
+        CHECK(near(s.w, 30) && near(s.h, 30));
+    }
+
+    // Both stated: neither is touched, ratio or no ratio.
+    {
+        const Sized s = lay_out("img { width: 50px; height: 10px }",
+                                "<body><img src='quad.png'></body>");
+        CHECK(near(s.w, 50) && near(s.h, 10));
+    }
+
+    // A src that resolves to nothing keeps the old behaviour rather than
+    // inventing a size.
+    {
+        const Sized s = lay_out("", "<body><img src='missing.png'></body>");
+        CHECK(near(s.w, 0) && near(s.h, 0));
+    }
+    {
+        const Sized s = lay_out("", "<body><img></body>");
+        CHECK(near(s.w, 0) && near(s.h, 0));
+    }
+}
+
 void test_background_shorthand() {
     {
         std::vector<ShorthandLonghand> out;

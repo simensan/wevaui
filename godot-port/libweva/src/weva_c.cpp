@@ -1823,6 +1823,9 @@ weva_document_t weva_document_create(const weva_config* config) {
     if (d->config.viewport_width <= 0) d->config.viewport_width = 1920;
     if (d->config.viewport_height <= 0) d->config.viewport_height = 1080;
     if (d->config.root_font_size <= 0) d->config.root_font_size = 16;
+    // Layout needs it too, not just paint: a replaced element's `auto` width
+    // is its INTRINSIC width, and only the store can say what that is.
+    d->ctx.images = &d->images;
     d->ctx.viewport_width_px = d->config.viewport_width;
     d->ctx.viewport_height_px = d->config.viewport_height;
     d->ctx.root_font_size_px = d->config.root_font_size;

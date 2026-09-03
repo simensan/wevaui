@@ -1,3 +1,4 @@
+#include "weva/image_store.h"
 #include "weva/box_builder.h"
 #include "weva/cascade.h"
 #include "weva/css_value.h"

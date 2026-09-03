@@ -407,6 +407,29 @@ CSS addresses them, so a script that can style a list can also fill it.
     doc.count_elements("#log .line")
     doc.query_text("#log .line:nth-child(2)")      # read one back by position
 
+**Images**
+
+`background-image: url(...)`, `<img src="...">` and the rest reach Godot's
+filesystem, so `res://` works -- including inside an exported `.pck`, where
+there are no files on disk for a C++ core to open:
+
+    doc.base_path = "res://ui"                  # what a relative url() joins to
+    <img src="icons/gem.png">                   # res://ui/icons/gem.png
+    background-image: url(res://art/frame.png)  # a scheme is left alone
+
+A path with no scheme is tried as given and then under `res://`, so a
+stylesheet written for a browser needs no rewriting. The bytes come from
+Godot; the DECODING happens in the core, which is what keeps this host and the
+software renderer byte-identical and the render gate exact.
+
+PNG only for now, 8 bits per channel and not interlaced. Anything else is
+refused rather than guessed at, and a refused image draws nothing -- exactly
+what every image did before this existed.
+
+`<img>` sizes as a replaced element: no width or height gives the image's own
+size, one of them gives the other through the intrinsic ratio, and
+`object-fit` and `object-position` place it in the content box.
+
 **Reading the document back**
 
 Two questions a script could not previously ask.

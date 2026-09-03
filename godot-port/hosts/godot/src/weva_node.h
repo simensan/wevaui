@@ -332,6 +332,19 @@ private:
     godot::String value_of(uint32_t element);
     godot::String attribute_of(uint32_t element, const char* name);
     godot::String model_path_of(uint32_t element);
+
+public:
+    // Where a relative `url(...)` in the CSS resolves from. Set it to the
+    // directory the markup came from and `url(icons/gem.png)` finds the file
+    // beside it, the way a browser resolves one.
+    void set_base_path(const godot::String& path);
+    godot::String get_base_path() const;
+
+private:
+    godot::String base_path_;
+    // Handed to the core so an asset is read through Godot: res:// resolves,
+    // and an exported .pck has no files for the core to open itself.
+    static size_t read_asset(void* user_data, const char* path, uint8_t* buffer, size_t capacity);
     std::vector<uint32_t> matches(const godot::String& selector);
 
 public:

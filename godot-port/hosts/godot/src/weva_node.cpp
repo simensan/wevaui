@@ -4,6 +4,7 @@
 
 #include <godot_cpp/classes/font.hpp>
 #include <godot_cpp/classes/font_file.hpp>
+#include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/image.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/os.hpp>
@@ -39,7 +40,55 @@ WevaDocument::WevaDocument() {
     cfg.viewport_height = 1080;
     cfg.use_user_agent_stylesheet = 1;
     doc_ = weva_document_create(&cfg);
+    // Assets come through Godot rather than through the core's own file
+    // reading, so `res://` works -- including inside an exported .pck, where
+    // there are no files on disk at all. The core still DECODES, which is what
+    // keeps the software renderer and this host byte-identical.
+    weva_document_set_asset_reader(doc_, &WevaDocument::read_asset, this);
 }
+
+// The two-call convention: the size, then the bytes.
+//
+// Opened twice rather than cached between the calls, deliberately. The core
+// calls this once per image for the life of the document -- decoded images are
+// cached there -- so the second open costs nothing worth a member holding a
+// file handle across a call boundary.
+size_t WevaDocument::read_asset(void* user_data, const char* path, uint8_t* buffer,
+                                size_t capacity) {
+    if (!path) return 0;
+    const String p = String::utf8(path);
+    Ref<FileAccess> file = FileAccess::open(p, FileAccess::READ);
+    if (file.is_null()) {
+        // A path relative to nothing resolves against res://, which is where a
+        // Godot project keeps its art. Without this a stylesheet would have to
+        // spell out res:// on every url(), which no browser-shaped stylesheet
+        // does.
+        if (!p.begins_with("res://") && !p.begins_with("user://") && !p.is_absolute_path()) {
+            file = FileAccess::open("res://" + p, FileAccess::READ);
+        }
+        if (file.is_null()) return 0;
+    }
+    const uint64_t length = file->get_length();
+    if (buffer == nullptr || capacity == 0) return static_cast<size_t>(length);
+    if (capacity < length) return 0;
+    const PackedByteArray bytes = file->get_buffer(static_cast<int64_t>(length));
+    if (static_cast<uint64_t>(bytes.size()) != length) return 0;
+    std::memcpy(buffer, bytes.ptr(), static_cast<size_t>(length));
+    static_cast<void>(user_data);
+    return static_cast<size_t>(length);
+}
+
+void WevaDocument::set_base_path(const String& path) {
+    base_path_ = path;
+    if (doc_) {
+        const CharString utf8 = path.utf8();
+        weva_document_set_base_path(doc_, utf8.get_data());
+        dirty_ = true;
+        queue_redraw();
+    }
+}
+
+String WevaDocument::get_base_path() const { return base_path_; }
 
 // The system symbol faces, loaded ONCE for the whole extension.
 //
@@ -267,6 +316,9 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::append_html);
     ClassDB::bind_method(D_METHOD("remove_element", "selector"), &WevaDocument::remove_element);
     ClassDB::bind_method(D_METHOD("count_elements", "selector"), &WevaDocument::count_elements);
+    ClassDB::bind_method(D_METHOD("set_base_path", "path"), &WevaDocument::set_base_path);
+    ClassDB::bind_method(D_METHOD("get_base_path"), &WevaDocument::get_base_path);
+    ADD_PROPERTY(PropertyInfo(Variant::STRING, "base_path"), "set_base_path", "get_base_path");
     ClassDB::bind_method(D_METHOD("get_computed_style", "selector", "property"),
                          &WevaDocument::get_computed_style);
     ClassDB::bind_method(D_METHOD("query_all_text", "selector"), &WevaDocument::query_all_text);

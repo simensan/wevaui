@@ -1918,6 +1918,65 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     return true;
 }
 
+// An <img>'s pixels, expressed as a background layer on its content box.
+//
+// Deliberately not a new painting path. `object-fit` and `background-size` are
+// the same four behaviours under different names, and `object-position` and
+// `background-position` are the same placement, so the layer machinery that
+// already rasterizes, tiles, clips and caches is exactly what an image needs.
+// The two differences are spelled out below rather than papered over.
+std::vector<BackgroundLayer> replaced_layer(const Box& b, const PaintContext& paint) {
+    if (!paint.images || !b.element || !b.style) return {};
+    if (b.element->tag_name() != "img") return {};
+    const std::string_view src = b.element->get_attribute("src");
+    if (src.empty()) return {};
+    const DecodedImage* image = paint.images->get(src);
+    if (!image) return {};
+
+    BackgroundLayer layer;
+    layer.is_gradient = false;
+    layer.image = image;
+    // An image is drawn once, never tiled: `background-repeat` has no
+    // object-fit counterpart and repeating one would be nothing a browser does.
+    layer.repeat_x = false;
+    layer.repeat_y = false;
+
+    const std::string_view fit = get(b.style, "object-fit");
+    if (fit == "contain" || fit == "scale-down") {
+        layer.size_x = "contain";
+    } else if (fit == "cover") {
+        layer.size_x = "cover";
+    } else if (fit == "none") {
+        layer.size_x = "auto";
+        layer.size_y = "auto";
+    } else {
+        // `fill` is the initial value and stretches to the box, ignoring the
+        // aspect ratio -- which `background-size: 100% 100%` says exactly.
+        layer.size_x = "100%";
+        layer.size_y = "100%";
+    }
+
+    // The other difference: object-position centres by default where
+    // background-position starts at the top left. It is what makes `cover`
+    // crop evenly instead of off the bottom right.
+    layer.pos_x = "50%";
+    layer.pos_y = "50%";
+    const std::string_view pos = get(b.style, "object-position");
+    if (!pos.empty()) {
+        const std::string_view trimmed = trim_view(pos);
+        const size_t space = trimmed.find(' ');
+        if (space == std::string_view::npos) {
+            // One value sets the horizontal position; the vertical stays
+            // centred, per CSS Images L3.
+            layer.pos_x = std::string(trimmed);
+        } else {
+            layer.pos_x = std::string(trim_view(trimmed.substr(0, space)));
+            layer.pos_y = std::string(trim_view(trimmed.substr(space + 1)));
+        }
+    }
+    return {layer};
+}
+
 // The box's background image layers, resolved against its own colour -- and
 // against the image store, which is what turns a `url(...)` from a string the
 // parser kept into pixels the rasterizer can composite.
@@ -2366,6 +2425,26 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             background_done = paint_layered_background(
                 layers, resolve_color(b.style, "background-color"), border_box, radii, ctx, fs, paint,
                 state.opacity, xf, state.clip.get(), state.filter.get(), b.style);
+        }
+    }
+
+    // The <img>'s own content. Above the background, below the border, and
+    // inside the CONTENT box rather than the border box -- padding on an
+    // image insets the picture, it does not scale it.
+    if (decorated && !hidden && !blurred && b.width > 0 && b.height > 0) {
+        const std::vector<BackgroundLayer> replaced = replaced_layer(b, paint);
+        if (!replaced.empty()) {
+            const double inset_l = b.border_left + b.padding_left;
+            const double inset_t = b.border_top + b.padding_top;
+            const Rect content_box(
+                x + inset_l, y + inset_t,
+                std::max(0.0, b.width - inset_l - b.border_right - b.padding_right),
+                std::max(0.0, b.height - inset_t - b.border_bottom - b.padding_bottom));
+            if (content_box.width > 0 && content_box.height > 0) {
+                paint_layered_background(replaced, LinearColor::transparent(), content_box,
+                                         BorderRadii::zero(), ctx, fs, paint, state.opacity, xf,
+                                         state.clip.get(), state.filter.get(), nullptr);
+            }
         }
     }
 

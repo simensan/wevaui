@@ -39,6 +39,12 @@ struct LayoutContext {
     const FontMetrics* (*variant_metrics)(void* user, const FontMetrics* base, int weight,
                                           bool italic) = nullptr;
     void* variant_user = nullptr;
+    // Where an <img>'s `src` gets its pixels, so layout can ask how big the
+    // image IS. A replaced element's `auto` width is its intrinsic width, and
+    // nothing else in layout can answer that. Null means images have no
+    // intrinsic size and an <img> lays out at zero, which is what it did
+    // before this existed.
+    class ImageStore* images = nullptr;
     // The document root's resolved line-height, for `rlh` lengths. Zero means
     // unset, in which case CssLength falls back to root_font_size * 1.2.
     double root_line_height_px = 0;
