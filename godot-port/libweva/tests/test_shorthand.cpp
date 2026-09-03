@@ -221,3 +221,26 @@ void test_shorthand_font() {
              "font-size=inherit;line-height=inherit;font-family=inherit");
     CHECK(is_shorthand("font"));
 }
+
+// CSS Flexbox L1 5.1 `flex-flow`. Unexpanded, `flex-flow: column wrap` set
+// NEITHER longhand -- a column layout came out a row, which is not a subtle
+// kind of wrong.
+void test_shorthand_flex_flow() {
+    // Both, in either order.
+    CHECK_EQ(expand("flex-flow", "column wrap"), "flex-direction=column;flex-wrap=wrap");
+    CHECK_EQ(expand("flex-flow", "wrap column"), "flex-direction=column;flex-wrap=wrap");
+
+    // Either alone, with the other taking its initial value -- which is the
+    // half a naive two-token split gets wrong.
+    CHECK_EQ(expand("flex-flow", "column"), "flex-direction=column;flex-wrap=nowrap");
+    CHECK_EQ(expand("flex-flow", "wrap"), "flex-direction=row;flex-wrap=wrap");
+    CHECK_EQ(expand("flex-flow", "row-reverse"), "flex-direction=row-reverse;flex-wrap=nowrap");
+    CHECK_EQ(expand("flex-flow", "wrap-reverse"), "flex-direction=row;flex-wrap=wrap-reverse");
+
+    // A token belonging to neither drops the whole declaration rather than
+    // setting half of it.
+    CHECK_EQ(expand("flex-flow", "column 10px"), "<none>");
+    CHECK_EQ(expand("flex-flow", "sideways"), "<none>");
+    // And two of the same kind is not a valid pair either.
+    CHECK_EQ(expand("flex-flow", "row column"), "<none>");
+}

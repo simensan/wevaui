@@ -1711,3 +1711,39 @@ void test_marker_pseudo_styles_the_marker() {
         CHECK(near(last, 10));
     }
 }
+
+// The expansion has to reach LAYOUT, not just the expander: a shorthand that
+// produces the right longhands and is then dropped somewhere between is the
+// same bug from the author's side.
+void test_flex_flow_reaches_layout() {
+    {
+        // Row, the default: two items side by side.
+        Fixture f;
+        CHECK(f.css("#g { display: flex; width: 300px }"
+                    ".i { width: 50px; height: 20px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div>"
+                       "<div id=b class=i></div></div></body>"));
+        CHECK(near(f.box("b").x, 50));
+        CHECK(near(f.box("b").y, 0));
+    }
+    {
+        // `flex-flow: column` stacks them, through the shorthand alone.
+        Fixture f;
+        CHECK(f.css("#g { display: flex; flex-flow: column; width: 300px }"
+                    ".i { width: 50px; height: 20px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div>"
+                       "<div id=b class=i></div></div></body>"));
+        CHECK(near(f.box("b").x, 0));
+        CHECK(near(f.box("b").y, 20));
+    }
+    {
+        // And the wrap half: three 50px items in a 120px row wrap to a second
+        // line only when the shorthand's `wrap` arrives.
+        Fixture f;
+        CHECK(f.css("#g { display: flex; flex-flow: row wrap; width: 120px }"
+                    ".i { width: 50px; height: 20px; flex: none }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div>"
+                       "<div id=c class=i></div></div></body>"));
+        CHECK(near(f.box("c").y, 20));   // pushed to the second line
+    }
+}

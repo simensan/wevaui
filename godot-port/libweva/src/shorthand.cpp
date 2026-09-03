@@ -457,6 +457,41 @@ bool expand_shorthand(std::string_view name, std::string_view value,
     }
     if (name == "border-radius") return expand_border_radius(t, out);
 
+    // CSS Flexbox L1 §5.1: `flex-flow` is `flex-direction || flex-wrap`, in
+    // either order and either alone. Unexpanded, `flex-flow: column wrap` set
+    // neither -- a column layout came out a row, which is not a subtle wrong.
+    if (name == "flex-flow") {
+        if (t.empty() || t.size() > 2) return true;
+        const auto is_direction = [](std::string_view v) {
+            return iequals(v, "row") || iequals(v, "row-reverse") || iequals(v, "column") ||
+                   iequals(v, "column-reverse");
+        };
+        const auto is_wrap = [](std::string_view v) {
+            return iequals(v, "nowrap") || iequals(v, "wrap") || iequals(v, "wrap-reverse");
+        };
+        std::string_view direction = "row";
+        std::string_view wrap = "nowrap";
+        bool had_direction = false, had_wrap = false;
+        for (std::string_view v : t) {
+            if (!had_direction && is_direction(v)) {
+                direction = v;
+                had_direction = true;
+                continue;
+            }
+            if (!had_wrap && is_wrap(v)) {
+                wrap = v;
+                had_wrap = true;
+                continue;
+            }
+            // A token that is neither drops the whole declaration, as an
+            // invalid shorthand should.
+            return true;
+        }
+        emit(out, "flex-direction", direction);
+        emit(out, "flex-wrap", wrap);
+        return true;
+    }
+
     // ---- two-value axis shorthands
     // CSS Flexbox L1 §7.1.1. The one-value forms are the ones that matter and
     // the ones that are easy to get wrong: a bare NUMBER is flex-grow with
