@@ -29,14 +29,14 @@ void ComputedStyle::ensure_capacity(int id) {
     values_.resize(need);
     parsed_.resize(need);
     parsed_ready_.resize(need, false);
-    occupied_.resize(need, false);
+    occupied_.resize(need, 0);
     important_.resize(need, false);
     occupied_bits_.resize((need + 63) / 64, 0);
 }
 
 bool ComputedStyle::contains(int id) const {
     if (id < 0 || static_cast<std::size_t>(id) >= occupied_.size()) return false;
-    return occupied_[static_cast<std::size_t>(id)];
+    return occupied_[static_cast<std::size_t>(id)] != 0;
 }
 
 std::string_view ComputedStyle::get(int id) const {
@@ -71,9 +71,9 @@ void ComputedStyle::set(int id, std::string_view value) {
     // A no-op write must not bump the version — the whole invalidation
     // architecture keys caches on version numbers, so a spurious bump costs a
     // re-cascade of everything downstream.
-    if (occupied_[i] && values_[i] == value) return;
-    if (!occupied_[i]) {
-        occupied_[i] = true;
+    if (occupied_[i] != 0 && values_[i] == value) return;
+    if (occupied_[i] == 0) {
+        occupied_[i] = 1;
         occupied_bits_[i >> 6] |= 1ULL << (i & 63);
         ++set_count_;
     }
@@ -175,7 +175,7 @@ const CssValue* ComputedStyle::parsed(std::string_view property) const {
 void ComputedStyle::unset(int id) {
     if (!contains(id)) return;
     auto i = static_cast<std::size_t>(id);
-    occupied_[i] = false;
+    occupied_[i] = 0;
     occupied_bits_[i >> 6] &= ~(1ULL << (i & 63));
     values_[i].clear();
     parsed_[i].reset();
@@ -212,8 +212,8 @@ bool ComputedStyle::differs_from(const ComputedStyle& other, std::vector<int>* c
     }
     const std::size_t n = std::max(values_.size(), other.values_.size());
     for (std::size_t i = 0; i < n; ++i) {
-        const bool a = i < occupied_.size() && occupied_[i];
-        const bool b = i < other.occupied_.size() && other.occupied_[i];
+        const bool a = i < occupied_.size() && occupied_[i] != 0;
+        const bool b = i < other.occupied_.size() && other.occupied_[i] != 0;
         if (!a && !b) continue;
         bool same;
         if (a == b) {
@@ -242,7 +242,7 @@ bool ComputedStyle::differs_from(const ComputedStyle& other, std::vector<int>* c
 std::vector<int> ComputedStyle::set_ids() const {
     std::vector<int> out;
     for (std::size_t i = 0; i < occupied_.size(); ++i) {
-        if (occupied_[i]) out.push_back(static_cast<int>(i));
+        if (occupied_[i] != 0) out.push_back(static_cast<int>(i));
     }
     return out;
 }

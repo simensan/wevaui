@@ -76,6 +76,17 @@ changed set on every pointer move -- and a touched-subtree walk from `<body>`
 is the whole document. Only the elements that actually flipped are marked now.
 66.6 ms -> 11.3 ms on layout-stress, 10.5 -> 0.46 on stats.
 
+**The occupancy flags were a bitset pretending to be a byte array.**
+`ComputedStyle::occupied_` was a `std::vector<bool>`, so every presence check
+-- and `get` does one for every property read in a layout pass -- paid a shift
+and a mask to extract one bit. The C# this ports keeps a `bool[]` beside its
+`ulong[]` bitset explicitly "for single-load hot readers", and the header here
+said so; `std::vector<bool>` simply is not that. As `uint8_t` it is one load,
+and the bitset is still there for the word-at-a-time walks that want it. Two to
+nine per cent, measured interleaved: vendor -9.4%, stock-dashboard -6.6%,
+randhtml -5.8%, glass -5.6%. It costs a byte per property per style rather
+than a bit, about a megabyte on the largest page in the corpus.
+
 **Every box resolved four zeroes it did not have.** `resolve_box_sides_px`
 substitutes "0" for an absent side, so a box declaring no margin and no padding
 -- which is most of them -- put four zeroes through keyword matching, a

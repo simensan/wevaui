@@ -139,7 +139,16 @@ private:
     // re-parsed on every read, which is the case the cache most needs to cover.
     mutable std::vector<CssValuePtr> parsed_;
     mutable std::vector<bool> parsed_ready_;
-    std::vector<bool> occupied_;
+    // uint8_t, not bool. std::vector<bool> is a bitset, so every presence
+    // check -- and `get` does one for every property read in a layout pass --
+    // paid a shift and a mask to extract one bit. The C# this ports keeps a
+    // bool[] beside the ulong[] bitset for exactly this reason, "for
+    // single-load hot readers", and vector<bool> is not that. The bitset is
+    // still here as occupied_bits_ for the word-at-a-time walks that want it.
+    //
+    // It costs a byte per registered property per style rather than a bit:
+    // 334 against 42, or about a megabyte on the largest page in the corpus.
+    std::vector<uint8_t> occupied_;
     std::vector<uint64_t> occupied_bits_;
     std::vector<bool> important_;
     std::map<std::string, std::string> custom_;
