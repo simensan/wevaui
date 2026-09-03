@@ -23,6 +23,29 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
 
+// The same lookup by id. A property id is resolved once for the
+// program below rather than hashed from its name on every call --
+// sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+// together at a quarter of a layout pass, ahead of any layout
+// algorithm. Safe because the registry keeps an id stable across
+// re-registration, which is what its header promises it for.
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
+}
+
+// Resolved at static-init. The registry is a function-local static,
+// so it is constructed on first use and these cannot outrun it.
+const int kId_clear = CssPropertyRegistry::instance().id_of("clear");
+const int kId_contain = CssPropertyRegistry::instance().id_of("contain");
+const int kId_contain_intrinsic_height = CssPropertyRegistry::instance().id_of("contain-intrinsic-height");
+const int kId_contain_intrinsic_size = CssPropertyRegistry::instance().id_of("contain-intrinsic-size");
+const int kId_content_visibility = CssPropertyRegistry::instance().id_of("content-visibility");
+const int kId_float = CssPropertyRegistry::instance().id_of("float");
+const int kId_height = CssPropertyRegistry::instance().id_of("height");
+const int kId_overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
+const int kId_overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
+
+
 bool iequals(std::string_view a, std::string_view b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
@@ -331,9 +354,9 @@ bool participates_in_flow(const Box& b) {
 // is what reads it — `contain: layout size` and `contain: strict` both apply.
 bool has_size_containment(const ComputedStyle* style) {
     if (!style) return false;
-    const std::string_view cv = get(style, "content-visibility");
+    const std::string_view cv = get(style, kId_content_visibility);
     if (iequals(cv, "hidden")) return true;
-    const std::string_view contain = get(style, "contain");
+    const std::string_view contain = get(style, kId_contain);
     if (contain.empty() || iequals(contain, "none")) return false;
     if (iequals(contain, "strict") || iequals(contain, "content")) return true;
     // Word-boundary search, so `contain: inline-size` does not read as `size`.
@@ -354,9 +377,9 @@ bool has_size_containment(const ComputedStyle* style) {
 double contain_intrinsic_height(const ComputedStyle* style, const LayoutContext& ctx,
                                 double font_size) {
     if (!style) return -1;
-    std::string_view raw = get(style, "contain-intrinsic-height");
+    std::string_view raw = get(style, kId_contain_intrinsic_height);
     if (raw.empty() || iequals(raw, "none")) {
-        raw = get(style, "contain-intrinsic-size");
+        raw = get(style, kId_contain_intrinsic_size);
         if (raw.empty() || iequals(raw, "none")) return -1;
         // Two values are width then height; one applies to both axes.
         size_t space = raw.find(' ');
@@ -368,9 +391,9 @@ double contain_intrinsic_height(const ComputedStyle* style, const LayoutContext&
 
 bool has_non_visible_overflow(const Box& b) {
     if (!b.style) return false;
-    const std::string_view ox = get(b.style, "overflow-x");
+    const std::string_view ox = get(b.style, kId_overflow_x);
     if (!ox.empty() && ox != "visible") return true;
-    const std::string_view oy = get(b.style, "overflow-y");
+    const std::string_view oy = get(b.style, kId_overflow_y);
     return !oy.empty() && oy != "visible";
 }
 
@@ -379,9 +402,9 @@ bool establishes_new_bfc(const Box& b) {
     // The `overflow` shorthand expands to overflow-x / overflow-y, so the
     // `overflow` slot itself normally holds its initial value even when the
     // author wrote `overflow: hidden`. Both axis longhands have to be checked.
-    const std::string_view ox = get(b.style, "overflow-x");
+    const std::string_view ox = get(b.style, kId_overflow_x);
     if (!ox.empty() && ox != "visible") return true;
-    const std::string_view oy = get(b.style, "overflow-y");
+    const std::string_view oy = get(b.style, kId_overflow_y);
     if (!oy.empty() && oy != "visible") return true;
 
     switch (b.display) {
@@ -400,7 +423,7 @@ bool establishes_new_bfc(const Box& b) {
             break;
     }
     if (b.position == PositionType::Absolute || b.position == PositionType::Fixed) return true;
-    const std::string_view f = get(b.style, "float");
+    const std::string_view f = get(b.style, kId_float);
     return f == "left" || f == "right" || f == "inline-start" || f == "inline-end";
 }
 
@@ -434,7 +457,7 @@ double definite_flow_content_height(const BoxTree& tree, const Box& b, const Lay
                                     double font_size) {
     if (b.cross_size_imposed) return b.content_height();
     if (!b.style) return -1;
-    const std::string_view raw = get(b.style, "height");
+    const std::string_view raw = get(b.style, kId_height);
     if (raw.empty() || raw == "auto") {
         // css-sizing-4 §4.2: an auto height derived from aspect-ratio and a
         // known width IS definite. A square `display: flex; align-items:
@@ -1038,8 +1061,8 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         // apply_box_model consults is_float() to skip auto-margin centring.
         {
             Box& cb = (*tree_)[c];
-            cb.float_type = parse_float_type(get(cb.style, "float"));
-            cb.clear = parse_clear_type(get(cb.style, "clear"));
+            cb.float_type = parse_float_type(get(cb.style, kId_float));
+            cb.clear = parse_clear_type(get(cb.style, kId_clear));
         }
         if ((*tree_)[c].is_float()) {
             layout_float_box(c, content_w);

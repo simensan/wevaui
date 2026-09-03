@@ -1,3 +1,4 @@
+#include "weva/css_properties.h"
 #include "weva/multicol.h"
 
 #include "weva/block_layout.h"
@@ -14,6 +15,24 @@ namespace {
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
+
+// The same lookup by id. A property id is resolved once for the
+// program below rather than hashed from its name on every call --
+// sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+// together at a quarter of a layout pass, ahead of any layout
+// algorithm. Safe because the registry keeps an id stable across
+// re-registration, which is what its header promises it for.
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
+}
+
+// Resolved at static-init. The registry is a function-local static,
+// so it is constructed on first use and these cannot outrun it.
+const int kId_column_count = CssPropertyRegistry::instance().id_of("column-count");
+const int kId_column_gap = CssPropertyRegistry::instance().id_of("column-gap");
+const int kId_column_width = CssPropertyRegistry::instance().id_of("column-width");
+const int kId_position = CssPropertyRegistry::instance().id_of("position");
+
 
 bool iequals(std::string_view a, std::string_view b) {
     if (a.size() != b.size()) return false;
@@ -37,7 +56,7 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
 
     double gap = 0;
     {
-        const std::string_view raw = get(style, "column-gap");
+        const std::string_view raw = get(style, kId_column_gap);
         if (!raw.empty() && !iequals(raw, "normal")) {
             const ResolvedLength r =
                 resolve_length(style, "column-gap", ctx, font_size, content_width);
@@ -49,14 +68,14 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
     // otherwise from how many columns of `column-width` fit — the last column
     // needs no gap after it, hence the (available + gap) / (width + gap) form.
     int count = 0;
-    const std::string_view count_raw = get(style, "column-count");
+    const std::string_view count_raw = get(style, kId_column_count);
     if (!count_raw.empty() && !iequals(count_raw, "auto")) {
         const ResolvedLength r = resolve_length(style, "column-count", ctx, font_size,
                                                 std::nullopt);
         if (r.kind == LengthKind::Length) count = static_cast<int>(r.pixels);
     }
     if (count <= 0) {
-        const std::string_view width_raw = get(style, "column-width");
+        const std::string_view width_raw = get(style, kId_column_width);
         if (!width_raw.empty() && !iequals(width_raw, "auto")) {
             const ResolvedLength r =
                 resolve_length(style, "column-width", ctx, font_size, content_width);
@@ -76,7 +95,7 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
     for (BoxId c : tree->children(container)) {
         const Box& cb = (*tree)[c];
         if (cb.kind != BoxKind::Block && cb.kind != BoxKind::AnonymousBlock) continue;
-        const PositionType pos = parse_position_type(get(cb.style, "position"));
+        const PositionType pos = parse_position_type(get(cb.style, kId_position));
         if (pos == PositionType::Absolute || pos == PositionType::Fixed) {
             block->layout_block(c, content_width, style);
             continue;

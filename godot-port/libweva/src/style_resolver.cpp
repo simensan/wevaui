@@ -1,3 +1,4 @@
+#include "weva/css_properties.h"
 #include "weva/style_resolver.h"
 
 #include <deque>
@@ -37,6 +38,23 @@ bool iequals(std::string_view a, std::string_view b) {
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
+
+// The same lookup by id. A property id is resolved once for the
+// program below rather than hashed from its name on every call --
+// sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+// together at a quarter of a layout pass, ahead of any layout
+// algorithm. Safe because the registry keeps an id stable across
+// re-registration, which is what its header promises it for.
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
+}
+
+// Resolved at static-init. The registry is a function-local static,
+// so it is constructed on first use and these cannot outrun it.
+const int kId_aspect_ratio = CssPropertyRegistry::instance().id_of("aspect-ratio");
+const int kId_direction = CssPropertyRegistry::instance().id_of("direction");
+const int kId_line_height = CssPropertyRegistry::instance().id_of("line-height");
+
 
 // The identifier of a keyword-or-identifier value, or empty for anything else.
 // The C# accepts either because its parser canonicalises known names to
@@ -199,7 +217,7 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
 
 double line_height_px(const ComputedStyle* style, double font_size, const LayoutContext& ctx,
                       const FontMetrics* metrics) {
-    const std::string_view raw = get(style, "line-height");
+    const std::string_view raw = get(style, kId_line_height);
     // `normal` is a UA-chosen value: the face's own line height when there is a
     // face, and the conventional 1.2 factor when there is not.
     const double fallback =
@@ -568,7 +586,7 @@ BoxSideValues box_sides(const ComputedStyle* style, std::string_view shorthand) 
 
 bool try_resolve_aspect_ratio(const ComputedStyle* style, double* ratio) {
     *ratio = 0;
-    std::string_view raw = trim(get(style, "aspect-ratio"));
+    std::string_view raw = trim(get(style, kId_aspect_ratio));
     if (raw.empty() || iequals(raw, "auto")) return false;
 
     // `auto <ratio>` and `<ratio> auto`: the explicit ratio takes precedence,
@@ -598,7 +616,7 @@ bool try_resolve_aspect_ratio(const ComputedStyle* style, double* ratio) {
 }
 
 bool is_rtl(const ComputedStyle* style) {
-    return iequals(trim(get(style, "direction")), "rtl");
+    return iequals(trim(get(style, kId_direction)), "rtl");
 }
 
 } // namespace weva

@@ -1,3 +1,4 @@
+#include "weva/css_properties.h"
 #include "weva/flex.h"
 
 #include "weva/block_layout.h"
@@ -19,6 +20,35 @@ namespace {
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
+
+// The same lookup by id. A property id is resolved once for the
+// program below rather than hashed from its name on every call --
+// sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+// together at a quarter of a layout pass, ahead of any layout
+// algorithm. Safe because the registry keeps an id stable across
+// re-registration, which is what its header promises it for.
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
+}
+
+// Resolved at static-init. The registry is a function-local static,
+// so it is constructed on first use and these cannot outrun it.
+const int kId_align_content = CssPropertyRegistry::instance().id_of("align-content");
+const int kId_align_items = CssPropertyRegistry::instance().id_of("align-items");
+const int kId_align_self = CssPropertyRegistry::instance().id_of("align-self");
+const int kId_direction = CssPropertyRegistry::instance().id_of("direction");
+const int kId_flex_basis = CssPropertyRegistry::instance().id_of("flex-basis");
+const int kId_flex_direction = CssPropertyRegistry::instance().id_of("flex-direction");
+const int kId_flex_wrap = CssPropertyRegistry::instance().id_of("flex-wrap");
+const int kId_justify_content = CssPropertyRegistry::instance().id_of("justify-content");
+const int kId_min_height = CssPropertyRegistry::instance().id_of("min-height");
+const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
+const int kId_overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
+const int kId_overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
+const int kId_position = CssPropertyRegistry::instance().id_of("position");
+const int kId_width = CssPropertyRegistry::instance().id_of("width");
+const int kId_writing_mode = CssPropertyRegistry::instance().id_of("writing-mode");
+
 
 bool iequals(std::string_view a, std::string_view b) {
     if (a.size() != b.size()) return false;
@@ -135,7 +165,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     const double font_size = (*tree)[container].font_size > 0 ? (*tree)[container].font_size
                                                               : ctx.root_font_size_px;
 
-    const std::string_view direction = get(style, "flex-direction");
+    const std::string_view direction = get(style, kId_flex_direction);
     const bool column = iequals(direction, "column") || iequals(direction, "column-reverse");
     bool reverse = iequals(direction, "row-reverse") || iequals(direction, "column-reverse");
 
@@ -148,8 +178,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     // flex row packed itself from the left, which is what the oracle's
     // cov-logical case caught -- Chrome and the reference agreed against us on
     // all three items.
-    if (!column && iequals(get(style, "direction"), "rtl")) {
-        const std::string_view writing_mode = get(style, "writing-mode");
+    if (!column && iequals(get(style, kId_direction), "rtl")) {
+        const std::string_view writing_mode = get(style, kId_writing_mode);
         if (writing_mode.empty() || iequals(writing_mode, "horizontal-tb")) reverse = !reverse;
     }
 
@@ -173,7 +203,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         // Filtering on the unstamped field let a `position: absolute` child
         // count as a flex item, and its width ate a share of the free space —
         // three `flex: 1` cells came out 126.67 wide instead of 142.67.
-        const PositionType pos = parse_position_type(get(cb.style, "position"));
+        const PositionType pos = parse_position_type(get(cb.style, kId_position));
         if (pos == PositionType::Absolute || pos == PositionType::Fixed) {
             // Still laid out, so the positioning pass has geometry to place;
             // it is just not an item. Its STATIC position (what `left/top:
@@ -185,7 +215,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             // (§10.3.7) and the static position centres its FINAL width; laid
             // out at the container's width it would centre a full-width box
             // at 0 and only shrink afterwards, in the positioning pass.
-            const std::string_view w_raw = get(cb.style, "width");
+            const std::string_view w_raw = get(cb.style, kId_width);
             if (w_raw.empty() || iequals(w_raw, "auto")) {
                 block->shrink_to_fit(c, content_width, style);
             } else {
@@ -217,11 +247,11 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             if (iequals(keyword, "flex-end") || iequals(keyword, "end")) return avail - outer;
             return 0.0;
         };
-        const std::string_view justify = get(style, "justify-content");
+        const std::string_view justify = get(style, kId_justify_content);
         for (BoxId c : out_of_flow) {
             Box& ab = (*tree)[c];
-            std::string_view self = get(ab.style, "align-self");
-            if (self.empty() || iequals(self, "auto")) self = get(style, "align-items");
+            std::string_view self = get(ab.style, kId_align_self);
+            if (self.empty() || iequals(self, "auto")) self = get(style, kId_align_items);
             const double outer_w = ab.width + ab.margin_left + ab.margin_right;
             const double outer_h = ab.height + ab.margin_top + ab.margin_bottom;
             const double main_off = offset_in(justify, final_main, column ? outer_h : outer_w);
@@ -266,7 +296,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         it.main_margins = column ? b.margin_top + b.margin_bottom : b.margin_left + b.margin_right;
         it.cross_margins = column ? b.margin_left + b.margin_right : b.margin_top + b.margin_bottom;
 
-        const std::string_view basis_raw = get(is, "flex-basis");
+        const std::string_view basis_raw = get(is, kId_flex_basis);
         const std::string_view size_raw = get(is, column ? "height" : "width");
         double base = column ? b.height : b.width;
         if (!basis_raw.empty() && !iequals(basis_raw, "auto") &&
@@ -313,7 +343,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         const double minmax_frame = is_border_box(is) ? 0 : main_frame;
         if (min_r.kind == LengthKind::Length) {
             it.min_main = std::max(0.0, min_r.pixels) + minmax_frame;
-        } else if (column && (min_r.kind == LengthKind::Auto || get(is, "min-height").empty())) {
+        } else if (column && (min_r.kind == LengthKind::Auto || get(is, kId_min_height).empty())) {
             // §4.5, the automatic minimum size: `min-height: auto` on a column
             // item is its content-based minimum unless it is a scroll
             // container. A `height: 100vh; overflow: auto` app shell whose
@@ -325,8 +355,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             // specified one, which the spec bounds the minimum by anyway).
             // Row items are not yet covered: their minimum is the min-content
             // WIDTH, which needs a probe this pass does not run.
-            const std::string_view oy = get(is, "overflow-y");
-            const std::string_view ox = get(is, "overflow-x");
+            const std::string_view oy = get(is, kId_overflow_y);
+            const std::string_view ox = get(is, kId_overflow_x);
             const bool scroll_container =
                 (!oy.empty() && !iequals(oy, "visible") && !iequals(oy, "clip")) ||
                 (!ox.empty() && !iequals(ox, "visible") && !iequals(ox, "clip"));
@@ -334,14 +364,14 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             // an empty item has a content size of zero and shrinks freely.
             const bool auto_main = size_raw.empty() || iequals(size_raw, "auto");
             if (!scroll_container && auto_main) it.min_main = std::max(it.min_main, b.height);
-        } else if (!column && (min_r.kind == LengthKind::Auto || get(is, "min-width").empty())) {
+        } else if (!column && (min_r.kind == LengthKind::Auto || get(is, kId_min_width).empty())) {
             // The row counterpart: a row item's automatic minimum is its
             // min-content WIDTH — the widest word, atom or fixed-width child
             // — unless it is a scroll container. A carousel of fixed-width
             // cards wider than the page keeps its 1310px and overflows,
             // centred at x = -15, as Chrome and the reference lay it out.
-            const std::string_view oy = get(is, "overflow-y");
-            const std::string_view ox = get(is, "overflow-x");
+            const std::string_view oy = get(is, kId_overflow_y);
+            const std::string_view ox = get(is, kId_overflow_x);
             const bool scroll_container =
                 (!oy.empty() && !iequals(oy, "visible") && !iequals(oy, "clip")) ||
                 (!ox.empty() && !iequals(ox, "visible") && !iequals(ox, "clip"));
@@ -374,7 +404,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     // that does not fit starts the next line, and an item that fits nowhere
     // still gets a line of its own. Before this every wrapping card grid was
     // one squeezed row.
-    const std::string_view wrap_raw = get(style, "flex-wrap");
+    const std::string_view wrap_raw = get(style, kId_flex_wrap);
     const bool wrap_reverse = iequals(wrap_raw, "wrap-reverse");
     const bool wraps = iequals(wrap_raw, "wrap") || wrap_reverse;
 
@@ -484,9 +514,9 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     };
     for (const Line& ln : lines) resolve_line(ln);
 
-    const std::string_view align_items = get(style, "align-items");
+    const std::string_view align_items = get(style, kId_align_items);
     const auto self_align = [&](const Box& b) {
-        std::string_view self = get(b.style, "align-self");
+        std::string_view self = get(b.style, kId_align_self);
         if (self.empty() || iequals(self, "auto")) self = align_items;
         if (self.empty() || iequals(self, "normal")) self = "stretch";
         return self;
@@ -601,7 +631,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         double before = 0, extra_between = 0;
         if (container_cross >= 0 && container_cross > sum) {
             const double free_space = container_cross - sum;
-            const std::string_view ac = get(style, "align-content");
+            const std::string_view ac = get(style, kId_align_content);
             const size_t n = lines.size();
             if (ac.empty() || iequals(ac, "normal") || iequals(ac, "stretch")) {
                 // The free space is split equally onto the lines themselves.
@@ -633,7 +663,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     }
 
     // ---- Main-axis alignment (§9.5), per line ------------------------------
-    const std::string_view justify = get(style, "justify-content");
+    const std::string_view justify = get(style, kId_justify_content);
     for (Line& ln : lines) {
         const size_t n = ln.end - ln.begin;
         double content_main = main_gap * static_cast<double>(n - 1);

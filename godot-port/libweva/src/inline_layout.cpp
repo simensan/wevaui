@@ -28,6 +28,42 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
 
+// The same lookup by id. A property id is resolved once for the
+// program below rather than hashed from its name on every call --
+// sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+// together at a quarter of a layout pass, ahead of any layout
+// algorithm. Safe because the registry keeps an id stable across
+// re-registration, which is what its header promises it for.
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
+}
+
+// Resolved at static-init. The registry is a function-local static,
+// so it is constructed on first use and these cannot outrun it.
+const int kId__webkit_line_clamp = CssPropertyRegistry::instance().id_of("-webkit-line-clamp");
+const int kId_column_gap = CssPropertyRegistry::instance().id_of("column-gap");
+const int kId_display = CssPropertyRegistry::instance().id_of("display");
+const int kId_flex_direction = CssPropertyRegistry::instance().id_of("flex-direction");
+const int kId_flex_wrap = CssPropertyRegistry::instance().id_of("flex-wrap");
+const int kId_font_family = CssPropertyRegistry::instance().id_of("font-family");
+const int kId_letter_spacing = CssPropertyRegistry::instance().id_of("letter-spacing");
+const int kId_line_break = CssPropertyRegistry::instance().id_of("line-break");
+const int kId_line_height = CssPropertyRegistry::instance().id_of("line-height");
+const int kId_margin_left = CssPropertyRegistry::instance().id_of("margin-left");
+const int kId_margin_right = CssPropertyRegistry::instance().id_of("margin-right");
+const int kId_overflow_wrap = CssPropertyRegistry::instance().id_of("overflow-wrap");
+const int kId_position = CssPropertyRegistry::instance().id_of("position");
+const int kId_tab_size = CssPropertyRegistry::instance().id_of("tab-size");
+const int kId_text_align = CssPropertyRegistry::instance().id_of("text-align");
+const int kId_text_indent = CssPropertyRegistry::instance().id_of("text-indent");
+const int kId_text_overflow = CssPropertyRegistry::instance().id_of("text-overflow");
+const int kId_white_space = CssPropertyRegistry::instance().id_of("white-space");
+const int kId_width = CssPropertyRegistry::instance().id_of("width");
+const int kId_word_break = CssPropertyRegistry::instance().id_of("word-break");
+const int kId_word_spacing = CssPropertyRegistry::instance().id_of("word-spacing");
+const int kId_word_wrap = CssPropertyRegistry::instance().id_of("word-wrap");
+
+
 bool iequals(std::string_view a, std::string_view b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
@@ -130,7 +166,7 @@ bool inline_edge_is_zero(const ComputedStyle* st) {
 }
 
 double letter_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
-    const std::string_view raw = get(style, "letter-spacing");
+    const std::string_view raw = get(style, kId_letter_spacing);
     if (raw.empty() || iequals(raw, "normal")) return 0;
     const ResolvedLength r = resolve_length(style, "letter-spacing", ctx, font_size, std::nullopt);
     if (r.kind == LengthKind::Length) return r.pixels;
@@ -177,7 +213,7 @@ double measure_spaced(const FontMetrics& default_metrics, std::string_view text,
 // nothing, so a code listing in a <pre> lost every level of its indentation.
 double tab_size_spaces(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
                        double space_width) {
-    const std::string_view raw = get(style, "tab-size");
+    const std::string_view raw = get(style, kId_tab_size);
     if (raw.empty()) return 8;
     // A bare number first: `tab-size: 4` is the common form and is NOT a
     // length.
@@ -197,7 +233,7 @@ double tab_size_spaces(const ComputedStyle* style, const LayoutContext& ctx, dou
 // CSS Text L3 8.1 `word-spacing`, in pixels. `normal` is zero extra; a
 // percentage resolves against the font size, as the reference has it.
 double word_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
-    const std::string_view raw = get(style, "word-spacing");
+    const std::string_view raw = get(style, kId_word_spacing);
     if (raw.empty() || iequals(raw, "normal")) return 0;
     const ResolvedLength r = resolve_length(raw, ctx, font_size, font_size);
     if (r.kind == LengthKind::Length) return r.pixels;
@@ -212,7 +248,7 @@ double word_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, dou
 // indent an author did write, which is the reference's reasoning too.
 double text_indent_px(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
                       double containing_width) {
-    std::string_view raw = get(style, "text-indent");
+    std::string_view raw = get(style, kId_text_indent);
     if (raw.empty()) return 0;
     // Take the leading term; the rest is keywords or nothing.
     const std::size_t space = raw.find(' ');
@@ -227,7 +263,7 @@ double text_indent_px(const ComputedStyle* style, const LayoutContext& ctx, doub
 // The face a run measures with: the family's registered metrics, then the
 // weight/italic variant of it when the host provides one.
 const FontMetrics* metrics_for_style(const LayoutContext& ctx, const ComputedStyle* style) {
-    const FontMetrics* base = ctx.font_for(get(style, "font-family"));
+    const FontMetrics* base = ctx.font_for(get(style, kId_font_family));
     if (!ctx.variant_metrics) return base;
     const int weight = resolve_font_weight(style);
     const bool italic = resolve_font_italic(style);
@@ -256,7 +292,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.line_height = line_height_px(item.style, item.font_size, ctx,
                                               item.metrics ? item.metrics : metrics);
             item.letter_spacing = letter_spacing_px(item.style, ctx, item.font_size);
-            const std::string_view ws = get(item.style, "white-space");
+            const std::string_view ws = get(item.style, kId_white_space);
             // `pre` and `pre-wrap` preserve whitespace; `nowrap` and `pre`
             // forbid wrapping. Only the two axes matter to layout, so they are
             // decomposed here rather than carried as a keyword.
@@ -265,8 +301,8 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.allow_wrap = !(iequals(ws, "nowrap") || iequals(ws, "pre"));
             item.preserve_newlines = iequals(ws, "pre") || iequals(ws, "pre-wrap") ||
                                      iequals(ws, "pre-line") || iequals(ws, "break-spaces");
-            const std::string_view wb = get(item.style, "word-break");
-            const std::string_view ow = get(item.style, "overflow-wrap");
+            const std::string_view wb = get(item.style, kId_word_break);
+            const std::string_view ow = get(item.style, kId_overflow_wrap);
             // `anywhere` differs from `break-all` only in how it affects
             // min-content sizing, which is not tracked yet, so the two are
             // observably identical here — the same simplification the
@@ -278,10 +314,10 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // one in most stylesheets.
             item.break_word = item.allow_wrap && !item.break_anywhere &&
                               (iequals(ow, "break-word") || iequals(wb, "break-word") ||
-                               iequals(get(item.style, "word-wrap"), "break-word"));
+                               iequals(get(item.style, kId_word_wrap), "break-word"));
             // `line-break` decides which kinsoku prohibitions apply between
             // CJK characters -- whether a small kana may start a line.
-            item.line_break = line_break_level(get(item.style, "line-break"));
+            item.line_break = line_break_level(get(item.style, kId_line_break));
             // CSS Text L3 8.1: extra space added at each word separator, on
             // top of the space's own advance. Unread until now, so a heading
             // set with `word-spacing: 4px` came out at its natural spacing.
@@ -376,7 +412,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
 } // namespace
 
 std::string_view resolve_text_align(const ComputedStyle* style) {
-    std::string_view t = get(style, "text-align");
+    std::string_view t = get(style, kId_text_align);
     if (t.empty()) t = "start";
     const bool rtl = is_rtl(style);
     if (iequals(t, "start")) return rtl ? "right" : "left";
@@ -414,8 +450,8 @@ std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId containe
 // the first place), and an inline axis that clips.
 bool wants_ellipsis(const ComputedStyle* style) {
     if (!style) return false;
-    if (!iequals(get(style, "text-overflow"), "ellipsis")) return false;
-    if (!iequals(get(style, "white-space"), "nowrap")) return false;
+    if (!iequals(get(style, kId_text_overflow), "ellipsis")) return false;
+    if (!iequals(get(style, kId_white_space), "nowrap")) return false;
     for (const char* prop : {"overflow-x", "overflow"}) {
         const std::string_view v = get(style, prop);
         if (iequals(v, "hidden") || iequals(v, "scroll") || iequals(v, "clip") ||
@@ -435,9 +471,9 @@ bool wants_ellipsis(const ComputedStyle* style) {
 // mean matching the reference by diverging from the browser.
 int line_clamp_of(const ComputedStyle* style) {
     if (!style) return 0;
-    const std::string_view display = get(style, "display");
+    const std::string_view display = get(style, kId_display);
     if (!iequals(display, "-webkit-box") && !iequals(display, "-webkit-inline-box")) return 0;
-    std::string_view raw = get(style, "-webkit-line-clamp");
+    std::string_view raw = get(style, kId__webkit_line_clamp);
     while (!raw.empty() && (raw.front() == ' ' || raw.front() == '\t')) raw.remove_prefix(1);
     while (!raw.empty() && (raw.back() == ' ' || raw.back() == '\t')) raw.remove_suffix(1);
     if (raw.empty() || iequals(raw, "none")) return 0;
@@ -654,7 +690,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                    : (cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr);
     std::optional<double> declared_line_height;
     if (line_height_style) {
-        const std::string_view raw = get(line_height_style, "line-height");
+        const std::string_view raw = get(line_height_style, kId_line_height);
         if (!raw.empty() && !iequals(raw, "normal")) {
             const double container_fs =
                 font_size_px(line_height_style,
@@ -1481,7 +1517,7 @@ namespace {
 // its own frame, bounded by its min-/max-width — plus margins either way.
 double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContext* ctx, bool minimum) {
     const Box& b = tree[c];
-    const std::string_view width_raw = get(b.style, "width");
+    const std::string_view width_raw = get(b.style, kId_width);
     const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
                                 width_raw.find('%') == std::string_view::npos;
     double w;
@@ -1504,8 +1540,8 @@ double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContex
     // it is not content. Counting it made a card with an auto-margin-pushed
     // item as wide as the line it was last laid out in, and it then could not
     // share a line with anything.
-    const std::string_view ml = get(b.style, "margin-left");
-    const std::string_view mr = get(b.style, "margin-right");
+    const std::string_view ml = get(b.style, kId_margin_left);
+    const std::string_view mr = get(b.style, kId_margin_right);
     const double margins = (iequals(ml, "auto") ? 0.0 : b.margin_left) +
                            (iequals(mr, "auto") ? 0.0 : b.margin_right);
     return w + margins;
@@ -1540,15 +1576,15 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
     }
     const bool flex = self.kind == BoxKind::Block &&
                       (self.display == DisplayKind::Flex || self.display == DisplayKind::InlineFlex);
-    const std::string_view direction = get(self.style, "flex-direction");
+    const std::string_view direction = get(self.style, kId_flex_direction);
     const bool flex_row = flex && !(iequals(direction, "column") || iequals(direction, "column-reverse"));
     // A row that may wrap breaks between items, so its min-content is its
     // widest item; one that may not still sums them. Text under
     // `white-space: nowrap`/`pre` cannot break either.
-    const std::string_view wrap_raw = get(self.style, "flex-wrap");
+    const std::string_view wrap_raw = get(self.style, kId_flex_wrap);
     const bool row_sums = flex_row && (!minimum || !(iequals(wrap_raw, "wrap") ||
                                                        iequals(wrap_raw, "wrap-reverse")));
-    const std::string_view ws = get(self.style, "white-space");
+    const std::string_view ws = get(self.style, kId_white_space);
     const bool text_unbreakable = !minimum || iequals(ws, "nowrap") || iequals(ws, "pre");
 
     double max = 0;
@@ -1563,7 +1599,7 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
         // ELEMENT boxes: a line box carries its container's style, and an
         // absolutely positioned container's own lines are its content.
         if (b.style && b.element && b.kind == BoxKind::Block) {
-            const PositionType p = parse_position_type(get(b.style, "position"));
+            const PositionType p = parse_position_type(get(b.style, kId_position));
             if (p == PositionType::Absolute || p == PositionType::Fixed) continue;
         }
         // CSS 2.1 §10.3.5: a float is out of flow for intrinsic sizing — its
@@ -1628,7 +1664,7 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
     if (row_sums && in_flow_blocks > 1) {
         double gap = 0;
         if (ctx && self.style) {
-            const std::string_view raw = get(self.style, "column-gap");
+            const std::string_view raw = get(self.style, kId_column_gap);
             if (!raw.empty() && !iequals(raw, "normal")) {
                 const double fs = self.font_size > 0 ? self.font_size : ctx->root_font_size_px;
                 const ResolvedLength r = resolve_length(self.style, "column-gap", *ctx, fs, std::nullopt);

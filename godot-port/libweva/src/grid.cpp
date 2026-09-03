@@ -1,3 +1,4 @@
+#include "weva/css_properties.h"
 #include "weva/grid.h"
 
 #include "weva/block_layout.h"
@@ -19,6 +20,35 @@ namespace {
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
+
+// The same lookup by id. A property id is resolved once for the
+// program below rather than hashed from its name on every call --
+// sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+// together at a quarter of a layout pass, ahead of any layout
+// algorithm. Safe because the registry keeps an id stable across
+// re-registration, which is what its header promises it for.
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
+}
+
+// Resolved at static-init. The registry is a function-local static,
+// so it is constructed on first use and these cannot outrun it.
+const int kId_align_content = CssPropertyRegistry::instance().id_of("align-content");
+const int kId_column_gap = CssPropertyRegistry::instance().id_of("column-gap");
+const int kId_grid_area = CssPropertyRegistry::instance().id_of("grid-area");
+const int kId_grid_auto_columns = CssPropertyRegistry::instance().id_of("grid-auto-columns");
+const int kId_grid_auto_rows = CssPropertyRegistry::instance().id_of("grid-auto-rows");
+const int kId_grid_template_areas = CssPropertyRegistry::instance().id_of("grid-template-areas");
+const int kId_grid_template_columns = CssPropertyRegistry::instance().id_of("grid-template-columns");
+const int kId_grid_template_rows = CssPropertyRegistry::instance().id_of("grid-template-rows");
+const int kId_height = CssPropertyRegistry::instance().id_of("height");
+const int kId_justify_content = CssPropertyRegistry::instance().id_of("justify-content");
+const int kId_overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
+const int kId_overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
+const int kId_position = CssPropertyRegistry::instance().id_of("position");
+const int kId_row_gap = CssPropertyRegistry::instance().id_of("row-gap");
+const int kId_width = CssPropertyRegistry::instance().id_of("width");
+
 
 bool iequals(std::string_view a, std::string_view b) {
     if (a.size() != b.size()) return false;
@@ -339,9 +369,9 @@ std::vector<std::vector<std::string>> parse_areas(std::string_view raw) {
 // grow to its content — it scrolls instead. Without this a 552px row whose item
 // held 604px of content came out 604 tall and overflowed its own grid.
 bool clips_overflow(const ComputedStyle* style) {
-    const std::string_view x = get(style, "overflow-x");
+    const std::string_view x = get(style, kId_overflow_x);
     if (!x.empty() && !iequals(x, "visible")) return true;
-    const std::string_view y = get(style, "overflow-y");
+    const std::string_view y = get(style, kId_overflow_y);
     return !y.empty() && !iequals(y, "visible");
 }
 
@@ -884,13 +914,13 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         (*tree)[container].font_size > 0 ? (*tree)[container].font_size : ctx.root_font_size_px;
 
     const double own_column_gap = [&] {
-        const std::string_view raw = get(style, "column-gap");
+        const std::string_view raw = get(style, kId_column_gap);
         if (raw.empty() || iequals(raw, "normal")) return 0.0;
         const ResolvedLength r = resolve_length(style, "column-gap", ctx, font_size, content_width);
         return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : 0.0;
     }();
     const double own_row_gap = [&] {
-        const std::string_view raw = get(style, "row-gap");
+        const std::string_view raw = get(style, kId_row_gap);
         if (raw.empty() || iequals(raw, "normal")) return 0.0;
         const ResolvedLength r = resolve_length(style, "row-gap", ctx, font_size, content_width);
         return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : 0.0;
@@ -900,8 +930,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // set, which is what makes `grid-template-columns` after `grid-template`
     // behave the way the cascade says it should. `grid` is checked after
     // `grid-template` for the same reason and in the same way.
-    std::string_view columns_raw = get(style, "grid-template-columns");
-    std::string_view rows_raw = get(style, "grid-template-rows");
+    std::string_view columns_raw = get(style, kId_grid_template_columns);
+    std::string_view rows_raw = get(style, kId_grid_template_rows);
     std::string from_rows, from_columns;
     if (is_template_initial(columns_raw) && is_template_initial(rows_raw)) {
         for (const char* shorthand : {"grid-template", "grid"}) {
@@ -921,15 +951,15 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
                          content_height >= 0 ? content_height : 0, own_row_gap);
     // Implicit tracks take their sizing from grid-auto-columns/rows, cycling
     // through the list; the initial `auto` when there is none.
-    std::vector<Track> auto_columns = parse_track_list(get(style, "grid-auto-columns"), ctx,
+    std::vector<Track> auto_columns = parse_track_list(get(style, kId_grid_auto_columns), ctx,
                                                        font_size, content_width, own_column_gap);
     std::vector<Track> auto_rows =
-        parse_track_list(get(style, "grid-auto-rows"), ctx, font_size,
+        parse_track_list(get(style, kId_grid_auto_rows), ctx, font_size,
                          content_height >= 0 ? content_height : 0, own_row_gap);
     if (auto_columns.empty()) auto_columns.push_back(Track{});
     if (auto_rows.empty()) auto_rows.push_back(Track{});
     const std::vector<std::vector<std::string>> areas =
-        parse_areas(get(style, "grid-template-areas"));
+        parse_areas(get(style, kId_grid_template_areas));
 
     // Subgrid: adopt the spanned parent tracks and the parent's gap; this
     // box's own edges shorten the first and last of them.
@@ -987,14 +1017,14 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     for (BoxId c : tree->children(container)) {
         const Box& cb = (*tree)[c];
         if (cb.kind != BoxKind::Block && cb.kind != BoxKind::AnonymousBlock) continue;
-        const PositionType pos = parse_position_type(get(cb.style, "position"));
+        const PositionType pos = parse_position_type(get(cb.style, kId_position));
         if (pos == PositionType::Absolute || pos == PositionType::Fixed) {
             block->layout_block(c, content_width, style);
             continue;
         }
         Pending p;
         p.box = c;
-        const std::string_view area = trim(get(cb.style, "grid-area"));
+        const std::string_view area = trim(get(cb.style, kId_grid_area));
         int col = 0, row = 0, col_span = 1, row_span = 1;
         if (!area.empty() && !iequals(area, "auto") && area.find('/') == std::string_view::npos &&
             area_rect(areas, std::string(area), &col, &row, &col_span, &row_span)) {
@@ -1220,7 +1250,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         Contribution c;
         c.start = p.column;
         c.span = p.column_span;
-        const std::string_view width_raw = get(b.style, "width");
+        const std::string_view width_raw = get(b.style, kId_width);
         const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
                                     width_raw.find('%') == std::string_view::npos;
         if (explicit_width) {
@@ -1266,8 +1296,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         (*tree)[container].grid_max_content = max_w;
     }
     size_tracks(&columns, content_width, column_gap, column_contributions,
-                get(style, "justify-content"));
-    distribute_content(&columns, content_width, column_gap, get(style, "justify-content"));
+                get(style, kId_justify_content));
+    distribute_content(&columns, content_width, column_gap, get(style, kId_justify_content));
 
     // Each item takes its inline size from its cell: a stretched auto-width
     // item fills it, a `start`/`center`/`end` one fits its content inside it,
@@ -1335,7 +1365,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         const double w = span_size(columns, p.column, p.column_span, column_gap);
         const bool subgrid = hand_over(p, false);
         const Box& b = (*tree)[p.box];
-        const std::string_view width_raw = get(b.style, "width");
+        const std::string_view width_raw = get(b.style, kId_width);
         const bool auto_width = width_raw.empty() || iequals(width_raw, "auto");
         if (!auto_width) {
             block->layout_block(p.box, w, style);
@@ -1345,7 +1375,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             block->relayout_at(p.box, w);
             return;
         }
-        const std::string_view height_raw = get(b.style, "height");
+        const std::string_view height_raw = get(b.style, kId_height);
         const bool auto_height = height_raw.empty() || iequals(height_raw, "auto");
         if (auto_height && has_ratio(b) && row_is_definite(p) &&
             is_stretch(self_alignment(b.style, style, true))) {
@@ -1385,7 +1415,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // `align-content: space-between; min-height: 150px` over two 40px rows
     // puts the second row at 110, not 40.
     double rows_available = content_height;
-    size_tracks(&rows, rows_available, row_gap, row_contributions, get(style, "align-content"));
+    size_tracks(&rows, rows_available, row_gap, row_contributions, get(style, kId_align_content));
     if (rows_available < 0 && !rows.empty()) {
         double natural = 0;
         for (size_t r = 0; r < rows.size(); ++r) natural += rows[r].size + gap_after(rows, r, row_gap);
@@ -1407,10 +1437,10 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         if (std::fabs(clamped - natural) > 1e-9) {
             rows_available = clamped;
             size_tracks(&rows, rows_available, row_gap, row_contributions,
-                        get(style, "align-content"));
+                        get(style, kId_align_content));
         }
     }
-    distribute_content(&rows, rows_available, row_gap, get(style, "align-content"));
+    distribute_content(&rows, rows_available, row_gap, get(style, kId_align_content));
 
     // ---- §12.1 steps 3 and 4: the rows can feed back into the columns -------
     // An aspect-ratio item that will be stretched to a now-definite row takes
@@ -1422,7 +1452,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // four `1fr` columns grow to 139.91 squares — overflowing the 460px grid
     // rather than staying at their 109px share.
     {
-        const std::string_view ac = get(style, "align-content");
+        const std::string_view ac = get(style, kId_align_content);
         rows_definite_by_stretch =
             rows_available >= 0 && (ac.empty() || iequals(ac, "normal") || iequals(ac, "stretch"));
         bool columns_changed = false;
@@ -1430,8 +1460,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             const Placement& p = items[i];
             const Box& b = (*tree)[p.box];
             if (!has_ratio(b) || !row_is_definite(p)) continue;
-            const std::string_view width_raw = get(b.style, "width");
-            const std::string_view height_raw = get(b.style, "height");
+            const std::string_view width_raw = get(b.style, kId_width);
+            const std::string_view height_raw = get(b.style, kId_height);
             if (!(width_raw.empty() || iequals(width_raw, "auto"))) continue;
             if (!(height_raw.empty() || iequals(height_raw, "auto"))) continue;
             if (!is_stretch(self_alignment(b.style, style, true))) continue;
@@ -1456,8 +1486,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         }
         if (columns_changed) {
             size_tracks(&columns, content_width, column_gap, column_contributions,
-                        get(style, "justify-content"));
-            distribute_content(&columns, content_width, column_gap, get(style, "justify-content"));
+                        get(style, kId_justify_content));
+            distribute_content(&columns, content_width, column_gap, get(style, kId_justify_content));
             for (const Placement& p : items) size_inline(p);
             row_contributions.clear();
             for (const Placement& p : items) {
@@ -1488,9 +1518,9 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         const Box& before = (*tree)[p.box];
         const std::string_view justify = self_alignment(before.style, style, false);
         const std::string_view align = self_alignment(before.style, style, true);
-        const std::string_view height_raw = get(before.style, "height");
+        const std::string_view height_raw = get(before.style, kId_height);
         const bool auto_height = height_raw.empty() || iequals(height_raw, "auto");
-        const std::string_view width_raw = get(before.style, "width");
+        const std::string_view width_raw = get(before.style, kId_width);
         const bool auto_width = width_raw.empty() || iequals(width_raw, "auto");
         const bool subgrid_rows = hand_over(p, true);
         if (subgrid_rows && h > 0) {

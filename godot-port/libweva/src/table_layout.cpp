@@ -1,3 +1,4 @@
+#include "weva/css_properties.h"
 #include "weva/table_layout.h"
 
 #include "weva/block_layout.h"
@@ -18,6 +19,26 @@ namespace {
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
+
+// The same lookup by id. A property id is resolved once for the
+// program below rather than hashed from its name on every call --
+// sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+// together at a quarter of a layout pass, ahead of any layout
+// algorithm. Safe because the registry keeps an id stable across
+// re-registration, which is what its header promises it for.
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
+}
+
+// Resolved at static-init. The registry is a function-local static,
+// so it is constructed on first use and these cannot outrun it.
+const int kId_border_collapse = CssPropertyRegistry::instance().id_of("border-collapse");
+const int kId_border_spacing = CssPropertyRegistry::instance().id_of("border-spacing");
+const int kId_caption_side = CssPropertyRegistry::instance().id_of("caption-side");
+const int kId_table_layout = CssPropertyRegistry::instance().id_of("table-layout");
+const int kId_vertical_align = CssPropertyRegistry::instance().id_of("vertical-align");
+const int kId_visibility = CssPropertyRegistry::instance().id_of("visibility");
+
 
 bool iequals(std::string_view a, std::string_view b) {
     if (a.size() != b.size()) return false;
@@ -42,7 +63,7 @@ std::string_view trim(std::string_view s) {
     return s;
 }
 
-bool is_collapsed(const Box& b) { return b.style && iequals(get(b.style, "visibility"), "collapse"); }
+bool is_collapsed(const Box& b) { return b.style && iequals(get(b.style, kId_visibility), "collapse"); }
 
 // An integer attribute such as colspan / rowspan / span, or `fallback` when
 // absent or unparseable. A non-positive value is the fallback too, except
@@ -413,7 +434,7 @@ double sum_rows(const std::vector<double>& heights, int start, int span, double 
 }
 
 std::string_view caption_side(const Box& cap) {
-    const std::string_view raw = trim(get(cap.style, "caption-side"));
+    const std::string_view raw = trim(get(cap.style, kId_caption_side));
     if (iequals(raw, "bottom") || iequals(raw, "block-end")) return "bottom";
     return "top";
 }
@@ -431,8 +452,8 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
     // ---- border-spacing (§17.6.1): initial 0, the UA sheet's 2px for
     // <table>, nothing under border-collapse: collapse ---------------------
     double spacing_x = 0, spacing_y = 0;
-    if (style && !iequals(get(style, "border-collapse"), "collapse")) {
-        const std::string_view raw = trim(get(style, "border-spacing"));
+    if (style && !iequals(get(style, kId_border_collapse), "collapse")) {
+        const std::string_view raw = trim(get(style, kId_border_spacing));
         if (!raw.empty()) {
             const size_t sp = raw.find(' ');
             if (sp == std::string_view::npos) {
@@ -489,7 +510,7 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
     if (col_count > 0) {
         const double avail = std::max(0.0, content_w - spacing_x * (col_count + 1));
         const std::vector<double> hints = column_hints(*tree, table, col_count, avail, ctx);
-        const bool fixed = style && iequals(trim(get(style, "table-layout")), "fixed") && content_w > 0;
+        const bool fixed = style && iequals(trim(get(style, kId_table_layout)), "fixed") && content_w > 0;
         widths = fixed ? resolve_fixed(*tree, rows, col_count, avail, hints, ctx)
                        : resolve_auto(rows, col_count, avail, hints);
         const std::vector<bool> collapsed = collapsed_columns(*tree, table, col_count);
@@ -603,7 +624,7 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
             Box& cb = (*tree)[p.cell];
             const double slack = target - cb.height;
             if (slack > 0) {
-                const std::string_view va = trim(get(cb.style, "vertical-align"));
+                const std::string_view va = trim(get(cb.style, kId_vertical_align));
                 double factor = 0;
                 if (iequals(va, "middle")) factor = 0.5;
                 else if (iequals(va, "bottom")) factor = 1.0;

@@ -94,6 +94,24 @@ else
     skip "layout oracle (needs python3 and weva_dump)"
 fi
 
+# ---- cached property ids name real properties ----------------------------
+#
+# Reading a style by id is a quarter faster than by name, but an id is only
+# equivalent for a REGISTERED property: an unregistered name resolves to
+# kCustomPropertyId, and reading by that id finds nothing while reading by
+# name finds it among the custom properties. Caching `list-style` -- a
+# shorthand the registry does not know -- un-suppressed every marker in the
+# corpus and moved four samples' box counts, and the only visible symptom was
+# the oracle.
+step "cached ids"
+if command -v python3 > /dev/null; then
+    line=$(python3 "$ROOT/tools/check_cached_ids.py" 2>&1 | tail -1)
+    echo "${line:-no result}"
+    case "$line" in "0 cached id"*) ;; *) fail "cached ids" ;; esac
+else
+    skip "cached ids (needs python3)"
+fi
+
 # ---- assets that silently drew nothing -----------------------------------
 #
 # An image that does not load is not an error anywhere: the box draws no

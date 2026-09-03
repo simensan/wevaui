@@ -18,6 +18,32 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
 
+// The same lookup by id. A property id is resolved once for the
+// program below rather than hashed from its name on every call --
+// sampling put ComputedStyle::get and CssPropertyRegistry::id_of
+// together at a quarter of a layout pass, ahead of any layout
+// algorithm. Safe because the registry keeps an id stable across
+// re-registration, which is what its header promises it for.
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
+}
+
+// Resolved at static-init. The registry is a function-local static,
+// so it is constructed on first use and these cannot outrun it.
+const int kId_column_count = CssPropertyRegistry::instance().id_of("column-count");
+const int kId_column_width = CssPropertyRegistry::instance().id_of("column-width");
+const int kId_content = CssPropertyRegistry::instance().id_of("content");
+const int kId_counter_increment = CssPropertyRegistry::instance().id_of("counter-increment");
+const int kId_counter_reset = CssPropertyRegistry::instance().id_of("counter-reset");
+const int kId_counter_set = CssPropertyRegistry::instance().id_of("counter-set");
+const int kId_display = CssPropertyRegistry::instance().id_of("display");
+const int kId_float = CssPropertyRegistry::instance().id_of("float");
+const int kId_list_style_type = CssPropertyRegistry::instance().id_of("list-style-type");
+const int kId_position = CssPropertyRegistry::instance().id_of("position");
+const int kId_quotes = CssPropertyRegistry::instance().id_of("quotes");
+const int kId_text_transform = CssPropertyRegistry::instance().id_of("text-transform");
+
+
 bool is_non_auto(std::string_view v) {
     return !v.empty() && v != "auto";
 }
@@ -27,7 +53,7 @@ bool is_non_auto(std::string_view v) {
 // ignore the column properties.
 bool is_multicol_container(const ComputedStyle* style) {
     if (!style) return false;
-    return is_non_auto(get(style, "column-count")) || is_non_auto(get(style, "column-width"));
+    return is_non_auto(get(style, kId_column_count)) || is_non_auto(get(style, kId_column_width));
 }
 
 bool equals_ignoring_case(std::string_view a, std::string_view b) {
@@ -41,12 +67,12 @@ bool equals_ignoring_case(std::string_view a, std::string_view b) {
 }
 
 bool is_out_of_flow_position(const ComputedStyle* style) {
-    const std::string_view p = get(style, "position");
+    const std::string_view p = get(style, kId_position);
     return equals_ignoring_case(p, "absolute") || equals_ignoring_case(p, "fixed");
 }
 
 bool is_floated(const ComputedStyle* style) {
-    const std::string_view f = get(style, "float");
+    const std::string_view f = get(style, kId_float);
     return !f.empty() && !equals_ignoring_case(f, "none");
 }
 
@@ -94,7 +120,7 @@ bool is_inline_level_block(DisplayKind d) {
 // transformed text — with a real face the capitals are wider.
 std::string_view BoxBuilder::transformed_text(std::string_view text,
                                               const ComputedStyle* style) {
-    const std::string_view mode = get(style, "text-transform");
+    const std::string_view mode = get(style, kId_text_transform);
     if (mode.empty() || mode == "none" || text.empty()) return text;
     const bool upper = mode == "uppercase", lower = mode == "lowercase",
                capitalize = mode == "capitalize";
@@ -158,7 +184,7 @@ BoxId BoxBuilder::new_block_box_for(DisplayKind display, const Element* e,
 }
 
 BoxId BoxBuilder::build(const Element& root, const ComputedStyle* root_style) {
-    const DisplayKind display = parse_display(get(root_style, "display"));
+    const DisplayKind display = parse_display(get(root_style, kId_display));
     if (display == DisplayKind::None) return kNoBox;
 
     const BoxId id = new_block_box_for(display, &root, root_style);
@@ -192,7 +218,7 @@ void BoxBuilder::append_node_as_block_child(const Node& node, const ComputedStyl
 
     const auto& e = static_cast<const Element&>(node);
     const ComputedStyle* style = styles_ ? styles_->style_of(e) : nullptr;
-    DisplayKind disp = parse_display(get(style, "display"));
+    DisplayKind disp = parse_display(get(style, kId_display));
     if (disp == DisplayKind::None) return;
 
     // A modal dialog or an open popover gets a `::backdrop` behind it,
@@ -388,7 +414,7 @@ void BoxBuilder::precompute_li_ordinals(const Element& list) {
 
 void BoxBuilder::maybe_inject_list_marker(const Element& e, const ComputedStyle* style,
                                           BoxId parent) {
-    if (!style || parse_display(get(style, "display")) != DisplayKind::ListItem) return;
+    if (!style || parse_display(get(style, kId_display)) != DisplayKind::ListItem) return;
     // The SHORTHAND as well as the longhand. `list-style: none` is what
     // authors actually write -- it is in three of this repo's own sample
     // stylesheets and in none of them as the longhand -- and reading only
@@ -397,7 +423,13 @@ void BoxBuilder::maybe_inject_list_marker(const Element& e, const ComputedStyle*
     //
     // The shorthand is not expanded into its longhands anywhere, so this
     // reads it directly rather than pretending it was.
-    std::string_view type = get(style, "list-style-type");
+    std::string_view type = get(style, kId_list_style_type);
+    // By NAME, deliberately. `list-style` is a shorthand with no slot in the
+    // registry -- only its three longhands have one -- so the cascade keeps it
+    // among the custom properties, where only the string lookup finds it.
+    // Reading it by id returns kCustomPropertyId and then nothing, which
+    // silently un-suppressed every `list-style: none` marker in the corpus and
+    // changed four samples' box counts.
     const std::string_view shorthand = get(style, "list-style");
     if (!shorthand.empty()) {
         // `list-style: <type> || <position> || <image>`, in any order. Only
@@ -636,7 +668,7 @@ QuotePairs parse_quotes(std::string_view raw) {
 void BoxBuilder::apply_counters(const ComputedStyle* style, int depth) {
     if (!style) return;
     // Order per CounterContext.cs: reset (opens scopes), then increment, then set.
-    for (const auto& [name, n] : parse_counter_list(get(style, "counter-reset"))) {
+    for (const auto& [name, n] : parse_counter_list(get(style, kId_counter_reset))) {
         counters_.push_back({name, n.value_or(0), depth});
     }
     const auto innermost = [&](const std::string& name) -> CounterScope* {
@@ -645,7 +677,7 @@ void BoxBuilder::apply_counters(const ComputedStyle* style, int depth) {
         }
         return nullptr;
     };
-    for (const auto& [name, n] : parse_counter_list(get(style, "counter-increment"))) {
+    for (const auto& [name, n] : parse_counter_list(get(style, kId_counter_increment))) {
         CounterScope* s = innermost(name);
         if (!s) {
             // §12.4: an increment with no scope behaves as if reset to 0 here.
@@ -654,7 +686,7 @@ void BoxBuilder::apply_counters(const ComputedStyle* style, int depth) {
         }
         s->value += n.value_or(1);
     }
-    for (const auto& [name, n] : parse_counter_list(get(style, "counter-set"))) {
+    for (const auto& [name, n] : parse_counter_list(get(style, kId_counter_set))) {
         CounterScope* s = innermost(name);
         if (!s) {
             counters_.push_back({name, 0, depth});
@@ -672,7 +704,7 @@ void BoxBuilder::close_counters(int depth) {
 }
 
 bool BoxBuilder::resolve_content(const ComputedStyle* ps, const Element& host, std::string* out) {
-    const std::string_view raw = get(ps, "content");
+    const std::string_view raw = get(ps, kId_content);
     if (raw.empty() || equals_ignoring_case(raw, "none") || equals_ignoring_case(raw, "normal")) {
         return false;
     }
@@ -690,7 +722,7 @@ bool BoxBuilder::resolve_content(const ComputedStyle* ps, const Element& host, s
     out->clear();
     std::optional<QuotePairs> quotes;
     const auto quote_pairs = [&]() -> const QuotePairs& {
-        if (!quotes) quotes = parse_quotes(get(ps, "quotes"));
+        if (!quotes) quotes = parse_quotes(get(ps, kId_quotes));
         return *quotes;
     };
     const auto values_of = [&](const std::string& name, std::vector<int>* vals) {
@@ -781,7 +813,7 @@ void BoxBuilder::inject_pseudo(const Element& host, const ComputedStyle* host_st
     close_counters(element_depth_ + 1);
     if (!has_content) return;
 
-    DisplayKind disp = parse_display(get(ps, "display"));
+    DisplayKind disp = parse_display(get(ps, kId_display));
     if (disp == DisplayKind::None) return;
     const bool blockify = blockifies_children((*tree_)[parent].display);
     if (!blockify && (disp == DisplayKind::Inline || is_inline_level_block(disp)) &&
@@ -832,7 +864,7 @@ void BoxBuilder::append_inline_child(const Node& node, const ComputedStyle* pare
 
     const auto& e = static_cast<const Element&>(node);
     const ComputedStyle* style = styles_ ? styles_->style_of(e) : nullptr;
-    DisplayKind disp = parse_display(get(style, "display"));
+    DisplayKind disp = parse_display(get(style, kId_display));
     if (disp == DisplayKind::None) return;
 
     if (disp == DisplayKind::Contents) {
