@@ -77,7 +77,12 @@ void ComputedStyle::set(int id, std::string_view value) {
         occupied_bits_[i >> 6] |= 1ULL << (i & 63);
         ++set_count_;
     }
-    values_[i] = std::string(value);
+    // assign(), not a constructed temporary: `= std::string(value)` builds a
+    // string, allocates for anything past the small-string buffer, moves it
+    // in and frees the slot's existing allocation. assign() reuses the
+    // capacity the slot already has, which after the first pass is almost
+    // always enough. A cascade performs ~178 of these per element.
+    values_[i].assign(value.data(), value.size());
     // The memo describes the old string.
     parsed_[i].reset();
     parsed_ready_[i] = false;

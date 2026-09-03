@@ -82,12 +82,41 @@ registry's full size at once now.
 
 ## What is still slow, and why it has not been fixed
 
-**A first cascade is ~25 us an element.** Each element performs ~345 property
-writes to materialise a ComputedStyle, plus ~780 `contains` and ~473
-`is_inherited`. No local tightening reaches that -- the vector copy and the
-capacity growth were both measured and neither was the cost. The fix is style
-sharing: elements with the same shape, the same parent and no inline style
-pointing at one computed style. It is a real change and wants its own pass.
+**Rasterising gradients on the CPU, in the first paint.** This is the whole of
+the remaining problem and it is not close:
+
+| page | cascade | layout | paint |
+|---|---|---|---|
+| hud | 6.6 ms | 2.0 ms | **134.6 ms** |
+| glass | 6.2 ms | 2.7 ms | **150.0 ms** |
+
+Five million gradient-stop evaluations and 52 blurs on hud alone. Making the
+CASCADE faster -- style sharing, a cheaper property write -- addresses four
+percent of that, which is why the obvious-sounding fix is the wrong one. It
+was worth measuring before building: an earlier reading of the same problem
+blamed the cascade on the strength of a 10,000-row synthetic page, where the
+proportions are reversed.
+
+What would actually help, and what it costs:
+
+  * A LUT for the stop search. `sample_stops` walks the stop list per pixel.
+    A table from quantised `t` to SEGMENT INDEX skips the search while leaving
+    the interpolation exactly as it is, so the output stays bit-identical.
+    Worth perhaps a tenth of the paint.
+  * Rasterising smooth gradients at reduced resolution and upsampling. This is
+    where the real factor is -- a full-screen layer is 590,000 pixels at the
+    current 1024-px cap -- and it MOVES PIXELS. The render gates compare
+    against the Godot backend at 0.00% on thirteen states, so this needs a
+    decision about tolerance before it can be a change.
+  * Gradients as GPU work rather than a baked texture. A different
+    architecture, not an optimisation.
+
+**A first cascade is ~30 us an element on a rule-heavy page.** Each element
+performs ~178 property writes to materialise a ComputedStyle. Style sharing --
+elements with the same shape, the same parent and no inline style pointing at
+one computed style -- is the fix, and it is worth doing on a page like
+layout-stress where the cascade IS the cost (16.7 ms against 7.3 for paint).
+It is not worth doing for hud or glass.
 
 Measured and worth recording: the cascade's shape cache does not earn its keep
 on a uniform list. 10,000 rows with a UNIQUE class each cascade FASTER than
