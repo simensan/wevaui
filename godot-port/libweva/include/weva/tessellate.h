@@ -77,6 +77,10 @@ struct ClipPoint {
 struct PreparedClip {
     std::vector<ClipPoint> polygon;
     std::vector<std::array<ClipPoint, 3>> pieces;
+    // One bounding box per piece, so a triangle that straddles the clip is cut
+    // against the two or three pieces it can actually reach rather than all
+    // thirty-odd of a rounded rectangle's fan. Same output, less of it.
+    std::vector<std::array<double, 4>> piece_bounds;   // x0, y0, x1, y1
     double x0 = 0, y0 = 0, x1 = 0, y1 = 0;          // bounds
     double ix0 = 0, iy0 = 0, ix1 = -1, iy1 = -1;    // the rectangle that fits inside
     bool convex = false;

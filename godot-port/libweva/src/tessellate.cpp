@@ -514,6 +514,14 @@ void clip_to_triangle(const std::vector<Vertex>& in, const std::array<ClipPoint,
 void PreparedClip::prepare() {
     pieces.clear();
     triangulate(polygon, &pieces);
+    piece_bounds.clear();
+    piece_bounds.reserve(pieces.size());
+    for (const std::array<ClipPoint, 3>& t : pieces) {
+        piece_bounds.push_back({std::min({t[0].x, t[1].x, t[2].x}),
+                                std::min({t[0].y, t[1].y, t[2].y}),
+                                std::max({t[0].x, t[1].x, t[2].x}),
+                                std::max({t[0].y, t[1].y, t[2].y})});
+    }
     x0 = y0 = 1e300;
     x1 = y1 = -1e300;
     for (const ClipPoint& p : polygon) {
@@ -610,7 +618,17 @@ void clip_triangles_polygon(const std::vector<Vertex>& vertices,
             out->indices.insert(out->indices.end(), {base, base + 1, base + 2});
             continue;
         }
-        for (const auto& piece : clip.pieces) {
+        for (size_t p = 0; p < clip.pieces.size(); ++p) {
+            // A piece the triangle cannot reach contributes nothing, and
+            // finding that out is four comparisons against the cost of cutting
+            // a polygon against three half-planes. Clipping was three quarters
+            // of paint on layout-stress, and most of it was this loop grinding
+            // through the far side of a rounded rectangle's fan.
+            if (p < clip.piece_bounds.size()) {
+                const std::array<double, 4>& b = clip.piece_bounds[p];
+                if (maxx <= b[0] || minx >= b[2] || maxy <= b[1] || miny >= b[3]) continue;
+            }
+            const auto& piece = clip.pieces[p];
             clip_to_triangle(tri, piece, &poly, &scratch);
             if (poly.size() < 3) continue;
             const uint32_t base = static_cast<uint32_t>(out->vertices.size());
