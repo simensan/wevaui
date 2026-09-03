@@ -442,6 +442,14 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
  * rebuild) needs to be able to read it back and could not. */
 weva_element_t weva_document_focus(weva_document_t doc);
 
+/* How long the pointer must rest on an element carrying `title` before its
+ * tooltip appears, in seconds. Default 0.6, as the reference has it.
+ *
+ * NEGATIVE turns tooltips off entirely and takes down any that is showing --
+ * a game with its own tooltip presentation wants the `title` attribute as
+ * data, not as a <div> the engine draws. Zero shows one on the next update. */
+void weva_document_set_tooltip_delay(weva_document_t doc, double seconds);
+
 /* ---- Dropdowns --------------------------------------------------------
  *
  * Clicking a <select> opens its list, clicking an option chooses it, and the

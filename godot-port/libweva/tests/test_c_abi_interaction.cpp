@@ -409,3 +409,113 @@ void test_abi_hit_follows_paint_order() {
     CHECK(at(50, 50) == "a");
     weva_document_destroy(d);
 }
+
+namespace {
+
+// The injected tooltip, if one is up. It carries a marker attribute so a host
+// -- and this test -- can tell it from the author's own content.
+weva_element_t tooltip_of(weva_document_t d) {
+    return weva_document_query(d, "[data-weva-tooltip]");
+}
+
+std::string tooltip_text(weva_document_t d) {
+    const weva_element_t e = tooltip_of(d);
+    if (e == WEVA_ELEMENT_NONE) return "";
+    char buf[128] = {0};
+    weva_element_text(d, e, buf, sizeof(buf));
+    return buf;
+}
+
+}   // namespace
+
+// `title="..."` renders as a tooltip after the pointer rests on the element.
+// The UA stylesheet has styled `.ui-tooltip` all along and nothing ever made
+// one, so `title` was inert.
+void test_abi_title_shows_a_tooltip() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0 } div { width: 100px; height: 40px }";
+    const char* html = "<div id=a title='Save the file'>Save</div>"
+                       "<div id=b title='Discard it'>Cancel</div>"
+                       "<div id=c>Plain</div>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    // Resting on it is not enough on its own: the delay is the whole point,
+    // or a tooltip flashes up every time the pointer crosses the screen.
+    weva_document_set_pointer(d, 50, 20, 0);
+    weva_document_update(d, 0.1);
+    CHECK(tooltip_of(d) == WEVA_ELEMENT_NONE);
+
+    // After the wait, it appears with the title's text.
+    weva_document_update(d, 0.6);
+    CHECK(tooltip_text(d) == "Save the file");
+
+    // Moving to a DIFFERENT titled element restarts the wait rather than
+    // showing the old text at the new place.
+    weva_document_set_pointer(d, 50, 60, 0);
+    weva_document_update(d, 0.1);
+    CHECK(tooltip_of(d) == WEVA_ELEMENT_NONE);
+    weva_document_update(d, 0.6);
+    CHECK(tooltip_text(d) == "Discard it");
+
+    // Moving onto something with no title takes it away.
+    weva_document_set_pointer(d, 50, 100, 0);
+    weva_document_update(d, 0.6);
+    CHECK(tooltip_of(d) == WEVA_ELEMENT_NONE);
+    weva_document_destroy(d);
+}
+
+// What dismisses one, and what a tooltip must not do to the document.
+void test_abi_tooltip_dismissal() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0 } #a { width: 100px; height: 40px }"
+                      " span { display: block }";
+    const char* html = "<div id=a title='Save the file'><span id=inner>Save</span></div>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    // A title on an ancestor covers what is inside it: the closest one wins,
+    // and here the only one is the parent.
+    weva_document_set_pointer(d, 20, 10, 0);
+    weva_document_update(d, 0.7);
+    CHECK(tooltip_text(d) == "Save the file");
+
+    // Moving within the SAME element keeps it up and moves it along.
+    weva_document_set_pointer(d, 60, 20, 0);
+    weva_document_update(d, 0.016);
+    CHECK(tooltip_text(d) == "Save the file");
+
+    // Pressing dismisses it: a tooltip over the button you are clicking is in
+    // the way of what you came to do.
+    weva_document_set_pointer(d, 60, 20, 1);
+    weva_document_update(d, 0.016);
+    CHECK(tooltip_of(d) == WEVA_ELEMENT_NONE);
+
+    // It does not capture the pointer either -- the UA rule gives it
+    // `pointer-events: none`, so what is UNDER it is still what gets hit.
+    // Probed inside the tooltip's own rectangle, which is the only place the
+    // question means anything: it sits at the pointer plus (12, 18), so with
+    // the pointer at (60, 20) it starts at (72, 38), still inside the 100x40
+    // div underneath.
+    weva_document_set_pointer(d, 60, 20, 0);
+    weva_document_update(d, 0.7);
+    const weva_element_t tip = tooltip_of(d);
+    CHECK(tip != WEVA_ELEMENT_NONE);
+    double tx = 0, ty = 0, tw = 0, th = 0;
+    CHECK(weva_element_bounds(d, tip, &tx, &ty, &tw, &th) == WEVA_OK);
+    CHECK(tx == 72 && ty == 38);   // beside the cursor, not under it
+    const weva_element_t under = weva_document_element_at(d, tx + 2, ty + 1);
+    CHECK(under != tip);
+    CHECK(under == weva_document_query(d, "#a"));
+    weva_document_destroy(d);
+}

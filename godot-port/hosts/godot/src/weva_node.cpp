@@ -222,6 +222,11 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("element_id_at", "point"), &WevaDocument::element_id_at);
     ClassDB::bind_method(D_METHOD("set_focus", "selector"), &WevaDocument::set_focus);
     ClassDB::bind_method(D_METHOD("get_focused_id"), &WevaDocument::get_focused_id);
+    ClassDB::bind_method(D_METHOD("set_tooltip_delay", "seconds"),
+                         &WevaDocument::set_tooltip_delay);
+    ClassDB::bind_method(D_METHOD("get_tooltip_delay"), &WevaDocument::get_tooltip_delay);
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "tooltip_delay"), "set_tooltip_delay",
+                 "get_tooltip_delay");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interactive"), "set_interactive", "get_interactive");
     ClassDB::bind_method(D_METHOD("set_paused", "on"), &WevaDocument::set_paused);
     ClassDB::bind_method(D_METHOD("get_paused"), &WevaDocument::get_paused);
@@ -863,6 +868,16 @@ bool WevaDocument::run_popover(const String& selector,
     queue_redraw();
     return true;
 }
+
+void WevaDocument::set_tooltip_delay(double seconds) {
+    tooltip_delay_ = seconds;
+    if (!doc_) return;
+    weva_document_set_tooltip_delay(doc_, seconds);
+    dirty_ = true;
+    queue_redraw();
+}
+
+double WevaDocument::get_tooltip_delay() const { return tooltip_delay_; }
 
 String WevaDocument::get_focused_id() {
     if (!doc_) return String();

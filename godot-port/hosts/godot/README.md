@@ -500,6 +500,23 @@ not.
 Like the reference, a `<summary>` is not in the tab order and Enter does not
 work it; a browser does both, and neither engine does yet.
 
+**Tooltips**
+
+`title="..."` draws after the pointer has rested on the element for 0.6s, as a
+`<div class="ui-tooltip">` beside the cursor. Style it with `.ui-tooltip`; it
+is an ordinary element, marked `data-weva-tooltip` so a host walking the DOM
+can tell it from its own content, and `pointer-events: none` so what is under
+it stays hoverable. A press dismisses it, and moving to a different titled
+element restarts the wait rather than showing the old text at the new place.
+
+    doc.tooltip_delay = 0.3     # seconds
+    doc.tooltip_delay = -1.0    # off, for a game that presents its own
+
+The wait runs on the clock rather than on pointer events, because a pointer
+that has stopped moving sends nothing more and the tooltip still has to appear
+-- so this needs `update_document(dt)` to be called with real time, as an
+animating document does.
+
 **Labels**
 
 `<label>` works the control it names, so the word beside a checkbox is

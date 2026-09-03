@@ -1146,6 +1146,21 @@ struct weva_document {
     // `data-popover-open` attribute, so a stylesheet can select on it and a
     // script can read it; this only remembers the ORDER.
     std::vector<const Element*> popovers;
+    // `title="..."` renders as a tooltip after the pointer has rested on the
+    // element for a moment. The UA sheet has styled `.ui-tooltip` all along
+    // and nothing ever made one, so `title` was inert.
+    //
+    // The delay is why this needs the clock and not just pointer events: a
+    // pointer that stops moving sends nothing more, and the tooltip has to
+    // appear anyway.
+    struct Tooltip {
+        const Element* host = nullptr;   // whose `title` would be shown
+        double dwell = 0;                // how long the pointer has rested there
+        Element* shown = nullptr;        // the injected <div>, while it is up
+        double x = 0;
+        double y = 0;
+    } tooltip;
+    double tooltip_delay = 0.6;
     // Where `{{ path }}` gets its values, and the attribute templates the
     // substitution would otherwise have eaten.
     weva_binding_source binding_source{};
@@ -1855,6 +1870,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->caret_painted = CaretState{};
     doc->scroll_drag = weva_document::ScrollDrag{};
     doc->popovers.clear();
+    doc->tooltip = weva_document::Tooltip{};
     doc->history.clear();
     doc->value_at_focus.clear();
     // The interaction state too, which is what the pointer is OVER and what
@@ -1923,6 +1939,15 @@ int weva_document_is_animating(weva_document_t doc) {
     return doc->styles.animating() ? 1 : 0;
 }
 
+namespace {
+
+// Defined with the pointer handling below; the update loop drives the dwell,
+// which is what makes a tooltip appear over a pointer that has stopped moving.
+void tooltip_show(weva_document* doc);
+void tooltip_hide(weva_document* doc);
+
+}   // namespace
+
 weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     if (!doc->doc) return WEVA_ERR_NOT_FOUND;
@@ -1949,6 +1974,14 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     // can see, so it is settled here -- against what was last painted -- and
     // asks for its own repaint before anything decides the pass is a no-op.
     if (dt_seconds > 0) doc->styles.state.caret_age += dt_seconds;
+    // The tooltip's wait runs on the clock alone, like the caret's blink: a
+    // pointer that has stopped moving sends no more events, and the tooltip
+    // still has to appear. Before the settled-document early-out, or a still
+    // pointer would never reach the delay.
+    if (dt_seconds > 0 && doc->tooltip_delay >= 0 && doc->tooltip.host && !doc->tooltip.shown) {
+        doc->tooltip.dwell += dt_seconds;
+        if (doc->tooltip.dwell >= doc->tooltip_delay) tooltip_show(doc);
+    }
     CaretState caret = caret_for(doc->styles.state);
     if (caret.element != doc->caret_painted.element ||
         caret.index != doc->caret_painted.index ||
@@ -2335,6 +2368,81 @@ void clear_radio_group(Node& root, std::string_view name, const Element* except)
         }
         clear_radio_group(e, name, except);
     }
+}
+
+void forget_element(weva_document* doc, const Element* e);
+
+// The nearest element with a non-empty `title`, so a tooltip on a panel covers
+// what is inside it and the closest one wins.
+const Element* title_host_at(const Element* target) {
+    for (const Node* n = target; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        const Element& e = static_cast<const Element&>(*n);
+        if (!e.get_attribute("title").empty()) return &e;
+    }
+    return nullptr;
+}
+
+// Where a tooltip sits: beside the cursor, not under it, or the pointer would
+// be inside the thing it just summoned.
+std::string tooltip_style(double x, double y) {
+    char buf[160];
+    std::snprintf(buf, sizeof(buf),
+                  "position:fixed;left:%gpx;top:%gpx;pointer-events:none;z-index:99999", x + 12,
+                  y + 18);
+    return buf;
+}
+
+void tooltip_hide(weva_document* doc) {
+    if (!doc->tooltip.shown) return;
+    Element* shown = doc->tooltip.shown;
+    doc->tooltip.shown = nullptr;
+    if (Node* parent = shown->parent()) parent->remove_child(shown);
+    forget_element(doc, shown);
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    doc->dom_touched = true;
+}
+
+void tooltip_show(weva_document* doc) {
+    if (doc->tooltip.shown || !doc->tooltip.host) return;
+    const std::string text(doc->tooltip.host->get_attribute("title"));
+    if (text.empty()) return;
+    // Into the <body> rather than beside <html>: a second root element is not
+    // a shape the box builder is asked to handle anywhere else, and
+    // `position: fixed` makes the parent irrelevant to where it lands.
+    Element* into = nullptr;
+    const std::function<void(Element&)> find_body = [&](Element& e) {
+        if (into) return;
+        if (e.tag_name() == "body") {
+            into = &e;
+            return;
+        }
+        for (const Ref<Node>& c : e.children()) {
+            if (c->node_type() == NodeType::Element) {
+                find_body(static_cast<Element&>(const_cast<Node&>(*c)));
+            }
+        }
+    };
+    for (const Ref<Node>& c : doc->doc->children()) {
+        if (c->node_type() == NodeType::Element) {
+            find_body(static_cast<Element&>(const_cast<Node&>(*c)));
+            if (!into) into = &static_cast<Element&>(const_cast<Node&>(*c));
+        }
+    }
+    if (!into) return;
+
+    Ref<Element> tip = make_ref<Element>("div");
+    tip->set_attribute("class", "ui-tooltip");
+    tip->set_attribute("style", tooltip_style(doc->tooltip.x, doc->tooltip.y));
+    // Marked so a host walking the DOM can tell it apart from its own content.
+    tip->set_attribute("data-weva-tooltip", "");
+    Ref<Node> label(new TextNode(text));
+    tip->append_child(label.get());
+    into->append_child(tip.get());
+    doc->tooltip.shown = tip.get();
+    doc->reindex_new_elements();
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    doc->dom_touched = true;
 }
 
 // True for the things a <label> can be for.
@@ -2724,6 +2832,30 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
             }
         }
         doc->press_target = nullptr;
+    }
+
+    // The tooltip follows the pointer and resets whenever the element under
+    // it changes, so moving from one titled thing to another restarts the
+    // wait rather than showing the old text at the new place.
+    {
+        weva_document::Tooltip& tip = doc->tooltip;
+        tip.x = x;
+        tip.y = y;
+        const Element* host = title_host_at(hit);
+        if (host != tip.host) {
+            tip.host = host;
+            tip.dwell = 0;
+            tooltip_hide(doc);
+        } else if (tip.shown) {
+            tip.shown->set_attribute("style", tooltip_style(x, y));
+            doc->pending = worst(doc->pending, Invalidation::Layout);
+        }
+        // Pressing anything dismisses it: a tooltip over the button you are
+        // clicking is in the way of what you came to do.
+        if (buttons != 0) {
+            tip.dwell = 0;
+            tooltip_hide(doc);
+        }
     }
 
     std::vector<const Element*> hover;
@@ -3503,6 +3635,12 @@ int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
     return 0;
 }
 
+void weva_document_set_tooltip_delay(weva_document_t doc, double seconds) {
+    if (!doc) return;
+    doc->tooltip_delay = seconds;
+    if (seconds < 0) tooltip_hide(doc);
+}
+
 weva_element_t weva_document_focus(weva_document_t doc) {
     if (!doc) return WEVA_ELEMENT_NONE;
     const Element* focused = doc->styles.state.focused;
@@ -3667,6 +3805,11 @@ void forget_element(weva_document* doc, const Element* e) {
     doc->history.erase(e);
     doc->popovers.erase(std::remove(doc->popovers.begin(), doc->popovers.end(), e),
                         doc->popovers.end());
+    if (doc->tooltip.host == e) {
+        doc->tooltip.host = nullptr;
+        doc->tooltip.dwell = 0;
+    }
+    if (doc->tooltip.shown == e) doc->tooltip.shown = nullptr;
     const auto drop = [e](std::vector<const Element*>* chain) {
         chain->erase(std::remove(chain->begin(), chain->end(), e), chain->end());
     };

@@ -90,6 +90,11 @@ public:
     // control it names -- so a host mirroring it has to be able to read it.
     godot::String get_focused_id();
 
+    // `title="..."` draws as a tooltip after the pointer rests on an element.
+    // Negative turns that off, for a game that presents its own.
+    void set_tooltip_delay(double seconds);
+    double get_tooltip_delay() const;
+
     // ---- Data binding ---------------------------------------------------
     //
     // What a script needs to drive a document: change what it says, change how
@@ -295,6 +300,7 @@ private:
     bool run_popover(const godot::String& selector,
                      weva_status (*fn)(weva_document_t, weva_element_t));
 
+    double tooltip_delay_ = 0.6;
     godot::Callable data_source_;
     godot::ObjectID controller_;
     bool interactive_ = true;

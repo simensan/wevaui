@@ -60,6 +60,7 @@ func _ready() -> void:
 	_test_modal_dialog()
 	_test_popovers()
 	_test_label_activates_control()
+	_test_title_tooltip()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -1136,4 +1137,34 @@ func _test_label_activates_control() -> void:
 	doc.update_document()
 	_check(doc.has_element_attribute("#other", "checked"), "`for` names one by id")
 	_check(doc.get_focused_id() == "other", "and the focus follows the click")
+	doc.queue_free()
+
+
+func _test_title_tooltip() -> void:
+	# `title="..."` draws after the pointer rests on the element. The UA
+	# stylesheet has styled `.ui-tooltip` all along and nothing ever made one.
+	var doc := _make_doc(
+		"<body><div id='a' title='Save the file'>Save</div></body>",
+		"html, body { margin: 0 } div { width: 100px; height: 40px }")
+
+	doc.set_pointer(Vector2(50, 20), 0)
+	doc.update_document(0.1)
+	_check(doc.query_bounds("[data-weva-tooltip]").size == Vector2.ZERO,
+		"the delay is real: nothing yet")
+
+	# The wait runs on the clock, so a pointer that has stopped moving still
+	# gets its tooltip.
+	doc.update_document(0.6)
+	_check(doc.query_text("[data-weva-tooltip]") == "Save the file",
+		"and then it appears with the title's text")
+
+	# A host with its own tooltips turns the engine's off, and any that is up
+	# goes with it.
+	doc.tooltip_delay = -1.0
+	doc.update_document(0.6)
+	_check(doc.query_bounds("[data-weva-tooltip]").size == Vector2.ZERO,
+		"a negative delay turns them off")
+	doc.set_pointer(Vector2(50, 20), 0)
+	doc.update_document(1.0)
+	_check(doc.query_bounds("[data-weva-tooltip]").size == Vector2.ZERO, "and keeps them off")
 	doc.queue_free()
