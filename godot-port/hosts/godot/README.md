@@ -261,9 +261,12 @@ gallery.
 
 ## Driving a document from GDScript
 
-`demo.tscn` is a worked example -- a health bar, buttons, a checkbox, a text
-field and a quest log BUILT from what happens rather than written in advance,
-with the animation left to CSS. Run it:
+`demo.tscn` is a worked example, and it is written the way the rest of this
+section recommends: the script holds game state and nothing else. The markup
+says where each piece is shown, which class goes on when, what each button is
+for, and how the log lays out -- so all of that moves without the script
+hearing about it. Two lines connect them, `set_controller(self)` and one
+`doc.data = {...}` per change. Run it:
 
     godot --path project --scene res://demo.tscn
 

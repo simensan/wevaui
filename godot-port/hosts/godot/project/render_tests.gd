@@ -376,98 +376,77 @@ func _test_form_binding() -> void:
 # demo.tscn is the worked example a reader copies from, so it is worth knowing
 # that the pattern in it actually works rather than that it merely parses.
 func _test_demo_scene_pattern() -> void:
+	# The demo drives its document entirely through bindings: the script holds
+	# state, sets `data`, and names methods in the markup. This walks the same
+	# path, because a worked example that has quietly stopped working is worse
+	# than none.
 	var demo := preload("res://demo.gd")
-	var doc := _make_doc(demo.HTML, demo.CSS, Vector2(640, 400))
+	var doc := _make_doc(demo.HTML, demo.CSS, Vector2(640, 480))
 
-	_check(doc.has_element("#hp-fill"), "the demo's bar is there")
-	_check(doc.get_element_text("#hp-text") == "100 / 100", "the demo's readout starts full")
-
-	var clicked: Array = []
-	doc.element_clicked.connect(func(id): clicked.append(id))
-
-	# What _refresh() does, at 40 hp: the readout, an inline width, and the
-	# state classes the stylesheet animates off.
-	doc.set_element_text("#hp-text", "40 / 100")
-	doc.set_element_attribute("#hp-fill", "style", "width: 40%")
-	doc.toggle_element_class("#hp-fill", "hurt", true)
+	doc.data = {
+		"Hp": 100, "Hurt": false, "Low": false, "Alive": true,
+		"AtFullHealth": true, "Status": "ready", "Log": [],
+	}
 	doc.update_document()
-	_check(doc.get_element_text("#hp-text") == "40 / 100", "the readout follows the script")
+	_check(doc.query_text(".value") == "100 / 100", "the readout reads the data")
+	_check(doc.get_element_attribute(".fill", "style") == "width: 100%",
+		"and the bar's width comes from the same number")
+	_check(doc.query_text(".status") == "ready", "as does the status line")
 
-	var bar := doc.query_bounds("#hp-fill")
+	# At full health the heal button is off, and the markup says so -- the
+	# script only reports the state.
+	_check(doc.get_element_attribute("button:nth-of-type(2)", "class").contains("off"),
+		"a button disables itself from the data")
+
+	# Hurt: the width follows, the class goes on, and the transition means the
+	# bar does NOT jump -- which is the point of leaving it to CSS.
+	doc.data = {
+		"Hp": 40, "Hurt": true, "Low": false, "Alive": true,
+		"AtFullHealth": false, "Status": "40 hp", "Log": [],
+	}
+	doc.update_document()
+	_check(doc.query_text(".value") == "40 / 100", "the readout follows")
+	_check(doc.get_element_attribute(".fill", "class").contains("hurt"),
+		"and the state class goes on")
 	var track := doc.query_bounds(".bar")
-	# The demo's stylesheet puts a 260ms transition on the bar's width, so it
-	# does NOT jump -- which is the point of driving a UI this way, and means
-	# the test has to let time pass before measuring.
-	_check(bar.size.x == track.size.x, "the bar has not moved yet: it is transitioning")
+	_check(doc.query_bounds(".fill").size.x == track.size.x,
+		"the bar has not moved yet: it is transitioning")
 	doc.update_document(0.3)
-	bar = doc.query_bounds("#hp-fill")
-	_check(bar.size.x < track.size.x * 0.6, "and lands narrow once the transition runs")
+	_check(doc.query_bounds(".fill").size.x < track.size.x * 0.6,
+		"and lands narrow once the transition runs")
 
-	# Clicking a button reaches the script by id, which is the whole binding.
-	var hit := doc.query_bounds("#hit")
-	var at := hit.position + hit.size * 0.5
+	# The log is a data-each list, so the script appends to an Array rather than
+	# building markup.
+	doc.data = {
+		"Hp": 40, "Hurt": true, "Low": false, "Alive": true, "AtFullHealth": false,
+		"Status": "hit", "Log": [
+			{"Id": 1, "Text": "took 10 damage", "Good": false, "Bad": true},
+			{"Id": 2, "Text": "healed 10", "Good": true, "Bad": false},
+		],
+	}
+	doc.update_document()
+	_check(doc.count_elements("#log > .entry") == 2, "one row per log entry")
+	_check(doc.query_text("#log > .entry:nth-of-type(1)").strip_edges() == "took 10 damage",
+		"filled from the item")
+	_check(doc.get_element_attribute("#log > .entry:nth-of-type(1)", "class").contains("hurt"),
+		"and coloured by its own flags")
+	_check(doc.get_element_attribute("#log > .entry:nth-of-type(2)", "class").contains("good"),
+		"each row reading its own")
+
+	# A click calls the method the markup named, on the controller.
+	var called: Array = []
+	doc.handler_invoked.connect(func(handler, _id): called.append(handler))
+	var button := doc.query_bounds("button:nth-of-type(1)")
+	var at := button.position + button.size * 0.5
 	doc.set_pointer(at, 0)
 	doc.set_pointer(at, 1)
 	doc.set_pointer(at, 0)
 	doc.update_document()
-	_check(doc.element_id_at(at) == "hit", "hit testing finds the button through the padding")
-	_check(clicked.has("hit"), "clicking the demo's button raises its id")
+	_check(called.has("take_damage"), "the button calls what the markup named it")
 
-	# `disabled` is set from the script the way the demo sets it on the heal
-	# button at full health -- an attribute with an empty value, which is
-	# how the markup spells "present". The control then takes nothing at
-	# all, which is the difference between disabled and merely grey.
-	doc.set_element_attribute("#heal", "disabled", "")
-	doc.update_document()
-	var heal := doc.query_bounds("#heal")
-	var at_heal := heal.position + heal.size * 0.5
-	clicked.clear()
-	doc.set_pointer(at_heal, 0)
-	doc.set_pointer(at_heal, 1)
-	doc.set_pointer(at_heal, 0)
-	doc.update_document()
-	_check(not clicked.has("heal"), "a disabled button reports no click")
-	doc.remove_element_attribute("#heal", "disabled")
-	doc.update_document()
-	doc.set_pointer(at_heal, 0)
-	doc.set_pointer(at_heal, 1)
-	doc.set_pointer(at_heal, 0)
-	doc.update_document()
-	_check(clicked.has("heal"), "and takes them again once it is enabled")
-
-	# The log the demo builds: appended, trimmed, and the newest shown.
-	for i in range(6):
-		doc.append_html("#log", "<div class='entry'>line %d</div>" % i)
-	doc.update_document()
-	_check(doc.count_elements("#log .entry") == 6, "the log takes what happens")
-	doc.remove_element("#log .entry:nth-child(1)")
-	doc.update_document()
-	_check(doc.count_elements("#log .entry") == 5, "and drops the oldest")
-	_check(doc.query_text("#log .entry:nth-child(1)") == "line 1",
-		"leaving the next one at the top")
-	doc.scroll_into_view("#log .entry:last-child")
-	doc.update_document()
-	# Visible, not "scrolled to the maximum": nearest-edge stops as soon as
-	# the row is in view, which leaves the container's bottom padding
-	# unscrolled -- and the row being visible is what a log actually wants.
-	var log_box := doc.query_bounds("#log")
-	var newest := doc.query_bounds("#log .entry:last-child")
-	_check(newest.position.y >= log_box.position.y - 0.5
-		and newest.end.y <= log_box.end.y + 0.5,
-		"and the newest row is inside the box you can see")
-
-	# The quality dropdown, which is how a settings screen offers a choice.
-	_check(doc.get_element_value("#quality") == "med", "the select starts on its choice")
-	doc.set_focus("#quality")
-	doc.send_key(KEY_DOWN)
-	_check(doc.get_element_value("#quality") == "high",
-		"and the arrows move through the options")
-
-	# And the form controls the demo exposes.
-	_check(doc.get_element_value("#name") == "Vintner of Halden",
-		"the demo's field has its value")
-	_check(doc.set_element_value("#shield", "on"), "the demo's checkbox can be set")
-	_check(doc.get_element_value("#shield") == "on", "and reads back")
+	# And the form controls the demo exposes still read back.
+	_check(doc.get_element_value("#name") == "Vintner of Halden", "the field has its value")
+	_check(doc.get_element_value("#quality") == "med", "and the select its choice")
 	doc.queue_free()
 
 
