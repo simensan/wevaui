@@ -258,11 +258,79 @@ void BoxBuilder::append_node_as_block_child(const Node& node, const ComputedStyl
     tree_->append_child(parent, ib);
 }
 
+// ---- list markers (CSS Lists L3 3) ---------------------------------------
+//
+// `li { display: list-item }` is in the user-agent stylesheet and nothing
+// acted on it, so every <ul> and <ol> in the port rendered without a single
+// bullet or number. The fifth UA rule this audit has found asking for
+// something that never happened.
+
+// Roman numerals over the range the spec defines them for. Outside 1..3999 a
+// spec-compliant engine falls back to decimal, and so does this.
+std::string to_roman(int n, bool lowercase) {
+    if (n < 1 || n > 3999) return std::to_string(n);
+    static const int kValues[] = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+    static const char* kUpper[] = {"M",  "CM", "D",  "CD", "C",  "XC", "L",
+                                   "XL", "X",  "IX", "V",  "IV", "I"};
+    static const char* kLower[] = {"m",  "cm", "d",  "cd", "c",  "xc", "l",
+                                   "xl", "x",  "ix", "v",  "iv", "i"};
+    std::string out;
+    for (int i = 0; i < 13; ++i) {
+        while (n >= kValues[i]) {
+            out += lowercase ? kLower[i] : kUpper[i];
+            n -= kValues[i];
+        }
+    }
+    return out;
+}
+
+// a, b, ... z, aa, ab: bijective base-26, which is why 26 is `z` and 27 `aa`
+// rather than `ba`.
+std::string to_alpha(int n, bool lowercase) {
+    if (n < 1) return std::to_string(n);
+    std::string out;
+    while (n > 0) {
+        const int rem = (n - 1) % 26;
+        out.insert(out.begin(), static_cast<char>((lowercase ? 'a' : 'A') + rem));
+        n = (n - 1) / 26;
+    }
+    return out;
+}
+
+std::string marker_text(std::string_view type, int ordinal) {
+    if (type.empty()) type = "disc";
+    if (type == "disc") return "\xE2\x80\xA2";      // U+2022 BULLET
+    if (type == "circle") return "\xE2\x97\xA6";    // U+25E6 WHITE BULLET
+    if (type == "square") return "\xE2\x96\xAA";    // U+25AA BLACK SMALL SQUARE
+    if (type == "decimal") return std::to_string(ordinal) + ".";
+    if (type == "decimal-leading-zero") {
+        // Chrome pads to two digits and no further, which is what the
+        // reference follows.
+        std::string n = std::to_string(ordinal);
+        if (n.size() < 2) n.insert(n.begin(), '0');
+        return n + ".";
+    }
+    if (type == "lower-roman") return to_roman(ordinal, true) + ".";
+    if (type == "upper-roman") return to_roman(ordinal, false) + ".";
+    if (type == "lower-alpha" || type == "lower-latin") return to_alpha(ordinal, true) + ".";
+    if (type == "upper-alpha" || type == "upper-latin") return to_alpha(ordinal, false) + ".";
+    // An unrecognised identifier falls back to the initial value rather than
+    // to decimal: the same contract the reference pins.
+    return "\xE2\x80\xA2";
+}
+
 void BoxBuilder::build_children(const Element& element, const ComputedStyle* style,
                                 BoxId parent) {
     ++element_depth_;
     apply_counters(style, element_depth_);
     inject_pseudo(element, style, parent, "before");
+    // After ::before, so the marker sits inside it the way a browser puts it.
+    maybe_inject_list_marker(element, style, parent);
+    // One pass for the whole list rather than each <li> walking back over its
+    // siblings, which would be quadratic in the length of the list.
+    if (element.tag_name() == "ul" || element.tag_name() == "ol") {
+        precompute_li_ordinals(element);
+    }
     for (const Ref<Node>& c : element.children()) {
         append_node_as_block_child(*c, style, parent);
     }
@@ -270,6 +338,104 @@ void BoxBuilder::build_children(const Element& element, const ComputedStyle* sty
     close_counters(element_depth_);
     --element_depth_;
     finalize_block_children(parent);
+}
+
+// HTML 4.4.5-6: <ol start=N> seeds the counter, <ol reversed> counts down
+// (from the number of items when no start is given), and <li value=V> resets
+// it at that item with the following siblings continuing from there.
+void BoxBuilder::precompute_li_ordinals(const Element& list) {
+    const bool ordered = list.tag_name() == "ol";
+    int counter = 1;
+    int step = 1;
+    const auto as_int = [](std::string_view raw, int* out) {
+        if (raw.empty()) return false;
+        const std::string text(raw);
+        char* end = nullptr;
+        const long v = std::strtol(text.c_str(), &end, 10);
+        if (end == text.c_str() || *end != '\0') return false;
+        *out = static_cast<int>(v);
+        return true;
+    };
+    if (ordered) {
+        int start = 1;
+        const bool has_start = as_int(list.get_attribute("start"), &start);
+        if (has_start) counter = start;
+        if (list.has_attribute("reversed")) {
+            step = -1;
+            if (!has_start) {
+                int items = 0;
+                for (const Ref<Node>& c : list.children()) {
+                    if (c->node_type() == NodeType::Element &&
+                        static_cast<const Element&>(*c).tag_name() == "li") {
+                        ++items;
+                    }
+                }
+                counter = items;
+            }
+        }
+    }
+    for (const Ref<Node>& c : list.children()) {
+        if (c->node_type() != NodeType::Element) continue;
+        const Element& item = static_cast<const Element&>(*c);
+        if (item.tag_name() != "li") continue;
+        int value = 0;
+        if (ordered && as_int(item.get_attribute("value"), &value)) counter = value;
+        li_ordinals_[&item] = counter;
+        counter += step;
+    }
+}
+
+void BoxBuilder::maybe_inject_list_marker(const Element& e, const ComputedStyle* style,
+                                          BoxId parent) {
+    if (!style || parse_display(get(style, "display")) != DisplayKind::ListItem) return;
+    // The SHORTHAND as well as the longhand. `list-style: none` is what
+    // authors actually write -- it is in three of this repo's own sample
+    // stylesheets and in none of them as the longhand -- and reading only
+    // `list-style-type` put a bullet on every one of those items, moving
+    // every sample that has a list down by a line.
+    //
+    // The shorthand is not expanded into its longhands anywhere, so this
+    // reads it directly rather than pretending it was.
+    std::string_view type = get(style, "list-style-type");
+    const std::string_view shorthand = get(style, "list-style");
+    if (!shorthand.empty()) {
+        // `list-style: <type> || <position> || <image>`, in any order. Only
+        // the type matters here, and `none` in any slot suppresses the
+        // marker -- which is the whole reason the shorthand is written.
+        if (shorthand.find("none") != std::string_view::npos) return;
+        for (const char* known :
+             {"disc", "circle", "square", "decimal-leading-zero", "decimal", "lower-roman",
+              "upper-roman", "lower-alpha", "lower-latin", "upper-alpha", "upper-latin"}) {
+            if (shorthand.find(known) != std::string_view::npos) {
+                type = known;
+                break;
+            }
+        }
+    }
+    // `list-style-type: none` is how an author turns a <ul> into a plain
+    // stack, which is most of the <ul>s in a game UI.
+    if (type == "none") return;
+
+    // The ordinal was worked out when the parent was built. An element with
+    // display: list-item outside a <ul>/<ol> still gets a marker, and counts
+    // as the first item.
+    int ordinal = 1;
+    const auto found = li_ordinals_.find(&e);
+    if (found != li_ordinals_.end()) ordinal = found->second;
+
+    // A text run at the start of the item's content, rather than out in the
+    // negative-margin region a browser uses. The reference wraps it in an
+    // inline-block to reserve a fixed slot; a run is the same thing to the
+    // line layout and stays visible AS text -- which is what lets a test, a
+    // dump or a host read the marker rather than infer it from a box.
+    //
+    // The item's own style, so font, size and colour flow through. A
+    // `::marker` pseudo would let an author style it apart, and neither
+    // engine has one yet.
+    const BoxId marker = tree_->create(BoxKind::Text, nullptr, style);
+    (*tree_)[marker].text = tree_->own_text(marker_text(type, ordinal) + " ");
+    (*tree_)[marker].pseudo_host = &e;
+    tree_->append_child(parent, marker);
 }
 
 void BoxBuilder::build_inline_children(const Element& element, const ComputedStyle* style,

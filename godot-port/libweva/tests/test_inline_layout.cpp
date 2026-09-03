@@ -1297,3 +1297,101 @@ void test_text_overflow_conditions() {
     CHECK(f.layout(html));
     CHECK(f.line_text(f.lines("w")[0]) == full);
 }
+
+// CSS Lists L3 3. `li { display: list-item }` is in the user-agent
+// stylesheet and nothing acted on it, so every <ul> and <ol> in the port
+// rendered without a single bullet or number.
+//
+// The marker lives on the ITEM, not the list: an <li> is block-level, so the
+// line boxes belong to it and the <ul> has none of its own.
+void test_list_markers() {
+    // The text of one item's first line, marker included.
+    const auto item_text = [](Fixture& f, const char* id) {
+        const std::vector<BoxId> ls = f.lines(id);
+        return ls.empty() ? std::string("<no line>") : f.line_text(ls[0]);
+    };
+    {
+        Fixture f;
+        CHECK(f.css("li { font-size: 20px }"));
+        CHECK(f.layout("<body><ul><li id=a>one</li><li id=b>two</li></ul></body>"));
+        // U+2022 BULLET, before the text.
+        CHECK(item_text(f, "a") == "• one");
+        CHECK(item_text(f, "b") == "• two");
+    }
+    {
+        Fixture f;
+        CHECK(f.css("li { font-size: 20px; list-style-type: decimal }"));
+        CHECK(f.layout("<body><ol><li id=a>a</li><li id=b>b</li><li id=c>c</li></ol></body>"));
+        CHECK(item_text(f, "a") == "1. a");
+        CHECK(item_text(f, "b") == "2. b");
+        CHECK(item_text(f, "c") == "3. c");
+    }
+    {
+        // `none` is how an author turns a <ul> into a plain stack, which is
+        // most of the lists in a game UI.
+        Fixture f;
+        CHECK(f.css("li { font-size: 20px; list-style-type: none }"));
+        CHECK(f.layout("<body><ul><li id=a>one</li></ul></body>"));
+        CHECK(item_text(f, "a") == "one");
+    }
+    {
+        // The other two bullet shapes.
+        Fixture f;
+        CHECK(f.css("#a { list-style-type: circle } #b { list-style-type: square }"));
+        CHECK(f.layout("<body><ul><li id=a>x</li><li id=b>y</li></ul></body>"));
+        CHECK(item_text(f, "a") == "◦ x");   // U+25E6
+        CHECK(item_text(f, "b") == "▪ y");   // U+25AA
+    }
+}
+
+// The HTML attributes that move the counter.
+void test_list_marker_ordinals() {
+    const auto mark = [](Fixture& f, const char* id) {
+        const std::vector<BoxId> ls = f.lines(id);
+        if (ls.empty()) return std::string("<no line>");
+        const std::string t = f.line_text(ls[0]);
+        return t.substr(0, t.find(' '));
+    };
+    {
+        Fixture f;
+        CHECK(f.css("li { list-style-type: decimal }"));
+        CHECK(f.layout("<body><ol start=5><li id=a>a</li><li id=b>b</li></ol></body>"));
+        CHECK(mark(f, "a") == "5.");
+        CHECK(mark(f, "b") == "6.");
+    }
+    {
+        // `reversed` with no `start` counts down from the number of items.
+        Fixture f;
+        CHECK(f.css("li { list-style-type: decimal }"));
+        CHECK(f.layout("<body><ol reversed><li id=a>a</li><li id=b>b</li>"
+                       "<li id=c>c</li></ol></body>"));
+        CHECK(mark(f, "a") == "3.");
+        CHECK(mark(f, "b") == "2.");
+        CHECK(mark(f, "c") == "1.");
+    }
+    {
+        // <li value=N> resets it, and the rest continue from there.
+        Fixture f;
+        CHECK(f.css("li { list-style-type: decimal }"));
+        CHECK(f.layout("<body><ol><li id=a>a</li><li id=b value=10>b</li>"
+                       "<li id=c>c</li></ol></body>"));
+        CHECK(mark(f, "a") == "1.");
+        CHECK(mark(f, "b") == "10.");
+        CHECK(mark(f, "c") == "11.");
+    }
+    {
+        Fixture f;
+        CHECK(f.css("li { list-style-type: lower-roman }"));
+        CHECK(f.layout("<body><ol start=4><li id=a>a</li><li id=b>b</li></ol></body>"));
+        CHECK(mark(f, "a") == "iv.");
+        CHECK(mark(f, "b") == "v.");
+    }
+    {
+        // Bijective base-26: 26 is Z and 27 is AA, not BA.
+        Fixture f;
+        CHECK(f.css("li { list-style-type: upper-alpha }"));
+        CHECK(f.layout("<body><ol start=26><li id=a>a</li><li id=b>b</li></ol></body>"));
+        CHECK(mark(f, "a") == "Z.");
+        CHECK(mark(f, "b") == "AA.");
+    }
+}

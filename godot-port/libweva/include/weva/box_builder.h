@@ -1,5 +1,7 @@
 #pragma once
 #include "weva/box.h"
+
+#include <map>
 #include "weva/computed_style.h"
 #include "weva/dom.h"
 
@@ -60,6 +62,14 @@ private:
     // CSS 2.1 §12.1: generates `host`'s ::before or ::after box as a child of
     // `parent`, when the pseudo has a style and its `content` resolves to
     // something other than none/normal.
+    // CSS Lists L3 3: an element with `display: list-item` gets a marker box
+    // at the start of its content. Ordinals for a whole <ul>/<ol> are worked
+    // out in one pass over its children rather than by each <li> walking back
+    // over its siblings, which would be quadratic in the length of the list.
+    void precompute_li_ordinals(const Element& list);
+    void maybe_inject_list_marker(const Element& e, const ComputedStyle* style, BoxId parent);
+    std::map<const Element*, int> li_ordinals_;
+
     // The `::backdrop` behind a modal dialog or an open popover.
     void maybe_inject_backdrop(const Element& host, BoxId parent);
     void inject_pseudo(const Element& host, const ComputedStyle* host_style, BoxId parent,

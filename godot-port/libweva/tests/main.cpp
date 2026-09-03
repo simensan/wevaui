@@ -211,6 +211,8 @@ void test_cjk_kinsoku_prohibitions();
 void test_cjk_does_not_break_latin_runs();
 void test_text_overflow_ellipsis();
 void test_text_overflow_conditions();
+void test_list_markers();
+void test_list_marker_ordinals();
 void test_relative_positioning();
 void test_absolute_containing_block();
 void test_absolute_placement();
@@ -570,6 +572,8 @@ int main() {
     test_cjk_does_not_break_latin_runs();
     test_text_overflow_ellipsis();
     test_text_overflow_conditions();
+    test_list_markers();
+    test_list_marker_ordinals();
     test_relative_positioning();
     test_absolute_containing_block();
     test_absolute_placement();
