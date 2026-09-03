@@ -624,3 +624,72 @@ void test_abi_context_menu_event() {
     CHECK(menus().empty());
     weva_document_destroy(d);
 }
+
+// Moving the pointer WITHIN a hovered ancestor must leave that ancestor's
+// rules alone.
+//
+// The cascade is told which elements changed state, and it used to be told
+// the whole hover chain -- every ancestor up to <body> -- on every move, which
+// meant a walk of the entire document. It is told only the elements that
+// actually flipped now, and the risk of that is exactly this case: an
+// ancestor hovered before AND after must keep its descendant rules applied,
+// even though it is no longer in the changed set.
+void test_abi_hover_within_an_ancestor_keeps_its_rules() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0 }"
+                      " #panel { width: 200px; height: 120px; background: #111 }"
+                      " .row { height: 40px }"
+                      // A rule reaching from the hovered ancestor into a
+                      // descendant, and one reaching a sibling.
+                      " #panel:hover .mark { background: #f00; height: 40px }"
+                      " #a:hover + #b { background: #0f0 }";
+    const char* html = "<div id=panel><div id=a class=row></div><div id=b class=row></div>"
+                       "<div id=m class='row mark'></div></div>"
+                       "<div id=outside>away</div>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    // How many red rects the document draws: the descendant rule's mark.
+    const auto marks = [&]() {
+        weva_document_update(d, 0);
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        int red = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].texture_id != 0 || draws[i].vertex_count == 0) continue;
+            const weva_vertex& v = draws[i].vertices[0];
+            if (v.r > 0.5f && v.g < 0.1f && v.b < 0.1f) ++red;
+        }
+        return red;
+    };
+
+    CHECK(marks() == 0);   // nothing hovered
+
+    // Into the panel, over its first row.
+    weva_document_set_pointer(d, 100, 20, 0);
+    CHECK(marks() == 1);
+
+    // MOVE WITHIN the panel, to the second row. The panel is hovered before
+    // and after, so it is not in the changed set -- and its descendant rule
+    // must still hold.
+    weva_document_set_pointer(d, 100, 60, 0);
+    CHECK(marks() == 1);
+
+    // A third move, still inside.
+    weva_document_set_pointer(d, 100, 100, 0);
+    CHECK(marks() == 1);
+
+    // Out of the panel entirely: now it flips, and the rule goes with it.
+    weva_document_set_pointer(d, 100, 200, 0);
+    CHECK(marks() == 0);
+
+    // And back in, to prove the flip works in both directions.
+    weva_document_set_pointer(d, 100, 20, 0);
+    CHECK(marks() == 1);
+    weva_document_destroy(d);
+}

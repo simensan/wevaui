@@ -2326,14 +2326,32 @@ void note_state_change(weva_document* doc, const std::vector<const Element*>& be
     if (before == after) return;
     ++doc->styles.state.version_;
     doc->dom_touched = true;
-    const auto note = [&](const std::vector<const Element*>& chain) {
+    // Only the elements whose state actually FLIPPED.
+    //
+    // A hover chain is the element and every ancestor up to <body>, because
+    // `:hover` applies to all of them. Marking both chains whole therefore
+    // marked <body> on every pointer move, and the cascade's touched-subtree
+    // walk starting at <body> is a walk of the entire document -- so moving
+    // the mouse one pixel within a panel restyled the page. On layout-stress
+    // that was 66 ms a frame.
+    //
+    // An element in BOTH chains kept its state and needs nothing. What is
+    // left is the two tails: the elements that stopped being hovered and the
+    // ones that started. A rule reaching from one of those into its subtree
+    // still works, because the walk covers the subtree of whatever flipped.
+    const auto in = [](const std::vector<const Element*>& chain, const Element* e) {
+        return std::find(chain.begin(), chain.end(), e) != chain.end();
+    };
+    const auto note_changed = [&](const std::vector<const Element*>& chain,
+                                  const std::vector<const Element*>& other) {
         for (const Element* e : chain) {
+            if (in(other, e)) continue;
             if (doc->touched.size() >= 64) return;
             doc->touched.push_back(const_cast<Element*>(e));
         }
     };
-    note(before);
-    note(after);
+    note_changed(before, after);
+    note_changed(after, before);
 }
 
 }   // namespace
@@ -4075,7 +4093,7 @@ weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t elemen
 
 int weva_element_row(weva_document_t doc, weva_element_t element, int* out_index,
                      char* key_buffer, size_t key_capacity) {
-    if (key_buffer && key_capacity > 0) key_buffer[0] = ' ';
+    if (key_buffer && key_capacity > 0) key_buffer[0] = '\0';
     if (!doc) return 0;
     const Element* e = doc->element_at(element);
     for (const Node* n = e; n; n = n->parent()) {
@@ -4090,7 +4108,7 @@ int weva_element_row(weva_document_t doc, weva_element_t element, int* out_index
         if (key_buffer && key_capacity > 0) {
             const size_t n_copy = key.size() < key_capacity - 1 ? key.size() : key_capacity - 1;
             if (n_copy > 0) std::memcpy(key_buffer, key.data(), n_copy);
-            key_buffer[n_copy] = ' ';
+            key_buffer[n_copy] = '\0';
         }
         return 1;
     }

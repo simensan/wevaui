@@ -324,6 +324,7 @@ void test_abi_tooltip_dismissal();
 void test_abi_paint_cull_keeps_reaching_shadows();
 void test_abi_secondary_button_does_not_activate();
 void test_abi_context_menu_event();
+void test_abi_hover_within_an_ancestor_keeps_its_rules();
 void test_abi_text_decorations_are_drawn();
 void test_abi_text_decoration_variants();
 void test_abi_text_decoration_styles();
@@ -700,6 +701,7 @@ int main() {
     test_abi_paint_cull_keeps_reaching_shadows();
     test_abi_secondary_button_does_not_activate();
     test_abi_context_menu_event();
+    test_abi_hover_within_an_ancestor_keeps_its_rules();
     test_abi_text_decorations_are_drawn();
     test_abi_text_decoration_variants();
     test_abi_text_decoration_styles();
