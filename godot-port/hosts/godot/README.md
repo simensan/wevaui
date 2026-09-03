@@ -430,16 +430,35 @@ never moves the focus ring somewhere you cannot see.
 **Text fields**
 
 Typing, the caret, the editing keys and selection are the document's. What a
-host has to drive is the two things it alone knows: Ctrl+A, which the ABI's key
-enum has no letter for, and the clipboard, which belongs to the platform.
+host has to drive is what it alone knows: the chords the ABI's key enum has no
+letters for, and the clipboard, which belongs to the platform.
 
     doc.select_all()
+    doc.undo()                                     # bind to Ctrl+Z
+    doc.redo()                                     # Ctrl+Y, or Ctrl+Shift+Z
     doc.get_selected_text()                        # for DisplayServer.clipboard_set
     doc.send_text(DisplayServer.clipboard_get())   # paste
     doc.set_element_selection("#name", 0, 5)
     doc.get_element_selection("#name")             # anchor first, so you know
                                                    # which way it runs
     doc.select_word_at(point)                      # what a double click does
+
+Ctrl on a motion key makes it word-sized, and the document handles that itself
+because those keys ARE in the enum: Ctrl+Left and Ctrl+Right move by the word,
+Ctrl+Backspace and Ctrl+Delete eat one, and Ctrl+Home and Ctrl+End reach the
+ends of the whole field rather than of the line. Shift extends the selection
+through any of them.
+
+A word is what a browser calls a word, not what a byte test calls one: a run of
+letters, digits and underscores; a run of punctuation as one unit; and each CJK
+character on its own, so Ctrl+Right through Japanese stops at every character
+instead of skipping the sentence. That classifier is also what a double click
+selects by.
+
+Undo groups a run of typing into ONE step -- undoing a sentence a letter at a
+time is not undo -- and anything that is not typing ends the run. Each field
+keeps its own history, and a script writing a value clears that field's, since
+the stack no longer describes what the field holds.
 
 **Dropdowns**
 

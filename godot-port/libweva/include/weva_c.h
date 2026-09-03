@@ -471,6 +471,19 @@ int weva_document_select_word_at(weva_document_t doc, double x, double y);
  * or what is focused takes no text. */
 int weva_document_select_all(weva_document_t doc);
 
+/* Undo and redo the focused field's edits. Returns 0 when there is nothing to
+ * undo, nothing focused, or what is focused takes no text.
+ *
+ * The key enum has no letters, so the document never sees Ctrl+Z for itself:
+ * a host binds the shortcut its platform uses and calls this, the same way it
+ * does for select-all and the clipboard.
+ *
+ * A run of typing is ONE step -- undoing a sentence a letter at a time is not
+ * undo -- and anything that is not typing ends the run. Setting the value from
+ * a script clears the history, since the stack no longer describes the field. */
+int weva_document_undo(weva_document_t doc);
+int weva_document_redo(weva_document_t doc);
+
 /* The selected text of the focused field, for a host putting it on the
  * clipboard. Follows the two-call pattern: returns the length, and fills
  * `buffer` when there is one. Zero when nothing is selected. */

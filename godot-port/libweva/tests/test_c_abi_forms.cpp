@@ -1400,3 +1400,235 @@ void test_abi_list_box_scrolls() {
     doc.click(100, 30 + h * 0.5);
     CHECK(doc.value("#s") != "a");
 }
+
+// Ctrl turns every motion key into its word-sized version. Without it a user
+// fixing a mistyped word has to hold Backspace and count.
+void test_abi_word_motion_keys() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 300px; height: 30px }",
+            "<input id=t type=text value='the quick brown fox'>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);   // cursor at the end, offset 19
+
+    const auto caret = [&]() {
+        int start = 0, end = 0;
+        weva_element_selection(doc.d, t, &start, &end);
+        return end;
+    };
+
+    // Ctrl+Left goes to the START of the word behind, and again to the one
+    // before that -- one press per word, not one per character.
+    weva_document_key(doc.d, WEVA_KEY_LEFT, WEVA_MOD_CTRL, 1);
+    CHECK(caret() == 16);   // "fox"
+    weva_document_key(doc.d, WEVA_KEY_LEFT, WEVA_MOD_CTRL, 1);
+    CHECK(caret() == 10);   // "brown"
+
+    // Ctrl+Right goes to the END of the word ahead.
+    weva_document_key(doc.d, WEVA_KEY_RIGHT, WEVA_MOD_CTRL, 1);
+    CHECK(caret() == 15);
+    // Plain Left is still one character, so Ctrl is what changed it.
+    weva_document_key(doc.d, WEVA_KEY_LEFT, 0, 1);
+    CHECK(caret() == 14);
+
+    // Shift+Ctrl selects by the word, which is how a word gets replaced.
+    weva_document_key(doc.d, WEVA_KEY_LEFT, WEVA_MOD_CTRL | WEVA_MOD_SHIFT, 1);
+    CHECK(selected(doc.d) == "brow");
+    weva_document_key(doc.d, WEVA_KEY_LEFT, WEVA_MOD_CTRL | WEVA_MOD_SHIFT, 1);
+    CHECK(selected(doc.d) == "quick brow");
+}
+
+// Ctrl+Backspace eats a word, which is the only way to correct one without
+// holding the key down.
+void test_abi_word_delete_keys() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 300px; height: 30px }",
+            "<input id=t type=text value='alpha beta gamma'>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);
+
+    weva_document_key(doc.d, WEVA_KEY_BACKSPACE, WEVA_MOD_CTRL, 1);
+    CHECK(doc.value("#t") == "alpha beta ");
+    weva_document_key(doc.d, WEVA_KEY_BACKSPACE, WEVA_MOD_CTRL, 1);
+    CHECK(doc.value("#t") == "alpha ");
+    // Plain Backspace is still one character.
+    weva_document_key(doc.d, WEVA_KEY_BACKSPACE, 0, 1);
+    CHECK(doc.value("#t") == "alpha");
+
+    // Forward, from the front.
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_DELETE, WEVA_MOD_CTRL, 1);
+    CHECK(doc.value("#t").empty());
+
+    // With something selected, Ctrl changes nothing: the selection goes, and
+    // no more, or a user loses text they never highlighted.
+    weva_element_set_value(doc.d, t, "one two three");
+    weva_element_set_selection(doc.d, t, 4, 7);
+    weva_document_key(doc.d, WEVA_KEY_BACKSPACE, WEVA_MOD_CTRL, 1);
+    CHECK(doc.value("#t") == "one  three");
+}
+
+// Home and End address the line; Ctrl+Home and Ctrl+End address the field.
+void test_abi_document_extent_keys() {
+    Doc doc("html, body { margin: 0 } textarea { display: block; width: 300px; height: 90px }",
+            "<textarea id=a>first line\nsecond line\nthird line</textarea>");
+    const weva_element_t a = weva_document_query(doc.d, "#a");
+    weva_document_set_focus(doc.d, a);
+    const auto caret = [&]() {
+        int start = 0, end = 0;
+        weva_element_selection(doc.d, a, &start, &end);
+        return end;
+    };
+    const int total = static_cast<int>(std::strlen("first line\nsecond line\nthird line"));
+    CHECK(caret() == total);
+
+    // Home stops at the start of the LINE the caret is on.
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    CHECK(caret() == 23);   // the start of the third line
+    // Ctrl+Home carries on to the top of the field.
+    weva_document_key(doc.d, WEVA_KEY_HOME, WEVA_MOD_CTRL, 1);
+    CHECK(caret() == 0);
+
+    weva_document_key(doc.d, WEVA_KEY_END, 0, 1);
+    CHECK(caret() == 10);   // the end of "first line"
+    weva_document_key(doc.d, WEVA_KEY_END, WEVA_MOD_CTRL, 1);
+    CHECK(caret() == total);
+
+    // Shift+Ctrl+Home from the end selects everything, which is how a field
+    // gets cleared without a mouse.
+    weva_document_key(doc.d, WEVA_KEY_HOME, WEVA_MOD_CTRL | WEVA_MOD_SHIFT, 1);
+    CHECK(static_cast<int>(selected(doc.d).size()) == total);
+}
+
+// The word a double click takes, over text that is not English.
+void test_abi_word_selection_over_cjk() {
+    // Three characters, three bytes each. A double click takes ONE of them --
+    // the old byte test took all nine, because every byte above ASCII counted
+    // as a word character.
+    Doc doc("html, body { margin: 0 } input { display: block; width: 300px; height: 30px;"
+            " font-size: 20px }",
+            "<input id=t type=text value='日本語'>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    CHECK(doc.value("#t").size() == 9);
+    double x = 0, y = 0, w = 0, h = 0;
+    weva_element_bounds(doc.d, t, &x, &y, &w, &h);
+    CHECK(weva_document_select_word_at(doc.d, x + 20, y + h / 2) == 1);
+    CHECK(selected(doc.d).size() == 3);
+}
+
+// Undo, and the grouping that makes it usable: a run of typing is one step.
+void test_abi_undo_groups_typing() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 300px; height: 30px }",
+            "<input id=t type=text value=''>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);
+
+    // Nothing edited, nothing to undo.
+    CHECK(weva_document_undo(doc.d) == 0);
+
+    weva_document_text_input(doc.d, "h");
+    weva_document_text_input(doc.d, "e");
+    weva_document_text_input(doc.d, "l");
+    weva_document_text_input(doc.d, "l");
+    weva_document_text_input(doc.d, "o");
+    CHECK(doc.value("#t") == "hello");
+
+    // ONE step, not five: undoing a word a letter at a time is not undo.
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#t").empty());
+    CHECK(weva_document_undo(doc.d) == 0);
+
+    // And redo puts it back whole.
+    CHECK(weva_document_redo(doc.d) == 1);
+    CHECK(doc.value("#t") == "hello");
+    CHECK(weva_document_redo(doc.d) == 0);
+}
+
+// What breaks a typing run: anything that is not typing.
+void test_abi_undo_breaks_on_other_edits() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 300px; height: 30px }",
+            "<input id=t type=text value=''>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);
+
+    weva_document_text_input(doc.d, "a");
+    weva_document_text_input(doc.d, "b");
+    weva_document_key(doc.d, WEVA_KEY_BACKSPACE, 0, 1);   // ends the run
+    weva_document_text_input(doc.d, "c");
+    weva_document_text_input(doc.d, "d");
+    CHECK(doc.value("#t") == "acd");
+
+    // Three steps back through three groups: "cd", the backspace, then "ab".
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#t") == "a");
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#t") == "ab");
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#t").empty());
+
+    // Redo walks the same three forward.
+    CHECK(weva_document_redo(doc.d) == 1);
+    CHECK(doc.value("#t") == "ab");
+    CHECK(weva_document_redo(doc.d) == 1);
+    CHECK(doc.value("#t") == "a");
+    CHECK(weva_document_redo(doc.d) == 1);
+    CHECK(doc.value("#t") == "acd");
+}
+
+// The parts of undo other than the text.
+void test_abi_undo_restores_cursor_and_forgets_scripted_writes() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 300px; height: 30px }",
+            "<input id=t type=text value='hello world'>");
+    const weva_element_t t = weva_document_query(doc.d, "#t");
+    weva_document_set_focus(doc.d, t);
+
+    // Delete a word from the middle, then undo it.
+    weva_element_set_selection(doc.d, t, 5, 5);
+    weva_document_key(doc.d, WEVA_KEY_DELETE, WEVA_MOD_CTRL, 1);
+    CHECK(doc.value("#t") == "hello");
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#t") == "hello world");
+    // The cursor is back where the edit happened, not parked at the end --
+    // landing at the end after every Ctrl+Z is what makes undo unusable.
+    int start = 0, end = 0;
+    weva_element_selection(doc.d, t, &start, &end);
+    CHECK(end == 5);
+
+    // Typing over a selection is its own step: undoing it has to bring back
+    // the text that was replaced, so it cannot join the run after it.
+    weva_element_set_selection(doc.d, t, 0, 5);
+    weva_document_text_input(doc.d, "X");
+    weva_document_text_input(doc.d, "Y");
+    CHECK(doc.value("#t") == "XY world");
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#t") == "X world");
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#t") == "hello world");
+
+    // A script writing the value clears the history: the stack describes a
+    // field that no longer holds what it described.
+    weva_document_text_input(doc.d, "z");
+    weva_element_set_value(doc.d, t, "something else");
+    CHECK(weva_document_undo(doc.d) == 0);
+    CHECK(doc.value("#t") == "something else");
+}
+
+// Two fields keep their own history, so undoing in one never reaches into the
+// other.
+void test_abi_undo_is_per_field() {
+    Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 30px }",
+            "<input id=a type=text value=''><input id=b type=text value=''>");
+    const weva_element_t a = weva_document_query(doc.d, "#a");
+    const weva_element_t b = weva_document_query(doc.d, "#b");
+
+    weva_document_set_focus(doc.d, a);
+    weva_document_text_input(doc.d, "one");
+    weva_document_set_focus(doc.d, b);
+    weva_document_text_input(doc.d, "two");
+
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#b").empty());
+    CHECK(doc.value("#a") == "one");   // untouched
+    CHECK(weva_document_undo(doc.d) == 0);
+
+    weva_document_set_focus(doc.d, a);
+    CHECK(weva_document_undo(doc.d) == 1);
+    CHECK(doc.value("#a").empty());
+}

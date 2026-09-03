@@ -54,6 +54,7 @@ func _ready() -> void:
 	_test_data_binding()
 	_test_event_handlers()
 	_test_commit_submit_and_scroll_signals()
+	_test_word_editing_and_undo()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -852,4 +853,42 @@ func _test_commit_submit_and_scroll_signals() -> void:
 	doc.update_document()
 	_check(scrolled.size() == 1 and scrolled[0][0] == "list" and _approx(scrolled[0][2], 20),
 		"a scroll reports the offset it landed on")
+	doc.queue_free()
+
+
+func _test_word_editing_and_undo() -> void:
+	# The editing a text field needs before it stops being a toy: Ctrl+Arrow
+	# by the word, Ctrl+Backspace to fix one, and Ctrl+Z to take it back.
+	var doc := _make_doc(
+		"<body><input id='t' type='text' value='alpha beta gamma'></body>",
+		"html, body { margin: 0 } input { display: block; width: 300px; height: 30px }")
+	doc.set_focus("#t")
+
+	# Ctrl+Backspace eats a word.
+	doc.send_key(KEY_BACKSPACE, true, false, true)
+	doc.update_document()
+	_check(doc.get_element_value("#t") == "alpha beta ", "Ctrl+Backspace deletes a word")
+
+	# And Ctrl+Z brings it back, whole.
+	_check(doc.undo(), "there is something to undo")
+	doc.update_document()
+	_check(doc.get_element_value("#t") == "alpha beta gamma", "undo restores the deleted word")
+	_check(doc.redo(), "and redo takes it away again")
+	doc.update_document()
+	_check(doc.get_element_value("#t") == "alpha beta ", "redo reapplies the edit")
+
+	# A run of typing is one undo step, so Ctrl+Z after a word removes the
+	# word rather than its last letter.
+	doc.send_text("xyz")
+	doc.update_document()
+	_check(doc.get_element_value("#t") == "alpha beta xyz", "typing appends")
+	_check(doc.undo(), "the typed run undoes")
+	doc.update_document()
+	_check(doc.get_element_value("#t") == "alpha beta ", "as one step, not three")
+
+	# Ctrl+Left moves by the word, which the selection shows.
+	doc.set_focus("#t")
+	doc.send_key(KEY_LEFT, true, true, true)   # shift + ctrl
+	doc.update_document()
+	_check(doc.get_selected_text() == "beta ", "Shift+Ctrl+Left selects a word")
 	doc.queue_free()

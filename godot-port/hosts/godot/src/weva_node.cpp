@@ -246,6 +246,8 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::send_key, DEFVAL(true), DEFVAL(false), DEFVAL(false));
     ClassDB::bind_method(D_METHOD("send_text", "text"), &WevaDocument::send_text);
     ClassDB::bind_method(D_METHOD("select_all"), &WevaDocument::select_all);
+    ClassDB::bind_method(D_METHOD("undo"), &WevaDocument::undo);
+    ClassDB::bind_method(D_METHOD("redo"), &WevaDocument::redo);
     ClassDB::bind_method(D_METHOD("select_word_at", "point"), &WevaDocument::select_word_at);
     ClassDB::bind_method(D_METHOD("open_select", "selector"), &WevaDocument::open_select);
     ClassDB::bind_method(D_METHOD("close_select"), &WevaDocument::close_select);
@@ -664,6 +666,24 @@ bool WevaDocument::select_all() {
     if (!doc_) return false;
     ensure_updated();
     if (!weva_document_select_all(doc_)) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::undo() {
+    if (!doc_) return false;
+    ensure_updated();
+    if (!weva_document_undo(doc_)) return false;
+    dirty_ = true;
+    queue_redraw();
+    return true;
+}
+
+bool WevaDocument::redo() {
+    if (!doc_) return false;
+    ensure_updated();
+    if (!weva_document_redo(doc_)) return false;
     dirty_ = true;
     queue_redraw();
     return true;

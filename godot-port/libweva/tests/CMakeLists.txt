@@ -1,6 +1,7 @@
 add_executable(weva_tests
     main.cpp
     test_arena.cpp
+    test_text_classes.cpp
     test_intern.cpp
     test_geometry.cpp
     test_dom.cpp

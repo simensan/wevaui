@@ -17,6 +17,7 @@
 #include "weva/paint.h"
 #include "weva/positioning.h"
 #include "weva/scrollbar.h"
+#include "weva/text_classes.h"
 #include "weva/selector.h"
 #include "weva/user_agent_stylesheet.h"
 
@@ -1115,6 +1116,25 @@ struct weva_document {
     // box: the box tree is thrown away and rebuilt whenever anything moves, so
     // an offset kept on a box would be lost by every class change.
     std::unordered_map<const Element*, std::pair<double, double>> scroll;
+    // What a field held before each edit, so Ctrl+Z can put it back. Snapshots
+    // rather than a log of operations: a text field is small, and a snapshot
+    // cannot disagree with the field the way a replayed operation can.
+    //
+    // Consecutive typing coalesces into ONE entry -- undoing a sentence a
+    // letter at a time is not undo -- and anything that is not typing breaks
+    // the run, which is the grouping a browser uses.
+    struct EditSnapshot {
+        std::string text;
+        int caret = 0;
+        int anchor = -1;
+    };
+    struct EditHistory {
+        std::vector<EditSnapshot> undo;
+        std::vector<EditSnapshot> redo;
+        bool last_was_typing = false;
+    };
+    static constexpr size_t kUndoDepth = 100;
+    std::unordered_map<const Element*, EditHistory> history;
     // Where `{{ path }}` gets its values, and the attribute templates the
     // substitution would otherwise have eaten.
     weva_binding_source binding_source{};
@@ -1596,22 +1616,10 @@ size_t field_offset_at(weva_document* doc, const Element& e, double x, double y)
 // digits and underscores; anything else is a separator, and double-clicking
 // one of those takes just it -- which is what a browser does.
 void word_around(const std::string& value, size_t at, size_t* from, size_t* to) {
-    const auto wordish = [](unsigned char c) {
-        return std::isalnum(c) != 0 || c == '_' || c >= 0x80;
-    };
-    const size_t n = value.size();
-    size_t i = std::min(at, n);
-    if (i == n && i > 0) --i;
-    if (n == 0) {
-        *from = *to = 0;
-        return;
-    }
-    const bool inside = wordish(static_cast<unsigned char>(value[i]));
-    size_t start = i, end = i + 1;
-    while (start > 0 && wordish(static_cast<unsigned char>(value[start - 1])) == inside) --start;
-    while (end < n && wordish(static_cast<unsigned char>(value[end])) == inside) ++end;
-    *from = start;
-    *to = end;
+    // The classifier, not a byte test: every byte above ASCII used to count as
+    // a word character here, which made a double click over Japanese select
+    // the entire run instead of one character.
+    word_range_at(value, at, from, to);
 }
 
 
@@ -2177,6 +2185,21 @@ namespace {
 // Writes what a field holds, to wherever that field keeps it. A <textarea>
 // keeps it as content, so this rebuilds its text node -- which is a structural
 // change, and the reason a keystroke in one costs a box rebuild.
+// Remember what a field holds before an edit changes it. `typing` marks the
+// edits that coalesce: a run of plain characters is one undo step, and
+// anything else -- a delete, a paste, a move -- ends the run.
+void push_undo(weva_document* doc, const Element& e, const std::string& before, int caret,
+               int anchor, bool typing) {
+    weva_document::EditHistory& h = doc->history[&e];
+    if (!(typing && h.last_was_typing && !h.undo.empty())) {
+        h.undo.push_back({before, caret, anchor});
+        if (h.undo.size() > weva_document::kUndoDepth) h.undo.erase(h.undo.begin());
+    }
+    h.last_was_typing = typing;
+    // A new edit is a new future: whatever was undone is no longer reachable.
+    h.redo.clear();
+}
+
 void set_field_value(weva_document* doc, Element& e, std::string_view value) {
     if (e.tag_name() == "textarea") {
         replace_text(e, value);
@@ -2644,8 +2667,20 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
             // A shifted move extends the selection from where it started; an
             // unshifted one drops it. Ctrl+A takes the lot.
             const bool extend = (modifiers & WEVA_MOD_SHIFT) != 0;
+            // Ctrl turns every motion key into its word- or document-sized
+            // version: the difference between Left and Ctrl+Left is a
+            // character and a word.
+            const bool by_word = (modifiers & WEVA_MOD_CTRL) != 0;
+            const auto word_left = [&](int i) {
+                return static_cast<int>(previous_word_boundary(value, static_cast<size_t>(i)));
+            };
+            const auto word_right = [&](int i) {
+                return static_cast<int>(next_word_boundary(value, static_cast<size_t>(i)));
+            };
             const Selection sel = selection_of(st, value.size());
             const int anchor_before = st.anchor;
+            const std::string before = value;
+            const int caret_before = caret;
             // Deleting the selection, wherever a key would have deleted one
             // character: that is what Backspace and Delete mean while
             // something is selected, and what typing does before it inserts.
@@ -2659,7 +2694,9 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                     if (!sel.empty()) {
                         erase_selection();
                     } else if (caret > 0) {
-                        const int from = prev(caret);
+                        // Ctrl+Backspace eats the word, which is the only way
+                        // to fix a mistyped one without holding the key.
+                        const int from = by_word ? word_left(caret) : prev(caret);
                         value.erase(static_cast<size_t>(from), static_cast<size_t>(caret - from));
                         caret = from;
                         edited = true;
@@ -2669,16 +2706,21 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                     if (!sel.empty()) {
                         erase_selection();
                     } else if (caret < static_cast<int>(value.size())) {
-                        const int to = next(caret);
+                        const int to = by_word ? word_right(caret) : next(caret);
                         value.erase(static_cast<size_t>(caret), static_cast<size_t>(to - caret));
                         edited = true;
                     }
                     break;
-                case WEVA_KEY_LEFT: caret = prev(caret); break;
-                case WEVA_KEY_RIGHT: caret = next(caret); break;
-                case WEVA_KEY_HOME: caret = multiline ? line_start(value, caret) : 0; break;
+                case WEVA_KEY_LEFT: caret = by_word ? word_left(caret) : prev(caret); break;
+                case WEVA_KEY_RIGHT: caret = by_word ? word_right(caret) : next(caret); break;
+                case WEVA_KEY_HOME:
+                    // Ctrl+Home is the top of the whole field, not the start
+                    // of the line the caret happens to be on.
+                    caret = (multiline && !by_word) ? line_start(value, caret) : 0;
+                    break;
                 case WEVA_KEY_END:
-                    caret = multiline ? line_end(value, caret) : static_cast<int>(value.size());
+                    caret = (multiline && !by_word) ? line_end(value, caret)
+                                                    : static_cast<int>(value.size());
                     break;
                 case WEVA_KEY_ENTER:
                     // The one key that means something different in a box you
@@ -2737,6 +2779,9 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                 st.caret_age = 0;   // a caret that blinks while you move it is unreadable
                 doc->caret_follow = true;
                 if (edited) {
+                    // A key edit is its own undo step: Ctrl+Z after a deleted
+                    // word puts the word back, not the whole sentence.
+                    push_undo(doc, *focused, before, caret_before, anchor_before, false);
                     // Through the field, not into an attribute: a <textarea>
                     // keeps what it holds as its CONTENT, and writing the
                     // attribute put every backspace and newline somewhere
@@ -2901,6 +2946,9 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
         // Typing over a selection replaces it, which is what every text box
         // does and the reason select-all-then-type works.
         const Selection sel = selection_of(st, value.size());
+        // Plain typing coalesces; typing that replaces a selection does not,
+        // since undoing it has to bring the replaced text back on its own.
+        push_undo(doc, *focused, value, st.caret, st.anchor, sel.empty());
         if (!sel.empty()) {
             value.erase(static_cast<size_t>(sel.from), static_cast<size_t>(sel.to - sel.from));
             st.caret = sel.from;
@@ -3042,6 +3090,50 @@ int weva_document_select_word_at(weva_document_t doc, double x, double y) {
     return 1;
 }
 
+namespace {
+
+// Undo and redo are the same move in opposite directions: take the top of one
+// stack, put what the field holds now on the other, and adopt what was taken.
+int step_history(weva_document* doc, bool undoing) {
+    if (!doc) return 0;
+    InteractionState& st = doc->styles.state;
+    if (!st.focused || !is_text_field(*st.focused)) return 0;
+    const auto found = doc->history.find(st.focused);
+    if (found == doc->history.end()) return 0;
+    weva_document::EditHistory& h = found->second;
+    std::vector<weva_document::EditSnapshot>& from = undoing ? h.undo : h.redo;
+    std::vector<weva_document::EditSnapshot>& to = undoing ? h.redo : h.undo;
+    if (from.empty()) return 0;
+
+    Element& field = const_cast<Element&>(*st.focused);
+    const std::string current = field_value(field);
+    to.push_back({current, st.caret, st.anchor});
+    const weva_document::EditSnapshot entry = from.back();
+    from.pop_back();
+
+    set_field_value(doc, field, entry.text);
+    note_value_change(doc, field, entry.text);
+    // The cursor goes back where it was, which is the half of undo that makes
+    // it usable: landing at the end of the field after every Ctrl+Z is not it.
+    st.caret = std::min(static_cast<int>(entry.text.size()), std::max(0, entry.caret));
+    st.anchor = entry.anchor < 0
+                    ? -1
+                    : std::min(static_cast<int>(entry.text.size()), entry.anchor);
+    st.caret_age = 0;
+    // A step is never typing, so the next character typed starts a new run
+    // instead of joining whatever the stack last held.
+    h.last_was_typing = false;
+    doc->caret_follow = true;
+    doc->pending = worst(doc->pending, Invalidation::Paint);
+    return 1;
+}
+
+}   // namespace
+
+int weva_document_undo(weva_document_t doc) { return step_history(doc, true); }
+
+int weva_document_redo(weva_document_t doc) { return step_history(doc, false); }
+
 int weva_document_select_all(weva_document_t doc) {
     if (!doc) return 0;
     InteractionState& st = doc->styles.state;
@@ -3146,6 +3238,10 @@ weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
     const std::string_view v(value ? value : "");
+    // A script replacing the value invalidates the undo stack: it describes a
+    // field that no longer holds what it described, and putting one of its
+    // snapshots back would silently discard what the script just wrote.
+    doc->history.erase(e);
     const std::string type = input_type_of(*e);
     if (e->tag_name() == "input" && (type == "checkbox" || type == "radio")) {
         const bool on = !v.empty() && v != "0" && v != "off" && v != "false";
@@ -3333,6 +3429,7 @@ void forget_element(weva_document* doc, const Element* e) {
     }
     doc->binding_templates.erase(e);
     doc->binding_repeats.erase(e);
+    doc->history.erase(e);
     const auto drop = [e](std::vector<const Element*>* chain) {
         chain->erase(std::remove(chain->begin(), chain->end(), e), chain->end());
     };

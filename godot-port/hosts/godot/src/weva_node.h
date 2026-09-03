@@ -154,6 +154,11 @@ public:
     // has to drive -- Ctrl+A, which the key enum cannot express, and the
     // clipboard, which belongs to the platform.
     bool select_all();
+
+    // Ctrl+Z is the host's to bind: the document's key enum has no letters,
+    // and which chord means undo is a platform question.
+    bool undo();
+    bool redo();
     bool select_word_at(const godot::Vector2& point);
 
     // Dropdowns, for a host routing its own input.
