@@ -589,3 +589,139 @@ void test_abi_rounded_rect_primitive() {
         weva_document_destroy(d);
     }
 }
+
+namespace {
+
+// Every solid (untextured) rect the document draws, as (x, y, w, h, r, g, b).
+// Decorations are rects, so this is how a test sees one.
+struct SolidRect {
+    double x, y, w, h;
+    float r, g, b;
+};
+
+std::vector<SolidRect> solid_rects(weva_document_t d) {
+    std::vector<SolidRect> out;
+    size_t count = 0;
+    const weva_draw* draws = weva_document_draws(d, &count);
+    for (size_t i = 0; i < count; ++i) {
+        if (draws[i].texture_id != 0 || draws[i].vertex_count == 0) continue;
+        double x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+        for (size_t v = 0; v < draws[i].vertex_count; ++v) {
+            const weva_vertex& vt = draws[i].vertices[v];
+            x0 = std::min(x0, static_cast<double>(vt.x));
+            y0 = std::min(y0, static_cast<double>(vt.y));
+            x1 = std::max(x1, static_cast<double>(vt.x));
+            y1 = std::max(y1, static_cast<double>(vt.y));
+        }
+        const weva_vertex& first = draws[i].vertices[0];
+        out.push_back({x0, y0, x1 - x0, y1 - y0, first.r, first.g, first.b});
+    }
+    return out;
+}
+
+}   // namespace
+
+// The user-agent stylesheet has asked for `text-decoration: underline` on <a>
+// and <u> since the beginning and nothing drew it, so every link in every
+// document was plain.
+void test_abi_text_decorations_are_drawn() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0; background: #fff }"
+                      " div { display: block; font-size: 20px; color: #000 }";
+    const char* html = "<div id=plain>Plain</div>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+    const size_t undecorated = solid_rects(d).size();
+
+    // An <a> takes its underline from the UA sheet alone -- no author rule.
+    const char* linked = "<a href=x>Link</a>";
+    weva_document_load_html(d, linked, std::strlen(linked));
+    weva_document_update(d, 0);
+    const std::vector<SolidRect> with_link = solid_rects(d);
+    CHECK(with_link.size() == undecorated + 1);
+
+    // Under the baseline and no taller than the text: a rule, not a block.
+    double bx = 0, by = 0, bw = 0, bh = 0;
+    weva_element_bounds(d, weva_document_query(d, "a"), &bx, &by, &bw, &bh);
+    bool found = false;
+    for (const SolidRect& r : with_link) {
+        if (r.h > 4 || r.w < 4) continue;   // not a rule
+        found = true;
+        CHECK(r.y > by);            // below the top of the line
+        CHECK(r.y < by + bh + 4);   // and not far below it
+        CHECK(r.w > 8);             // as wide as the word, near enough
+    }
+    CHECK(found);
+    weva_document_destroy(d);
+}
+
+// Which line, what colour, how thick.
+void test_abi_text_decoration_variants() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0; background: #fff }"
+                      " div { display: block; font-size: 20px; color: #000 }";
+    weva_document_add_css(d, css, std::strlen(css));
+
+    const auto rules_of = [&](const char* html) {
+        weva_document_load_html(d, html, std::strlen(html));
+        weva_document_update(d, 0);
+        // A rule is wide and thin. The bound has to allow a DECLARED
+        // thickness -- at 4 it excluded the 5px case below and took the
+        // binary down on an empty result.
+        std::vector<SolidRect> rules;
+        for (const SolidRect& r : solid_rects(d)) {
+            if (r.h <= 8 && r.w > 4) rules.push_back(r);
+        }
+        return rules;
+    };
+
+    CHECK(rules_of("<div>Plain</div>").empty());
+    CHECK(rules_of("<div style='text-decoration: underline'>x</div>").size() == 1);
+    CHECK(rules_of("<div style='text-decoration: line-through'>x</div>").size() == 1);
+    CHECK(rules_of("<div style='text-decoration: overline'>x</div>").size() == 1);
+    // Two lines at once, from one declaration.
+    CHECK(rules_of("<div style='text-decoration: underline overline'>x</div>").size() == 2);
+    // `none` on the element beats the UA sheet's underline on <a>.
+    CHECK(rules_of("<a href=x style='text-decoration: none'>x</a>").empty());
+
+    // The three sit in different places: overline above the text, underline
+    // below it, line-through between.
+    // Guarded: indexing an empty result would take the whole binary down
+    // before a single CHECK had printed, which is how this first showed up.
+    const auto y_of = [&](const char* html) {
+        const std::vector<SolidRect> r = rules_of(html);
+        CHECK(!r.empty());
+        return r.empty() ? 0.0 : r[0].y;
+    };
+    const double over = y_of("<div style='text-decoration: overline'>x</div>");
+    const double strike = y_of("<div style='text-decoration: line-through'>x</div>");
+    const double under = y_of("<div style='text-decoration: underline'>x</div>");
+    CHECK(over < strike);
+    CHECK(strike < under);
+
+    // `text-decoration-color` overrides the text colour; without it the rule
+    // takes the text's.
+    const std::vector<SolidRect> red =
+        rules_of("<div style='text-decoration: underline; text-decoration-color: #ff0000'>x</div>");
+    CHECK(red.size() == 1);
+    if (!red.empty()) CHECK(red[0].r > 0.5f && red[0].g < 0.1f);
+    const std::vector<SolidRect> black = rules_of("<div style='text-decoration: underline'>x</div>");
+    CHECK(!black.empty());
+    if (!black.empty()) CHECK(black[0].r < 0.1f);
+
+    // And a declared thickness is used.
+    const std::vector<SolidRect> thick = rules_of(
+        "<div style='text-decoration: underline; text-decoration-thickness: 5px'>x</div>");
+    CHECK(thick.size() == 1);
+    if (!thick.empty()) CHECK(thick[0].h > 4);
+    weva_document_destroy(d);
+}

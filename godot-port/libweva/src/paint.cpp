@@ -1482,6 +1482,76 @@ bool is_form_control(const Box& b) {
     return tag == "input" || tag == "select" || tag == "textarea";
 }
 
+// ---- text decorations (CSS Text Decoration L4) ---------------------------
+//
+// The UA stylesheet has asked for `text-decoration: underline` on <a> and <u>
+// since the beginning and nothing drew it, so every link in every document was
+// plain. This is the fourth UA rule this audit has found styling something the
+// port never created.
+
+enum DecorationFlags {
+    kNoDecoration = 0,
+    kUnderline = 1 << 0,
+    kOverline = 1 << 1,
+    kLineThrough = 1 << 2,
+};
+
+int decoration_flags_of(const ComputedStyle* style) {
+    if (!style) return kNoDecoration;
+    // The longhand first; the shorthand's other components (style, colour,
+    // thickness) are read separately, and either may carry the line.
+    std::string raw(get(style, "text-decoration-line"));
+    if (raw.empty() || raw == "none") raw = std::string(get(style, "text-decoration"));
+    if (raw.empty() || raw == "none") return kNoDecoration;
+    int flags = kNoDecoration;
+    if (raw.find("underline") != std::string::npos) flags |= kUnderline;
+    if (raw.find("overline") != std::string::npos) flags |= kOverline;
+    if (raw.find("line-through") != std::string::npos) flags |= kLineThrough;
+    return flags;
+}
+
+// Solid, and everything else drawn as solid for now: a dashed or wavy rule is
+// a pattern of rects, and getting the line there at all is the difference
+// between a link that looks like one and a link that does not.
+void paint_text_decorations(int flags, double x, double baseline, double width, double ascent,
+                            double font_size, const ComputedStyle* style,
+                            const LayoutContext& ctx, const LinearColor& text_color,
+                            const PaintContext& paint, double opacity,
+                            const Transform2D* xf, const ClipNode* clip,
+                            const ColorFilter* filter) {
+    if (flags == kNoDecoration || width <= 0) return;
+    // CSS Text Decoration L4 3.2: `auto` is the font's own, and this is the
+    // reference's fallback for a face that does not say.
+    double thickness = std::max(1.0, ascent / 12.0);
+    const std::string_view declared = get(style, "text-decoration-thickness");
+    if (!declared.empty() && declared != "auto" && declared != "from-font") {
+        const ResolvedLength r = resolve_length(declared, ctx, font_size, font_size);
+        if (r.kind == LengthKind::Length && r.pixels > 0) thickness = r.pixels;
+    }
+    LinearColor color = text_color;
+    const std::string_view decl_color = get(style, "text-decoration-color");
+    if (!decl_color.empty() && decl_color != "currentcolor" && decl_color != "currentColor") {
+        color = resolve_color(style, "text-decoration-color");
+    }
+    double extra = 0;
+    const std::string_view offset = get(style, "text-underline-offset");
+    if (!offset.empty() && offset != "auto") {
+        const ResolvedLength r = resolve_length(offset, ctx, font_size, font_size);
+        if (r.kind == LengthKind::Length) extra = std::max(0.0, r.pixels);
+    }
+
+    const auto line = [&](double y) {
+        Mesh m;
+        tessellate_rect(Rect(x, y, width, thickness), color, &m, false);
+        draw_mesh(m, paint.backend, {}, opacity, xf, clip, filter);
+    };
+    // The same three positions the reference uses, so a document set by one
+    // engine and rendered by the other has its rules in the same places.
+    if (flags & kUnderline) line(baseline + ascent / 8.0 + extra);
+    if (flags & kOverline) line(baseline - ascent);
+    if (flags & kLineThrough) line(baseline - ascent * 0.4);
+}
+
 const FontMetrics* control_metrics(const LayoutContext& ctx, const ComputedStyle* style) {
     const FontMetrics* base = ctx.font_for(get(style, "font-family"));
     if (!ctx.variant_metrics || !base) return base;
@@ -1649,6 +1719,12 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
         Mesh text;
         build_text_geometry(t.text, cl, baseline, fs, color, paint, &text, spacing, &face);
         draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+        if (const int deco = decoration_flags_of(b.style)) {
+            double run_w = 0;
+            for (const Vertex& v : text.vertices) run_w = std::max<double>(run_w, v.position.x - cl);
+            paint_text_decorations(deco, cl, baseline, run_w, ascent, fs, b.style, ctx, color, paint,
+                                   state.opacity, xf, state.clip.get(), state.filter.get());
+        }
 
         // The caret, at the character the cursor sits before. Its x is the
         // width of the text up to that point, measured the same way the run
@@ -2426,6 +2502,18 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                                           srgb_to_linear_f(c[2]), c[3]);
                 }
             }
+        }
+        // The rules over the glyphs, so a line-through reads as struck rather
+        // than as a rule the text happens to sit near.
+        if (const int deco = decoration_flags_of(b.style)) {
+            const FontMetrics* dm = control_metrics(ctx, b.style);
+            const double dascent = dm ? dm->ascent(b.font_size) : b.font_size * 0.8;
+            double run_w = 0;
+            for (const Vertex& v : text.vertices) run_w = std::max<double>(run_w, v.position.x - x);
+            if (run_w <= 0) run_w = b.width;
+            paint_text_decorations(deco, x, baseline, run_w, dascent, b.font_size, b.style, ctx,
+                                   text_color, paint, state.opacity, xf, state.clip.get(),
+                                   state.filter.get());
         }
         // The handle from the single up-front upload, never a fresh one: see
         // prepare_glyphs.
