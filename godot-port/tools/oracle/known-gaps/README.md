@@ -15,32 +15,57 @@ case; the numbers below say what to expect.
     python3 run_oracle.py corpus/samples --width 1280 --height 720 \
         --weva-dump <build>/tools/weva_dump/weva_dump --reuse-reference
 
-## An inline image sits flush, with no room for the strut
+## The first line box of a block gets no strut
 
-Not a parked case -- a finding, from `cov-image`, worth writing down before it
-is rediscovered.
+A real bug, localised exactly, with a fix that was written and measured and
+then backed out. Written up rather than left in because landing it needs a
+decision that is not mine to take.
 
-CSS 2.1 s10.8: every line box begins with a strut, a zero-width inline box
-carrying the containing block's own font metrics, and its descent counts
-toward the line's height whatever else is on the line. An inline image's
-baseline is its bottom margin edge, so the strut's descender leaves a few
-pixels of space UNDER it -- the gap every web developer has met and worked
-around with `display: block` or `vertical-align: middle`.
+CSS 2.1 s10.8: every line box begins with a strut -- a zero-width inline box
+carrying the containing block's own font and line-height -- and it counts
+toward the line's height whatever else is on the line. `reset_line_metrics`
+seeds the strut correctly, but BOTH of its callers are inside `flush_line`,
+which runs at the END of a line. So line one of every block starts with the
+metrics at zero and only lines two onward are seeded.
 
-This engine puts the image flush. A `<div style="padding: 8px; border: 1px">`
-holding a 90px inline image measures:
+It hides almost perfectly: a line with any text on it takes the same ascent
+and descent from the text items themselves, which makes the strut redundant
+exactly where it is present. Only a first line holding nothing but an ATOM --
+an image, an inline-block, a form control -- is short, and before images
+existed the corpus had no such line, because its inline-blocks all contain
+text of their own.
+
+Measured, on a `<div style="padding: 8px; border: 1px">` holding a 90px
+inline image:
 
 | | height |
 |---|---|
 | C++ | 110 |
+| C++ with `reset_line_metrics()` before the loop | 112.81 |
 | Chrome | **114.84** |
 | C# reference | 20 (it loads no image at all) |
 
-4.84px is the strut's descent at the 13px font the case uses. `reset_line_metrics`
-already seeds the line with `strut_descent`, so the seeding is right; what is
-missing is somewhere further along, and it did not show up until an inline box
-was taller than the text beside it -- which before images essentially never
-happened, since the corpus's inline-blocks all contain text of their own.
+So the one-line fix -- call `reset_line_metrics()` once before the item loop --
+is right and moves every affected value toward Chrome. What stops it landing
+is what it then reveals. On `form-metrics`, whose rows are checkboxes and
+radios alone on a line, each row moves from the reference's 293.72 to 297.82
+against Chrome's 300.92: closer, Chrome leaning to us on five values, and
+still outside Chrome's tolerance on thirteen. The reference has no strut on a
+first line either, so today the two engines agree by sharing the bug, and
+fixing it turns a green case red.
+
+The remaining ~3px is not the baseline. The atom baseline was the obvious
+suspect -- a childless atom uses the content-box bottom, where a replaced
+element's baseline is its bottom margin edge -- and changing it made things
+sharply worse: `stock-dashboard` went to 314 differences with Chrome siding
+with the REFERENCE on 308. The existing rule is right, and its comment already
+said so.
+
+What is left is font metrics: this engine's descent is about a pixel short of
+Chrome's per line, which is the same calibration question as the form-control
+widths above. Landing the strut fix wants that fixed in the same change, or
+the port simply leads the reference here and the oracle records another
+reference bug.
 
 ## cov-gutter — scrollbar-gutter reserves nothing
 
