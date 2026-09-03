@@ -59,6 +59,7 @@ func _ready() -> void:
 	_test_details_disclosure()
 	_test_modal_dialog()
 	_test_popovers()
+	_test_label_activates_control()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -1097,4 +1098,42 @@ func _test_popovers() -> void:
 	_check(doc.toggle_popover("#menu"), "toggle opens it")
 	doc.update_document()
 	_check(doc.get_triangle_count() > plain, "an open popover draws its backdrop")
+	doc.queue_free()
+
+
+func _test_label_activates_control() -> void:
+	# Exactly the shape this repo's own demo uses:
+	#   <label class='check'><input type='checkbox'> Shield</label>
+	# Clicking the word "Shield" did nothing, because the port had no <label>
+	# handling -- only a hit on the 13px box itself toggled anything.
+	var doc := _make_doc(
+		"<body><label id='wrap'><input id='cb' type='checkbox'> Shield</label>" +
+		"<label id='named' for='other'>Sound</label>" +
+		"<input id='other' type='checkbox'></body>",
+		"html, body { margin: 0 } label { display: block; height: 30px; width: 200px }" +
+		" input { width: 13px; height: 13px }")
+
+	var box := doc.query_bounds("#wrap")
+	# Well past the checkbox, on the text.
+	var at := Vector2(box.position.x + box.size.x - 10, box.position.y + box.size.y * 0.5)
+	_check(not doc.has_element_attribute("#cb", "checked"), "starts unchecked")
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(doc.has_element_attribute("#cb", "checked"), "clicking the label's text toggles it")
+
+	# And it is a toggle, not a set.
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(not doc.has_element_attribute("#cb", "checked"), "and back again")
+
+	# `for` reaches a control outside the label.
+	box = doc.query_bounds("#named")
+	at = box.position + box.size * 0.5
+	doc.set_pointer(at, 1)
+	doc.set_pointer(at, 0)
+	doc.update_document()
+	_check(doc.has_element_attribute("#other", "checked"), "`for` names one by id")
+	_check(doc.get_focused_id() == "other", "and the focus follows the click")
 	doc.queue_free()

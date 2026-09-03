@@ -1981,3 +1981,81 @@ void test_abi_popover_joins_the_top_layer() {
     weva_element_hide_popover(doc.d, weva_document_query(doc.d, "#menu"));
     CHECK(doc.backdrops() == 0);
 }
+
+// Clicking the word beside a checkbox toggles it. Every UI works this way, and
+// the port had no <label> handling at all -- so only a hit on the 13px box
+// itself did anything, including in this repo's own Godot demo.
+void test_abi_label_activates_its_control() {
+    Doc doc("html, body { margin: 0 } label { display: block; height: 30px }"
+            " input { width: 13px; height: 13px }",
+            "<label id=wrap><input id=cb type=checkbox> Shield</label>"
+            "<label id=named for=other>Sound</label>"
+            "<input id=other type=checkbox>");
+    double x = 0, y = 0, w = 0, h = 0;
+    const auto checked = [&](const char* sel) {
+        return weva_element_has_attribute(doc.d, weva_document_query(doc.d, sel), "checked") != 0;
+    };
+
+    // A label WRAPPING a control owns the first one inside it. Click near the
+    // right edge, well past the 13px box, on the text.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#wrap"), &x, &y, &w, &h);
+    CHECK(!checked("#cb"));
+    doc.click(x + w - 5, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(checked("#cb"));
+    doc.click(x + w - 5, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(!checked("#cb"));   // and back, so it is a toggle and not a set
+
+    // `for` names one by id, and the control need not be inside the label.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#named"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(checked("#other"));
+
+    // The label also moves the focus, so the keyboard follows the click.
+    CHECK(weva_document_focus(doc.d) == weva_document_query(doc.d, "#other"));
+}
+
+// The cases a naive forwarding gets wrong.
+void test_abi_label_forwarding_edge_cases() {
+    Doc doc("html, body { margin: 0 } label { display: block; height: 30px }"
+            " input { width: 13px; height: 13px }",
+            "<label id=direct><input id=cb type=checkbox> Shield</label>"
+            "<label id=off for=disabled>Off</label>"
+            "<input id=disabled type=checkbox disabled>"
+            "<label id=empty>Nothing here</label>"
+            "<label id=slider for=vol>Volume</label>"
+            "<input id=vol type=range min=0 max=100 value=40>");
+    double x = 0, y = 0, w = 0, h = 0;
+    const auto checked = [&](const char* sel) {
+        return weva_element_has_attribute(doc.d, weva_document_query(doc.d, sel), "checked") != 0;
+    };
+
+    // A click ON the control inside a label is the activation. Forwarding a
+    // second one to the same control would toggle it straight back off.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#cb"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(checked("#cb"));
+
+    // A disabled control is not activated by its label either.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#off"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(!checked("#disabled"));
+
+    // A label with no control and no `for` does nothing at all.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#empty"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);   // no crash, nothing changed
+
+    // A slider does NOT move when its label is clicked -- the value comes from
+    // where along the track the pointer landed, and it landed on the label.
+    // The focus still follows.
+    weva_element_bounds(doc.d, weva_document_query(doc.d, "#slider"), &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#vol") == "40");
+    CHECK(weva_document_focus(doc.d) == weva_document_query(doc.d, "#vol"));
+}

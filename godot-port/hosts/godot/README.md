@@ -500,6 +500,20 @@ not.
 Like the reference, a `<summary>` is not in the tab order and Enter does not
 work it; a browser does both, and neither engine does yet.
 
+**Labels**
+
+`<label>` works the control it names, so the word beside a checkbox is
+clickable and not just the 13px box. `for="id"` names one anywhere in the
+document; without it the label owns the first control inside it. A click on the
+control itself is the activation, so nothing is forwarded twice, and a disabled
+control is not activated by its label.
+
+    doc.get_focused_id()      # a label moves the focus too, so read it back
+
+A slider is the exception: its value comes from where along the track the
+pointer landed, and a label click landed somewhere else, so the label focuses
+it and leaves the value alone -- what a browser does.
+
 **Dialogs**
 
 A `<dialog>` opens plainly or modally, and the difference is the dim behind it:

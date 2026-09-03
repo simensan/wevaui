@@ -221,6 +221,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_interactive"), &WevaDocument::get_interactive);
     ClassDB::bind_method(D_METHOD("element_id_at", "point"), &WevaDocument::element_id_at);
     ClassDB::bind_method(D_METHOD("set_focus", "selector"), &WevaDocument::set_focus);
+    ClassDB::bind_method(D_METHOD("get_focused_id"), &WevaDocument::get_focused_id);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interactive"), "set_interactive", "get_interactive");
     ClassDB::bind_method(D_METHOD("set_paused", "on"), &WevaDocument::set_paused);
     ClassDB::bind_method(D_METHOD("get_paused"), &WevaDocument::get_paused);
@@ -861,6 +862,12 @@ bool WevaDocument::run_popover(const String& selector,
     dirty_ = true;
     queue_redraw();
     return true;
+}
+
+String WevaDocument::get_focused_id() {
+    if (!doc_) return String();
+    ensure_updated();
+    return id_of(weva_document_focus(doc_));
 }
 
 bool WevaDocument::show_popover(const String& selector) {

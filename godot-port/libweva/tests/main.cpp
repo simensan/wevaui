@@ -291,6 +291,8 @@ void test_abi_details_toggles();
 void test_abi_details_only_its_own_summary();
 void test_abi_details_reports_the_toggle();
 void test_abi_dialog_backdrop();
+void test_abi_label_activates_its_control();
+void test_abi_label_forwarding_edge_cases();
 void test_abi_popover_backdrop();
 void test_abi_popover_trigger();
 void test_abi_popover_target_action();
@@ -637,6 +639,8 @@ int main() {
     test_abi_details_only_its_own_summary();
     test_abi_details_reports_the_toggle();
     test_abi_dialog_backdrop();
+    test_abi_label_activates_its_control();
+    test_abi_label_forwarding_edge_cases();
     test_abi_popover_backdrop();
     test_abi_popover_trigger();
     test_abi_popover_target_action();

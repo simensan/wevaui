@@ -85,6 +85,10 @@ public:
 
     // Focus, by selector; an empty selector drops it.
     bool set_focus(const godot::String& selector);
+    // The id of what has the focus, or "". The focus moves without the host
+    // asking -- Tab walks it, a click moves it, a <label> moves it to the
+    // control it names -- so a host mirroring it has to be able to read it.
+    godot::String get_focused_id();
 
     // ---- Data binding ---------------------------------------------------
     //

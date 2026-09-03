@@ -436,6 +436,12 @@ weva_element_t weva_document_focus_next(weva_document_t doc, int backwards);
  * decide -- the document has no notion of tab order yet. */
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element);
 
+/* What has the focus, or WEVA_ELEMENT_NONE. The focus moves without a host
+ * asking -- Tab walks it, a click moves it, a label moves it to the control it
+ * names -- so a host that mirrors it (a Godot focus ring, a restore after a
+ * rebuild) needs to be able to read it back and could not. */
+weva_element_t weva_document_focus(weva_document_t doc);
+
 /* ---- Dropdowns --------------------------------------------------------
  *
  * Clicking a <select> opens its list, clicking an option chooses it, and the

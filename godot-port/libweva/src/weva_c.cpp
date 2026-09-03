@@ -2337,6 +2337,50 @@ void clear_radio_group(Node& root, std::string_view name, const Element* except)
     }
 }
 
+// True for the things a <label> can be for.
+bool is_labelable(const Element& e) {
+    const std::string_view tag = e.tag_name();
+    return tag == "input" || tag == "textarea" || tag == "select" || tag == "button" ||
+           tag == "meter" || tag == "progress";
+}
+
+// The first form control inside a subtree, in document order.
+Element* first_control_in(const Node& n) {
+    for (const Ref<Node>& c : n.children()) {
+        if (c->node_type() != NodeType::Element) continue;
+        Element& e = static_cast<Element&>(const_cast<Node&>(*c));
+        if (is_labelable(e)) return &e;
+        if (Element* nested = first_control_in(e)) return nested;
+    }
+    return nullptr;
+}
+
+// The control a <label> works, if the click was on the label rather than on a
+// control itself. `for` names one by id; without it the label owns the first
+// control inside it.
+//
+// Returns null when the click already landed ON a control -- clicking the
+// checkbox inside a label is the activation, and forwarding a second one would
+// toggle it back off.
+Element* label_target_for_click(weva_document* doc, const Element* hit) {
+    if (!hit || is_labelable(*hit)) return nullptr;
+    const Element* label = nullptr;
+    for (const Node* n = hit; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        const Element& e = static_cast<const Element&>(*n);
+        if (e.tag_name() == "label") {
+            label = &e;
+            break;
+        }
+    }
+    if (!label) return nullptr;
+    const std::string named(label->get_attribute("for"));
+    Element* target = named.empty() ? first_control_in(*label) : element_by_id(doc, named);
+    // A disabled control is not activated by its label either.
+    if (target && target->has_attribute("disabled")) return nullptr;
+    return target;
+}
+
 // What a click does to a control. Returns true when it changed something.
 bool activate_control(weva_document* doc, Element& e, double x) {
     const std::string type = input_type_of(e);
@@ -2655,7 +2699,29 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
             }
             // A checkbox toggles on the click, not the press, so dragging off
             // it and back changes nothing -- as it does not in any toolkit.
-            activate_control(doc, const_cast<Element&>(*hit), x);
+            //
+            // A click on a <label> works the control it is for, which is why
+            // the word beside a checkbox is clickable in every UI. The port
+            // had no <label> handling at all, so `<label><input
+            // type=checkbox> Shield</label>` -- the shape in this repo's own
+            // demo -- only responded to a hit on the 13px box itself.
+            if (Element* labelled = label_target_for_click(doc, hit)) {
+                // Focus follows the click, as it does for a direct one, so
+                // the keyboard lands on what the label named.
+                weva_document_set_focus(doc, doc->handle_of(labelled));
+                // A checkbox or radio toggles; a slider does NOT move. Its
+                // value comes from where along its track the pointer landed,
+                // and the pointer landed on the label -- a browser focuses the
+                // slider and leaves the value alone, so this does too. (The
+                // reference forwards a synthetic click with no coordinates,
+                // which drives the slider to its minimum; that is a bug, and
+                // matching it would be the wrong kind of parity.)
+                if (input_type_of(*labelled) != "range") {
+                    activate_control(doc, *labelled, x);
+                }
+            } else {
+                activate_control(doc, const_cast<Element&>(*hit), x);
+            }
         }
         doc->press_target = nullptr;
     }
@@ -3435,6 +3501,12 @@ int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
         if (n == a) return 1;
     }
     return 0;
+}
+
+weva_element_t weva_document_focus(weva_document_t doc) {
+    if (!doc) return WEVA_ELEMENT_NONE;
+    const Element* focused = doc->styles.state.focused;
+    return focused ? doc->handle_of(focused) : WEVA_ELEMENT_NONE;
 }
 
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element) {
