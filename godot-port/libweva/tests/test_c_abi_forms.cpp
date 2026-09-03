@@ -380,17 +380,20 @@ void test_abi_caret_is_drawn() {
     weva_document_update(doc.d, 0);
     size_t focused = 0;
     weva_document_draws(doc.d, &focused);
-    CHECK(focused > unfocused);       // the bar is an extra draw
+    // Focusing adds the caret AND the focus ring the UA stylesheet asks for,
+    // so the blink is measured against the frame with the ring in it rather
+    // than against the unfocused one.
+    CHECK(focused > unfocused);
 
     // A focused field keeps the document animating, or a host that stops
     // handing over time freezes the cursor mid-blink.
     CHECK(weva_document_is_animating(doc.d) == 1);
 
-    // Half a second on, half off.
+    // Half a second on, half off: one draw's difference, the bar itself.
     weva_document_update(doc.d, 0.6);
     size_t dark = 0;
     weva_document_draws(doc.d, &dark);
-    CHECK(dark == unfocused);
+    CHECK(dark == focused - 1);
     weva_document_update(doc.d, 0.5);
     size_t lit = 0;
     weva_document_draws(doc.d, &lit);
@@ -400,7 +403,7 @@ void test_abi_caret_is_drawn() {
     // moving it is worse than none.
     weva_document_update(doc.d, 0.6);
     weva_document_draws(doc.d, &dark);
-    CHECK(dark == unfocused);
+    CHECK(dark == focused - 1);
     weva_document_key(doc.d, WEVA_KEY_LEFT, 0, 1);
     weva_document_update(doc.d, 0);
     weva_document_draws(doc.d, &lit);
@@ -743,9 +746,10 @@ void test_abi_selection_is_drawn() {
         for (size_t i = 0; i < count; ++i) {
             if (draws[i].vertex_count == 0) continue;
             const weva_vertex& v = draws[i].vertices[0];
-            // Blue, and more blue than red: the selection band and nothing
-            // else in these documents.
-            if (!(v.b > 0.2f && v.b > v.r * 2)) continue;
+            // The band, and not the focus ring, which is also blue: the band
+            // is translucent by design so the glyphs behind it stay readable,
+            // and the ring is opaque.
+            if (!(v.b > 0.2f && v.b > v.r * 2 && v.a < 0.8f)) continue;
             double x0 = 1e9, x1 = -1e9;
             for (size_t k = 0; k < draws[i].vertex_count; ++k) {
                 x0 = std::fmin(x0, draws[i].vertices[k].x);
@@ -939,6 +943,11 @@ void test_abi_select_opens_and_chooses() {
 
     double x = 0, y = 0, w = 0, h = 0;
     doc.bounds("#s", &x, &y, &w, &h);
+    // Focused but closed, which is what it goes back to once a row is chosen:
+    // comparing against the UNfocused frame would count the focus ring as the
+    // list, and the list would look like it never went away.
+    weva_document_set_focus(doc.d, s);
+    weva_document_update(doc.d, 0);
     size_t closed_draws = 0;
     weva_document_draws(doc.d, &closed_draws);
 
@@ -1076,4 +1085,102 @@ void test_abi_select_reflects_choice() {
     // And asking to open something that is not a select is a no.
     Doc div(kSelectCss, "<div id=d></div>");
     CHECK(weva_document_open_select(div.d, weva_document_query(div.d, "#d")) == 0);
+}
+
+// A disabled control is not a target. It still occupies its space -- what is
+// behind it is not hit either -- but nothing about it responds, which is what
+// makes it look disabled rather than merely grey.
+void test_abi_disabled_controls_are_inert() {
+    Doc doc("html, body { margin: 0 }"
+            "input, button { display: block; width: 120px; height: 24px }"
+            "button:hover { background: #ff0000 }",
+            "<button id=go disabled>Go</button>"
+            "<input id=c type=checkbox disabled>"
+            "<input id=t type=text value=abc disabled>"
+            "<input id=live type=checkbox>");
+    double x = 0, y = 0, w = 0, h = 0;
+
+    // A click on it raises nothing and changes nothing.
+    doc.bounds("#c", &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    CHECK(doc.value("#c").empty());
+    for (const weva_event& e : doc.drain()) {
+        CHECK(e.kind != WEVA_EVENT_CLICK);
+    }
+
+    // Nor is it hovered, so `:hover` cannot light it up.
+    doc.bounds("#go", &x, &y, &w, &h);
+    size_t before = 0;
+    weva_document_draws(doc.d, &before);
+    weva_document_set_pointer(doc.d, x + w / 2, y + h / 2, 0);
+    weva_document_update(doc.d, 0);
+    size_t after = 0;
+    weva_document_draws(doc.d, &after);
+    CHECK(after == before);
+
+    // And it cannot take focus, so a host cannot put the keyboard where the
+    // user could not.
+    CHECK(weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t")) != WEVA_OK);
+    weva_document_text_input(doc.d, "z");
+    CHECK(doc.value("#t") == "abc");
+
+    // The one beside it still works, so this is disabling and not breaking.
+    doc.bounds("#live", &x, &y, &w, &h);
+    doc.click(x + w / 2, y + h / 2);
+    CHECK(doc.value("#live") == "on");
+}
+
+// A list longer than the cap scrolls. Without this its last options could be
+// neither seen nor clicked -- they were simply not drawn.
+void test_abi_select_long_list_scrolls() {
+    std::string html = "<select id=s>";
+    for (int i = 0; i < 30; ++i) {
+        html += "<option value=v" + std::to_string(i) + ">Option " + std::to_string(i) +
+                "</option>";
+    }
+    html += "</select>";
+    Doc doc("html, body { margin: 0 }"
+            "select { display: block; width: 160px; height: 28px; font-size: 14px }",
+            html.c_str());
+    const weva_element_t s = weva_document_query(doc.d, "#s");
+    CHECK(doc.value("#s") == "v0");
+
+    // The keyboard reaches the end of a list far longer than the box: End
+    // takes the highlight there, and the list follows it.
+    weva_document_open_select(doc.d, s);
+    weva_document_key(doc.d, WEVA_KEY_END, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#s") == "v29");
+
+    // And back to the top.
+    weva_document_open_select(doc.d, s);
+    weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#s") == "v0");
+
+    // A wheel over the open list moves the list rather than the page, and
+    // what is under the pointer afterwards is a LATER option -- which is the
+    // proof the rows moved and not just a counter.
+    double x = 0, y = 0, w = 0, h = 0;
+    doc.bounds("#s", &x, &y, &w, &h);
+    weva_document_open_select(doc.d, s);
+    weva_document_update(doc.d, 0);
+    const double first_row_y = y + h + 4;
+    weva_document_set_pointer(doc.d, x + w / 2, first_row_y, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_scroll(doc.d, x + w / 2, first_row_y, 0, 40) == 1);
+    weva_document_update(doc.d, 0);
+    weva_document_set_pointer(doc.d, x + w / 2, first_row_y, 1);
+    weva_document_update(doc.d, 0);
+    const std::string chosen = doc.value("#s");
+    CHECK(chosen != "v0");   // the row at the top of the list is no longer the first
+
+    // Reopening starts where the chosen option is, so a long list does not
+    // open at the top with the selection out of sight.
+    weva_document_open_select(doc.d, s);
+    weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#s") == chosen);
 }

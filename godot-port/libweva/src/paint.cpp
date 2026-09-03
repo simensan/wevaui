@@ -1923,6 +1923,51 @@ void paint_selection_band(const Box& b, double x, double y, size_t from, size_t 
     draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
 }
 
+// CSS UI L4 3: the outline, a ring OUTSIDE the border box, offset by
+// `outline-offset` and following the border's curvature. It takes no layout
+// space, which is why it can be drawn from the box's own geometry with nothing
+// else to consult.
+//
+// The UA stylesheet has drawn a focus ring on `:focus-visible` since the sheet
+// was written; nothing painted it, so tabbing through a document moved a focus
+// nobody could see, and an author using `outline` for emphasis got silence.
+void paint_outline(const Box& b, double x, double y, const LayoutContext& ctx,
+                   const BorderRadii& radii, const PaintContext& paint, double opacity,
+                   const Transform2D* xf, const ClipNode* clip, const ColorFilter* filter) {
+    if (!b.style) return;
+    const std::string_view style = get(b.style, "outline-style");
+    if (style.empty() || ci_equal(style, "none") || ci_equal(style, "hidden")) return;
+    const double fs = b.font_size > 0 ? b.font_size : ctx.root_font_size_px;
+    double width = resolve_length(b.style, "outline-width", ctx, fs).pixels;
+    // `auto` is a ring the UA picks; ours is a hairline, which is what the
+    // shorthand leaves behind when only a colour and `auto` were given.
+    if (width <= 0 && ci_equal(style, "auto")) width = 1;
+    if (width <= 0) return;
+    const double offset = resolve_length(b.style, "outline-offset", ctx, fs).pixels;
+
+    // `outline-color` defaults to the text colour, as `currentColor` does, and
+    // that is also what `auto` means in practice.
+    LinearColor color = resolve_color(b.style, "outline-color");
+    if (color.a <= 0) color = resolve_color(b.style, "color");
+    if (color.a <= 0) return;
+
+    const double grow = offset + width;
+    const Rect outer(x - grow, y - grow, b.width + grow * 2, b.height + grow * 2);
+    if (outer.width <= 0 || outer.height <= 0) return;
+    // The curve grows with the ring, so a rounded box gets a rounded outline
+    // rather than a square one standing off its corners.
+    const auto grown = [&](const CornerRadius& c) {
+        return CornerRadius(c.x_radius > 0 ? c.x_radius + grow : 0,
+                            c.y_radius > 0 ? c.y_radius + grow : 0);
+    };
+    const BorderRadii outer_radii(grown(radii.top_left), grown(radii.top_right),
+                                  grown(radii.bottom_right), grown(radii.bottom_left));
+    const LinearColor colors[4] = {color, color, color, color};
+    Mesh mesh;
+    tessellate_border(outer, outer_radii, width, width, width, width, colors, &mesh);
+    draw_mesh(mesh, paint.backend, {}, opacity, xf, clip, filter);
+}
+
 // The element a box belongs to: itself if it has one, otherwise the nearest
 // ancestor that does. A text run has none of its own.
 const Element* owner_element(const BoxTree& tree, BoxId id) {
@@ -2154,6 +2199,10 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         Mesh mesh;
         paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done);
         draw_mesh(mesh, paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
+        // Outside the border box, and taking no layout space -- so it is drawn
+        // from this box's own geometry, over its border.
+        paint_outline(b, x, y, ctx, radii, paint, state.opacity, xf, state.clip.get(),
+                      state.filter.get());
         if (!shadows.empty()) {
             const Rect padding_box(x + b.border_left, y + b.border_top,
                                    b.width - b.border_left - b.border_right,
@@ -2720,8 +2769,11 @@ SelectListGeometry select_list_geometry(const BoxTree& tree, BoxId select_box,
     double x = 0, y = 0;
     visual_position(tree, select_box, &x, &y);
     // Below the control, its width, and as tall as it needs -- capped so a
-    // hundred options do not run off the bottom of the world.
+    // hundred options do not run off the bottom of the world. Past the cap the
+    // list SCROLLS rather than hiding what does not fit, which is the whole
+    // difference between a long list and a truncated one.
     const double height = std::min(g.row_height * g.count, 320.0);
+    g.rows = std::max(1, static_cast<int>(height / g.row_height));
     g.box = Rect(x, y + b.height, b.width, height);
     // Flipped above when there is no room below, the way a native list does.
     if (g.box.bottom() > ctx.viewport_height_px && y - height >= 0) {
@@ -2777,9 +2829,10 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
         draw_mesh(line, paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
     }
 
-    const int visible_rows = static_cast<int>(g.box.height / g.row_height);
-    for (int i = 0; i < g.count && i < visible_rows; ++i) {
-        const double row_y = g.box.y + i * g.row_height;
+    const int first = std::clamp(paint.popup.first_row, 0, std::max(0, g.count - g.rows));
+    for (int row = 0; row < g.rows && first + row < g.count; ++row) {
+        const int i = first + row;
+        const double row_y = g.box.y + row * g.row_height;
         if (i == paint.popup.highlighted) {
             Mesh band;
             tessellate_rect(Rect(g.box.x + 1, row_y, g.box.width - 2, g.row_height),

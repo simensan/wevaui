@@ -619,6 +619,11 @@ func _test_select_dropdown() -> void:
 	_check(doc.get_element_value("#q") == "med", "the value is the chosen option's")
 
 	var box := doc.query_bounds("#q")
+	# Focused but closed, which is what it goes back to once a row is taken:
+	# an unfocused frame has no focus ring in it, so the ring would be
+	# counted as the list and the list would look like it never closed.
+	doc.set_focus("#q")
+	doc.update_document()
 	var closed := doc.get_draw_count()
 	doc.set_pointer(box.position + box.size * 0.5, 1)
 	doc.update_document()

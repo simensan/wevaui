@@ -105,6 +105,7 @@ struct CaretState {
 struct SelectPopup {
     const Element* element = nullptr;   // the open select, or null for none
     int highlighted = -1;               // the option under the pointer or the keys
+    int first_row = 0;                  // the list is scrolled to here
 };
 
 struct PaintContext {
@@ -131,6 +132,7 @@ struct SelectListGeometry {
     Rect box;             // the whole list, in document coordinates
     double row_height = 0;
     int count = 0;        // options in it
+    int rows = 0;         // how many of them fit in the box
 };
 
 SelectListGeometry select_list_geometry(const BoxTree& tree, BoxId select_box,

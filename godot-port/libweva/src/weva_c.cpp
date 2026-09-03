@@ -278,6 +278,23 @@ int line_end(const std::string& s, int at) {
     return static_cast<int>(s.size());
 }
 
+// The disabled form control at or above an element, if any. A disabled control
+// takes no pointer events at all -- no hover, no press, no click, no focus --
+// and neither does anything inside it, which is why this looks UP: the label
+// text inside a disabled button is not a live target either.
+const Element* disabled_ancestor(const Element* e) {
+    for (const Node* n = e; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        const Element& candidate = static_cast<const Element&>(*n);
+        const std::string_view tag = candidate.tag_name();
+        const bool form_element = tag == "input" || tag == "button" || tag == "select" ||
+                                  tag == "textarea" || tag == "option" || tag == "optgroup" ||
+                                  tag == "fieldset";
+        if (form_element && candidate.has_attribute("disabled")) return &candidate;
+    }
+    return nullptr;
+}
+
 // The selected range of a field's value, low end first. Empty when there is no
 // selection, which is the usual case.
 struct Selection {
@@ -1063,6 +1080,9 @@ struct weva_document {
     // property of the document -- reload the same markup and nothing is open.
     const Element* open_select = nullptr;
     int highlighted_option = -1;
+    // The row the open list is scrolled to. A list longer than the cap has to
+    // move, or its last options can be neither seen nor clicked.
+    int select_first_row = 0;
     // Set when the cursor moved or the text under it changed, so the next
     // update scrolls it back into view. Not every frame: a reader who has
     // scrolled away from the cursor should stay there.
@@ -1293,8 +1313,28 @@ int select_row_at(weva_document* doc, double x, double y) {
     const SelectListGeometry g =
         select_list_geometry(doc->tree, box, doc->ctx, *doc->open_select);
     if (!g.visible || !g.box.contains(x, y)) return -1;
-    const int row = static_cast<int>((y - g.box.y) / g.row_height);
+    const int row = doc->select_first_row + static_cast<int>((y - g.box.y) / g.row_height);
     return row >= 0 && row < g.count ? row : -1;
+}
+
+// Scrolls the open list the least that shows the highlighted row -- the same
+// nearest-edge rule the document uses for scrolling anything else into view.
+void reveal_highlighted_option(weva_document* doc) {
+    if (!doc->open_select) return;
+    const BoxId box = box_of(doc, doc->open_select);
+    if (box == kNoBox) return;
+    const SelectListGeometry g =
+        select_list_geometry(doc->tree, box, doc->ctx, *doc->open_select);
+    if (!g.visible || g.rows <= 0) return;
+    const int last = std::max(0, g.count - g.rows);
+    int first = std::clamp(doc->select_first_row, 0, last);
+    if (doc->highlighted_option >= 0) {
+        if (doc->highlighted_option < first) first = doc->highlighted_option;
+        else if (doc->highlighted_option >= first + g.rows) {
+            first = doc->highlighted_option - g.rows + 1;
+        }
+    }
+    doc->select_first_row = std::clamp(first, 0, last);
 }
 
 // Chooses an option: `selected` moves onto it and off its siblings, so the DOM
@@ -1784,6 +1824,7 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     paint.caret = caret;
     paint.popup.element = doc->open_select;
     paint.popup.highlighted = doc->highlighted_option;
+    paint.popup.first_row = doc->select_first_row;
     doc->caret_painted = caret;
     doc->textures.begin_pass();
     paint_tree(doc->tree, doc->root, doc->ctx, paint);
@@ -2120,6 +2161,11 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
     }
 
     const Element* hit = element_at_point(doc->tree, doc->root, x, y);
+    // A disabled control is not a target: it still occupies its space, so what
+    // is behind it is not hit either, but nothing about it responds. A greyed
+    // out button that still reports clicks is worse than one that is not
+    // greyed out at all.
+    if (hit && disabled_ancestor(hit)) hit = nullptr;
 
     // Enter and leave are reported against the innermost element, which is
     // where the hover chain starts.
@@ -2142,6 +2188,8 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
                 weva_document_set_focus(doc, doc->handle_of(hit));
                 doc->open_select = &e;
                 doc->highlighted_option = chosen_index(e);
+                doc->select_first_row = 0;
+                reveal_highlighted_option(doc);
                 doc->pending = worst(doc->pending, Invalidation::Paint);
                 return;
             }
@@ -2460,15 +2508,18 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                 const int from = doc->highlighted_option < 0 ? chosen_index(select)
                                                              : doc->highlighted_option;
                 doc->highlighted_option = std::clamp(from + step, 0, count - 1);
+                reveal_highlighted_option(doc);
                 doc->pending = worst(doc->pending, Invalidation::Paint);
                 return 1;
             }
             case WEVA_KEY_HOME:
                 doc->highlighted_option = 0;
+                reveal_highlighted_option(doc);
                 doc->pending = worst(doc->pending, Invalidation::Paint);
                 return 1;
             case WEVA_KEY_END:
                 doc->highlighted_option = count - 1;
+                reveal_highlighted_option(doc);
                 doc->pending = worst(doc->pending, Invalidation::Paint);
                 return 1;
             case WEVA_KEY_ENTER:
@@ -2501,6 +2552,8 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
             if (key == WEVA_KEY_ENTER || key == WEVA_KEY_SPACE) {
                 doc->open_select = &select;
                 doc->highlighted_option = chosen_index(select);
+                doc->select_first_row = 0;
+                reveal_highlighted_option(doc);
                 doc->pending = worst(doc->pending, Invalidation::Paint);
                 return 1;
             }
@@ -2630,6 +2683,8 @@ int weva_document_open_select(weva_document_t doc, weva_element_t element) {
     if (!e || e->tag_name() != "select") return 0;
     doc->open_select = e;
     doc->highlighted_option = chosen_index(*e);
+    doc->select_first_row = 0;
+    reveal_highlighted_option(doc);
     doc->pending = worst(doc->pending, Invalidation::Paint);
     return 1;
 }
@@ -2795,6 +2850,9 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     if (element != WEVA_ELEMENT_NONE) {
         target = doc->element_at(element);
         if (!target) return WEVA_ERR_NOT_FOUND;
+        // A disabled control cannot be focused, in a browser or here, so a
+        // host cannot put the keyboard somewhere the user could not.
+        if (disabled_ancestor(target)) return WEVA_ERR_INVALID_ARGUMENT;
     }
     if (st.focused == target) return WEVA_OK;
     // A field you have just focused puts the cursor after what it holds, which
@@ -2829,6 +2887,20 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
 
 int weva_document_scroll(weva_document_t doc, double x, double y, double dx, double dy) {
     if (!doc || (dx == 0 && dy == 0)) return 0;
+    // A wheel over an open list moves the LIST. It sits above the document, so
+    // scrolling the page under it would move the wrong thing.
+    if (doc->open_select && select_row_at(doc, x, y) >= 0) {
+        const BoxId box = box_of(doc, doc->open_select);
+        const SelectListGeometry g =
+            select_list_geometry(doc->tree, box, doc->ctx, *doc->open_select);
+        const int last = std::max(0, g.count - g.rows);
+        const int step = dy > 0 ? 1 : -1;
+        const int to = std::clamp(doc->select_first_row + step * 3, 0, last);
+        if (to == doc->select_first_row) return 0;
+        doc->select_first_row = to;
+        doc->pending = worst(doc->pending, Invalidation::Paint);
+        return 1;
+    }
     // Up from the point, not down from the root: the wheel belongs to the
     // innermost thing under it that can move. One that has hit its end passes
     // the wheel on, which is what makes a scrolled list inside a page stop
