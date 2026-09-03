@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <set>
 #include <vector>
 #include <string>
 
@@ -723,5 +724,86 @@ void test_abi_text_decoration_variants() {
         "<div style='text-decoration: underline; text-decoration-thickness: 5px'>x</div>");
     CHECK(thick.size() == 1);
     if (!thick.empty()) CHECK(thick[0].h > 4);
+    weva_document_destroy(d);
+}
+
+// `text-decoration-style`. Solid was all the port drew; dashed, dotted and
+// double all came out as one unbroken rule, so the three ways of marking text
+// apart were one way.
+//
+// A decoration is drawn per text RUN, and the collapsing tokeniser makes one
+// run per word and one per space -- so even a solid underline arrives as
+// several contiguous pieces. These assertions are about the SHAPE the pieces
+// make, not about how many the tokeniser happened to produce.
+void test_abi_text_decoration_styles() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0; background: #fff }"
+                      " div { display: block; font-size: 20px; color: #000; width: 300px }";
+    weva_document_add_css(d, css, std::strlen(css));
+
+    // The rules are given a colour nothing else uses, so a glyph drawn as a
+    // solid rect -- which the built-in 5x7 face does -- cannot be mistaken for
+    // one. A size filter alone counted glyphs as rules.
+    const auto rules_of = [&](const char* decoration) {
+        const std::string html = std::string("<div style='text-decoration: underline; ") +
+                                 "text-decoration-color: #ff0000; " + decoration +
+                                 "'>a word or two</div>";
+        weva_document_load_html(d, html.c_str(), html.size());
+        weva_document_update(d, 0);
+        std::vector<SolidRect> rules;
+        for (const SolidRect& r : solid_rects(d)) {
+            if (r.r > 0.5f && r.g < 0.1f && r.b < 0.1f) rules.push_back(r);
+        }
+        return rules;
+    };
+    const auto reach = [](const std::vector<SolidRect>& rs) {
+        double far = 0;
+        for (const SolidRect& r : rs) far = std::max<double>(far, r.x + r.w);
+        return far;
+    };
+    const auto ink = [](const std::vector<SolidRect>& rs) {
+        double total = 0;
+        for (const SolidRect& r : rs) total += r.w;
+        return total;
+    };
+    const auto rows = [](const std::vector<SolidRect>& rs) {
+        std::set<int> ys;
+        for (const SolidRect& r : rs) ys.insert(static_cast<int>(r.y * 4));
+        return ys.size();
+    };
+
+    const std::vector<SolidRect> solid = rules_of("");
+    CHECK(!solid.empty());
+    CHECK(rows(solid) == 1);   // one rule, at one height
+
+    // Two parallel rules: twice the pieces, at two heights, and twice the ink.
+    const std::vector<SolidRect> dbl = rules_of("text-decoration-style: double");
+    CHECK(dbl.size() == solid.size() * 2);
+    CHECK(rows(dbl) == 2);
+    CHECK(std::abs(ink(dbl) - ink(solid) * 2) < 0.5);
+
+    // Broken rules: more pieces than solid, less ink than solid, and dotted
+    // is finer than dashed.
+    const std::vector<SolidRect> dotted = rules_of("text-decoration-style: dotted");
+    const std::vector<SolidRect> dashed = rules_of("text-decoration-style: dashed");
+    CHECK(dotted.size() > solid.size());
+    CHECK(dashed.size() > solid.size());
+    CHECK(dotted.size() > dashed.size());
+    CHECK(ink(dotted) < ink(solid));
+    CHECK(ink(dashed) < ink(solid));
+    CHECK(rows(dotted) == 1);
+
+    // No piece runs past where the solid rule ends: the last is cut to the
+    // run rather than overhanging it.
+    CHECK(reach(dashed) <= reach(solid) + 0.01);
+    CHECK(reach(dotted) <= reach(solid) + 0.01);
+
+    // `wavy` has no curve primitive in either renderer, so both draw it as
+    // dashed. Asserted so the shared simplification is a decision on record.
+    CHECK(rules_of("text-decoration-style: wavy").size() == dashed.size());
     weva_document_destroy(d);
 }

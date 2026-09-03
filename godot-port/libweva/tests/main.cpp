@@ -321,6 +321,7 @@ void test_abi_secondary_button_does_not_activate();
 void test_abi_context_menu_event();
 void test_abi_text_decorations_are_drawn();
 void test_abi_text_decoration_variants();
+void test_abi_text_decoration_styles();
 void test_abi_row_identity();
 void test_abi_selection_replaces();
 void test_abi_selection_is_drawn();
@@ -690,6 +691,7 @@ int main() {
     test_abi_context_menu_event();
     test_abi_text_decorations_are_drawn();
     test_abi_text_decoration_variants();
+    test_abi_text_decoration_styles();
     test_abi_row_identity();
     test_abi_selection_replaces();
     test_abi_selection_is_drawn();

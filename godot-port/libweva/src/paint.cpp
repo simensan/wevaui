@@ -1540,10 +1540,37 @@ void paint_text_decorations(int flags, double x, double baseline, double width, 
         if (r.kind == LengthKind::Length) extra = std::max(0.0, r.pixels);
     }
 
-    const auto line = [&](double y) {
+    // `text-decoration-style`. The shapes are the reference's, so a rule set
+    // by one engine and drawn by the other has the same dashes in the same
+    // places -- and `wavy` is drawn as dashed by both, since a sine needs a
+    // curve primitive neither renderer has.
+    const std::string_view deco_style = get(style, "text-decoration-style");
+    const auto segment = [&](double sx, double sy, double sw) {
+        if (sw <= 0) return;
         Mesh m;
-        tessellate_rect(Rect(x, y, width, thickness), color, &m, false);
+        tessellate_rect(Rect(sx, sy, sw, thickness), color, &m, false);
         draw_mesh(m, paint.backend, {}, opacity, xf, clip, filter);
+    };
+    const auto line = [&](double y) {
+        if (deco_style == "double") {
+            // Two parallel rules, a gap of one and a half thicknesses apart.
+            segment(x, y, width);
+            segment(x, y + thickness * 1.5, width);
+            return;
+        }
+        if (deco_style == "dotted" || deco_style == "dashed" || deco_style == "wavy") {
+            // Dots are one thickness with a gap of one; dashes are three with
+            // a gap of three. The last one is cut to the run rather than
+            // overrunning it.
+            const double dot = deco_style == "dotted" ? std::max(1.0, thickness)
+                                                      : std::max(2.0, thickness * 3.0);
+            const double period = dot * 2.0;
+            for (double cursor = x; cursor < x + width; cursor += period) {
+                segment(cursor, y, std::min(dot, x + width - cursor));
+            }
+            return;
+        }
+        segment(x, y, width);
     };
     // The same three positions the reference uses, so a document set by one
     // engine and rendered by the other has its rules in the same places.
