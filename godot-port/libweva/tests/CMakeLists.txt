@@ -56,6 +56,7 @@ add_executable(weva_tests
     test_table.cpp
     test_background.cpp
     test_image_decode.cpp
+    test_focus_move.cpp
     test_backdrop_filter.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)

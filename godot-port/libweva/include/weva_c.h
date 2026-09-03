@@ -450,6 +450,23 @@ void weva_document_text_input(weva_document_t doc, const char* utf8);
  * surprises people who expect one or the other alone. */
 weva_element_t weva_document_focus_next(weva_document_t doc, int backwards);
 
+/* Moves focus in a DIRECTION rather than along the tab order.
+ *
+ * What a gamepad or a D-pad needs, and what a tab order cannot express: the
+ * next control to the left of this one is a question about geometry, not about
+ * source order, and a menu laid out as a grid tabs through it in reading order
+ * whatever the stick did. A script cannot reasonably do this itself either --
+ * it would have to fetch every focusable's rectangle and re-derive the whole
+ * heuristic each frame.
+ *
+ * `dx` and `dy` give the direction; only their signs matter, and exactly one
+ * should be non-zero. Returns the element that took focus, or the current one
+ * when there is nothing that way -- deliberately, because a menu should stay
+ * where it is at its edge rather than wrapping to the far side under the
+ * player's thumb. With nothing focused it takes the first focusable, so a
+ * fresh screen answers the first press. */
+weva_element_t weva_document_focus_move(weva_document_t doc, double dx, double dy);
+
 /* Focus, or WEVA_ELEMENT_NONE to drop it. Sets :focus and :focus-visible on
  * the element and :focus-within on its ancestors. Focus is the host's to
  * decide -- the document has no notion of tab order yet. */

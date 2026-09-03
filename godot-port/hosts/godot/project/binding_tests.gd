@@ -127,6 +127,54 @@ func _reading_back(_unused: WevaDocument) -> void:
 	_check(doc.query_all_text(".nothing-here").size() == 0, "no match is an empty list")
 	doc.queue_free()
 
+# Focus by DIRECTION, which is the one a gamepad asks and the tab order cannot
+# answer: what is to the left of this? In a grid, source order says "the
+# previous one", which at the end of every row is the element above-right.
+func _gamepad_focus() -> void:
+	var doc := WevaDocument.new()
+	add_child(doc)
+	doc.document_size = Vector2(400, 300)
+	doc.css = """
+	#grid { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; }
+	button { width: 80px; height: 40px; }
+	"""
+	doc.html = """
+	<div id="grid">
+	  <button id="a">a</button><button id="b">b</button><button id="c">c</button>
+	  <button id="d">d</button><button id="e">e</button><button id="g">g</button>
+	  <button id="h">h</button><button id="i">i</button><button id="j">j</button>
+	</div>
+	"""
+	doc.update_document()
+
+	#   a b c
+	#   d e g
+	#   h i j
+	doc.set_focus("#e")
+	_check(doc.focus_move(Vector2.LEFT) == "d", "left of the middle")
+	doc.set_focus("#e")
+	_check(doc.focus_move(Vector2.RIGHT) == "g", "right of it")
+	doc.set_focus("#e")
+	_check(doc.focus_move(Vector2.UP) == "b", "above it")
+	doc.set_focus("#e")
+	_check(doc.focus_move(Vector2.DOWN) == "i", "below it")
+
+	# Straight down a column rather than diagonally to whatever is nearest.
+	doc.set_focus("#a")
+	_check(doc.focus_move(Vector2.DOWN) == "d", "down a column, not across")
+
+	# At the edge it stays: a menu that wraps under a held stick is worse than
+	# one that stops.
+	doc.set_focus("#a")
+	_check(doc.focus_move(Vector2.UP) == "a", "the top edge holds")
+	_check(doc.focus_move(Vector2.LEFT) == "a", "and the left one")
+
+	# An analogue stick rarely reads exactly 1.0; only the sign is used.
+	doc.set_focus("#e")
+	_check(doc.focus_move(Vector2(0.37, 0)) == "g", "a partial stick still moves")
+
+	doc.queue_free()
+
 func _ready() -> void:
 	var doc := WevaDocument.new()
 	add_child(doc)
@@ -241,6 +289,8 @@ func _ready() -> void:
 	other.queue_free()
 
 	_reading_back(doc)
+
+	_gamepad_focus()
 
 	doc.queue_free()
 	print("godot bindings: %d checks, %d failures" % [checks, failures])

@@ -208,6 +208,9 @@ public:
     // Moves focus in tab order and returns the id that now has it, or "" when
     // the document has nothing focusable in it.
     godot::String focus_next(bool backwards);
+    // Focus in a DIRECTION rather than along the tab order, which is what a
+    // gamepad stick or a D-pad asks for.
+    godot::String focus_move(const godot::Vector2& direction);
 
     // Runs cascade, layout and paint now, rather than waiting for the frame.
     // `dt` advances transitions and animations by that many seconds -- a game

@@ -403,6 +403,7 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("text_entered", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::STRING, "text")));
     ClassDB::bind_method(D_METHOD("focus_next", "backwards"), &WevaDocument::focus_next);
+    ClassDB::bind_method(D_METHOD("focus_move", "direction"), &WevaDocument::focus_move);
     ClassDB::bind_method(D_METHOD("get_draw_count"), &WevaDocument::get_draw_count);
     ClassDB::bind_method(D_METHOD("get_triangle_count"), &WevaDocument::get_triangle_count);
 
@@ -653,6 +654,15 @@ godot::String WevaDocument::focus_next(bool backwards) {
     // Delivered here rather than next frame: a script that moves focus and
     // then looks at what happened should not have to wait for a redraw.
     pump_events();
+    return id_of(e);
+}
+
+godot::String WevaDocument::focus_move(const Vector2& direction) {
+    if (!doc_) return String();
+    ensure_updated();
+    const weva_element_t e = weva_document_focus_move(doc_, direction.x, direction.y);
+    dirty_ = true;
+    queue_redraw();
     return id_of(e);
 }
 

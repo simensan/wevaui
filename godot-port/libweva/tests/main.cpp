@@ -177,6 +177,7 @@ void test_table_row_groups_and_captions();
 void test_table_visibility_collapse_and_column_hints();
 void test_grid_stretched_rows_feed_back_into_columns();
 void test_image_decode();
+void test_focus_move();
 void test_background_image();
 void test_replaced_img();
 void test_border_image();
@@ -558,6 +559,7 @@ int main() {
     test_table_visibility_collapse_and_column_hints();
     test_grid_stretched_rows_feed_back_into_columns();
     test_image_decode();
+    test_focus_move();
     test_background_image();
     test_replaced_img();
     test_border_image();

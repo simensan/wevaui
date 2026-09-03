@@ -430,6 +430,25 @@ what every image did before this existed.
 size, one of them gives the other through the intrinsic ratio, and
 `object-fit` and `object-position` place it in the content box.
 
+**Driving it with a gamepad**
+
+A tab order cannot answer the question a stick asks. `focus_next` walks the
+document in source order, which in a grid means the end of every row jumps to
+the element above-right. `focus_move` asks about GEOMETRY instead:
+
+    doc.focus_move(Vector2.LEFT)      # returns the id that took focus
+    doc.focus_move(input_direction)   # only the sign is read
+
+It scores each candidate by how far it is along the direction plus a heavy
+penalty for drifting off it, which is what keeps a cursor travelling down a
+column instead of diagonally to whatever happens to be nearest. At an edge it
+STAYS rather than wrapping -- a menu that jumps from its last row to its first
+under a held stick is worse than one that stops. With nothing focused, the
+first press picks something up, so a freshly opened screen answers.
+
+A script cannot reasonably do this itself: it would have to fetch every
+focusable's rectangle and re-derive the heuristic each frame.
+
 **Reading the document back**
 
 Two questions a script could not previously ask.

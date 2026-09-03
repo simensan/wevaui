@@ -3039,6 +3039,83 @@ weva_element_t weva_document_focus_next(weva_document_t doc, int backwards) {
     return handle;
 }
 
+weva_element_t weva_document_focus_move(weva_document_t doc, double dx, double dy) {
+    if (!doc || !doc->doc) return WEVA_ELEMENT_NONE;
+    if (dx == 0 && dy == 0) return doc->handle_of(doc->styles.state.focused);
+    std::vector<std::pair<int, const Element*>> found;
+    collect_focusables(*doc->doc, doc->styles, &found);
+    if (found.empty()) return WEVA_ELEMENT_NONE;
+
+    const Element* current = doc->styles.state.focused;
+    if (!current) {
+        // Nothing focused: the first press picks something up rather than
+        // doing nothing, which is what a player expects opening a screen.
+        const weva_element_t first = doc->handle_of(found.front().second);
+        weva_document_set_focus(doc, first);
+        return first;
+    }
+
+    const auto rect_of = [&](const Element* e, double* x, double* y, double* w, double* h) {
+        return weva_element_bounds(doc, doc->handle_of(e), x, y, w, h) == WEVA_OK;
+    };
+    double cx = 0, cy = 0, cw = 0, ch = 0;
+    if (!rect_of(current, &cx, &cy, &cw, &ch)) return doc->handle_of(current);
+    const double from_x = cx + cw * 0.5, from_y = cy + ch * 0.5;
+
+    const bool horizontal = dx != 0;
+    const double sign = horizontal ? (dx > 0 ? 1.0 : -1.0) : (dy > 0 ? 1.0 : -1.0);
+
+    const Element* best = nullptr;
+    double best_score = 0;
+    for (const auto& entry : found) {
+        const Element* e = entry.second;
+        if (e == current) continue;
+        double ex = 0, ey = 0, ew = 0, eh = 0;
+        if (!rect_of(e, &ex, &ey, &ew, &eh)) continue;
+        if (ew <= 0 || eh <= 0) continue;
+
+        // The candidate must lie past this one's EDGE on the travelled axis,
+        // not merely past its centre: two controls side by side in a row have
+        // centres a few pixels apart vertically, and a centre test would let
+        // "up" land on a neighbour that is really beside you.
+        const double near_edge = horizontal ? (sign > 0 ? ex : -(ex + ew))
+                                            : (sign > 0 ? ey : -(ey + eh));
+        const double own_edge = horizontal ? (sign > 0 ? cx + cw : -cx)
+                                           : (sign > 0 ? cy + ch : -cy);
+        if (near_edge < own_edge - 0.5) continue;
+
+        const double to_x = ex + ew * 0.5, to_y = ey + eh * 0.5;
+        const double along = horizontal ? std::abs(to_x - from_x) : std::abs(to_y - from_y);
+        // How far off the travelled line it sits, measured to the candidate's
+        // nearest edge so a wide element counts as aligned anywhere along it.
+        double off = 0;
+        if (horizontal) {
+            if (from_y < ey) off = ey - from_y;
+            else if (from_y > ey + eh) off = from_y - (ey + eh);
+        } else {
+            if (from_x < ex) off = ex - from_x;
+            else if (from_x > ex + ew) off = from_x - (ex + ew);
+        }
+
+        // Distance along the direction, plus a heavy penalty for drifting off
+        // it. The weight is what makes a grid feel right: without it, a
+        // slightly nearer element one column over beats the one directly
+        // ahead, and the cursor walks diagonally.
+        const double score = along + off * 4.0;
+        if (!best || score < best_score) {
+            best = e;
+            best_score = score;
+        }
+    }
+
+    // Nothing that way: stay put. A menu that wraps from its last row to its
+    // first under a held stick is worse than one that stops.
+    if (!best) return doc->handle_of(current);
+    const weva_element_t handle = doc->handle_of(best);
+    weva_document_set_focus(doc, handle);
+    return handle;
+}
+
 int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down) {
     if (!doc) return 0;
     weva_event e{};
