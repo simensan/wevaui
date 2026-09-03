@@ -38,6 +38,27 @@ struct CascadeStyles : StyleProvider {
         auto it = by_element.find(&e);
         return it == by_element.end() ? nullptr : it->second;
     }
+    // Pseudo-elements, which this fixture answered `nullptr` to for every
+    // name -- so ::before, ::after and ::marker were all invisible to a layout
+    // test and a rule targeting one looked like an engine that ignored it.
+    // Computed on demand and kept, since the box builder asks per element.
+    std::map<std::pair<const Element*, std::string>, ComputedStyle*> pseudos;
+    const ComputedStyle* pseudo_style_of(const Element& e, std::string_view name) override {
+        const std::pair<const Element*, std::string> key{&e, std::string(name)};
+        auto known = pseudos.find(key);
+        if (known != pseudos.end()) return known->second;
+        const ComputedStyle* host = style_of(e);
+        if (!host) return nullptr;
+        auto computed = std::make_unique<ComputedStyle>();
+        if (!engine.compute_pseudo_element(e, name, state, *host, computed.get())) {
+            pseudos[key] = nullptr;
+            return nullptr;
+        }
+        ComputedStyle* raw = computed.get();
+        owned.push_back(std::move(computed));
+        pseudos[key] = raw;
+        return raw;
+    }
 };
 
 struct Fixture {
@@ -1630,5 +1651,63 @@ void test_tabs_are_expanded_not_measured() {
         CHECK(text.find('	') == std::string::npos);
         // Four spaces to the stop, then the letter.
         CHECK(text == "    x");
+    }
+}
+
+// A marker must not take the item's own box properties. The reference warns
+// about exactly this: styling the marker with the li's ComputedStyle hands it
+// the li's padding, border and background, and its `.zebra li` measured 26.9
+// where Chrome says 26.
+void test_list_marker_does_not_inherit_the_items_box() {
+    Fixture f;
+    CHECK(f.css("li { font-size: 20px; padding: 10px; border: 2px solid #000;"
+                "     list-style-type: decimal }"));
+    CHECK(f.layout("<body><ol><li id=a>x</li></ol></body>"));
+    const std::vector<BoxId> ls = f.lines("a");
+    CHECK(!ls.empty());
+    if (ls.empty()) return;
+    // The marker starts at the item's CONTENT edge -- border 2 plus padding
+    // 10 -- and not one padding further in.
+    double first_x = -1;
+    for (BoxId c : f.tree.children(ls[0])) { first_x = f.tree[c].x; break; }
+    CHECK(near(first_x, 0));   // relative to the line box, which is already inset
+
+    // And the item is one line tall plus its own frame: a marker carrying the
+    // li's padding a second time would show up here.
+    CHECK(near(f.box("a").height, 20 * 1.2 + 20 + 4));
+}
+
+// `li::marker { ... }` styles the marker apart from the item, which is the
+// only way to give a bullet its own colour or size. The port computed no
+// marker pseudo at all, so such a rule matched nothing.
+void test_marker_pseudo_styles_the_marker() {
+    // The marker is the first run on the item's line. Its FONT SIZE is the
+    // thing ::marker changes, and asserting on that rather than on a width
+    // keeps the test off the tokeniser's split of "1." and the space after it.
+    const auto marker_font = [](Fixture& f) {
+        const std::vector<BoxId> ls = f.lines("a");
+        if (ls.empty()) return -1.0;
+        for (BoxId c : f.tree.children(ls[0])) return f.tree[c].font_size;
+        return -1.0;
+    };
+    {
+        // No rule: the marker keeps the item's own size.
+        Fixture f;
+        CHECK(f.css("li { font-size: 30px; list-style-type: decimal }"));
+        CHECK(f.layout("<body><ol><li id=a>x</li></ol></body>"));
+        CHECK(near(marker_font(f), 30));
+    }
+    {
+        // A rule: the marker takes its own, and the item keeps its.
+        Fixture f;
+        CHECK(f.css("li { font-size: 10px; list-style-type: decimal }"
+                    "li::marker { font-size: 30px }"));
+        CHECK(f.layout("<body><ol><li id=a>x</li></ol></body>"));
+        CHECK(near(marker_font(f), 30));
+        // The item's own text is still 10px, which is what "apart from the
+        // item" means.
+        double last = -1;
+        for (BoxId c : f.tree.children(f.lines("a")[0])) last = f.tree[c].font_size;
+        CHECK(near(last, 10));
     }
 }

@@ -432,7 +432,17 @@ void BoxBuilder::maybe_inject_list_marker(const Element& e, const ComputedStyle*
     // The item's own style, so font, size and colour flow through. A
     // `::marker` pseudo would let an author style it apart, and neither
     // engine has one yet.
-    const BoxId marker = tree_->create(BoxKind::Text, nullptr, style);
+    // `li::marker { color: ... }` styles the marker apart from the item, which
+    // is the only way to give a bullet its own colour or size. Without a rule
+    // the marker keeps the item's style, so font and colour flow through as
+    // they should.
+    //
+    // The port's marker is a TEXT box, which carries no padding, border or
+    // background -- so it cannot pick up the item's box the way the
+    // reference's inline-block marker could, and there is a test saying so.
+    const ComputedStyle* marker_style = styles_->pseudo_style_of(e, "marker");
+    if (!marker_style) marker_style = style;
+    const BoxId marker = tree_->create(BoxKind::Text, nullptr, marker_style);
     (*tree_)[marker].text = tree_->own_text(marker_text(type, ordinal) + " ");
     (*tree_)[marker].pseudo_host = &e;
     tree_->append_child(parent, marker);

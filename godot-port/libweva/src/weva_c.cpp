@@ -753,6 +753,7 @@ struct StyleMap : StyleProvider {
         pseudo_by_element.erase({e, 0});
         pseudo_by_element.erase({e, 1});
         pseudo_by_element.erase({e, 2});
+        pseudo_by_element.erase({e, 3});
         transitions.erase(e);
         animation_clock.erase(e);
         animated.erase(e);
@@ -879,8 +880,8 @@ struct StyleMap : StyleProvider {
         // same way, cached the same way, and the box builder asks for it by
         // the same call. Without it here the UA sheet's `::backdrop` rule
         // matched nothing and a modal dialog had no dim behind it.
-        static constexpr std::string_view kPseudos[3] = {"before", "after", "backdrop"};
-        for (int i = 0; i < 3; ++i) {
+        static constexpr std::string_view kPseudos[4] = {"before", "after", "backdrop", "marker"};
+        for (int i = 0; i < 4; ++i) {
             auto pit = pseudo_by_element.find({&e, i});
             const bool had = pit != pseudo_by_element.end();
             const bool has = engine.compute_pseudo_element(e, kPseudos[i], state, *raw, &scratch);
@@ -913,7 +914,11 @@ struct StyleMap : StyleProvider {
         return it == by_element.end() ? nullptr : it->second;
     }
     const ComputedStyle* pseudo_style_of(const Element& e, std::string_view name) override {
-        const int i = name == "before" ? 0 : name == "after" ? 1 : name == "backdrop" ? 2 : -1;
+        const int i = name == "before"     ? 0
+                      : name == "after"    ? 1
+                      : name == "backdrop" ? 2
+                      : name == "marker"   ? 3
+                                           : -1;
         if (i < 0) return nullptr;
         auto it = pseudo_by_element.find({&e, i});
         return it == pseudo_by_element.end() ? nullptr : it->second;

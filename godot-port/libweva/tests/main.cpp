@@ -213,6 +213,8 @@ void test_text_overflow_ellipsis();
 void test_text_overflow_conditions();
 void test_list_markers();
 void test_list_marker_ordinals();
+void test_list_marker_does_not_inherit_the_items_box();
+void test_marker_pseudo_styles_the_marker();
 void test_text_indent();
 void test_tabs_are_expanded_not_measured();
 void test_tab_size();
@@ -583,6 +585,8 @@ int main() {
     test_text_overflow_conditions();
     test_list_markers();
     test_list_marker_ordinals();
+    test_list_marker_does_not_inherit_the_items_box();
+    test_marker_pseudo_styles_the_marker();
     test_text_indent();
     test_tabs_are_expanded_not_measured();
     test_tab_size();
