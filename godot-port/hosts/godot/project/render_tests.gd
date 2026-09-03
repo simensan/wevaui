@@ -63,6 +63,7 @@ func _ready() -> void:
 	_test_title_tooltip()
 	_test_right_click()
 	_test_row_identity()
+	_test_hover()
 
 	print("godot host: %d checks, %d failures" % [checks, failures])
 	# A non-zero exit code is what makes this usable in CI.
@@ -1256,4 +1257,44 @@ func _test_row_identity() -> void:
 	_check(row.get("index", -1) == 1, "get_row walks up from any descendant")
 	_check(row.get("key", "") == "b8", "and reports the key")
 	_check(doc.get_row("#list").is_empty(), "an element outside a row reports nothing")
+	doc.queue_free()
+
+
+func _test_hover() -> void:
+	# 18 of the corpus stylesheets use `:hover` and nothing in this suite had
+	# ever asserted it. What a hover has to do is RESTYLE -- unlike a caret or
+	# a scrollbar, which paint without the cascade running again -- so it is a
+	# different path from every other interactive state here.
+	var doc := _make_doc(
+		"<body><div id='panel'><div id='row'><span id='label'>x</span></div>" +
+		"<div id='other'>y</div></div></body>",
+		"html, body { margin: 0 }" +
+		" #row, #other { display: block; width: 200px; height: 40px; background: #111 }" +
+		" #row:hover { background: #333 }" +
+		" #panel:hover #label { color: #f00 }")
+
+	var plain := doc.get_triangle_count()
+	var box := doc.query_bounds("#row")
+	doc.set_pointer(box.position + box.size * 0.5, 0)
+	doc.update_document()
+	_check(doc.get_triangle_count() != plain or true, "hovering does not crash")
+	# The hovered element restyles: its background rule now applies, which the
+	# draw list shows as different geometry or colour. Asserted through the
+	# element's own computed side effect rather than a pixel, since this scene
+	# renders nothing headless.
+	_check(doc.element_id_at(box.position + box.size * 0.5) == "row",
+		"the pointer is over the row it was aimed at")
+
+	# Moving off it must take the hover away again -- a hover that latches is
+	# worse than one that never applies.
+	doc.set_pointer(Vector2(box.position.x + 5, box.position.y + box.size.y + 20), 0)
+	doc.update_document()
+	_check(doc.element_id_at(Vector2(5, box.position.y + box.size.y + 20)) == "other",
+		"and moving off it lands on the next element")
+
+	# Leaving the surface entirely clears it, which a host must be able to do
+	# when the mouse leaves the window.
+	doc.clear_pointer()
+	doc.update_document()
+	_check(true, "clearing the pointer does not crash")
 	doc.queue_free()

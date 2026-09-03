@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The backend comparison for the states that only exist while a user is doing
-# something -- a cursor, a selection, a scrolled list, an open dropdown.
+# something -- a cursor, a selection, a scrolled list, an open dropdown, a
+# hovered row.
 #
 # compare_all.sh covers the corpus, but a corpus of static pages never reaches
 # those paths: the dropdown in particular is painted AFTER the tree and with no
@@ -34,3 +35,10 @@ run focused-field   --focus='#name' --selection=11,17
 run focused-area    --focus='#notes' --selection=2,14
 run open-select     --open='#q'
 run scrolled-list   --focus='#log' --scroll=40
+# Hover was covered by nothing at all: 18 of the corpus stylesheets use it and
+# every gate rendered them unhovered, so the Godot backend had never drawn a
+# hovered frame. Three shapes, because they need different machinery -- the
+# element itself, a descendant of a hovered ancestor, and a sibling of one.
+run hovered-row     --hover='.entry'
+run hovered-parent  --hover='.panel'
+run hovered-sibling --hover='#name'
