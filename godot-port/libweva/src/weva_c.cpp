@@ -497,7 +497,32 @@ struct StyleMap : StyleProvider {
     // are then freshly correct in the style itself.
     std::map<const Element*, std::map<int, std::string>> animation_saved;
 
+    // What each animation last PUT ON SCREEN, which is a different question
+    // from what the cascade last said. An animating element that is
+    // re-cascaded -- because a key was pressed, a class toggled, a pointer
+    // moved -- has its animated properties unwound to the declared values and
+    // written back a moment later, and comparing the write against the
+    // declared value calls that a change. It is not one: nothing moved. This
+    // is what the write is compared against instead.
+    std::map<const Element*, std::map<int, std::string>> animation_shown;
+
+    // Puts back what an animation overwrote, WITHOUT calling it a change.
+    //
+    // The live style holds the animation's current value; the cascade is about
+    // to produce the declared one. Diffing those two reports a change that is
+    // not one -- the animation will write its value straight back -- and the
+    // report costs a relayout. Putting the declared value back first makes the
+    // diff compare the cascade's last answer with the cascade's new one, which
+    // is the only comparison that means anything.
+    void unwind_animated(const Element& e, ComputedStyle* live) {
+        auto it = animation_saved.find(&e);
+        if (it == animation_saved.end()) return;
+        for (const auto& kv : it->second) live->set(kv.first, kv.second);
+        animation_saved.erase(it);
+    }
+
     void restore_animated(const Element& e, ComputedStyle* live) {
+        animation_shown.erase(&e);
         auto it = animation_saved.find(&e);
         if (it == animation_saved.end()) return;
         for (const auto& kv : it->second) {
@@ -600,7 +625,16 @@ struct StyleMap : StyleProvider {
                     // so the end of the animation has something to go back to.
                     if (saved.find(id) == saved.end()) saved[id] = std::string(live->get(id));
                     live->set(id, value);
-                    pending = worst(pending, invalidation_for_property(id));
+                    // Invalidated only when it MOVES. A pass with no time in it
+                    // -- a keystroke, a class toggle, a hover -- writes the
+                    // same value it wrote last frame, and calling that a change
+                    // made every interaction on an animating page cost a
+                    // relayout of the whole document.
+                    std::string& shown = animation_shown[&e][id];
+                    if (shown != value) {
+                        shown = value;
+                        pending = worst(pending, invalidation_for_property(id));
+                    }
                 }
             } else {
                 restore_animated(e, live);
@@ -711,6 +745,7 @@ struct StyleMap : StyleProvider {
     // behind is a stale key that a later allocation at the same address would
     // silently inherit.
     void forget(const Element* e) {
+        animation_shown.erase(e);
         by_element.erase(e);
         pseudo_by_element.erase({e, 0});
         pseudo_by_element.erase({e, 1});
@@ -728,6 +763,7 @@ struct StyleMap : StyleProvider {
         animation_clock.clear();
         animated.clear();
         animation_saved.clear();
+        animation_shown.clear();
         pending = Invalidation::Boxes;
     }
 
@@ -826,6 +862,8 @@ struct StyleMap : StyleProvider {
             engine.compute(e, state, parent, raw);
         } else {
             raw = it->second;
+            // Before the diff, not after: see unwind_animated.
+            unwind_animated(e, raw);
             engine.compute(e, state, parent, &scratch);
             merge(raw, &scratch, &e);
         }

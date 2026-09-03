@@ -199,11 +199,22 @@ bool ComputedStyle::differs_from(const ComputedStyle& other, std::vector<int>* c
         const bool a = i < occupied_.size() && occupied_[i];
         const bool b = i < other.occupied_.size() && other.occupied_[i];
         if (!a && !b) continue;
-        bool same = a == b;
-        if (same) {
+        bool same;
+        if (a == b) {
             same = values_[i] == other.values_[i] &&
                    (i < important_.size() && important_[i]) ==
                        (i < other.important_.size() && other.important_[i]);
+        } else {
+            // Set on one side and not the other is not yet a difference: a
+            // property set to what it would have been anyway computes the
+            // same. Asking for the VALUE settles it, and the question here is
+            // whether the computed value changed -- nothing downstream can
+            // tell how it was arrived at.
+            //
+            // Comparing set-ness alone reported `padding: 0` against an unset
+            // padding as a change, and one such report costs a relayout of the
+            // whole document.
+            same = get(static_cast<int>(i)) == other.get(static_cast<int>(i));
         }
         if (same) continue;
         any = true;
