@@ -84,7 +84,7 @@ falsify it is to add a sample that uses something untested and look at it.
 exactly. The ordering above tracks text density almost perfectly, which is
 the same conclusion as the paragraph before it, arrived at from the other end.
 
-## OPEN: a border radius plus unequal border widths draws a trapezoid
+## FIXED: a border radius plus unequal border widths drew a trapezoid
 
 Reproductions: `tools/oracle/corpus/visual/border-radius-uneven.{html,css}` and
 `inset-shadow-blur.{html,css}`. Render either with `weva_render` and look.
@@ -123,9 +123,31 @@ is not wired into `check.sh` because two rasterisers never agree pixel for
 pixel. `episode-stats` is the top-ranked page in it, at 5.6 per cent non-text
 difference, which is what led here.
 
-**Fixing it** means making the outer-to-inner correspondence robust for unequal
-widths -- offsetting each outer vertex inward by the width of the edge it
-belongs to, blending the two widths across a corner arc, rather than building a
-second rounded rect and zipping. That changes every border in the engine, so it
-wants its own pass with the visual corpus checked before and after.
+**The fix**, and it was smaller than the diagnosis suggested. The zip is fine;
+what was wrong was one corner of the inner outline. `inset_radii` reduces each
+radius per axis, so `border-bottom: 20px; border-radius: 11px` gave the bottom
+corners a radius of (11, 0) -- the y-axis eaten by the 20px bottom, the x-axis
+untouched by the 0px side. That is neither a curve nor a corner:
+`rounded_outline` hands it to `arc_points`, which has no arc to sweep and emits
+the arc's CENTRE, a point 11px in from where the corner belongs. The inner
+right edge then ran diagonally from (300, 11) to (289, 70) and the ring
+swallowed a wedge of the content that widened down the whole side.
+
+A corner that has collapsed on either axis is square, so both axes now go to
+zero together. The mesh dump goes from `inner (289.00, 70.00)` to
+`inner (300.00, 70.00)` and the trapezoid is gone.
+
+**A second bug underneath it.** With the geometry right, blurred inset shadows
+were still hard-edged rectangles. `paint_inset_shadows` computed each layer's
+target coverage as `blurred_coverage(-e, sigma)` where the outset loop directly
+above it uses `blurred_coverage(e, sigma)`. Negated, the THICKEST frame came
+out fully dense on the first iteration, every later frame failed the
+`target <= accumulated` test, and the blur collapsed to one hard frame a
+blur-radius thick -- contradicting the comment two lines below, which already
+said the frames run thickest-faint to thinnest-dense.
+
+**Measured.** `visual_rank_soft.py` over the 35 samples, before and after:
+`episode-stats` 5.6% -> **0.5%** non-text difference from Chrome, `load-game`
+2.3% -> 1.2%, `menu` 3.6% -> 2.7%, and **nothing worse**. episode-stats was the
+worst non-animated page in the corpus and is now the best.
 

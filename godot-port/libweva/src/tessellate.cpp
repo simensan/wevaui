@@ -129,12 +129,29 @@ BorderRadii clamp_radii_to_rect(const BorderRadii& r, double width, double heigh
 BorderRadii inset_radii(const BorderRadii& r, double top, double right, double bottom,
                         double left) {
     const auto in = [](double v, double by) { return std::max(0.0, v - by); };
-    return BorderRadii(CornerRadius(in(r.top_left.x_radius, left), in(r.top_left.y_radius, top)),
-                       CornerRadius(in(r.top_right.x_radius, right), in(r.top_right.y_radius, top)),
-                       CornerRadius(in(r.bottom_right.x_radius, right),
-                                    in(r.bottom_right.y_radius, bottom)),
-                       CornerRadius(in(r.bottom_left.x_radius, left),
-                                    in(r.bottom_left.y_radius, bottom)));
+    // A corner whose curve has collapsed on EITHER axis is square, so both
+    // axes go to zero together.
+    //
+    // Leaving one axis behind produces a radius like (11, 0), which is not a
+    // curve and not a corner: rounded_outline hands it to arc_points, which
+    // has nothing to sweep and emits the arc's CENTRE -- a point 11px in from
+    // the corner it is standing in for. The inner outline then has a vertex
+    // where the corner should be, the ring zips the outer edge against it, and
+    // the border acquires a wedge that widens along its whole length.
+    //
+    // `border-bottom: 20px solid; border-radius: 11px` came out a TRAPEZOID
+    // because of this: the right border is zero wide, so the inner right edge
+    // ran diagonally from the top corner to a point 11px inside the bottom one.
+    // It needs a radius AND unequal widths, which is why uniform borders and
+    // square boxes were both fine.
+    const auto corner = [&](const CornerRadius& c, double dx, double dy) {
+        const double x = in(c.x_radius, dx), y = in(c.y_radius, dy);
+        if (x <= 0 || y <= 0) return CornerRadius(0, 0);
+        return CornerRadius(x, y);
+    };
+    return BorderRadii(corner(r.top_left, left, top), corner(r.top_right, right, top),
+                       corner(r.bottom_right, right, bottom),
+                       corner(r.bottom_left, left, bottom));
 }
 
 // ---- antialiasing ---------------------------------------------------------

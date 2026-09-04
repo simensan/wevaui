@@ -181,6 +181,33 @@ else
     skip "assets (needs weva_render)"
 fi
 
+# ---- the Godot extension -------------------------------------------------
+#
+# BEFORE the backend gate, which is the whole point of where this sits.
+#
+# That gate's premise is that both renderers get the IDENTICAL draw list, so
+# any difference is the two rasterisers. It only holds if both are running the
+# same engine. This build used to live down in the host tests, AFTER the gate,
+# so every run that changed libweva compared a freshly built weva_render
+# against a Godot still loading the PREVIOUS run's .so, and reported the
+# version skew as a rasteriser difference. It failed on the first run and
+# passed on the second, which is the most misleading way for a gate to behave.
+step "godot extension"
+if [ -x "$GODOT" ] && [ -f "$GODOT_BUILD/build.ninja" ]; then
+    # The extension links straight into project/addons/weva/bin, so there is
+    # nothing to copy afterwards. The `cp` that used to be here named a file
+    # the build never writes and was silenced with `|| true` -- a good way to
+    # hide a real staleness bug behind a no-op.
+    if ( cd "$GODOT_BUILD" && ninja ) > /tmp/weva-host-build.log 2>&1; then
+        echo "extension ok"
+    else
+        fail "godot host build"
+        grep -E "error:|FAILED" /tmp/weva-host-build.log | head -5
+    fi
+else
+    skip "godot extension (needs godot and a configured $GODOT_BUILD)"
+fi
+
 # ---- the two rasterisers, on the same draw list --------------------------
 step "backend gate"
 if [ -x "$GODOT" ] && [ -x "$GCC/tools/weva_render/weva_render" ]; then
@@ -209,14 +236,7 @@ fi
 # ---- the GDScript surface ------------------------------------------------
 step "host tests"
 if [ -x "$GODOT" ]; then
-    if [ -f "$GODOT_BUILD/build.ninja" ]; then
-        # The extension links straight into project/addons/weva/bin, so there
-        # is nothing to copy afterwards. The `cp` that used to be here named a
-        # file the build never writes and was silenced with `|| true` -- a good
-        # way to hide a real staleness bug behind a no-op.
-        ( cd "$GODOT_BUILD" && ninja ) > /tmp/weva-host-build.log 2>&1 ||
-            { fail "godot host build"; grep -E "error:|FAILED" /tmp/weva-host-build.log | head -5; }
-    fi
+    # Built above, before the backend gate that depends on it.
     line=$(cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
         "$GODOT" --headless --path . test_scene.tscn 2>&1 | grep "godot host:" | tail -1)
     echo "${line:-no result}"

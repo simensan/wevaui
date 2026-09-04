@@ -249,6 +249,70 @@ void test_radii_clamping() {
     CHECK(near(in.top_left.x_radius, 6));
     BorderRadii flat = inset_radii(BorderRadii::uniform(2), 10, 10, 10, 10);
     CHECK(flat.is_zero());
+
+    // A corner that collapses on ONE axis is square, so both axes go to zero
+    // together. `border-bottom: 20px; border-radius: 11px` shrinks the bottom
+    // corners' y-radius to nothing while their x-radius, reduced by a zero
+    // side width, stays 11 -- and a radius of (11, 0) is neither a curve nor a
+    // corner. rounded_outline hands it to arc_points, which has no arc to
+    // sweep and emits the arc's CENTRE, a point 11px in from where the corner
+    // belongs. The border then came out a TRAPEZOID.
+    BorderRadii one_axis = inset_radii(BorderRadii::uniform(11), 0, 0, 20, 0);
+    CHECK(near(one_axis.bottom_right.x_radius, 0));
+    CHECK(near(one_axis.bottom_right.y_radius, 0));
+    CHECK(near(one_axis.bottom_left.x_radius, 0));
+    CHECK(near(one_axis.bottom_left.y_radius, 0));
+    // The corners the border does not touch keep their curve.
+    CHECK(near(one_axis.top_left.x_radius, 11));
+    CHECK(near(one_axis.top_right.y_radius, 11));
+}
+
+// The ring must not stray outside the box it is a border of.
+//
+// With a radius and unequal widths, the inner outline used to run diagonally
+// from a corner that had collapsed to its arc centre, so the ring swallowed a
+// wedge of the content area that widened along the whole edge. Checking the
+// vertices stay within the band each side declares catches that without
+// needing a picture.
+void test_tessellate_border_uneven_widths() {
+    LinearColor c[4] = {LinearColor::white(), LinearColor::white(), LinearColor::white(),
+                        LinearColor::white()};
+    const Rect box(0, 0, 300, 90);
+    Mesh m;
+    tessellate_border(box, BorderRadii::uniform(11), 0, 0, 20, 0, c, &m, 8, false);
+    CHECK(!m.empty());
+    // Only the bottom side has width, so nothing may sit more than 20px above
+    // the bottom edge, and nothing may be inset horizontally at all.
+    double min_y = 1e9, min_x = 1e9, max_x = -1e9;
+    for (const Vertex& v : m.vertices) {
+        min_y = std::min(min_y, static_cast<double>(v.position.y));
+        min_x = std::min(min_x, static_cast<double>(v.position.x));
+        max_x = std::max(max_x, static_cast<double>(v.position.x));
+    }
+    CHECK(near(min_x, 0));
+    CHECK(near(max_x, 300));
+    // 70 is the inner edge; the top corners' arcs are the only thing above it,
+    // and with zero top and side widths they collapse onto the outer outline.
+    CHECK(min_y >= 0);
+
+    // The inner outline's right edge must be VERTICAL. The right border is
+    // zero wide, so from the bottom of the top-right curve (y = 11) down to
+    // the inner bottom edge (y = 70) the inner ring sits exactly on x = 300.
+    //
+    // This is the assertion that fails on the old code: the collapsed
+    // bottom-right corner landed at its arc CENTRE, (289, 70), pulling the
+    // inner edge 11px inward and turning the whole side into a wedge. Vertex
+    // pairs are (outer, inner), so the odd indices are the inner ring.
+    int inner_right = 0;
+    for (size_t i = 1; i < m.vertices.size(); i += 2) {
+        const double x = m.vertices[i].position.x;
+        const double y = m.vertices[i].position.y;
+        if (y >= 11 - 1e-6 && y <= 70 + 1e-6 && x > 150) {
+            ++inner_right;
+            CHECK(near(x, 300));
+        }
+    }
+    CHECK(inner_right > 0);
 }
 
 void test_tessellate_border() {

@@ -247,6 +247,7 @@ void test_tessellate_rect();
 void test_tessellate_rounded();
 void test_radii_clamping();
 void test_tessellate_border();
+void test_tessellate_border_uneven_widths();
 void test_paint_decorations();
 void test_clip_triangles();
 void test_paint_tree_calls();
@@ -637,6 +638,7 @@ int main() {
     test_tessellate_rounded();
     test_radii_clamping();
     test_tessellate_border();
+    test_tessellate_border_uneven_widths();
     test_paint_decorations();
     test_clip_triangles();
     test_paint_tree_calls();

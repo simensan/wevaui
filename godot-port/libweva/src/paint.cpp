@@ -900,7 +900,18 @@ void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding
         double accumulated = 0;
         for (int k = 0; k < layers; ++k) {
             const double e = sh.blur > 0 ? sh.blur * (1.0 - 2.0 * (k + 0.5) / layers) : 0.0;
-            const double target = sh.color.a * blurred_coverage(-e, sigma);
+            // `e`, NOT `-e`, exactly as the outset loop above has it. A frame
+            // of thickness `spread + e` reaches depth `e` past the spread, and
+            // the Gaussian's value THERE is what the accumulated coverage
+            // should reach -- faint for a deep frame, dense for a shallow one.
+            //
+            // Negated, the thickest frame came out fully dense on its first
+            // iteration, every later frame failed the `target <= accumulated`
+            // test below, and the whole blur collapsed to ONE hard-edged frame
+            // a blur-radius thick. `inset 0 0 40px` drew a 40px rectangle with
+            // a crisp inner edge instead of a soft falloff -- which is what the
+            // two lines below already say it should not.
+            const double target = sh.color.a * blurred_coverage(e, sigma);
             // The frames run thickest (faint) to thinnest (dense): at depth
             // t inside the edge only the frames at least t thick cover it.
             const double thickness = sh.spread + e;
