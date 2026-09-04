@@ -18,6 +18,7 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <vector>
 
@@ -464,6 +465,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("focus_next", "backwards"), &WevaDocument::focus_next);
     ClassDB::bind_method(D_METHOD("focus_move", "direction"), &WevaDocument::focus_move);
     ClassDB::bind_method(D_METHOD("get_draw_count"), &WevaDocument::get_draw_count);
+    ClassDB::bind_method(D_METHOD("get_last_update_ms"), &WevaDocument::get_last_update_ms);
     ClassDB::bind_method(D_METHOD("get_triangle_count"), &WevaDocument::get_triangle_count);
 
     // Multiline so the editor gives a usable box for markup rather than a
@@ -1682,7 +1684,10 @@ void WevaDocument::ensure_updated(double dt) {
     ensure_font_backend();
     // Not an error to update an empty document: a scene may set css before
     // html, and the next update picks both up.
+    const auto t0 = std::chrono::steady_clock::now();
     weva_document_update(doc_, dt);
+    last_update_ms_ =
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     dirty_ = false;
 
     // Mirror the document's textures by id: a texture already held is kept
@@ -2109,6 +2114,10 @@ bool WevaDocument::remove_element_attribute(const String& selector, const String
     dirty_ = true;
     queue_redraw();
     return true;
+}
+
+double WevaDocument::get_last_update_ms() const {
+    return last_update_ms_;
 }
 
 int WevaDocument::get_draw_count() const {

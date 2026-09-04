@@ -266,6 +266,17 @@ public:
     // Diagnostics the render tests assert on.
     int get_draw_count() const;
     int get_triangle_count() const;
+
+    // How long the last engine update took, in milliseconds: the layout and
+    // paint the core does inside weva_document_update, and nothing else. It
+    // does NOT include Godot's own draw of the resulting triangles, which is
+    // what the frame time covers -- the two answer different questions and a
+    // stats window wants both.
+    //
+    // Zero until an update has actually run. A document that is not dirty and
+    // has no animation does no work, so a static page reads zero rather than
+    // some small idle number, which is the honest answer.
+    double get_last_update_ms() const;
     // False when the engine gave us no usable face and the core's stub font is
     // still in play — worth being able to assert on, since text that renders
     // with the 5x7 stub looks like a font choice rather than a failure.
@@ -308,6 +319,7 @@ private:
     godot::String css_;
     godot::Vector2 size_{0, 0};
     bool dirty_ = true;
+    double last_update_ms_ = 0;
     godot::Dictionary data_;
     // The three popover calls differ only in which ABI entry they take.
     bool run_popover(const godot::String& selector,

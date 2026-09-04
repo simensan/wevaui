@@ -437,6 +437,30 @@ out-of-flow boxes, which is the honest price of the feature rather than an
 accident of codegen. Kept: it closes nine real oracle failures and implements
 a CSS module the engine did not have.
 
+## The layout benchmarks measure a stub font
+
+Everything above was measured with `tools/layoutbench.sh`, which drives
+`weva_bench`, which registers `MonoFontMetrics` -- a stub face whose advance is
+a constant. The Godot host registers the real engine font. Measured through the
+host, on `stats.html` at 1280x720, with a Release extension
+(`hosts/godot/project/statprobe.tscn`, and `WEVA_STAGE_LOG=1` for the split):
+
+    build, engine font    284 ms      cascade 6, layout 241, paint 23
+    build, stub font       49 ms
+    settled update          0 ms      the core's early-out, working
+
+`layoutbench` puts the same page at about **0.9 ms**.
+
+So measuring text is the overwhelming majority of what layout costs in the host,
+and the numbers in the rest of this file are a fraction of a per cent of what a
+real page pays. They are not wrong -- the box-model work they measure is real,
+and `text-indent` at -18% was a genuine allocation removed from a hot path --
+but they are not the whole picture, and nothing here has yet been measured
+against the face that ships.
+
+The gallery's stats window (`S`) shows the build time, and `F` switches faces
+while it is open, so the difference is one keypress away.
+
 ## Tried, measured, and not kept
 
 Both of these looked obviously worth doing and are slower. Recorded so the

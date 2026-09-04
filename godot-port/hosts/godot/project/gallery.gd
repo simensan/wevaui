@@ -25,6 +25,35 @@ var _doc_size := GATE_SIZE
 var _pan := 0.0
 var _scroll_span := 0.0
 
+# ---- the stats window ------------------------------------------------------
+#
+# Two numbers, answering different questions.
+#
+# `frame` is Godot's: wall time between presented frames. On a page that is
+# merely being looked at, nearly all of it is Godot drawing triangles the
+# engine produced once and has not touched since.
+#
+# `build` is this engine's: parsing the page, cascading it, laying it out and
+# painting it, from nothing. It is timed around the whole of _build().
+#
+# It is deliberately NOT read from the core. weva_document_update early-outs
+# when nothing has been invalidated -- which for a static sample is every call
+# after the first -- so timing that call reports 0.001 ms for a page with 150
+# draws in it. The first version of this window did exactly that, and it would
+# have been a very convincing lie.
+#
+# R rebuilds the page every frame, which folds the build into the frame time
+# and shows what the page costs when nothing can be reused.
+const STATS_SAMPLES := 60
+
+var _show_stats := true
+var _rebuild_every_frame := false
+var _frame_ms: Array[float] = []
+var _build_ms: Array[float] = []
+
+@onready var _stats: Label = %Stats
+@onready var _stats_panel: PanelContainer = %StatsPanel
+
 @onready var _list: ItemList = %List
 @onready var _title: Label = %Title
 @onready var _meta: Label = %Meta
@@ -61,6 +90,7 @@ func _ready() -> void:
 
 	_list.item_selected.connect(_on_selected)
 	_stage.resized.connect(_fit)
+	set_process(true)
 	_list.select(0)
 	_show(0)
 
@@ -69,7 +99,72 @@ func _on_selected(i: int) -> void:
 	_show(i)
 
 
+func _process(delta: float) -> void:
+	if _rebuild_every_frame and _doc != null:
+		_build(_doc_size)
+		_fit()
+	elif _doc != null:
+		# Advance the clock. An animated page needs it to move at all, and a
+		# settled one early-outs inside the core for almost nothing -- which is
+		# what makes the `update` line below meaningful when it appears.
+		_doc.update_document(delta)
+
+	_stats_panel.visible = _show_stats
+	if not _show_stats:
+		return
+
+	_push(_frame_ms, delta * 1000.0)
+
+	# The MEDIAN, not the mean. One 40ms hitch from a window resize or the OS
+	# scheduling something else drags a mean for a whole second and makes the
+	# window unreadable exactly when you are watching it.
+	var frame := _median(_frame_ms)
+	var fps := 0.0 if frame <= 0.0 else 1000.0 / frame
+	var update := 0.0 if _doc == null else _doc.get_last_update_ms()
+	var lines := [
+		"%5.1f fps" % fps,
+		"frame  %6.2f ms   worst %6.2f" % [frame, _worst(_frame_ms)],
+		"build  %6.2f ms   worst %6.2f%s" % [
+			_median(_build_ms), _worst(_build_ms),
+			"   every frame" if _rebuild_every_frame else "",
+		],
+		# Only when there IS one. The core does no work on a settled document,
+		# so an `update 0.00 ms` line on 30 of the 35 samples would say nothing
+		# and read as though the engine were free. On the animated ones it is
+		# the real per-frame cost.
+		"" if update <= 0.0 else "update %6.2f ms   animating" % update,
+		"",
+		"%d draws   %d triangles" % [
+			0 if _doc == null else _doc.get_draw_count(),
+			0 if _doc == null else _doc.get_triangle_count(),
+		],
+	]
+	_stats.text = "\n".join(lines)
+
+
+func _push(buf: Array[float], v: float) -> void:
+	buf.append(v)
+	if buf.size() > STATS_SAMPLES:
+		buf.remove_at(0)
+
+
+func _median(buf: Array[float]) -> float:
+	if buf.is_empty():
+		return 0.0
+	var sorted := buf.duplicate()
+	sorted.sort()
+	return sorted[sorted.size() / 2]
+
+
+func _worst(buf: Array[float]) -> float:
+	var m := 0.0
+	for v in buf:
+		m = maxf(m, v)
+	return m
+
+
 func _build(size: Vector2) -> void:
+	var t0 := Time.get_ticks_usec()
 	if _doc != null:
 		_doc.queue_free()
 	_doc = WevaDocument.new()
@@ -80,11 +175,16 @@ func _build(size: Vector2) -> void:
 	_stage.add_child(_doc)
 	_doc.update_document()
 	_doc_size = size
+	_push(_build_ms, float(Time.get_ticks_usec() - t0) / 1000.0)
 
 
 func _show(i: int) -> void:
 	_index = clampi(i, 0, _names.size() - 1)
 	_pan = 0.0
+	# A page change is a discontinuity: its first frames include the build, and
+	# carrying the previous page's samples across would blame them on this one.
+	_frame_ms.clear()
+	_build_ms.clear()
 
 	# Laid out at the gate size first, because that is the document the corpus
 	# captures and both gates measure -- and because it is what says how far the
@@ -201,6 +301,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			# so being able to see it is worth a key.
 			_use_engine_font = not _use_engine_font
 			_show(_index)
+		KEY_S:
+			_show_stats = not _show_stats
+		KEY_R:
+			_rebuild_every_frame = not _rebuild_every_frame
+			_frame_ms.clear()
+			_build_ms.clear()
 		KEY_ESCAPE:
 			get_tree().quit()
 		_:

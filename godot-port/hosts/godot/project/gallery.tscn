@@ -92,7 +92,7 @@ theme_override_colors/font_color = Color(0.55, 0.6, 0.66, 1)
 [node name="Hint" type="Label" parent="Split/Right/Header/Pad/Row"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "← → sample   P full page   F font   Esc quit"
+text = "← → sample   P full page   F font   S stats   R rebuild   Esc quit"
 theme_override_font_sizes/font_size = 12
 theme_override_colors/font_color = Color(0.45, 0.5, 0.56, 1)
 
@@ -101,3 +101,30 @@ unique_name_in_owner = true
 clip_contents = true
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="StatsPanel" type="PanelContainer" parent="Split/Right/Stage"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -232.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 108.0
+grow_horizontal = 0
+mouse_filter = 2
+
+[node name="StatsPad" type="MarginContainer" parent="Split/Right/Stage/StatsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Stats" type="Label" parent="Split/Right/Stage/StatsPanel/StatsPad"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "—"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.72, 0.78, 0.85, 1)
