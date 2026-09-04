@@ -42,8 +42,21 @@ public:
     const CssProperty* by_id(int id) const;
     const CssProperty* by_name(std::string_view name) const;
     std::string_view name_of(int id) const;
-    bool is_inherited(int id) const;
-    std::string_view initial_value(int id) const;
+
+    // Inline, and off flat arrays, because these two are the tail of every
+    // property read that is not set on the box itself -- which is most of
+    // them. ComputedStyle::get asks is_inherited before walking the inherit
+    // chain and initial_value when the walk finds nothing, so between them
+    // they run once per miss per box per pass. Sampling layout-stress put
+    // is_inherited alone at 194 samples, more than any other single line.
+    bool is_inherited(int id) const {
+        return id >= 0 && static_cast<std::size_t>(id) < inherited_.size() &&
+               inherited_[static_cast<std::size_t>(id)] != 0;
+    }
+    std::string_view initial_value(int id) const {
+        if (id < 0 || static_cast<std::size_t>(id) >= initial_views_.size()) return {};
+        return initial_views_[static_cast<std::size_t>(id)];
+    }
     int count() const { return static_cast<int>(properties_.size()); }
 
     static bool is_custom_property(std::string_view name) {
@@ -67,7 +80,17 @@ private:
     // Indexed by id. is_inherited() is asked on every property read that falls
     // through to the inherit chain, and reaching it through by_id() is a bounds
     // check and a pointer chase to fetch one bool.
-    std::vector<bool> inherited_;
+    //
+    // Bytes, not bits. std::vector<bool> makes every read a shift, a mask and
+    // a test against a word it has to load, for a table of 334 entries that
+    // fits in cache either way -- the same change on ComputedStyle's presence
+    // flags was worth up to 9 per cent on its own.
+    std::vector<uint8_t> inherited_;
+    // Views onto properties_[id].initial_value, so the fallback return is a
+    // load rather than a bounds check, a pointer chase into CssProperty and a
+    // std::string-to-string_view conversion. Rebuilt wherever an initial value
+    // is written, since assigning the string can move its buffer.
+    std::vector<std::string_view> initial_views_;
     size_t hash_mask_ = 0;
     static size_t hash_name(std::string_view name);
 

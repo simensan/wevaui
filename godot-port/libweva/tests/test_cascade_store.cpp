@@ -57,6 +57,37 @@ void test_property_registry() {
     CHECK(reg.is_inherited(fresh));
     CHECK(reg.name_of(fresh) == "--weva-test-prop");
 
+    // ---- re-registering must refresh the side tables, not just the record.
+    // is_inherited() and initial_value() answer from arrays built alongside
+    // properties_, and the re-registration path wrote the record and returned
+    // -- so `@property { inherits: false }` redefining an already-registered
+    // custom property left the inheritance flag at whatever it was FIRST
+    // registered with, and every descendant went on inheriting a property
+    // declared not to.
+    CHECK(reg.register_property("--weva-test-prop", false, "1") == fresh);
+    CHECK(!reg.is_inherited(fresh));
+    CHECK(reg.initial_value(fresh) == "1");
+    CHECK(reg.register_property("--weva-test-prop", true, "2") == fresh);
+    CHECK(reg.is_inherited(fresh));
+    CHECK(reg.initial_value(fresh) == "2");
+
+    // A long value, so the assignment has to reallocate the record's string:
+    // the cached view has to be re-pointed at the new buffer, not left on the
+    // freed one.
+    const std::string long_initial(200, 'z');
+    reg.register_property("--weva-test-prop", true, long_initial);
+    CHECK(reg.initial_value(fresh) == long_initial);
+    CHECK(reg.initial_value(fresh).size() == 200);
+
+    // And the same for a built-in, whose inheritance the engine reads on
+    // every miss of that property on every box.
+    const int ls = reg.id_of("letter-spacing");
+    CHECK(reg.is_inherited(ls));
+    reg.register_property("letter-spacing", false, "normal");
+    CHECK(!reg.is_inherited(ls));
+    reg.register_property("letter-spacing", true, "normal");   // restore
+    CHECK(reg.is_inherited(ls));
+
     // ---- out-of-range ids are handled, not indexed
     CHECK(reg.by_id(-1) == nullptr);
     CHECK(reg.by_id(999999) == nullptr);

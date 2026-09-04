@@ -212,6 +212,32 @@ like a small win by the same loose method and is a consistent 1 to 6 per cent
 LOSS under `--ab` -- clearing the borrowed rows costs more than the allocations
 it saves, so the grid still builds them fresh.
 
+## The registry's side tables, flattened
+
+`ComputedStyle::get(id)` answers from the box's own values when the property is
+set there, and most reads are not: they fall through to `is_inherited(id)`,
+then a walk of the ancestors, then `initial_value(id)`. Those two registry
+calls are therefore the tail of nearly every property read on nearly every box.
+
+Sampling layout-stress put `is_inherited` at 194 samples on one line -- more
+than any other single line in the pass, ahead of flex and inline layout. It was
+an out-of-line call doing a bounds check and a `std::vector<bool>` bit extract.
+`initial_value` was worse per call: a bounds check, a pointer chase into a
+`CssProperty`, and a `std::string`-to-`string_view` conversion.
+
+Both are now inline, off flat arrays: `inherited_` holds bytes rather than
+bits, and `initial_views_` holds the views themselves so the fallback return is
+one load. Between 4 and 6 per cent on the large pages and up to 9 on the small
+ones, with nothing slower anywhere in the corpus:
+
+    layout-stress  -3.8%     glass       -5.8%     particles    -7.8%
+    stats          -4.1%     match3      -6.4%     sample-menu  -8.3%
+    settings       -5.2%     dialogue    -7.1%     card-component -9.1%
+
+`std::vector<bool>` has now cost measurable time twice in this engine, on
+`ComputedStyle::occupied_` and here. It is worth treating as a red flag in any
+table an inner loop indexes.
+
 ## Tried, measured, and not kept
 
 Both of these looked obviously worth doing and are slower. Recorded so the

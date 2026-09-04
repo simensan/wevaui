@@ -67,11 +67,12 @@ void CssPropertyRegistry::rebuild_index() {
 
     size_t cap = 16;
     while (cap < properties_.size() * 4) cap *= 2;
-    inherited_.assign(properties_.size(), false);
+    inherited_.assign(properties_.size(), 0);
+    initial_views_.assign(properties_.size(), std::string_view());
     for (const CssProperty& p : properties_) {
-        if (p.is_inherited && p.id >= 0 && p.id < static_cast<int>(inherited_.size())) {
-            inherited_[static_cast<std::size_t>(p.id)] = p.is_inherited;
-        }
+        if (p.id < 0 || p.id >= static_cast<int>(inherited_.size())) continue;
+        inherited_[static_cast<std::size_t>(p.id)] = p.is_inherited ? 1 : 0;
+        initial_views_[static_cast<std::size_t>(p.id)] = p.initial_value;
     }
     hash_slots_.assign(cap, -1);
     hash_mask_ = cap - 1;
@@ -88,8 +89,20 @@ int CssPropertyRegistry::register_property(std::string_view name, bool inherited
     // startup, and @property can redefine a custom property's initial value
     // while the document is live.
     if (int existing = id_of(name); existing != kCustomPropertyId) {
-        properties_[static_cast<std::size_t>(existing)].is_inherited = inherited;
-        properties_[static_cast<std::size_t>(existing)].initial_value = std::string(initial);
+        const auto i = static_cast<std::size_t>(existing);
+        properties_[i].is_inherited = inherited;
+        properties_[i].initial_value = std::string(initial);
+        // The side tables have to follow. They did not: re-registering a
+        // property with a different `inherits` left is_inherited() answering
+        // from the flag captured when the property was FIRST registered, which
+        // is precisely what `@property { inherits: false }` redefining an
+        // already-registered custom property does. The initial-value view also
+        // has to be refreshed, because assigning the string above can move its
+        // buffer out from under the old one.
+        if (i < inherited_.size()) {
+            inherited_[i] = inherited ? 1 : 0;
+            initial_views_[i] = properties_[i].initial_value;
+        }
         return existing;
     }
     CssProperty p;
@@ -125,16 +138,6 @@ const CssProperty* CssPropertyRegistry::by_name(std::string_view name) const {
 std::string_view CssPropertyRegistry::name_of(int id) const {
     const CssProperty* p = by_id(id);
     return p ? std::string_view(p->name) : std::string_view();
-}
-
-bool CssPropertyRegistry::is_inherited(int id) const {
-    if (id < 0 || id >= static_cast<int>(inherited_.size())) return false;
-    return inherited_[static_cast<std::size_t>(id)];
-}
-
-std::string_view CssPropertyRegistry::initial_value(int id) const {
-    const CssProperty* p = by_id(id);
-    return p ? std::string_view(p->initial_value) : std::string_view();
 }
 
 } // namespace weva
