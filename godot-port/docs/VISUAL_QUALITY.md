@@ -151,3 +151,44 @@ said the frames run thickest-faint to thinnest-dense.
 2.3% -> 1.2%, `menu` 3.6% -> 2.7%, and **nothing worse**. episode-stats was the
 worst non-animated page in the corpus and is now the best.
 
+## OPEN: an inline replaced element with a percentage width blows out its grid track
+
+Reproduction: `tools/oracle/corpus/visual/inline-percent-in-grid.{html,css}`.
+
+Three cells in `grid-template-columns: repeat(3, 1fr)`, each holding an `<img>`
+that cannot load. The two whose image is `display: block` get even thirds. The
+one whose image is left INLINE takes the whole grid:
+
+    div.c   x=0     w=40         <- padding only, image contributes 0
+    div.c   x=64    w=40
+    div.c   x=128   w=1280       <- the entire grid, overflowing it
+    img.inl x=148   w=1240
+
+The two rules differ in one declaration, `display: block`. Chrome gives all
+three 389.33.
+
+**Why.** CSS Sizing §5.2.1: while computing an intrinsic contribution, a
+percentage size behaves as `auto` -- for a replaced element with no intrinsic
+width, zero. Block children go through block layout, which does this, which is
+why the block images contribute nothing. An inline atom does not: `size_atoms`
+sizes it with `shrink_to_fit(atom, available_width, ...)`, and
+`available_width` is a concrete number, so `width: 100%` resolves against it
+and the item reports a max-content contribution of the whole containing block.
+A `1fr` track is `minmax(auto, 1fr)`, so that automatic minimum wins over the
+fr share and the track swallows the grid.
+
+**Scope.** `9slice-demo` is the case that surfaced it: its first grid has one
+`.frame-img-large`, which is the only image on the page without `display:
+block`, and that one cell takes the row. Its second grid, whose cells hold
+`<div>`s, is correct on the same page.
+
+**Shared with the reference**, which agrees with us -- so the layout oracle
+reads `ok` and only the comparison against Chrome shows it. It was found by
+sorting `chrome_sweep.py` output by the largest disagreement: 827px, on a page
+whose next-largest difference is 2px of line-height.
+
+**Fixing it** means telling the atom-sizing path that it is inside an intrinsic
+measurement, so percentages resolve as `auto` rather than against a provisional
+width. That is the same distinction block layout already makes; the plumbing is
+what is missing, and it wants its own pass.
+

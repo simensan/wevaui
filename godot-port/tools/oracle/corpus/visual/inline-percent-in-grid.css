@@ -1,0 +1,7 @@
+body { margin: 0; padding: 0; font-family: monospace; font-size: 16px }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px }
+.c { padding: 20px }
+/* identical but for `display`. The inline one blows its 1fr track out to the
+   whole grid; the block ones sit in even thirds. */
+.blk { display: block; width: 100%; height: 120px }
+.inl { width: 100%; height: 200px }
