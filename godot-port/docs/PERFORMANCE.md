@@ -356,6 +356,44 @@ item out at the container's width to learn its natural size, then again at the
 size that falls out of resolving the line. Skipping the second pass is not
 available, and a guard on "same width" would fire on nothing.
 
+## `text-indent: 0` was half the allocations in a layout pass
+
+The biggest single win in this file, from four words of code.
+
+`resolve_length` has two overloads. One takes a style and a property id and
+reads the style's memoised parse. The other takes the value as CHARACTERS, has
+no memo to read, and calls `parse_css_value` -- which allocates a CssValue --
+every single time it runs.
+
+`text-indent` computes to `0`, it is inherited so every element has it, and
+`text_indent_px` reads it through the character overload once per inline
+container per inline layout. Allocation-site profiling on vendor.html:
+
+    3168 of 6022 allocations in one steady-state pass
+         parse_css_value  <- resolve_length(string_view)  <- layout_inline_items
+
+Fifty-three per cent of a layout pass's allocations, to parse the string "0"
+into the number nought, over and over, on a page where no element indents
+anything.
+
+The fix is a fast path in the character overload for `0` and `0px`, which is
+the same trick `resolve_box_sides_px` already uses for its all-zero case:
+
+    vendor        -18.6%     stats         -16.4%     randhtml      -11.7%
+    inventory     -18.0%     layout-stress -11.2%     quests        -14.1%
+
+    allocations per pass:  vendor 10163 -> 2915, inventory 3140 -> 716,
+                           layout-stress 7670 -> 2348
+
+NOT the empty string, which falls through to `auto` -- a different answer from
+zero in every caller that tells them apart -- and not `0%`, which is a Percent
+to its callers rather than a Length, and that difference decides how it
+resolves against its basis.
+
+Worth remembering as a shape: a hot path reading a value as text rather than
+through the parsed-value memo. The memo exists precisely so this does not
+happen, and the character overload is the door around it.
+
 ## Anchor positioning costs 2 to 4 per cent, and I cannot say why
 
 Landing CSS anchor positioning moved about half the corpus by 2 to 4 per cent

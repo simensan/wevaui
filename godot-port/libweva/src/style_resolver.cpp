@@ -388,6 +388,22 @@ ResolvedLength resolve_length_value(const CssValue* value, const LayoutContext& 
 
 ResolvedLength resolve_length(std::string_view raw, const LayoutContext& ctx, double font_size,
                               std::optional<double> basis_px, double line_height) {
+    // A bare zero, without going through the parser.
+    //
+    // This overload takes the value as CHARACTERS, so it has no parsed-value
+    // memo to read and calls parse_css_value -- which allocates a CssValue --
+    // every single time. `0` is the initial value of text-indent and
+    // letter-spacing and word-spacing, and what box_sides substitutes for an
+    // absent edge, so the overwhelmingly common input is exactly the one that
+    // needs no parsing at all. Sampling put this line in the inline layout's
+    // per-container path on vendor.
+    //
+    // `0` and `0px` only, and NOT the empty string: an empty value falls
+    // through parse_css_value to `auto`, which is a different answer from zero
+    // in every caller that distinguishes them. `0%` is a Percent to its
+    // callers rather than a Length, and that difference decides how the value
+    // resolves against its basis.
+    if (raw == "0" || raw == "0px") return ResolvedLength::pixel(0);
     ResolvedLength keyword;
     if (resolve_length_keyword(raw, &keyword)) return keyword;
     CssParseError err;
