@@ -10,7 +10,8 @@
 #                       caught a double free, a premature free and a
 #                       use-after-free in the element table this session alone
 #   layout oracle       our layout against the C# reference, with Chrome
-#                       arbitrating the disagreements
+#                       arbitrating the disagreements, over all THREE corpora --
+#                       samples, hand and harvest
 #   backend gate        the software renderer against Godot's, on the IDENTICAL
 #                       draw list, so a difference is the two rasterisers and
 #                       nothing else
@@ -83,13 +84,51 @@ else
 fi
 
 # ---- layout, against the reference with Chrome arbitrating ---------------
+#
+# THREE corpora, not one. For a long time this gate ran only `samples`, and two
+# real bugs lived comfortably underneath it: a subgrid growing implicit rows it
+# should have clamped, and a list marker taking inline space so that every
+# inline child of every <li> sat a marker-width too far right. Neither shows up
+# in `samples` -- the marker one CANNOT, because a list item holding only text
+# has no element after the marker for the dump to compare, and every item in
+# every sample holds only text.
+#
+# `hand` is the small hand-written cases and `harvest` the ones lifted from the
+# reference's own test suite. Both were sitting in the repo with a Chrome
+# capture beside every case, and nothing ran them.
 step "layout oracle"
 if command -v python3 > /dev/null && [ -x "$GCC/tools/weva_dump/weva_dump" ]; then
-    line=$(cd "$REPO" && python3 "$ROOT/tools/oracle/run_oracle.py" "$SAMPLES" \
-        --width 1280 --height 720 --weva-dump "$GCC/tools/weva_dump/weva_dump" \
-        --out-dir /tmp/weva-oracle --quiet 2>&1 | grep "agree," | tail -1)
-    echo "${line:-no result}"
-    case "$line" in *" 0 differ,"*) ;; *) fail "layout oracle" ;; esac
+    # corpus, width, height -> the summary line
+    oracle() {
+        (cd "$REPO" && python3 "$ROOT/tools/oracle/run_oracle.py" "$1" \
+            --width "$2" --height "$3" --weva-dump "$GCC/tools/weva_dump/weva_dump" \
+            --out-dir "/tmp/weva-oracle-$(basename "$1")" --quiet 2>&1 |
+            grep "agree," | tail -1)
+    }
+
+    line=$(oracle "$SAMPLES" 1280 720)
+    echo "samples:  ${line:-no result}"
+    case "$line" in *" 0 differ,"*) ;; *) fail "layout oracle (samples)" ;; esac
+
+    # The hand and harvest captures were taken at 800x600. Running them at 1280
+    # reports most of the corpus differing on nothing but the width of some
+    # full-width block, which is the first thing to check if this goes red.
+    line=$(oracle "$ROOT/tools/oracle/corpus/hand" 800 600)
+    echo "hand:     ${line:-no result}"
+    case "$line" in *" 0 differ,"*) ;; *) fail "layout oracle (hand)" ;; esac
+
+    # Harvest carries three cases that cannot pass yet, all waiting on the font
+    # and form-control metrics decision in known-gaps/README.md: on those,
+    # Chrome agrees with NEITHER engine. Gated at exactly three, so a fourth
+    # breaks the build -- which is the part that matters.
+    line=$(oracle "$ROOT/tools/oracle/corpus/harvest" 800 600)
+    echo "harvest:  ${line:-no result}"
+    case "$line" in
+        *" 3 differ,"*) ;;
+        *" 0 differ,"*|*" 1 differ,"*|*" 2 differ,"*)
+            echo "  (fewer than the 3 known -- lower the number in check.sh)" ;;
+        *) fail "layout oracle (harvest)" ;;
+    esac
 else
     skip "layout oracle (needs python3 and weva_dump)"
 fi

@@ -111,6 +111,27 @@ deterministically outside Unity before anything else in this plan is worth
 starting. Verify with an actual `dotnet build` — this has not been confirmed on
 a machine with the SDK.
 
+## All three corpora are gated now
+
+`check.sh` runs the oracle over `samples` (47, at 1280x720), `hand` (47) and
+`harvest` (210, both at 800x600). It used to run only `samples`, and two real
+bugs lived comfortably underneath it -- a subgrid growing implicit rows it
+should have clamped, and a list marker taking inline space so every inline
+child of every `<li>` sat a marker-width too far right.
+
+The marker one could not have been caught by `samples` at any size: a list item
+holding only text has no element after the marker for the dump to compare, and
+every item in every sample holds only text. It took an `<input>` inside an
+`<li>`, in a case lifted from the reference's own suite, to make it visible.
+
+`hand` and `harvest` gate at 0 and 3 differ respectively. The three are waiting
+on the font and form-control metrics decision in `known-gaps/README.md`; on
+those, Chrome agrees with neither engine. The number is written into check.sh
+so a fourth breaks the build.
+
+The oracle step now takes about four minutes rather than one. That is the price
+of the two bugs above, and it is worth paying.
+
 ## The harvest pool, and chrome_sweep.py
 
 `corpus/samples` is the gate: 47 cases, three-way, run by `check.sh`.
