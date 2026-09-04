@@ -303,6 +303,32 @@ Worth doing this way round whenever the fix is expensive and the diagnosis is
 an inference: make the problem WORSE first, cheaply, and see if the metric
 notices.
 
+## The font-size memo was checked one step too late
+
+`font_size_px` memoises its result on the style, keyed on the style's version
+and the parent's resolved size. The check sat AFTER the declaration was read --
+and `font-size` is inherited, so that read walks the ancestor chain whenever
+the box does not set a size of its own, which is most boxes. Every memo hit
+was still paying for an O(depth) walk, twice per box, for a value the memo
+already had.
+
+Moving the check above the read is the whole change. Layout writes no style,
+so after the first call per style the walk is pure waste.
+
+    stock-dashboard -6.1%   stats  -4.7%   vendor        -3.9%
+    glass           -4.6%   flex-playground -2.1%   layout-stress -2.1%
+
+The key stays sound across inheritance even though it is the style's OWN
+version: what an ancestor's font-size change moves is the parent's resolved
+size, and that is the other half of the key. This is the distinction the
+reverted inherit memo got wrong -- it cached an ancestor's identity under a
+key that an ancestor could not move.
+
+layout-stress and grid-playground both read as small REGRESSIONS on the
+five-sweep A/B (+0.9% and +1.6%) and as -2.1% and -1.0% on an eleven-sweep run
+restricted to them. That is the second time a five-sweep reading has inverted;
+confirm anything under about three per cent before believing it either way.
+
 ## Tried, measured, and not kept
 
 Both of these looked obviously worth doing and are slower. Recorded so the

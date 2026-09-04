@@ -159,6 +159,37 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
     const double parent_fs =
         parent_style ? font_size_px(parent_style, nullptr, ctx) : ctx.root_font_size_px;
 
+    // Answered from the style when the parent size has not moved, and answered
+    // BEFORE the declaration is read.
+    //
+    // The result depends on nothing but this style and its parent's size, so
+    // the two together are a complete key and nothing below them adds to it.
+    // The check used to sit after the `get` -- and `font-size` is INHERITED,
+    // so that `get` walks the ancestor chain whenever the box does not set one
+    // itself, which is most boxes. A memo hit was still paying for an O(depth)
+    // walk. Layout writes no style, so after the first call per style the
+    // walk was pure waste, twice per box.
+    //
+    // The key is sound across inheritance even though it is the style's OWN
+    // version: what an ancestor's font-size change moves is `parent_fs`, and
+    // that is the other half of the key.
+    if (style && style->font_size_memo_version == style->version() &&
+        style->font_size_memo_parent == parent_fs) {
+        return style->font_size_memo_px;
+    }
+
+    // Everything below derives the answer; this records it on the way out.
+    // A lambda rather than a write before each of the seven returns, so a
+    // later branch cannot forget.
+    const auto remember = [&](double px) {
+        if (style) {
+            style->font_size_memo_parent = parent_fs;
+            style->font_size_memo_px = px;
+            style->font_size_memo_version = style->version();
+        }
+        return px;
+    };
+
     // The id, resolved once for the whole program.
     //
     // `get(name)` and `parsed(name)` each hash the name, so this hashed
@@ -168,28 +199,7 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
     static const int kFontSize = CssPropertyRegistry::instance().id_of("font-size");
     const std::string_view raw = style ? style->get(kFontSize) : std::string_view();
     const double fallback = parent_fs > 0 ? parent_fs : ctx.root_font_size_px;
-    if (raw.empty()) return fallback;
-
-    // Answered from the style when the parent size has not moved.
-    //
-    // The result depends on nothing but this style and its parent's size, and
-    // font_size_px runs several times for every box and again for its parent.
-    // A `calc()` font-size was being evaluated afresh each time: CssCalc
-    // evaluate was the second-largest cost in a randhtml pass, behind only
-    // grid layout, purely from re-deriving a number that had not changed.
-    if (style->font_size_memo_version == style->version() &&
-        style->font_size_memo_parent == parent_fs) {
-        return style->font_size_memo_px;
-    }
-    // Everything below derives the answer; this records it on the way out.
-    // A lambda rather than a write before each of the seven returns, so a
-    // later branch cannot forget.
-    const auto remember = [&](double px) {
-        style->font_size_memo_parent = parent_fs;
-        style->font_size_memo_px = px;
-        style->font_size_memo_version = style->version();
-        return px;
-    };
+    if (raw.empty()) return remember(fallback);
 
     // Through the style's parsed cache: font_size_px is called for every box
     // several times over, and re-parsing its declaration was the single largest
