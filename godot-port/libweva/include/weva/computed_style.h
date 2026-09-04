@@ -61,6 +61,7 @@ public:
     // its first attempt by missing the main set().
     mutable int64_t font_size_memo_version = -1;
 
+
     void set_inherit_parent(const ComputedStyle* parent) { parent_ = parent; }
     const ComputedStyle* inherit_parent() const { return parent_; }
 

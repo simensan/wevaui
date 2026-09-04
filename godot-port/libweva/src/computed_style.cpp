@@ -5,10 +5,18 @@
 namespace weva {
 
 namespace {
-int64_t next_version() {
-    static int64_t counter = 0;
-    return ++counter;
-}
+int64_t g_version_counter = 0;
+
+int64_t next_version() { return ++g_version_counter; }
+
+// The counter as it stands, without advancing it. The inherit memo keys on
+// this rather than on the style's own version: what it caches is an ANCESTOR,
+// and an ancestor changing does not touch the descendant's version. Any write
+// to any style advances the counter, so every memo lapses together -- which is
+// blunt, and correct. Keying it on the style's own version instead served a
+// stale ancestor the moment one was written to, and the cascade store tests
+// caught it.
+int64_t current_version() { return g_version_counter; }
 const std::string kEmpty;
 }  // namespace
 
@@ -51,6 +59,12 @@ std::string_view ComputedStyle::get(int id) const {
     // property, so it is settled once and the chain is then just a walk.
     const auto& reg = CssPropertyRegistry::instance();
     if (parent_ && reg.is_inherited(id)) {
+        // Walked, not memoised. Caching the ancestor that sets each inherited
+        // property looked obviously worth it -- the walk is O(depth) and runs
+        // for every read of every inherited property on every box -- and it
+        // measured 4 to 6 per cent SLOWER on the larger pages under an
+        // interleaved A/B. Real chains are one or two links, so the memo's
+        // guard costs more than the walk it skips.
         for (const ComputedStyle* p = parent_; p; p = p->parent_) {
             if (p->contains(id)) return p->values_[static_cast<std::size_t>(id)];
         }

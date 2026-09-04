@@ -212,6 +212,28 @@ like a small win by the same loose method and is a consistent 1 to 6 per cent
 LOSS under `--ab` -- clearing the borrowed rows costs more than the allocations
 it saves, so the grid still builds them fresh.
 
+## Tried, measured, and not kept
+
+Both of these looked obviously worth doing and are slower. Recorded so the
+next person -- or the next tick -- does not spend the afternoon rediscovering
+them.
+
+**Pooling the grid's auto-placement occupancy.** One heap allocation per row
+per grid, replaced by a borrowed vector whose rows are cleared instead. 722
+fewer allocations a pass on randhtml and a consistent 1 to 6 per cent LOSS
+under `--ab`: clearing the borrowed rows costs more than the allocations save.
+
+**Memoising the inherit chain.** `ComputedStyle::get` walks ancestors to find
+who sets an inherited property, which is O(depth) and runs for every read of
+colour, font, line-height and the rest on every box. Caching the ancestor that
+answered, guarded by a global version counter, measured 4 to 6 per cent SLOWER
+on the larger pages -- stats +6.1%, map +6.2%, vendor +4.2%. Real chains are
+one or two links, so the guard costs more than the walk.
+
+Both were measured the wrong way first and looked like wins. Both are losses
+under an interleaved A/B. Allocation count and time have now pointed opposite
+ways three times in this file.
+
 ## What is still slow, and why it has not been fixed
 
 **Rasterising gradients on the CPU, in the first paint.** This is the whole of

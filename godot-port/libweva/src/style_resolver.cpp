@@ -245,7 +245,9 @@ double line_height_px(const ComputedStyle* style, double font_size, const Layout
         metrics ? metrics->line_height(font_size) : font_size * kDefaultLineHeightFactor;
     if (raw.empty()) return fallback;
 
-    const CssValue* v = style->parsed("line-height");
+    // By ID. The raw value above already reads by id; this one still hashed
+    // "line-height" from its characters, once for every box on every pass.
+    const CssValue* v = style->parsed(kId_line_height);
     if (!v) return fallback;
 
     // `normal` — and any other keyword — falls through to the font-derived
