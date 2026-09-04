@@ -975,6 +975,11 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // box's own edges shorten the first and last of them.
     double column_gap_used = own_column_gap;
     double row_gap_used = own_row_gap;
+    // CSS Grid L2 §9: a subgridded axis has no implicit tracks. Items that run
+    // past the subgridded range are clamped into the last one instead of
+    // growing the grid, so these follow the adoption below into the placement.
+    bool columns_are_subgrid = false;
+    bool rows_are_subgrid = false;
     {
         const auto it = g_subgrid_tracks.find(container);
         if (it != g_subgrid_tracks.end()) {
@@ -994,11 +999,13 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
                 adopt(it->second.columns, self.padding_left + self.border_left,
                       self.padding_right + self.border_right, &columns);
                 column_gap_used = it->second.column_gap;
+                columns_are_subgrid = true;
             }
             if (wants_subgrid(style, "grid-template-rows") && !it->second.rows.empty()) {
                 adopt(it->second.rows, self.padding_top + self.border_top,
                       self.padding_bottom + self.border_bottom, &rows);
                 row_gap_used = it->second.row_gap;
+                rows_are_subgrid = true;
             }
             g_subgrid_tracks.erase(it);
         }
@@ -1196,6 +1203,33 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             std::swap(pl.column_span, pl.row_span);
         }
         std::swap(explicit_columns, explicit_rows);
+    }
+
+    // CSS Grid L2 §9: "the subgrid does not have implicit tracks in the
+    // subgridded axis" -- an item placed past the end is clamped into the last
+    // subgridded track rather than growing the grid.
+    //
+    // Without this, a subgrid spanning two 40px and 80px parent rows and
+    // holding four items put items three and four at y=120 and y=130, below
+    // the subgrid's own 120px box. Chrome stacks all the overflow in the last
+    // row, at y=40. The parent's tracks are the subgrid's whole world; there
+    // is nowhere else for an item to go.
+    const auto clamp_into = [](std::vector<Placement>& placements, int track_count,
+                               int Placement::*line, int Placement::*span) {
+        if (track_count <= 0) return;
+        for (Placement& p : placements) {
+            if (p.*span > track_count) p.*span = track_count;
+            if (p.*line + p.*span > track_count) p.*line = track_count - p.*span;
+            if (p.*line < 0) p.*line = 0;
+        }
+    };
+    if (columns_are_subgrid) {
+        clamp_into(items, static_cast<int>(columns.size()), &Placement::column,
+                   &Placement::column_span);
+    }
+    if (rows_are_subgrid) {
+        clamp_into(items, static_cast<int>(rows.size()), &Placement::row,
+                   &Placement::row_span);
     }
 
     // Implicit columns: a placement past the explicit grid adds `auto` tracks,

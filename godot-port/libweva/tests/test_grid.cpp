@@ -601,8 +601,15 @@ void test_grid_subgrid() {
         CHECK(near(f.box("d").width, 150));
     }
     {
-        // Rows: the child spans two of the parent's rows; items past them go
-        // into implicit auto rows of its own.
+        // Rows: the child spans two of the parent's rows, and items past them
+        // are CLAMPED into the last of those rows.
+        //
+        // This test asserted implicit auto rows -- i3 at y=120, below the
+        // subgrid's own 120px box -- which is what the code did and is not
+        // what a browser does. CSS Grid L2 §9: a subgrid has no implicit
+        // tracks in the subgridded axis. Chrome stacks the overflow in the
+        // last row, and the harvest case this came from (SubgridAutoTracks-02)
+        // says so directly.
         Fixture f;
         CHECK(f.css("#p { display: grid; grid-template-columns: 200px;"
                     "     grid-template-rows: 40px 80px 40px 80px; width: 200px; height: 400px }"
@@ -615,7 +622,11 @@ void test_grid_subgrid() {
         CHECK(near(f.box("c").height, 120));
         CHECK(near(f.box("i1").height, 40));
         CHECK(near(f.box("i2").y, 40) && near(f.box("i2").height, 80));
-        CHECK(near(f.box("i3").y, 120));
+        // Both overflow items land on the last subgridded row, on top of i2.
+        CHECK(near(f.box("i3").y, 40));
+        CHECK(near(f.box("i4").y, 40));
+        // And the subgrid does not grow to hold them.
+        CHECK(near(f.box("c").height, 120));
     }
     {
         // The parent's gap is the subgrid's gap, and the subgrid's own padding

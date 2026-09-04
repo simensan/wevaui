@@ -110,3 +110,30 @@ minor here: **BaselineGen is the oracle**, so it must build cleanly and
 deterministically outside Unity before anything else in this plan is worth
 starting. Verify with an actual `dotnet build` — this has not been confirmed on
 a machine with the SDK.
+
+## The harvest pool, and chrome_sweep.py
+
+`corpus/samples` is the gate: 47 cases, three-way, run by `check.sh`.
+`corpus/harvest` holds 210 more, each with a Chrome capture already beside it,
+and nothing ran them -- the three-way needs BaselineGen for every case, which
+is slow enough that the gate deliberately does not.
+
+`chrome_sweep.py` does the cheap two-way instead: lay each case out and ask
+whether Chrome agrees. No reference, so it cannot tell a port bug from a place
+where the reference and Chrome differ by design. Its output is a list of
+**leads**, not a verdict.
+
+    python3 tools/oracle/chrome_sweep.py tools/oracle/corpus/harvest         --weva-dump <build>/tools/weva_dump/weva_dump --width 800 --height 600
+
+The width matters: the harvest captures were taken at 800x600 and the samples
+at 1280x720. Running harvest at 1280 reports 138 of 210 differing, all of them
+`ours 1280, chrome 800` on some full-width block. At the right width it is 34,
+and most of those are the font-metrics divergence -- the harvest captures were
+not taken with `--metrics=mono`, so any line height reads 18.288 against
+Chrome's 19. Read past those.
+
+What it found on its first run was real: a subgrid with more items than
+subgridded tracks grew implicit rows instead of clamping into the last one.
+Confirmed by promoting the lead to the three-way, which returned REF! on four
+cases -- 0 differ, chrome sides with us on every value.
+
