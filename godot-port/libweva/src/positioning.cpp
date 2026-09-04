@@ -14,10 +14,26 @@ namespace weva {
 namespace {
 
 const int kId_height = CssPropertyRegistry::instance().id_of("height");
+// run_positioning visits every box in the tree, and these are read on each
+// visit -- by name, which hashed the name and probed the registry index every
+// time. Resolved once for the program instead; the registry keeps an id stable
+// across re-registration precisely so this is safe.
+const int kId_contain = CssPropertyRegistry::instance().id_of("contain");
+const int kId_filter = CssPropertyRegistry::instance().id_of("filter");
+const int kId_margin = CssPropertyRegistry::instance().id_of("margin");
+const int kId_outline_width = CssPropertyRegistry::instance().id_of("outline-width");
+const int kId_overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
+const int kId_overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
+const int kId_will_change = CssPropertyRegistry::instance().id_of("will-change");
+const int kId_z_index = CssPropertyRegistry::instance().id_of("z-index");
 
 
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
+}
+
+std::string_view get(const ComputedStyle* s, int id) {
+    return s ? s->get(id) : std::string_view();
 }
 
 bool iequals(std::string_view a, std::string_view b) {
@@ -54,11 +70,11 @@ bool has_containing_block_property(const Box& b) {
     if (set_and_not_none(b.style, "transform")) return true;
     if (set_and_not_none(b.style, "filter")) return true;
     if (set_and_not_none(b.style, "perspective")) return true;
-    const std::string_view wc = get(b.style, "will-change");
+    const std::string_view wc = get(b.style, kId_will_change);
     if (has_token(wc, "transform") || has_token(wc, "filter") || has_token(wc, "perspective")) {
         return true;
     }
-    const std::string_view contain = get(b.style, "contain");
+    const std::string_view contain = get(b.style, kId_contain);
     return has_token(contain, "layout") || has_token(contain, "paint") ||
            has_token(contain, "strict") || has_token(contain, "content");
 }
@@ -186,7 +202,7 @@ bool clips_overflow(const Box& b) {
 
 bool scrollable_on_axis(const Box& b, bool vertical) {
     if (!clips_overflow(b)) return false;
-    const std::string_view v = get(b.style, vertical ? "overflow-y" : "overflow-x");
+    const std::string_view v = get(b.style, vertical ? kId_overflow_y : kId_overflow_x);
     return v == "auto" || v == "scroll";
 }
 
@@ -279,7 +295,7 @@ void stamp_offsets(BoxTree* tree, BoxId root, const LayoutContext& ctx) {
         b.offset_bottom = resolve_offset(b.style, "bottom", ctx, fs, basis);
         b.offset_left = resolve_offset(b.style, "left", ctx, fs, basis);
 
-        const std::string_view z = get(b.style, "z-index");
+        const std::string_view z = get(b.style, kId_z_index);
         if (!z.empty() && !iequals(z, "auto")) {
             double v = 0;
             if (css_parse_double(z, &v)) b.z_index = static_cast<int>(v);
@@ -376,7 +392,7 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     // definite size, and BOTH margins auto, the slack is split evenly — the box
     // centres. This is what makes `inset: 0; margin: auto` centre a dialog.
     double extra_left = 0, extra_top = 0;
-    const BoxSideValues mar = box_sides(style, "margin");
+    const BoxSideValues mar = box_sides(style, kId_margin);
     if (horiz_pinned && iequals(mar.left, "auto") && iequals(mar.right, "auto") &&
         is_definite_size(style, "width", ctx, fs, cb.width)) {
         const double slack = cb.width - *box.offset_left - *box.offset_right -
@@ -501,9 +517,9 @@ double decoration_reach(const ComputedStyle* style) {
         const std::string_view raw = style->get(prop);
         if (!raw.empty() && raw != "none") reach += sum_lengths(raw, 1.0);
     }
-    const std::string_view outline = style->get("outline-width");
+    const std::string_view outline = style->get(kId_outline_width);
     if (!outline.empty()) reach += sum_lengths(outline, 1.0) + 4;
-    const std::string_view filter = style->get("filter");
+    const std::string_view filter = style->get(kId_filter);
     // A blur reaches about three sigma, and the declaration's own numbers
     // already carry the radius.
     if (!filter.empty() && filter != "none") reach += sum_lengths(filter, 3.0);
@@ -564,7 +580,7 @@ void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxI
         if (cb.z_index && is_positioned) {
             z = *cb.z_index;
         } else if (items_stack && cb.style && cb.kind == BoxKind::Block) {
-            const std::string_view zr = cb.style->get("z-index");
+            const std::string_view zr = cb.style->get(kId_z_index);
             if (!zr.empty() && zr != "auto") z = std::atoi(std::string(zr).c_str());
         }
         const Entry e{c, z, order++};

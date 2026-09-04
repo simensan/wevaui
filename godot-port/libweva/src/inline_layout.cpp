@@ -36,6 +36,9 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
 // re-registration, which is what its header promises it for.
 const int kId_max_width = CssPropertyRegistry::instance().id_of("max-width");
 const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
+const int kId_color = CssPropertyRegistry::instance().id_of("color");
+const int kId_margin = CssPropertyRegistry::instance().id_of("margin");
+const int kId_padding = CssPropertyRegistry::instance().id_of("padding");
 
 std::string_view get(const ComputedStyle* s, int id) {
     return s ? s->get(id) : std::string_view();
@@ -358,8 +361,8 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
                 // Percentages of the containing block's width: the block
                 // container's, which is what the box tree's ancestor chain
                 // reaches through the container box.
-                pad = resolve_box_sides_px(b.style, "padding", ctx, fs, 0, lh);
-                mar = resolve_box_sides_px(b.style, "margin", ctx, fs, 0, lh);
+                pad = resolve_box_sides_px(b.style, kId_padding, ctx, fs, 0, lh);
+                mar = resolve_box_sides_px(b.style, kId_margin, ctx, fs, 0, lh);
                 bor = resolve_border_edges(b.style, ctx, fs);
             }
             if (b.kind == BoxKind::Inline) {
@@ -405,7 +408,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // `white-space: nowrap` stacked into a column the moment it grew
             // past its box, instead of overflowing it to be scrolled, which is
             // exactly what such a row is for.
-            const std::string_view ws = get(inherited ? inherited : item.style, "white-space");
+            const std::string_view ws = get(inherited ? inherited : item.style, kId_white_space);
             item.allow_wrap = !(iequals(ws, "nowrap") || iequals(ws, "pre"));
             out->push_back(item);
         }
@@ -1132,8 +1135,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             r.text = f.text;
             r.source_node = (*tree)[f.item->source_run].source_node;
             r.font_size = f.item->font_size;
-            r.font_family = get(f.item->style, "font-family");
-            r.color = get(f.item->style, "color");
+            r.font_family = get(f.item->style, kId_font_family);
+            r.color = get(f.item->style, kId_color);
             r.x = f.x + dx;
             // Runs sit on the shared baseline, so a smaller span aligns with a
             // larger one rather than with the line's top edge.

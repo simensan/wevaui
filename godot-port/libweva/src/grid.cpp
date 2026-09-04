@@ -30,6 +30,11 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
 const int kId_max_height = CssPropertyRegistry::instance().id_of("max-height");
 const int kId_max_width = CssPropertyRegistry::instance().id_of("max-width");
 const int kId_min_height = CssPropertyRegistry::instance().id_of("min-height");
+const int kId_align_self = CssPropertyRegistry::instance().id_of("align-self");
+const int kId_justify_self = CssPropertyRegistry::instance().id_of("justify-self");
+const int kId_align_items = CssPropertyRegistry::instance().id_of("align-items");
+const int kId_justify_items = CssPropertyRegistry::instance().id_of("justify-items");
+const int kId_grid_auto_flow = CssPropertyRegistry::instance().id_of("grid-auto-flow");
 const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
 
 std::string_view get(const ComputedStyle* s, int id) {
@@ -831,9 +836,9 @@ void size_tracks(std::vector<Track>* tracks, double available, double gap,
 // expanded to these longhands by the cascade.
 std::string_view self_alignment(const ComputedStyle* item, const ComputedStyle* container,
                                 bool block_axis) {
-    std::string_view v = get(item, block_axis ? "align-self" : "justify-self");
+    std::string_view v = get(item, block_axis ? kId_align_self : kId_justify_self);
     if (v.empty() || iequals(v, "auto") || iequals(v, "normal")) {
-        v = get(container, block_axis ? "align-items" : "justify-items");
+        v = get(container, block_axis ? kId_align_items : kId_justify_items);
     }
     // `legacy` is justify-items' initial value and behaves as normal.
     if (v.empty() || iequals(v, "auto") || iequals(v, "normal") || iequals(v, "legacy") ||
@@ -1073,7 +1078,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     bool flow_column = false;
     bool flow_dense = false;
     {
-        const std::string_view raw = get((*tree)[container].style, "grid-auto-flow");
+        const std::string_view raw = get((*tree)[container].style, kId_grid_auto_flow);
         flow_column = raw.find("column") != std::string_view::npos;
         flow_dense = raw.find("dense") != std::string_view::npos;
     }

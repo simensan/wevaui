@@ -31,6 +31,7 @@ std::string_view get(const ComputedStyle* s, int id) {
 // Resolved at static-init. The registry is a function-local static,
 // so it is constructed on first use and these cannot outrun it.
 const int kId_column_count = CssPropertyRegistry::instance().id_of("column-count");
+const int kId_white_space = CssPropertyRegistry::instance().id_of("white-space");
 const int kId_column_width = CssPropertyRegistry::instance().id_of("column-width");
 const int kId_content = CssPropertyRegistry::instance().id_of("content");
 const int kId_counter_increment = CssPropertyRegistry::instance().id_of("counter-increment");
@@ -942,7 +943,7 @@ bool is_collapsible_whitespace_only(const BoxTree& tree, BoxId id) {
             if (c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\f') return false;
         }
         // `white-space: pre` and friends preserve it, so it is real content.
-        const std::string_view ws = b.style ? b.style->get("white-space") : std::string_view();
+        const std::string_view ws = b.style ? b.style->get(kId_white_space) : std::string_view();
         return !(ws == "pre" || ws == "pre-wrap" || ws == "pre-line" || ws == "break-spaces");
     }
     if (b.kind != BoxKind::Inline && b.kind != BoxKind::AnonymousInline) return false;

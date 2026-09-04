@@ -238,6 +238,26 @@ ones, with nothing slower anywhere in the corpus:
 `ComputedStyle::occupied_` and here. It is worth treating as a red flag in any
 table an inner loop indexes.
 
+## The last of the by-name property reads
+
+The bulk conversion of `get(style, "name")` to a cached id missed every call
+whose property is chosen at runtime -- `get(is, column ? "margin-top" :
+"margin-left")` -- because the rewrite matched a literal, and a ternary is not
+one. It also missed `positioning.cpp` entirely, which had no id-taking helper
+at all and read `will-change`, `contain`, `overflow-x`/`-y`, `z-index`,
+`outline-width`, `filter` and `margin` by name on every box in the tree.
+
+Those are now ids as well, the ternaries picking between two constants instead
+of two strings. Nothing in the corpus got slower and the large pages moved
+again:
+
+    stats       -7.4%     glass         -6.2%     quests    -8.4%
+    flex-play   -4.9%     grid-play     -4.7%     dialogue  -7.6%
+    vendor      -4.6%     layout-stress -3.7%     randhtml  -3.0%
+
+Together with the registry flattening above, a layout pass of layout-stress is
+down from 3.16 ms to 2.67 ms.
+
 ## Tried, measured, and not kept
 
 Both of these looked obviously worth doing and are slower. Recorded so the

@@ -36,6 +36,12 @@ std::string_view get(const ComputedStyle* s, int id) {
 // Resolved at static-init. The registry is a function-local static,
 // so it is constructed on first use and these cannot outrun it.
 const int kId_align_content = CssPropertyRegistry::instance().id_of("align-content");
+const int kId_margin_top = CssPropertyRegistry::instance().id_of("margin-top");
+const int kId_margin_left = CssPropertyRegistry::instance().id_of("margin-left");
+const int kId_margin_bottom = CssPropertyRegistry::instance().id_of("margin-bottom");
+const int kId_margin_right = CssPropertyRegistry::instance().id_of("margin-right");
+const int kId_height = CssPropertyRegistry::instance().id_of("height");
+const int kId_max_width = CssPropertyRegistry::instance().id_of("max-width");
 const int kId_align_items = CssPropertyRegistry::instance().id_of("align-items");
 const int kId_align_self = CssPropertyRegistry::instance().id_of("align-self");
 const int kId_direction = CssPropertyRegistry::instance().id_of("direction");
@@ -291,15 +297,15 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         // An auto margin on the main axis is resolved by THIS algorithm (§9.5
         // step 1), not by block layout, which may already have centred the box
         // with it. Zeroed here so the share below is the whole used value.
-        it.auto_margin_start = is_auto(get(is, column ? "margin-top" : "margin-left"));
-        it.auto_margin_end = is_auto(get(is, column ? "margin-bottom" : "margin-right"));
+        it.auto_margin_start = is_auto(get(is, column ? kId_margin_top : kId_margin_left));
+        it.auto_margin_end = is_auto(get(is, column ? kId_margin_bottom : kId_margin_right));
         if (it.auto_margin_start) (column ? b.margin_top : b.margin_left) = 0;
         if (it.auto_margin_end) (column ? b.margin_bottom : b.margin_right) = 0;
         it.main_margins = column ? b.margin_top + b.margin_bottom : b.margin_left + b.margin_right;
         it.cross_margins = column ? b.margin_left + b.margin_right : b.margin_top + b.margin_bottom;
 
         const std::string_view basis_raw = get(is, kId_flex_basis);
-        const std::string_view size_raw = get(is, column ? "height" : "width");
+        const std::string_view size_raw = get(is, column ? kId_height : kId_width);
         double base = column ? b.height : b.width;
         if (!basis_raw.empty() && !iequals(basis_raw, "auto") &&
             !iequals(basis_raw, "content")) {
@@ -333,7 +339,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         }
 
         const ResolvedLength min_r =
-            resolve_length(is, column ? "min-height" : "min-width", ctx,
+            resolve_length(is, column ? kId_min_height : kId_min_width, ctx,
                            b.font_size > 0 ? b.font_size : font_size, main_basis);
         // min/max are compared with the BORDER-box main size, so under
         // content-box sizing they carry the frame — the same correction
@@ -385,7 +391,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             }
         }
         const ResolvedLength max_r =
-            resolve_length(is, column ? "max-height" : "max-width", ctx,
+            resolve_length(is, column ? kId_max_height : kId_max_width, ctx,
                            b.font_size > 0 ? b.font_size : font_size, main_basis);
         if (max_r.kind == LengthKind::Length) {
             it.max_main = std::max(0.0, max_r.pixels) + minmax_frame;
@@ -568,7 +574,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                 // §9.4: an item that is NOT being stretched sizes to fit its own
                 // content on the cross axis. In a column that means the width
                 // has to come off the block default of filling the container.
-                const std::string_view cross_raw = get((*tree)[it.box].style, "width");
+                const std::string_view cross_raw = get((*tree)[it.box].style, kId_width);
                 if ((cross_raw.empty() || iequals(cross_raw, "auto")) &&
                     !iequals(self_align((*tree)[it.box]), "stretch")) {
                     const Box& cb = (*tree)[it.box];
@@ -783,7 +789,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                 // `stretch` is the initial value: an item with an auto cross size
                 // fills the line. One with a definite size keeps it.
                 const std::string_view cross_raw =
-                    get((*tree)[it.box].style, column ? "width" : "height");
+                    get((*tree)[it.box].style, column ? kId_width : kId_height);
                 if (cross_raw.empty() || iequals(cross_raw, "auto")) {
                     double stretched = std::max(0.0, ln.cross - it.cross_margins);
                     // §9.4: the stretched size is still clamped by the item's own
