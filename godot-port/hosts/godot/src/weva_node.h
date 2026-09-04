@@ -320,6 +320,9 @@ private:
     godot::Vector2 size_{0, 0};
     bool dirty_ = true;
     double last_update_ms_ = 0;
+    // The draw list this node has already submitted, so an update that
+    // published nothing does not force a redraw of the identical frame.
+    uint64_t drawn_serial_ = 0;
     godot::Dictionary data_;
     // The three popover calls differ only in which ABI entry they take.
     bool run_popover(const godot::String& selector,

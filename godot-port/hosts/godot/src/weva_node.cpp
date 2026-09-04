@@ -1722,7 +1722,21 @@ void WevaDocument::update_document(double dt) {
     // a script that drives the pointer and then updates does not have to wait
     // for a frame to hear about it.
     pump_events();
-    queue_redraw();
+    // ...but only redraw if there is something new to draw.
+    //
+    // The documented way to use this node is to call update_document from
+    // _process. That used to queue a redraw unconditionally, and a redraw
+    // rebuilds three PackedArrays per draw and converts every vertex from
+    // linear to sRGB -- 7,280 vertices and 150 draws on one sample. For a
+    // page nothing has touched, all of it produced the identical frame.
+    //
+    // The core publishes a new draw list only when it actually ran a pass, and
+    // says so through the serial, so this costs one comparison.
+    const uint64_t serial = weva_document_draw_serial(doc_);
+    if (serial != drawn_serial_) {
+        drawn_serial_ = serial;
+        queue_redraw();
+    }
 }
 
 // Evaluating a rounded box per pixel, which is what a rasterizer that only

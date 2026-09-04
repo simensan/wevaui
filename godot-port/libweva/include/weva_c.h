@@ -241,6 +241,19 @@ weva_status weva_document_content_size(weva_document_t doc, double* out_width,
  * published stay valid. A host may therefore call this every frame. */
 weva_status weva_document_update(weva_document_t doc, double dt_seconds);
 
+/* Changes when, and only when, weva_document_update publishes a NEW draw list.
+ *
+ * A settled document does no work in update -- no cascade, no layout, no paint
+ * -- and so publishes nothing, and this does not move. A host driving update
+ * from its frame loop, which is the documented way to use it, should compare
+ * this against the value it last drew and skip re-submitting when they match.
+ *
+ * That is not a micro-optimisation. Re-submitting means walking every draw and
+ * converting every vertex again, for a page that has not changed: on a sample
+ * with 150 draws and 7,280 vertices it was several milliseconds a frame, every
+ * frame, for nothing. */
+uint64_t weva_document_draw_serial(weva_document_t doc);
+
 /* Whether any transition is still running, so a host knows to keep handing
  * over time and redrawing. False for a document that has settled. */
 int weva_document_is_animating(weva_document_t doc);

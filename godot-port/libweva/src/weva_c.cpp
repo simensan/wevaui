@@ -1311,6 +1311,10 @@ struct weva_document {
     // The POD views handed across the boundary. Members, so they outlive the
     // call that returns them and are replaced wholesale on the next update.
     std::vector<weva_draw> draw_views;
+    // Bumped only where draw_views is rebuilt, which the settled-document
+    // early-out above never reaches. A host compares it to decide whether it
+    // has anything new to submit -- see weva_document_draw_serial.
+    uint64_t draw_serial = 0;
     std::vector<weva_texture> texture_views;
 
     // Every element still in the document. A binding repeat is the one thing
@@ -2216,6 +2220,7 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     //
     // The POD views point straight at the collected buffers: nothing is copied
     // across the boundary, which is what the documented lifetime buys.
+    ++doc->draw_serial;
     doc->draw_views.clear();
     doc->draw_views.reserve(doc->backend.draws.size());
     for (const auto& d : doc->backend.draws) {
@@ -2267,6 +2272,10 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
         doc->texture_views.push_back(t);
     }
     return WEVA_OK;
+}
+
+uint64_t weva_document_draw_serial(weva_document_t doc) {
+    return doc ? doc->draw_serial : 0;
 }
 
 const weva_draw* weva_document_draws(weva_document_t doc, size_t* out_count) {
