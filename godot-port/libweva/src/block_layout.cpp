@@ -423,6 +423,41 @@ bool has_size_containment(const ComputedStyle* style) {
     return false;
 }
 
+// CSS Containment L3 §2.1 and Containment L3 §3.1: containment of the INLINE
+// axis only. The box has no contents to take a width from; its height still
+// comes from them.
+//
+// `contain: inline-size` ONLY, and deliberately not `container-type`.
+//
+// The longhand is a clean port gap: the reference implements it and this did
+// not, so an absolutely positioned tray came out 189px wide where the
+// reference and Chrome both say 26 -- its padding and border and nothing else.
+//
+// `container-type: inline-size` also applies inline-size containment per
+// Containment L3 §3.1, and adding it here was tried and backed out. It gets
+// the CONTAINER right and its contents wrong: Chrome lays the children out at
+// their own intrinsic size, overflowing the zero-width content box, where this
+// engine collapses them to zero with it. Chrome then also applies the
+// container QUERY, which restyles them again -- and that half is deliberately
+// not ported (see the note in cascade.cpp). Half the feature moved combat-hud
+// from agreeing with the reference to differing from it while still matching
+// neither, which is worse than the gap. Left for whenever the query loop lands.
+bool has_inline_size_containment(const ComputedStyle* style) {
+    if (!style) return false;
+    const auto has_token = [](std::string_view list, std::string_view word) {
+        size_t at = list.find(word);
+        while (at != std::string_view::npos) {
+            const bool start_ok = at == 0 || list[at - 1] == ' ';
+            const size_t end = at + word.size();
+            const bool end_ok = end == list.size() || list[end] == ' ';
+            if (start_ok && end_ok) return true;
+            at = list.find(word, at + 1);
+        }
+        return false;
+    };
+    return has_token(get(style, kId_contain), "inline-size");
+}
+
 // The substitute content size a size-contained box uses, from
 // `contain-intrinsic-size: <width> <height>` or its longhands. Negative means
 // none was given, which makes the contained size zero.
@@ -895,7 +930,7 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     // this an `<span style="display:inline-block; contain:size">` came out the
     // width of its text -- 307px where the reference and a browser both say
     // 100 -- and everything after it on the line moved with it.
-    if (has_size_containment(style)) {
+    if (has_size_containment(style) || has_inline_size_containment(style)) {
         const double intrinsic = contain_intrinsic_width(style, ctx_, fs);
         const double used = intrinsic >= 0 ? intrinsic : 0.0;
         Box& b = (*tree_)[id];

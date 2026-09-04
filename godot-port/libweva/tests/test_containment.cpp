@@ -182,6 +182,23 @@ void test_size_containment() {
         CHECK(near(f.box("c").width, 0));
     }
     {
+        // CSS Containment L3 §2.1: `contain: inline-size` contains the INLINE
+        // axis only. A shrink-to-fit box has no contents to take a width from,
+        // so it is its own frame and nothing more -- but its HEIGHT still comes
+        // from the contents, which is what separates this from `contain: size`.
+        Fixture f;
+        CHECK(f.css("body { font-family: monospace; font-size: 16px }"
+                    "#w { position: relative; width: 600px; height: 300px }"
+                    "#t { position: absolute; top: 0; left: 0; padding: 12px;"
+                    "     border: 1px solid #444; contain: inline-size }"));
+        CHECK(f.layout("<body><div id=w><section id=t><p id=p>some content here</p>"
+                       "</section></div></body>"));
+        // 12 + 12 of padding and 1 + 1 of border, with no content width.
+        CHECK(near(f.box("t").width, 26));
+        // ...and a height that still measures the contents, so NOT 26.
+        CHECK(f.box("t").height > 26);
+    }
+    {
         // Padding and border are NOT contained away -- containment removes the
         // contents, not the box's own frame.
         Fixture f;
