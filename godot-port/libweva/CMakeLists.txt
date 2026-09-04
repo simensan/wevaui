@@ -40,6 +40,7 @@ add_library(weva STATIC
     src/inline_layout.cpp
     src/invalidation.cpp
     src/keyframes.cpp
+    src/anchor.cpp
     src/positioning.cpp
     src/scrollbar.cpp
     src/text_classes.cpp

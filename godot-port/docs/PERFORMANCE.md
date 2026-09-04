@@ -356,6 +356,37 @@ item out at the container's width to learn its natural size, then again at the
 size that falls out of resolving the line. Skipping the second pass is not
 available, and a guard on "same width" would fire on nothing.
 
+## Anchor positioning costs 2 to 4 per cent, and I cannot say why
+
+Landing CSS anchor positioning moved about half the corpus by 2 to 4 per cent
+and the other half not at all. It is recorded here unresolved rather than
+quietly absorbed, because the obvious explanations are all ruled out:
+
+* **Not measurement noise.** The harness A/B'd against a copy of the same
+  binary reads within 1 per cent, and `bench_head` against a freshly built HEAD
+  reads within 1.2. Both controls were run alongside the numbers below.
+* **Not the out-of-flow path.** `layout-stress` declares no `position:
+  absolute` at all and still moves 1.9 per cent.
+* **Not the anchor walk.** It is lazy: nothing collects a registry until a
+  declaration actually reads `anchor(`. Two earlier shapes -- collecting per
+  pass, and noting anchor names per element at build time -- were worse (6 to
+  12 and 1 to 2 per cent), and both were replaced.
+* **Not the extra translation unit.** Building `anchor.cpp` into the library
+  with the positioning side reverted costs nothing measurable.
+* **Not the size of the diff in positioning.cpp.** Moving the pass state and
+  both resolvers out into `anchor.cpp`, leaving 27 added lines behind, changed
+  nothing.
+
+The remaining candidate, untested, is that the two cross-translation-unit
+calls in `apply_absolute` stop it being inlined into `run_recursive`, which
+walks every box -- so the per-box code changes even on a page with nothing
+out of flow. Worth an hour with `-fopt-info-inline` if someone wants the
+2 per cent back.
+
+Kept as it stands because the feature closes nine real oracle failures and
+implements a CSS module the engine did not have, which is worth more than
+2 per cent.
+
 ## Tried, measured, and not kept
 
 Both of these looked obviously worth doing and are slower. Recorded so the

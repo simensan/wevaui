@@ -1,4 +1,5 @@
 #include "weva/css_properties.h"
+#include "weva/anchor.h"
 #include "weva/positioning.h"
 
 #include "weva/inline_layout.h"
@@ -14,6 +15,7 @@ namespace weva {
 namespace {
 
 const int kId_height = CssPropertyRegistry::instance().id_of("height");
+const int kId_width = CssPropertyRegistry::instance().id_of("width");
 // run_positioning visits every box in the tree, and these are read on each
 // visit -- by name, which hashed the name and probed the registry index every
 // time. Resolved once for the program instead; the registry keeps an id stable
@@ -306,6 +308,7 @@ void stamp_offsets(BoxTree* tree, BoxId root, const LayoutContext& ctx) {
 
 namespace {
 
+
 void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
                     const LayoutContext& ctx, BlockLayout* block) {
     // Deliberately NOT a `Box&` held across the whole function. The relayouts
@@ -322,12 +325,30 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     // Percentage offsets resolve against the containing block, so they are
     // re-read here now that it is known.
     const auto off = [&](std::string_view property, double basis) {
+        // CSS Anchor Positioning L1 §3.1: an `anchor()` inset is a position on
+        // another element's border box, not a length against this one's basis.
+        if (auto px = try_anchor_offset(*tree, id, property, get(style, property), cb)) {
+            return px;
+        }
         return resolve_offset(style, property, ctx, fs, basis);
     };
     (*tree)[id].offset_left = off("left", cb.width);
     (*tree)[id].offset_right = off("right", cb.width);
     (*tree)[id].offset_top = off("top", cb.height);
     (*tree)[id].offset_bottom = off("bottom", cb.height);
+
+    // `anchor-size()` in width or height. Resolved here rather than in block
+    // layout because it needs the anchor's laid-out size, which only exists
+    // once the anchor itself has been through layout -- and an absolutely
+    // positioned box is sized after everything in flow.
+    if (auto px = try_anchor_size(*tree, id, get(style, kId_width))) {
+        (*tree)[id].width = *px;
+        if (block) block->relayout_at(id, *px);
+    }
+    if (auto px = try_anchor_size(*tree, id, get(style, kId_height))) {
+        (*tree)[id].height = *px;
+        (*tree)[id].cross_size_imposed = true;
+    }
 
     const bool horiz_pinned = (*tree)[id].offset_left.has_value() && (*tree)[id].offset_right.has_value();
     const bool vert_pinned = (*tree)[id].offset_top.has_value() && (*tree)[id].offset_bottom.has_value();
@@ -480,7 +501,13 @@ void run_recursive(BoxTree* tree, BoxId id, const LayoutContext& ctx, BlockLayou
 
 void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx, BlockLayout* block) {
     stamp_offsets(tree, root, ctx);
+    // The registry is built lazily inside the walk, but it must be built as a
+    // WHOLE when it is: an `anchor-name` can be declared on an element that
+    // comes after the one referring to it, so no partial, as-you-go collection
+    // would find it.
+    begin_anchor_pass(*tree, root);
     run_recursive(tree, root, ctx, block);
+    end_anchor_pass();
 }
 
 // How far this box's own decoration can reach past its border box.
