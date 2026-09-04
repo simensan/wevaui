@@ -1,6 +1,9 @@
 #pragma once
 #include "weva/font_interface.h"
 
+#include <cstdint>
+#include <string>
+#include <unordered_map>
 #include <string_view>
 #include <vector>
 
@@ -79,8 +82,28 @@ public:
     double measure(std::string_view text, double fs) const override;
 
 private:
+    // Measured widths, keyed on a hash of (text, size).
+    //
+    // Layout asks the same question repeatedly -- every relayout probe, every
+    // intrinsic-width pass re-measures runs that have not changed. Building
+    // one sample page through the Godot host made 5,384 measure() calls for
+    // 107 distinct pairs, each of the repeats a full shaping call across the
+    // host boundary.
+    //
+    // A hash key so a lookup allocates nothing; the text is stored and
+    // compared on a hit, so a collision costs a re-shape rather than a wrong
+    // width. Mutable because this memoises a pure function: it changes how
+    // often the answer is derived, never what it is.
+    struct Measured {
+        std::string text;
+        int64_t size_key = 0;
+        double width = 0;
+    };
+    static constexpr std::size_t kMeasureCacheMax = 4096;
+
     FontInterface* font_;
     FaceHandle face_;
+    mutable std::unordered_map<uint64_t, Measured> measured_;
 };
 
 } // namespace weva

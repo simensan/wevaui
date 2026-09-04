@@ -437,6 +437,28 @@ out-of-flow boxes, which is the honest price of the feature rather than an
 accident of codegen. Kept: it closes nine real oracle failures and implements
 a CSS module the engine did not have.
 
+## Measuring text was 98 per cent repeat work
+
+The largest win in this file, and it was invisible to every benchmark in it.
+
+`FontInterfaceMetrics::measure` shapes the text and sums the advances. It did
+that on every call, and layout calls it over and over: every relayout probe and
+every intrinsic-width pass re-measures runs that have not changed. Building
+`stats.html` through the Godot host made **5,384 measure() calls for 107
+distinct (text, size) pairs** -- 98 per cent repeats, each one a full shaping
+call across the host boundary into Godot's TextServer.
+
+Memoised on a hash of (text, size), so a lookup allocates nothing and the
+stored text is compared on a hit -- a collision costs a re-shape, never a wrong
+width. Bounded at 4096 entries and cleared wholesale when it fills, because the
+access pattern is a layout pass rather than a working set.
+
+    build, engine font    266 ms -> 61.6 ms
+    of which layout       241 ms -> (the rest is parse, cascade, paint, bridge)
+
+Invisible to `layoutbench` because `MonoFontMetrics` has its own `measure` and
+never touches this path -- which is exactly the point of the section below.
+
 ## The layout benchmarks measure a stub font
 
 Everything above was measured with `tools/layoutbench.sh`, which drives
