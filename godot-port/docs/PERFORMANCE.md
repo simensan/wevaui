@@ -437,6 +437,41 @@ out-of-flow boxes, which is the honest price of the feature rather than an
 accident of codegen. Kept: it closes nine real oracle failures and implements
 a CSS module the engine did not have.
 
+## An animated page reshaped all its text every frame
+
+`hud` ran at 12 to 15 ms a frame in the gallery and spiked on hover. That was
+the engine, and text was nearly all of it.
+
+An animated page invalidates every frame, so it runs a full pass: cascade,
+layout, paint. Timed per stage, paint was 5.0 ms of it and layout 2.1. Timed
+inside paint (`WEVA_PAINT_LOG`), 3.0 of paint's 4.0 ms was text -- 1.5 shaping
+and 1.5 building the quads -- against 0.16 for backgrounds and 0.10 for
+shadows.
+
+The text had not changed. It was being shaped twice per frame, once by layout
+to measure it and once by paint to place it, and every one of those calls
+crossed the host boundary TWICE (once to size the result, once to fill it),
+with the Godot host building a TextServer buffer and reading a Dictionary per
+glyph each time.
+
+Shaping is now memoised at the ABI adapter, keyed on (face, text, size), which
+covers both callers. Measured through the host, engine work per frame:
+
+    page          before   after     hover before   hover after
+    hud            4.33    0.96          5.40          2.04
+    combat-hud     7.01    1.06          6.92          1.09
+    match3         9.03    2.30          9.48          2.70
+    glass          0.03    0.03          2.45          0.57
+
+`hud`'s worst frame went 8.64 ms to 3.04, and its worst while hovering 12.91 to
+5.49.
+
+There are now two caches on the same seam: this one, and the scalar width cache
+in `FontInterfaceMetrics::measure`. They are kept apart deliberately -- measure
+wants a double and would otherwise copy a glyph vector to get one. Both are
+pure functions of (face, text, size) and the face is immutable, so neither has
+an invalidation surface.
+
 ## Measuring text was 98 per cent repeat work
 
 The largest win in this file, and it was invisible to every benchmark in it.

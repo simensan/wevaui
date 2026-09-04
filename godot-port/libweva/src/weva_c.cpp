@@ -1052,6 +1052,29 @@ public:
         if (!t_.shape) { fallback_->shape(face, utf8, px, out); return; }
         if (!out) return;
         out->clear();
+
+        // Memoised, because the same run is shaped over and over.
+        //
+        // Layout shapes it to measure, paint shapes it again to place the
+        // glyphs, and an ANIMATED page does both on every frame for text that
+        // has not changed. On the hud sample that was paint spending 1.5ms a
+        // frame inside shape() alone, plus whatever layout asked for.
+        //
+        // Every call also crosses the host boundary TWICE -- once to size the
+        // result, once to fill it -- and in the Godot host each of those
+        // builds a TextServer buffer and reads a Dictionary per glyph back
+        // out. That is the cost being avoided, not the arithmetic.
+        //
+        // Sound because a shaper is a pure function of (face, text, size): the
+        // face id identifies an immutable face, and nothing else in the call
+        // can change the answer.
+        const uint64_t key = shape_key(face.id, utf8, px);
+        const auto hit = shaped_.find(key);
+        if (hit != shaped_.end() && hit->second.px_key == px_key(px) &&
+            hit->second.face == face.id && hit->second.text == utf8) {
+            *out = hit->second.glyphs;
+            return;
+        }
         // Sized with one call, filled with a second — the same two-call shape
         // the text accessor uses, so a host implements one pattern.
         const size_t n = t_.shape(t_.user_data, face.id, utf8.data(), utf8.size(), px, nullptr,
@@ -1070,7 +1093,44 @@ public:
             g.cluster = clusters[i];
             out->push_back(g);
         }
+
+        // Bounded, and cleared wholesale rather than evicted one at a time:
+        // the access pattern is a frame, not a working set, and the next frame
+        // asks the same questions and refills it immediately.
+        if (shaped_.size() >= kShapeCacheMax) shaped_.clear();
+        Shaped entry;
+        entry.face = face.id;
+        entry.px_key = px_key(px);
+        entry.text.assign(utf8);
+        entry.glyphs = *out;
+        shaped_.emplace(key, std::move(entry));
     }
+
+private:
+    // Size is part of the key: the same word at 11px and 14px shapes to
+    // different advances, and folding them together would be a subtle,
+    // size-dependent wrongness rather than an obvious one.
+    static int64_t px_key(double px) { return static_cast<int64_t>(std::llround(px * 1024.0)); }
+
+    static uint64_t shape_key(uint64_t face, std::string_view text, double px) {
+        uint64_t h = 1469598103934665603ULL;
+        const auto mix = [&h](uint64_t v) { h = (h ^ v) * 1099511628211ULL; };
+        mix(face);
+        for (const char c : text) mix(static_cast<unsigned char>(c));
+        mix(static_cast<uint64_t>(px_key(px)));
+        return h;
+    }
+
+    struct Shaped {
+        uint64_t face = 0;
+        int64_t px_key = 0;
+        std::string text;
+        std::vector<ShapedGlyph> glyphs;
+    };
+    static constexpr size_t kShapeCacheMax = 4096;
+    std::unordered_map<uint64_t, Shaped> shaped_;
+
+public:
 
 private:
     weva_font_backend t_;

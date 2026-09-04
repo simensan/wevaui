@@ -1,74 +1,83 @@
 extends Control
 
-# What a FRAME costs, as opposed to a build.
+# What an ANIMATED page costs per frame, and what a hover costs on top.
 #
-# The gallery's stats window reports frame time, and a static page should cost
-# nothing: the draw list has not changed, so there is nothing to re-submit.
-# This checks that claim, because the node used to queue a redraw on every
-# update_document call whether or not anything had changed -- and a redraw
-# rebuilds three PackedArrays per draw and converts every vertex to sRGB.
+# Frame time is not the instrument: headless Godot has a floor near 6.9ms that
+# swamps it. update_document is timed directly instead, which is the engine's
+# own work and is not affected by the floor.
 const SAMPLES := "../../../tools/oracle/corpus/samples"
-const PAGE := "stats"
-const FRAMES := 240
+const FRAMES := 200
 
 var _doc: WevaDocument = null
+var _pages: Array[String] = ["hud", "combat-hud", "stats", "glass", "match3"]
+var _page := 0
 var _n := 0
-var _t0 := 0
+var _update_us := 0
+var _worst_us := 0
 var _redraws := 0
+var _hovering := false
+var _hover_us := 0
+var _hover_n := 0
+var _hover_worst := 0
 
 
-func _ready() -> void:
+func _load(name: String) -> void:
     var dir := ProjectSettings.globalize_path("res://").path_join(SAMPLES).simplify_path()
+    if _doc != null:
+        _doc.queue_free()
     _doc = WevaDocument.new()
     _doc.document_size = Vector2(1280, 720)
-    _doc.css = FileAccess.open(dir.path_join(PAGE + ".css"), FileAccess.READ).get_as_text()
-    _doc.html = FileAccess.open(dir.path_join(PAGE + ".html"), FileAccess.READ).get_as_text()
+    _doc.interactive = true
+    var css_path := dir.path_join(name + ".css")
+    _doc.css = "" if not FileAccess.file_exists(css_path) else \
+        FileAccess.open(css_path, FileAccess.READ).get_as_text()
+    _doc.html = FileAccess.open(dir.path_join(name + ".html"), FileAccess.READ).get_as_text()
     add_child(_doc)
     _doc.update_document()
     _doc.draw.connect(func() -> void: _redraws += 1)
-    print("frame probe: %s, %d draws, %d triangles" % [
-        PAGE, _doc.get_draw_count(), _doc.get_triangle_count()])
-    _t0 = Time.get_ticks_usec()
+    _n = 0
+    _update_us = 0
+    _worst_us = 0
+    _redraws = 0
+    _hover_us = 0
+    _hover_n = 0
+    _hover_worst = 0
 
 
-var _phase := 0
-var _update_us := 0
+func _ready() -> void:
+    print("%-14s %10s %10s %8s %12s %10s" % [
+        "page", "update ms", "worst ms", "redraws", "hover ms", "hover worst"])
+    _load(_pages[0])
 
 
 func _process(delta: float) -> void:
-    # Phase 0 drives the document exactly as a game is told to; phase 1 does
-    # not touch it at all. The DIFFERENCE is what this engine costs per frame.
-    # Without the second phase the number is Godot's own frame floor plus ours,
-    # reported as if it were all ours.
-    if _phase == 0:
-        var t := Time.get_ticks_usec()
-        _doc.update_document(delta)
-        _update_us += Time.get_ticks_usec() - t
-    elif _phase == 2:
-        # What an ANIMATING page pays: the draw list is republished, so every
-        # draw is walked and every vertex converted again.
-        _doc.queue_redraw()
+    # Half the run idle, half of it moving the pointer -- a hover is a restyle
+    # and whatever that invalidates, which is the thing that spikes.
+    var hover := _n >= FRAMES / 2
+    if hover:
+        # A different point each frame, so :hover actually changes.
+        _doc.set_pointer(Vector2(200 + (_n % 40) * 20, 120 + (_n % 17) * 30), 0)
+    var t := Time.get_ticks_usec()
+    _doc.update_document(delta)
+    var us := Time.get_ticks_usec() - t
+    if hover:
+        _hover_us += us
+        _hover_n += 1
+        _hover_worst = maxi(_hover_worst, us)
+    else:
+        _update_us += us
+        _worst_us = maxi(_worst_us, us)
     _n += 1
     if _n < FRAMES:
         return
 
-    var total := float(Time.get_ticks_usec() - _t0) / 1000.0
-    if _phase == 0:
-        print("frame probe: driven   %6.3f ms/frame   update %6.3f ms   %d redraws" % [
-            total / FRAMES, float(_update_us) / FRAMES / 1000.0, _redraws])
-        _phase = 1
-        _n = 0
-        _redraws = 0
-        _t0 = Time.get_ticks_usec()
+    var idle_n := FRAMES / 2
+    print("%-14s %10.3f %10.3f %8d %12.3f %10.3f" % [
+        _pages[_page], float(_update_us) / idle_n / 1000.0, float(_worst_us) / 1000.0,
+        _redraws, float(_hover_us) / maxi(1, _hover_n) / 1000.0,
+        float(_hover_worst) / 1000.0])
+    _page += 1
+    if _page >= _pages.size():
+        get_tree().quit()
         return
-    if _phase == 1:
-        print("frame probe: idle     %6.3f ms/frame   (Godot's own floor)   %d redraws" % [
-            total / FRAMES, _redraws])
-        _phase = 2
-        _n = 0
-        _redraws = 0
-        _t0 = Time.get_ticks_usec()
-        return
-    print("frame probe: redrawn  %6.3f ms/frame   %d redraws   (a full re-submit each frame)" % [
-        total / FRAMES, _redraws])
-    get_tree().quit()
+    _load(_pages[_page])
