@@ -377,15 +377,27 @@ quietly absorbed, because the obvious explanations are all ruled out:
   both resolvers out into `anchor.cpp`, leaving 27 added lines behind, changed
   nothing.
 
-The remaining candidate, untested, is that the two cross-translation-unit
-calls in `apply_absolute` stop it being inlined into `run_recursive`, which
-walks every box -- so the per-box code changes even on a page with nothing
-out of flow. Worth an hour with `-fopt-info-inline` if someone wants the
-2 per cent back.
+**It was the call sites, not the calls.** Disabling all six with `if (false)`
+while leaving every line in place kept most of the regression -- so their mere
+presence was changing how `apply_absolute` compiled. That same run also
+cleared `layout-stress` and `randhtml` to 0.0 and 0.2 per cent, which means
+their earlier readings were variance and the real cost only ever landed on
+samples that HAVE out-of-flow content.
 
-Kept as it stands because the feature closes nine real oracle failures and
-implements a CSS module the engine did not have, which is worth more than
-2 per cent.
+Collapsing the six into one cold call -- `apply_anchor_overrides`, which writes
+all four insets and both extents in `anchor.cpp` and is marked
+`[[gnu::cold]]` -- halves what is left:
+
+    sample     six call sites   one cold call
+    glass               +2.4%           +1.4%
+    inventory           +2.5%           +1.1%
+    layout-stress       +1.9%            0.0%
+    randhtml            +0.2%           +0.2%
+
+What remains is about 1 to 2 per cent on the four samples with the most
+out-of-flow boxes, which is the honest price of the feature rather than an
+accident of codegen. Kept: it closes nine real oracle failures and implements
+a CSS module the engine did not have.
 
 ## Tried, measured, and not kept
 

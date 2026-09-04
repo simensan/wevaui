@@ -12,6 +12,8 @@ namespace {
 
 const int kId_anchor_name = CssPropertyRegistry::instance().id_of("anchor-name");
 const int kId_position_anchor = CssPropertyRegistry::instance().id_of("position-anchor");
+const int kId_width = CssPropertyRegistry::instance().id_of("width");
+const int kId_height = CssPropertyRegistry::instance().id_of("height");
 
 std::string_view get(const ComputedStyle* s, int id) {
     return s ? s->get(id) : std::string_view();
@@ -114,22 +116,46 @@ void end_anchor_pass() {
     g_pass = PassAnchors{};
 }
 
-std::optional<double> try_anchor_offset(const BoxTree& tree, BoxId box,
-                                        std::string_view property, std::string_view raw,
-                                        const ContainingBlock& cb) {
-    if (!g_open || !looks_like_anchor_function(raw)) return std::nullopt;
-    double px = 0;
-    if (!resolve_anchor_offset(tree, g_pass.get(), box, property, raw, cb, &px)) {
-        return std::nullopt;
-    }
-    return px;
-}
+bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb) {
+    if (!g_open) return false;
+    const ComputedStyle* style = (*tree)[box].style;
+    if (!style) return false;
 
-std::optional<double> try_anchor_size(const BoxTree& tree, BoxId box, std::string_view raw) {
-    if (!g_open || !looks_like_anchor_function(raw)) return std::nullopt;
+    // Every one of these is a value the caller has already resolved the
+    // ordinary way; an anchor function replaces it, anything else leaves it.
+    struct Inset { const char* name; std::optional<double> Box::*slot; };
+    static const Inset kInsets[] = {
+        {"left", &Box::offset_left},
+        {"right", &Box::offset_right},
+        {"top", &Box::offset_top},
+        {"bottom", &Box::offset_bottom},
+    };
+    for (const Inset& in : kInsets) {
+        const std::string_view raw = style->get(in.name);
+        if (!looks_like_anchor_function(raw)) continue;
+        double px = 0;
+        if (resolve_anchor_offset(*tree, g_pass.get(), box, in.name, raw, cb, &px)) {
+            (*tree)[box].*in.slot = px;
+        }
+    }
+
+    bool width_set = false;
     double px = 0;
-    if (!resolve_anchor_size(tree, g_pass.get(), box, raw, &px)) return std::nullopt;
-    return px;
+    const std::string_view w_raw = style->get(kId_width);
+    if (looks_like_anchor_function(w_raw) &&
+        resolve_anchor_size(*tree, g_pass.get(), box, w_raw, &px)) {
+        (*tree)[box].width = px;
+        width_set = true;
+    }
+    const std::string_view h_raw = style->get(kId_height);
+    if (looks_like_anchor_function(h_raw) &&
+        resolve_anchor_size(*tree, g_pass.get(), box, h_raw, &px)) {
+        (*tree)[box].height = px;
+        // The auto-height rule would otherwise collapse it back to the
+        // content, which for an empty tooltip is zero.
+        (*tree)[box].cross_size_imposed = true;
+    }
+    return width_set;
 }
 
 AnchorRegistry collect_anchors(const BoxTree& tree, BoxId root) {

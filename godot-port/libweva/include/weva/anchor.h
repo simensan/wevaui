@@ -101,13 +101,17 @@ bool resolve_anchor_offset(const BoxTree& tree, const AnchorRegistry& anchors, B
                            std::string_view property, std::string_view raw,
                            const ContainingBlock& cb, double* out);
 
-// The same against the open pass's registry, which is what layout calls.
-// Absent when there is no pass, when `raw` is not an anchor function, or when
-// it names an anchor the document does not have.
-std::optional<double> try_anchor_offset(const BoxTree& tree, BoxId box,
-                                        std::string_view property, std::string_view raw,
-                                        const ContainingBlock& cb);
-std::optional<double> try_anchor_size(const BoxTree& tree, BoxId box, std::string_view raw);
+// Writes every anchor-derived value onto `box`: its four insets, its width and
+// its height, each only where the declaration is an anchor function that
+// resolves. Returns true when the WIDTH was one of them, which the caller must
+// follow with a relayout at that width.
+//
+// ONE entry point, called once per out-of-flow box, rather than a query per
+// property. Six call sites inside `apply_absolute` cost 2 per cent on the
+// samples with out-of-flow content even with every one of them disabled --
+// their presence alone was enough to change how that function was compiled.
+// Marked cold so it stays out of the caller's hot path.
+[[gnu::cold]] bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb);
 
 // The same for `anchor-size(<name>? width|height)`, which resolves to that
 // extent of the anchor's border box.
