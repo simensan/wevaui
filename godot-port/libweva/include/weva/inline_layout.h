@@ -99,6 +99,11 @@ struct InlineItem {
     double margin_edge = 0;     // start: margin-left; end: margin-right
     double decoration = 0;      // start: border-left + padding-left; end: the right pair
 
+    // A list marker under `list-style-position: outside`. flush_line lifts it
+    // out of the inline flow: it keeps its place on the line and its width,
+    // and stops advancing the pen for everything after it.
+    bool is_list_marker_outside = false;
+
     bool is_atom() const { return atom_box != kNoBox; }
     bool is_break() const { return break_box != kNoBox; }
     bool is_inline_start() const { return inline_box_start != kNoBox; }

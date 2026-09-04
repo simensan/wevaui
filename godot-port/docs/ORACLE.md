@@ -137,3 +137,22 @@ subgridded tracks grew implicit rows instead of clamping into the last one.
 Confirmed by promoting the lead to the three-way, which returned REF! on four
 cases -- 0 differ, chrome sides with us on every value.
 
+### What the harvest pool found
+
+Running the full three-way over all 210 harvest cases takes a few minutes and
+is worth doing when the gate has been green for a while. The first run read
+**181 agree, 14 differ, 15 reference bugs**. The 14:
+
+* Nine are CSS anchor positioning (`anchor-name`, `position-anchor`,
+  `position-try-fallbacks`), which `positioning.cpp` does not implement at all.
+  Not a bug -- a missing feature, and the largest one left.
+* Two were list markers taking inline space, fixed.
+* One is a subgrid case, fixed.
+* The rest (`QuestGridAutoRow-02`, `SnapshotMatcher-00`) are cases where Chrome
+  agrees with NEITHER engine: both differ from the browser on text-driven
+  heights, and from each other by a few pixels on top. Those need the font
+  decision in known-gaps/README.md before they mean anything.
+
+The 15 reference bugs are the C# reference being wrong with Chrome siding with
+us, which is the verdict working as designed and needs nothing.
+

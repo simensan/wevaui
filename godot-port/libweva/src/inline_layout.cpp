@@ -289,6 +289,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.source_run = c;
             item.inline_parent = inline_parent;
             item.text = b.text;
+            item.is_list_marker_outside = b.is_list_marker_outside;
             item.style = b.style ? b.style : inherited;
             // A text run's style is its element's, so `em` resolves against
             // that element's PARENT — `<small>` (0.83em) inside a 14px label is
@@ -975,6 +976,41 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                                        ? 0.0
                                        : declared_line_height.value_or(natural_height);
         const double baseline = natural_baseline + (line_height - natural_height) * 0.5;
+
+        // CSS Lists L3 §3.2: an `outside` marker -- the initial value, and so
+        // nearly every marker -- sits in the area BEFORE the content edge and
+        // takes no inline space. The port builds the marker as a text run at
+        // the start of the item's content, which is what let it be read as
+        // text; what it must not do is push the content along.
+        //
+        // Every inline child of every list item was shifted right by the
+        // marker's advance: a <span>, an <input> or an <img> in an <li> came
+        // out at x=54.4 where both Chrome and the reference put it at 40.
+        // Nothing caught it because a list item holding only TEXT has no
+        // element after the marker to dump, and every gated sample's items
+        // hold only text.
+        //
+        // The marker keeps its width -- it still draws -- and moves to its
+        // own left of the content edge. `inside` markers are not flagged and
+        // stay in the flow, which is exactly what `inside` means.
+        // ALL the marker's fragments, not the first: "1. " tokenises into the
+        // number and the space that follows it, so shifting by one fragment's
+        // width moved the content half way and looked like a rounding bug.
+        double marker_width = 0;
+        size_t marker_first = line.size();
+        for (size_t k = 0; k < line.size(); ++k) {
+            if (!line[k].item->is_list_marker_outside) continue;
+            if (marker_first == line.size()) marker_first = k;
+            marker_width += line[k].width;
+        }
+        if (marker_first < line.size() && marker_width > 0) {
+            // From the marker onwards: the marker's own fragments end up left
+            // of the content edge, and everything after them closes the gap.
+            // Anything BEFORE it -- a ::before, which the builder injects
+            // ahead of the marker -- keeps its place.
+            for (size_t k = marker_first; k < line.size(); ++k) line[k].x -= marker_width;
+            pen -= marker_width;
+        }
 
         double dx = line_left;
         if (iequals(align, "right")) dx += line_width - pen;

@@ -1666,11 +1666,27 @@ void test_list_marker_does_not_inherit_the_items_box() {
     const std::vector<BoxId> ls = f.lines("a");
     CHECK(!ls.empty());
     if (ls.empty()) return;
-    // The marker starts at the item's CONTENT edge -- border 2 plus padding
-    // 10 -- and not one padding further in.
-    double first_x = -1;
-    for (BoxId c : f.tree.children(ls[0])) { first_x = f.tree[c].x; break; }
-    CHECK(near(first_x, 0));   // relative to the line box, which is already inset
+    // The marker is measured from the item's CONTENT edge -- border 2 plus
+    // padding 10 -- and not one padding further in. That is what this test is
+    // about, and it still holds; what changed is which side of the edge the
+    // marker lands on.
+    //
+    // `list-style-position` is `outside` by default, so the marker ENDS at the
+    // content edge rather than starting there. Asserting x=0 here was
+    // asserting the marker sat in the inline flow, which shifted every inline
+    // child of every list item right by the marker's width.
+    double first_x = 0, last_x = 0;
+    bool any = false;
+    for (BoxId c : f.tree.children(ls[0])) {
+        if (!any) first_x = f.tree[c].x;
+        last_x = f.tree[c].x;
+        any = true;
+    }
+    CHECK(any);
+    // Relative to the line box, which is already inset by the frame.
+    CHECK(first_x < 0);
+    // And the item's own content begins exactly at the edge.
+    CHECK(near(last_x, 0));
 
     // And the item is one line tall plus its own frame: a marker carrying the
     // li's padding a second time would show up here.

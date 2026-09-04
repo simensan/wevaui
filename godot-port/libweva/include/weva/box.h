@@ -166,6 +166,12 @@ struct Box {
     ClearType clear = ClearType::None;
     // list-style-image on a marker box, whose text run is suppressed.
     std::string_view list_marker_image;
+    // A list item's marker, under `list-style-position: outside` -- the
+    // initial value. The marker still rides the item's first line, but it is
+    // placed BEFORE the content edge and takes no inline space, so the item's
+    // own content starts where it would with no marker at all. Set only for
+    // `outside`; an `inside` marker is an ordinary inline run.
+    bool is_list_marker_outside = false;
 
     // ---- Inline ---------------------------------------------------------
     // Set on the SECOND and later fragments of a span that wraps across lines

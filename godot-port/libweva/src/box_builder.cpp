@@ -31,6 +31,7 @@ std::string_view get(const ComputedStyle* s, int id) {
 // Resolved at static-init. The registry is a function-local static,
 // so it is constructed on first use and these cannot outrun it.
 const int kId_column_count = CssPropertyRegistry::instance().id_of("column-count");
+const int kId_list_style_position = CssPropertyRegistry::instance().id_of("list-style-position");
 const int kId_white_space = CssPropertyRegistry::instance().id_of("white-space");
 const int kId_column_width = CssPropertyRegistry::instance().id_of("column-width");
 const int kId_content = CssPropertyRegistry::instance().id_of("content");
@@ -479,6 +480,15 @@ void BoxBuilder::maybe_inject_list_marker(const Element& e, const ComputedStyle*
     const BoxId marker = tree_->create(BoxKind::Text, nullptr, marker_style);
     (*tree_)[marker].text = tree_->own_text(marker_text(type, ordinal) + " ");
     (*tree_)[marker].pseudo_host = &e;
+    // CSS Lists L3 §3.2. `outside` is the initial value and puts the marker
+    // before the content edge, taking no inline space; `inside` makes it the
+    // first thing in the item's content, which is what this box already is.
+    // Both spellings have to be read, because `list-style` is a shorthand with
+    // no registry slot -- see the note above on why it is read by NAME.
+    std::string_view position = get(style, kId_list_style_position);
+    if (shorthand.find("inside") != std::string_view::npos) position = "inside";
+    else if (shorthand.find("outside") != std::string_view::npos) position = "outside";
+    (*tree_)[marker].is_list_marker_outside = position != "inside";
     tree_->append_child(parent, marker);
 }
 
