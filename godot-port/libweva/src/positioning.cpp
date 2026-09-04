@@ -391,10 +391,16 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     if (has_explicit_size(style, "height") && cb.height > 0) {
         const ResolvedLength r = resolve_length(style, kId_height, ctx, fs, cb.height);
         if (r.kind == LengthKind::Length) {
-            double h = r.pixels;
-            if (!is_border_box(style)) {
-                h += box.padding_top + box.padding_bottom + box.border_top + box.border_bottom;
-            }
+            const double frame =
+                box.padding_top + box.padding_bottom + box.border_top + box.border_bottom;
+            // CSS Box Sizing L3 §4.1, the same floor block layout applies: a
+            // border box can never be shorter than its own padding and border,
+            // because the CONTENT box is what is floored at zero. Missing here,
+            // an absolutely positioned CSS triangle -- `height: 0` with a 10px
+            // bottom border, under the `* { box-sizing: border-box }` that
+            // opens most stylesheets -- came out zero tall and drew nothing,
+            // while the same element in flow was already correct.
+            const double h = is_border_box(style) ? std::max(r.pixels, frame) : r.pixels + frame;
             box.height = std::max(0.0, h);
         }
     }

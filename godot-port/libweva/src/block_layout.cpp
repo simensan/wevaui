@@ -269,10 +269,21 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
         // C# has the same two branches with the same body.
         resolved_width = avail;
     } else if (width_r.kind == LengthKind::Length) {
-        resolved_width = border_box ? width_r.pixels : width_r.pixels + width_frame;
+        // CSS Box Sizing L3 §4.1: under `border-box` the used value is floored
+        // so the CONTENT box does not go negative -- so the border box can
+        // never be narrower than its own padding and border.
+        //
+        // Without the floor, `width: 0` with a 6px border each side gave a box
+        // 0 wide instead of 12. That is not a corner case: it is the CSS
+        // triangle idiom (`width: 0; height: 0` with transparent side borders)
+        // under the `* { box-sizing: border-box }` that nearly every modern
+        // stylesheet opens with, so the marker vanished entirely. The same
+        // floor applies to a percentage, and to the height below.
+        resolved_width = border_box ? std::max(width_r.pixels, width_frame)
+                                    : width_r.pixels + width_frame;
     } else if (width_r.kind == LengthKind::Percent) {
         const double base = containing_block_width * width_r.percent * 0.01;
-        resolved_width = border_box ? base : base + width_frame;
+        resolved_width = border_box ? std::max(base, width_frame) : base + width_frame;
     } else {
         resolved_width = avail;
     }
@@ -1367,7 +1378,7 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
     double computed;
     double aspect_ratio = 0;
     if (height_r.kind == LengthKind::Length) {
-        computed = border_box ? height_r.pixels : height_r.pixels + frame;
+        computed = border_box ? std::max(height_r.pixels, frame) : height_r.pixels + frame;
     } else if (try_resolve_aspect_ratio(box.style, &aspect_ratio) && aspect_ratio > 0 &&
                box.width > 0) {
         // Width set, height auto: the ratio derives the height, between the

@@ -176,6 +176,7 @@ void test_grid_intrinsic_width_is_its_tracks();
 void test_top_level_comparison_functions();
 void test_flex_wrap_reverse_flips_item_alignment();
 void test_flex_baseline_items_size_the_line();
+void test_border_box_floors_at_its_own_frame();
 void test_aspect_ratio_height_respects_box_sizing();
 void test_table_fixed_layout_columns();
 void test_table_border_spacing_and_auto_layout();
@@ -567,6 +568,7 @@ int main() {
     test_top_level_comparison_functions();
     test_flex_wrap_reverse_flips_item_alignment();
     test_flex_baseline_items_size_the_line();
+    test_border_box_floors_at_its_own_frame();
     test_aspect_ratio_height_respects_box_sizing();
     test_table_fixed_layout_columns();
     test_table_border_spacing_and_auto_layout();

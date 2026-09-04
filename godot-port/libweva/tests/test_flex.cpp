@@ -819,6 +819,68 @@ void test_flex_baseline_items_size_the_line() {
     CHECK(near(f.box("t").y, 0));
 }
 
+// CSS Box Sizing L3 §4.1: under `border-box` the used value is floored so the
+// CONTENT box does not go negative, which means the border box can never be
+// smaller than its own padding and border.
+//
+// This is the CSS triangle idiom -- `width: 0; height: 0` with transparent side
+// borders -- under the `* { box-sizing: border-box }` that opens nearly every
+// modern stylesheet. Without the floor the box came out 0 x 0 and drew nothing.
+// combat-hud's minimap marker is exactly this, and it was invisible.
+void test_border_box_floors_at_its_own_frame() {
+    {
+        Fixture f;
+        CHECK(f.css("* { box-sizing: border-box }"
+                    "#w { width: 400px }"
+                    "#tri { width: 0; height: 0;"
+                    "       border-left: 6px solid transparent;"
+                    "       border-right: 6px solid transparent;"
+                    "       border-bottom: 10px solid #fff }"
+                    "#pad { width: 4px; height: 0; padding: 0 9px }"
+                    "#ok { width: 60px; height: 20px; border: 5px solid blue }"));
+        CHECK(f.layout("<body><div id=w><div id=tri></div><div id=pad></div>"
+                       "<div id=ok></div></div></body>"));
+        // 6 + 6 of border, and 10 of bottom border.
+        CHECK(near(f.box("tri").width, 12));
+        CHECK(near(f.box("tri").height, 10));
+        // Padding counts the same as border.
+        CHECK(near(f.box("pad").width, 18));
+        // A width that already fits its frame is untouched.
+        CHECK(near(f.box("ok").width, 60));
+        CHECK(near(f.box("ok").height, 20));
+    }
+    {
+        // The absolutely positioned form goes through a SECOND conversion, in
+        // the positioning pass, which re-resolves the height once the
+        // containing block is known. It had the same missing floor: the width
+        // came out right and the height stayed zero.
+        Fixture f;
+        CHECK(f.css("* { box-sizing: border-box }"
+                    "#map { position: relative; width: 200px; height: 120px }"
+                    "#p { position: absolute; top: 50%; left: 50%;"
+                    "     width: 0; height: 0;"
+                    "     border-left: 6px solid transparent;"
+                    "     border-right: 6px solid transparent;"
+                    "     border-bottom: 10px solid #fff }"));
+        CHECK(f.layout("<body><div id=map><span id=p></span></div></body>"));
+        CHECK(near(f.box("p").width, 12));
+        CHECK(near(f.box("p").height, 10));
+    }
+    {
+        // content-box is unaffected: there the width is the CONTENT and the
+        // frame is added on top, so zero plus a frame was always right.
+        Fixture f;
+        CHECK(f.css("#w { width: 400px }"
+                    "#tri { box-sizing: content-box; width: 0; height: 0;"
+                    "       border-left: 6px solid transparent;"
+                    "       border-right: 6px solid transparent;"
+                    "       border-bottom: 10px solid #fff }"));
+        CHECK(f.layout("<body><div id=w><div id=tri></div></div></body>"));
+        CHECK(near(f.box("tri").width, 12));
+        CHECK(near(f.box("tri").height, 10));
+    }
+}
+
 void test_aspect_ratio_height_respects_box_sizing() {
     // hud.html's portrait: `width: 100%; aspect-ratio: 3 / 4; border: 1px`
     // in a 286px column. Content-box: 286 of content → 381.33, plus the
