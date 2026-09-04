@@ -137,6 +137,60 @@ void test_size_containment() {
                     "#tall { height: 100px }"));
         CHECK(f.layout("<body><div id=w><div id=c><div id=tall></div></div></div></body>"));
         CHECK(near(f.box("c").height, 40));
+        // The block's width still comes from its containing block: nothing
+        // about size containment makes a normal-flow block shrink.
+        CHECK(near(f.box("c").width, 400));
+    }
+    {
+        // ...but a box whose width comes from its CONTENTS has no contents to
+        // take it from. CSS Containment L2 3.1 is both axes, and the first
+        // value of contain-intrinsic-size is the width.
+        //
+        // This was missing entirely: an inline-block came out the width of the
+        // text it was defined not to have, and everything after it on the line
+        // moved with it. It hid because a block in normal flow takes its width
+        // from its containing block either way, and that is what every
+        // containment case in the corpus was.
+        Fixture f;
+        CHECK(f.css("body { font-family: monospace; font-size: 16px }"
+                    "#w { width: 600px }"
+                    "#c { display: inline-block; contain: size;"
+                    "     contain-intrinsic-size: 100px 50px }"));
+        CHECK(f.layout("<body><div id=w><span id=c>a very long piece of text</span></div></body>"));
+        CHECK(near(f.box("c").width, 100));
+        CHECK(near(f.box("c").height, 50));
+    }
+    {
+        // The same for a float, and with the longhand rather than the
+        // shorthand -- which is read from the opposite end of the value.
+        Fixture f;
+        CHECK(f.css("body { font-family: monospace; font-size: 16px }"
+                    "#w { width: 600px }"
+                    "#c { float: left; contain: size; contain-intrinsic-width: 120px }"));
+        CHECK(f.layout("<body><div id=w><div id=c>floating content, quite wide</div></div></body>"));
+        CHECK(near(f.box("c").width, 120));
+    }
+    {
+        // Contained and shrink-to-fit with NO intrinsic size stated is zero
+        // wide, not content-wide. Falling back to the content would be the
+        // same bug wearing a default.
+        Fixture f;
+        CHECK(f.css("body { font-family: monospace; font-size: 16px }"
+                    "#w { width: 600px }"
+                    "#c { display: inline-block; contain: size }"));
+        CHECK(f.layout("<body><div id=w><span id=c>some text here</span></div></body>"));
+        CHECK(near(f.box("c").width, 0));
+    }
+    {
+        // Padding and border are NOT contained away -- containment removes the
+        // contents, not the box's own frame.
+        Fixture f;
+        CHECK(f.css("body { font-family: monospace; font-size: 16px }"
+                    "#w { width: 600px }"
+                    "#c { display: inline-block; contain: size; padding: 5px;"
+                    "     border: 2px solid #000; contain-intrinsic-size: 40px 10px }"));
+        CHECK(f.layout("<body><div id=w><span id=c>text</span></div></body>"));
+        CHECK(near(f.box("c").width, 40 + 10 + 4));
     }
     {
         // `content-visibility: hidden` implies size containment.

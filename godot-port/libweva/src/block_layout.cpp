@@ -48,6 +48,7 @@ const int kId_clear = CssPropertyRegistry::instance().id_of("clear");
 const int kId_contain = CssPropertyRegistry::instance().id_of("contain");
 const int kId_contain_intrinsic_height = CssPropertyRegistry::instance().id_of("contain-intrinsic-height");
 const int kId_contain_intrinsic_size = CssPropertyRegistry::instance().id_of("contain-intrinsic-size");
+const int kId_contain_intrinsic_width = CssPropertyRegistry::instance().id_of("contain-intrinsic-width");
 const int kId_content_visibility = CssPropertyRegistry::instance().id_of("content-visibility");
 const int kId_float = CssPropertyRegistry::instance().id_of("float");
 const int kId_height = CssPropertyRegistry::instance().id_of("height");
@@ -414,6 +415,29 @@ bool has_size_containment(const ComputedStyle* style) {
 // The substitute content size a size-contained box uses, from
 // `contain-intrinsic-size: <width> <height>` or its longhands. Negative means
 // none was given, which makes the contained size zero.
+//
+// The WIDTH half. Size containment sizes a box as though it had no contents,
+// and that is both axes -- CSS Containment L2 §3.1. It shows up only where the
+// width comes from the contents in the first place: an inline-block, a float,
+// an absolutely positioned box, a grid or flex item left to its own size. A
+// block in normal flow takes its width from its containing block either way,
+// which is why this was missing for so long without anything noticing.
+double contain_intrinsic_width(const ComputedStyle* style, const LayoutContext& ctx,
+                               double font_size) {
+    if (!style) return -1;
+    std::string_view raw = get(style, kId_contain_intrinsic_width);
+    if (raw.empty() || iequals(raw, "none")) {
+        raw = get(style, kId_contain_intrinsic_size);
+        if (raw.empty() || iequals(raw, "none")) return -1;
+        // Two values are width then height, so the width is the FIRST -- the
+        // opposite end from the height's reading of the same declaration.
+        const size_t space = raw.find(' ');
+        if (space != std::string_view::npos) raw = raw.substr(0, space);
+    }
+    const ResolvedLength r = resolve_length(raw, ctx, font_size, std::nullopt);
+    return r.kind == LengthKind::Length ? std::max(0.0, r.pixels) : -1;
+}
+
 double contain_intrinsic_height(const ComputedStyle* style, const LayoutContext& ctx,
                                 double font_size) {
     if (!style) return -1;
@@ -847,6 +871,24 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
         }
         // An explicit width needs no probing: apply_box_model already resolved
         // it, so just lay the contents out inside it.
+        layout_content(id, fs, available_width, parent_style);
+        return fs;
+    }
+
+    // CSS Containment L2 §3.1: a size-contained box is sized as though it had
+    // no contents, so there is nothing to shrink TO. Its width is whatever
+    // contain-intrinsic-size states, or zero when it states nothing.
+    //
+    // Checked before the content probes below, which is the whole point: those
+    // probes measure the contents this box is defined not to have. Without
+    // this an `<span style="display:inline-block; contain:size">` came out the
+    // width of its text -- 307px where the reference and a browser both say
+    // 100 -- and everything after it on the line moved with it.
+    if (has_size_containment(style)) {
+        const double intrinsic = contain_intrinsic_width(style, ctx_, fs);
+        const double used = intrinsic >= 0 ? intrinsic : 0.0;
+        Box& b = (*tree_)[id];
+        b.width = used + b.padding_left + b.padding_right + b.border_left + b.border_right;
         layout_content(id, fs, available_width, parent_style);
         return fs;
     }
