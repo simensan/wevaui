@@ -329,6 +329,33 @@ five-sweep A/B (+0.9% and +1.6%) and as -2.1% and -1.0% on an eleven-sweep run
 restricted to them. That is the second time a five-sweep reading has inverted;
 confirm anything under about three per cent before believing it either way.
 
+## There is no redundant relayout to remove
+
+The standing assumption through several rounds of this work was that flex and
+grid re-lay their children more than they need to, and that the win waiting to
+be had was structural rather than another few per cent off a property read.
+Counting says no.
+
+Instrumenting the entry points for one pass (a temporary probe, not kept):
+
+    sample            boxes  layout_block  relayout  relayout at the SAME width
+    layout-stress      6926          3704       988         193, all with a height imposed
+    vendor             8162          1907      1418          80, all with a height imposed
+    flex-playground    4890          1704      1341          54, all with a height imposed
+    grid-playground    3008           886      1065         202, all with a height imposed
+
+Relayout is between a quarter and more than all of the initial layout count --
+grid-playground relayouts MORE often than it lays out -- which is what made the
+hypothesis look good. But of the relayouts that arrive at a width the box
+already has, **every single one has had a cross size imposed on it**, so it is
+re-running with a genuinely new constraint rather than repeating itself. Not
+one relayout in the corpus is provably redundant.
+
+The two-pass shape is the flex and grid algorithms doing their job: lay the
+item out at the container's width to learn its natural size, then again at the
+size that falls out of resolving the line. Skipping the second pass is not
+available, and a guard on "same width" would fire on nothing.
+
 ## Tried, measured, and not kept
 
 Both of these looked obviously worth doing and are slower. Recorded so the
