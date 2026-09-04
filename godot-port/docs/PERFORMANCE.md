@@ -475,8 +475,25 @@ Text was 3.0 of the old 4.0 ms and is now 0.06. What is left is `rest` -- the
 part of a paint pass none of the named buckets claim: the tree walk, clips,
 borders, images, the layer machinery. It is the largest remaining bucket on
 every animated page (0.57 ms on hud, 1.3 ms on match3, where backgrounds are
-another 0.6), and attributing it further needs finer buckets in the profile
-before anything can be done about it.
+another 0.6).
+
+Two hypotheses about it have been tested and neither survived:
+
+* **The submission path.** `draw_mesh` is where every draw goes, and with a
+  clip it copies the whole mesh, transforms every vertex and clips
+  geometrically. It is now measured (`[submit ...]` in the log, reported as
+  "of which" because it nests inside the other buckets): **0.14 ms across 134
+  draws, 41 of them clipped.** Not it.
+* **Pseudo-element restyling.** `compute_pseudo_element` runs four times per
+  element and shows up in a sampled paint trace. But that trace comes from
+  `weva_bench --mutate=paint`, which forces a restyle; an animated document
+  deliberately skips it, and hud's cascade reads 0.000 ms on most frames. Not
+  it either.
+
+Sampling the paint path on hud is flat -- no site above five samples. So the
+remaining 0.6 ms is spread thin across the tree walk, about 4.5 microseconds a
+box, and there is no single thing to fix. Anyone picking this up should add
+buckets rather than guess, which is what ruled the two above out.
 
 There are now two caches on the same seam: this one, and the scalar width cache
 in `FontInterfaceMetrics::measure`. They are kept apart deliberately -- measure

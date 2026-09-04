@@ -276,10 +276,49 @@ void filter_rgba(std::vector<uint8_t>* rgba, const ColorFilter& f) {
     }
 }
 
+// WEVA_PAINT_LOG attributes a paint pass to its parts. Paint stayed the whole
+// cost of an update after the texture cache landed, and a per-pass total does
+// not say which part -- shadows, text or the backend -- to look at.
+struct PaintProfile {
+    double shadows = 0, text = 0, backgrounds = 0, other = 0;
+    double shadow_tess = 0, shadow_draw = 0;
+    int shadow_layers = 0;
+    // draw_mesh, the one path every draw goes through. Reported as "of which"
+    // rather than subtracted from `rest`, because it NESTS inside the other
+    // buckets -- a text draw is inside `text` AND inside this. Subtracting a
+    // nested bucket would make the remainder a lie.
+    double submit = 0;
+    long submit_calls = 0;
+    long submit_clipped = 0;
+    bool on = false;
+};
+// Thread-local: two documents can paint at once, and a diagnostic must not
+// introduce a data race to collect its numbers.
+thread_local PaintProfile g_paint_profile;
+
+struct ProfileScope {
+    double* slot;
+    std::chrono::steady_clock::time_point t0;
+    explicit ProfileScope(double* s)
+        : slot(g_paint_profile.on ? s : nullptr) {
+        if (slot) t0 = std::chrono::steady_clock::now();
+    }
+    ~ProfileScope() {
+        if (!slot) return;
+        *slot += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0)
+                     .count();
+    }
+};
+
 void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, double opacity = 1,
                const Transform2D* xform = nullptr, const ClipNode* clip = nullptr,
                const ColorFilter* filter = nullptr) {
     if (source.empty()) return;
+    ProfileScope prof(&g_paint_profile.submit);
+    if (g_paint_profile.on) {
+        ++g_paint_profile.submit_calls;
+        if (clip) ++g_paint_profile.submit_clipped;
+    }
     // A colour filter rewrites the vertex colours: the whole story for solid
     // geometry and coverage text; textured draws had their texels filtered
     // where they were generated (see filter_rgba), and keep white vertices.
@@ -669,32 +708,6 @@ int shadow_layers(double blur) {
     return std::min(48, std::max(12, k));
 }
 
-// WEVA_PAINT_LOG attributes a paint pass to its parts. Paint stayed the whole
-// cost of an update after the texture cache landed, and a per-pass total does
-// not say which part -- shadows, text or the backend -- to look at.
-struct PaintProfile {
-    double shadows = 0, text = 0, backgrounds = 0, other = 0;
-    double shadow_tess = 0, shadow_draw = 0;
-    int shadow_layers = 0;
-    bool on = false;
-};
-// Thread-local: two documents can paint at once, and a diagnostic must not
-// introduce a data race to collect its numbers.
-thread_local PaintProfile g_paint_profile;
-
-struct ProfileScope {
-    double* slot;
-    std::chrono::steady_clock::time_point t0;
-    explicit ProfileScope(double* s)
-        : slot(g_paint_profile.on ? s : nullptr) {
-        if (slot) t0 = std::chrono::steady_clock::now();
-    }
-    ~ProfileScope() {
-        if (!slot) return;
-        *slot += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0)
-                     .count();
-    }
-};
 
 // One blurred outer shadow, as a single textured quad.
 //
@@ -3281,9 +3294,11 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
         const PaintProfile& p = g_paint_profile;
         std::fprintf(stderr,
                      "    paint: glyphs %6.2f  shadows %6.2f (tess %5.2f draw %5.2f over %d "
-                     "layers)  text %6.2f  backgrounds %6.2f  rest %6.2f  (total %6.2f ms)\n",
+                     "layers)  text %6.2f  backgrounds %6.2f  rest %6.2f  (total %6.2f ms)"
+                     "  [submit %6.2f in %ld draws, %ld clipped]\n",
                      glyphs_ms, p.shadows, p.shadow_tess, p.shadow_draw, p.shadow_layers, p.text,
-                     p.backgrounds, total - glyphs_ms - p.shadows - p.text - p.backgrounds, total);
+                     p.backgrounds, total - glyphs_ms - p.shadows - p.text - p.backgrounds, total,
+                     p.submit, p.submit_calls, p.submit_clipped);
     }
 }
 
