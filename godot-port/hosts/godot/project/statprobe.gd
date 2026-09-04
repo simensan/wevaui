@@ -99,5 +99,33 @@ func _ready() -> void:
     print("stats probe: stub-font build %.3f ms against %.3f with the engine font"
         % [stub_ms, second_ms])
 
+    # A spread across the corpus, because one page is thin evidence. Each is
+    # built twice and the SECOND is reported: the first in the process pays for
+    # the engine font and its atlas, which no later one does.
+    print("")
+    print("%-18s %10s %10s" % ["sample", "engine ms", "stub ms"])
+    for name in ["stats", "vendor", "layout-stress", "quests", "randhtml",
+                 "inventory", "glass", "menu", "todo", "card-component"]:
+        var html_path := dir.path_join(name + ".html")
+        if not FileAccess.file_exists(html_path):
+            continue
+        var css_path := dir.path_join(name + ".css")
+        var html := FileAccess.open(html_path, FileAccess.READ).get_as_text()
+        var css := "" if not FileAccess.file_exists(css_path) else             FileAccess.open(css_path, FileAccess.READ).get_as_text()
+        var ms := [0.0, 0.0]
+        for mode in 2:
+            for pass_i in 2:
+                var t := Time.get_ticks_usec()
+                var d := WevaDocument.new()
+                d.use_engine_font = mode == 0
+                d.document_size = Vector2(1280, 720)
+                d.css = css
+                d.html = html
+                add_child(d)
+                d.update_document()
+                ms[mode] = float(Time.get_ticks_usec() - t) / 1000.0
+                d.queue_free()
+        print("%-18s %10.1f %10.1f" % [name, ms[0], ms[1]])
+
     print("godot stats: %d checks, %d failures" % [checks, fails])
     get_tree().quit(1 if fails else 0)
