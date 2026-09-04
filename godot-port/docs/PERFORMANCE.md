@@ -455,9 +455,36 @@ answered, guarded by a global version counter, measured 4 to 6 per cent SLOWER
 on the larger pages -- stats +6.1%, map +6.2%, vendor +4.2%. Real chains are
 one or two links, so the guard costs more than the walk.
 
-Both were measured the wrong way first and looked like wins. Both are losses
-under an interleaved A/B. Allocation count and time have now pointed opposite
-ways three times in this file.
+**Reserving the grid's track-list vectors.** `split_tracks` and
+`parse_track_list` grow by `push_back`, so a track list takes three
+allocations to reach eight. `reserve(8)` in both moved allocations by 1 per
+cent -- most real track lists are two or three tracks, where the growth walk
+allocated once anyway -- and cost 2 to 3 per cent in time for the
+over-reservation.
+
+**Replacing the grid's `std::stable_sort` with `std::sort`.** Sorting spanning
+items by span allocates a temporary buffer inside `stable_sort`: 1276 of the
+7210 allocations in a randhtml pass, the largest single site in the engine
+after `text-indent`. Ordering by (span, arrival index) instead is provably
+identical -- arrival order is exactly what stability preserved -- and removed
+17 per cent of the pass's allocations. It is 0.4 to 4.5 per cent SLOWER. The
+lists are short, and the second comparison in the comparator costs more than
+the buffer it avoids.
+
+All four were measured the wrong way first and looked like wins. All four are
+losses under an interleaved A/B.
+
+### Allocation count is not a proxy for time in this engine
+
+Four times now, and worth stating as a rule rather than a coincidence. The one
+allocation fix that DID pay -- `text-indent`, worth 18 per cent -- did not pay
+because it removed allocations. It paid because it removed a full CSS value
+PARSE from a per-container path: the allocation was a symptom of parsing text
+that a memo already held, and the parse was the cost.
+
+So the question to ask of an allocation site is not "how many?" but "what work
+is it a symptom of?". A vector that grows is not doing avoidable work. A
+`parse_css_value` on a string that has not changed since the last pass is.
 
 ## What is still slow, and why it has not been fixed
 
