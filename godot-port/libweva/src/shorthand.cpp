@@ -540,6 +540,54 @@ bool expand_shorthand(std::string_view name, std::string_view value,
         return true;
     }
 
+    // CSS Multi-column L1 §3.3: `columns: <'column-width'> || <'column-count'>`
+    // in either order. The multi-column layout already reads both longhands;
+    // only the shorthand was missing, so `columns: 3` did nothing at all while
+    // `column-count: 3` worked -- and `columns` is the form almost everybody
+    // writes.
+    //
+    // An INTEGER is the count and a LENGTH is the width. That is the whole
+    // distinction, and it is why the count check has to reject `12em` before
+    // is_number sees a bare `12`.
+    if (name == "columns") {
+        if (t.empty() || t.size() > 2) return true;
+        const auto is_count = [](std::string_view v) {
+            if (v.empty() || is_length_token(v) || is_percentage_token(v)) return false;
+            for (char c : v) {
+                if (!is_digit(c)) return false;
+            }
+            return true;
+        };
+        std::string_view width = "auto";
+        std::string_view count = "auto";
+        bool had_width = false, had_count = false;
+        for (std::string_view v : t) {
+            // `auto` fills whichever slot is still free, so `columns: auto 3`
+            // and `columns: 3 auto` both mean count 3 and width auto.
+            if (iequals(v, "auto")) continue;
+            if (!had_count && is_count(v)) {
+                count = v;
+                had_count = true;
+                continue;
+            }
+            // NOT is_length_token alone: it accepts `%` to match the
+            // reference's unit list, and column-width takes a <length>, never
+            // a percentage. `columns: 50%` is invalid, not a 50% column.
+            if (!had_width && ((is_length_token(v) && !is_percentage_token(v)) ||
+                               is_math_function(v))) {
+                width = v;
+                had_width = true;
+                continue;
+            }
+            // Anything else makes the whole declaration invalid, and an
+            // invalid shorthand sets none of its longhands.
+            return true;
+        }
+        emit(out, "column-width", width);
+        emit(out, "column-count", count);
+        return true;
+    }
+
     // ---- two-value axis shorthands
     // CSS Flexbox L1 §7.1.1. The one-value forms are the ones that matter and
     // the ones that are easy to get wrong: a bare NUMBER is flex-grow with

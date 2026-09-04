@@ -283,6 +283,26 @@ flex-playground read +1.9% on the five-sweep A/B and -2.4% on an eleven-sweep
 one restricted to it. Five sweeps is not always enough to call a two per cent
 move, even interleaved.
 
+## Box is 528 bytes, and that is not the problem
+
+A layout pass of layout-stress walks 6,926 boxes, 3.6 MB of them, which does
+not fit in L2 -- and sampling put `BoxTree::operator[]` at about a tenth of the
+pass. The obvious read is that the struct is too fat: 38 of those bytes are
+padding around interleaved bools, and another 72 are `std::optional` offsets
+that almost every box leaves empty. Splitting it hot/cold would be days of
+work across every layout file.
+
+Before starting, the cheap experiment: add 64 bytes of dead padding to `Box`
+and measure. A twelve per cent size increase cost **nothing** -- layout-stress
+-0.3%, vendor +0.3%, randhtml +1.4%, and the two samples that moved 2.5% are
+small ones inside the noise. So the samples on `operator[]` are the index and
+the loads, not misses that a smaller struct would avoid, and the whole refactor
+is off the table for a fraction of a per cent.
+
+Worth doing this way round whenever the fix is expensive and the diagnosis is
+an inference: make the problem WORSE first, cheaply, and see if the metric
+notices.
+
 ## Tried, measured, and not kept
 
 Both of these looked obviously worth doing and are slower. Recorded so the

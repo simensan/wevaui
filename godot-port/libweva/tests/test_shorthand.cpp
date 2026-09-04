@@ -222,6 +222,39 @@ void test_shorthand_font() {
     CHECK(is_shorthand("font"));
 }
 
+// CSS Multi-column L1 3.3 `columns`. Multi-column layout reads column-count
+// and column-width and works; the shorthand was never expanded, so `columns: 3`
+// -- the form almost everybody writes -- laid out as a single column while
+// `column-count: 3` laid out as three.
+void test_shorthand_columns() {
+    // An integer is the count, a length is the width, and the free slot takes
+    // `auto`. Getting this backwards is the whole risk in the property.
+    CHECK_EQ(expand("columns", "3"), "column-width=auto;column-count=3");
+    CHECK_EQ(expand("columns", "12em"), "column-width=12em;column-count=auto");
+    CHECK_EQ(expand("columns", "200px"), "column-width=200px;column-count=auto");
+
+    // Both, in either order.
+    CHECK_EQ(expand("columns", "3 12em"), "column-width=12em;column-count=3");
+    CHECK_EQ(expand("columns", "12em 3"), "column-width=12em;column-count=3");
+
+    // `auto` fills whichever slot is still free.
+    CHECK_EQ(expand("columns", "auto"), "column-width=auto;column-count=auto");
+    CHECK_EQ(expand("columns", "auto 3"), "column-width=auto;column-count=3");
+    CHECK_EQ(expand("columns", "3 auto"), "column-width=auto;column-count=3");
+    CHECK_EQ(expand("columns", "auto 12em"), "column-width=12em;column-count=auto");
+
+    // A bare number with a unit must not be read as a count: `12em` is a
+    // width, and the digit prefix is exactly what a looser check gets wrong.
+    CHECK_EQ(expand("columns", "12em 4em"), "<none>");
+    CHECK_EQ(expand("columns", "3 4"), "<none>");
+    CHECK_EQ(expand("columns", "50%"), "<none>");
+    CHECK_EQ(expand("columns", "3.5"), "<none>");
+    CHECK_EQ(expand("columns", "wide"), "<none>");
+    CHECK_EQ(expand("columns", "3 12em auto"), "<none>");
+
+    CHECK(is_shorthand("columns"));
+}
+
 // CSS Flexbox L1 5.1 `flex-flow`. Unexpanded, `flex-flow: column wrap` set
 // NEITHER longhand -- a column layout came out a row, which is not a subtle
 // kind of wrong.

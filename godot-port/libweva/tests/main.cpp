@@ -82,6 +82,7 @@ void test_auto_margin_centering();
 void test_shorthand_expansion_gap();
 void test_shorthand_tokenizer();
 void test_shorthand_edges();
+void test_shorthand_columns();
 void test_shorthand_flex_flow();
 void test_shorthand_text_decoration();
 void test_shorthand_border();
@@ -464,6 +465,7 @@ int main() {
     test_shorthand_expansion_gap();
     test_shorthand_tokenizer();
     test_shorthand_edges();
+    test_shorthand_columns();
     test_shorthand_flex_flow();
     test_shorthand_text_decoration();
     test_shorthand_border();

@@ -110,6 +110,37 @@ struct Fixture {
 
 void test_multicol() {
     {
+        // The `columns` shorthand reaching layout, which is the point of
+        // expanding it: identical geometry to the column-count case below,
+        // written the way an author actually writes it. Before the expansion
+        // existed this laid out as ONE column -- box_builder decides
+        // is_multicol from the longhands, and neither was ever set.
+        Fixture f;
+        CHECK(f.css("#m { width: 760px; columns: 3; column-gap: 20px }"
+                    ".item { height: 60px }"));
+        CHECK(f.layout("<body><div id=m><div id=a class=item></div><div id=b class=item></div>"
+                       "<div id=c class=item></div><div id=d class=item></div>"
+                       "<div id=e class=item></div><div id=g class=item></div></div></body>"));
+        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
+        CHECK(near(f.box("a").width, 240));
+        CHECK(near(f.box("c").x, 260));
+        CHECK(near(f.box("e").x, 520));
+        CHECK(near(f.box("m").height, 120));
+    }
+    {
+        // And the width form, which the same shorthand has to tell apart from
+        // the count form by nothing but the unit.
+        Fixture f;
+        CHECK(f.css("#m { width: 760px; columns: 200px; column-gap: 20px }"
+                    ".item { height: 60px }"));
+        CHECK(f.layout("<body><div id=m><div id=a class=item></div><div id=b class=item></div>"
+                       "<div id=c class=item></div></div></body>"));
+        CHECK(near(f.box("a").x, 0));
+        CHECK(near(f.box("b").x, 260));
+        CHECK(near(f.box("c").x, 520));
+        CHECK(near(f.box("a").width, 240));
+    }
+    {
         // column-count with a gap: three 240px columns in 760px, six 60px
         // children balanced two per column, so the container is 120 tall.
         Fixture f;
