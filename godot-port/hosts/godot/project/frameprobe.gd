@@ -5,6 +5,13 @@ extends Control
 # Frame time is not the instrument: headless Godot has a floor near 6.9ms that
 # swamps it. update_document is timed directly instead, which is the engine's
 # own work and is not affected by the floor.
+# Read it with the stage and paint logs for a breakdown:
+#   WEVA_STAGE_LOG=1 godot --headless --path . frameprobe.tscn
+#   WEVA_PAINT_LOG=1 godot --headless --path . frameprobe.tscn
+#
+# That pair is what found the text-shaping cost: the stage log said paint, the
+# paint log said text, and the ABI adapter said it was being asked twice a
+# frame for something that had not changed.
 const SAMPLES := "../../../tools/oracle/corpus/samples"
 const FRAMES := 200
 

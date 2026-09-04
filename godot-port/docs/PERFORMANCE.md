@@ -466,6 +466,18 @@ covers both callers. Measured through the host, engine work per frame:
 `hud`'s worst frame went 8.64 ms to 3.04, and its worst while hovering 12.91 to
 5.49.
 
+### Where hud's frame goes now
+
+    paint 0.82 ms total:  rest 0.57   backgrounds 0.13   shadows 0.08
+                          glyphs 0.03  text 0.03
+
+Text was 3.0 of the old 4.0 ms and is now 0.06. What is left is `rest` -- the
+part of a paint pass none of the named buckets claim: the tree walk, clips,
+borders, images, the layer machinery. It is the largest remaining bucket on
+every animated page (0.57 ms on hud, 1.3 ms on match3, where backgrounds are
+another 0.6), and attributing it further needs finer buckets in the profile
+before anything can be done about it.
+
 There are now two caches on the same seam: this one, and the scalar width cache
 in `FontInterfaceMetrics::measure`. They are kept apart deliberately -- measure
 wants a double and would otherwise copy a glyph vector to get one. Both are
