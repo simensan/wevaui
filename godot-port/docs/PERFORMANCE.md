@@ -258,6 +258,31 @@ again:
 Together with the registry flattening above, a layout pass of layout-stress is
 down from 3.16 ms to 2.67 ms.
 
+## Caller attribution, and the two things it found
+
+Line-level attribution names the callee. `id_of` was still visible after every
+by-name read had supposedly been converted, and `id_of` is not where the fix
+goes. The sampler now aggregates the innermost address WITH its caller
+(`WEVA_PAIRS` in the scratch `timesites.cpp`), which answered it in one run:
+
+`resolve_border_edges` takes its property names as lambda PARAMETERS --
+`edge("border-top-style", "border-top-width")` -- so the textual rewrite, which
+matched `get(style, "literal")`, could not see them. Eight name hashes per box
+per pass, and the largest single contributor left to `id_of`.
+
+`is_border_box` was a cross-translation-unit call from block, flex, grid,
+inline, table and positioning, several times per box, to read one byte's worth
+of answer. Now inline in the header, with the property id as a namespace-scope
+inline variable so there is no function-local static guard to check either.
+
+    layout-stress -6.2%   glass  -5.1%   match3    -7.4%
+    vendor        -4.2%   quests -4.0%   particles -7.0%
+    stats         -3.4%   randhtml -3.3%
+
+flex-playground read +1.9% on the five-sweep A/B and -2.4% on an eleven-sweep
+one restricted to it. Five sweeps is not always enough to call a two per cent
+move, even interleaved.
+
 ## Tried, measured, and not kept
 
 Both of these looked obviously worth doing and are slower. Recorded so the

@@ -53,6 +53,14 @@ const int kId_float = CssPropertyRegistry::instance().id_of("float");
 const int kId_height = CssPropertyRegistry::instance().id_of("height");
 const int kId_overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
 const int kId_overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
+const int kId_border_top_style = CssPropertyRegistry::instance().id_of("border-top-style");
+const int kId_border_right_style = CssPropertyRegistry::instance().id_of("border-right-style");
+const int kId_border_bottom_style = CssPropertyRegistry::instance().id_of("border-bottom-style");
+const int kId_border_left_style = CssPropertyRegistry::instance().id_of("border-left-style");
+const int kId_border_top_width = CssPropertyRegistry::instance().id_of("border-top-width");
+const int kId_border_right_width = CssPropertyRegistry::instance().id_of("border-right-width");
+const int kId_border_bottom_width = CssPropertyRegistry::instance().id_of("border-bottom-width");
+const int kId_border_left_width = CssPropertyRegistry::instance().id_of("border-left-width");
 
 
 bool iequals(std::string_view a, std::string_view b) {
@@ -155,28 +163,26 @@ ResolvedSides resolve_box_sides_px(const ComputedStyle* style, int shorthand_id,
 
 ResolvedSides resolve_border_edges(const ComputedStyle* style, const LayoutContext& ctx,
                                    double font_size) {
-    const auto edge = [&](std::string_view style_prop, std::string_view width_prop) {
-        const std::string_view s = get(style, style_prop);
+    // By id. Each of these was a name hashed and probed in the registry index,
+    // eight of them for every box on every pass -- caller attribution put this
+    // lambda at the top of what still reached id_of once the bulk rewrite was
+    // done, because the rewrite matched `get(style, "literal")` and these
+    // names arrive as parameters.
+    const auto edge = [&](int style_id, int width_id) {
+        const std::string_view s = get(style, style_id);
         // `none` and `hidden` zero the edge whatever border-width says. The
         // initial border-style is `none`, so an author who sets only
         // border-width gets no border at all — which is correct, and a
         // frequent surprise.
         if (s.empty() || s == "none" || s == "hidden") return 0.0;
-        return resolve_border_width(get(style, width_prop), font_size, ctx);
+        return resolve_border_width(get(style, width_id), font_size, ctx);
     };
     ResolvedSides r;
-    r.top = edge("border-top-style", "border-top-width");
-    r.right = edge("border-right-style", "border-right-width");
-    r.bottom = edge("border-bottom-style", "border-bottom-width");
-    r.left = edge("border-left-style", "border-left-width");
+    r.top = edge(kId_border_top_style, kId_border_top_width);
+    r.right = edge(kId_border_right_style, kId_border_right_width);
+    r.bottom = edge(kId_border_bottom_style, kId_border_bottom_width);
+    r.left = edge(kId_border_left_style, kId_border_left_width);
     return r;
-}
-
-bool is_border_box(const ComputedStyle* style) {
-    // Once per program rather than once per box. apply_box_model asks this for
-    // every box on every pass.
-    static const int kBoxSizing = CssPropertyRegistry::instance().id_of("box-sizing");
-    return style && style->get(kBoxSizing) == "border-box";
 }
 
 PositionType parse_position_type(std::string_view raw) {

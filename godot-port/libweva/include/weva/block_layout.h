@@ -1,6 +1,7 @@
 #pragma once
 #include "weva/box.h"
 #include "weva/computed_style.h"
+#include "weva/css_properties.h"
 #include "weva/font_metrics.h"
 #include "weva/inline_layout.h"
 
@@ -41,7 +42,22 @@ ResolvedSides resolve_border_edges(const ComputedStyle* style, const LayoutConte
                                    double font_size);
 
 // CSS Basic UI §4.1. Initial is content-box; only `border-box` flips it.
-bool is_border_box(const ComputedStyle* style);
+//
+// Inline, and in the header, because it is asked from block, flex, grid,
+// inline, table and positioning -- every one of those a cross-translation-unit
+// call, several times per box per pass, to read one byte's worth of answer.
+// Caller attribution put it at 50 samples on layout-stress from apply_box_model
+// alone.
+//
+// The id is a namespace-scope inline variable rather than a function-local
+// static so there is no guard to check on each call. The registry is itself a
+// function-local static, so it is constructed on first use and this cannot
+// outrun it.
+inline const int kBoxSizingId = CssPropertyRegistry::instance().id_of("box-sizing");
+
+inline bool is_border_box(const ComputedStyle* style) {
+    return style && style->get(kBoxSizingId) == "border-box";
+}
 
 PositionType parse_position_type(std::string_view raw);
 
