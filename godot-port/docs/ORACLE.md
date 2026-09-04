@@ -158,6 +158,37 @@ subgridded tracks grew implicit rows instead of clamping into the last one.
 Confirmed by promoting the lead to the three-way, which returned REF! on four
 cases -- 0 differ, chrome sides with us on every value.
 
+### Sort by the LARGEST disagreement, not by how many
+
+`chrome_sweep.py` orders both its cases and the values within each case by how
+far apart they are. That ordering is the whole technique, and it is what found
+`contain: inline-size` and the border-box floor:
+
+* **1 to 10px** is the font-metrics gap. Every page has it, it is on almost
+  every value, and it means nothing until the decision in
+  `known-gaps/README.md` is taken.
+* **100px and up** is a real divergence, and there are only ever a handful.
+
+Listing the first few differences in DOCUMENT order buries the second kind
+under the first. `9slice-demo`'s largest disagreement is 827px; the six values
+an element-ordered listing showed were all 2px font drift.
+
+Three things in its output are the TOOL, not the engine, and are worth knowing
+before chasing one:
+
+* **Transformed elements.** Chrome's `getBoundingClientRect` returns the
+  transformed axis-aligned bounding box; `weva_dump` applies only the
+  translation part of a transform. A `rotate(45deg)` on a 21px box reads as
+  21 against Chrome's 29.7, which is 21 times root two and not a bug.
+  `level-select` and `neon` are entirely this.
+* **Inline elements.** Chrome reports an inline element's rect as the union of
+  its line boxes and can report `y: -1` for an empty one; we report the box.
+  `card-component`'s 1280px is this, on a page that is pixel-identical.
+* **Runs of same-identity siblings.** The two sides do not always list them in
+  the same order. `repair_runs` re-pairs them by position now -- it took
+  `9slice-demo` from 53 differing values to 45 and `menu`'s worst from 135px
+  to 36 -- but it only handles CONSECUTIVE runs.
+
 ### What the harvest pool found
 
 Running the full three-way over all 210 harvest cases takes a few minutes and

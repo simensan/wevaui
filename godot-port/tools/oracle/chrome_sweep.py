@@ -16,6 +16,7 @@ of LEADS, not a gate. It is for finding cases worth promoting into samples.
 
 import argparse
 import json
+import re
 import os
 import subprocess
 import sys
@@ -24,6 +25,46 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from run_oracle import align, chrome_agrees, load_chrome   # noqa: E402
 
 KEYS = ("x", "y", "w", "h")
+
+
+def _ident(e):
+    return (e.get("tag"), e.get("id"), e.get("cls"))
+
+
+def repair_runs(ours, theirs, pairs):
+    """Re-pairs runs of same-identity siblings by position, in place.
+
+    `align` pairs by index within a run of identical identities, and the two
+    sides do not always list such a run in the same order -- the engines emit
+    inline fragments InsertChildFirst while Chrome walks the DOM. Positional
+    pairing then judges each element against the other's partner and reports
+    both as wrong, twice over and by the distance between them.
+
+    That is not a subtle effect. Two <code> siblings in 9slice-demo read as
+    `ours 971 vs chrome 231` and `ours 231 vs chrome 971` -- an 826px
+    disagreement that is entirely the pairing. run_oracle.py has refine_runs
+    for the same reason; this is the two-way version.
+    """
+    runs = []
+    start = 0
+    for i in range(1, len(ours) + 1):
+        if i == len(ours) or _ident(ours[i]) != _ident(ours[start]):
+            if i - start > 1:
+                runs.append(range(start, i))
+            start = i
+    for run in runs:
+        mine = [i for i in run if i in pairs]
+        if len(mine) < 2:
+            continue
+        theirs_idx = sorted(pairs[i] for i in mine)
+        # Both sides sorted by where they actually sit, then zipped. A run whose
+        # order already matches is unchanged by this.
+        mine.sort(key=lambda i: (round(float(ours[i].get("y") or 0), 3),
+                                 round(float(ours[i].get("x") or 0), 3)))
+        theirs_idx.sort(key=lambda j: (round(float(theirs[j].get("y") or 0), 3),
+                                       round(float(theirs[j].get("x") or 0), 3)))
+        for i, j in zip(mine, theirs_idx):
+            pairs[i] = j
 
 
 def compare(case, corpus, weva_dump, width, height, out_dir):
@@ -46,15 +87,29 @@ def compare(case, corpus, weva_dump, width, height, out_dir):
         ours = json.load(f).get("elements", [])
     theirs = chrome.get("elements", [])
     pairs, _ = align(ours, theirs)
-    bad = []
+    repair_runs(ours, theirs, pairs)
+    # Sorted by how FAR apart they are, not by document order.
+    #
+    # The whole value of this tool is that a page's largest disagreement tells
+    # you what kind of problem it has: 1 to 10px is the font-metrics gap, 100+
+    # is a real divergence. Listing the first few in element order buries that
+    # under whatever happened to be at the top of the page.
+    scored = []
     for i, j in sorted(pairs.items()):
         for k in KEYS:
-            if not chrome_agrees(theirs[j].get(k), ours[i].get(k)):
-                e = ours[i]
-                bad.append("%s%s%s .%s: ours %s, chrome %s"
+            if chrome_agrees(theirs[j].get(k), ours[i].get(k)):
+                continue
+            e = ours[i]
+            try:
+                delta = abs(float(ours[i].get(k)) - float(theirs[j].get(k)))
+            except (TypeError, ValueError):
+                delta = 0.0
+            scored.append((delta, "%s%s%s .%s: ours %s, chrome %s  (%.1fpx)"
                            % (e.get("tag"), "#" + e["id"] if e.get("id") else "",
                               "." + e["cls"] if e.get("cls") else "", k,
-                              ours[i].get(k), theirs[j].get(k)))
+                              ours[i].get(k), theirs[j].get(k), delta)))
+    scored.sort(key=lambda t: -t[0])
+    bad = [line for _, line in scored]
     unpaired = len(ours) - len(pairs)
     return (case, "DIFF" if bad else "ok", bad, unpaired)
 
@@ -89,10 +144,20 @@ def main():
         else:
             clean += 1
 
-    diffs.sort(key=lambda d: -len(d[1]))
+    # Cases ordered by their WORST disagreement, for the same reason.
+    def worst_of(bad):
+        m = 0.0
+        for line in bad:
+            hit = re.search(r"\(([\d.]+)px\)$", line)
+            if hit:
+                m = max(m, float(hit.group(1)))
+        return m
+
+    diffs.sort(key=lambda d: -worst_of(d[1]))
     for name, bad, unpaired in diffs:
-        print("DIFF %-44s %4d value(s)%s" % (name, len(bad),
-              ", %d unpaired" % unpaired if unpaired else ""))
+        print("DIFF %-40s worst %7.1fpx  %4d value(s)%s"
+              % (name, worst_of(bad), len(bad),
+                 ", %d unpaired" % unpaired if unpaired else ""))
         for line in bad[:a.show]:
             print("       ", line)
     for name, err in crashes:
