@@ -1667,9 +1667,24 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
                 // An inline box's fragment spans the runs it covers; counting
                 // it as well as them doubled every bold word.
                 if (run.kind == BoxKind::Inline) continue;
-                const double w = run.width + (run.kind == BoxKind::Block
-                                                  ? run.margin_left + run.margin_right
-                                                  : 0);
+                // An ATOM on the line -- an inline-block, a replaced element --
+                // goes through block_child_contribution rather than being read
+                // off the box, for the same reason a block child does.
+                //
+                // css-sizing-3 §5.2.1: while an intrinsic contribution is being
+                // computed, a percentage size behaves as `auto`. `run.width` is
+                // whatever size_atoms last stamped, and size_atoms resolves the
+                // percentage against a concrete available width -- so an
+                // `<img style="width: 100%">` reported the WHOLE containing
+                // block as its contribution. In a `1fr` track, which is
+                // minmax(auto, 1fr), that automatic minimum beats the fr share
+                // and one image took an entire three-column grid.
+                //
+                // It only showed on an INLINE image, because a `display: block`
+                // one is a block child and already took this path.
+                const double w = run.kind == BoxKind::Block
+                                     ? block_child_contribution(tree, r, ctx, minimum)
+                                     : run.width;
                 line_sum += w;
                 if (w > widest) widest = w;
             }

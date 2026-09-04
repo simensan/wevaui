@@ -677,6 +677,50 @@ void test_grid_stretched_rows_feed_back_into_columns() {
 // `grid-auto-flow` (CSS Grid L1 8.5). The port read neither half of it, so
 // `column` laid out in rows -- a toolbar meant to run down the side came out
 // across the top -- and `dense` packed sparsely.
+// css-sizing-3 §5.2.1: while an intrinsic contribution is being computed, a
+// percentage size behaves as `auto` -- for a replaced element with no intrinsic
+// width, nothing at all.
+//
+// A `1fr` track is minmax(auto, 1fr), so an item that over-reports its
+// automatic minimum beats the fr share and takes the whole grid. An INLINE
+// <img style="width: 100%"> did exactly that: intrinsic_width read the width
+// size_atoms had last stamped, which is the percentage already resolved
+// against a concrete available width. A `display: block` image was always
+// right, because a block child goes through block_child_contribution, which
+// has excluded percentages from the start.
+void test_grid_inline_atom_percentage_contribution() {
+    {
+        Fixture f;
+        CHECK(f.css("body { margin: 0; font-family: monospace; font-size: 16px }"
+                    "#g { display: grid; grid-template-columns: repeat(3, 1fr);"
+                    "     gap: 24px; width: 1216px }"
+                    ".c { padding: 20px }"
+                    ".blk { display: block; width: 100%; height: 120px }"
+                    ".inl { width: 100%; height: 200px }"));
+        CHECK(f.layout("<body><div id=g><div id=a class=c><img class=blk></div>"
+                       "<div id=b class=c><img class=blk></div>"
+                       "<div id=c class=c><img class=inl></div></div></body>"));
+        // (1216 - 48) / 3. The inline image must not take more than its third.
+        CHECK(near(f.box("a").width, 389.3333, 1e-3));
+        CHECK(near(f.box("b").width, 389.3333, 1e-3));
+        CHECK(near(f.box("c").width, 389.3333, 1e-3));
+    }
+    {
+        // The same for an inline-block, which is the other kind of atom -- and
+        // one that HAS content, so its contribution is its content's rather
+        // than zero. Its percentage width must still not be counted.
+        Fixture f;
+        CHECK(f.css("body { margin: 0; font-family: monospace; font-size: 16px }"
+                    "#g { display: grid; grid-template-columns: repeat(2, 1fr);"
+                    "     gap: 0; width: 400px }"
+                    ".ib { display: inline-block; width: 100% }"));
+        CHECK(f.layout("<body><div id=g><div id=a><span class=ib>x</span></div>"
+                       "<div id=b>y</div></div></body>"));
+        CHECK(near(f.box("a").width, 200));
+        CHECK(near(f.box("b").width, 200));
+    }
+}
+
 void test_grid_auto_flow_column() {
     {
         // Row flow, the default: four items across two columns fill left to

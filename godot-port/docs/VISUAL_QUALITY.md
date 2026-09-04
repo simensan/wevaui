@@ -151,7 +151,7 @@ said the frames run thickest-faint to thinnest-dense.
 2.3% -> 1.2%, `menu` 3.6% -> 2.7%, and **nothing worse**. episode-stats was the
 worst non-animated page in the corpus and is now the best.
 
-## OPEN: an inline replaced element with a percentage width blows out its grid track
+## FIXED: an inline replaced element with a percentage width blew out its grid track
 
 Reproduction: `tools/oracle/corpus/visual/inline-percent-in-grid.{html,css}`.
 
@@ -187,8 +187,17 @@ reads `ok` and only the comparison against Chrome shows it. It was found by
 sorting `chrome_sweep.py` output by the largest disagreement: 827px, on a page
 whose next-largest difference is 2px of line-height.
 
-**Fixing it** means telling the atom-sizing path that it is inside an intrinsic
-measurement, so percentages resolve as `auto` rather than against a provisional
-width. That is the same distinction block layout already makes; the plumbing is
-what is missing, and it wants its own pass.
+**The fix** turned out to need no new plumbing at all. `intrinsic_width` walks
+a line's runs and reads `run.width` off each one. For an atom, that is whatever
+`size_atoms` last stamped -- the percentage already resolved. Routing a Block
+run through `block_child_contribution`, the helper the block path already uses,
+gives the atom the same treatment: an explicit width counts, a percentage does
+not, and the result is bounded by min-/max-width. One expression.
+
+`9slice-demo`'s largest disagreement with Chrome went from **827px to 4.3px**,
+and the 4.3 is the font-metrics gap on a `<code>` line-height. Its differing
+values went from 45 to 28. The layout oracle still reads 0 differ on all three
+corpora -- the reference has this bug, so the samples that exercise it now come
+back as reference bugs with Chrome siding with us, which is the verdict working
+as designed.
 
