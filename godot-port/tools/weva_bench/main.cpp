@@ -262,8 +262,10 @@ int main(int argc, char** argv) {
 
     bool full = false;
     bool sample = false;
+    bool cold = false;
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--full") full = true;
+        if (std::string(argv[i]) == "--cold") cold = true;
         if (std::string(argv[i]) == "--sample") sample = true;
     }
 
@@ -327,6 +329,53 @@ int main(int argc, char** argv) {
     // A game redraws a static document for free -- the host only updates when
     // it marks the document dirty -- so this number is the cost of a change,
     // and it is the one that decides whether a health bar can move every frame.
+    // `--cold` is the number a user actually looks at: opening a screen.
+    //
+    // --full measures a change to a document that is already up, which is the
+    // steady state and, after the caching work, mostly free. It says nothing
+    // about the FIRST frame -- the glyph atlas is empty, every gradient has to
+    // be rasterized, every shadow blurred -- and that is the one a game pays
+    // when it opens a menu, and the one the gallery's `build` line shows.
+    //
+    // Everything is rebuilt per pass, parsing included, because a host that
+    // swaps a screen re-parses it too.
+    if (cold) {
+        double best = 1e300, total = 0;
+        start_sampling();
+        for (int i = 0; i < passes; ++i) {
+            const auto t0 = std::chrono::steady_clock::now();
+            weva_config cfg{};
+            cfg.viewport_width = 1280;
+            cfg.viewport_height = 720;
+            cfg.use_user_agent_stylesheet = 1;
+            weva_document_t d = weva_document_create(&cfg);
+            if (!css.empty() && weva_document_add_css(d, css.data(), css.size()) != WEVA_OK) {
+                std::fprintf(stderr, "weva_bench: css rejected\n");
+                return 1;
+            }
+            if (weva_document_load_html(d, html.data(), html.size()) != WEVA_OK) {
+                std::fprintf(stderr, "weva_bench: html rejected\n");
+                return 1;
+            }
+            weva_document_update(d, 0);
+            const double ms =
+                std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0)
+                    .count();
+            total += ms;
+            if (ms < best) best = ms;
+            weva_document_destroy(d);
+        }
+        stop_sampling();
+        if (passes <= 0) {
+            std::fprintf(stderr, "weva_bench: no passes (argument order?)\n");
+            return 1;
+        }
+        std::printf("%-20s %-7s %-10s best %8.3f ms  mean %8.3f ms\n", argv[1], "cold", "-", best,
+                    total / passes);
+        if (sample) report_sites("time samples", g_samples, 16);
+        return 0;
+    }
+
     if (full) {
         weva_config cfg{};
         cfg.viewport_width = 1280;
@@ -346,7 +395,24 @@ int main(int argc, char** argv) {
         // The element a mutation lands on: the first the document has, so any
         // sample works without knowing its markup.
         weva_element_t target = WEVA_ELEMENT_NONE;
-        if (mutate != "none" && mutate != "hover") {
+        // `--target=last` is the realistic case, and `*` is the worst one.
+        //
+        // `*` resolves to the first element in the document, which is <html> or
+        // <body>: a change there dirties everything, so the cascade restyles the
+        // page and no amount of scoping can help. That is worth measuring, but
+        // it is not what a running UI does. A health bar moving is a LEAF, and
+        // the last element in document order is a leaf on every page in the
+        // corpus without having to know its markup.
+        if (mutate == "last") mutate = "layout";
+        if (target_selector == "last") {
+            std::vector<weva_element_t> all(16384);
+            const size_t n = weva_document_query_all(d, "*", all.data(), all.size());
+            if (n == 0) {
+                std::fprintf(stderr, "weva_bench: --target=last found no element\n");
+                return 1;
+            }
+            target = all[std::min(n, all.size()) - 1];
+        } else if (mutate != "none" && mutate != "hover") {
             target = weva_document_query(d, target_selector.c_str());
             if (target == WEVA_ELEMENT_NONE) {
                 std::fprintf(stderr, "weva_bench: --mutate found no element\n");

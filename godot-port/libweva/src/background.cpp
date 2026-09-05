@@ -293,6 +293,27 @@ Srgb mix(const Srgb& a, const Srgb& b, double t) {
 // `inv_span` is prepare()'s table of 1/(p1 - p0) per stop pair, or null when
 // the caller has not built one -- the parse-time callers sample a handful of
 // points and do not need it.
+// `x` folded into [0, m), without calling libm.
+//
+// The idiom this replaces -- fmod(fmod(x, m) + m, m) -- is TWO calls into libm
+// per use, and the rasterizer's inner loop can reach four of them per sample:
+// two to wrap a repeating tile on each axis, two more inside a repeating
+// gradient's stop lookup. On map.html, whose page background is a pair of
+// repeating 80px grid-line gradients across the whole viewport, that came to
+// some six million fmod calls and 88 of its 89 ms of paint.
+//
+// floor() is a single instruction where fmod is a call with argument reduction
+// in it. The clamps at the end are not decoration: the multiply-and-subtract
+// can land a hair below zero or a hair on m where fmod would have returned
+// exactly one end or the other, and every caller relies on the half-open range.
+inline double wrap_positive(double x, double m) {
+    if (!(m > 0)) return 0;
+    const double r = x - m * std::floor(x / m);
+    if (r < 0) return 0;
+    if (r >= m) return 0;   // rounded up onto the period end, which IS zero
+    return r;
+}
+
 Srgb sample_stops(const std::vector<GradientStop>& stops, const std::vector<Srgb>& srgb, double t,
                   bool repeating, const std::vector<double>* inv_span = nullptr) {
     if (stops.empty()) return {0, 0, 0, 0};
@@ -301,7 +322,7 @@ Srgb sample_stops(const std::vector<GradientStop>& stops, const std::vector<Srgb
     const double last = stops.back().position;
     if (repeating && last > first) {
         const double span = last - first;
-        t = first + std::fmod(std::fmod(t - first, span) + span, span);
+        t = first + wrap_positive(t - first, span);
     }
     if (t <= first) return srgb.front();
     if (t >= last) return srgb.back();
@@ -665,9 +686,7 @@ double gradient_t(const PreparedGradient& p, double x, double y) {
         case Gradient::Kind::Conic: {
             double a = std::atan2(x - p.cx, -(y - p.cy));   // 0 at top, clockwise
             a -= p.g->from_deg * kPi / 180.0;
-            a = std::fmod(a, 2 * kPi);
-            if (a < 0) a += 2 * kPi;
-            t = a / (2 * kPi);
+            t = wrap_positive(a, 2 * kPi) / (2 * kPi);
             break;
         }
     }
@@ -1086,7 +1105,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         if (e.span > 0) {
             if (2 * e.half_width >= e.span) return true;
             const double base = e.positions.front();
-            const double w = base + std::fmod(std::fmod(t - base, e.span) + e.span, e.span);
+            const double w = base + wrap_positive(t - base, e.span);
             for (const double pos : e.positions) {
                 for (int k = -1; k <= 1; ++k) {
                     const double q = pos + k * e.span;
@@ -1104,6 +1123,9 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     };
 
     static const bool gradient_log = std::getenv("WEVA_GRADIENT_LOG") != nullptr;
+    // How much of the adaptive path actually pays off, which the sample count
+    // alone does not say: `3^2 samples` is the ceiling, not the bill.
+    long supersampled = 0;
     if (gradient_log) {
         std::fprintf(stderr, "  [grad] %dx%d tex, %zu tiles, %d^2 samples, flat_x %d flat_y %d\n",
                      tex_w, tex_h, tiles.size(), samples, flat_x ? 1 : 0, flat_y ? 1 : 0);
@@ -1135,6 +1157,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                     }
                 }
             }
+            if (gradient_log && texel_samples > 1) ++supersampled;
             const double tinv = 1.0 / texel_samples;
             for (int oy = 0; oy < texel_samples; ++oy) {
                 const double y = (py + (oy + 0.5) * tinv) * sy;
@@ -1146,9 +1169,9 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                     for (size_t i = tiles.size(); i-- > 0;) {
                         const Tile& t = tiles[i];
                         double lx = x - t.ox, ly = y - t.oy;
-                        if (t.wrap_x) lx = std::fmod(std::fmod(lx, t.tw) + t.tw, t.tw);
+                        if (t.wrap_x) lx = wrap_positive(lx, t.tw);
                         else if (!t.repeat_x && (lx < 0 || lx >= t.tw)) continue;
-                        if (t.wrap_y) ly = std::fmod(std::fmod(ly, t.th) + t.th, t.th);
+                        if (t.wrap_y) ly = wrap_positive(ly, t.th);
                         else if (!t.repeat_y && (ly < 0 || ly >= t.th)) continue;
                         const Srgb s = t.image ? sample_image(*t.image, lx, ly, t.tw, t.th)
                                                : sample_prepared(t.prepared, lx, ly);
@@ -1189,6 +1212,11 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
             o[2] = byte(b);
             o[3] = byte(a);
         }
+    }
+    if (gradient_log && samples > 1) {
+        const long texels = static_cast<long>(tex_w) * tex_h;
+        std::fprintf(stderr, "  [grad]   adaptive: %ld of %ld texels supersampled (%.1f%%)\n",
+                     supersampled, texels, texels ? 100.0 * supersampled / texels : 0.0);
     }
 }
 
