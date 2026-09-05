@@ -562,6 +562,39 @@ Reverted: correct, unmeasurable, and complexity in a correctness-sensitive
 path. The 32 ms is simply 1024 x 1024 texels x 2 tiles of ordinary per-pixel
 work.
 
+### Still open: the background cache key asks a question the pixels do not answer
+
+The remaining 28 ms of grid-playground's warm change is one texture being
+regenerated because the cache key opens with the box's width and height, and a
+`padding-left` flip moves the width by a pixel.
+
+`tools/gradsize` measures whether the texels actually depend on that. Two
+rasterisations of the same gradient, box 1280 wide against 1269, both capped to
+a 1024x1024 texture:
+
+    radial, all percentages        0 of 4,194,304 bytes differ
+    radial, px radius         24,736 differ, worst 58
+    linear, percentages       68,455 differ, worst  1
+    linear, px stop           96,256 differ, worst  1
+
+The first row is **bit-identical**, and it is the common case: percentage
+geometry divides the box size straight back out, so `rx = 0.8w` and `cx = 0.5w`
+make `ex = ((px + 0.5) / tex_w - 0.5) / 0.8` with no `w` left in it. A resize
+regenerates four megabytes of identical pixels.
+
+The other three are genuinely different and must keep missing -- a linear
+gradient's angle depends on the box aspect, which is why even its "percentages"
+row moves by one level.
+
+**The fix is not a heuristic.** A textual test for "no px anywhere" trips over
+`rgba(22,34,58,0)`; a size tolerance would silently share a texture between the
+second row's variants, which differ by 58 of 255. The principled version keys
+on the RESOLVED, size-normalised parameters the rasteriser will actually use --
+`prepare()` per tile is microseconds against the 28 ms rasterisation, so it can
+be run to build the key. What makes that safe rather than plausible is the
+table above: any candidate must make the first row hit and the other three
+miss, and gradsize says which.
+
 ### Still open: layout has no incremental path
 
 `layout-stress` sits at 7.6 ms a frame where everything else is under 2.3, and
