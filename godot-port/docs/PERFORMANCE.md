@@ -437,6 +437,55 @@ out-of-flow boxes, which is the honest price of the feature rather than an
 accident of codegen. Kept: it closes nine real oracle failures and implements
 a CSS module the engine did not have.
 
+## Every animated sample, and where the font seam still costs
+
+An animated page invalidates every frame, so a full pass runs every frame.
+Every sample with an `infinite` keyframe animation, engine work per frame,
+after the shaping and face-metrics caches (`frameprobe.tscn`):
+
+    page               ms/frame   worst    hovering   hover worst
+    layout-stress          7.58   10.99      10.62       57.04
+    match3                 2.30    3.60       2.77       11.04
+    particles              1.94    3.25       2.25       20.90
+    audit-validation       1.34    3.00       2.94        4.89
+    combat-hud             1.09    1.97       1.13        4.74
+    hud                    0.96    2.35       1.70        5.56
+    match3-endgame         0.90    1.61       0.88        4.04
+    neon                   0.49    1.22       0.58        2.54
+    glass                  0.03    0.16       0.59        6.98
+    story-bubble           0.02    0.05       0.05        0.70
+
+    stats  (static)        0.005   0.009      0.42        6.77
+    vendor (static)        0.004   0.009      0.38        6.56
+
+Two things the table says. Most animated pages are now under 2.3 ms, which is
+the shaping cache. And `layout-stress` is an outlier at 7.6, which it should be
+-- it is a synthetic worst case with 6,926 boxes and animations on top.
+
+### face_metrics was a host round trip per box
+
+`line_height`, `ascent` and `descent` are three entry points and each called
+`face_metrics` on the host. Layout asks for a line height on every box, so
+layout-stress paid 6,926 round trips an update for a value that depends on
+nothing but the face and the size -- of which a page uses about ten.
+
+Cached on (face, size) at the same adapter as shaping. layout-stress went 10.46
+to 7.58 ms a frame and its layout stage from 7-9 ms to 3.6-4.1;
+audit-validation 2.07 to 1.34.
+
+The shaping cache was checked for thrashing at the same time, since it clears
+wholesale when full and layout-stress is the page most likely to overflow it:
+**26,862 hits, 325 misses, 0 clears**. The working set is 325 runs against a
+4,096 cap, so the wholesale clear has never fired.
+
+### Still open: hover spikes
+
+The `hover worst` column is the remaining problem, and it is not confined to
+the heavy pages: `stats` and `vendor` are STATIC and still spike to 6.8 and 6.6
+ms on a hover, against a 0.005 ms idle frame. layout-stress reaches 57. A hover
+restyles and relayouts, so some of that is real, but a 1,300x jump on a static
+page is not explained by that alone and has not been investigated yet.
+
 ## An animated page reshaped all its text every frame
 
 `hud` ran at 12 to 15 ms a frame in the gallery and spiked on hover. That was

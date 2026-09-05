@@ -997,10 +997,29 @@ public:
     bool face_metrics(FaceHandle face, double px, FaceMetrics* out) override {
         if (!t_.face_metrics) return fallback_->face_metrics(face, px, out);
         if (!out) return false;
+
+        // Memoised on (face, size), which is a handful of pairs for a whole
+        // page -- a document uses a few font sizes, not a few thousand.
+        //
+        // Layout asks constantly: line_height, ascent and descent are three
+        // separate entry points and each one calls this, so every box that
+        // needs a line height costs a round trip into the host. On
+        // layout-stress that is 6,926 boxes an update, every update, for a
+        // value that depends on nothing but the face and the size.
+        const uint64_t key = (face.id << 20) ^ static_cast<uint64_t>(px_key(px));
+        const auto hit = face_metrics_.find(key);
+        if (hit != face_metrics_.end() && hit->second.face == face.id &&
+            hit->second.px_key == px_key(px)) {
+            *out = hit->second.metrics;
+            return hit->second.ok;
+        }
+
         *out = {};
         const int32_t ok = t_.face_metrics(t_.user_data, face.id, px, &out->ascent,
                                            &out->descent, &out->line_gap);
         out->units_per_em = px;
+        if (face_metrics_.size() >= kFaceMetricsCacheMax) face_metrics_.clear();
+        face_metrics_[key] = FaceEntry{face.id, px_key(px), *out, ok != 0};
         return ok != 0;
     }
     bool glyph_index(FaceHandle face, uint32_t cp, uint32_t* out) override {
@@ -1130,7 +1149,17 @@ private:
     static constexpr size_t kShapeCacheMax = 4096;
     std::unordered_map<uint64_t, Shaped> shaped_;
 
-public:
+    struct FaceEntry {
+        uint64_t face = 0;
+        int64_t px_key = 0;
+        FaceMetrics metrics;
+        bool ok = false;
+    };
+    // Small on purpose: a page's distinct (face, size) pairs number in the
+    // tens. If this ever fills, something is generating sizes rather than
+    // using them.
+    static constexpr size_t kFaceMetricsCacheMax = 512;
+    std::unordered_map<uint64_t, FaceEntry> face_metrics_;
 
 private:
     weva_font_backend t_;
