@@ -160,6 +160,24 @@ double rounded_rect_coverage(double px, double py, double w, double h,
 // passes per axis.
 void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma);
 
+// The same blur, for a buffer whose colour is the SAME everywhere and whose
+// alpha is the only thing that varies -- every box-shadow and every text-shadow,
+// which are a single colour drawn at a coverage.
+//
+// Blurring is linear and the working buffer is premultiplied, so the three
+// colour planes are just the alpha plane times a constant: running them through
+// the filter reproduces that constant at four times the cost in arithmetic and,
+// more to the point, in memory traffic. The result is identical wherever there
+// is any coverage, which test_blur_flat_matches_full holds it to.
+//
+// In a texel with NO coverage the two differ, and deliberately: the four-channel
+// path divides the blurred colour by a blurred alpha that has fallen to a
+// rounding residue, and gets an arbitrary colour out -- 204 of 255 away from the
+// real one, in the case the test pins. This keeps the real colour, which is what
+// a straight-alpha texture wants at its transparent edge, since the bilinear
+// filter blends those texels into their neighbours.
+void blur_flat_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma);
+
 // The colour of `g` at (x, y) inside a `width` x `height` gradient box, as
 // straight-alpha sRGB in [0, 1]. Exposed for tests.
 void sample_gradient(const Gradient& g, double x, double y, double width, double height,

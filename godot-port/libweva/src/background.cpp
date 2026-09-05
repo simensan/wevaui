@@ -1268,22 +1268,27 @@ void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
     }
 }
 
-void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) {
-    if (sigma <= 0.3 || width <= 0 || height <= 0) return;
-    const size_t n = static_cast<size_t>(width) * height;
-    std::vector<float> p(n * 4);
-    for (size_t i = 0; i < n; ++i) {
-        const float a = (*rgba)[i * 4 + 3] / 255.0f;
-        p[i * 4 + 0] = (*rgba)[i * 4 + 0] / 255.0f * a;
-        p[i * 4 + 1] = (*rgba)[i * 4 + 1] / 255.0f * a;
-        p[i * 4 + 2] = (*rgba)[i * 4 + 2] / 255.0f * a;
-        p[i * 4 + 3] = a;
-    }
-    // Three box blurs of width w approximate a Gaussian of sigma:
-    // w = sqrt(12 sigma^2 / 3 + 1).
-    const int box = std::max(1, static_cast<int>(std::sqrt(12.0 * sigma * sigma / 3.0 + 1.0)));
-    const int r = box / 2;
-    std::vector<float> tmp(n * 4);
+// The blur, over one channel or four.
+//
+// `flat` says the colour is the same everywhere and only the coverage varies,
+// which is true of every box-shadow and every text-shadow: the rasterizer was
+// handed a single colour and drew nothing but its alpha. Blurring is linear and
+// the buffer is premultiplied, so p = a * (r, g, b, 1) -- the three colour
+// planes are the alpha plane times a constant, and blurring them reproduces
+// that constant at four times the cost in both arithmetic and memory traffic.
+//
+// CH is a template parameter and not an argument, which is not a style choice:
+// the first version passed the channel count as an int, and the one-channel path
+// came out no faster than the four-channel one it replaced. A runtime trip count
+// of 1 is a loop the compiler cannot unroll or vectorise, and it gave back
+// everything the missing three channels saved.
+template <int CH>
+void blur_planes(std::vector<float>* p, std::vector<float>* tmp, int width, int height, int r) {
+    const int taps = 2 * r + 1;
+    // The reciprocal, not the divisor. Six passes over four channels is
+    // TWENTY-FOUR divides per texel, and a divide is the one arithmetic
+    // instruction a modern core cannot pipeline.
+    const double inv_taps = 1.0 / taps;
     // A box blur is a sliding window: moving one pixel adds one sample and
     // drops one, so a pass costs the same whatever the radius. Re-summing the
     // whole window per pixel instead made every blur O(width * radius), and a
@@ -1293,57 +1298,128 @@ void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) 
     //
     // Edges extend the outermost pixel, which is what the window did when it
     // clamped its index, so the divisor stays 2r+1 everywhere.
-    const int taps = 2 * r + 1;
     const auto pass_h = [&](const std::vector<float>& in, std::vector<float>* out) {
         for (int y = 0; y < height; ++y) {
-            const float* row = in.data() + static_cast<size_t>(y) * width * 4;
-            float* orow = out->data() + static_cast<size_t>(y) * width * 4;
-            double acc[4] = {0, 0, 0, 0};
+            const float* row = in.data() + static_cast<size_t>(y) * width * CH;
+            float* orow = out->data() + static_cast<size_t>(y) * width * CH;
+            double acc[CH] = {};
             for (int k = -r; k <= r; ++k) {
                 const int xx = std::clamp(k, 0, width - 1);
-                for (int c = 0; c < 4; ++c) acc[c] += row[xx * 4 + c];
+                for (int c = 0; c < CH; ++c) acc[c] += row[xx * CH + c];
             }
             for (int x = 0; x < width; ++x) {
-                for (int c = 0; c < 4; ++c) orow[x * 4 + c] = static_cast<float>(acc[c] / taps);
+                for (int c = 0; c < CH; ++c) {
+                    orow[x * CH + c] = static_cast<float>(acc[c] * inv_taps);
+                }
                 const int add = std::clamp(x + r + 1, 0, width - 1);
                 const int drop = std::clamp(x - r, 0, width - 1);
-                for (int c = 0; c < 4; ++c) acc[c] += row[add * 4 + c] - row[drop * 4 + c];
+                for (int c = 0; c < CH; ++c) acc[c] += row[add * CH + c] - row[drop * CH + c];
             }
         }
     };
+    // The vertical pass walks DOWN a row-major buffer, so consecutive reads are
+    // a row apart and every one of them is a cache miss. Taken one column at a
+    // time, each of those misses fetches a 64-byte line and uses CH floats of
+    // it -- four bytes, in the one-channel case, of every sixty-four.
+    //
+    // So a block of columns is carried down together: the line a miss fetches
+    // is then used in full. The block is in FLOATS rather than columns so that
+    // it stays one cache line whatever CH is.
+    //
+    // Worth less than it looks: on glass's two shadow textures it took the blur
+    // from 1.56 ms to 1.32, where making CH a compile-time constant had already
+    // taken it from 3.41. The prefetcher was evidently already doing most of
+    // this; the constant trip count was the real find.
+    constexpr int kBlockFloats = 16;
+    constexpr int kBlockCols = kBlockFloats / CH > 0 ? kBlockFloats / CH : 1;
     const auto pass_v = [&](const std::vector<float>& in, std::vector<float>* out) {
-        // Column-major over a row-major buffer, so the window walks down one
-        // column at a time and the stride is the row.
-        const size_t stride = static_cast<size_t>(width) * 4;
-        for (int x = 0; x < width; ++x) {
-            const float* col = in.data() + static_cast<size_t>(x) * 4;
-            float* ocol = out->data() + static_cast<size_t>(x) * 4;
-            double acc[4] = {0, 0, 0, 0};
+        const size_t stride = static_cast<size_t>(width) * CH;
+        for (int x0 = 0; x0 < width; x0 += kBlockCols) {
+            const int cols = std::min(kBlockCols, width - x0);
+            const int lanes = cols * CH;
+            const float* base = in.data() + static_cast<size_t>(x0) * CH;
+            float* obase = out->data() + static_cast<size_t>(x0) * CH;
+            double acc[kBlockCols * CH] = {};
             for (int k = -r; k <= r; ++k) {
                 const int yy = std::clamp(k, 0, height - 1);
-                for (int c = 0; c < 4; ++c) acc[c] += col[yy * stride + c];
+                const float* row = base + static_cast<size_t>(yy) * stride;
+                for (int i = 0; i < lanes; ++i) acc[i] += row[i];
             }
             for (int y = 0; y < height; ++y) {
-                for (int c = 0; c < 4; ++c) {
-                    ocol[static_cast<size_t>(y) * stride + c] = static_cast<float>(acc[c] / taps);
+                float* orow = obase + static_cast<size_t>(y) * stride;
+                for (int i = 0; i < lanes; ++i) {
+                    orow[i] = static_cast<float>(acc[i] * inv_taps);
                 }
                 const int add = std::clamp(y + r + 1, 0, height - 1);
                 const int drop = std::clamp(y - r, 0, height - 1);
-                for (int c = 0; c < 4; ++c) {
-                    acc[c] += col[add * stride + c] - col[drop * stride + c];
-                }
+                const float* arow = base + static_cast<size_t>(add) * stride;
+                const float* drow = base + static_cast<size_t>(drop) * stride;
+                for (int i = 0; i < lanes; ++i) acc[i] += arow[i] - drow[i];
             }
         }
     };
     for (int i = 0; i < 3; ++i) {
-        pass_h(p, &tmp);
-        pass_v(tmp, &p);
+        pass_h(*p, tmp);
+        pass_v(*tmp, p);
+    }
+}
+
+void blur_impl(std::vector<uint8_t>* rgba, int width, int height, double sigma, bool flat) {
+    if (sigma <= 0.3 || width <= 0 || height <= 0) return;
+    const size_t n = static_cast<size_t>(width) * height;
+    // One float per texel when only the coverage moves, four when the colour
+    // does.
+    const int ch = flat ? 1 : 4;
+    // The colour to write back. Taken from the first covered texel, since by
+    // assumption every covered texel carries it.
+    uint8_t fr = 0, fg = 0, fb = 0;
+    if (flat) {
+        for (size_t i = 0; i < n; ++i) {
+            if ((*rgba)[i * 4 + 3] == 0) continue;
+            fr = (*rgba)[i * 4 + 0];
+            fg = (*rgba)[i * 4 + 1];
+            fb = (*rgba)[i * 4 + 2];
+            break;
+        }
+    }
+    std::vector<float> p(n * ch);
+    if (flat) {
+        for (size_t i = 0; i < n; ++i) p[i] = (*rgba)[i * 4 + 3] / 255.0f;
+    } else {
+        for (size_t i = 0; i < n; ++i) {
+            const float a = (*rgba)[i * 4 + 3] / 255.0f;
+            p[i * 4 + 0] = (*rgba)[i * 4 + 0] / 255.0f * a;
+            p[i * 4 + 1] = (*rgba)[i * 4 + 1] / 255.0f * a;
+            p[i * 4 + 2] = (*rgba)[i * 4 + 2] / 255.0f * a;
+            p[i * 4 + 3] = a;
+        }
+    }
+    // Three box blurs of width w approximate a Gaussian of sigma:
+    // w = sqrt(12 sigma^2 / 3 + 1).
+    const int box = std::max(1, static_cast<int>(std::sqrt(12.0 * sigma * sigma / 3.0 + 1.0)));
+    const int r = box / 2;
+    std::vector<float> tmp(n * ch);
+    if (flat) blur_planes<1>(&p, &tmp, width, height, r);
+    else blur_planes<4>(&p, &tmp, width, height, r);
+    const auto byte = [](float v) {
+        return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255));
+    };
+    if (flat) {
+        // The same shape the four-channel tail has: a texel the blur left with
+        // no coverage at all keeps black, so bilinear filtering across the
+        // texture's transparent edge behaves exactly as it did before.
+        for (size_t i = 0; i < n; ++i) {
+            const float a = p[i];
+            const bool covered = a > 0;
+            (*rgba)[i * 4 + 0] = covered ? fr : 0;
+            (*rgba)[i * 4 + 1] = covered ? fg : 0;
+            (*rgba)[i * 4 + 2] = covered ? fb : 0;
+            (*rgba)[i * 4 + 3] = byte(a);
+        }
+        return;
     }
     for (size_t i = 0; i < n; ++i) {
         const float a = p[i * 4 + 3];
-        const auto byte = [](float v) {
-            return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255));
-        };
         if (a > 0) {
             (*rgba)[i * 4 + 0] = byte(p[i * 4 + 0] / a);
             (*rgba)[i * 4 + 1] = byte(p[i * 4 + 1] / a);
@@ -1353,6 +1429,14 @@ void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) 
         }
         (*rgba)[i * 4 + 3] = byte(a);
     }
+}
+
+void blur_flat_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) {
+    blur_impl(rgba, width, height, sigma, true);
+}
+
+void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) {
+    blur_impl(rgba, width, height, sigma, false);
 }
 
 } // namespace weva

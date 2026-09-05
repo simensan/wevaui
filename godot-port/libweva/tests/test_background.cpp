@@ -1372,3 +1372,111 @@ void test_background_size_independence() {
         if (c.must_differ) CHECK(any_differed);
     }
 }
+
+// blur_flat_rgba() claims to produce what blur_rgba() would, for a buffer whose
+// colour never varies. It is worth a test rather than an argument: the fast path
+// skips three quarters of the filter on the grounds that those planes are the
+// alpha plane times a constant, and if that reasoning is off by a rounding step
+// every shadow in the engine shifts colour.
+//
+// Wherever there is any coverage at all, the two agree byte for byte. Where
+// there is NONE they need not, and do not: the four-channel path divides the
+// blurred colour by the blurred alpha, and at a texel whose alpha has fallen to
+// a rounding residue that divide amplifies the residue into an arbitrary
+// colour -- 204 of 255 away from the real one, in the case below. It is
+// invisible directly, being fully transparent, but a straight-alpha texture is
+// sampled bilinearly and those texels DO bleed into their neighbours, so
+// carrying the actual colour there is the better of the two. That is what the
+// fast path does, and it is the one place the outputs differ.
+void test_blur_flat_matches_full() {
+    struct Shape { int w, h; double sigma; };
+    const Shape shapes[] = {
+        {5, 5, 1.0}, {32, 32, 4.0}, {64, 24, 9.0}, {17, 61, 2.5}, {120, 90, 30.0},
+    };
+    // Colours chosen to land awkwardly: one that divides 255 evenly, one that
+    // does not, one at full white and one nearly black.
+    const uint8_t colours[][3] = {{51, 102, 153}, {200, 37, 91}, {255, 255, 255}, {1, 2, 3}};
+
+    for (const Shape& s : shapes) {
+        for (const auto& c : colours) {
+            std::vector<uint8_t> full(static_cast<size_t>(s.w) * s.h * 4, 0);
+            // A coverage field with an edge, a ramp and a hole in it, so the
+            // blur has something to do in every direction.
+            for (int y = 0; y < s.h; ++y) {
+                for (int x = 0; x < s.w; ++x) {
+                    const bool inside = x > s.w / 5 && x < s.w - s.w / 5 &&
+                                        y > s.h / 5 && y < s.h - s.h / 5;
+                    const bool hole = x > s.w / 2 && x < s.w / 2 + 3 && y > s.h / 2;
+                    int a = 0;
+                    if (inside && !hole) a = 40 + (x * 211 + y * 97) % 216;
+                    if (a == 0) continue;
+                    uint8_t* d = full.data() + (static_cast<size_t>(y) * s.w + x) * 4;
+                    d[0] = c[0];
+                    d[1] = c[1];
+                    d[2] = c[2];
+                    d[3] = static_cast<uint8_t>(a);
+                }
+            }
+            std::vector<uint8_t> flat = full;
+            blur_rgba(&full, s.w, s.h, s.sigma);
+            blur_flat_rgba(&flat, s.w, s.h, s.sigma);
+
+            // The alpha plane -- the whole picture, as far as a shadow is
+            // concerned -- must be identical everywhere.
+            for (size_t i = 3; i < full.size(); i += 4) CHECK(flat[i] == full[i]);
+            // And so must the colour, wherever any of it shows.
+            for (size_t i = 0; i < full.size(); i += 4) {
+                if (full[i + 3] == 0) continue;
+                CHECK(flat[i + 0] == full[i + 0]);
+                CHECK(flat[i + 1] == full[i + 1]);
+                CHECK(flat[i + 2] == full[i + 2]);
+            }
+        }
+    }
+
+    // The transparent texels really are the only difference, and the fast path
+    // really does put the colour there -- stated as its own case so that a
+    // future change making them agree everywhere is noticed rather than
+    // silently accepted.
+    {
+        std::vector<uint8_t> full(17 * 61 * 4, 0);
+        for (int y = 12; y < 49; ++y) {
+            for (int x = 3; x < 14; ++x) {
+                uint8_t* d = full.data() + (static_cast<size_t>(y) * 17 + x) * 4;
+                d[0] = 51; d[1] = 102; d[2] = 153;
+                d[3] = static_cast<uint8_t>(40 + (x * 211 + y * 97) % 216);
+            }
+        }
+        std::vector<uint8_t> flat = full;
+        blur_rgba(&full, 17, 61, 2.5);
+        blur_flat_rgba(&flat, 17, 61, 2.5);
+        CHECK(flat != full);
+        int differing_with_coverage = 0, transparent_carrying_colour = 0;
+        for (size_t i = 0; i < full.size(); i += 4) {
+            const bool same = flat[i] == full[i] && flat[i + 1] == full[i + 1] &&
+                              flat[i + 2] == full[i + 2];
+            if (!same && full[i + 3] != 0) ++differing_with_coverage;
+            if (!same && full[i + 3] == 0 && flat[i] == 51 && flat[i + 1] == 102 &&
+                flat[i + 2] == 153) {
+                ++transparent_carrying_colour;
+            }
+        }
+        CHECK(differing_with_coverage == 0);
+        CHECK(transparent_carrying_colour > 0);
+    }
+
+    // And the degenerate inputs the shadow paths really do hand it: a buffer
+    // with no coverage anywhere, and a sigma below the threshold that makes
+    // the whole call a no-op.
+    std::vector<uint8_t> empty(64 * 4, 0);
+    std::vector<uint8_t> empty_flat = empty;
+    blur_rgba(&empty, 8, 8, 3.0);
+    blur_flat_rgba(&empty_flat, 8, 8, 3.0);
+    CHECK(empty_flat == empty);
+
+    std::vector<uint8_t> tiny(64 * 4, 200);
+    std::vector<uint8_t> tiny_flat = tiny;
+    blur_rgba(&tiny, 8, 8, 0.1);
+    blur_flat_rgba(&tiny_flat, 8, 8, 0.1);
+    CHECK(tiny_flat == tiny);
+}

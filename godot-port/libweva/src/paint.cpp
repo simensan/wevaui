@@ -287,6 +287,12 @@ struct PaintProfile {
     double shadows = 0, text = 0, backgrounds = 0, other = 0;
     double shadow_tess = 0, shadow_draw = 0;
     int shadow_layers = 0;
+    // The blurred-shadow texture, broken into its four steps. Charging the
+    // whole of paint_blurred_box_shadow to `shadows` said glass spent 5 ms
+    // there and nothing about which part, and reasoning about which part
+    // guessed wrong twice.
+    double shadow_raster = 0, shadow_blur = 0, shadow_punch = 0, shadow_upload = 0;
+    int shadow_textures = 0;
     // draw_mesh, the one path every draw goes through. Reported as "of which"
     // rather than subtracted from `rest`, because it NESTS inside the other
     // buckets -- a text draw is inside `text` AND inside this. Subtracting a
@@ -307,10 +313,14 @@ struct ProfileScope {
         : slot(g_paint_profile.on ? s : nullptr) {
         if (slot) t0 = std::chrono::steady_clock::now();
     }
-    ~ProfileScope() {
+    ~ProfileScope() { close(); }
+    // Ends the measurement early, for a region that finishes before its
+    // enclosing block does.
+    void close() {
         if (!slot) return;
         *slot += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0)
                      .count();
+        slot = nullptr;
     }
 };
 
@@ -789,10 +799,18 @@ bool paint_blurred_box_shadow(const Shadow& sh, const Rect& border_box, const Bo
     }
 
     if (!tex) {
+        ++g_paint_profile.shadow_textures;
         std::vector<uint8_t> rgba;
-        rasterize_background_padded({}, col, shape.width, shape.height, tex_w, tex_h, pad,
-                                    &shape_radii, ctx, font_size, &rgba);
-        blur_rgba(&rgba, tex_w, tex_h, sigma * scale);
+        {
+            ProfileScope r(&g_paint_profile.shadow_raster);
+            rasterize_background_padded({}, col, shape.width, shape.height, tex_w, tex_h, pad,
+                                        &shape_radii, ctx, font_size, &rgba);
+        }
+        {
+            ProfileScope b(&g_paint_profile.shadow_blur);
+            blur_flat_rgba(&rgba, tex_w, tex_h, sigma * scale);
+        }
+        ProfileScope punch(&g_paint_profile.shadow_punch);
 
         // CSS Backgrounds L3 §7.1: an outer shadow is not painted inside the
         // border box. The ring path did this by never drawing there; here the
@@ -814,6 +832,8 @@ bool paint_blurred_box_shadow(const Shadow& sh, const Rect& border_box, const Bo
             }
         }
 
+        punch.close();
+        ProfileScope up(&g_paint_profile.shadow_upload);
         tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
         if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
         else if (paint.owned_textures) paint.owned_textures->push_back(tex);
@@ -2288,7 +2308,7 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
             }
         }
     }
-    blur_rgba(&rgba, w, h, sigma);
+    blur_flat_rgba(&rgba, w, h, sigma);
 
     const TextureHandle tex = paint.backend->generate_texture(rgba, {w, h});
     if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
@@ -3333,10 +3353,12 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
         std::fprintf(stderr,
                      "    paint: glyphs %6.2f  shadows %6.2f (tess %5.2f draw %5.2f over %d "
                      "layers)  text %6.2f  backgrounds %6.2f  rest %6.2f  (total %6.2f ms)"
-                     "  [submit %6.2f in %ld draws, %ld clipped]\n",
+                     "  [submit %6.2f in %ld draws, %ld clipped]"
+                     "  [%d shadow tex: raster %5.2f blur %5.2f punch %5.2f upload %5.2f]\n",
                      glyphs_ms, p.shadows, p.shadow_tess, p.shadow_draw, p.shadow_layers, p.text,
                      p.backgrounds, total - glyphs_ms - p.shadows - p.text - p.backgrounds, total,
-                     p.submit, p.submit_calls, p.submit_clipped);
+                     p.submit, p.submit_calls, p.submit_clipped, p.shadow_textures,
+                     p.shadow_raster, p.shadow_blur, p.shadow_punch, p.shadow_upload);
     }
 }
 
