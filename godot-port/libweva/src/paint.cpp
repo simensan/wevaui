@@ -976,7 +976,8 @@ bool clips_children(const ComputedStyle* style) {
 // and viewport-sized for the canvas.
 std::string background_key(const ComputedStyle* style, const LinearColor& color, double w,
                            double h, const BorderRadii& radii, double font_size, double blur,
-                           const ColorFilter* filter) {
+                           const ColorFilter* filter,
+                           const std::vector<BackgroundLayer>* layers, int tex_w, int tex_h) {
     std::string k;
     k.reserve(128);
     const auto num = [&](double v) {
@@ -984,19 +985,41 @@ std::string background_key(const ComputedStyle* style, const LinearColor& color,
         std::snprintf(buf, sizeof(buf), "%.3f;", v);
         k += buf;
     };
-    num(w);
-    num(h);
+    // The texture's own resolution is always part of the key: two boxes that
+    // rasterize to different texel grids are different textures whatever else
+    // they share. Above 1024 it saturates, which is exactly where a texture is
+    // expensive enough for the sharing to matter.
+    num(tex_w);
+    num(tex_h);
+    // The box's SIZE is part of it only when the picture depends on the size.
+    //
+    // A gradient written entirely in percentages resolves to the same texels at
+    // any box size, so carrying the width and height here turned every resize
+    // into a full re-rasterization for nothing. A blurred background is the
+    // exception: its padding and its corner coverage are in absolute pixels.
+    const bool size_free =
+        blur == 0 && layers && !layers->empty() && background_size_independent(*layers);
+    if (!size_free) {
+        num(w);
+        num(h);
+    }
     num(font_size);
     num(blur);
     num(color.r);
     num(color.g);
     num(color.b);
     num(color.a);
-    const CornerRadius corners[4] = {radii.top_left, radii.top_right, radii.bottom_right,
-                                     radii.bottom_left};
-    for (const CornerRadius& c : corners) {
-        num(c.x_radius);
-        num(c.y_radius);
+    // Only the blurred path rasterizes the corners into the texture; the plain
+    // one gets its coverage from the mesh and never passes the radii to the
+    // rasterizer at all, so keying on them there is a miss for a difference the
+    // texels cannot have.
+    if (blur > 0) {
+        const CornerRadius corners[4] = {radii.top_left, radii.top_right, radii.bottom_right,
+                                         radii.bottom_left};
+        for (const CornerRadius& c : corners) {
+            num(c.x_radius);
+            num(c.y_radius);
+        }
     }
     // The raw CSS decides the layers, and it is already a string. Keying on the
     // parsed form would mean serialising every gradient stop by hand and
@@ -1914,7 +1937,8 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     std::string key;
     TextureHandle tex;
     if (paint.texture_cache && style) {
-        key = background_key(style, color, area.width, area.height, radii, font_size, 0, filter);
+        key = background_key(style, color, area.width, area.height, radii, font_size, 0, filter,
+                             &layers, tex_w, tex_h);
         tex = paint.texture_cache->get(key);
     }
     if (!tex) {
@@ -2454,7 +2478,8 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             std::string key;
             TextureHandle tex;
             if (paint.texture_cache && b.style) {
-                key = background_key(b.style, bg, b.width, b.height, radii, fs, blur, nullptr);
+                key = background_key(b.style, bg, b.width, b.height, radii, fs, blur, nullptr,
+                                     &layers, tex_w, tex_h);
                 tex = paint.texture_cache->get(key);
             }
             if (!tex) {

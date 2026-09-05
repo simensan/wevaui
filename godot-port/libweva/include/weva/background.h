@@ -84,6 +84,21 @@ struct BackgroundLayer {
 std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* style,
                                                        const LinearColor& current_color);
 
+// Whether these layers rasterize to the SAME texels at any box size, given the
+// same texture size -- because every coordinate in them is a fraction of the
+// box, and divides straight back out.
+//
+// This is what lets a background texture survive a resize. The cache key
+// otherwise carries the box's width and height, so a box one pixel wider is a
+// miss and a full re-rasterization: on grid-playground, whose <body> carries a
+// 1024x1024 two-layer gradient, that was 28 ms for a one-pixel padding change.
+//
+// Being wrong here puts the wrong picture on screen, and no page-comparison
+// gate would catch it -- the captures are of documents that never resize. The
+// test that does is test_background_size_independence, which rasterizes each
+// answer at several sizes and holds the promise to the pixel.
+bool background_size_independent(const std::vector<BackgroundLayer>& layers);
+
 // Rasterizes `color` under `layers` over a `width` x `height` painting area
 // into `tex_w` x `tex_h` straight-alpha sRGB RGBA8 texels. Gradient boxes are
 // the layer tiles; positions and sizes resolve with `ctx` and `font_size`.

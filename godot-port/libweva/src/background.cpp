@@ -785,6 +785,75 @@ std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* styl
     return layers;
 }
 
+namespace {
+
+// A raw <position> or <length-percentage> that resolves proportionally to the
+// box: a percentage, or one of the keywords, which are percentages by another
+// name. Anything absolute -- px, em, a calc() mixing the two -- does not.
+bool proportional(std::string_view raw) {
+    raw = trim(raw);
+    if (raw.empty()) return true;                 // omitted: the default, which is a %
+    if (iequals(raw, "auto") || iequals(raw, "cover") || iequals(raw, "contain")) return true;
+    if (iequals(raw, "left") || iequals(raw, "right") || iequals(raw, "top") ||
+        iequals(raw, "bottom") || iequals(raw, "center")) {
+        return true;
+    }
+    return raw.back() == '%';
+}
+
+// Whether the gradient's normalised form survives a change of ASPECT RATIO, not
+// merely of scale.
+//
+// This is the part that is easy to get wrong. A percentage-only radial ellipse
+// is fully normalised -- rx = 0.8w and cx = 0.5w give ex = ((u - 0.5) / 0.8)
+// with no w left in it -- so it is the same picture on a 1280-wide box and a
+// 1269-wide one. A CIRCLE is not: one radius covers both axes, so w/r appears
+// on one and h/r on the other and the two move apart as the box stretches.
+// Neither is a linear gradient at any angle off the axes, whose iso-lines are
+// only at that angle when the box is square, nor a conic, whose angles distort
+// the same way.
+bool aspect_invariant(const Gradient& g) {
+    switch (g.kind) {
+        case Gradient::Kind::Linear: {
+            // A corner keyword IS an aspect-dependent angle -- that is the
+            // whole point of the magic corners (Images L3 3.1.1).
+            if (g.corner != 0) return false;
+            const double a = std::fmod(std::fmod(g.angle_deg, 90.0) + 90.0, 90.0);
+            return a < 1e-9;
+        }
+        case Gradient::Kind::Radial:
+            return !g.circle;
+        case Gradient::Kind::Conic:
+            return false;
+    }
+    return false;
+}
+
+}   // namespace
+
+bool background_size_independent(const std::vector<BackgroundLayer>& layers) {
+    for (const BackgroundLayer& l : layers) {
+        // A decoded image has intrinsic pixel dimensions, so how much of the
+        // box it covers is a matter of absolute size.
+        if (!l.is_gradient || l.image || !l.url.empty()) return false;
+        if (!proportional(l.pos_x) || !proportional(l.pos_y)) return false;
+        if (!proportional(l.size_x) || !proportional(l.size_y)) return false;
+        const Gradient& g = l.gradient;
+        if (!aspect_invariant(g)) return false;
+        if (!proportional(g.pos_x_raw) || !proportional(g.pos_y_raw)) return false;
+        if (g.sizing == Gradient::Sizing::Explicit &&
+            (!proportional(g.radius_x_raw) || !proportional(g.radius_y_raw))) {
+            return false;
+        }
+        // A stop at `300px` sits a different fraction along the gradient line
+        // on every box width.
+        for (const GradientStop& st : g.stops) {
+            if (st.is_px) return false;
+        }
+    }
+    return true;
+}
+
 void sample_gradient(const Gradient& g, double x, double y, double width, double height,
                      const LayoutContext& ctx, double font_size, float out_srgb[4]) {
     const PreparedGradient p = prepare(g, width, height, ctx, font_size);

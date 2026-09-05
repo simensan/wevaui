@@ -1270,3 +1270,82 @@ void test_border_as_thick_as_its_radius() {
               " border-radius: 40px; border: 10px solid #c00 }",
               "<body><div id=b></div></body>") >= 1);
 }
+
+// background_size_independent() promises that two boxes of DIFFERENT sizes
+// rasterize to identical texels at the same texture size. That promise is what
+// lets the paint cache drop width and height from its key, so breaking it puts
+// the wrong picture on screen -- and no page-comparison gate would notice,
+// because the captured documents never resize.
+//
+// So it is checked directly: every answer is rasterized at several aspect
+// ratios and the bytes compared. `true` must mean byte-identical. `false` is
+// allowed to be conservative -- a gradient that happens not to move is still a
+// correct thing to refuse to share -- so it is checked the other way only for
+// the forms whose dependence is the reason the predicate exists.
+void test_background_size_independence() {
+    struct Case {
+        const char* css;
+        bool independent;
+        bool must_differ;   // and, for the dependent ones, that it really does
+    };
+    const Case cases[] = {
+        // Fully normalised: percentages all the way down, and an ELLIPSE, whose
+        // two radii divide the two axes back out independently.
+        {"radial-gradient(ellipse 80% 60% at 50% 0%, #16223a 0%, rgba(22,34,58,0) 55%)", true,
+         false},
+        {"radial-gradient(ellipse closest-side at 30% 70%, #fff, #000)", true, false},
+        {"radial-gradient(ellipse farthest-corner at 50% 50%, #fff, #000)", true, false},
+        // Axis-aligned linear: the ramp runs along one axis and normalises.
+        {"linear-gradient(180deg, #0b0e16 0%, #080a10 100%)", true, false},
+        {"linear-gradient(90deg, #f00 0%, #00f 100%)", true, false},
+        {"linear-gradient(270deg, #f00 20%, #00f 80%)", true, false},
+
+        // A px radius is an absolute distance; the box growing around it moves
+        // the falloff.
+        {"radial-gradient(ellipse 400px 300px at 50% 0%, #16223a 0%, rgba(22,34,58,0) 55%)", false,
+         true},
+        // One radius over two axes: the circle stays round while the box
+        // stretches, so the normalised picture cannot.
+        {"radial-gradient(circle closest-side at 50% 50%, #fff, #000)", false, true},
+        // Off the axes, the iso-lines are only at that angle on a square box.
+        {"linear-gradient(135deg, #36c2ff, #5b8cff)", false, true},
+        // The magic corners ARE an aspect-dependent angle.
+        {"linear-gradient(to bottom right, #36c2ff, #5b8cff)", false, true},
+        // Angles around a centre distort with the aspect ratio.
+        {"conic-gradient(from 0deg at 50% 50%, #f00, #0f0, #00f, #f00)", false, true},
+        // A px stop sits a different fraction along the line on every width.
+        {"linear-gradient(90deg, #36c2ff 0px, #5b8cff 300px)", false, true},
+    };
+
+    // Same texture size throughout -- that is the premise, and it is what the
+    // cache key now pins instead of the box.
+    const int tw = 128, th = 128;
+    const double sizes[][2] = {{1280, 1135}, {1269, 1135}, {640, 1135}, {1280, 400}};
+
+    for (const Case& c : cases) {
+        LayoutContext ctx;
+        ctx.viewport_width_px = 1280;
+        ctx.viewport_height_px = 720;
+        ComputedStyle style;
+        style.set(CssPropertyRegistry::instance().id_of("background-image"), c.css);
+        const LinearColor base{0, 0, 0, 0};
+        const std::vector<BackgroundLayer> layers = resolve_background_layers(&style, base);
+        CHECK(!layers.empty());
+        CHECK(background_size_independent(layers) == c.independent);
+
+        std::vector<uint8_t> first;
+        rasterize_background(layers, base, sizes[0][0], sizes[0][1], tw, th, ctx, 16, &first);
+        bool any_differed = false;
+        for (size_t i = 1; i < sizeof(sizes) / sizeof(sizes[0]); ++i) {
+            std::vector<uint8_t> other;
+            rasterize_background(layers, base, sizes[i][0], sizes[i][1], tw, th, ctx, 16, &other);
+            const bool same = other == first;
+            if (!same) any_differed = true;
+            // The whole promise, in one line: an independent answer means the
+            // bytes match at every size, with no tolerance.
+            if (c.independent) CHECK(same);
+        }
+        // And the dependent ones are not merely being refused out of caution.
+        if (c.must_differ) CHECK(any_differed);
+    }
+}

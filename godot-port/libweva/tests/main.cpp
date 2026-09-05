@@ -189,6 +189,7 @@ void test_grid_stretched_rows_feed_back_into_columns();
 void test_image_decode();
 void test_focus_move();
 void test_background_image();
+void test_background_size_independence();
 void test_replaced_img();
 void test_border_image();
 void test_background_shorthand();
@@ -590,6 +591,7 @@ int main() {
     test_image_decode();
     test_focus_move();
     test_background_image();
+    test_background_size_independence();
     test_replaced_img();
     test_border_image();
     test_background_shorthand();
