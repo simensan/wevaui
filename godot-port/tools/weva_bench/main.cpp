@@ -384,6 +384,15 @@ int main(int argc, char** argv) {
             if (ms < best) best = ms;
         }
         stop_sampling();
+        // A pass count of zero leaves `best` at its sentinel, which printed as
+        // 1e300 and, once averaged by a caller, as -nan. A sample with no
+        // stylesheet is enough to cause it: the shell passes an empty argument,
+        // the pass count slides into the css slot, and the run silently
+        // measures nothing. Saying so beats printing a number.
+        if (passes <= 0) {
+            std::fprintf(stderr, "weva_bench: no passes (argument order?)\n");
+            return 1;
+        }
         size_t draws = 0, textures = 0;
         weva_document_draws(d, &draws);
         weva_document_textures(d, &textures);
