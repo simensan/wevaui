@@ -478,6 +478,44 @@ wholesale when full and layout-stress is the page most likely to overflow it:
 **26,862 hits, 325 misses, 0 clears**. The working set is 325 runs against a
 4,096 cap, so the wholesale clear has never fired.
 
+### Still open: layout has no incremental path
+
+`layout-stress` sits at 7.6 ms a frame where everything else is under 2.3, and
+the reason is structural rather than a hot loop. From weva_c.cpp:
+
+    if (pending >= Invalidation::Layout) {
+        doc->tree.reset();
+        ... build_document(...)
+    }
+    if (pending >= Invalidation::Layout) {
+        block.layout_root(root, viewport_w, viewport_h);
+        run_positioning(...);
+        compute_visual_overflow(...);
+    }
+
+**Any** layout-affecting change rebuilds the whole box tree and lays out from
+the root. There is no scoping. The cascade above it IS scoped -- it confines
+its walk to touched elements and what the sheets can carry forward -- and
+layout simply is not.
+
+layout-stress animates `padding`, `width` and `font-size` on purpose (its own
+header says so: it exists to exercise the relayout path), so it pays a full
+6,926-box rebuild and layout on every frame for a handful of animated
+elements.
+
+**What that is worth, measured.** The identical page with its three keyframes
+swapped from padding/width/font-size to `opacity` -- same tree, same box count,
+same paint, only the invalidation tier different:
+
+    layout-stress                     7.63 ms/frame   worst 12.08
+    the same page, paint-only anims   3.41 ms/frame   worst  5.76
+
+So roughly 4.2 ms is the whole-tree relayout and 3.4 ms the whole-tree repaint.
+Scoping layout to the dirty subtrees would take the first most of the way to
+nothing; partial repaint would do the same for the second. Both are
+architectural projects rather than optimisations, and neither should be started
+without the incremental-layout benchmark the C# side has.
+
 ### Still open: hover spikes
 
 The `hover worst` column is the remaining problem, and it is not confined to
