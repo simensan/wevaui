@@ -2302,6 +2302,10 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     doc->textures.begin_pass();
     paint_tree(doc->tree, doc->root, doc->ctx, paint);
     doc->textures.end_pass(doc->render_backend());
+    if (stage_log) {
+        std::fprintf(stderr, "  %-12s %d hits %d misses, %zu held\n", "textures",
+                     doc->textures.hits(), doc->textures.misses(), doc->textures.size());
+    }
     lap("paint");
 
     // With a host backend registered the host issued its own draws, so there

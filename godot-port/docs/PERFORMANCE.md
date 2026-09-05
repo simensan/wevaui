@@ -478,6 +478,57 @@ wholesale when full and layout-stress is the page most likely to overflow it:
 **26,862 hits, 325 misses, 0 clears**. The working set is 325 runs against a
 4,096 cap, so the wholesale clear has never fired.
 
+## flipbench.sh: what ONE change costs on a whole page
+
+`layoutbench.sh` measures a layout from nothing. That is the cold case, and the
+engine is already good at it. A running UI does the WARM case instead: the page
+is laid out, one thing changes, and the engine catches up. Nothing measured
+that, which is why the next section's numbers had never been seen.
+
+`tools/flipbench.sh` flips one property on one element, alternating between two
+values so nothing can be cached, and reports two runs per sample:
+
+    layout   padding-left flipped   -> Invalidation::Layout
+    paint    background-color       -> Invalidation::Paint
+
+Read the DELTA. A paint flip repaints the whole page too, so absolute numbers
+are dominated by paint and would hide a layout change entirely; the difference
+subtracts everything the two share.
+
+### What it found on its first run
+
+    sample             layout    paint    delta
+    grid-playground    31.84     1.35     30.50
+    weva-landing       29.34     1.74     27.60
+    flex-playground    24.50     2.42     22.08
+    form-demo          14.99     1.05     13.94
+    layout-stress      11.61     8.84      2.77
+
+grid-playground is 3,008 boxes and layout-stress is 6,926, so this is not
+about page size. Staged, grid-playground's layout flip is layout 0.85 ms and
+**paint 32 ms** -- and its PAINT flip is 1.35 ms total. Paint after a layout
+change is twenty-four times paint after a paint change.
+
+The texture cache explains it exactly: a paint flip is 2 hits 0 misses every
+pass, a layout flip is 1 hit 1 MISS every pass. One texture regenerates
+forever. Logging the missing key names it:
+
+    MISS 1280.000;1135.000;16.000;...;radial-gradient(ellipse 80% 60% at 50...
+    MISS 1269.000;1135.000;...
+    MISS 1268.000;1135.000;...
+
+The key opens with the texture's size, and `padding-left: 11px` to `12px`
+changes the width of a full-page gradient by one pixel. So a one-pixel change
+regenerates 1,280 x 1,135 pixels -- 1.45 million -- at about 21 nanoseconds
+each, because `sample_stops` walks the stop list per pixel.
+
+That is a window resize as much as a benchmark: every resize frame of any page
+with a large gradient background pays it. Not fixed here. The two candidate
+fixes -- a stop lookup table, or quantising the size in the cache key so a
+small resize reuses the texture stretched -- both change pixels, and the
+backend gate compares the two rasterisers on the IDENTICAL draw list so it
+would not notice. That wants `visual_rank_soft.py` before and after.
+
 ### Still open: layout has no incremental path
 
 `layout-stress` sits at 7.6 ms a frame where everything else is under 2.3, and

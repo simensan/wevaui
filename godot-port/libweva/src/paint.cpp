@@ -25,6 +25,10 @@ TextureHandle TextureCache::get(const std::string& key) {
     auto it = entries_.find(key);
     if (it == entries_.end()) {
         ++misses_;
+        // TEMPORARY probe: which key is missing.
+        if (std::getenv("WEVA_TEXKEY_LOG")) {
+            std::fprintf(stderr, "  MISS %.140s\n", key.c_str());
+        }
         return {};
     }
     it->second.used = true;
