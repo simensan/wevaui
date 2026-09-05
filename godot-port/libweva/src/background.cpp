@@ -1058,6 +1058,87 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     const bool flat_x = constant_along(true);
     const bool flat_y = !flat_x && constant_along(false);
 
+    // How many texels before the picture REPEATS, on each axis, or 0 for never.
+    //
+    // flat_x and flat_y above are this with a period of one: a `180deg` ramp
+    // has the same colour all the way across a row, so the row is one texel and
+    // 1023 copies. A tiled background is the same idea one step out -- map's
+    // page background is a pair of 80px grid-line gradients across the whole
+    // viewport, which is 64 texels of picture and 737,216 texels of copying,
+    // and rasterizing all of it cost 59 ms of a 67 ms first paint.
+    //
+    // Every tile has to repeat on the axis for the composite to. A tile that
+    // covers the area rather than repeating across it (`wrap_x` false) is one
+    // gradient stretched over the whole width and has no period at all, so one
+    // of those is enough to rule the axis out.
+    //
+    // The period is taken in TEXELS and must land on a whole number of them: a
+    // tile 80px wide on a texel grid of 1.25px steps is 64 texels exactly, and
+    // if it were not, copying would shift the pattern by a fraction of a texel
+    // every period and the seams would show.
+    const auto period_along = [&](bool horizontal) -> int {
+        if (tiles.empty()) return 0;
+        const int tex_extent = horizontal ? tex_w : tex_h;
+        const double step = horizontal ? width / tex_w : height / tex_h;
+        long lcm = 1;
+        for (const Tile& t : tiles) {
+            // Two different things repeat, and both count.
+            //
+            // A tiled background repeats because `background-size` is smaller
+            // than the box, and the period is the tile. A
+            // repeating-linear-gradient repeats inside a tile that covers the
+            // whole box, and the period is its stop span projected onto this
+            // axis -- map's grid is the second kind, so a test that only knew
+            // about the first found nothing.
+            double period_px = 0;
+            if (horizontal ? t.wrap_x : t.wrap_y) {
+                period_px = horizontal ? t.tw : t.th;
+            } else {
+                // Not tiled on this axis: it must be a covering tile, or its
+                // own edge is a feature and there is no period.
+                const double o = horizontal ? t.ox : t.oy;
+                const double extent = horizontal ? width : height;
+                const double own = horizontal ? t.tw : t.th;
+                if (o > 0 || o + own < extent) return 0;
+                const PreparedGradient& g = t.prepared;
+                // A radial or conic gradient has no period along an axis, and
+                // an image that is not tiled is just an image.
+                if (t.image || !g.g || g.g->kind != Gradient::Kind::Linear) return 0;
+                const double d = std::fabs(horizontal ? g.dx : g.dy);
+                if (d < 1e-9) {
+                    // The gradient does not vary along this axis at all, so one
+                    // texel is the whole story -- which is what flat_x and
+                    // flat_y say when EVERY tile is like this.
+                    period_px = step;
+                } else {
+                    if (!g.g->repeating || g.stops.size() < 2) return 0;
+                    const double stop_span = g.stops.back().position - g.stops.front().position;
+                    if (!(stop_span > 0)) return 0;
+                    // t advances by d / line_length per pixel, and repeats every
+                    // stop_span of t.
+                    period_px = stop_span * g.line_length / d;
+                }
+            }
+            if (!(period_px > 0)) return 0;
+            const double in_texels = period_px / step;
+            const long rounded = std::lround(in_texels);
+            if (rounded < 1 || std::fabs(in_texels - rounded) > 1e-9) return 0;
+            // The least common multiple, spelled out to keep the overflow check
+            // in view: two coprime periods multiply, and a pair of odd tile
+            // sizes would take this past the texture in a hurry.
+            long a = lcm, b = rounded;
+            while (b) { const long r = a % b; a = b; b = r; }
+            const long g = a > 0 ? a : 1;
+            if (lcm / g > tex_extent) return 0;
+            lcm = lcm / g * rounded;
+            if (lcm >= tex_extent) return 0;
+        }
+        return static_cast<int>(lcm);
+    };
+    // Only where the cheaper flat path does not already cover the axis.
+    const int period_x = flat_x ? 0 : period_along(true);
+    const int period_y = flat_y ? 0 : period_along(false);
+
     // A texel only needs more than one sample where the gradient actually
     // steps. Everywhere else the ramp is linear across the texel, so the nine
     // samples average to the one at the centre and the extra eight are waste
@@ -1138,10 +1219,29 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                         static_cast<size_t>(tex_w) * 4);
             continue;
         }
+        if (period_y > 0 && py >= period_y) {
+            // A whole row, already drawn one period up.
+            std::memcpy(out_rgba->data() + static_cast<size_t>(py) * tex_w * 4,
+                        out_rgba->data() + static_cast<size_t>(py - period_y) * tex_w * 4,
+                        static_cast<size_t>(tex_w) * 4);
+            continue;
+        }
         for (int px = 0; px < tex_w; ++px) {
             if (flat_x && px > 0) {
                 std::memcpy(out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4,
                             out_rgba->data() + static_cast<size_t>(py) * tex_w * 4, 4);
+                continue;
+            }
+            if (period_x > 0 && px >= period_x) {
+                // The rest of the row is this row's first period, repeated. One
+                // memcpy of the whole tail would be wrong: the source overlaps
+                // the destination whenever the tail is longer than the period.
+                const size_t row = static_cast<size_t>(py) * tex_w * 4;
+                const int run = std::min(period_x, tex_w - px);
+                std::memcpy(out_rgba->data() + row + static_cast<size_t>(px) * 4,
+                            out_rgba->data() + row + static_cast<size_t>(px - period_x) * 4,
+                            static_cast<size_t>(run) * 4);
+                px += run - 1;
                 continue;
             }
             float ar = 0, ag = 0, ab = 0, aa = 0;
@@ -1212,6 +1312,10 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
             o[2] = byte(b);
             o[3] = byte(a);
         }
+    }
+    if (gradient_log && (period_x > 0 || period_y > 0)) {
+        std::fprintf(stderr, "  [grad]   period %d x %d of %d x %d texels\n",
+                     period_x ? period_x : tex_w, period_y ? period_y : tex_h, tex_w, tex_h);
     }
     if (gradient_log && samples > 1) {
         const long texels = static_cast<long>(tex_w) * tex_h;
