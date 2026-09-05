@@ -1930,8 +1930,17 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
         return false;
     }
     ProfileScope prof(&g_paint_profile.backgrounds);
-    const int tex_w = static_cast<int>(std::min(1024.0, std::ceil(area.width)));
-    const int tex_h = static_cast<int>(std::min(1024.0, std::ceil(area.height)));
+    // A texel per pixel, capped -- except for a background with no
+    // discontinuity in it, which the bilinear filter reconstructs from far
+    // fewer. WEVA_SMOOTH_TEXELS overrides the cap, for calibrating it.
+    static const int smooth_cap = [] {
+        const char* e = std::getenv("WEVA_SMOOTH_TEXELS");
+        return e ? std::atoi(e) : kSmoothGradientTexels;
+    }();
+    const int detail = background_texture_detail(layers) ? smooth_cap : 0;
+    const double cap = detail > 0 ? static_cast<double>(detail) : 1024.0;
+    const int tex_w = static_cast<int>(std::min(cap, std::ceil(area.width)));
+    const int tex_h = static_cast<int>(std::min(cap, std::ceil(area.height)));
     // Rasterizing is a texel per pixel of the box, so an unchanged background
     // is looked up rather than redrawn. See TextureCache.
     std::string key;

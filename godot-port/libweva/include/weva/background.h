@@ -29,6 +29,23 @@
 
 namespace weva {
 
+// See background_texture_detail(). Measured, not guessed: the corpus was
+// rendered at 1024, 512, 256, 128 and 64 and compared channel by channel
+// against the 1024 renders.
+//
+//     512   worst channel delta  2, 0.02% of pixels off by more than 1
+//     256   worst channel delta  5, 0.05%
+//     128   worst channel delta  8, 0.34%
+//      64   worst channel delta 15, 1.27%
+//
+// 512 is where the difference disappears into the 8-bit quantisation already
+// there, and it still cuts the texels by four. 256 is tempting -- it takes
+// form-demo's background from 4.5 ms to 2.1 -- but a delta of 5 is a real if
+// faint band, and the samples that show it (episode-stats, story-bubble) get it
+// from the KNEE at an interior stop, which a coarser texture rounds off.
+// Sharpening the predicate to notice knees would earn the lower number.
+inline constexpr int kSmoothGradientTexels = 512;
+
 struct GradientStop {
     LinearColor color;
     double position = 0;      // fraction of the gradient line / turn, or px
@@ -83,6 +100,21 @@ struct BackgroundLayer {
 // layer first as in the property. Empty when there is no image.
 std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* style,
                                                        const LinearColor& current_color);
+
+// The texture side a SMOOTH background can be rasterized at without losing
+// anything, or 0 for "as many texels as the box has pixels".
+//
+// A gradient with no discontinuity in it is a slowly varying function, and the
+// bilinear filter that samples the texture reconstructs it from far fewer texels
+// than the box has pixels -- form-demo's page background is one
+// `radial-gradient(1200px 600px at 50% -10%, ...)`, and rasterizing it at
+// 1024x1024 cost 14 ms of a 15 ms frame for detail nothing can see. At the cap
+// it is 4.5 ms, and the worst pixel anywhere in the corpus moves by 2 of 255.
+//
+// A discontinuity is the thing this must not touch: a conic gradient closes on
+// itself, two stops at one position are a hard band, and a repeating layer's
+// tiles have edges where they meet. Those all return 0 and keep every texel.
+int background_texture_detail(const std::vector<BackgroundLayer>& layers);
 
 // Whether these layers rasterize to the SAME texels at any box size, given the
 // same texture size -- because every coordinate in them is a fraction of the

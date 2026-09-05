@@ -831,6 +831,30 @@ bool aspect_invariant(const Gradient& g) {
 
 }   // namespace
 
+int background_texture_detail(const std::vector<BackgroundLayer>& layers) {
+    for (const BackgroundLayer& l : layers) {
+        // An image carries whatever detail it carries.
+        if (!l.is_gradient || l.image || !l.url.empty()) return 0;
+        // A tiled layer repeats its picture across the box, so the texture
+        // needs the resolution of the whole strip, not of one tile.
+        if (l.repeat_x || l.repeat_y) {
+            if (!iequals(trim(l.size_x), "auto") || !iequals(trim(l.size_y), "auto")) return 0;
+        }
+        const Gradient& g = l.gradient;
+        if (g.repeating) return 0;
+        // A conic gradient always closes on itself, and any two stops sharing a
+        // position are a hard band boundary. Both are discontinuities, and a
+        // discontinuity is exactly the thing a coarse texture turns to mush.
+        if (g.kind == Gradient::Kind::Conic) return 0;
+        for (size_t i = 1; i < g.stops.size(); ++i) {
+            if (!g.stops[i].has_position || !g.stops[i - 1].has_position) continue;
+            if (g.stops[i].is_px != g.stops[i - 1].is_px) continue;
+            if (std::fabs(g.stops[i].position - g.stops[i - 1].position) < 1e-6) return 0;
+        }
+    }
+    return layers.empty() ? 0 : kSmoothGradientTexels;
+}
+
 bool background_size_independent(const std::vector<BackgroundLayer>& layers) {
     for (const BackgroundLayer& l : layers) {
         // A decoded image has intrinsic pixel dimensions, so how much of the

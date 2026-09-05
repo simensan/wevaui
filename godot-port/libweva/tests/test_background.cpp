@@ -735,13 +735,36 @@ void test_paint_gradient_backgrounds_and_canvas() {
     CHECK(red == 1);
     CHECK(owned.size() == 2);
     CHECK(backend.textures.size() == 2);
-    // The canvas texture is viewport-sized; the small box's is its own size.
+    // A texel per pixel, up to the cap the layer's content earns. Both of
+    // these gradients are smooth -- no conic, no repeated stop position -- so
+    // both take the smooth cap, which the 1000x600 canvas hits and the 40x40
+    // box is well under. See background_texture_detail().
     bool has_canvas_tex = false, has_small_tex = false;
     for (const auto& kv : backend.textures) {
-        if (kv.second.x == 1000 && kv.second.y == 600) has_canvas_tex = true;
+        if (kv.second.x == kSmoothGradientTexels && kv.second.y == kSmoothGradientTexels) {
+            has_canvas_tex = true;
+        }
         if (kv.second.x == 40 && kv.second.y == 40) has_small_tex = true;
     }
     CHECK(has_canvas_tex && has_small_tex);
+
+    // And a gradient WITH a discontinuity keeps every texel it asks for: a
+    // conic closes on itself, and smearing that seam is the one thing the cap
+    // must not do.
+    CHECK(f.css("html, body { margin: 0; height: 100% }"
+                "body { background: conic-gradient(from 0deg, #000 0%, #fff 100%) }"));
+    CHECK(f.layout("<body></body>"));
+    RecordingBackend hard;
+    std::vector<TextureHandle> hard_owned;
+    PaintContext hard_paint;
+    hard_paint.backend = &hard;
+    hard_paint.owned_textures = &hard_owned;
+    paint_tree(f.tree, f.root, f.ctx, hard_paint);
+    bool full_size = false;
+    for (const auto& kv : hard.textures) {
+        if (kv.second.x == 1000 && kv.second.y == 600) full_size = true;
+    }
+    CHECK(full_size);
 }
 
 void test_blur_and_padded_rasterize() {
