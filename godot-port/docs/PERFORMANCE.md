@@ -529,6 +529,39 @@ small resize reuses the texture stretched -- both change pixels, and the
 backend gate compares the two rasterisers on the IDENTICAL draw list so it
 would not notice. That wants `visual_rank_soft.py` before and after.
 
+### Three divides a pixel
+
+`gradient_t` divided twice for a radial gradient and once for a linear one, and
+`sample_stops` divided once more to find the position within a stop pair. A
+divide is four or five times a multiply, and a full-page background is a
+million pixels.
+
+All four are precomputed in `prepare()` now. The stop table resolves `next` the
+same way `sample_stops` does -- a hint sits BETWEEN two colour stops, so the
+pair is not always (i, i+1) and a table that assumed so would divide by the
+wrong span wherever a hint appeared.
+
+    grid-playground   33.03 -> 28.60      flex-playground   25.43 -> 22.51
+    weva-landing      29.74 -> 28.45      form-demo         15.70 -> 14.10
+
+About 13 per cent, and no pixel moved: `visual_rank_soft.py` over all 35
+samples reports 0 pages changed on either column. That check was the point --
+`x * (1/y)` is not bit-identical to `x / y`, and the backend gate compares the
+two rasterisers on the same draw list so it cannot see a colour change.
+
+### Tried and reverted: adaptive supersampling for radial gradients
+
+The first guess was that a radial gradient with a hard stop fell out of the
+adaptive edge test -- which only handles linear -- and supersampled 3x3 over
+the whole texture. The bound is easy enough (t = sqrt(ex^2+ey^2) and |ex| <= t
+gives |dt/dx| <= 1/rx, conservative in the safe direction), and it was written.
+
+Then `WEVA_GRADIENT_LOG` said every gradient in the corpus rasterises at
+**1^2 samples**. Not one page supersamples, so the change could never fire.
+Reverted: correct, unmeasurable, and complexity in a correctness-sensitive
+path. The 32 ms is simply 1024 x 1024 texels x 2 tiles of ordinary per-pixel
+work.
+
 ### Still open: layout has no incremental path
 
 `layout-stress` sits at 7.6 ms a frame where everything else is under 2.3, and

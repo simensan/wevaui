@@ -290,8 +290,11 @@ Srgb mix(const Srgb& a, const Srgb& b, double t) {
 }
 
 // The colour at `t` along normalized stops. `srgb` holds the stops' colours.
+// `inv_span` is prepare()'s table of 1/(p1 - p0) per stop pair, or null when
+// the caller has not built one -- the parse-time callers sample a handful of
+// points and do not need it.
 Srgb sample_stops(const std::vector<GradientStop>& stops, const std::vector<Srgb>& srgb, double t,
-                  bool repeating) {
+                  bool repeating, const std::vector<double>* inv_span = nullptr) {
     if (stops.empty()) return {0, 0, 0, 0};
     if (stops.size() == 1) return srgb[0];
     const double first = stops.front().position;
@@ -314,7 +317,14 @@ Srgb sample_stops(const std::vector<GradientStop>& stops, const std::vector<Srgb
         if (next >= stops.size()) return srgb[i];
         const double p0 = stops[i].position, p1 = stops[next].position;
         if (t < p0 || t > p1) continue;
-        double local = p1 > p0 ? (t - p0) / (p1 - p0) : 0;
+        // The reciprocal when prepare() has one: this is the last divide left
+        // in the per-pixel path.
+        double local = 0;
+        if (inv_span && i < inv_span->size() && (*inv_span)[i] > 0) {
+            local = (t - p0) * (*inv_span)[i];
+        } else if (p1 > p0) {
+            local = (t - p0) / (p1 - p0);
+        }
         if (hint && p1 > p0) {
             const double h = std::clamp((hint->position - p0) / (p1 - p0), 1e-6, 1 - 1e-6);
             local = std::pow(local, std::log(0.5) / std::log(h));
@@ -559,6 +569,14 @@ struct PreparedGradient {
     std::vector<Srgb> colors;
     double angle_rad = 0, dx = 0, dy = 0, line_length = 1, cx = 0, cy = 0;
     RadialGeometry radial{};
+    // Reciprocals of the three divisors gradient_t would otherwise divide by
+    // ONCE PER PIXEL. A full-page background is a million pixels and a divide
+    // is four or five times a multiply, so these are worth precomputing even
+    // though the arithmetic is trivial.
+    double inv_line_length = 1, inv_rx = 1, inv_ry = 1;
+    // Reciprocal of each span between consecutive colour stops, indexed by the
+    // FIRST stop of the pair, for the same reason.
+    std::vector<double> inv_span;
     // Whether this gradient has a discontinuity, which decides whether the
     // texel needs more than one sample. A ramp antialiases itself; an edge
     // does not.
@@ -607,6 +625,27 @@ PreparedGradient prepare(const Gradient& g, double w, double h, const LayoutCont
             }
         }
     }
+
+    // The reciprocals gradient_t and sample_stops would otherwise recompute
+    // for every pixel. Guarded: a zero divisor kept its old behaviour of
+    // producing an infinity or a nan, and 1 here keeps the same shape without
+    // one -- the callers already treat a degenerate gradient as flat.
+    p.inv_line_length = p.line_length != 0 ? 1.0 / p.line_length : 1.0;
+    p.inv_rx = p.radial.rx != 0 ? 1.0 / p.radial.rx : 1.0;
+    p.inv_ry = p.radial.ry != 0 ? 1.0 / p.radial.ry : 1.0;
+    // Indexed by the FIRST stop of each pair, and resolving `next` exactly as
+    // sample_stops does -- a hint sits between two colour stops, so the pair is
+    // not always (i, i+1) and a table that assumed so would divide by the wrong
+    // span wherever a hint appeared.
+    p.inv_span.assign(p.stops.size(), 0.0);
+    for (size_t i = 0; i + 1 < p.stops.size(); ++i) {
+        if (p.stops[i].is_hint) continue;
+        size_t next = i + 1;
+        if (next < p.stops.size() && p.stops[next].is_hint) ++next;
+        if (next >= p.stops.size()) continue;
+        const double span = p.stops[next].position - p.stops[i].position;
+        p.inv_span[i] = span > 0 ? 1.0 / span : 0.0;
+    }
     return p;
 }
 
@@ -615,11 +654,11 @@ double gradient_t(const PreparedGradient& p, double x, double y) {
     double t = 0;
     switch (p.g->kind) {
         case Gradient::Kind::Linear:
-            t = ((x - p.cx) * p.dx + (y - p.cy) * p.dy) / p.line_length + 0.5;
+            t = ((x - p.cx) * p.dx + (y - p.cy) * p.dy) * p.inv_line_length + 0.5;
             break;
         case Gradient::Kind::Radial: {
-            const double ex = (x - p.radial.cx) / p.radial.rx;
-            const double ey = (y - p.radial.cy) / p.radial.ry;
+            const double ex = (x - p.radial.cx) * p.inv_rx;
+            const double ey = (y - p.radial.cy) * p.inv_ry;
             t = std::sqrt(ex * ex + ey * ey);
             break;
         }
@@ -636,7 +675,7 @@ double gradient_t(const PreparedGradient& p, double x, double y) {
 }
 
 Srgb sample_prepared(const PreparedGradient& p, double x, double y) {
-    return sample_stops(p.stops, p.colors, gradient_t(p, x, y), p.g->repeating);
+    return sample_stops(p.stops, p.colors, gradient_t(p, x, y), p.g->repeating, &p.inv_span);
 }
 
 } // namespace
