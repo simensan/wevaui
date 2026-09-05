@@ -693,3 +693,149 @@ void test_abi_hover_within_an_ancestor_keeps_its_rules() {
     CHECK(marks() == 1);
     weva_document_destroy(d);
 }
+
+// The reach filter: a pointer move only restyles what a rule could match.
+//
+// This is a SKIP, and the failure mode of a skip is silence -- the element
+// keeps its old style and nothing complains. So each form of `:hover` a sheet
+// can take gets a case, and each checks that the colour actually moves.
+//
+// The one that motivated the filter is the last: the user-agent sheet contains
+// `.ui-menu-item:hover`, so "does any rule mention :hover" is true for every
+// document ever loaded, and a document-wide flag would never skip anything.
+
+void test_abi_hover_reach_bare_pseudo() {
+    // `:hover` with nothing to key on reaches everything, including elements
+    // the sheet never names.
+    Doc doc("html, body { margin: 0 } "
+            "div { width: 100px; height: 60px; background: #202020 } "
+            ":hover { background: #ff0000 }",
+            "<div id=a>x</div>");
+    weva_document_set_pointer(doc.d, 50, 30, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(has_colour(colours(doc.d), 0xff0000));
+}
+
+void test_abi_hover_reach_by_class() {
+    Doc doc("html, body { margin: 0 } "
+            "div { width: 100px; height: 60px; background: #202020 } "
+            ".hot:hover { background: #00ff00 }",
+            "<div class=hot id=a>x</div><div id=b>y</div>");
+
+    // The keyed element restyles.
+    weva_document_set_pointer(doc.d, 50, 30, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(has_colour(colours(doc.d), 0x00ff00));
+
+    // The unkeyed one below it does not -- and, just as importantly, moving
+    // onto it takes the first one's colour away again.
+    weva_document_set_pointer(doc.d, 50, 90, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(!has_colour(colours(doc.d), 0x00ff00));
+}
+
+void test_abi_hover_reach_by_tag() {
+    Doc doc("html, body { margin: 0 } "
+            "div, p { width: 100px; height: 60px; background: #202020 } "
+            "p:hover { background: #0000ff }",
+            "<div id=a>x</div><p id=b>y</p>");
+    weva_document_set_pointer(doc.d, 50, 30, 0);   // the div
+    weva_document_update(doc.d, 0);
+    CHECK(!has_colour(colours(doc.d), 0x0000ff));
+    weva_document_set_pointer(doc.d, 50, 90, 0);   // the p
+    weva_document_update(doc.d, 0);
+    CHECK(has_colour(colours(doc.d), 0x0000ff));
+}
+
+void test_abi_hover_reach_by_id() {
+    Doc doc("html, body { margin: 0 } "
+            "div { width: 100px; height: 60px; background: #202020 } "
+            "#b:hover { background: #ff00ff }",
+            "<div id=a>x</div><div id=b>y</div>");
+    weva_document_set_pointer(doc.d, 50, 30, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(!has_colour(colours(doc.d), 0xff00ff));
+    weva_document_set_pointer(doc.d, 50, 90, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(has_colour(colours(doc.d), 0xff00ff));
+}
+
+void test_abi_hover_reach_descendant_rule() {
+    // The element that CHANGES is not the element that is hovered. The keys
+    // come from the compound carrying the pseudo -- `.card` -- and marking it
+    // works because the cascade re-walks its subtree, which is where the span
+    // lives.
+    Doc doc("html, body { margin: 0 } "
+            ".card { width: 100px; height: 60px; background: #202020 } "
+            "span { display: block; width: 40px; height: 20px; background: #303030 } "
+            ".card:hover span { background: #ffff00 }",
+            "<div class=card><span>x</span></div>");
+    weva_document_set_pointer(doc.d, 20, 10, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(has_colour(colours(doc.d), 0xffff00));
+}
+
+void test_abi_hover_reach_negated() {
+    // `.chip:not(:hover)` is keyed on `.chip` exactly as `.chip:hover` is: the
+    // keys come from the compound, not from the pseudo's polarity. Getting
+    // this wrong leaves the un-hovered style stuck on when the pointer lands.
+    Doc doc("html, body { margin: 0 } "
+            "div { width: 100px; height: 60px } "
+            ".chip:not(:hover) { background: #00ffff } "
+            ".chip:hover { background: #202020 }",
+            "<div class=chip id=a>x</div><div id=b>y</div>");
+    CHECK(has_colour(colours(doc.d), 0x00ffff));
+    weva_document_set_pointer(doc.d, 50, 30, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(!has_colour(colours(doc.d), 0x00ffff));
+}
+
+void test_abi_hover_reach_inside_has() {
+    // `:hover` under `:has()` reaches beyond the hovered element's ancestors,
+    // so the keys of the compound it sits on are the wrong answer and the
+    // filter has to give up.
+    //
+    // An ancestor subject is the easy half: `#wrap:has(#a:hover)` is keyed on
+    // `#wrap`, which is in the chain anyway.
+    {
+        Doc doc("html, body { margin: 0 } "
+                "div { width: 100px; height: 60px; background: #202020 } "
+                "#wrap { height: 120px; background: #101010 } "
+                "#wrap:has(#a:hover) { background: #ff8800 }",
+                "<div id=wrap><div id=a>x</div><div id=b>y</div></div>");
+        CHECK(!has_colour(colours(doc.d), 0xff8800));
+        weva_document_set_pointer(doc.d, 50, 30, 0);
+        weva_document_update(doc.d, 0);
+        CHECK(has_colour(colours(doc.d), 0xff8800));
+    }
+
+    // A SIBLING subject: `#a` is neither the hovered element nor one of its
+    // ancestors, so nothing about it is in the chain the filter is handed.
+    // This passes with the `inside_has` guard removed too -- a sheet with
+    // `:has()` in it takes the unscoped walk regardless -- but it is the case
+    // that would break first if that ever changed.
+    {
+        Doc doc("html, body { margin: 0 } "
+                "div { width: 100px; height: 60px; background: #202020 } "
+                "#a:has(~ #b:hover) { background: #ff8800 }",
+                "<div id=a>x</div><div id=b>y</div>");
+        CHECK(!has_colour(colours(doc.d), 0xff8800));
+        weva_document_set_pointer(doc.d, 50, 90, 0);   // onto #b
+        weva_document_update(doc.d, 0);
+        CHECK(has_colour(colours(doc.d), 0xff8800));
+    }
+}
+
+void test_abi_active_reach() {
+    // The same filter, on the other pseudo, driven by a button press.
+    Doc doc("html, body { margin: 0 } "
+            "div { width: 100px; height: 60px; background: #202020 } "
+            ".press:active { background: #88ff00 }",
+            "<div class=press id=a>x</div><div id=b>y</div>");
+    weva_document_set_pointer(doc.d, 50, 30, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(has_colour(colours(doc.d), 0x88ff00));
+    weva_document_set_pointer(doc.d, 50, 30, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(!has_colour(colours(doc.d), 0x88ff00));
+}

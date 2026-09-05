@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 // Ports the resolution core of Runtime/Css/Cascade/CascadeEngine.cs: match
@@ -23,6 +24,23 @@
 namespace weva {
 
 enum class DeclarationOrigin { UserAgent = 0, User = 1, Author = 2 };
+
+// What a `:hover` or `:active` in the compiled sheets can reach: the keys of
+// every compound one of them sits on. `everything` is the honest answer when a
+// compound gives no key to go on.
+//
+// Held as sets rather than a bool because the user-agent sheet contains one
+// `:hover` rule, and a bool would therefore be true for every document.
+struct StateReach {
+    std::unordered_set<std::string> classes;
+    std::unordered_set<std::string> ids;
+    std::unordered_set<std::string> tags;
+    bool everything = false;
+
+    bool empty() const {
+        return !everything && classes.empty() && ids.empty() && tags.empty();
+    }
+};
 
 // Unlayered rules outrank every layered rule for normal declarations, and LOSE
 // to them for !important. A large sentinel gives that ordering for free.
@@ -97,6 +115,18 @@ public:
     // :has() lets it reach its ancestors, and then anything they select.
     bool has_sibling_selectors() const { return cache_unsafe_sibling_composition_; }
     bool has_has_selectors() const { return cache_unsafe_has_; }
+    // What `:hover` and `:active` can reach.
+    //
+    // A pointer move flips a hover chain on every frame it moves, and each flip
+    // marks its elements for restyle -- which re-cascades their SUBTREES. When
+    // no rule can match the flipped element differently, none of that can move
+    // a single computed value, and the whole walk is waste: `stats.html` was
+    // paying between 0.5 and 8 ms of cascade on every frame the pointer moved,
+    // for a sheet with no `:hover` in it.
+    const StateReach& hover_reach() const { return hover_reach_; }
+    const StateReach& active_reach() const { return active_reach_; }
+    // Whether a state flip on `e` can change what matches it.
+    bool state_observable(const StateReach& reach, const Element& e) const;
 
     // Collects every declaration matching `e`, already sorted so the last
     // entry wins. Exposed for DevTools-style cascade traces and for tests.
@@ -190,6 +220,8 @@ private:
     // Sheet-wide opt-outs, computed once at rule-compile time.
     bool cache_unsafe_sibling_composition_ = false;  // `p + p`, :nth-of-type, ...
     bool cache_unsafe_has_ = false;                  // :has() depends on descendants
+    StateReach hover_reach_;                         // what :hover can match
+    StateReach active_reach_;                        // what :active can match
     bool shape_key_folds_sibling_index_ = false;     // :nth-child, :first-child, :empty
     // Pseudo-element rules never match a real element, so they live in their
     // own buckets keyed by pseudo name rather than being scanned and rejected

@@ -27,7 +27,7 @@ int compare_important_origin(DeclarationOrigin a, DeclarationOrigin b) {
 int cmp_int(int a, int b) { return a < b ? -1 : (a > b ? 1 : 0); }
 
 void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
-                       bool* has_has, bool* folds_index);
+                       bool* has_has, bool* folds_index, bool* uses_hover, bool* uses_active);
 
 
 // ASCII-only whitespace trim and case-insensitive compare, used by the
@@ -189,6 +189,8 @@ void CascadeEngine::clear() {
     shape_cache_.clear();
     cache_unsafe_sibling_composition_ = false;
     cache_unsafe_has_ = false;
+    hover_reach_ = StateReach{};
+    active_reach_ = StateReach{};
     shape_key_folds_sibling_index_ = false;
 }
 
@@ -226,10 +228,59 @@ uint64_t hash_class_tokens(std::string_view classes) {
 // Walks a compound sequence looking for constructs that make a per-element
 // shape key unsound or incomplete.
 void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
-                       bool* has_has, bool* folds_index);
+                       bool* has_has, bool* folds_index, StateReach* hover,
+                       StateReach* active, bool inside_has);
+
+// Which compounds a `:hover` or `:active` sits on, so a pointer move only
+// restyles what a rule could actually match.
+//
+// The boolean this replaces -- "does any rule mention :hover" -- was useless in
+// practice, because the user-agent sheet has one such rule
+// (`.ui-menu-item:hover`) and that single line turned the flag on for every
+// document ever loaded. What matters is not whether SOME rule says :hover but
+// whether one says it about THIS element.
+//
+// So the keys of the compound carrying the pseudo are recorded, and an element
+// that shares none of them cannot change appearance when the pointer arrives.
+// A compound with no key at all (a bare `:hover`, or `*:hover`) reaches
+// everything and is recorded as such.
+//
+// `:hover` nested inside `:has()` is given the same treatment, but as belt and
+// braces rather than because a test can catch it: the element whose style moves
+// need not be a descendant of the hovered one, so these keys describe the wrong
+// element -- and yet the keyed element is by definition in the hover chain, so
+// the marking still lands, and a sheet containing `:has()` already takes the
+// unscoped walk (see `scoped` in weva_c.cpp). Deleting the guard breaks no test
+// today. It is here so that narrowing the `:has()` walk later cannot silently
+// take this with it.
+void collect_keys(const CompoundSelector& c, StateReach* reach) {
+    bool keyed = false;
+    for (const auto& part : c.parts) {
+        switch (part->tag()) {
+            case SimpleSelector::Tag::Class:
+                reach->classes.insert(static_cast<const ClassSelector&>(*part).class_name);
+                keyed = true;
+                break;
+            case SimpleSelector::Tag::Id:
+                reach->ids.insert(static_cast<const IdSelector&>(*part).id);
+                keyed = true;
+                break;
+            case SimpleSelector::Tag::Type:
+                reach->tags.insert(static_cast<const TypeSelector&>(*part).tag_name);
+                keyed = true;
+                break;
+            default:
+                break;
+        }
+    }
+    // `:hover` on its own, or hung off `*`, or off an attribute selector we do
+    // not index: nothing narrows it, so it reaches everything.
+    if (!keyed) reach->everything = true;
+}
 
 void classify_compound(const CompoundSelector& c, bool* unsafe_sibling,
-                       bool* has_has, bool* folds_index) {
+                       bool* has_has, bool* folds_index, StateReach* hover,
+                       StateReach* active, bool inside_has) {
     for (const auto& part : c.parts) {
         if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
         const auto& pc = static_cast<const PseudoClassSelector&>(*part);
@@ -261,20 +312,36 @@ void classify_compound(const CompoundSelector& c, bool* unsafe_sibling,
             case PseudoClassKind::Has:
                 *has_has = true;
                 break;
+            // Not a cache-safety fact like the others: this is what a POINTER
+            // MOVE can change. The keys come from the compound the pseudo sits
+            // on, at whatever nesting depth it was found -- `.btn:not(:hover)`
+            // is keyed on `.btn`, the same as `.btn:hover`.
+            case PseudoClassKind::Hover:
+                if (inside_has) hover->everything = true;
+                else collect_keys(c, hover);
+                break;
+            case PseudoClassKind::Active:
+                if (inside_has) active->everything = true;
+                else collect_keys(c, active);
+                break;
             default:
                 break;
         }
+        const bool nested_has = inside_has || pc.kind == PseudoClassKind::Has;
         for (const auto& inner : pc.inner_list) {
-            classify_selector(*inner, unsafe_sibling, has_has, folds_index);
+            classify_selector(*inner, unsafe_sibling, has_has, folds_index, hover, active,
+                              nested_has);
         }
         for (const auto& inner : pc.nth_of_filter) {
-            classify_selector(*inner, unsafe_sibling, has_has, folds_index);
+            classify_selector(*inner, unsafe_sibling, has_has, folds_index, hover, active,
+                              nested_has);
         }
     }
 }
 
 void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
-                       bool* has_has, bool* folds_index) {
+                       bool* has_has, bool* folds_index, StateReach* hover,
+                       StateReach* active, bool inside_has) {
     for (Combinator cb : seq.combinators) {
         // `p + p` / `p ~ p`: the match depends on preceding-sibling
         // composition, not just this element's own shape.
@@ -283,7 +350,7 @@ void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
         }
     }
     for (const auto& c : seq.compounds) {
-        classify_compound(c, unsafe_sibling, has_has, folds_index);
+        classify_compound(c, unsafe_sibling, has_has, folds_index, hover, active, inside_has);
     }
 }
 
@@ -401,6 +468,25 @@ int CascadeEngine::layer_ordinal_for(std::string_view name) {
     return static_cast<int>(layer_names_.size() - 1);
 }
 
+bool CascadeEngine::state_observable(const StateReach& reach, const Element& e) const {
+    if (reach.everything) return true;
+    if (reach.empty()) return false;
+    if (!reach.tags.empty() && reach.tags.count(e.tag_name())) return true;
+    if (!reach.ids.empty()) {
+        const std::string_view id = e.id();
+        if (!id.empty() && reach.ids.count(std::string(id))) return true;
+    }
+    if (!reach.classes.empty()) {
+        // Walked rather than set-intersected: an element carries a handful of
+        // classes and this runs once per element of a hover chain, which is a
+        // depth, not a tree.
+        for (const std::string_view c : e.class_list()) {
+            if (reach.classes.count(std::string(c))) return true;
+        }
+    }
+    return false;
+}
+
 void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
                                   int* source_index, int layer_ordinal) {
     for (const auto& r : rules) {
@@ -416,7 +502,8 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 // on spotting sibling-composition and :has() selectors anywhere
                 // in the sheet.
                 classify_selector(cs.sequence, &cache_unsafe_sibling_composition_,
-                                  &cache_unsafe_has_, &shape_key_folds_sibling_index_);
+                                  &cache_unsafe_has_, &shape_key_folds_sibling_index_,
+                                  &hover_reach_, &active_reach_, false);
                 const std::string* pseudo = cs.sequence.pseudo_element();
                 std::string pseudo_name = pseudo ? *pseudo : std::string();
                 CompiledRule cr;

@@ -346,7 +346,7 @@ int main(int argc, char** argv) {
         // The element a mutation lands on: the first the document has, so any
         // sample works without knowing its markup.
         weva_element_t target = WEVA_ELEMENT_NONE;
-        if (mutate != "none") {
+        if (mutate != "none" && mutate != "hover") {
             target = weva_document_query(d, target_selector.c_str());
             if (target == WEVA_ELEMENT_NONE) {
                 std::fprintf(stderr, "weva_bench: --mutate found no element\n");
@@ -360,7 +360,19 @@ int main(int argc, char** argv) {
         double best = 1e300, total = 0;
         start_sampling();
         for (int i = 0; i < passes; ++i) {
-            if (target != WEVA_ELEMENT_NONE) {
+            // `hover` moves the pointer instead of editing the document: two
+            // points far enough apart to land on different elements, so every
+            // pass crosses a real boundary and the hover chain actually flips.
+            //
+            // It is the mouse-move frame, and on a page whose sheet never says
+            // `:hover` the honest answer is that it costs nothing. It did not:
+            // marking the flipped elements made the cascade re-walk their
+            // subtrees to find that no rule matched differently.
+            if (mutate == "hover") {
+                const int x = (i & 1) ? 320 : 960;
+                const int y = (i & 1) ? 180 : 540;
+                weva_document_set_pointer(d, x, y, 0);
+            } else if (target != WEVA_ELEMENT_NONE) {
                 const char* const* values = mutate == "paint" ? paint_values : layout_values;
                 weva_element_set_attribute(d, target, "style", values[i & 1]);
             }

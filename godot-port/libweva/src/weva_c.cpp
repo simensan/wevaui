@@ -2440,11 +2440,29 @@ namespace {
 // list of elements whose style may have moved, which is the union of the chain
 // that was in the state and the chain that is -- and that is exactly the list
 // the scoped restyle takes.
+// `reach` is what the pseudo carried by these chains can match; null means the
+// change is observable on every element regardless (focus, which moves the
+// caret and the scroll position whether or not a rule ever says `:focus`).
 void note_state_change(weva_document* doc, const std::vector<const Element*>& before,
-                       const std::vector<const Element*>& after) {
+                       const std::vector<const Element*>& after, const StateReach* reach) {
     if (before == after) return;
-    ++doc->styles.state.version_;
-    doc->dom_touched = true;
+    // No rule can match this element differently, so no computed value can
+    // move, and marking it would be pure waste: the cascade re-walks the
+    // SUBTREE of anything marked, so a pointer crossing a panel re-cascaded
+    // most of the page to discover nothing had changed. `stats.html`, whose
+    // sheet contains no `:hover` at all, was paying 0.5 to 8 ms a frame for it.
+    //
+    // Per element rather than per document, because the user-agent sheet has
+    // one `:hover` rule -- `.ui-menu-item:hover` -- and a document-wide test
+    // would therefore always say yes. A page WITH hover rules still gets the
+    // win for every element those rules cannot reach.
+    //
+    // The chains themselves are still updated by the caller: hit testing, the
+    // cursor and the tooltip all read them. This only decides whether the
+    // CASCADE is told.
+    const auto observable = [&](const Element* e) {
+        return !reach || doc->styles.engine.state_observable(*reach, *e);
+    };
     // Only the elements whose state actually FLIPPED.
     //
     // A hover chain is the element and every ancestor up to <body>, because
@@ -2461,16 +2479,26 @@ void note_state_change(weva_document* doc, const std::vector<const Element*>& be
     const auto in = [](const std::vector<const Element*>& chain, const Element* e) {
         return std::find(chain.begin(), chain.end(), e) != chain.end();
     };
+    bool any = false;
     const auto note_changed = [&](const std::vector<const Element*>& chain,
                                   const std::vector<const Element*>& other) {
         for (const Element* e : chain) {
             if (in(other, e)) continue;
+            if (!observable(e)) continue;
             if (doc->touched.size() >= 64) return;
             doc->touched.push_back(const_cast<Element*>(e));
+            any = true;
         }
     };
     note_changed(before, after);
     note_changed(after, before);
+    // Bumped only when something was actually marked. The version is what the
+    // shape cache keys on, so bumping it for a flip nothing can observe throws
+    // away every cached match set for no reason -- which is most of the cost
+    // this is here to avoid.
+    if (!any) return;
+    ++doc->styles.state.version_;
+    doc->dom_touched = true;
 }
 
 }   // namespace
@@ -3044,8 +3072,8 @@ void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t
     const std::vector<const Element*> old_active = st.active_chain;
     st.hover_chain = hover;
     st.active_chain = active;
-    note_state_change(doc, old_hover, hover);
-    note_state_change(doc, old_active, active);
+    note_state_change(doc, old_hover, hover, &doc->styles.engine.hover_reach());
+    note_state_change(doc, old_active, active, &doc->styles.engine.active_reach());
 }
 
 void weva_document_clear_pointer(weva_document_t doc) {
@@ -3055,8 +3083,8 @@ void weva_document_clear_pointer(weva_document_t doc) {
     const std::vector<const Element*> old_active = st.active_chain;
     st.hover_chain.clear();
     st.active_chain.clear();
-    note_state_change(doc, old_hover, st.hover_chain);
-    note_state_change(doc, old_active, st.active_chain);
+    note_state_change(doc, old_hover, st.hover_chain, &doc->styles.engine.hover_reach());
+    note_state_change(doc, old_active, st.active_chain, &doc->styles.engine.active_reach());
 }
 
 namespace {
@@ -3932,7 +3960,10 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     InteractionState::chain_of(target, &st.focus_chain);
     std::vector<const Element*> changed = old_chain;
     if (previous) changed.push_back(previous);
-    note_state_change(doc, changed, st.focus_chain);
+    // Always observable: unlike :hover, focus also moves the caret and the
+    // scroll position, and a text field repaints on it whether or not a rule
+    // ever says `:focus`.
+    note_state_change(doc, changed, st.focus_chain, nullptr);
     // The focused element's own bits changed even when the chain did not.
     if (previous || target) {
         ++st.version_;
