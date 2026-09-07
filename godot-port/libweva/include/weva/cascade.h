@@ -6,6 +6,7 @@
 #include "weva/selector.h"
 
 #include <cstdint>
+#include <array>
 #include <map>
 #include <memory>
 #include <string>
@@ -106,6 +107,11 @@ public:
     struct CacheStats { int64_t hits = 0; int64_t misses = 0; int64_t skipped = 0; };
     const CacheStats& cache_stats() const { return stats_; }
     void reset_cache_stats() { stats_ = CacheStats{}; }
+    struct WorkProfile {
+        std::array<double, 8> ms{};
+        size_t elements = 0, pseudos = 0;
+    };
+    void report_work_profile() const;
     void invalidate_cache() { shape_cache_.clear(); }
 
     // Whether any compiled selector can match on something other than the
@@ -217,6 +223,7 @@ private:
     // :has(). Reused rather than allocated per element.
     mutable std::vector<MatchedDeclaration> uncached_matches_;
     mutable CacheStats stats_;
+    mutable WorkProfile work_profile_;
     // Sheet-wide opt-outs, computed once at rule-compile time.
     bool cache_unsafe_sibling_composition_ = false;  // `p + p`, :nth-of-type, ...
     bool cache_unsafe_has_ = false;                  // :has() depends on descendants

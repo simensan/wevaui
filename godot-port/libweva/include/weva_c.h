@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 2
+#define WEVA_ABI_VERSION_MINOR 12
 
 uint32_t weva_abi_version(void);
 
@@ -209,12 +209,37 @@ typedef struct weva_font_backend {
     uint64_t (*variant)(void* user_data, uint64_t face, int32_t weight, int32_t italic);
 } weva_font_backend;
 
+/* Positioned shaping, added in minor 11 without extending the existing font
+ * callback table. Coordinates are pixels: x is rightward, y is upward from
+ * the baseline. A cluster is a UTF-8 BYTE offset into the source string.
+ * Glyph IDs retain the installed font backend's opaque ID convention. */
+typedef struct weva_shaped_glyph {
+    uint32_t glyph, cluster;
+    double x_advance, y_advance;
+    double x_offset, y_offset;
+} weva_shaped_glyph;
+
+/* Same sizing protocol as shape: write at most capacity entries, return the
+ * complete count. user_data comes from the installed weva_font_backend. */
+typedef size_t (*weva_shape_glyphs_fn)(void* user_data, uint64_t face, const char* utf8,
+                                    size_t length, double px, weva_shaped_glyph* out,
+                                    size_t capacity);
+
 /* Both copy the table, so the caller may free it on return. Passing null
  * restores the built-in stub. Registering after a document has been updated
- * takes effect on the NEXT update. */
+ * takes effect on the NEXT update. Installing a font table refreshes cached
+ * glyphs even when the table and face ID are unchanged. Changing renderers
+ * releases the atlas through its old owner and reuploads its CPU pixels. */
 void weva_document_set_render_backend(weva_document_t doc, const weva_render_backend* backend);
 void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend* backend,
                                     uint64_t face);
+
+/* Overrides the installed font table's shape callback. Null restores its
+ * legacy callback. Changing this invalidates shape/measurement/layout caches;
+ * installing a font backend again clears the override. A font table must be
+ * installed first (otherwise INVALID_ARGUMENT). Existing font tables and
+ * their callers keep their original binary layout and behavior. */
+weva_status weva_document_set_font_shaper(weva_document_t doc, weva_shape_glyphs_fn shape);
 
 weva_document_t weva_document_create(const weva_config* config);
 void weva_document_destroy(weva_document_t doc);
@@ -223,6 +248,10 @@ void weva_document_destroy(weva_document_t doc);
  * The bytes are copied; the caller may free them on return. */
 weva_status weva_document_load_html(weva_document_t doc, const char* html, size_t length);
 weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t length);
+/* Replaces all author stylesheets; the UA sheet and live DOM, form values,
+ * focus, bindings and animation clocks remain. An empty string removes author
+ * CSS. Both this and add_css schedule a restyle on the next update. */
+weva_status weva_document_set_css(weva_document_t doc, const char* css, size_t length);
 
 void weva_document_set_viewport(weva_document_t doc, int width, int height);
 
@@ -233,13 +262,22 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height);
 weva_status weva_document_content_size(weva_document_t doc, double* out_width,
                                        double* out_height);
 
-/* Runs cascade, layout and paint. `dt_seconds` advances transitions; pass 0
- * for a static document.
+/* Runs cascade, layout and paint. `dt_seconds` advances animation and timed
+ * input gestures; pass 0 for a static document.
  *
  * An update that finds nothing changed -- no attribute set, no pointer moved,
  * nothing in flight -- returns having done nothing, and the draws already
  * published stay valid. A host may therefore call this every frame. */
 weva_status weva_document_update(weva_document_t doc, double dt_seconds);
+
+/* Separate animation and input clocks. The original update passes the same
+ * elapsed time to both. A host pausing CSS animations can continue timed
+ * gestures with animation_seconds=0 and real frame time for input_seconds.
+ * Nonpositive or nonfinite input_seconds is ignored. */
+weva_status weva_document_update_with_input_time(weva_document_t doc,
+                                                double animation_seconds, double input_seconds);
+/* Whether a held gesture needs further input ticks. False on release/cancel. */
+int weva_document_needs_input_tick(weva_document_t doc);
 
 /* Changes when, and only when, weva_document_update publishes a NEW draw list.
  *
@@ -264,6 +302,15 @@ int weva_document_is_animating(weva_document_t doc);
  * of the whole display list is exactly the allocation the port exists to
  * remove. */
 const weva_draw* weva_document_draws(weva_document_t doc, size_t* out_count);
+
+/* Minor 12: one nonzero version per published draw, in the same order as
+ * weva_document_draws. Equal versions within one document identify the same
+ * immutable command, including its geometry, texture handle and effect data.
+ * Replayed commands keep their versions even when their list positions move;
+ * rebuilt commands get new versions, never reused during the document's life.
+ * The array has the same lifetime as the published draw views. The existing
+ * weva_draw struct and its array stride are unchanged. */
+const uint64_t* weva_document_draw_versions(weva_document_t doc, size_t* out_count);
 const weva_texture* weva_document_textures(weva_document_t doc, size_t* out_count);
 
 /* Returns WEVA_ELEMENT_NONE when nothing matches. */
@@ -288,8 +335,8 @@ typedef enum weva_event_kind {
     WEVA_EVENT_NONE = 0,
     WEVA_EVENT_POINTER_DOWN,
     WEVA_EVENT_POINTER_UP,
-    /* A press and a release on the same element, which is what a script
-     * actually wants and what neither of the two above is on its own. */
+    /* Pointer press/release on one element, or native keyboard activation.
+     * Keyboard clicks carry zero coordinates and no pointer events. */
     WEVA_EVENT_CLICK,
     WEVA_EVENT_POINTER_ENTER,
     WEVA_EVENT_POINTER_LEAVE,
@@ -328,7 +375,15 @@ typedef enum weva_event_kind {
     /* The secondary button went down on an element -- what a right-click
      * means. The engine does nothing else with it: a context menu is markup,
      * and this is the signal to show it. `on-contextmenu`. */
-    WEVA_EVENT_CONTEXT_MENU
+    WEVA_EVENT_CONTEXT_MENU,
+    /* IME lifecycle. text carries the selected text at start, the preedit on
+     * update, and the final text on end. Value-change events still describe
+     * provisional edits; hosts may use the lifecycle to defer their work. */
+    WEVA_EVENT_COMPOSITION_START,
+    WEVA_EVENT_COMPOSITION_UPDATE,
+    WEVA_EVENT_COMPOSITION_END,
+    // Defaults have been restored. Queued notifications cannot cancel reset.
+    WEVA_EVENT_RESET
 } weva_event_kind;
 
 /* Held modifiers, as a bitmask on weva_event.modifiers. */
@@ -392,6 +447,12 @@ typedef struct weva_event {
  * dropped rather than the memory growing without limit. */
 int weva_document_poll_event(weva_document_t doc, weva_event* out);
 
+/* Full UTF-8 text of the last successfully polled event, including long paste
+ * and composition payloads. Returns the required bytes excluding the terminator;
+ * a null buffer queries the size. Read/copy before polling again. The original
+ * event struct remains copyable and contains a short UTF-8 prefix. */
+size_t weva_document_event_text(weva_document_t doc, char* buffer, size_t capacity);
+
 /* Whether an element is `target` or a descendant of it. What a host needs to
  * answer "was this click inside my panel?" without walking the tree itself. */
 int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
@@ -410,6 +471,19 @@ int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
  * WEVA_ELEMENT_NONE. Valid after an update. Useful on its own, for a host
  * routing its own clicks. */
 weva_element_t weva_document_element_at(weva_document_t doc, double x, double y);
+
+/* Whether document content or an open dropdown accepts this point. Unlike
+ * element_at, this includes dropdown rows outside the DOM box tree. Honors
+ * CSS pointer-events; call after updating layout. */
+int weva_document_accepts_pointer(weva_document_t doc, double x, double y);
+
+/* A nonzero input version while an auto popover or dropdown is open, else 0.
+ * A host observing a press routed to another native control may dismiss after
+ * GUI routing. Dismiss only if this version still matches, so a native handler
+ * opening a new popup cannot have it closed by the older press. No pointer or
+ * activation events are synthesized. Manual popovers and dialogs stay open. */
+uint64_t weva_document_transient_version(weva_document_t doc);
+int weva_document_dismiss_transients(weva_document_t doc, uint64_t version);
 
 /* Which pointer buttons are held, as a bitmask on `buttons`. Matching the
  * web's MouseEvent.buttons, so a host that already speaks that needs no
@@ -437,6 +511,11 @@ typedef enum weva_pointer_button {
  * what makes `.card:hover .title` work with the pointer over the title. The
  * document works that chain out; a host passes a position. */
 void weva_document_set_pointer(weva_document_t doc, double x, double y, uint32_t buttons);
+/* Modifier-aware pointer input (weva_key_modifier). The original entry point
+ * forwards with no modifiers. Listboxes replace on plain click, toggle with
+ * Ctrl/Meta, and extend from their anchor with Shift. */
+void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y,
+                                         uint32_t buttons, uint32_t modifiers);
 
 /* The pointer left the surface: nothing is hovered or pressed. A host that
  * stops sending positions without this leaves the last element hovered. */
@@ -444,8 +523,9 @@ void weva_document_clear_pointer(weva_document_t doc);
 
 /* A key went down or came up. `key` is a weva_key; pass WEVA_KEY_OTHER for
  * anything the engine has no meaning for and it still reaches the host as an
- * event. Returns 1 when the ENGINE consumed it -- Tab moving focus is the case
- * that matters -- so a host knows not to act on it as well. */
+ * event. Returns 1 when consumed by editing, focus, activation or scrolling.
+ * Send both edges: buttons activate on Enter down or Space up; focus loss
+ * cancels a pending Space. A consumed key must not also be inserted as text. */
 int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down);
 
 /* Text the user typed, UTF-8. Separate from the key events because they are
@@ -453,15 +533,62 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
  * several keys. */
 void weva_document_text_input(weva_document_t doc, const char* utf8);
 
+/* Same delivery, returning 1 when a focused editable text field consumed it.
+ * maxlength limits the inserted UTF-16 units without splitting a code point.
+ * Rejected insertion is still consumed; an unchanged field emits no text or
+ * value event and adds no undo entry. Hosts keep it out of game handlers. */
+int weva_document_try_text_input(weva_document_t doc, const char* utf8);
+/* Physical text input with modifiers. Select typeahead excludes Ctrl/Alt/Meta
+ * chords; text-field editing retains AltGr text. Plain text_input uses zero.
+ * UTF-8 may contain several characters; a select searches them in order. */
+int weva_document_try_text_input_modifiers(weva_document_t doc, const char* utf8, uint32_t modifiers);
+
+/* Insert clipboard text as one undo step. Accepts leading tabs/newlines and
+ * normalizes CR/LF for input or textarea before applying maxlength. Returns
+ * 1 when an editable field consumes it, including rejection at the limit. */
+int weva_document_paste_text(weva_document_t doc, const char* utf8);
+
+/* The focused editable text field, or NONE. Call after an update to include
+ * CSS visibility. Useful for activating a platform IME only over text input. */
+weva_element_t weva_document_text_input_target(weva_document_t doc);
+
+/* Replace the current preedit, starting a composition at the selection if
+ * necessary. start/end are UTF-8 byte offsets within utf8, clamped to character
+ * boundaries. Provisional text is visible in the value, as in HTML input.
+ * Empty text cancels, removing the preedit (including text it replaced).
+ * All updates form one undo step. Returns 1 when accepted. */
+int weva_document_set_composition(weva_document_t doc, const char* utf8, int start, int end);
+
+/* Finish a composition. Non-null utf8 replaces it with the final text; null
+ * keeps the current preedit and selection. Finishing an editable composition,
+ * including focus loss, enforces maxlength; trimming collapses the selection.
+ * With no composition, nonempty text is delivered as ordinary text input.
+ * Empty utf8 cancels. Returns 1 when a composition or edit was handled. */
+int weva_document_commit_composition(weva_document_t doc, const char* utf8);
+
+/* Active composition target and byte range in its value; NONE otherwise. */
+weva_element_t weva_document_composition(weva_document_t doc, int* start, int* end);
+
+/* Insertion caret in document coordinates, including CSS transforms and
+ * scrolling. Valid after an update; returns 0 without an editable target.
+ * Hosts transform this rectangle into window coordinates for IME candidates. */
+int weva_document_caret_bounds(weva_document_t doc, double* x, double* y,
+                               double* width, double* height);
+
 /* Moves focus to the next focusable element in tab order, or the previous one
  * when `backwards`. Returns the element that now has focus.
  *
  * Focusable means `tabindex` that is not negative, or one of the elements that
- * is focusable by nature -- a, button, input, select, textarea -- and not
+ * is focusable by nature -- a, button, input, select, textarea, summary -- and not
  * disabled or hidden. Positive tabindex comes first in numeric order, then
  * everything else in document order, which is what HTML specifies and what
- * surprises people who expect one or the other alone. */
+ * surprises people who expect one or the other alone. A named radio group
+ * within one form contributes one Tab stop; arrows move within that group. */
 weva_element_t weva_document_focus_next(weva_document_t doc, int backwards);
+
+/* Like focus_next, but wrap=0 clears focus and returns NONE at a document's
+ * edge so an embedding UI can continue to its next native control. */
+weva_element_t weva_document_focus_step(weva_document_t doc, int backwards, int wrap);
 
 /* Moves focus in a DIRECTION rather than along the tab order.
  *
@@ -502,9 +629,9 @@ void weva_document_set_tooltip_delay(weva_document_t doc, double seconds);
 /* ---- Dropdowns --------------------------------------------------------
  *
  * Clicking a <select> opens its list, clicking an option chooses it, and the
- * choice is written back to the DOM as `selected` on that option -- so a
- * stylesheet sees it through :checked and a script reads it as the element's
- * value, with no separate state to keep in step.
+ * choice changes the option's live selectedness. Stylesheets see it through
+ * :checked and scripts read the control value. The selected attributes keep
+ * their reset defaults.
  *
  * The list is painted after everything else and hit tested before everything
  * else, because a dropdown covers whatever it opens over and is not in the box
@@ -534,8 +661,8 @@ weva_element_t weva_document_open_select_element(weva_document_t doc);
  * is not over a field's text. */
 int weva_document_select_word_at(weva_document_t doc, double x, double y);
 
-/* Selects everything in the focused field. Returns 0 when nothing is focused
- * or what is focused takes no text. */
+/* Selects all text in the focused field, or all enabled options in a focused
+ * multiple select. Returns 0 when the focused element supports neither. */
 int weva_document_select_all(weva_document_t doc);
 
 /* Undo and redo the focused field's edits. Returns 0 when there is nothing to
@@ -733,10 +860,18 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
 size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buffer,
                           size_t capacity);
 
-/* Sets it, as the user would. Raises no event: a host that just set the value
- * already knows. */
+/* Sets live state, preserving markup defaults. Text/range values are
+ * sanitized; maxlength does not limit programmatic writes. Checkbox/radio
+ * use "on"/"" and multiple selects use comma-separated values. No input or
+ * change event is raised; this sets the control's dirty value/checked flag. */
 weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
                                    const char* value);
+
+/* Restore current markup defaults, including controls outside the form with
+ * form="id". Preserve focus, discard owned edit history/preedit, and queue one
+ * RESET notification. No input/change events are synthesized. */
+weva_status weva_document_reset_form(weva_document_t doc, weva_element_t form);
+weva_element_t weva_element_form(weva_document_t doc, weva_element_t element);
 
 /* Replaces an element's text with `text`.
  *

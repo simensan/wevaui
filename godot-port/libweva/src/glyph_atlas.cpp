@@ -1,8 +1,23 @@
 #include "weva/glyph_atlas.h"
 
 #include <cmath>
+#include <algorithm>
 
 namespace weva {
+
+void GlyphAtlas::clear() {
+    ++slot_version_;
+    slots_.clear();
+    std::fill(pixels_.begin(), pixels_.end(), 0);
+    shelf_x_ = shelf_y_ = shelf_height_ = 0;
+    dirty_ = true;
+}
+
+void GlyphAtlas::release_texture(RenderInterface* backend) {
+    if (texture_ && backend) backend->release_texture(texture_);
+    texture_ = {};
+    dirty_ = true;
+}
 
 const GlyphSlot* GlyphAtlas::get(FontInterface* font, FaceHandle face, uint32_t glyph,
                                  double px) {

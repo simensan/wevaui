@@ -38,17 +38,19 @@ func _hovering(doc: WevaDocument) -> bool:
 	return doc.get_computed_style("#card", "background-color").contains("200")
 
 # A real InputEventMouseMotion, at a GLOBAL screen position, through the same
-# _input the window delivers to.
+# GUI input path the window delivers to. The scene supplies a sized
+# SubViewport because the headless display's root window is only 64x64.
 func _move_to(doc: WevaDocument, global_point: Vector2) -> void:
 	var ev := InputEventMouseMotion.new()
 	ev.global_position = global_point
 	ev.position = global_point
 	# Through the viewport, which is how a window delivers one -- the node's
 	# own _input is not callable from script on a GDExtension class.
-	get_viewport().push_input(ev)
+	get_viewport().push_input(ev, true)
 	doc.update_document()
 
 func _ready() -> void:
+	get_viewport().notify_mouse_entered()
 	var stage := Node2D.new()
 	add_child(stage)
 
@@ -58,6 +60,8 @@ func _ready() -> void:
 	doc.html = HTML
 	stage.add_child(doc)
 	doc.update_document()
+	await get_tree().process_frame
+	await get_tree().process_frame
 
 	# 1:1, no transform. If this fails, hover is broken outright.
 	_check(not _hovering(doc), "nothing is hovered to start with")
@@ -96,9 +100,9 @@ func _ready() -> void:
 	_check(not _hovering(doc), "and leaves again")
 
 	# A pan, which is what scrolling the gallery does.
-	doc.position = Vector2(120, -60)
+	doc.position = Vector2(120, -10)
 	doc.update_document()
-	_move_to(doc, Vector2(170, -40))
+	_move_to(doc, Vector2(170, 10))
 	_check(_hovering(doc), "hover survives a pan")
 
 	# The stage itself carrying a transform, rather than the document.

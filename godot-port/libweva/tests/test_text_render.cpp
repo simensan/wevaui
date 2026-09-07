@@ -111,6 +111,7 @@ void test_glyph_atlas() {
     StubFont font;
     GlyphAtlas atlas(64, 64);
     const FaceHandle face = StubFont::builtin();
+    const uint64_t slot_version = atlas.slot_version();
     uint32_t a = 0, b = 0, space = 0;
     font.glyph_index(face, 'A', &a);
     font.glyph_index(face, 'B', &b);
@@ -147,6 +148,12 @@ void test_glyph_atlas() {
     CHECK(atlas.texture(&r).id == t1.id);
     atlas.get(&font, face, b, 32);
     CHECK(atlas.texture(&r).id != t1.id);
+    CHECK(atlas.slot_version() == slot_version);
+    atlas.release_texture(&r);
+    CHECK(atlas.slot_count() > 0 && atlas.slot_version() == slot_version);
+    atlas.clear();
+    CHECK(atlas.slot_count() == 0 && atlas.slot_version() != slot_version);
+    CHECK(atlas.get(&font, face, a, 16) != nullptr);
 }
 
 void test_text_geometry() {

@@ -2,6 +2,7 @@
 #include "weva/computed_style.h"
 #include "weva/css_properties.h"
 #include <string>
+#include <utility>
 
 using namespace weva;
 
@@ -178,6 +179,98 @@ void test_computed_style() {
     CHECK(s.set_count() == 0);
     CHECK(!s.contains(display));
     CHECK(s.custom_properties().empty());
+
+    // Adding other declarations must preserve views and parsed values already
+    // handed to callers, including small strings stored inside their owner.
+    // Use reverse property order, then grow beyond the initial metadata size.
+    {
+        ComputedStyle values;
+        values.set(width, "12px");
+        const auto short_view = values.get(width);
+        const auto* short_data = short_view.data();
+        const auto* parsed_width = values.parsed(width);
+        CHECK(parsed_width && parsed_width->raw == "12px");
+        const std::string long_value(200, 'q');
+        values.set(color, long_value);
+        const auto long_view = values.get(color);
+        const auto* long_data = long_view.data();
+        for (int id = reg.count() - 1; id >= 0; --id) {
+            if (id != width && id != color) values.set(id, std::to_string(id));
+        }
+        const int high_id = reg.count() + 129;
+        values.set_important(high_id, true);  // metadata without a raw value
+        CHECK(!values.contains(high_id));
+        CHECK(values.is_important(high_id));
+        values.set(high_id, "high");
+        CHECK(short_view == "12px" && values.get(width).data() == short_data);
+        CHECK(long_view == long_value && values.get(color).data() == long_data);
+        CHECK(values.parsed(width) == parsed_width);
+        CHECK(values.set_count() == reg.count() + 1);
+        const auto ids = values.set_ids();
+        CHECK(ids.size() == static_cast<size_t>(reg.count() + 1));
+        CHECK(ids.front() == 0 && ids.back() == high_id);
+        for (int id = 0; id < reg.count(); ++id) {
+            CHECK(ids[static_cast<size_t>(id)] == id);
+            const auto expected = id == width ? "12px" :
+                id == color ? long_value : std::to_string(id);
+            CHECK(values.get(id) == expected);
+        }
+
+        const auto version = values.version();
+        values.set(width, short_view);
+        CHECK(values.version() == version);
+        values.unset(width);
+        CHECK(values.get(width) == reg.initial_value(width));
+        CHECK(!values.contains(width));
+        values.set(width, "27px");
+        CHECK(values.parsed(width) && values.parsed(width)->raw == "27px");
+        std::string out;
+        CHECK(values.try_get(high_id, &out) && out == "high");
+
+        // Move/swap ownership, then clear and refill in a different order.
+        // The cascade uses these operations when replacing retained styles.
+        ComputedStyle moved = std::move(values);
+        values.clear();
+        values.set(display, "grid");
+        CHECK(values.get(display) == "grid" && values.set_count() == 1);
+        CHECK(moved.get(color).data() == long_data);
+        std::swap(values, moved);
+        CHECK(values.get(high_id) == "high" && values.is_important(high_id));
+        CHECK(moved.get(display) == "grid");
+
+        values.set("--page-reset", "old");
+        values.set_inherit_parent(&moved);
+        values.clear();
+        CHECK(values.set_count() == 0 && values.set_ids().empty());
+        CHECK(values.inherit_parent() == nullptr);
+        CHECK(values.custom_properties().empty());
+        CHECK(!values.is_important(high_id) && !values.contains(high_id));
+        CHECK(values.get(width) == reg.initial_value(width));
+        values.set(high_id, "reused");
+        values.set(color, "");
+        values.set(width, "39px");
+        CHECK(values.set_count() == 3);
+        CHECK(values.get(high_id) == "reused");
+        CHECK(values.contains(color) && values.get(color).empty());
+        CHECK(values.parsed(width) && values.parsed(width)->raw == "39px");
+
+        // Diff by property id, independently of value insertion order.
+        ComputedStyle equal;
+        equal.set(width, "39px");
+        equal.set(color, "");
+        equal.set(high_id, "reused");
+        std::vector<int> changed;
+        bool unattributed = false;
+        CHECK(!values.differs_from(equal, &changed, &unattributed));
+        CHECK(changed.empty() && !unattributed);
+        equal.set(high_id, "changed");
+        CHECK(values.differs_from(equal, &changed, &unattributed));
+        CHECK(changed.size() == 1 && changed[0] == high_id && !unattributed);
+        values.unset(high_id);
+        CHECK(values.set_count() == 2 && !values.is_important(high_id));
+        values.clear();
+        CHECK(values.get(width) == reg.initial_value(width));
+    }
 }
 
 void test_lazy_inheritance() {
@@ -218,6 +311,39 @@ void test_lazy_inheritance() {
     CHECK(leaf.get("--brand") == "#f00");
     CHECK(leaf.contains("--brand"));      // reachable, though not local
     CHECK(leaf.custom_properties().empty());
+
+    // Name views need not be terminated at their boundary. Custom names are
+    // case-sensitive, and an explicitly empty value still shadows ancestors.
+    const std::string name = "--component-primary-accent-color";
+    const std::string extended = name + "-suffix";
+    const std::string_view name_view(extended.data(), name.size());
+    root.set(name, "first");
+    root.set("--component-primary-Accent-color", "different case");
+    CHECK(leaf.get(name_view) == "first");
+    CHECK(leaf.get("--component-primary-Accent-color") == "different case");
+    CHECK(leaf.get(extended).empty());
+    CHECK(!leaf.contains(extended));
+    CHECK(leaf.contains(name_view));
+    CHECK(!leaf.contains_own(name_view));
+    CHECK(root.contains_own(name_view));
+    const int64_t before_read = leaf.version();
+    CHECK(leaf.get(name_view) == "first");
+    CHECK(leaf.version() == before_read);
+    root.set(name, "updated");
+    CHECK(leaf.get(name_view) == "updated");
+    mid.set(name, "");
+    CHECK(leaf.get(name_view).empty());
+    CHECK(leaf.contains(name_view));
+    CHECK(mid.contains_own(name_view));
+    CHECK(root.get(name_view) == "updated");
+    mid.clear();
+    mid.set_inherit_parent(&root);
+    CHECK(leaf.get(name_view) == "updated");
+    ComputedStyle other;
+    other.set(name, "other parent");
+    leaf.set_inherit_parent(&other);
+    CHECK(leaf.get(name_view) == "other parent");
+    CHECK(!leaf.contains("--brand"));
 
     // ---- clear() drops the link, so reads fall back to initials only
     leaf.clear();

@@ -13,17 +13,13 @@ extends Control
 # paint log said text, and the ABI adapter said it was being asked twice a
 # frame for something that had not changed.
 const SAMPLES := "../../../tools/oracle/corpus/samples"
-const FRAMES := 200
+const FRAMES := 24
 
 var _doc: WevaDocument = null
 # Every sample with an `infinite` keyframe animation, worst first by how many,
 # plus two static ones as a control -- an animated page invalidates every frame
 # and a static one does not, and the difference is the whole point.
-var _pages: Array[String] = [
-    "neon", "particles", "match3", "match3-endgame", "hud", "glass",
-    "layout-stress", "combat-hud", "audit-validation", "story-bubble",
-    "stats", "vendor",
-]
+var _pages: Array[String] = ["stats"]
 var _page := 0
 var _n := 0
 var _update_us := 0

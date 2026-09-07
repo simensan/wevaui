@@ -37,6 +37,7 @@ func _ready() -> void:
 	_test_engine_font_is_adopted()
 	_test_text_produces_textured_geometry()
 	_test_restyle_round_trips()
+	_test_stylesheet_replacement()
 	_test_empty_and_malformed_input()
 	_test_backdrop_filter_crosses_the_boundary()
 	_test_content_size()
@@ -151,6 +152,22 @@ func _test_restyle_round_trips() -> void:
 		"setting an attribute on a missing element reports failure")
 	_check(not doc.remove_element_attribute("#nope", "x"),
 		"removing an attribute from a missing element reports failure")
+	doc.queue_free()
+
+func _test_stylesheet_replacement() -> void:
+	var doc := _make_doc("<div id='box'></div><input id='name' value='Ada'>",
+		"#box { width: 80px; height: 30px } #name { width: 120px }")
+	doc.set_focus("#name")
+	doc.set_element_value("#name", "Grace")
+	doc.css = "#box { width: 40px }"
+	doc.update_document(0)
+	_check(_approx(doc.query_bounds("#box").size.x, 40), "new stylesheet applies to a live document")
+	_check(_approx(doc.query_bounds("#box").size.y, 0), "removed stylesheet declarations stop applying")
+	_check(doc.get_element_value("#name") == "Grace", "replacing CSS preserves edited form values")
+	_check(doc.get_focused_id() == "name", "replacing CSS preserves focus")
+	doc.css = ""
+	doc.update_document(0)
+	_check(doc.query_bounds("#box").size.x > 100, "empty CSS restores the UA block layout")
 	doc.queue_free()
 
 func _test_empty_and_malformed_input() -> void:
@@ -1124,7 +1141,7 @@ func _test_label_activates_control() -> void:
 	doc.set_pointer(at, 1)
 	doc.set_pointer(at, 0)
 	doc.update_document()
-	_check(doc.has_element_attribute("#cb", "checked"), "clicking the label's text toggles it")
+	_check(doc.has_element("#cb:checked"), "clicking the label's text toggles it")
 
 	# And it is a toggle, not a set.
 	doc.set_pointer(at, 1)
@@ -1138,7 +1155,7 @@ func _test_label_activates_control() -> void:
 	doc.set_pointer(at, 1)
 	doc.set_pointer(at, 0)
 	doc.update_document()
-	_check(doc.has_element_attribute("#other", "checked"), "`for` names one by id")
+	_check(doc.has_element("#other:checked"), "`for` names one by id")
 	_check(doc.get_focused_id() == "other", "and the focus follows the click")
 	doc.queue_free()
 
@@ -1212,7 +1229,7 @@ func _test_right_click() -> void:
 	doc.set_pointer(at, PRIMARY)
 	doc.set_pointer(at, 0)
 	doc.update_document()
-	_check(doc.has_element_attribute("#cb", "checked"), "a left-click still toggles")
+	_check(doc.has_element("#cb:checked"), "a left-click still toggles")
 	_check(menus.is_empty(), "and asks for no menu")
 	doc.queue_free()
 

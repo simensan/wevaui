@@ -6,6 +6,7 @@
 #include "weva/inline_layout.h"
 
 #include <map>
+#include <array>
 #include "weva/style_resolver.h"
 
 #include <string_view>
@@ -154,12 +155,21 @@ private:
 // finalisation. NOT ported yet, so the corresponding boxes are laid out as
 // ordinary in-flow blocks: floats and `clear`, out-of-flow positioning, inline
 // formatting, and the flex / grid / table / multicol modes.
+class LayoutReuse {
+public:
+    virtual ~LayoutReuse() = default;
+    // The box model and imposed width are already resolved. A miss must
+    // materialize deferred children before ordinary layout resumes.
+    virtual bool reuse_layout(BoxTree* tree, BoxId id) = 0;
+};
+
 class BlockLayout {
 public:
     // `metrics` may be null, in which case a container of inline content
     // reports zero height — layout still runs, it just cannot measure text.
-    BlockLayout(BoxTree* tree, const LayoutContext& ctx, const FontMetrics* metrics = nullptr)
-        : tree_(tree), ctx_(ctx), metrics_(metrics) {}
+    BlockLayout(BoxTree* tree, const LayoutContext& ctx, const FontMetrics* metrics = nullptr,
+                LayoutReuse* reuse = nullptr)
+        : tree_(tree), ctx_(ctx), metrics_(metrics), reuse_(reuse) {}
 
     // Seeds the synthetic root with the viewport box. The height seed matters:
     // it is what lets `html, body { height: 100% }` chain down, since a
@@ -202,10 +212,41 @@ private:
     BoxTree* tree_;
     LayoutContext ctx_;
     const FontMetrics* metrics_ = nullptr;
+    LayoutReuse* reuse_ = nullptr;
     // Inline items per container, collected once. A shrink-to-fit probe lays
     // the same container out three times, and the first pass replaces its
     // children with line boxes — so the source runs must not be re-walked.
-    std::map<BoxId, std::vector<InlineItem>> inline_items_;
+    struct InlineLayoutEntry {
+        std::vector<InlineItem> items;
+        bool plain_text = false;
+        struct Input {
+            double width = 0, top = 0, left = 0;
+            const ComputedStyle* style = nullptr;
+            const ComputedStyle* parent_style = nullptr;
+            int64_t style_version = 0, parent_version = 0;
+            bool operator==(const Input& o) const {
+                return width == o.width && top == o.top && left == o.left &&
+                    style == o.style && parent_style == o.parent_style &&
+                    style_version == o.style_version && parent_version == o.parent_version;
+            }
+        };
+        struct Result {
+            Input input;
+            double height = 0;
+            struct Line {
+                BoxId id = kNoBox;
+                double x = 0, y = 0;
+            };
+            std::array<Line, 8> lines{};
+            size_t count = 0;
+            bool ready = false;
+        };
+        // Intrinsic probes and the final width commonly alternate. Retain a
+        // few small results without allocating another vector per probe.
+        std::array<Result, 3> results;
+        size_t next_result = 0;
+    };
+    std::map<BoxId, InlineLayoutEntry> inline_items_;
     // The float context of the BFC currently being laid out, and where that
     // BFC's origin sits in the coordinates of the box being laid out. Both are
     // saved and restored around each BFC boundary.

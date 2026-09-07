@@ -103,10 +103,9 @@ struct ResolvedLength {
 
 // Resolves an element's used font-size.
 //
-// NOTE the shape of this, because it is load-bearing and surprising: the
-// parent's own font-size is resolved with a NULL grandparent, i.e. against the
-// root. So `em` compounds correctly for two levels and stops. Ported as the C#
-// has it — see PORT_PLAN.md, where it is flagged for oracle confirmation.
+// Relative declarations use the computed size along the style's inheritance
+// chain; undeclared/inherited sizes retain that computed value. parent_style
+// is a fallback for manually built styles without an inheritance link.
 double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_style,
                     const LayoutContext& ctx);
 
@@ -167,6 +166,10 @@ double resolve_length_px(std::string_view raw, double fallback, const LayoutCont
 // thin/medium/thick are 1/3/5px. An unparseable value is 0, not the initial
 // `medium` — a border that fails to parse should not appear.
 double resolve_border_width(std::string_view raw, double font_size, const LayoutContext& ctx);
+// Reuses the declaration's parsed value; relative units still resolve against
+// the current font/context on every call.
+double resolve_border_width(const ComputedStyle* style, int property_id,
+                            double font_size, const LayoutContext& ctx);
 
 struct BoxSideValues {
     std::string_view top, right, bottom, left;

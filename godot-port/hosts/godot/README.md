@@ -1,24 +1,70 @@
 # The Godot host
 
+For a standalone game integration, open
+[`examples/frontier_camp`](../../examples/frontier_camp/README.md). It uses the
+packaged addon, Inspector-selected HTML/CSS, signal-driven `WevaView` bindings,
+keyed inventory actions and two-way settings. Its native-input test also runs
+from an exported executable.
+
 A GDExtension that binds `libweva`'s C ABI and draws its geometry through a
-`Node2D`. It talks to the core through `weva_c.h` only — no Godot type reaches
+`Control`. It talks to the core through `weva_c.h` only — no Godot type reaches
 the core, and no core C++ type reaches Godot. That is the property that lets the
 same core serve a Unity host later, and it is worth keeping loudly true.
 
+The Control's `font` theme item selects its native default font, including
+parent themes, overrides and type variations. Resource changes refresh both
+layout and glyphs. See [font integration](../../docs/GODOT_TEXT_SHAPING.md)
+for authoring, test commands and the remaining CSS family-selection work.
+
+`check_theme_fonts.py --godot /path/to/godot --library /path/to/library --render`
+verifies theme changes and viewport-dependent font sizes in an isolated project.
+Resized controls must match freshly loaded controls in geometry and pixels,
+including empty elements whose `em` dimensions depend on `vw`/`vh` font sizes.
+
+The `font_inheritance_tests.tscn` scene checks computed font-size inheritance,
+`display:contents`, generated content and live ancestor/class changes through
+both font backends. Run it headlessly for geometry or with a renderer for
+incremental-versus-fresh pixel comparisons. Its headless checks are included
+in `check.sh`; the corresponding browser fixture is
+`tools/oracle/check_font_inheritance_chrome.py`.
+
+The `intrinsic_size_tests.tscn` scene checks shrink-to-fit and flex/grid widths
+through both font backends, including preserved newlines and live whitespace
+changes. Run `godot --headless --path hosts/godot/project intrinsic_size_tests.tscn`
+from `godot-port/`; omit `--headless` to also compare incremental and fresh
+pixels. `check.sh` includes its headless checks in the host integration gate.
+
+## Western survival sample
+
+Select **western-survival** in the gallery, or run
+`project/samples/western_survival/survival.tscn` directly. It provides a working
+survival HUD, inventory, consumables, crafting, hotbar and ammunition over a
+frontier backdrop. See the [sample guide](project/samples/western_survival/README.md)
+for controls, screenshots, integration notes, interaction checks and measured
+runtime costs.
+
 ## Building
+
+Builds require Python 3.9 or newer. CMake downloads pinned ICU 78.3 sources
+and embeds the select-search data in the native library. Installed addons
+need no separate ICU runtime. See [the dependency profile](../../third_party/icu/README.md)
+for the source hash, offline override and notices.
 
 `godot-cpp` is not vendored: the core builds and tests with no Godot dependency
 at all, and vendoring would quietly end that.
 
-`godot-cpp` is version-coupled to the engine. It publishes a branch per release
-(`4.5`, and older) but `master` also ships the bundled API descriptions for
-newer versions, which is how a 4.7 build is produced today:
+The host builds `godot-cpp` from an external source checkout in the same CMake
+build. Its target supplies the generated headers and ABI-related compiler
+definitions; a separately built archive is no longer selected by filename.
+The current desktop builds target Godot API 4.7. From `godot-port/`:
 
 ```sh
-git clone --depth 1 https://github.com/godotengine/godot-cpp
-cmake -S godot-cpp -B godot-cpp/build -G Ninja \
-      -DCMAKE_BUILD_TYPE=Release -DGODOTCPP_API_VERSION=4.7
-cmake --build godot-cpp/build -j
+git clone https://github.com/godotengine/godot-cpp
+git -C godot-cpp checkout 26fb7ab5821e6a1096f62c22f7462d1d70caa332
+cmake -S hosts/godot -B build-godot -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR=$PWD/godot-cpp \
+      -DGODOTCPP_API_VERSION=4.7
+cmake --build build-godot -j 8
 ```
 
 Set `GODOTCPP_API_VERSION` to the engine you target. If your engine is newer
@@ -27,33 +73,166 @@ this always matches, whatever the version:
 
 ```sh
 godot --headless --dump-extension-api --dump-gdextension-interface
-cmake -S godot-cpp -B godot-cpp/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-      -DGODOTCPP_CUSTOM_API_FILE=$PWD/extension_api.json
-```
-
-Then the host:
-
-```sh
-cmake -S hosts/godot -B build-godot -G Ninja \
-      -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR=$PWD/godot-cpp
-cmake --build build-godot -j
+cmake -S hosts/godot -B build-godot -G Ninja -DCMAKE_BUILD_TYPE=Release \
+      -DGODOT_CPP_DIR=$PWD/godot-cpp -DGODOTCPP_CUSTOM_API_FILE=$PWD/extension_api.json
 ```
 
 The library lands in `project/addons/weva/bin/`, where `weva.gdextension`
-expects it. `GODOT_CPP_BUILD_DIR` overrides where the built `godot-cpp` archive
-is looked for, since the SCons and CMake builds put it in different places under
-different names.
+expects it. `GODOT_CPP_BUILD_DIR` is obsolete. Set `WEVA_GODOT_BIN` to another
+output directory when testing an isolated build while an editor has the current
+library loaded.
 
-Verified against Godot 4.7.2 with `godot-cpp` master at API 4.7. An extension
+The checked-in extension descriptor and package tool declare Godot 4.7 as the
+minimum, matching these builds. Keep that declaration consistent when building
+against a different or custom API.
+
+The build pin is `godot-cpp` revision `26fb7ab5821e6a1096f62c22f7462d1d70caa332`
+at API 4.7. The stock Godot 4.7.2 text-safety blocker remains open; see
+[release verification](../../docs/RELEASE.md). An extension
 built against an older `godot-cpp` does load in a newer engine — the 4.3 build
 ran fine under 4.7.2 — but build against the version you ship on.
 
-### `.godot/extension_list.cfg`
+### First import
 
-It is checked in on purpose. The editor generates it on first import, and
-without it the engine loads no GDExtension at all — a headless or CI run then
-fails with `Could not find type "WevaDocument"` and no hint that an extension
-was even meant to load.
+Open a new project in the editor once before launching it as a game. The editor
+discovers the extension and imports images into `.godot/`. The development
+project carries `extension_list.cfg` for its test runners, but an installed
+addon must work without copying that cache. For an isolated headless import:
+
+```sh
+godot --headless --path /path/to/project --editor --quit-after 60
+```
+
+Immediate `--import` / `--quit` reproduced Godot's extension-documentation
+initialization crash on Linux 4.7.2; letting the editor initialize for several
+frames avoids it. See [Godot issue #111645](https://github.com/godotengine/godot/issues/111645).
+`check_export.py` exercises this fresh-cache workflow on Linux and Windows.
+
+## Make an installable preview
+
+Build the libraries first, then package the platforms you intend to test:
+
+```sh
+python3 hosts/godot/package_addon.py \
+    --linux-library hosts/godot/project/addons/weva/bin/libweva_godot.so \
+    --windows-library /path/to/weva_godot.dll \
+    --godot-cpp-dir /path/to/godot-cpp --version 0.1.0-preview.59 \
+    --output /path/to/weva-preview.zip
+python3 hosts/godot/check_export.py --godot /path/to/godot --addon /path/to/weva-preview.zip
+# With matching desktop export templates installed:
+python3 hosts/godot/check_export.py --godot /path/to/godot --addon /path/to/weva-preview.zip --native
+```
+
+Each library argument is optional; include at least one. Supply API 4.7 x86_64
+builds. The archive contains only `addons/weva/`, with the selected libraries,
+their SHA-256 checksums, Weva/godot-cpp licenses, installation instructions and
+a standalone example. Extract it into a fresh project's root and run
+`addons/weva/example/example.tscn`. The example edits a player name through
+`data-model` and updates a bound score through button handlers.
+
+CMake writes `<library>.build.json` after linking. Keep this file beside each
+library: packaging verifies the binary, source and godot-cpp content hashes,
+records the compiler/configuration and Git identity when available, and rejects
+stale, instrumented, Debug, double-precision or custom-API builds. Source
+archives without Git metadata retain their content fingerprint. Both libraries
+in a combined ZIP must match the supplied source/dependency snapshot. The ZIP
+is deterministic for identical inputs, and an existing output is never replaced.
+Only explicit `X.Y.Z-preview.N` versions are accepted while the product release
+requirements remain open. A successfully packaged preview is not release approval.
+
+`check_export.py --addon` installs that archive into a fresh project and tests
+both the resource fixture and the example before and after exporting a PCK.
+`--native` also exports and launches debug, release and embedded-pack games.
+`check.sh` packages and checks the Linux build with native exports, so it now
+requires matching desktop export templates. Repeat the check on
+Windows for a Windows release; a passing Linux gate does not validate a DLL.
+
+## Render upload checks
+
+Consecutive meshes with the same texture share a triangle upload, preserving
+their order. Backdrop copies and SDF materials end a run; each combined upload
+is limited to 65,536 vertices. A single larger mesh keeps its original path.
+`WEVA_GODOT_DRAW_LOG=1` reports packing, submission time and upload counts.
+`WEVA_GODOT_DISABLE_BATCHING=1` restores individual uploads for comparisons.
+
+Unchanged command versions reuse the batch's packed vertex/color/UV/index
+arrays. `WEVA_GODOT_DISABLE_PACK_CACHE=1` forces repacking for comparisons.
+The draw log also reports packed vertices and reused batches. Upload counts
+still include reused arrays: Godot receives the triangles on every redraw.
+
+`layout_stress_probe.gd` can write per-frame CSV with
+`WEVA_GALLERY_PROBE_TRACE=/path/frames.csv`. Its frame IDs match the draw log,
+so core updates and uploads can be separated from waits elsewhere in a frame.
+Viewport CPU/GPU timestamp collection is opt-in with
+`WEVA_GALLERY_PROBE_GPU_TIMING=1`. See [the timing notes](../../docs/PERFORMANCE.md)
+for observed Windows GPU waits and the limits of those measurements.
+
+For normal in-game workloads, use `run_game_ui_bench.py`: retained HUDs,
+batched state writes, data bindings, menu hover/fades, inventory scrolling and
+chat typing. It includes all public API calls in the CPU measurement and can
+compare frozen DLLs/SOs with repeated native runs and exact final pixels.
+See [the runtime benchmark guide](../../docs/RUNTIME_PERFORMANCE.md).
+
+Set `WEVA_GALLERY_PROBE_COLD_BUILDS=15` when running the same probe to measure
+fresh document builds instead of animated frames. It reports the first build
+and a series of fresh builds, including parsing, engine fonts and host texture
+preparation. Godot itself stays running, so later documents can benefit from
+its resource caches. `WEVA_STAGE_LOG=1` adds cascade storage counts and separate
+flow, positioning, overflow and incremental-index times for full layout.
+It also reports host-font calls, cache hits and time by operation.
+Add `WEVA_CASCADE_LOG=1` to separate matching, declaration application,
+value-resolution passes and pseudo queries, including metadata/value-page
+allocation time. Computed styles allocate stable raw-value pages on demand.
+`WEVA_FONT_LOG=1` breaks uncached Godot shaping into preparation, TextServer
+shaping, glyph export and conversion, reported when a font backend clears.
+`WEVA_INLINE_LOG=1` traces inline-result hits; `WEVA_DISABLE_INLINE_REUSE=1`
+disables within-pass line reuse for comparisons. Per-call tracing adds
+substantial overhead.
+`WEVA_LAYOUT_LOG=1` reports inclusive box-model, inline and height-finalization
+times inside full root layout, with collection, atom-sizing and line-building
+subscopes inside inline work. `WEVA_GODOT_DISABLE_VARIANT_CACHE=1` disables
+sharing of immutable synthetic fonts between documents; it keeps the corrected
+per-document distinction between ordinary and heavier bold synthesis.
+Use logging separately from timing comparisons.
+
+After importing the test project, run the pixel regression with a display:
+
+```sh
+python3 hosts/godot/check_triangle_batching.py --godot /path/to/godot \
+    --project hosts/godot/project --rendering-method gl_compatibility
+python3 hosts/godot/check_packed_draws.py --godot /path/to/godot \
+    --project hosts/godot/project --rendering-method gl_compatibility
+```
+
+Use `--rendering-method mobile` for Vulkan. This compares exact rendered
+images with batching on/off, including overlapping transparency, clipped
+gradients, texture/material boundaries, backdrop filters and large uploads.
+`check.sh` includes the OpenGL check beside the other rendered gates.
+The packed-array check compares 26 images with caching enabled/disabled and
+requires actual reuse. It covers repeated redraws, removed/moved geometry,
+gradients, font and viewport changes, native modulation/shader parameters,
+SDF/backdrop transitions, visibility, empty documents and reloads.
+Pass `--cache-kind glyphs` to compare the same images with the core's glyph
+prepass reuse enabled/disabled. This skips unchanged text subtrees while their
+glyph slots remain prepared. `WEVA_DISABLE_GLYPH_REUSE=1` disables it, and
+`WEVA_PAINT_LOG=1` reports glyph timing and the number of skipped subtrees.
+It also separates background, shadow and filter costs, with raster/blur/upload
+sub-scopes for textures. `WEVA_GRADIENT_LOG=1` reports each background texture's
+dimensions, sample count, reuse paths and raster duration. These diagnostic
+timings include logging overhead; use uninstrumented runs for performance
+comparisons.
+
+`WEVA_BLUR_LOG=1` separates scratch-buffer preparation, horizontal and vertical
+blur passes, and output conversion. The `weva_blur_variants` CTest target checks
+the normal and forced-portable kernels against each other, including transparent
+pixels, narrow textures and radii larger than the texture.
+
+`WEVA_REUSE_LOG=1` identifies changed inputs at retained paint boundaries:
+position, opacity, transform, scissor, geometric clip, color filter and canvas
+owner. For example, layout-stress retains its grid in layout, but its animated
+counter height changes the grid's fractional position and rounded clipping
+boundary, requiring new paint geometry. Use this trace with `WEVA_STAGE_LOG=1`
+to distinguish rejected paint reuse from a layout fallback.
 
 ## Rebuilding while Godot is open
 
@@ -118,12 +297,11 @@ exits non-zero when any of them does:
 
     bash godot-port/check.sh            # or --clean to rebuild from scratch
 
-    === unit tests ===            10124 checks, 0 failures
-    === sanitizers ===            10124 checks, 0 failures
-    === layout oracle ===         21/37 agree, 0 differ, 16 reference bugs
-    === backend gate ===          37 samples, 0 over the structural gate
-    === interactive gate ===      five states, all 0.00%
-    === host tests ===            165 checks, 0 failures
+The gates include core unit tests, the mutation corpus against full
+recomputation, ASan/UBSan, all three layout-oracle corpora, packed resources,
+backend comparisons, interactive rendering, host tests and demo integration.
+The three remaining harvest metric differences are tracked in
+[product readiness](../../docs/PRODUCT_READINESS.md).
 
 A build directory it cannot find is SKIPPED with a line saying so rather than
 passing quietly, and `WEVA_BUILD_GCC`, `WEVA_BUILD_CLANG`, `WEVA_BUILD_GODOT`
@@ -198,6 +376,16 @@ scene can be authored in the editor. Setting any of them marks the document
 dirty and the next frame runs the update — batching several changes into one
 layout rather than one each.
 
+The base class is now `Control`; earlier preview scripts typed as `Node2D`
+must use `WevaDocument` or `Control`. `document_size` aliases native `size`.
+An unsized node fills its parent using full-rect anchors, and Godot Containers
+can size it directly. Resizing the Control reflows HTML without a viewport
+resize callback in GDScript.
+
+Assigning `css` replaces the previous author stylesheet; `css = ""` removes
+it. The default browser styles remain. Replacement preserves the DOM, edited
+form values, focus and selection, and keeps the clock of continuing animations.
+
 Drawing goes through `RenderingServer::canvas_item_add_triangle_array`, which
 takes the index buffer directly — the shape the core already produces. Not
 `draw_polygon`: that takes a polygon *outline* and triangulates it, so handing
@@ -230,26 +418,44 @@ reports a zero line gap, because `TextServer` exposes none and its own line
 height is ascent + descent; inventing one would make `line-height: normal`
 taller here than in any Godot control using the same face.
 
-Not yet wired: input events, the animation tick, and registering Godot's
-`RenderingServer` as the core's render backend through the function-pointer
-table — drawing currently goes through the collected draw list rather than
-straight into the engine.
+The additive minor-11 `weva_document_set_font_shaper` callback carries each
+shaped glyph's offsets across the C ABI. Godot's per-run offsets are separate
+from the bitmap bearings above; both apply to combining marks. The adapter
+converts TextServer character clusters to UTF-8 byte offsets and retains the
+exact font RID chosen for every glyph, including automatic system fallbacks.
+The original font table keeps its binary layout and legacy shaping callback.
+
+Build the separate native adapter test extension with
+`-DWEVA_GODOT_FONT_TESTS=ON`, then run:
+
+```bash
+python3 hosts/godot/check_font_shaping.py --godot /path/to/godot \
+    --library hosts/godot/project/addons/weva/bin/libweva_font_tests.so
+```
+
+On Windows, pass the generated `weva_font_tests.dll`. The runner creates an
+isolated project and checks glyph positions, source clusters, native metrics,
+coverage pixels and the resulting document geometry against TextServer.
+`check.sh` runs this gate when the test extension is present; a custom output
+path can be supplied through `WEVA_GODOT_FONT_TEST_LIBRARY`. Test extensions
+are excluded from the packaged addon. See [text shaping](../../docs/GODOT_TEXT_SHAPING.md)
+for the separate stock-engine limitation and remaining typography limits.
+
+Input events and the animation clock run through the node. Drawing consumes
+the core's collected draw list through Godot's rendering server.
 
 ## Windows (MSVC)
 
-Verified with Visual Studio 2022 Build Tools, CMake 4.3 and Godot 4.7.1
-(win64, mono): the host suite passes 23/23 and `capture.tscn` renders through
-the GPU. From a Developer-agnostic shell (CMake finds MSBuild itself):
+Verified with Visual Studio 2022 Build Tools and standard Godot 4.7.2 (win64):
+245 host checks, 75 binding checks, 40 native input checks, 35 keyboard checks, 28 IME checks
+and the isolated project/PCK smoke pass.
+From a Developer-agnostic shell (CMake finds MSBuild itself):
 
 ```powershell
 git clone --depth 1 https://github.com/godotengine/godot-cpp C:\Users\<you>\godot-cpp
-cmake -S C:\Users\<you>\godot-cpp -B C:\Users\<you>\godot-cpp\build-msvc `
-      -G "Visual Studio 17 2022" -A x64 -DGODOTCPP_API_VERSION=4.7
-cmake --build C:\Users\<you>\godot-cpp\build-msvc --config Release -j 8
-
 cmake -S godot-port\hosts\godot -B C:\Users\<you>\weva-build\godot-msvc `
       -G "Visual Studio 17 2022" -A x64 `
-      -DGODOT_CPP_DIR=C:/Users/<you>/godot-cpp -DGODOT_CPP_BUILD_DIR=C:/Users/<you>/godot-cpp/build-msvc
+      -DGODOT_CPP_DIR=C:/Users/<you>/godot-cpp -DGODOTCPP_API_VERSION=4.7
 cmake --build C:\Users\<you>\weva-build\godot-msvc --config Release -j 8
 ```
 
@@ -387,13 +593,21 @@ Three things worth knowing:
     `Quests.1.Note`, in the item that row actually is. Nested repeats unwind
     the whole way up, and `data_changed` reports the resolved path. A path
     that names no alias is global, in a row as anywhere else.
-  * **Only a player's edit writes back.** `set_element_value()` from a script
+  * **Player edits and form resets write back.** `set_element_value()` from a script
     raises no input event, here as in a browser, and neither does a value the
     data itself pushed in -- so the two directions cannot chase each other. And
     a `set_data_source()` resolver is read-only: a Callable can answer a path
     but has nowhere to put an answer, so the write-back stays out of its way.
 
 `binding_tests.gd` is this, executable; `check.sh` runs it.
+
+Controls retain markup defaults independently of their live values. A
+`type="reset"` button or `doc.reset_form("#settings")` restores the owned
+controls and their writable `data-model` paths before calling `on-reset`
+and emitting `form_reset(id)`. Use `:checked` for live selection/checkedness;
+`[checked]` and `[selected]` describe defaults. See
+[FORM_STATE.md](../../docs/FORM_STATE.md) for default changes, sanitization,
+external form owners, queued event semantics and remaining form limits.
 
 **Building it from data**
 
@@ -409,26 +623,57 @@ CSS addresses them, so a script that can style a list can also fill it.
 
 **Images**
 
-`background-image: url(...)`, `<img src="...">` and the rest reach Godot's
-filesystem, so `res://` works -- including inside an exported `.pck`, where
-there are no files on disk for a C++ core to open:
+`background-image: url(...)`, `<img src="...">` and other image properties
+resolve through Godot, including inside an exported `.pck`:
 
     doc.base_path = "res://ui"                  # what a relative url() joins to
     <img src="icons/gem.png">                   # res://ui/icons/gem.png
     background-image: url(res://art/frame.png)  # a scheme is left alone
 
-A path with no scheme is tried as given and then under `res://`, so a
-stylesheet written for a browser needs no rewriting. The bytes come from
-Godot; the DECODING happens in the core, which is what keeps this host and the
-software renderer byte-identical and the render gate exact.
+Relative paths resolve under `base_path`, or under `res://` if no base is set.
+Project textures load through `ResourceLoader`, so the same imported texture
+and import settings apply in the editor and an exported game. PNG and SVG are
+covered by the export smoke test. Other Godot texture formats use the same
+path when Godot can provide a readable image.
 
-PNG only for now, 8 bits per channel and not interlaced. Anything else is
-refused rather than guessed at, and a refused image draws nothing -- exactly
-what every image did before this existed.
+The host passes a PNG snapshot to the core's image cache. Raw images outside
+the importer (`user://`, absolute paths, or Keep File) still need to be PNG,
+8 bits per channel and non-interlaced. `get_missing_assets()` reports paths
+that could not be loaded.
 
 `<img>` sizes as a replaced element: no width or height gives the image's own
 size, one of them gives the other through the intrinsic ratio, and
 `object-fit` and `object-position` place it in the content box.
+
+**Exporting HTML, CSS and artwork**
+
+HTML and CSS are plain files. Include `*.html,*.css` in the export preset's
+non-resource filter so `FileAccess.get_file_as_string()` can read them in a
+packed game. For images named only in markup, use **Export all resources** or
+explicitly include their imported resources; Godot cannot infer dependencies
+from HTML/CSS text. Use project-relative `res://` paths for shipped assets.
+See Godot's [export filters](https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html).
+
+The isolated resource check creates a new project, imports it, exports a PCK,
+then runs the pack from another directory with the native library beside it:
+
+```sh
+python3 hosts/godot/check_export.py --godot /path/to/godot
+# For a binary built outside the sample project:
+python3 hosts/godot/check_export.py --godot /path/to/godot --library /path/to/weva_godot.dll
+```
+
+It checks markup, stylesheet replacement, imported PNG/SVG dimensions and
+missing-asset diagnostics, with the original PNG absent from the pack.
+The default pack check uses the editor executable and needs no export templates.
+Add `--native` to check actual debug/release executable exports using installed
+templates. The check verifies that Godot copies the selected extension, hides
+the source project, relocates the exported directories and launches them.
+With `--addon`, the packaged example's controller and binding checks also run.
+`--native --addon /path/to/addon.zip --render` additionally compares its rendered
+pixels with the project; this needs a display and OpenGL 3 support.
+See [desktop export verification](../../docs/DESKTOP_EXPORTS.md) for the tested
+configuration and reproducible commands.
 
 **Changing one property, and finding a box on screen**
 
@@ -555,6 +800,7 @@ submits unless its `type` says otherwise.
     doc.value_changed.connect(func(id, value): ...)     # every keystroke
     doc.value_committed.connect(func(id, value): ...)   # once, when done
     doc.form_submitted.connect(func(id): ...)           # the form's id
+    doc.form_reset.connect(func(id): ...)               # defaults and data restored
     doc.element_scrolled.connect(func(id, x, y): ...)   # where it landed
     doc.key_pressed.connect(func(id, key, mods): ...)
     doc.text_entered.connect(func(id, text): ...)
@@ -592,7 +838,7 @@ letters for, and the clipboard, which belongs to the platform.
     doc.undo()                                     # bind to Ctrl+Z
     doc.redo()                                     # Ctrl+Y, or Ctrl+Shift+Z
     doc.get_selected_text()                        # for DisplayServer.clipboard_set
-    doc.send_text(DisplayServer.clipboard_get())   # paste
+    doc.paste_text(DisplayServer.clipboard_get())  # paste as one undo step
     doc.set_element_selection("#name", 0, 5)
     doc.get_element_selection("#name")             # anchor first, so you know
                                                    # which way it runs
@@ -651,8 +897,8 @@ boolean attributes -- `open`, `checked`, `disabled`, `selected`, `required` --
 are written with no value, so reading one back returns "" whether it is set or
 not.
 
-Like the reference, a `<summary>` is not in the tab order and Enter does not
-work it; a browser does both, and neither engine does yet.
+The first `<summary>` participates in Tab navigation and native keyboard
+activation; Enter and Space share its pointer activation behavior.
 
 **Pointer buttons**
 
@@ -743,16 +989,48 @@ and closes only when asked.
 **Dropdowns**
 
 Clicking a `<select>` opens its list and clicking a row chooses it, through the
-pointer the node already forwards. The choice lands in the DOM as `selected` on
-the option, so `:checked`, the paint and `get_element_value` all agree.
+pointer the node already forwards. The choice changes live selectedness,
+so `:checked`, paint and `get_element_value` agree while the `selected`
+attributes retain their reset defaults.
 
     doc.open_select("#quality")
     doc.close_select()
     doc.get_open_select()                          # the id, or ""
 
+`size="1"` and invalid/zero sizes use dropdown behavior. `multiple` or a
+parsed size greater than one makes a listbox. Plain clicks replace selection,
+Ctrl/Meta clicks toggle, and Shift extends a range from the anchor. Dragging
+updates rows immediately and commits input/change once on release. Native
+keyboard navigation skips disabled rows and keeps its active row visible;
+Ctrl+A selects enabled rows in a multiple select. The explicit pointer method
+accepts an optional modifier mask as its third argument. See
+[FORM_STATE.md](../../docs/FORM_STATE.md#select-interaction) for the complete
+contract and remaining select limitations.
+
 **Input**
 
-The node reads its own input while `interactive` is on, which is the default.
+The Control receives Godot's GUI input while `interactive` is on, the default.
+Native focus, mouse filters, visibility, canvas transforms and overlapping
+controls determine which document receives events. CSS `pointer-events: none`
+lets native hit testing continue beneath the document; descendants can opt
+back in. A small outside-press observer dismisses dropdowns and auto popovers
+after native routing without synthesizing clicks. Version checks keep it from
+closing a popup newly opened by a native event handler.
+
+Tab/Shift+Tab traverse the HTML tab order and continue through native Controls
+at either end. Keep sibling UI under a common Control (or configure explicit
+native focus neighbors); separate viewport root Controls have separate Godot
+focus roots. `set_focus` synchronizes Godot focus, and native focus loss clears
+the HTML focus. Accepted edits stop before `_unhandled_input`; game actions
+should use that path. Unicode key events, held edit keys, Ctrl/Cmd+A/C/X/V/Z,
+Ctrl+Y and Shift+Ctrl/Cmd+Z are supported. Buttons use Enter down and Space up;
+checkboxes, radio groups, ranges, summaries, popover triggers and implicit
+submission have native keyboard actions. See [keyboard behavior and limits](../../docs/KEYBOARD_INPUT.md).
+IME preedit, commit/cancel, composition signals and one-step undo are
+implemented; see [IME evidence and compatibility limits](../../docs/IME.md).
+Broader IME compatibility, remaining form behavior, touch-device integration and accessibility
+remain release work.
+
 A host routing its own -- a gamepad cursor, a touch surface, a menu that
 decides who gets the keyboard -- calls these instead.
 
@@ -763,16 +1041,23 @@ decides who gets the keyboard -- calls these instead.
     doc.send_text("x")
     doc.focus_next(false)                          # tab order
 
-Tab moves focus by itself and the document reports having consumed the key. A
-key with nothing to scroll and no field to edit is NOT consumed, so a game
-keeps its own arrows.
+The explicit `focus_next` method wraps within HTML. Automatic native Tab
+routing hands off at the document edge. Keys that the document does not use
+remain available to the game's unhandled input handlers.
 
 **Time**
 
-`paused` stops the clock: transitions and @keyframes hold where they are, and
-the document still updates when something else changes it. `update_document(dt)`
+`paused` stops CSS time: transitions and @keyframes hold where they are. The
+document still updates when inputs change. Listbox and text-selection gestures
+autoscroll on monotonic elapsed time, independently of `Engine.time_scale`.
+Godot's normal scene-tree processing rules still apply. `update_document(dt)`
 steps it by hand, which is what a test wants when it needs to see a transition
 partway rather than wait for real frames.
+
+Each document advances automatically once per Godot process frame. A parent
+`_process` should not also call `update_document(delta)`; doing both advances
+animations twice and runs the update twice. A host that owns time explicitly
+can call `set_process(false)` and drive `update_document(dt)` itself.
 
 Two things worth knowing, because both have caught someone out:
 

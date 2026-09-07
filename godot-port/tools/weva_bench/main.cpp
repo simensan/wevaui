@@ -31,14 +31,20 @@
 
 #include <algorithm>
 #include <chrono>
+#ifdef _WIN32
+#include <windows.h>
+#include <dbghelp.h>
+#else
 #include <execinfo.h>
 #include <sys/time.h>
+#endif
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <map>
 #include <memory>
+#include <new>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -89,19 +95,30 @@ size_t g_samples = 0;
 // question, so --sample-depth picks.
 int g_sample_depth = 2;
 
+#ifndef _WIN32
 void record_sample();
-
 void on_sigprof(int) {
     if (!g_sampling) return;
     ++g_samples;
     record_sample();
 }
+#endif
 
+#if defined(_MSC_VER)
+__declspec(noinline)
+#elif defined(__GNUC__)
+__attribute__((noinline))
+#endif
 void record_site(size_t size) {
     void* frames[kFrames + 2];
+#ifdef _WIN32
+    const int n = CaptureStackBackTrace(0, kFrames + 2, frames, nullptr);
+#else
     const int n = backtrace(frames, kFrames + 2);
-    // Frame 0 is operator new itself; skip it so sites group by their caller.
-    const int start = n > 1 ? 1 : 0;
+#endif
+    // This recorder and operator new occupy the first two frames. Keep the
+    // recorder out of line so release and symbol builds skip the same frames.
+    const int start = n > 2 ? 2 : 0;
     const int depth = n - start < kFrames ? n - start : kFrames;
     for (size_t i = 0; i < g_site_count; ++i) {
         if (g_sites[i].depth != depth) continue;
@@ -123,6 +140,7 @@ void record_site(size_t size) {
     site.bytes = size;
 }
 
+#ifndef _WIN32
 void record_sample() {
     void* frames[kFrames + 3];
     const int n = backtrace(frames, kFrames + 3);
@@ -152,9 +170,17 @@ void record_sample() {
     site.count = 1;
     site.bytes = 0;
 }
+#endif
 
-void report_sites(const char* what, size_t total, int top) {
+void report_sites(const char* what, size_t total, int top, bool allocations = false) {
     std::printf("\n  %s (top %d of %zu sites), innermost frame first:\n", what, top, g_site_count);
+#ifdef _WIN32
+    const HANDLE process = GetCurrentProcess();
+    SymSetOptions(SYMOPT_UNDNAME | SYMOPT_DEFERRED_LOADS | SYMOPT_FAIL_CRITICAL_ERRORS | SYMOPT_NO_PROMPTS);
+    // Local symbols only. RelWithDebInfo provides names for core frames;
+    // Release without PDBs still reports the captured instruction addresses.
+    const bool symbols = SymInitialize(process, ".", TRUE) != FALSE;
+#endif
     std::vector<size_t> order(g_site_count);
     for (size_t i = 0; i < g_site_count; ++i) order[i] = i;
     std::sort(order.begin(), order.end(),
@@ -162,17 +188,34 @@ void report_sites(const char* what, size_t total, int top) {
     for (size_t rank = 0; rank < order.size() && rank < static_cast<size_t>(top); ++rank) {
         const Site& site = g_sites[order[rank]];
         std::printf("  %6zu (%4.1f%%)\n", site.count, total ? 100.0 * site.count / total : 0.0);
+        if (allocations) std::printf("        %zu allocated bytes\n", site.bytes);
+#ifdef _WIN32
+        for (int f = 0; f < site.depth && f < 4; ++f) {
+            alignas(SYMBOL_INFO) unsigned char storage[sizeof(SYMBOL_INFO) + MAX_SYM_NAME]{};
+            auto* info = reinterpret_cast<SYMBOL_INFO*>(storage);
+            info->SizeOfStruct = sizeof(SYMBOL_INFO);
+            info->MaxNameLen = MAX_SYM_NAME;
+            DWORD64 offset = 0;
+            if (symbols && SymFromAddr(process, reinterpret_cast<DWORD64>(site.frames[f]), &offset, info))
+                std::printf("        %s+0x%llx\n", info->Name, static_cast<unsigned long long>(offset));
+            else std::printf("        %p\n", site.frames[f]);
+        }
+#else
         char** names = backtrace_symbols(site.frames, site.depth);
         for (int f = 0; f < site.depth && f < 4; ++f) {
             std::printf("        %s\n", names ? names[f] : "?");
         }
         std::free(names);
+#endif
     }
+#ifdef _WIN32
+    if (symbols) SymCleanup(process);
+#endif
 }
 
 }   // namespace
 
-void* operator new(size_t size) {
+void* operator new(size_t size, const std::nothrow_t&) noexcept {
     if (g_counting) {
         ++g_allocations;
         g_bytes += size;
@@ -184,14 +227,24 @@ void* operator new(size_t size) {
             g_counting = true;
         }
     }
-    void* p = std::malloc(size ? size : 1);
+    return std::malloc(size ? size : 1);
+}
+void* operator new(size_t size) {
     // The build disables exceptions, so an allocation failure aborts rather
     // than throwing. A benchmark that cannot allocate has nothing to report.
-    if (!p) std::abort();
-    return p;
+    if (void* p = ::operator new(size, std::nothrow)) return p;
+    std::abort();
 }
+// libstdc++ stable_sort uses nothrow new for its temporary buffer. It must
+// share our allocator and counter, including in an AddressSanitizer build.
+void* operator new[](size_t size) { return ::operator new(size); }
+void* operator new[](size_t size, const std::nothrow_t&) noexcept { return ::operator new(size, std::nothrow); }
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete(void* p, size_t) noexcept { std::free(p); }
+void operator delete[](void* p) noexcept { std::free(p); }
+void operator delete[](void* p, size_t) noexcept { std::free(p); }
+void operator delete(void* p, const std::nothrow_t&) noexcept { std::free(p); }
+void operator delete[](void* p, const std::nothrow_t&) noexcept { std::free(p); }
 
 using namespace weva;
 
@@ -238,6 +291,10 @@ struct Styles : StyleProvider {
 
 std::string read_file(const char* path) {
     std::ifstream f(path);
+    if (!f) {
+        std::fprintf(stderr, "weva_bench: cannot read %s\n", path);
+        std::exit(2);
+    }
     std::ostringstream s;
     s << f.rdbuf();
     return s.str();
@@ -251,7 +308,7 @@ int main(int argc, char** argv) {
         return 2;
     }
     const std::string html = read_file(argv[1]);
-    const std::string css = argc > 2 ? read_file(argv[2]) : std::string();
+    const std::string css = argc > 2 && argv[2][0] ? read_file(argv[2]) : std::string();
     int passes = argc > 3 ? std::atoi(argv[3]) : 200;
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--profile") g_profile = true;
@@ -259,6 +316,10 @@ int main(int argc, char** argv) {
     // Attribution needs only one measured pass, and the capture makes the
     // timings meaningless anyway.
     if (g_profile && passes > 20) passes = 20;
+    if (passes <= 0) {
+        std::fprintf(stderr, "weva_bench: no passes (argument order?)\n");
+        return 2;
+    }
 
     bool full = false;
     bool sample = false;
@@ -268,6 +329,16 @@ int main(int argc, char** argv) {
         if (std::string(argv[i]) == "--cold") cold = true;
         if (std::string(argv[i]) == "--sample") sample = true;
     }
+    if (sample && g_profile) {
+        std::fprintf(stderr, "weva_bench: --sample and --profile must run separately\n");
+        return 2;
+    }
+#ifdef _WIN32
+    if (sample) {
+        std::fprintf(stderr, "weva_bench: --sample requires POSIX SIGPROF; use --profile for Windows allocation stacks\n");
+        return 2;
+    }
+#endif
 
     // What each timed pass changes about the document.
     //
@@ -289,15 +360,23 @@ int main(int argc, char** argv) {
     // animates layout relays out every frame.
     double frame_dt = 0;
     std::string target_selector = "*";
+    std::string focus_selector;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a.rfind("--target=", 0) == 0) target_selector = a.substr(9);
+        if (a.rfind("--focus=", 0) == 0) focus_selector = a.substr(8);
         if (a.rfind("--sample-depth=", 0) == 0) g_sample_depth = std::atoi(a.c_str() + 15);
         if (a.rfind("--dt=", 0) == 0) frame_dt = std::atof(a.c_str() + 5);
     }
+    if (g_sample_depth < 1 || g_sample_depth > kFrames) {
+        std::fprintf(stderr, "weva_bench: --sample-depth must be between 1 and %d\n", kFrames);
+        return 2;
+    }
+    if (g_profile) std::fprintf(stderr, "weva_bench: allocation profiling enabled; timings include stack capture\n");
 
     // Arms the profiling timer around the timed region.
     const auto start_sampling = [&] {
+#ifndef _WIN32
         if (!sample) return;
         void* warm[4];
         backtrace(warm, 4);   // force the lazy init out of the handler
@@ -313,12 +392,15 @@ int main(int argc, char** argv) {
         g_site_count = 0;
         g_samples = 0;
         g_sampling = true;
+#endif
     };
     const auto stop_sampling = [&] {
+#ifndef _WIN32
         if (!sample) return;
         g_sampling = false;
         itimerval off{};
         setitimer(ITIMER_PROF, &off, nullptr);
+#endif
     };
 
     // `--full` times what a HOST actually pays when something changes: the
@@ -343,6 +425,11 @@ int main(int argc, char** argv) {
         double best = 1e300, total = 0;
         start_sampling();
         for (int i = 0; i < passes; ++i) {
+            if (i == passes - 1) {
+                g_allocations = g_bytes = 0;
+                g_counting = true;
+            }
+            if (sample) g_sampling = true;
             const auto t0 = std::chrono::steady_clock::now();
             weva_config cfg{};
             cfg.viewport_width = 1280;
@@ -361,18 +448,20 @@ int main(int argc, char** argv) {
             const double ms =
                 std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0)
                     .count();
+            g_counting = false;
             total += ms;
             if (ms < best) best = ms;
+            // Match the sampled region to the timer: destruction happens after
+            // the cold build has been measured and must not dominate its profile.
+            if (sample) g_sampling = false;
             weva_document_destroy(d);
         }
         stop_sampling();
-        if (passes <= 0) {
-            std::fprintf(stderr, "weva_bench: no passes (argument order?)\n");
-            return 1;
-        }
-        std::printf("%-20s %-7s %-10s best %8.3f ms  mean %8.3f ms\n", argv[1], "cold", "-", best,
-                    total / passes);
+        std::printf("%-20s %-7s %-10s best %8.3f ms  mean %8.3f ms"
+                    "  cold allocations %zu (%zu bytes)\n", argv[1], "cold", "-", best,
+                    total / passes, g_allocations, g_bytes);
         if (sample) report_sites("time samples", g_samples, 16);
+        if (g_profile) report_sites("allocation sites", g_allocations, 12, true);
         return 0;
     }
 
@@ -423,7 +512,19 @@ int main(int argc, char** argv) {
                                              "background-color:#123457"};
         const char* const layout_values[2] = {"padding-left:11px", "padding-left:12px"};
 
+        if (!focus_selector.empty() || mutate == "caret") {
+            const auto focus = focus_selector.empty() ? target : weva_document_query(d, focus_selector.c_str());
+            weva_document_set_focus(d, focus);
+            if (weva_document_text_input_target(d) == WEVA_ELEMENT_NONE) {
+                std::fprintf(stderr, "weva_bench: text editing needs a focused editable field\n");
+                weva_document_destroy(d);
+                return 1;
+            }
+            weva_document_update(d, 0);
+        }
+
         double best = 1e300, total = 0;
+        size_t steady_allocations = 0, steady_bytes = 0;
         start_sampling();
         for (int i = 0; i < passes; ++i) {
             // `hover` moves the pointer instead of editing the document: two
@@ -434,7 +535,11 @@ int main(int argc, char** argv) {
             // `:hover` the honest answer is that it costs nothing. It did not:
             // marking the flipped elements made the cascade re-walk their
             // subtrees to find that no rule matched differently.
-            if (mutate == "hover") {
+            if (mutate == "caret") {
+                const int key = (i & 1) ? WEVA_KEY_HOME : WEVA_KEY_END;
+                weva_document_key(d, key, 0, 1);
+                weva_document_key(d, key, 0, 0);
+            } else if (mutate == "hover") {
                 const int x = (i & 1) ? 320 : 960;
                 const int y = (i & 1) ? 180 : 540;
                 weva_document_set_pointer(d, x, y, 0);
@@ -442,29 +547,33 @@ int main(int argc, char** argv) {
                 const char* const* values = mutate == "paint" ? paint_values : layout_values;
                 weva_element_set_attribute(d, target, "style", values[i & 1]);
             }
+            const bool measure_allocations = i == passes - 1;
+            if (measure_allocations) {
+                g_allocations = g_bytes = 0;
+                g_counting = true;
+            }
             const auto t0 = std::chrono::steady_clock::now();
             weva_document_update(d, frame_dt);
             const auto t1 = std::chrono::steady_clock::now();
+            if (measure_allocations) {
+                g_counting = false;
+                steady_allocations = g_allocations;
+                steady_bytes = g_bytes;
+            }
             const double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
             total += ms;
             if (ms < best) best = ms;
         }
         stop_sampling();
-        // A pass count of zero leaves `best` at its sentinel, which printed as
-        // 1e300 and, once averaged by a caller, as -nan. A sample with no
-        // stylesheet is enough to cause it: the shell passes an empty argument,
-        // the pass count slides into the css slot, and the run silently
-        // measures nothing. Saying so beats printing a number.
-        if (passes <= 0) {
-            std::fprintf(stderr, "weva_bench: no passes (argument order?)\n");
-            return 1;
-        }
         size_t draws = 0, textures = 0;
         weva_document_draws(d, &draws);
         weva_document_textures(d, &textures);
-        std::printf("%-20s %-7s %-10s best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures\n",
-                    argv[1], mutate.c_str(), target_selector.c_str(), best, total / passes, draws, textures);
+        std::printf("%-20s %-7s %-10s best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures"
+                    "  steady-state allocations %zu (%zu bytes)\n",
+                    argv[1], mutate.c_str(), target_selector.c_str(), best, total / passes, draws, textures,
+                    steady_allocations, steady_bytes);
         if (sample) report_sites("time samples", g_samples, 16);
+        if (g_profile) report_sites("allocation sites", g_allocations, 12, true);
         weva_document_destroy(d);
         return 0;
     }
@@ -551,24 +660,6 @@ int main(int argc, char** argv) {
                 "steady-state allocations %zu (%zu bytes)\n",
                 argv[1], boxes, best_ms, total_ms / passes, steady_allocations, steady_bytes);
     if (sample) report_sites("time samples", g_samples, 16);
-    if (g_profile) {
-        std::printf("\n  allocation sites (top 12 of %zu), innermost frame first:\n",
-                    g_site_count);
-        std::vector<size_t> order(g_site_count);
-        for (size_t i = 0; i < g_site_count; ++i) order[i] = i;
-        std::sort(order.begin(), order.end(), [](size_t a, size_t b) {
-            return g_sites[a].count > g_sites[b].count;
-        });
-        for (size_t rank = 0; rank < order.size() && rank < 12; ++rank) {
-            const Site& site = g_sites[order[rank]];
-            std::printf("  %6zu allocs %9zu bytes (%.0f%%)\n", site.count, site.bytes,
-                        steady_allocations ? 100.0 * site.count / steady_allocations : 0.0);
-            char** names = backtrace_symbols(site.frames, site.depth);
-            for (int f = 0; f < site.depth && f < 4; ++f) {
-                std::printf("        %s\n", names ? names[f] : "?");
-            }
-            std::free(names);
-        }
-    }
+    if (g_profile) report_sites("allocation sites", steady_allocations, 12, true);
     return 0;
 }

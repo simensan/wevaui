@@ -8,6 +8,8 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -24,14 +26,21 @@
 
 namespace weva_godot {
 
+struct SharedFontVariant;
+// Called at scene-module shutdown while the TextServer still exists.
+void release_shared_font_variants();
+
 class GodotFontBackend {
 public:
     // Fills a table whose `user_data` is this object. The table outlives the
     // call; the caller keeps it alive for as long as the document.
-    void fill(weva_font_backend* out);
-    // Frees the faces this backend created (loaded files, synthesized
-    // variants); adopted engine fonts are left to their owners.
+    void fill(weva_font_backend* out, weva_shape_glyphs_fn* positioned_shape = nullptr);
+    // Releases loaded files and this backend's references to shared synthetic
+    // variants; adopted engine fonts are left to their owners.
     ~GodotFontBackend();
+    // Drop borrowed glyph IDs and owned variants before changing resources.
+    // Existing face IDs are never reused during this backend's lifetime.
+    void clear();
 
     // Adopts a face the engine already has — the theme's fallback font, say —
     // without going through a font file. Returns the handle to hand to
@@ -39,13 +48,16 @@ public:
     uint64_t adopt(const godot::RID& font);
     // A face with fallbacks: the first font is the face, the rest are tried
     // in order for glyphs it lacks (a symbol or emoji font behind the UI
-    // face). Shaping runs across all of them, and a glyph id carries which
-    // one it came from in its top byte, so the core's opaque ids stay opaque.
+    // face). Opaque glyph IDs retain the exact font TextServer chose, including
+    // automatically discovered system fallbacks outside this initial list.
     uint64_t adopt(const godot::TypedArray<godot::RID>& fonts);
     // The same, with the primary font's file data, from which bold and italic
     // variants are built as independent fonts (see variant).
+    // immutable_fallbacks is only for the host's private compatibility fonts:
+    // every font after the primary must stay unchanged for the TextServer's
+    // lifetime. Arbitrary resource fallback chains must leave this false.
     uint64_t adopt(const godot::TypedArray<godot::RID>& fonts,
-                   const godot::PackedByteArray& primary_data);
+                   const godot::PackedByteArray& primary_data, bool immutable_fallbacks = false);
 
 private:
     // Every entry point is static so its address fits a C function pointer;
@@ -61,15 +73,47 @@ private:
                              weva_glyph_bitmap* out);
     static size_t shape(void* self, uint64_t face, const char* utf8, size_t length, double px,
                         uint32_t* glyphs, double* advances, uint32_t* clusters, size_t capacity);
+    static size_t shape_positioned(void* self, uint64_t face, const char* utf8, size_t length,
+                                   double px, weva_shaped_glyph* out, size_t capacity);
     static uint64_t variant(void* self, uint64_t face, int32_t weight, int32_t italic);
 
     godot::RID resolve(uint64_t face, uint32_t slot = 0) const;
     const std::vector<godot::RID>* fonts_of(uint64_t face) const;
 
+    struct GlyphSource { godot::RID font; int64_t index; };
+    uint32_t retain_glyph(const godot::RID& font, int64_t index);
+    const GlyphSource* glyph_source(uint64_t face, uint32_t glyph) const;
+    std::vector<GlyphSource> glyph_sources_;
+    std::map<std::pair<uint64_t, int64_t>, uint32_t> glyph_ids_;
+
+    const std::vector<weva_shaped_glyph>& shape_run(uint64_t face, const char* utf8,
+                                                  size_t length, double px);
+    // One result bridges the sizing/fill calls. Face IDs identify immutable
+    // fonts; the actual TextServer pixel size and source bytes complete the key.
+    std::vector<weva_shaped_glyph> shaped_run_;
+    std::string shaped_text_;
+    uint64_t shaped_face_ = 0;
+    int64_t shaped_size_ = 0;
+    bool shaped_ready_ = false;
+    struct ShapeProfile {
+        size_t runs = 0, shared_hits = 0;
+        double prepare_ms = 0, shape_ms = 0, extract_ms = 0, convert_ms = 0;
+    } shape_profile_;
+
     std::map<uint64_t, std::vector<godot::RID>> faces_;
-    // Synthesized bold / italic faces by (base face, bold, italic): linked
-    // variations of every font in the face, sharing their glyph caches.
-    std::map<std::tuple<uint64_t, bool, bool>, uint64_t> variants_;
+    // Synthesized faces by (base face, emboldening strength, italic): independent
+    // primary fonts so synthesis cannot mutate the regular glyph cache.
+    std::map<std::tuple<uint64_t, int, bool>, uint64_t> variants_;
+    std::vector<std::shared_ptr<SharedFontVariant>> shared_variants_;
+    // Only the host's private system-font fallback list can opt into sharing.
+    // User-provided fallback resources remain mutable and never enter here.
+    std::vector<uint64_t> immutable_fallback_faces_;
+    struct SharedShapeFace {
+        SharedFontVariant* primary = nullptr; // owned by shared_variants_
+        std::vector<uint64_t> font_ids;
+        uint64_t key = 1469598103934665603ULL;
+    };
+    std::map<uint64_t, SharedShapeFace> shared_shape_faces_;
     std::vector<godot::RID> owned_;
     std::map<uint64_t, godot::PackedByteArray> face_data_;
     uint64_t next_face_ = 1;

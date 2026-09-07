@@ -10,6 +10,7 @@
 #include "weva/tessellate.h"
 #include "weva/user_agent_stylesheet.h"
 #include <array>
+#include <algorithm>
 #include <cmath>
 #include <map>
 #include <memory>
@@ -83,6 +84,52 @@ void test_software_fill_rule() {
     // 0.75 along the diagonal.
     for (int y = 1; y < 11; ++y) {
         for (int x = 1; x < 11; ++x) CHECK(near(r.pixel(x, y).a, 0.5));
+    }
+}
+
+void test_software_interior_clip_is_invisible() {
+    // An irrelevant clip must not change texture samples, per-vertex color,
+    // or coverage. Compare against drawing the original triangles directly,
+    // not against another clipping algorithm or regenerated golden image.
+    std::vector<uint8_t> pixels(8 * 8 * 4);
+    for (size_t i = 0; i < pixels.size(); ++i) pixels[i] = static_cast<uint8_t>((i * 71 + 23) % 256);
+    for (bool reverse : {false, true}) {
+        for (int phase = 0; phase < 8; ++phase) {
+            const float dx = phase * .125f, dy = phase * .0625f;
+            PreparedClip clip;
+            clip.polygon = rounded_rect_outline(Rect(dx, dy, 200, 24), BorderRadii::uniform(12));
+            if (reverse) std::reverse(clip.polygon.begin(), clip.polygon.end());
+            clip.prepare();
+            for (int kind = 0; kind < 3; ++kind) {
+                std::vector<Vertex> vertices = {
+                    vtx(13 + dx, 1 + dy, LinearColor::white(), 0, 0),
+                    vtx(180 + dx, 1 + dy, LinearColor::white(), 1, .25f),
+                    vtx(60 + dx, 18 + dy, LinearColor::white(), .3f, 1)};
+                if (kind == 0) {
+                    vertices[0].color = LinearColor(.01f, .8f, .05f, 1);
+                    vertices[1].color = LinearColor(.9f, .1f, .05f, 1);
+                    vertices[2].color = LinearColor(.2f, .1f, .95f, 1);
+                } else if (kind == 1) {
+                    vertices[0].color.a = .1f;
+                    vertices[1].color.a = .4f;
+                    vertices[2].color.a = .85f;
+                }
+                const std::vector<uint32_t> indices = reverse ? std::vector<uint32_t>{0, 2, 1} :
+                                                               std::vector<uint32_t>{0, 1, 2};
+                Mesh clipped;
+                clip_triangles_polygon(vertices, indices, clip, &clipped);
+                SoftwareRenderer direct(204, 28), actual(204, 28);
+                direct.clear(LinearColor(.03f, .07f, .1f, 1));
+                actual.clear(LinearColor(.03f, .07f, .1f, 1));
+                const auto direct_texture = kind == 2 ? direct.generate_texture(pixels, {8, 8}) : TextureHandle{};
+                const auto actual_texture = kind == 2 ? actual.generate_texture(pixels, {8, 8}) : TextureHandle{};
+                draw(&direct, vertices, indices, direct_texture);
+                draw(&actual, clipped.vertices, clipped.indices, actual_texture);
+                CHECK(direct.to_srgb_rgba() == actual.to_srgb_rgba());
+                if (direct_texture) direct.release_texture(direct_texture);
+                if (actual_texture) actual.release_texture(actual_texture);
+            }
+        }
     }
 }
 

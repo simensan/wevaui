@@ -50,7 +50,9 @@ std::string substitute_bindings(std::string_view text, const BindingResolver& re
 using BindingRepeats = std::map<const Element*, std::vector<std::string>>;
 
 // Applies every binding under `root`: `data-each` repeats, text nodes,
-// attribute values, and `data-class-<name>` toggles. Returns how many nodes it
+// attribute values (boolean attributes bind presence), and `data-class-<name>`
+// toggles. Literal disabled="false" retains HTML's normal presence semantics.
+// Returns how many nodes it
 // changed, so a caller can tell a refresh that did something from one that did
 // not.
 int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates* templates,

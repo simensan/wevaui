@@ -11,6 +11,15 @@ namespace {
 
 constexpr double kPi = 3.14159265358979323846;
 
+template<class T> void reserve_append(std::vector<T>* values, size_t count) {
+    if (count <= values->capacity() - values->size()) return;
+    const size_t needed = values->size() + count;
+    const size_t capacity = values->capacity();
+    const size_t growth = capacity / 2;
+    const size_t grown = capacity <= values->max_size() - growth ? capacity + growth : needed;
+    values->reserve(std::max(needed, grown));
+}
+
 Vertex vert(double x, double y, const LinearColor& c) {
     Vertex v;
     v.position = {static_cast<float>(x), static_cast<float>(y)};
@@ -99,12 +108,90 @@ int edge_of(double x, double y, const Rect& r, const double widths[4]) {
     return best;
 }
 
+struct BorderPoint { double x, y; float coverage; };
+
+// Partition a strip by the mitres between adjacent sides. Interpolating colors
+// at shared corner vertices produces a gradient along a whole straight edge.
+// Each partition instead keeps its side's color, including across alpha ramps.
+void colored_border_strip(const std::array<BorderPoint, 4>& strip, const Rect& outer,
+                          const double widths[4], const LinearColor colors[4], Mesh* out) {
+    const auto distance = [&](int side, const BorderPoint& p) {
+        switch (side) {
+        case 0: return p.y - outer.y;
+        case 1: return outer.right() - p.x;
+        case 2: return outer.bottom() - p.y;
+        default: return p.x - outer.x;
+        }
+    };
+    for (int side=0; side<4; ++side) {
+        if (widths[side]<=0 || colors[side].a<=0) continue;
+        // A convex quad clipped by three half-planes has at most seven distinct
+        // points; extra slots also hold coincident boundary vertices.
+        std::array<BorderPoint, 16> points{}, clipped{};
+        std::copy(strip.begin(),strip.end(),points.begin());
+        size_t count=4;
+        for (int other=0; other<4 && count; ++other) {
+            if (other==side || widths[other]<=0) continue;
+            const auto plane = [&](const BorderPoint& p) {
+                return distance(other,p)*widths[side] - distance(side,p)*widths[other];
+            };
+            size_t kept=0;
+            const auto append = [&](const BorderPoint& p) {
+                if (kept && clipped[kept-1].x==p.x && clipped[kept-1].y==p.y &&
+                    clipped[kept-1].coverage==p.coverage) return;
+                clipped[kept++]=p;
+            };
+            BorderPoint previous=points[count-1];
+            double before=plane(previous);
+            for (size_t i=0; i<count; ++i) {
+                const auto current=points[i];
+                const double now=plane(current);
+                if ((before<0)!=(now<0)) {
+                    if (now==0) append(current);
+                    else if (before==0) append(previous);
+                    else {
+                        const double t=before/(before-now);
+                        append({previous.x+(current.x-previous.x)*t,
+                                previous.y+(current.y-previous.y)*t,
+                                previous.coverage+(current.coverage-previous.coverage)*static_cast<float>(t)});
+                    }
+                }
+                if (now>=0) append(current);
+                previous=current; before=now;
+            }
+            if (kept>1 && clipped[0].x==clipped[kept-1].x && clipped[0].y==clipped[kept-1].y &&
+                clipped[0].coverage==clipped[kept-1].coverage) --kept;
+            points.swap(clipped); count=kept;
+        }
+        if (count<3) continue;
+        double area=0;
+        for (size_t i=1; i+1<count; ++i) {
+            const auto& a=points[i]; const auto& b=points[i+1];
+            area+=(a.x-points[0].x)*(b.y-points[0].y)-(b.x-points[0].x)*(a.y-points[0].y);
+        }
+        if (std::fabs(area)<=1e-12) continue;
+        out->reserve_append(count,(count-2)*3);
+        const auto base=static_cast<uint32_t>(out->vertices.size());
+        for (size_t i=0; i<count; ++i) {
+            auto color=colors[side]; color.a*=points[i].coverage;
+            out->vertices.push_back(vert(points[i].x,points[i].y,color));
+        }
+        for (uint32_t i=1; i+1<count; ++i)
+            for (uint32_t index : {base,base+i,base+i+1}) out->indices.push_back(index);
+    }
+}
+
 } // namespace
 
+void Mesh::reserve_append(size_t vertex_count, size_t index_count) {
+    weva::reserve_append(&vertices, vertex_count);
+    weva::reserve_append(&indices, index_count);
+}
+
 void Mesh::append(const Mesh& other) {
+    reserve_append(other.vertices.size(), other.indices.size());
     const uint32_t base = static_cast<uint32_t>(vertices.size());
     vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
-    indices.reserve(indices.size() + other.indices.size());
     for (uint32_t i : other.indices) indices.push_back(base + i);
 }
 
@@ -230,6 +317,7 @@ void fill_outline_aa(const std::vector<std::pair<double, double>>& pts, double c
                      const LinearColor& color, bool antialias, Mesh* out) {
     if (pts.size() < 3) return;
     const uint32_t n = static_cast<uint32_t>(pts.size());
+    out->reserve_append(1 + pts.size() * (antialias ? 2 : 1), pts.size() * (antialias ? 9 : 3));
 
     if (!antialias) {
         const uint32_t base = static_cast<uint32_t>(out->vertices.size());
@@ -285,6 +373,7 @@ void tessellate_rect(const Rect& r, const LinearColor& color, Mesh* out, bool an
         // Two triangles from four corners, with no centre vertex — this is the
         // commonest shape in any document and it should not pay for a fan.
         const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+        out->reserve_append(4, 6);
         out->vertices.push_back(vert(r.x, r.y, color));
         out->vertices.push_back(vert(r.right(), r.y, color));
         out->vertices.push_back(vert(r.right(), r.bottom(), color));
@@ -354,12 +443,39 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
     // it exactly. Only a radius puts a curve in the outline.
     const bool feather = antialias && !outer_radii.is_zero() && !too_thin_to_feather(outer) &&
                          std::min(std::min(top, right), std::min(bottom, left)) > 2 * kAaHalfWidth;
-
     const std::vector<std::pair<double, double>> o_solid =
         feather ? offset_outline(o, -kAaHalfWidth) : o;
     const std::vector<std::pair<double, double>> i_solid =
         feather ? offset_outline(i2, kAaHalfWidth) : i2;
 
+    bool different_colors=false;
+    int first=-1;
+    for (int side=0; side<4; ++side) if (widths[side]>0) {
+        if (first<0) first=side;
+        else if (colors[side]!=colors[first]) different_colors=true;
+    }
+    if (different_colors) {
+        const size_t strips=feather ? 3 : 1;
+        // Each corner's mitre can split different outer/inner arc segments.
+        out->reserve_append((o.size()*4+32)*strips,(o.size()*6+48)*strips);
+        const auto o_edge=feather ? offset_outline(o,kAaHalfWidth) : std::vector<std::pair<double,double>>{};
+        const auto i_edge=feather ? offset_outline(i2,-kAaHalfWidth) : std::vector<std::pair<double,double>>{};
+        const auto point = [](const std::pair<double,double>& p, float coverage) {
+            return BorderPoint{p.first,p.second,coverage};
+        };
+        for (uint32_t k=0; k<n; ++k) {
+            const uint32_t next=(k+1)%n;
+            colored_border_strip({point(o_solid[k],1),point(o_solid[next],1),
+                                  point(i_solid[next],1),point(i_solid[k],1)},outer,widths,colors,out);
+            if (!feather) continue;
+            colored_border_strip({point(o_solid[k],1),point(o_edge[k],0),
+                                  point(o_edge[next],0),point(o_solid[next],1)},outer,widths,colors,out);
+            colored_border_strip({point(i_solid[k],1),point(i_solid[next],1),
+                                  point(i_edge[next],0),point(i_edge[k],0)},outer,widths,colors,out);
+        }
+        return;
+    }
+    out->reserve_append(o.size() * (feather ? 4 : 2), o.size() * (feather ? 18 : 6));
     const uint32_t base = static_cast<uint32_t>(out->vertices.size());
     for (uint32_t k = 0; k < n; ++k) {
         const LinearColor& c = colors[edge_of(o[k].first, o[k].second, outer, widths)];
@@ -453,15 +569,18 @@ bool point_in_triangle(const ClipPoint& p, const ClipPoint& a, const ClipPoint& 
 }
 
 // Ear clipping. O(n^2) per polygon, and polygons here have a handful of points.
-void triangulate(std::vector<ClipPoint> pts, std::vector<std::array<ClipPoint, 3>>* out) {
+void triangulate(std::vector<ClipPoint> clean, std::vector<std::array<ClipPoint, 3>>* out) {
     // Drop consecutive duplicates (a closing point equal to the first, or
-    // percentages that resolved onto each other).
-    std::vector<ClipPoint> clean;
-    for (const ClipPoint& p : pts) {
-        if (clean.empty() || std::fabs(clean.back().x - p.x) > 1e-9 || std::fabs(clean.back().y - p.y) > 1e-9) {
-            clean.push_back(p);
+    // percentages that resolved onto each other). Compact the argument's owned
+    // copy in place; the caller's polygon remains available for containment.
+    size_t kept = 0;
+    for (size_t i = 0; i < clean.size(); ++i) {
+        const ClipPoint p = clean[i];
+        if (!kept || std::fabs(clean[kept - 1].x - p.x) > 1e-9 || std::fabs(clean[kept - 1].y - p.y) > 1e-9) {
+            clean[kept++] = p;
         }
     }
+    clean.resize(kept);
     while (clean.size() > 1 && std::fabs(clean.front().x - clean.back().x) < 1e-9 &&
            std::fabs(clean.front().y - clean.back().y) < 1e-9) {
         clean.pop_back();
@@ -476,6 +595,9 @@ void triangulate(std::vector<ClipPoint> pts, std::vector<std::array<ClipPoint, 3
     if (std::fabs(area) < 1e-12) return;
     if (area < 0) std::reverse(clean.begin(), clean.end());
 
+    // Each removed ear emits one piece; the final fan emits at most n - 2
+    // pieces in total. Degenerate ears can only reduce that count.
+    out->reserve(out->size() + clean.size() - 2);
     std::vector<size_t> idx(clean.size());
     for (size_t i = 0; i < idx.size(); ++i) idx[i] = i;
     size_t guard = 0;
@@ -507,23 +629,48 @@ void triangulate(std::vector<ClipPoint> pts, std::vector<std::array<ClipPoint, 3
     }
 }
 
-// Sutherland-Hodgman of a convex polygon of vertices against one CCW triangle.
-void clip_to_triangle(const std::vector<Vertex>& in, const std::array<ClipPoint, 3>& t,
-                      std::vector<Vertex>* poly, std::vector<Vertex>* scratch) {
-    *poly = in;
-    for (int e = 0; e < 3 && !poly->empty(); ++e) {
+// Each half-plane emits at most two vertices per input vertex. Starting with
+// three and clipping three times therefore needs at most 24 slots, including
+// duplicate boundary vertices and degenerate inputs. Reuse these stack buffers
+// across pieces without changing the interpolation or emitted vertex order.
+struct TriangleClipBuffer {
+    std::array<Vertex, 24> vertices;
+    size_t size = 0;
+};
+
+const TriangleClipBuffer& clip_to_triangle(const std::array<Vertex, 3>& in,
+                                          const std::array<ClipPoint, 3>& t,
+                                          TriangleClipBuffer* poly,
+                                          TriangleClipBuffer* scratch) {
+    std::copy(in.begin(), in.end(), poly->vertices.begin());
+    poly->size = in.size();
+    for (int e = 0; e < 3 && poly->size; ++e) {
         const ClipPoint& p = t[static_cast<size_t>(e)];
         const ClipPoint& q = t[static_cast<size_t>((e + 1) % 3)];
         const double ex = q.x - p.x, ey = q.y - p.y;
-        clip_edge(*poly, scratch,
-                  [&](const Vertex& v) { return ex * (v.position.y - p.y) - ey * (v.position.x - p.x); },
-                  [&](const Vertex& a, const Vertex& b) {
-                      const double da = ex * (a.position.y - p.y) - ey * (a.position.x - p.x);
-                      const double db = ex * (b.position.y - p.y) - ey * (b.position.x - p.x);
-                      return da / (da - db);
-                  });
-        poly->swap(*scratch);
+        const auto side = [&](const Vertex& v) {
+            return ex * (v.position.y - p.y) - ey * (v.position.x - p.x);
+        };
+        scratch->size = 0;
+        const Vertex* prev = &poly->vertices[poly->size - 1];
+        // Adjacent edges share this vertex. Evaluate its half-plane once and
+        // reuse the same distances for interpolation, in the original order.
+        double dp = side(*prev);
+        for (size_t i = 0; i < poly->size; ++i) {
+            const Vertex& cur = poly->vertices[i];
+            const double dc = side(cur);
+            if (dc >= 0) {
+                if (dp < 0) scratch->vertices[scratch->size++] = lerp_vertex(*prev, cur, dp / (dp - dc));
+                scratch->vertices[scratch->size++] = cur;
+            } else if (dp >= 0) {
+                scratch->vertices[scratch->size++] = lerp_vertex(*prev, cur, dp / (dp - dc));
+            }
+            prev = &cur;
+            dp = dc;
+        }
+        std::swap(poly, scratch);
     }
+    return *poly;
 }
 
 } // namespace
@@ -636,7 +783,48 @@ void clip_triangles_polygon(const std::vector<Vertex>& vertices,
     if (clip.pieces.empty()) return;
     out->vertices.reserve(out->vertices.size() + vertices.size());
     out->indices.reserve(out->indices.size() + indices.size());
-    std::vector<Vertex> tri(3), poly, scratch;
+    std::array<Vertex, 3> tri;
+    TriangleClipBuffer clipped, scratch;
+    // The inscribed rectangle misses the long triangles along a thin
+    // rounded bar. A triangle in every inward half-plane is wholly in the
+    // convex clip, so keep it intact, including its original attributes.
+    // Unnecessary cuts alter UV/coverage interpolation and can open cracks
+    // between pieces. A clip that does not intersect a triangle must leave
+    // it looking exactly as it would without that clip.
+    // Classify shared vertices lazily, once per mesh/clip invocation.
+    std::vector<uint8_t> inside;
+    // Passing triangles keep their source vertex sharing. The same input
+    // index denotes the same position and attributes; rebuilding three
+    // vertices per triangle needlessly expands fills, borders and text.
+    // Allocate only when a triangle passes, and map into the caller's current
+    // output so appending or applying another clip remains valid.
+    std::vector<uint32_t> passed_indices;
+    constexpr uint32_t not_emitted = ~uint32_t{0};
+    double orient = 1;
+    if (clip.convex && !clip.polygon.empty()) {
+        double area2 = 0;
+        for (size_t k = 0; k < clip.polygon.size(); ++k) {
+            const auto& a = clip.polygon[k];
+            const auto& b = clip.polygon[(k + 1) % clip.polygon.size()];
+            area2 += a.x * b.y - b.x * a.y;
+        }
+        orient = area2 >= 0 ? 1.0 : -1.0;
+        inside.assign(vertices.size(), 2);
+    }
+    const auto contains_vertex = [&](uint32_t i) {
+        if (inside[i] != 2) return inside[i] != 0;
+        const auto& v = vertices[i].position;
+        for (size_t k = 0; k < clip.polygon.size(); ++k) {
+            const auto& a = clip.polygon[k];
+            const auto& b = clip.polygon[(k + 1) % clip.polygon.size()];
+            if (((b.x - a.x) * (v.y - a.y) - (b.y - a.y) * (v.x - a.x)) * orient < 0) {
+                inside[i] = 0;
+                return false;
+            }
+        }
+        inside[i] = 1;
+        return true;
+    };
     for (size_t i = 0; i + 2 < indices.size(); i += 3) {
         tri[0] = vertices[indices[i]];
         tri[1] = vertices[indices[i + 1]];
@@ -646,10 +834,19 @@ void clip_triangles_polygon(const std::vector<Vertex>& vertices,
         const double miny = std::min({tri[0].position.y, tri[1].position.y, tri[2].position.y});
         const double maxy = std::max({tri[0].position.y, tri[1].position.y, tri[2].position.y});
         if (maxx <= clip.x0 || minx >= clip.x1 || maxy <= clip.y0 || miny >= clip.y1) continue;
-        if (minx >= clip.ix0 && maxx <= clip.ix1 && miny >= clip.iy0 && maxy <= clip.iy1) {
-            const uint32_t base = static_cast<uint32_t>(out->vertices.size());
-            out->vertices.insert(out->vertices.end(), tri.begin(), tri.end());
-            out->indices.insert(out->indices.end(), {base, base + 1, base + 2});
+        if ((minx >= clip.ix0 && maxx <= clip.ix1 && miny >= clip.iy0 && maxy <= clip.iy1) ||
+            (!inside.empty() &&
+             contains_vertex(indices[i]) && contains_vertex(indices[i + 1]) &&
+             contains_vertex(indices[i + 2]))) {
+            if (passed_indices.empty()) passed_indices.assign(vertices.size(), not_emitted);
+            for (size_t corner = 0; corner < 3; ++corner) {
+                uint32_t& mapped = passed_indices[indices[i + corner]];
+                if (mapped == not_emitted) {
+                    mapped = static_cast<uint32_t>(out->vertices.size());
+                    out->vertices.push_back(tri[corner]);
+                }
+                out->indices.push_back(mapped);
+            }
             continue;
         }
         for (size_t p = 0; p < clip.pieces.size(); ++p) {
@@ -663,12 +860,17 @@ void clip_triangles_polygon(const std::vector<Vertex>& vertices,
                 if (maxx <= b[0] || minx >= b[2] || maxy <= b[1] || miny >= b[3]) continue;
             }
             const auto& piece = clip.pieces[p];
-            clip_to_triangle(tri, piece, &poly, &scratch);
-            if (poly.size() < 3) continue;
+            const auto& poly = clip_to_triangle(tri, piece, &clipped, &scratch);
+            if (poly.size < 3) continue;
             const uint32_t base = static_cast<uint32_t>(out->vertices.size());
-            out->vertices.insert(out->vertices.end(), poly.begin(), poly.end());
-            for (uint32_t k = 1; k + 1 < poly.size(); ++k) {
-                out->indices.insert(out->indices.end(), {base, base + k, base + k + 1});
+            out->vertices.insert(out->vertices.end(), poly.vertices.begin(), poly.vertices.begin() + poly.size);
+            const size_t index_base = out->indices.size();
+            out->indices.resize(index_base + (poly.size - 2) * 3);
+            uint32_t* next = out->indices.data() + index_base;
+            for (uint32_t k = 1; k + 1 < poly.size; ++k) {
+                *next++ = base;
+                *next++ = base + k;
+                *next++ = base + k + 1;
             }
         }
     }
@@ -688,6 +890,12 @@ void clip_triangles_polygon(const std::vector<Vertex>& vertices,
 std::vector<ClipPoint> rounded_rect_outline(const Rect& r, const BorderRadii& radii, int segments) {
     const BorderRadii c = clamp_radii_to_rect(radii, r.width, r.height);
     std::vector<ClipPoint> out;
+    const size_t arc_size = segments < 0 ? 0 : static_cast<size_t>(segments) + 1;
+    const auto point_count = [&](const CornerRadius& corner) {
+        return corner.x_radius <= 0 || corner.y_radius <= 0 ? size_t{1} : arc_size;
+    };
+    out.reserve(point_count(c.top_left) + point_count(c.top_right) +
+                point_count(c.bottom_right) + point_count(c.bottom_left));
     const double x0 = r.x, y0 = r.y, x1 = r.x + r.width, y1 = r.y + r.height;
     const double kPi = 3.14159265358979323846;
     // Corner centre, radii, start angle; angles run clockwise on a y-down page.

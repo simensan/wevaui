@@ -1,0 +1,13 @@
+--- a/platform/linuxbsd/x11/display_server_x11.cpp
++++ b/platform/linuxbsd/x11/display_server_x11.cpp
+@@ -3937,7 +3937,9 @@
+ 	// X11 functions don't know what const is
+ 	XKeyEvent *xkeyevent = p_event;
+ 
+-	if (wd.ime_in_progress) {
++	// XIM commits are keycode-zero KeyPress events and can precede
++	// PREEDIT_DONE. Decode them even while composition is still active.
++	if (wd.ime_in_progress && !(xkeyevent->type == KeyPress && xkeyevent->keycode == 0)) {
+ 		return;
+ 	}
+ 	if (wd.ime_suppress_next_keyup) {

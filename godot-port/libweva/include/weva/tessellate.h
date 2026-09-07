@@ -15,6 +15,10 @@ struct Mesh {
     std::vector<uint32_t> indices;
 
     bool empty() const { return indices.empty(); }
+    // Reserve a known append before emitting individual vertices/indices.
+    // Repeated appends keep geometric growth instead of reallocating for
+    // every shape. Existing geometry and ordering are unchanged.
+    void reserve_append(size_t vertex_count, size_t index_count);
     // Appends `other`, shifting its indices — how a border's four edges or a
     // box's background and border become one draw call.
     void append(const Mesh& other);
@@ -37,8 +41,8 @@ void tessellate_rounded_rect(const Rect& r, const BorderRadii& radii, const Line
 // Emitted as one mesh rather than four edges so a mitred corner between two
 // different colours does not double-cover, and so a uniform border is one draw.
 //
-// `colors` are top, right, bottom and left; each vertex takes the colour of the
-// edge it belongs to, and a corner blends between its two.
+// `colors` are top, right, bottom and left. Different colors meet at mitres
+// proportional to the adjacent border widths; straight edges stay one color.
 void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double top,
                        double right, double bottom, double left,
                        const LinearColor colors[4], Mesh* out, int segments = 8,
@@ -88,8 +92,10 @@ struct PreparedClip {
     void prepare();
 };
 
-// Clips against a polygon prepared in advance. The overload taking a bare
-// polygon prepares one and throws it away, which is right for a one-off.
+// Clips against a polygon prepared in advance. Triangles wholly inside a
+// convex clip retain their shared vertices and original UV/color/coverage. Crossing
+// triangles retain the existing interpolation path. The overload taking a
+// bare polygon prepares one and throws it away, which is right for a one-off.
 void clip_triangles_polygon(const std::vector<Vertex>& vertices,
                             const std::vector<uint32_t>& indices, const PreparedClip& clip,
                             Mesh* out);

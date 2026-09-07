@@ -9,10 +9,35 @@
 #include "weva/variable_resolver.h"
 
 #include <algorithm>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
 
 namespace weva {
 
 namespace {
+
+struct CascadePhaseProfile {
+    using Clock = std::chrono::steady_clock;
+    CascadeEngine::WorkProfile* profile;
+    Clock::time_point last;
+    size_t final_bucket;
+    CascadePhaseProfile(CascadeEngine::WorkProfile& p, size_t final)
+        : profile(nullptr), final_bucket(final) {
+        static const bool enabled = std::getenv("WEVA_CASCADE_LOG") != nullptr;
+        if (!enabled) return;
+        profile = &p;
+        if (final == 7) ++p.pseudos; else ++p.elements;
+        last = Clock::now();
+    }
+    void lap(size_t bucket) {
+        if (!profile) return;
+        const auto now = Clock::now();
+        profile->ms[bucket] += std::chrono::duration<double, std::milli>(now - last).count();
+        last = now;
+    }
+    ~CascadePhaseProfile() { lap(final_bucket); }
+};
 
 // UA < User < Author for normal declarations.
 int compare_normal_origin(DeclarationOrigin a, DeclarationOrigin b) {
@@ -333,6 +358,10 @@ void classify_compound(const CompoundSelector& c, bool* unsafe_sibling,
                               nested_has);
         }
         for (const auto& inner : pc.nth_of_filter) {
+            // A filtered sibling rank depends on other siblings' matches,
+            // not just this element's index/count. Their attributes or text
+            // (:empty) can change while this element's shape stays equal.
+            *unsafe_sibling = true;
             classify_selector(*inner, unsafe_sibling, has_has, folds_index, hover, active,
                               nested_has);
         }
@@ -658,6 +687,7 @@ const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
 
 void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                             const ComputedStyle* parent, ComputedStyle* out) const {
+    CascadePhaseProfile profile(work_profile_, 6);
     out->clear();
     auto& reg = CssPropertyRegistry::instance();
 
@@ -670,7 +700,10 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     // stamping loop that would otherwise discard it.
     const uint64_t gen = ++cascade_generation_;
     winner_keys_.resize(static_cast<size_t>(reg.count()));
-    std::vector<MatchedDeclaration> matches = collect_matches(e, state);
+    const auto& collected = collect_matches(e, state);
+    profile.lap(0);
+    std::vector<MatchedDeclaration> matches = collected;
+    profile.lap(1);
     // Custom properties first, in cascade order among themselves, so that a
     // shorthand carrying var() can be expanded AT ITS CASCADE POSITION in the
     // pass below. Expanding it after the cascade instead — the only option
@@ -780,6 +813,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         }
     }
 
+    profile.lap(2);
     // 3. Link the inherit chain, then map logical properties onto physical
     // ones, then resolve attr(), env() and var().
     //
@@ -799,6 +833,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     // keywords, `@property` syntax validation and initial-value seeding —
     // matching the C#, so a `var()` reference below reads a settled value.
     resolve_custom_properties(out, parent);
+    profile.lap(3);
 
     // attr() and env() run BEFORE var(), so a custom property whose value is
     // `attr(data-x)` or `env(safe-area-inset-top)` is already substituted by
@@ -825,6 +860,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         // An env() with no usable fallback taints its declaration, same as var().
         for (int id : env_drops) out->unset(id);
     }
+    profile.lap(4);
     {
         std::vector<std::pair<int, std::string>> rewrites;
         std::vector<int> drops;
@@ -866,12 +902,17 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     for (int id : dropped_) out->unset(id);
     dropped_.clear();
 
+    profile.lap(5);
     // 5. CSS-wide keywords, LAST — after substitution, so `inherit` yields the
     // parent's already-substituted computed value rather than the text
     // `var(--x)`. `revert`/`revert-layer` first roll back to the appropriate
-    // lower-priority match; only when there is none do they collapse to the
-    // initial value.
+    // lower-priority match. Font-size and line-height retain their inheritance
+    // source when no rollback target exists.
     {
+        static const int font_id = reg.id_of("font-size");
+        static const int line_id = reg.id_of("line-height");
+        bool font_inherited = false;
+        bool line_inherited = false;
         std::vector<std::pair<int, std::string>> rewrites;
         for (int id : out->set_ids()) {
             const std::string_view raw = out->get(id);
@@ -882,6 +923,22 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                 pre = pre_resolve_rollback(name, raw, matches,
                                            winner_keys_[static_cast<size_t>(id)]);
             }
+            if (id == font_id || id == line_id) {
+                const auto keyword = trim_ws(pre);
+                // Relative syntax copied from the parent is not a new
+                // declaration relative to that parent. Preserve its source
+                // so layout inherits the parent's computed pixel size.
+                const bool inherited = iequals_ascii(keyword, "inherit") ||
+                    iequals_ascii(keyword, "unset") || iequals_ascii(keyword, "revert") ||
+                    iequals_ascii(keyword, "revert-layer");
+                if (id == font_id) font_inherited = inherited;
+                else {
+                    line_inherited = inherited;
+                    // A rollback with no remaining declaration defaults to
+                    // inheritance for this inherited property, not normal.
+                    if (inherited) pre = "inherit";
+                }
+            }
             std::string resolved;
             if (resolve_css_wide_keyword(id, pre, parent, &resolved)) {
                 rewrites.emplace_back(id, std::move(resolved));
@@ -890,6 +947,8 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
             }
         }
         for (auto& r : rewrites) out->set(r.first, r.second);
+        if (font_inherited) out->mark_font_size_inherited();
+        if (line_inherited) out->mark_line_height_inherited();
     }
 }
 
@@ -951,6 +1010,7 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
                                            const ElementStateProvider& state,
                                            const ComputedStyle& host_style,
                                            ComputedStyle* out) const {
+    CascadePhaseProfile profile(work_profile_, 7);
     auto it = pseudo_rules_.find(std::string(pseudo_name));
     if (it == pseudo_rules_.end() || it->second.empty()) return false;
 
@@ -1024,6 +1084,8 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
 
     // Inheritance source is the ORIGINATING element, not the host's parent.
     const bool has_drops = !dropped_.empty();
+    static const int font_id = reg.id_of("font-size");
+    static const int line_id = reg.id_of("line-height");
     auto was_dropped = [&](int id) {
         return has_drops && std::find(dropped_.begin(), dropped_.end(), id) != dropped_.end();
     };
@@ -1037,14 +1099,62 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
         if (out->contains(id) && !was_dropped(id)) continue;
         if (reg.is_inherited(id)) {
             const std::string_view v = host_style.get(id);
-            if (!v.empty()) out->set(id, v);
+            if (!v.empty()) {
+                out->set(id, v);
+                if (id == font_id) out->mark_font_size_inherited();
+                if (id == line_id) out->mark_line_height_inherited();
+            }
         } else {
             std::string_view initial = reg.initial_value(id);
             if (!initial.empty()) out->set(id, initial);
         }
     }
     dropped_.clear();
+    out->set_inherit_parent(&host_style);
+    if (!out->font_size_inherited()) {
+        const auto raw = out->get(font_id);
+        if (is_css_wide_keyword(trim_ws(raw))) {
+            // Pseudos inherit from their originating element too. Resolve
+            // initial as a value, but keep computed inheritance distinct.
+            if (iequals_ascii(trim_ws(raw), "initial")) {
+                out->set(font_id, reg.initial_value(font_id));
+            } else {
+                out->set(font_id, host_style.get(font_id));
+                out->mark_font_size_inherited();
+            }
+        }
+    }
+    if (!out->line_height_inherited()) {
+        const auto raw = out->get(line_id);
+        if (is_css_wide_keyword(trim_ws(raw))) {
+            std::string pre(raw);
+            for (auto m = matches.rbegin(); m != matches.rend(); ++m) {
+                if (reg.id_of(m->declaration->property) != line_id) continue;
+                pre = pre_resolve_rollback(reg.name_of(line_id), raw, matches, CascadeKey::of(*m, 0));
+                break;
+            }
+            if (!is_css_wide_keyword(trim_ws(pre))) {
+                out->set(line_id, pre);
+            } else if (iequals_ascii(trim_ws(pre), "initial")) {
+                out->set(line_id, reg.initial_value(line_id));
+            } else {
+                out->set(line_id, host_style.get(line_id));
+                out->mark_line_height_inherited();
+            }
+        }
+    }
     return true;
+}
+
+void CascadeEngine::report_work_profile() const {
+    if (!work_profile_.elements && !work_profile_.pseudos) return;
+    static constexpr const char* names[] = {"match", "match copy", "declarations", "logical/custom",
+                                           "attr/env", "variables", "keywords", "pseudos"};
+    std::fprintf(stderr, "    cascade work: %zu elements, %zu pseudo queries\n",
+                 work_profile_.elements, work_profile_.pseudos);
+    for (size_t i = 0; i < work_profile_.ms.size(); ++i)
+        std::fprintf(stderr, "    cascade part: %-14s %.3f ms\n", names[i], work_profile_.ms[i]);
+    work_profile_ = {};
 }
 
 bool CascadeEngine::resolve_pseudo_content(const ComputedStyle& pseudo_style,

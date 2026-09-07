@@ -1,0 +1,79 @@
+<main id="survival" class="survival">
+  <header class="identity">
+    <div class="eyebrow">A FRONTIER SURVIVAL</div>
+    <h1>DUST &amp; IRON</h1>
+    <div class="location">DRY CREEK <span class="separator">/</span> NEW AUSTEN TERRITORY</div>
+  </header>
+
+  <div class="compass" aria-label="Compass bearing northwest">
+    <div class="compass-marks"><span>W</span><span>285</span><span>300</span><strong>NW</strong><span>330</span><span>345</span><span>N</span></div>
+    <div class="compass-ruler"></div><div class="compass-needle"></div>
+    <div class="waypoint"><span class="diamond"></span> DRY CREEK OUTPOST <span class="distance">420 m</span></div>
+  </div>
+
+  <aside class="expedition">
+    <div class="dayline"><span>DAY 12</span><span>18:42</span><span>18 C</span></div>
+    <div class="quest-label">BEFORE NIGHTFALL</div>
+    <h2>Something worth staying for.</h2>
+    <p id="objective">Gather supplies and build a campfire.</p>
+    <div class="quest-progress"><span class="quest-dot"></span><span id="wood-objective">Gather wood</span><strong id="wood-count">8 / 12</strong></div>
+    <button id="open-satchel" class="satchel-button" on-click="open_inventory">FIELD SATCHEL <kbd>TAB</kbd></button>
+  </aside>
+
+  <div id="crosshair" class="crosshair"><span></span></div>
+  <button id="scavenge" class="interact" on-click="scavenge">
+    <kbd>E</kbd><span><strong>Search abandoned camp</strong><small>Wood, stone &amp; a little good fortune.</small></span>
+  </button>
+  <div id="toast" class="toast hidden" role="status">Supplies added to your satchel.</div>
+
+  <section class="vitals" aria-label="Survival status">
+    <div class="vitals-heading"><span class="status-dot"></span><span id="condition">HOLDING UP</span><span class="subtle">VITALS</span></div>
+    <div class="vital health"><img src="assets/heart.svg" alt="Health"><span class="vital-name">HEALTH</span><div class="meter"><div id="health-fill" class="fill"></div></div><strong id="health-value">82</strong></div>
+    <div class="vital hunger"><img src="assets/food.svg" alt="Hunger"><span class="vital-name">HUNGER</span><div class="meter"><div id="hunger-fill" class="fill"></div></div><strong id="hunger-value">64</strong></div>
+    <div class="vital thirst"><img src="assets/drop.svg" alt="Thirst"><span class="vital-name">THIRST</span><div class="meter"><div id="thirst-fill" class="fill"></div></div><strong id="thirst-value">38</strong></div>
+    <div class="vital stamina"><img src="assets/bolt.svg" alt="Stamina"><span class="vital-name">STAMINA</span><div class="meter"><div id="stamina-fill" class="fill"></div></div><strong id="stamina-value">100</strong></div>
+    <div class="vitals-note" id="vitals-note">Find water before the trail gets longer.</div>
+  </section>
+
+  <section class="quick-access" aria-label="Quick access">
+    <div class="equipped-line"><span class="rule"></span><span id="equipped-name">FRONTIER REVOLVER</span><span class="rule"></span></div>
+    <div class="hotbar" id="hotbar">
+      <button id="hot-0" class="hot-slot selected" on-click="select_hotbar" title="Frontier revolver"><kbd>1</kbd><img src="assets/revolver.svg" alt="Revolver"><span class="durability"><i></i></span></button>
+      <button id="hot-1" class="hot-slot" on-click="select_hotbar" title="Stone hatchet"><kbd>2</kbd><img src="assets/hatchet.svg" alt="Hatchet"><span class="durability"><i></i></span></button>
+      <button id="hot-2" class="hot-slot" on-click="select_hotbar" title="Canteen"><kbd>3</kbd><img src="assets/canteen.svg" alt="Canteen"><span id="hot-count-2" class="stack">3</span></button>
+      <button id="hot-3" class="hot-slot" on-click="select_hotbar" title="Baked beans"><kbd>4</kbd><img src="assets/beans.svg" alt="Beans"><span id="hot-count-3" class="stack">2</span></button>
+      <button id="hot-4" class="hot-slot" on-click="select_hotbar" title="Clean bandage"><kbd>5</kbd><img src="assets/bandage.svg" alt="Bandage"><span id="hot-count-4" class="stack">2</span></button>
+      <button id="hot-5" class="hot-slot" on-click="select_hotbar" title="Campfire kit"><kbd>6</kbd><img src="assets/campfire.svg" alt="Campfire"><span id="hot-count-5" class="stack">0</span></button>
+    </div>
+    <div class="quick-hints"><span><kbd>F</kbd> USE ITEM</span><span><kbd>C</kbd> CRAFT</span><span><kbd>SHIFT</kbd> SPRINT</span></div>
+  </section>
+
+  <aside id="weapon-info" class="weapon-info">
+    <div class="eyebrow" id="weapon-kind">SINGLE ACTION</div>
+    <div class="ammo"><strong id="loaded">06</strong><span>/</span><span id="reserve">24</span></div>
+    <div class="weapon-bottom"><span id="weapon-caliber">.45 COLT</span><span><kbd>R</kbd> RELOAD</span></div>
+  </aside>
+
+  <div id="scrim" class="scrim hidden"></div>
+  <section id="satchel" class="satchel hidden" role="dialog" aria-modal="true" aria-label="Field satchel">
+    <header class="satchel-header"><div><div class="eyebrow">WHAT YOU CARRY IS WHAT YOU KEEP</div><h2>FIELD SATCHEL</h2></div><div class="carry"><span id="carry-weight">18.4</span> <span class="subtle">/ 40 kg</span><small>TRAVELLING LIGHT</small></div><button id="close-satchel" class="close" on-click="close_inventory" aria-label="Close satchel">ESC <span>X</span></button></header>
+    <nav class="satchel-tabs"><button id="tab-inventory" class="tab active" on-click="show_inventory">INVENTORY <span>24 SLOTS</span></button><button id="tab-crafting" class="tab" on-click="show_crafting">CRAFTING <span>3 RECIPES</span></button></nav>
+
+    <div class="inventory-view">
+      <div class="pack"><div class="section-label">BACKPACK <span>PROVISIONS &amp; EQUIPMENT</span></div><div id="inventory-grid" class="inventory-grid"></div><div class="pack-note"><span class="tiny-diamond"></span> Keep the essentials close. Leave the rest behind.</div></div>
+      <aside class="item-details"><div class="section-label" id="item-category">EQUIPMENT / WEAPON</div><div class="item-hero"><img id="detail-icon" src="assets/revolver.svg" alt="Selected item"></div><h3 id="item-name">Frontier revolver</h3><p id="item-description">Six chances to make it home. A reliable single-action revolver, worn smooth from years on the trail.</p><div class="detail-row"><span>WEIGHT</span><strong id="item-weight">1.2 kg</strong></div><div class="detail-row"><span>IN YOUR PACK</span><strong id="item-quantity">1</strong></div><button id="item-action" class="primary" on-click="use_selected">EQUIP ITEM</button><div class="detail-hint">Select an item to inspect or use it.</div></aside>
+    </div>
+
+    <div class="crafting-view">
+      <div class="recipes"><div class="section-label">ON THE TRAIL <span>HANDCRAFTED</span></div>
+        <button id="recipe-0" class="recipe chosen" on-click="select_recipe"><img src="assets/campfire.svg" alt=""><span><strong>Campfire</strong><small>Warmth, light, a place to return.</small></span><b>01</b></button>
+        <button id="recipe-1" class="recipe" on-click="select_recipe"><img src="assets/bandage.svg" alt=""><span><strong>Clean bandage</strong><small>A little care goes a long way.</small></span><b>02</b></button>
+        <button id="recipe-2" class="recipe" on-click="select_recipe"><img src="assets/hatchet.svg" alt=""><span><strong>Stone hatchet</strong><small>Make something from nothing.</small></span><b>03</b></button>
+        <div class="craft-note"><span class="tiny-diamond"></span><p>Recipes consume supplies from your pack.<br>Finished items go straight into your inventory.</p></div>
+      </div>
+      <aside class="craft-details"><div class="section-label">RECIPE DETAILS</div><div class="craft-hero"><img id="recipe-icon" src="assets/campfire.svg" alt="Selected recipe"></div><h3 id="recipe-name">Campfire</h3><p id="recipe-description">Turn a few supplies into a safe place for the night.</p><div class="section-label materials-label">MATERIALS REQUIRED</div><div id="recipe-costs" class="recipe-costs"></div><button id="craft-action" class="primary" on-click="craft">CRAFT CAMPFIRE</button><div id="craft-status" class="detail-hint">All materials available.</div></aside>
+    </div>
+
+    <footer class="satchel-footer"><span><kbd>1-6</kbd> QUICK EQUIP <kbd>F</kbd> USE / CRAFT SELECTED</span><span>DRY CREEK <span class="separator">/</span> DAY 12</span></footer>
+  </section>
+</main>

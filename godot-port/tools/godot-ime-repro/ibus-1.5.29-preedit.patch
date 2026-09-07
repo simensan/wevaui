@@ -1,0 +1,15 @@
+--- a/src/ibusinputcontext.c
++++ b/src/ibusinputcontext.c
+@@ -1570,6 +1570,12 @@
+             ibus_input_context_fwd_text_to_delete_surrounding (context, text);
+             break;
+         }
++        case 'h':
++            g_signal_emit (context, context_signals[HIDE_PREEDIT_TEXT], 0, text);
++            break;
++        case 's':
++            g_signal_emit (context, context_signals[SHOW_PREEDIT_TEXT], 0, text);
++            break;
+         case 'u':
+         case 'm': {
+             IBusText *position;

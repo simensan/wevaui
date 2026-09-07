@@ -17,6 +17,9 @@
 #   layout   padding-left flipped between two values -> Invalidation::Layout
 #   paint    background-color flipped                -> Invalidation::Paint
 #
+# The default target is the last element, a leaf. Set WEVA_FLIP_TARGET=*
+# to measure a root change that necessarily invalidates the entire page.
+#
 # and the DIFFERENCE between them is what layout costs, with everything the two
 # share -- cascade, paint, publishing the draw list -- subtracted out. That
 # subtraction is the point: a paint flip repaints the whole page too, so the
@@ -51,7 +54,7 @@ trap 'rm -rf "$tmp"' EXIT
 # One flip mode through one binary, in milliseconds. `best` rather than mean:
 # a flip allocates, and the mean carries whatever the allocator was doing.
 run_flip() {   # binary, html, css, mode
-    "$1" "$2" "$3" "$FLIPS" --full --dt=0 "--mutate=$4" 2>/dev/null |
+    "$1" "$2" "$3" "$FLIPS" --full --dt=0 "--mutate=$4" "--target=${WEVA_FLIP_TARGET:-last}" 2>/dev/null |
         sed -n 's/.*best *\([0-9.]*\) ms.*/\1/p'
 }
 

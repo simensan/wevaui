@@ -20,6 +20,10 @@
 
 namespace weva {
 
+// Shared by style preparation and box construction: only these hosts can
+// generate a backdrop in the currently supported top-layer model.
+bool top_layer_host(const Element& e);
+
 // Supplies the cascaded style for an element. The C# passes a
 // `Func<Element, ComputedStyle>` so the engine can rebind it per pass without
 // reallocating the builder; the same intent here.
@@ -39,9 +43,18 @@ public:
     }
 };
 
+// A transaction can defer a clean subtree until layout knows its constraints.
+// Returning true leaves its children to the matching layout reuse provider.
+class BoxBuildReuse {
+public:
+    virtual ~BoxBuildReuse() = default;
+    virtual bool reuse_children(BoxTree* tree, BoxId id) = 0;
+};
+
 class BoxBuilder {
 public:
-    BoxBuilder(BoxTree* tree, StyleProvider* styles) : tree_(tree), styles_(styles) {}
+    BoxBuilder(BoxTree* tree, StyleProvider* styles, BoxBuildReuse* reuse = nullptr)
+        : tree_(tree), styles_(styles), reuse_(reuse) {}
 
     // Builds the box for one element and its subtree. Returns kNoBox for
     // `display: none`.
@@ -51,6 +64,10 @@ public:
     // The root box has neither element nor style: it is the initial containing
     // block's stand-in, not a box for `<html>`.
     BoxId build_document(const Document& doc);
+    // Populate an existing deferred root when its constraints miss the cache.
+    void materialize_children(BoxId id) {
+        build_children(*(*tree_)[id].element, (*tree_)[id].style, id);
+    }
 
 private:
     void append_node_as_block_child(const Node& node, const ComputedStyle* parent_style,
@@ -104,6 +121,7 @@ private:
 
     BoxTree* tree_;
     StyleProvider* styles_;
+    BoxBuildReuse* reuse_ = nullptr;
 
     // Scratch for the anonymous-block pass, reused across calls rather than
     // allocated per container.

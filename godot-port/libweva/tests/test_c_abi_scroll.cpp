@@ -49,7 +49,7 @@ struct Doc {
     }
     std::string value(const char* selector) {
         char buf[128] = {0};
-        weva_element_attribute(d, at(selector), "value", buf, sizeof(buf));
+        weva_element_value(d, at(selector), buf, sizeof(buf));
         return buf;
     }
     // Which element is drawn at a point, by id.

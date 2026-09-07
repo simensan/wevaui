@@ -469,17 +469,16 @@ void test_abi_textarea_edits_its_content() {
     weva_document_text_input(doc.d, "!");
     weva_document_update(doc.d, 0);
     CHECK(doc.value("#t") == "hello!");
-    // And it is the TEXT that changed, which is what gets laid out: an
-    // attribute nobody reads would leave the box showing the old string.
+    // Markup retains the reset default while layout uses the live value.
     char buf[64] = {0};
     weva_element_text(doc.d, t, buf, sizeof(buf));
-    CHECK(std::string(buf) == "hello!");
+    CHECK(std::string(buf) == "hello");
 
-    // A host setting it writes to the same place.
+    // A host setter changes the live value without replacing that default.
     CHECK(weva_element_set_value(doc.d, t, "typed by the game") == WEVA_OK);
     weva_document_update(doc.d, 0);
     weva_element_text(doc.d, t, buf, sizeof(buf));
-    CHECK(std::string(buf) == "typed by the game");
+    CHECK(std::string(buf) == "hello");
     CHECK(doc.value("#t") == "typed by the game");
 }
 
@@ -1313,9 +1312,8 @@ void test_abi_list_box_selects() {
     CHECK(announced);
 }
 
-// A `multiple` list toggles, and reports everything chosen. The ABI carries
-// buttons and not modifiers, so there is no Ctrl+click to tell a toggle from a
-// replace -- and toggling is what a settings list wants anyway.
+// A plain click replaces selection. Modifier-aware toggle/range and drag
+// behavior is covered in test_select_controls.cpp.
 void test_abi_list_box_multiple() {
     Doc doc("html, body { margin: 0 }"
             "select { display: block; width: 180px; height: 90px; padding: 0; border: 0 }"
@@ -1334,11 +1332,11 @@ void test_abi_list_box_multiple() {
 
     doc.bounds("#s option:nth-child(3)", &x, &y, &w, &h);
     doc.click(x + w / 2, y + h / 2);
-    CHECK(doc.value("#s") == "a,c");     // both, in document order
+    CHECK(doc.value("#s") == "c");
 
-    // And clicking one again lets it go.
+    // Clicking the same choice again preserves it.
     doc.click(x + w / 2, y + h / 2);
-    CHECK(doc.value("#s") == "a");
+    CHECK(doc.value("#s") == "c");
 
     // A disabled list takes nothing at all, like every other disabled control.
     Doc off("html, body { margin: 0 }"
@@ -1993,7 +1991,7 @@ void test_abi_label_activates_its_control() {
             "<input id=other type=checkbox>");
     double x = 0, y = 0, w = 0, h = 0;
     const auto checked = [&](const char* sel) {
-        return weva_element_has_attribute(doc.d, weva_document_query(doc.d, sel), "checked") != 0;
+        return weva_document_query(doc.d, (std::string(sel) + ":checked").c_str()) != WEVA_ELEMENT_NONE;
     };
 
     // A label WRAPPING a control owns the first one inside it. Click near the
@@ -2029,7 +2027,7 @@ void test_abi_label_forwarding_edge_cases() {
             "<input id=vol type=range min=0 max=100 value=40>");
     double x = 0, y = 0, w = 0, h = 0;
     const auto checked = [&](const char* sel) {
-        return weva_element_has_attribute(doc.d, weva_document_query(doc.d, sel), "checked") != 0;
+        return weva_document_query(doc.d, (std::string(sel) + ":checked").c_str()) != WEVA_ELEMENT_NONE;
     };
 
     // A click ON the control inside a label is the activation. Forwarding a

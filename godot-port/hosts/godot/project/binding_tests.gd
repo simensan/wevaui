@@ -295,6 +295,50 @@ func _gamepad_focus() -> void:
 
 	doc.queue_free()
 
+func _coalesced_runtime_writes() -> void:
+	var ui := WevaDocument.new()
+	ui.document_size = Vector2(600,400)
+	ui.interactive = false
+	ui.css = 'html,body{margin:0}div{width:100px;height:40px;background:#456} .wide{width:180px}input{display:block;width:180px;height:30px}'
+	ui.html = '<div id="a">first</div><div id="b">second</div><input id="f"><div id="echo">{{Name}}</div>'
+	add_child(ui)
+	ui.set_process(false)
+	ui.update_document(0)
+	var before := ui.get_draw_count()
+	_check(ui.set_element_style("#a","display","none"),"queue first HUD write")
+	_check(ui.set_element_text("#b","changed"),"queue text write")
+	_check(ui.set_element_value("#f","typed"),"queue value write")
+	_check(ui.add_element_class("#b","wide"),"queue class write")
+	_check(ui.get_draw_count() == before,"ordinary writes do not publish intermediate frames")
+	# Selectors read the live DOM even before layout consumes the prior write.
+	_check(ui.set_element_style(".wide","height","50px"),"write resolves newly added class")
+	_check(ui.query_bounds("#b").size == Vector2(180,50),"geometry read flushes all pending writes")
+	_check(not ui.query_bounds("#a").has_area(),"pending hide takes effect")
+	_check(ui.get_element_text("#b") == "changed","text read observes pending write")
+	_check(ui.get_element_value("#f") == "typed","control read observes pending write")
+	# Input still synchronizes layout before hit testing or focus navigation.
+	ui.set_element_style("#f","margin-left","100px")
+	ui.set_pointer(Vector2(110,60),1)
+	ui.set_pointer(Vector2(110,60),0)
+	_check(ui.get_focused_id() == "f","pointer uses geometry after queued writes")
+	ui.set_element_value("#f","next")
+	_check(ui.set_element_style(":focus","color","rgb(10, 20, 30)"),"write resolves live focus")
+	_check(ui.get_computed_style("#f","color").contains("10"),"computed style read flushes focused write")
+	# Writing the currently displayed binding value must still remove its
+	# template source, exactly as a different manual text value does.
+	ui.data = {"Name":"same"}
+	ui.update_document(0)
+	ui.set_element_text("#echo","same")
+	ui.data = {"Name":"other"}
+	_check(ui.get_element_text("#echo") == "same","identical manual text replaces binding source")
+	# Writes also work before the first layout after document replacement.
+	ui.html = '<div id="fresh">old</div>'
+	_check(ui.set_element_style("#fresh","width","240px"),"style write before first layout")
+	_check(ui.set_element_text("#fresh","new"),"text write before first layout")
+	_check(ui.query_bounds("#fresh").size.x == 240,"first read lays out the final state")
+	_check(ui.query_text("#fresh") == "new","replaced DOM remains queryable")
+	ui.free()
+
 func _ready() -> void:
 	var doc := WevaDocument.new()
 	add_child(doc)
@@ -347,6 +391,9 @@ func _ready() -> void:
 	_click(doc, "#music")
 	_check(typeof(doc.data["Settings"]["Music"]) == TYPE_BOOL, "a checkbox stays a bool")
 	_check(doc.data["Settings"]["Music"] == false, "and the click cleared it")
+	_click(doc, "#music")
+	_check(doc.data["Settings"]["Music"] == true, "checking it again writes the on value back as true")
+	_check(doc.get_element_value("#music") == "on", "binding refresh preserves the checked control")
 
 	# Everything else bound to the path follows it, without the script asking.
 	_check(doc.query_text("#echo").contains("Hopper"), "the label follows the field")
@@ -392,6 +439,13 @@ func _ready() -> void:
 	# A path inside a row that names no alias is global, and stays global.
 	_check(rows.query_text("#quests > .row:nth-of-type(2)").contains("Open the gate"),
 			"the row still reads its own fields")
+	# Replacing markup keeps the current model, including aliases created by
+	# data-each during this reload. No later data assignment should be needed.
+	rows.html = ROWS_HTML
+	rows.update_document(0)
+	_check(rows.count_elements("#quests > .row") == 2, "HTML replacement recreates bound rows")
+	_check(rows.get_element_value("#quests > .row:nth-of-type(2) input[type=text]") == "oiled",
+			"replacement rows initialize their controls from the current model")
 	rows.queue_free()
 
 	# A resolver owns its own data and has nowhere to put an answer, so the
@@ -403,10 +457,68 @@ func _ready() -> void:
 	other.set_data_source(func(path): return "resolved" if path == "Player.Name" else null)
 	other.update_document()
 	_check(other.get_element_value("#name") == "resolved", "a resolver fills a model too")
-	other.set_element_value("#name", "ignored")
+	other.html = '<textarea id="replacement" data-model="Player.Name">default</textarea>'
+	other.update_document(0)
+	_check(other.get_element_value("#replacement") == "resolved", "replacement markup uses an existing resolver")
+	other.set_element_value("#replacement", "ignored")
 	other.update_document()
 	_check(true, "and writing it back does not crash")
 	other.queue_free()
+
+	var replacement := WevaDocument.new()
+	add_child(replacement)
+	replacement.data = {"Name":"á😀b"}
+	var edit_events: Array[String] = []
+	replacement.value_changed.connect(func(_id, _value):edit_events.append("input"))
+	replacement.value_committed.connect(func(_id, _value):edit_events.append("change"))
+	replacement.html = '<form id="form"><input id="input" value="initial" data-model="Name"><textarea id="area" data-model="Name">default</textarea><span id="echo">{{Name}}</span></form>'
+	replacement.update_document(0)
+	_check(replacement.get_element_value("#input") == "á😀b", "data assigned before HTML initializes new inputs")
+	_check(replacement.get_element_value("#area") == "á😀b", "data assigned before HTML initializes new textareas")
+	_check(replacement.query_text("#echo") == "á😀b", "model initialization preserves text bindings")
+	_check(edit_events.is_empty(), "HTML model initialization emits no edit events")
+	replacement.reset_form("#form")
+	_check(replacement.get_element_value("#area") == "default", "initializing live models preserves markup reset defaults")
+	replacement.queue_free()
+
+	var literal := WevaDocument.new()
+	add_child(literal)
+	literal.html = '<span id="literal">{{Missing}}</span>'
+	literal.update_document(0)
+	_check(literal.query_text("#literal") == "{{Missing}}", "unconfigured bindings preserve literal corpus markup")
+	literal.data = {}
+	literal.html = '<span id="literal">{{Missing}}</span>'
+	literal.update_document(0)
+	_check(literal.query_text("#literal") == "", "explicit empty data stays configured through HTML replacement")
+	literal.queue_free()
+
+	# Exercise the large-form fallback and eviction of parsed binding paths.
+	var many := WevaDocument.new()
+	add_child(many)
+	many.css = "#hidden { display: none }"
+	var values := {}
+	var markup := "<div id=hidden>"
+	for i in range(1100):
+		values["field%d" % i] = "value%d" % i
+		if i < 40:
+			markup += '<input id="field%d" data-model="Fields.field%d">' % [i, i]
+		else:
+			markup += '<span>{{ Fields.field%d }}</span>' % i
+	markup += "</div>"
+	many.html = markup
+	many.data = {"Fields": values}
+	many.update_document(0)
+	for i in range(40):
+		_check(many.get_element_value("#field%d" % i) == "value%d" % i, "large form initializes model %d" % i)
+	values["field39"] = "shared dictionary changed"
+	many.refresh_bindings()
+	many.update_document(0)
+	_check(many.get_element_value("#field39") == "shared dictionary changed", "path cache retains no stale data values")
+	_check(many.refresh_bindings() == 0, "large repeated refresh reports no changes")
+	many.html = '<input id="reloaded" data-model="Fields.field39">'
+	many.update_document(0)
+	_check(many.get_element_value("#reloaded") == "shared dictionary changed", "path cache reload preserves data")
+	many.queue_free()
 
 	_reading_back(doc)
 
@@ -414,6 +526,7 @@ func _ready() -> void:
 	_state_selectors()
 	_inline_styles()
 	_screen_rects()
+	_coalesced_runtime_writes()
 
 	doc.queue_free()
 	print("godot bindings: %d checks, %d failures" % [checks, failures])

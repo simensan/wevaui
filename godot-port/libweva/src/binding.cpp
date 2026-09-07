@@ -1,5 +1,6 @@
 #include "weva/binding.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cstring>
 #include <utility>
@@ -24,6 +25,18 @@ bool truthy(std::string_view value) {
     if (v.empty()) return false;
     if (v == "0" || v == "false" || v == "False" || v == "FALSE") return false;
     return true;
+}
+
+// Binding values control the PRESENCE of HTML boolean attributes. A literal
+// disabled="false" still disables a button; only templated values use this.
+bool boolean_attribute(std::string_view name) {
+    for (const auto candidate : {"allowfullscreen", "async", "autofocus", "autoplay",
+             "checked", "controls", "default", "defer", "disabled", "formnovalidate",
+             "inert", "ismap", "loop", "multiple", "muted", "nomodule", "novalidate",
+             "open", "playsinline", "readonly", "required", "reversed", "selected"}) {
+        if (name == candidate) return true;
+    }
+    return false;
 }
 
 const char* kClassPrefix = "data-class-";
@@ -111,6 +124,7 @@ Ref<Node> clone_node(const Node& source) {
         copy->set_attribute(attrs.name_at(i), attrs.value_at(i));
     }
     clone_children(source, copy.get());
+    copy->copy_form_state_from(e);
     // `retain`, not the constructor: that one ADOPTS a reference the caller
     // owns, and `copy` already owns the only one there is.
     return Ref<Node>::retain(copy.get());
@@ -279,16 +293,18 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
         // Collected first: setting an attribute while walking the map is a
         // mutation of the thing being walked.
         std::vector<std::pair<std::string, std::string>> writes;
+        std::vector<std::string> removals;
         std::vector<std::pair<std::string, bool>> classes;
+        const auto saved = templates ? templates->find(&e) : BindingTemplates::iterator{};
         for (std::size_t i = 0; i < attrs.size(); ++i) {
             const std::string name(attrs.name_at(i));
-            const std::string value(attrs.value_at(i));
+            const std::string_view value = attrs.value_at(i);
 
             // `data-class-<name>="Path"` toggles ONE class and leaves the rest
             // of the attribute alone, which is what makes it composable with
             // classes the author wrote by hand.
             if (name.rfind(kClassPrefix, 0) == 0 && name.size() > std::strlen(kClassPrefix)) {
-                std::string path = value;
+                std::string path(value);
                 if (has_binding(value)) path = substitute_bindings(value, resolver);
                 std::string resolved;
                 const bool on = resolver.resolve(trim(path), &resolved) && truthy(resolved);
@@ -298,27 +314,42 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
 
             // The template is whatever was there the first time this ran, kept
             // because the substitution overwrites it.
-            const std::string* tmpl = nullptr;
-            if (templates) {
-                auto& per_element = (*templates)[&e];
-                auto it = per_element.find(name);
-                if (it != per_element.end()) {
-                    tmpl = &it->second;
-                } else if (has_binding(value)) {
-                    tmpl = &(per_element[name] = value);
+            std::string_view tmpl;
+            if (templates && saved != templates->end()) {
+                auto it = saved->second.find(name);
+                if (it != saved->second.end()) tmpl = it->second;
+            }
+            if (tmpl.empty() && has_binding(value)) {
+                tmpl = templates ? std::string_view((*templates)[&e][name] = std::string(value)) : value;
+            }
+            if (tmpl.empty()) continue;
+            const std::string filled = substitute_bindings(tmpl, resolver);
+            if (boolean_attribute(name)) {
+                if (!truthy(filled)) removals.push_back(name);
+                else if (!value.empty()) writes.emplace_back(name, "");
+            } else if (filled != value) {
+                writes.emplace_back(name, filled);
+            }
+        }
+        // A false boolean is absent from the live attribute map, but its
+        // owned template must be evaluated again so it can become true later.
+        if (templates) {
+            const auto found = templates->find(&e);
+            if (found != templates->end()) {
+                for (const auto& entry : found->second) {
+                    if (!attrs.contains(entry.first) && boolean_attribute(entry.first) &&
+                        truthy(substitute_bindings(entry.second, resolver))) {
+                        writes.emplace_back(entry.first, "");
+                    }
                 }
             }
-            if (!tmpl && has_binding(value)) {
-                const std::string filled = substitute_bindings(value, resolver);
-                if (filled != value) writes.emplace_back(name, filled);
-                continue;
-            }
-            if (!tmpl) continue;
-            const std::string filled = substitute_bindings(*tmpl, resolver);
-            if (filled != value) writes.emplace_back(name, filled);
         }
         for (const auto& kv : writes) {
             attrs.set(kv.first, kv.second);
+            ++changed;
+        }
+        for (const auto& name : removals) {
+            attrs.remove(name);
             ++changed;
         }
         for (const auto& kv : classes) {
@@ -358,8 +389,14 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
             ++changed;
         }
     }
-    // Copied first: a repeat appends its rows to this very list.
-    std::vector<Ref<Node>> children(root.children().begin(), root.children().end());
+    // Only a direct repeat can mutate this child vector. Ordinary binding
+    // walks need no temporary vector or retain/release of every child.
+    std::vector<Ref<Node>> snapshot;
+    const bool expands = std::any_of(root.children().begin(), root.children().end(), [](const Ref<Node>& child) {
+        return child->is_element() && static_cast<const Element&>(*child).has_attribute("data-each");
+    });
+    if (expands) snapshot.assign(root.children().begin(), root.children().end());
+    const auto& children = expands ? snapshot : root.children();
     for (const Ref<Node>& child : children) {
         // A row belongs to the template that made it, and is filled by the
         // template's pass with the row's own scope. Walking into one here

@@ -9,9 +9,13 @@
 #include "weva/tessellate.h"
 
 #include <map>
+#include <memory>
+#include <optional>
 #include <string>
+#include <unordered_map>
 
 namespace weva {
+class StyleProvider;
 
 // Walks a laid-out box tree and issues draws through the render interface.
 //
@@ -27,6 +31,7 @@ BorderRadii resolve_border_radii(const ComputedStyle* style, double width, doubl
 
 // Resolves a colour-valued property. Returns transparent when absent or
 // unparseable, so a bad declaration paints nothing rather than black.
+// Registered properties share ComputedStyle's invalidated-on-write parse cache.
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property);
 
 // Paints `root` and its subtree. Boxes are walked in tree order, which is
@@ -53,6 +58,8 @@ public:
     // Null when absent. A hit marks the entry used for this pass.
     TextureHandle get(const std::string& key);
     void put(const std::string& key, TextureHandle texture);
+    // A reused command references the texture without asking for its key.
+    void retain(TextureHandle texture);
     // Called around a paint pass; end_pass releases whatever went unused.
     void begin_pass();
     void end_pass(RenderInterface* backend);
@@ -68,6 +75,7 @@ private:
         bool used = false;
     };
     std::map<std::string, Entry> entries_;
+    std::unordered_map<uint64_t, Entry*> by_texture_;
     int hits_ = 0;
     int misses_ = 0;
 };
@@ -82,6 +90,7 @@ struct CaretState {
     const Element* element = nullptr;   // the focused field, or null for none
     int index = 0;                      // characters before the caret
     bool visible = true;                // the blink, off half the time
+    double text_scroll_x = 0;           // focused input's internal text viewport
     // A <textarea>'s value is laid out as ordinary inline content, so its
     // cursor lives inside one of the text runs rather than in text paint draws
     // itself. Which run, and how far into it, is settled once after layout --
@@ -97,6 +106,7 @@ struct CaretState {
     // slice of it, and the part of that slice inside the range is the part to
     // highlight.
     size_t selection_from = 0, selection_to = 0;
+    size_t composition_from = 0, composition_to = 0;
     std::string_view source;
 };
 
@@ -109,7 +119,43 @@ struct SelectPopup {
     int first_row = 0;                  // the list is scrolled to here
 };
 
+// Optional retained draw-list seam. A replay must reproduce the complete
+// subtree, including backend state changes, or return false without drawing.
+struct ClipNode;
+struct ColorFilter;
+
+// Incoming paint inputs at a retained layout boundary. Clips and filters are
+// immutable snapshots; equality compares their values, not pointer identities.
+struct PaintReplayInputs {
+    double x = 0, y = 0, opacity = 1;
+    std::optional<Recti> scissor;
+    bool transformed = false;
+    Transform2D xform;
+    std::shared_ptr<const ClipNode> clip;
+    std::shared_ptr<const ColorFilter> filter;
+    BoxId canvas_owner = kNoBox;
+    bool operator==(const PaintReplayInputs& other) const;
+};
+
+class PaintReuse {
+public:
+    virtual ~PaintReuse() = default;
+    // The glyph prepass may skip a subtree only when all its text/font inputs
+    // and the atlas's slot version still match the preceding prepared pass.
+    // Paint position, clipping and texture uploads do not remove glyph slots.
+    virtual void begin_glyphs(const GlyphAtlas&) {}
+    virtual bool reuse_glyphs(BoxId) const { return false; }
+    virtual void begin_paint(TextureHandle atlas) = 0;
+    virtual bool replay(BoxId box) = 0;
+    virtual bool tracks_inputs(BoxId) const { return false; }
+    virtual bool replay(BoxId box, const PaintReplayInputs&) { return replay(box); }
+    virtual void begin_box(BoxId box) = 0;
+    virtual void end_box(BoxId box) = 0;
+};
+
 struct PaintContext {
+    StyleProvider* styles = nullptr; // Popup rows have styles but no layout boxes.
+    PaintReuse* reuse = nullptr;
     RenderInterface* backend = nullptr;
     FontInterface* font = nullptr;
     GlyphAtlas* atlas = nullptr;
@@ -127,6 +173,7 @@ struct PaintContext {
     ImageStore* images = nullptr;
     CaretState caret;
     SelectPopup popup;
+    const Element* active_option = nullptr;
 };
 
 // Where the open list goes, and how tall each row is: shared by paint and by
@@ -135,7 +182,7 @@ struct SelectListGeometry {
     bool visible = false;
     Rect box;             // the whole list, in document coordinates
     double row_height = 0;
-    int count = 0;        // options in it
+    int count = 0;        // display rows, including optgroup headings
     int rows = 0;         // how many of them fit in the box
 };
 
@@ -176,6 +223,17 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
 // document coordinates.
 size_t control_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
                               const PaintContext& paint, double x);
+
+// Insertion caret in document coordinates, with scroll and CSS transforms.
+// The geometry uses the same face, prefix measurement and line metrics as paint.
+bool text_caret_bounds(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                       const PaintContext& paint, Rect* out);
+
+// Clamp the focused input's text viewport, optionally revealing its caret.
+// Timed selection scrolling controls the viewport independently of the caret.
+double input_text_scroll(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                         const PaintContext& paint, bool reveal_caret = true,
+                         double* maximum = nullptr);
 
 // For a <textarea>, whose value is laid out as runs: the offset into `source`
 // nearest the point, taking the line under `y` and then the character under

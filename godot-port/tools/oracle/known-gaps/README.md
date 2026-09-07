@@ -1,5 +1,11 @@
 # Known gaps
 
+The conformance target is now **Chrome** when the reference disagrees (see
+[`docs/ORACLE.md`](../../../docs/ORACLE.md), 2026-09-05). Historical notes below
+that describe a pending choice of target are superseded by that decision.
+Their measurements still need calibration with matching font and stylesheet
+inputs; neither a smaller error nor a policy decision turns a failure green.
+
 Cases that do **not** gate, because they fail for a reason no amount of
 porting fixes: the C++ engine and the C# reference agree with each other and
 both differ from a browser. The oracle's job is parity, and on these two the

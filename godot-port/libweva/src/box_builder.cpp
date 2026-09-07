@@ -2,6 +2,7 @@
 #include "weva/box_builder.h"
 #include "weva/cascade.h"
 #include "weva/css_value.h"
+#include "weva/form_state.h"
 
 #include <cctype>
 #include <cstdlib>
@@ -350,9 +351,32 @@ std::string marker_text(std::string_view type, int ordinal) {
 
 void BoxBuilder::build_children(const Element& element, const ComputedStyle* style,
                                 BoxId parent) {
+    if (reuse_ && reuse_->reuse_children(tree_, parent)) return;
+    if (element.tag_name() == "select" && !select_is_listbox(element)) return;
+    if (element.tag_name() == "textarea") {
+        const auto value = element.form_value();
+        if (!value.empty()) {
+            const BoxId text = tree_->create(BoxKind::Text, &element, style);
+            (*tree_)[text].text = transformed_text(value, style);
+            (*tree_)[text].source_control = &element;
+            tree_->append_child(parent, text);
+        }
+        finalize_block_children(parent);
+        return;
+    }
     ++element_depth_;
     apply_counters(style, element_depth_);
     inject_pseudo(element, style, parent, "before");
+    if (element.tag_name() == "option" || element.tag_name() == "optgroup") {
+        std::string label = element.tag_name() == "option" ? option_label(element) : std::string(element.get_attribute("label"));
+        if (element.tag_name() == "optgroup" && label.find_first_not_of(" \t\r\n\f") == std::string::npos)
+            label = "\xC2\xA0"; // Empty group headings still occupy a line.
+        if (!label.empty()) {
+            const BoxId text = tree_->create(BoxKind::Text, &element, style);
+            (*tree_)[text].text = transformed_text(tree_->own_text(std::move(label)), style);
+            tree_->append_child(parent, text);
+        }
+    }
     // After ::before, so the marker sits inside it the way a browser puts it.
     maybe_inject_list_marker(element, style, parent);
     // One pass for the whole list rather than each <li> walking back over its
@@ -361,7 +385,7 @@ void BoxBuilder::build_children(const Element& element, const ComputedStyle* sty
         precompute_li_ordinals(element);
     }
     for (const Ref<Node>& c : element.children()) {
-        append_node_as_block_child(*c, style, parent);
+        if (element.tag_name() != "option") append_node_as_block_child(*c, style, parent);
     }
     inject_pseudo(element, style, parent, "after");
     close_counters(element_depth_);
@@ -494,6 +518,21 @@ void BoxBuilder::maybe_inject_list_marker(const Element& e, const ComputedStyle*
 
 void BoxBuilder::build_inline_children(const Element& element, const ComputedStyle* style,
                                        BoxId parent) {
+    if (element.tag_name() == "select" && !select_is_listbox(element)) return;
+    if (element.tag_name() == "option" || element.tag_name() == "optgroup") {
+        build_children(element, style, parent);
+        return;
+    }
+    if (element.tag_name() == "textarea") {
+        const auto value = element.form_value();
+        if (!value.empty()) {
+            const BoxId text = tree_->create(BoxKind::Text, &element, style);
+            (*tree_)[text].text = transformed_text(value, style);
+            (*tree_)[text].source_control = &element;
+            tree_->append_child(parent, text);
+        }
+        return;
+    }
     ++element_depth_;
     apply_counters(style, element_depth_);
     inject_pseudo(element, style, parent, "before");

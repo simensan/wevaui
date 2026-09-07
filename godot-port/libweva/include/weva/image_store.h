@@ -2,6 +2,7 @@
 #include "weva/image_decode.h"
 
 #include <functional>
+#include <cstdint>
 #include <map>
 #include <string>
 #include <string_view>
@@ -24,7 +25,7 @@ public:
     void set_base_path(std::string base) {
         if (base != base_) {
             base_ = std::move(base);
-            cache_.clear();
+            clear();
         }
     }
     const std::string& base_path() const { return base_; }
@@ -36,7 +37,7 @@ public:
     using Reader = std::function<bool(const std::string& path, std::vector<uint8_t>* out)>;
     void set_reader(Reader reader) {
         reader_ = std::move(reader);
-        cache_.clear();
+        clear();
     }
 
     // Null when the URL cannot be read or is not a format the decoder knows.
@@ -47,7 +48,10 @@ public:
     // tests and for a host that wants to report what it could not find.
     std::string resolve(std::string_view url) const;
 
-    void clear() { cache_.clear(); }
+    void clear() { cache_.clear(); content_version_ = next_content_version(); }
+    // Decoded inputs remain immutable until a reset. Versions are unique
+    // across stores too, so a paint cache can safely receive a different one.
+    uint64_t content_version() const { return content_version_; }
     size_t size() const { return cache_.size(); }
 
     // Every URL that was asked for and could not be produced.
@@ -84,6 +88,8 @@ public:
     }
 
 private:
+    static uint64_t next_content_version();
+    uint64_t content_version_ = next_content_version();
     std::string base_;
     Reader reader_;
     // Keyed by the RESOLVED path, so two stylesheets reaching the same file by

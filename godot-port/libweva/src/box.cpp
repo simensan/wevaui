@@ -3,7 +3,7 @@
 namespace weva {
 
 BoxId BoxTree::create(BoxKind kind, const Element* element, const ComputedStyle* style) {
-    const BoxId id = static_cast<BoxId>(boxes_.size());
+    const BoxId id = free_boxes_.empty() ? static_cast<BoxId>(boxes_.size()) : free_boxes_.back();
     Box b;
     b.kind = kind;
     b.element = element;
@@ -11,8 +11,85 @@ BoxId BoxTree::create(BoxKind kind, const Element* element, const ComputedStyle*
     // An anonymous block wrapper exists precisely to hold inline content, so
     // the invariant is established at creation rather than by every caller.
     if (kind == BoxKind::AnonymousBlock) b.contains_inlines = true;
-    boxes_.push_back(b);
+    if (free_boxes_.empty()) boxes_.push_back(b);
+    else { free_boxes_.pop_back(); boxes_[static_cast<size_t>(id)] = b; }
     return id;
+}
+
+void BoxTree::release_subtree(BoxId root) {
+    for (BoxId c = (*this)[root].first_child; c != kNoBox;) {
+        const BoxId next = (*this)[c].next_sibling;
+        release_subtree(c);
+        c = next;
+    }
+    imported_text_.erase(root);
+    (*this)[root] = Box{};
+    free_boxes_.push_back(root);
+}
+
+void BoxTree::import_subtree(BoxId into, const BoxTree& source, BoxId from) {
+    (*this)[into] = source[from];
+    Box& b = (*this)[into];
+    b.parent = b.first_child = b.last_child = b.prev_sibling = b.next_sibling = kNoBox;
+    // A textarea's caret uses offsets into its DOM text. Keep those views;
+    // only transformed/collapsed text owned by scratch needs transferring.
+    bool dom_text = false;
+    if (b.source_node) {
+        const auto& source_text = b.source_node->data();
+        const uintptr_t start = reinterpret_cast<uintptr_t>(source_text.data());
+        const uintptr_t run = reinterpret_cast<uintptr_t>(b.text.data());
+        dom_text = run >= start && run + b.text.size() <= start + source_text.size();
+    }
+    if (b.source_control) {
+        const auto source_text = b.source_control->form_value();
+        const uintptr_t start = reinterpret_cast<uintptr_t>(source_text.data());
+        const uintptr_t run = reinterpret_cast<uintptr_t>(b.text.data());
+        dom_text = run >= start && run + b.text.size() <= start + source_text.size();
+    }
+    if (!b.text.empty() && !dom_text) {
+        imported_text_[into] = std::string(b.text);
+        b.text = imported_text_[into];
+    }
+    for (BoxId c : source.children(from)) {
+        if (source[c].retained_from != kNoBox) {
+            const BoxId child = source[c].retained_from;
+            const Box prior = (*this)[child];
+            (*this)[child] = source[c];
+            (*this)[child].retained_from = kNoBox;
+            (*this)[child].first_child = prior.first_child;
+            (*this)[child].last_child = prior.last_child;
+            (*this)[child].parent = (*this)[child].prev_sibling = (*this)[child].next_sibling = kNoBox;
+            append_child(into, child);
+            continue;
+        }
+        const BoxId child = create(source[c].kind);
+        import_subtree(child, source, c);
+        append_child(into, child);
+    }
+}
+
+void BoxTree::replace_subtree(BoxId root, const BoxTree& source, BoxId source_root) {
+    // Retained descendants must be detached before releasing their old
+    // ancestors. Their IDs, children and owned text stay in this arena.
+    const auto detach_retained = [&](const auto& self, BoxId id) -> void {
+        if (source[id].retained_from != kNoBox) {
+            remove_child(source[id].retained_from);
+            return;
+        }
+        for (BoxId c : source.children(id)) self(self, c);
+    };
+    detach_retained(detach_retained, source_root);
+    const Box old = (*this)[root];
+    for (BoxId c = old.first_child; c != kNoBox;) {
+        const BoxId next = (*this)[c].next_sibling;
+        release_subtree(c);
+        c = next;
+    }
+    imported_text_.erase(root);
+    import_subtree(root, source, source_root);
+    (*this)[root].parent = old.parent;
+    (*this)[root].prev_sibling = old.prev_sibling;
+    (*this)[root].next_sibling = old.next_sibling;
 }
 
 void BoxTree::append_child(BoxId parent, BoxId child) {

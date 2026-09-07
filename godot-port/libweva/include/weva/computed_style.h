@@ -3,17 +3,21 @@
 #include "weva/css_value.h"
 
 #include <cstdint>
+#include <array>
 #include <map>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
 // Ports Runtime/Css/Cascade/ComputedStyle.cs.
 //
-// Storage is an id-indexed array of raw value strings plus an occupancy
-// bitset. The array indexing is the point: layout and paint read hot
-// properties by cached id, so a lookup is an array load rather than a string
-// hash. Custom properties (`--foo`) have no id and spill to a side map.
+// Property ids index a compact slot table; raw strings live in stable pages
+// allocated only for properties written to this style. A typical style sets
+// about a dozen of the 334 registered properties. Allocating all 334 strings
+// per element dominated cold declaration application. Lookups remain indexed,
+// and growing storage cannot invalidate views of another property's string.
+// Custom properties (`--foo`) have no id and spill to a side map.
 //
 // The C# keeps BOTH a bool[] and a parallel ulong[] bitset — the bool[] for
 // single-load hot readers, the bitset so FillInherited can iterate
@@ -32,6 +36,9 @@ namespace weva {
 
 class ComputedStyle {
 public:
+    // Transparent comparison lets reads use string_view without allocating
+    // an owned key. Stored names and values still belong to the style.
+    using CustomPropertyMap = std::map<std::string, std::string, std::less<>>;
     ComputedStyle() = default;
 
     // Inheritance and initial values are resolved LAZILY on read rather than
@@ -47,27 +54,45 @@ public:
     // style lives in the caller's frame above the child's, which satisfies
     // that naturally — but a style that outlives its walk must not keep the
     // pointer.
-    // The resolved font-size, remembered with the parent size it was resolved
-    // against. font_size_px is called several times per box and again for the
-    // parent, and a calc() font-size was re-evaluated on every one of them.
+    // The resolved font-size, remembered with its parent size and the numeric
+    // layout context used to resolve relative/physical units. font_size_px is
+    // called several times per box and again for the parent, and a calc()
+    // font-size was re-evaluated on every one of them.
     // Mutable and public because it is pure memoisation of a pure function --
     // it changes no answer, only how often the answer is derived. Invalidated
     // by the cascade writing a new value, like the parsed-value memo beside it.
     mutable double font_size_memo_px = 0;
     mutable double font_size_memo_parent = -1;
+    // Viewport width/height, root font size, root line height and DPI, in that
+    // order. Parent size alone cannot detect changes to vw/rem/rlh/pt inputs.
+    mutable std::array<double, 5> font_size_memo_context{};
     // Tied to the style's VERSION rather than invalidated by hand at each
     // mutation. Every write already bumps the version, so the memo cannot
     // outlive the value it describes -- which the by-hand version got wrong on
     // its first attempt by missing the main set().
     mutable int64_t font_size_memo_version = -1;
+    // Only an explicitly owned px/number value can ignore both context and
+    // parent size. Inherited values keep the ordinary dependency checks.
+    mutable bool font_size_memo_absolute = false;
 
 
     void set_inherit_parent(const ComputedStyle* parent) { parent_ = parent; }
     const ComputedStyle* inherit_parent() const { return parent_; }
 
-    // Raw string access by id. Resolves through the inherit chain and then the
-    // registry's initial value, so an unset slot still yields the correct
-    // computed value. Use contains() to ask whether THIS style set it directly.
+    // A materialized inherit/unset (or pseudo inheritance) retains the raw
+    // parent string for style queries, but font resolution must inherit the
+    // parent's computed size instead of applying that string again.
+    bool font_size_inherited() const { return font_size_inherited_; }
+    void mark_font_size_inherited();
+    // Relative line-height lengths inherit computed pixels, while numbers
+    // and normal remain relative to the descendant's font. Keep the source
+    // of materialized inherit/unset and pseudo values until resolution.
+    bool line_height_inherited() const { return line_height_inherited_; }
+    void mark_line_height_inherited();
+
+    // Raw string access by id. Reads through the inherit chain and then the
+    // registry's initial value. Relative font sizes still need font_size_px
+    // to obtain computed pixels. contains() tests THIS style's own slot.
     std::string_view get(int property_id) const;
     bool try_get(int property_id, std::string* out) const;
     bool contains(int property_id) const;
@@ -110,9 +135,10 @@ public:
     const CssValue* parsed(std::string_view property) const;
     int set_count() const { return set_count_; }
     int64_t version() const { return version_; }
+    static void report_storage_profile();
 
     const std::vector<uint64_t>& occupied_bits() const { return occupied_bits_; }
-    const std::map<std::string, std::string>& custom_properties() const { return custom_; }
+    const CustomPropertyMap& custom_properties() const { return custom_; }
 
     // Ids set DIRECTLY on this style (not inherited, not initial), ascending.
     std::vector<int> set_ids() const;
@@ -134,8 +160,16 @@ public:
 private:
     void ensure_capacity(int id);
 
-    std::vector<std::string> values_;
-    // Parallel to values_. `parsed_ready_` distinguishes "not parsed yet" from
+    static constexpr size_t kValuesPerPage = 16;
+    using ValuePage = std::array<std::string, kValuesPerPage>;
+    std::vector<std::unique_ptr<ValuePage>> values_;
+    // Zero means no slot has been assigned; otherwise the value is slot + 1.
+    // Presence remains separate, so unset can preserve reusable string storage.
+    std::vector<uint32_t> value_slots_;
+    size_t value_count_ = 0;
+    const std::string& own_value(size_t id) const;
+    std::string& ensure_value(size_t id);
+    // Indexed by property id. `parsed_ready_` distinguishes "not parsed yet" from
     // "parsed, and the result was null" — without it a malformed value would be
     // re-parsed on every read, which is the case the cache most needs to cover.
     mutable std::vector<CssValuePtr> parsed_;
@@ -152,8 +186,10 @@ private:
     std::vector<uint8_t> occupied_;
     std::vector<uint64_t> occupied_bits_;
     std::vector<bool> important_;
-    std::map<std::string, std::string> custom_;
+    CustomPropertyMap custom_;
     const ComputedStyle* parent_ = nullptr;
+    bool font_size_inherited_ = false;
+    bool line_height_inherited_ = false;
     int set_count_ = 0;
     int64_t version_ = 0;
 };

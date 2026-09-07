@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -25,6 +26,7 @@ namespace weva {
 class Node;
 class Element;
 class Document;
+struct FormControlState;
 
 // Explicit node tag instead of dynamic_cast: docs/CONVENTIONS.md forbids the
 // core from depending on RTTI, and a tag is cheaper than a type-info walk on a
@@ -34,6 +36,7 @@ enum class NodeType { Document, Element, Text };
 enum class MutationKind {
     ChildAdded, ChildRemoved, TextChanged,
     AttributeAdded, AttributeChanged, AttributeRemoved,
+    FormStateChanged,
 };
 
 struct DomMutation {
@@ -132,6 +135,7 @@ private:
 class Element : public Node {
 public:
     explicit Element(std::string_view tag_name);
+    ~Element() override;
 
     const std::string& tag_name() const { return tag_name_; }
     AttributeMap& attributes() { return attributes_; }
@@ -146,11 +150,35 @@ public:
     std::string_view class_name() const { return attributes_.get("class"); }
     std::vector<std::string_view> class_list() const;
 
+    // Live control state is separate from the content attributes/default text.
+    // Storage is allocated only for controls that need it; reads after the
+    // first access allocate nothing. Changes bump an input version and bubble.
+    std::string_view form_value() const;
+    void set_form_value(std::string_view value, bool sanitize = true);
+    bool form_checked() const;
+    void set_form_checked(bool checked, bool dirty = true);
+    bool form_selected() const;
+    void set_form_selected(bool selected, bool dirty = true);
+    int64_t form_version() const { return form_version_; }
+    int64_t form_label_version() const { return form_label_version_; }
+    void reset_form_control();
+    void copy_form_state_from(const Element& source);
+
 private:
+    friend void form_children_changed(Node& parent);
+    friend void normalize_select(Element& select, bool fallback);
+    friend void set_select_value(Element& select, std::string_view value);
     void on_attribute_changed(std::string_view name, const std::string* old_v, const std::string* new_v);
+    void form_attribute_changed(std::string_view name, const std::string* old_v);
+    void form_changed();
+    void set_selected_raw(bool selected, bool dirty);
+    FormControlState& control_state() const;
 
     std::string tag_name_;
     AttributeMap attributes_;
+    mutable std::unique_ptr<FormControlState> form_state_;
+    int64_t form_version_ = 0;
+    int64_t form_label_version_ = 0;
 };
 
 class Document : public Node {

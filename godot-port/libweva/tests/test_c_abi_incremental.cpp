@@ -12,12 +12,43 @@
 // nothing at all, paint-only, layout, and a change to which boxes exist.
 #include "check.h"
 #include "weva_c.h"
+#include "weva/font_interface.h"
+#include "select_autoscroll_fixture.h"
+#include "text_autoscroll_fixture.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <string>
 #include <vector>
+#include <map>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+
+namespace {
+struct IncrementalBindingData {
+    std::map<std::string, std::string> values;
+    int rows = 2;
+    static int count(void* user, const char* path) {
+        return std::strcmp(path, "Items") == 0 ? static_cast<IncrementalBindingData*>(user)->rows : -1;
+    }
+    static size_t read(void* user, const char* path, char* out, size_t capacity, int* found) {
+        const auto& values = static_cast<IncrementalBindingData*>(user)->values;
+        const auto it = values.find(path);
+        *found = it != values.end();
+        if (!*found) return 0;
+        const auto& value = it->second;
+        if (out && capacity) {
+            const size_t n = std::min(value.size(), capacity - 1);
+            std::memcpy(out, value.data(), n); out[n] = 0;
+        }
+        return value.size();
+    }
+};
+}
 
 namespace {
 
@@ -35,6 +66,7 @@ struct Frame {
     struct Draw {
         std::vector<float> vertices;
         std::vector<uint32_t> indices;
+        std::vector<double> effect;
         int32_t kind = 0;
         int32_t scissor[5] = {0, 0, 0, 0, 0};
         // Texture IDS are deliberately absent: they are handles, and an
@@ -60,8 +92,17 @@ struct Frame {
             const char* what = nullptr;
             if (a.kind != b.kind) what = "kind";
             else if (a.vertices.size() != b.vertices.size()) what = "vertex count";
-            else if (a.vertices != b.vertices) what = "vertex data";
+            else if (a.vertices != b.vertices) {
+                for (size_t v = 0; v < a.vertices.size(); ++v) {
+                    if (a.vertices[v] == b.vertices[v]) continue;
+                    std::snprintf(buf, sizeof(buf), "draw %zu of %zu: vertex field %zu differs: %.17g vs %.17g",
+                        i, draws.size(), v, static_cast<double>(a.vertices[v]), static_cast<double>(b.vertices[v]));
+                    return buf;
+                }
+                what = "vertex data";
+            }
             else if (a.indices != b.indices) what = "indices";
+            else if (a.effect != b.effect) what = "effect parameters";
             else if (a.tex_w != b.tex_w || a.tex_h != b.tex_h) what = "texture size";
             else if (a.texels != b.texels) what = "texture pixels";
             else {
@@ -84,6 +125,7 @@ struct Frame {
             const Draw& a = draws[i];
             const Draw& b = o.draws[i];
             if (a.vertices != b.vertices || a.indices != b.indices || a.kind != b.kind) return false;
+            if (a.effect != b.effect) return false;
             for (int k = 0; k < 5; ++k) {
                 if (a.scissor[k] != b.scissor[k]) return false;
             }
@@ -109,6 +151,16 @@ Frame capture(weva_document_t d) {
         }
         t.indices.assign(s.indices, s.indices + s.index_count);
         t.kind = s.kind;
+        if (s.kind == WEVA_DRAW_BACKDROP_FILTER) {
+            t.effect.push_back(s.backdrop.blur_radius);
+            for (float v : s.backdrop.color_matrix) t.effect.push_back(v);
+            for (float v : s.backdrop.color_offset) t.effect.push_back(v);
+            t.effect.push_back(s.backdrop.color_alpha);
+        } else if (s.kind == WEVA_DRAW_ROUNDED_RECT) {
+            const auto& r = s.rounded_rect;
+            t.effect = {r.x, r.y, r.width, r.height, r.r, r.g, r.b, r.a};
+            for (const auto& corner : r.radii) for (double v : corner) t.effect.push_back(v);
+        }
         t.scissor[0] = s.scissor_x;
         t.scissor[1] = s.scissor_y;
         t.scissor[2] = s.scissor_width;
@@ -404,6 +456,96 @@ void test_abi_incremental_matches_fresh() {
         weva_document_destroy(d);
     }
 
+    // ---- viewport-relative font sizes on empty boxes: text layout can hide
+    // a stale font-size memo by querying it with another parent-size key.
+    for (const char* form : {"10vw", "10vh", "10vmin", "10vmax", "10dvw", "10svh",
+                             "calc(1em + 2vw)", "clamp(8px, 10vw, 40px)"}) {
+        const char* html = "<div id=sample></div>";
+        const std::string css = std::string("html,body{margin:0;font-size:16px}#sample{") +
+            "display:block;width:1em;height:1em;background:#09f;font-size:" + form + "}";
+        weva_config initial = config(100, 200);
+        weva_document_t resized = weva_document_create(&initial);
+        CHECK(weva_document_add_css(resized, css.data(), css.size()) == WEVA_OK);
+        CHECK(weva_document_load_html(resized, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(resized, 0) == WEVA_OK);
+        const int sizes[][2] = {{200,200}, {200,400}, {400,200}, {100,200}};
+        for (const auto& size : sizes) {
+            weva_document_set_viewport(resized, size[0], size[1]);
+            CHECK(weva_document_update(resized, 0) == WEVA_OK);
+            weva_config target = config(size[0], size[1]);
+            weva_document_t fresh = weva_document_create(&target);
+            CHECK(weva_document_add_css(fresh, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(fresh, html, std::strlen(html)) == WEVA_OK);
+            CHECK(weva_document_update(fresh, 0) == WEVA_OK);
+            double x, y, width, height, fx, fy, fw, fh;
+            CHECK(weva_element_bounds(resized, weva_document_query(resized, "#sample"),
+                                      &x, &y, &width, &height) == WEVA_OK);
+            CHECK(weva_element_bounds(fresh, weva_document_query(fresh, "#sample"),
+                                      &fx, &fy, &fw, &fh) == WEVA_OK);
+            CHECK(x == fx && y == fy && width == fw && height == fh);
+            const Frame actual = capture(resized), expected = capture(fresh);
+            if (actual != expected)
+                std::printf("  viewport font [%s, %dx%d]: %s\n", form, size[0], size[1],
+                            actual.diff(expected).c_str());
+            CHECK(actual == expected);
+            CHECK(weva_document_update(resized, 0) == WEVA_OK);
+            CHECK(capture(resized) == expected);
+            weva_document_destroy(fresh);
+        }
+        weva_document_destroy(resized);
+    }
+
+    // ---- computed font inheritance, including equal raw strings with
+    // different bases. Check authored dimensions as well as fresh parity.
+    for (const char* display : {"block", "contents"}) {
+        const char* html = "<div id=base><div id=a><div id=b><div id=sample></div></div></div></div>";
+        const std::string css = std::string("html,body{margin:0;font-size:16px}") +
+            "#base{font-size:16px}#a{font-size:2em;display:" + display + "}#b{font-size:2em}"
+            "#sample{width:1em;height:1em;background:#09f}"
+            "#b.inherit{font-size:inherit!important}#b.unset{font-size:unset}"
+            "#b.initial{font-size:initial}#b.empty{font-size:var(--missing)}"
+            "#b.relative{font-size:150%}#sample::before{content:'';display:block;"
+            "width:0.5em;height:0.5em;background:#f80}";
+        auto make = [&]() {
+            weva_config c = config();
+            auto d = weva_document_create(&c);
+            CHECK(weva_document_add_css(d, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(d, html, std::strlen(html)) == WEVA_OK);
+            return d;
+        };
+        auto live = make();
+        CHECK(weva_document_update(live, 0) == WEVA_OK);
+        for (int base_px : {16, 20, 12, 16}) {
+            for (const char* mode : {"inherit", "", "unset", "initial", "empty", "relative", ""}) {
+                auto fresh = make();
+                const std::string base_style = "font-size:" + std::to_string(base_px) + "px";
+                for (auto d : {live, fresh}) {
+                    CHECK(weva_element_set_attribute(d, weva_document_query(d, "#base"),
+                                                      "style", base_style.c_str()) == WEVA_OK);
+                    CHECK(weva_element_set_attribute(d, weva_document_query(d, "#b"), "class", mode) == WEVA_OK);
+                    CHECK(weva_document_update(d, 0) == WEVA_OK);
+                }
+                const double expected = std::strcmp(mode, "initial") == 0 ? 16 :
+                    std::strcmp(mode, "relative") == 0 ? base_px * 3 :
+                    *mode ? base_px * 2 : base_px * 4;
+                double x, y, w, h;
+                CHECK(weva_element_bounds(live, weva_document_query(live, "#sample"), &x, &y, &w, &h) == WEVA_OK);
+                if (w != expected || h != expected)
+                    std::printf("  inherited font [%s,%d,%s]: %.9g x %.9g expected %.9g\n",
+                                display, base_px, mode, w, h, expected);
+                CHECK(w == expected && h == expected);
+                const Frame actual = capture(live), control = capture(fresh);
+                if (actual != control) std::printf("  inherited font frame: %s\n", actual.diff(control).c_str());
+                CHECK(actual == control);
+                CHECK(!actual.draws.empty());
+                CHECK(weva_document_update(live, 0) == WEVA_OK);
+                CHECK(capture(live) == control);
+                weva_document_destroy(fresh);
+            }
+        }
+        weva_document_destroy(live);
+    }
+
     // ---- a second document loaded into the same handle
     {
         weva_config c = config();
@@ -424,4 +566,1000 @@ void test_abi_incremental_matches_fresh() {
         CHECK(same_geometry(got, want));
         weva_document_destroy(d);
     }
+}
+
+
+// Alternate changes on different branches and compare EVERY frame with a
+// forced rebuild. This catches stale command ranges after preceding siblings
+// gain/lose draws, freed texture handles, ancestor effects and arena growth.
+void test_abi_incremental_subtree_sequences() {
+    const char* html =
+        "<div id=wrap><div id=a><span>Alpha beta gamma delta</span></div>"
+        "<div id=b><span>Beta alpha gamma delta</span></div>"
+        "<div id=c><span>Gamma delta beta alpha</span></div></div>"
+        "<div id=tail>Outside the changed subtree</div>";
+    const char* css =
+        "#wrap { width:330px; padding:5px; background:#123; }"
+        "#a,#b,#c { width:180px; height:60px; box-sizing:border-box; overflow:hidden;"
+        " padding:4px; border:1px solid #369; border-radius:7px;"
+        " background:linear-gradient(90deg,#234,#567); box-shadow:0 1px 4px #345; }"
+        "#tail { background:#abc; padding:5px; }";
+    struct Mutation { const char* selector; const char* style; };
+    const Mutation steps[] = {
+        {"#a", "padding:12px"}, {"#b", "background:#af4"},
+        {"#a", "padding:7px"}, {"#c", "background:none;box-shadow:none;border:0"},
+        {"#wrap", "opacity:.4"}, {"#b", "border-radius:20px"},
+        {"#b", "border-radius:calc(10% + 1em) / calc(20% + 2px)"},
+        {"#b", "border-radius:calc(10% + 1em) / calc(20% + 2px);width:220px;height:90px"},
+        {"#b", "border-radius:calc(10% + 1em) / calc(20% + 2px);font-size:20px"},
+        {"#b", "border-top-left-radius:12px\t8px;border-top-right-radius:10%\n20%"},
+        {"#b", "border-radius:0"}, {"#b", "border-radius:20px"},
+        {"#b", "border:8px outset currentColor;color:rgba(0,0,0,.5)"},
+        {"#b", "border:8px inset currentColor;color:#767676;border-radius:12px"},
+        {"#b", "border:8px solid;border-color:red green blue transparent;border-radius:12px"},
+        {"#b", "border:8px solid;border-color:red green blue yellow;border-left-width:17px"},
+        {"#b", "border:8px outset;border-top-style:solid;border-right-style:none"},
+        {"#b", "border:8px outset currentColor"}, {"#wrap", "color:#0000ff"},
+        {"#b", "border:0"}, {"#b", ""}, {"#wrap", ""},
+        {"#a", "padding:4px;font-size:20px"}, {"#wrap", "opacity:.8;clip-path:inset(3px)"},
+        {"#a", "padding:9px;font-size:14px"}, {"#wrap", ""},
+        {"#wrap", "line-height:150%;font-size:20px"}, {"#a span", "font-size:10px"},
+        {"#a span", "font-size:10px;line-height:150%"},
+        {"#a span", "font-size:10px;line-height:inherit"},
+        {"#wrap", "line-height:150%;font-size:24px"},
+        {"#wrap", "line-height:calc(1 + .5);font-size:24px"},
+        {"#a span", "font-size:10px;line-height:unset"},
+        {"#wrap", "line-height:calc(1em + 50% + 2px);font-size:20px"},
+        {"#a span", ""}, {"#wrap", ""},
+        {"#c", "background:linear-gradient(90deg,#234,#567)"},
+        {"#a", "height:auto;width:100px"}, {"#a", ""},
+        {"#wrap", "display:flex;width:200px"}, {"#a", "padding:18px"},
+        {"#wrap", "display:grid;grid-template-columns:1fr 1fr"}, {"#a", "width:230px"},
+        {"#a", "padding:0;height:auto"}, {"#a span", "display:block;height:10px;margin:17px 0 13px"},
+        {"#wrap", "display:flex;flex-direction:column"},
+        {"#a span", "display:block;height:10px;margin:-7px 0 23px"},
+        {"#a", "height:20px;padding:0"}, {"#wrap", "display:block"},
+        {"#wrap", "display:grid;grid-template-columns:1fr 1fr"},
+        {"#a span", ""}, {"#a", ""},
+        {"#wrap", ""}, {"#b", "transform:translate(7px,3px)"},
+        {"#b", "background:blue;filter:blur(2px)"}, {"#b", ""},
+        {"#wrap", "color:red"}, {"#a", "padding:4px"},
+        {"#b", "backdrop-filter:blur(3px) brightness(.6)"}, {"#a", "background:green"},
+        {"#b", "backdrop-filter:blur(1px) brightness(.8)"}, {"#a", "background:blue"},
+        {"#wrap", "display:flex"}, {"#a", "display:inline-flex;width:180px"},
+        {"#a span", "padding-left:2px"}, {"#a span", "padding-left:3px"},
+        {"#wrap", "position:relative;left:7px;top:9px"},
+        {"#b", "position:absolute;right:0;bottom:0;width:60px;height:30px"},
+        {"#a", "padding:12px"}, {"#a", "padding:8px"},
+        {"#wrap", "position:fixed;left:15%;top:10%;height:200px"},
+        {"#a", "padding:6px"}, {"#a", "padding:4px"},
+        {"#a span", "anchor-name:--text"},
+        {"#b", "position:fixed;left:anchor(--text right);top:anchor(--text bottom)"},
+        {"#a", "padding:12px"}, {"#a span", ""},
+        {"#a", "padding:6px"}, {"#b", "position:sticky;top:0"},
+        {"#a", "padding:9px"}, {"#b", "float:left"},
+        {"#a", "padding:4px"}, {"#b", ""}, {"#wrap", ""},
+    };
+    const weva_config cfg = config();
+    weva_document_t live = weva_document_create(&cfg);
+    weva_document_t full = weva_document_create(&cfg);
+    for (weva_document_t doc : {live, full}) {
+        CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    }
+    std::map<std::string, std::string> attributes;
+    for (int repeat = 0; repeat < 3; ++repeat) {
+        for (const Mutation& step : steps) {
+            attributes[step.selector] = step.style;
+            weva_element_set_attribute(live, weva_document_query(live, step.selector), "style", step.style);
+            weva_document_load_html(full, html, std::strlen(html));
+            for (const auto& attr : attributes)
+                weva_element_set_attribute(full, weva_document_query(full, attr.first.c_str()),
+                                           "style", attr.second.c_str());
+            CHECK(weva_document_update(live, 0) == WEVA_OK);
+            CHECK(weva_document_update(full, 0) == WEVA_OK);
+            const Frame a = capture(live), b = capture(full);
+            if (a != b) std::printf("  subtree sequence %d %s %s: %s\n", repeat,
+                                    step.selector, step.style, a.diff(b).c_str());
+            CHECK(a == b);
+            double lw=0, lh=0, fw=0, fh=0;
+            weva_document_content_size(live, &lw, &lh);
+            weva_document_content_size(full, &fw, &fh);
+            CHECK(lw == fw && lh == fh);
+        }
+    }
+    weva_document_destroy(live);
+    weva_document_destroy(full);
+}
+
+
+static void check_retained_grid_paint(const char* overflow) {
+    const std::string css =
+        "*{box-sizing:border-box}html,body{margin:0}"
+        "#app{display:flex;flex-direction:column;width:400px;height:300px;padding:6px;gap:7px}"
+        "#live{width:50px;height:24px;background:#abc}#footer{height:10px;flex:none}"
+        "#wrap{flex:1;min-height:0;padding:4px;overflow:hidden;border-radius:9px;background:#123}"
+        "#grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}"
+        ".cell{height:35px;background:linear-gradient(90deg,#456,#acf);border-radius:5px}"
+        ".cell span{font-size:11px;color:white}" + std::string("#wrap{") + overflow + "}";
+    std::string html = "<div id=app><div id=live></div><div id=wrap><div id=grid>";
+    for (int i = 0; i < 48; ++i)
+        html += "<div class=cell id=c" + std::to_string(i) + "><span>cell</span></div>";
+    html += "</div></div><div id=footer></div></div>";
+    const auto cfg = config();
+    auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (auto doc : {live, full}) {
+        CHECK(weva_document_add_css(doc, css.data(), css.size()) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html.data(), html.size()) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    }
+    const auto cell_geometry = [](weva_document_t doc) -> uintptr_t {
+        // The first textured draw is the first cell's gradient: preceding
+        // boxes have only solid fills. This also identifies it after rotation.
+        size_t count = 0;
+        const auto* draws = weva_document_draws(doc, &count);
+        for (size_t i = 0; i < count; ++i) {
+            const auto& d = draws[i];
+            if (d.texture_id && d.vertex_count) return reinterpret_cast<uintptr_t>(d.vertices);
+        }
+        return 0;
+    };
+    struct Mutation { const char* selector; const char* style; };
+    const Mutation changes[] = {
+        {"#live", "width:100px"}, {"#live", "width:80px;background:none"},
+        {"#live", "width:120px;background:#abc"},
+        // Footer changes only the grid's incoming clip; header changes also
+        // move its origin. Fractions exercise curved clips within a scissor.
+        {"#footer", "height:10.125px"}, {"#footer", "height:31px"},
+        {"#live", "height:40px"}, {"#live", "height:24px"},
+        {"#wrap", "opacity:.6;filter:sepia(.3)"},
+        {"#wrap", "transform:translate(.25px,.5px);clip-path:inset(2px round 4px)"},
+        {"#c0", "background:#fa3"}, {"#grid", "color:red"},
+        {"#wrap", ""}, {"#footer", ""}, {"#c0", ""}, {"#grid", ""}
+    };
+    for (int repeat = 0; repeat < 2; ++repeat) {
+        for (size_t step = 0; step < sizeof(changes)/sizeof(changes[0]); ++step) {
+            const uintptr_t previous = cell_geometry(live);
+            CHECK(previous != 0);
+            for (auto doc : {live, full}) {
+                const auto& change = changes[step];
+                CHECK(weva_element_set_attribute(doc, weva_document_query(doc, change.selector),
+                                                 "style", change.style) == WEVA_OK);
+            }
+            weva_document_set_viewport(full, 401, 300);
+            weva_document_set_viewport(full, 400, 300);
+            CHECK(weva_document_update(live, 0) == WEVA_OK);
+            CHECK(weva_document_update(full, 0) == WEVA_OK);
+            const Frame a = capture(live), b = capture(full);
+            if (a != b) std::printf("  retained paint %s %d/%zu: %s\n", overflow, repeat, step, a.diff(b).c_str());
+            CHECK(a == b);
+            // This checks that unchanged geometry was actually retained. Old
+            // draw buffers are still alive while a fresh frame is constructed,
+            // so a full repaint cannot reuse this allocation by coincidence.
+            if (step < 3) CHECK(cell_geometry(live) == previous);
+        }
+    }
+    weva_document_destroy(live);
+    weva_document_destroy(full);
+}
+
+void test_abi_incremental_retained_grid_paint() {
+    for (const char* overflow : {"", "border-radius:0", "overflow:visible;border-radius:0",
+            "overflow:visible;border-radius:0;transform:rotate(3deg);transform-origin:50% 50%"})
+        check_retained_grid_paint(overflow);
+}
+
+void test_abi_draw_versions() {
+    size_t count = 99;
+    CHECK(weva_document_draw_versions(nullptr, &count) == nullptr && count == 0);
+    const auto cfg = config();
+    auto doc = weva_document_create(&cfg);
+    CHECK(weva_document_draw_versions(doc, &count) == nullptr && count == 0);
+    const char* css = "body{margin:0}div{width:90px;height:40px;background:#acf}"
+                      "#b{background:linear-gradient(90deg,#13a,#5bd)}";
+    const char* html = "<div id=a></div><div id=b>text</div><div id=c></div>";
+    CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+    CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+    CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    std::map<uint64_t, Frame::Draw> seen;
+    std::vector<uint64_t> previous;
+    for (int step = 0; step < 9; ++step) {
+        if (step == 1 || step == 2)
+            weva_element_set_attribute(doc, weva_document_query(doc, "#a"), "style",
+                                       step == 1 ? "background:#bfa" : "background:none");
+        if (step == 3)
+            weva_element_set_attribute(doc, weva_document_query(doc, "#b"), "style",
+                                       "background:linear-gradient(90deg,#f31,#dab)");
+        if (step == 4) weva_document_set_font_backend(doc, nullptr, 0);
+        if (step == 5) weva_document_set_render_backend(doc, nullptr);
+        if (step == 6) weva_document_load_html(doc, "", 0);
+        if (step == 7) weva_document_load_html(doc, html, std::strlen(html));
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        const Frame frame = capture(doc);
+        const uint64_t* versions = weva_document_draw_versions(doc, &count);
+        CHECK(count == frame.draws.size());
+        CHECK((versions != nullptr) == (count != 0));
+        size_t retained = 0, rebuilt = 0;
+        std::map<uint64_t, bool> unique;
+        for (size_t i = 0; i < count; ++i) {
+            CHECK(versions[i] != 0 && unique.emplace(versions[i], true).second);
+            const auto old = seen.find(versions[i]);
+            if (old != seen.end()) {
+                Frame a, b;
+                a.draws.push_back(old->second); b.draws.push_back(frame.draws[i]);
+                CHECK(a == b);
+                ++retained;
+            } else {
+                CHECK(seen.empty() || versions[i] > seen.rbegin()->first);
+                seen.emplace(versions[i], frame.draws[i]);
+                ++rebuilt;
+            }
+        }
+        if (step == 1) CHECK(retained > 0 && rebuilt > 0);
+        if (step == 2) {
+            CHECK(retained > 0 && count < previous.size());
+            // The surviving draw moves earlier without changing its version.
+            CHECK(count && versions[0] == previous[1]);
+        }
+        if (step == 4 || step == 5 || step == 7) CHECK(retained == 0 && rebuilt > 0);
+        if (step == 8) CHECK(rebuilt == 0 && retained == count);
+        previous.clear();
+        if (count) previous.assign(versions, versions + count);
+        const auto* published = versions;
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        CHECK(weva_document_draw_versions(doc, &count) == published);
+        CHECK(count == previous.size());
+    }
+    weva_document_destroy(doc);
+}
+
+void test_abi_incremental_glyph_preparation() {
+    struct FontState {
+        weva::StubFont font;
+        weva::Bitmap bitmap;
+        int empty_rasters = 0;
+    } state[2];
+    weva_font_backend fonts[2]{};
+    const auto cfg = config();
+    weva_document_t docs[2]{};
+    const char* html = "<div id=dirty></div><div id=text>A A</div>"
+                       "<input id=field value='B B'><div id=clip><p>C C</p></div>";
+    const char* css = "body{margin:0}#dirty{width:40px;height:20px;background:red}"
+                      "#clip{height:1px;overflow:hidden}p{margin-top:30px}";
+    for (int i = 0; i < 2; ++i) {
+        fonts[i].user_data = &state[i];
+        fonts[i].rasterize = [](void* data, uint64_t face, uint32_t glyph, double px,
+                               weva_glyph_bitmap* out) -> int32_t {
+            auto& s = *static_cast<FontState*>(data);
+            s.bitmap = {};
+            if (!s.font.rasterize(weva::FaceHandle{face}, glyph, px,
+                                  weva::RenderMode::Alpha8, &s.bitmap)) return 0;
+            if (s.bitmap.width == 0 || s.bitmap.height == 0) ++s.empty_rasters;
+            *out = {s.bitmap.data.data(), s.bitmap.width, s.bitmap.height, nullptr};
+            return 1;
+        };
+        docs[i] = weva_document_create(&cfg);
+        weva_document_set_font_backend(docs[i], &fonts[i], 1);
+        CHECK(weva_document_add_css(docs[i], css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(docs[i], html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(docs[i], 0) == WEVA_OK);
+        CHECK(state[i].empty_rasters > 0);
+    }
+    int viewport_width = 400;
+    for (int step = 0; step < 11; ++step) {
+        for (int i = 0; i < 2; ++i) {
+            const auto doc = docs[i];
+            const auto attr = [&](const char* selector, const char* name, const char* value) {
+                CHECK(weva_element_set_attribute(doc, weva_document_query(doc, selector),
+                                                 name, value) == WEVA_OK);
+            };
+            state[i].empty_rasters = 0;
+            if (step == 0 || step == 10) attr("#dirty", "style", "background:blue");
+            if (step == 1) attr("#dirty", "style", "background:none");
+            if (step == 2) {
+                CHECK(weva_element_set_text(doc, weva_document_query(doc, "#text"), "Z Z") == WEVA_OK);
+            }
+            if (step == 3) attr("#field", "value", "Q Q");
+            if (step == 4) attr("#text", "style", "font-size:22px");
+            if (step == 5) weva_document_set_font_backend(doc, &fonts[i], 1);
+            if (step == 6) { viewport_width = 380; weva_document_set_viewport(doc, viewport_width, 300); }
+            if (step == 7) attr("#clip", "style", "height:90px");
+            if (step == 8) CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+            if (step == 9) weva_document_set_render_backend(doc, nullptr);
+        }
+        // Same final viewport, but a forced complete layout/paint in the control.
+        weva_document_set_viewport(docs[1], viewport_width + 1, 300);
+        weva_document_set_viewport(docs[1], viewport_width, 300);
+        CHECK(weva_document_update(docs[0], 0) == WEVA_OK);
+        CHECK(weva_document_update(docs[1], 0) == WEVA_OK);
+        const Frame live = capture(docs[0]), full = capture(docs[1]);
+        if (live != full) std::printf("  glyph preparation step %d: %s\n", step, live.diff(full).c_str());
+        CHECK(live == full);
+        // Spaces have no slot: visiting unchanged text would rasterize them
+        // again even when the shaper memo and every visible glyph are cached.
+        if (step == 0 || step == 1 || step == 10) CHECK(state[0].empty_rasters == 0);
+        CHECK(state[1].empty_rasters > 0);
+        if (step == 2 || step == 3 || step == 4 || step == 5 || step == 8)
+            CHECK(state[0].empty_rasters > 0);
+    }
+    for (const auto doc : docs) weva_document_destroy(doc);
+}
+
+void test_abi_incremental_flex_intrinsics() {
+    const char* html =
+        "<main><nav><span class=hint><span class=btn>A</span>Load</span>"
+        "<span class=hint><span class=btn id=button>B</span>Back</span></nav>"
+        "<div>Unchanged content</div><div>More surrounding content</div></main>";
+    const char* css =
+        "main{position:relative;width:400px;height:150px}"
+        "nav{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:20px}"
+        ".hint{display:flex;align-items:center;gap:12px}"
+        ".btn{display:flex;width:34px;height:34px;align-items:center;justify-content:center;background:#abc}";
+    check_with_sheet("natural flex width before imposing allocation", html, css, "#button",
+                     "style", "padding-left:11px");
+    check_with_sheet("natural flex width from border", html, css, "#button",
+                     "style", "border:7px solid red");
+    const std::string shrinking = std::string(css) +
+        "nav{width:120px;right:auto}.hint{flex:1;min-width:0}.btn{min-width:0;padding-left:22px}";
+    check_with_sheet("natural flex width after shrinking", html, shrinking.c_str(), "#button",
+                     "style", "padding-left:0");
+
+    // Switching between preserved and collapsed newlines changes intrinsic
+    // contributions. Retained sibling lines must still match a fresh tree.
+    const char* multiline = "<main><div id=text>aa bbbb\ncc</div>"
+                            "<div>unchanged\nsibling</div></main>";
+    for (const char* display : {"flex", "grid"}) {
+        for (const char* before : {"normal", "pre", "pre-wrap", "pre-line"}) {
+            const std::string sheet = std::string("main{display:") + display +
+                ";width:140px;grid-template-columns:max-content max-content;gap:8px}"
+                "main>div{font-size:16px;white-space:" + before + ";background:#abc}";
+            for (const char* after : {"normal", "pre", "pre-wrap", "pre-line"}) {
+                const std::string style = std::string("white-space:") + after;
+                check_with_sheet("forced-break intrinsic width after restyle", multiline,
+                                 sheet.c_str(), "#text", "style", style.c_str());
+            }
+        }
+    }
+}
+
+// Reflow the surrounding flex allocation while a large grid stays clean.
+// Advance far enough to cross animation reversals, then change the grid,
+// viewport, and a width allocation so both retention and materialization run.
+void test_abi_incremental_grid_animation() {
+    const std::string css =
+        "*{box-sizing:border-box}html,body{margin:0;height:100%}"
+        ".app{display:flex;flex-direction:column;height:100vh;padding:6px;gap:7px}"
+        ".live{display:flex;gap:4px}.counter{width:70px;animation:grow .9s linear infinite alternate}"
+        "@keyframes grow{from{font-size:10px}to{font-size:24px}}"
+        ".gridwrap{flex:1;min-width:0;padding:4px;overflow:auto;border-radius:5px;background:#123}"
+        ".grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}"
+        ".cell{display:flex;flex-direction:column;padding:3px;gap:2px;background:#456}"
+        ".label{font-size:11px;text-transform:uppercase}"
+        ".bar{height:6px;overflow:hidden}.fill{height:100%;width:60%;background:#acf}";
+    std::string html = "<div class=app><div class=live><span class=counter>61%</span>"
+                       "<span class=counter>47%</span></div><div class=gridwrap><div class=grid>";
+    for (int i = 0; i < 48; ++i)
+        html += "<div class=cell><span class=label>cell " + std::to_string(i) +
+                "</span><div class=bar><div class=fill></div></div></div>";
+    html += "</div></div></div>";
+    for (int scenario = 0; scenario < 3; ++scenario) {
+        const bool row = scenario == 1;
+        const weva_config cfg = config();
+        const std::string sheet = css + (row ?
+            ".app{flex-direction:row}.live{flex:none;width:80px;animation:wide 1s linear infinite alternate}"
+            "@keyframes wide{from{width:80px}to{width:130px}}" : "") +
+            (scenario == 2 ? ".bar{height:70%}" : ""); // auto-parent height dependency: reflow
+        auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+        for (auto doc : {live, full}) {
+            CHECK(weva_document_add_css(doc, sheet.data(), sheet.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(doc, html.data(), html.size()) == WEVA_OK);
+            CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        }
+        std::vector<weva_element_t> elements(512);
+        const size_t count = weva_document_query_all(live, "*", elements.data(), elements.size());
+        CHECK(count > 0 && count < elements.size());
+        for (int frame = 0; frame < 36; ++frame) {
+            const int width = frame < 18 ? 400 : 460;
+            for (auto doc : {live, full}) {
+                if (frame == 18) weva_document_set_viewport(doc, width, 300);
+                if (frame == 10 || frame == 22)
+                    weva_element_set_attribute(doc, weva_document_query(doc, ".grid"),
+                                               "style", frame == 10 ? "padding:7px" : "padding:0");
+                if (frame == 12 || frame == 24)
+                    CHECK(weva_element_set_scroll(doc, weva_document_query(doc, ".gridwrap"),
+                                                  0, frame == 12 ? 100 : 0) == WEVA_OK);
+                if (frame % 9 == 8)
+                    weva_element_set_attribute(doc, weva_document_query(doc, ".cell:last-child .label"),
+                                               "style", frame % 2 ? "padding-left:3px" : "padding-left:8px");
+            }
+            weva_document_set_viewport(full, width + 1, 300);
+            weva_document_set_viewport(full, width, 300);
+            CHECK(weva_document_update(live, .137) == WEVA_OK);
+            CHECK(weva_document_update(full, .137) == WEVA_OK);
+            const Frame a = capture(live), b = capture(full);
+            if (a != b) std::printf("  animated grid scenario=%d frame=%d: %s\n", scenario, frame, a.diff(b).c_str());
+            CHECK(a == b);
+            for (size_t i = 0; i < count; ++i) {
+                double av[4] = {}, bv[4] = {};
+                CHECK(weva_element_bounds(live, elements[i], &av[0], &av[1], &av[2], &av[3]) ==
+                      weva_element_bounds(full, elements[i], &bv[0], &bv[1], &bv[2], &bv[3]));
+                for (int k = 0; k < 4; ++k) CHECK(av[k] == bv[k]);
+            }
+        }
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+}
+
+// Optional integration gate: the shipped samples, with a whole-layout control
+// whose DOM, animation clocks and glyph history remain identical. A viewport
+// round trip forces recomputation without resetting any of those inputs.
+void test_abi_incremental_corpus() {
+    const char* corpus = std::getenv("WEVA_INCREMENTAL_CORPUS");
+    if (!corpus) return;
+    const auto read = [](const std::filesystem::path& p) {
+        std::ifstream f(p, std::ios::binary);
+        return std::string(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+    };
+    for (const auto& entry : std::filesystem::directory_iterator(corpus)) {
+        if (entry.path().extension() != ".html") continue;
+        const std::string html = read(entry.path());
+        auto css_path = entry.path();
+        css_path.replace_extension(".css");
+        const std::string css = read(css_path);
+        const weva_config cfg = config(1280, 720);
+        weva_document_t live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+        for (weva_document_t doc : {live, full}) {
+            if (!css.empty()) CHECK(weva_document_add_css(doc, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(doc, html.data(), html.size()) == WEVA_OK);
+            CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        }
+        std::vector<weva_element_t> elements(16384);
+        const size_t count = weva_document_query_all(live, "*", elements.data(), elements.size());
+        CHECK(count > 0 && count <= elements.size());
+        if (count == 0 || count > elements.size()) {
+            weva_document_destroy(live); weva_document_destroy(full); continue;
+        }
+        for (int step = 0; step < 9; ++step) {
+            const weva_element_t target = elements[step < 6 ? count - 1 : count / 2];
+            const char* style = step < 3 ? (step % 2 ? "background:#123456" : "background:#123457")
+                                       : (step % 2 ? "padding-left:11px" : "padding-left:12px");
+            for (weva_document_t doc : {live, full})
+                CHECK(weva_element_set_attribute(doc, target, "style", style) == WEVA_OK);
+            weva_document_set_viewport(full, 1281, 720);
+            weva_document_set_viewport(full, 1280, 720);
+            const double dt = step < 6 ? 0 : 1.0 / 60;
+            CHECK(weva_document_update(live, dt) == WEVA_OK);
+            CHECK(weva_document_update(full, dt) == WEVA_OK);
+            const Frame a = capture(live), b = capture(full);
+            if (a != b) std::printf("  corpus %s step %d: %s\n", entry.path().stem().string().c_str(),
+                                    step, a.diff(b).c_str());
+            CHECK(a == b);
+            for (size_t i = 0; i < count; ++i) {
+                double av[4] = {}, bv[4] = {};
+                CHECK(weva_element_bounds(live, elements[i], &av[0], &av[1], &av[2], &av[3]) ==
+                      weva_element_bounds(full, elements[i], &bv[0], &bv[1], &bv[2], &bv[3]));
+                for (int k = 0; k < 4; ++k) {
+                    if (av[k] != bv[k]) std::printf("  corpus %s step %d element %zu axis %d: %.17g vs %.17g\n",
+                        entry.path().stem().string().c_str(), step, i, k, av[k], bv[k]);
+                    CHECK(av[k] == bv[k]);
+                }
+            }
+        }
+        std::printf("  incremental corpus: %s\n", entry.path().stem().string().c_str());
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+}
+
+
+void test_abi_incremental_backdrop_lifecycle() {
+    const char* html = "<section id=parent><dialog id=d>Dialog</dialog>"
+        "<div id=p popover>Popover</div><div id=stable>Stable</div></section>";
+    const char* css = "html,body{margin:0}#parent{--shade:rgba(20,40,80,.5)}"
+        "dialog,[popover]{width:120px;height:60px}"
+        "::backdrop{background:var(--shade)}"
+        ".hot::backdrop{background:rgba(80,40,20,.7)}"
+        "#stable{width:100px;height:40px;background:green}";
+    const auto cfg = config();
+    const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (const auto doc : {live, full}) {
+        weva_document_add_css(doc, css, std::strlen(css));
+        weva_document_load_html(doc, html, std::strlen(html));
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    }
+    for (int round = 0; round < 3; ++round) for (int step = 0; step < 12; ++step) {
+        for (const auto doc : {live, full}) {
+            const auto d = weva_document_query(doc, "#d"), p = weva_document_query(doc, "#p");
+            switch (step) {
+                case 0: weva_element_show_dialog(doc, d, 1); break;
+                case 1: weva_element_show_popover(doc, p); break;
+                case 2: weva_element_set_attribute(doc, d, "class", "hot"); break;
+                case 3: weva_element_show_dialog(doc, d, 0); break;
+                case 4: weva_element_hide_popover(doc, p); break;
+                case 5:
+                    // Neither backdrop is generated now. Reopening must
+                    // consume changes to both own and inherited declarations.
+                    weva_element_set_attribute(doc, d, "class", "");
+                    weva_element_set_attribute(doc, p, "class", "hot");
+                    weva_element_set_attribute(doc, weva_document_query(doc, "#parent"),
+                        "style", round % 2 ? "--shade:rgba(60,20,80,.3)" : "--shade:rgba(20,80,60,.8)");
+                    break;
+                case 6: weva_element_show_dialog(doc, d, 1); weva_element_show_popover(doc, p); break;
+                case 7: weva_element_set_attribute(doc, p, "class", ""); break;
+                case 8: weva_element_close_dialog(doc, d); weva_element_hide_popover(doc, p); break;
+                case 9: weva_element_show_popover(doc, p); weva_element_show_dialog(doc, d, 1); break;
+                case 10: weva_element_remove(doc, d); weva_element_remove(doc, p); break;
+                case 11: weva_document_load_html(doc, html, std::strlen(html)); break;
+            }
+        }
+        weva_document_set_viewport(full, 401, 300);
+        weva_document_set_viewport(full, 400, 300);
+        CHECK(weva_document_update(live, 0) == WEVA_OK);
+        CHECK(weva_document_update(full, 0) == WEVA_OK);
+        const auto a = capture(live), b = capture(full);
+        if (a != b) std::printf("  backdrop lifecycle %d/%d: %s\n", round, step, a.diff(b).c_str());
+        CHECK(a == b);
+    }
+    weva_document_destroy(live);
+    weva_document_destroy(full);
+}
+
+void test_abi_incremental_form_state() {
+    // Type is a layout input even when author rules suppress all UA style
+    // differences. Compare the whole frame with a fresh document in both
+    // directions, including type removal and invalid/mixed-case values.
+    const char* baseline_css =
+        "body{margin:0;padding:12px;font:16px sans-serif}"
+        "#field{display:inline-block;box-sizing:border-box;width:90px;height:34px;"
+        "margin:7px 0 2px;padding:3px 4px 5px;border:1px solid #555;"
+        "border-radius:0;background:white;color:black;font:inherit;overflow:hidden}";
+    for (const char* initial : {"text", "checkbox", "radio", "range", "image"}) {
+        const std::string html = std::string("<input id=field type='") + initial +
+            "' value='1'><span>Label</span>";
+        for (const char* type : {"text", "number", "checkbox", "RADIO", "range", "image", "unknown", ""})
+            check_with_sheet("input type baseline", html.c_str(), baseline_css, "#field", "type",
+                             *type ? type : nullptr);
+    }
+    const char* html = "<form id=f><input id=t value=seed placeholder=hint>"
+        "<textarea id=a placeholder=hint>seed</textarea><input id=c type=checkbox checked>"
+        "<select id=s><option value=a selected>A</option><option value=b>B</option></select>"
+        "<input id=r type=range value=2 step=3 max=20></form><div id=stable>stable content</div>";
+    const char* css = "html,body{margin:0}input,textarea,select{display:block;width:150px;height:40px}"
+        "textarea{height:60px;white-space:pre-wrap}input:checked+select{color:red}"
+        "input[value=next]{border:2px solid green}textarea:placeholder-shown{padding:4px}"
+        "#stable{background:linear-gradient(red,blue);width:100px;height:40px}";
+    const weva_config cfg = config();
+    const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (const auto doc : {live, full}) {
+        weva_document_add_css(doc, css, std::strlen(css));
+        weva_document_load_html(doc, html, std::strlen(html)); weva_document_update(doc, 0);
+        weva_document_set_focus(doc, weva_document_query(doc, "#a")); weva_document_update(doc, 0);
+    }
+    for (int round = 0; round < 3; ++round) for (int step = 0; step < 12; ++step) {
+        const std::string long_value = std::string(round ? 512 : 40, 'a') + "\nbeta gamma";
+        for (const auto doc : {live, full}) {
+            const auto a = weva_document_query(doc, "#a"), t = weva_document_query(doc, "#t");
+            switch (step) {
+                case 0: case 1:
+                    weva_element_set_value(doc, t, long_value.c_str());
+                    weva_element_set_value(doc, a, long_value.c_str()); break;
+                case 2: weva_element_set_value(doc, weva_document_query(doc, "#s"), "b"); break;
+                case 3: weva_element_set_value(doc, weva_document_query(doc, "#c"), ""); break;
+                case 4:
+                    weva_element_set_attribute(doc, t, "value", "next");
+                    weva_element_set_text(doc, a, "new default\nsecond line"); break;
+                case 5: case 9: case 11: weva_document_reset_form(doc, weva_document_query(doc, "#f")); break;
+                case 6: weva_element_set_selection(doc, a, 2, 6); break;
+                case 7: weva_element_set_value(doc, t, ""); weva_element_set_value(doc, a, ""); break;
+                case 8: weva_element_set_value(doc, weva_document_query(doc, "#r"), "10"); break;
+                case 10: weva_element_set_attribute(doc, a, "style", round % 2 ? "padding:2px" : "padding:8px"); break;
+            }
+        }
+        weva_document_set_viewport(full, 401, 300); weva_document_set_viewport(full, 400, 300);
+        weva_document_update(live, 0); weva_document_update(full, 0);
+        const Frame a = capture(live), b = capture(full);
+        if (a != b) std::printf("  form state %d/%d: %s\n", round, step, a.diff(b).c_str());
+        CHECK(a == b);
+    }
+    weva_document_destroy(live); weva_document_destroy(full);
+}
+
+void test_abi_incremental_textarea_reflow() {
+    const char* html = "<textarea id=t>alpha beta gamma delta alpha beta gamma</textarea>"
+                       "<div>surrounding content <b>bold</b><span>more</span></div>"
+                       "<div>stable sibling <b>bold</b><span>more</span></div>";
+    const char* css = "textarea { display:block;width:160px;height:60px;box-sizing:border-box; }";
+    const weva_config cfg = config();
+    weva_document_t live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (weva_document_t doc : {live, full}) {
+        weva_document_add_css(doc, css, std::strlen(css));
+        weva_document_load_html(doc, html, std::strlen(html));
+        weva_document_update(doc, 0);
+        weva_document_set_focus(doc, weva_document_query(doc, "#t"));
+        weva_element_set_selection(doc, weva_document_query(doc, "#t"), 7, 17);
+        weva_document_update(doc, 0);
+    }
+    for (int step = 0; step < 20; ++step) {
+        for (weva_document_t doc : {live, full})
+            weva_element_set_attribute(doc, weva_document_query(doc, "#t"), "style",
+                                       step % 2 ? "padding:3px" : "padding:8px");
+        weva_document_set_viewport(full, 401, 300);
+        weva_document_set_viewport(full, 400, 300);
+        weva_document_update(live, 0);
+        weva_document_update(full, 0);
+        const Frame a=capture(live), b=capture(full);
+        if (a != b) std::printf("  textarea reflow %d: %s\n", step, a.diff(b).c_str());
+        CHECK(a == b);
+    }
+    weva_document_destroy(live); weva_document_destroy(full);
+}
+
+void test_abi_incremental_select_color_scopes() {
+    const char* html = "<form id=f><select id=s multiple size=4>"
+        "<option id=a value=a selected>Alpha</option><optgroup label=Group>"
+        "<option id=b value=b>Beta</option><option id=c value=c>Charlie</option>"
+        "</optgroup></select><div id=indicator>Inherited <span>inline <b>text</b></span></div>"
+        "<div id=stable>stable <em>text</em></div><button id=other type=button>Other</button></form>";
+    const char* base = "html,body{margin:0}select{display:block;width:230px;height:90px}"
+        "option{height:25px}#indicator{color:red;border:2px solid currentColor;"
+        "text-decoration:underline;text-shadow:1px 1px currentColor}"
+        "#stable{color:purple}#f.tone #indicator{color:blue}";
+    for (const char* dependency : {"", "option:checked + option{color:green;padding-left:14px}",
+            "form:has(option[value=b]:checked) #indicator{color:green;padding:8px}"}) {
+        const std::string css = std::string(base) + dependency;
+        const auto cfg = config();
+        const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+        for (const auto doc : {live,full}) {
+            weva_document_add_css(doc,css.data(),css.size());
+            weva_document_load_html(doc,html,std::strlen(html));
+            CHECK(weva_document_update(doc,0) == WEVA_OK);
+        }
+        for (int step=0;step<10;++step) {
+            for (const auto doc : {live,full}) {
+                const auto s = weva_document_query(doc,"#s");
+                const auto f = weva_document_query(doc,"#f");
+                switch (step) {
+                    case 0: weva_element_set_value(doc,s,"b"); break;
+                    case 1: weva_element_set_value(doc,s,"c"); break;
+                    case 2: weva_element_set_attribute(doc,f,"class","tone"); break;
+                    case 3: weva_element_set_value(doc,s,"a,b,c"); break;
+                    case 4:
+                        // Overlapping ancestor/descendant scopes, in reverse
+                        // order, must see final inherited and sibling inputs.
+                        weva_element_set_attribute(doc,weva_document_query(doc,"#indicator span"),"style","font-weight:bold");
+                        weva_element_set_attribute(doc,f,"class","");
+                        weva_element_set_value(doc,s,""); break;
+                    case 5: weva_document_reset_form(doc,f); break;
+                    case 6:
+                        weva_document_set_focus(doc,s);
+                        weva_document_try_text_input(doc,"b"); break;
+                    case 7: weva_document_key(doc,WEVA_KEY_DOWN,WEVA_MOD_CTRL,1); break;
+                    case 8:
+                        // Input queues cannot retain an option removed before
+                        // the frame that would consume its state version.
+                        weva_element_set_value(doc,s,"b");
+                        weva_element_remove(doc,weva_document_query(doc,"#b")); break;
+                    case 9:
+                        weva_document_load_html(doc,html,std::strlen(html));
+                        weva_document_set_focus(doc,weva_document_query(doc,"#s")); break;
+                }
+            }
+            weva_document_set_viewport(full,401,300); weva_document_set_viewport(full,400,300);
+            CHECK(weva_document_update(live,0) == WEVA_OK); CHECK(weva_document_update(full,0) == WEVA_OK);
+            const auto a=capture(live), b=capture(full);
+            if (a != b) std::printf("  select color scope %s / %d: %s\n",dependency,step,a.diff(b).c_str());
+            CHECK(a == b);
+        }
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+}
+
+void test_abi_incremental_select_autoscroll() {
+    for(bool nested : {false,true}) {
+        AutoScrollDoc live,full;
+        for(auto* d : {&live,&full}) {
+            if(nested) {weva_element_set_scroll(d->doc,d->at("#outer"),0,30);d->update();}
+            d->start();
+        }
+        for(int step=0;step<24;++step) {
+            if(step==6) for(auto* d : {&live,&full})
+                weva_element_set_attribute(d->doc,d->at("#outer"),"style","top:45px;width:230px");
+            if(step==8) for(auto* d : {&live,&full})
+                weva_element_set_attribute(d->doc,d->at("#s"),"style","height:80px");
+            if(step==12) {
+                for(auto* d : {&live,&full}) {
+                    d->row(18);
+                    const auto b=d->bounds("#s"); d->pointer(b.x+b.w/2,b.y-25);
+                }
+            }
+            if(step==20) for(auto* d : {&live,&full}) weva_document_clear_pointer(d->doc);
+            weva_document_set_viewport(full.doc,641,480);weva_document_set_viewport(full.doc,640,480);
+            live.update(0.05);full.update(0.05);
+            CHECK(live.scroll()==full.scroll()); CHECK(live.selected()==full.selected());
+            const auto a=capture(live.doc),b=capture(full.doc);
+            if(a!=b) std::printf("  autoscroll nested %d / %d: %s\n",nested,step,a.diff(b).c_str());
+            CHECK(a==b);
+        }
+    }
+}
+
+void test_abi_incremental_text_autoscroll() {
+    for(const char* kind : {"text","password","textarea"})for(bool nested : {false,true}){
+        TextScrollDoc live(kind,nested),full(kind,nested);
+        for(auto* d : {&live,&full}){
+            if(nested){weva_element_set_scroll(d->doc,d->at("#outer"),0,20);d->update();}
+            d->start(std::strcmp(kind,"textarea")==0?2:0);
+        }
+        for(int step=0;step<36;++step){
+            for(auto* d : {&live,&full}){
+                if(step==4)weva_element_set_attribute(d->doc,d->at("#outer"),"style","top:60px;width:240px");
+                if(step==6)weva_element_set_attribute(d->doc,d->at("#f"),"style","width:140px;padding:3px;font-size:15px");
+                if(step==18){const auto b=d->bounds();d->pointer(b.x-35,b.y-35);}
+                if(step==30)weva_document_clear_pointer(d->doc);
+            }
+            weva_document_set_viewport(full.doc,641,480);weva_document_set_viewport(full.doc,640,480);
+            live.update(0.05);full.update(0.05);
+            CHECK(live.selection()==full.selection());CHECK(live.scroll()==full.scroll());
+            const auto a=capture(live.doc),b=capture(full.doc);
+            if(a!=b)std::printf("  text autoscroll %s nested %d / %d: %s\n",kind,nested,step,a.diff(b).c_str());
+            CHECK(a==b);
+        }
+    }
+}
+
+void test_abi_incremental_direct_text() {
+    // Text can change line structure, intrinsic sizing, :empty and selectors
+    // outside its owner. Compare every step with a forced full layout, keeping
+    // the same glyph history. Include old text buffers larger than SSO so an
+    // unsafe retained view is visible under ASan.
+    const char* html = "<main id=root><section id=area><div id=preceding>Before</div><div id=label>100</div>"
+        "<span id=next>Following sibling</span><div id=mixed>prefix <b>ICON</b> suffix</div>"
+        "<div id=hidden>hidden label</div><div id=bar></div></section>"
+        "<aside>stable text <b>bold</b><span>more</span></aside>"
+        "<aside>another stable region 0123456789 <b>bold</b><span>more</span></aside></main>";
+    const std::string base = "html,body{margin:0}#area{width:240px}"
+        "#label{width:45px;min-height:18px}#bar{width:80px;height:4px;background:red}"
+        "#hidden{display:none}#mixed{width:150px}#next{color:blue}"
+        "#label:empty{background:green}"
+        "#mixed::before{content:'*'}";
+    for (const char* layout : {"", "#area{display:flex;flex-wrap:wrap;gap:4px}",
+            "#area{display:grid;grid-template-columns:auto 1fr}",
+            "#area{display:inline-block;width:auto}#label{width:auto}",
+            "#area{display:table}#label,#mixed{display:table-cell}",
+            "#label{display:contents}", "#root:has(#label:empty) aside{color:purple}",
+            "#area>div:nth-child(2 of :not(:empty)){color:purple}",
+            "#area>div:nth-last-child(4 of :not(:empty)){color:green}"}) {
+        // Filtered-rank cases must stand alone: an unrelated '+' rule would
+        // already disable the match cache and mask their own classification.
+        const std::string css = base + layout + (std::strstr(layout,"nth-") ? "" :
+            "#label:empty + #next{font-size:22px}");
+        const auto cfg = config();
+        const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+        for (const auto doc : {live,full}) {
+            weva_document_add_css(doc,css.data(),css.size());
+            weva_document_load_html(doc,html,std::strlen(html));
+            CHECK(weva_document_update(doc,0) == WEVA_OK);
+        }
+        for (int step=0;step<15;++step) {
+            size_t old_count = 0;
+            const auto* old_versions = weva_document_draw_versions(live,&old_count);
+            const std::vector<uint64_t> before(old_versions,old_versions+old_count);
+            for (const auto doc : {live,full}) {
+                const auto label = weva_document_query(doc,"#label");
+                switch (step) {
+                    case 0: weva_element_set_text(doc,label,"99"); break;
+                    case 1: weva_element_set_text(doc,label,""); break;
+                    case 2: weva_element_set_text(doc,label,"a long changing label that wraps onto several lines"); break;
+                    case 3: weva_element_set_text(doc,label,"8"); break;
+                    case 4:
+                        weva_element_set_text(doc,label,"intermediate");
+                        weva_element_set_text(doc,label,"7");
+                        weva_element_set_style(doc,weva_document_query(doc,"#bar"),"width","37px"); break;
+                    case 5:
+                        weva_element_set_text(doc,weva_document_query(doc,"#mixed"),"replacement beside the preserved icon");
+                        weva_element_set_attribute(doc,weva_document_query(doc,"#area"),"style","font-size:19px"); break;
+                    case 6: weva_element_set_text(doc,weva_document_query(doc,"#hidden"),"new hidden text"); break;
+                    case 7: weva_element_set_style(doc,weva_document_query(doc,"#hidden"),"display","block"); break;
+                    case 8: weva_element_set_text(doc,weva_document_query(doc,"#mixed"),""); break;
+                    case 9:
+                        weva_element_set_text(doc,label,"queued then removed");
+                        weva_element_remove(doc,label); break;
+                    case 10:
+                        weva_element_set_text(doc,weva_document_query(doc,"#mixed"),"queued then replaced");
+                        weva_element_set_html(doc,weva_document_query(doc,"#area"),"<div id=label>new element</div>",
+                                              std::strlen("<div id=label>new element</div>")); break;
+                    case 11:
+                        weva_element_set_text(doc,label,"queued before reload");
+                        weva_document_load_html(doc,html,std::strlen(html)); break;
+                    case 12:
+                        weva_element_set_text(doc,label,"queued before viewport change");
+                        weva_document_set_viewport(doc,420,320); break;
+                    case 13: weva_element_set_text(doc,label,"100"); break;
+                    case 14: weva_element_set_text(doc,label,"100"); break;
+                }
+            }
+            const int width = step >= 12 ? 420 : 400, height = step >= 12 ? 320 : 300;
+            weva_document_set_viewport(full,width+1,height); weva_document_set_viewport(full,width,height);
+            CHECK(weva_document_update(live,0) == WEVA_OK); CHECK(weva_document_update(full,0) == WEVA_OK);
+            const auto a=capture(live), b=capture(full);
+            if (a != b) std::printf("  direct text %s / %d: %s\n",layout,step,a.diff(b).c_str());
+            CHECK(a == b);
+            if (step == 0 && !*layout) {
+                size_t count = 0, reused = 0;
+                const auto* versions = weva_document_draw_versions(live,&count);
+                for (size_t i=0;i<count;++i)
+                    if (std::find(before.begin(),before.end(),versions[i]) != before.end()) ++reused;
+                CHECK(reused > 0 && reused < count);
+            }
+        }
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+}
+
+
+void test_abi_incremental_bindings() {
+    const char* html = "<main id=root><section id=area><div id=before>before</div>"
+        "<div id=label>{{ Label }}</div><span id=after>after</span>"
+        "<div id=mixed>prefix <b>{{ Bold }}</b> {{ Suffix }}</div>"
+        "<div id=hidden>{{ Hidden }}</div><div id=bar style='width:{{ Width }}px'></div>"
+        "<button id=button disabled='{{ Disabled }}' data-class-hot='Hot'>Use</button></section>"
+        "<div id=list><template data-each='Items as item' data-key='Id'>"
+        "<div class=row><span>{{ item.Name }}</span><input value='{{ item.Name }}'></div>"
+        "</template></div><aside>unchanged region <b>bold</b> more unchanged text</aside></main>";
+    const std::string base = "html,body{margin:0}#area{width:240px}#label{width:45px;min-height:18px}"
+        "#hidden{display:none}#mixed{width:150px}#bar{height:4px;background:red}"
+        "#label:empty{background:green}button:disabled{color:gray}.hot{background:orange}";
+    for (const char* layout : {"", "#area{display:flex;flex-wrap:wrap;gap:4px}",
+            "#area{display:grid;grid-template-columns:auto 1fr}",
+            "#area{display:inline-block;width:auto}#label{width:auto}",
+            "#label{display:contents}", "#root:has(#label:empty) aside{color:purple}",
+            "#area>div:nth-last-child(3 of :not(:empty)){color:green}",
+            "#area>div:nth-last-child(3 of [style*='37']){color:purple}"}) {
+        const std::string css = base + layout;
+        const auto cfg = config();
+        const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+        IncrementalBindingData data;
+        data.values = {{"Label","100"},{"Bold","ICON"},{"Suffix","suffix"},{"Hidden","hidden"},
+            {"Width","80"},{"Disabled","false"},{"Hot","false"},
+            {"Items.0.Id","a"},{"Items.0.Name","first"},{"Items.1.Id","b"},{"Items.1.Name","second"}};
+        weva_binding_source source{&data, &IncrementalBindingData::read, &IncrementalBindingData::count};
+        for (const auto doc : {live, full}) {
+            weva_document_add_css(doc, css.data(), css.size());
+            weva_document_load_html(doc, html, std::strlen(html));
+            weva_document_set_binding_source(doc, &source);
+            weva_document_refresh_bindings(doc);
+            CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        }
+        for (int step = 0; step < 19; ++step) {
+            size_t old_count = 0;
+            const auto* old = weva_document_draw_versions(live, &old_count);
+            const std::vector<uint64_t> before(old, old + old_count);
+            switch (step) {
+                case 0: data.values["Label"] = "101"; break;
+                case 1: data.values["Label"] = ""; break;
+                case 2: data.values["Label"] = std::string(140, 'w'); break;
+                case 3: data.values["Label"] = "8"; data.values["Width"] = "37"; break;
+                case 4: data.values["Bold"] = "new icon"; data.values["Suffix"] = "new suffix"; break;
+                case 5: data.values["Disabled"] = "true"; data.values["Hot"] = "true"; break;
+                case 6: data.values["Hidden"] = "new hidden text"; break;
+                case 7: data.values["Items.0.Name"] = "renamed row"; break;
+                case 8: data.rows = 0; break;
+                case 9: data.rows = 2; break;
+                case 10: std::swap(data.values["Items.0.Id"], data.values["Items.1.Id"]); break;
+                case 11: data.values["Label"] = "queued then removed"; break;
+                case 12: data.values["Width"] = "38"; break;
+                case 13: data.values["Bold"] = "queued before reload"; break;
+                case 14: data.values["Width"] = "39"; break;
+                case 15: data.values["Disabled"] = "false"; data.values["Hot"] = "false"; break;
+                case 16: data.values["Items.0.Id"] = "replacement"; break;
+                case 17: data.values["Label"] = "100"; break;
+                case 18: break;
+            }
+            for (const auto doc : {live, full}) {
+                const int changed = weva_document_refresh_bindings(doc);
+                if (step == 18) CHECK(changed == 0);
+                if (step == 6) weva_element_set_style(doc, weva_document_query(doc,"#hidden"), "display", "block");
+                if (step == 11) weva_element_remove(doc, weva_document_query(doc,"#label"));
+                if (step == 12) {
+                    const char* fragment = "<div id=label>{{ Label }}</div><div id=bar style='width:{{ Width }}px'></div>";
+                    weva_element_set_html(doc, weva_document_query(doc,"#area"), fragment, std::strlen(fragment));
+                    weva_document_refresh_bindings(doc);
+                }
+                if (step == 13) {
+                    weva_document_load_html(doc, html, std::strlen(html));
+                    weva_document_refresh_bindings(doc);
+                }
+                if (step == 14) weva_document_set_viewport(doc, 420, 320);
+                // Two structural refreshes before one update must also forget
+                // removed controls/templates before allocator address reuse.
+                if (step == 16) {
+                    data.rows = 0; weva_document_refresh_bindings(doc);
+                    data.rows = 2; weva_document_refresh_bindings(doc);
+                }
+            }
+            const int width = step >= 14 ? 420 : 400, height = step >= 14 ? 320 : 300;
+            weva_document_set_viewport(full, width+1, height); weva_document_set_viewport(full, width, height);
+            CHECK(weva_document_update(live, 0) == WEVA_OK);
+            CHECK(weva_document_update(full, 0) == WEVA_OK);
+            const auto a = capture(live), b = capture(full);
+            if (a != b) {
+                std::printf("  binding %s / %d: %s\n", layout, step, a.diff(b).c_str());
+                for (const char* sel : {"#area","#list","#list>.row", "#list>.row span"}) {
+                    for (auto doc : {live, full}) { double x,y,w,h; weva_element_bounds(doc,weva_document_query(doc,sel),&x,&y,&w,&h);
+                        std::printf("%s %s %g %g %g %g\n",doc == live ? "live" : "full",sel,x,y,w,h); }
+                }
+            }
+            CHECK(a == b);
+            if (step == 0 && !*layout) {
+                size_t count = 0, reused = 0;
+                const auto* versions = weva_document_draw_versions(live, &count);
+                for (size_t i=0; i<count; ++i)
+                    if (std::find(before.begin(), before.end(), versions[i]) != before.end()) ++reused;
+                CHECK(reused > 0 && reused < count);
+            }
+            if (step == 18) {
+                const auto serial = weva_document_draw_serial(live);
+                CHECK(weva_document_refresh_bindings(live) == 0);
+                CHECK(weva_document_update(live, 0) == WEVA_OK);
+                CHECK(weva_document_draw_serial(live) == serial);
+            }
+        }
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+}
+
+
+void test_abi_incremental_caret_reuse() {
+    const char* html = "<main><input id=a value='a long starting value'><input id=b value=second>"
+        "<textarea id=t>first line\nsecond line\nthird line</textarea></main>"
+        "<aside>unchanged HUD <strong>100 HEALTH</strong></aside>"
+        "<aside>unchanged inventory <b>WOOD 24</b><span>STONE 12</span></aside>";
+    const char* css = "html,body{margin:0}input{display:block;width:100px;height:24px}"
+        "textarea{width:160px;height:40px}aside{background:#345;color:white}"
+        "input:focus{border-color:red}textarea:focus{color:blue}";
+    const auto cfg = config();
+    const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (const auto doc : {live,full}) {
+        weva_document_add_css(doc,css,std::strlen(css));
+        weva_document_load_html(doc,html,std::strlen(html));
+        weva_document_update(doc,0);
+        weva_document_set_focus(doc,weva_document_query(doc,"#a"));
+        weva_document_update(doc,0);
+    }
+    for (int step=0; step<13; ++step) {
+        size_t old_count=0;
+        const auto* old=weva_document_draw_versions(live,&old_count);
+        const std::vector<uint64_t> before(old,old+old_count);
+        for (const auto doc : {live,full}) {
+            switch(step) {
+                case 0: break; // blink without a DOM/style mutation
+                case 1: weva_document_select_all(doc); break;
+                case 2: weva_document_try_text_input(doc,"replacement"); break;
+                case 3: weva_element_set_selection(doc,weva_document_query(doc,"#a"),2,6); break;
+                case 4: weva_document_set_composition(doc,"composing",0,9); break;
+                case 5: weva_document_set_composition(doc,"composing",2,5); break;
+                case 6: weva_document_commit_composition(doc,"done"); break;
+                case 7: weva_document_undo(doc); break;
+                case 8: weva_document_redo(doc); break;
+                case 9: weva_document_set_focus(doc,weva_document_query(doc,"#b")); break;
+                case 10: weva_document_set_focus(doc,weva_document_query(doc,"#t")); break;
+                case 11: weva_document_select_all(doc); break;
+                case 12: weva_document_set_focus(doc,WEVA_ELEMENT_NONE); break;
+            }
+        }
+        weva_document_set_viewport(full,401,300); weva_document_set_viewport(full,400,300);
+        const double dt = step == 0 ? 0.55 : 0;
+        weva_document_update(live,dt); weva_document_update(full,dt);
+        const auto a=capture(live), b=capture(full);
+        if (a != b) std::printf("  caret reuse %d: %s\n",step,a.diff(b).c_str());
+        CHECK(a == b);
+        if (step <= 1 || step == 9) {
+            size_t count=0, reused=0;
+            const auto* versions=weva_document_draw_versions(live,&count);
+            for(size_t i=0;i<count;++i)
+                if(std::find(before.begin(),before.end(),versions[i])!=before.end()) ++reused;
+            CHECK(reused > 0 && reused < count);
+        }
+    }
+    weva_document_destroy(live); weva_document_destroy(full);
 }

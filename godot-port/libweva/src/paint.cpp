@@ -1,4 +1,8 @@
 #include "weva/paint.h"
+#include "weva/grapheme.h"
+#include "weva/form_values.h"
+#include "weva/form_state.h"
+#include "weva/box_builder.h"
 
 #include "weva/background.h"
 #include "weva/border_image.h"
@@ -37,7 +41,15 @@ TextureHandle TextureCache::get(const std::string& key) {
 }
 
 void TextureCache::put(const std::string& key, TextureHandle texture) {
+    const auto old = entries_.find(key);
+    if (old != entries_.end()) by_texture_.erase(old->second.texture.id);
     entries_[key] = Entry{texture, true};
+    by_texture_[texture.id] = &entries_[key];
+}
+
+void TextureCache::retain(TextureHandle texture) {
+    const auto it = by_texture_.find(texture.id);
+    if (it != by_texture_.end()) it->second->used = true;
 }
 
 void TextureCache::begin_pass() {
@@ -58,6 +70,7 @@ void TextureCache::end_pass(RenderInterface* backend) {
             continue;
         }
         if (backend) backend->release_texture(it->second.texture);
+        by_texture_.erase(it->second.texture.id);
         it = entries_.erase(it);
     }
 }
@@ -67,6 +80,7 @@ void TextureCache::release_all(RenderInterface* backend) {
         for (auto& kv : entries_) backend->release_texture(kv.second.texture);
     }
     entries_.clear();
+    by_texture_.clear();
 }
 
 // A clip in force for a subtree: `clip-path`, or the rounded padding box of an
@@ -195,16 +209,43 @@ struct ColorFilter {
 
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property);
 
+bool PaintReplayInputs::operator==(const PaintReplayInputs& o) const {
+    if (x != o.x || y != o.y || opacity != o.opacity || canvas_owner != o.canvas_owner ||
+        transformed != o.transformed || (transformed && xform != o.xform) ||
+        scissor.has_value() != o.scissor.has_value()) return false;
+    if (scissor && (scissor->x != o.scissor->x || scissor->y != o.scissor->y ||
+                    scissor->width != o.scissor->width || scissor->height != o.scissor->height)) return false;
+    const ClipNode* a = clip.get();
+    const ClipNode* b = o.clip.get();
+    while (a && b) {
+        if (a == b) break;
+        if (a->polygon.size() != b->polygon.size()) return false;
+        for (size_t i = 0; i < a->polygon.size(); ++i)
+            if (a->polygon[i].x != b->polygon[i].x || a->polygon[i].y != b->polygon[i].y) return false;
+        a = a->parent.get();
+        b = b->parent.get();
+    }
+    if (bool(a) != bool(b) || bool(filter) != bool(o.filter)) return false;
+    if (filter && filter != o.filter) {
+        if (filter->alpha != o.filter->alpha) return false;
+        for (int r = 0; r < 3; ++r) {
+            if (filter->add[r] != o.filter->add[r]) return false;
+            for (int c = 0; c < 3; ++c)
+                if (filter->m[r][c] != o.filter->m[r][c]) return false;
+        }
+    }
+    return true;
+}
+
 namespace {
 
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
 
-double radius_component(std::string_view raw, const LayoutContext& ctx, double font_size,
+double radius_component(const CssValue* value, const LayoutContext& ctx, double font_size,
                         double basis) {
-    if (raw.empty()) return 0;
-    const ResolvedLength r = resolve_length(raw, ctx, font_size, basis);
+    const ResolvedLength r = resolve_length_value(value, ctx, font_size, basis);
     if (r.kind == LengthKind::Length) return std::max(0.0, r.pixels);
     if (r.kind == LengthKind::Percent) return std::max(0.0, basis * r.percent * 0.01);
     return 0;
@@ -212,27 +253,23 @@ double radius_component(std::string_view raw, const LayoutContext& ctx, double f
 
 // A corner radius may be one value (circular) or two (elliptical), and the two
 // axes resolve against different basis lengths.
-CornerRadius corner(const ComputedStyle* style, std::string_view property,
+CornerRadius corner(const ComputedStyle* style, int property,
                     const LayoutContext& ctx, double font_size, double width, double height) {
-    const std::string_view raw = get(style, property);
-    if (raw.empty()) return {};
-    // Split on the first top-level space; a calc() keeps its own spaces inside
-    // parentheses.
-    size_t split = std::string_view::npos;
-    int depth = 0;
-    for (size_t i = 0; i < raw.size(); ++i) {
-        if (raw[i] == '(') ++depth;
-        else if (raw[i] == ')') --depth;
-        else if (depth == 0 && raw[i] == ' ') { split = i; break; }
+    const std::string_view raw = style->get(property);
+    // Do not populate a parse-cache slot for the overwhelmingly common zero.
+    if (raw.empty() || raw == "0" || raw == "0px") return {};
+    const CssValue* x = style->parsed(property);
+    const CssValue* y = x;
+    if (x && x->kind() == CssValueKind::List) {
+        const auto& list = static_cast<const CssValueList&>(*x);
+        if (list.separator != CssListSeparator::Space || list.items.size() != 2) return {};
+        x = list.items[0].get();
+        y = list.items[1].get();
     }
-    if (split == std::string_view::npos) {
-        const double v = radius_component(raw, ctx, font_size, width);
-        // A single value is circular, but the two axes still resolve against
-        // different bases when it is a percentage.
-        return CornerRadius(v, radius_component(raw, ctx, font_size, height));
-    }
-    return CornerRadius(radius_component(raw.substr(0, split), ctx, font_size, width),
-                        radius_component(raw.substr(split + 1), ctx, font_size, height));
+    // Cache syntax only. The same style can paint boxes of different sizes,
+    // and percentages, font units and calc() must consume their current inputs.
+    return CornerRadius(radius_component(x, ctx, font_size, width),
+                        radius_component(y, ctx, font_size, height));
 }
 
 // `letter-spacing` in px: a length, or a percentage of the font size (the
@@ -293,13 +330,21 @@ struct PaintProfile {
     // guessed wrong twice.
     double shadow_raster = 0, shadow_blur = 0, shadow_punch = 0, shadow_upload = 0;
     int shadow_textures = 0;
+    // Disjoint from backgrounds/shadows/text: filter:blur takes its own
+    // background raster path. Its sub-scopes nest here, never in `rest`.
+    double filters = 0, filter_raster = 0, filter_blur = 0, filter_upload = 0;
+    int filter_textures = 0;
     // draw_mesh, the one path every draw goes through. Reported as "of which"
     // rather than subtracted from `rest`, because it NESTS inside the other
     // buckets -- a text draw is inside `text` AND inside this. Subtracting a
     // nested bucket would make the remainder a lie.
     double submit = 0;
+    // Nested attribution, like submit: plain fills/borders do not run through
+    // the layered-background scope, and color parsing occurs in many buckets.
+    double decoration_build = 0, decoration_draw = 0, colors = 0;
     long submit_calls = 0;
     long submit_clipped = 0;
+    int glyph_subtrees_reused = 0;
     bool on = false;
 };
 // Thread-local: two documents can paint at once, and a diagnostic must not
@@ -324,10 +369,12 @@ struct ProfileScope {
     }
 };
 
-void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, double opacity = 1,
+// Consumes a temporary mesh. Callers must finish any geometry measurements
+// before handing it over; retained draws own their buffers in the backend.
+void draw_mesh(Mesh&& mesh, RenderInterface* backend, TextureHandle tex, double opacity = 1,
                const Transform2D* xform = nullptr, const ClipNode* clip = nullptr,
                const ColorFilter* filter = nullptr) {
-    if (source.empty()) return;
+    if (mesh.empty()) return;
     ProfileScope prof(&g_paint_profile.submit);
     if (g_paint_profile.on) {
         ++g_paint_profile.submit_calls;
@@ -336,19 +383,12 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
     // A colour filter rewrites the vertex colours: the whole story for solid
     // geometry and coverage text; textured draws had their texels filtered
     // where they were generated (see filter_rgba), and keep white vertices.
-    Mesh filtered;
-    const Mesh* in = &source;
-    if (filter) {
-        filtered = source;
-        filter_vertices(&filtered.vertices, *filter);
-        in = &filtered;
-    }
-    const Mesh& input = *in;
+    if (filter) filter_vertices(&mesh.vertices, *filter);
     if (clip) {
         // Into screen space first, then geometric clipping, innermost clip
         // outwards; opacity last. The transformed path below is folded in
         // here so the polygons and the vertices meet in one space.
-        Mesh cur = input;
+        Mesh& cur = mesh;
         if (xform) {
             for (Vertex& v : cur.vertices) {
                 double x = 0, y = 0;
@@ -374,8 +414,19 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
             // ramp a feathered edge carries past its nominal bounds.
             if (!n->intersects_box(x0, y0, x1, y1)) return;
             if (n->contains_box(x0 - 1, y0 - 1, x1 + 1, y1 + 1)) continue;
+            static const bool clip_log = std::getenv("WEVA_CLIP_LOG") != nullptr;
+            const auto clip_start = clip_log ? std::chrono::steady_clock::now() :
+                                              std::chrono::steady_clock::time_point{};
             Mesh tmp;
             clip_triangles_polygon(cur.vertices, cur.indices, n->clip_shape(), &tmp);
+            if (clip_log) {
+                const double ms = std::chrono::duration<double,std::milli>(
+                    std::chrono::steady_clock::now()-clip_start).count();
+                std::fprintf(stderr,"clip: x %.3f y %.3f w %.3f h %.3f; %zu points; %zu -> %zu vertices; %zu triangles; %.4f ms\n",
+                             n->min_x,n->min_y,n->max_x-n->min_x,n->max_y-n->min_y,
+                             n->polygon.size(),cur.vertices.size(),tmp.vertices.size(),
+                             tmp.indices.size()/3,ms);
+            }
             cur = std::move(tmp);
             if (cur.empty()) return;
             bounds();
@@ -386,15 +437,8 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
         backend->render_mesh(std::move(cur.vertices), std::move(cur.indices), {0, 0}, tex);
         return;
     }
-    const Mesh& mesh = input;
-    // Handed over rather than compiled: `cur` and `copy` are this function's
-    // own and are moved, so the backend that keeps the geometry takes it
-    // without a copy. A backend that batches will want geometry to outlive a
-    // frame; that needs the paint cache, keyed on style and layout versions,
-    // which is a later slice.
     if (opacity < 1 || xform) {
-        Mesh copy = mesh;
-        for (Vertex& v : copy.vertices) {
+        for (Vertex& v : mesh.vertices) {
             if (opacity < 1) v.color.a *= static_cast<float>(std::max(0.0, opacity));
             if (xform) {
                 double x = 0, y = 0;
@@ -402,12 +446,8 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
                 v.position = {static_cast<float>(x), static_cast<float>(y)};
             }
         }
-        backend->render_mesh(std::move(copy.vertices), std::move(copy.indices), {0, 0}, tex);
-        return;
     }
-    // The last one copies: the mesh belongs to the caller, and the backend
-    // keeps what it is given.
-    backend->render_mesh(mesh.vertices, mesh.indices, {0, 0}, tex);
+    backend->render_mesh(std::move(mesh.vertices), std::move(mesh.indices), {0, 0}, tex);
 }
 
 // Asks the backend to filter what it has already painted, inside `shape`.
@@ -416,10 +456,9 @@ void draw_mesh(const Mesh& source, RenderInterface* backend, TextureHandle tex, 
 // would, so a backdrop-filtered panel is confined by an ancestor's overflow
 // exactly as its background is. Opacity is deliberately NOT folded in: it
 // scales what the element paints, and the backdrop is not that.
-void filter_backdrop(const Mesh& shape, RenderInterface* backend, const BackdropEffect& effect,
+void filter_backdrop(Mesh&& cur, RenderInterface* backend, const BackdropEffect& effect,
                      const Transform2D* xform = nullptr, const ClipNode* clip = nullptr) {
-    if (shape.empty()) return;
-    Mesh cur = shape;
+    if (cur.empty()) return;
     if (xform) {
         for (Vertex& v : cur.vertices) {
             double x = 0, y = 0;
@@ -848,7 +887,7 @@ bool paint_blurred_box_shadow(const Shadow& sh, const Rect& border_box, const Bo
         v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                        static_cast<float>((v.position.y - area.y) / area.height)};
     }
-    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip, nullptr);
+    draw_mesh(std::move(mesh), paint.backend, tex, opacity, xf, clip, nullptr);
     return true;
 }
 
@@ -917,7 +956,7 @@ void paint_outer_shadows(const std::vector<Shadow>& shadows, const Rect& border_
             }
             {
                 ProfileScope d(&g_paint_profile.shadow_draw);
-                draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
+                draw_mesh(std::move(mesh), backend, {}, opacity, xf, clip, filter);
             }
         }
     }
@@ -967,7 +1006,7 @@ void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding
             tessellate_border(padding_box, radii, std::min(top, padding_box.height),
                               std::min(right, padding_box.width), std::min(bottom, padding_box.height),
                               std::min(left, padding_box.width), colors, &mesh);
-            draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
+            draw_mesh(std::move(mesh), backend, {}, opacity, xf, clip, filter);
         }
     }
 }
@@ -990,6 +1029,50 @@ bool clips_children(const ComputedStyle* style) {
     return false;
 }
 
+
+// Exact scalar encoding for cache inputs: rounding fractional sizes or filter
+// values could alias textures that rasterize to different pixels.
+template<class T> void append_texture_input(std::string& key, T value) {
+    key.append(reinterpret_cast<const char*>(&value), sizeof(value));
+}
+
+void append_image_version(std::string& key, const PaintContext& paint) {
+    append_texture_input(key, paint.images ? paint.images->content_version() : uint64_t{0});
+}
+
+// <img> uses the same rasterizer as layered backgrounds, but its inputs come
+// from src/object-fit/object-position. Own the key; never retain image pointers.
+std::string replaced_image_key(const BackgroundLayer& layer, const Rect& area,
+                              int tex_w, int tex_h, const LayoutContext& ctx,
+                              double font_size, const PaintContext& paint,
+                              const ColorFilter* filter) {
+    std::string key("img|");
+    key.reserve(256 + layer.url.size());
+    append_image_version(key, paint);
+    const auto text = [&](std::string_view value) {
+        append_texture_input(key, value.size());
+        key.append(value);
+    };
+    text(layer.url); text(layer.pos_x); text(layer.pos_y);
+    text(layer.size_x); text(layer.size_y);
+    append_texture_input(key, area.width); append_texture_input(key, area.height);
+    append_texture_input(key, tex_w); append_texture_input(key, tex_h);
+    append_texture_input(key, font_size);
+    append_texture_input(key, ctx.root_font_size_px);
+    append_texture_input(key, ctx.root_line_height_px);
+    append_texture_input(key, ctx.viewport_width_px);
+    append_texture_input(key, ctx.viewport_height_px);
+    append_texture_input(key, ctx.dpi_pixels_per_inch);
+    append_texture_input(key, filter != nullptr);
+    if (filter) {
+        for (int r=0; r<3; ++r) {
+            for (int c=0; c<3; ++c) append_texture_input(key, filter->m[r][c]);
+            append_texture_input(key, filter->add[r]);
+        }
+        append_texture_input(key, filter->alpha);
+    }
+    return key;
+}
 
 // Everything that decides a rasterized layer's pixels, as a string. Cheap
 // beside the rasterization it avoids -- which is a texel per pixel of the box,
@@ -1448,34 +1531,13 @@ bool ci_equal(std::string_view a, std::string_view b) {
 }
 
 std::string input_type(const Element& e) {
-    std::string t(e.get_attribute("type"));
-    for (char& c : t) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return t;
+    return std::string(form_input_type(e));
 }
 
-// HTML §4.10.7: the selected option is the last one with `selected`, else
-// the first option (also looked for inside <optgroup>).
+// Selectedness is shared by painting, selectors and the control API.
 const Element* selected_option(const Element& select) {
-    const Element* first = nullptr;
-    const Element* chosen = nullptr;
-    const auto visit = [&](const Element& o) {
-        if (!first) first = &o;
-        if (o.has_attribute("selected")) chosen = &o;
-    };
-    for (const Ref<Node>& c : select.children()) {
-        if (c->node_type() != NodeType::Element) continue;
-        const auto& ce = static_cast<const Element&>(*c);
-        if (ce.tag_name() == "option") visit(ce);
-        else if (ce.tag_name() == "optgroup") {
-            for (const Ref<Node>& g : ce.children()) {
-                if (g->node_type() == NodeType::Element &&
-                    static_cast<const Element&>(*g).tag_name() == "option") {
-                    visit(static_cast<const Element&>(*g));
-                }
-            }
-        }
-    }
-    return chosen ? chosen : first;
+    for (const auto* option : form_options(select)) if (option->form_selected()) return option;
+    return nullptr;
 }
 
 std::string trimmed_text_of(const Element& e) {
@@ -1491,9 +1553,34 @@ std::string trimmed_text_of(const Element& e) {
 
 struct ControlText {
     std::string text;
+    std::string_view source;
+    std::vector<size_t> source_boundaries;
+    bool password = false;
     bool placeholder = false;   // painted faded
     bool centered = true;       // vertically, in the content box (single-line controls)
+
+    size_t display_offset(size_t offset) const {
+        if (!password) return std::min(offset, text.size());
+        const auto at = std::upper_bound(source_boundaries.begin(), source_boundaries.end(), offset);
+        return static_cast<size_t>(at - source_boundaries.begin() - 1) * 3; // U+2022 is three UTF-8 bytes.
+    }
+    size_t source_offset(size_t offset) const {
+        if (!password) return std::min(offset, text.size());
+        return source_boundaries[std::min(offset / 3, source_boundaries.size() - 1)];
+    }
 };
+
+// Carets and selection edges follow advances, including spaces and glyphs
+// without bitmaps. Ink bounds exclude those advances and can overhang them.
+double text_advance(std::string_view text, double fs, const PaintContext& paint,
+                    const FaceHandle& face, double spacing) {
+    if (!paint.font || text.empty()) return 0;
+    std::vector<ShapedGlyph> glyphs;
+    paint.font->shape(face, text, fs, &glyphs);
+    double advance = 0;
+    for (const ShapedGlyph& glyph : glyphs) advance += glyph.x_advance + spacing;
+    return advance;
+}
 
 // The text a control shows that no box carries. False for controls whose
 // content is in the tree (a <textarea> with text, a <button>) or drawn as a
@@ -1508,7 +1595,8 @@ bool form_control_text(const Box& b, ControlText* out) {
             type == "file" || type == "color" || type == "image") {
             return false;
         }
-        const std::string_view value = e.get_attribute("value");
+        const std::string_view value = e.form_value();
+        out->source = value;
         if (type == "submit" || type == "button" || type == "reset") {
             out->text = !value.empty() ? std::string(value)
                         : type == "submit" ? "Submit" : type == "reset" ? "Reset" : "";
@@ -1516,33 +1604,40 @@ bool form_control_text(const Box& b, ControlText* out) {
         }
         if (!value.empty()) {
             if (type == "password") {
+                out->password = true;
                 out->text.clear();
-                for (size_t i = 0; i < value.size(); ++i) out->text += "\xE2\x80\xA2";
+                out->source_boundaries = {0};
+                Graphemes clusters(value);
+                size_t end = 0;
+                while (clusters.next(&end)) {
+                    out->source_boundaries.push_back(end);
+                    out->text += "\xE2\x80\xA2";
+                }
             } else {
                 out->text = std::string(value);
             }
             return true;
         }
         const std::string_view ph = e.get_attribute("placeholder");
-        if (ph.empty()) return false;
+        if (ph.empty()) return true; // Empty editable fields still paint their caret.
         out->text = std::string(ph);
         out->placeholder = true;
         return true;
     }
     if (tag == "select") {
-        if (e.has_attribute("multiple") || e.has_attribute("size")) return false;
+        if (select_is_listbox(e)) return false;
         const Element* opt = selected_option(e);
         if (!opt) return false;
-        out->text = trimmed_text_of(*opt);
+        out->text = option_label(*opt);
         return !out->text.empty();
     }
     if (tag == "textarea") {
-        if (!trimmed_text_of(e).empty()) return false;
+        out->centered = false;
+        if (!e.form_value().empty()) return false;
         const std::string_view ph = e.get_attribute("placeholder");
         if (ph.empty()) return false;
         out->text = std::string(ph);
         out->placeholder = true;
-        out->centered = false;
         return true;
     }
     return false;
@@ -1552,6 +1647,14 @@ bool is_form_control(const Box& b) {
     if (!b.element || b.kind != BoxKind::Block) return false;
     const std::string_view tag = b.element->tag_name();
     return tag == "input" || tag == "select" || tag == "textarea";
+}
+
+double control_text_offset(const Box& b, bool centered, double content_height, double line_height) {
+    if (!centered) return 0;
+    const double offset = (content_height - line_height) * 0.5;
+    // Short text fields keep their line centered; buttons and selects retain
+    // their non-negative content offset.
+    return b.element && form_is_text_entry(*b.element) ? offset : std::max(0.0, offset);
 }
 
 // ---- text decorations (CSS Text Decoration L4) ---------------------------
@@ -1621,7 +1724,7 @@ void paint_text_decorations(int flags, double x, double baseline, double width, 
         if (sw <= 0) return;
         Mesh m;
         tessellate_rect(Rect(sx, sy, sw, thickness), color, &m, false);
-        draw_mesh(m, paint.backend, {}, opacity, xf, clip, filter);
+        draw_mesh(std::move(m), paint.backend, {}, opacity, xf, clip, filter);
     };
     const auto line = [&](double y) {
         if (deco_style == "double") {
@@ -1679,7 +1782,7 @@ void fill_rounded(const Rect& r, double radius, const LinearColor& color, Render
     const double rr = std::min(radius, std::min(r.width, r.height) * 0.5);
     const CornerRadius cr(rr);
     tessellate_rounded_rect(r, BorderRadii(cr, cr, cr, cr), color, &mesh);
-    draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
+    draw_mesh(std::move(mesh), backend, {}, opacity, xf, clip, filter);
 }
 
 double attr_double(const Element& e, std::string_view name, double fallback) {
@@ -1704,7 +1807,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
     if (tag == "input") {
         const std::string type = input_type(e);
         if (type == "checkbox") {
-            if (!e.has_attribute("checked")) return;
+            if (!e.form_checked()) return;
             // Chrome fills the whole box with the accent colour and puts a
             // white tick on it. An accent-coloured square with nothing in it
             // reads as "some state", not as "checked" -- at 13px there is
@@ -1727,12 +1830,12 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             const LinearColor ink = tick_color_on(accent);
             stroke_segment(a, mid, thickness, ink, &tick);
             stroke_segment(mid, c, thickness, ink, &tick);
-            draw_mesh(tick, paint.backend, {}, state.opacity, xf, state.clip.get(),
+            draw_mesh(std::move(tick), paint.backend, {}, state.opacity, xf, state.clip.get(),
                       state.filter.get());
             return;
         }
         if (type == "radio") {
-            if (!e.has_attribute("checked")) return;
+            if (!e.form_checked()) return;
             const double inset = b.width * 0.25;
             const double d = b.width - 2 * inset;
             fill_rounded(Rect(x + inset, y + inset, d, d), d * 0.5, accent_color_of(b.style),
@@ -1740,10 +1843,8 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             return;
         }
         if (type == "range") {
-            double lo = attr_double(e, "min", 0), hi = attr_double(e, "max", 100);
-            if (hi <= lo) hi = lo + 1;
-            const double value = attr_double(e, "value", (lo + hi) * 0.5);
-            double frac = (value - lo) / (hi - lo);
+            const RangeValue range(e);
+            double frac = range.max > range.min ? (range.value - range.min) / (range.max - range.min) : 0;
             if (!(frac >= 0)) frac = 0;
             if (frac > 1) frac = 1;
             if (cw <= 0) return;
@@ -1773,84 +1874,91 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
     const bool has_text = form_control_text(b, &t);
     if (has_text && paint.font && paint.atlas && cw > 0 && ch > 0) {
         const FaceHandle face = face_for_run(b, paint);
+        FontInterfaceMetrics default_metrics(paint.font, face);
         const FontMetrics* m = control_metrics(ctx, b.style);
-        const double ascent = m ? m->ascent(fs) : fs * 0.8;
-        const double line_h = m ? m->line_height(fs) : fs * kDefaultLineHeightFactor;
-        const double baseline =
-            t.centered ? ct + std::max(0.0, (ch - line_h) * 0.5) + ascent : ct + ascent;
+        if (!m) m = &default_metrics;
+        const double ascent = m->ascent(fs);
+        const double line_h = m->line_height(fs);
+        const double text_top = ct + control_text_offset(b, t.centered, ch, line_h);
+        const double baseline = text_top + ascent;
         LinearColor color = resolve_color(b.style, "color");
         if (t.placeholder) color = LinearColor(color.r * 0.5f, color.g * 0.5f, color.b * 0.5f, color.a * 0.5f);
-        // The overlay is clipped to the padding box, as the runtime's text
-        // overlay is; a long value does not spill past the border.
+        // Clip the overlay to its content box. A transformed input needs
+        // the transformed polygon, including its caret and selection.
+        PaintState text_state = state;
+        if (xf) push_clip(&text_state, {{cl, ct}, {cl + cw, ct}, {cl + cw, ct + ch}, {cl, ct + ch}});
+        const ClipNode* text_clip = text_state.clip.get();
         Recti clip{static_cast<int>(std::floor(cl)), static_cast<int>(std::floor(ct)),
                    static_cast<int>(std::ceil(cl + cw)) - static_cast<int>(std::floor(cl)),
                    static_cast<int>(std::ceil(ct + ch)) - static_cast<int>(std::floor(ct))};
+        if (xf) {
+            clip = {static_cast<int>(std::floor(text_clip->min_x)), static_cast<int>(std::floor(text_clip->min_y)),
+                    static_cast<int>(std::ceil(text_clip->max_x)) - static_cast<int>(std::floor(text_clip->min_x)),
+                    static_cast<int>(std::ceil(text_clip->max_y)) - static_cast<int>(std::floor(text_clip->min_y))};
+        }
         if (state.scissor) clip = intersect(*state.scissor, clip);
         paint.backend->set_scissor(&clip);
         // The selection band, behind the glyphs. An <input> draws its own text,
         // so the range indexes it directly -- there are no runs to map through.
         const double spacing = letter_spacing_of(b.style, ctx, fs);
+        const double text_left = cl - (paint.caret.element == &e && !t.placeholder ? paint.caret.text_scroll_x : 0);
+        const auto advance_to = [&](size_t offset) {
+            return text_advance(std::string_view(t.text).substr(0, t.display_offset(offset)), fs, paint, face, spacing);
+        };
         if (!t.placeholder && paint.caret.element == &e &&
             paint.caret.selection_to > paint.caret.selection_from) {
-            const size_t from = std::min(paint.caret.selection_from, t.text.size());
-            const size_t to = std::min(paint.caret.selection_to, t.text.size());
+            const size_t from = paint.caret.selection_from;
+            const size_t to = paint.caret.selection_to;
             if (to > from) {
-                Mesh before;
-                build_text_geometry(t.text.substr(0, from), 0, 0, fs, color, paint, &before,
-                                    spacing, &face);
-                Mesh through;
-                build_text_geometry(t.text.substr(0, to), 0, 0, fs, color, paint, &through, spacing,
-                                    &face);
-                double start = 0, end = 0;
-                for (const Vertex& v : before.vertices) start = std::max<double>(start, v.position.x);
-                for (const Vertex& v : through.vertices) end = std::max<double>(end, v.position.x);
-                if (from == 0) start = 0;
+                const double start = advance_to(from), end = advance_to(to);
                 if (end > start) {
-                    const double top = t.centered ? ct + std::max(0.0, (ch - line_h) * 0.5) : ct;
                     Mesh band;
-                    tessellate_rect(Rect(cl + start, top, end - start, std::min(ch, line_h)),
+                    tessellate_rect(Rect(text_left + start, text_top, end - start, line_h),
                                     LinearColor::from_srgb(51, 144, 255, 0.45f), &band, false);
-                    draw_mesh(band, paint.backend, {}, state.opacity, xf, state.clip.get(),
+                    draw_mesh(std::move(band), paint.backend, {}, state.opacity, xf, text_clip,
                               state.filter.get());
                 }
             }
         }
         Mesh text;
-        build_text_geometry(t.text, cl, baseline, fs, color, paint, &text, spacing, &face);
-        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
-        if (const int deco = decoration_flags_of(b.style)) {
-            double run_w = 0;
-            for (const Vertex& v : text.vertices) run_w = std::max<double>(run_w, v.position.x - cl);
-            paint_text_decorations(deco, cl, baseline, run_w, ascent, fs, b.style, ctx, color, paint,
-                                   state.opacity, xf, state.clip.get(), state.filter.get());
+        build_text_geometry(t.text, text_left, baseline, fs, color, paint, &text, spacing, &face);
+        const int deco = decoration_flags_of(b.style);
+        double run_w = 0;
+        if (deco) {
+            for (const Vertex& v : text.vertices)
+                run_w = std::max<double>(run_w, v.position.x - text_left);
+        }
+        draw_mesh(std::move(text), paint.backend, atlas_texture, state.opacity, xf, text_clip, state.filter.get());
+        if (!t.placeholder && paint.caret.element == &e &&
+            paint.caret.composition_to > paint.caret.composition_from) {
+            const double from = advance_to(paint.caret.composition_from);
+            const double to = advance_to(paint.caret.composition_to);
+            Mesh underline;
+            tessellate_rect(Rect(text_left + from, text_top + line_h - 1, to - from, 1),
+                            color, &underline, false);
+            draw_mesh(std::move(underline), paint.backend, {}, state.opacity, xf, text_clip, state.filter.get());
+        }
+        if (deco) {
+            paint_text_decorations(deco, text_left, baseline, run_w, ascent, fs, b.style, ctx, color, paint,
+                                   state.opacity, xf, text_clip, state.filter.get());
         }
 
         // The caret, at the character the cursor sits before. Its x is the
         // width of the text up to that point, measured the same way the run
         // was laid out -- anything else and the bar drifts from the glyphs as
         // the value grows.
-        if (paint.caret.visible && paint.caret.element == &e && !t.placeholder) {
-            const size_t at = std::min(static_cast<size_t>(std::max(0, paint.caret.index)),
-                                       t.text.size());
-            const std::string_view prefix(t.text.data(), at);
-            Mesh measure;
-            build_text_geometry(prefix, 0, 0, fs, color, paint, &measure,
-                                letter_spacing_of(b.style, ctx, fs), &face);
-            double advance = 0;
-            for (const Vertex& v : measure.vertices) {
-                advance = std::max<double>(advance, v.position.x);
-            }
+        if (paint.caret.visible && paint.caret.element == &e) {
+            const double advance = t.placeholder ? 0 : advance_to(static_cast<size_t>(std::max(0, paint.caret.index)));
             // An empty prefix measures nothing, which is the left edge.
-            const double caret_x = cl + (at == 0 ? 0.0 : advance);
-            const double top = t.centered ? ct + std::max(0.0, (ch - line_h) * 0.5) : ct;
+            const double caret_x = text_left + advance;
             Mesh bar;
-            tessellate_rect(Rect(caret_x, top, 1.0, std::min(ch, line_h)), color, &bar, false);
-            draw_mesh(bar, paint.backend, {}, state.opacity, xf, state.clip.get(),
+            tessellate_rect(Rect(caret_x, text_top, 1.0, line_h), resolve_color(b.style, "color"), &bar, false);
+            draw_mesh(std::move(bar), paint.backend, {}, state.opacity, xf, text_clip,
                       state.filter.get());
         }
         paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
     }
-    if (tag == "select" && !e.has_attribute("multiple") && !e.has_attribute("size")) {
+    if (tag == "select" && !select_is_listbox(e)) {
         // The mark that says a list drops out of this: a triangle pointing
         // down, as every platform draws it. A grey dash -- which is what the
         // runtime's v1 drew and this inherited -- says nothing at all, and now
@@ -1871,13 +1979,18 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
         arrow.vertices.push_back(Vertex{point(ax + w, ay), ink, {0, 0}});
         arrow.vertices.push_back(Vertex{point(ax + w * 0.5, ay + h), ink, {0, 0}});
         arrow.indices = {0, 1, 2};
-        draw_mesh(arrow, paint.backend, {}, state.opacity, xf, state.clip.get(),
+        draw_mesh(std::move(arrow), paint.backend, {}, state.opacity, xf, state.clip.get(),
                   state.filter.get());
     }
 }
 
 void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
                     const PaintContext& paint) {
+    static const bool disable_reuse = std::getenv("WEVA_DISABLE_GLYPH_REUSE") != nullptr;
+    if (!disable_reuse && paint.reuse && paint.reuse->reuse_glyphs(id)) {
+        if (g_paint_profile.on) ++g_paint_profile.glyph_subtrees_reused;
+        return;
+    }
     const Box& b = tree[id];
     if (b.kind == BoxKind::Text && !b.text.empty() && paint.font && paint.atlas) {
         const FaceHandle face = face_for_run(b, paint);
@@ -1905,6 +2018,20 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
 // popup's glyphs go into the atlas AFTER the tree's draws have referenced it,
 // and the re-pack turns every word on the page into a smear of the wrong
 // texels -- which is exactly what a screenshot with a dropdown open showed.
+struct PopupTextStyle {
+    const ComputedStyle* style;
+    FaceHandle face;
+    double size;
+};
+PopupTextStyle popup_text_style(const Element& row, const Box& select,
+                                double select_size, const LayoutContext& ctx, const PaintContext& paint) {
+    const auto* style = paint.styles ? paint.styles->style_of(row) : select.style;
+    const auto* parent = row.parent() && row.parent()->is_element() && paint.styles
+        ? paint.styles->style_of(static_cast<const Element&>(*row.parent())) : select.style;
+    const int weight = paint.styles ? resolve_font_weight(style) : row.tag_name() == "optgroup" ? 700 : resolve_font_weight(style);
+    const auto face = paint.font ? paint.font->variant(paint.face, weight, resolve_font_italic(style)) : paint.face;
+    return {style, face, paint.styles && style ? font_size_px(style, parent, ctx) : select_size};
+}
 void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
                           const PaintContext& paint) {
     const Element* select = paint.popup.element;
@@ -1914,10 +2041,13 @@ void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
         if (b.element != select || b.kind != BoxKind::Block) continue;
         const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
         const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
-        for (const Element* option : select_options(*select)) {
+        for (const Element* option : select_rows(*select)) {
             std::vector<ShapedGlyph> glyphs;
-            paint.font->shape(paint.face, trimmed_text_of(*option), fs, &glyphs);
-            for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, paint.face, g.glyph, fs);
+            const bool group = option->tag_name() == "optgroup";
+            const auto text = popup_text_style(*option, b, fs, ctx, paint);
+            const auto label = group ? std::string(option->get_attribute("label")) : option_label(*option);
+            paint.font->shape(text.face, label, text.size, &glyphs);
+            for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, text.face, g.glyph, text.size);
         }
         return;
     }
@@ -1945,7 +2075,8 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
                               double font_size, const PaintContext& paint, double opacity = 1,
                               const Transform2D* xf = nullptr, const ClipNode* clip = nullptr,
                               const ColorFilter* filter = nullptr,
-                              const ComputedStyle* style = nullptr) {
+                              const ComputedStyle* style = nullptr,
+                              const BackgroundLayer* replaced = nullptr) {
     if (!has_paintable_layer(layers) || !paint.backend || area.width <= 0 || area.height <= 0) {
         return false;
     }
@@ -1965,9 +2096,14 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     // is looked up rather than redrawn. See TextureCache.
     std::string key;
     TextureHandle tex;
-    if (paint.texture_cache && style) {
-        key = background_key(style, color, area.width, area.height, radii, font_size, 0, filter,
-                             &layers, tex_w, tex_h);
+    if (paint.texture_cache && (style || replaced)) {
+        if (replaced) {
+            key = replaced_image_key(*replaced, area, tex_w, tex_h, ctx, font_size, paint, filter);
+        } else {
+            key = background_key(style, color, area.width, area.height, radii, font_size, 0, filter,
+                                 &layers, tex_w, tex_h);
+            append_image_version(key, paint);
+        }
         tex = paint.texture_cache->get(key);
     }
     if (!tex) {
@@ -1996,7 +2132,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
         v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                        static_cast<float>((v.position.y - area.y) / area.height)};
     }
-    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip, filter);
+    draw_mesh(std::move(mesh), paint.backend, tex, opacity, xf, clip, filter);
     return true;
 }
 
@@ -2081,6 +2217,7 @@ bool paint_border_image(const Box& b, const Rect& border_box, const LayoutContex
     TextureHandle tex;
     if (paint.texture_cache) {
         key = border_image_key(b.style, border_box.width, border_box.height, bi);
+        append_image_version(key, paint);
         tex = paint.texture_cache->get(key);
     }
     if (!tex) {
@@ -2100,7 +2237,7 @@ bool paint_border_image(const Box& b, const Rect& border_box, const LayoutContex
         v.tex_coord = {static_cast<float>((v.position.x - border_box.x) / border_box.width),
                        static_cast<float>((v.position.y - border_box.y) / border_box.height)};
     }
-    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip, filter);
+    draw_mesh(std::move(mesh), paint.backend, tex, opacity, xf, clip, filter);
     return true;
 }
 
@@ -2122,6 +2259,7 @@ std::vector<BackgroundLayer> replaced_layer(const Box& b, const PaintContext& pa
     BackgroundLayer layer;
     layer.is_gradient = false;
     layer.image = image;
+    layer.url.assign(src);
     // An image is drawn once, never tiled: `background-repeat` has no
     // object-fit counterpart and repeating one would be nothing a browser does.
     layer.repeat_x = false;
@@ -2266,7 +2404,7 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
             v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                            static_cast<float>((v.position.y - area.y) / area.height)};
         }
-        draw_mesh(mesh, paint.backend, cached, opacity, xf, clip, nullptr);
+        draw_mesh(std::move(mesh), paint.backend, cached, opacity, xf, clip, nullptr);
         return true;
     }
 
@@ -2320,21 +2458,16 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
         v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                        static_cast<float>((v.position.y - area.y) / area.height)};
     }
-    draw_mesh(mesh, paint.backend, tex, opacity, xf, clip, nullptr);
+    draw_mesh(std::move(mesh), paint.backend, tex, opacity, xf, clip, nullptr);
     return true;
 }
 
 // How wide `text` is when laid out the way `run` was. Used for both ends of a
 // selection band and for where the cursor sits: measuring rather than guessing
 // keeps the band on the glyphs at any letter-spacing.
-double measured_width(std::string_view text, const Box& run, const LinearColor& color,
+double measured_width(std::string_view text, const Box& run, const LinearColor&,
                       const PaintContext& paint, const FaceHandle& face, double spacing) {
-    if (text.empty()) return 0;
-    Mesh measure;
-    build_text_geometry(text, 0, 0, run.font_size, color, paint, &measure, spacing, &face);
-    double advance = 0;
-    for (const Vertex& v : measure.vertices) advance = std::max<double>(advance, v.position.x);
-    return advance;
+    return text_advance(text, run.font_size, paint, face, spacing);
 }
 
 // The band behind the selected part of one run. `from`/`to` are byte offsets
@@ -2343,7 +2476,7 @@ void paint_selection_band(const Box& b, double x, double y, size_t from, size_t 
                           const LinearColor& text_color, const PaintContext& paint,
                           const FaceHandle& face, double spacing, RenderInterface* backend,
                           double opacity, const Transform2D* xf, const ClipNode* clip,
-                          const ColorFilter* filter) {
+                          const ColorFilter* filter, bool underline = false) {
     if (from >= to || to > b.text.size()) return;
     const double start = measured_width(b.text.substr(0, from), b, text_color, paint, face, spacing);
     const double end = measured_width(b.text.substr(0, to), b, text_color, paint, face, spacing);
@@ -2353,9 +2486,10 @@ void paint_selection_band(const Box& b, double x, double y, size_t from, size_t 
     // ask for a colour yet.
     const LinearColor band = LinearColor::from_srgb(51, 144, 255, 0.45f);
     Mesh mesh;
-    tessellate_rect(Rect(x + start, y, end - start, b.height > 0 ? b.height : b.font_size), band,
-                    &mesh, false);
-    draw_mesh(mesh, backend, {}, opacity, xf, clip, filter);
+    const double height = b.height > 0 ? b.height : b.font_size;
+    tessellate_rect(Rect(x + start, underline ? y + height - 1 : y, end - start,
+                        underline ? 1 : height), underline ? text_color : band, &mesh, false);
+    draw_mesh(std::move(mesh), backend, {}, opacity, xf, clip, filter);
 }
 
 // CSS UI L4 3: the outline, a ring OUTSIDE the border box, offset by
@@ -2400,7 +2534,85 @@ void paint_outline(const Box& b, double x, double y, const LayoutContext& ctx,
     const LinearColor colors[4] = {color, color, color, color};
     Mesh mesh;
     tessellate_border(outer, outer_radii, width, width, width, width, colors, &mesh);
-    draw_mesh(mesh, paint.backend, {}, opacity, xf, clip, filter);
+    draw_mesh(std::move(mesh), paint.backend, {}, opacity, xf, clip, filter);
+}
+
+// CSS permits UA-dependent inset/outset shading. Match the softened bevels
+// measured in Chrome 152: change sRGB brightness, preserving hue and alpha,
+// with extra contrast for near-black borders. Do not shade linear RGB directly.
+LinearColor bevel_color(const ComputedStyle* style, std::string_view property, bool dark) {
+    ProfileScope prof(&g_paint_profile.colors);
+    const auto* value=style->parsed(CssPropertyRegistry::instance().id_of(property));
+    if (!value || value->kind()!=CssValueKind::Color) return LinearColor::transparent();
+    const auto& source=static_cast<const CssColor&>(*value);
+    const double luminance=.2126*srgb_byte_to_linear(source.r)+
+                           .7152*srgb_byte_to_linear(source.g)+.0722*srgb_byte_to_linear(source.b);
+    const auto adjust = [](const CssColor& input, bool lighter) {
+        CssColor result=input;
+        const float maximum=std::max({input.r,input.g,input.b})/255.f;
+        if (maximum==0) {
+            result.r=result.g=result.b=lighter ? 84 : 0;
+            return result;
+        }
+        const float factor=(lighter ? std::min(1.f,maximum+.33f) : std::max(0.f,maximum-.33f))/maximum;
+        const auto channel = [&](uint8_t byte) {
+            const float normalized=std::clamp((byte/255.f)*factor,0.f,1.f);
+            // 256 bins, with 1.0 kept in the final bin (Chrome's color quantizer).
+            return static_cast<uint8_t>(normalized*std::nextafter(256.f,0.f));
+        };
+        result.r=channel(input.r); result.g=channel(input.g); result.b=channel(input.b);
+        return result;
+    };
+    CssColor result=source;
+    if (luminance<=.014443845) {
+        result=adjust(source,true);
+        if (!dark) result=adjust(result,true);
+    } else if (dark || luminance<=.83077) {
+        result=adjust(source,!dark);
+    }
+    return LinearColor::from_srgb(result.r,result.g,result.b,result.a);
+}
+
+bool border_keyword(std::string_view value, std::string_view keyword) {
+    if (value.size()!=keyword.size()) return false;
+    for (size_t i=0; i<value.size(); ++i) {
+        char c=value[i];
+        if (c>='A' && c<='Z') c=static_cast<char>(c-'A'+'a');
+        if (c!=keyword[i]) return false;
+    }
+    return true;
+}
+
+// The recursive walk already resolved this box's radii and background color
+// for effects and layered backgrounds. Keep one decoration implementation,
+// accepting those values so an ordinary fill/border does not resolve them again.
+void paint_resolved_decorations(const Box& b, const Rect& border_box, const BorderRadii& radii,
+                                const LinearColor& bg, Mesh* out, bool with_background,
+                                bool skip_border) {
+    ProfileScope prof(&g_paint_profile.decoration_build);
+    if (!b.style || b.width <= 0 || b.height <= 0) return;
+    // Background under the border: transparent borders reveal it.
+    if (with_background && bg.a > 0) tessellate_rounded_rect(border_box, radii, bg, out);
+    // A border image replaces the ordinary border, including transparent texels.
+    if (!skip_border &&
+        (b.border_top > 0 || b.border_right > 0 || b.border_bottom > 0 || b.border_left > 0)) {
+        const auto side = [&](std::string_view property, std::string_view style_property, bool leading) {
+            const std::string_view raw = get(b.style, property);
+            if (raw.empty() || border_keyword(raw,"currentcolor"))
+                property="color";
+            const std::string_view border_style=get(b.style,style_property);
+            const bool inset=border_keyword(border_style,"inset");
+            if (inset || border_keyword(border_style,"outset"))
+                return bevel_color(b.style,property,inset ? leading : !leading);
+            return resolve_color(b.style, property);
+        };
+        const LinearColor colors[4] = {side("border-top-color","border-top-style",true),
+                                       side("border-right-color","border-right-style",false),
+                                       side("border-bottom-color","border-bottom-style",false),
+                                       side("border-left-color","border-left-style",true)};
+        tessellate_border(border_box, radii, b.border_top, b.border_right, b.border_bottom,
+                          b.border_left, colors, out);
+    }
 }
 
 // The element a box belongs to: itself if it has one, otherwise the nearest
@@ -2418,6 +2630,19 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     const Box& b = tree[id];
     const double x = origin_x + b.x;
     const double y = origin_y + b.y;
+    if (paint.reuse) {
+        if (paint.reuse->tracks_inputs(id)) {
+            const PaintReplayInputs inputs{x, y, state.opacity, state.scissor, state.transformed,
+                                            state.xform, state.clip, state.filter, canvas_owner};
+            if (paint.reuse->replay(id, inputs)) return;
+        } else if (paint.reuse->replay(id)) return;
+    }
+    struct Capture {
+        PaintReuse* reuse;
+        BoxId id;
+        Capture(PaintReuse* r, BoxId b) : reuse(r), id(b) { if (reuse) reuse->begin_box(id); }
+        ~Capture() { if (reuse) reuse->end_box(id); }
+    } capture(paint.reuse, id);
 
     // Nothing this box or anything under it can paint reaches the clip it is
     // inside, so the whole subtree is skipped here rather than walked and
@@ -2493,6 +2718,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     const double blur = decorated && b.style ? blur_filter_radius(b.style, ctx, fs) : 0;
     bool blurred = false;
     if (blur > 0 && !hidden && b.width > 0 && b.height > 0 && paint.backend && id != canvas_owner) {
+        ProfileScope prof(&g_paint_profile.filters);
         const std::vector<BackgroundLayer> layers = layers_of(b, paint);
         const LinearColor bg = resolve_color(b.style, "background-color");
         if (bg.a > 0 || has_paintable_layer(layers)) {
@@ -2509,14 +2735,25 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             if (paint.texture_cache && b.style) {
                 key = background_key(b.style, bg, b.width, b.height, radii, fs, blur, nullptr,
                                      &layers, tex_w, tex_h);
+                append_image_version(key, paint);
                 tex = paint.texture_cache->get(key);
             }
             if (!tex) {
+                if (g_paint_profile.on) ++g_paint_profile.filter_textures;
                 std::vector<uint8_t> rgba;
-                rasterize_background_padded(layers, bg, b.width, b.height, tex_w, tex_h, pad, &radii,
-                                            ctx, fs, &rgba);
-                blur_rgba(&rgba, tex_w, tex_h, blur * scale);
-                tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+                {
+                    ProfileScope raster(&g_paint_profile.filter_raster);
+                    rasterize_background_padded(layers, bg, b.width, b.height, tex_w, tex_h, pad, &radii,
+                                                ctx, fs, &rgba);
+                }
+                {
+                    ProfileScope convolution(&g_paint_profile.filter_blur);
+                    blur_rgba(&rgba, tex_w, tex_h, blur * scale);
+                }
+                {
+                    ProfileScope upload(&g_paint_profile.filter_upload);
+                    tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+                }
                 if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
                 else if (paint.owned_textures) paint.owned_textures->push_back(tex);
             }
@@ -2529,7 +2766,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 v.tex_coord = {static_cast<float>((v.position.x - area.x) / area.width),
                                static_cast<float>((v.position.y - area.y) / area.height)};
             }
-            draw_mesh(mesh, paint.backend, tex, state.opacity, xf, state.clip.get(), state.filter.get());
+            draw_mesh(std::move(mesh), paint.backend, tex, state.opacity, xf, state.clip.get(), state.filter.get());
             blurred = true;
         }
     }
@@ -2596,7 +2833,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             Mesh shape;
             tessellate_rounded_rect(border_box, radii, LinearColor::white(), &shape, 8, false);
             for (Vertex& v : shape.vertices) v.color = LinearColor::transparent();
-            filter_backdrop(shape, paint.backend, effect, xf, state.clip.get());
+            filter_backdrop(std::move(shape), paint.backend, effect, xf, state.clip.get());
         }
     }
 
@@ -2636,7 +2873,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             if (content_box.width > 0 && content_box.height > 0) {
                 paint_layered_background(replaced, LinearColor::transparent(), content_box,
                                          BorderRadii::zero(), ctx, fs, paint, state.opacity, xf,
-                                         state.clip.get(), state.filter.get(), nullptr);
+                                         state.clip.get(), state.filter.get(), nullptr, &replaced.front());
             }
         }
     }
@@ -2686,9 +2923,12 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
 
         Mesh mesh;
-        paint_box_decorations(tree, id, ctx, x, y, &mesh, !background_done,
-                              border_image_drawn);
-        draw_mesh(mesh, paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
+        paint_resolved_decorations(b, border_box, radii, bg_color, &mesh, !background_done,
+                                   border_image_drawn);
+        {
+            ProfileScope decoration_draw(&g_paint_profile.decoration_draw);
+            draw_mesh(std::move(mesh), paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
+        }
         // Outside the border box, and taking no layout space -- so it is drawn
         // from this box's own geometry, over its border.
         paint_outline(b, x, y, ctx, radii, paint, state.opacity, xf, state.clip.get(),
@@ -2713,13 +2953,26 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         b.height > 0) {
         paint_form_control(b, ctx, x, y, fs, paint, atlas_texture, state, xf);
     }
+    if (decorated && !hidden && paint.backend && paint.active_option && b.element == paint.active_option &&
+        b.width > 2 && b.height > 2) {
+        // The keyboard row can differ from selectedness under Ctrl+arrows.
+        // Draw inside the row so overflow clipping retains the entire cue.
+        const auto color = resolve_color(b.style, "color");
+        Mesh ring;
+        tessellate_rect(Rect(x + 1, y + 1, b.width - 2, 1), color, &ring, false);
+        tessellate_rect(Rect(x + 1, y + b.height - 2, b.width - 2, 1), color, &ring, false);
+        tessellate_rect(Rect(x + 1, y + 2, 1, b.height - 4), color, &ring, false);
+        tessellate_rect(Rect(x + b.width - 2, y + 2, 1, b.height - 4), color, &ring, false);
+        draw_mesh(std::move(ring), paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
+    }
 
     // The selection band, behind the glyphs of this run. Each run views into
     // the value's own buffer, so the difference of the pointers says which
     // slice of the value it holds, and the part of that slice inside the
     // selected range is the part to paint.
     if (b.kind == BoxKind::Text && !b.text.empty() && !hidden && paint.font && paint.atlas &&
-        paint.caret.selection_to > paint.caret.selection_from && !paint.caret.source.empty()) {
+        (paint.caret.selection_to > paint.caret.selection_from ||
+         paint.caret.composition_to > paint.caret.composition_from) && !paint.caret.source.empty()) {
         const char* base = paint.caret.source.data();
         const char* run = b.text.data();
         if (run >= base && run + b.text.size() <= base + paint.caret.source.size() &&
@@ -2736,6 +2989,13 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                                      b.justify_letter_spacing,
                                  paint.backend, state.opacity, xf, state.clip.get(),
                                  state.filter.get());
+            const size_t composition_from = paint.caret.composition_from > off ? paint.caret.composition_from - off : 0;
+            const size_t composition_to = paint.caret.composition_to > off
+                ? std::min(paint.caret.composition_to - off, b.text.size()) : 0;
+            paint_selection_band(b, x, y, composition_from, composition_to, resolve_color(b.style, "color"), paint,
+                                 face_for_run(b, paint),
+                                 letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing,
+                                 paint.backend, state.opacity, xf, state.clip.get(), state.filter.get(), true);
         }
     }
 
@@ -2760,7 +3020,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 Mesh shadow;
                 build_text_geometry(b.text, x + sh.x, baseline + sh.y, b.font_size, sh.color, paint,
                                     &shadow, spacing, &run_face);
-                draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+                draw_mesh(std::move(shadow), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
                 continue;
             }
             if (paint_blurred_text_shadow(b.text, x, baseline, b.font_size, spacing, run_face, sh,
@@ -2791,7 +3051,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                     Mesh shadow;
                     build_text_geometry(b.text, x + sh.x + i * sigma, baseline + sh.y + j * sigma,
                                         b.font_size, c, paint, &shadow, spacing, &run_face);
-                    draw_mesh(shadow, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+                    draw_mesh(std::move(shadow), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
                 }
             }
         }
@@ -2830,7 +3090,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
         // The handle from the single up-front upload, never a fresh one: see
         // prepare_glyphs.
-        draw_mesh(text, paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+        draw_mesh(std::move(text), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
     }
 
     // The caret, in the run that was found to hold it. Which run, and how far
@@ -2843,19 +3103,12 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         const FaceHandle caret_face = face_for_run(b, paint);
         const double caret_spacing =
             letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;
-        double advance = 0;
-        if (paint.caret.run_offset > 0 && paint.caret.run_offset <= b.text.size()) {
-            Mesh measure;
-            build_text_geometry(b.text.substr(0, paint.caret.run_offset), 0, 0, b.font_size,
-                                caret_color, paint, &measure, caret_spacing, &caret_face);
-            for (const Vertex& v : measure.vertices) {
-                advance = std::max<double>(advance, v.position.x);
-            }
-        }
+        const double advance = text_advance(b.text.substr(0, std::min(paint.caret.run_offset, b.text.size())),
+                                           b.font_size, paint, caret_face, caret_spacing);
         Mesh bar;
         tessellate_rect(Rect(x + advance, y, 1.0, b.height > 0 ? b.height : b.font_size),
                         caret_color, &bar, false);
-        draw_mesh(bar, paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
+        draw_mesh(std::move(bar), paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
     }
 
     // `overflow` other than visible clips the children to the padding box
@@ -2906,8 +3159,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // Shared with HIT TESTING, which has to agree with it: the two had
     // separate implementations and disagreed, so a positioned element drawn on
     // top of a later sibling could not be clicked.
-    std::vector<BoxId> order;
-    paint_order_children(tree, id, &order);
+    const ChildPaintOrder order(tree, id);
     const double child_x = x - b.scroll_x, child_y = y - b.scroll_y;
     for (const BoxId c : order) {
         paint_recursive(tree, c, ctx, child_x, child_y, paint, atlas_texture, canvas_owner, state);
@@ -2980,7 +3232,7 @@ BoxId paint_canvas(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
         color.a > 0) {
         Mesh mesh;
         tessellate_rect(canvas, color, &mesh);
-        draw_mesh(mesh, paint.backend, {});
+        draw_mesh(std::move(mesh), paint.backend, {});
     }
     return owner;
 }
@@ -2988,10 +3240,21 @@ BoxId paint_canvas(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
 } // namespace
 
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property) {
-    const std::string_view raw = get(style, property);
-    if (raw.empty()) return LinearColor::transparent();
-    CssParseError err;
-    CssValuePtr v = parse_css_value(raw, &err);
+    ProfileScope prof(&g_paint_profile.colors);
+    if (!style) return LinearColor::transparent();
+    const int id = CssPropertyRegistry::instance().id_of(property);
+    CssValuePtr custom;
+    const CssValue* v;
+    if (id == kCustomPropertyId) {
+        // Public callers can resolve an unregistered/custom property too;
+        // those have no parsed slot, so retain the on-demand behavior.
+        custom = parse_css_value(style->get(property), nullptr);
+        v = custom.get();
+    } else {
+        // Reuse the style's existing slot memo. Writes/unsets invalidate it,
+        // and inherited reads share the current ancestor's entry.
+        v = style->parsed(id);
+    }
     if (!v || v->kind() != CssValueKind::Color) return LinearColor::transparent();
     const auto& c = static_cast<const CssColor&>(*v);
     return LinearColor::from_srgb(c.r, c.g, c.b, c.a);
@@ -3000,10 +3263,15 @@ LinearColor resolve_color(const ComputedStyle* style, std::string_view property)
 BorderRadii resolve_border_radii(const ComputedStyle* style, double width, double height,
                                  const LayoutContext& ctx, double font_size) {
     if (!style) return BorderRadii::zero();
-    return BorderRadii(corner(style, "border-top-left-radius", ctx, font_size, width, height),
-                       corner(style, "border-top-right-radius", ctx, font_size, width, height),
-                       corner(style, "border-bottom-right-radius", ctx, font_size, width, height),
-                       corner(style, "border-bottom-left-radius", ctx, font_size, width, height));
+    static const auto& registry = CssPropertyRegistry::instance();
+    static const int top_left = registry.id_of("border-top-left-radius");
+    static const int top_right = registry.id_of("border-top-right-radius");
+    static const int bottom_right = registry.id_of("border-bottom-right-radius");
+    static const int bottom_left = registry.id_of("border-bottom-left-radius");
+    return BorderRadii(corner(style, top_left, ctx, font_size, width, height),
+                       corner(style, top_right, ctx, font_size, width, height),
+                       corner(style, bottom_right, ctx, font_size, width, height),
+                       corner(style, bottom_left, ctx, font_size, width, height));
 }
 
 void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
@@ -3018,32 +3286,8 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
     const Rect border_box(origin_x, origin_y, b.width, b.height);
     const BorderRadii radii = resolve_border_radii(b.style, b.width, b.height, ctx, fs);
 
-    // The background paints under the border, out to the border box: a
-    // semi-transparent border shows the background through it.
     const LinearColor bg = resolve_color(b.style, "background-color");
-    if (with_background && bg.a > 0) tessellate_rounded_rect(border_box, radii, bg, out);
-
-    // A border image has already been drawn over this border and replaces it
-    // (CSS Backgrounds L3 s6.1). Painting both would show the border's colour
-    // through every transparent texel of the sprite -- and the idiom is
-    // `border: 16px solid transparent`, so it would usually be invisible and
-    // occasionally not.
-    if (!skip_border &&
-        (b.border_top > 0 || b.border_right > 0 || b.border_bottom > 0 || b.border_left > 0)) {
-        // An unset border-color is `currentColor`, which is what makes a
-        // border follow the text colour by default.
-        const auto side = [&](std::string_view property) {
-            const std::string_view raw = get(b.style, property);
-            if (raw.empty() || raw == "currentcolor" || raw == "currentColor") {
-                return resolve_color(b.style, "color");
-            }
-            return resolve_color(b.style, property);
-        };
-        const LinearColor colors[4] = {side("border-top-color"), side("border-right-color"),
-                                       side("border-bottom-color"), side("border-left-color")};
-        tessellate_border(border_box, radii, b.border_top, b.border_right, b.border_bottom,
-                          b.border_left, colors, out);
-    }
+    paint_resolved_decorations(b, border_box, radii, bg, out, with_background, skip_border);
 }
 
 void build_text_geometry(std::string_view text, double x, double baseline_y, double font_size,
@@ -3056,48 +3300,63 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
     paint.font->shape(face, text, font_size, &glyphs);
 
     double pen = x;
-    for (const ShapedGlyph& g : glyphs) {
-        const GlyphSlot* slot = paint.atlas->get(paint.font, face, g.glyph, font_size);
-        // A glyph with no bitmap — a space, or one the face does not have —
-        // still advances the pen. Skipping the advance would close the gaps
-        // between words.
-        if (slot) {
-            // SNAPPED to whole pixels. The atlas holds one bitmap per glyph,
-            // rasterised on the pixel grid, and the quad spans exactly its
-            // texels — so if the quad starts at a fraction, every texel column
-            // straddles two pixels. A backend sampling the atlas with nearest
-            // filtering (which is what keeps text crisp, and what both of ours
-            // do) then drops some columns and doubles others: stems come out
-            // 1px here and 2px there inside one word, and diagonals break up.
-            //
-            // Placing it at a fraction would only be right with a bitmap per
-            // subpixel phase, which is what a browser rasterises and this atlas
-            // does not. The pen keeps its full precision, so spacing is still
-            // accumulated exactly; only the bitmap is snapped.
-            const double gx = std::round(pen + g.x_offset + slot->bearing_x);
-            // bearing_y measures UP from the baseline, so the quad's top edge
-            // is above it.
-            const double gy = std::round(baseline_y - g.y_offset - slot->bearing_y);
-            const uint32_t base = static_cast<uint32_t>(out->vertices.size());
-            // A colour glyph carries its own colours in the atlas; only the
-            // text's alpha applies to it (CSS Fonts 4 §5.2 — `color` does not
-            // tint a colour font's glyphs).
-            const LinearColor glyph_color =
-                slot->is_color ? LinearColor(1.f, 1.f, 1.f, color.a) : color;
-            const auto v = [&](double px, double py, float u, float w) {
-                Vertex vt;
-                vt.position = {static_cast<float>(px), static_cast<float>(py)};
-                vt.color = glyph_color;
-                vt.tex_coord = {u, w};
-                return vt;
-            };
-            out->vertices.push_back(v(gx, gy, slot->u0, slot->v0));
-            out->vertices.push_back(v(gx + slot->width, gy, slot->u1, slot->v0));
-            out->vertices.push_back(v(gx + slot->width, gy + slot->height, slot->u1, slot->v1));
-            out->vertices.push_back(v(gx, gy + slot->height, slot->u0, slot->v1));
-            for (uint32_t i : {0u, 1u, 2u, 0u, 2u, 3u}) out->indices.push_back(base + i);
+    // Atlas entries live in stable map nodes; get() never erases them. A
+    // bounded stack batch resolves each slot once, then reserves exactly the
+    // geometry that has ink. Long whitespace runs do not reserve empty quads.
+    constexpr size_t batch_size = 64;
+    std::array<const GlyphSlot*, batch_size> slots;
+    for (size_t start = 0; start < glyphs.size(); start += batch_size) {
+        const size_t count = std::min(batch_size, glyphs.size() - start);
+        size_t visible = 0;
+        for (size_t i = 0; i < count; ++i) {
+            slots[i] = paint.atlas->get(paint.font, face, glyphs[start + i].glyph, font_size);
+            if (slots[i]) ++visible;
         }
-        pen += g.x_advance + letter_spacing;
+        out->reserve_append(visible * 4, visible * 6);
+        for (size_t index = 0; index < count; ++index) {
+            const ShapedGlyph& g = glyphs[start + index];
+            const GlyphSlot* slot = slots[index];
+            // A glyph with no bitmap — a space, or one the face does not have —
+            // still advances the pen. Skipping the advance would close the gaps
+            // between words.
+            if (slot) {
+                // SNAPPED to whole pixels. The atlas holds one bitmap per glyph,
+                // rasterised on the pixel grid, and the quad spans exactly its
+                // texels — so if the quad starts at a fraction, every texel column
+                // straddles two pixels. A backend sampling the atlas with nearest
+                // filtering (which is what keeps text crisp, and what both of ours
+                // do) then drops some columns and doubles others: stems come out
+                // 1px here and 2px there inside one word, and diagonals break up.
+                //
+                // Placing it at a fraction would only be right with a bitmap per
+                // subpixel phase, which is what a browser rasterises and this atlas
+                // does not. The pen keeps its full precision, so spacing is still
+                // accumulated exactly; only the bitmap is snapped.
+                const double gx = std::round(pen + g.x_offset + slot->bearing_x);
+                // bearing_y measures UP from the baseline, so the quad's top edge
+                // is above it.
+                const double gy = std::round(baseline_y - g.y_offset - slot->bearing_y);
+                const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+                // A colour glyph carries its own colours in the atlas; only the
+                // text's alpha applies to it (CSS Fonts 4 §5.2 — `color` does not
+                // tint a colour font's glyphs).
+                const LinearColor glyph_color =
+                    slot->is_color ? LinearColor(1.f, 1.f, 1.f, color.a) : color;
+                const auto v = [&](double px, double py, float u, float w) {
+                    Vertex vt;
+                    vt.position = {static_cast<float>(px), static_cast<float>(py)};
+                    vt.color = glyph_color;
+                    vt.tex_coord = {u, w};
+                    return vt;
+                };
+                out->vertices.push_back(v(gx, gy, slot->u0, slot->v0));
+                out->vertices.push_back(v(gx + slot->width, gy, slot->u1, slot->v0));
+                out->vertices.push_back(v(gx + slot->width, gy + slot->height, slot->u1, slot->v1));
+                out->vertices.push_back(v(gx, gy + slot->height, slot->u0, slot->v1));
+                for (uint32_t i : {0u, 1u, 2u, 0u, 2u, 3u}) out->indices.push_back(base + i);
+            }
+            pen += g.x_advance + letter_spacing;
+        }
     }
 }
 
@@ -3117,29 +3376,113 @@ namespace {
 size_t offset_nearest(std::string_view text, double dx, double font_size, double spacing,
                       const FaceHandle& face, const PaintContext& paint) {
     if (dx <= 0 || text.empty()) return 0;
-    const LinearColor ignored;
-    double previous = 0;
-    size_t i = 0;
-    while (i < text.size()) {
-        // One codepoint at a time: a cursor between the bytes of one is not a
-        // position at all.
-        size_t next = i + 1;
-        while (next < text.size() && (static_cast<unsigned char>(text[next]) & 0xC0) == 0x80) {
-            ++next;
-        }
-        Mesh measure;
-        build_text_geometry(text.substr(0, next), 0, 0, font_size, ignored, paint, &measure,
-                            spacing, &face);
-        double width = 0;
-        for (const Vertex& v : measure.vertices) width = std::max<double>(width, v.position.x);
-        if (dx < width) return dx - previous < width - dx ? i : next;
-        previous = width;
-        i = next;
+    std::vector<size_t> boundaries{0};
+    Graphemes clusters(text, GraphemeProfile::BrowserCaret);
+    size_t end = 0;
+    while (clusters.next(&end)) boundaries.push_back(end);
+    const auto width = [&](size_t index) {
+        return text_advance(text.substr(0, boundaries[index]), font_size, paint, face, spacing);
+    };
+    size_t low = 0, high = boundaries.size() - 1;
+    if (dx >= width(high)) return text.size();
+    // LTR text advances are ordered. Binary search avoids shaping every
+    // prefix of a long value while dragging its selection.
+    while (high - low > 1) {
+        const size_t mid = low + (high - low) / 2;
+        if (width(mid) <= dx) low = mid;
+        else high = mid;
     }
-    return text.size();
+    return dx - width(low) < width(high) - dx ? boundaries[low] : boundaries[high];
 }
 
 }   // namespace
+
+double input_text_scroll(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                         const PaintContext& paint, bool reveal_caret, double* out_maximum) {
+    if (out_maximum) *out_maximum = 0;
+    if (!tree.valid(box)) return 0;
+    const Box& b = tree[box];
+    if (!b.element || b.element != paint.caret.element || b.element->tag_name() != "input") return 0;
+    ControlText text;
+    if (!form_control_text(b, &text) || text.placeholder) return 0;
+    const double width = b.width - b.border_left - b.border_right - b.padding_left - b.padding_right;
+    if (width <= 1) return 0;
+    const auto* parent_style = b.parent == kNoBox ? nullptr : tree[b.parent].style;
+    const double fs = font_size_px(b.style, parent_style, ctx);
+    const auto face = face_for_run(b, paint);
+    const double spacing = letter_spacing_of(b.style, ctx, fs);
+    const double total = text_advance(text.text, fs, paint, face, spacing);
+    const double maximum = std::max(0.0, total - width + 1);
+    if (out_maximum) *out_maximum = maximum;
+    double scroll = std::clamp(paint.caret.text_scroll_x, 0.0, maximum);
+    if (!reveal_caret) return scroll;
+    const size_t offset = text.display_offset(static_cast<size_t>(std::max(0, paint.caret.index)));
+    const double caret = text_advance(std::string_view(text.text).substr(0, offset), fs, paint, face, spacing);
+    if (caret < scroll) scroll = caret;
+    else if (caret - scroll > width - 1) scroll = caret - width + 1;
+    return std::clamp(scroll, 0.0, maximum);
+}
+
+bool text_caret_bounds(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                       const PaintContext& paint, Rect* out) {
+    if (!out || !tree.valid(box) || !paint.font || !paint.atlas) return false;
+    const Box& field = tree[box];
+    if (!field.element || field.width <= 0 || field.height <= 0) return false;
+    const BoxId target = tree.valid(paint.caret.run) ? paint.caret.run : box;
+    const Box& b = tree[target];
+    double x = 0, y = 0;
+    visual_position(tree, target, &x, &y);
+    const auto color = resolve_color(b.style, "color");
+    const auto face = face_for_run(b, paint);
+    if (target != box) {
+        const size_t offset = std::min(paint.caret.run_offset, b.text.size());
+        x += measured_width(b.text.substr(0, offset), b, color, paint, face,
+                            letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing);
+        *out = Rect(x, y, 1, b.height > 0 ? b.height : b.font_size);
+    } else {
+        const auto* parent_style = b.parent == kNoBox ? nullptr : tree[b.parent].style;
+        const double fs = font_size_px(b.style, parent_style, ctx);
+        FontInterfaceMetrics default_metrics(paint.font, face);
+        const FontMetrics* metrics = control_metrics(ctx, b.style);
+        if (!metrics) metrics = &default_metrics;
+        const double line_height = metrics->line_height(fs);
+        const double content_height = b.height - b.border_top - b.border_bottom - b.padding_top - b.padding_bottom;
+        ControlText text;
+        form_control_text(b, &text);
+        const size_t offset = text.placeholder ? 0 : text.display_offset(static_cast<size_t>(std::max(0, paint.caret.index)));
+        const double advance = text_advance(std::string_view(text.text).substr(0, offset), fs, paint, face,
+                                            letter_spacing_of(b.style, ctx, fs));
+        const double top = control_text_offset(b, text.centered, content_height, line_height);
+        const double visible_top = std::max(0.0, top);
+        const double visible_bottom = std::min(content_height, top + line_height);
+        *out = Rect(x + b.border_left + b.padding_left + advance - paint.caret.text_scroll_x,
+                    y + b.border_top + b.padding_top + visible_top,
+                    1, std::max(0.0, visible_bottom - visible_top));
+    }
+    Transform2D transform;
+    for (BoxId id = target; id != kNoBox; id = tree[id].parent) {
+        const Box& ancestor = tree[id];
+        if (ancestor.kind == BoxKind::Text || ancestor.kind == BoxKind::Line ||
+            ancestor.kind == BoxKind::AnonymousBlock || ancestor.kind == BoxKind::AnonymousInline || !ancestor.style) continue;
+        const auto* parent_style = ancestor.parent == kNoBox ? nullptr : tree[ancestor.parent].style;
+        const double fs = font_size_px(ancestor.style, parent_style, ctx);
+        Transform2D local;
+        if (!parse_transform(ancestor.style, ctx, fs, ancestor.width, ancestor.height, &local)) continue;
+        visual_position(tree, id, &x, &y);
+        transform = transform.multiply(Transform2D::translate(static_cast<float>(-x), static_cast<float>(-y))
+            .multiply(local).multiply(Transform2D::translate(static_cast<float>(x), static_cast<float>(y))));
+    }
+    const double xs[] = {out->x, out->x + out->width, out->x + out->width, out->x};
+    const double ys[] = {out->y, out->y, out->y + out->height, out->y + out->height};
+    double left = 0, top = 0, right = 0, bottom = 0;
+    for (int i = 0; i < 4; ++i) {
+        transform.apply(xs[i], ys[i], &x, &y);
+        if (i == 0) { left = right = x; top = bottom = y; }
+        else { left = std::min(left, x); right = std::max(right, x); top = std::min(top, y); bottom = std::max(bottom, y); }
+    }
+    *out = Rect(left, top, right - left, bottom - top);
+    return out->height > 0;
+}
 
 size_t control_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
                               const PaintContext& paint, double x) {
@@ -3152,8 +3495,9 @@ size_t control_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContex
     double ox = 0, oy = 0;
     visual_position(tree, box, &ox, &oy);
     const double content_left = ox + b.border_left + b.padding_left;
-    return offset_nearest(t.text, x - content_left, fs, letter_spacing_of(b.style, ctx, fs),
-                          face_for_run(b, paint), paint);
+    const double scroll = paint.caret.element == b.element ? paint.caret.text_scroll_x : 0;
+    return t.source_offset(offset_nearest(t.text, x - content_left + scroll, fs,
+                         letter_spacing_of(b.style, ctx, fs), face_for_run(b, paint), paint));
 }
 
 size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
@@ -3206,22 +3550,7 @@ size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& c
 }
 
 std::vector<const Element*> select_options(const Element& select) {
-    std::vector<const Element*> out;
-    for (const Ref<Node>& c : select.children()) {
-        if (c->node_type() != NodeType::Element) continue;
-        const auto& e = static_cast<const Element&>(*c);
-        if (e.tag_name() == "option") {
-            out.push_back(&e);
-        } else if (e.tag_name() == "optgroup") {
-            for (const Ref<Node>& g : e.children()) {
-                if (g->node_type() == NodeType::Element &&
-                    static_cast<const Element&>(*g).tag_name() == "option") {
-                    out.push_back(&static_cast<const Element&>(*g));
-                }
-            }
-        }
-    }
-    return out;
+    return form_options(select);
 }
 
 SelectListGeometry select_list_geometry(const BoxTree& tree, BoxId select_box,
@@ -3229,7 +3558,7 @@ SelectListGeometry select_list_geometry(const BoxTree& tree, BoxId select_box,
     SelectListGeometry g;
     if (!tree.valid(select_box)) return g;
     const Box& b = tree[select_box];
-    const std::vector<const Element*> options = select_options(select);
+    const std::vector<const Element*> options = select_rows(select);
     if (options.empty()) return g;
     const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
     const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
@@ -3270,6 +3599,9 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
     const SelectListGeometry g = select_list_geometry(tree, box, ctx, *select);
     if (!g.visible) return;
     const std::vector<const Element*> options = select_options(*select);
+    const auto rows = select_rows(*select);
+    const auto* highlighted = paint.popup.highlighted >= 0 && paint.popup.highlighted < static_cast<int>(options.size())
+        ? options[static_cast<size_t>(paint.popup.highlighted)] : nullptr;
 
     // Nothing above it clips it: the list is drawn over whatever it opens on
     // top of, which is the whole point of a dropdown.
@@ -3277,9 +3609,6 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
     const Box& b = tree[box];
     const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
     const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
-    const FontMetrics* m = control_metrics(ctx, b.style);
-    const double ascent = m ? m->ascent(fs) : fs * 0.8;
-    const FaceHandle face = paint.face;
     // The control's own colours, so a styled select gets a list that matches
     // rather than a white box in the middle of a dark page.
     LinearColor background = resolve_color(b.style, "background-color");
@@ -3289,7 +3618,7 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
 
     Mesh panel;
     tessellate_rect(g.box, background, &panel, false);
-    draw_mesh(panel, paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
+    draw_mesh(std::move(panel), paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
     // A hairline border, so the list reads as being above the page.
     for (const Rect& edge : {Rect(g.box.x, g.box.y, g.box.width, 1),
                              Rect(g.box.x, g.box.bottom() - 1, g.box.width, 1),
@@ -3297,28 +3626,41 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
                              Rect(g.box.right() - 1, g.box.y, 1, g.box.height)}) {
         Mesh line;
         tessellate_rect(edge, border, &line, false);
-        draw_mesh(line, paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
+        draw_mesh(std::move(line), paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
     }
 
+    const Recti clip{static_cast<int>(std::ceil(g.box.x + 1)), static_cast<int>(std::ceil(g.box.y + 1)),
+                     std::max(0, static_cast<int>(std::floor(g.box.width - 2))),
+                     std::max(0, static_cast<int>(std::floor(g.box.height - 2)))};
+    paint.backend->set_scissor(&clip);
     const int first = std::clamp(paint.popup.first_row, 0, std::max(0, g.count - g.rows));
     for (int row = 0; row < g.rows && first + row < g.count; ++row) {
         const int i = first + row;
+        const auto* entry = rows[static_cast<size_t>(i)];
+        const bool group = entry->tag_name() == "optgroup";
+        const bool disabled = group ? entry->has_attribute("disabled") : option_disabled(*entry);
+        const bool active = entry == highlighted && !group && !disabled;
         const double row_y = g.box.y + row * g.row_height;
-        if (i == paint.popup.highlighted) {
+        if (active) {
             Mesh band;
             tessellate_rect(Rect(g.box.x + 1, row_y, g.box.width - 2, g.row_height),
                             LinearColor::from_srgb(51, 144, 255, 0.85f), &band, false);
-            draw_mesh(band, paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
+            draw_mesh(std::move(band), paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
         }
-        const std::string label = trimmed_text_of(*options[static_cast<size_t>(i)]);
+        const std::string label = group ? std::string(entry->get_attribute("label")) : option_label(*entry);
         if (label.empty()) continue;
+        const auto row_text = popup_text_style(*entry, b, fs, ctx, paint);
+        const FontMetrics* metrics = control_metrics(ctx, row_text.style);
+        const double ascent = metrics ? metrics->ascent(row_text.size) : row_text.size * 0.8;
+        LinearColor ink = active ? LinearColor::from_srgb(255, 255, 255, 1.f) : resolve_color(row_text.style, "color");
+        if (disabled) ink.a *= 0.5f;
+        const double indent = !group && entry->parent() != select ? 20 : 6;
         Mesh glyphs;
-        build_text_geometry(label, g.box.x + 6, row_y + (g.row_height - fs) * 0.5 + ascent, fs,
-                            i == paint.popup.highlighted ? LinearColor::from_srgb(255, 255, 255, 1.f)
-                                                         : text,
-                            paint, &glyphs, letter_spacing_of(b.style, ctx, fs), &face);
-        draw_mesh(glyphs, paint.backend, atlas_texture, 1.0, nullptr, nullptr, nullptr);
+        build_text_geometry(label, g.box.x + indent, row_y + (g.row_height - row_text.size) * 0.5 + ascent, row_text.size, ink,
+                            paint, &glyphs, letter_spacing_of(row_text.style, ctx, row_text.size), &row_text.face);
+        draw_mesh(std::move(glyphs), paint.backend, atlas_texture, 1.0, nullptr, nullptr, nullptr);
     }
+    paint.backend->set_scissor(nullptr);
 }
 
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
@@ -3334,12 +3676,14 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     double glyphs_ms = 0;
     if (paint.atlas && paint.font) {
         const auto t0 = std::chrono::steady_clock::now();
+        if (paint.reuse) paint.reuse->begin_glyphs(*paint.atlas);
         prepare_glyphs(tree, root, ctx, paint);
         prepare_popup_glyphs(tree, ctx, paint);
         atlas_texture = paint.atlas->texture(paint.backend);
         glyphs_ms =
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     }
+    if (paint.reuse) paint.reuse->begin_paint(atlas_texture);
     const BoxId canvas_owner = paint_canvas(tree, root, ctx, paint);
     paint_recursive(tree, root, ctx, 0, 0, paint, atlas_texture, canvas_owner, PaintState{});
     // Last, and over everything: an open dropdown is not in the box tree.
@@ -3352,13 +3696,19 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
         const PaintProfile& p = g_paint_profile;
         std::fprintf(stderr,
                      "    paint: glyphs %6.2f  shadows %6.2f (tess %5.2f draw %5.2f over %d "
-                     "layers)  text %6.2f  backgrounds %6.2f  rest %6.2f  (total %6.2f ms)"
+                     "layers)  text %6.2f  backgrounds %6.2f  filters %6.2f  rest %6.2f  (total %6.2f ms)"
                      "  [submit %6.2f in %ld draws, %ld clipped]"
-                     "  [%d shadow tex: raster %5.2f blur %5.2f punch %5.2f upload %5.2f]\n",
+                     "  [%d shadow tex: raster %5.2f blur %5.2f punch %5.2f upload %5.2f]"
+                     "  [%d filter tex: raster %5.2f blur %5.2f upload %5.2f]"
+                     "  [of which: decoration build %5.2f draw %5.2f; colors %5.2f]"
+                     "  [%d glyph subtrees reused]\n",
                      glyphs_ms, p.shadows, p.shadow_tess, p.shadow_draw, p.shadow_layers, p.text,
-                     p.backgrounds, total - glyphs_ms - p.shadows - p.text - p.backgrounds, total,
+                     p.backgrounds, p.filters,
+                     total - glyphs_ms - p.shadows - p.text - p.backgrounds - p.filters, total,
                      p.submit, p.submit_calls, p.submit_clipped, p.shadow_textures,
-                     p.shadow_raster, p.shadow_blur, p.shadow_punch, p.shadow_upload);
+                     p.shadow_raster, p.shadow_blur, p.shadow_punch, p.shadow_upload,
+                     p.filter_textures, p.filter_raster, p.filter_blur, p.filter_upload,
+                     p.decoration_build, p.decoration_draw, p.colors, p.glyph_subtrees_reused);
     }
 }
 

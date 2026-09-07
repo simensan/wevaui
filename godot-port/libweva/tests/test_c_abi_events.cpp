@@ -142,6 +142,38 @@ void test_abi_element_contains() {
 }
 
 void test_abi_set_text() {
+    // Repeated model writes retain the published frame, including mixed
+    // text/icon rows. Descendant text alone is not this API's direct text.
+    {
+        Doc repeat(kCss, "<div id=row>label<span id=icon>*</span></div><div id=empty></div>");
+        const auto row = weva_document_query(repeat.d, "#row");
+        const auto empty = weva_document_query(repeat.d, "#empty");
+        const auto serial = weva_document_draw_serial(repeat.d);
+        for (int i = 0; i < 20; ++i) {
+            CHECK(weva_element_set_text(repeat.d, row, "label") == WEVA_OK);
+            CHECK(weva_element_set_text(repeat.d, empty, "") == WEVA_OK);
+            CHECK(weva_document_update(repeat.d, 1.0 / 60.0) == WEVA_OK);
+            CHECK(weva_document_draw_serial(repeat.d) == serial);
+        }
+        CHECK(repeat.text("#row") == "label*");
+        // An identical write must not clear another pending mutation.
+        weva_element_set_style(repeat.d, row, "width", "170px");
+        weva_element_set_text(repeat.d, row, "label");
+        weva_document_update(repeat.d, 0);
+        double w = 0;
+        CHECK(weva_element_bounds(repeat.d, row, nullptr, nullptr, &w, nullptr) == WEVA_OK);
+        CHECK(w == 170);
+        const auto styled = weva_document_draw_serial(repeat.d);
+        for (int i = 0; i < 20; ++i) {
+            CHECK(weva_element_set_style(repeat.d, row, "width", "170px") == WEVA_OK);
+            weva_document_update(repeat.d, 0);
+            CHECK(weva_document_draw_serial(repeat.d) == styled);
+        }
+        CHECK(weva_element_set_text(repeat.d, row, "label*") == WEVA_OK);
+        weva_document_update(repeat.d, 0);
+        CHECK(repeat.text("#row") == "label**");
+        CHECK(weva_document_draw_serial(repeat.d) > styled);
+    }
     Doc doc(kCss, kHtml);
     CHECK(doc.text("#a") == "one");
 

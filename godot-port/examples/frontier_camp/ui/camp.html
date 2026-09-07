@@ -1,0 +1,52 @@
+<main class="camp">
+  <header class="masthead">
+    <div><div class="eyebrow">THE REDWATER TERRITORY</div><h1>DUST &amp; IRON</h1></div>
+    <div class="location"><span class="eyebrow">CAMP AT REDWATER</span><p>Day 04 <span class="divider">/</span> <span id="clock">{{ View.Clock }}</span> <span class="divider">/</span> Clear skies</p></div>
+    <button id="settings-button" on-click="open_settings">Settings</button>
+  </header>
+
+  <section class="satchel panel">
+    <div class="panel-heading"><div><div class="eyebrow">TAKE ONLY WHAT YOU NEED</div><h2>Your satchel</h2></div><span id="stack-count" class="count">{{ View.Stacks }} stacks</span></div>
+    <div class="inventory" id="inventory">
+      <template data-each="Items as item" data-key="Id">
+        <article class="item" id="item-{{ item.Id }}">
+          <img src="{{ item.Icon }}" width="44" height="44">
+          <div class="item-copy"><strong>{{ item.Name }}</strong><small>{{ item.Detail }}</small></div>
+          <span class="quantity" id="count-{{ item.Id }}">×{{ item.Count }}</span>
+          <button class="item-action" id="use-{{ item.Id }}" on-click="use_item" disabled="{{ item.Disabled }}">{{ item.Action }}</button>
+        </article>
+      </template>
+    </div>
+    <div class="satchel-footer"><span>Good supplies make a long trail shorter.</span><button id="sort" on-click="sort_items">Reverse order</button></div>
+  </section>
+
+  <aside class="journal panel">
+    <div class="eyebrow">BEFORE THE SUN GOES DOWN</div><h2>A place to rest</h2>
+    <p class="objective" id="objective">{{ View.Objective }}</p>
+    <div class="recipe"><img src="assets/campfire.svg" width="64" height="64"><div><strong>Campfire kit</strong><small>Warmth. Light. A little hope.</small></div></div>
+    <div class="recipe-cost"><span>Dry wood</span><strong id="wood-cost">{{ View.Wood }} / 4</strong></div>
+    <div class="recipe-cost"><span>River stone</span><strong id="stone-cost">{{ View.Stone }} / 2</strong></div>
+    <button id="craft" class="primary" on-click="craft" disabled="{{ View.CraftDisabled }}">Craft campfire</button>
+    <button id="forage" on-click="forage">Gather supplies <span>[ E ]</span></button>
+    <p class="hint">Search the open ground for wood.<br>A little effort takes a little stamina.</p>
+  </aside>
+
+  <div class="message" id="message">{{ View.Message }}</div>
+  <footer class="hud">
+    <div class="identity"><span class="eyebrow">TRAVELER</span><strong id="player-label">{{ Player.Name }}</strong><span class="money">$ <span id="gold">{{ Player.Gold }}</span></span></div>
+    <div class="vital"><div>HEALTH <strong id="health">{{ Player.Health }}</strong></div><div class="meter"><span id="health-bar" style="width: {{ Player.Health }}%"></span></div></div>
+    <div class="vital stamina"><div>STAMINA <strong id="stamina">{{ Player.Stamina }}</strong></div><div class="meter"><span id="stamina-bar" style="width: {{ Player.Stamina }}%"></span></div></div>
+    <div class="world-hint">Click the open ground to forage.<br><span>[ H ]</span> Take damage to try a bandage.</div>
+  </footer>
+
+  <dialog id="settings">
+    <form id="settings-form">
+      <div class="eyebrow">MAKE YOURSELF AT HOME</div><h2>Trail settings</h2>
+      <label for="player-name">Traveler name</label><input id="player-name" type="text" maxlength="24" value="Morgan" data-model="Player.Name">
+      <label for="volume">Volume <span id="volume-label">{{ Settings.Volume }}%</span></label><input id="volume" type="range" min="0" max="100" step="1" value="65" data-model="Settings.Volume">
+      <label class="check-row" for="music"><input id="music" type="checkbox" checked data-model="Settings.Music"> Game audio</label>
+      <p class="hint">Changes apply as you edit.</p>
+      <div class="settings-actions"><button id="reset-settings" type="reset">Restore defaults</button><button id="close-settings" class="primary" type="button" on-click="close_settings">Back to camp</button></div>
+    </form>
+  </dialog>
+</main>

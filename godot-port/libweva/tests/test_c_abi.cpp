@@ -4,6 +4,7 @@
 #include "check.h"
 #include "weva_c.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -100,6 +101,79 @@ void test_abi_load_and_update() {
     CHECK(weva_document_load_html(d, html, 6) == WEVA_OK);
     CHECK(weva_document_update(d, 0) == WEVA_OK);
 
+    weva_document_destroy(d);
+}
+
+void test_abi_stylesheet_replacement() {
+    const auto cfg = default_config();
+    auto d = weva_document_create(&cfg);
+    const auto set_css = [&](const char* css) {
+        CHECK(weva_document_set_css(d, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+    };
+    const auto width = [&](weva_element_t box) {
+        double w = 0;
+        CHECK(weva_element_bounds(d, box, nullptr, nullptr, &w, nullptr) == WEVA_OK);
+        return w;
+    };
+    const auto height = [&](weva_element_t box) {
+        double h = 0;
+        CHECK(weva_element_bounds(d, box, nullptr, nullptr, nullptr, &h) == WEVA_OK);
+        return h;
+    };
+    CHECK(load(d, "<div id=box></div><input id=name value=Ada>") == WEVA_OK);
+    CHECK(add_css(d, "#box{width:80px;height:30px}") == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    const auto box = weva_document_query(d, "#box");
+    const auto field = weva_document_query(d, "#name");
+    CHECK(near(width(box), 80));
+    // Appending a sheet to a settled document must trigger the lifecycle,
+    // while retaining declarations from previous author sheets.
+    CHECK(add_css(d, "#box{width:60px}") == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(near(width(box), 60) && near(height(box), 30));
+    CHECK(weva_document_set_focus(d, field) == WEVA_OK);
+    CHECK(weva_element_set_value(d, field, "Grace") == WEVA_OK);
+    CHECK(weva_element_set_selection(d, field, 1, 4) == WEVA_OK);
+    set_css("#box{width:40px}");
+    CHECK(near(width(box), 40) && near(height(box), 0));
+    CHECK(weva_document_query(d, "#name") == field);
+    CHECK(weva_document_focus(d) == field);
+    char value[32] = {};
+    weva_element_value(d, field, value, sizeof(value));
+    CHECK(std::string(value) == "Grace");
+    int start = 0, end = 0;
+    CHECK(weva_element_selection(d, field, &start, &end) == WEVA_OK);
+    CHECK(start == 1 && end == 4);
+    CHECK(weva_document_set_css(d, nullptr, 1) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_document_set_css(nullptr, "", 0) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(near(width(box), 40));
+    CHECK(weva_document_set_css(d, nullptr, 0) == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(width(box) > 100); // UA block rule survives, author width disappears
+
+    // Old registrations and generated content must leave with their sheet.
+    set_css("@property --measure{syntax:'<length>';initial-value:30px;inherits:false}"
+            "#box{width:var(--measure,70px)}#box::before{content:'label';display:block;height:20px}");
+    CHECK(near(width(box), 30) && near(height(box), 20));
+    set_css("#box{width:var(--measure,70px)}");
+    CHECK(near(width(box), 70) && near(height(box), 0));
+
+    set_css("#box{width:7px;animation:grow 1s linear infinite}"
+            "@keyframes grow{from{width:10px}to{width:110px}}");
+    CHECK(weva_document_update(d, .25) == WEVA_OK);
+    CHECK(near(width(box), 35));
+    set_css("#box{width:7px;animation:grow 1s linear infinite}"
+            "@keyframes grow{from{width:50px}to{width:150px}}");
+    CHECK(near(width(box), 75)); // same animation's clock survives the new rules
+    set_css("#box{width:7px;animation:grow 1s linear infinite}");
+    CHECK(near(width(box), 7)); // removed keyframes cannot keep animating
+    for (int i = 0; i < 40; ++i) {
+        set_css(i % 2 ? "#box{width:22px}" : "#box{width:11px;height:9px}");
+        CHECK(near(width(box), i % 2 ? 22 : 11));
+        CHECK(near(height(box), i % 2 ? 0 : 9));
+    }
     weva_document_destroy(d);
 }
 
@@ -253,6 +327,8 @@ void host_set_scissor(void* ud, int32_t, int32_t, int32_t, int32_t, int32_t) {
 
 struct HostFontState {
     int shapes = 0, rasterizes = 0;
+    int positioned_shapes = 0;
+    uint8_t coverage = 200;
 };
 
 int32_t host_face_metrics(void*, uint64_t, double px, double* asc, double* desc,
@@ -283,7 +359,7 @@ int32_t host_rasterize(void* ud, uint64_t, uint32_t, double px, weva_glyph_bitma
     static std::vector<uint8_t> pixels;
     ++static_cast<HostFontState*>(ud)->rasterizes;
     const int n = static_cast<int>(px);
-    pixels.assign(static_cast<size_t>(n) * n, 200);
+    pixels.assign(static_cast<size_t>(n) * n, static_cast<HostFontState*>(ud)->coverage);
     out->alpha = pixels.data();
     out->width = n;
     out->height = n;
@@ -300,6 +376,15 @@ size_t host_shape(void* ud, uint64_t, const char* utf8, size_t len, double px, u
             clusters[i] = static_cast<uint32_t>(i);
         }
     }
+    return len;
+}
+
+size_t host_positioned_shape(void* ud, uint64_t, const char* utf8, size_t len, double px,
+                             weva_shaped_glyph* out, size_t capacity) {
+    ++static_cast<HostFontState*>(ud)->positioned_shapes;
+    for (size_t i = 0; out && i < len && i < capacity; ++i)
+        out[i] = {static_cast<uint32_t>(static_cast<unsigned char>(utf8[i])),
+                  static_cast<uint32_t>(i), px * 2, 0, 3, 4};
     return len;
 }
 
@@ -457,6 +542,154 @@ void test_abi_host_font_backend() {
     CHECK(weva_element_bounds(d, weva_document_query(d, "#a"), &x, &y, &w, &h) == WEVA_OK);
     CHECK(near(h, 12));
 
+    weva_document_destroy(d);
+}
+
+void test_abi_font_and_renderer_replacement() {
+    weva_config cfg = default_config(400, 150);
+    weva_document_t d = weva_document_create(&cfg);
+    HostFontState a, b;
+    b.coverage = 80;
+    weva_font_backend fb{};
+    fb.user_data = &a;
+    fb.face_metrics = host_face_metrics;
+    fb.glyph_index = host_glyph_index;
+    fb.glyph_metrics = host_glyph_metrics;
+    fb.rasterize = host_rasterize;
+    fb.shape = host_shape;
+    CHECK(load(d, "<body><span id=a>AB</span></body>") == WEVA_OK);
+    CHECK(add_css(d, "body{margin:30px}#a{display:inline-block;font-size:16px;line-height:40px}") == WEVA_OK);
+    weva_document_set_font_backend(d, &fb, 7);
+    const auto alpha = [&] {
+        size_t count = 0;
+        const weva_texture* textures = weva_document_textures(d, &count);
+        CHECK(count == 1);
+        uint8_t maximum = 0;
+        for (size_t t = 0; t < count; ++t)
+            for (int64_t i = 0; i < int64_t(textures[t].width) * textures[t].height; ++i)
+                maximum = std::max(maximum, textures[t].rgba[i * 4 + 3]);
+        return maximum;
+    };
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(alpha() == 200);
+    fb.user_data = &b;
+    // Same face and glyph IDs, different provider and rasterized coverage.
+    weva_document_set_font_backend(d, &fb, 7);
+    CHECK(alpha() == 200); // The preceding frame stays published until update.
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(b.rasterizes > 0 && alpha() == 80);
+    b.coverage = 120;
+    // Reinstalling the same table also refreshes a mutated font resource.
+    weva_document_set_font_backend(d, &fb, 7);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(alpha() == 120);
+
+    struct Textures {
+        uint64_t next = 100;
+        std::vector<uint64_t> live;
+        int uploads = 0, releases = 0;
+    } first, second;
+    second.next = 1000;
+    weva_render_backend rb{};
+    rb.generate_texture = [](void* user, const uint8_t*, int32_t, int32_t) -> uint64_t {
+        auto& s = *static_cast<Textures*>(user);
+        ++s.uploads;
+        s.live.push_back(s.next);
+        return s.next++;
+    };
+    rb.release_texture = [](void* user, uint64_t texture) {
+        auto& s = *static_cast<Textures*>(user);
+        auto it = std::find(s.live.begin(), s.live.end(), texture);
+        CHECK(it != s.live.end());
+        if (it != s.live.end()) s.live.erase(it);
+        ++s.releases;
+    };
+    const int rasterizes = b.rasterizes;
+    rb.user_data = &first;
+    weva_document_set_render_backend(d, &rb);
+    CHECK(alpha() == 120); // Published pixels live until the next update.
+    weva_document_set_render_backend(d, &rb);
+    CHECK(alpha() == 120); // Repeated replacement must retain that same frame.
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(first.uploads == 1 && first.live.size() == 1);
+    CHECK(b.rasterizes == rasterizes); // Reuse CPU glyphs with a new texture owner.
+    rb.user_data = &second;
+    weva_document_set_render_backend(d, &rb);
+    CHECK(first.live.empty() && first.releases == 1);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(second.uploads == 1 && second.live.size() == 1);
+    CHECK(b.rasterizes == rasterizes);
+    weva_document_destroy(d);
+    CHECK(second.live.empty() && second.releases == 1);
+}
+
+void test_abi_positioned_font_shaping() {
+    weva_config cfg = default_config(400, 150);
+    weva_document_t d = weva_document_create(&cfg);
+    CHECK(weva_document_set_font_shaper(nullptr, host_positioned_shape) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_document_set_font_shaper(d, host_positioned_shape) == WEVA_ERR_INVALID_ARGUMENT);
+    HostFontState state;
+    weva_font_backend fb{};
+    fb.user_data = &state;
+    fb.face_metrics = host_face_metrics;
+    fb.glyph_index = host_glyph_index;
+    fb.glyph_metrics = host_glyph_metrics;
+    fb.rasterize = host_rasterize;
+    fb.shape = host_shape;
+    weva_document_set_font_backend(d, &fb, 7);
+    CHECK(load(d, "<body><span id=a>AB</span></body>") == WEVA_OK);
+    // Leave room above the glyphs so the upward offset is observable without
+    // clipping and re-triangulating the first quad at the UA body's top edge.
+    CHECK(add_css(d, "body{margin:30px}#a{display:inline-block;font-size:16px;line-height:40px}") == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    const auto vertices = [&] {
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        std::vector<weva_vertex> out;
+        for (size_t i = 0; i < count; ++i)
+            if (draws[i].texture_id)
+                out.insert(out.end(), draws[i].vertices, draws[i].vertices + draws[i].vertex_count);
+        return out;
+    };
+    const auto width = [&] {
+        double w = 0;
+        CHECK(weva_element_bounds(d, weva_document_query(d, "#a"), nullptr, nullptr, &w, nullptr) == WEVA_OK);
+        return w;
+    };
+    const auto legacy = vertices();
+    CHECK(!legacy.empty());
+    CHECK(near(width(), 32));
+    const int legacy_calls = state.shapes;
+    CHECK(weva_document_set_font_shaper(d, host_positioned_shape) == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(state.positioned_shapes >= 2 && state.shapes == legacy_calls);
+    CHECK(near(width(), 64));
+    const auto positioned = vertices();
+    CHECK(positioned.size() == legacy.size());
+    if (!legacy.empty() && !positioned.empty()) {
+        CHECK(near(positioned.front().x - legacy.front().x, 3));
+        CHECK(near(positioned.front().y - legacy.front().y, -4));
+    }
+    // A no-op registration preserves the warm shaping cache and clean frame.
+    const int positioned_calls = state.positioned_shapes;
+    CHECK(weva_document_set_font_shaper(d, host_positioned_shape) == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(state.positioned_shapes == positioned_calls);
+    // Removing the override restores legacy shaping and measured widths.
+    CHECK(weva_document_set_font_shaper(d, nullptr) == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(near(width(), 32));
+    const auto restored = vertices();
+    CHECK(restored.size() == legacy.size());
+    for (size_t i = 0; i < std::min(restored.size(), legacy.size()); ++i)
+        CHECK(restored[i].x == legacy[i].x && restored[i].y == legacy[i].y);
+    // Installing a font table clears the override even for the same face ID.
+    CHECK(weva_document_set_font_shaper(d, host_positioned_shape) == WEVA_OK);
+    weva_document_set_font_backend(d, &fb, 7);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(near(width(), 32));
+    weva_document_set_font_backend(d, nullptr, 0);
+    CHECK(weva_document_set_font_shaper(d, nullptr) == WEVA_ERR_INVALID_ARGUMENT);
     weva_document_destroy(d);
 }
 

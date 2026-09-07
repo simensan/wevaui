@@ -11,6 +11,11 @@ means touching thousands of call sites.
 * **No RTTI dependence** in the core. Hosts may use it; `libweva` must not need it.
 * **CMake**, one top-level project, core and hosts as separate targets.
 
+Use a separate `-DWEVA_SANITIZERS=ON` build for memory-safety checks. It covers
+the core and embedded ICU, uses ASan on MSVC or ASan/UBSan on GCC/Clang, and
+adds positive controls that verify instrumentation is active. Run the complete
+mutation corpus and CTest suite; see [SANITIZERS.md](SANITIZERS.md).
+
 ## Exceptions: none
 
 The C# core has **509 `throw new` sites**. Throwing across a GDExtension
@@ -81,8 +86,9 @@ Layout computes in `double` and the goldens depend on exact rounding.
   comment saying why, because someone will try to add it.
 * Round with `std::round` (matches C#'s `MidpointRounding.AwayFromZero`), not
   `std::nearbyint` (banker's rounding, and mode-dependent).
-* Bit-identical layout dumps against the C# oracle are the acceptance test. If
-  they diverge, that is a bug, not tolerance.
+* Layout dumps are compared against the C# oracle, with Chrome arbitrating
+  disagreements (see ORACLE.md). Standard web behavior follows Chrome when
+  the reference is wrong; record the evidence rather than widening tolerance.
 
 ## The C ABI
 

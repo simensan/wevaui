@@ -4,6 +4,34 @@
 
 using namespace weva;
 
+void test_box_tree_move_owns_text() {
+    std::vector<BoxTree> trees;
+    // Repeated vector growth used to select a shallow copy: deque's move is
+    // not noexcept, so vector preferred the implicit copy constructor. Short
+    // strings then dangled into freed deque storage before subtree import.
+    for (int i = 0; i < 24; ++i) {
+        BoxTree tree;
+        const BoxId root = tree.create(BoxKind::Block);
+        for (const std::string& text : {std::string("short"), std::string(100, 'x')}) {
+            const BoxId run = tree.create(BoxKind::Text);
+            tree[run].text = tree.own_text(text);
+            tree.append_child(root, run);
+        }
+        trees.push_back(std::move(tree));
+    }
+    for (BoxTree& source : trees) {
+        BoxTree moved;
+        moved = std::move(source);
+        BoxTree destination;
+        const BoxId root = destination.create(BoxKind::Block);
+        destination.replace_subtree(root, moved, 0);
+        moved.reset();
+        const BoxId first = destination[root].first_child;
+        CHECK(destination[first].text == "short");
+        CHECK(destination[destination[first].next_sibling].text == std::string(100, 'x'));
+    }
+}
+
 namespace {
 
 // The children of `parent`, in order. Every structural test checks this AND the
@@ -253,4 +281,77 @@ void test_box_reparenting() {
     CHECK(links_consistent(t, p1) && links_consistent(t, p2));
     CHECK(forward(t, p1) == std::vector<BoxId>({a, c}));
     CHECK(t.child_count(p2) == 0);
+}
+
+
+void test_box_subtree_storage_lifetime() {
+    BoxTree tree;
+    const BoxId root = tree.create(BoxKind::Block);
+    const BoxId changed = tree.create(BoxKind::Block);
+    const BoxId sibling = tree.create(BoxKind::Block);
+    tree.append_child(root, changed);
+    tree.append_child(root, sibling);
+    for (int pass = 0; pass < 200; ++pass) {
+        const int children = pass % 2 ? 2 : 8;
+        const std::string text(128, static_cast<char>('a' + pass % 26));
+        {
+            BoxTree scratch;
+            const BoxId replacement = scratch.create(BoxKind::Block);
+            for (int n = 0; n < children; ++n) {
+                const BoxId run = scratch.create(BoxKind::Text);
+                scratch[run].text = scratch.own_text(text);
+                scratch.append_child(replacement, run);
+            }
+            tree.replace_subtree(changed, scratch, replacement);
+        }
+        CHECK(tree.size() <= 11);
+        CHECK(links_consistent(tree, root));
+        CHECK(forward(tree, root) == std::vector<BoxId>({changed, sibling}));
+        CHECK(tree.child_count(changed) == children);
+        for (BoxId c : tree.children(changed)) CHECK(tree[c].text == text);
+    }
+    tree.reset();
+    CHECK(tree.create(BoxKind::Block) == 0);
+    CHECK(tree.size() == 1);
+
+    // Keep two subtrees while repeatedly replacing their enclosing wrappers.
+    // Their text was imported from a temporary tree, so detaching them after
+    // releasing the wrappers would lose both the stable IDs and text storage.
+    const BoxId retained_a = tree.create(BoxKind::Block);
+    const BoxId retained_b = tree.create(BoxKind::Block);
+    for (BoxId retained : {retained_a, retained_b}) {
+        BoxTree seed;
+        const BoxId block = seed.create(BoxKind::Block);
+        const BoxId run = seed.create(BoxKind::Text);
+        seed[run].text = seed.own_text(std::string(128, 'a' + retained));
+        seed.append_child(block, run);
+        tree.replace_subtree(retained, seed, block);
+        tree.append_child(0, retained);
+    }
+    const BoxId text_a = tree[retained_a].first_child, text_b = tree[retained_b].first_child;
+    for (int pass = 0; pass < 100; ++pass) {
+        {
+            BoxTree scratch;
+            const BoxId replacement = scratch.create(BoxKind::Block);
+            for (BoxId retained : {retained_b, retained_a}) {
+                const BoxId wrapper = scratch.create(BoxKind::Block);
+                const BoxId deferred = scratch.create(BoxKind::Block);
+                scratch[deferred].retained_from = retained;
+                scratch[deferred].y = pass;
+                scratch.append_child(wrapper, deferred);
+                scratch.append_child(replacement, wrapper);
+            }
+            tree.replace_subtree(0, scratch, replacement);
+        }
+        CHECK(tree.size() <= 7);
+        CHECK(links_consistent(tree, 0));
+        CHECK(tree[retained_a].first_child == text_a && tree[retained_b].first_child == text_b);
+        CHECK(tree[text_a].text == std::string(128, 'a' + retained_a));
+        CHECK(tree[text_b].text == std::string(128, 'a' + retained_b));
+        CHECK(tree[retained_a].y == pass && tree[retained_b].y == pass);
+        CHECK(tree[retained_a].retained_from == kNoBox && tree[retained_b].retained_from == kNoBox);
+        CHECK(tree[tree[0].first_child].first_child == retained_b);
+        CHECK(tree[tree[0].last_child].first_child == retained_a);
+        for (BoxId wrapper : tree.children(0)) CHECK(links_consistent(tree, wrapper));
+    }
 }

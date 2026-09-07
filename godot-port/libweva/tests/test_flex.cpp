@@ -110,6 +110,60 @@ struct Fixture {
 
 } // namespace
 
+void test_flex_grid_item_formatting_context() {
+    for (const char* display : {"flex", "inline-flex", "grid", "inline-grid"}) {
+        for (bool fixed : {false, true}) for (bool contents : {false, true}) {
+            Fixture f;
+            CHECK(f.css(std::string("#r{display:") + display +
+                ";width:200px;flex-direction:column;grid-template-columns:200px;gap:5px;align-items:start}"
+                "#a{width:100px;margin:7px 0 11px;" + (fixed ? "height:20px" : "height:auto") +
+                "}#child{height:10px;margin:17px 0 13px}#next{height:9px;width:100px}"
+                "#contents{display:contents}"));
+            const std::string html = std::string("<div id=r>") + (contents ? "<div id=contents>" : "") +
+                "<div id=a><div id=child></div></div>" + (contents ? "</div>" : "") +
+                "<div id=next></div></div>";
+            CHECK(f.layout(html));
+            const double height = fixed ? 20 : 40;
+            CHECK(near(f.box("a").margin_top,7));
+            CHECK(near(f.box("a").margin_bottom,11));
+            CHECK(near(f.box("a").y,7));
+            CHECK(near(f.box("a").height,height));
+            CHECK(near(f.box("child").y,17));
+            CHECK(near(f.box("next").y,7+height+11+5));
+            CHECK(near(f.box("r").height,7+height+11+5+9));
+        }
+        // Floats contribute to their item's auto height and stay inside its
+        // formatting context, including when the item has no in-flow content.
+        Fixture f;
+        CHECK(f.css(std::string("#r{display:") + display +
+            ";width:200px;flex-direction:column;grid-template-columns:200px;gap:5px;align-items:start}"
+            "#a{width:100px}#child{float:left;width:30px;height:37px}#next{height:9px;width:100px}"));
+        CHECK(f.layout("<div id=r><div id=a><div id=child></div></div><div id=next></div></div>"));
+        CHECK(near(f.box("a").height,37));
+        CHECK(near(f.box("next").y,42));
+        CHECK(near(f.box("r").height,51));
+
+        Fixture outside;
+        CHECK(outside.css(std::string("#outer{display:flow-root;width:400px}#float{float:left;width:350px;height:60px}") +
+            "#r{display:" + display + ";width:120px;flex-direction:column;grid-template-columns:120px}"
+            "#a{width:120px;font-size:16px;line-height:20px}"));
+        CHECK(outside.layout("<div id=outer><div id=float></div><div id=r><div id=a>aa aa aa aa aa</div></div></div>"));
+        CHECK(near(outside.box("a").height,20));
+    }
+    // Ordinary descendants still collapse with their own children. Only the
+    // boundary where the item participates in flex/grid contains that chain.
+    Fixture nested;
+    CHECK(nested.css("#r{display:flex;flex-direction:column;width:200px}"
+                     "#child{height:10px;margin:17px 0 13px}"));
+    CHECK(nested.layout("<div id=r><div id=a><div id=middle><div id=child></div></div></div></div>"));
+    CHECK(near(nested.box("a").margin_top,0));
+    CHECK(near(nested.box("a").margin_bottom,0));
+    CHECK(near(nested.box("a").height,40));
+    CHECK(near(nested.box("middle").y,17));
+    CHECK(near(nested.box("middle").height,10));
+    CHECK(near(nested.box("child").y,0));
+}
+
 void test_flex_main_axis() {
     {
         // Fixed-width items laid out in a row with a gap between them.

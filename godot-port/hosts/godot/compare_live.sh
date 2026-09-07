@@ -11,7 +11,8 @@
 #
 # Usage: compare_live.sh   (needs the same GODOT_BIN / WEVA_RENDER as
 # compare_all.sh)
-set -u
+set -uo pipefail
+failures=0
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 S=$ROOT/tools/oracle/corpus/samples
 R=${WEVA_RENDER:-$HOME/weva/build-gcc/tools/weva_render/weva_render}
@@ -19,15 +20,18 @@ G=${GODOT_BIN:-$HOME/godot/godot}
 run() {
     local label="$1"; shift
     local out
-    out=$(GODOT_SILENCE_ROOT_WARNING=1 timeout 300 python3 "$ROOT/hosts/godot/compare_render.py" \
+    if ! out=$(GODOT_SILENCE_ROOT_WARNING=1 timeout 300 python3 "$ROOT/hosts/godot/compare_render.py" \
             "$S/forms-live.html" "$S/forms-live.css" --size 440x460 \
             --weva-render "$R" --godot "$G" --project "$ROOT/hosts/godot/project" \
-            "$@" 2>&1)
+            "$@" 2>&1); then
+        failures=$((failures + 1))
+        printf 'ERR %s comparison failed\n%s\n' "$label" "$out" >&2
+    fi
     local ink over
     ink=$(printf '%s\n' "$out" | sed -n 's/.*structural *\([0-9]*\) px (\([0-9.]*\)%).*/\2/p')
     over=$(printf '%s\n' "$out" | sed -n 's/.*over tolerance *\([0-9]*\) px (\([0-9.]*\)%).*/\2/p')
-    [ -n "$ink" ] || { ink="ERR"; printf '%s\n' "$out" | tail -5; }
-    [ -n "$over" ] || over="ERR"
+    [ -n "$ink" ] || { ink="ERR"; failures=$((failures + 1)); printf '%s\n' "$out" | tail -5; }
+    [ -n "$over" ] || { over="ERR"; failures=$((failures + 1)); }
     printf '%-22s struct %6s%%  over-tol %6s%%\n' "$label" "$ink" "$over"
 }
 run idle
@@ -50,3 +54,4 @@ run pressed         --press='#act'
 run modal-dialog    --dialog='#ask'
 run open-popover    --popover='#menu'
 run tooltip         --tooltip='#act'
+[ "$failures" -eq 0 ]

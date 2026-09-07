@@ -4,7 +4,13 @@ add_executable(weva_tests
     test_text_classes.cpp
     test_intern.cpp
     test_geometry.cpp
+    test_grapheme.cpp
     test_dom.cpp
+    test_form_state.cpp
+    test_select_controls.cpp
+    test_select_autoscroll.cpp
+    test_text_autoscroll.cpp
+    test_typeahead.cpp
     test_html.cpp
     test_html_parser.cpp
     test_css_tokenizer.cpp
@@ -45,6 +51,9 @@ add_executable(weva_tests
     test_software_renderer.cpp
     test_text_render.cpp
     test_c_abi.cpp
+    test_c_abi_ime.cpp
+    test_c_abi_text_editing.cpp
+    test_c_abi_maxlength.cpp
     test_c_abi_events.cpp
     test_c_abi_forms.cpp
     test_c_abi_dom.cpp
@@ -62,3 +71,31 @@ add_executable(weva_tests
 )
 target_link_libraries(weva_tests PRIVATE weva)
 add_test(NAME weva_tests COMMAND weva_tests)
+
+add_executable(weva_style_lookup_allocations test_style_lookup_allocations.cpp)
+target_link_libraries(weva_style_lookup_allocations PRIVATE weva)
+add_test(NAME weva_style_lookup_allocations COMMAND weva_style_lookup_allocations)
+
+add_executable(weva_blur_variants test_blur_variants.cpp blur_portable_reference.cpp)
+target_link_libraries(weva_blur_variants PRIVATE weva)
+add_test(NAME weva_blur_variants COMMAND weva_blur_variants)
+
+add_executable(weva_geometry_allocations test_geometry_allocations.cpp)
+target_link_libraries(weva_geometry_allocations PRIVATE weva)
+add_test(NAME weva_geometry_allocations COMMAND weva_geometry_allocations)
+
+add_executable(weva_paint_order_allocations test_paint_order_allocations.cpp)
+target_link_libraries(weva_paint_order_allocations PRIVATE weva)
+add_test(NAME weva_paint_order_allocations COMMAND weva_paint_order_allocations)
+
+add_executable(weva_radius_allocations test_radius_allocations.cpp)
+target_link_libraries(weva_radius_allocations PRIVATE weva)
+add_test(NAME weva_radius_allocations COMMAND weva_radius_allocations)
+
+add_executable(weva_clip_allocations test_clip_allocations.cpp)
+target_link_libraries(weva_clip_allocations PRIVATE weva)
+add_test(NAME weva_clip_allocations COMMAND weva_clip_allocations)
+
+add_executable(weva_draw_mesh_allocations test_draw_mesh_allocations.cpp)
+target_link_libraries(weva_draw_mesh_allocations PRIVATE weva)
+add_test(NAME weva_draw_mesh_allocations COMMAND weva_draw_mesh_allocations)

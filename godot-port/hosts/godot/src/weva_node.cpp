@@ -1,15 +1,24 @@
 #include "weva_node.h"
 
 #include <godot_cpp/classes/viewport.hpp>
+#include <godot_cpp/classes/input.hpp>
+#include <godot_cpp/classes/display_server.hpp>
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/main_loop.hpp>
+#include <godot_cpp/classes/time.hpp>
+#include <godot_cpp/classes/window.hpp>
 
 #include <godot_cpp/classes/font.hpp>
 #include <godot_cpp/classes/font_file.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/image.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/texture2d.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/theme_db.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/variant/callable_method_pointer.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
 #include <godot_cpp/variant/typed_array.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
@@ -19,6 +28,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 
@@ -26,7 +37,43 @@ using namespace godot;
 
 namespace weva_godot {
 
+namespace {
+struct GodotDrawProfile {
+    bool enabled = false;
+    double packing_ms = 0, submit_ms = 0;
+    size_t vertices = 0, submissions = 0, max_batch_vertices = 0;
+    size_t packed_vertices = 0, reused_batches = 0;
+};
+thread_local GodotDrawProfile draw_profile;
+using DrawClock = std::chrono::steady_clock;
+double draw_elapsed(DrawClock::time_point start) {
+    return std::chrono::duration<double, std::milli>(DrawClock::now()-start).count();
+}
+struct GodotDrawScope {
+    DrawClock::time_point start{};
+    uint64_t frame = 0;
+    GodotDrawScope() {
+        static const bool enabled = std::getenv("WEVA_GODOT_DRAW_LOG") != nullptr;
+        draw_profile = {};
+        draw_profile.enabled = enabled;
+        if (enabled) {
+            frame = Engine::get_singleton()->get_process_frames();
+            start = DrawClock::now();
+        }
+    }
+    ~GodotDrawScope() {
+        if (draw_profile.enabled)
+            std::fprintf(stderr,"godot draw: %.3f ms; packing %.3f, submit %.3f ms; %zu vertices; %zu submissions, largest %zu vertices; frame %llu; packed %zu vertices, %zu batches reused\n",
+                         draw_elapsed(start),draw_profile.packing_ms,draw_profile.submit_ms,draw_profile.vertices,
+                         draw_profile.submissions,draw_profile.max_batch_vertices,
+                         static_cast<unsigned long long>(frame),draw_profile.packed_vertices,draw_profile.reused_batches);
+    }
+};
+} // namespace
+
 WevaDocument::WevaDocument() {
+    set_mouse_filter(MOUSE_FILTER_PASS);
+    set_focus_mode(FOCUS_ALL);
     // The ABI is versioned so a host can refuse a library it was not built
     // against. Checking the major here rather than at first use means a
     // mismatch is a loud failure at construction, not a subtle one later.
@@ -41,42 +88,57 @@ WevaDocument::WevaDocument() {
     cfg.viewport_height = 1080;
     cfg.use_user_agent_stylesheet = 1;
     doc_ = weva_document_create(&cfg);
-    // Assets come through Godot rather than through the core's own file
-    // reading, so `res://` works -- including inside an exported .pck, where
-    // there are no files on disk at all. The core still DECODES, which is what
-    // keeps the software renderer and this host byte-identical.
+    // Godot resolves imported textures and PCK paths; the core consumes PNG
+    // bytes through its existing decoder and document-scoped image cache.
     weva_document_set_asset_reader(doc_, &WevaDocument::read_asset, this);
 }
 
-// The two-call convention: the size, then the bytes.
-//
-// Opened twice rather than cached between the calls, deliberately. The core
-// calls this once per image for the life of the document -- decoded images are
-// cached there -- so the second open costs nothing worth a member holding a
-// file handle across a call boundary.
+namespace {
+PackedByteArray image_bytes(String path) {
+    if (!path.begins_with("res://") && !path.begins_with("user://") && !path.is_absolute_path())
+        path = "res://" + path;
+
+    // An exported PNG normally exists as a remapped CompressedTexture2D,
+    // with no original PNG file in the pack. Resolve through the importer in
+    // both editor and export so resizing/compression settings agree too.
+    ResourceLoader* loader = ResourceLoader::get_singleton();
+    if (path.begins_with("res://") && loader && loader->exists(path, "Texture2D")) {
+        const Ref<Texture2D> texture = loader->load(path, "Texture2D");
+        if (texture.is_valid()) {
+            Ref<Image> image = texture->get_image();
+            if (image.is_valid() && !image->is_empty()) {
+                if (image->is_compressed() && image->decompress() != OK) return {};
+                image->convert(Image::FORMAT_RGBA8);
+                return image->save_png_to_buffer();
+            }
+        }
+    }
+    // Raw PNGs outside the importer (user://, absolute paths, Keep File)
+    // retain the same core decoder path as the standalone renderer.
+    Ref<FileAccess> file = FileAccess::open(path, FileAccess::READ);
+    if (file.is_null()) return {};
+    return file->get_buffer(file->get_length());
+}
+}
+
+// Cache only across this synchronous size/read pair: imported images should
+// not be loaded and PNG-encoded twice, or retained twice after decoding.
 size_t WevaDocument::read_asset(void* user_data, const char* path, uint8_t* buffer,
                                 size_t capacity) {
-    if (!path) return 0;
+    if (!path || !user_data) return 0;
+    auto* self = static_cast<WevaDocument*>(user_data);
     const String p = String::utf8(path);
-    Ref<FileAccess> file = FileAccess::open(p, FileAccess::READ);
-    if (file.is_null()) {
-        // A path relative to nothing resolves against res://, which is where a
-        // Godot project keeps its art. Without this a stylesheet would have to
-        // spell out res:// on every url(), which no browser-shaped stylesheet
-        // does.
-        if (!p.begins_with("res://") && !p.begins_with("user://") && !p.is_absolute_path()) {
-            file = FileAccess::open("res://" + p, FileAccess::READ);
-        }
-        if (file.is_null()) return 0;
+    if (!buffer || capacity == 0 || self->asset_read_path_ != p) {
+        self->asset_read_path_ = p;
+        self->asset_read_bytes_ = image_bytes(p);
     }
-    const uint64_t length = file->get_length();
-    if (buffer == nullptr || capacity == 0) return static_cast<size_t>(length);
+    const size_t length = static_cast<size_t>(self->asset_read_bytes_.size());
+    if (!buffer || capacity == 0) return length;
     if (capacity < length) return 0;
-    const PackedByteArray bytes = file->get_buffer(static_cast<int64_t>(length));
-    if (static_cast<uint64_t>(bytes.size()) != length) return 0;
-    std::memcpy(buffer, bytes.ptr(), static_cast<size_t>(length));
-    static_cast<void>(user_data);
-    return static_cast<size_t>(length);
+    if (length) std::memcpy(buffer, self->asset_read_bytes_.ptr(), length);
+    self->asset_read_bytes_ = PackedByteArray();
+    self->asset_read_path_ = String();
+    return length;
 }
 
 void WevaDocument::set_base_path(const String& path) {
@@ -94,8 +156,7 @@ String WevaDocument::get_base_path() const { return base_path_; }
 bool WevaDocument::set_element_style(const String& selector, const String& property,
                                      const String& value) {
     if (!doc_) return false;
-    ensure_updated();
-    const uint32_t e = resolve(selector);
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE) return false;
     const CharString p = property.utf8();
     const CharString v = value.utf8();
@@ -220,6 +281,8 @@ void WevaDocument::set_use_engine_font(bool use) {
         // A null table is what the ABI reads as "back to the built-in".
         weva_document_set_font_backend(doc_, nullptr, 0);
         font_face_ = 0;
+        font_backend_.clear();
+        disconnect_theme_font();
     }
     dirty_ = true;
     queue_redraw();
@@ -234,20 +297,28 @@ void WevaDocument::set_use_sdf_rects(bool use) {
 void WevaDocument::ensure_font_backend() {
     // Deliberately lazy rather than done in the constructor: ThemeDB may not be
     // up that early, and use_engine_font has to be settable before the first
-    // update, which is the last moment the ABI allows a backend to be
-    // registered.
-    if (!doc_ || font_face_ != 0 || !use_engine_font_) return;
+    // update. Later resource/theme changes reinstall it on the next update.
+    if (!doc_ || !use_engine_font_) return;
+    if (font_face_ != 0 && !theme_font_dirty_ && !font_resource_dirty_) return;
 
-    // The engine's own fallback font, adopted directly as a TextServer RID.
-    // Loading a font file would work too, but this way the document renders in
-    // the same face as every other control in the project by default, and the
-    // host ships no font of its own.
-    ThemeDB* theme = ThemeDB::get_singleton();
-    if (!theme) return;
-    const Ref<Font> fallback = theme->get_fallback_font();
+    // Resolve through Control so node overrides, inherited project themes
+    // and theme type variations select the same resource as native controls.
+    Ref<Font> fallback = get_theme_font("font");
+    if (fallback.is_null()) {
+        ThemeDB* theme = ThemeDB::get_singleton();
+        if (theme) fallback = theme->get_fallback_font();
+    }
     if (fallback.is_null()) return;
-    TypedArray<RID> rids = fallback->get_rids();
+    theme_font_dirty_ = false;
+    if (font_face_ != 0 && fallback == theme_font_ && !font_resource_dirty_) return;
+    // Font caches and shares this Array. Appending our compatibility fallbacks
+    // to it changes the resource seen by every native control and makes the
+    // chain grow again with each document. Own the array before extending it.
+    TypedArray<RID> rids = fallback->get_rids().duplicate();
     if (rids.is_empty()) return;
+    // Extra faces already on the resource may change independently. Only the
+    // compatibility faces appended below are private immutable inputs.
+    const bool immutable_fallbacks = rids.size() == 1;
 
     // Behind it, whatever the system has for symbols and emoji: the theme
     // font covers Latin and little else, and a sample's ★ or 🛡 would draw
@@ -256,9 +327,15 @@ void WevaDocument::ensure_font_backend() {
     // present the emoji face after it was never reached. Names the system
     // lacks are skipped rather than left to fall back to the default face,
     // which would shadow every name behind them.
-    for (const Ref<SystemFont>& sf : shared_symbol_fonts()) {
-        const TypedArray<RID> symbol_rids = sf->get_rids();
-        for (int64_t i = 0; i < symbol_rids.size(); ++i) rids.push_back(symbol_rids[i]);
+    // Keep these compatibility fallbacks only for the global default. An
+    // explicit project font already defines its fallback chain; extra system
+    // faces can take precedence over its bitmap fallbacks during shaping.
+    ThemeDB* theme_db = ThemeDB::get_singleton();
+    if (theme_db && fallback == theme_db->get_fallback_font()) {
+        for (const Ref<SystemFont>& sf : shared_symbol_fonts()) {
+            const TypedArray<RID> symbol_rids = sf->get_rids();
+            for (int64_t i = 0; i < symbol_rids.size(); ++i) rids.push_back(symbol_rids[i]);
+        }
     }
 
     // The theme font's file data lets the backend build bold and italic
@@ -266,14 +343,42 @@ void WevaDocument::ensure_font_backend() {
     PackedByteArray primary_data;
     const Ref<FontFile> file = fallback;
     if (file.is_valid()) primary_data = file->get_data();
-    font_face_ = font_backend_.adopt(rids, primary_data);
+    // Release owned variants and stale borrowed RIDs before dropping the old
+    // resource reference. A resource can change its RIDs without changing its
+    // object identity, so its changed signal is also an input to this rebuild.
+    font_backend_.clear();
+    disconnect_theme_font();
+    theme_font_ = fallback;
+    if (theme_font_changed_.is_null())
+        theme_font_changed_ = callable_mp(this, &WevaDocument::font_resource_changed);
+    theme_font_->connect("changed", theme_font_changed_);
+    font_resource_dirty_ = false;
+    font_face_ = font_backend_.adopt(rids, primary_data, immutable_fallbacks);
     if (font_face_ == 0) return;
-    font_backend_.fill(&font_table_);
+    weva_shape_glyphs_fn shaper = nullptr;
+    font_backend_.fill(&font_table_, &shaper);
     weva_document_set_font_backend(doc_, &font_table_, font_face_);
+    weva_document_set_font_shaper(doc_, shaper);
     dirty_ = true;
 }
 
+void WevaDocument::font_resource_changed() {
+    font_resource_dirty_ = true;
+    dirty_ = true;
+    queue_redraw();
+}
+
+void WevaDocument::disconnect_theme_font() {
+    if (theme_font_.is_valid()) {
+        if (theme_font_->is_connected("changed", theme_font_changed_))
+            theme_font_->disconnect("changed", theme_font_changed_);
+        theme_font_.unref();
+    }
+}
+
 WevaDocument::~WevaDocument() {
+    disconnect_theme_font();
+    close_ime();
     if (doc_) weva_document_destroy(doc_);
     release_layers();
     RenderingServer* rs_ = RenderingServer::get_singleton();
@@ -359,7 +464,8 @@ void WevaDocument::_bind_methods() {
                          &WevaDocument::get_element_value);
     ClassDB::bind_method(D_METHOD("set_element_value", "selector", "value"),
                          &WevaDocument::set_element_value);
-    ClassDB::bind_method(D_METHOD("set_pointer", "point", "buttons"), &WevaDocument::set_pointer);
+    ClassDB::bind_method(D_METHOD("reset_form", "selector"), &WevaDocument::reset_form);
+    ClassDB::bind_method(D_METHOD("set_pointer", "point", "buttons", "modifiers"), &WevaDocument::set_pointer, DEFVAL(0));
     ClassDB::bind_method(D_METHOD("clear_pointer"), &WevaDocument::clear_pointer);
     ClassDB::bind_method(D_METHOD("scroll_at", "point", "delta"), &WevaDocument::scroll_at);
     ClassDB::bind_method(D_METHOD("scroll_element", "selector", "delta"),
@@ -414,6 +520,15 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("send_key", "keycode", "pressed", "shift", "ctrl"),
                          &WevaDocument::send_key, DEFVAL(true), DEFVAL(false), DEFVAL(false));
     ClassDB::bind_method(D_METHOD("send_text", "text"), &WevaDocument::send_text);
+    ClassDB::bind_method(D_METHOD("paste_text", "text"), &WevaDocument::paste_text);
+    ClassDB::bind_method(D_METHOD("set_composition", "text", "start", "end"), &WevaDocument::set_composition);
+    ClassDB::bind_method(D_METHOD("commit_composition", "text"), &WevaDocument::commit_composition);
+    ClassDB::bind_method(D_METHOD("finish_composition"), &WevaDocument::finish_composition);
+    ClassDB::bind_method(D_METHOD("has_composition"), &WevaDocument::has_composition);
+    ClassDB::bind_method(D_METHOD("get_caret_bounds"), &WevaDocument::get_caret_bounds);
+    ClassDB::bind_method(D_METHOD("get_caret_window_bounds"), &WevaDocument::get_caret_window_bounds);
+    for (const char* signal : {"composition_started", "composition_updated", "composition_ended"})
+        ADD_SIGNAL(MethodInfo(signal, PropertyInfo(Variant::STRING, "id"), PropertyInfo(Variant::STRING, "text")));
     ClassDB::bind_method(D_METHOD("select_all"), &WevaDocument::select_all);
     ClassDB::bind_method(D_METHOD("undo"), &WevaDocument::undo);
     ClassDB::bind_method(D_METHOD("redo"), &WevaDocument::redo);
@@ -442,6 +557,7 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("value_committed", PropertyInfo(Variant::STRING, "id"),
                           PropertyInfo(Variant::STRING, "value")));
     ADD_SIGNAL(MethodInfo("form_submitted", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("form_reset", PropertyInfo(Variant::STRING, "id")));
     // A `data-model` control wrote its value back into `data`. The path, not
     // the element, because the path is what a script keyed its own state on.
     ADD_SIGNAL(MethodInfo("data_changed", PropertyInfo(Variant::STRING, "path"),
@@ -490,38 +606,52 @@ void WevaDocument::_ready() {
     // shelf boundaries into whatever glyph was packed next door.
     set_texture_filter(TEXTURE_FILTER_NEAREST);
 
-    // Without this the default `interactive` does nothing: the flag is set but
-    // no input arrives, so :hover would be wired up and still never fire.
-    set_process_input(interactive_);
-
-    if (size_ == Vector2(0, 0)) {
-        // No explicit size: take the viewport's, so a document dropped into a
-        // scene fills it rather than laying out against a default nobody chose.
-        const Vector2 vp = get_viewport_rect().size;
-        if (vp.x > 0 && vp.y > 0) set_document_size(vp);
-    }
+    // Native anchors and Containers own the rectangle. An unsized document
+    // fills its parent; an explicitly sized one keeps its chosen rectangle.
+    if (get_size() == Vector2()) set_anchors_and_offsets_preset(PRESET_FULL_RECT);
+    sync_control_size();
     ensure_updated();
+    sync_gui_focus();
+    set_process_input(true);
 }
 
 void WevaDocument::set_html(const String& html) {
+    close_ime();
+    binding_paths_.clear();
     html_ = html;
     if (!doc_) return;
     const CharString utf8 = html.utf8();
     weva_document_load_html(doc_, utf8.get_data(), static_cast<size_t>(utf8.length()));
+    // Reload creates new controls and repeat rows. Existing data must fill
+    // their models just as it does when data is assigned after the markup.
+    if (bindings_active_) refresh_bindings();
     dirty_ = true;
     queue_redraw();
 }
 
 void WevaDocument::set_css(const String& css) {
+    if (css_ == css) return;
+    if (doc_) {
+        const CharString utf8 = css.utf8();
+        const weva_status status = weva_document_set_css(doc_, utf8.get_data(), static_cast<size_t>(utf8.length()));
+        if (status != WEVA_OK) {
+            UtilityFunctions::push_error("WevaDocument could not replace CSS (status ", status, ").");
+            return;
+        }
+    }
     css_ = css;
-    if (!doc_) return;
-    const CharString utf8 = css.utf8();
-    weva_document_add_css(doc_, utf8.get_data(), static_cast<size_t>(utf8.length()));
     dirty_ = true;
     queue_redraw();
 }
 
 void WevaDocument::set_document_size(const Vector2& size) {
+    set_size(size);
+    sync_control_size();
+}
+
+void WevaDocument::sync_control_size() {
+    const Vector2 size = get_size();
+    if (size == size_) return;
     size_ = size;
     if (!doc_) return;
     weva_document_set_viewport(doc_, static_cast<int>(size.x), static_cast<int>(size.y));
@@ -531,11 +661,152 @@ void WevaDocument::set_document_size(const Vector2& size) {
 
 void WevaDocument::set_interactive(bool on) {
     interactive_ = on;
-    set_process_input(on);
+    set_mouse_filter(on ? MOUSE_FILTER_PASS : MOUSE_FILTER_IGNORE);
+    set_focus_mode(on ? FOCUS_ALL : FOCUS_NONE);
     if (!on && doc_) {
-        weva_document_clear_pointer(doc_);
-        dirty_ = true;
-        queue_redraw();
+        clear_pointer();
+    }
+}
+
+void WevaDocument::sync_gui_focus() {
+    if (doc_ && interactive_ && is_inside_tree() && is_visible_in_tree() &&
+        get_focus_mode_with_override() != FOCUS_NONE && weva_document_focus(doc_) != WEVA_ELEMENT_NONE &&
+        !has_focus()) grab_focus();
+}
+
+void WevaDocument::close_ime() {
+    const int32_t window = ime_window_;
+    ime_window_ = -1;
+    ime_target_ = WEVA_ELEMENT_NONE;
+    ime_end_pending_ = false;
+    ime_end_target_ = WEVA_ELEMENT_NONE;
+    ime_commit_text_ = String();
+    if (window >= 0 && DisplayServer::get_singleton())
+        DisplayServer::get_singleton()->window_set_ime_active(false, window);
+}
+
+Rect2 WevaDocument::get_caret_bounds() {
+    if (!doc_) return Rect2();
+    ensure_updated();
+    if (weva_document_text_input_target(doc_) == WEVA_ELEMENT_NONE) return Rect2();
+    const uint64_t serial = weva_document_draw_serial(doc_);
+    if (serial != caret_bounds_serial_) {
+        double x = 0, y = 0, width = 0, height = 0;
+        weva_document_caret_bounds(doc_, &x, &y, &width, &height);
+        caret_bounds_ = Rect2(x, y, width, height);
+        caret_bounds_serial_ = serial;
+    }
+    return caret_bounds_;
+}
+
+Rect2 WevaDocument::get_caret_window_bounds() {
+    if (!is_inside_tree()) return Rect2();
+    const Rect2 bounds = get_caret_bounds();
+    if (!bounds.has_area()) return Rect2();
+    return (get_viewport()->get_screen_transform() * get_global_transform_with_canvas()).xform(bounds);
+}
+
+void WevaDocument::sync_ime() {
+    auto* display = DisplayServer::get_singleton();
+    if (!display || !display->has_feature(DisplayServer::FEATURE_IME)) return;
+    Window* window = is_inside_tree() ? get_window() : nullptr;
+    const int32_t id = window ? window->get_window_id() : -1;
+    uint32_t target = WEVA_ELEMENT_NONE;
+    if (doc_ && interactive_ && is_visible_in_tree() && has_focus() && id >= 0 && display->window_is_focused(id)) {
+        ensure_updated();
+        target = weva_document_text_input_target(doc_);
+    }
+    if (target == WEVA_ELEMENT_NONE) {
+        if (ime_window_ >= 0 && weva_document_commit_composition(doc_, nullptr)) {
+            dirty_ = true;
+            queue_redraw();
+        }
+        close_ime();
+        return;
+    }
+    const bool opening = ime_window_ != id || ime_target_ != target;
+    if (opening) {
+        close_ime();
+        ime_window_ = id;
+        ime_target_ = target;
+    }
+    const Rect2 caret = get_caret_window_bounds();
+    const Vector2i position = Vector2i(caret.position + Vector2(0, caret.size.y));
+    const uint64_t serial = weva_document_draw_serial(doc_);
+    if (opening || position != ime_position_ || serial != ime_draw_serial_) {
+        // X11 may transfer keyboard focus back from its IME child window
+        // without changing the HTML target. Refresh on a painted caret,
+        // as Godot's LineEdit does, including after a window activation.
+        display->window_set_ime_active(true, id);
+        ime_draw_serial_ = serial;
+        ime_position_ = position;
+        display->window_set_ime_position(position, id);
+    }
+}
+
+bool WevaDocument::set_composition(const String& text, int start, int end) {
+    if (!doc_) return false;
+    ensure_updated();
+    const CharString utf8 = text.utf8();
+    const int from = text.substr(0, std::clamp(start, 0, static_cast<int>(text.length()))).utf8().length();
+    const int to = text.substr(0, std::clamp(end, 0, static_cast<int>(text.length()))).utf8().length();
+    if (!weva_document_set_composition(doc_, utf8.get_data(), from, to)) return false;
+    dirty_ = true;
+    queue_redraw();
+    pump_events();
+    return true;
+}
+
+bool WevaDocument::commit_composition(const String& text) {
+    if (!doc_) return false;
+    const CharString utf8 = text.utf8();
+    if (!weva_document_commit_composition(doc_, utf8.get_data())) return false;
+    dirty_ = true;
+    queue_redraw();
+    pump_events();
+    return true;
+}
+
+bool WevaDocument::finish_composition() {
+    if (!doc_ || !weva_document_commit_composition(doc_, nullptr)) return false;
+    dirty_ = true;
+    queue_redraw();
+    pump_events();
+    return true;
+}
+
+bool WevaDocument::has_composition() const {
+    return doc_ && weva_document_composition(doc_, nullptr, nullptr) != WEVA_ELEMENT_NONE;
+}
+
+void WevaDocument::schedule_ime_end() {
+    if (ime_end_pending_) return;
+    ime_end_pending_ = true;
+    ime_end_target_ = weva_document_composition(doc_, nullptr, nullptr);
+    callable_mp(this, &WevaDocument::flush_ime_commit).call_deferred();
+}
+
+void WevaDocument::flush_ime_commit() {
+    if (!ime_end_pending_) return;
+    ime_end_pending_ = false;
+    const String text = ime_commit_text_;
+    ime_commit_text_ = String();
+    const uint32_t target = ime_end_target_;
+    ime_end_target_ = WEVA_ELEMENT_NONE;
+    if (doc_ && target != WEVA_ELEMENT_NONE && weva_document_composition(doc_, nullptr, nullptr) == target)
+        commit_composition(text);
+}
+
+void WevaDocument::receive_ime_update() {
+    if (ime_window_ < 0 || !has_focus() || !interactive_ || !is_visible_in_tree()) return;
+    auto* display = DisplayServer::get_singleton();
+    const String text = display->ime_get_text();
+    if (text.is_empty()) {
+        if (has_composition()) schedule_ime_end();
+    } else {
+        flush_ime_commit();
+        const Vector2i selection = display->ime_get_selection();
+        if (!set_composition(text, selection.x, selection.x + selection.y)) close_ime();
     }
 }
 
@@ -565,29 +836,108 @@ static int weva_key_from_godot(Key code) {
     }
 }
 
+bool WevaDocument::_has_point(const Vector2& point) const {
+    if (!interactive_ || !doc_) return false;
+    const_cast<WevaDocument*>(this)->ensure_updated();
+    return weva_document_accepts_pointer(doc_, point.x, point.y) != 0;
+}
+
+void WevaDocument::dismiss_outside_transients() {
+    pointer_focus_entry_ = false;
+    const uint64_t version = outside_dismiss_version_;
+    outside_dismiss_version_ = 0;
+    if (doc_ && weva_document_dismiss_transients(doc_, version)) {
+        dirty_ = true;
+        queue_redraw();
+        pump_events();
+    }
+}
+
 void WevaDocument::_input(const Ref<InputEvent>& event) {
-    if (!interactive_ || !doc_ || event.is_null()) return;
+    // Observe only light dismissal. Activation and typing belong exclusively
+    // to _gui_input. Flush the previous event before another one is routed;
+    // the deferred call also covers the last event of a frame.
+    dismiss_outside_transients();
+    if (!interactive_ || !doc_ || !is_visible_in_tree()) return;
+    const Ref<InputEventMouseButton> button = event;
+    if (button.is_null() || !button->is_pressed() || button->get_button_index() != MOUSE_BUTTON_LEFT) return;
+    pointer_focus_entry_ = true;
+    outside_dismiss_version_ = weva_document_transient_version(doc_);
+    callable_mp(this, &WevaDocument::dismiss_outside_transients).call_deferred();
+}
+
+void WevaDocument::_gui_input(const Ref<InputEvent>& event) {
+    if (!interactive_ || !doc_ || event.is_null() || !is_visible_in_tree()) return;
+    const Ref<InputEventMouseButton> routed_button = event;
+    if (routed_button.is_valid() && routed_button->is_pressed() && routed_button->get_button_index() == MOUSE_BUTTON_LEFT)
+        outside_dismiss_version_ = 0;
+    ensure_updated();
 
     const Ref<InputEventKey> key = event;
-    if (key.is_valid() && !key->is_echo()) {
+    if (key.is_valid()) {
+        // Result text may arrive as several Unicode key events after the OS
+        // clears its preedit. Collect that batch before replacing the range.
+        if (has_composition() || ime_end_pending_) {
+            if (key->is_pressed() && key->get_unicode() >= 32 && key->get_unicode() != 127) {
+                schedule_ime_end();
+                ime_commit_text_ += String::chr(key->get_unicode());
+            }
+            accept_event();
+            return;
+        }
         uint32_t modifiers = 0;
         if (key->is_shift_pressed()) modifiers |= WEVA_MOD_SHIFT;
         if (key->is_ctrl_pressed()) modifiers |= WEVA_MOD_CTRL;
         if (key->is_alt_pressed()) modifiers |= WEVA_MOD_ALT;
         if (key->is_meta_pressed()) modifiers |= WEVA_MOD_META;
         const int code = weva_key_from_godot(key->get_keycode());
-        const bool consumed =
-            weva_document_key(doc_, code, modifiers, key->is_pressed() ? 1 : 0) != 0;
+        bool consumed = false;
+        if (key->is_pressed() && code == WEVA_KEY_TAB && !key->is_ctrl_pressed()) {
+            const bool backwards = key->is_shift_pressed();
+            consumed = weva_document_focus_step(doc_, backwards, 0) != WEVA_ELEMENT_NONE;
+            // At the edge, let Godot continue its native focus chain. If this
+            // is the only Control, keep the HTML tab order cycling locally.
+            Control* next = backwards ? find_prev_valid_focus() : find_next_valid_focus();
+            if (!consumed && (!next || next == this))
+                consumed = weva_document_focus_step(doc_, backwards, 1) != WEVA_ELEMENT_NONE;
+        } else {
+            consumed = weva_document_key(doc_, code, modifiers, key->is_pressed() ? 1 : 0) != 0;
+        }
+        const bool shortcut = key->is_command_or_control_pressed() && !key->is_alt_pressed();
+        if (key->is_pressed() && shortcut) {
+            switch (key->get_keycode()) {
+                case KEY_A: consumed = select_all() || consumed; break;
+                case KEY_C:
+                case KEY_X: {
+                    const String selected = get_selected_text();
+                    if (!selected.is_empty()) {
+                        DisplayServer::get_singleton()->clipboard_set(selected);
+                        if (key->get_keycode() == KEY_X) send_key(KEY_BACKSPACE);
+                        consumed = true;
+                    }
+                    break;
+                }
+                case KEY_V: {
+                    const CharString text = DisplayServer::get_singleton()->clipboard_get().utf8();
+                    consumed = weva_document_paste_text(doc_, text.get_data()) != 0 || consumed;
+                    break;
+                }
+                case KEY_Z: consumed = (key->is_shift_pressed() ? redo() : undo()) || consumed; break;
+                case KEY_Y: consumed = redo() || consumed; break;
+                default: break;
+            }
+        }
         // The unicode a key produced is a separate thing from the key: Shift+1
         // is one key and the text "!", and a dead key produces no text at all.
-        if (key->is_pressed() && key->get_unicode() != 0) {
+        if (key->is_pressed() && !consumed && !shortcut && key->get_unicode() >= 32 && key->get_unicode() != 127) {
             const String character = String::chr(key->get_unicode());
             const CharString utf8 = character.utf8();
-            weva_document_text_input(doc_, utf8.get_data());
+            consumed = weva_document_try_text_input_modifiers(doc_, utf8.get_data(), modifiers) != 0 || consumed;
         }
         dirty_ = true;
         queue_redraw();
-        if (consumed) get_viewport()->set_input_as_handled();
+        pump_events();
+        if (consumed) accept_event();
         return;
     }
 
@@ -597,7 +947,7 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
     // scroll at all.
     const Ref<InputEventScreenDrag> touch = event;
     if (touch.is_valid()) {
-        const Vector2 at = get_global_transform().affine_inverse().xform(touch->get_position());
+        const Vector2 at = touch->get_position();
         const Vector2 by = touch->get_relative();
         ensure_updated();
         // Negated: the content follows the finger, so dragging UP moves the
@@ -613,9 +963,11 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
     const Ref<InputEventMouseMotion> motion = event;
     const Ref<InputEventMouseButton> button = event;
     if (motion.is_null() && button.is_null()) return;
+    if (button.is_valid() && button->is_pressed() && button->get_button_index() == MOUSE_BUTTON_LEFT && !has_focus())
+        grab_focus();
 
-    const Vector2 local = get_global_transform().affine_inverse().xform(
-        motion.is_valid() ? motion->get_global_position() : button->get_global_position());
+    // Control delivers local coordinates, including CanvasLayer/camera/scale.
+    const Vector2 local = motion.is_valid() ? motion->get_position() : button->get_position();
     // The wheel, before the pointer bookkeeping: a wheel event carries no
     // movement, so the "nothing moved" early return below would swallow it.
     if (button.is_valid() && button->is_pressed()) {
@@ -679,28 +1031,71 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
             else buttons &= ~bit;
         }
     }
-    if (local == pointer_ && buttons == buttons_) return;
+    const Ref<InputEventWithModifiers> mouse_modifiers = event;
+    uint32_t modifiers = 0;
+    if (mouse_modifiers->is_shift_pressed()) modifiers |= WEVA_MOD_SHIFT;
+    if (mouse_modifiers->is_ctrl_pressed()) modifiers |= WEVA_MOD_CTRL;
+    if (mouse_modifiers->is_alt_pressed()) modifiers |= WEVA_MOD_ALT;
+    if (mouse_modifiers->is_meta_pressed()) modifiers |= WEVA_MOD_META;
+    if (local == pointer_ && buttons == buttons_ && modifiers == pointer_modifiers_) return;
     pointer_ = local;
     buttons_ = buttons;
-    weva_document_set_pointer(doc_, local.x, local.y, buttons);
+    pointer_modifiers_ = modifiers;
+    weva_document_set_pointer_modifiers(doc_, local.x, local.y, buttons, modifiers);
     // The document decides whether anything actually changed; an update that
     // finds no style different publishes the frame it already had.
     dirty_ = true;
     queue_redraw();
+    pump_events();
+    if (button.is_valid()) accept_event();
 }
 
 void WevaDocument::_notification(int what) {
+    if (what == NOTIFICATION_THEME_CHANGED) {
+        theme_font_dirty_ = true;
+        dirty_ = true;
+        queue_redraw();
+    }
+    if (what == NOTIFICATION_ENTER_TREE) last_input_tick_usec_ = 0;
+    if (what == MainLoop::NOTIFICATION_OS_IME_UPDATE) receive_ime_update();
+    if (what == NOTIFICATION_FOCUS_EXIT || what == NOTIFICATION_WM_WINDOW_FOCUS_OUT || what == NOTIFICATION_EXIT_TREE)
+        close_ime();
+    if (what == NOTIFICATION_WM_WINDOW_FOCUS_OUT) {
+        finish_composition();
+        clear_pointer();
+    }
+    if (what == NOTIFICATION_WM_WINDOW_FOCUS_IN) sync_ime();
+    if (what == NOTIFICATION_RESIZED) sync_control_size();
+    if (what == NOTIFICATION_MOUSE_EXIT && buttons_ == 0) clear_pointer();
+    if (what == NOTIFICATION_FOCUS_ENTER && doc_ && interactive_) {
+        ensure_updated();
+        // A pointer entry focuses what was clicked in _gui_input. Selecting
+        // the first HTML field here can scroll it into view before that click.
+        if (!pointer_focus_entry_ && weva_document_focus(doc_) == WEVA_ELEMENT_NONE)
+            weva_document_focus_next(doc_, Input::get_singleton()->is_action_pressed("ui_focus_prev") ||
+                                           Input::get_singleton()->is_key_pressed(KEY_SHIFT));
+        dirty_ = true;
+        queue_redraw();
+        pump_events();
+    }
+    if (what == NOTIFICATION_FOCUS_EXIT && doc_) set_focus(String());
+    if (what == NOTIFICATION_VISIBILITY_CHANGED && is_inside_tree() && !is_visible_in_tree()) clear_pointer();
     if (what == NOTIFICATION_EXIT_TREE && doc_) {
         weva_document_clear_pointer(doc_);
+        pointer_ = Vector2(-1, -1);
+        buttons_ = 0;
+        outside_dismiss_version_ = 0;
     }
 }
 
-void WevaDocument::set_pointer(const Vector2& point, int buttons) {
+void WevaDocument::set_pointer(const Vector2& point, int buttons, int modifiers) {
     if (!doc_) return;
     ensure_updated();
     pointer_ = point;
     buttons_ = static_cast<uint32_t>(buttons);
-    weva_document_set_pointer(doc_, point.x, point.y, buttons_);
+    pointer_modifiers_ = static_cast<uint32_t>(modifiers);
+    weva_document_set_pointer_modifiers(doc_, point.x, point.y, buttons_, pointer_modifiers_);
+    sync_gui_focus();
     dirty_ = true;
     queue_redraw();
     pump_events();
@@ -710,6 +1105,7 @@ godot::String WevaDocument::focus_next(bool backwards) {
     if (!doc_) return String();
     ensure_updated();
     const weva_element_t e = weva_document_focus_next(doc_, backwards ? 1 : 0);
+    sync_gui_focus();
     dirty_ = true;
     queue_redraw();
     // Delivered here rather than next frame: a script that moves focus and
@@ -722,6 +1118,7 @@ godot::String WevaDocument::focus_move(const Vector2& direction) {
     if (!doc_) return String();
     ensure_updated();
     const weva_element_t e = weva_document_focus_move(doc_, direction.x, direction.y);
+    sync_gui_focus();
     dirty_ = true;
     queue_redraw();
     return id_of(e);
@@ -789,11 +1186,9 @@ Vector2 WevaDocument::get_element_scroll_max(const String& selector) {
 
 // ---- Input a host routes itself ----------------------------------------
 //
-// `interactive` makes the document read the mouse and keyboard straight from
-// the viewport, which is what most scenes want. A game with its own input map
-// -- a controller whose d-pad should scroll a list, a pause menu that decides
-// who gets the keys -- wants to hand events over one at a time instead. These
-// are that: the same path _input takes, reachable from a script.
+// `interactive` makes the document receive Godot's routed GUI events.
+// A game with its own input map can hand events over one at a time through
+// these explicit document-coordinate operations.
 
 bool WevaDocument::send_key(int keycode, bool pressed, bool shift, bool ctrl) {
     if (!doc_) return false;
@@ -817,6 +1212,19 @@ void WevaDocument::send_text(const String& text) {
     dirty_ = true;
     queue_redraw();
     pump_events();
+}
+
+bool WevaDocument::paste_text(const String& text) {
+    if (!doc_ || text.is_empty()) return false;
+    ensure_updated();
+    const CharString utf8 = text.utf8();
+    const bool consumed = weva_document_paste_text(doc_, utf8.get_data()) != 0;
+    if (consumed) {
+        dirty_ = true;
+        queue_redraw();
+        pump_events();
+    }
+    return consumed;
 }
 
 // ---- Selection -----------------------------------------------------------
@@ -974,6 +1382,13 @@ bool step(const Variant& from, const String& key, Variant* out) {
 
 }   // namespace
 
+const PackedStringArray& WevaDocument::binding_parts(const String& path) const {
+    auto found = binding_paths_.find(path);
+    if (found != binding_paths_.end()) return found->second;
+    if (binding_paths_.size() >= 1024) binding_paths_.clear();
+    return binding_paths_.emplace(path, path.split(".")).first->second;
+}
+
 bool WevaDocument::resolve_binding(const String& path, String* out) const {
     if (data_source_.is_valid()) {
         const Variant v = data_source_.call(path);
@@ -982,7 +1397,7 @@ bool WevaDocument::resolve_binding(const String& path, String* out) const {
         return true;
     }
     Variant current = data_;
-    const PackedStringArray parts = path.split(".");
+    const PackedStringArray parts = binding_parts(path);
     for (int i = 0; i < parts.size(); ++i) {
         Variant next;
         if (!step(current, parts[i], &next)) return false;
@@ -1093,8 +1508,7 @@ bool WevaDocument::toggle_popover(const String& selector) {
 
 bool WevaDocument::show_dialog(const String& selector) {
     if (!doc_) return false;
-    ensure_updated();
-    const uint32_t e = resolve(selector);
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE) return false;
     if (weva_element_show_dialog(doc_, e, 0) != WEVA_OK) return false;
     dirty_ = true;
@@ -1104,8 +1518,7 @@ bool WevaDocument::show_dialog(const String& selector) {
 
 bool WevaDocument::show_modal_dialog(const String& selector) {
     if (!doc_) return false;
-    ensure_updated();
-    const uint32_t e = resolve(selector);
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE) return false;
     if (weva_element_show_dialog(doc_, e, 1) != WEVA_OK) return false;
     dirty_ = true;
@@ -1115,8 +1528,7 @@ bool WevaDocument::show_modal_dialog(const String& selector) {
 
 bool WevaDocument::close_dialog(const String& selector) {
     if (!doc_) return false;
-    ensure_updated();
-    const uint32_t e = resolve(selector);
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE) return false;
     if (weva_element_close_dialog(doc_, e) != WEVA_OK) return false;
     dirty_ = true;
@@ -1161,7 +1573,7 @@ int WevaDocument::resolve_binding_count(const String& path) const {
         return v.get_type() == Variant::ARRAY ? static_cast<int>(Array(v).size()) : -1;
     }
     Variant current = data_;
-    const PackedStringArray parts = path.split(".");
+    const PackedStringArray parts = binding_parts(path);
     for (int i = 0; i < parts.size(); ++i) {
         Variant next;
         if (!step(current, parts[i], &next)) return -1;
@@ -1183,6 +1595,7 @@ void WevaDocument::set_data_source(const Callable& resolver) {
 }
 
 int WevaDocument::refresh_bindings() {
+    bindings_active_ = true;
     if (!doc_) return 0;
     weva_binding_source source{};
     source.user = this;
@@ -1300,10 +1713,18 @@ godot::String WevaDocument::attribute_of(uint32_t element, const char* name) {
 // into it would move the caret to the end while someone is typing in it.
 int WevaDocument::apply_models() {
     if (!doc_) return 0;
-    size_t count = weva_document_query_all(doc_, "[data-model]", nullptr, 0);
+    // Most game screens have only a few editable controls. Fill in one scan;
+    // large forms retain the same unbounded fallback as the public query API.
+    weva_element_t local[32];
+    weva_element_t* elements = local;
+    size_t count = weva_document_query_all(doc_, "[data-model]", local, 32);
     if (count == 0) return 0;
-    std::vector<weva_element_t> elements(count);
-    count = weva_document_query_all(doc_, "[data-model]", elements.data(), elements.size());
+    std::vector<weva_element_t> overflow;
+    if (count > 32) {
+        overflow.resize(count);
+        elements = overflow.data();
+        count = weva_document_query_all(doc_, "[data-model]", elements, count);
+    }
 
     applying_models_ = true;
     int changed = 0;
@@ -1347,7 +1768,11 @@ bool WevaDocument::write_data_path(const godot::String& path, const godot::Strin
     Variant existing;
     if (step(current, leaf, &existing)) {
         switch (existing.get_type()) {
-            case Variant::BOOL: value = text.to_lower() == "true" || text == "1"; break;
+            case Variant::BOOL: {
+                const String boolean = text.to_lower();
+                value = boolean == "true" || boolean == "1" || boolean == "on";
+                break;
+            }
             case Variant::INT: value = static_cast<int64_t>(text.to_int()); break;
             case Variant::FLOAT: value = text.to_float(); break;
             default: break;
@@ -1445,12 +1870,16 @@ godot::String WevaDocument::id_of(uint32_t element) {
     char buffer[128];
     const size_t n = weva_element_attribute(doc_, element, "id", buffer, sizeof(buffer));
     if (n == 0 || n >= sizeof(buffer)) return String();
-    return String(buffer);
+    return String::utf8(buffer);
 }
 
-uint32_t WevaDocument::resolve(const godot::String& selector) {
+uint32_t WevaDocument::resolve(const godot::String& selector, bool flush) {
     if (!doc_ || selector.is_empty()) return WEVA_ELEMENT_NONE;
-    ensure_updated();
+    // DOM and live pseudo-state queries need no layout. Ordinary writes can
+    // accumulate until a read, interaction, explicit update or frame consumes
+    // them; updating three HUD bars must not paint three intermediate frames.
+    // Reads retain synchronous geometry/style semantics through the default.
+    if (flush) ensure_updated();
     const CharString s = selector.utf8();
     return weva_document_query(doc_, s.get_data());
 }
@@ -1459,7 +1888,16 @@ void WevaDocument::pump_events() {
     if (!doc_) return;
     weva_event e{};
     while (weva_document_poll_event(doc_, &e)) {
+        String event_text;
+        if (e.kind == WEVA_EVENT_TEXT_INPUT || e.kind == WEVA_EVENT_COMPOSITION_START ||
+            e.kind == WEVA_EVENT_COMPOSITION_UPDATE || e.kind == WEVA_EVENT_COMPOSITION_END) {
+            const size_t size = weva_document_event_text(doc_, nullptr, 0);
+            std::vector<char> text(size + 1, 0);
+            weva_document_event_text(doc_, text.data(), text.size());
+            event_text = String::utf8(text.data());
+        }
         const String id = id_of(e.target);
+        if (e.kind == WEVA_EVENT_RESET) write_back_form_models(e.target);
         // What the MARKUP called it, before what the element is called. A
         // controller with that method gets it, and `handler_invoked` carries
         // it either way -- so a script can dispatch by the name the designer
@@ -1490,7 +1928,10 @@ void WevaDocument::pump_events() {
             case WEVA_EVENT_KEY_DOWN:
                 emit_signal("key_pressed", id, e.key, static_cast<int>(e.modifiers));
                 break;
-            case WEVA_EVENT_TEXT_INPUT: emit_signal("text_entered", id, String(e.text)); break;
+            case WEVA_EVENT_TEXT_INPUT: emit_signal("text_entered", id, event_text); break;
+            case WEVA_EVENT_COMPOSITION_START: emit_signal("composition_started", id, event_text); break;
+            case WEVA_EVENT_COMPOSITION_UPDATE: emit_signal("composition_updated", id, event_text); break;
+            case WEVA_EVENT_COMPOSITION_END: emit_signal("composition_ended", id, event_text); break;
             case WEVA_EVENT_FOCUS: emit_signal("element_focused", id); break;
             case WEVA_EVENT_BLUR: emit_signal("element_blurred", id); break;
             case WEVA_EVENT_VALUE_CHANGED:
@@ -1508,6 +1949,7 @@ void WevaDocument::pump_events() {
                 write_back_model(e.target);
                 break;
             case WEVA_EVENT_SUBMIT: emit_signal("form_submitted", id); break;
+            case WEVA_EVENT_RESET: emit_signal("form_reset", id); break;
             case WEVA_EVENT_CONTEXT_MENU:
                 // Where the user asked for a menu. The engine has none of its
                 // own to show -- a menu is markup -- so this is the signal to
@@ -1529,6 +1971,7 @@ void WevaDocument::pump_events() {
             default: break;
         }
     }
+    sync_ime();
 }
 
 // One control's value into the data it is modelled on. Skipped while a model
@@ -1547,8 +1990,37 @@ void WevaDocument::write_back_model(uint32_t element) {
     refresh_bindings();
 }
 
+void WevaDocument::write_back_form_models(uint32_t form) {
+    if (applying_models_ || data_source_.is_valid()) return;
+    const auto elements = matches("[data-model]");
+    std::vector<std::pair<String, String>> changed;
+    for (const uint32_t element : elements) {
+        if (weva_element_form(doc_, element) != form) continue;
+        const String path = model_path_of(element);
+        if (path.is_empty()) continue;
+        const String value = value_of(element);
+        String previous;
+        if (resolve_binding(path, &previous) && previous == value) continue;
+        if (write_data_path(path, value)) changed.emplace_back(path, value);
+    }
+    // Update the entire form before bindings can reapply an old model value
+    // to another control that reset just restored.
+    for (const auto& entry : changed) emit_signal("data_changed", entry.first, entry.second);
+    if (!changed.empty()) refresh_bindings();
+}
+
+bool WevaDocument::reset_form(const String& selector) {
+    const uint32_t form = resolve(selector);
+    if (form == WEVA_ELEMENT_NONE || weva_document_reset_form(doc_, form) != WEVA_OK) return false;
+    dirty_ = true;
+    pump_events();
+    sync_ime();
+    queue_redraw();
+    return true;
+}
+
 bool WevaDocument::set_element_text(const godot::String& selector, const godot::String& text) {
-    const uint32_t e = resolve(selector);
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE) return false;
     const CharString t = text.utf8();
     if (weva_element_set_text(doc_, e, t.get_data()) != WEVA_OK) return false;
@@ -1563,7 +2035,7 @@ godot::String WevaDocument::get_element_text(const godot::String& selector) {
     const size_t needed = weva_element_text(doc_, e, nullptr, 0);
     std::vector<char> buffer(needed + 1, '\0');
     weva_element_text(doc_, e, buffer.data(), buffer.size());
-    return String(buffer.data());
+    return String::utf8(buffer.data());
 }
 
 godot::String WevaDocument::get_element_value(const godot::String& selector) {
@@ -1572,11 +2044,11 @@ godot::String WevaDocument::get_element_value(const godot::String& selector) {
     const size_t needed = weva_element_value(doc_, e, nullptr, 0);
     std::vector<char> buffer(needed + 1, '\0');
     weva_element_value(doc_, e, buffer.data(), buffer.size());
-    return String(buffer.data());
+    return String::utf8(buffer.data());
 }
 
 bool WevaDocument::set_element_value(const godot::String& selector, const godot::String& value) {
-    const uint32_t e = resolve(selector);
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE) return false;
     const CharString v = value.utf8();
     if (weva_element_set_value(doc_, e, v.get_data()) != WEVA_OK) return false;
@@ -1594,7 +2066,7 @@ bool WevaDocument::has_element(const godot::String& selector) {
 // hand through set_attribute means every caller reimplements the split.
 bool WevaDocument::toggle_element_class(const godot::String& selector, const godot::String& name,
                                         bool on) {
-    const uint32_t e = resolve(selector);
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE || name.is_empty()) return false;
     char buffer[512];
     const size_t n = weva_element_attribute(doc_, e, "class", buffer, sizeof(buffer));
@@ -1634,61 +2106,73 @@ godot::String WevaDocument::element_id_at(const Vector2& point) {
     char buffer[128];
     const size_t n = weva_element_attribute(doc_, e, "id", buffer, sizeof(buffer));
     if (n == 0 || n >= sizeof(buffer)) return String();
-    return String(buffer);
+    return String::utf8(buffer);
 }
 
 bool WevaDocument::set_focus(const godot::String& selector) {
     if (!doc_) return false;
-    ensure_updated();
+    // The core queues reveal when layout is pending. Opening a dialog then
+    // focusing its first field can publish one final frame, including IME.
     if (selector.is_empty()) {
-        return weva_document_set_focus(doc_, WEVA_ELEMENT_NONE) == WEVA_OK;
+        const bool ok = weva_document_set_focus(doc_, WEVA_ELEMENT_NONE) == WEVA_OK;
+        if (has_focus()) release_focus();
+        dirty_ = true;
+        queue_redraw();
+        pump_events();
+        return ok;
     }
     const CharString s = selector.utf8();
     const weva_element_t e = weva_document_query(doc_, s.get_data());
     if (e == WEVA_ELEMENT_NONE) return false;
     if (weva_document_set_focus(doc_, e) != WEVA_OK) return false;
+    sync_gui_focus();
     dirty_ = true;
     queue_redraw();
     pump_events();
     return true;
 }
 
-// The clock, which transitions need and nothing else does.
-//
-// A transition is the one thing that changes a document without anyone
-// touching it, so the node has to keep asking -- but only while something is
-// actually running. weva_document_update returns immediately when no
-// transition is in flight, so the cost of asking is a branch.
+// Animation and timed pointer gestures share the frame, but pausing CSS time
+// must leave input responsive. Settled core updates still return immediately.
 void WevaDocument::_process(double delta) {
+    // Godot's delta is simulation time (including Engine.time_scale).
+    // Captured input uses elapsed monotonic time, even in slow motion.
+    const uint64_t now = Time::get_singleton()->get_ticks_usec();
+    const double input_dt = last_input_tick_usec_ ? (now - last_input_tick_usec_) / 1000000.0 : 0;
+    last_input_tick_usec_ = now;
     if (!doc_) return;
     if (paused_) {
-        // Still update if something else made the document dirty; just do not
-        // let time be the thing that moved.
-        if (dirty_) ensure_updated(0);
+        // Input time advances held gestures while CSS time stays fixed.
+        if (dirty_ || weva_document_needs_input_tick(doc_)) ensure_updated(0,input_dt);
         pump_events();
         return;
     }
     pending_dt_ += delta;
-    if (!dirty_ && pending_dt_ <= 0) return;
+    if (!dirty_ && pending_dt_ <= 0 && !weva_document_needs_input_tick(doc_)) return;
     const double dt = pending_dt_;
     pending_dt_ = 0;
-    ensure_updated(dt);
+    ensure_updated(dt,input_dt);
     pump_events();
-    // A document with something in flight has to be drawn again next frame;
-    // the draw list changed under it.
-    if (weva_document_is_animating(doc_)) queue_redraw();
 }
 
-void WevaDocument::ensure_updated(double dt) {
-    if (!doc_ || (!dirty_ && dt <= 0)) return;
+void WevaDocument::ensure_updated(double dt, double input_dt) {
+    if (input_dt < 0) input_dt = dt;
+    if (!doc_ || (!dirty_ && dt <= 0 && input_dt <= 0)) return;
     ensure_font_backend();
     // Not an error to update an empty document: a scene may set css before
     // html, and the next update picks both up.
     const auto t0 = std::chrono::steady_clock::now();
-    weva_document_update(doc_, dt);
+    const uint64_t previous_draw = weva_document_draw_serial(doc_);
+    weva_document_update_with_input_time(doc_, dt, input_dt);
+    if (weva_document_draw_serial(doc_) != previous_draw) queue_redraw();
     last_update_ms_ =
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
     dirty_ = false;
+
+    // Texture views are published together with a new draw list. A settled
+    // update leaves both unchanged: keep the host's map as well, avoiding a
+    // map-node allocation and Ref churn for every retained texture each tick.
+    if (weva_document_draw_serial(doc_) == previous_draw) return;
 
     // Mirror the document's textures by id: a texture already held is kept
     // (ids are never reused within a document), a new one is uploaded, one
@@ -1724,8 +2208,7 @@ void WevaDocument::update_document(double dt) {
     pump_events();
     // ...but only redraw if there is something new to draw.
     //
-    // The documented way to use this node is to call update_document from
-    // _process. That used to queue a redraw unconditionally, and a redraw
+    // An explicit update used to queue a redraw unconditionally, and a redraw
     // rebuilds three PackedArrays per draw and converts every vertex from
     // linear to sRGB -- 7,280 vertices and 150 draws on one sample. For a
     // page nothing has touched, all of it produced the identical frame.
@@ -1866,46 +2349,115 @@ bool WevaDocument::draw_rounded_rect(const RID& item, const weva_draw& d) {
     return true;
 }
 
-void WevaDocument::add_triangles(const RID& item, const weva_draw& d) {
+namespace {
+size_t triangle_run(const weva_draw* draws, size_t count, bool sdf_rects) {
+    static const bool disabled = std::getenv("WEVA_GODOT_DISABLE_BATCHING") != nullptr;
+    const auto ordinary = [sdf_rects](const weva_draw& d) {
+        return d.kind == WEVA_DRAW_GEOMETRY ||
+               (d.kind == WEVA_DRAW_ROUNDED_RECT && !sdf_rects);
+    };
+    if (!count) return 0;
+    if (disabled || !ordinary(draws[0])) return 1;
+    size_t vertices = draws[0].vertex_count;
+    size_t run = 1;
+    // Preserve painter order, texture and material boundaries. Bound each
+    // upload without splitting any mesh that already exceeds this size.
+    while (run < count && ordinary(draws[run]) &&
+           draws[run].vertex_count && draws[run].index_count &&
+           draws[run].texture_id == draws[0].texture_id &&
+           vertices + draws[run].vertex_count <= 65536) {
+        vertices += draws[run].vertex_count;
+        ++run;
+    }
+    return run;
+}
+}
+
+void WevaDocument::add_triangles(const RID& item, const weva_draw* draws, size_t count,
+                                const uint64_t* versions) {
+    const auto pack_start = draw_profile.enabled ? DrawClock::now() : DrawClock::time_point{};
     // draw_polygon takes a polygon OUTLINE and triangulates it, so feeding it a
     // triangle soup produces garbage where it does not fail outright ("Invalid
     // polygon data, triangulation failed"). canvas_item_add_triangle_array
     // takes the index buffer directly, which is exactly the shape the core
     // already produces — no expansion, and no triangulator second-guessing
     // geometry that is already triangles.
-    PackedVector2Array points;
-    PackedColorArray colors;
-    PackedVector2Array uvs;
-    points.resize(static_cast<int64_t>(d.vertex_count));
-    colors.resize(static_cast<int64_t>(d.vertex_count));
-    uvs.resize(static_cast<int64_t>(d.vertex_count));
-    Vector2* pw = points.ptrw();
-    Color* cw = colors.ptrw();
-    Vector2* uw = uvs.ptrw();
-    for (size_t k = 0; k < d.vertex_count; ++k) {
-        const weva_vertex& v = d.vertices[k];
-        pw[k] = Vector2(v.x, v.y);
-        // The core works in linear space; Godot's canvas expects sRGB, so the
-        // conversion happens here rather than in the core, where it would be
-        // wrong for a backend that wants linear.
-        cw[k] = Color(v.r, v.g, v.b, v.a).linear_to_srgb();
-        uw[k] = Vector2(v.u, v.v);
+    if (packed_used_ == packed_batches_.size()) packed_batches_.emplace_back();
+    PackedBatch& packed = packed_batches_[packed_used_++];
+    auto& points = packed.points;
+    auto& colors = packed.colors;
+    auto& uvs = packed.uvs;
+    auto& indices = packed.indices;
+    size_t vertex_count = 0, index_count = 0;
+    for (size_t i = 0; i < count; ++i) {
+        vertex_count += draws[i].vertex_count;
+        index_count += draws[i].index_count;
     }
-
-    PackedInt32Array indices;
-    indices.resize(static_cast<int64_t>(d.index_count));
-    int32_t* iw = indices.ptrw();
-    for (size_t k = 0; k < d.index_count; ++k) {
-        iw[k] = static_cast<int32_t>(d.indices[k]);
+    // Versions describe immutable command inputs. PackedArray copy-on-write
+    // keeps earlier RenderingServer submissions valid when a cache slot changes.
+    static const bool disable_cache = std::getenv("WEVA_GODOT_DISABLE_PACK_CACHE") != nullptr;
+    const bool reuse = !disable_cache && versions && packed.versions.size() == count &&
+                       std::equal(packed.versions.begin(), packed.versions.end(), versions);
+    if (reuse) {
+        if (draw_profile.enabled) ++draw_profile.reused_batches;
+    } else {
+        if (versions) packed.versions.assign(versions, versions + count);
+        else packed.versions.clear();
+        if (draw_profile.enabled) draw_profile.packed_vertices += vertex_count;
+        points.resize(static_cast<int64_t>(vertex_count));
+        colors.resize(static_cast<int64_t>(vertex_count));
+        uvs.resize(static_cast<int64_t>(vertex_count));
+        Vector2* pw = points.ptrw();
+        Color* cw = colors.ptrw();
+        Vector2* uw = uvs.ptrw();
+        indices.resize(static_cast<int64_t>(index_count));
+        int32_t* iw = indices.ptrw();
+        float last_rgb[3]{};
+        Color converted_rgb;
+        bool have_rgb = false;
+        size_t base = 0, index_base = 0;
+        for (size_t i = 0; i < count; ++i) {
+            const weva_draw& d = draws[i];
+            for (size_t k = 0; k < d.vertex_count; ++k) {
+                const weva_vertex& v = d.vertices[k];
+                pw[base+k] = Vector2(v.x, v.y);
+                // The core works in linear space; Godot's canvas expects sRGB, so the
+                // conversion happens here rather than in the core, where it would be
+                // wrong for a backend that wants linear.
+                // Glyphs and flat fills repeat one RGB across many vertices. The
+                // coverage ramp changes alpha only, which is already linear. Reuse
+                // the exact conversion for consecutive identical RGB bit patterns.
+                const float rgb[3]{v.r,v.g,v.b};
+                if (!have_rgb || std::memcmp(rgb,last_rgb,sizeof(rgb)) != 0) {
+                    converted_rgb = Color(v.r,v.g,v.b,1).linear_to_srgb();
+                    std::memcpy(last_rgb,rgb,sizeof(rgb));
+                    have_rgb = true;
+                }
+                cw[base+k] = Color(converted_rgb.r,converted_rgb.g,converted_rgb.b,v.a);
+                uw[base+k] = Vector2(v.u, v.v);
+            }
+            for (size_t k = 0; k < d.index_count; ++k)
+                iw[index_base+k] = static_cast<int32_t>(base+d.indices[k]);
+            base += d.vertex_count;
+            index_base += d.index_count;
+        }
     }
 
     RID texture;
-    if (d.texture_id != 0) {
-        const auto it = textures_.find(d.texture_id);
+    if (draws[0].texture_id != 0) {
+        const auto it = textures_.find(draws[0].texture_id);
         if (it != textures_.end() && it->second.is_valid()) texture = it->second->get_rid();
+    }
+    const auto submit_start = draw_profile.enabled ? DrawClock::now() : DrawClock::time_point{};
+    if (draw_profile.enabled) {
+        draw_profile.packing_ms += std::chrono::duration<double,std::milli>(submit_start-pack_start).count();
+        draw_profile.vertices += vertex_count;
+        ++draw_profile.submissions;
+        draw_profile.max_batch_vertices = std::max(draw_profile.max_batch_vertices,vertex_count);
     }
     RenderingServer::get_singleton()->canvas_item_add_triangle_array(
         item, indices, points, colors, uvs, PackedInt32Array(), PackedFloat32Array(), texture);
+    if (draw_profile.enabled) draw_profile.submit_ms += draw_elapsed(submit_start);
 }
 
 // The shader behind `backdrop-filter`. It reads the back buffer, which is what
@@ -1968,7 +2520,7 @@ RID WevaDocument::backdrop_material() {
     return m;
 }
 
-void WevaDocument::draw_layered(const weva_draw* draws, size_t count) {
+void WevaDocument::draw_layered(const weva_draw* draws, size_t count, const uint64_t* versions) {
     RenderingServer* rs = RenderingServer::get_singleton();
     release_layers();
 
@@ -1991,7 +2543,9 @@ void WevaDocument::draw_layered(const weva_draw* draws, size_t count) {
         if (d.vertex_count == 0 || d.index_count == 0) continue;
 
         if (d.kind != WEVA_DRAW_BACKDROP_FILTER) {
-            add_triangles(current, d);
+            const size_t run = triangle_run(draws+i, count-i, false);
+            add_triangles(current, draws+i, run, versions ? versions+i : nullptr);
+            i += run-1;
             continue;
         }
 
@@ -2031,18 +2585,23 @@ void WevaDocument::draw_layered(const weva_draw* draws, size_t count) {
                                        d.backdrop.color_offset[2]));
         rs->material_set_param(mat, "out_alpha", d.backdrop.color_alpha);
         rs->canvas_item_set_material(item, mat);
-        add_triangles(item, d);
+        add_triangles(item, &d, 1, versions ? versions+i : nullptr);
 
         current = new_layer(false);
     }
 }
 
 void WevaDocument::_draw() {
+    GodotDrawScope profile;
     ensure_updated();
     if (!doc_) return;
 
     size_t count = 0;
     const weva_draw* draws = weva_document_draws(doc_, &count);
+    size_t version_count = 0;
+    const uint64_t* versions = weva_document_draw_versions(doc_, &version_count);
+    if (version_count != count) versions = nullptr;
+    packed_used_ = 0;
 
     rounded_used_ = 0;
     bool any_backdrop = false;
@@ -2050,7 +2609,8 @@ void WevaDocument::_draw() {
         any_backdrop = draws[i].kind == WEVA_DRAW_BACKDROP_FILTER;
     }
     if (any_backdrop) {
-        draw_layered(draws, count);
+        draw_layered(draws, count, versions);
+        packed_batches_.resize(packed_used_);
         return;
     }
     release_layers();
@@ -2063,8 +2623,11 @@ void WevaDocument::_draw() {
         const weva_draw& d = draws[i];
         if (d.vertex_count == 0 || d.index_count == 0) continue;
         if (d.kind == WEVA_DRAW_ROUNDED_RECT && draw_rounded_rect(get_canvas_item(), d)) continue;
-        add_triangles(get_canvas_item(), d);
+        const size_t run = triangle_run(draws+i, count-i, use_sdf_rects_);
+        add_triangles(get_canvas_item(), draws+i, run, versions ? versions+i : nullptr);
+        i += run-1;
     }
+    packed_batches_.resize(packed_used_);
 }
 
 Vector2 WevaDocument::get_content_size() {

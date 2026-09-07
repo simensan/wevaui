@@ -23,7 +23,7 @@ import sys
 
 
 def load(path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -113,7 +113,7 @@ def load_chrome(corpus, name):
     for suffix in (".html.chrome-layout.json", ".chrome-layout.json"):
         path = os.path.join(corpus, name + suffix)
         if os.path.exists(path):
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 return json.load(f)
     return None
 

@@ -8,16 +8,59 @@
 
 #include "weva/css_properties.h"
 #include "weva/inline_layout.h"
+#include "weva/form_state.h"
 
 #include <algorithm>
 
 #include <cmath>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
 namespace weva {
 
 namespace {
+
+struct LayoutProfile {
+    struct Part { double ms = 0; size_t calls = 0; };
+    Part parts[6];
+};
+thread_local LayoutProfile* active_layout_profile = nullptr;
+
+struct LayoutProfileRoot {
+    LayoutProfile profile;
+    LayoutProfile* previous = active_layout_profile;
+    bool enabled;
+    LayoutProfileRoot() {
+        static const bool log = std::getenv("WEVA_LAYOUT_LOG") != nullptr;
+        enabled = log;
+        if (enabled) active_layout_profile = &profile;
+    }
+    ~LayoutProfileRoot() {
+        if (!enabled) return;
+        active_layout_profile = previous;
+        static constexpr const char* names[] = {"box model", "inline", "finalize",
+                                               "collect", "atoms", "line build"};
+        for (size_t i = 0; i < 6; ++i)
+            std::fprintf(stderr, "    layout work: %-10s %.3f ms; %zu calls (inclusive)\n",
+                names[i], profile.parts[i].ms, profile.parts[i].calls);
+    }
+};
+
+struct LayoutProfilePart {
+    using Clock = std::chrono::steady_clock;
+    LayoutProfile::Part* part;
+    Clock::time_point start;
+    explicit LayoutProfilePart(size_t index)
+        : part(active_layout_profile ? &active_layout_profile->parts[index] : nullptr) {
+        if (part) { ++part->calls; start = Clock::now(); }
+    }
+    ~LayoutProfilePart() {
+        if (part) part->ms += std::chrono::duration<double, std::milli>(Clock::now() - start).count();
+    }
+};
 
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
@@ -176,7 +219,7 @@ ResolvedSides resolve_border_edges(const ComputedStyle* style, const LayoutConte
         // border-width gets no border at all — which is correct, and a
         // frequent surprise.
         if (s.empty() || s == "none" || s == "hidden") return 0.0;
-        return resolve_border_width(get(style, width_id), font_size, ctx);
+        return resolve_border_width(style, width_id, font_size, ctx);
     };
     ResolvedSides r;
     r.top = edge(kId_border_top_style, kId_border_top_width);
@@ -196,6 +239,7 @@ PositionType parse_position_type(std::string_view raw) {
 
 double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
                        const ComputedStyle* parent_style, const LayoutContext& ctx) {
+    LayoutProfilePart profile(0);
     Box& box = (*tree)[id];
     const ComputedStyle* style = box.style;
 
@@ -507,6 +551,22 @@ bool has_non_visible_overflow(const Box& b) {
     return !oy.empty() && oy != "visible";
 }
 
+namespace {
+bool is_flex_grid_item(const BoxTree& tree, const Box& b) {
+    // Flex/grid items establish independent formatting contexts too. Their
+    // children's margins stay inside them and their floats cannot escape.
+    // The box parent handles display:contents and retained subtree probes
+    // without storing another derived flag on the box.
+    if (tree.valid(b.parent)) {
+        const DisplayKind parent_display = tree[b.parent].display;
+        if (parent_display == DisplayKind::Flex || parent_display == DisplayKind::InlineFlex ||
+            parent_display == DisplayKind::Grid || parent_display == DisplayKind::InlineGrid)
+            return true;
+    }
+    return false;
+}
+} // namespace
+
 bool establishes_new_bfc(const Box& b) {
     if (!b.style) return false;
     // The `overflow` shorthand expands to overflow-x / overflow-y, so the
@@ -622,6 +682,9 @@ bool parent_height_auto(const Box& b, const LayoutContext& ctx, double font_size
 bool is_self_collapsing(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
                         double font_size) {
     const Box& b = tree[id];
+    // A deferred grid owns nonempty in-flow children in the retained arena.
+    // Its empty proxy vector is not evidence of an empty/self-collapsing box.
+    if (b.retained_from != kNoBox) return false;
     if (b.padding_top > 0 || b.padding_bottom > 0) return false;
     if (b.border_top > 0 || b.border_bottom > 0) return false;
     if (b.style) {
@@ -790,6 +853,7 @@ void BlockLayout::place_float(BoxId container, BoxId float_box, double top_y,
 
 double BlockLayout::layout_inline_content(BoxId id, double content_width,
                                           const ComputedStyle* parent_style) {
+    LayoutProfilePart work_profile(1);
     if (!metrics_) return 0;
     // The items are collected ONCE per container and cached: a shrink-to-fit
     // probe lays the same container out three times, and the first pass
@@ -798,9 +862,20 @@ double BlockLayout::layout_inline_content(BoxId id, double content_width,
     // are re-derived on every pass.
     auto it = inline_items_.find(id);
     if (it == inline_items_.end()) {
-        it = inline_items_.emplace(id, collect_inline_items(*tree_, id, ctx_, metrics_)).first;
+        LayoutProfilePart collect_profile(3);
+        InlineLayoutEntry entry;
+        entry.items = collect_inline_items(*tree_, id, ctx_, metrics_);
+        entry.plain_text = std::all_of(entry.items.begin(), entry.items.end(), [](const InlineItem& item) {
+            return item.source_run != kNoBox && item.inline_parent == kNoBox &&
+                   !item.is_atom() && !item.is_break() && !item.is_marker();
+        });
+        it = inline_items_.emplace(id, std::move(entry)).first;
     }
-    size_atoms(&it->second, content_width, parent_style);
+    auto& entry = it->second;
+    {
+        LayoutProfilePart atoms_profile(4);
+        size_atoms(&entry.items, content_width, parent_style);
+    }
 
     // The container's own offset inside the BFC. bfc_origin_ still refers to
     // the PARENT here — it is updated further down layout_block, past the
@@ -813,8 +888,69 @@ double BlockLayout::layout_inline_content(BoxId id, double content_width,
         env.bfc_content_top = bfc_origin_y_ + (*tree_)[id].y + (*tree_)[id].padding_top +
                               (*tree_)[id].border_top;
     }
-    return layout_inline_items(tree_, id, it->second, content_width, ctx_, *metrics_,
-                               env.floats ? &env : nullptr);
+    const Box& before = (*tree_)[id];
+    InlineLayoutEntry::Input input;
+    input.width = content_width;
+    input.top = before.padding_top + before.border_top;
+    input.left = before.padding_left + before.border_left;
+    input.style = before.style;
+    input.parent_style = before.parent != kNoBox ? (*tree_)[before.parent].style : nullptr;
+    input.style_version = input.style ? input.style->version() : 0;
+    input.parent_version = input.parent_style ? input.parent_style->version() : 0;
+    static const bool enabled = std::getenv("WEVA_DISABLE_INLINE_REUSE") == nullptr;
+    static const bool profile = std::getenv("WEVA_INLINE_LOG") != nullptr;
+    // The collected text/style/font inputs belong to this BlockLayout pass.
+    // Plain text cannot reparent atoms or inline fragments during a probe;
+    // its detached line boxes remain intact in the arena. Floats add an
+    // external position-dependent constraint, so use the ordinary walk there.
+    const bool reusable = enabled && entry.plain_text && !env.floats;
+    if (reusable) for (const auto& result : entry.results) {
+        if (!result.ready || !(result.input == input)) continue;
+        bool intact = true;
+        for (size_t i = 0; i < result.count; ++i) {
+            const BoxId line = result.lines[i].id;
+            if (!tree_->valid(line) || (*tree_)[line].kind != BoxKind::Line ||
+                ((*tree_)[line].parent != kNoBox && (*tree_)[line].parent != id)) {
+                intact = false;
+                break;
+            }
+        }
+        if (!intact) continue;
+        tree_->clear_children(id);
+        for (size_t i = 0; i < result.count; ++i) {
+            const auto& saved = result.lines[i];
+            // Button centering and table-cell vertical alignment adjust the
+            // lines after inline layout. Restore the unadjusted output so
+            // finalization can apply the current container's alignment once.
+            (*tree_)[saved.id].x = saved.x;
+            (*tree_)[saved.id].y = saved.y;
+            tree_->append_child(id, saved.id);
+        }
+        if (profile) std::fprintf(stderr, "inline reuse: %d width %.9g hit 1\n", id, content_width);
+        return result.height;
+    }
+    if (profile) std::fprintf(stderr, "inline reuse: %d width %.9g hit 0\n", id, content_width);
+    double height;
+    {
+        LayoutProfilePart lines_profile(5);
+        height = layout_inline_items(tree_, id, entry.items, content_width, ctx_, *metrics_,
+                                     env.floats ? &env : nullptr);
+    }
+    if (reusable) {
+        InlineLayoutEntry::Result result;
+        result.input = input;
+        result.height = height;
+        result.ready = true;
+        for (BoxId line : tree_->children(id)) {
+            if (result.count == result.lines.size()) { result.ready = false; break; }
+            result.lines[result.count++] = {line, (*tree_)[line].x, (*tree_)[line].y};
+        }
+        if (result.ready) {
+            entry.results[entry.next_result] = result;
+            entry.next_result = (entry.next_result + 1) % entry.results.size();
+        }
+    }
+    return height;
 }
 
 void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_width,
@@ -824,9 +960,9 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
         shrink_to_fit(it.atom_box, available_width, parent_style);
         const Box& a = (*tree_)[it.atom_box];
         it.atom_outer_width = a.margin_left + a.width + a.margin_right;
-        // CSS 2.1 §10.8.1: an inline-block's baseline, measured from its TOP
-        // BORDER EDGE — not its margin edge, which is why margin_top appears
-        // in none of the three branches.
+        // First derive the baseline from the top border edge. Form controls
+        // expose their native content baseline; generic inline-blocks follow
+        // CSS 2.1 §10.8.1 below. Convert to the top margin edge afterward.
         //
         //  1. overflow other than visible: the bottom margin edge, because a
         //     clipping box does not expose its contents' baseline;
@@ -838,7 +974,19 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
         // everything, which put the baseline at the atom's bottom edge and made
         // every line holding an inline-block one text-descent too tall. The
         // oracle caught it; no self-written test had.
-        if (has_non_visible_overflow(a)) {
+        const FontMetrics* const fm = it.metrics ? it.metrics : metrics_;
+        const auto input_type = a.element && a.element->tag_name() == "input"
+                                    ? form_input_type(*a.element) : std::string_view();
+        if (a.element && form_is_text_entry(*a.element) && fm) {
+            // No child LineBox carries the overlaid value. Expose its centered
+            // baseline even for an empty value, a short field or clipped overflow.
+            const double top = a.border_top + a.padding_top;
+            const double content_height = a.height - top - a.padding_bottom - a.border_bottom;
+            it.atom_baseline = top + (content_height - fm->line_height(it.font_size)) * 0.5 +
+                               fm->ascent(it.font_size);
+        } else if (input_type == "checkbox" || input_type == "radio" || input_type == "range") {
+            it.atom_baseline = a.height;
+        } else if (input_type == "image" || has_non_visible_overflow(a)) {
             it.atom_baseline = a.height + a.margin_bottom;
         } else {
             BoxId last_line = kNoBox;
@@ -852,6 +1000,9 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
                 it.atom_baseline = content_bottom < 0 ? a.height : content_bottom;
             }
         }
+        // Inline layout measures extents from the top margin edge, then adds
+        // margin_top to position the border box. Include it once in the metric.
+        it.atom_baseline += a.margin_top;
     }
 }
 
@@ -877,18 +1028,24 @@ bool size_replaced_box(Box& b, const DecodedImage& image, const LayoutContext& c
                        double font_size) {
     const double iw = std::max(1, image.width);
     const double ih = std::max(1, image.height);
+    const double width_frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
+    const double height_frame = b.padding_top + b.padding_bottom + b.border_top + b.border_bottom;
     const ResolvedLength w = resolve_length(b.style, kId_width, ctx, font_size, std::nullopt);
     const ResolvedLength h = resolve_length(b.style, kId_height, ctx, font_size, std::nullopt);
-    const bool have_w = w.kind == LengthKind::Length;
+    const bool have_w = w.kind == LengthKind::Length || w.kind == LengthKind::Percent;
     const bool have_h = h.kind == LengthKind::Length;
+    // Keep the content contribution independent of later flexed sizes. An
+    // image has no child boxes for min-/max-content measurement to walk.
+    b.intrinsic_width = have_h ? std::max(0.0, b.height - height_frame) * iw / ih : iw;
+    b.intrinsic_height = ih;
     if (have_w && have_h) return false;   // both stated; nothing to infer
     if (have_w) {
-        b.height = b.width * (ih / iw);
+        b.height = b.content_width() * (ih / iw) + height_frame;
     } else if (have_h) {
-        b.width = b.height * (iw / ih);
+        b.width = b.intrinsic_width + width_frame;
     } else {
-        b.width = iw;
-        b.height = ih;
+        b.width = iw + width_frame;
+        b.height = ih + height_frame;
     }
     return true;
 }
@@ -1022,6 +1179,18 @@ void BlockLayout::relayout_at_size(BoxId id, double width, double height) {
 void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
                                       const ComputedStyle* parent_style) {
     (*tree_)[id].width = width;
+    if (reuse_ && reuse_->reuse_layout(tree_, id)) return;
+    Box& b = (*tree_)[id];
+    if (b.intrinsic_height > 0) {
+        // Flex/grid can impose a new width after initial image measurement.
+        // There is no text content to reflow, but an auto height follows the
+        // intrinsic ratio unless the parent also imposed the height.
+        const ResolvedLength h = resolve_length(b.style, kId_height, ctx_, font_size, std::nullopt);
+        if (!b.cross_size_imposed && h.kind == LengthKind::Auto && b.intrinsic_width > 0)
+            b.height = b.content_width() * b.intrinsic_height / b.intrinsic_width +
+                       b.padding_top + b.padding_bottom + b.border_top + b.border_bottom;
+        return;
+    }
     // The first inline pass replaced the container's children with line boxes,
     // so the source runs can no longer be walked. The collected items are
     // cached per container for the duration of the pass and reused, which is
@@ -1036,6 +1205,7 @@ void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
 }
 
 void BlockLayout::layout_root(BoxId root, double viewport_width, double viewport_height) {
+    LayoutProfileRoot profile;
     Box& b = (*tree_)[root];
     b.x = 0;
     b.y = 0;
@@ -1062,6 +1232,8 @@ void BlockLayout::layout_block(BoxId id, double available_width,
         (*tree_)[id].width = available_width;
         fs = ctx_.root_font_size_px;
     }
+
+    if (reuse_ && reuse_->reuse_layout(tree_, id)) return;
 
     // A replaced element has no contents to lay out; its size comes from the
     // image. This is the path a FLEX ITEM takes -- flex measures its items
@@ -1103,7 +1275,15 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     if ((*tree_)[id].contains_inlines) {
         // Without a font backend nothing can be measured, so the box reports
         // zero content height rather than a number derived from guessing.
+        // This branch precedes block-child float setup: independent inline
+        // content must not wrap around floats in an ancestor's context.
+        FloatContext* const previous_floats = current_floats_;
+        if (current_floats_ && current_floats_->count() > 0 &&
+            (is_flex_grid_item(*tree_, (*tree_)[id]) || establishes_new_bfc((*tree_)[id]) ||
+             (*tree_)[id].is_float() || (*tree_)[id].is_inline_block))
+            current_floats_ = nullptr;
         const double inline_h = layout_inline_content(id, content_w, own_style);
+        current_floats_ = previous_floats;
         finalize_block_size(id, font_size, top_inner + inline_h);
         return;
     }
@@ -1151,9 +1331,9 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     // A new block formatting context gets its own float context; otherwise this
     // box's children join the ancestor BFC's, so a float placed here is still
     // avoided by content further down that BFC.
-    const bool establishes_bfc =
-        !own_style || establishes_new_bfc((*tree_)[id]) || (*tree_)[id].is_float() ||
-        (*tree_)[id].is_inline_block;
+    const bool item_context = is_flex_grid_item(*tree_, (*tree_)[id]);
+    const bool establishes_bfc = !own_style || item_context || establishes_new_bfc((*tree_)[id]) ||
+                                 (*tree_)[id].is_float() || (*tree_)[id].is_inline_block;
     FloatContext* const prev_floats = current_floats_;
     const double prev_bfc_x = bfc_origin_x_;
     const double prev_bfc_y = bfc_origin_y_;
@@ -1211,8 +1391,8 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     // The synthetic root has no style and no margins of its own: it is the
     // viewport edge, and nothing collapses through it.
     const bool parent_participates = own_style && participates_in_flow((*tree_)[id]);
-    const bool top_open = parent_participates && parent_top_open((*tree_)[id]);
-    const bool bottom_open = parent_participates && parent_bottom_open((*tree_)[id]) &&
+    const bool top_open = parent_participates && !item_context && parent_top_open((*tree_)[id]);
+    const bool bottom_open = parent_participates && !item_context && parent_bottom_open((*tree_)[id]) &&
                              parent_height_auto((*tree_)[id], ctx_, font_size);
 
     double cursor = top_inner;
@@ -1372,6 +1552,7 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
 }
 
 void BlockLayout::finalize_block_size(BoxId id, double font_size, double content_bottom_y) {
+    LayoutProfilePart profile(2);
     Box& box = (*tree_)[id];
     // A flex line already decided this box's height; keep it.
     if (box.cross_size_imposed) return;

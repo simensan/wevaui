@@ -38,6 +38,14 @@ public:
     // of packing at all.
     TextureHandle texture(RenderInterface* backend);
 
+    // Font identities belong to a backend. Replacing it invalidates every
+    // slot even if the new backend reuses face/glyph IDs. The old uploaded
+    // texture remains alive until texture() publishes the replacement.
+    void clear();
+    // Release through the backend that owns the handle. Retain CPU glyphs
+    // for upload to a replacement renderer on its next paint.
+    void release_texture(RenderInterface* backend);
+
     int width() const { return width_; }
     int height() const { return height_; }
     // The packed pixels, RGBA. Read access so a caller can composite a run
@@ -45,6 +53,9 @@ public:
     // blurring means having the run's coverage somewhere it can be filtered.
     const std::vector<uint8_t>& pixels() const { return pixels_; }
     int slot_count() const { return static_cast<int>(slots_.size()); }
+    // Adding glyphs or replacing the uploaded texture preserves existing slots.
+    // Clearing the atlas changes their input version and requires preparation.
+    uint64_t slot_version() const { return slot_version_; }
 
 private:
     // Keyed by face as well as glyph: a bold or italic variant is another
@@ -68,6 +79,7 @@ private:
     // the entries are all roughly the same height, which glyphs at one size are.
     int shelf_x_ = 0, shelf_y_ = 0, shelf_height_ = 0;
     bool dirty_ = false;
+    uint64_t slot_version_ = 1;
     TextureHandle texture_;
 };
 

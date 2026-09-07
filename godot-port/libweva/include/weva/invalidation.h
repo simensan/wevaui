@@ -30,11 +30,10 @@ inline Invalidation worst(Invalidation a, Invalidation b) { return a > b ? a : b
 // document on screen, and being wrong the other way only costs time.
 //
 // The list is not a guess about what "sounds visual". Each entry was checked
-// against every layout source for a read of that property name, which is how
-// `color` came off it: inline layout copies it into the text runs it builds,
-// so a document whose colour changed but whose layout did not run would keep
-// painting the old one. `filter`, `transform`, `z-index` and `visibility` came
-// off for the same kind of reason -- positioning and table layout read them.
+// against every layout source for a read of that property name. Text color
+// is read from the retained style during paint; layout holds no color copy.
+// `filter`, `transform`, `z-index` and `visibility` remain outside the list
+// because positioning and table layout read them.
 Invalidation invalidation_for_property(int property_id);
 
 // The property ids this build treats as paint-only, for tests.

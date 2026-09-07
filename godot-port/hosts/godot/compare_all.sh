@@ -14,28 +14,36 @@
 # the engine's real font against the core's stub and every glyph disagrees.
 #
 # Usage: compare_all.sh <corpus-dir> [size]
-set -u
+set -uo pipefail
+failures=0
 CORPUS="${1:?usage: compare_all.sh <corpus-dir> [size]}"
 SIZE="${2:-1280x720}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 RENDER="${WEVA_RENDER:-$HOME/weva/build-gcc/tools/weva_render/weva_render}"
 GODOT="${GODOT_BIN:-$HOME/godot/godot}"
+shopt -s nullglob
+pages=("$CORPUS"/*.html)
+[ "${#pages[@]}" -gt 0 ] || { echo 'ERR no corpus pages' >&2; exit 1; }
 
-for html in "$CORPUS"/*.html; do
+for html in "${pages[@]}"; do
     base="$(basename "$html" .html)"
     css="${html%.html}.css"
     [ -f "$css" ] || css="-"
-    out=$(GODOT_SILENCE_ROOT_WARNING=1 timeout 300 python3 "$ROOT/hosts/godot/compare_render.py" \
+    if ! out=$(GODOT_SILENCE_ROOT_WARNING=1 timeout 300 python3 "$ROOT/hosts/godot/compare_render.py" \
             "$html" "$css" --size "$SIZE" \
             --weva-render "$RENDER" --godot "$GODOT" \
-            --project "$ROOT/hosts/godot/project" 2>&1)
+            --project "$ROOT/hosts/godot/project" 2>&1); then
+        failures=$((failures + 1))
+        printf 'ERR %s comparison failed\n%s\n' "$base" "$out" >&2
+    fi
     ink=$(printf '%s\n' "$out" | sed -n 's/.*structural *\([0-9]*\) px (\([0-9.]*\)%).*/\2/p')
     over=$(printf '%s\n' "$out" | sed -n 's/.*over tolerance *\([0-9]*\) px (\([0-9.]*\)%).*/\2/p')
-    [ -n "$ink" ] || ink="ERR"
-    [ -n "$over" ] || over="ERR"
+    [ -n "$ink" ] || { ink="ERR"; failures=$((failures + 1)); }
+    [ -n "$over" ] || { over="ERR"; failures=$((failures + 1)); }
     # Structural is the gate — a shape drawn wrongly or not at all.
     # Over-tolerance is reported beside it because edge antialiasing lands
     # there and nowhere else, so a sample high in one and low in the other is
     # two rasterisers disagreeing at edges rather than a bug worth chasing.
     printf '%-24s struct %6s%%  over-tol %6s%%\n' "$base" "$ink" "$over"
 done
+[ "$failures" -eq 0 ]

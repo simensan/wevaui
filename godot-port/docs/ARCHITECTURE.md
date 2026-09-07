@@ -1,5 +1,493 @@
 # Architecture
 
+## Godot Control integration
+
+Native font adoption duplicates the Array returned by `Font.get_rids()` before
+appending compatibility symbol fonts. Godot shares that array with the source
+Font; copying a `TypedArray` handle alone aliases it. Mutating the borrowed
+array grew the global default's font chain on every document open or engine-font
+toggle. The duplicate owns only the list; font resources and native RID owners
+retain their existing lifetimes and resource-change invalidation.
+
+`WevaDocument` derives from `Control`. Native size/anchors/Containers provide
+the document viewport, and `_gui_input` owns typing and pointer activation.
+`_has_point` consults the core hit region, including select-list rows, so CSS
+`pointer-events` participates in Godot's native stacking. Focus notifications
+synchronize HTML focus with the viewport; non-wrapping ABI focus steps hand
+Tab navigation back to Godot at the document edge. Pointer entry defers HTML
+focus to the clicked element, avoiding an unrelated first-field scroll.
+
+An `_input` observer only schedules light dismissal for primary presses.
+The GUI handler cancels dismissal when it receives that press. Otherwise the
+observer dismisses existing auto popovers/dropdowns after native routing.
+The core's transient input version guards deferred work against a native
+handler opening a new popup. Manual popovers and dialogs are unaffected.
+Scene removal and visibility loss cancel pointer state. Explicit input methods
+remain available for games that set `interactive = false`.
+
+Keyboard activation shares `activate_element` with pointer clicks. Space
+retains a DOM target until release; focus loss, removal and document reload
+cancel it. Radio focus memory is scoped by live form ownership and cleared
+with the DOM lifetime. Range reads, painting and pointer/keyboard edits use
+one normalization helper. Event-driven value changes propagate through the
+existing tracker and binding path; these states add no idle-frame traversal.
+
+IME preedit is an explicit UTF-8 range in the focused control value. The core
+retains the original edit snapshot until composition ends and adds one undo
+checkpoint only when the final value differs. External value changes end the
+stale range. Selection and composition ranges participate in caret repaint
+comparison. The host converts Godot character offsets, batches native result
+keys before replacing preedit, and transforms measured caret bounds into
+window coordinates. Queued events own their full text separately from the
+unchanged ABI event struct; hosts retrieve it before polling the next event.
+See [IME.md](IME.md) for platform evidence and outstanding compatibility work.
+
+## Retained subtree updates
+
+The optional Godot `WevaView` script loads files and connects a game's change
+signal to a deferred binding refresh. Bursts refresh once, with no extra process
+callback or idle dictionary traversal. The native document still owns layout,
+paint and GUI input.
+
+Templated HTML boolean attributes bind presence. Their source remains in the
+owned `BindingTemplates` map while the live attribute is absent, so false → true
+can restore it. Literal attributes retain HTML semantics; other attributes stay
+strings. This uses the existing binding invalidation and lifetime cleanup.
+
+Binding refreshes observe actual DOM mutations during substitution. Changed
+text and image sources enter the content-input queue; attributes restyle their
+selector scope. Only repeat structure changes rebuild the element index and
+box tree. Removed rows lose pointer-keyed state before their addresses can be
+reused. Dead computed styles remain owned until the previous box/paint pass is
+replaced, then are released instead of accumulating across list refreshes.
+
+Caret, selection and composition changes invalidate the affected controls'
+paint inputs, including the old control on a focus move. Dialog box changes
+retain their cascade origin. Opening a dialog and focusing a field can therefore
+share the final layout; deferred focus reveal uses the new geometry. Retained
+grid proxies must not be classified as empty by margin collapsing: their
+in-flow children remain in the retained arena until the splice.
+
+The Godot host caches parsed binding paths with a bounded lifetime, while
+reading shared Dictionary values on every refresh. Small forms resolve their
+model elements in one scan; larger forms keep the dynamic fallback.
+
+Godot's ordinary style, text, value and class writes query the live DOM without
+flushing layout. A sequence of HUD writes is consumed by the next frame,
+explicit update, geometry/style read or geometry-dependent interaction. Those
+read and input paths retain their synchronous update behavior. No extra batch
+API, retained selector handle or cache key is introduced. After an update that
+retains the published draw serial, the host also retains its texture map;
+texture views are published only with a new draw list in the core.
+
+Repeated direct-text writes compare direct text children and their original
+binding sources before replacing nodes. Element children and their order stay
+intact; a manual write of a currently rendered binding value still replaces the
+template source. Repeated inline-style writes compare the complete normalized
+declaration string before notifying the tracker. Neither no-op clears other
+pending changes. Changed direct text queues its owner's layout input for the
+next pass, even when computed declarations are unchanged. The existing subtree
+proof builds fresh text/line boxes and compares geometry, baselines, intrinsic
+exports and parent inputs before splicing them into the retained tree. If the
+proof fails, layout falls back to a full rebuild. Removal and document reload
+discard queued owners before their DOM lifetime ends; queue capacity is reused.
+
+Image `src` writes enter the same content-input queue, since a new source may
+change intrinsic dimensions without changing computed declarations. Equal
+source assignments remain no-ops for layout and paint.
+
+Text writes also restyle the selector scope for `:empty`. Sibling-dependent
+sheets include the containing element's family, because filtered
+`nth-last-child(... of :empty)` can affect preceding siblings. Filtered sibling
+ranks bypass the per-element match cache: a sibling's filter match can change
+without changing the target's index/count. `:has()` retains the existing full
+cascade fallback. Stable HUD labels therefore reuse unrelated layout and paint
+without assuming that every text replacement has identical sizing or styles.
+
+Computed styles keep a property-id slot table and allocate raw strings in
+stable pages of 16 values as declarations are written. Presence, importance
+and parsed-value metadata remain indexed by property id; lazy inheritance,
+initial-value lookup and style versions retain their existing contracts.
+Growing the slot table or page list cannot move another property's string.
+`clear()` resets presence, mappings, parsed values, custom properties and the
+inheritance parent while retaining page and string capacity for reuse. Move
+and swap transfer page ownership, and clearing a moved-from style is valid.
+This trades an extra indirection on reads for fewer string constructions on
+cold sparse styles. Retained capacity follows each style's high-water usage.
+Declaration enumeration walks the existing occupancy words in ascending id
+order and reserves the known declaration count once. It does not scan unused
+property slots or change presence/version semantics.
+`WEVA_CASCADE_LOG=1` with `WEVA_STAGE_LOG=1` reports cascade subscopes and
+metadata/page allocation time; clocks remain disabled by default.
+
+Line-height resolution finds the declaring style through the DOM inheritance
+chain. Lengths and percentages use that style's computed font size; numbers
+and `normal` use the consuming element's font. Numeric calc/min/max/clamp
+expressions retain multiplier semantics. Materialized inherit/unset/rollback
+and pseudo values carry a source flag, so identical raw strings with different
+bases invalidate the line-height property. Set, unset and clear reset that
+flag; move/swap transfer it. No used line-height is cached: parent font and
+viewport/root/DPI changes remain live inputs. The source is found before
+parsing, so changing an inherited declaration's type cannot reuse the copied
+child syntax. Pseudo line-height rollback preserves a lower layer's own value.
+
+The font-size memo also keys on exact viewport width/height, root font size,
+root line height and DPI. A fixed pixel-sized parent does not change when
+those inputs change, so style version plus resolved parent size alone could
+reuse stale vw/rem/rlh/pt results. Context changes now invalidate that memo
+without globally clearing styles or their parsed-value caches. The extra
+five doubles belong to the style and follow its normal move/swap lifetime;
+`clear()` already bumps the style version before any memo can be reused.
+An explicitly owned px/number font size depends only on its own declaration:
+its memo can return before resolving the parent or comparing context values.
+Setting, unsetting or clearing the declaration changes its version and
+recomputes that classification. Undeclared and explicitly inherited sizes
+forward to the DOM parent's computed size, without a redundant memo at every
+inherited link. Authored relative declarations compound along the full style
+chain, independently of box ancestry (`display:contents`, anonymous boxes).
+
+Materialized font-size inheritance retains a source flag beside the raw value.
+An inherited `2em` and an authored `2em` have different bases despite identical
+strings, so changing that flag bumps the style version and is reported as a
+font-size change by the cascade diff. This preserves layout invalidation and
+`!important` without expanding the cached value into every descendant.
+Normal `set`, `unset` and `clear` reset the flag; generated content points to
+the originating element's style and uses the same computed-inheritance path.
+
+Border-width resolution reads an owned declaration's existing parsed-value cache.
+The cache stores syntax, so font-relative, viewport and physical units still
+resolve against current numeric inputs on each call. Setting, unsetting or
+clearing a width invalidates its parse through the normal style mutation path.
+Inherited and registry-provided values use raw resolution: re-registering an
+initial value can change it without advancing this style's version.
+`none` and `hidden` border styles skip width resolution. No geometry cache or
+additional input-version scheme is introduced. The raw-string resolver remains
+available for callers without a style and uses locale-independent number parsing.
+
+Within one `BlockLayout` pass, plain-text containers retain up to three
+inline-layout results of at most eight lines each. Intrinsic probes commonly
+revisit nonconsecutive widths. Exact width, padding/border origin, style
+identity and style input versions select a result; text/font inputs already
+belong to that pass's collected items. Active floats, atoms, inline fragments
+and larger results keep the normal layout path. Detached lines stay in the
+box arena. Reattachment restores their original local positions before button
+centering or table-cell alignment runs again. Nothing survives the layout
+pass, and no cross-frame invalidation or C ABI changes are introduced.
+`WEVA_DISABLE_INLINE_REUSE=1` restores ordinary line construction.
+`WEVA_LAYOUT_LOG=1` separates inline collection, atom sizing and line building
+as inclusive subscopes of inline layout.
+
+The ABI style walk prepares `::backdrop` only for hosts accepted by the box
+builder's shared top-layer predicate. Ordinary elements no longer allocate a
+style for the universal UA backdrop rule. A closed host retains any previous
+backdrop style without recomputing it; its DOM attribute versions schedule
+recomputation and box construction when it reopens. This preserves the style's
+address and consumes declaration changes made while the backdrop was absent.
+The general pseudo-element cascade API keeps its existing behavior.
+
+Layout now reports the grid roots whose identities and children survive an
+ancestor replacement. Paint distinguishes those replacements from actual
+style/scroll input changes: the former stop invalidation at retained roots;
+the latter continue to propagate through descendants normally.
+
+Each eligible boundary records its incoming absolute position, accumulated
+opacity/transform/filter, scissor, geometric clip chain and canvas owner.
+Changed values bump the subtree's paint input version before replay is tried.
+Clip and filter snapshots compare exact values, not shared-pointer identities
+or approximate bounds. Their immutable shared storage survives until the next
+boundary snapshot or reset. Full layout/backend changes reset these snapshots
+with the ordinary paint ranges. A grid that survives layout can therefore keep
+its draw buffers only while its paint inputs also remain equal. Descendant
+ranges relocate when earlier siblings add or remove draws; referenced textures
+remain retained by the existing texture-cache pass.
+
+ABI minor 12 exposes a parallel `weva_document_draw_versions` array without
+changing the `weva_draw` struct or its stride. Each newly collected command
+gets a document-lifetime unique, nonzero version. Replayed commands retain
+their versions when they move within the draw list. Equal versions identify
+identical published command inputs, including geometry, texture ID and effects.
+The version array has the same lifetime as the published draw views.
+
+Godot retains converted vertex/color/UV/index arrays for each consecutive draw
+batch. An exact match of its ordered command versions reuses those arrays;
+changed batch boundaries or commands repack the slot. PackedArray copy-on-write
+preserves any earlier submission while the slot changes. Unused slots are
+released after drawing. Canvas items, materials, painter order and texture
+lookup keep their existing behavior. Every redraw still submits the geometry
+to Godot; this cache avoids CPU packing and color conversion, not GPU uploads.
+`WEVA_GODOT_DISABLE_PACK_CACHE=1` bypasses reuse for pixel/performance comparisons.
+
+The glyph prepass uses the same subtree input versions before walking text.
+A previously prepared subtree can skip shaping and atlas lookups while its
+inputs and the atlas's slot version stay equal. Clearing glyph slots bumps
+that version; adding glyphs and replacing the GPU texture preserve it. Moving
+or clipping a retained grid can therefore require new paint without requiring
+another glyph walk. Text/font mutations and full layout/provider resets still
+prepare the affected subtree. Popup labels retain their separate prepass.
+The `PaintReuse` hooks have defaults for existing implementations, and the C
+ABI is unchanged. `WEVA_DISABLE_GLYPH_REUSE=1` restores the full glyph walk.
+
+Font-provider changes invalidate glyph slots as well as measured/shaped runs.
+The atlas key's face/glyph IDs belong to the installed provider and may be
+reused by its replacement. The previous uploaded texture survives until the
+next paint publishes a new atlas. Renderer changes release that handle through
+its old owner and retain CPU glyphs for upload to the new renderer; destruction
+releases the last handle. Godot theme/resource notifications feed the existing
+external-font input path and schedule new boxes. Clean frames do not resolve
+theme fonts or rebuild font tables.
+During renderer replacement, the collecting backend moves its published
+texture map nodes into temporary storage before releasing handles. Pixel views
+remain valid across multiple replacements until the next paint starts; no
+pixel copy or work on a clean frame is added.
+
+Host font shaping uses the original callback table plus an optional positioned
+callback registered separately in ABI minor 11. Changing it clears shaped-run
+and measurement caches and schedules new boxes; replacing the table removes
+the override. Godot preserves native placement offsets and maps glyph IDs to
+their exact font RID, including automatic fallbacks. Its count/fill memo is
+keyed by immutable face, actual TextServer size and source bytes. The original
+table's binary layout remains unchanged. See [GODOT_TEXT_SHAPING.md](GODOT_TEXT_SHAPING.md).
+
+Godot's synthetic primary fonts share an eight-entry LRU across backends.
+Exact file bytes, emboldening strength, italic transform and the owning
+TextServer identify each immutable independent font. The key never borrows a
+source RID or relies on a mutable FontFile's identity. Each backend retains
+its own shared reference, so eviction or another document's destruction cannot
+free a font still in use. Cache entries keep their TextServer alive and release
+RIDs through that owner. Scene-module shutdown clears the pool before engine
+teardown. Fallback RIDs remain borrowed from each document's current resources.
+The local variant key distinguishes the existing 0.6 and 0.9 synthesis
+strengths; a boolean bold key previously made weights 700/800 depend on request
+order. `WEVA_GODOT_DISABLE_VARIANT_CACHE=1` bypasses cross-document sharing.
+
+Each immutable synthetic font retains a bounded LRU of shaped runs: 128
+entries and 4,096 allocated glyph slots, with at most 512 source bytes and
+512 glyphs per run. Entries compare exact source bytes, rounded TextServer
+size and the ordered font RID list (at most 64 fonts). The host only marks
+its private compatibility fallback chain immutable; resource fallback chains
+are excluded. A run using any fallback glyph is also excluded. Native glyph
+indices are remapped to each receiving backend's opaque handles. Shared runs
+live with their owning synthetic font, so eviction cannot free a live font.
+`WEVA_GODOT_DISABLE_SHAPE_CACHE=1` bypasses this reuse independently.
+
+Form controls own lazy `FormControlState` storage on their DOM element. Live
+values, checkedness and selectedness have separate dirty flags from markup
+defaults. DOM mutation hooks maintain clean defaults and group selection;
+`FormStateChanged` bubbles to the document and marks the affected elements.
+`StyleMap` compares each control's `form_version` and adds its existing style
+to `changes`: textarea requires layout, other control state requires paint.
+Option changes also bump their select's input version for the closed caption.
+Selector caches already include live pseudo-state in their keys.
+
+Form visuals and selector inputs are consumed separately. The DOM observer
+queues each control's versioned visual inputs, but marks a cascade scope only
+when its state differs from the state last styled. An option's selectedness
+therefore restyles that option, while the containing select only consumes its
+caption/row version. Value events do not create another select-subtree scope.
+Queued controls are discarded on removal and reload. The normal attribute,
+sibling-selector and `:has()` propagation paths remain responsible for their
+broader dependencies.
+
+Before a scoped cascade, overlapping dirty roots are coalesced using their
+actual ancestor/sibling reach. Paint requests such as scrolling can coexist
+with a scoped cascade; they do not require a full style walk. The stage log
+reports visited elements and match-cache hits/misses, and `WEVA_STYLE_LOG`
+reports the changed property IDs/values for diagnosis.
+
+Text painting already reads `color` from the retained style. The unused box
+color snapshot has been removed, making color a paint-only property. Parent
+color changes invalidate descendant paint inputs through the existing tracker,
+including text decoration and `currentColor`, without reflow. Full-render
+comparisons cover inherited color, selection, sibling rules, `:has()`, reset,
+removal and reload. Reload also clears the focus chain before any old DOM
+pointer can become a dirty root.
+
+Select display mode is another versioned form input: changing `size` or
+`multiple` can require new child boxes while leaving computed CSS and current
+selectedness unchanged. Dropdown child suppression belongs to box building;
+option computed display remains ordinary CSS. Listbox keyboard-row changes
+have independent input versions consumed by the style/paint change tracker,
+so Ctrl+arrows repaint the select without giving an option DOM focus. Gesture
+anchors and selectedness snapshots belong to the document and are discarded
+on reset, load or removal. Idle frames do not scan this state.
+
+Held listbox and text-selection autoscroll share a separate input clock. The
+original C update advances both clocks; Godot uses monotonic elapsed time for
+input and simulation delta for CSS, so paused/scaled game time does not stall
+selection. Layout frames restore ancestor
+scroll offsets before evaluating the pointer against the new list viewport.
+A changed scroll offset feeds the list box into existing paint input-version
+propagation, invalidating descendants and ancestors while retaining unrelated
+branches. Reaching a boundary publishes no new draws or scroll events. The
+host requests a redraw only when the core draw serial changes during a tick.
+
+Text gestures preserve the source anchor and extend the endpoint as scrolling
+exposes characters. Single-line fields use their internal text offset;
+textareas use their box scroll offsets. Neither path edits form state or undo
+history. After pointer release, range selection retains its viewport until an
+explicit caret-follow action. Capture ownership is discarded on focus loss,
+hide, disable, reset, detach or reload. The text-field box enters the same
+paint input-version propagation as a scrolling list, with retained/full-frame
+comparisons covering nested scrolling, wrapping and live geometry changes.
+
+Option text/label and optgroup label changes increment `form_label_version`.
+The style tracker consumes it separately from selection versions, so a label
+rebuilds affected text layout while a choice only repaints. Options own their
+display text in the box arena; they preserve DOM text and submitted values.
+Popup rows have no boxes, so `PaintContext` optionally supplies their computed
+styles. Popup glyph preparation uses the same face/size as drawing, and the
+panel clips its rows after drawing its border.
+
+Each document owns a select typeahead session with a steady-clock timeout.
+Input invokes the embedded ICU collation search; idle updates do not visit it.
+Focus/removal/load clear its DOM target. The ICU wrapper owns every UTF-16
+buffer retained by its search handle, including short labels. The pinned
+English data profile and isolated symbols are described in
+[third_party/icu](../third_party/icu/README.md).
+
+Textarea runs view the live value buffer and carry `source_control` through
+inline splitting and subtree imports. Equal assignments preserve that buffer;
+changed values bump the version before reflow. Pool resets clear the source
+pointer with the rest of the box. These paths add no idle-frame traversal.
+The host batches all reset model writes before refreshing bindings. See
+[FORM_STATE.md](FORM_STATE.md) for the public live/default contract.
+
+The C ABI lifecycle consumes `StyleMap::changes`, the actual cascade and
+animation output differences. `IncrementalLayout` keeps principal box IDs and
+the intrinsic contributions exported by the last layout. It builds and lays
+out a fresh subtree against the retained containing-block chain, accepting it
+only when its exports stay equal. Every candidate is checked before any
+splice. External constraints and dependencies that cannot be isolated use the
+full baseline. Index updates stay within replaced subtrees; full layout over
+unchanged DOM reuses index storage, while structure resets identities.
+
+Flex/grid boxes also retain `ParentLayoutInput`, the natural dimensions and
+intrinsic widths measured before their parent allocated the final size. A
+probe first compares those original inputs, then compares the output at the
+old allocated width. Used widths alone are insufficient: shrinking can hide
+changed natural widths and otherwise leave neighbouring items stale. The
+record owns no pointers and follows the box's pool reset/copy contract.
+
+Parent input capture measures min-content and max-content in one recursive
+walk, sharing child classification and constraint resolution. Single-size
+queries specialize away the unused result. The calculation reads current
+geometry every time; it adds no cache, retained key or pool-reset fields, and
+does not weaken the comparisons required before an incremental splice.
+
+`BoxTree` itself is move-only: its text views can reference its own deque and
+imported-string map. A shallow tree copy would duplicate that storage without
+rebinding the views. This matters when a vector of prepared replacements
+grows; its reallocation must move the trees and retain their text owners.
+
+Unchanged positioned ancestors and siblings do not prevent a static subtree
+from being replaced. Positioned descendants still do; floats, sticky boxes
+and named anchors retain a document-wide fallback because their dependencies
+can cross subtree boundaries. `WEVA_LAYOUT_LOG=1` identifies rejected probes
+and accepted roots.
+
+A clean grid can remain in the retained tree while a probe reflows its
+surrounding flex allocation. Grid roots carry the input version of their last
+layout; changed descendants and ancestors invalidate that version. The box
+builder leaves eligible grid children deferred. Layout reuses their height,
+intrinsic widths and visual overflow only when the newly resolved width and
+box edges match. A changed allocation materializes the children before normal
+layout continues. This path requires an auto-height grid under an ordinary
+block, with no positioned descendants, subgrid, or percentage-height dependency
+on an auto-height parent. External inputs still force full layout.
+
+The transaction detaches retained grid roots before releasing their old
+ancestors, then reconnects them under the replacement wrappers. Their child
+IDs and owned text remain intact; indexing skips these retained descendants.
+Probe size limits count the boxes actually rebuilt, allowing a small flex
+column around a large clean grid to qualify. The enclosing root must still
+pass the same outer-geometry, baseline and intrinsic-export checks. Repaint
+remains necessary when that reflow moves the grid or changes its clip.
+
+Corner-radius painting uses each longhand's existing `ComputedStyle::parsed`
+entry, including the two components of elliptical radii. Writes, unset and
+clear invalidate that entry through the existing style contract. Only syntax
+is retained: each use resolves percentages, font units and calculations from
+the current border-box dimensions and length context. Zero radii avoid
+populating parse entries. The shared CSS value parser also handles whitespace
+and comments between components, replacing the former literal-space split.
+
+Replaced images (`<img>`) reuse their raster textures through `TextureCache`.
+The key owns the source URL, resolved object-fit/position layer inputs, exact
+content and texel dimensions, length-resolution context and accumulated color
+filter. ImageStore content versions distinguish reader/base-path resets and
+replacement stores without retaining decoded-image pointers. Versions change
+only when resource inputs reset; looking up or loading an image does not bump
+them. Identical images share a texture, while position, opacity and clipping
+remain per-draw work. End-of-pass retention and eviction use the existing
+texture ownership contract.
+
+The public base-path and asset-reader setters schedule layout on changed
+resource inputs, preserving published views until the next update. Background,
+blurred-background and border-image texture keys include the same resource
+version, so replacing asset bytes cannot reuse old raster pixels.
+
+Painting and hit testing share `ChildPaintOrder`. It checks the current
+sibling sequence and traverses the existing links forwards or backwards when
+they already follow paint order. A reordered container uses one entry vector;
+sorting includes the original sequence as the final tie-breaker. The former
+four bucket vectors, stable-sort scratch and output vector are unnecessary.
+The view lasts only for the walk, with no retained tree pointers or new cache
+keys. Separate ordering/allocation checks cover mixed stacking groups,
+flex/grid items, sibling reordering and reverse hit testing.
+
+Geometry builders reserve known append sizes before emitting vertices and
+indices. `Mesh::reserve_append` retains geometric growth when many shapes are
+combined. Text uses bounded 64-glyph stack batches of atlas slots to count only
+quads with ink; slots are owned by stable atlas map nodes and never survive the
+call. These reservations add no cache or retained lifetime, and preserve
+geometry values, order and clipping. A separate allocation-budget executable
+covers rounded geometry, repeated appends and visible/empty glyph runs.
+
+Clip preparation compacts its owned polygon copy in place when dropping
+consecutive duplicates, then reserves the maximum triangle-piece count before
+ear clipping. The caller's polygon stays unchanged for containment tests.
+Rounded clip outlines reserve their exact point count from the clamped radii
+and segment count. Preparation remains lazy at the existing `ClipNode`
+boundary; triangulation order and vertex interpolation are unchanged. The
+allocation guard emits a digest of prepared metadata and clipped geometry for
+comparison with a frozen library, covering both windings, concave/degenerate
+polygons and duplicate points.
+
+Paint submission consumes temporary meshes through an rvalue-reference
+parameter. Colour filters, transforms and opacity mutate those owned vertices
+before the vectors move into `RenderInterface::render_mesh`. Clipping retains
+its existing screen-space operation order and replaces the owned mesh at each
+cut; it needs no initial copy. The backdrop region also consumes its temporary
+shape. Callers finish geometry measurements before submission, including the
+input text width used by decorations. The backend API and retained cache keys
+are unchanged. Ownership checks keep an earlier backend's draws alive through
+later paints and compare combined effects against a frozen library.
+
+The collecting backend owns preceding command buffers and per-box command
+ranges. Its key is a monotonically increasing input version, propagated from
+changed styles/replaced boxes to descendants and ancestors. Glyph-atlas
+identity is another input. Cache hits transfer buffers and retain textures by
+handle so sweeping cannot release a visible cached background. External paint
+inputs invalidate the root version; clean frames still return before pipeline
+work. Custom backend callbacks use the existing full path.
+
+The incremental corpus gate forces full recomputation in a control document
+by round-tripping viewport size before updating, without resetting its DOM,
+animation clock or glyph history. See PERFORMANCE.md for timings and fallback
+cases.
+
+Geometric clipping preserves a triangle's original vertices whenever all
+three lie inside every inward half-plane of a convex clip. This applies to
+textured, colored and antialiased triangles: a clip with no geometric effect
+must not introduce new attribute interpolation. Shared vertices are classified
+lazily for each mesh/clip invocation. Boundary crossings and concave clips
+retain the triangulated clipping path. Direct-render pixel checks enforce
+that an irrelevant clip leaves the original triangle's appearance unchanged.
+Passing triangles also retain their input vertex sharing. A map local to the
+clip call records the appended output index for each source index; coincident
+vertices with different attributes stay distinct. This reduces copied and
+uploaded vertices without changing triangle order, interpolation or cache keys.
+
 Three layers, with the seam deliberately placed so a second host costs a shim
 rather than a second engine.
 

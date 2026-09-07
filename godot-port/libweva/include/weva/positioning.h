@@ -101,6 +101,47 @@ void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx,
 // to the element underneath.
 void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out);
 
+// Traverses the existing sibling links when they already follow paint order.
+// Otherwise owns one sorted list for this walk. The tree and its styles must
+// stay unchanged until traversal finishes; nothing is cached between walks.
+class ChildPaintOrder {
+public:
+    ChildPaintOrder(const BoxTree& tree, BoxId container);
+    class Iterator {
+    public:
+        Iterator(const ChildPaintOrder* order, int cursor, bool reverse)
+            : order_(order), cursor_(cursor), reverse_(reverse) {}
+        BoxId operator*() const {
+            return order_->sorted_.empty() ? cursor_ : order_->sorted_[cursor_].id;
+        }
+        Iterator& operator++() {
+            if (order_->sorted_.empty()) {
+                const Box& b = order_->tree_[cursor_];
+                cursor_ = reverse_ ? b.prev_sibling : b.next_sibling;
+            } else {
+                cursor_ += reverse_ ? -1 : 1;
+            }
+            return *this;
+        }
+        bool operator!=(const Iterator& other) const { return cursor_ != other.cursor_; }
+    private:
+        const ChildPaintOrder* order_;
+        int cursor_;
+        bool reverse_;
+    };
+    Iterator begin() const { return {this, sorted_.empty() ? first_ : 0, false}; }
+    Iterator end() const { return {this, sorted_.empty() ? kNoBox : count_, false}; }
+    Iterator rbegin() const { return {this, sorted_.empty() ? last_ : count_ - 1, true}; }
+    Iterator rend() const { return {this, kNoBox, true}; }
+    int size() const { return count_; }
+private:
+    struct Entry { BoxId id; int z; int sequence; bool positioned_zero; };
+    const BoxTree& tree_;
+    BoxId first_ = kNoBox, last_ = kNoBox;
+    int count_ = 0;
+    std::vector<Entry> sorted_;
+};
+
 // Fills every box's visual-overflow rectangle: the area it and its descendants
 // can paint into, relative to its own origin. One bottom-up pass, run after
 // layout and positioning have placed everything.
@@ -109,5 +150,7 @@ void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxI
 // what keeps a long scrolled list cheap: the work is the number of boxes you
 // can SEE rather than the number that exist.
 void compute_visual_overflow(BoxTree* tree, BoxId root);
+// Re-union one ancestor after a subtree changed, using its children's caches.
+void update_visual_overflow(BoxTree* tree, BoxId root);
 
 } // namespace weva

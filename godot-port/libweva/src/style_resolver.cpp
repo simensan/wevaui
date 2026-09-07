@@ -6,8 +6,6 @@
 #include "weva/css_calc.h"
 
 #include <cctype>
-#include <cstdlib>
-#include <cstring>
 #include <string>
 #include <vector>
 
@@ -152,40 +150,47 @@ LengthContext LayoutContext::to_length_context(double font_size_px_,
 
 double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_style,
                     const LayoutContext& ctx) {
-    // The parent's size is resolved with a NULL grandparent, so it resolves
-    // against the root rather than against its own parent. `em` therefore
-    // compounds for two levels and no further. This is the C#'s shape, ported
-    // as-is; see PORT_PLAN.md.
+    if (style && style->font_size_memo_absolute &&
+        style->font_size_memo_version == style->version()) {
+        return style->font_size_memo_px;
+    }
+    // The inheritance chain follows DOM elements, even when display:contents
+    // or anonymous boxes change the box ancestry. The explicit parent is a
+    // fallback for callers that construct styles without a linked cascade.
+    const ComputedStyle* parent = style && style->inherit_parent()
+        ? style->inherit_parent() : parent_style != style ? parent_style : nullptr;
+    static const int kFontSize = CssPropertyRegistry::instance().id_of("font-size");
+    // An inherited size is exactly the parent's result. Forward the read
+    // without maintaining a redundant memo at every undeclared ancestor.
+    if (!style || !style->contains(kFontSize) || style->font_size_inherited())
+        return parent ? font_size_px(parent, parent->inherit_parent(), ctx) : ctx.root_font_size_px;
     const double parent_fs =
-        parent_style ? font_size_px(parent_style, nullptr, ctx) : ctx.root_font_size_px;
+        parent ? font_size_px(parent, parent->inherit_parent(), ctx) : ctx.root_font_size_px;
 
-    // Answered from the style when the parent size has not moved, and answered
-    // BEFORE the declaration is read.
-    //
-    // The result depends on nothing but this style and its parent's size, so
-    // the two together are a complete key and nothing below them adds to it.
-    // The check used to sit after the `get` -- and `font-size` is INHERITED,
-    // so that `get` walks the ancestor chain whenever the box does not set one
-    // itself, which is most boxes. A memo hit was still paying for an O(depth)
-    // walk. Layout writes no style, so after the first call per style the
-    // walk was pure waste, twice per box.
-    //
-    // The key is sound across inheritance even though it is the style's OWN
-    // version: what an ancestor's font-size change moves is `parent_fs`, and
-    // that is the other half of the key.
+    // Context inputs join the style version and resolved parent size. A fixed
+    // pixel-sized parent does not change when the viewport, root metrics or
+    // DPI change, while this style's vw/rem/rlh/pt (including calc) can.
+    // Compare before reading the declaration, preserving the inexpensive
+    // memo hit for repeated layout probes.
+    const std::array<double, 5> context_key = {ctx.viewport_width_px, ctx.viewport_height_px,
+        ctx.root_font_size_px, ctx.root_line_height_px, ctx.dpi_pixels_per_inch};
     if (style && style->font_size_memo_version == style->version() &&
-        style->font_size_memo_parent == parent_fs) {
+        style->font_size_memo_parent == parent_fs &&
+        style->font_size_memo_context == context_key) {
         return style->font_size_memo_px;
     }
 
     // Everything below derives the answer; this records it on the way out.
     // A lambda rather than a write before each of the seven returns, so a
     // later branch cannot forget.
+    bool absolute = false;
     const auto remember = [&](double px) {
         if (style) {
             style->font_size_memo_parent = parent_fs;
+            style->font_size_memo_context = context_key;
             style->font_size_memo_px = px;
             style->font_size_memo_version = style->version();
+            style->font_size_memo_absolute = absolute;
         }
         return px;
     };
@@ -196,8 +201,7 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
     // "font-size" twice per call -- and it is called several times for every
     // box, recursively for the parent as well. The registry keeps an id stable
     // across re-registration precisely so a cache like this is safe.
-    static const int kFontSize = CssPropertyRegistry::instance().id_of("font-size");
-    const std::string_view raw = style ? style->get(kFontSize) : std::string_view();
+    const std::string_view raw = style->get(kFontSize);
     const double fallback = parent_fs > 0 ? parent_fs : ctx.root_font_size_px;
     if (raw.empty()) return remember(fallback);
 
@@ -215,6 +219,8 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
     switch (v->kind()) {
         case CssValueKind::Length: {
             double px = 0;
+            absolute = style && style->contains(kFontSize) &&
+                       static_cast<const CssLength&>(*v).unit == CssLengthUnit::Px;
             // Basis is the parent size: a percentage font-size resolves against
             // the parent, not against any containing block.
             if (static_cast<const CssLength&>(*v).to_pixels(
@@ -228,6 +234,7 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
         case CssValueKind::Number:
             // A unitless font-size is read as pixels. Not valid CSS, but the
             // reference accepts it.
+            absolute = style && style->contains(kFontSize);
             return remember(static_cast<const CssNumber&>(*v).value);
         case CssValueKind::Calc: {
             // CSS Values L4 §10: a math function resolves to a length when its
@@ -248,43 +255,52 @@ double font_size_px(const ComputedStyle* style, const ComputedStyle* parent_styl
 
 double line_height_px(const ComputedStyle* style, double font_size, const LayoutContext& ctx,
                       const FontMetrics* metrics) {
-    const std::string_view raw = get(style, kId_line_height);
     // `normal` is a UA-chosen value: the face's own line height when there is a
     // face, and the conventional 1.2 factor when there is not.
     const double fallback =
         metrics ? metrics->line_height(font_size) : font_size * kDefaultLineHeightFactor;
-    if (raw.empty()) return fallback;
-
-    // By ID. The raw value above already reads by id; this one still hashed
-    // "line-height" from its characters, once for every box on every pass.
-    const CssValue* v = style->parsed(kId_line_height);
+    const ComputedStyle* source = style;
+    while (source && (!source->contains(kId_line_height) || source->line_height_inherited()))
+        source = source->inherit_parent();
+    const CssValue* v = source ? source->parsed(kId_line_height) : nullptr;
     if (!v) return fallback;
 
     // `normal` — and any other keyword — falls through to the font-derived
     // default rather than resolving.
     if (!identifier_of(*v).empty()) return fallback;
 
+    // A number inherits as a multiplier; lengths/percentages inherit the
+    // computed length of the element that declared them (CSS 2.2 §10.8.1).
+    // A calc() whose type is Number follows the same rule as a bare number.
+    if (v->kind() == CssValueKind::Number)
+        return font_size * static_cast<const CssNumber&>(*v).value;
+    const CssCalc* calc = v->kind() == CssValueKind::Calc ? static_cast<const CssCalc*>(v) : nullptr;
+    if (calc && calc->expression && calc_classify(*calc->expression) == CalcType::Number) {
+        double multiplier = 0;
+        if (calc->evaluate(ctx.to_length_context(font_size, font_size), &multiplier, nullptr))
+            return font_size * std::max(0.0, multiplier);
+        return fallback;
+    }
+    const double source_fs = source && source != style
+        ? font_size_px(source, source->inherit_parent(), ctx) : font_size;
+
     switch (v->kind()) {
         case CssValueKind::Length: {
             double px = 0;
             if (static_cast<const CssLength&>(*v).to_pixels(
-                    ctx.to_length_context(font_size, font_size), &px)) {
+                    ctx.to_length_context(source_fs, source_fs), &px)) {
                 return px;
             }
             return fallback;
         }
         case CssValueKind::Percentage:
-            return font_size * static_cast<const CssPercentage&>(*v).value * 0.01;
-        case CssValueKind::Number:
-            // A unitless line-height is a MULTIPLIER, unlike font-size where the
-            // same syntax means pixels.
-            return font_size * static_cast<const CssNumber&>(*v).value;
+            return source_fs * static_cast<const CssPercentage&>(*v).value * 0.01;
         case CssValueKind::Calc: {
             double px = 0;
             std::string why;
             if (static_cast<const CssCalc&>(*v).evaluate(
-                    ctx.to_length_context(font_size, font_size), &px, &why)) {
-                return px;
+                    ctx.to_length_context(source_fs, source_fs), &px, &why)) {
+                return std::max(0.0, px);
             }
             return fallback;
         }
@@ -486,6 +502,50 @@ double resolve_length_px(std::string_view raw, double fallback, const LayoutCont
     return r.kind == LengthKind::Length ? r.pixels : fallback;
 }
 
+namespace {
+
+double border_width_value(const CssValue* v, double font_size, const LayoutContext& ctx) {
+    if (!v) return 0;
+    if (const std::string_view id = identifier_of(*v); !id.empty()) {
+        return border_width_keyword(id);
+    }
+    switch (v->kind()) {
+        case CssValueKind::Length: {
+            const auto& length = static_cast<const CssLength&>(*v);
+            if (length.unit == CssLengthUnit::Px) return length.value;
+            double px = 0;
+            // Percentage border widths are invalid CSS. The existing resolver
+            // uses a zero basis; retain that contract here.
+            return length.to_pixels(ctx.to_length_context(font_size, 0.0), &px) ? px : 0;
+        }
+        case CssValueKind::Number:
+            return static_cast<const CssNumber&>(*v).value;
+        case CssValueKind::Calc: {
+            double px = 0;
+            std::string why;
+            return static_cast<const CssCalc&>(*v).evaluate(
+                ctx.to_length_context(font_size, 0.0), &px, &why) ? px : 0;
+        }
+        default:
+            return 0;
+    }
+}
+
+} // namespace
+
+double resolve_border_width(const ComputedStyle* style, int property_id,
+                            double font_size, const LayoutContext& ctx) {
+    const std::string_view raw = style ? style->get(property_id) : std::string_view();
+    if (raw.empty()) return 0;
+    if (raw == "thin") return 1;
+    if (raw == "medium") return 3;
+    if (raw == "thick") return 5;
+    // Only owned declarations are invalidated by this style's writes. A
+    // registry initial value can change without advancing its style version.
+    if (!style->contains(property_id)) return resolve_border_width(raw, font_size, ctx);
+    return border_width_value(style->parsed(property_id), font_size, ctx);
+}
+
 double resolve_border_width(std::string_view raw, double font_size, const LayoutContext& ctx) {
     if (raw.empty()) return 0;
     if (raw == "thin") return 1;
@@ -517,49 +577,17 @@ double resolve_border_width(std::string_view raw, double font_size, const Layout
                 }
             }
             if (plain) {
-                char buf[32];
-                std::memcpy(buf, digits.data(), digits.size());
-                buf[digits.size()] = '\0';
-                char* end = nullptr;
-                const double n = std::strtod(buf, &end);
+                double n = 0;
                 // A bare number is only a width when it is zero; `border-width:
                 // 2` is invalid CSS, and the parser below decides what it means.
-                if (end && *end == '\0' && (px || n == 0)) return n;
+                if (css_parse_double(digits, &n) && (px || n == 0)) return n;
             }
         }
     }
 
     CssParseError err;
     CssValuePtr v = parse_css_value(raw, &err);
-    if (!v) return 0;
-    if (const std::string_view id = identifier_of(*v); !id.empty()) {
-        return border_width_keyword(id);
-    }
-    switch (v->kind()) {
-        case CssValueKind::Length: {
-            double px = 0;
-            // Basis 0: a percentage border-width is not valid CSS, and
-            // resolving it against zero matches the reference.
-            if (static_cast<const CssLength&>(*v).to_pixels(
-                    ctx.to_length_context(font_size, 0.0), &px)) {
-                return px;
-            }
-            return 0;
-        }
-        case CssValueKind::Number:
-            return static_cast<const CssNumber&>(*v).value;
-        case CssValueKind::Calc: {
-            double px = 0;
-            std::string why;
-            if (static_cast<const CssCalc&>(*v).evaluate(ctx.to_length_context(font_size, 0.0),
-                                                         &px, &why)) {
-                return px;
-            }
-            return 0;
-        }
-        default:
-            return 0;
-    }
+    return border_width_value(v.get(), font_size, ctx);
 }
 
 // The four longhand ids for a shorthand, resolved once per shorthand rather

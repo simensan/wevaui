@@ -1,6 +1,7 @@
 #include "weva/image_store.h"
 
 #include <fstream>
+#include <atomic>
 
 namespace weva {
 
@@ -39,6 +40,11 @@ bool read_file(const std::string& path, std::vector<uint8_t>* out) {
 }
 
 } // namespace
+
+uint64_t ImageStore::next_content_version() {
+    static std::atomic<uint64_t> serial{1};
+    return serial.fetch_add(1, std::memory_order_relaxed);
+}
 
 std::string ImageStore::resolve(std::string_view url) const {
     // A scheme or an absolute path is already what it is; joining a base onto

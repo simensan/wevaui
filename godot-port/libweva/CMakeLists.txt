@@ -2,8 +2,10 @@ add_library(weva STATIC
     src/arena.cpp
     src/intern.cpp
     src/geometry.cpp
+    src/grapheme.cpp
     src/color.cpp
     src/dom.cpp
+    src/form_state.cpp
     src/html_tables.cpp
     src/html_tokenizer.cpp
     src/hit_test.cpp
@@ -39,11 +41,13 @@ add_library(weva STATIC
     src/border_image.cpp
     src/inline_layout.cpp
     src/invalidation.cpp
+    src/incremental_layout.cpp
     src/keyframes.cpp
     src/anchor.cpp
     src/positioning.cpp
     src/scrollbar.cpp
     src/text_classes.cpp
+    src/typeahead.cpp
     src/tessellate.cpp
     src/paint.cpp
     src/background.cpp
@@ -57,7 +61,7 @@ add_library(weva STATIC
     src/weva_c.cpp
 )
 target_include_directories(weva PUBLIC include)
-target_link_libraries(weva PUBLIC weva_flags)
+target_link_libraries(weva PUBLIC weva_flags PRIVATE weva_icu_i18n)
 
 # Opt-in frame pointers for tools/weva_bench --profile. Off by default so the
 # shipped library is not slowed by a diagnostic.

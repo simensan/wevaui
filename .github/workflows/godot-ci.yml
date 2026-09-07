@@ -1,0 +1,94 @@
+name: Godot core and package checks
+
+on:
+  push:
+    paths: ['godot-port/**', '.github/workflows/godot-ci.yml']
+  pull_request:
+    paths: ['godot-port/**', '.github/workflows/godot-ci.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+        sanitizers: ['OFF', 'ON']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      WEVA_INCREMENTAL_CORPUS: ${{ github.workspace }}/godot-port/tools/oracle/corpus/samples
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Linux compiler
+        if: runner.os == 'Linux'
+        run: echo 'CXX=clang++-18' >> "$GITHUB_ENV"
+      - name: Windows compiler and ASan runtime
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Configure
+        run: cmake -S godot-port -B build-core -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_SANITIZERS=${{ matrix.sanitizers }} -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+      - name: Build
+        run: cmake --build build-core --parallel 4
+      - name: Core, sample mutations, allocation guards and sanitizer controls
+        run: ctest --test-dir build-core --output-on-failure --no-tests=error
+      - name: Release tooling regressions
+        run: python -m unittest discover -s godot-port/tools/tests -v
+      - name: Text safety runner regressions
+        run: python -m unittest discover -s godot-port/tools/godot-text-shaping-repro -p test_check.py -v
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-${{ matrix.os }}-sanitizers-${{ matrix.sanitizers }}
+          path: |
+            build-core/Testing/Temporary/
+            build-core/sanitizer-probes/
+
+  extension:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          repository: godotengine/godot-cpp
+          ref: 26fb7ab5821e6a1096f62c22f7462d1d70caa332
+          path: .deps/godot-cpp
+      - name: Windows compiler
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Configure extension with pinned Godot bindings
+        run: cmake -S godot-port/hosts/godot -B build-host -G Ninja -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR=${{ github.workspace }}/.deps/godot-cpp -DGODOTCPP_API_VERSION=4.7 -DGODOTCPP_PRECISION=single -DWEVA_GODOT_BIN=${{ github.workspace }}/build-host/bin
+      - name: Build extension and metadata
+        run: cmake --build build-host --target weva_godot --parallel 4
+      - name: Verify Windows packaging
+        if: runner.os == 'Windows'
+        run: python godot-port/hosts/godot/package_addon.py --windows-library build-host/bin/weva_godot.dll --godot-cpp-dir .deps/godot-cpp --version 0.1.0-preview.${{ github.run_number }} --output build-host/weva-windows.zip
+      - name: Verify Linux packaging
+        if: runner.os == 'Linux'
+        run: python godot-port/hosts/godot/package_addon.py --linux-library build-host/bin/libweva_godot.so --godot-cpp-dir .deps/godot-cpp --version 0.1.0-preview.${{ github.run_number }} --output build-host/weva-linux.zip
+      # These are build artifacts, not release approvals. Engine text safety,
+      # native input/rendering and relocated exports are separate release gates.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-build-${{ matrix.os }}
+          path: |
+            build-host/bin/*.build.json
+            build-host/weva-*.zip

@@ -173,14 +173,15 @@ void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx, dou
     double w = ctx.viewport_width_px;
     double h = ctx.viewport_height_px;
     if (tree.valid(root)) {
-        for (int i = 0; i < tree.size(); ++i) {
+        const auto visit = [&](auto&& self, BoxId i) -> void {
             const Box& b = tree[i];
-            if (b.width <= 0 && b.height <= 0) continue;
             double ax = 0, ay = 0;
             absolute_position(tree, i, &ax, &ay);
             w = std::max(w, ax + b.width);
             h = std::max(h, ay + b.height);
-        }
+            for (BoxId c : tree.children(i)) self(self, c);
+        };
+        visit(visit, root);
     }
     if (out_width) *out_width = w;
     if (out_height) *out_height = h;
@@ -551,7 +552,14 @@ double decoration_reach(const ComputedStyle* style) {
 
 void compute_visual_overflow(BoxTree* tree, BoxId root) {
     if (!tree || !tree->valid(root)) return;
+    for (BoxId c : tree->children(root)) compute_visual_overflow(tree, c);
+    update_visual_overflow(tree, root);
+}
+
+void update_visual_overflow(BoxTree* tree, BoxId root) {
+    if (!tree || !tree->valid(root)) return;
     Box& b = (*tree)[root];
+    if (b.retained_from != kNoBox) return; // includes the deferred children
     // Its own border box, always: a box paints its background and border there
     // whatever its children do.
     double x0 = 0, y0 = 0, x1 = b.width, y1 = b.height;
@@ -560,7 +568,6 @@ void compute_visual_overflow(BoxTree* tree, BoxId root) {
     const double slack = decoration_reach(b.style);
     const bool clips = clips_overflow(b);
     for (BoxId c : tree->children(root)) {
-        compute_visual_overflow(tree, c);
         const Box& cb = (*tree)[c];
         // A clipping box's children are drawn shifted by its scroll offset,
         // and the offset moves -- so the union is taken UNSHIFTED and the clip
@@ -578,24 +585,22 @@ void compute_visual_overflow(BoxTree* tree, BoxId root) {
     b.vis_y1 = y1 + slack;
 }
 
-void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out) {
-    out->clear();
+ChildPaintOrder::ChildPaintOrder(const BoxTree& tree, BoxId container) : tree_(tree) {
     if (!tree.valid(container)) return;
-    struct Entry {
-        BoxId id;
-        int z;
-        int order;
-    };
-    std::vector<Entry> negative, in_flow, positioned, positive;
     const Box& b = tree[container];
+    first_ = b.first_child;
+    last_ = b.last_child;
+    if (first_ == last_) {
+        count_ = first_ == kNoBox ? 0 : 1;
+        return;
+    }
     const DisplayKind pd = b.display;
     // A flex or grid item stacks by z-index without being positioned
     // (Flexbox 4.3, Grid 6.4); layout stamps z only on the positioned, so it
     // is read from the style here.
     const bool items_stack = pd == DisplayKind::Flex || pd == DisplayKind::InlineFlex ||
                              pd == DisplayKind::Grid || pd == DisplayKind::InlineGrid;
-    int order = 0;
-    for (BoxId c : tree.children(container)) {
+    const auto entry = [&](BoxId c, int sequence) {
         const Box& cb = tree[c];
         const bool is_positioned =
             cb.style && cb.kind == BoxKind::Block && cb.position != PositionType::Static;
@@ -606,21 +611,35 @@ void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxI
             const std::string_view zr = cb.style->get(kId_z_index);
             if (!zr.empty() && zr != "auto") z = std::atoi(std::string(zr).c_str());
         }
-        const Entry e{c, z, order++};
-        if (z < 0) negative.push_back(e);
-        else if (z > 0) positive.push_back(e);
-        else if (is_positioned) positioned.push_back(e);
-        else in_flow.push_back(e);
-    }
-    const auto by_z = [](const Entry& a, const Entry& c) {
-        return a.z != c.z ? a.z < c.z : a.order < c.order;
+        return Entry{c, z, sequence, z == 0 && is_positioned};
     };
-    std::stable_sort(negative.begin(), negative.end(), by_z);
-    std::stable_sort(positive.begin(), positive.end(), by_z);
-    out->reserve(negative.size() + in_flow.size() + positioned.size() + positive.size());
-    for (const auto* bucket : {&negative, &in_flow, &positioned, &positive}) {
-        for (const Entry& e : *bucket) out->push_back(e.id);
+    const auto by_z = [](const Entry& a, const Entry& c) {
+        if (a.z != c.z) return a.z < c.z;
+        if (a.positioned_zero != c.positioned_zero) return !a.positioned_zero;
+        return a.sequence < c.sequence;
+    };
+    Entry previous{};
+    bool ordered = true;
+    for (BoxId c : tree.children(container)) {
+        const Entry current = entry(c, count_);
+        if (count_ && by_z(current, previous)) ordered = false;
+        previous = current;
+        ++count_;
     }
+    if (ordered) return;
+    sorted_.reserve(static_cast<size_t>(count_));
+    int sequence = 0;
+    for (BoxId c : tree.children(container)) sorted_.push_back(entry(c, sequence++));
+    // The explicit tree sequence breaks every tie, so sort needs neither
+    // stability nor the temporary allocation used by stable_sort.
+    std::sort(sorted_.begin(), sorted_.end(), by_z);
+}
+
+void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out) {
+    out->clear();
+    const ChildPaintOrder order(tree, container);
+    out->reserve(static_cast<size_t>(order.size()));
+    for (BoxId c : order) out->push_back(c);
 }
 
 } // namespace weva

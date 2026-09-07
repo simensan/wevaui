@@ -36,7 +36,6 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
 // re-registration, which is what its header promises it for.
 const int kId_max_width = CssPropertyRegistry::instance().id_of("max-width");
 const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
-const int kId_color = CssPropertyRegistry::instance().id_of("color");
 const int kId_margin = CssPropertyRegistry::instance().id_of("margin");
 const int kId_padding = CssPropertyRegistry::instance().id_of("padding");
 
@@ -832,7 +831,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     };
 
     // Emits the fragments collected so far as one LineBox with TextRun children.
-    const auto flush_line = [&](bool is_final) {
+    const auto flush_line = [&](bool is_final, bool forced_break = false) {
         // Trailing collapsible spaces do not occupy the end of a line — they
         // would otherwise push the alignment of every centred or right-aligned
         // line by a space width.
@@ -1026,6 +1025,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         (*tree)[lb].height = line_height;
         (*tree)[lb].baseline = baseline;
         (*tree)[lb].is_final_line = is_final;
+        (*tree)[lb].ends_with_forced_break = forced_break;
         (*tree)[lb].applied_text_align_delta = dx;
         // What the wrap took off the end of this line, so the unwrapped width
         // of the paragraph can be rebuilt from its lines.
@@ -1170,9 +1170,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             Box& r = (*tree)[run];
             r.text = f.text;
             r.source_node = (*tree)[f.item->source_run].source_node;
+            r.source_control = (*tree)[f.item->source_run].source_control;
             r.font_size = f.item->font_size;
             r.font_family = get(f.item->style, kId_font_family);
-            r.color = get(f.item->style, kId_color);
             r.x = f.x + dx;
             // Runs sit on the shared baseline, so a smaller span aligns with a
             // larger one rather than with the line's top edge.
@@ -1260,7 +1260,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             // stamped there.
             grow_line_metrics(it);
             line.push_back({&it, {}, false, pen, 0});
-            flush_line(false);
+            flush_line(false, true);
             continue;
         }
         if (it.is_atom()) {
@@ -1514,7 +1514,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             }
             if (nl == std::string_view::npos) break;
             grow_line_metrics(it);
-            flush_line(false);
+            flush_line(false, true);
             seg_begin = nl + 1;
         }
     }
@@ -1550,31 +1550,50 @@ double max_content_width(const BoxTree& tree, BoxId id) {
     return max_content_width(tree, id, nullptr);
 }
 
-double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, bool minimum);
-
 namespace {
+
+struct IntrinsicWidths {
+    double minimum = 0;
+    double maximum = 0;
+};
+
+// A parent needs both sizes from the same geometry. Compute them together so
+// nested flex/grid items share tree walks and constraint resolution. The single
+// size APIs specialize away the unused half; no geometry survives this call.
+template<bool Minimum, bool Maximum>
+IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutContext* ctx);
 
 // A block-level child's outer max-content contribution: its explicit width
 // when it has one (already resolved onto the box), otherwise its content plus
 // its own frame, bounded by its min-/max-width — plus margins either way.
-double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContext* ctx, bool minimum) {
+template<bool Minimum, bool Maximum>
+IntrinsicWidths block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContext* ctx) {
     const Box& b = tree[c];
     const std::string_view width_raw = get(b.style, kId_width);
     const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
                                 width_raw.find('%') == std::string_view::npos;
-    double w;
+    IntrinsicWidths w;
     if (explicit_width) {
-        w = b.width;
+        if constexpr (Minimum) w.minimum = b.width;
+        if constexpr (Maximum) w.maximum = b.width;
     } else {
         const double frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
-        w = intrinsic_width(tree, c, ctx, minimum) + frame;
+        w = intrinsic_widths<Minimum, Maximum>(tree, c, ctx);
+        if constexpr (Minimum) w.minimum += frame;
+        if constexpr (Maximum) w.maximum += frame;
         if (ctx && b.style) {
             const double fs = b.font_size > 0 ? b.font_size : ctx->root_font_size_px;
             const double minmax_frame = is_border_box(b.style) ? 0 : frame;
             const ResolvedLength min_w = resolve_length(b.style, kId_min_width, *ctx, fs, std::nullopt);
             const ResolvedLength max_w = resolve_length(b.style, kId_max_width, *ctx, fs, std::nullopt);
-            if (min_w.kind == LengthKind::Length) w = std::max(w, min_w.pixels + minmax_frame);
-            if (max_w.kind == LengthKind::Length) w = std::min(w, max_w.pixels + minmax_frame);
+            if (min_w.kind == LengthKind::Length) {
+                if constexpr (Minimum) w.minimum = std::max(w.minimum, min_w.pixels + minmax_frame);
+                if constexpr (Maximum) w.maximum = std::max(w.maximum, min_w.pixels + minmax_frame);
+            }
+            if (max_w.kind == LengthKind::Length) {
+                if constexpr (Minimum) w.minimum = std::min(w.minimum, max_w.pixels + minmax_frame);
+                if constexpr (Maximum) w.maximum = std::min(w.maximum, max_w.pixels + minmax_frame);
+            }
         }
     }
     // `margin: auto` is resolved by the box's container (centring, or a flex
@@ -1586,10 +1605,10 @@ double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContex
     const std::string_view mr = get(b.style, kId_margin_right);
     const double margins = (iequals(ml, "auto") ? 0.0 : b.margin_left) +
                            (iequals(mr, "auto") ? 0.0 : b.margin_right);
-    return w + margins;
+    if constexpr (Minimum) w.minimum += margins;
+    if constexpr (Maximum) w.maximum += margins;
+    return w;
 }
-
-} // namespace
 
 // CSS 2.1 §10.3.5 / css-sizing-3 §5: the max-content inline size of a box's
 // CONTENT (the caller adds the box's own frame). A flex row sums its items —
@@ -1597,16 +1616,10 @@ double block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContex
 // container takes the widest child. Taking the max for a flex row made an
 // absolutely positioned pill (icon + amount) shrink-to-fit to its widest
 // item alone, and its items then shrank to fit into that.
-double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
-    return intrinsic_width(tree, id, ctx, false);
-}
-
-double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
-    return intrinsic_width(tree, id, ctx, true);
-}
-
-double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, bool minimum) {
+template<bool Minimum, bool Maximum>
+IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
     const Box& self = tree[id];
+    if (self.intrinsic_height > 0) return {self.intrinsic_width, self.intrinsic_width};
     // A grid container's intrinsic size is its tracks', which layout_grid
     // records when it sizes them (§12 under a max-content constraint); the
     // children alone say nothing about fixed tracks or gaps. An 8-column
@@ -1614,7 +1627,7 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
     if (self.kind == BoxKind::Block &&
         (self.display == DisplayKind::Grid || self.display == DisplayKind::InlineGrid) &&
         self.grid_max_content >= 0) {
-        return minimum ? self.grid_min_content : self.grid_max_content;
+        return {self.grid_min_content, self.grid_max_content};
     }
     const bool flex = self.kind == BoxKind::Block &&
                       (self.display == DisplayKind::Flex || self.display == DisplayKind::InlineFlex);
@@ -1624,14 +1637,14 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
     // widest item; one that may not still sums them. Text under
     // `white-space: nowrap`/`pre` cannot break either.
     const std::string_view wrap_raw = get(self.style, kId_flex_wrap);
-    const bool row_sums = flex_row && (!minimum || !(iequals(wrap_raw, "wrap") ||
-                                                       iequals(wrap_raw, "wrap-reverse")));
+    const bool min_row_sums = flex_row && !(iequals(wrap_raw, "wrap") ||
+                                          iequals(wrap_raw, "wrap-reverse"));
     const std::string_view ws = get(self.style, kId_white_space);
-    const bool text_unbreakable = !minimum || iequals(ws, "nowrap") || iequals(ws, "pre");
+    const bool min_text_unbreakable = iequals(ws, "nowrap") || iequals(ws, "pre");
 
-    double max = 0;
-    double sum = 0;
-    double paragraph = 0;   // running unwrapped width of the current run of lines
+    IntrinsicWidths max;
+    IntrinsicWidths sum;
+    IntrinsicWidths paragraph;   // running unwrapped width of the current run of lines
     int in_flow_blocks = 0;
     for (BoxId c : tree.children(id)) {
         const Box& b = tree[c];
@@ -1657,13 +1670,10 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
             // the lines were broken at the width the box happened to have;
             // reading the widest WRAPPED line fitted a centred paragraph to
             // 163.8px inside its 194px column. A forced break ends a paragraph.
-            double line_sum = 0, widest = 0;
-            bool forced_break = false;
+            IntrinsicWidths line_sum;
+            double widest = 0;
             for (BoxId r : tree.children(c)) {
                 const Box& run = tree[r];
-                if (run.kind == BoxKind::Inline && run.element && run.element->tag_name() == "br") {
-                    forced_break = true;
-                }
                 // An inline box's fragment spans the runs it covers; counting
                 // it as well as them doubled every bold word.
                 if (run.kind == BoxKind::Inline) continue;
@@ -1682,43 +1692,65 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
                 //
                 // It only showed on an INLINE image, because a `display: block`
                 // one is a block child and already took this path.
-                const double w = run.kind == BoxKind::Block
-                                     ? block_child_contribution(tree, r, ctx, minimum)
-                                     : run.width;
-                line_sum += w;
-                if (w > widest) widest = w;
-            }
-            if (text_unbreakable) {
-                // The space a wrap trimmed sits BETWEEN two lines of the
-                // paragraph and comes back when they are joined; one trimmed
-                // at the paragraph's end is gone in max-content too. The
-                // inline boxes' own edges are on the line but in no run.
-                const bool ends_paragraph = forced_break || b.is_final_line;
-                paragraph += line_sum + b.inline_decoration_width +
-                             (ends_paragraph ? 0.0 : b.trimmed_trailing_space);
-                if (ends_paragraph) {
-                    if (paragraph > max) max = paragraph;
-                    paragraph = 0;
+                const IntrinsicWidths w = run.kind == BoxKind::Block
+                    ? block_child_contribution<Minimum, Maximum>(tree, r, ctx)
+                    : IntrinsicWidths{run.width, run.width};
+                if constexpr (Minimum) {
+                    line_sum.minimum += w.minimum;
+                    if (w.minimum > widest) widest = w.minimum;
                 }
-            } else if (widest > max) {
-                max = widest;
+                if constexpr (Maximum) line_sum.maximum += w.maximum;
+            }
+            // The space a wrap trimmed sits BETWEEN two lines of the
+            // paragraph and comes back when they are joined; one trimmed
+            // at the paragraph's end is gone in max-content too. The
+            // inline boxes' own edges are on the line but in no run.
+            const bool ends_paragraph = b.ends_with_forced_break || b.is_final_line;
+            if constexpr (Minimum) {
+                if (min_text_unbreakable) {
+                    paragraph.minimum += line_sum.minimum + b.inline_decoration_width +
+                                         (ends_paragraph ? 0.0 : b.trimmed_trailing_space);
+                    if (ends_paragraph) {
+                        if (paragraph.minimum > max.minimum) max.minimum = paragraph.minimum;
+                        paragraph.minimum = 0;
+                    }
+                } else if (widest > max.minimum) {
+                    max.minimum = widest;
+                }
+            }
+            if constexpr (Maximum) {
+                paragraph.maximum += line_sum.maximum + b.inline_decoration_width +
+                                     (ends_paragraph ? 0.0 : b.trimmed_trailing_space);
+                if (ends_paragraph) {
+                    if (paragraph.maximum > max.maximum) max.maximum = paragraph.maximum;
+                    paragraph.maximum = 0;
+                }
             }
             continue;
         }
         if (b.kind == BoxKind::Block && b.is_inline_block) {
             // An atom that has not been placed on a line yet (a container
             // whose inline content is still raw): its own width.
-            if (b.width > max) max = b.width;
+            if constexpr (Minimum) { if (b.width > max.minimum) max.minimum = b.width; }
+            if constexpr (Maximum) { if (b.width > max.maximum) max.maximum = b.width; }
             continue;
         }
         if (b.kind != BoxKind::Block && b.kind != BoxKind::AnonymousBlock) continue;
-        const double contribution = block_child_contribution(tree, c, ctx, minimum);
+        const IntrinsicWidths contribution = block_child_contribution<Minimum, Maximum>(tree, c, ctx);
         ++in_flow_blocks;
-        sum += contribution;
-        if (contribution > max) max = contribution;
+        if constexpr (Minimum) {
+            sum.minimum += contribution.minimum;
+            if (contribution.minimum > max.minimum) max.minimum = contribution.minimum;
+        }
+        if constexpr (Maximum) {
+            sum.maximum += contribution.maximum;
+            if (contribution.maximum > max.maximum) max.maximum = contribution.maximum;
+        }
     }
-    if (paragraph > max) max = paragraph;   // lines that did not end in a final line
-    if (row_sums && in_flow_blocks > 1) {
+    // Lines that did not end in a final line.
+    if constexpr (Minimum) { if (paragraph.minimum > max.minimum) max.minimum = paragraph.minimum; }
+    if constexpr (Maximum) { if (paragraph.maximum > max.maximum) max.maximum = paragraph.maximum; }
+    if (((Minimum && min_row_sums) || (Maximum && flex_row)) && in_flow_blocks > 1) {
         double gap = 0;
         if (ctx && self.style) {
             const std::string_view raw = get(self.style, kId_column_gap);
@@ -1728,9 +1760,33 @@ double intrinsic_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx, 
                 if (r.kind == LengthKind::Length) gap = std::max(0.0, r.pixels);
             }
         }
-        return sum + gap * static_cast<double>(in_flow_blocks - 1);
+        const double gaps = gap * static_cast<double>(in_flow_blocks - 1);
+        if constexpr (Minimum) { if (min_row_sums) max.minimum = sum.minimum + gaps; }
+        if constexpr (Maximum) max.maximum = sum.maximum + gaps;
     }
     return max;
+}
+
+} // namespace
+
+double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
+    return intrinsic_widths<false, true>(tree, id, ctx).maximum;
+}
+
+double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
+    return intrinsic_widths<true, false>(tree, id, ctx).minimum;
+}
+
+double block_intrinsic_contribution(const BoxTree& tree, BoxId id,
+                                   const LayoutContext* ctx, bool minimum) {
+    return minimum ? block_child_contribution<true, false>(tree, id, ctx).minimum
+                   : block_child_contribution<false, true>(tree, id, ctx).maximum;
+}
+
+ParentLayoutInput measure_parent_layout_input(const BoxTree& tree, BoxId id,
+                                              double available_width, const LayoutContext& ctx) {
+    const IntrinsicWidths widths = intrinsic_widths<true, true>(tree, id, &ctx);
+    return {available_width, tree[id].width, tree[id].height, widths.minimum, widths.maximum};
 }
 
 } // namespace weva

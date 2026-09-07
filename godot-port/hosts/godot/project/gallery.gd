@@ -15,10 +15,12 @@ extends Control
 const SAMPLES_REL := "../../../tools/oracle/corpus/samples"
 # What the corpus is captured at, and therefore what both gates measure.
 const GATE_SIZE := Vector2(1280, 720)
+const SURVIVAL_SAMPLE := "western-survival"
 
 var _names: PackedStringArray = []
 var _index := 0
 var _doc: WevaDocument = null
+var _sample_root: Control = null
 var _use_engine_font := true
 var _full_page := false
 var _doc_size := GATE_SIZE
@@ -58,6 +60,8 @@ var _build_ms: Array[float] = []
 @onready var _title: Label = %Title
 @onready var _meta: Label = %Meta
 @onready var _stage: Control = %Stage
+@onready var _hint: Label = %Hint
+@onready var _corpus_hint: String = _hint.text
 
 
 func _samples_dir() -> String:
@@ -79,6 +83,7 @@ func _ready() -> void:
 		# <name>.html.chrome-layout.json; only the sources themselves are pages.
 		if f.ends_with(".html") and not f.contains(".chrome"):
 			_names.append(f.substr(0, f.length() - 5))
+	_names.append(SURVIVAL_SAMPLE)
 	_names.sort()
 
 	for n in _names:
@@ -103,11 +108,8 @@ func _process(delta: float) -> void:
 	if _rebuild_every_frame and _doc != null:
 		_build(_doc_size)
 		_fit()
-	elif _doc != null:
-		# Advance the clock. An animated page needs it to move at all, and a
-		# settled one early-outs inside the core for almost nothing -- which is
-		# what makes the `update` line below meaningful when it appears.
-		_doc.update_document(delta)
+	# WevaDocument processes its own animation and input clocks. Advancing it
+	# here as well doubles animation speed and pays for a second update.
 
 	_stats_panel.visible = _show_stats
 	if not _show_stats:
@@ -165,21 +167,37 @@ func _worst(buf: Array[float]) -> float:
 
 func _build(size: Vector2) -> void:
 	var t0 := Time.get_ticks_usec()
-	if _doc != null:
+	if _sample_root != null:
+		_stage.remove_child(_sample_root)
+		_sample_root.queue_free()
+		_sample_root = null
+	elif _doc != null:
+		_stage.remove_child(_doc)
 		_doc.queue_free()
-	_doc = WevaDocument.new()
-	_doc.use_engine_font = _use_engine_font
-	_doc.document_size = size
-	_doc.css = _read(_samples_dir().path_join(_names[_index] + ".css"))
-	_doc.html = _read(_samples_dir().path_join(_names[_index] + ".html"))
-	_stage.add_child(_doc)
+	if _names[_index] == SURVIVAL_SAMPLE:
+		_sample_root = load("res://samples/western_survival/survival.tscn").instantiate()
+		_sample_root.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		_sample_root.size = size
+		_stage.add_child(_sample_root)
+		_doc = _sample_root.get("ui")
+		_doc.use_engine_font = _use_engine_font
+	else:
+		_doc = WevaDocument.new()
+		_doc.use_engine_font = _use_engine_font
+		_doc.document_size = size
+		_doc.css = _read(_samples_dir().path_join(_names[_index] + ".css"))
+		_doc.html = _read(_samples_dir().path_join(_names[_index] + ".html"))
+		_stage.add_child(_doc)
 	_doc.update_document()
+	_stage.move_child(_stats_panel,-1)
 	_doc_size = size
 	_push(_build_ms, float(Time.get_ticks_usec() - t0) / 1000.0)
 
 
 func _show(i: int) -> void:
 	_index = clampi(i, 0, _names.size() - 1)
+	if _names[_index] == SURVIVAL_SAMPLE:
+		_rebuild_every_frame = false
 	_pan = 0.0
 	# A page change is a discontinuity: its first frames include the build, and
 	# carrying the previous page's samples across would blame them on this one.
@@ -203,6 +221,7 @@ func _show(i: int) -> void:
 	_fit()
 
 	_title.text = _names[_index]
+	_hint.text = "Tab satchel   C craft   1–6 equip   F use   S stats" if _sample_root != null else _corpus_hint
 	var tail := ""
 	if _doc_size.y > GATE_SIZE.y:
 		tail = "   full page, %dpx -- scroll" % int(_doc_size.y)
@@ -247,10 +266,11 @@ func _fit() -> void:
 	# on resize and would otherwise restore a pan the new size cannot afford.
 	_pan = clampf(_pan, 0.0, _scroll_span)
 	var origin := (room - _doc_size * s) * 0.5
-	_doc.scale = Vector2(s, s)
+	var surface: Control = _sample_root if _sample_root != null else _doc
+	surface.scale = Vector2(s, s)
 	# Floored so the page lands on whole pixels; a half-pixel offset resamples
 	# every glyph just as surely as a fractional scale does.
-	_doc.position = Vector2(origin.x, minf(origin.y, 0.0) - _pan).floor()
+	surface.position = Vector2(origin.x, minf(origin.y, 0.0) - _pan).floor()
 
 
 func _read(path: String) -> String:

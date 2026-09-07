@@ -39,13 +39,14 @@ function bundledFontFaceCss() {
     return s;
 }
 
-// Under --metrics=mono Chrome also lays out under the ENGINES' user-agent
-// sheet (godot-port/libweva/src/user_agent_stylesheet.cpp is the C#
-// UserAgentStylesheet verbatim): `html, body { margin: 0; height: 100% }`,
+// Under --metrics=mono Chrome also gets the port's user-agent sheet from
+// godot-port/libweva/src/user_agent_stylesheet.cpp: `html, body { margin: 0; height: 100% }`,
 // the form-control and heading defaults, the table defaults. Injected inside
 // `@layer weva-ua`, so it beats Chrome's own UA sheet (author origin) but
-// loses to every unlayered author rule whatever its specificity — exactly
-// where a UA sheet sits. Without it every page that relies on a UA default
+// loses to every unlayered author rule whatever its specificity. This is an
+// overlay, not a replacement: unspecified browser UA defaults remain (for
+// example button borders), and origin rollback still sees an author layer.
+// Without it every page that relies on a UA default
 // (a body without `margin: 0`, an unstyled <h2>) is off Chrome by that
 // default and nothing on it can be arbitrated.
 const UA_SHEET_CPP = path.join(REPO, 'godot-port', 'libweva', 'src', 'user_agent_stylesheet.cpp');
@@ -80,7 +81,8 @@ function listDir(dir, width, height) {
 // with these faces Chrome's text widths equal the engines' exactly and it can
 // arbitrate text-dependent differences too. `line-height: normal` is pinned to
 // 1.143 because Blink rounds a face's ascent and descent to whole pixels for
-// `normal` but computes a numeric line-height precisely.
+// `normal` but computes a numeric line-height precisely. Normalize computed
+// `normal` after the cascade so inherited authored line heights remain intact.
 const METRICS = (() => {
     const i = process.argv.findIndex(a => a.startsWith('--metrics='));
     if (i < 0) return 'inter';
@@ -113,8 +115,7 @@ function monoFontFaceCss() {
         throw new Error('--metrics=mono needs the synthetic fonts: run godot-port/tools/oracle/make_mono_font.py');
     }
     return `@font-face{font-family:'WevaMonoSans';src:url('${u(sans)}')}` +
-           `@font-face{font-family:'WevaMonoMonospace';src:url('${u(mono)}')}` +
-           `html{font-family:'WevaMonoSans'}*{line-height:1.143}`;
+           `@font-face{font-family:'WevaMonoMonospace';src:url('${u(mono)}')}`;
 }
 
 function targets() {
@@ -139,7 +140,9 @@ function targets() {
     return out;
 }
 
-async function captureOne(browser, target) {
+export async function captureOne(browser, target, {
+    metrics = METRICS, screenshot = SCREENSHOT, noLayout = NO_LAYOUT,
+} = {}) {
     const { html: htmlPath, width, height } = target;
     if (!fs.existsSync(htmlPath)) {
         return { htmlPath, ok: false, error: 'missing' };
@@ -162,10 +165,10 @@ async function captureOne(browser, target) {
     // reset (or, under --metrics=mono, the engines' whole UA sheet in a
     // layer) and the font faces.
     const injected =
-        (METRICS === 'mono'
+        (metrics === 'mono'
             ? '<style>@layer weva-ua{' + wevaUaCss() + '}</style>'
             : '<style>body{margin:0}</style>') +
-        '<style>' + (METRICS === 'mono' ? monoFontFaceCss() : bundledFontFaceCss()) + '</style>';
+        '<style>' + (metrics === 'mono' ? monoFontFaceCss() : bundledFontFaceCss()) + '</style>';
 
     let loadPath = htmlPath;
     let tempPath = null;
@@ -212,24 +215,34 @@ async function captureOne(browser, target) {
         await page.addStyleTag({
             content: '*,*::before,*::after{animation:none!important;transition:none!important;}'
         });
-        if (METRICS === 'mono') {
+        if (metrics === 'mono') {
             // The engines resolve a font-family stack to the first REGISTERED
             // family — only `monospace` is registered beside the default — so
             // every element measures with the sans face unless its stack names
             // monospace anywhere. Mirror that per element, then let fonts
             // settle again.
             await page.evaluate(() => {
-                const all = document.querySelectorAll('body, body *');
-                for (const el of all) {
-                    const fam = getComputedStyle(el).fontFamily || '';
-                    const mono = /(^|,)\s*['"]?monospace['"]?\s*(,|$)/i.test(fam);
+                // Snapshot before writing: replacing an ancestor's family
+                // changes the inherited family reported on its descendants.
+                const styles = Array.from(document.querySelectorAll('html, body, body *'), el => {
+                    const cs = getComputedStyle(el);
+                    return { el, mono: /(^|,)\s*['"]?monospace['"]?\s*(,|$)/i.test(cs.fontFamily || ''),
+                             normal: cs.lineHeight === 'normal' };
+                });
+                for (const { el, mono, normal } of styles) {
                     el.style.setProperty('font-family', mono ? 'WevaMonoMonospace' : 'WevaMonoSans', 'important');
+                    // Normalize only computed `normal`. A universal rule also
+                    // overrides inherited lengths (30px on a 10px child became
+                    // 11.43px), while font shorthands can reset it back to normal.
+                    if (normal) {
+                        el.style.setProperty('line-height', '1.143', 'important');
+                    }
                 }
             });
         }
         await page.evaluate(() => document.fonts.ready);
         await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-        if (SCREENSHOT) {
+        if (screenshot) {
             await page.screenshot({ path: htmlPath + '.chrome.png', clip: { x: 0, y: 0, width, height } });
         }
         elements = await page.evaluate(() => {
@@ -280,9 +293,13 @@ async function captureOne(browser, target) {
     }
 
     const outPath = htmlPath + '.chrome-layout.json';
-    if (NO_LAYOUT) return { htmlPath, outPath, ok: true, count: elements.length };
+    if (noLayout) return { htmlPath, outPath, ok: true, count: elements.length };
     fs.writeFileSync(outPath, JSON.stringify({
         source: path.basename(htmlPath),
+        metrics,
+        browser: await browser.version(),
+        userAgentStylesheet: metrics === 'mono' ? 'weva overlay on browser' : 'browser with body margin reset',
+        lineHeightNormalization: metrics === 'mono' ? 'computed normal to 1.143' : 'native',
         width, height,
         count: elements.length,
         elements,
@@ -333,12 +350,15 @@ async function main() {
             }
         }
         console.log(`\nCaptured ${okCount}/${list.length} demos.`);
+        if (okCount !== list.length) throw new Error('One or more layout captures failed.');
     } finally {
         await browser.close();
     }
 }
 
-main().catch(err => {
-    console.error(err && err.stack || err);
-    process.exit(1);
-});
+if (process.argv[1] && fs.realpathSync(process.argv[1]) === __filename) {
+    main().catch(err => {
+        console.error(err && err.stack || err);
+        process.exit(1);
+    });
+}

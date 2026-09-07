@@ -1,7 +1,7 @@
 [configuration]
 
 entry_symbol = "weva_library_init"
-compatibility_minimum = "4.2"
+compatibility_minimum = "4.7"
 ; Lets the EDITOR drop the library when it loses focus, so the DLL can be
 ; rebuilt without closing Godot first. Windows will not let anything overwrite a
 ; mapped DLL, and before this every rebuild meant quitting the editor. (Linux

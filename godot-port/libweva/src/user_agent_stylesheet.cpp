@@ -74,7 +74,12 @@ button, input, select, textarea, img { display: inline-block; }
    single line inside an explicit `height` is handled by ButtonContentCentering
    in layout (Chrome's anonymous centered content box), scoped to default-
    display buttons so author `display` overrides are untouched. */
-button { box-sizing: border-box; padding: 2px 6px; display: inline-block; text-align: center; }
+/* Desktop browser small-control font (10pt at 96 CSS px/in). An authored
+   font or font:inherit overrides this UA rule through the ordinary cascade. */
+button { font: 13.333333333333333px sans-serif; box-sizing: border-box; padding: 1px 6px; border: 2px outset ButtonBorder;
+         background-color: ButtonFace; color: ButtonText; display: inline-block; text-align: center; }
+button:active { border-style: inset; }
+button:active:disabled { border-style: outset; }
 input, textarea, select { padding: 1px 2px; border: 1px solid #767676; }
 /* Chrome UA: textarea content preserves newlines/spaces and soft-wraps
    (white-space: pre-wrap). Also the contract the multiline caret map
@@ -166,9 +171,9 @@ textarea { display: inline-block; box-sizing: border-box; width: 218px; height: 
 select { display: inline-block; box-sizing: border-box; min-width: 218px; height: 34px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
 /* A closed <select> renders only the selected option's text via its own
    paint path; its <option> children are not laid out in flow. */
-option { display: none; }
-optgroup { display: none; }
-select[size] option, select[multiple] option { display: block; padding: 2px 4px; }
+option { display: block; padding: 2px 4px; font-weight: normal; white-space: nowrap; }
+optgroup { display: block; font-weight: bold; white-space: nowrap; }
+optgroup option { padding-left: 20px; }
 /* More rows than fit is the normal case for a keybind or server list, so it
    scrolls rather than hiding the rest behind an edge -- the wheel, the bar and
    the keyboard all follow from this one declaration. */

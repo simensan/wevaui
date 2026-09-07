@@ -1,4 +1,5 @@
 #include "weva/dom.h"
+#include "weva/form_state.h"
 
 #include <algorithm>
 #include <cctype>
@@ -115,6 +116,8 @@ Status Node::append_child(Node* child) {
         children_.push_back(keep);
         bump_version();
         child->bump_version();
+        form_subtree_inserted(*child);
+        form_children_changed(*this);
         raise_bubbling(DomMutation{MutationKind::ChildAdded, this, child, {}, {}, {}});
         return Status::Ok;
     }
@@ -130,6 +133,8 @@ Status Node::append_child(Node* child) {
     propagate_owner_document(child);
     bump_version();
     child->bump_version();
+    form_subtree_inserted(*child);
+    form_children_changed(*this);
     raise_bubbling(DomMutation{MutationKind::ChildAdded, this, child, {}, {}, {}});
     return Status::Ok;
 }
@@ -154,6 +159,8 @@ Status Node::insert_before(Node* child, Node* reference_child) {
         children_.insert(children_.begin() + ref_idx, keep);
         bump_version();
         child->bump_version();
+        form_subtree_inserted(*child);
+        form_children_changed(*this);
         raise_bubbling(DomMutation{MutationKind::ChildAdded, this, child, {}, {}, {}});
         return Status::Ok;
     }
@@ -169,6 +176,8 @@ Status Node::insert_before(Node* child, Node* reference_child) {
     propagate_owner_document(child);
     bump_version();
     child->bump_version();
+    form_subtree_inserted(*child);
+    form_children_changed(*this);
     raise_bubbling(DomMutation{MutationKind::ChildAdded, this, child, {}, {}, {}});
     return Status::Ok;
 }
@@ -198,6 +207,7 @@ bool Node::remove_child(Node* child) {
     // Re-attaching re-propagates the destination.
     child->owner_document_ = nullptr;
     propagate_owner_document(child);
+    form_children_changed(*this);
     return true;
 }
 
@@ -208,23 +218,17 @@ void TextNode::set_data(std::string_view value) {
     std::string old = data_;
     data_ = std::string(value);
     bump_version();
+    if (parent()) form_children_changed(*parent());
     DomMutation m{MutationKind::TextChanged, this, nullptr, {}, old, data_};
     raise_bubbling(m);
 }
 
 // --------------------------------------------------------------------- Element
 
-Element::Element(std::string_view tag_name)
-    : Node(NodeType::Element), tag_name_(tag_name) {
-    attributes_.set_change_handler(
-        [this](std::string_view n, const std::string* o, const std::string* v) {
-            on_attribute_changed(n, o, v);
-        });
-}
-
 void Element::on_attribute_changed(std::string_view name, const std::string* old_v,
                                    const std::string* new_v) {
     bump_version();
+    form_attribute_changed(name, old_v);
     DomMutation m{};
     m.target = this;
     m.name = std::string(name);

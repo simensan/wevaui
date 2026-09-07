@@ -8,9 +8,12 @@
 #include "weva/inline_layout.h"
 #include "weva/user_agent_stylesheet.h"
 #include <cmath>
+#include <cstdlib>
+#include <iomanip>
 #include <map>
 #include <memory>
 #include <string>
+#include <sstream>
 
 using namespace weva;
 
@@ -86,7 +89,7 @@ struct Fixture {
         sheets.push_back(std::move(s));
         return true;
     }
-    bool layout(std::string_view html, double vw = 1000, double vh = 600) {
+    bool build(std::string_view html) {
         HtmlParseError he;
         ParseOptions o;
         o.strict = false;
@@ -99,7 +102,10 @@ struct Fixture {
         }
         BoxBuilder builder(&tree, &styles);
         root = builder.build_document(*doc);
-        if (root == kNoBox) return false;
+        return root != kNoBox;
+    }
+    bool layout(std::string_view html, double vw = 1000, double vh = 600) {
+        if (!build(html)) return false;
         BlockLayout bl(&tree, ctx, &metrics);
         bl.layout_root(root, vw, vh);
         return true;
@@ -151,7 +157,71 @@ struct Fixture {
 
 bool near(double a, double b) { return std::fabs(a - b) < 1e-9; }
 
+void append_geometry(const BoxTree& tree, BoxId id, std::ostringstream& out) {
+    const Box& box = tree[id];
+    out << '(' << static_cast<int>(box.kind) << ':' << box.x << ',' << box.y << ','
+        << box.width << ',' << box.height << ',' << box.baseline << ',' << box.text;
+    for (BoxId child : tree.children(id)) append_geometry(tree, child, out);
+    out << ')';
+}
+
+std::string geometry(const Fixture& f) {
+    std::ostringstream out;
+    out << std::setprecision(17);
+    append_geometry(f.tree, f.root, out);
+    return out.str();
+}
+
 } // namespace
+
+void test_inline_layout_reuse() {
+    const char* examples[] = {
+        "<div id='text'>one two three four five six seven eight</div>",
+        "<button id='text'>one two three four five six seven eight</button>",
+        "<table><tr><td id='text'>one two three four five six seven eight</td>"
+        "<td style='height:140px'>tall</td></tr></table>",
+        "<div id='text'>one <b>two three</b> four "
+        "<span style='display:inline-block;width:20%'>atom</span> five</div>",
+        "<div style='display:flow-root'><div style='float:left;width:50%;height:60px'>float</div>"
+        "<div id='text'>one two three four five six seven eight</div></div>",
+        "<div id='text' style='white-space:pre-wrap'>a\nb\nc\nd\ne\nf\ng\nh\ni\nj</div>",
+        "<div id='text' style='white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"
+        "one two three four five six seven eight nine ten</div>"
+    };
+    const char* css = "body{margin:0;font-size:16px} #text{padding:5%;text-align:center}"
+                      "button{display:block;width:100%;height:120px;box-sizing:border-box}"
+                      "table{width:100%} td{vertical-align:middle}";
+    for (const char* html : examples) {
+        Fixture retained;
+        CHECK(retained.css(css));
+        CHECK(retained.build(html));
+        BlockLayout layout(&retained.tree, retained.ctx, &retained.metrics);
+        // Revisit nonconsecutive widths, including percentage padding and
+        // post-layout button/cell alignment. Compare every reachable box
+        // against a fresh tree, not only the outer element bounds.
+        for (double width : {220.0, 140.0, 220.0, 360.0, 140.0, 220.0}) {
+            layout.layout_root(retained.root, width, 600);
+            Fixture fresh;
+            CHECK(fresh.css(css));
+            CHECK(fresh.layout(html, width, 600));
+            CHECK_EQ(geometry(retained), geometry(fresh));
+        }
+    }
+
+    // Prove an eligible A -> B -> A probe actually restores its first result.
+    // The environment switch is used by independent old-path comparisons.
+    Fixture f;
+    CHECK(f.css("body{margin:0} #text{font-size:16px}"));
+    CHECK(f.build(examples[0]));
+    BlockLayout layout(&f.tree, f.ctx, &f.metrics);
+    layout.layout_root(f.root, 100, 600);
+    const auto first = f.lines("text");
+    CHECK(first.size() > 1);
+    layout.layout_root(f.root, 200, 600);
+    layout.layout_root(f.root, 100, 600);
+    CHECK(f.lines("text").size() == first.size());
+    if (!std::getenv("WEVA_DISABLE_INLINE_REUSE")) CHECK(f.lines("text") == first);
+}
 
 void test_font_metrics() {
     MonoFontMetrics m;
@@ -415,6 +485,44 @@ void test_shrink_to_fit() {
 // Both of these were found by the differential oracle rather than here, which
 // is the point of keeping them: the C++ suite had no case that could tell a
 // missing forced break or a missing intra-word break from correct output.
+void test_form_control_baselines() {
+    // An independent ordinary inline-block centers text with a line-height
+    // equal to its content height. Editable inputs expose the same baseline.
+    for (const auto type : {"text", "search", "tel", "url", "email", "password", "number",
+                            "date", "month", "week", "time", "datetime-local", "TEXT", "unknown"}) {
+        for (int fs : {10, 16, 28}) for (int height : {12, 34, 60}) {
+            for (const auto overflow : {"visible", "hidden", "auto", "clip"}) {
+                for (int margin : {-3, 0, 7}) {
+                    Fixture f;
+                    const int top = 3, bottom = 5, border = 1;
+                    const int content = height - top - bottom - border * 2;
+                    const std::string common =
+                        "{display:inline-block;box-sizing:border-box;width:120px;height:" + std::to_string(height) +
+                        "px;border:1px solid;padding:3px 4px 5px;margin:" + std::to_string(margin) +
+                        "px 0 2px;font-size:" + std::to_string(fs) + "px}";
+                    CHECK(f.css("#field,#model" + common + "#field{overflow:" + overflow +
+                                ";line-height:0}#model{line-height:" + std::to_string(content) + "px}"));
+                    CHECK(f.layout("<div><input id=field type='" + std::string(type) +
+                                   "'><span id=model>X</span></div>"));
+                    CHECK(near(f.box("field").y, f.box("model").y));
+                    CHECK(near(f.box("field").height, height));
+                }
+            }
+        }
+    }
+    for (const auto type : {"checkbox", "radio", "range", "image", "CHECKBOX"}) {
+        for (const auto overflow : {"visible", "hidden", "auto"}) {
+            Fixture f;
+            CHECK(f.css("#field,#model{display:inline-block;box-sizing:border-box;width:40px;height:34px;"
+                        "border:2px solid;padding:3px 4px;margin:7px 0 5px}#model{overflow:hidden}"
+                        "#field{overflow:" + std::string(overflow) + "}#model{margin-bottom:" +
+                        (std::string(type) == "image" ? "5px" : "0") + "}"));
+            CHECK(f.layout("<div><input id=field type='" + std::string(type) + "'><span id=model></span></div>"));
+            CHECK(near(f.box("field").y, f.box("model").y));
+        }
+    }
+}
+
 void test_forced_breaks() {
     {
         // `br` forces a line break and leaves a zero-width box on the line it
@@ -850,6 +958,81 @@ void test_max_content_joins_wrapped_lines() {
                 "#a { width: 26px; height: 26px }"));
     CHECK(h.layout("<body><div id=r><span id=a></span> Back <span id=b class=x></span></div></body>"));
     CHECK(near(h.box("b").x, 26 + 10 + 4 * 8 + 10));
+}
+
+void test_parent_intrinsic_measurements() {
+    struct Example { const char* css; const char* html; double minimum; double maximum; };
+    const Example examples[] = {
+        {"width:40px", "aa bbbb cc", 32, 80},
+        {"width:40px;white-space:nowrap", "aa bbbb cc", 80, 80},
+        {"width:40px;white-space:pre", "aa bbbb", 56, 56},
+        {"width:40px;white-space:pre", "aa bbbb\ncc", 56, 56},
+        {"width:40px;white-space:pre", "\naa bbbb\n\ncc\n", 56, 56},
+        {"width:40px;white-space:pre", "aa <span>bbbb\ncc</span>", 56, 56},
+        {"width:40px;white-space:pre-wrap", "aa bbbb\ncc", 32, 56},
+        {"width:40px;white-space:pre-line", "aa bbbb\ncc", 32, 56},
+        {"width:40px;white-space:pre-line", "aa bbbb  \n  cc", 32, 56},
+        {"width:40px", "aa bbbb\ncc", 32, 80},
+        {"width:40px;white-space:nowrap", "aa bbbb\ncc", 80, 80},
+        {"width:40px", "aa bbbb<br>cc", 32, 56},
+        {"width:40px", "<b style='padding:0 4px'>aa bbbb</b>", 32, 64},
+        {"display:flex;width:200px;gap:10px;flex-wrap:wrap",
+         "<div>aa bbbb</div><div>cc ddd</div>", 32, 114},
+        {"display:flex;width:200px;gap:10px;flex-wrap:nowrap",
+         "<div>aa bbbb</div><div>cc ddd</div>", 66, 114},
+        {"display:flex;width:200px;gap:10px;flex-direction:column",
+         "<div>aa bbbb</div><div>cc ddd</div>", 32, 56},
+        {"display:grid;width:200px;grid-template-columns:30px 50px;gap:10px",
+         "<div>aa</div><div>cc</div>", 90, 90},
+        {"width:200px", "<div style='width:40px;padding:0 3px;margin:0 auto'>a</div>", 46, 46},
+        {"width:200px", "<div style='width:50%;padding:0 3px'>aa bbbb</div>", 38, 62},
+        {"width:200px", "<div style='min-width:70px;max-width:90px;padding:0 3px'>aa bbbb</div>", 76, 76},
+        {"width:200px", "<div style='max-width:40px;box-sizing:border-box;padding:0 3px'>aa bbbb</div>", 38, 40},
+        {"width:200px", "<div>aa</div><div style='position:absolute;width:500px'>x</div>"
+                        "<div style='position:fixed;width:600px'>x</div>"
+                        "<div style='float:left;width:700px'>x</div>", 16, 16},
+    };
+    for (const auto& example : examples) {
+        Fixture f;
+        CHECK(f.css(std::string("#s { font-size:16px;") + example.css + "}"));
+        CHECK(f.layout(std::string("<body><div id=s>") + example.html + "</div></body>"));
+        const BoxId id = f.find("s");
+        const auto measured = measure_parent_layout_input(f.tree, id, 200, f.ctx);
+        if (!near(measured.min_content, example.minimum) || !near(measured.max_content, example.maximum)) {
+            std::printf("intrinsic sizes for {%s} %s: got %.17g / %.17g; expected %.17g / %.17g\n",
+                        example.css, example.html, measured.min_content, measured.max_content,
+                        example.minimum, example.maximum);
+        }
+        CHECK(near(measured.min_content, example.minimum));
+        CHECK(near(measured.max_content, example.maximum));
+        CHECK(near(min_content_width(f.tree, id, &f.ctx), example.minimum));
+        CHECK(near(max_content_width(f.tree, id, &f.ctx), example.maximum));
+        CHECK(measured.available_width == 200);
+        CHECK(measured.width == f.tree[id].width && measured.height == f.tree[id].height);
+    }
+    // Intrinsic contributions use current child geometry, even if the style
+    // version is unchanged. Parent input capture must not retain a prior probe.
+    Fixture f;
+    CHECK(f.css("#s { width:200px } #c { width:40px; margin:0 auto }"));
+    CHECK(f.layout("<body><div id=s><div id=c>a</div></div></body>"));
+    const BoxId parent = f.find("s"), child = f.find("c");
+    const auto before = measure_parent_layout_input(f.tree, parent, 200, f.ctx);
+    CHECK(before.min_content == 40 && before.max_content == 40);
+    f.tree[child].width = 65;
+    const auto after = measure_parent_layout_input(f.tree, parent, 200, f.ctx);
+    CHECK(after.min_content == 65 && after.max_content == 65);
+    CHECK(after != before);
+
+    // The measured width must reach actual shrink-to-fit, flex and grid
+    // sizing, not just the standalone intrinsic-width entry points.
+    for (const char* parent : {"display:block", "display:flex",
+                               "display:grid;grid-template-columns:max-content"}) {
+        Fixture sized;
+        CHECK(sized.css(std::string("#p { width:200px;") + parent +
+                        "} #s { display:inline-block; font-size:16px; white-space:pre }"));
+        CHECK(sized.layout("<body><div id=p><div id=s>aa bbbb\ncc</div></div></body>"));
+        CHECK(near(sized.box("s").width, 56));
+    }
 }
 
 void test_inline_box_edges_take_space_on_the_line() {

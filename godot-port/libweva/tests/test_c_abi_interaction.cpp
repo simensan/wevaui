@@ -570,7 +570,8 @@ void test_abi_secondary_button_does_not_activate() {
     // The primary button does all three, so the difference is the button and
     // not the test failing to reach anything.
     press_release("#cb", WEVA_BUTTON_PRIMARY);
-    CHECK(has("#cb", "checked"));
+    CHECK(weva_document_query(d, "#cb:checked") != WEVA_ELEMENT_NONE);
+    CHECK(!has("#cb", "checked")); // The reset default remains unchecked.
     press_release("#sum", WEVA_BUTTON_PRIMARY);
     CHECK(has("#dd", "open"));
     count_kind(WEVA_EVENT_SUBMIT);

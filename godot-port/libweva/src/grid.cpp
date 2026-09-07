@@ -1280,6 +1280,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // 260px-wide sidebar were placed at x=0 rather than at its 16px padding.
     for (const Placement& p : items) {
         block->layout_block(p.box, content_width, style);
+        (*tree)[p.box].parent_layout_input = measure_parent_layout_input(*tree, p.box, content_width, ctx);
     }
 
     // Each item's inline contributions (§12.5): its min-content and
@@ -1300,8 +1301,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         if (explicit_width) {
             c.min_c = c.max_c = b.width + margins;
         } else {
-            double min_c = min_content_width(*tree, p.box, &ctx) + frame;
-            double max_c = max_content_width(*tree, p.box, &ctx) + frame;
+            double min_c = b.parent_layout_input.min_content + frame;
+            double max_c = b.parent_layout_input.max_content + frame;
             const double item_fs = b.font_size > 0 ? b.font_size : font_size;
             const double minmax_frame = is_border_box(b.style) ? 0 : frame;
             const ResolvedLength min_w =

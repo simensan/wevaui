@@ -289,6 +289,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         // Laid out once at the container's inner width so its natural sizes and
         // box model are resolved; the main size is corrected below.
         block->layout_block(it.box, content_width, style);
+        (*tree)[it.box].parent_layout_input = measure_parent_layout_input(*tree, it.box, content_width, ctx);
         Box& b = (*tree)[it.box];
         const ComputedStyle* is = b.style;
 
@@ -334,7 +335,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             if (!column) {
                 const double frame =
                     b.padding_left + b.padding_right + b.border_left + b.border_right;
-                base = max_content_width(*tree, it.box, &ctx) + frame;
+                base = b.parent_layout_input.max_content + frame;
             }
         }
 
@@ -387,7 +388,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             if (!scroll_container && auto_main) {
                 const double frame =
                     b.padding_left + b.padding_right + b.border_left + b.border_right;
-                it.min_main = std::max(it.min_main, min_content_width(*tree, it.box, &ctx) + frame);
+                it.min_main = std::max(it.min_main, b.parent_layout_input.min_content + frame);
             }
         }
         const ResolvedLength max_r =

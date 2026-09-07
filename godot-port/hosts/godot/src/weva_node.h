@@ -10,9 +10,12 @@
 #include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
 #include <godot_cpp/classes/input_event_screen_drag.hpp>
-#include <godot_cpp/classes/node2d.hpp>
+#include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/system_font.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
+#include <godot_cpp/variant/packed_color_array.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
+#include <godot_cpp/variant/packed_string_array.hpp>
 #include <godot_cpp/variant/packed_vector2_array.hpp>
 #include <godot_cpp/variant/vector2i.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
@@ -22,7 +25,7 @@
 #include "godot_font.h"
 #include "weva_c.h"
 
-// The Godot host: a Node2D that owns a weva document and draws its geometry.
+// The Godot host: a Control that owns a weva document and draws its geometry.
 //
 // It talks to libweva only through weva_c.h. No Godot type reaches the core and
 // no core C++ type reaches Godot — which is the whole point of the ABI, and the
@@ -37,8 +40,8 @@ namespace weva_godot {
 const std::vector<godot::Ref<godot::SystemFont>>& shared_symbol_fonts();
 void release_shared_symbol_fonts();
 
-class WevaDocument : public godot::Node2D {
-    GDCLASS(WevaDocument, godot::Node2D)
+class WevaDocument : public godot::Control {
+    GDCLASS(WevaDocument, godot::Control)
 
 public:
     WevaDocument();
@@ -46,6 +49,8 @@ public:
 
     void _ready() override;
     void _draw() override;
+    void _gui_input(const godot::Ref<godot::InputEvent>& event) override;
+    bool _has_point(const godot::Vector2& point) const override;
     void _input(const godot::Ref<godot::InputEvent>& event) override;
     void _process(double delta) override;
     void _notification(int what);
@@ -58,16 +63,16 @@ public:
     void set_css(const godot::String& css);
     godot::String get_css() const { return css_; }
 
-    // The viewport the document lays out against. Defaults to the node's
-    // canvas size on first draw.
+    // Alias for Control.size, the viewport the document lays out against.
+    // Unsized documents use full-rect anchors when entering the scene.
     void set_document_size(const godot::Vector2& size);
     godot::Vector2 get_document_size() const { return size_; }
 
     // ---- Interaction ---------------------------------------------------
     //
     // The engine matches :hover, :active and :focus; what it cannot know is
-    // where the pointer is. With `interactive` on, the node reads its own
-    // input and tells the document, which is all those rules need.
+    // where the pointer is. With `interactive` on, Godot routes GUI input
+    // through this Control's focus, hit region, visibility and stacking.
     void set_interactive(bool on);
     bool get_interactive() const { return interactive_; }
 
@@ -116,11 +121,12 @@ public:
     // form submission would carry, and takes the same on the way in.
     godot::String get_element_value(const godot::String& selector);
     bool set_element_value(const godot::String& selector, const godot::String& value);
+    bool reset_form(const godot::String& selector);
 
     // Drives the pointer directly, for a host routing its own input -- a
     // gamepad cursor, a touch surface, a test. `buttons` is a bitmask; the
     // primary button is bit 0 and is what makes an element :active.
-    void set_pointer(const godot::Vector2& point, int buttons);
+    void set_pointer(const godot::Vector2& point, int buttons, int modifiers = 0);
     void clear_pointer();
 
     // Scrolling. `scroll_at` is what a wheel does -- it finds the innermost
@@ -170,6 +176,7 @@ public:
     int apply_models();
     bool write_data_path(const godot::String& path, const godot::String& text);
     void write_back_model(uint32_t element);
+    void write_back_form_models(uint32_t form);
 
     // `on-click="OnStart"` calls OnStart on the controller. The markup names
     // the method; the script supplies the object.
@@ -185,6 +192,15 @@ public:
     // document, or a scene that decides who gets the keyboard.
     bool send_key(int keycode, bool pressed = true, bool shift = false, bool ctrl = false);
     void send_text(const godot::String& text);
+    bool paste_text(const godot::String& text);
+
+    // Explicit IME routing uses Godot String character offsets (start/end).
+    bool set_composition(const godot::String& text, int start, int end);
+    bool commit_composition(const godot::String& text);
+    bool finish_composition();
+    bool has_composition() const;
+    godot::Rect2 get_caret_bounds();
+    godot::Rect2 get_caret_window_bounds();
 
     // Selection. The document does the selecting; these are the parts a host
     // has to drive -- Ctrl+A, which the key enum cannot express, and the
@@ -286,6 +302,22 @@ protected:
     static void _bind_methods();
 
 private:
+    void sync_control_size();
+    void sync_gui_focus();
+    void sync_ime();
+    void close_ime();
+    void receive_ime_update();
+    void flush_ime_commit();
+    void schedule_ime_end();
+    int32_t ime_window_ = -1;
+    uint64_t ime_draw_serial_ = UINT64_MAX;
+    uint32_t ime_target_ = WEVA_ELEMENT_NONE;
+    uint32_t ime_end_target_ = WEVA_ELEMENT_NONE;
+    bool ime_end_pending_ = false;
+    godot::String ime_commit_text_;
+    godot::Vector2i ime_position_;
+    uint64_t caret_bounds_serial_ = UINT64_MAX;
+    godot::Rect2 caret_bounds_;
     // Idempotent: adopts the engine's fallback face the first time it can, and
     // is called from both the constructor and _ready because ThemeDB is not
     // guaranteed to be up at construction.
@@ -295,16 +327,25 @@ protected:
 
 private:
     // `dt` advances transitions; zero means "only if something is dirty".
-    void ensure_updated(double dt = 0);
+    void ensure_updated(double dt = 0, double input_dt = -1);
 
     // Adds one published draw's triangles to a canvas item.
-    void add_triangles(const godot::RID& item, const weva_draw& d);
+    void add_triangles(const godot::RID& item, const weva_draw* draws, size_t count = 1,
+                       const uint64_t* versions = nullptr);
+    struct PackedBatch {
+        std::vector<uint64_t> versions;
+        godot::PackedVector2Array points, uvs;
+        godot::PackedColorArray colors;
+        godot::PackedInt32Array indices;
+    };
+    std::vector<PackedBatch> packed_batches_;
+    size_t packed_used_ = 0;
     // Draws a document that contains at least one backdrop-filter. Godot copies
     // to the back buffer ONCE per canvas item, before that item's commands, so
     // interleaving "copy what is behind me" with geometry means splitting the
     // draw list across items in z order. Documents without one keep the single
     // item, which is every sample but two.
-    void draw_layered(const weva_draw* draws, size_t count);
+    void draw_layered(const weva_draw* draws, size_t count, const uint64_t* versions);
     godot::RID backdrop_material();
     // Draws a rounded rect by EVALUATING it per pixel rather than uploading its
     // tessellation: exact coverage instead of the core's half-pixel ramp, off
@@ -320,10 +361,17 @@ private:
     godot::Vector2 size_{0, 0};
     bool dirty_ = true;
     double last_update_ms_ = 0;
+    uint64_t last_input_tick_usec_ = 0;
     // The draw list this node has already submitted, so an update that
     // published nothing does not force a redraw of the identical frame.
     uint64_t drawn_serial_ = 0;
     godot::Dictionary data_;
+    bool bindings_active_ = false;
+    // Cache parsed paths, never data values: shared Dictionaries and Callable
+    // sources must still be read on each refresh. Bound storage across reloads
+    // and list churn, including applications that generate arbitrary paths.
+    mutable std::map<godot::String, godot::PackedStringArray> binding_paths_;
+    const godot::PackedStringArray& binding_parts(const godot::String& path) const;
     // The three popover calls differ only in which ABI entry they take.
     bool run_popover(const godot::String& selector,
                      weva_status (*fn)(weva_document_t, weva_element_t));
@@ -338,6 +386,10 @@ private:
     // that changes no style, and this skips the call.
     godot::Vector2 pointer_{-1, -1};
     uint32_t buttons_ = 0;
+    uint32_t pointer_modifiers_ = 0;
+    uint64_t outside_dismiss_version_ = 0;
+    bool pointer_focus_entry_ = false;
+    void dismiss_outside_transients();
     // Time owed to the document. An update consumes it; a frame in which
     // nothing is moving hands over nothing and costs nothing.
     double pending_dt_ = 0;
@@ -385,6 +437,10 @@ public:
 
 private:
     godot::String base_path_;
+    // One image in transit across the ABI's size/read pair. Released as soon
+    // as the core owns the bytes; its ImageStore owns the decoded cache.
+    godot::String asset_read_path_;
+    godot::PackedByteArray asset_read_bytes_;
     // Handed to the core so an asset is read through Godot: res:// resolves,
     // and an exported .pck has no files for the core to open itself.
     static size_t read_asset(void* user_data, const char* path, uint8_t* buffer, size_t capacity);
@@ -407,7 +463,7 @@ private:
     bool applying_models_ = false;
     // Resolves a selector to a handle, updating the document first so the
     // answer reflects what a script has just changed.
-    uint32_t resolve(const godot::String& selector);
+    uint32_t resolve(const godot::String& selector, bool flush = true);
     // The atlas texture, rebuilt when the document publishes a new one. Held
     // so it outlives the draw call that references it.
     // Every texture the document published, by the id its draws name: the
@@ -419,6 +475,12 @@ private:
     weva_font_backend font_table_{};
     uint64_t font_face_ = 0;
     bool use_engine_font_ = true;
+    godot::Ref<godot::Font> theme_font_;
+    godot::Callable theme_font_changed_;
+    bool theme_font_dirty_ = true;
+    bool font_resource_dirty_ = false;
+    void font_resource_changed();
+    void disconnect_theme_font();
 
     // Only allocated for a document that uses backdrop-filter.
     std::vector<godot::RID> layer_items_;

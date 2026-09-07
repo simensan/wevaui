@@ -19,6 +19,7 @@ void uninitialize_weva_module(ModuleInitializationLevel p_level) {
     if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) return;
     // Here rather than in a static destructor, which would run after the engine
     // is gone and free TextServer RIDs into nothing.
+    weva_godot::release_shared_font_variants();
     weva_godot::release_shared_symbol_fonts();
 }
 

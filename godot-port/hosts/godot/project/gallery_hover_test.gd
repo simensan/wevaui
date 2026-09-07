@@ -6,7 +6,7 @@ extends Node
 # one loads gallery.tscn itself -- the real scene, with its sidebar, its header
 # and its clipped Control stage -- picks a sample that styles :hover, and moves
 # the mouse over a hovering element the way a window would. What it is looking
-# for is a transform this chain gets wrong: the document is a Node2D inside a
+# for is a transform this chain gets wrong: the document is a Control inside a
 # Control inside two containers, scaled to fit and offset by a scroll pan.
 
 var failures := 0
@@ -19,6 +19,7 @@ func _check(condition: bool, description: String) -> void:
 		printerr("FAIL  ", description)
 
 func _ready() -> void:
+	get_viewport().notify_mouse_entered()
 	var gallery = load("res://gallery.tscn").instantiate()
 	add_child(gallery)
 	await get_tree().process_frame
@@ -57,7 +58,7 @@ func _ready() -> void:
 	var ev := InputEventMouseMotion.new()
 	ev.global_position = on_screen
 	ev.position = on_screen
-	get_viewport().push_input(ev)
+	get_viewport().push_input(ev, true)
 	doc.update_document()
 	var after := doc.get_computed_style(probe, "border-top-color")
 

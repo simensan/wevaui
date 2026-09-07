@@ -2,6 +2,9 @@
 // and sampling, layer rasterization, and the painted result (one textured
 // draw per gradient box; the body's background on the canvas).
 #include "check.h"
+#include "weva_c.h"
+#include <algorithm>
+#include <array>
 #include "weva/background.h"
 #include "weva/border_image.h"
 #include "weva/image_store.h"
@@ -17,6 +20,7 @@
 #include "weva/user_agent_stylesheet.h"
 
 #include <cmath>
+#include <cstring>
 #include <map>
 #include <memory>
 #include <string>
@@ -228,6 +232,203 @@ Texel texel_at(const std::vector<uint8_t>& rgba, int tex_w, int x, int y) {
 
 } // namespace
 
+void test_replaced_image_cache() {
+    ImageStore store;
+    const auto reader = [](const std::string&, std::vector<uint8_t>* out) {
+        out->assign(k_quad_png, k_quad_png + sizeof(k_quad_png));
+        return true;
+    };
+    store.set_reader(reader);
+    TextureCache cache;
+    RecordingBackend retained;
+    uint64_t previous = 0;
+    const auto run = [&](std::string_view css, bool reuse, double viewport = 400,
+                         double root_font = 16, double root_line = 19.2, double dpi = 96,
+                         std::string_view src = "quad.png") {
+        Fixture f;
+        f.ctx.images = &store;
+        f.ctx.root_font_size_px = root_font;
+        f.ctx.root_line_height_px = root_line;
+        f.ctx.dpi_pixels_per_inch = dpi;
+        CHECK(f.css(std::string("html,body{margin:0}img{display:block;box-sizing:content-box;"
+                                "width:40px;height:30px}") + std::string(css)));
+        const std::string html = "<body><img src='" + std::string(src) + "'><img src='" +
+                                  std::string(src) + "'></body>";
+        CHECK(f.layout(html,viewport,300));
+        retained.draws.clear();
+        PaintContext p; p.images=&store; p.backend=&retained; p.texture_cache=&cache;
+        cache.begin_pass();
+        paint_tree(f.tree,f.root,f.ctx,p);
+        cache.end_pass(&retained);
+        RecordingBackend fresh;
+        p.backend=&fresh; p.texture_cache=nullptr;
+        paint_tree(f.tree,f.root,f.ctx,p);
+        CHECK(retained.draws.size() == fresh.draws.size());
+        size_t image_draws = 0;
+        uint64_t image_texture = 0;
+        for (size_t i=0; i<std::min(retained.draws.size(),fresh.draws.size()); ++i) {
+            const auto& a=retained.draws[i]; const auto& b=fresh.draws[i];
+            CHECK(a.geometry.indices == b.geometry.indices);
+            CHECK(a.geometry.vertices.size() == b.geometry.vertices.size());
+            for (size_t v=0; v<std::min(a.geometry.vertices.size(),b.geometry.vertices.size()); ++v) {
+                const Vertex& av=a.geometry.vertices[v]; const Vertex& bv=b.geometry.vertices[v];
+                CHECK(av.position.x==bv.position.x && av.position.y==bv.position.y &&
+                      av.tex_coord.x==bv.tex_coord.x && av.tex_coord.y==bv.tex_coord.y &&
+                      av.color.r==bv.color.r && av.color.g==bv.color.g &&
+                      av.color.b==bv.color.b && av.color.a==bv.color.a);
+            }
+            CHECK((a.texture != 0) == (b.texture != 0));
+            if (a.texture) {
+                CHECK(retained.texture_bytes[a.texture] == fresh.texture_bytes[b.texture]);
+                CHECK(retained.textures[a.texture].x == fresh.textures[b.texture].x);
+                CHECK(retained.textures[a.texture].y == fresh.textures[b.texture].y);
+                if (image_texture) CHECK(image_texture == a.texture); // identical images share
+                image_texture = a.texture;
+                ++image_draws;
+            }
+        }
+        CHECK(image_draws == 2);
+        CHECK(image_texture != 0);
+        if (previous) CHECK((image_texture == previous) == reuse);
+        previous = image_texture;
+        CHECK(cache.size() == 1 && retained.textures.size() == 1);
+    };
+    run("",false);
+    run("",true);
+    run("img{opacity:.5;transform:translateX(7px);border-radius:8px}",true);
+    run("img{padding:3px;border:2px solid red}",true);
+    for (const char* css : {"img{object-fit:contain}","img{object-fit:cover}",
+            "img{object-fit:none}","img{object-fit:scale-down}",
+            "img{object-fit:none;object-position:0% 100%}",
+            "img{object-fit:none;object-position:1em 1rem}",
+            "img{object-fit:none;object-position:1em 1rem;font-size:20px}",
+            "img{width:40.0001px}","img{width:40.0002px}",
+            "img{height:31px}","img{filter:brightness(.7)}",
+            "body{filter:brightness(.8)}img{filter:opacity(.6)}"}) {
+        run(css,false); run(css,true);
+    }
+    const char* units="img{object-fit:none;object-position:calc(1vw + 1rem) calc(1rlh + 1in)}";
+    run(units,false);
+    run(units,false,420);
+    run(units,false,420,18);
+    run(units,false,420,18,22);
+    run(units,false,420,18,22,120);
+    run(units,false,420,18,22,120,"other.png");
+    run(units,true,420,18,22,120,"other.png");
+    run("",false);
+    store.clear(); run("",false);
+    store.set_base_path("different"); run("",false);
+    store.set_base_path("different"); run("",true);
+    store.set_reader(reader); run("",false);
+    store=ImageStore{}; store.set_reader(reader); run("",false);
+    const uint8_t alternative_png[] = {
+        137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,2,0,0,0,1,8,6,0,0,0,
+        244,34,127,138,0,0,0,17,73,68,65,84,120,156,99,248,223,192,240,159,225,255,
+        255,6,0,21,247,4,253,191,252,42,226,0,0,0,0,73,69,78,68,174,66,96,130
+    };
+    const auto original_pixels=retained.texture_bytes[previous];
+    store.set_reader([&](const std::string&,std::vector<uint8_t>* out) {
+        out->assign(alternative_png,alternative_png+sizeof(alternative_png)); return true;
+    });
+    run("",false);
+    CHECK(retained.texture_bytes[previous] != original_pixels);
+    // Cached failures do not keep the old texture alive. Reappearance has to
+    // produce a new handle; the cache must also release everything when unused.
+    store.set_reader([](const std::string&,std::vector<uint8_t>*) { return false; });
+    Fixture missing; missing.ctx.images=&store;
+    CHECK(missing.layout("<body><img src='quad.png' style='width:40px;height:30px'></body>"));
+    PaintContext p; p.images=&store; p.backend=&retained; p.texture_cache=&cache;
+    cache.begin_pass(); retained.draws.clear();
+    paint_tree(missing.tree,missing.root,missing.ctx,p);
+    cache.end_pass(&retained);
+    CHECK(cache.size()==0 && retained.textures.empty());
+    store.set_reader(reader); run("",false);
+    cache.release_all(&retained);
+    CHECK(retained.textures.empty());
+
+    // Public resource resets must schedule an update even on an idle document.
+    weva_config cfg{}; cfg.viewport_width=100; cfg.viewport_height=100; cfg.use_user_agent_stylesheet=1;
+    const auto doc=weva_document_create(&cfg);
+    struct Asset { const uint8_t* bytes; size_t size; } other{alternative_png,sizeof(alternative_png)};
+    const auto asset_reader=[](void* user,const char* path,uint8_t* out,size_t capacity)->size_t {
+        if (std::strstr(path,"missing")) return 0;
+        const auto& alternate=*static_cast<Asset*>(user);
+        const bool changed=std::strstr(path,"other")!=nullptr;
+        const auto* bytes=changed ? alternate.bytes : k_quad_png;
+        const size_t size=changed ? alternate.size : sizeof(k_quad_png);
+        if (out && capacity>=size) std::memcpy(out,bytes,size);
+        return size;
+    };
+    weva_document_set_asset_reader(doc,asset_reader,&other);
+    const char* html="<body><img src='quad.png' style='display:block;width:40px;height:30px'></body>";
+    CHECK(weva_document_load_html(doc,html,std::strlen(html))==WEVA_OK);
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    size_t draw_count=0;
+    weva_document_draws(doc,&draw_count);
+    CHECK(draw_count>0);
+    const auto pixels = [&]() {
+        size_t count=0; const auto* draws=weva_document_draws(doc,&count);
+        uint64_t texture=0;
+        for (size_t i=0;i<count;++i) if (draws[i].texture_id) {texture=draws[i].texture_id;break;}
+        const auto* textures=weva_document_textures(doc,&count);
+        for (size_t i=0;i<count;++i) if (textures[i].id==texture)
+            return std::vector<uint8_t>(textures[i].rgba,textures[i].rgba+textures[i].width*textures[i].height*4);
+        return std::vector<uint8_t>();
+    };
+    const auto first_pixels=pixels();
+    CHECK(!first_pixels.empty());
+    const auto img=weva_document_query(doc,"img");
+    weva_element_set_attribute(doc,img,"src","other.png");
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(!pixels().empty() && pixels()!=first_pixels);
+    auto serial=weva_document_draw_serial(doc);
+    weva_element_set_attribute(doc,img,"src","other.png");
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(weva_document_draw_serial(doc)==serial);
+    weva_element_set_attribute(doc,img,"src",nullptr);
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(pixels().empty());
+    weva_element_set_attribute(doc,img,"src","quad.png");
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(pixels()==first_pixels);
+    serial=weva_document_draw_serial(doc);
+    weva_document_set_base_path(doc,"missing");
+    CHECK(weva_document_draw_serial(doc)==serial); // publication is deferred
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(weva_document_draw_serial(doc)!=serial);
+    CHECK(weva_document_missing_assets(doc,nullptr,0)==1);
+    weva_document_set_base_path(doc,"present");
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(weva_document_missing_assets(doc,nullptr,0)==0);
+    serial=weva_document_draw_serial(doc);
+    weva_document_set_base_path(doc,"present");
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(weva_document_draw_serial(doc)==serial);
+    weva_document_set_asset_reader(doc,nullptr,nullptr);
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(weva_document_draw_serial(doc)!=serial);
+    CHECK(weva_document_missing_assets(doc,nullptr,0)==1);
+    weva_document_destroy(doc);
+
+    const auto siblings=weva_document_create(&cfg);
+    weva_document_set_asset_reader(siblings,asset_reader,&other);
+    const char* sibling_html="<body><img id=first src=quad.png><img id=second src=quad.png></body>";
+    const char* sibling_css="img{display:block;width:40px;height:30px}"
+        "img:nth-last-child(1 of [src='quad.png']){width:50px}";
+    weva_document_add_css(siblings,sibling_css,std::strlen(sibling_css));
+    weva_document_load_html(siblings,sibling_html,std::strlen(sibling_html));
+    CHECK(weva_document_update(siblings,0)==WEVA_OK);
+    const auto first=weva_document_query(siblings,"#first"), second=weva_document_query(siblings,"#second");
+    for (const char* source : {"other.png","quad.png",static_cast<const char*>(nullptr)}) {
+        weva_element_set_attribute(siblings,second,"src",source);
+        CHECK(weva_document_update(siblings,0)==WEVA_OK);
+        char width[32]{};
+        weva_element_computed_style(siblings,first,"width",width,sizeof(width));
+        CHECK(std::strcmp(width,source && std::strcmp(source,"quad.png")==0 ? "40px" : "50px")==0);
+    }
+    weva_document_destroy(siblings);
+}
+
 void test_background_image() {
     weva::ImageStore store = quad_store();
     const weva::DecodedImage* image = store.get("quad.png");
@@ -404,6 +605,27 @@ void test_replaced_img() {
     {
         const Sized s = lay_out("", "<body><img></body>");
         CHECK(near(s.w, 0) && near(s.h, 0));
+    }
+
+    // Replaced content supplies intrinsic contributions even though an img
+    // has no DOM children. Flex's content-size probe used to return zero,
+    // then its reflow erased the height as well.
+    struct FlexImage { const char* css; double width, height; };
+    const FlexImage flex_images[] = {
+        {"section{display:flex;align-items:center;width:100px}", 2, 2},
+        {"section{display:flex;align-items:center;width:100px}img{height:30px}", 30, 30},
+        {"section{display:flex;align-items:center;width:100px}img{flex:1}", 100, 100},
+        {"section{display:flex;align-items:center;width:100px}img{flex-basis:20px}", 20, 20},
+        {"section{display:flex;align-items:center;width:1px}", 2, 2},
+        {"section{display:flex;align-items:center;width:1px}img{min-width:0}", 1, 1},
+        {"section{display:flex;align-items:center;width:100px}img{padding:3px;border:2px solid}", 12, 12},
+        {"section{display:flex;align-items:center;width:100px}img{width:50%}", 50, 50},
+        {"section{display:flex;flex-direction:column;align-items:center;width:100px}", 2, 2},
+    };
+    for (const auto& row : flex_images) {
+        const Sized s = lay_out(row.css, "<body><section><img src='quad.png'></section></body>");
+        CHECK(near(s.w, row.width));
+        CHECK(near(s.h, row.height));
     }
 }
 
@@ -674,6 +896,73 @@ void test_gradient_sampling() {
     }
 }
 
+// Compare prepared interpolation against the original scalar arithmetic,
+// including hint indices, transparent endpoints and repeated stop ranges.
+void test_gradient_prepared_color_spans() {
+    const char* cases[] = {
+        "linear-gradient(90deg, rgba(17, 109, 213, .37) 0%, rgba(229, 71, 43, .83) 100%)",
+        "linear-gradient(90deg, rgba(17, 109, 213, .37) 0%, transparent 100%)",
+        "linear-gradient(90deg, transparent 0%, rgba(229, 71, 43, .83) 100%)",
+        "linear-gradient(90deg, rgba(17, 109, 213, .000001) 0%, rgba(229, 71, 43, .000003) 100%)",
+        "linear-gradient(90deg, rgba(17, 109, 213, .37) 0%, rgba(17, 109, 213, .37) 100%)",
+        "linear-gradient(90deg, rgba(17, 109, 213, .37) 0%, 25%, rgba(17, 109, 213, .37) 100%)",
+        "linear-gradient(90deg, rgba(17, 109, 213, .37) 0%, 25%, rgba(229, 71, 43, .83) 100%)",
+        "linear-gradient(90deg, red 0%, rgba(17, 109, 213, .37) 50%, blue 100%)",
+        "repeating-linear-gradient(90deg, rgba(17, 109, 213, .37) 0%, rgba(229, 71, 43, .83) 50%)",
+        "repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0% 25%, transparent 25% 50%)"
+    };
+    LayoutContext ctx;
+    for (const char* css : cases) {
+        Gradient gradient;
+        CHECK(parse_gradient(css, LinearColor::black(), &gradient));
+        std::vector<std::array<float, 4>> colors;
+        for (const auto& stop : gradient.stops) {
+            Gradient constant;
+            constant.stops = {stop};
+            std::array<float, 4> color;
+            sample_gradient(constant, 0, 0, 1, 1, ctx, 16, color.data());
+            colors.push_back(color);
+        }
+        for (int point = -128; point <= 384; ++point) {
+            const double x = point / 256.0;
+            double t = x; // A 1x1, 90-degree gradient at y=.5 has t=x.
+            const double last = gradient.stops.back().position;
+            if (gradient.repeating) t -= last * std::floor(t / last);
+            std::array<float, 4> expected = colors.back();
+            if (t <= 0) expected = colors.front();
+            else if (t < last) {
+                for (size_t i = 0; i + 1 < gradient.stops.size(); ++i) {
+                    if (gradient.stops[i].is_hint) continue;
+                    size_t next = i + 1;
+                    const bool hint = gradient.stops[next].is_hint;
+                    if (hint) ++next;
+                    const double p0 = gradient.stops[i].position;
+                    const double p1 = gradient.stops[next].position;
+                    if (t < p0 || t > p1) continue;
+                    double local = p1 > p0 ? (t - p0) * (1.0 / (p1 - p0)) : 0;
+                    if (hint) {
+                        const double h = (gradient.stops[i + 1].position - p0) / (p1 - p0);
+                        local = std::pow(local, std::log(0.5) / std::log(h));
+                    }
+                    const float fraction = static_cast<float>(std::clamp(local, 0.0, 1.0));
+                    const auto& a = colors[i];
+                    const auto& b = colors[next];
+                    const float alpha = a[3] + (b[3] - a[3]) * fraction;
+                    expected[3] = alpha > 0 ? alpha : 0;
+                    for (int channel = 0; channel < 3; ++channel) {
+                        const float pa = a[channel] * a[3], pb = b[channel] * b[3];
+                        expected[channel] = alpha > 0 ? (pa + (pb - pa) * fraction) / alpha : 0;
+                    }
+                    break;
+                }
+            }
+            float actual[4];
+            sample_gradient(gradient, x, 0.5, 1, 1, ctx, 16, actual);
+            for (int channel = 0; channel < 4; ++channel) CHECK(actual[channel] == expected[channel]);
+        }
+    }
+}
+
 void test_background_rasterize_layers() {
     const LinearColor black = LinearColor::black();
     LayoutContext ctx;
@@ -790,6 +1079,22 @@ void test_blur_and_padded_rasterize() {
     CHECK(tex[(0 * 20 + 0) * 4 + 3] == 0);          // in the pad
     CHECK(tex[(5 * 20 + 5) * 4 + 3] == 0);          // the box's corner, outside the circle
     CHECK(tex[(10 * 20 + 10) * 4 + 3] == 255);      // its centre
+
+    // Square corners copy the original raster bytes into the padded image.
+    // Check both representations of no radius, and a narrow, downscaled box.
+    const BorderRadii square = BorderRadii::zero();
+    const LinearColor color{0.17f, 0.43f, 0.91f, 0.37f};
+    for (const BorderRadii* radii : {static_cast<const BorderRadii*>(nullptr), &square}) {
+        std::vector<uint8_t> inner, padded;
+        rasterize_background({}, color, 13, 71, 3, 17, ctx, 16, &inner);
+        rasterize_background_padded({}, color, 13, 71, 7, 21, 2, radii, ctx, 16, &padded);
+        std::vector<uint8_t> expected(7 * 21 * 4, 0);
+        for (int y = 0; y < 17; ++y)
+            for (int x = 0; x < 3; ++x)
+                for (int c = 0; c < 4; ++c)
+                    expected[((y + 2) * 7 + x + 2) * 4 + c] = inner[(y * 3 + x) * 4 + c];
+        CHECK(padded == expected);
+    }
 }
 
 void test_paint_transform_rotates_geometry() {
@@ -1479,4 +1784,88 @@ void test_blur_flat_matches_full() {
     blur_rgba(&tiny, 8, 8, 0.1);
     blur_flat_rgba(&tiny_flat, 8, 8, 0.1);
     CHECK(tiny_flat == tiny);
+}
+
+namespace {
+// Frozen scalar reference for the four-channel blur before strip/rounding
+// optimization. Each channel is visited independently, with the original
+// float differences, double accumulators, clamped edges and lround tail.
+// Compare all bytes, including invisible RGB that bilinear sampling can use.
+void scalar_blur(std::vector<uint8_t>* rgba, int w, int h, double sigma) {
+    if (sigma <= 0.3 || w <= 0 || h <= 0) return;
+    const size_t n = static_cast<size_t>(w) * h;
+    std::vector<float> p(n * 4), tmp(n * 4);
+    for (size_t i = 0; i < n; ++i) {
+        const float a = (*rgba)[i * 4 + 3] / 255.0f;
+        for (int c = 0; c < 3; ++c) p[i * 4 + c] = (*rgba)[i * 4 + c] / 255.0f * a;
+        p[i * 4 + 3] = a;
+    }
+    const int r = std::max(1, static_cast<int>(std::sqrt(12.0 * sigma * sigma / 3.0 + 1.0))) / 2;
+    const double inv = 1.0 / (2 * r + 1);
+    for (int pass = 0; pass < 3; ++pass) {
+        for (int c = 0; c < 4; ++c) {
+            for (int y = 0; y < h; ++y) {
+                const auto at = [&](int x) { return (static_cast<size_t>(y) * w + std::clamp(x, 0, w-1)) * 4 + c; };
+                double acc = 0;
+                for (int k = -r; k <= r; ++k) acc += p[at(k)];
+                for (int x = 0; x < w; ++x) {
+                    tmp[at(x)] = static_cast<float>(acc * inv);
+                    acc += p[at(x+r+1)] - p[at(x-r)];
+                }
+            }
+            for (int x = 0; x < w; ++x) {
+                const auto at = [&](int y) { return (static_cast<size_t>(std::clamp(y, 0, h-1)) * w + x) * 4 + c; };
+                double acc = 0;
+                for (int k = -r; k <= r; ++k) acc += tmp[at(k)];
+                for (int y = 0; y < h; ++y) {
+                    p[at(y)] = static_cast<float>(acc * inv);
+                    acc += tmp[at(y+r+1)] - tmp[at(y-r)];
+                }
+            }
+        }
+    }
+    const auto byte = [](float v) {
+        return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255));
+    };
+    for (size_t i = 0; i < n; ++i) {
+        const float a = p[i * 4 + 3];
+        for (int c = 0; c < 3; ++c) (*rgba)[i * 4 + c] = a > 0 ? byte(p[i * 4 + c] / a) : 0;
+        (*rgba)[i * 4 + 3] = byte(a);
+    }
+}
+}
+
+void test_blur_matches_scalar() {
+    for (const auto& size : {std::pair<int,int>{0,0}, {1,1}, {1,41}, {41,1}, {3,5},
+                           {17,2}, {41,6}, {17,61}, {127,29}, {128,31}, {129,33},
+                           {513,257}, {1024,656}, {1024,664}}) {
+        const int w = size.first, h = size.second;
+        for (double sigma : {0.0, 0.3, 0.31, 0.5, 1.0, 2.5, 30.0, 90.0}) {
+            if (w > 500 && sigma != 2.5 && sigma != 30) continue;
+            std::vector<uint8_t> input(static_cast<size_t>(w) * h * 4);
+            uint32_t seed = 17;
+            for (auto& v : input) { seed = 1664525u * seed + 1013904223u; v = seed >> 24; }
+            auto flat = input;
+            for (size_t i = 0; i < flat.size(); i += 4) {
+                flat[i] = 200; flat[i + 1] = 37; flat[i + 2] = 91;
+            }
+            auto expected = input;
+            scalar_blur(&expected, w, h, sigma);
+            blur_rgba(&input, w, h, sigma);
+            if (input != expected) std::printf("  blur bytes differ: %dx%d sigma=%g\n", w, h, sigma);
+            CHECK(input == expected);
+            // Interleaving rows in the one-channel shadow path must preserve
+            // the scalar alpha, including 1/2/3-row tails and radii larger
+            // than either dimension. The color remains the constant input.
+            blur_flat_rgba(&flat, w, h, sigma);
+            bool same_alpha = true, same_color = true;
+            for (size_t i = 0; i < flat.size(); i += 4) {
+                same_alpha &= flat[i + 3] == expected[i + 3];
+                if (flat[i + 3] > 0)
+                    same_color &= flat[i] == 200 && flat[i + 1] == 37 && flat[i + 2] == 91;
+            }
+            CHECK(same_alpha);
+            CHECK(same_color);
+        }
+    }
 }

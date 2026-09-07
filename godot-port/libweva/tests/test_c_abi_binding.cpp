@@ -102,6 +102,67 @@ struct Doc {
 
 }   // namespace
 
+void test_c_abi_binding_boolean_attributes() {
+    Doc doc("html,body{margin:0}button{display:block;width:120px;height:30px}",
+        "<button id=action disabled='{{ Locked }}' on-click='Act'>Go</button>"
+        "<button id=literal disabled='false'>Literal</button>"
+        "<input id=field readonly='{{ Locked }}' required='{{ Locked }}'>"
+        "<div id=aria aria-disabled='{{ Locked }}'></div>");
+    const auto action = weva_document_query(doc.d, "#action");
+    for (const char* value : {"false", "true", "0", "1", "", "False", "on", "false"}) {
+        doc.data.values["Locked"] = value;
+        doc.refresh();
+        const bool locked = std::string(value) == "true" || std::string(value) == "1" || std::string(value) == "on";
+        CHECK((weva_document_query(doc.d, "#action:disabled") != WEVA_ELEMENT_NONE) == locked);
+        CHECK((weva_document_query(doc.d, "#field[readonly][required]") != WEVA_ELEMENT_NONE) == locked);
+        CHECK(weva_document_query(doc.d, "#literal:disabled") != WEVA_ELEMENT_NONE);
+        CHECK(doc.attribute("#aria", "aria-disabled") == value);
+        CHECK(doc.refresh() == 0);
+        weva_document_set_pointer(doc.d, 60, 15, 0);
+        weva_document_set_pointer(doc.d, 60, 15, 1);
+        weva_document_set_pointer(doc.d, 60, 15, 0);
+        weva_event event{};
+        int clicks = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_CLICK && event.target == action &&
+                std::string(event.handler) == "Act") ++clicks;
+        }
+        CHECK(clicks == (locked ? 0 : 1));
+    }
+    doc.data.values.erase("Locked");
+    doc.refresh();
+    CHECK(weva_document_query(doc.d, "#action[disabled]") == WEVA_ELEMENT_NONE);
+
+    Doc rows("", "<div id=list><template data-each='Items as it' data-key='Id'>"
+        "<button disabled='{{ it.Locked }}'>{{ it.Id }}</button></template></div>");
+    rows.data.lists["Items"] = 2;
+    rows.data.values = {{"Items.0.Id", "a"}, {"Items.0.Locked", "false"},
+                        {"Items.1.Id", "b"}, {"Items.1.Locked", "true"}};
+    rows.refresh();
+    CHECK(weva_document_query_all(rows.d, "#list > button:disabled", nullptr, 0) == 1);
+    rows.data.values["Items.0.Locked"] = "true";
+    rows.refresh();
+    CHECK(weva_document_query_all(rows.d, "#list > button:disabled", nullptr, 0) == 2);
+    rows.data.values["Items.0.Id"] = "b";
+    rows.data.values["Items.1.Id"] = "a";
+    rows.data.values["Items.1.Locked"] = "false";
+    rows.refresh();
+    CHECK(weva_document_query_all(rows.d, "#list > button:disabled", nullptr, 0) == 1);
+    rows.data.lists["Items"] = 0;
+    rows.refresh();
+    rows.data.lists["Items"] = 2;
+    rows.refresh();
+    CHECK(weva_document_query_all(rows.d, "#list > button:disabled", nullptr, 0) == 1);
+    const char* replacement = "<button id=new disabled='{{ Locked }}'>New</button>";
+    weva_document_load_html(doc.d, replacement, std::strlen(replacement));
+    doc.data.values["Locked"] = "true";
+    doc.refresh();
+    CHECK(weva_document_query(doc.d, "#new:disabled") != WEVA_ELEMENT_NONE);
+    doc.data.values["Locked"] = "false";
+    doc.refresh();
+    CHECK(weva_document_query(doc.d, "#new[disabled]") == WEVA_ELEMENT_NONE);
+}
+
 // Text, and the thing that makes it a binding rather than one substitution:
 // the markup stays the template, so the same node fills again when the data
 // moves.

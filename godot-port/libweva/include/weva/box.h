@@ -8,6 +8,7 @@
 #include <optional>
 #include <string_view>
 #include <vector>
+#include <map>
 
 // Ports Runtime/Layout/Boxes — the box tree that layout writes into and paint
 // reads out of.
@@ -82,6 +83,20 @@ enum class PositionType : uint8_t { Static, Relative, Absolute, Fixed, Sticky };
 enum class FloatType : uint8_t { None, Left, Right };
 enum class ClearType : uint8_t { None, Left, Right, Both };
 
+// The measurements a flex/grid parent consumed BEFORE allocating the item's
+// final size. Final used widths can hide a change in natural size through
+// flex shrinking, so incremental layout compares these inputs as well.
+struct ParentLayoutInput {
+    double available_width = -1;
+    double width = 0, height = 0;
+    double min_content = 0, max_content = 0;
+    bool operator==(const ParentLayoutInput& o) const {
+        return available_width == o.available_width && width == o.width && height == o.height &&
+               min_content == o.min_content && max_content == o.max_content;
+    }
+    bool operator!=(const ParentLayoutInput& o) const { return !(*this == o); }
+};
+
 struct Box {
     BoxKind kind = BoxKind::Block;
 
@@ -127,6 +142,8 @@ struct Box {
     std::optional<double> offset_top, offset_right, offset_bottom, offset_left;
     std::optional<int> z_index;
 
+    // Replaced image contribution before flex/grid imposes a used width;
+    // the width accounts for a definite authored height and its aspect ratio.
     double intrinsic_width = 0, intrinsic_height = 0;
 
     // Scroll offset on a scroll container. Paint shifts descendants by
@@ -189,6 +206,9 @@ struct Box {
     // ---- Line -----------------------------------------------------------
     double baseline = 0;
     bool is_final_line = false;
+    // Preserved newlines and <br> end an intrinsic-sizing paragraph; a soft
+    // wrap does not. This is independent of the final line in the container.
+    bool ends_with_forced_break = false;
     // The text-align shift already applied to this line's children. A later
     // alignment pass — a flex or grid item re-running its inline content once
     // its width settles — subtracts this before applying the new offset.
@@ -212,9 +232,9 @@ struct Box {
     // text). Never owned by the box.
     std::string_view text;
     std::string_view font_family;
-    std::string_view color;
     double font_size = 0;
     const TextNode* source_node = nullptr;
+    const Element* source_control = nullptr; // textarea's live value buffer
     // Inter-character justification, added on top of the CSS letter-spacing.
     double justify_letter_spacing = 0;
 
@@ -224,6 +244,10 @@ struct Box {
     // discards it, which is invisible until something inside depends on the
     // height — a nested column flex container, for instance.
     bool cross_size_imposed = false;
+    ParentLayoutInput parent_layout_input;
+    // Scratch-only reference to a retained layout subtree in the destination
+    // tree. Its children stay there until the transaction is committed.
+    BoxId retained_from = kNoBox;
 
     bool is_float() const { return float_type != FloatType::None; }
     double content_width() const {
@@ -238,6 +262,15 @@ struct Box {
 // pool without releasing it, so a steady-state frame allocates nothing.
 class BoxTree {
 public:
+    BoxTree() = default;
+    // Boxes hold views into this tree's owned text. A shallow copy duplicates
+    // the strings but leaves those views pointing at the old owner. In
+    // particular, vector growth must MOVE scratch trees, never copy them.
+    BoxTree(const BoxTree&) = delete;
+    BoxTree& operator=(const BoxTree&) = delete;
+    BoxTree(BoxTree&&) = default;
+    BoxTree& operator=(BoxTree&&) = default;
+
     BoxId create(BoxKind kind, const Element* element = nullptr,
                  const ComputedStyle* style = nullptr);
 
@@ -258,11 +291,16 @@ public:
     void remove_child(BoxId child);
     void replace_child(BoxId existing, BoxId replacement);
     void clear_children(BoxId parent);
+    // Splice a separately laid-out subtree while retaining its root identity.
+    // Imported runs own their text; no view may point into the scratch tree.
+    void replace_subtree(BoxId root, const BoxTree& source, BoxId source_root);
 
     // Frees every box. Capacity is kept: that is the point of the arena.
     void reset() {
         boxes_.clear();
         owned_text_.clear();
+        imported_text_.clear();
+        free_boxes_.clear();
     }
     // Storage for text the tree produced itself — a `text-transform`ed run
     // — that no DOM node holds. Lives as long as the tree.
@@ -309,6 +347,10 @@ public:
 private:
     std::vector<Box> boxes_;
     std::deque<std::string> owned_text_;
+    std::map<BoxId, std::string> imported_text_;
+    std::vector<BoxId> free_boxes_;
+    void release_subtree(BoxId root);
+    void import_subtree(BoxId into, const BoxTree& source, BoxId from);
 };
 
 } // namespace weva

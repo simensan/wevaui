@@ -11,10 +11,9 @@ namespace {
 // Properties nothing outside paint reads.
 //
 // Verified by searching every layout source -- block, inline, flex, grid,
-// table, positioning and box building -- for a read of each name. Five
+// table, positioning and box building -- for a read of each name. Four
 // plausible candidates failed that search and are deliberately absent:
 //
-//   color        inline layout copies it into the text runs it builds
 //   filter       positioning: a filter establishes a containing block
 //   transform    positioning: so does a transform
 //   z-index      positioning: stacking order
@@ -23,6 +22,7 @@ namespace {
 // A name that is not a registered property resolves to no id and is simply
 // not in the table, which costs nothing but the entry.
 const char* const kPaintOnly[] = {
+    "color", // Text, decorations and currentColor read the retained style during paint.
     "background",       "background-color",    "background-image",
     "background-position", "background-position-x", "background-position-y",
     "background-size",  "background-repeat",   "background-clip",

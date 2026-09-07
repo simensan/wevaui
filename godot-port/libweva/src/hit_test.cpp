@@ -4,8 +4,6 @@
 #include "weva/dom.h"
 #include "weva/positioning.h"
 
-#include <vector>
-
 namespace weva {
 
 namespace {
@@ -67,10 +65,9 @@ struct Search {
         // the child list backwards meant a `position: fixed` popover drawn
         // over a later <div> was not clickable anywhere it overlapped it --
         // every click went to the div underneath.
-        std::vector<BoxId> order;
-        paint_order_children(tree, id, &order);
-        for (size_t i = order.size(); i-- > 0;) {
-            const BoxId hit = visit(order[i], cx, cy, ignore);
+        const ChildPaintOrder order(tree, id);
+        for (auto i = order.rbegin(); i != order.rend(); ++i) {
+            const BoxId hit = visit(*i, cx, cy, ignore);
             if (hit != kNoBox) return hit;
         }
         if (ignore) return kNoBox;

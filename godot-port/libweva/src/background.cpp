@@ -4,10 +4,20 @@
 #include "weva/css_value.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <memory>
+#include <type_traits>
+
+#if (defined(__SSE2__) || defined(_M_X64)) && !defined(WEVA_BLUR_FORCE_PORTABLE)
+#include <emmintrin.h>
+#define WEVA_BLUR_SSE2 1
+#else
+#define WEVA_BLUR_SSE2 0
+#endif
 
 namespace weva {
 
@@ -275,24 +285,46 @@ Srgb to_srgb(const LinearColor& c) {
     return {linear_to_srgb(c.r), linear_to_srgb(c.g), linear_to_srgb(c.b), std::clamp(c.a, 0.0f, 1.0f)};
 }
 
+// The endpoints and their difference in premultiplied sRGB. These depend
+// only on the stops, so prepare them once instead of multiplying both
+// endpoints and subtracting them again for every raster sample.
+struct ColorSpan {
+    Srgb start;
+    Srgb delta;
+    double inverse_length = 0;
+    bool constant = false;
+};
+
+ColorSpan color_span(const Srgb& a, const Srgb& b) {
+    const Srgb pa{a.r * a.a, a.g * a.a, a.b * a.a, a.a};
+    const Srgb pb{b.r * b.a, b.g * b.a, b.b * b.a, b.a};
+    ColorSpan span{pa, {pb.r - pa.r, pb.g - pa.g, pb.b - pa.b, pb.a - pa.a}};
+    span.constant = span.delta.r == 0 && span.delta.g == 0 &&
+                    span.delta.b == 0 && span.delta.a == 0;
+    if (span.constant) {
+        // Store the exact scalar result, including its multiply/divide
+        // rounding. Returning the original unpremultiplied stop can differ.
+        span.start = pa.a > 0 ? Srgb{pa.r / pa.a, pa.g / pa.a, pa.b / pa.a, pa.a}
+                             : Srgb{0, 0, 0, 0};
+    }
+    return span;
+}
+
 // Interpolates in premultiplied sRGB (Images L4 §3.4.1), so a fade to
-// `transparent` does not pass through grey.
-Srgb mix(const Srgb& a, const Srgb& b, double t) {
-    const float ft = static_cast<float>(std::clamp(t, 0.0, 1.0));
-    const float pa_r = a.r * a.a, pa_g = a.g * a.a, pa_b = a.b * a.a;
-    const float pb_r = b.r * b.a, pb_g = b.g * b.a, pb_b = b.b * b.a;
-    const float alpha = a.a + (b.a - a.a) * ft;
-    const float r = pa_r + (pb_r - pa_r) * ft;
-    const float g = pa_g + (pb_g - pa_g) * ft;
-    const float bb = pa_b + (pb_b - pa_b) * ft;
+// `transparent` does not pass through grey. Keep the arithmetic order and
+// unpremultiplication used by the scalar sampler.
+Srgb mix(const ColorSpan& span, double t) {
+    // Clamp by value. MSVC's reference-returning std::clamp spills these hot
+    // operands and selects a stack address before loading the result.
+    const float ft = static_cast<float>(t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t);
+    const float alpha = span.start.a + span.delta.a * ft;
+    const float r = span.start.r + span.delta.r * ft;
+    const float g = span.start.g + span.delta.g * ft;
+    const float bb = span.start.b + span.delta.b * ft;
     if (alpha <= 0) return {0, 0, 0, 0};
     return {r / alpha, g / alpha, bb / alpha, alpha};
 }
 
-// The colour at `t` along normalized stops. `srgb` holds the stops' colours.
-// `inv_span` is prepare()'s table of 1/(p1 - p0) per stop pair, or null when
-// the caller has not built one -- the parse-time callers sample a handful of
-// points and do not need it.
 // `x` folded into [0, m), without calling libm.
 //
 // The idiom this replaces -- fmod(fmod(x, m) + m, m) -- is TWO calls into libm
@@ -314,8 +346,10 @@ inline double wrap_positive(double x, double m) {
     return r;
 }
 
+// The colour at `t` along normalized stops. Endpoints retain their original
+// sRGB values; interior samples use the prepared premultiplied spans.
 Srgb sample_stops(const std::vector<GradientStop>& stops, const std::vector<Srgb>& srgb, double t,
-                  bool repeating, const std::vector<double>* inv_span = nullptr) {
+                  bool repeating, const std::vector<ColorSpan>& color_spans) {
     if (stops.empty()) return {0, 0, 0, 0};
     if (stops.size() == 1) return srgb[0];
     const double first = stops.front().position;
@@ -338,11 +372,12 @@ Srgb sample_stops(const std::vector<GradientStop>& stops, const std::vector<Srgb
         if (next >= stops.size()) return srgb[i];
         const double p0 = stops[i].position, p1 = stops[next].position;
         if (t < p0 || t > p1) continue;
+        if (color_spans[i].constant) return color_spans[i].start;
         // The reciprocal when prepare() has one: this is the last divide left
         // in the per-pixel path.
         double local = 0;
-        if (inv_span && i < inv_span->size() && (*inv_span)[i] > 0) {
-            local = (t - p0) * (*inv_span)[i];
+        if (color_spans[i].inverse_length > 0) {
+            local = (t - p0) * color_spans[i].inverse_length;
         } else if (p1 > p0) {
             local = (t - p0) / (p1 - p0);
         }
@@ -350,7 +385,7 @@ Srgb sample_stops(const std::vector<GradientStop>& stops, const std::vector<Srgb
             const double h = std::clamp((hint->position - p0) / (p1 - p0), 1e-6, 1 - 1e-6);
             local = std::pow(local, std::log(0.5) / std::log(h));
         }
-        return mix(srgb[i], srgb[next], local);
+        return mix(color_spans[i], local);
     }
     return srgb.back();
 }
@@ -595,9 +630,9 @@ struct PreparedGradient {
     // is four or five times a multiply, so these are worth precomputing even
     // though the arithmetic is trivial.
     double inv_line_length = 1, inv_rx = 1, inv_ry = 1;
-    // Reciprocal of each span between consecutive colour stops, indexed by the
-    // FIRST stop of the pair, for the same reason.
-    std::vector<double> inv_span;
+    // Premultiplied color endpoints and reciprocal length for each span,
+    // indexed by the FIRST stop of the pair.
+    std::vector<ColorSpan> color_spans;
     // Whether this gradient has a discontinuity, which decides whether the
     // texel needs more than one sample. A ramp antialiases itself; an edge
     // does not.
@@ -658,14 +693,15 @@ PreparedGradient prepare(const Gradient& g, double w, double h, const LayoutCont
     // sample_stops does -- a hint sits between two colour stops, so the pair is
     // not always (i, i+1) and a table that assumed so would divide by the wrong
     // span wherever a hint appeared.
-    p.inv_span.assign(p.stops.size(), 0.0);
+    p.color_spans.resize(p.stops.size());
     for (size_t i = 0; i + 1 < p.stops.size(); ++i) {
         if (p.stops[i].is_hint) continue;
         size_t next = i + 1;
         if (next < p.stops.size() && p.stops[next].is_hint) ++next;
         if (next >= p.stops.size()) continue;
+        p.color_spans[i] = color_span(p.colors[i], p.colors[next]);
         const double span = p.stops[next].position - p.stops[i].position;
-        p.inv_span[i] = span > 0 ? 1.0 / span : 0.0;
+        p.color_spans[i].inverse_length = span > 0 ? 1.0 / span : 0.0;
     }
     return p;
 }
@@ -694,7 +730,8 @@ double gradient_t(const PreparedGradient& p, double x, double y) {
 }
 
 Srgb sample_prepared(const PreparedGradient& p, double x, double y) {
-    return sample_stops(p.stops, p.colors, gradient_t(p, x, y), p.g->repeating, &p.inv_span);
+    return sample_stops(p.stops, p.colors, gradient_t(p, x, y), p.g->repeating,
+                        p.color_spans);
 }
 
 } // namespace
@@ -931,6 +968,9 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                           double width, double height, int tex_w, int tex_h,
                           const LayoutContext& ctx, double font_size,
                           std::vector<uint8_t>* out_rgba) {
+    static const bool gradient_log = std::getenv("WEVA_GRADIENT_LOG") != nullptr;
+    const auto raster_start = gradient_log ? std::chrono::steady_clock::now()
+                                           : std::chrono::steady_clock::time_point{};
     tex_w = std::max(1, tex_w);
     tex_h = std::max(1, tex_h);
     out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
@@ -1203,7 +1243,6 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         return false;
     };
 
-    static const bool gradient_log = std::getenv("WEVA_GRADIENT_LOG") != nullptr;
     // How much of the adaptive path actually pays off, which the sample count
     // alone does not say: `3^2 samples` is the ceiling, not the bill.
     long supersampled = 0;
@@ -1304,7 +1343,8 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                 // fuse it with the +0.5 into an FMA and round the pair at
                 // higher precision than lround did -- which moved eighteen of
                 // hud's texels by one when it could.
-                const float scaled = std::clamp(v, 0.0f, 1.0f) * 255.0f;
+                // As in mix(), keep this a value rather than a selected reference.
+                const float scaled = (v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v) * 255.0f;
                 return static_cast<uint8_t>(scaled + 0.5f);
             };
             o[0] = byte(r);
@@ -1321,6 +1361,11 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         const long texels = static_cast<long>(tex_w) * tex_h;
         std::fprintf(stderr, "  [grad]   adaptive: %ld of %ld texels supersampled (%.1f%%)\n",
                      supersampled, texels, texels ? 100.0 * supersampled / texels : 0.0);
+    }
+    if (gradient_log) {
+        const double elapsed = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - raster_start).count();
+        std::fprintf(stderr, "  [grad]   raster %.3f ms\n", elapsed);
     }
 }
 
@@ -1386,6 +1431,16 @@ void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
     std::vector<uint8_t> inner;
     rasterize_background(layers, color, width, height, inner_w, inner_h, ctx, font_size, &inner);
     out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
+    if (!radii || radii->is_zero()) {
+        // Without rounded corners every inner texel has full coverage.
+        // Preserve the raster bytes directly, including transparent colours.
+        for (int y = 0; y < inner_h; ++y) {
+            std::memcpy(out_rgba->data() + (static_cast<size_t>(y + pad) * tex_w + pad) * 4,
+                        inner.data() + static_cast<size_t>(y) * inner_w * 4,
+                        static_cast<size_t>(inner_w) * 4);
+        }
+        return;
+    }
     const double sx = width / inner_w, sy = height / inner_h;
     for (int y = 0; y < inner_h; ++y) {
         for (int x = 0; x < inner_w; ++x) {
@@ -1415,7 +1470,8 @@ void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
 // of 1 is a loop the compiler cannot unroll or vectorise, and it gave back
 // everything the missing three channels saved.
 template <int CH>
-void blur_planes(std::vector<float>* p, std::vector<float>* tmp, int width, int height, int r) {
+void blur_planes(float* p, float* tmp, int width, int height, int r,
+                 double* horizontal_ms, double* vertical_ms) {
     const int taps = 2 * r + 1;
     // The reciprocal, not the divisor. Six passes over four channels is
     // TWENTY-FOUR divides per texel, and a divide is the one arithmetic
@@ -1430,47 +1486,102 @@ void blur_planes(std::vector<float>* p, std::vector<float>* tmp, int width, int 
     //
     // Edges extend the outermost pixel, which is what the window did when it
     // clamped its index, so the divisor stays 2r+1 everywhere.
-    const auto pass_h = [&](const std::vector<float>& in, std::vector<float>* out) {
-        for (int y = 0; y < height; ++y) {
-            const float* row = in.data() + static_cast<size_t>(y) * width * CH;
-            float* orow = out->data() + static_cast<size_t>(y) * width * CH;
-            double acc[CH] = {};
+    const auto pass_h = [&](const float* in, float* out) {
+        if constexpr (CH == 4) {
+            for (int y = 0; y < height; ++y) {
+                const float* row = in + static_cast<size_t>(y) * width * CH;
+                float* orow = out + static_cast<size_t>(y) * width * CH;
+#if WEVA_BLUR_SSE2
+                // Preserve the scalar float differences and double running
+                // sums. SSE2 groups independent channels, without reassociating
+                // samples or using approximate reciprocals/conversions.
+                __m128d low = _mm_setzero_pd(), high = _mm_setzero_pd();
+                const __m128d scale = _mm_set1_pd(inv_taps);
+                for (int k = -r; k <= r; ++k) {
+                    const int xx = std::clamp(k, 0, width - 1);
+                    const __m128 sample = _mm_loadu_ps(row + xx * CH);
+                    low = _mm_add_pd(low, _mm_cvtps_pd(sample));
+                    high = _mm_add_pd(high, _mm_cvtps_pd(_mm_movehl_ps(sample, sample)));
+                }
+                for (int x = 0; x < width; ++x) {
+                    const __m128 lo = _mm_cvtpd_ps(_mm_mul_pd(low, scale));
+                    const __m128 hi = _mm_cvtpd_ps(_mm_mul_pd(high, scale));
+                    _mm_storeu_ps(orow + x * CH, _mm_movelh_ps(lo, hi));
+                    const int add = std::clamp(x + r + 1, 0, width - 1);
+                    const int drop = std::clamp(x - r, 0, width - 1);
+                    const __m128 difference = _mm_sub_ps(_mm_loadu_ps(row + add * CH),
+                                                        _mm_loadu_ps(row + drop * CH));
+                    low = _mm_add_pd(low, _mm_cvtps_pd(difference));
+                    high = _mm_add_pd(high, _mm_cvtps_pd(_mm_movehl_ps(difference, difference)));
+                }
+#else
+                double acc[CH] = {};
+                for (int k = -r; k <= r; ++k) {
+                    const int xx = std::clamp(k, 0, width - 1);
+                    for (int c = 0; c < CH; ++c) acc[c] += row[xx * CH + c];
+                }
+                for (int x = 0; x < width; ++x) {
+                    for (int c = 0; c < CH; ++c) orow[x * CH + c] = static_cast<float>(acc[c] * inv_taps);
+                    const int add = std::clamp(x + r + 1, 0, width - 1);
+                    const int drop = std::clamp(x - r, 0, width - 1);
+                    for (int c = 0; c < CH; ++c) acc[c] += row[add * CH + c] - row[drop * CH + c];
+                }
+#endif
+            }
+            return;
+        }
+        // Independent row sums hide the running sum's dependency latency and
+        // share clamped indices. A channel still accumulates in its original
+        // left-to-right order, including the initial repeated edge samples.
+        const size_t stride = static_cast<size_t>(width) * CH;
+        const auto rows_h = [&](auto row_count, int y) {
+            constexpr int kRows = decltype(row_count)::value;
+            const float* base = in + static_cast<size_t>(y) * stride;
+            float* obase = out + static_cast<size_t>(y) * stride;
+            double acc[kRows][CH] = {};
             for (int k = -r; k <= r; ++k) {
                 const int xx = std::clamp(k, 0, width - 1);
-                for (int c = 0; c < CH; ++c) acc[c] += row[xx * CH + c];
+                for (int row_index = 0; row_index < kRows; ++row_index) {
+                    const float* row = base + static_cast<size_t>(row_index) * stride;
+                    for (int c = 0; c < CH; ++c) acc[row_index][c] += row[xx * CH + c];
+                }
             }
             for (int x = 0; x < width; ++x) {
-                for (int c = 0; c < CH; ++c) {
-                    orow[x * CH + c] = static_cast<float>(acc[c] * inv_taps);
-                }
                 const int add = std::clamp(x + r + 1, 0, width - 1);
                 const int drop = std::clamp(x - r, 0, width - 1);
-                for (int c = 0; c < CH; ++c) acc[c] += row[add * CH + c] - row[drop * CH + c];
+                for (int row_index = 0; row_index < kRows; ++row_index) {
+                    const float* row = base + static_cast<size_t>(row_index) * stride;
+                    float* orow = obase + static_cast<size_t>(row_index) * stride;
+                    for (int c = 0; c < CH; ++c) {
+                        orow[x * CH + c] = static_cast<float>(acc[row_index][c] * inv_taps);
+                        acc[row_index][c] += row[add * CH + c] - row[drop * CH + c];
+                    }
+                }
             }
-        }
+        };
+        int y = 0;
+        for (; y + 4 <= height; y += 4) rows_h(std::integral_constant<int, 4>{}, y);
+        for (; y < height; ++y) rows_h(std::integral_constant<int, 1>{}, y);
     };
     // The vertical pass walks DOWN a row-major buffer, so consecutive reads are
     // a row apart and every one of them is a cache miss. Taken one column at a
     // time, each of those misses fetches a 64-byte line and uses CH floats of
     // it -- four bytes, in the one-channel case, of every sixty-four.
     //
-    // So a block of columns is carried down together: the line a miss fetches
-    // is then used in full. The block is in FLOATS rather than columns so that
-    // it stays one cache line whatever CH is.
-    //
-    // Worth less than it looks: on glass's two shadow textures it took the blur
-    // from 1.56 ms to 1.32, where making CH a compile-time constant had already
-    // taken it from 3.41. The prefetcher was evidently already doing most of
-    // this; the constant trip count was the real find.
-    constexpr int kBlockFloats = 16;
-    constexpr int kBlockCols = kBlockFloats / CH > 0 ? kBlockFloats / CH : 1;
-    const auto pass_v = [&](const std::vector<float>& in, std::vector<float>* out) {
+    // Carry a strip of columns down together. Four-channel filter textures
+    // are large enough that a single cache line per strip still revisits the
+    // whole image hundreds of times. Wider strips stream contiguous reads
+    // and writes; the one-channel shadow kernel retains its smaller block.
+    // Neither strip width nor channel grouping changes accumulation order.
+    const auto pass_v = [&](const float* in, float* out) {
+        constexpr int kBlockFloats = CH == 4 ? 512 : 16;
+        constexpr int kBlockCols = kBlockFloats / CH > 0 ? kBlockFloats / CH : 1;
         const size_t stride = static_cast<size_t>(width) * CH;
         for (int x0 = 0; x0 < width; x0 += kBlockCols) {
             const int cols = std::min(kBlockCols, width - x0);
             const int lanes = cols * CH;
-            const float* base = in.data() + static_cast<size_t>(x0) * CH;
-            float* obase = out->data() + static_cast<size_t>(x0) * CH;
+            const float* base = in + static_cast<size_t>(x0) * CH;
+            float* obase = out + static_cast<size_t>(x0) * CH;
             double acc[kBlockCols * CH] = {};
             for (int k = -r; k <= r; ++k) {
                 const int yy = std::clamp(k, 0, height - 1);
@@ -1479,25 +1590,56 @@ void blur_planes(std::vector<float>* p, std::vector<float>* tmp, int width, int 
             }
             for (int y = 0; y < height; ++y) {
                 float* orow = obase + static_cast<size_t>(y) * stride;
-                for (int i = 0; i < lanes; ++i) {
-                    orow[i] = static_cast<float>(acc[i] * inv_taps);
-                }
                 const int add = std::clamp(y + r + 1, 0, height - 1);
                 const int drop = std::clamp(y - r, 0, height - 1);
                 const float* arow = base + static_cast<size_t>(add) * stride;
                 const float* drow = base + static_cast<size_t>(drop) * stride;
-                for (int i = 0; i < lanes; ++i) acc[i] += arow[i] - drow[i];
+#if WEVA_BLUR_SSE2
+                if constexpr (CH == 4) {
+                    const __m128d scale = _mm_set1_pd(inv_taps);
+                    // lanes is a multiple of four, even in the last strip.
+                    // Keep each loaded sum for both its output and update.
+                    for (int i = 0; i < lanes; i += 4) {
+                        const __m128d low = _mm_loadu_pd(acc + i);
+                        const __m128d high = _mm_loadu_pd(acc + i + 2);
+                        const __m128 lo = _mm_cvtpd_ps(_mm_mul_pd(low, scale));
+                        const __m128 hi = _mm_cvtpd_ps(_mm_mul_pd(high, scale));
+                        _mm_storeu_ps(orow + i, _mm_movelh_ps(lo, hi));
+                        const __m128 difference = _mm_sub_ps(_mm_loadu_ps(arow + i),
+                                                            _mm_loadu_ps(drow + i));
+                        _mm_storeu_pd(acc + i, _mm_add_pd(low, _mm_cvtps_pd(difference)));
+                        _mm_storeu_pd(acc + i + 2,
+                            _mm_add_pd(high, _mm_cvtps_pd(_mm_movehl_ps(difference, difference))));
+                    }
+                } else
+#endif
+                {
+                    for (int i = 0; i < lanes; ++i) orow[i] = static_cast<float>(acc[i] * inv_taps);
+                    for (int i = 0; i < lanes; ++i) acc[i] += arow[i] - drow[i];
+                }
             }
         }
     };
     for (int i = 0; i < 3; ++i) {
-        pass_h(*p, tmp);
-        pass_v(*tmp, p);
+        const auto start = horizontal_ms ? std::chrono::steady_clock::now()
+                                         : std::chrono::steady_clock::time_point{};
+        pass_h(p, tmp);
+        const auto middle = horizontal_ms ? std::chrono::steady_clock::now()
+                                          : std::chrono::steady_clock::time_point{};
+        pass_v(tmp, p);
+        if (horizontal_ms) {
+            *horizontal_ms += std::chrono::duration<double, std::milli>(middle - start).count();
+            *vertical_ms += std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - middle).count();
+        }
     }
 }
 
 void blur_impl(std::vector<uint8_t>* rgba, int width, int height, double sigma, bool flat) {
     if (sigma <= 0.3 || width <= 0 || height <= 0) return;
+    static const bool blur_log = std::getenv("WEVA_BLUR_LOG") != nullptr;
+    const auto start = blur_log ? std::chrono::steady_clock::now()
+                                : std::chrono::steady_clock::time_point{};
     const size_t n = static_cast<size_t>(width) * height;
     // One float per texel when only the coverage moves, four when the colour
     // does.
@@ -1514,7 +1656,10 @@ void blur_impl(std::vector<uint8_t>* rgba, int width, int height, double sigma, 
             break;
         }
     }
-    std::vector<float> p(n * ch);
+    // Every element is written before its first read: conversion fills p,
+    // then each horizontal pass fills tmp before the vertical pass reads it.
+    // Value-initialized vectors clear both large buffers unnecessarily.
+    std::unique_ptr<float[]> p(new float[n * ch]);
     if (flat) {
         for (size_t i = 0; i < n; ++i) p[i] = (*rgba)[i * 4 + 3] / 255.0f;
     } else {
@@ -1530,11 +1675,31 @@ void blur_impl(std::vector<uint8_t>* rgba, int width, int height, double sigma, 
     // w = sqrt(12 sigma^2 / 3 + 1).
     const int box = std::max(1, static_cast<int>(std::sqrt(12.0 * sigma * sigma / 3.0 + 1.0)));
     const int r = box / 2;
-    std::vector<float> tmp(n * ch);
-    if (flat) blur_planes<1>(&p, &tmp, width, height, r);
-    else blur_planes<4>(&p, &tmp, width, height, r);
+    std::unique_ptr<float[]> tmp(new float[n * ch]);
+    const auto prepared = blur_log ? std::chrono::steady_clock::now()
+                                   : std::chrono::steady_clock::time_point{};
+    double horizontal_ms = 0, vertical_ms = 0;
+    if (flat) blur_planes<1>(p.get(), tmp.get(), width, height, r,
+                             blur_log ? &horizontal_ms : nullptr, blur_log ? &vertical_ms : nullptr);
+    else blur_planes<4>(p.get(), tmp.get(), width, height, r,
+                        blur_log ? &horizontal_ms : nullptr, blur_log ? &vertical_ms : nullptr);
+    const auto filtered = blur_log ? std::chrono::steady_clock::now()
+                                   : std::chrono::steady_clock::time_point{};
+    const auto report = [&] {
+        if (!blur_log) return;
+        const auto end = std::chrono::steady_clock::now();
+        std::fprintf(stderr, "  [blur] %dx%d sigma %.3f channels %d: prepare %.3f horizontal %.3f"
+            " vertical %.3f finish %.3f total %.3f ms\n", width, height, sigma, ch,
+            std::chrono::duration<double, std::milli>(prepared - start).count(),
+            horizontal_ms, vertical_ms,
+            std::chrono::duration<double, std::milli>(end - filtered).count(),
+            std::chrono::duration<double, std::milli>(end - start).count());
+    };
     const auto byte = [](float v) {
-        return static_cast<uint8_t>(std::lround(std::clamp(v, 0.0f, 1.0f) * 255));
+        const float scaled = std::clamp(v, 0.0f, 1.0f) * 255;
+        // Nonnegative and bounded: truncating after +0.5 is lround. Add in
+        // double so a float immediately below a half does not round up to it.
+        return static_cast<uint8_t>(static_cast<double>(scaled) + 0.5);
     };
     if (flat) {
         // The same shape the four-channel tail has: a texel the blur left with
@@ -1548,6 +1713,7 @@ void blur_impl(std::vector<uint8_t>* rgba, int width, int height, double sigma, 
             (*rgba)[i * 4 + 2] = covered ? fb : 0;
             (*rgba)[i * 4 + 3] = byte(a);
         }
+        report();
         return;
     }
     for (size_t i = 0; i < n; ++i) {
@@ -1561,6 +1727,7 @@ void blur_impl(std::vector<uint8_t>* rgba, int width, int height, double sigma, 
         }
         (*rgba)[i * 4 + 3] = byte(a);
     }
+    report();
 }
 
 void blur_flat_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) {

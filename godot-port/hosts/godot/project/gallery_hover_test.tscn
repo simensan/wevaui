@@ -2,5 +2,8 @@
 
 [ext_resource type="Script" path="res://gallery_hover_test.gd" id="1"]
 
-[node name="Root" type="Node"]
+[node name="Viewport" type="SubViewport"]
+size = Vector2i(1520, 800)
+
+[node name="Root" type="Node" parent="."]
 script = ExtResource("1")

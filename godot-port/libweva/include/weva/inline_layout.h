@@ -76,7 +76,7 @@ struct InlineItem {
     // Distance from the atom's top edge up to the line baseline. Per spec an
     // inline-block's baseline is the bottom of its content, which for a box
     // with no inline content of its own is its bottom margin edge.
-    double atom_baseline = 0;
+    double atom_baseline = 0;      // from the top margin edge
 
     // A `<br>`: a forced line break. It carries a box because the reference
     // emits one per break — zero width, the line's height — and layout, paint
@@ -158,6 +158,12 @@ double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx
 // piece — a word, an atom, an explicit width — rather than the whole line.
 // A flex row that may not wrap still sums its items.
 double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx);
+// The contribution a block exports to its parent, including definite width,
+// frame, min/max constraints and non-auto margins.
+double block_intrinsic_contribution(const BoxTree& tree, BoxId id,
+                                    const LayoutContext* ctx, bool minimum);
+ParentLayoutInput measure_parent_layout_input(const BoxTree& tree, BoxId id,
+                                              double available_width, const LayoutContext& ctx);
 
 // Collects the flattened inline sequence, exposed for tests: getting the
 // whitespace handling right is most of the work, and it is far easier to check
