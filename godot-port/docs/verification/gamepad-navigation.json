@@ -67,5 +67,16 @@
       "weva addon example: 17 checks, 0 failures"
     ],
     "passed": true
+  },
+  "linux_stock": {
+    "engine": "stock Linux Godot 4.7.2.stable.official.ed1daf0bf (WSL Ubuntu), headless",
+    "library_sha256": "c366c8a8e4a63fdba4abecbc2579db17de1e3918d23daef5b34740f07dc2595b",
+    "test_library_sha256": "65ca0e05f81d285d4ca5dba452cd8f647029888cc62890836e5ee385e24d1ec3",
+    "built_from": "the same source as the Windows candidate (gcc, ~/weva/build-godot)",
+    "gamepad_navigation_tests": {
+      "checks": 34,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/linux/gamepad_navigation_tests.log"
+    }
   }
 }

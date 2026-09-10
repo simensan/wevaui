@@ -85,9 +85,9 @@
     "The autoscroll stress fixture passes with every library and editor, so it does not detect this defect."
   ],
   "limitations": [
-    "Windows RTX 5080 only; Linux/macOS and other engine versions unverified.",
     "Text in native Godot controls bypasses the adapter and still needs the engine patch.",
-    "Exports and desktop/1080p/4K timing profiles were not rerun for this candidate; it is not installed."
+    "Exports and desktop/1080p/4K timing profiles were not rerun for this candidate; it is not installed.",
+    "macOS and other engine versions unverified; Linux evidence is headless."
   ],
   "host": {
     "binary_sha256": "8ce46c8432a34b616edef56edcdc19679c5a8b6bf11f82924dbda8d65fa0f74b",
@@ -358,5 +358,18 @@
       ".utmp/safe-engine71/shaping-checks/frontier-check-headless.log",
       ".utmp/safe-engine71/shaping-checks/frontier-check-mobile.log"
     ]
+  },
+  "linux_stock": {
+    "engine": "stock Linux Godot 4.7.2.stable.official.ed1daf0bf (WSL Ubuntu), headless",
+    "library_sha256": "c366c8a8e4a63fdba4abecbc2579db17de1e3918d23daef5b34740f07dc2595b",
+    "test_library_sha256": "65ca0e05f81d285d4ca5dba452cd8f647029888cc62890836e5ee385e24d1ec3",
+    "built_from": "the same source as the Windows candidate (gcc, ~/weva/build-godot)",
+    "adapter_checks": "godot font backend: 19826 checks, 0 failures",
+    "text_autoscroll": {
+      "checks": 81,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/linux/text_autoscroll_tests.log"
+    },
+    "note": "The standalone reproduction is documented failing on this stock Linux engine (GODOT_TEXT_SHAPING.md); the adapter suite including the past-limit cases passes with the piece-wise shaper."
   }
 }

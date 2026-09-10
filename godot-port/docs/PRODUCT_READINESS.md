@@ -79,7 +79,10 @@ out-of-bounds index. The patched editor passes the same suite, all 49 host
 entries (35,546 checks), the sample checks, all 14 core suites and all 16
 sanitizer suites. Exports and timing profiles were not rerun, the candidate
 is not installed, and text in native Godot controls still needs the engine
-patch. [Shaping evidence](verification/stock-engine-shaping.json).
+patch. The same source built for Linux passes the adapter suite (19,826
+checks), the autoscroll fixture and the font-face, diagnostics and gamepad
+scenes headless on the official stock Linux 4.7.2 editor, which carries the
+same engine defect. [Shaping evidence](verification/stock-engine-shaping.json).
 
 A three-round ownership isolation on candidate217 classifies the retained
 objects as bounded, not accumulating. Five short Vulkan 1080p 3D editor arms
