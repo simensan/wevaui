@@ -458,6 +458,14 @@ path can be supplied through `WEVA_GODOT_FONT_TEST_LIBRARY`. Test extensions
 are excluded from the packaged addon. See [text shaping](../../docs/GODOT_TEXT_SHAPING.md)
 for the stock-engine defect the adapter works around and remaining typography limits.
 
+`run_host_suite.py --godot <editor> --project hosts/godot/project --out <new dir>`
+runs the editor import, every test/smoke scene and the western_survival smoke
+script headless, and writes `receipt.json` with per-entry checks and the
+library digest: the "host entries" figure in the readiness documents. To test
+an uninstalled library, copy the project to `<dir>/hosts/godot/project`, put
+the library in its `addons/weva/bin`, and give `<dir>/tools` a junction or
+symlink to `godot-port/tools` so the gallery scenes find the sample corpus.
+
 Input events and the animation clock run through the node. Drawing consumes
 the core's collected draw list through Godot's rendering server.
 
