@@ -41,8 +41,13 @@ preview217 run): cold construction 85.3 ms CPU, prepared reuse with hidden data
 updates 0.827 ms CPU p95, soak frame p95 2.08 ms and maximum 23.4 ms. Private
 memory minute medians rise from 821.7 to 823.3 MiB and hold from minute six;
 teardown returns to 491 nodes and 1,930 objects after recreation and 1,937
-after the soak, the bounded pattern classified above. Lower-end hardware and a
-physical controller remain unrun for this build.
+after the soak, the bounded pattern classified above. On the official stock
+Windows 4.7.1 editor the installed build passes the full host suite (52
+entries, 35,610 checks) and the sample headless and rendered, so the patched
+editor is no longer needed to run or test document UI; it remains the choice
+for text in native Godot controls, and exports still use its templates (stock
+templates are not installed here). Lower-end hardware and a physical
+controller remain unrun for this build.
 [Build220 qualification](verification/qualification220.json),
 [lifecycle evidence](verification/lifecycle220.json).
 
@@ -362,7 +367,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Exported artwork and markup | Verified Windows subset: package example and relocated exports cover HTML/CSS and imported artwork. |
 | Reproducible native builds | Package/build metadata matches source and dependency content; toolchain configuration is recorded. Cross-toolchain bit-identical builds are not established. See RELEASE.md. |
 | Installable addon | Current Windows package and fresh consumer pass. Historical Linux package results cannot certify the current preview. |
-| Native desktop exports | Current patched Windows debug/release/embedded exports pass. Document text past the engine's shaping limits now works on the stock Windows 4.7.1 editor; stock exports, other platforms and native-control text remain unverified. |
+| Native desktop exports | Current patched Windows debug/release/embedded exports pass. The full host suite and the sample pass on the stock Windows 4.7.1 editor with build220; stock-template exports, other platforms and native-control text remain unverified. |
 | Replaced images in flex layouts | Current intrinsic-size suite and rendered example pass. Broader layout agreement is assessed separately below. |
 | Native GUI integration | Current input suite covers Control focus, native overlays, document visibility and routed input. Joypad events now drive HTML focus, activation and dismissal through the project's ui_* actions with conventional button fallbacks (gamepad_navigation_tests: 33 checks with real joypad button and axis events, including wake on first press and held-direction repeat). Physical touch/gamepad acceptance is still needed. |
 | Text editing and popup lifecycle | Current dialog suite: 1,199 checks; popover beforetoggle suite: 1,389 checks, including opening vetoes, ordered closing, mutation and queue-pressure cases. Form method=dialog is covered. Full browser task timing, remaining dialog lifecycle and physical input-method acceptance remain open. [Popover evidence](verification/popover-beforetoggle.json). |

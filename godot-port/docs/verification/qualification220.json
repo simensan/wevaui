@@ -1330,5 +1330,20 @@
     ],
     "private_mib_first_minute": 821.676,
     "private_mib_last_minute": 829.73
+  },
+  "stock_editor_4_7_1": {
+    "editor": "official Godot 4.7.1.stable.mono Windows editor (Downloads)",
+    "sample_installed": {
+      "headless": "frontier integration: 101 checks, 0 failures",
+      "mobile": "frontier integration: 101 checks, 0 failures"
+    },
+    "host_suite_installed": {
+      "passed": true,
+      "entries": 52,
+      "checks": 35610,
+      "godot": "C:/Users/simen/Downloads/Godot_v4.7.1-stable_mono_win64/Godot_v4.7.1-stable_mono_win64_console.exe",
+      "receipt": ".utmp/safe-engine71/shaping-checks/host-suite-stock/receipt.json"
+    },
+    "note": "Every host scene and the sample pass on the stock editor with build220; exports were produced with the patched templates and stock templates are not installed here."
   }
 }

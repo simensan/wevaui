@@ -5,9 +5,13 @@ installed version. Sample, exports and desktop performance checks pass;
 [qualification and remaining scope](../../docs/PRODUCT_READINESS.md).
 
 
-Open `project.godot` in the verified patched **Godot 4.7.2** editor described in
-the [engine guide](../../docs/GODOT_TEXT_SHAPING.md#windows-patched-engine-bundle-2026-09-08), then press **F5**. The prepared local
-project has the Windows addon installed. This is independent of the host gallery.
+Open `project.godot` in Godot 4.7 and press **F5**. With build220 the sample's
+own checks pass on the official stock 4.7.1 editor, headless and rendered,
+including the long-Unicode name churn; the verified patched **Godot 4.7.2**
+editor described in the [engine guide](../../docs/GODOT_TEXT_SHAPING.md#windows-patched-engine-bundle-2026-09-08)
+remains the choice for text in native Godot controls and for the exports below.
+The prepared local project has the Windows addon installed. This is independent
+of the host gallery.
 
 Use the same bundle's debug and release binaries as the Windows export preset's
 **Custom Template** paths. The project already includes ICU support data in
