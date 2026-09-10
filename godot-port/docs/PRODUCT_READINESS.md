@@ -356,13 +356,22 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 
 ## Next work
 
-1. Diagnose the intermittent whole-frame stalls and verify the eventual release
+1. On a quiet machine, rerun the desktop timing profile for preview219
+   (`.utmp/safe-engine71/weva-fonts-preview219.zip`; every other gate in
+   [qualification219.json](verification/qualification219.json) passes) and,
+   if it passes, install it into both local addons so the sample runs with
+   `@font-face`, controller navigation and the stock-engine text fix. Then
+   decide the 1080p whole-frame gate with
+   [frame-attribution217.json](verification/frame-attribution217.json) in hand.
+2. Diagnose the intermittent whole-frame stalls and verify the eventual release
    candidate at target resolutions and on lower-end hardware.
-2. Resolve remaining game-relevant CSS/text/form behavior: animation timing and
-   composition edge cases, font loading/face selection, multicolumn paragraph
-   fragmentation, vertical writing, bidi caret behavior and dialog/input lifecycle.
-3. Verify physical IME, touch/gamepad and accessibility, platform exports and
+3. Resolve remaining game-relevant CSS/text/form behavior: animation timing and
+   composition edge cases, `unicode-range`/`local()` font sources, multicolumn
+   paragraph fragmentation, vertical writing, bidi caret behavior and
+   dialog/input lifecycle.
+4. Verify physical IME, touch/gamepad and accessibility, platform exports and
    longer memory/lifecycle behavior. Stock-engine Unicode safety is covered for
-   document text on Windows; stock exports and native-control text remain open.
-4. Keep release artifacts and all required evidence tied to the same candidate.
+   document text on Windows and Linux; stock exports and native-control text
+   remain open.
+5. Keep release artifacts and all required evidence tied to the same candidate.
    Historical passes do not clear a current failure or missing requirement.
