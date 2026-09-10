@@ -734,6 +734,9 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_gamepad_navigation", "on"), &WevaDocument::set_gamepad_navigation);
     ClassDB::bind_method(D_METHOD("get_gamepad_navigation"), &WevaDocument::get_gamepad_navigation);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gamepad_navigation"), "set_gamepad_navigation", "get_gamepad_navigation");
+    ClassDB::bind_method(D_METHOD("set_gamepad_wake", "on"), &WevaDocument::set_gamepad_wake);
+    ClassDB::bind_method(D_METHOD("get_gamepad_wake"), &WevaDocument::get_gamepad_wake);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gamepad_wake"), "set_gamepad_wake", "get_gamepad_wake");
     ClassDB::bind_method(D_METHOD("set_paused", "on"), &WevaDocument::set_paused);
     ClassDB::bind_method(D_METHOD("get_paused"), &WevaDocument::get_paused);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "paused"), "set_paused", "get_paused");
@@ -1188,14 +1191,15 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
     // the deferred call also covers the last event of a frame.
     dismiss_outside_transients();
     if (!interactive_ || !doc_ || !is_visible_in_tree()) return;
-    // A controller's first press on a screen nobody has focused wakes the
-    // document, the way a mouse click would: this node takes Godot focus,
-    // FOCUS_ENTER selects the first HTML control, and that press is spent.
-    // Only when nothing else holds focus, so a game that put focus on its
-    // own Control keeps it.
+    // With gamepad_wake, a controller's first press on a screen nobody has
+    // focused wakes the document, the way a mouse click would: this node
+    // takes Godot focus, FOCUS_ENTER selects the first HTML control, and
+    // that press is spent. Only when nothing else holds focus, so a game
+    // that put focus on its own Control keeps it. Opt-in, because a HUD
+    // that is always on screen would otherwise take the movement stick.
     const Ref<InputEventJoypadButton> wake_button = event;
     const Ref<InputEventJoypadMotion> wake_motion = event;
-    if (gamepad_navigation_ && !has_focus() && get_focus_mode() != FOCUS_NONE &&
+    if (gamepad_navigation_ && gamepad_wake_ && !has_focus() && get_focus_mode() != FOCUS_NONE &&
         ((wake_button.is_valid() && wake_button->is_pressed()) ||
          (wake_motion.is_valid() && (wake_motion->get_axis_value() > 0.5f || wake_motion->get_axis_value() < -0.5f)))) {
         Viewport* viewport = get_viewport();

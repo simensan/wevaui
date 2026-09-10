@@ -38,8 +38,9 @@ runtime. The addon must contain `weva_view.gd` and your platform's library.
   defaults** uses HTML form reset. **Escape** returns to camp.
 - Click open ground between the panels and HUD to forage through gameplay
   input. UI clicks and typing do not also trigger game actions.
-- A controller needs no script: the first press wakes the UI on **Settings**,
-  A opens it, the pad moves between rows and adjusts the slider, B closes it.
+- A controller works too (`game.gd` opts into `gamepad_wake`): the first press
+  wakes the UI on **Settings**, A opens it, the pad moves between rows and
+  adjusts the slider, B closes it.
 - A native Timer advances the clock and restores stamina once camp is built.
 
 This UI sample uses a static landscape and a small resource/crafting simulation.

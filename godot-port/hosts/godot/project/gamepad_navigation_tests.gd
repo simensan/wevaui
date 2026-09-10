@@ -62,6 +62,10 @@ func _ready() -> void:
 
 	check(not doc.has_focus(), "nothing holds focus before the controller is touched")
 	button(JOY_BUTTON_DPAD_RIGHT)
+	button(JOY_BUTTON_DPAD_RIGHT, false)
+	check(not doc.has_focus(), "without gamepad_wake a pad press leaves an unfocused document alone")
+	doc.gamepad_wake = true
+	button(JOY_BUTTON_DPAD_RIGHT)
 	check(doc.has_focus() and doc.get_focused_id() == "b1", "the first pad press wakes the document on its first control without moving")
 	check(viewport.is_input_handled(), "and is spent doing so")
 	button(JOY_BUTTON_DPAD_RIGHT, false)

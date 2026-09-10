@@ -11,6 +11,10 @@ var capture_prefix := ""
 func _ready() -> void:
 	# This is the entire setup: markup lives on the UI node in the Inspector.
 	ui.bind_state(state.model, self, state.changed)
+	# This one screen is the whole UI, so a controller's first press may wake
+	# it. Older addons have no such property.
+	if "gamepad_wake" in ui:
+		ui.gamepad_wake = true
 	ui.data_changed.connect(_on_data_changed)
 	ui.dialog_closed.connect(_on_dialog_closed)
 	$Clock.timeout.connect(state.tick)

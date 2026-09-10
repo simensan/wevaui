@@ -30,9 +30,10 @@ radio group or caret takes left/right first; a `<select>`, `<textarea>` or
 number field takes up/down), accept is Space on a control and Enter in a
 field, cancel is Escape and is consumed only when something closed. Actions
 without a joypad binding fall back to A, B, the D-pad and the shoulders.
-A held direction repeats after 400 ms at ten steps a second, and when no
-Control holds focus the first press wakes the document on its first control
-without also moving. The core adds `weva_element_tag_name` for this.
+A held direction repeats after 400 ms at ten steps a second, and with the
+opt-in `gamepad_wake` the first press on a screen nobody focused wakes the
+document on its first control without also moving (off by default so a
+permanent HUD cannot take the movement stick). The core adds `weva_element_tag_name` for this.
 Thirty-three host checks push real joypad events through a viewport,
 including the repeat timing; physical controller acceptance remains open. [Gamepad evidence](verification/gamepad-navigation.json).
 

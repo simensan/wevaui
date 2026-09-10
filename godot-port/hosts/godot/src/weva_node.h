@@ -85,6 +85,13 @@ public:
     // focus, as for typing: grab_focus() when the screen opens.
     void set_gamepad_navigation(bool on) { gamepad_navigation_ = on; }
     bool get_gamepad_navigation() const { return gamepad_navigation_; }
+    // With this on, a joypad press or stick push while no Control holds
+    // focus wakes this document on its first control and is spent doing so.
+    // Off by default: a HUD that is always on screen must not take the
+    // movement stick from the game. Turn it on for a menu screen, or call
+    // grab_focus() when the screen opens.
+    void set_gamepad_wake(bool on) { gamepad_wake_ = on; }
+    bool get_gamepad_wake() const { return gamepad_wake_; }
 
     // Stops the clock. Transitions and @keyframes hold where they are, which
     // a game wants when it pauses and a CAPTURE requires: comparing two
@@ -422,6 +429,7 @@ private:
     godot::ObjectID controller_;
     bool interactive_ = true;
     bool gamepad_navigation_ = true;
+    bool gamepad_wake_ = false;
     bool navigation_action(const godot::Ref<godot::InputEvent>& event);
     bool navigate_direction(int index, const godot::String& tag, const godot::String& type);
     void repeat_navigation(uint64_t now_usec);
