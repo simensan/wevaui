@@ -5,8 +5,11 @@ workaround, `@font-face` with real bold/italic files, gamepad navigation and
 `WevaView` live reload on top of build211. Its qualification (core, sanitizers,
 52 host entries, sample, fresh-consumer native export, export smokes and the
 desktop timing profile, all passing) is in
-[qualification220.json](../../docs/verification/qualification220.json); 1080p/4K
-and lifecycle were not rerun for it. The build211 record follows.
+[qualification220.json](../../docs/verification/qualification220.json). The
+automatic 1080p and 4K 3D profiles pass 276/276 each with whole-frame p95 of
+1-4 ms on the same busy scene that measured 8-17 ms in every earlier session
+(the earlier waits were external and remain unexplained). The lifecycle soak
+was not rerun for it. The build211 record follows.
 
 Build211 (ABI minor24) previously contained incremental
 font warmup in the sample loading screen, animation

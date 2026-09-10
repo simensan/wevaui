@@ -29,9 +29,14 @@ timing profile passes 72/72 (settings typing 0.39-0.56 ms changed-API p95),
 and the 52-entry host suite (35,610 checks), the rendered sample, the
 fresh-consumer native export and the packaged export smokes pass on the
 packaged library; the installed copies then pass the sample headless and
-rendered and the host suite in place. 1080p/4K, the lifecycle soak, lower-end
-hardware and a physical controller remain unrun for this build.
-[Build220 qualification](verification/qualification220.json).
+rendered and the host suite in place. The automatic 1080p and 4K 3D profiles
+then pass 276/276 each. On the identical busy scene (1,126 OpenGL draws,
+115,490 primitives, vsync off, same adapter) whole-frame p95 is 0.7-1.8 ms
+with the UI disabled and 1-4 ms with it, where every earlier session measured
+8-17 ms; Overwolf, the NVIDIA container and Steam were running as before, so
+the earlier waits' cause stays unidentified, but they were never UI cost. The
+lifecycle soak, lower-end hardware and a physical controller remain unrun for
+this build. [Build220 qualification](verification/qualification220.json).
 
 The earlier preview219 candidate (shaping pieces, `@font-face`
 with real variants, gamepad navigation) was qualified as far as that session's
@@ -373,10 +378,11 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 
 ## Next work
 
-1. Decide the 1080p whole-frame gate for build220 with
-   [frame-attribution217.json](verification/frame-attribution217.json) in hand
-   (a UI-attributable limit or a lighter test scene), then run the 1080p/4K
-   profiles and the lifecycle soak on it.
+1. Run the ten-minute lifecycle soak on build220. Consider giving the
+   whole-frame gate a UI-attributable delta limit next to the absolute one, so
+   an external presentation wait (see
+   [frame-attribution217.json](verification/frame-attribution217.json) and the
+   build220 numbers above) is reported as such rather than as a UI failure.
 2. Diagnose the intermittent whole-frame stalls and verify the eventual release
    candidate at target resolutions and on lower-end hardware.
 3. Resolve remaining game-relevant CSS/text/form behavior: animation timing and
