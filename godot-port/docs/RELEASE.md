@@ -1,10 +1,11 @@
 # Godot release verification
 
-The addon is a development preview. Stock Godot 4.7.2 still corrupts long emoji
-runs and crashes on mixed-script inputs. A local patched Windows editor/template
-bundle now passes the crash reproductions in actual exports with ICU embedded.
-Use the matching editor and both templates; a passing addon build alone cannot
-establish engine text safety. See
+The addon is a development preview. Stock Godot 4.7 still corrupts long emoji
+runs and crashes on mixed-script inputs when TextServer receives them directly;
+the addon's adapter now shapes document text in pieces the engine handles, and
+the sample's long-Unicode checks pass on the official stock 4.7.1 editor. A local
+patched Windows editor/template bundle remains the safe choice for text in
+native Godot controls. See
 [text shaping](GODOT_TEXT_SHAPING.md) and the full
 [product requirements](PRODUCT_READINESS.md).
 

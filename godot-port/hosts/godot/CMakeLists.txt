@@ -47,7 +47,8 @@ add_library(weva_godot SHARED
     src/weva_node.cpp
 )
 
-target_link_libraries(weva_godot PRIVATE weva godot-cpp)
+# ICU character properties mirror the engine's script iterator (godot_font.cpp).
+target_link_libraries(weva_godot PRIVATE weva godot-cpp weva_icu_common)
 # Stamp the linked binary, not a developer-supplied label. Packaging checks
 # both this binary digest and the current source/dependency content digests.
 find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter)
@@ -99,7 +100,7 @@ endif()
 option(WEVA_GODOT_FONT_TESTS "Build the native font-adapter test extension" OFF)
 if(WEVA_GODOT_FONT_TESTS)
     add_library(weva_font_tests SHARED src/godot_font.cpp tests/font_backend_tests.cpp)
-    target_link_libraries(weva_font_tests PRIVATE weva godot-cpp)
+    target_link_libraries(weva_font_tests PRIVATE weva godot-cpp weva_icu_common)
     if(MSVC)
         target_compile_options(weva_font_tests PRIVATE /Zc:__cplusplus /vmg /utf-8 /EHs-c- /W3)
         target_compile_definitions(weva_font_tests PRIVATE _HAS_EXCEPTIONS=0 NOMINMAX)

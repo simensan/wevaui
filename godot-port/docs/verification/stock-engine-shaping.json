@@ -1,0 +1,92 @@
+{
+  "scope": "Adapter workaround for the stock Godot 4.7 script-iterator stack defect: document text with more than 32 emoji sub-runs or 128 open brackets is shaped in pieces. Windows only; the engine defect itself is unchanged.",
+  "library_sha256": "8ce46c8432a34b616edef56edcdc19679c5a8b6bf11f82924dbda8d65fa0f74b",
+  "test_library_sha256": "24ba0312f310cf13c2b00705934eb674767118bfc80c1530eabaddfb89181d5f",
+  "source": {
+    "godot_font.cpp": "5c44418ffc9799052570f5ee4ea5a82a11ca3a31d26224a4000ad8bb618ecef3",
+    "font_backend_tests.cpp": "5cda0a75c910d2d339ac4f2b0fba7338b00a92f5830ccfc2333266761517c2c9",
+    "filter_data.py": "8656443f220c3755482c4c845acca723f971594810ceeef9f67d2d01aec4dc58"
+  },
+  "icu_data": {
+    "added_resource": "uemoji.icu",
+    "added_bytes": 14400,
+    "total_bytes": 1293232,
+    "resources": 14,
+    "reason": "ICU 70+ serves UCHAR_EMOJI*/UCHAR_EXTENDED_PICTOGRAPHIC from uemoji data; without it every emoji lookup is false and no split happens."
+  },
+  "engines": {
+    "stock": "C:/Users/simen/Downloads/Godot_v4.7.1-stable_mono_win64 (official 4.7.1.stable.mono)",
+    "patched": ".utmp/safe-engine71/weva-godot-4.7.2-scriptfix71-windows-x86_64/editor"
+  },
+  "standalone_probe_on_stock": {
+    "summary": "6 cases, 5 failures",
+    "result": ".utmp/safe-engine71/shaping-checks/stock-probe/result.json"
+  },
+  "adapter_checks": {
+    "patched_editor": {
+      "engine": "4.7.2.stable.custom_build",
+      "checks": 19692,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/patched-new/check.log"
+    },
+    "stock_editor": {
+      "engine": "4.7.1.stable.mono.official.a13da4feb",
+      "checks": 19692,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/stock-new/check.log"
+    }
+  },
+  "frontier_lifecycle_on_stock": {
+    "previous_library_02664d4b": {
+      "completed": false,
+      "fatal": [
+        "ERROR: FATAL: Index p_index = 242 is out of bounds (size() = 241)."
+      ],
+      "log": ".utmp/safe-engine71/shaping-checks/frontier-stock-old/run.log"
+    },
+    "new_library": {
+      "completed": true,
+      "fatal": [],
+      "log": ".utmp/safe-engine71/shaping-checks/frontier-stock-new/run.log"
+    },
+    "settings": "5 cycles, 2 s soak, 1080p 3D, mixed-script 60-unit names"
+  },
+  "text_autoscroll": {
+    "stock-old-stress": {
+      "checks": 81,
+      "failures": 0
+    },
+    "stock-new-stress": {
+      "checks": 81,
+      "failures": 0
+    },
+    "stock-new-regular": {
+      "checks": 81,
+      "failures": 0
+    },
+    "patched-new-stress": {
+      "checks": 81,
+      "failures": 0
+    },
+    "patched-new-regular": {
+      "checks": 81,
+      "failures": 0
+    }
+  },
+  "core": {
+    "passed_suites": 14,
+    "total_suites": 14,
+    "log": ".utmp/safe-engine71/shaping-native/core-ctest.log"
+  },
+  "findings": [
+    "The stock 4.7.1 editor still fails five of six standalone reproduction cases; the workaround is in the adapter, not the engine.",
+    "All 19,692 adapter checks pass on both editors, including the five new past-limit cases compared glyph-by-glyph against tiled three-unit references.",
+    "The Frontier Camp lifecycle harness on the stock editor aborts with a fatal out-of-bounds index using the previous library and completes with the new one.",
+    "The autoscroll stress fixture passes with every library and editor, so it does not detect this defect."
+  ],
+  "limitations": [
+    "Windows RTX 5080 only; Linux/macOS and other engine versions unverified.",
+    "Text in native Godot controls bypasses the adapter and still needs the engine patch.",
+    "Sanitizer suites, the full host suite, exports and timing profiles were not rerun for this candidate; it is not installed."
+  ]
+}

@@ -23,6 +23,20 @@ Recreation teardown returns to 491 nodes/1,934 objects; final soak teardown is
 491 nodes/1,937 objects. This finite result does not establish leak freedom or
 clear the prior timing failures. [Lifecycle evidence](verification/lifecycle217.json).
 
+The Godot font adapter now shapes document text with more than 32 emoji
+sub-runs or 128 open brackets in pieces the stock engine's script iterator can
+hold, splitting only where the engine itself starts a sub-run or pushes a
+bracket, with right-to-left pieces kept in visual order. The embedded ICU data
+gains `uemoji.icu` (14,400 bytes), which the emoji properties need. On the
+official stock Windows 4.7.1 editor the standalone reproduction still fails
+five of six cases, while the adapter suite passes all 19,692 checks including
+five new past-limit cases, and the Frontier Camp lifecycle harness with 60-unit
+mixed-script names completes where the previous library aborted with a fatal
+out-of-bounds index. The patched editor passes the same suite; all 14 core
+suites pass. Sanitizers, the full host suite, exports and timing were not rerun
+for this candidate, it is not installed, and text in native Godot controls
+still needs the engine patch. [Shaping evidence](verification/stock-engine-shaping.json).
+
 A three-round ownership isolation on candidate217 classifies the retained
 objects as bounded, not accumulating. Five short Vulkan 1080p 3D editor arms
 (everything enabled; settings open/close, name churn or sorting disabled; UI
@@ -271,7 +285,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Exported artwork and markup | Verified Windows subset: package example and relocated exports cover HTML/CSS and imported artwork. |
 | Reproducible native builds | Package/build metadata matches source and dependency content; toolchain configuration is recorded. Cross-toolchain bit-identical builds are not established. See RELEASE.md. |
 | Installable addon | Current Windows package and fresh consumer pass. Historical Linux package results cannot certify the current preview. |
-| Native desktop exports | Current patched Windows debug/release/embedded exports pass. Other platforms and stock-engine safety remain unverified. |
+| Native desktop exports | Current patched Windows debug/release/embedded exports pass. Document text past the engine's shaping limits now works on the stock Windows 4.7.1 editor; stock exports, other platforms and native-control text remain unverified. |
 | Replaced images in flex layouts | Current intrinsic-size suite and rendered example pass. Broader layout agreement is assessed separately below. |
 | Native GUI integration | Current input suite covers Control focus, native overlays, document visibility and routed input. Physical touch/gamepad acceptance is still needed. |
 | Text editing and popup lifecycle | Current dialog suite: 1,199 checks; popover beforetoggle suite: 1,389 checks, including opening vetoes, ordered closing, mutation and queue-pressure cases. Form method=dialog is covered. Full browser task timing, remaining dialog lifecycle and physical input-method acceptance remain open. [Popover evidence](verification/popover-beforetoggle.json). |
@@ -301,6 +315,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
    composition edge cases, font loading/face selection, multicolumn paragraph
    fragmentation, vertical writing, bidi caret behavior and dialog/input lifecycle.
 3. Verify physical IME, touch/gamepad and accessibility, platform exports and
-   longer memory/lifecycle behavior. Stock-engine Unicode safety remains open.
+   longer memory/lifecycle behavior. Stock-engine Unicode safety is covered for
+   document text on Windows; stock exports and native-control text remain open.
 4. Keep release artifacts and all required evidence tied to the same candidate.
    Historical passes do not clear a current failure or missing requirement.

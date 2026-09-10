@@ -103,7 +103,8 @@ minimum, matching these builds. Keep that declaration consistent when building
 against a different or custom API.
 
 The build pin is `godot-cpp` revision `26fb7ab5821e6a1096f62c22f7462d1d70caa332`
-at API 4.7. The stock Godot 4.7.2 text-safety blocker remains open; see
+at API 4.7. The adapter works around the stock Godot 4.7 script-iterator
+defect for document text; the engine defect itself is unpatched upstream, see
 [release verification](../../docs/RELEASE.md). An extension
 built against an older `godot-cpp` does load in a newer engine — the 4.3 build
 ran fine under 4.7.2 — but build against the version you ship on.
@@ -455,7 +456,7 @@ coverage pixels and the resulting document geometry against TextServer.
 `check.sh` runs this gate when the test extension is present; a custom output
 path can be supplied through `WEVA_GODOT_FONT_TEST_LIBRARY`. Test extensions
 are excluded from the packaged addon. See [text shaping](../../docs/GODOT_TEXT_SHAPING.md)
-for the separate stock-engine limitation and remaining typography limits.
+for the stock-engine defect the adapter works around and remaining typography limits.
 
 Input events and the animation clock run through the node. Drawing consumes
 the core's collected draw list through Godot's rendering server.

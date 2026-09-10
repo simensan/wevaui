@@ -53,9 +53,11 @@ func create_doc(kind: String, engine_font := true) -> void:
 	doc.use_engine_font = engine_font
 	doc.paused = true
 	doc.css = 'html,body{margin:0;background:#192333;color:#f1f5fb;font:16px sans-serif}input,textarea{position:absolute;left:40px;top:60px;width:160px;padding:0;border:0;background:#26354a;color:#f1f5fb;font-size:16px;line-height:24px}input{height:32px}textarea{height:96px;white-space:pre;overflow:auto}#clock{position:absolute;top:210px;width:20px;height:20px;background:#66ccaa;animation:travel 2s linear infinite}@keyframes travel{from{left:0px}to{left:200px}}'
-	# Stock Godot 4.7.2 corrupts ScriptIterator's stack above 32 separate
-	# emoji runs. Keep ordinary interaction coverage below that threshold;
-	# the standalone tools/godot-text-shaping-repro suite retains the failure.
+	# Stock Godot 4.7 corrupts ScriptIterator's stack above 32 separate emoji
+	# runs; the adapter shapes such runs in pieces (font_backend_tests.cpp
+	# covers the limits). Ordinary coverage stays below the threshold, and the
+	# stress mode passes with or without the workaround, so it is a regression
+	# check only; tools/godot-text-shaping-repro retains the engine failure.
 	source = ("á😀b"+"áb".repeat(12)).repeat(8)
 	if OS.get_environment("WEVA_TEXT_SHAPING_STRESS") == "1":
 		source = "á😀b".repeat(60)

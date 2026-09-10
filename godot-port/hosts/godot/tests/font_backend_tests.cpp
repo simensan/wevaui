@@ -431,6 +431,95 @@ class WevaFontBackendTests : public RefCounted {
         weva_document_destroy(doc);
     }
 
+    // Stock Godot 4.7 corrupts glyph ranges past 32 emoji sub-runs in one
+    // script run, crashes on the script run after that, and mishandles more
+    // than 128 open brackets the same way. The adapter shapes such text in
+    // pieces. The reference is the same unit tiled three times plus the tail,
+    // which the engine's starter stacks hold: its first unit has only a
+    // following neighbour, its middle unit both, its last unit the tail. The
+    // long text must read as first, middle repeated, last, tail, so every
+    // kerning pair across a unit edge or a piece edge is checked on every
+    // engine, patched or not.
+    void check_engine_stack_limits(const weva_font_backend& table, weva_shape_glyphs_fn positioned,
+                                   uint64_t face) {
+        const auto shape_text = [&](const String& text) {
+            const CharString utf8 = text.utf8();
+            const size_t count = positioned(table.user_data, face, utf8.get_data(), utf8.length(), 32, nullptr, 0);
+            std::vector<weva_shaped_glyph> glyphs(count);
+            positioned(table.user_data, face, utf8.get_data(), utf8.length(), 32, glyphs.data(), count);
+            return glyphs;
+        };
+        struct Case {
+            const char* unit;
+            int repeat;
+            const char* tail;
+            bool rtl;
+            const char* label;
+        };
+        const Case cases[] = {
+            {"á😀b", 33, "", false, "33 emoji sub-runs"},
+            {"á😀b", 65, "Ж", false, "65 emoji sub-runs then a second script"},
+            {"á😀b", 33, "Ж😀б", false, "emoji sub-runs continuing in a second script"},
+            {"( ", 129, "", false, "129 open brackets"},
+            {"ب😀", 33, "", true, "33 emoji sub-runs in a right-to-left run"},
+        };
+        for (const Case& c : cases) {
+            const String unit = String::utf8(c.unit);
+            const String tail = String::utf8(c.tail);
+            String whole, reference_text;
+            for (int i = 0; i < c.repeat; ++i) whole += unit;
+            for (int i = 0; i < 3; ++i) reference_text += unit;
+            whole += tail;
+            reference_text += tail;
+            const auto reference_glyphs = shape_text(reference_text);
+            const auto whole_glyphs = shape_text(whole);
+            const uint32_t unit_bytes = static_cast<uint32_t>(unit.utf8().length());
+            // Groups in visual order: unit 0, 1, 2 and the tail (3), each
+            // keeping its own internal visual order.
+            std::vector<std::pair<int, std::vector<weva_shaped_glyph>>> groups;
+            for (const auto& g : reference_glyphs) {
+                const int k = std::min<int>(3, static_cast<int>(g.cluster / unit_bytes));
+                if (groups.empty() || groups.back().first != k) groups.push_back({k, {}});
+                groups.back().second.push_back(g);
+            }
+            std::vector<weva_shaped_glyph> expected;
+            const int middle = c.repeat - 2;
+            for (const auto& group : groups) {
+                const auto emit = [&](uint32_t shift) {
+                    for (auto g : group.second) {
+                        g.cluster += shift;
+                        expected.push_back(g);
+                    }
+                };
+                if (group.first == 1) {
+                    for (int i = 0; i < middle; ++i) emit(static_cast<uint32_t>(c.rtl ? middle - 1 - i : i) * unit_bytes);
+                } else if (group.first >= 2) {
+                    emit(static_cast<uint32_t>(middle - 1) * unit_bytes);
+                } else {
+                    emit(0);
+                }
+            }
+            check(!reference_glyphs.empty() && whole_glyphs.size() == expected.size(),
+                  "long text keeps every glyph past the engine stack limits");
+            if (whole_glyphs.size() != expected.size()) {
+                std::fprintf(stderr, "  %s: %zu glyphs, expected %zu\n", c.label, whole_glyphs.size(), expected.size());
+                continue;
+            }
+            bool same = true;
+            for (size_t i = 0; i < expected.size() && same; ++i) {
+                const auto& a = whole_glyphs[i];
+                const auto& b = expected[i];
+                same = a.glyph == b.glyph && a.cluster == b.cluster && near(a.x_advance, b.x_advance) &&
+                       near(a.y_advance, b.y_advance) && near(a.x_offset, b.x_offset) && near(a.y_offset, b.y_offset);
+                if (!same)
+                    std::fprintf(stderr, "  %s: glyph %zu differs: id %u/%u cluster %u/%u advance %.17g/%.17g offset %.17g,%.17g/%.17g,%.17g\n",
+                                 c.label, i, a.glyph, b.glyph, a.cluster, b.cluster, a.x_advance, b.x_advance,
+                                 a.x_offset, a.y_offset, b.x_offset, b.y_offset);
+            }
+            check(same, "long text shapes exactly as its units do past the engine stack limits");
+        }
+    }
+
 protected:
     static void _bind_methods() {
         ClassDB::bind_method(D_METHOD("run_checks"), &WevaFontBackendTests::run_checks);
@@ -547,6 +636,7 @@ public:
         check(saw_byte_cluster, "fixture distinguished UTF-8 bytes from character indices");
         check_variants(ts, primary, fonts);
         check_shared_runs(ts, primary);
+        check_engine_stack_limits(table, positioned, face);
         UtilityFunctions::print("godot font backend: ", checks_, " checks, ", failures_, " failures");
         return failures_ ? 1 : 0;
     }

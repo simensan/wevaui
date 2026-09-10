@@ -11,9 +11,11 @@ project has the Windows addon installed. This is independent of the host gallery
 
 Use the same bundle's debug and release binaries as the Windows export preset's
 **Custom Template** paths. The project already includes ICU support data in
-exports (`internationalization/locale/include_text_server_data=true`). Stock
-Godot 4.7.2 remains affected by the long-Unicode crash; the integration tests now
-exercise that input through real bindings and editing.
+exports (`internationalization/locale/include_text_server_data=true`). The
+addon shapes long emoji-heavy text in pieces, so this sample's long-Unicode
+name churn also completes on the official stock 4.7.1 editor; the engine's own
+defect still affects native Godot controls, see
+[text shaping](../../docs/GODOT_TEXT_SHAPING.md).
 
 For a fresh checkout, extract a current addon ZIP here, or run:
 

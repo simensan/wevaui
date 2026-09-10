@@ -11,7 +11,7 @@ import struct
 import sys
 
 SOURCE_SHA256 = 'd5cf2a40dccbe471781ec7af85693bff542ff12f0b670c9630c4e72d60714b8b'
-KEEP = {'root.res', 'en.res', 'en_US.res', 'res_index.res', 'pool.res',
+KEEP = {'root.res', 'en.res', 'en_US.res', 'res_index.res', 'pool.res', 'uemoji.icu',
         'coll/root.res', 'coll/en.res', 'coll/res_index.res', 'coll/ucadata.icu',
         'brkitr/root.res', 'brkitr/en.res', 'brkitr/en_US.res', 'brkitr/char.brk'}
 

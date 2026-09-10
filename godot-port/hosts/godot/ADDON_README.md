@@ -146,11 +146,13 @@ paste and composition commit. Script values may exceed it. Native paste and
 `ui.paste_text(text)` form a separate undo step and normalize line endings.
 See `TEXT_EDITING.md` for the browser profiles and remaining editing limits.
 
-Stock Godot 4.7.2 has a text-shaping defect above 32 separate emoji runs that
-can corrupt positions or crash, including without this addon. A separate patched
-Windows editor/template bundle passes editor and exported-game checks; this
-addon archive does not replace the engine. Use matching verified templates and
-enable `internationalization/locale/include_text_server_data` in your project.
+Stock Godot 4.7 has a text-shaping defect above 32 separate emoji runs (and
+above 128 open brackets) that can corrupt positions or crash, including without
+this addon. This addon shapes such text in pieces the engine handles, so
+document text with unrestricted Unicode works on the stock editor and templates;
+text in native Godot controls still goes through the engine unchanged. A
+separate patched Windows editor/template bundle remains available for that.
+Enable `internationalization/locale/include_text_server_data` in your project.
 Godot's TextServer data is separate from Weva's embedded select-search ICU data.
 Read `GODOT_TEXT_SHAPING.md` before using unrestricted Unicode text in a release.
 

@@ -14,6 +14,8 @@
 #include <godot_cpp/variant/vector2.hpp>
 #include <godot_cpp/variant/vector2i.hpp>
 
+#include "unicode/uchar.h"
+
 #include <cmath>
 #include <algorithm>
 #include <cstring>
@@ -36,6 +38,141 @@ TextServer* server() {
 int64_t size_of(double px) {
     const int64_t s = static_cast<int64_t>(std::lround(px));
     return s > 0 ? s : 1;
+}
+
+// Stock Godot 4.7 (modules/text_server_adv/script_iterator.cpp) grows two
+// fixed stacks without copying their contents. More than 32 emoji sub-runs in
+// one script run corrupt the glyph ranges, and the grown stack is freed before
+// the next script run, which then writes through the dangling pointer and can
+// crash the process. More than 128 unmatched open brackets do the same. The
+// adapter therefore shapes such text in pieces that never fill either stack.
+// Every split lands exactly where the engine would start a new emoji sub-run
+// or push another bracket, so no ligature or kerning pair spans a boundary,
+// and ordinary text keeps taking the single-buffer path unchanged.
+constexpr int64_t kEmojiSubrunStackDepth = 32;
+constexpr int64_t kBracketStackDepth = 128;
+constexpr char32_t kZeroWidthJoiner = 0x200d;
+constexpr char32_t kVariationSelector15 = 0xfe0e;
+constexpr char32_t kVariationSelector16 = 0xfe0f;
+constexpr char32_t kCombiningEnclosingKeycap = 0x20e3;
+
+// Mirrors ScriptIterator::is_emoji so the count below matches the engine's.
+bool engine_is_emoji(char32_t c, char32_t next) {
+    const bool pictographic = u_hasBinaryProperty(c, UCHAR_EMOJI) ||
+                              u_hasBinaryProperty(c, UCHAR_EXTENDED_PICTOGRAPHIC);
+    if (next == kVariationSelector15 && pictographic) return false;
+    if (next == kVariationSelector16 && pictographic) return true;
+    return u_hasBinaryProperty(c, UCHAR_EMOJI_PRESENTATION) ||
+           u_hasBinaryProperty(c, UCHAR_EMOJI_MODIFIER) ||
+           u_hasBinaryProperty(c, UCHAR_REGIONAL_INDICATOR) ||
+           (u_hasBinaryProperty(c, UCHAR_EMOJI) && u_hasBinaryProperty(next, UCHAR_EMOJI_MODIFIER));
+}
+
+// Character indices at which a fresh shaped-text buffer must begin. Empty for
+// text the engine's starter stacks can hold, which is nearly all of it.
+std::vector<int64_t> shaping_piece_starts(const char32_t* s, int64_t n) {
+    std::vector<int64_t> starts;
+    std::vector<char32_t> open_brackets;
+    int64_t emoji_subruns = 0;
+    bool emoji_run = false;
+    const auto split_at = [&](int64_t i) {
+        starts.push_back(i);
+        emoji_subruns = 0;
+        emoji_run = false;
+        open_brackets.clear();
+    };
+    for (int64_t i = 0; i < n; ++i) {
+        const char32_t c = s[i];
+        const char32_t next = i + 1 < n ? s[i + 1] : 0;
+        int32_t bracket = U_BPT_NONE;
+        if (c < 0x80 && next < 0x80) {
+            // ASCII never continues or starts an emoji sub-run on its own; a
+            // keycap base needs the non-ASCII selector that follows it.
+            emoji_run = false;
+            if (c == '(' || c == '[' || c == '{') bracket = U_BPT_OPEN;
+            else if (c == ')' || c == ']' || c == '}') bracket = U_BPT_CLOSE;
+        } else {
+            if (engine_is_emoji(c, next)) {
+                if (!emoji_run) {
+                    if (emoji_subruns == kEmojiSubrunStackDepth) split_at(i);
+                    emoji_run = true;
+                    ++emoji_subruns;
+                }
+            } else if (emoji_run && c != kZeroWidthJoiner && c != kVariationSelector16 &&
+                       c != kCombiningEnclosingKeycap &&
+                       !(u_hasBinaryProperty(c, UCHAR_EXTENDED_PICTOGRAPHIC) && next != kVariationSelector15)) {
+                emoji_run = false;
+            }
+            bracket = u_getIntPropertyValue(c, UCHAR_BIDI_PAIRED_BRACKET_TYPE);
+        }
+        if (bracket == U_BPT_OPEN) {
+            if (static_cast<int64_t>(open_brackets.size()) == kBracketStackDepth) split_at(i);
+            open_brackets.push_back(c);
+        } else if (bracket == U_BPT_CLOSE && !open_brackets.empty()) {
+            // The engine pops unmatched opens down to the pair and then the
+            // pair itself; a close with no pair on the stack empties it.
+            const char32_t pair = static_cast<char32_t>(u_getBidiPairedBracket(static_cast<UChar32>(c)));
+            while (!open_brackets.empty() && open_brackets.back() != pair) open_brackets.pop_back();
+            if (!open_brackets.empty()) open_brackets.pop_back();
+        }
+    }
+    return starts;
+}
+
+// The paragraph direction the engine's automatic detection would choose, so
+// every piece of one run agrees on it.
+TextServer::Direction strong_direction(const char32_t* s, int64_t n) {
+    for (int64_t i = 0; i < n; ++i) {
+        switch (u_charDirection(static_cast<UChar32>(s[i]))) {
+            case U_LEFT_TO_RIGHT: return TextServer::DIRECTION_LTR;
+            case U_RIGHT_TO_LEFT:
+            case U_RIGHT_TO_LEFT_ARABIC: return TextServer::DIRECTION_RTL;
+            default: break;
+        }
+    }
+    return TextServer::DIRECTION_LTR;
+}
+
+// Shapes the text as one buffer, or as the pieces the stock engine can hold.
+// Glyphs come back in visual order with whole-string character indices, the
+// same contract as a single shaped_text_get_glyphs call.
+bool shape_text_pieces(TextServer* ts, const String& text, const TypedArray<RID>& fonts, int64_t size,
+                       const std::vector<int64_t>& piece_starts, TypedArray<Dictionary>& glyphs) {
+    if (piece_starts.empty()) {
+        const RID shaped = ts->create_shaped_text();
+        if (!shaped.is_valid()) return false;
+        ts->shaped_text_add_string(shaped, text, fonts, size);
+        ts->shaped_text_shape(shaped);
+        glyphs = ts->shaped_text_get_glyphs(shaped);
+        ts->free_rid(shaped);
+        return true;
+    }
+    const int64_t length = text.length();
+    const TextServer::Direction direction = strong_direction(text.ptr(), length);
+    std::vector<TypedArray<Dictionary>> pieces;
+    pieces.reserve(piece_starts.size() + 1);
+    int64_t begin = 0;
+    for (size_t p = 0; p <= piece_starts.size(); ++p) {
+        const int64_t end = p < piece_starts.size() ? piece_starts[p] : length;
+        const RID shaped = ts->create_shaped_text(direction);
+        if (!shaped.is_valid()) return false;
+        ts->shaped_text_add_string(shaped, text.substr(begin, end - begin), fonts, size);
+        ts->shaped_text_shape(shaped);
+        TypedArray<Dictionary> piece = ts->shaped_text_get_glyphs(shaped);
+        ts->free_rid(shaped);
+        for (int64_t i = 0; i < piece.size(); ++i) {
+            Dictionary g = piece[i];
+            g["start"] = static_cast<int64_t>(g["start"]) + begin;
+            g["end"] = static_cast<int64_t>(g["end"]) + begin;
+        }
+        pieces.push_back(piece);
+        begin = end;
+    }
+    // A right-to-left run reads its later pieces first.
+    if (direction == TextServer::DIRECTION_RTL) std::reverse(pieces.begin(), pieces.end());
+    glyphs = TypedArray<Dictionary>();
+    for (const auto& piece : pieces) glyphs.append_array(piece);
+    return true;
 }
 
 } // namespace
@@ -471,8 +608,7 @@ const std::vector<weva_shaped_glyph>& GodotFontBackend::shape_run(
     }
     byte_offsets.back() = byte;
     if (byte != length) return shaped_run_; // invalid UTF-8 was not preserved by String
-    const RID shaped = ts->create_shaped_text();
-    if (!shaped.is_valid()) return shaped_run_;
+    const std::vector<int64_t> piece_starts = shaping_piece_starts(text.ptr(), text_length);
 
     // Every font of the face, in order: TextServer falls back through the
     // list per character, and reports which font each glyph came from.
@@ -482,14 +618,13 @@ const std::vector<weva_shaped_glyph>& GodotFontBackend::shape_run(
     const RID primary_metrics = metric == metric_fonts_.end() ? primary_render : metric->second;
     for (const RID& r : *face_fonts) fonts.push_back(r == primary_render ? primary_metrics : r);
     lap(shape_profile_.prepare_ms);
-    ts->shaped_text_add_string(shaped, text, fonts, size);
-    ts->shaped_text_shape(shaped);
+    TypedArray<Dictionary> shaped_glyphs;
+    if (!shape_text_pieces(ts, text, fonts, size, piece_starts, shaped_glyphs)) return shaped_run_;
     lap(shape_profile_.shape_ms);
 
     // Reuse native keys in both the synthesis check and glyph conversion.
     const Variant font_key("font_rid"), index_key("index"), start_key("start"),
                   advance_key("advance"), offset_key("offset"), repeat_key("repeat");
-    TypedArray<Dictionary> shaped_glyphs = ts->shaped_text_get_glyphs(shaped);
     bool styled_positions = false;
     struct PrimaryAdvances {
         std::vector<double> values;
@@ -518,18 +653,10 @@ const std::vector<weva_shaped_glyph>& GodotFontBackend::shape_run(
                     primary_advances[{static_cast<int64_t>(glyph[start_key]),
                                       static_cast<int64_t>(glyph[index_key])}].values.push_back(glyph[advance_key]);
             }
-            const RID styled = ts->create_shaped_text();
-            if (!styled.is_valid()) {
-                ts->free_rid(shaped);
-                return shaped_run_;
-            }
             fonts[0] = primary_render;
             lap(shape_profile_.extract_ms);
-            ts->shaped_text_add_string(styled, text, fonts, size);
-            ts->shaped_text_shape(styled);
+            if (!shape_text_pieces(ts, text, fonts, size, piece_starts, shaped_glyphs)) return shaped_run_;
             lap(shape_profile_.shape_ms);
-            shaped_glyphs = ts->shaped_text_get_glyphs(styled);
-            ts->free_rid(styled);
         }
     }
     lap(shape_profile_.extract_ms);
@@ -568,7 +695,6 @@ const std::vector<weva_shaped_glyph>& GodotFontBackend::shape_run(
             else primary_only = false;
         }
     }
-    ts->free_rid(shaped);
     if (primary_only) {
         reusable.size = size;
         reusable.text.assign(utf8, length);

@@ -242,8 +242,9 @@ Stock Godot 4.7.2 can return corrupt glyph positions or crash when a string
 contains more than 32 separate emoji runs within one script run. For example,
 `"á😀b".repeat(33)` crosses the limit. This affects Weva's engine-font path
 and reproduces with native TextServer calls in an empty project without Weva.
-It is a release blocker for applications accepting unrestricted Unicode text.
-The addon does not contain an engine fix.
+Without a workaround it blocks applications accepting unrestricted Unicode
+text. The addon does not contain an engine fix; since the shaping-pieces
+candidate its font adapter avoids the defect, as described below.
 
 The cause is in Godot's `modules/text_server_adv/script_iterator.cpp`:
 the first growth of its emoji stack allocates a larger buffer without copying
@@ -278,9 +279,41 @@ runner uses a fresh private project, explicit engine logs and a JSON report
 with executable/probe hashes and process exits. This prevents ordinary host
 success from hiding the known failure; it does not change runtime shaping.
 
-The regular Weva autoscroll fixture covers long accented/emoji text below the
-upstream trigger and passes on stock Godot. Its separate stress mode and the
-standalone reproduction retain the known failure. Those passing interaction
-checks do not establish that arbitrary long Unicode values are safe in stock
-Godot. Truncating text or disabling font fallback is not implemented as a
-workaround.
+### Adapter workaround: shaping in pieces (2026-09-10)
+
+The font adapter (`hosts/godot/src/godot_font.cpp`) now counts emoji sub-runs
+and open brackets with the same ICU character properties and rules as the
+engine's script iterator, and shapes a run in separate TextServer buffers
+whenever one buffer would need more than 32 emoji sub-runs or 128 open
+brackets. Each split lands exactly where the engine starts a new emoji sub-run
+or pushes a bracket, so no ligature or kerning pair crosses it; pieces of a
+right-to-left run are appended in reverse so the glyphs stay in visual order,
+and glyph character indices are rebased to the whole run. Ordinary text keeps
+the single-buffer path unchanged. The embedded ICU data now includes
+`uemoji.icu` (14,400 bytes), which the emoji properties require.
+
+Evidence on Windows, official stock Godot 4.7.1 (mono) and the patched 4.7.2
+editor, adapter library
+`8ce46c8432a34b616edef56edcdc19679c5a8b6bf11f82924dbda8d65fa0f74b`
+(see [shaping-pieces receipt](verification/stock-engine-shaping.json) for the
+exact digest and logs):
+
+- The standalone reproduction still fails five of six cases on the stock
+  editor (33/65/256 emoji runs corrupt; both mixed-script cases crash). The
+  engine defect is unchanged.
+- The native font-adapter suite gains five cases past the limits: 33 and 65
+  emoji sub-runs, sub-runs continuing into a second script, 129 open
+  brackets and a right-to-left run. Each long text must read exactly as its
+  three-unit reference tiled, kerning included. All 19,692 checks pass on
+  both the patched and the stock editor.
+- The Frontier Camp lifecycle harness with 60-unit mixed-script name churn
+  through real bindings aborts on the stock editor with the previous library
+  (`FATAL: Index p_index = 242 is out of bounds`), and completes with the new
+  one.
+- The text autoscroll fixture passes its 81 checks in every combination,
+  including stress mode with the previous library, so it does not discriminate
+  this defect.
+
+Text that reaches TextServer through other paths (native Godot controls, the
+theme font in native overlays) is not shaped by the adapter and still needs
+the engine patch. Other platforms and engine versions are unverified.

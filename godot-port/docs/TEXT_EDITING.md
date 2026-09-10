@@ -70,10 +70,9 @@ capture, source-range editing and stopped simulation time. A rendered run adds
 a selection/clip capture check. The complete mutation corpus passes 588,811
 checks in both Release and ASan/UBSan.
 
-Stock Godot 4.7.2 has a separate long-emoji shaping defect that can corrupt
-positions or crash. See [GODOT_TEXT_SHAPING.md](GODOT_TEXT_SHAPING.md). Ordinary
-integration coverage stays below its trigger; a separate stress mode retains
-the failure and passes with the candidate engine patch.
+Stock Godot 4.7 has a separate long-emoji shaping defect that can corrupt
+positions or crash. The adapter now shapes affected runs in pieces, verified on
+the stock editor; see [GODOT_TEXT_SHAPING.md](GODOT_TEXT_SHAPING.md).
 
 ## Segmentation and deletion
 
