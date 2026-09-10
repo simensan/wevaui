@@ -11,6 +11,7 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -198,6 +199,51 @@ void test_abi_binding_text() {
     Doc broken("html, body { margin: 0 }", "<p id=t>{{ half open</p>");
     broken.refresh();
     CHECK(broken.text("#t") == "{{ half open");
+
+    // Different piece boundaries may still produce exactly the same text.
+    // Also cover shrinking/growing around a long unchanged literal prefix.
+    Doc pieces("", "<p id=t data-caption='Northern supply cache: {{ A }}{{ B }} ready.'>Northern supply cache: {{ A }}{{ B }} ready.</p>");
+    struct Parts { const char* a; const char* b; const char* joined; };
+    const Parts cases[] = {{"ab","c","abc"},{"a","bc","abc"},{"","abc","abc"},
+        {"abc","","abc"},{"abc","d","abcd"},{"ab","","ab"},{"","",""},
+        {"longer value"," with suffix","longer value with suffix"},
+        {"\xe2\x9a\x92","\xe9\x93\x81","\xe2\x9a\x92\xe9\x93\x81"}};
+    std::string previous;
+    for (const auto& row : cases) {
+        pieces.data.values["A"] = row.a;
+        pieces.data.values["B"] = row.b;
+        const std::string expected = std::string("Northern supply cache: ") + row.joined + " ready.";
+        CHECK(pieces.refresh() == (expected == previous ? 0 : 2));
+        CHECK(pieces.text("#t") == expected);
+        CHECK(pieces.attribute("#t", "data-caption") == expected);
+        CHECK(pieces.refresh() == 0);
+        previous = expected;
+    }
+
+    // A callback is evaluated once for every occurrence, even if all output
+    // matches. Its value can change between two reads of the same path.
+    Doc reads("", "<p id=t data-caption='{{ X }}/{{ X }}'>{{ X }}/{{ X }}</p>");
+    int sequence = 0;
+    weva_binding_source source{};
+    source.user = &sequence;
+    source.value = [](void* user, const char*, char* buffer, size_t capacity, int* found) -> size_t {
+        const std::string value = std::to_string((*static_cast<int*>(user))++);
+        *found = 1;
+        if (buffer && capacity > value.size()) std::memcpy(buffer, value.c_str(), value.size()+1);
+        return value.size();
+    };
+    weva_document_set_binding_source(reads.d, &source);
+    CHECK(reads.refresh() == 2);
+    CHECK(sequence == 4);
+    CHECK(reads.attribute("#t", "data-caption") == "0/1");
+    CHECK(reads.text("#t") == "2/3");
+    sequence = 0;
+    CHECK(reads.refresh() == 0);
+    CHECK(sequence == 4);
+    CHECK(reads.refresh() == 2);
+    CHECK(sequence == 8);
+    CHECK(reads.attribute("#t", "data-caption") == "4/5");
+    CHECK(reads.text("#t") == "6/7");
 }
 
 // An attribute binding, which is how a width, a title or a disabled state
@@ -256,6 +302,22 @@ void test_abi_binding_classes() {
     styled.data.values["Big"] = "true";
     styled.refresh();
     CHECK(styled.height("#b") == 40);
+
+    Doc selected("#b{height:10px}#b.inventory-item-selected{height:25px}",
+        "<div id=b class=authored data-class-inventory-item-selected='  {{ Flag.Path }}  '></div>");
+    selected.data.values["Flag.Path"] = "Player.Inventory.Selected";
+    selected.data.values["Player.Inventory.Selected"] = "true";
+    CHECK(selected.refresh() == 1);
+    CHECK(selected.height("#b") == 25);
+    CHECK(selected.attribute("#b", "class") == "authored inventory-item-selected");
+    CHECK(selected.refresh() == 0);
+    selected.data.values["Flag.Path"] = "Player.Inventory.AnotherSelection";
+    selected.data.values["Player.Inventory.AnotherSelection"] = "false";
+    CHECK(selected.refresh() == 1);
+    CHECK(selected.height("#b") == 10);
+    CHECK(selected.attribute("#b", "class") == "authored");
+    selected.data.values.erase("Flag.Path");
+    CHECK(selected.refresh() == 0);
 }
 
 // With no source, or a path-less document, nothing happens and nothing breaks.
@@ -509,4 +571,87 @@ void test_abi_row_identity() {
                            &plain_index, plain_key, sizeof(plain_key)) == 1);
     CHECK(plain_index == 1);
     CHECK(std::string(plain_key) == "1");
+}
+
+void test_abi_bound_dialog_open_order() {
+    Doc doc("", "<dialog id=a closedby=any open='{{ A }}'>A</dialog><dialog id=b closedby=any open='{{ B }}'>B</dialog>");
+    doc.data.values["A"] = "false";
+    doc.data.values["B"] = "false";
+    doc.refresh();
+    doc.data.values["B"] = "true";
+    doc.refresh();
+    doc.data.values["A"] = "true";
+    doc.refresh();
+    const auto a = weva_document_query(doc.d, "#a");
+    weva_event event{};
+    while (weva_document_poll_event(doc.d, &event)) {}
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 1);
+    int cancels = 0;
+    while (weva_document_poll_event(doc.d, &event)) if (event.kind == WEVA_EVENT_CANCEL) {
+        ++cancels;
+        CHECK(event.target == a);
+        CHECK(weva_document_prevent_default(doc.d));
+    }
+    CHECK(cancels == 1);
+    doc.data.values["A"] = "false";
+    doc.refresh();
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 1);
+    while (weva_document_poll_event(doc.d, &event)) if (event.kind == WEVA_EVENT_CANCEL)
+        CHECK(event.target == weva_document_query(doc.d, "#b"));
+    CHECK(!weva_element_has_attribute(doc.d, weva_document_query(doc.d, "#b"), "open"));
+}
+
+// Getters may observe a new value when the ABI asks again with a larger buffer.
+void test_abi_binding_value_changes_during_read() {
+    struct ChangingData {
+        std::vector<std::string> values;
+        size_t calls = 0;
+        bool missing_on_retry = false;
+        int impossible_on_call = -1;
+        static size_t read(void* user, const char*, char* buffer, size_t capacity, int* found) {
+            auto& self = *static_cast<ChangingData*>(user);
+            const size_t index = self.calls++;
+            *found = !(self.missing_on_retry && index > 0);
+            if (!*found) return 0;
+            if (static_cast<int>(index) == self.impossible_on_call) return size_t(-1);
+            const auto& value = self.values[index < self.values.size() ? index : self.values.size() - 1];
+            if (capacity) {
+                const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
+                std::memcpy(buffer, value.data(), n);
+                buffer[n] = 0;
+            }
+            return value.size();
+        }
+    };
+    const std::vector<std::vector<std::string>> cases = {
+        {std::string(500, 'a'), "short"},
+        {std::string(128, 'a'), ""},
+        {std::string(128, 'a'), std::string(127, 'b')},
+        {std::string(128, 'a'), std::string(500, 'b'), std::string(500, 'c')},
+        {std::string(128, 'a'), std::string(129, 'b'), std::string(130, 'c')}
+    };
+    for (const auto& values : cases) {
+        Doc doc("", "<p id=t>{{ Long }}</p>");
+        ChangingData data{values};
+        weva_binding_source source{};
+        source.user = &data;
+        source.value = &ChangingData::read;
+        weva_document_set_binding_source(doc.d, &source);
+        doc.refresh();
+        CHECK(doc.text("#t") == values.back());
+        CHECK(data.calls <= 3);
+        data.calls = 0;
+        data.missing_on_retry = true;
+        doc.refresh();
+        CHECK(doc.text("#t").empty());
+        CHECK(data.calls == 2);
+        data.missing_on_retry = false;
+        for (int invalid_call : {0, 1}) {
+            data.calls = 0;
+            data.impossible_on_call = invalid_call;
+            doc.refresh();
+            CHECK(doc.text("#t").empty());
+            CHECK(data.calls == static_cast<size_t>(invalid_call + 1));
+        }
+    }
 }

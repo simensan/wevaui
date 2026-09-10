@@ -1,4 +1,13 @@
+# Ada needs C++20. Isolate it so the core and public headers retain C++17.
+add_library(weva_url OBJECT ../third_party/ada/ada.cpp src/url_validation.cpp)
+target_include_directories(weva_url PRIVATE include)
+target_link_libraries(weva_url PRIVATE weva_flags)
+target_compile_features(weva_url PRIVATE cxx_std_20)
+target_compile_definitions(weva_url PRIVATE ADA_INCLUDE_URL_PATTERN=0)
+set_target_properties(weva_url PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 add_library(weva STATIC
+    $<TARGET_OBJECTS:weva_url>
     src/arena.cpp
     src/intern.cpp
     src/geometry.cpp
@@ -6,6 +15,8 @@ add_library(weva STATIC
     src/color.cpp
     src/dom.cpp
     src/form_state.cpp
+    src/temporal_value.cpp
+    ../third_party/decimal/decimal.cpp
     src/html_tables.cpp
     src/html_tokenizer.cpp
     src/hit_test.cpp
@@ -23,6 +34,8 @@ add_library(weva STATIC
     src/components.cpp
     src/variable_resolver.cpp
     src/media.cpp
+    src/container_query.cpp
+    src/container_query_state.cpp
     src/env_attr.cpp
     src/logical.cpp
     src/animation.cpp
@@ -59,6 +72,7 @@ add_library(weva STATIC
     src/font_interface.cpp
     src/glyph_atlas.cpp
     src/weva_c.cpp
+    src/diagnostic_cycles.cpp
 )
 target_include_directories(weva PUBLIC include)
 target_link_libraries(weva PUBLIC weva_flags PRIVATE weva_icu_i18n)

@@ -1,0 +1,32 @@
+{
+  "scope": "Source-only close-request overflow protection; native candidate requires rebuild",
+  "abi_minor": 15,
+  "source_sha256": {
+    "godot-port/libweva/include/weva_c.h": "29288753362d6d12e6968575ac0f0c310e00e3acc2a1db274d29a87a7fd4b9a3",
+    "godot-port/libweva/src/weva_c.cpp": "45b50a5c312afc120e84bc0bd7a4160b2b52c4b8a1264776f4759e17cd3c6dc8",
+    "godot-port/libweva/tests/test_c_abi_forms.cpp": "ed2158bb74ccc83567c7806b604184c23478252630a3fc829419ff8c4c9404aa",
+    "godot-port/libweva/tests/main.cpp": "77d685bc472595da4b92f6a308ebd810dde22b092b27ed369cf796e3f50219a9"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 20.2
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 118.12
+  },
+  "covered": [
+    "pending close survives 600 keyboard notifications",
+    "veto remains possible after overflow",
+    "default close occurs once",
+    "full request queue rejects extra requests explicitly"
+  ],
+  "remaining": [
+    "native rebuild and validation",
+    "Escape routing",
+    "return values",
+    "beforetoggle/task semantics"
+  ]
+}

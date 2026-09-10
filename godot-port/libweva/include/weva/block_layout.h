@@ -19,6 +19,10 @@
 
 namespace weva {
 
+// Place a normal-flow block within its containing inline width. Flex/grid,
+// floats, inline boxes and positioned boxes have separate alignment rules.
+double resolve_block_inline_offset(Box& box, double containing_width, bool rtl);
+
 struct ResolvedSides {
     double top = 0, right = 0, bottom = 0, left = 0;
     // The authored text of the inline edges, kept because `auto` margins are a
@@ -61,6 +65,12 @@ inline bool is_border_box(const ComputedStyle* style) {
 }
 
 PositionType parse_position_type(std::string_view raw);
+
+// Shared by layout and intrinsic contribution measurement, so flex/grid parents
+// cannot accidentally recover content sizes suppressed by containment.
+bool has_size_containment(const ComputedStyle* style);
+bool has_inline_size_containment(const ComputedStyle* style);
+double contain_intrinsic_width(const ComputedStyle* style, const LayoutContext& ctx, double font_size);
 
 // Resolves the box model onto `box`: padding, border and margin edges, the
 // used width, and a definite height when one is available. Returns the
@@ -138,10 +148,15 @@ public:
     double find_placement_y(double y, double width, FloatType side, double cb_width) const;
 
     // §9.5.2: the highest bottom edge among floats matching `clear`. A cleared
-    // box's top MARGIN edge is pushed below this.
-    double clear_bottom(ClearType c) const;
+    // block's border edge (float's margin edge) is pushed below this. `found`
+    // distinguishes no matching float from a float ending at or above zero.
+    double clear_bottom(ClearType c, bool* found = nullptr) const;
     // §10.6.7: a BFC grows to enclose the floats it contains.
     double max_bottom() const;
+    double max_top() const;
+    // Intersect a containing-block band with preceding float margin boxes.
+    // Returns the next bottom edge where a blocked band can become wider.
+    double available_band(double top, double bottom, double* left, double* right) const;
 
 private:
     std::vector<Entry> floats_;

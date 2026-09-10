@@ -1,0 +1,185 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "tag": "input",
+      "action": "keep",
+      "custom": true,
+      "message": "Reserved name",
+      "invalid": 1,
+      "submits": 0,
+      "open": true
+    },
+    {
+      "tag": "input",
+      "action": "clear",
+      "custom": false,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "input",
+      "action": "reset",
+      "custom": true,
+      "message": "Reserved name",
+      "invalid": 1,
+      "submits": 0,
+      "open": true
+    },
+    {
+      "tag": "input",
+      "action": "disable",
+      "custom": true,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "input",
+      "action": "clone",
+      "custom": false,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "textarea",
+      "action": "keep",
+      "custom": true,
+      "message": "Reserved name",
+      "invalid": 1,
+      "submits": 0,
+      "open": true
+    },
+    {
+      "tag": "textarea",
+      "action": "clear",
+      "custom": false,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "textarea",
+      "action": "reset",
+      "custom": true,
+      "message": "Reserved name",
+      "invalid": 1,
+      "submits": 0,
+      "open": true
+    },
+    {
+      "tag": "textarea",
+      "action": "disable",
+      "custom": true,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "textarea",
+      "action": "clone",
+      "custom": false,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "select",
+      "action": "keep",
+      "custom": true,
+      "message": "Reserved name",
+      "invalid": 1,
+      "submits": 0,
+      "open": true
+    },
+    {
+      "tag": "select",
+      "action": "clear",
+      "custom": false,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "select",
+      "action": "reset",
+      "custom": true,
+      "message": "Reserved name",
+      "invalid": 1,
+      "submits": 0,
+      "open": true
+    },
+    {
+      "tag": "select",
+      "action": "disable",
+      "custom": true,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "select",
+      "action": "clone",
+      "custom": false,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "button",
+      "action": "keep",
+      "custom": true,
+      "message": "Reserved name",
+      "invalid": 1,
+      "submits": 0,
+      "open": true
+    },
+    {
+      "tag": "button",
+      "action": "clear",
+      "custom": false,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "button",
+      "action": "reset",
+      "custom": true,
+      "message": "Reserved name",
+      "invalid": 1,
+      "submits": 0,
+      "open": true
+    },
+    {
+      "tag": "button",
+      "action": "disable",
+      "custom": true,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    },
+    {
+      "tag": "button",
+      "action": "clone",
+      "custom": false,
+      "message": "",
+      "invalid": 0,
+      "submits": 1,
+      "open": false
+    }
+  ]
+}

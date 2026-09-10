@@ -101,6 +101,9 @@ private:
     } shape_profile_;
 
     std::map<uint64_t, std::vector<godot::RID>> faces_;
+    // Synthetic bold changes outlines, not text advances. These immutable
+    // regular peers are owned by the shared variants, never borrowed resources.
+    std::map<uint64_t, godot::RID> metric_fonts_;
     // Synthesized faces by (base face, emboldening strength, italic): independent
     // primary fonts so synthesis cannot mutate the regular glyph cache.
     std::map<std::tuple<uint64_t, int, bool>, uint64_t> variants_;

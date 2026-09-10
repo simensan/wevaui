@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verify the standalone consumer project, its native input and relocated export."""
 import argparse
+import configparser
 import hashlib
 import importlib.util
 import json
@@ -22,7 +23,18 @@ def main():
     parser.add_argument('--addon', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True, help='New output directory')
     parser.add_argument('--native', action='store_true', help='Export and run a release executable')
+    parser.add_argument('--debug-template', type=Path, help='Custom template pair for --native')
+    parser.add_argument('--release-template', type=Path, help='Custom template pair for --native')
     args = parser.parse_args()
+    templates = {}
+    if args.debug_template or args.release_template:
+        if not (args.native and args.debug_template and args.release_template):
+            parser.error('Custom templates require --native and both template paths')
+        for mode, path in [('debug', args.debug_template), ('release', args.release_template)]:
+            path = path.resolve()
+            if not path.is_file():
+                parser.error(f'Missing {mode} template: {path}')
+            templates[mode] = path
     engine, addon, out = args.godot.resolve(), args.addon.resolve(), args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     source = Path(__file__).resolve().parents[2] / 'examples' / 'frontier_camp'
@@ -68,6 +80,21 @@ def main():
 
     if args.native:
         preset = 'Windows Desktop' if platform == 'windows' else 'Linux'
+        preset_file = project / 'export_presets.cfg'
+        original_presets = preset_file.read_text(encoding='utf-8')
+        if templates:
+            config = configparser.ConfigParser(interpolation=None)
+            config.optionxform = str
+            config.read_string(original_presets)
+            sections = [name for name in config.sections() if re.fullmatch(r'preset\.\d+', name)
+                        and config[name].get('name') == json.dumps(preset)]
+            if len(sections) != 1:
+                raise RuntimeError('Expected one export preset named ' + preset)
+            options = config[sections[0] + '.options']
+            for mode, path in templates.items():
+                options['custom_template/' + mode] = json.dumps(path.as_posix(), ensure_ascii=False)
+            with preset_file.open('w', encoding='utf-8') as stream:
+                config.write(stream)
         exported = out / 'exported'
         exported.mkdir()
         executable = exported / ('FrontierCamp.exe' if platform == 'windows' else 'FrontierCamp.x86_64')
@@ -91,10 +118,14 @@ def main():
             if digest(out / ('gl_compatibility-' + name + '.png')) != digest(out / ('export-' + name + '.png')):
                 raise RuntimeError('Export pixels differ: ' + name)
         hidden.rename(project)
+        # Machine-specific template paths are verification inputs, not part of
+        # the distributable editor project or its restored default presets.
+        preset_file.write_text(original_presets, encoding='utf-8')
         shutil.make_archive(str(out / 'frontier-camp-windows' if platform == 'windows' else out / 'frontier-camp-linux'),
                             'zip', relocated)
 
     receipt = {'passed': True, 'engine_sha256': digest(engine), 'addon_sha256': digest(addon),
+               'templates': {mode: {'path': str(path), 'sha256': digest(path)} for mode, path in templates.items()},
                'library_sha256': library['sha256'], 'runs': runs,
                'export_pixels_match_project': True if args.native else None}
     (out / 'verification.json').write_text(json.dumps(receipt, indent=2) + '\n')

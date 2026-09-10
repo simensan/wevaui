@@ -1,0 +1,36 @@
+{
+  "scope": "Email type mismatch core source after candidate108; installed107 unchanged",
+  "source_sha256": {
+    "libweva/include/weva/form_state.h": "ac1c3c8b90501ddce95e1c9cf8800a97612c89dcc16dc346c12895d7bf1be134",
+    "libweva/src/form_state.cpp": "8e1278db9a705cdd4a776decb6eabf699d4fd76d7de7a997e1fc7c81b5570af4",
+    "libweva/src/weva_c.cpp": "cda525cbf30913c788f09e72cc4e0a2cf17dc24fc1af4eef60995b629d7e4699",
+    "libweva/tests/test_form_state.cpp": "8be160e44d47fd8fc44c3c9b43a4b50ecf8ddfa03ed8555129a2c1c48946b7fe",
+    "libweva/tests/test_c_abi_forms.cpp": "f258aa1abac7f5554d800615500547d34ce6ed1c11056b37e79dc92846eb7b4f",
+    "libweva/tests/main.cpp": "b559910ce96caac46a780aed584c88b7fae3965c90daa2f1f3a5f615ddd74918"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 19.93
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 120.01
+  },
+  "browser_value_cases": 56,
+  "browser_submission_cases": 112,
+  "browser_evidence": "email-validation-browser.json",
+  "notes": [
+    "Only a source comment was added after the tested builds",
+    "No native rebuild, host, exports, installation or performance qualification for this email change",
+    "Programmatic email value behavior; native IME IDN conversion not qualified"
+  ],
+  "remaining": [
+    "URL type mismatch",
+    "Pattern, length, date/time and bad-input constraints",
+    "Public validity APIs and validity pseudo-classes",
+    "Click default ordering and detached DOM event behavior",
+    "Native packaging, integration, exports and performance qualification"
+  ]
+}

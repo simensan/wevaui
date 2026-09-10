@@ -30,16 +30,21 @@ def as_text(value):
     return value or ''
 
 
-def check_case(godot, project, logs, case, env):
-    command = [str(godot), '--headless', '--path', str(project),
-               '--log-file', str(logs / f'{case}.engine.log'),
-               '--script', str(project / 'probe.gd'), '--', case]
+def check_case(godot, project, logs, case, env, *, native_mode=None):
+    command = [str(godot), '--headless']
+    if native_mode is None:
+        command += ['--path', str(project)]
+    command += ['--log-file', str(logs / f'{case}.engine.log')]
+    if native_mode is None:
+        command += ['--script', str(project / 'probe.gd')]
+    command += ['--', case]
     started = time.monotonic()
     code = None
     reasons = []
     try:
         run = subprocess.run(command, capture_output=True, text=True,
-                             encoding='utf-8', errors='replace', timeout=30, env=env)
+                             encoding='utf-8', errors='replace', timeout=30, env=env,
+                             cwd=godot.parent if native_mode is not None else None)
         code = run.returncode
         log = run.stdout + run.stderr
         if code != 0:
@@ -49,6 +54,10 @@ def check_case(godot, project, logs, case, env):
             reasons.append('missing successful case summary')
         if re.search(r'ERROR:|SCRIPT ERROR:|^FAIL\b', log, re.M):
             reasons.append('engine or assertion error')
+        if native_mode is not None:
+            expected = str(native_mode == 'debug').lower()
+            if not re.search(rf'^Template debug: {expected}\s*$', log, re.M):
+                reasons.append('wrong or missing template build mode')
     except subprocess.TimeoutExpired as error:
         log = as_text(error.stdout) + as_text(error.stderr)
         reasons.append('timeout after 30 seconds')

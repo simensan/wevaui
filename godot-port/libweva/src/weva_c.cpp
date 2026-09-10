@@ -1,3 +1,4 @@
+#include "diagnostic_cycles.h"
 #include "weva/image_store.h"
 #include "weva_c.h"
 #include "weva/grapheme.h"
@@ -8,10 +9,12 @@
 #include "weva/box_builder.h"
 #include "weva/animation.h"
 #include "weva/cascade.h"
+#include "weva/container_query_state.h"
 #include "weva/font_interface.h"
 #include "weva/font_metrics.h"
 #include "weva/form_values.h"
 #include "weva/form_state.h"
+#include "weva/range_track.h"
 #include "weva/glyph_atlas.h"
 #include "weva/tessellate.h"
 #include "weva/binding.h"
@@ -29,6 +32,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <memory>
 #include <unordered_map>
 
 #include <cstring>
@@ -42,12 +46,57 @@
 #include <tuple>
 #include <memory>
 #include <optional>
+#include <limits>
 #include <string>
 #include <vector>
 
 namespace {
 
 using namespace weva;
+
+// Opt-in bounded diagnostics: no per-update I/O, and no storage in normal runs.
+// Each thread retains its last 4096 updates and writes them only on teardown.
+struct BufferedUpdateTrace {
+    struct Entry { double stages[5]{}; double total = 0; uint64_t cycles = 0; };
+    Entry entries[4096]{};
+    uint64_t count = 0;
+    void append(const Entry& entry) { entries[count++ % 4096] = entry; }
+    ~BufferedUpdateTrace() {
+        std::fprintf(stderr, "WEVA_STAGE_TRACE_BEGIN %llu\n", static_cast<unsigned long long>(count));
+        const uint64_t begin = count > 4096 ? count - 4096 : 0;
+        for (uint64_t i = begin; i < count; ++i) {
+            const auto& e = entries[i % 4096];
+            std::fprintf(stderr, "WEVA_STAGE_TRACE %llu %.6f %.6f %.6f %.6f %.6f %.6f\n",
+                static_cast<unsigned long long>(i), e.stages[0], e.stages[1], e.stages[2],
+                e.stages[3], e.stages[4], e.total);
+            std::fprintf(stderr, "WEVA_STAGE_CYCLES %llu %llu\n",
+                static_cast<unsigned long long>(i), static_cast<unsigned long long>(e.cycles));
+        }
+        std::fprintf(stderr, "WEVA_STAGE_TRACE_END\n");
+    }
+};
+struct BufferedUpdateSample {
+    using Clock = std::chrono::steady_clock;
+    BufferedUpdateTrace* trace;
+    BufferedUpdateTrace::Entry entry;
+    Clock::time_point start;
+    uint64_t start_cycles;
+    BufferedUpdateSample(BufferedUpdateTrace* t, Clock::time_point time)
+        : trace(t), start(time), start_cycles(t ? diagnostic_thread_cycles() : 0) {}
+    ~BufferedUpdateSample() {
+        if (!trace) return;
+        entry.total = std::chrono::duration<double, std::milli>(Clock::now() - start).count();
+        const uint64_t end_cycles = diagnostic_thread_cycles();
+        if (start_cycles && end_cycles >= start_cycles) entry.cycles = end_cycles - start_cycles;
+        trace->append(entry);
+    }
+};
+BufferedUpdateTrace* buffered_update_trace() {
+    static const bool enabled = std::getenv("WEVA_STAGE_TRACE") != nullptr;
+    if (!enabled) return nullptr;
+    thread_local std::unique_ptr<BufferedUpdateTrace> trace(new BufferedUpdateTrace);
+    return trace.get();
+}
 
 // Collects the draw list instead of rasterizing it, so the host's own renderer
 // issues the draws. This is the backend the ABI implies: the core still does
@@ -146,12 +195,15 @@ public:
                 const auto classes = element ? element->get_attribute("class") : std::string_view();
                 std::fprintf(stderr, "  paint boundary: box=%u class='%.*s' fresh=%d "
                     "position=(%.17g,%.17g)->(%.17g,%.17g) opacity=%d transform=%d "
-                    "scissor=%d clip=%d filter=%d canvas=%u->%u\n", static_cast<unsigned>(id),
+                    "scissor=%d clip=%d filter=%d overflow=%d cb=%u/%u->%u/%u canvas=%u->%u\n", static_cast<unsigned>(id),
                     static_cast<int>(classes.size()), classes.data(), entry.second,
                     old.x, old.y, inputs.x, inputs.y, old.opacity != inputs.opacity,
                     old.transformed != inputs.transformed || (old.transformed && old.xform != inputs.xform),
                     !same_field(&PaintReplayInputs::scissor), !same_field(&PaintReplayInputs::clip),
-                    !same_field(&PaintReplayInputs::filter), static_cast<unsigned>(old.canvas_owner),
+                    !same_field(&PaintReplayInputs::filter), !same_field(&PaintReplayInputs::overflow),
+                    static_cast<unsigned>(old.absolute_cb), static_cast<unsigned>(old.fixed_cb),
+                    static_cast<unsigned>(inputs.absolute_cb), static_cast<unsigned>(inputs.fixed_cb),
+                    static_cast<unsigned>(old.canvas_owner),
                     static_cast<unsigned>(inputs.canvas_owner));
             }
             invalidate_subtree(id);
@@ -230,13 +282,17 @@ public:
 
     void render_rounded_rect(const RoundedRect& shape, const std::vector<Vertex>& v,
                              const std::vector<uint32_t>& i) override {
+        render_rounded_rect_owned(shape, v, i);
+    }
+    void render_rounded_rect_owned(const RoundedRect& shape, std::vector<Vertex> v,
+                                   std::vector<uint32_t> i) override {
         // The tessellation still travels, so a host that does not know this
         // kind uploads it and draws the same shape.
         Draw d;
         d.kind = WEVA_DRAW_ROUNDED_RECT;
         d.rounded_rect = shape;
-        d.vertices = v;
-        d.indices = i;
+        d.vertices = std::move(v);
+        d.indices = std::move(i);
         if (scissor_) {
             // Only a shape that actually CROSSES the scissor needs cutting. A
             // scissor is in force for very nearly every box -- the viewport is
@@ -422,35 +478,16 @@ bool replace_text(Element& e, std::string_view text) {
     return true;
 }
 
-// Where the line holding `at` begins and ends, in bytes. Only a <textarea>
-// has more than one, which is why Home and End mean something narrower there.
-int line_start(const std::string& s, int at) {
-    for (int i = std::min(at, static_cast<int>(s.size())) - 1; i >= 0; --i) {
-        if (s[static_cast<size_t>(i)] == '\n') return i + 1;
-    }
-    return 0;
-}
-
-int line_end(const std::string& s, int at) {
-    for (int i = std::max(0, at); i < static_cast<int>(s.size()); ++i) {
-        if (s[static_cast<size_t>(i)] == '\n') return i;
-    }
-    return static_cast<int>(s.size());
-}
-
-// The disabled form control at or above an element, if any. A disabled control
-// takes no pointer events at all -- no hover, no press, no click, no focus --
-// and neither does anything inside it, which is why this looks UP: the label
-// text inside a disabled button is not a live target either.
+// The disabled form control at or above an element, if any. Descendant content
+// must not activate or focus its disabled control; hover remains observable.
 const Element* disabled_ancestor(const Element* e) {
     for (const Node* n = e; n; n = n->parent()) {
         if (n->node_type() != NodeType::Element) continue;
         const Element& candidate = static_cast<const Element&>(*n);
         const std::string_view tag = candidate.tag_name();
-        const bool form_element = tag == "input" || tag == "button" || tag == "select" ||
-                                  tag == "textarea" || tag == "option" || tag == "optgroup" ||
-                                  tag == "fieldset";
-        if (form_element && candidate.has_attribute("disabled")) return &candidate;
+        // Fieldsets disable controls, not arbitrary links/content; the control
+        // helper also honors each ancestor fieldset's first legend exception.
+        if (tag != "fieldset" && form_is_disabled(candidate)) return &candidate;
     }
     return nullptr;
 }
@@ -477,18 +514,7 @@ bool is_text_field(const Element& e) {
 // a plus sign. Negative values and values outside the signed IDL range mean
 // no limit. Number inputs do not support maxlength.
 int text_max_length(const Element& field) {
-    if (field.tag_name() == "input" && input_type_of(field) == "number") return -1;
-    std::string_view raw = field.get_attribute("maxlength");
-    while (!raw.empty() && (raw.front() == ' ' || raw.front() == '\t' || raw.front() == '\n' ||
-                           raw.front() == '\r' || raw.front() == '\f')) raw.remove_prefix(1);
-    if (!raw.empty() && raw.front() == '+') {
-        raw.remove_prefix(1);
-        if (raw.empty() || raw.front() < '0' || raw.front() > '9') return -1;
-    }
-    if (raw.empty()) return -1;
-    int limit = -1;
-    const auto parsed = std::from_chars(raw.data(), raw.data() + raw.size(), limit);
-    return parsed.ec == std::errc{} && limit >= 0 ? limit : -1;
+    return form_text_length_limit(field, "maxlength");
 }
 
 size_t utf16_length(std::string_view text) {
@@ -503,6 +529,8 @@ size_t utf16_length(std::string_view text) {
 // scratch storage, so ordinary typing requires no additional allocation.
 std::string_view user_text(const Element& field, std::string_view current, size_t from, size_t to,
                            std::string_view incoming, std::string* scratch) {
+    if (field.tag_name() == "input" && form_input_type(field) == "number")
+        return form_number_edit_text(current, from, to, incoming, *scratch);
     const bool multiline = field.tag_name() == "textarea";
     if (incoming.find_first_of("\r\n") != std::string_view::npos) {
         if (!multiline)
@@ -532,15 +560,15 @@ std::string_view user_text(const Element& field, std::string_view current, size_
 }
 
 std::string field_value(const Element& e) {
-    return std::string(e.form_value());
+    return std::string(e.form_edit_value());
 }
 
 size_t field_value_size(const Element& e) {
-    return e.form_value().size();
+    return e.form_edit_value().size();
 }
 
 bool field_value_equals(const Element& e, std::string_view value) {
-    return e.form_value() == value;
+    return e.form_edit_value() == value;
 }
 
 struct InteractionState : ElementStateProvider {
@@ -555,6 +583,11 @@ struct InteractionState : ElementStateProvider {
     int caret = 0;
     double caret_age = 0;
     double text_scroll_x = 0;
+    bool caret_downstream = false;
+    const Element* vertical_owner = nullptr;
+    uint64_t vertical_version = 0;
+    int vertical_index = -1;
+    double vertical_x = 0;
     // The other end of the selection, or -1 when there is none. A selection is
     // a caret that remembers where it started: every move either drags this
     // along (unshifted) or leaves it where it was (shifted), which is the whole
@@ -573,10 +606,9 @@ struct InteractionState : ElementStateProvider {
         // where the cascade asks for them, and the shape cache already folds
         // every attribute into its key so caching stays sound.
         const std::string_view tag = e.tag_name();
-        const bool form_element = tag == "input" || tag == "button" || tag == "select" ||
-                                  tag == "textarea" || tag == "option" || tag == "optgroup" ||
-                                  tag == "fieldset";
-        if (form_element && e.has_attribute("disabled")) {
+        if (e.is_modal()) bits |= static_cast<uint32_t>(ElementState::Modal);
+        if (e.is_popover_open()) bits |= static_cast<uint32_t>(ElementState::PopoverOpen);
+        if (form_is_disabled(e)) {
             bits |= static_cast<uint32_t>(ElementState::Disabled);
         }
         if ((tag == "input" && (form_input_type(e) == "checkbox" || form_input_type(e) == "radio") && e.form_checked()) ||
@@ -586,7 +618,7 @@ struct InteractionState : ElementStateProvider {
         // :placeholder-shown is true only while the field is EMPTY, which is
         // the whole point of it -- it is how a floating label knows to float.
         if ((tag == "input" || tag == "textarea") && !e.get_attribute("placeholder").empty() &&
-            e.form_value().empty()) {
+            e.form_edit_value().empty()) {
             bits |= static_cast<uint32_t>(ElementState::PlaceholderShown);
         }
 
@@ -635,6 +667,7 @@ CaretState caret_for(const InteractionState& st) {
     if (st.focused && is_text_field(*st.focused)) {
         c.element = st.focused;
         c.index = std::max(0, st.caret);
+        c.downstream = st.caret_downstream;
         c.text_scroll_x = st.text_scroll_x;
         // Half a second lit, half dark. Moving it resets the age, so the
         // cursor is never invisible at the moment you are steering it.
@@ -668,6 +701,8 @@ struct RunningTransition {
     int property_id = -1;
     std::string from;      // the displayed value when it started, mid-flight or not
     std::string to;        // the cascaded value it is heading for
+    std::string reversing_start;
+    double reversing_factor = 1;
     double elapsed = 0;
     double delay = 0;
     double duration = 0;
@@ -678,7 +713,7 @@ struct RunningTransition {
     // rather than on it leaves the document subtly wrong for good.
     std::string value_now(bool* finished) const {
         const double t = elapsed - delay;
-        if (t <= 0) { *finished = false; return from; }
+        if (t < 0) { *finished = false; return from; }
         if (t >= duration) { *finished = true; return to; }
         std::string out;
         if (!interpolate_css(from, to, easing(t / duration), &out)) { *finished = true; return to; }
@@ -705,6 +740,8 @@ struct StyleMap : StyleProvider {
         bool listbox = false;
         int64_t label_version = 0;
         ElementState styled_state = ElementState::None;
+        int styled_validity = -2; // Validity input consumed by the last cascade.
+        int styled_range = -1; // Range input consumed by the last cascade, not paint.
         std::string_view input_type; // Canonical static string, independent of DOM storage.
     };
     std::map<const Element*, ControlInput> form_input_versions;
@@ -749,11 +786,22 @@ struct StyleMap : StyleProvider {
     // Transitions in flight, by element. Cleared with the styles they belong
     // to, since both are keyed on elements of the current document.
     std::map<const Element*, std::vector<RunningTransition>> transitions;
+    // Before-change rendering state survives parent-first cascade updates.
+    // Hidden elements have no before-change style from which to transition.
+    std::set<const Element*> transition_hidden;
 
     // @keyframes by name, collected from every sheet as it is added, and the
     // clock each element's animation is running against.
     std::map<std::string, KeyframeAnimation> keyframes;
-    std::map<const Element*, double> animation_clock;
+    struct AnimationClock {
+        std::string name;
+        double elapsed = 0;
+    };
+    struct AnimationClocks {
+        std::string names;
+        std::vector<AnimationClock> entries;
+    };
+    std::map<const Element*, AnimationClocks> animation_clock;
     // Only the elements that actually name an animation. Walking every element
     // every frame to ask would give a document with nothing moving a per-frame
     // cost again, which is the whole thing the incremental work removed.
@@ -774,7 +822,12 @@ struct StyleMap : StyleProvider {
     // written back a moment later, and comparing the write against the
     // declared value calls that a change. It is not one: nothing moved. This
     // is what the write is compared against instead.
-    std::map<const Element*, std::map<int, std::string>> animation_shown;
+    struct AnimationValue {
+        std::string shown;
+        std::string pending;
+        bool active = false;
+    };
+    std::map<const Element*, std::map<int, AnimationValue>> animation_shown;
 
     // Puts back what an animation overwrote, WITHOUT calling it a change.
     //
@@ -811,33 +864,97 @@ struct StyleMap : StyleProvider {
         return false;
     }
 
+    bool transition_ancestor_hidden(const Element& e) const {
+        // walk() updates the parent's state before descending. Scoped walks
+        // reuse that parent's last cascaded state, avoiding a full ancestor scan.
+        for (const Node* node = e.parent(); node; node = node->parent()) {
+            if (node->node_type() == NodeType::Element)
+                return transition_hidden.count(static_cast<const Element*>(node)) != 0;
+        }
+        return false;
+    }
+
+    bool animation_displayed(const Element& e) const {
+        static const int display_id = CssPropertyRegistry::instance().id_of("display");
+        for (const Node* node = &e; node; node = node->parent()) {
+            if (node->node_type() != NodeType::Element) continue;
+            const auto* element = static_cast<const Element*>(node);
+            const auto style = by_element.find(element);
+            if (style == by_element.end()) continue;
+            std::string_view display = style->second->get(display_id);
+            // Cancellation uses the underlying display, independent of animated
+            // output and of the order in which ancestor effects are sampled.
+            const auto saved = animation_saved.find(element);
+            if (saved != animation_saved.end()) {
+                const auto base = saved->second.find(display_id);
+                if (base != saved->second.end()) display = base->second;
+            }
+            if (display == "none") return false;
+        }
+        return true;
+    }
+
     // Applies every @keyframes animation an element names.
     //
     // Animations sit ABOVE transitions in the cascade (CSS Cascade L5 §6.1),
     // so this runs after them and overwrites what they wrote -- an element
     // doing both shows the animation, which is what a browser does.
     void apply_animations(const Element& e, ComputedStyle* live, double dt) {
-        const std::string_view names = live->get("animation-name");
-        if (names.empty() || names == "none") {
+        const std::string_view requested_names = live->get("animation-name");
+        if (requested_names.empty() || requested_names == "none" || !animation_displayed(e)) {
             animation_clock.erase(&e);
             restore_animated(e, live);
             return;
         }
-        double& clock = animation_clock[&e];
-        clock += dt;
+        auto& clocks = animation_clock[&e];
+        if (clocks.names != requested_names) {
+            size_t count = 0;
+            while (!nth(requested_names, count, false).empty()) ++count;
+            std::vector<AnimationClock> next(count);
+            std::vector<bool> consumed(clocks.entries.size(), false);
+            // Chromium identifies animations by name and occurrence from the
+            // start of the list. Match that browser behavior for duplicates;
+            // it differs from the reverse matching in the CSS Animations draft.
+            for (size_t i = 0; i < next.size(); ++i) {
+                const auto name = nth(requested_names, i, false);
+                if (name.empty() || name == "none") continue;
+                for (size_t j = 0; j < clocks.entries.size(); ++j) {
+                    if (!consumed[j] && clocks.entries[j].name == name) {
+                        next[i] = std::move(clocks.entries[j]);
+                        consumed[j] = true;
+                        break;
+                    }
+                }
+            }
+            clocks.entries = std::move(next);
+            clocks.names = requested_names;
+        }
+        const std::string_view names = clocks.names;
+        bool has_definition = false;
+        auto& composed = animation_shown[&e];
+        for (auto& entry : composed) entry.second.active = false;
 
-        for (size_t i = 0; i < 8; ++i) {
-            const std::string_view name = nth(names, i);
-            if (name.empty() || name == "none") break;
+        for (size_t i = 0; i < clocks.entries.size(); ++i) {
+            const std::string_view name = nth(names, i, false);
+            if (name.empty()) break;
+            if (name == "none") continue;
+            auto& clock = clocks.entries[i];
             auto it = keyframes.find(std::string(name));
             if (it == keyframes.end()) {
-                if (nth(names, i + 1) == name) break;
+                clock.name.clear();
+                clock.elapsed = 0;
                 continue;
             }
+            has_definition = true;
+            if (clock.name != name) {
+                clock.name = name;
+                clock.elapsed = 0;
+            }
+            const bool paused = nth(live->get("animation-play-state"), i) == "paused";
+            if (!paused) clock.elapsed += dt;
             double duration = 0;
             if (!parse_time_seconds(nth(live->get("animation-duration"), i), &duration) ||
-                duration <= 0) {
-                if (nth(names, i + 1) == name) break;
+                duration < 0) {
                 continue;
             }
             double delay = 0;
@@ -852,75 +969,96 @@ struct StyleMap : StyleProvider {
             const double iterations =
                 count_raw == "infinite" ? 1e30 : std::max(0.0, std::atof(std::string(count_raw).c_str()));
 
-            const double elapsed = clock - delay;
+            const double elapsed = clock.elapsed - delay;
             double progress = 0;
+            double cycle_index = 0;
             bool active = true;
             if (elapsed < 0) {
-                // Before it starts: `backwards` and `both` show the first
-                // frame, everything else leaves the cascaded value alone.
                 if (fill != "backwards" && fill != "both") active = false;
-                progress = 0;
             } else {
-                const double cycles = elapsed / duration;
-                if (cycles >= iterations) {
-                    // After the last iteration: `forwards` and `both` hold the
-                    // end, everything else snaps back to the cascaded value.
+                const bool finished = duration == 0 || elapsed / duration >= iterations;
+                if (finished) {
                     if (fill != "forwards" && fill != "both") active = false;
-                    progress = 1;
-                    // Which END, though, depends on where an alternating
-                    // animation stopped.
-                    const double whole = std::floor(iterations);
-                    const bool odd = std::fmod(whole, 2.0) >= 1.0;
-                    if ((direction == "alternate" && odd) ||
-                        (direction == "alternate-reverse" && !odd) || direction == "reverse") {
-                        progress = 0;
+                    // The endpoint is the final fraction of the final cycle.
+                    // An exact boundary belongs to the preceding cycle, except
+                    // for zero iterations, which stays at the initial endpoint.
+                    const double end_cycles = duration == 0 && count_raw == "infinite" ? 1 : iterations;
+                    cycle_index = std::floor(end_cycles);
+                    progress = end_cycles - cycle_index;
+                    if (end_cycles > 0 && progress == 0) {
+                        progress = 1;
+                        cycle_index -= 1;
                     }
                 } else {
-                    progress = cycles - std::floor(cycles);
-                    const bool odd_cycle = std::fmod(std::floor(cycles), 2.0) >= 1.0;
-                    if (direction == "reverse") progress = 1 - progress;
-                    else if (direction == "alternate" && odd_cycle) progress = 1 - progress;
-                    else if (direction == "alternate-reverse" && !odd_cycle) progress = 1 - progress;
+                    const double cycles = elapsed / duration;
+                    cycle_index = std::floor(cycles);
+                    progress = cycles - cycle_index;
                 }
+            }
+            // Direction also applies to backwards fill and the final fraction.
+            const bool odd_cycle = std::fmod(cycle_index, 2.0) >= 1.0;
+            if (direction == "reverse" ||
+                (direction == "alternate" && odd_cycle) ||
+                (direction == "alternate-reverse" && !odd_cycle)) {
+                progress = 1 - progress;
             }
             if (active) {
                 const double eased = easing(progress);
-                std::map<int, std::string>& saved = animation_saved[&e];
                 for (const std::string& property : it->second.properties) {
-                    std::string value;
-                    if (!keyframe_value_at(it->second, property, eased, &value)) continue;
                     const int id = CssPropertyRegistry::instance().id_of(property);
                     if (id < 0) continue;
-                    // The declared value, kept the first time it is overwritten
-                    // so the end of the animation has something to go back to.
-                    if (saved.find(id) == saved.end()) saved[id] = std::string(live->get(id));
-                    live->set(id, value);
-                    // Invalidated only when it MOVES. A pass with no time in it
-                    // -- a keystroke, a class toggle, a hover -- writes the
-                    // same value it wrote last frame, and calling that a change
-                    // made every interaction on an animating page cost a
-                    // relayout of the whole document.
-                    std::string& shown = animation_shown[&e][id];
-                    if (shown != value) {
-                        shown = value;
-                        note_change(live, invalidation_for_property(id));
-                    }
+                    std::string value;
+                    if (!keyframe_value_at(it->second, property, eased, &value)) continue;
+                    auto& result = composed[id];
+                    result.pending = std::move(value);
+                    result.active = true;
                 }
-            } else {
-                restore_animated(e, live);
             }
-            any_animation = any_animation || (active && elapsed < iterations * duration);
-            if (nth(names, i + 1) == name) break;
+            // A delay without backwards fill still needs ticks to reach its
+            // active interval. Paused effects retain their value without ticks.
+            any_animation = any_animation || (!paused && elapsed < iterations * duration);
+        }
+        if (!has_definition) {
+            // A name with no matching keyframes creates no CSS animation.
+            // Removing its definition cancels it; later reappearance starts
+            // a fresh timeline instead of resuming this element's old clock.
+            animation_clock.erase(&e);
+            restore_animated(e, live);
+            return;
+        }
+        auto& saved = animation_saved[&e];
+        for (auto it = composed.begin(); it != composed.end();) {
+            const int id = it->first;
+            auto& result = it->second;
+            if (result.active) {
+                if (saved.find(id) == saved.end()) saved[id] = std::string(live->get(id));
+                live->set(id, result.pending);
+                if (result.shown != result.pending) {
+                    result.shown = result.pending;
+                    note_change(live, invalidation_for_property(id));
+                }
+                ++it;
+            } else {
+                // Restore only properties no remaining effect supplies. Cascade
+                // may already have refreshed the base value and cleared saved.
+                const auto base = saved.find(id);
+                if (base != saved.end()) {
+                    live->set(id, base->second);
+                    saved.erase(base);
+                }
+                if (result.shown != live->get(id)) {
+                    note_change(live, invalidation_for_property(id));
+                }
+                it = composed.erase(it);
+            }
         }
     }
 
-    // The nth entry of a comma-separated transition longhand, and the LAST
-    // entry for anything past the end -- which is what lets one duration serve
-    // three properties, as every stylesheet assumes it does.
-    static std::string_view nth(std::string_view list, size_t index) {
+    // Timing longhands repeat their entire list to match the number of effects.
+    // Name/property lists use strict indexing so duplicate entries remain valid.
+    static std::string_view nth(std::string_view list, size_t index, bool repeat_list = true) {
         size_t start = 0, count = 0;
         int depth = 0;
-        std::string_view last;
         for (size_t i = 0; i <= list.size(); ++i) {
             if (i < list.size()) {
                 if (list[i] == '(') ++depth;
@@ -934,12 +1072,11 @@ struct StyleMap : StyleProvider {
             while (!piece.empty() && (piece.back() == ' ' || piece.back() == '	')) {
                 piece.remove_suffix(1);
             }
-            last = piece;
             if (count == index) return piece;
             ++count;
             start = i + 1;
         }
-        return last;
+        return repeat_list && count ? nth(list, index % count, false) : std::string_view{};
     }
 
     // How this property transitions on this style, or false when it does not.
@@ -947,24 +1084,40 @@ struct StyleMap : StyleProvider {
     // what CSS Transitions L1 §3 specifies -- so turning a transition on in a
     // :hover rule makes the way IN animate and the way out snap, exactly as it
     // does in a browser.
-    static bool transition_for(const ComputedStyle& style, int id, double* duration,
-                               double* delay, Easing* easing) {
+    static bool transition_index(const ComputedStyle& style, int id, size_t* matched) {
         const std::string_view names = style.get("transition-property");
         if (names.empty() || names == "none") return false;
         const std::string_view want = CssPropertyRegistry::instance().name_of(id);
         if (want.empty()) return false;
         size_t index = 0;
         bool found = false;
-        for (size_t i = 0; i < 32; ++i) {
-            const std::string_view entry = nth(names, i);
-            if (entry.empty()) break;
+        // Property names contain no function arguments. Scan once rather than
+        // repeatedly indexing from the start, without truncating long lists.
+        for (size_t i = 0, start = 0; start < names.size(); ++i) {
+            const size_t comma = names.find(',', start);
+            const size_t end = comma == std::string_view::npos ? names.size() : comma;
+            std::string_view entry = names.substr(start, end - start);
+            const size_t first = entry.find_first_not_of(" \t\r\n\f");
+            if (first != std::string_view::npos) {
+                const size_t last = entry.find_last_not_of(" \t\r\n\f");
+                entry = entry.substr(first, last - first + 1);
+            }
             if (entry == "all" || entry == want) { index = i; found = true; }
-            if (nth(names, i + 1) == entry) break;   // past the end: nth repeats
+            if (comma == std::string_view::npos) break;
+            start = comma + 1;
         }
-        if (!found) return false;
+        if (found) *matched = index;
+        return found;
+    }
+
+    static bool transition_for(const ComputedStyle& style, int id, double* duration,
+                               double* delay, Easing* easing) {
+        size_t index = 0;
+        if (!transition_index(style, id, &index)) return false;
         if (!parse_time_seconds(nth(style.get("transition-duration"), index), duration)) return false;
-        if (*duration <= 0) return false;
+        if (*duration < 0) return false;
         if (!parse_time_seconds(nth(style.get("transition-delay"), index), delay)) *delay = 0;
+        if (*duration + *delay <= 0) return false;
         if (!parse_easing(nth(style.get("transition-timing-function"), index), easing)) {
             parse_easing("ease", easing);
         }
@@ -983,18 +1136,33 @@ struct StyleMap : StyleProvider {
             auto it = by_element.find(e);
             if (it != by_element.end()) apply_animations(*e, it->second, dt);
         }
-        if (dt <= 0) return;
         for (auto& kv : transitions) {
             auto it = by_element.find(kv.first);
             if (it == by_element.end()) { kv.second.clear(); continue; }
             ComputedStyle* live = it->second;
             std::vector<RunningTransition>& list = kv.second;
+            if (list.empty()) continue;
+            if (!animation_displayed(*kv.first)) {
+                for (const RunningTransition& transition : list) {
+                    if (live->get(transition.property_id) != transition.to) {
+                        live->set(transition.property_id, transition.to);
+                        note_change(live, invalidation_for_property(transition.property_id));
+                    }
+                }
+                list.clear();
+                continue;
+            }
+            if (dt <= 0) continue;
             for (size_t i = 0; i < list.size();) {
                 list[i].elapsed += dt;
                 bool finished = false;
                 const std::string now = list[i].value_now(&finished);
-                live->set(list[i].property_id, now);
-                note_change(live, invalidation_for_property(list[i].property_id));
+                // Delays and stepped timing can hold an unchanged value for
+                // many frames. Advance the clock without invalidating output.
+                if (live->get(list[i].property_id) != now) {
+                    live->set(list[i].property_id, now);
+                    note_change(live, invalidation_for_property(list[i].property_id));
+                }
                 if (finished) list.erase(list.begin() + static_cast<long>(i));
                 else ++i;
             }
@@ -1038,6 +1206,7 @@ struct StyleMap : StyleProvider {
         pseudo_by_element.erase({e, 2});
         pseudo_by_element.erase({e, 3});
         transitions.erase(e);
+        transition_hidden.erase(e);
         animation_clock.erase(e);
         animated.erase(e);
         animation_saved.erase(e);
@@ -1055,6 +1224,7 @@ struct StyleMap : StyleProvider {
         by_element.clear();
         pseudo_by_element.clear();
         transitions.clear();
+        transition_hidden.clear();
         animation_clock.clear();
         animated.clear();
         animation_saved.clear();
@@ -1069,10 +1239,26 @@ struct StyleMap : StyleProvider {
         merge(into, &scratch);
     }
 
+    std::vector<int> changed_property_ids;
     void merge(ComputedStyle* live, ComputedStyle* fresh, const Element* owner = nullptr) {
-        std::vector<int> changed;
+        // Reused only within this non-reentrant merge; no callback observes it.
+        auto& changed = changed_property_ids;
+        changed.clear();
         bool unattributed = false;
-        if (!live->differs_from(*fresh, &changed, &unattributed)) return;
+        if (!live->differs_from(*fresh, &changed, &unattributed)) {
+            // The new target can equal a held step's displayed value, even
+            // though the running transition still targets another value.
+            if (owner && !transitions.empty()) {
+                const auto existing = transitions.find(owner);
+                if (existing != transitions.end()) {
+                    auto& list = existing->second;
+                    list.erase(std::remove_if(list.begin(), list.end(), [&](const RunningTransition& t) {
+                        return fresh->get(t.property_id) != t.to;
+                    }), list.end());
+                }
+            }
+            return;
+        }
         static const bool style_log = std::getenv("WEVA_STYLE_LOG") != nullptr;
         if (style_log && owner) {
             std::fprintf(stderr, "style %.*s#%.*s:", static_cast<int>(owner->tag_name().size()), owner->tag_name().data(),
@@ -1087,7 +1273,32 @@ struct StyleMap : StyleProvider {
         // the value the cascade just produced are both in hand. Nothing else
         // in the engine has both.
         std::vector<RunningTransition>* running = nullptr;
-        if (owner && !changed.empty()) {
+        const bool can_transition = owner && transition_hidden.count(owner) == 0 &&
+            fresh->get("display") != "none" && !transition_ancestor_hidden(*owner);
+        // A fresh hidden style owns its latest target. Do not restore an older
+        // running target over it when cancellation occurs later in advance().
+        if (owner && !can_transition) transitions.erase(owner);
+        if (can_transition) {
+            const auto existing = transitions.find(owner);
+            if (existing != transitions.end() && !existing->second.empty()) {
+                running = &existing->second;
+                running->erase(std::remove_if(running->begin(), running->end(), [&](const RunningTransition& t) {
+                    size_t index = 0;
+                    if (!transition_index(*fresh, t.property_id, &index)) return true;
+                    // A duration change alone does not interrupt an existing
+                    // transition. A new target must still qualify to animate.
+                    if (fresh->get(t.property_id) == t.to) return false;
+                    // A step can still display the new target while the old
+                    // transition points elsewhere. Cancel instead of letting
+                    // its next step overwrite the requested value.
+                    if (fresh->get(t.property_id) == live->get(t.property_id)) return true;
+                    double duration = 0, delay = 0;
+                    Easing easing;
+                    return !transition_for(*fresh, t.property_id, &duration, &delay, &easing);
+                }), running->end());
+            }
+        }
+        if (can_transition && !changed.empty()) {
             for (const int id : changed) {
                 double duration = 0, delay = 0;
                 Easing easing;
@@ -1106,7 +1317,23 @@ struct StyleMap : StyleProvider {
                     // where it is, which is what stops a hover flicker from
                     // snapping.
                     bool finished = false;
-                    t.from = t.value_now(&finished);
+                    const std::string current = t.value_now(&finished);
+                    if (target == t.reversing_start) {
+                        const double progress = t.duration > 0 ?
+                            std::clamp((t.elapsed - t.delay) / t.duration, 0.0, 1.0) : 1.0;
+                        const double eased = t.elapsed < t.delay ? 0.0 : t.easing(progress);
+                        // Match Chromium's clamping of negative overshoot;
+                        // the draft's absolute-value rule differs here.
+                        t.reversing_factor = std::clamp(eased * t.reversing_factor +
+                            (1.0 - t.reversing_factor), 0.0, 1.0);
+                        t.reversing_start = t.to;
+                        duration *= t.reversing_factor;
+                        if (delay < 0) delay *= t.reversing_factor;
+                    } else {
+                        t.reversing_start = current;
+                        t.reversing_factor = 1;
+                    }
+                    t.from = current;
                     t.to = std::string(target);
                     t.elapsed = 0;
                     t.delay = delay;
@@ -1119,6 +1346,7 @@ struct StyleMap : StyleProvider {
                 RunningTransition t;
                 t.property_id = id;
                 t.from = std::string(live->get(id));
+                t.reversing_start = t.from;
                 t.to = std::string(target);
                 t.delay = delay;
                 t.duration = duration;
@@ -1197,13 +1425,20 @@ struct StyleMap : StyleProvider {
             engine.compute(e, state, parent, &scratch);
             merge(raw, &scratch, &e);
         }
+        if (raw->get("display") == "none" || transition_ancestor_hidden(e))
+            transition_hidden.insert(&e);
+        else transition_hidden.erase(&e);
         const std::string_view animation = raw->get("animation-name");
         // Live form state does not alter attributes or computed declarations.
         // Its own input version drives layout/paint, including clean controls
         // whose defaults were changed by a binding or a script.
         consume_control_inputs(e, raw);
         auto form_input = form_input_versions.find(&e);
-        if (form_input != form_input_versions.end()) form_input->second.styled_state = state.state_of(e);
+        if (form_input != form_input_versions.end()) {
+            form_input->second.styled_state = state.state_of(e);
+            form_input->second.styled_validity = engine.has_validity_selectors() ? form_validity_selector_state(e) : -2;
+            form_input->second.styled_range = engine.has_range_selectors() ? form_range_selector_state(e) : -1;
+        }
         if (!animation.empty() && animation != "none") animated.insert(&e);
         else animated.erase(&e);
 
@@ -1339,6 +1574,7 @@ class HostFontBackend : public FontInterface {
 public:
     HostFontBackend(const weva_font_backend& table, FontInterface* fallback)
         : t_(table), fallback_(fallback) {}
+    ~HostFontBackend() override { log_shape_cache("destroy"); }
 
     void profile_lap(const char* stage) {
         if (!profile_enabled_) return;
@@ -1354,7 +1590,11 @@ public:
     bool set_shaper(weva_shape_glyphs_fn shape) {
         if (shape == positioned_shape_) return false;
         positioned_shape_ = shape;
+        log_shape_cache("before_shaper_reset");
+        newest_shape_ = oldest_shape_ = nullptr;
         shaped_.clear();
+        shaped_bytes_ = 0;
+        log_shape_cache("after_shaper_reset");
         return true;
     }
 
@@ -1467,6 +1707,7 @@ public:
         if (hit != shaped_.end() && hit->second.px_key == px_key(px) &&
             hit->second.face == face.id && hit->second.text == utf8) {
             profile.hit();
+            touch_shape(hit->second);
             *out = hit->second.glyphs;
             return;
         }
@@ -1510,16 +1751,44 @@ public:
             }
         }
 
-        // Bounded, and cleared wholesale rather than evicted one at a time:
-        // the access pattern is a frame, not a working set, and the next frame
-        // asks the same questions and refills it immediately.
-        if (shaped_.size() >= kShapeCacheMax) shaped_.clear();
+        // A changing counter/name must not flush the hot labels around it.
+        // References to unordered_map values survive rehash, so intrusive LRU
+        // links need no separate allocation or scan on a cache hit/insertion.
+        if (utf8.size() >= kShapeCacheBytes ||
+            out->size() > kShapeCacheBytes / sizeof(ShapedGlyph)) return;
+        const auto collision = shaped_.find(key);
+        if (collision != shaped_.end()) {
+            shaped_bytes_ -= shape_bytes(collision->second);
+            unlink_shape(collision->second);
+            shaped_.erase(collision);
+        }
         Shaped entry;
+        entry.key = key;
         entry.face = face.id;
         entry.px_key = px_key(px);
         entry.text.assign(utf8);
         entry.glyphs = *out;
-        shaped_.emplace(key, std::move(entry));
+        // A count limit alone lets long changing labels retain many megabytes.
+        // Oversized runs still shape correctly, but do not evict the entire
+        // working set just to retain a result larger than the payload budget.
+        if (entry.text.capacity() >= kShapeCacheBytes ||
+            entry.glyphs.capacity() > kShapeCacheBytes / sizeof(ShapedGlyph)) return;
+        const size_t bytes = shape_bytes(entry);
+        if (bytes > kShapeCacheBytes) return;
+        while (!shaped_.empty() && (shaped_.size() >= kShapeCacheMax ||
+               shaped_bytes_ > kShapeCacheBytes - bytes)) {
+            const bool log_eviction = memory_log_enabled_ && shape_insertions_ % 256 == 255;
+            if (log_eviction) log_shape_cache("before_lru_eviction");
+            const auto oldest_key = oldest_shape_->key;
+            shaped_bytes_ -= shape_bytes(*oldest_shape_);
+            unlink_shape(*oldest_shape_);
+            shaped_.erase(oldest_key);
+            if (log_eviction) log_shape_cache("after_lru_eviction");
+        }
+        auto inserted = shaped_.emplace(key, std::move(entry));
+        shaped_bytes_ += bytes;
+        touch_shape(inserted.first->second);
+        if (memory_log_enabled_ && ++shape_insertions_ % 256 == 0) log_shape_cache("checkpoint");
     }
 
 private:
@@ -1538,13 +1807,61 @@ private:
     }
 
     struct Shaped {
+        uint64_t key = 0;
+        Shaped* newer = nullptr;
+        Shaped* older = nullptr;
         uint64_t face = 0;
         int64_t px_key = 0;
         std::string text;
         std::vector<ShapedGlyph> glyphs;
     };
     static constexpr size_t kShapeCacheMax = 4096;
+    // Per document payload bound; map nodes/buckets and allocator overhead are
+    // separately bounded by the entry limit. This is not a process-memory cap.
+    static constexpr size_t kShapeCacheBytes = 4 * 1024 * 1024;
+    static size_t shape_bytes(const Shaped& entry) {
+        return sizeof(Shaped) + entry.text.capacity() + 1 +
+               entry.glyphs.capacity() * sizeof(ShapedGlyph);
+    }
+    size_t shaped_bytes_ = 0;
     std::unordered_map<uint64_t, Shaped> shaped_;
+    Shaped* newest_shape_ = nullptr;
+    Shaped* oldest_shape_ = nullptr;
+    size_t shape_insertions_ = 0; // Diagnostic cadence only, not a cache key.
+
+    void unlink_shape(Shaped& entry) {
+        if (entry.newer) entry.newer->older = entry.older;
+        else if (newest_shape_ == &entry) newest_shape_ = entry.older;
+        if (entry.older) entry.older->newer = entry.newer;
+        else if (oldest_shape_ == &entry) oldest_shape_ = entry.newer;
+        entry.newer = entry.older = nullptr;
+    }
+    void touch_shape(Shaped& entry) {
+        if (newest_shape_ == &entry) return;
+        unlink_shape(entry);
+        entry.older = newest_shape_;
+        if (newest_shape_) newest_shape_->newer = &entry;
+        else oldest_shape_ = &entry;
+        newest_shape_ = &entry;
+    }
+
+    // Explicit diagnostic only: never scan retained runs on ordinary frames.
+    // Capacities describe cache payload, not allocator commitment or RSS. String
+    // capacity includes inline storage; map nodes and allocator overhead are not
+    // included. Backend identity distinguishes concurrently live documents.
+    void log_shape_cache(const char* event) const {
+        if (!memory_log_enabled_) return;
+        size_t text_capacity = 0, glyph_capacity = 0;
+        for (const auto& item : shaped_) {
+            text_capacity += item.second.text.capacity() + 1;
+            glyph_capacity += item.second.glyphs.capacity() * sizeof(ShapedGlyph);
+        }
+        std::fprintf(stderr, "WEVA_SHAPE_CACHE {\"event\":\"%s\",\"backend\":\"%p\","
+            "\"entries\":%zu,\"text_capacity_bytes\":%zu,\"glyph_capacity_bytes\":%zu,"
+            "\"entry_storage_bytes\":%zu,\"bucket_count\":%zu}\n",
+            event, static_cast<const void*>(this), shaped_.size(), text_capacity,
+            glyph_capacity, shaped_.size() * sizeof(Shaped), shaped_.bucket_count());
+    }
 
     struct FaceEntry {
         uint64_t face = 0;
@@ -1561,6 +1878,7 @@ private:
 private:
     weva_font_backend t_;
     const bool profile_enabled_ = std::getenv("WEVA_STAGE_LOG") != nullptr;
+    const bool memory_log_enabled_ = std::getenv("WEVA_FONT_CACHE_LOG") != nullptr;
     ProfileBucket profile_[6];
     weva_shape_glyphs_fn positioned_shape_ = nullptr;
     FontInterface* fallback_;
@@ -1576,6 +1894,7 @@ struct weva_document {
     std::unique_ptr<Stylesheet> ua_sheet;
     std::vector<std::unique_ptr<Stylesheet>> sheets; // author sheets only
     StyleMap styles;
+    ContainerQueryState container_queries;
     BoxTree tree;
     IncrementalLayout incremental_layout;
     LayoutContext ctx;
@@ -1591,6 +1910,7 @@ struct weva_document {
     // measure with the stub's advances while paint drew the host's glyphs, and
     // the text would drift off the line boxes laid out for it.
     std::unique_ptr<FontInterfaceMetrics> host_metrics;
+    std::map<std::string, std::unique_ptr<FontInterfaceMetrics>> family_metrics;
     // Metrics for the host's bold / italic variants of the default face, by
     // (face, weight, italic); handed to layout through ctx.variant_metrics.
     std::map<std::tuple<uint64_t, int, bool>, std::unique_ptr<FontInterfaceMetrics>> variant_metrics;
@@ -1643,12 +1963,40 @@ struct weva_document {
     std::string composition_value;
     static constexpr size_t kUndoDepth = 100;
     std::unordered_map<const Element*, EditHistory> history;
-    // The open popovers, innermost last. A stack rather than a flag because
-    // popovers nest -- a menu opens a submenu -- and Escape closes one per
-    // press rather than all of them. The open state itself lives in the
-    // `data-popover-open` attribute, so a stylesheet can select on it and a
-    // script can read it; this only remembers the ORDER.
+    struct FieldSelection {
+        int caret = 0;
+        int anchor = -1;
+        std::string value;
+    };
+    // Only fields that have lost focus need a saved selection. Active editing
+    // still uses InteractionState, without copying its value on every keystroke.
+    std::unordered_map<const Element*, FieldSelection> field_selections;
+    // Open popovers, innermost last, for dismissal order. Live visibility
+    // belongs to the element. The data attribute is a compatibility mirror.
     std::vector<const Element*> popovers;
+    // Keep the opening mode until dismissal: attribute mutation has already
+    // changed the current mode when the live-state observer sees a close.
+    std::unordered_set<const Element*> light_dismiss_popovers;
+    std::unordered_map<const Element*, const Element*> popover_parents;
+    std::unordered_map<const Element*, const Element*> popover_previous_focus;
+    struct DialogEntry { const Element* dialog; const Element* previous_focus; };
+    // Opening order, not DOM order. Entries are removed with their elements.
+    std::vector<DialogEntry> dialog_focus_history;
+    // Open order also includes markup and attribute-created dialogs, which do
+    // not have show() focus-restoration entries.
+    std::vector<const Element*> dialog_close_order;
+    void sync_dialog_open(const Element* e) {
+        if (e->tag_name() != "dialog") return;
+        auto it = std::find(dialog_close_order.begin(), dialog_close_order.end(), e);
+        if (e->has_attribute("open")) {
+            if (it == dialog_close_order.end()) dialog_close_order.push_back(e);
+        } else {
+            if (it != dialog_close_order.end()) dialog_close_order.erase(it);
+            dialog_close_generations.erase(e);
+        }
+    }
+
+    bool check_focus_after_dialog_close = false;
     // `title="..."` renders as a tooltip after the pointer has rested on the
     // element for a moment. The UA sheet has styled `.ui-tooltip` all along
     // and nothing ever made one, so `title` was inert.
@@ -1727,6 +2075,9 @@ struct weva_document {
     // viewport resized, a backend swapped, the document loaded. Cleared by the
     // update that acts on it.
     Invalidation pending = Invalidation::Boxes;
+    // Geometry-only passes already propagate paint input versions. Keep the
+    // publication request separate from structural/layout invalidation.
+    bool paint_pending = false;
     // Whether an attribute was set since the last update. Only the cascade can
     // tell what an attribute did, but nothing can have changed if none was
     // touched -- and then even running the cascade is waste.
@@ -1737,28 +2088,103 @@ struct weva_document {
     // :has() is about, which lets a descendant decide an ancestor's match and
     // puts the whole document back in play.
     std::vector<Element*> touched;
+    bool default_inputs_dirty = true;
+    std::vector<Ref<Element>> default_buttons;
 
     // Events waiting for the host to pump them. Bounded: a host that never
     // reads gets the oldest dropped rather than unbounded growth, because a
     // queue that can starve a process is worse than a lost click.
+    struct ValidationReport {
+        size_t pending = 0;
+        Ref<Element> form;
+        std::vector<Ref<Element>> unhandled;
+        bool interactive = true;
+        bool standalone_control = false;
+    };
     struct QueuedEvent : weva_event {
         std::string full_text;
+        std::vector<Ref<Element>> popover_pending_closes;
+        int popover_open_mode = 0;
+        bool popover_resume_open = false;
+        bool popover_restore_focus = true;
+        Ref<Element> popover_hide_target;
+        Ref<Element> popover_open_target;
+        Ref<Element> popover_open_source;
+        Ref<Element> close_target;
+        uint64_t close_generation = 0;
+        bool has_close_value = false;
+        std::string close_value;
+        Ref<Element> submit_form;
+        Ref<Element> submitter;
+        std::string image_coordinates;
+        Ref<Element> invalid_target;
+        std::shared_ptr<ValidationReport> validation_report;
         QueuedEvent(const weva_event& event) : weva_event(event) {}
         QueuedEvent(const weva_event& event, std::string_view text) : weva_event(event), full_text(text) {}
     };
     std::deque<QueuedEvent> events;
     std::string polled_event_text;
+    int polled_popover_open_mode = 0;
+    bool popover_request_events = false;
+    Ref<Element> polled_popover_open_source;
+    bool polled_popover_restore_focus = true;
+    Ref<Element> polled_popover_hide_target;
+    Ref<Element> polled_popover_open_target;
+    Ref<Element> polled_close_target;
+    uint64_t polled_close_generation = 0;
+    bool polled_close_prevented = false;
+    bool polled_has_close_value = false;
+    std::string polled_close_value;
+    Ref<Element> polled_submit_form;
+    Ref<Element> polled_submitter;
+    std::string polled_image_coordinates;
+    Ref<Element> polled_invalid_target;
+    std::shared_ptr<ValidationReport> polled_validation_report;
+    std::unordered_map<const Element*, std::string> dialog_return_values;
+    uint64_t next_close_generation = 0;
+    std::unordered_map<const Element*, uint64_t> dialog_close_generations;
     static constexpr size_t kMaxEvents = 256;
+    bool push_event(QueuedEvent event) {
+        if (events.size() >= kMaxEvents) {
+            // Notifications may be dropped under pressure. CANCEL, SUBMIT and
+            // INVALID and popover requests own default actions; preserve them.
+            const auto discard = std::find_if(events.begin(), events.end(),
+                [](const auto& queued) { return queued.kind != WEVA_EVENT_CANCEL && !queued.submit_form && !queued.invalid_target && !queued.popover_open_target && !queued.popover_hide_target; });
+            if (discard == events.end()) return false;
+            events.erase(discard);
+        }
+        events.push_back(std::move(event));
+        return true;
+    }
+
     // The element a press started on, so a release on the SAME one is a click
     // and a release anywhere else is not.
     const Element* press_target = nullptr;
+    const Element* popover_press_target = nullptr;
+    bool popover_press_active = false;
+
+    std::unordered_map<const Element*, weva_element_t> element_handles;
+    std::vector<weva_element_t> query_order;
+    uint64_t structure_version = 1, query_order_version = 0;
 
     weva_element_t handle_of(const Element* e) const {
-        if (!e) return WEVA_ELEMENT_NONE;
-        for (size_t i = 0; i < elements.size(); ++i) {
-            if (elements[i] == e) return static_cast<weva_element_t>(i);
-        }
-        return WEVA_ELEMENT_NONE;
+        const auto found = element_handles.find(e);
+        return found == element_handles.end() ? WEVA_ELEMENT_NONE : found->second;
+    }
+
+    const std::vector<weva_element_t>& document_order() {
+        if (query_order_version == structure_version) return query_order;
+        query_order.clear();
+        const auto visit = [&](const auto& self, const Node& node) -> void {
+            if (node.is_element()) {
+                const auto handle = handle_of(static_cast<const Element*>(&node));
+                if (handle != WEVA_ELEMENT_NONE) query_order.push_back(handle);
+            }
+            for (const auto& child : node.children()) self(self, *child);
+        };
+        if (doc) visit(visit, *doc);
+        query_order_version = structure_version;
+        return query_order;
     }
 
     // `on-click` for a click, `on-input` for a value change, and so on. The
@@ -1774,9 +2200,13 @@ struct weva_document {
             case WEVA_EVENT_VALUE_CHANGED: return "on-input";
             case WEVA_EVENT_CHANGE: return "on-change";
             case WEVA_EVENT_SUBMIT: return "on-submit";
+            case WEVA_EVENT_INVALID: return "on-invalid";
             case WEVA_EVENT_RESET: return "on-reset";
+            case WEVA_EVENT_CLOSE: return "on-close";
+            case WEVA_EVENT_CANCEL: return "on-cancel";
             case WEVA_EVENT_SCROLL: return "on-scroll";
             case WEVA_EVENT_TOGGLE: return "on-toggle";
+            case WEVA_EVENT_BEFORE_TOGGLE: return "on-beforetoggle";
             case WEVA_EVENT_CONTEXT_MENU: return "on-contextmenu";
             case WEVA_EVENT_KEY_DOWN: return "on-keydown";
             case WEVA_EVENT_KEY_UP: return "on-keyup";
@@ -1800,7 +2230,10 @@ struct weva_document {
             if (n->node_type() != NodeType::Element) continue;
             const std::string_view named =
                 static_cast<const Element&>(*n).get_attribute(attribute);
-            if (named.empty()) continue;
+            if (named.empty()) {
+                if (e->kind == WEVA_EVENT_CLOSE || e->kind == WEVA_EVENT_CANCEL || e->kind == WEVA_EVENT_INVALID || e->kind == WEVA_EVENT_BEFORE_TOGGLE) return;
+                continue;
+            }
             const size_t copy = named.size() < sizeof(e->handler) - 1 ? named.size()
                                                                      : sizeof(e->handler) - 1;
             std::memcpy(e->handler, named.data(), copy);
@@ -1809,8 +2242,8 @@ struct weva_document {
         }
     }
 
-    void queue_event(int32_t kind, const Element* target, double x, double y, uint32_t buttons,
-                     uint32_t modifiers = 0) {
+    bool queue_event(int32_t kind, const Element* target, double x, double y, uint32_t buttons,
+                     uint32_t modifiers = 0, const char* toggle_state = nullptr) {
         weva_event e{};
         e.kind = kind;
         e.target = WEVA_ELEMENT_NONE;
@@ -1823,9 +2256,12 @@ struct weva_document {
         e.y = y;
         e.buttons = buttons;
         e.modifiers = modifiers;
+        if (kind == WEVA_EVENT_TOGGLE) {
+            if (!toggle_state) toggle_state = target && target->has_attribute("open") ? "open" : "closed";
+            std::memcpy(e.text, toggle_state, std::strlen(toggle_state) + 1);
+        }
         fill_handler(&e, target);
-        if (events.size() >= kMaxEvents) events.pop_front();
-        events.push_back(e);
+        return push_event(e);
     }
 
     RenderInterface* render_backend() {
@@ -1874,9 +2310,13 @@ struct weva_document {
     // the handles already handed out. A binding repeat is the one thing that
     // makes elements without going through the ABI.
     void reindex_new_elements() {
-        std::set<const Element*> known(elements.begin(), elements.end());
         const std::function<void(Element&)> visit = [&](Element& e) {
-            if (!known.count(&e)) elements.push_back(&e);
+            if (!element_handles.count(&e)) {
+                ++structure_version;
+                element_handles.emplace(&e, static_cast<weva_element_t>(elements.size()));
+                elements.push_back(&e);
+                sync_dialog_open(&e);
+            }
             for (const Ref<Node>& c : e.children()) {
                 if (c->node_type() == NodeType::Element) {
                     visit(static_cast<Element&>(const_cast<Node&>(*c)));
@@ -1891,7 +2331,10 @@ struct weva_document {
     }
 
     void index_elements(Element& e) {
+        ++structure_version;
+        element_handles.emplace(&e, static_cast<weva_element_t>(elements.size()));
         elements.push_back(&e);
+        sync_dialog_open(&e);
         for (const Ref<Node>& c : e.children()) {
             if (c->node_type() == NodeType::Element) {
                 index_elements(static_cast<Element&>(const_cast<Node&>(*c)));
@@ -1906,6 +2349,10 @@ struct weva_document {
 namespace {
 
 extern "C" void forget_subtree(weva_document* doc, const Element& e);
+
+bool is_table_span_attribute(std::string_view name) {
+    return name == "rowspan" || name == "colspan" || name == "span";
+}
 
 void note_box_input(weva_document* doc, Element* e) {
     auto& inputs = doc->styles.pending_box_inputs;
@@ -1925,6 +2372,23 @@ void note_box_input(weva_document* doc, Element* e) {
 void note_binding_mutation(weva_document* doc, const DomMutation& mutation) {
     if (mutation.kind == MutationKind::FormStateChanged) return;
     if (mutation.kind == MutationKind::ChildAdded || mutation.kind == MutationKind::ChildRemoved) {
+        // Same-parent moves emit ChildAdded without a removal. Existing style
+        // identity proves that this is a retained row, not a new clone. Its
+        // parent's content/order is the layout input; selector scope still
+        // includes every sibling whose rank or combinator match can change.
+        if (mutation.kind == MutationKind::ChildAdded && mutation.target && mutation.target->is_element() &&
+            mutation.related && mutation.related->is_element() &&
+            doc->styles.by_element.count(static_cast<const Element*>(mutation.related))) {
+            auto* parent = static_cast<Element*>(mutation.target);
+            auto& inputs = doc->styles.pending_content_inputs;
+            if (std::find(inputs.begin(), inputs.end(), parent) == inputs.end()) inputs.push_back(parent);
+            doc->dom_touched = true;
+            if (doc->styles.engine.has_sibling_selectors() && parent->parent() && parent->parent()->is_element())
+                parent = static_cast<Element*>(parent->parent());
+            if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), parent) == doc->touched.end())
+                doc->touched.push_back(parent);
+            return;
+        }
         doc->binding_structure_changed = true;
         doc->pending = worst(doc->pending, Invalidation::Boxes);
         // Drop pointer-keyed state before a removed row can be freed and its
@@ -1940,7 +2404,12 @@ void note_binding_mutation(weva_document* doc, const DomMutation& mutation) {
         return;
     }
     auto* e = static_cast<Element*>(owner);
-    if (mutation.kind == MutationKind::TextChanged || (e->tag_name() == "img" && mutation.name == "src")) {
+    if (e->tag_name() == "dialog" && mutation.name == "open")
+        doc->sync_dialog_open(e);
+    // Table placement reads span attributes directly, independent of computed
+    // CSS. Their input version must change even when no selector result does.
+    const bool table_span = is_table_span_attribute(mutation.name);
+    if (mutation.kind == MutationKind::TextChanged || table_span || (e->tag_name() == "img" && mutation.name == "src")) {
         auto& inputs = doc->styles.pending_content_inputs;
         if (std::find(inputs.begin(), inputs.end(), e) == inputs.end()) inputs.push_back(e);
     }
@@ -1968,41 +2437,41 @@ void resolve_caret_run(weva_document* doc, CaretState* caret) {
     caret->run = kNoBox;
     caret->run_offset = 0;
     if (!caret->element || caret->element->tag_name() != "textarea") return;
-    const std::string_view source = caret->element->form_value();
+    const std::string_view source = caret->element->form_edit_value();
     if (source.empty()) return;
     caret->source = source;
     const size_t idx = static_cast<size_t>(std::max(0, caret->index));
-    const char* base = source.data();
     BoxId last = kNoBox;
     size_t last_end = 0;
     const auto visit = [&](auto&& self, BoxId i) -> bool {
         for (BoxId c : doc->tree.children(i)) if (self(self, c)) return true;
         const Box& b = doc->tree[i];
-        if (b.kind != BoxKind::Text || b.text.empty()) return false;
+        if (b.kind != BoxKind::Text || (b.text.empty() && b.source_control != caret->element)) return false;
         // The FRAGMENTS, not the run they were split from. Inline layout keeps
         // the whole unsplit run in the tree as well, and it spans the entire
         // value -- so it matches any cursor, and paint never draws it. Only a
         // fragment sits in a line box, which is also where its baseline comes
         // from.
         if (b.parent == kNoBox || doc->tree[b.parent].kind != BoxKind::Line) return false;
-        const char* run = b.text.data();
-        if (run < base || run + b.text.size() > base + source.size()) return false;
-        const size_t off = static_cast<size_t>(run - base);
-        if (idx >= off && idx <= off + b.text.size()) {
+        if (b.source_control != caret->element) return false;
+        const auto source_at = text_source_offset(b, source);
+        if (!source_at) return false;
+        const size_t off = *source_at;
+        if (idx >= off && idx <= off + text_source_length(b)) {
             caret->run = i;
-            caret->run_offset = idx - off;
-            return true;
+            caret->run_offset = source_to_display(b, idx - off);
+            return !caret->downstream;
         }
-        if (off + b.text.size() <= idx) {
+        if (off + text_source_length(b) <= idx) {
             last = i;
             last_end = b.text.size();
         }
         return false;
     };
-    if (doc->tree.valid(doc->root) && visit(visit, doc->root)) return;
-    // Past every run -- the value ends in a newline, so the cursor is on an
-    // empty last line. The end of the last run is the closest honest place for
-    // it until empty lines carry a run of their own.
+    if (doc->tree.valid(doc->root)) visit(visit, doc->root);
+    if (caret->run != kNoBox) return;
+    // Fall back to the preceding fragment if no source-backed run matches.
+    // Preserved empty lines carry their own zero-width matching fragments.
     caret->run = last;
     caret->run_offset = last_end;
 }
@@ -2070,32 +2539,233 @@ Element* element_by_id(weva_document* doc, const std::string& id) {
     return nullptr;
 }
 
-// A popover is `auto` unless it says `manual`. The difference is what closes
-// it: an auto one goes away when you click elsewhere or press Escape, a manual
-// one only when something asks.
+// Auto/hint popovers close on outside clicks and Escape. Invalid keywords
+// use manual behavior; HTML keywords are ASCII case-insensitive.
 bool popover_is_auto(const Element& e) {
-    return e.get_attribute("popover") != "manual";
+    return form_popover_light_dismiss(e);
 }
 
-// Opening and closing, which is only ever these three lines plus the stack.
-void popover_show(weva_document* doc, Element& e) {
-    if (!e.has_attribute("popover") || e.has_attribute("data-popover-open")) return;
+bool is_within(const Element* candidate, const Element* ancestor);
+void popover_hide(weva_document* doc, Element& e, bool restore_focus = true);
+extern "C" void focus_popover(weva_document* doc, const Element& e);
+
+bool popover_is_hint(const Element& e) {
+    const auto value = e.get_attribute("popover");
+    return value.size() == 4 && (value[0] == 'h' || value[0] == 'H') &&
+        (value[1] == 'i' || value[1] == 'I') && (value[2] == 'n' || value[2] == 'N') &&
+        (value[3] == 't' || value[3] == 'T');
+}
+
+int popover_mode_id(const Element& e) {
+    return popover_is_hint(e) ? 2 : (popover_is_auto(e) ? 1 : 3);
+}
+
+void popover_show(weva_document* doc, Element& e, const Element* source = nullptr) {
+    if (!e.has_attribute("popover") || e.is_popover_open() || e.is_modal()) return;
+    const Element* parent = nullptr;
+    if (popover_is_auto(e)) {
+        // Keep the topmost ancestor and its existing stack. The invoker can
+        // establish that ancestry even when the submenu is elsewhere in DOM.
+        // Closing through the normal live-state path preserves notifications
+        // and invalidation; it also removes the entry from this vector.
+        const bool hint = popover_is_hint(e);
+        for (size_t i = doc->popovers.size(); i-- > 0;) {
+            auto* open = const_cast<Element*>(doc->popovers[i]);
+            if (!popover_is_auto(*open)) continue;
+            if (is_within(&e, open) || is_within(source, open)) { parent = open; break; }
+            if (!hint || popover_is_hint(*open)) popover_hide(doc, *open, false);
+        }
+    }
+    const bool restore_focus = popover_is_auto(e) && doc->light_dismiss_popovers.empty();
+    const Element* previous_focus = doc->styles.state.focused;
+    e.set_popover_open(true);
     e.set_attribute("data-popover-open", "");
     doc->popovers.push_back(&e);
+    if (popover_is_auto(e)) doc->light_dismiss_popovers.insert(&e);
+    if (parent) doc->popover_parents[&e] = parent;
     ++doc->transient_version;
     // It joins the top layer, so a ::backdrop box appears: boxes, not paint.
     doc->pending = worst(doc->pending, Invalidation::Boxes);
-    doc->queue_event(WEVA_EVENT_TOGGLE, &e, 0, 0, 0);
+    focus_popover(doc, e);
+    if (restore_focus && previous_focus) doc->popover_previous_focus[&e] = previous_focus;
+    doc->queue_event(WEVA_EVENT_TOGGLE, &e, 0, 0, 0, 0, "open");
 }
 
-void popover_hide(weva_document* doc, Element& e) {
-    if (!e.has_attribute("data-popover-open")) return;
+weva_status request_popover_open(weva_document* doc, weva_element_t element, const Element* source = nullptr) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || !e->has_attribute("popover")) return WEVA_ERR_NOT_FOUND;
+    if (e->is_modal()) return WEVA_ERR_INVALID_STATE;
+    if (e->is_popover_open() || doc->polled_popover_open_target.get() == e) return WEVA_OK;
+    for (const auto& pending : doc->events)
+        if (pending.popover_open_target.get() == e) return WEVA_OK;
+    weva_event event{};
+    event.kind = WEVA_EVENT_BEFORE_TOGGLE;
+    event.target = element;
+    std::strcpy(event.text, "open");
+    doc->fill_handler(&event, e);
+    weva_document::QueuedEvent queued(event);
+    queued.popover_open_target = Ref<Element>::retain(e);
+    if (source) queued.popover_open_source = Ref<Element>::retain(const_cast<Element*>(source));
+    return doc->push_event(std::move(queued)) ? WEVA_OK : WEVA_ERR_INVALID_STATE;
+}
+
+weva_status request_popover_hide(weva_document* doc, weva_element_t element, bool restore_focus = true, bool allow_missing_attribute = false) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || (!allow_missing_attribute && !e->has_attribute("popover"))) return WEVA_ERR_NOT_FOUND;
+    if (!e->is_popover_open() || doc->polled_popover_hide_target.get() == e) return WEVA_OK;
+    for (const auto& pending : doc->events)
+        if (pending.popover_hide_target.get() == e) return WEVA_OK;
+    // A parent close is one operation even though it dispatches several
+    // events. Reserve the whole subtree before accepting any child request.
+    const auto already_pending = [&](const Element* candidate) {
+        if (doc->polled_popover_hide_target.get() == candidate) return true;
+        return std::any_of(doc->events.begin(), doc->events.end(),
+            [candidate](const auto& event) { return event.popover_hide_target.get() == candidate; });
+    };
+    size_t needed = 1;
+    if (doc->light_dismiss_popovers.count(e)) {
+        for (const Element* candidate : doc->popovers) {
+            if (candidate == e || !doc->light_dismiss_popovers.count(candidate) || already_pending(candidate)) continue;
+            const Element* ancestor = candidate;
+            while (ancestor) {
+                const auto parent = doc->popover_parents.find(ancestor);
+                ancestor = parent == doc->popover_parents.end() ? nullptr : parent->second;
+                if (ancestor == e) { ++needed; break; }
+            }
+        }
+    }
+    const size_t protected_events = std::count_if(doc->events.begin(), doc->events.end(),
+        [](const auto& queued) { return queued.kind == WEVA_EVENT_CANCEL || queued.submit_form ||
+            queued.invalid_target || queued.popover_open_target || queued.popover_hide_target; });
+    if (protected_events >= weva_document::kMaxEvents || needed > weva_document::kMaxEvents - protected_events) return WEVA_ERR_INVALID_STATE;
+    // Descendants leave the stack before the parent's closing event, as in
+    // the browser hide-all-popovers-until algorithm. Reverse opening order
+    // visits deeper menus first; already queued requests are deduplicated.
+    if (doc->light_dismiss_popovers.count(e)) {
+        for (size_t i = doc->popovers.size(); i-- > 0;) {
+            const Element* child = doc->popovers[i];
+            if (child == e || !doc->light_dismiss_popovers.count(child)) continue;
+            const Element* ancestor = child;
+            while (ancestor) {
+                const auto parent = doc->popover_parents.find(ancestor);
+                ancestor = parent == doc->popover_parents.end() ? nullptr : parent->second;
+                if (ancestor == e) {
+                    const auto status = request_popover_hide(doc, doc->handle_of(child), false);
+                    if (status != WEVA_OK) return status;
+                    break;
+                }
+            }
+        }
+    }
+    weva_event event{};
+    event.kind = WEVA_EVENT_BEFORE_TOGGLE;
+    event.target = element;
+    std::strcpy(event.text, "closed");
+    doc->fill_handler(&event, e);
+    weva_document::QueuedEvent queued(event);
+    queued.popover_restore_focus = restore_focus;
+    queued.popover_hide_target = Ref<Element>::retain(e);
+    return doc->push_event(std::move(queued)) ? WEVA_OK : WEVA_ERR_INVALID_STATE;
+}
+
+void complete_popover_open(weva_document* doc, Ref<Element> target, Ref<Element> source, int expected_mode,
+                           std::vector<Ref<Element>> pending_closes = {}, bool resuming = false) {
+    if (!resuming || pending_closes.empty()) {
+        if (!target || doc->handle_of(target.get()) == WEVA_ELEMENT_NONE ||
+            !target->has_attribute("popover") || target->is_popover_open() || target->is_modal() ||
+            popover_mode_id(*target) != expected_mode) return;
+        if (source && doc->handle_of(source.get()) == WEVA_ELEMENT_NONE) source = {};
+        std::vector<const Element*> roots;
+        if (popover_is_auto(*target)) {
+            const bool hint = popover_is_hint(*target);
+            for (auto it = doc->popovers.rbegin(); it != doc->popovers.rend(); ++it) {
+                const Element* open = *it;
+                if (!popover_is_auto(*open)) continue;
+                if (is_within(target.get(), open) || is_within(source.get(), open)) break;
+                if (!hint || popover_is_hint(*open)) roots.push_back(open);
+            }
+        }
+        for (const Element* candidate : doc->popovers) {
+            if (!doc->light_dismiss_popovers.count(candidate)) continue;
+            const Element* ancestor = candidate;
+            while (ancestor) {
+                if (std::find(roots.begin(), roots.end(), ancestor) != roots.end()) {
+                    pending_closes.push_back(Ref<Element>::retain(const_cast<Element*>(candidate)));
+                    break;
+                }
+                const auto parent = doc->popover_parents.find(ancestor);
+                ancestor = parent == doc->popover_parents.end() ? nullptr : parent->second;
+            }
+        }
+        if (pending_closes.empty()) {
+            popover_show(doc, *target, source.get());
+            return;
+        }
+    }
+    // Finish the captured old stack even if a closing handler invalidates the
+    // replacement. Browser opening eligibility is rechecked after that work.
+    Ref<Element> closing;
+    while (!pending_closes.empty()) {
+        closing = std::move(pending_closes.back());
+        pending_closes.pop_back();
+        if (doc->handle_of(closing.get()) != WEVA_ELEMENT_NONE && closing->is_popover_open()) break;
+        closing = {};
+    }
+    if (!closing) {
+        complete_popover_open(doc, std::move(target), std::move(source), expected_mode);
+        return;
+    }
+    // An accepted opening owns this continuation. Process one close at a time
+    // ahead of unrelated queued requests; its two internal slots cannot be
+    // consumed by a handler filling the public queue. At most kMaxEvents + 2
+    // entries exist: this pair is consumed before another pair is scheduled.
+    weva_event event{};
+    weva_document::QueuedEvent continuation(event);
+    continuation.popover_pending_closes = std::move(pending_closes);
+    continuation.popover_resume_open = true;
+    continuation.popover_open_mode = expected_mode;
+    continuation.popover_open_target = std::move(target);
+    continuation.popover_open_source = std::move(source);
+    doc->events.push_front(std::move(continuation));
+    weva_event close_event{};
+    close_event.kind = WEVA_EVENT_BEFORE_TOGGLE;
+    close_event.target = doc->handle_of(closing.get());
+    std::strcpy(close_event.text, "closed");
+    doc->fill_handler(&close_event, closing.get());
+    weva_document::QueuedEvent close(close_event);
+    close.popover_restore_focus = false;
+    close.popover_hide_target = std::move(closing);
+    doc->events.push_front(std::move(close));
+}
+
+void popover_hide(weva_document* doc, Element& e, bool restore_focus) {
+    if (!e.is_popover_open()) return;
+    // Stack replacement suppresses restoration; an explicit close can return
+    // focus to the saved control. Discard before the live-state notification.
+    if (!restore_focus) doc->popover_previous_focus.erase(&e);
+    // The live-state observer performs dismissal bookkeeping and queues one
+    // notification, including closes caused by changing the popover attribute.
+    e.set_popover_open(false);
     e.remove_attribute("data-popover-open");
-    doc->popovers.erase(std::remove(doc->popovers.begin(), doc->popovers.end(), &e),
-                        doc->popovers.end());
-    ++doc->transient_version;
     doc->pending = worst(doc->pending, Invalidation::Boxes);
-    doc->queue_event(WEVA_EVENT_TOGGLE, &e, 0, 0, 0);
+}
+
+void popover_hide_above(weva_document* doc, const Element* e) {
+    if (!doc->light_dismiss_popovers.count(e)) return;
+    const auto found = std::find(doc->popovers.begin(), doc->popovers.end(), e);
+    if (found == doc->popovers.end()) return;
+    const size_t index = static_cast<size_t>(found - doc->popovers.begin());
+    for (size_t i = doc->popovers.size(); i-- > index + 1;) {
+        auto* child = const_cast<Element*>(doc->popovers[i]);
+        const Element* ancestor = child;
+        while (ancestor) {
+            const auto entry = doc->popover_parents.find(ancestor);
+            ancestor = entry == doc->popover_parents.end() ? nullptr : entry->second;
+            if (ancestor == e) { popover_hide(doc, *child, false); break; }
+        }
+    }
 }
 
 // Escape closes ONE, the topmost auto one -- so a submenu closes before the
@@ -2105,6 +2775,8 @@ bool popover_hide_top_auto(weva_document* doc) {
     for (size_t i = doc->popovers.size(); i-- > 0;) {
         Element& e = const_cast<Element&>(*doc->popovers[i]);
         if (!popover_is_auto(e)) continue;
+        if (doc->popover_request_events)
+            return weva_element_request_hide_popover(doc, doc->handle_of(&e)) == WEVA_OK;
         popover_hide(doc, e);
         return true;
     }
@@ -2122,11 +2794,58 @@ const Element* popover_trigger_at(const Element* target) {
     return nullptr;
 }
 
+const Element* popover_pointer_ancestor(weva_document* doc, const Element* hit) {
+    const Element* trigger = popover_trigger_at(hit);
+    const Element* target = trigger ? element_by_id(doc, std::string(trigger->get_attribute("popovertarget"))) : nullptr;
+    for (auto entry = doc->popovers.rbegin(); entry != doc->popovers.rend(); ++entry)
+        if (popover_is_auto(**entry) && (is_within(hit, *entry) || target == *entry)) return *entry;
+    return nullptr;
+}
+
+void popover_pointer_release(weva_document* doc, const Element* hit) {
+    if (!doc->popover_press_active) return;
+    const Element* endpoint = popover_pointer_ancestor(doc, hit);
+    const bool same_endpoint = endpoint == doc->popover_press_target;
+    doc->popover_press_active = false;
+    doc->popover_press_target = nullptr;
+    if (!same_endpoint) return;
+    for (size_t i = doc->popovers.size(); i-- > 0;) {
+        auto* open = const_cast<Element*>(doc->popovers[i]);
+        if (open == endpoint) break;
+        if (popover_is_auto(*open)) {
+            if (doc->popover_request_events) weva_element_request_hide_popover(doc, doc->handle_of(open));
+            else popover_hide(doc, *open);
+        }
+    }
+}
+
 bool is_within(const Element* candidate, const Element* ancestor) {
     for (const Node* n = candidate; n; n = n->parent()) {
         if (n == ancestor) return true;
     }
     return false;
+}
+
+const Element* active_modal(const weva_document* doc) {
+    for (auto entry = doc->dialog_focus_history.rbegin(); entry != doc->dialog_focus_history.rend(); ++entry)
+        if (entry->dialog->is_modal()) return entry->dialog;
+    return nullptr;
+}
+
+bool input_blocked(const weva_document* doc, const Element* target) {
+    const Element* modal = active_modal(doc);
+    return (target && form_is_inert(*target)) || (modal && !is_within(target, modal));
+}
+extern "C" bool focus_unavailable_now(weva_document* doc, const Element& target);
+extern "C" bool focus_disabled(const Element& e, const weva_document* doc);
+
+const Element* input_element_at(const weva_document* doc, double x, double y) {
+    if (active_modal(doc) && (x < 0 || y < 0 || x >= doc->ctx.viewport_width_px || y >= doc->ctx.viewport_height_px)) return nullptr;
+    const Element* hit = element_at_point(doc->tree, doc->root, x, y, &doc->ctx);
+    // The modal backdrop targets its dialog, never a control underneath it.
+    const Element* modal = active_modal(doc);
+    if (modal && !is_within(hit, modal)) return form_is_inert(*modal) ? nullptr : modal;
+    return hit;
 }
 
 // The <details> a click should toggle: the one whose own <summary> was hit.
@@ -2176,6 +2895,7 @@ size_t text_boundary(std::string_view text, int offset) {
 }
 
 void note_value_change(weva_document* doc, Element& e, std::string_view value, bool input = true) {
+    if (e.tag_name() == "input" && form_input_type(e) == "number") value = e.form_value();
     if (&e == doc->styles.state.focused && is_text_field(e)) doc->user_edited_since_focus = true;
     // A select's caption/row inputs and its options' :checked states are
     // already versioned by the DOM observer. Selection cannot restyle every
@@ -2191,14 +2911,12 @@ void note_value_change(weva_document* doc, Element& e, std::string_view value, b
     const size_t copy = text_boundary(value, static_cast<int>(std::min(value.size(), sizeof(ev.text) - 1)));
     std::memcpy(ev.text, value.data(), copy);
     ev.text[copy] = '\0';
-    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
-    doc->events.emplace_back(ev, value);
+    doc->push_event(weva_document::QueuedEvent(ev, value));
     if (input && commits_immediately(e)) {
         weva_event committed = ev;
         committed.kind = WEVA_EVENT_CHANGE;
         weva_document::fill_handler(&committed, &e);
-        if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
-        doc->events.emplace_back(committed, value);
+        doc->push_event(weva_document::QueuedEvent(committed, value));
     }
 }
 
@@ -2407,8 +3125,11 @@ void list_pointer_drag(weva_document* doc, const Element* hit) {
     Rect viewport;
     // Moving inside the captured list arms autoscroll. Subsequent moves may
     // leave it; the capture continues to own the held gesture.
-    if (list_drag_viewport(doc, select, &viewport) && viewport.contains(doc->pointer_x, doc->pointer_y))
-        doc->list_scroll_armed = true;
+    if (list_drag_viewport(doc, select, &viewport)) {
+        double x = doc->pointer_x, y = doc->pointer_y;
+        if (point_to_layout(doc->tree, box_of(doc, select), doc->ctx, &x, &y) && viewport.contains(x, y))
+            doc->list_scroll_armed = true;
+    }
     if (!select || list_box_of(hit) != select || !navigable_option(doc, hit)) return;
     auto& state = list_selection(doc, *select);
     if (!state.dragging || state.active == hit) return;
@@ -2439,12 +3160,14 @@ BoxId advance_list_autoscroll(weva_document* doc, double seconds) {
         return kNoBox;
     }
     const auto box = box_of(doc,doc->list_drag);
+    double pointer_x = doc->pointer_x, pointer_y = doc->pointer_y;
+    if (!point_to_layout(doc->tree, box, doc->ctx, &pointer_x, &pointer_y)) return kNoBox;
     const auto& b = doc->tree[box];
     const auto overflow = b.style ? b.style->get("overflow-y") : std::string_view();
     if (overflow == "hidden" || overflow == "clip") return kNoBox;
     const double edge = std::min(20.0, viewport.height * 0.25);
-    const double above = viewport.y + edge - doc->pointer_y;
-    const double below = doc->pointer_y - (viewport.bottom() - edge);
+    const double above = viewport.y + edge - pointer_y;
+    const double below = pointer_y - (viewport.bottom() - edge);
     const double distance = above > 0 ? -above : below > 0 ? below : 0;
     if (distance == 0) return kNoBox;
     double mx=0, my=0;
@@ -2594,12 +3317,13 @@ PaintContext measuring_context(weva_document* doc) {
 size_t field_offset_at(weva_document* doc, const Element& e, double x, double y) {
     const BoxId box = box_of(doc, &e);
     if (box == kNoBox) return 0;
+    if (!point_to_layout(doc->tree, box, doc->ctx, &x, &y)) return 0;
     PaintContext paint = measuring_context(doc);
     paint.caret = caret_for(doc->styles.state);
     if (e.tag_name() != "textarea") {
         return control_text_offset_at(doc->tree, box, doc->ctx, paint, x);
     }
-    const std::string_view source = e.form_value();
+    const std::string_view source = e.form_edit_value();
     if (source.empty()) return 0;
     double ox = 0, oy = 0;
     visual_position(doc->tree, box, &ox, &oy);
@@ -2632,6 +3356,8 @@ BoxId advance_text_autoscroll(weva_document* doc, double seconds) {
         return kNoBox;
     }
     const auto box = box_of(doc,doc->text_drag);
+    double pointer_x = doc->pointer_x, pointer_y = doc->pointer_y;
+    if (!point_to_layout(doc->tree, box, doc->ctx, &pointer_x, &pointer_y)) return kNoBox;
     auto& state = doc->styles.state;
     auto& b = doc->tree[box];
     const bool multiline = doc->text_drag->tag_name() == "textarea";
@@ -2646,8 +3372,8 @@ BoxId advance_text_autoscroll(weva_document* doc, double seconds) {
         measure.caret = caret_for(state);
         from_x = input_text_scroll(doc->tree,box,doc->ctx,measure,false,&mx);
     }
-    const double x = std::clamp(from_x + text_autoscroll_step(doc->pointer_x,viewport.x,viewport.width,seconds),0.0,mx);
-    const double y = multiline ? std::clamp(from_y + text_autoscroll_step(doc->pointer_y,viewport.y,viewport.height,seconds),0.0,my) : 0;
+    const double x = std::clamp(from_x + text_autoscroll_step(pointer_x,viewport.x,viewport.width,seconds),0.0,mx);
+    const double y = multiline ? std::clamp(from_y + text_autoscroll_step(pointer_y,viewport.y,viewport.height,seconds),0.0,my) : 0;
     if (x == from_x && y == from_y) return kNoBox;
     if (multiline) {
         doc->scroll[doc->text_drag] = {x,y};
@@ -2709,11 +3435,10 @@ const FontMetrics* document_variant_metrics(void* user, const FontMetrics* base,
                                             bool italic) {
     auto* doc = static_cast<weva_document*>(user);
     if (!doc || !doc->host_font) return base;
-    // Only the default face has variants here; a registered family's
-    // metrics object is not a host face.
-    if (base && base != doc->host_metrics.get()) return base;
-    const FaceHandle v = doc->host_font->variant(doc->face, weight, italic);
-    if (v.id == doc->face.id) return base;
+    const FaceHandle source = base ? base->rendering_face(doc->host_font.get()) : doc->face;
+    if (!source.id) return base;
+    const FaceHandle v = doc->host_font->variant(source, weight, italic);
+    if (v.id == source.id) return base;
     const auto key = std::make_tuple(v.id, weight, italic);
     auto it = doc->variant_metrics.find(key);
     if (it == doc->variant_metrics.end()) {
@@ -2730,6 +3455,8 @@ void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend
                                     uint64_t face) {
     if (!doc) return;
     doc->atlas.clear();
+    doc->ctx.fonts.clear();
+    doc->family_metrics.clear();
     doc->variant_metrics.clear();
     // A different face measures differently, so every line box is suspect.
     doc->pending = Invalidation::Boxes;
@@ -2757,12 +3484,45 @@ weva_status weva_document_set_font_shaper(weva_document_t doc, weva_shape_glyphs
     // changed positioning/advances invalidate every measured run and line.
     doc->variant_metrics.clear();
     doc->host_metrics = std::make_unique<FontInterfaceMetrics>(doc->host_font.get(), doc->face);
+    for (auto& entry : doc->family_metrics) {
+        const auto face = entry.second->rendering_face(doc->host_font.get());
+        entry.second = std::make_unique<FontInterfaceMetrics>(doc->host_font.get(), face);
+        doc->ctx.register_font(entry.first, entry.second.get());
+    }
+    doc->pending = Invalidation::Boxes;
+    return WEVA_OK;
+}
+
+weva_status weva_document_register_font_family(weva_document_t doc, const char* family,
+                                               uint64_t face) {
+    if (!doc || !family || (face && !doc->host_font)) return WEVA_ERR_INVALID_ARGUMENT;
+    LayoutContext normalized;
+    normalized.register_font(family, &doc->metrics);
+    if (normalized.fonts.empty() || normalized.fonts.front().first.empty())
+        return WEVA_ERR_INVALID_ARGUMENT;
+    const std::string& key = normalized.fonts.front().first;
+    auto it = doc->family_metrics.find(key);
+    if (!face) {
+        if (it == doc->family_metrics.end()) return WEVA_OK;
+        auto& fonts = doc->ctx.fonts;
+        fonts.erase(std::remove_if(fonts.begin(), fonts.end(),
+            [&](const auto& entry) { return entry.first == key; }), fonts.end());
+        doc->family_metrics.erase(it);
+    } else {
+        if (it != doc->family_metrics.end() &&
+            it->second->rendering_face(doc->host_font.get()).id == face) return WEVA_OK;
+        auto metrics = std::make_unique<FontInterfaceMetrics>(doc->host_font.get(), FaceHandle{face});
+        doc->ctx.register_font(key, metrics.get());
+        doc->family_metrics[key] = std::move(metrics);
+    }
+    doc->variant_metrics.clear();
     doc->pending = Invalidation::Boxes;
     return WEVA_OK;
 }
 
 weva_document_t weva_document_create(const weva_config* config) {
     auto* d = new weva_document();
+    d->container_queries.attach(&d->styles.engine);
     if (config) d->config = *config;
     if (d->config.viewport_width <= 0) d->config.viewport_width = 1920;
     if (d->config.viewport_height <= 0) d->config.viewport_height = 1080;
@@ -2773,6 +3533,10 @@ weva_document_t weva_document_create(const weva_config* config) {
     d->ctx.viewport_width_px = d->config.viewport_width;
     d->ctx.viewport_height_px = d->config.viewport_height;
     d->ctx.root_font_size_px = d->config.root_font_size;
+    auto media = d->styles.engine.media_context();
+    media.viewport_width_px = d->config.viewport_width;
+    media.viewport_height_px = d->config.viewport_height;
+    d->styles.engine.set_media_context(media);
 
     if (d->config.use_user_agent_stylesheet) {
         auto ua = std::make_unique<Stylesheet>();
@@ -2803,14 +3567,78 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     opts.strict = false;
     doc->doc = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
     if (!doc->doc) return WEVA_ERR_PARSE;
+    doc->doc->set_popover_attribute_close_handler([doc](Element& element) {
+        return doc->popover_request_events &&
+            request_popover_hide(doc, doc->handle_of(&element), true, true) == WEVA_OK;
+    });
     doc->doc->add_observer([doc](const DomMutation& mutation) {
+        if (mutation.kind == MutationKind::ChildAdded || mutation.kind == MutationKind::ChildRemoved ||
+            mutation.name == "type" || mutation.name == "form" || mutation.name == "id" ||
+            mutation.name == "command" || mutation.name == "commandfor") doc->default_inputs_dirty = true;
+        if (mutation.kind == MutationKind::ChildAdded || mutation.kind == MutationKind::ChildRemoved)
+            ++doc->structure_version;
         if (doc->refreshing_bindings) note_binding_mutation(doc, mutation);
         if (mutation.kind != MutationKind::FormStateChanged || !mutation.target->is_element()) return;
         auto* e = static_cast<Element*>(mutation.target);
+        const bool input_default = mutation.form_value == FormValueMutation::InputDefault;
+        const bool textarea_default = mutation.form_value == FormValueMutation::TextareaDefault;
+        if ((input_default || textarea_default) && e == doc->styles.state.focused && is_text_field(*e)) {
+            auto& state = doc->styles.state;
+            state.caret = 0;
+            state.anchor = -1;
+            state.vertical_owner = nullptr;
+            state.caret_downstream = true;
+            state.caret_age = 0;
+            doc->caret_follow = true;
+            doc->styles.repaint(e);
+        }
+        if (e != doc->styles.state.focused) {
+            const auto saved = doc->field_selections.find(e);
+            if (saved != doc->field_selections.end()) {
+                const auto value = e->form_edit_value();
+                if (textarea_default || saved->second.value != value) {
+                    saved->second.value.assign(value);
+                    if (!input_default) {
+                        saved->second.caret = textarea_default ? 0 : static_cast<int>(value.size());
+                        saved->second.anchor = -1;
+                    }
+                }
+            }
+        }
         doc->styles.pending_control_inputs.insert(e);
         const auto seen = doc->styles.form_input_versions.find(e);
+        const auto current = doc->styles.state.state_of(*e);
+        const uint32_t top_mask = static_cast<uint32_t>(ElementState::Modal) | static_cast<uint32_t>(ElementState::PopoverOpen);
+        const uint32_t previous = seen == doc->styles.form_input_versions.end() ? 0 : static_cast<uint32_t>(seen->second.styled_state);
+        if (((previous ^ static_cast<uint32_t>(current)) & top_mask) != 0) note_box_input(doc, e);
+        if (!e->is_popover_open()) {
+            popover_hide_above(doc, e);
+            doc->light_dismiss_popovers.erase(e);
+            doc->popover_parents.erase(e);
+            const auto it = std::find(doc->popovers.begin(), doc->popovers.end(), e);
+            if (it != doc->popovers.end()) {
+                doc->popovers.erase(it);
+                ++doc->transient_version;
+                e->remove_attribute("data-popover-open");
+                doc->queue_event(WEVA_EVENT_TOGGLE, e, 0, 0, 0, 0, "closed");
+                const auto previous = doc->popover_previous_focus.find(e);
+                if (previous != doc->popover_previous_focus.end()) {
+                    const Element* restore = previous->second;
+                    doc->popover_previous_focus.erase(previous);
+                    if (is_within(doc->styles.state.focused, e))
+                        weva_document_set_focus(doc, doc->handle_of(restore));
+                }
+            }
+        }
+        // Form mutations still update the control's content. Only changed
+        // selector inputs need cascade: comparing against the last cascade
+        // also preserves changes queued across intervening paint-only updates.
         if (seen != doc->styles.form_input_versions.end() &&
-            seen->second.styled_state == doc->styles.state.state_of(*e)) return;
+            seen->second.styled_state == current &&
+            (!doc->styles.engine.has_validity_selectors() ||
+             seen->second.styled_validity == form_validity_selector_state(*e)) &&
+            (!doc->styles.engine.has_range_selectors() ||
+             seen->second.styled_range == form_range_selector_state(*e))) return;
         doc->dom_touched = true;
         if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
             doc->touched.push_back(e);
@@ -2822,6 +3650,10 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     expand_components(doc->doc.get());
 
     doc->elements.clear();
+    doc->dialog_close_order.clear();
+    doc->element_handles.clear();
+    doc->query_order.clear();
+    ++doc->structure_version;
     for (const Ref<Node>& c : doc->doc->children()) {
         if (c->node_type() == NodeType::Element) {
             doc->index_elements(static_cast<Element&>(const_cast<Node&>(*c)));
@@ -2830,14 +3662,31 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     // Every style is keyed on an element of the old document, so none of them
     // can be reused and the walk would otherwise see a page of new elements.
     doc->styles.clear();
+    doc->container_queries.attach(&doc->styles.engine);
     doc->pending = Invalidation::Boxes;
     // Those point at elements of the document just replaced.
     doc->touched.clear();
+    doc->default_buttons.clear();
+    doc->default_inputs_dirty = true;
     doc->dom_touched = false;
     doc->events.clear();
     doc->polled_event_text.clear();
+    doc->polled_popover_open_source = {};
+    doc->polled_popover_hide_target = {};
+    doc->polled_popover_open_target = {};
+    doc->polled_close_target = {};
+    doc->polled_close_value.clear();
+    doc->polled_submit_form = {};
+    doc->polled_submitter = {};
+    doc->polled_image_coordinates.clear();
+    doc->polled_invalid_target = {};
+    doc->polled_validation_report.reset();
+    doc->dialog_return_values.clear();
+    doc->dialog_close_generations.clear();
     doc->press_target = nullptr;
     doc->space_press_target = nullptr;
+    doc->popover_press_target = nullptr;
+    doc->popover_press_active = false;
     doc->activation_keys_down = 0;
     doc->radio_focus_memory.clear();
     doc->list_selections.clear();
@@ -2856,8 +3705,14 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->caret_painted = CaretState{};
     doc->scroll_drag = weva_document::ScrollDrag{};
     doc->popovers.clear();
+    doc->light_dismiss_popovers.clear();
+    doc->popover_parents.clear();
+    doc->popover_previous_focus.clear();
+    doc->dialog_focus_history.clear();
+    doc->check_focus_after_dialog_close = false;
     doc->tooltip = weva_document::Tooltip{};
     doc->history.clear();
+    doc->field_selections.clear();
     doc->composition_before = {};
     doc->composition_value.clear();
     doc->value_at_focus.clear();
@@ -2894,7 +3749,7 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
     // The cascade caches selector matches by element shape, and the shapes did
     // not change -- the rules did.
     doc->styles.engine.invalidate_cache();
-    collect_keyframes(*doc->sheets.back(), &doc->styles.keyframes);
+    doc->styles.keyframes = doc->styles.engine.keyframes();
     // New selectors can create/remove pseudo boxes even without a DOM
     // mutation. The lifecycle must observe the changed stylesheet input.
     doc->pending = Invalidation::Boxes;
@@ -2917,7 +3772,7 @@ weva_status weva_document_set_css(weva_document_t doc, const char* css, size_t l
     if (doc->ua_sheet)
         doc->styles.engine.add_stylesheet(doc->ua_sheet.get(), DeclarationOrigin::UserAgent);
     doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
-    collect_keyframes(*sheet, &doc->styles.keyframes);
+    doc->styles.keyframes = doc->styles.engine.keyframes();
     doc->sheets.push_back(std::move(sheet));
     doc->pending = Invalidation::Boxes;
     return WEVA_OK;
@@ -2930,6 +3785,18 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     doc->config.viewport_height = height;
     doc->ctx.viewport_width_px = width;
     doc->ctx.viewport_height_px = height;
+    // Conditional rules are compiled against viewport inputs. Recompile on
+    // that input change before the normal style diff propagates invalidation.
+    auto media = doc->styles.engine.media_context();
+    media.viewport_width_px = width;
+    media.viewport_height_px = height;
+    doc->styles.engine.set_media_context(media);
+    doc->styles.engine.clear();
+    if (doc->ua_sheet)
+        doc->styles.engine.add_stylesheet(doc->ua_sheet.get(), DeclarationOrigin::UserAgent);
+    for (const auto& sheet : doc->sheets)
+        doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
+    doc->styles.keyframes = doc->styles.engine.keyframes();
     // A cached texture is keyed by the box's own size and style, which does not
     // capture a viewport unit INSIDE a gradient -- a `50vw` stop on a
     // fixed-width box would survive a resize it should not. Dropping the cache
@@ -2938,7 +3805,7 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     // Computed styles do not mention the viewport -- percentages and viewport
     // units are resolved at layout -- so the cascade would report no change at
     // all while every size on the page may be different.
-    doc->pending = worst(doc->pending, Invalidation::Layout);
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
 }
 
 weva_status weva_document_content_size(weva_document_t doc, double* out_width,
@@ -2970,10 +3837,22 @@ void tooltip_hide(weva_document* doc);
 
 }   // namespace
 
+static weva_status update_document(weva_document_t doc, double dt_seconds,
+                                   double input_seconds, bool publish_paint);
+
+weva_status weva_document_update_geometry(weva_document_t doc) {
+    return update_document(doc, 0, 0, false);
+}
+
 weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     return weva_document_update_with_input_time(doc,dt_seconds,dt_seconds);
 }
 weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_seconds, double input_seconds) {
+    return update_document(doc, dt_seconds, input_seconds, true);
+}
+
+static weva_status update_document(weva_document_t doc, double dt_seconds,
+                                   double input_seconds, bool publish_paint) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     if (!doc->doc) return WEVA_ERR_NOT_FOUND;
 
@@ -2983,13 +3862,20 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     static const bool stage_log = std::getenv("WEVA_STAGE_LOG") != nullptr;
     const auto now = [] { return std::chrono::steady_clock::now(); };
     auto t0 = now();
+    BufferedUpdateSample sample(buffered_update_trace(), t0);
     const auto lap = [&](const char* what) {
-        if (!stage_log) return;
+        if (!stage_log && !sample.trace) return;
         const auto t = now();
-        std::fprintf(stderr, "  %-12s %7.3f ms\n", what,
-                     std::chrono::duration<double, std::milli>(t - t0).count());
-        if (doc->host_font) doc->host_font->profile_lap(what);
-        t0 = now();
+        const double elapsed = std::chrono::duration<double, std::milli>(t - t0).count();
+        if (sample.trace) {
+            const char* names[] = {"cascade", "animate", "boxes", "layout", "paint"};
+            for (size_t i = 0; i < 5; ++i) if (std::strcmp(what, names[i]) == 0) sample.entry.stages[i] += elapsed;
+        }
+        if (stage_log) {
+            std::fprintf(stderr, "  %-12s %7.3f ms\n", what, elapsed);
+            if (doc->host_font) doc->host_font->profile_lap(what);
+            t0 = now();
+        } else t0 = t;
     };
 
     // Nothing has been touched since the last update, so there is nothing for
@@ -3008,10 +3894,51 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
         doc->tooltip.dwell += dt_seconds;
         if (doc->tooltip.dwell >= doc->tooltip_delay) tooltip_show(doc);
     }
+    if (doc->styles.engine.has_default_selectors() && doc->default_inputs_dirty) {
+        std::vector<Ref<Element>> next;
+        const auto collect = [&](const auto& self, Node& node) -> void {
+            if (node.is_element()) {
+                auto& e = static_cast<Element&>(node);
+                if (form_is_submit_button(e) && form_is_default(e)) next.push_back(Ref<Element>::retain(&e));
+            }
+            for (const auto& child : node.children()) self(self, *child);
+        };
+        collect(collect, *doc->doc);
+        const auto touch = [&](const Ref<Element>& element) {
+            const Node* root = element.get();
+            while (root->parent()) root = root->parent();
+            if (root != doc->doc.get()) return;
+            doc->dom_touched = true;
+            if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), element.get()) == doc->touched.end())
+                doc->touched.push_back(element.get());
+        };
+        for (const auto& e : doc->default_buttons) if (std::find(next.begin(), next.end(), e) == next.end()) touch(e);
+        for (const auto& e : next) if (std::find(doc->default_buttons.begin(), doc->default_buttons.end(), e) == doc->default_buttons.end()) touch(e);
+        doc->default_buttons = std::move(next);
+        doc->default_inputs_dirty = false;
+    }
+    if (doc->check_focus_after_dialog_close) {
+        doc->check_focus_after_dialog_close = false;
+        if (doc->styles.state.focused && focus_unavailable_now(doc, *doc->styles.state.focused))
+            weva_document_set_focus(doc, WEVA_ELEMENT_NONE);
+    }
+    if (doc->dom_touched && doc->styles.state.focused &&
+        (form_is_disabled(*doc->styles.state.focused) || form_is_inert(*doc->styles.state.focused)))
+        weva_document_set_focus(doc, WEVA_ELEMENT_NONE);
+    if (doc->dom_touched &&
+        ((doc->press_target && form_is_inert(*doc->press_target)) ||
+         (doc->scroll_drag.element && form_is_inert(*doc->scroll_drag.element)) ||
+         (!doc->styles.state.hover_chain.empty() && form_is_inert(*doc->styles.state.hover_chain.front())))) {
+        // Cancel captured gestures even when the mouse is stationary. Preserve
+        // physical button state so the next move cannot synthesize a new press.
+        const auto buttons = doc->buttons_last;
+        weva_document_clear_pointer(doc);
+        doc->buttons_last = buttons;
+    }
     if (doc->styles.state.composing && !field_value_equals(*doc->styles.state.focused, doc->composition_value))
         weva_document_commit_composition(doc, nullptr);
     if (doc->dom_touched && doc->open_select &&
-        (select_is_listbox(*doc->open_select) || disabled_ancestor(doc->open_select))) {
+        (select_is_listbox(*doc->open_select) || disabled_ancestor(doc->open_select) || form_is_inert(*doc->open_select))) {
         doc->set_open_select(nullptr);
         doc->highlighted_option = -1;
         doc->pending = worst(doc->pending, Invalidation::Paint);
@@ -3019,6 +3946,7 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     CaretState caret = caret_for(doc->styles.state);
     if (caret.element != doc->caret_painted.element ||
         caret.index != doc->caret_painted.index ||
+        caret.downstream != doc->caret_painted.downstream ||
         caret.visible != doc->caret_painted.visible ||
         caret.selection_from != doc->caret_painted.selection_from ||
         caret.selection_to != doc->caret_painted.selection_to ||
@@ -3030,7 +3958,8 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
         doc->styles.repaint(doc->caret_painted.element);
         doc->styles.repaint(caret.element);
     }
-    if (doc->pending == Invalidation::None && !doc->dom_touched && doc->styles.pending_control_inputs.empty() &&
+    if ((!publish_paint || !doc->paint_pending) &&
+        doc->pending == Invalidation::None && !doc->dom_touched && doc->styles.pending_control_inputs.empty() &&
         doc->styles.pending_visual_inputs.empty() &&
         doc->styles.pending_box_inputs.empty() &&
         !(dt_seconds > 0 && doc->styles.animating()) &&
@@ -3055,6 +3984,8 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     // difference it found across the document.
     doc->styles.begin_pass();
     if (stage_log) doc->styles.engine.reset_cache_stats();
+    const Element* modal_input = doc->styles.pending_box_inputs.size() == 1 &&
+        doc->styles.pending_box_inputs.front()->tag_name() == "dialog" ? doc->styles.pending_box_inputs.front() : nullptr;
     for (const Element* e : doc->styles.pending_box_inputs) {
         const auto found = doc->styles.by_element.find(e);
         if (found == doc->styles.by_element.end()) doc->styles.note_structural();
@@ -3101,7 +4032,8 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     // the cascade already knows it: it works the same fact out to decide
     // whether its match cache is sound.
     const bool scoped = doc->pending <= Invalidation::Paint && !doc->touched.empty() &&
-                        doc->touched.size() < 64 && !doc->styles.engine.has_has_selectors();
+                        doc->touched.size() < 64 && !doc->styles.engine.has_has_selectors() &&
+                        !doc->styles.engine.has_validity_selectors();
     if (scoped) {
         const bool siblings_matter = doc->styles.engine.has_sibling_selectors();
         // Fold overlapping selector scopes before walking. A parent's style
@@ -3184,6 +4116,23 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     // cascade made an animating page look as though it were restyling, which
     // is exactly what it is NOT doing.
     doc->styles.advance(dt_seconds);
+    if (doc->styles.pending != Invalidation::None && doc->styles.state.focused &&
+        focus_disabled(*doc->styles.state.focused, doc)) {
+        // The cascade has already resolved visibility, including ancestor rules
+        // and visible descendants. Do not re-resolve it on clean HUD frames.
+        const Element* previous = doc->styles.state.focused;
+        weva_document_set_focus(doc, WEVA_ELEMENT_NONE);
+        // Clearing focus flips :focus-within on every ancestor. Restyle that
+        // root scope now so siblings and :has() see the blur this frame. Match
+        // caches retain their versioned inputs; no global cache is invalidated.
+        for (const auto& child : doc->doc->children())
+            if (child->is_element()) doc->styles.walk(static_cast<const Element&>(*child), nullptr);
+        doc->styles.advance(0);
+        doc->styles.repaint(previous);
+        doc->touched.clear();
+        doc->dom_touched = false;
+        caret = caret_for(doc->styles.state);
+    }
     lap("animate");
     // Use restored geometry on layout frames and let explicit row/caret
     // reveal finish before the held gesture advances the viewport.
@@ -3197,6 +4146,7 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     // by the entry point that did it.
     pending = worst(pending, doc->pending);
     doc->pending = Invalidation::None;
+    if (publish_paint && doc->paint_pending) pending = worst(pending, Invalidation::Paint);
 
     if (pending == Invalidation::None) {
         // Nothing an element can see is different, so the draws already
@@ -3212,10 +4162,14 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     // fresh subtree, and splices only when its dimensions, baselines and
     // intrinsic contributions prove that surrounding layout stays valid.
     // Structure, external constraints and unsupported dependencies rebuild.
-    const bool subtree_layout = pending == Invalidation::Layout &&
+    const bool modal_layout = pending == Invalidation::Boxes && modal_input &&
+        pending_at_entry == Invalidation::None && doc->incremental_layout.update_modal(
+            &doc->tree, doc->root, *doc->doc, *modal_input, &doc->styles, doc->ctx,
+            &doc->metrics_backend(), doc->styles.changes);
+    bool subtree_layout = modal_layout || (pending == Invalidation::Layout &&
         pending_at_entry < Invalidation::Layout &&
         doc->incremental_layout.update(&doc->tree, doc->root, &doc->styles, doc->ctx,
-                                      &doc->metrics_backend(), doc->styles.changes);
+                                      &doc->metrics_backend(), doc->styles.changes));
     if (pending >= Invalidation::Layout && !subtree_layout) {
         doc->tree.reset();
         BoxBuilder builder(&doc->tree, &doc->styles);
@@ -3247,6 +4201,40 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     if (stage_log && subtree_layout)
         std::fprintf(stderr, "  layout reused: %zu subtrees replaced, %zu grids retained\n",
                      doc->incremental_layout.replaced().size(), doc->incremental_layout.retained_grids());
+    if (pending >= Invalidation::Layout && !doc->styles.engine.container_queries().empty()) {
+        // Size containment makes query dependencies flow from ancestors to
+        // descendants. Settle nested containers before publishing this frame;
+        // the DOM depth cannot exceed the number of styled elements.
+        size_t remaining=doc->styles.by_element.size()+1;
+        while (doc->container_queries.refresh(*doc->doc,doc->tree,doc->root,doc->styles,doc->ctx)) {
+            if (!remaining--) {
+                std::fprintf(stderr,"WEVA: container size queries did not settle\n");
+                return WEVA_ERR_INTERNAL;
+            }
+            const auto previous=doc->styles.pending;
+            doc->styles.pending=Invalidation::None;
+            for (const Element* element:doc->container_queries.changed_roots()) {
+                const auto* parent=element->parent();
+                const auto* parent_style=parent && parent->is_element()
+                    ? doc->styles.style_of(static_cast<const Element&>(*parent)) : nullptr;
+                doc->styles.walk(*element,parent_style);
+            }
+            const auto query_pending=doc->styles.pending;
+            doc->styles.pending=worst(previous,query_pending);
+            pending=worst(pending,query_pending);
+            if (query_pending < Invalidation::Layout) break;
+            doc->tree.reset();
+            BoxBuilder builder(&doc->tree,&doc->styles);
+            doc->root=builder.build_document(*doc->doc);
+            if (doc->root==kNoBox) return WEVA_ERR_INTERNAL;
+            BlockLayout block(&doc->tree,doc->ctx,&doc->metrics_backend());
+            block.layout_root(doc->root,doc->ctx.viewport_width_px,doc->ctx.viewport_height_px);
+            run_positioning(&doc->tree,doc->root,doc->ctx,&block);
+            compute_visual_overflow(&doc->tree,doc->root);
+            doc->incremental_layout.index(doc->tree,doc->root,doc->ctx,true);
+            subtree_layout=false;
+        }
+    }
     lap("layout");
 
     // Where the cursor ended up, now that there is a layout, and the scroll
@@ -3331,7 +4319,19 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     for (const auto& change : doc->styles.changes) {
         const auto& boxes = doc->incremental_layout.style_boxes();
         const auto it = boxes.find(change.first);
-        if (it != boxes.end() && it->second != kNoBox) paint_changes.push_back(it->second);
+        if (it != boxes.end() && it->second != kNoBox) {
+            BoxId changed = it->second;
+            // Inline styles can own fragments on several sibling lines. Their
+            // containing block is the smallest retained boundary covering all
+            // fragments; invalidating only the first leaves later lines stale.
+            if (doc->tree[changed].kind == BoxKind::Inline || doc->tree[changed].kind == BoxKind::Text) {
+                while (doc->tree[changed].parent != kNoBox &&
+                       doc->tree[changed].kind != BoxKind::Block &&
+                       doc->tree[changed].kind != BoxKind::AnonymousBlock)
+                    changed = doc->tree[changed].parent;
+            }
+            paint_changes.push_back(changed);
+        }
     }
     const bool reset_paint = (pending >= Invalidation::Layout && !subtree_layout) ||
                             pending_at_entry != Invalidation::None ||
@@ -3345,6 +4345,13 @@ weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_
     }
     doc->backend.prepare_reuse(doc->tree, &doc->textures, paint_changes, reset_paint,
                                doc->incremental_layout, subtree_layout);
+    if (!publish_paint) {
+        // Retain every changed cache input across event geometry updates while
+        // leaving the published draw buffers and their textures untouched.
+        doc->paint_pending = true;
+        return WEVA_OK;
+    }
+    doc->paint_pending = false;
     for (TextureHandle t : doc->transient_textures) doc->render_backend()->release_texture(t);
     doc->transient_textures.clear();
     doc->backend.begin_frame();
@@ -3447,6 +4454,10 @@ uint64_t weva_document_draw_serial(weva_document_t doc) {
     return doc ? doc->draw_serial : 0;
 }
 
+uint64_t weva_document_interaction_version(weva_document_t doc) {
+    return doc ? static_cast<uint64_t>(doc->styles.state.version_) : 0;
+}
+
 const weva_draw* weva_document_draws(weva_document_t doc, size_t* out_count) {
     if (out_count) *out_count = doc ? doc->draw_views.size() : 0;
     return doc && !doc->draw_views.empty() ? doc->draw_views.data() : nullptr;
@@ -3467,10 +4478,7 @@ weva_element_t weva_document_query(weva_document_t doc, const char* selector) {
     CompiledSelector compiled;
     SelectorParseError err;
     if (!parse_selector(selector, &compiled, &err)) return WEVA_ELEMENT_NONE;
-    for (size_t i = 0; i < doc->elements.size(); ++i) {
-        // A removed element leaves a hole rather than renumbering the ones
-        // after it, so every walk of this table steps over nulls.
-        if (!doc->elements[i]) continue;
+    for (weva_element_t i : doc->document_order()) {
         // The document's OWN state, not a null one.
         //
         // With a null provider no state pseudo-class could ever match here --
@@ -3500,10 +4508,48 @@ weva_status weva_element_bounds(weva_document_t doc, weva_element_t element, dou
         // can see.
         double ax = 0, ay = 0;
         visual_position(doc->tree, i, &ax, &ay);
+        double width = b.width, height = b.height;
+        if (b.kind == BoxKind::Inline) {
+            // Query-only walk: wrapped/split inline elements have several
+            // principal fragments. The index deliberately retains just one.
+            bool nonempty = false;
+            const auto visit = [&](const auto& self, BoxId id) -> void {
+                const Box& fragment = doc->tree[id];
+                if ((fragment.kind == BoxKind::Inline && fragment.element == e) ||
+                    is_promoted_inline_fragment(fragment, e)) {
+                    if ((fragment.width != 0 && fragment.height != 0) || fragment.split_inline_owner) {
+                        double x, y, fw = fragment.width, fh = fragment.height;
+                        if (is_promoted_inline_fragment(fragment, e)) {
+                            promoted_inline_rect(doc->tree, id, &x, &y, &fw, &fh);
+                            double px, py; visual_position(doc->tree, fragment.parent, &px, &py);
+                            x += px - doc->tree[fragment.parent].scroll_x;
+                            y += py - doc->tree[fragment.parent].scroll_y;
+                        } else visual_position(doc->tree, id, &x, &y);
+                        if (fw == 0 || fh == 0) {
+                            // Empty client rectangles do not enlarge a union.
+                        } else if (!nonempty) {
+                            ax = x; ay = y; width = fw; height = fh;
+                            nonempty = true;
+                        } else {
+                            const double right = std::max(ax + width, x + fw);
+                            const double bottom = std::max(ay + height, y + fh);
+                            ax = std::min(ax, x); ay = std::min(ay, y);
+                            width = right - ax; height = bottom - ay;
+                        }
+                    }
+                }
+                for (BoxId child : doc->tree.children(id)) self(self, child);
+            };
+            BoxId containing_block = i;
+            while (doc->tree[containing_block].kind != BoxKind::Block &&
+                   doc->tree[containing_block].parent != kNoBox)
+                containing_block = doc->tree[containing_block].parent;
+            visit(visit, containing_block);
+        }
         if (out_x) *out_x = ax;
         if (out_y) *out_y = ay;
-        if (out_width) *out_width = b.width;
-        if (out_height) *out_height = b.height;
+        if (out_width) *out_width = width;
+        if (out_height) *out_height = height;
         return WEVA_OK;
     }
     // The element exists but generated no box — `display: none`, or the
@@ -3586,7 +4632,7 @@ void note_state_change(weva_document* doc, const std::vector<const Element*>& be
 
 weva_element_t weva_document_element_at(weva_document_t doc, double x, double y) {
     if (!doc) return WEVA_ELEMENT_NONE;
-    const Element* hit = element_at_point(doc->tree, doc->root, x, y);
+    const Element* hit = input_element_at(doc, x, y);
     if (!hit) return WEVA_ELEMENT_NONE;
     for (size_t i = 0; i < doc->elements.size(); ++i) {
         if (doc->elements[i] == hit) return static_cast<weva_element_t>(i);
@@ -3614,7 +4660,7 @@ void push_undo(weva_document* doc, const Element& e, const std::string& before, 
 void set_field_value(weva_document*, Element& e, std::string_view value) {
     // Editor snapshots/preedit may contain incomplete number input. The
     // public programmatic setter applies the value sanitization algorithm.
-    e.set_form_value(value, false);
+    e.set_form_value(value, false, true);
 }
 
 void composition_event(weva_document* doc, int kind, std::string_view text) {
@@ -3624,8 +4670,7 @@ void composition_event(weva_document* doc, int kind, std::string_view text) {
     weva_document::fill_handler(&event, doc->styles.state.focused);
     const size_t count = text_boundary(text, static_cast<int>(std::min(text.size(), sizeof(event.text) - 1)));
     std::memcpy(event.text, text.data(), count);
-    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
-    doc->events.emplace_back(event, text);
+    doc->push_event(weva_document::QueuedEvent(event, text));
 }
 
 bool same_radio_group(weva_document* doc, const Element* a, const Element* b) {
@@ -3765,7 +4810,7 @@ bool set_range_value(weva_document* doc, Element& e, const RangeValue& range, do
 }
 
 // What a click does to a control. Returns true when it changed something.
-bool activate_control(weva_document* doc, Element& e, double x) {
+bool activate_control(weva_document* doc, Element& e, double x, double y) {
     const std::string type = input_type_of(e);
     if (e.tag_name() == "input" && (type == "checkbox" || type == "radio")) {
         if (type == "radio") {
@@ -3785,10 +4830,12 @@ bool activate_control(weva_document* doc, Element& e, double x) {
         if (weva_element_bounds(doc, doc->handle_of(&e), &ex, &ey, &ew, &eh) != WEVA_OK) {
             return false;
         }
-        if (ew <= 0) return false;
+        const auto box = box_of(doc, &e);
+        if (box == kNoBox || !point_to_layout(doc->tree, box, doc->ctx, &x, &y)) return false;
+        const RangeTrack track(doc->tree[box], ex, ey);
+        if (track.length <= 0 || track.cross <= 0) return false;
         const RangeValue range(e);
-        double frac = (x - ex) / ew;
-        frac = frac < 0 ? 0 : frac > 1 ? 1 : frac;
+        const double frac = track.fraction(x, y);
         return set_range_value(doc, e, range, range.min + frac * (range.max - range.min));
     }
     return false;
@@ -3807,41 +4854,60 @@ const Element* activation_target(const Element* hit) {
     return hit;
 }
 
-bool is_submit_button(const Element& e) {
-    if (e.tag_name() == "input") {
-        const auto type = input_type_of(e);
-        return type == "submit" || type == "image";
+void queue_form_submission(weva_document* doc, Element* form, const Element* submitter,
+                           double x, double y, uint32_t buttons, bool pointer = false) {
+    // A form cannot recursively submit while its submit handler is running.
+    if (!form || doc->polled_submit_form.get() == form ||
+        (doc->polled_validation_report && doc->polled_validation_report->form.get() == form)) return;
+    weva_event event{};
+    event.kind = WEVA_EVENT_SUBMIT;
+    event.target = doc->handle_of(form);
+    event.x = x;
+    event.y = y;
+    event.buttons = buttons;
+    doc->fill_handler(&event, form);
+    weva_document::QueuedEvent queued(event);
+    queued.submit_form = Ref<Element>::retain(form);
+    if (submitter) queued.submitter = Ref<Element>::retain(const_cast<Element*>(submitter));
+    if (submitter && submitter->tag_name() == "input" && form_input_type(*submitter) == "image") {
+        double local_x = 0, local_y = 0;
+        const BoxId id = box_of(doc, submitter);
+        if (pointer && id != kNoBox && point_to_layout(doc->tree, id, doc->ctx, &x, &y)) {
+            double origin_x = 0, origin_y = 0;
+            visual_position(doc->tree, id, &origin_x, &origin_y);
+            local_x = std::max(0.0, x - origin_x - doc->tree[id].border_left);
+            local_y = std::max(0.0, y - origin_y - doc->tree[id].border_top);
+        }
+        queued.image_coordinates = std::to_string(static_cast<int64_t>(std::round(local_x))) + "," +
+                                   std::to_string(static_cast<int64_t>(std::round(local_y)));
     }
-    if (e.tag_name() != "button") return false;
-    std::string type(e.get_attribute("type"));
-    for (char& c : type) if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
-    return type != "button" && type != "reset";
+    doc->push_event(std::move(queued));
 }
 
 // Pointer and keyboard activation share event routing and default actions.
 // Keyboard clicks use zero coordinates and never synthesize pointer events.
 void activate_element(weva_document* doc, const Element* hit, double x, double y, uint32_t buttons,
-                      uint32_t modifiers = 0) {
-    if (!hit || disabled_ancestor(hit)) return;
+                      uint32_t modifiers = 0, bool pointer = false) {
+    if (!hit || disabled_ancestor(hit) || input_blocked(doc, hit)) return;
     doc->queue_event(WEVA_EVENT_CLICK, hit, x, y, buttons, modifiers);
     const Element* target = activation_target(hit);
     if (target && (target->tag_name() == "button" || target->tag_name() == "input") && form_input_type(*target) == "reset") {
         if (Element* form = form_of(target, doc)) weva_document_reset_form(doc, doc->handle_of(form));
     }
-    if (target && is_submit_button(*target)) {
+    if (target && form_is_submit_button(*target)) {
         if (Element* form = form_of(target, doc))
-            doc->queue_event(WEVA_EVENT_SUBMIT, form, x, y, buttons);
+            queue_form_submission(doc, form, target, x, y, buttons, pointer);
     }
     if (const Element* trigger = popover_trigger_at(hit)) {
         if (Element* popover = element_by_id(doc, std::string(trigger->get_attribute("popovertarget")))) {
             const auto action = trigger->get_attribute("popovertargetaction");
-            if (action == "show") popover_show(doc, *popover);
-            else if (action == "hide" || popover->has_attribute("data-popover-open")) popover_hide(doc, *popover);
-            else popover_show(doc, *popover);
+            if (action == "hide" || (action != "show" && popover->is_popover_open())) {
+                if (doc->popover_request_events) weva_element_request_hide_popover(doc, doc->handle_of(popover));
+                else popover_hide(doc, *popover);
+            }
+            else if (doc->popover_request_events) request_popover_open(doc, doc->handle_of(popover), trigger);
+            else popover_show(doc, *popover, trigger);
         }
-    } else if (!doc->popovers.empty()) {
-        const Element* top = doc->popovers.back();
-        if (popover_is_auto(*top) && !is_within(hit, top)) popover_hide(doc, const_cast<Element&>(*top));
     }
     if (target && target->tag_name() == "summary") {
         Element* details = details_for_summary_click(target);
@@ -3852,12 +4918,12 @@ void activate_element(weva_document* doc, const Element* hit, double x, double y
         doc->queue_event(WEVA_EVENT_TOGGLE, details, x, y, buttons);
     }
     if (Element* labelled = label_target_for_click(doc, hit)) {
-        if (disabled_ancestor(labelled)) return;
+        if (disabled_ancestor(labelled) || input_blocked(doc, labelled)) return;
         weva_document_set_focus(doc, doc->handle_of(labelled));
         // A label focuses a slider without moving its thumb.
-        if (input_type_of(*labelled) != "range") activate_control(doc, *labelled, x);
+        if (input_type_of(*labelled) != "range") activate_control(doc, *labelled, x, y);
     } else if (target) {
-        activate_control(doc, const_cast<Element&>(*target), x);
+        activate_control(doc, const_cast<Element&>(*target), x, y);
     }
 }
 
@@ -3872,7 +4938,7 @@ bool implicit_submit(weva_document* doc, const Element* field) {
             if (child->node_type() != NodeType::Element) continue;
             const auto& e = static_cast<const Element&>(*child);
             if (form_of(&e, doc) == form) {
-                if (is_submit_button(e)) return &e;
+                if (form_is_submit_button(e)) return &e;
                 if (e.tag_name() == "input" && is_text_field(e)) ++blocking_fields;
             }
             if (const Element* found = self(self, e)) return found;
@@ -3882,7 +4948,7 @@ bool implicit_submit(weva_document* doc, const Element* field) {
     if (const Element* button = visit(visit, *doc->doc)) {
         if (!disabled_ancestor(button)) activate_element(doc, button, 0, 0, 0);
     } else if (is_text_field(*field) && blocking_fields <= 1) {
-        doc->queue_event(WEVA_EVENT_SUBMIT, form, 0, 0, 0);
+        queue_form_submission(doc, form, nullptr, 0, 0, 0);
     }
     return true;
 }
@@ -3897,18 +4963,21 @@ namespace {
 // what finds the thing the bar belongs to.
 bool scrollbar_under(const weva_document* doc, double x, double y, Scrollbar* out, BoxId* out_box,
                      bool* out_vertical, bool* out_on_thumb) {
-    for (BoxId id = box_at_point(doc->tree, doc->root, x, y); id != kNoBox;
+    for (BoxId id = box_at_point(doc->tree, doc->root, x, y, &doc->ctx); id != kNoBox;
          id = doc->tree[id].parent) {
+        if (doc->tree[id].element && input_blocked(doc, doc->tree[id].element)) break;
         if (!doc->tree[id].element || !clips_overflow(doc->tree[id])) continue;
         double ox = 0, oy = 0;
         visual_position(doc->tree, id, &ox, &oy);
+        double local_x = x, local_y = y;
+        if (!point_to_layout(doc->tree, id, doc->ctx, &local_x, &local_y)) continue;
         for (const bool vertical : {true, false}) {
             const Scrollbar bar = scrollbar_of(doc->tree, id, vertical, ox, oy);
-            if (!bar.visible || !bar.track.contains(x, y)) continue;
+            if (!bar.visible || !bar.track.contains(local_x, local_y)) continue;
             *out = bar;
             *out_box = id;
             *out_vertical = vertical;
-            *out_on_thumb = bar.thumb.contains(x, y);
+            *out_on_thumb = bar.thumb.contains(local_x, local_y);
             return true;
         }
     }
@@ -3923,8 +4992,8 @@ bool focus_order_of(const Element& e, int* order, bool include_negative = false)
 
 int weva_document_accepts_pointer(weva_document_t doc, double x, double y) {
     if (!doc) return 0;
-    if (doc->open_select && select_row_at(doc, x, y) >= 0) return 1;
-    return element_at_point(doc->tree, doc->root, x, y) != nullptr;
+    if (doc->open_select && !input_blocked(doc, doc->open_select) && select_row_at(doc, x, y) >= 0) return 1;
+    return input_element_at(doc, x, y) != nullptr;
 }
 
 uint64_t weva_document_transient_version(weva_document_t doc) {
@@ -3938,7 +5007,15 @@ uint64_t weva_document_transient_version(weva_document_t doc) {
 int weva_document_dismiss_transients(weva_document_t doc, uint64_t version) {
     if (!doc || !version || version != weva_document_transient_version(doc)) return 0;
     if (doc->open_select) weva_document_open_select(doc, WEVA_ELEMENT_NONE);
-    while (popover_hide_top_auto(doc)) {}
+    // Queued closes leave the live stack unchanged until the host polls.
+    // Traverse it once rather than repeatedly selecting the same top item.
+    if (doc->popover_request_events) {
+        for (size_t i = doc->popovers.size(); i-- > 0;) {
+            const auto* popup = doc->popovers[i];
+            if (popover_is_auto(*popup))
+                weva_element_request_hide_popover(doc, doc->handle_of(popup));
+        }
+    } else while (popover_hide_top_auto(doc)) {}
     return 1;
 }
 
@@ -3954,8 +5031,18 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
     doc->pointer_y = y;
     const bool pressed = (buttons & WEVA_BUTTON_PRIMARY) && !(previous_buttons & WEVA_BUTTON_PRIMARY);
     InteractionState& st = doc->styles.state;
-    if (pressed)
+    if (buttons & WEVA_BUTTON_PRIMARY) st.vertical_owner = nullptr;
+    if (pressed) {
+        doc->popover_press_active = false;
+        doc->popover_press_target = nullptr;
         weva_document_commit_composition(doc, nullptr);
+    }
+
+    if (doc->open_select && input_blocked(doc, doc->open_select)) {
+        doc->set_open_select(nullptr);
+        doc->highlighted_option = -1;
+        doc->pending = worst(doc->pending, Invalidation::Paint);
+    }
 
     // An open list is above the document, so it takes the pointer before the
     // tree does: what is under a dropdown is not what you are pointing at.
@@ -3987,10 +5074,15 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
     // slides under it, and whatever the pointer happens to be over takes
     // neither :hover nor a click.
     if (doc->scroll_drag.element) {
-        if (buttons == 0) {
+        if (buttons == 0 || input_blocked(doc, doc->scroll_drag.element)) {
             doc->scroll_drag = weva_document::ScrollDrag{};
         } else {
-            const double along = doc->scroll_drag.vertical ? y : x;
+            double local_x = x, local_y = y;
+            if (!point_to_layout(doc->tree, box_of(doc, doc->scroll_drag.element), doc->ctx, &local_x, &local_y)) {
+                doc->scroll_drag = weva_document::ScrollDrag{};
+                return;
+            }
+            const double along = doc->scroll_drag.vertical ? local_y : local_x;
             const double moved = (along - doc->scroll_drag.grab) * doc->scroll_drag.per_pixel;
             auto& at = doc->scroll[doc->scroll_drag.element];
             const double to = std::max(0.0, doc->scroll_drag.from + moved);
@@ -4007,12 +5099,14 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
         BoxId box = kNoBox;
         bool vertical = false, on_thumb = false;
         if (scrollbar_under(doc, x, y, &bar, &box, &vertical, &on_thumb)) {
+            double local_x = x, local_y = y;
+            if (!point_to_layout(doc->tree, box, doc->ctx, &local_x, &local_y)) return;
             const Box& b = doc->tree[box];
             const double at = vertical ? b.scroll_y : b.scroll_x;
             if (on_thumb) {
                 doc->scroll_drag.element = b.element;
                 doc->scroll_drag.vertical = vertical;
-                doc->scroll_drag.grab = vertical ? y : x;
+                doc->scroll_drag.grab = vertical ? local_y : local_x;
                 doc->scroll_drag.from = at;
                 doc->scroll_drag.per_pixel = bar.scroll_per_pixel;
             } else {
@@ -4020,7 +5114,7 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
                 // does everywhere.
                 const double page = vertical ? b.height - b.border_top - b.border_bottom
                                              : b.width - b.border_left - b.border_right;
-                const double point = vertical ? y : x;
+                const double point = vertical ? local_y : local_x;
                 const double thumb_start = vertical ? bar.thumb.y : bar.thumb.x;
                 const double to = std::max(0.0, at + (point < thumb_start ? -page : page));
                 auto& offset = doc->scroll[b.element];
@@ -4031,12 +5125,19 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
         }
     }
 
-    const Element* hit = element_at_point(doc->tree, doc->root, x, y);
-    // A disabled control is not a target: it still occupies its space, so what
-    // is behind it is not hit either, but nothing about it responds. A greyed
-    // out button that still reports clicks is worse than one that is not
-    // greyed out at all.
-    if (hit && disabled_ancestor(hit)) hit = nullptr;
+    const Element* hit = input_element_at(doc, x, y);
+    // Disabled controls still receive pointer events and hover/active styling.
+    if (pressed) {
+        doc->popover_press_active = !doc->light_dismiss_popovers.empty();
+        doc->popover_press_target = doc->popover_press_active ? popover_pointer_ancestor(doc, hit) : nullptr;
+    }
+    // Keep the hit for those and title tooltips, but never latch activation.
+    const bool disabled_hit = hit && disabled_ancestor(hit);
+    if (doc->press_target && (disabled_ancestor(doc->press_target) || input_blocked(doc, doc->press_target))) {
+        doc->press_target = nullptr;
+        clear_text_drag(doc);
+        finish_list_drag(doc);
+    }
 
     // Enter and leave are reported against the innermost element, which is
     // where the hover chain starts.
@@ -4060,12 +5161,12 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
     const uint32_t was_down = previous_buttons & WEVA_BUTTON_PRIMARY;
     if (primary != 0 && !was_down) {
         clear_text_drag(doc);
-        doc->press_target = hit;
+        doc->press_target = disabled_hit ? nullptr : hit;
         doc->queue_event(WEVA_EVENT_POINTER_DOWN, hit, x, y, buttons, modifiers);
         // A range follows the pointer from the moment it goes down, and a
         // click on a field takes focus -- both are what makes a control feel
         // like one rather than like a picture of one.
-        if (hit) {
+        if (hit && !disabled_hit) {
             // Click focus includes negative tabindex and the nearest focusable
             // ancestor (for example the button around a span). It is distinct
             // from sequential focus, which deliberately skips tabindex=-1.
@@ -4093,7 +5194,7 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
                 doc->pending = worst(doc->pending, Invalidation::Paint);
                 return;
             }
-            if (input_type_of(e) == "range") activate_control(doc, e, x);
+            if (input_type_of(e) == "range") activate_control(doc, e, x, y);
             if (is_text_field(e)) {
                 weva_document_set_focus(doc, doc->handle_of(hit));
                 // The cursor goes where you pressed, not to the end of the
@@ -4116,7 +5217,9 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
         InteractionState& state = doc->styles.state;
         Rect viewport;
         if (!text_drag_viewport(doc,&viewport)) { clear_text_drag(doc); return; }
-        if (viewport.contains(x,y)) doc->text_scroll_armed = true;
+        double local_x = x, local_y = y;
+        if (point_to_layout(doc->tree, box_of(doc, doc->press_target), doc->ctx, &local_x, &local_y) &&
+            viewport.contains(local_x,local_y)) doc->text_scroll_armed = true;
         const int to = static_cast<int>(field_offset_at(doc, *doc->press_target, x, y));
         if (to != state.caret) {
             if (state.anchor < 0) state.anchor = state.caret;
@@ -4129,7 +5232,7 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
                input_type_of(const_cast<Element&>(*doc->press_target)) == "range") {
         // Held and moving: the range keeps following, even once the pointer
         // has left it, which is how a slider behaves everywhere.
-        activate_control(doc, const_cast<Element&>(*doc->press_target), x);
+        activate_control(doc, const_cast<Element&>(*doc->press_target), x, y);
     } else if (primary == 0 && was_down) {
         clear_text_drag(doc);
         doc->queue_event(WEVA_EVENT_POINTER_UP, hit, x, y, buttons, modifiers);
@@ -4137,7 +5240,8 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
         // A click is a press and a release on the SAME element. Releasing
         // somewhere else is a drag that ended, and is not a click -- which is
         // the behaviour every button in every toolkit has.
-        if (hit && hit == doc->press_target) activate_element(doc, hit, x, y, buttons, modifiers);
+        popover_pointer_release(doc, hit);
+        if (hit && hit == doc->press_target) activate_element(doc, hit, x, y, buttons, modifiers, true);
         doc->press_target = nullptr;
     }
 
@@ -4189,6 +5293,8 @@ void weva_document_clear_pointer(weva_document_t doc) {
     finish_list_drag(doc);
     doc->press_target = nullptr;
     doc->buttons_last = 0;
+    doc->popover_press_target = nullptr;
+    doc->popover_press_active = false;
     doc->scroll_drag = weva_document::ScrollDrag{};
     InteractionState& st = doc->styles.state;
     const std::vector<const Element*> old_hover = st.hover_chain;
@@ -4220,6 +5326,10 @@ bool focus_order_of(const Element& e, int* order, bool include_negative) {
     }
     // Focusable by nature. An <a> only counts with an href, as in HTML.
     const std::string_view tag = e.tag_name();
+    if (tag == "dialog" && e.has_attribute("open") && include_negative) {
+        *order = -1;
+        return true;
+    }
     if (tag == "button" || tag == "input" || tag == "select" || tag == "textarea") {
         *order = 0;
         return true;
@@ -4232,7 +5342,14 @@ bool focus_order_of(const Element& e, int* order, bool include_negative) {
     return false;
 }
 
-bool focus_disabled(const Element& e, const StyleMap& styles) {
+bool text_contents_hidden(const weva_document* doc, const Element& e) {
+    const auto style = doc->styles.by_element.find(&e);
+    return style != doc->styles.by_element.end() && style->second->get("content-visibility") == "hidden";
+}
+
+bool focus_disabled(const Element& e, const weva_document* doc) {
+    const StyleMap& styles = doc->styles;
+    if (input_blocked(doc, &e)) return true;
     if (disabled_ancestor(&e) || (e.tag_name() == "input" && input_type_of(e) == "hidden")) return true;
     auto it = styles.by_element.find(&e);
     if (it == styles.by_element.end()) return true;   // no box, no focus
@@ -4241,21 +5358,49 @@ bool focus_disabled(const Element& e, const StyleMap& styles) {
     for (const Node* n = &e; n; n = n->parent()) {
         if (n->node_type() != NodeType::Element) continue;
         const auto ancestor = styles.by_element.find(static_cast<const Element*>(n));
-        if (ancestor != styles.by_element.end() && ancestor->second->get("display") == "none") return true;
+        if (ancestor != styles.by_element.end() &&
+            (ancestor->second->get("display") == "none" ||
+             (n != &e && ancestor->second->get("content-visibility") == "hidden"))) return true;
     }
     return false;
 }
 
-void collect_focusables(const Node& n, const StyleMap& styles,
+// Explicit focus can follow a mutation before the next layout pass. Resolve
+// only the target's ancestor chain, without changing retained style objects.
+bool focus_unavailable_now(weva_document* doc, const Element& target) {
+    if (input_blocked(doc, &target) || disabled_ancestor(&target) ||
+        (target.tag_name() == "input" && input_type_of(target) == "hidden")) return true;
+    if (!doc->dom_touched && doc->pending < Invalidation::Layout &&
+        doc->styles.pending < Invalidation::Layout && doc->styles.pending_box_inputs.empty())
+        return focus_disabled(target, doc);
+    std::vector<const Element*> chain;
+    const Node* root = &target;
+    for (const Node* node = &target; node; node = node->parent()) {
+        root = node;
+        if (node->is_element()) chain.push_back(static_cast<const Element*>(node));
+    }
+    if (root != doc->doc.get()) return true;
+    std::vector<ComputedStyle> resolved(chain.size());
+    const ComputedStyle* parent = nullptr;
+    for (size_t i = 0; i < chain.size(); ++i) {
+        doc->styles.engine.compute(*chain[chain.size()-1-i], doc->styles.state, parent, &resolved[i]);
+        if (resolved[i].get("display") == "none") return true;
+        if (i + 1 < chain.size() && resolved[i].get("content-visibility") == "hidden") return true;
+        parent = &resolved[i];
+    }
+    return parent && (parent->get("visibility") == "hidden" || parent->get("visibility") == "collapse");
+}
+
+void collect_focusables(const Node& n, const weva_document* doc,
                         std::vector<std::pair<int, const Element*>>* out, bool include_negative = false) {
     for (const Ref<Node>& c : n.children()) {
         if (c->node_type() != NodeType::Element) continue;
         const auto& e = static_cast<const Element&>(*c);
         int order = 0;
-        if (focus_order_of(e, &order, include_negative) && !focus_disabled(e, styles)) {
+        if (focus_order_of(e, &order, include_negative) && !focus_disabled(e, doc)) {
             out->emplace_back(order, &e);
         }
-        collect_focusables(e, styles, out, include_negative);
+        collect_focusables(e, doc, out, include_negative);
     }
 }
 
@@ -4268,7 +5413,7 @@ weva_element_t weva_document_focus_next(weva_document_t doc, int backwards) {
 weva_element_t weva_document_focus_step(weva_document_t doc, int backwards, int wrap) {
     if (!doc || !doc->doc) return WEVA_ELEMENT_NONE;
     std::vector<std::pair<int, const Element*>> found;
-    collect_focusables(*doc->doc, doc->styles, &found);
+    collect_focusables(*doc->doc, doc, &found);
     if (found.empty()) {
         if (!wrap) weva_document_set_focus(doc, WEVA_ELEMENT_NONE);
         return WEVA_ELEMENT_NONE;
@@ -4325,6 +5470,17 @@ weva_element_t weva_document_focus_step(weva_document_t doc, int backwards, int 
     }
     const weva_element_t handle = doc->handle_of(found[next].second);
     weva_document_set_focus(doc, handle);
+    const Element* target = found[next].second;
+    if (doc->styles.state.focused == target && target->tag_name() == "input" && is_text_field(*target)) {
+        // Sequential keyboard focus selects input text, unlike programmatic
+        // focus or textarea navigation, which preserve the field's selection.
+        auto& state = doc->styles.state;
+        state.caret = static_cast<int>(target->form_edit_value().size());
+        state.anchor = state.caret ? 0 : -1;
+        state.caret_age = 0;
+        doc->caret_follow = true;
+        doc->styles.repaint(target);
+    }
     return handle;
 }
 
@@ -4332,7 +5488,7 @@ weva_element_t weva_document_focus_move(weva_document_t doc, double dx, double d
     if (!doc || !doc->doc) return WEVA_ELEMENT_NONE;
     if (dx == 0 && dy == 0) return doc->handle_of(doc->styles.state.focused);
     std::vector<std::pair<int, const Element*>> found;
-    collect_focusables(*doc->doc, doc->styles, &found);
+    collect_focusables(*doc->doc, doc, &found);
     if (found.empty()) return WEVA_ELEMENT_NONE;
 
     const Element* current = doc->styles.state.focused;
@@ -4407,6 +5563,7 @@ weva_element_t weva_document_focus_move(weva_document_t doc, double dx, double d
 
 int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down) {
     if (!doc) return 0;
+    if (down && key != WEVA_KEY_UP && key != WEVA_KEY_DOWN) doc->styles.state.vertical_owner = nullptr;
     if (doc->styles.state.composing && key != WEVA_KEY_OTHER) {
         if (down && key == WEVA_KEY_ESCAPE) weva_document_commit_composition(doc, "");
         else if (down && key == WEVA_KEY_ENTER) weva_document_commit_composition(doc, nullptr);
@@ -4420,15 +5577,48 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
     e.key = key;
     e.modifiers = modifiers;
     weva_document::fill_handler(&e, doc->styles.state.focused);
-    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
-    doc->events.push_back(e);
+    doc->push_event(e);
+
+    // Close requests are independent of whether the focused control still has
+    // usable layout. Composition handled Escape above; popovers and selects
+    // receive it before their containing dialog.
+    if (down && key == WEVA_KEY_ESCAPE) {
+        if (popover_hide_top_auto(doc)) return 1;
+        if (doc->open_select) {
+            doc->set_open_select(nullptr);
+            doc->highlighted_option = -1;
+            doc->pending = worst(doc->pending, Invalidation::Paint);
+            return 1;
+        }
+    }
+    // The latest shown dialog owns the close request, including a non-modal
+    // dialog whose disabled close policy shields an underlying modal.
+    if (down && key == WEVA_KEY_ESCAPE) {
+        for (auto entry = doc->dialog_close_order.rbegin(); entry != doc->dialog_close_order.rend(); ++entry) {
+            const Element* dialog = *entry;
+            if (!dialog->has_attribute("open")) continue;
+            const auto closedby = dialog->get_attribute("closedby");
+            const auto keyword = [&](std::string_view name) {
+                if (closedby.size() != name.size()) return false;
+                for (size_t i = 0; i < name.size(); ++i) {
+                    char c = closedby[i];
+                    if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+                    if (c != name[i]) return false;
+                }
+                return true;
+            };
+            const bool enabled = keyword("any") || keyword("closerequest") ||
+                (!keyword("none") && dialog->is_modal());
+            return enabled && weva_element_request_close_dialog_with_value(doc, doc->handle_of(dialog), "") == WEVA_OK ? 1 : 0;
+        }
+    }
 
     const uint32_t key_bit = key == WEVA_KEY_SPACE ? 1u : key == WEVA_KEY_ENTER ? 2u : 0u;
     const bool repeat = (doc->activation_keys_down & key_bit) != 0;
     if (down) doc->activation_keys_down |= key_bit;
     else doc->activation_keys_down &= ~key_bit;
     const Element* focused_control = doc->styles.state.focused;
-    if (focused_control && !focus_disabled(*focused_control, doc->styles)) {
+    if (focused_control && !focus_disabled(*focused_control, doc)) {
         const auto tag = focused_control->tag_name();
         const auto type = input_type_of(*focused_control);
         const bool button = tag == "button" || (tag == "input" &&
@@ -4436,16 +5626,38 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
         const bool summary = tag == "summary" && details_for_summary_click(focused_control);
         const bool mark = tag == "input" && (type == "checkbox" || type == "radio");
         const bool link = tag == "a" && focused_control->has_attribute("href");
+        if (tag == "input" && type == "number" && (key == WEVA_KEY_UP || key == WEVA_KEY_DOWN) &&
+            !text_contents_hidden(doc, *focused_control)) {
+            if (down) {
+                std::string next;
+                if (form_number_step(*focused_control, key == WEVA_KEY_UP, next)) {
+                    auto& field = const_cast<Element&>(*focused_control);
+                    auto& state = doc->styles.state;
+                    push_undo(doc, field, field_value(field), state.caret, state.anchor, false);
+                    set_field_value(doc, field, next);
+                    state.caret = static_cast<int>(next.size());
+                    state.anchor = -1;
+                    note_value_change(doc, field, next);
+                    note_value_change(doc, field, next, false);
+                    doc->value_at_focus = field_value(field);
+                    doc->user_edited_since_focus = false;
+                }
+            }
+            return 1;
+        }
         if (tag == "input" && type == "range") {
             const RangeValue range(*focused_control);
             const double step = range.any ? (range.max - range.min) / 100 : range.step;
             const double page = std::max(step, (range.max - range.min) / 10);
+            const RangeOrientation orientation(doc->styles.style_of(*focused_control));
+            const double right = !orientation.vertical && orientation.reversed ? -step : step;
+            const double up = orientation.vertical && !orientation.reversed ? -step : step;
             double to = range.value;
             switch (key) {
-                case WEVA_KEY_RIGHT:
-                case WEVA_KEY_UP: to += step; break;
-                case WEVA_KEY_LEFT:
-                case WEVA_KEY_DOWN: to -= step; break;
+                case WEVA_KEY_RIGHT: to += right; break;
+                case WEVA_KEY_UP: to += up; break;
+                case WEVA_KEY_LEFT: to -= right; break;
+                case WEVA_KEY_DOWN: to -= up; break;
                 case WEVA_KEY_PAGE_UP: to += page; break;
                 case WEVA_KEY_PAGE_DOWN: to -= page; break;
                 case WEVA_KEY_HOME: to = range.min; break;
@@ -4463,7 +5675,7 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
             !(modifiers & (WEVA_MOD_CTRL | WEVA_MOD_ALT | WEVA_MOD_META)) &&
             (key == WEVA_KEY_LEFT || key == WEVA_KEY_RIGHT || key == WEVA_KEY_UP || key == WEVA_KEY_DOWN)) {
             std::vector<std::pair<int, const Element*>> all;
-            collect_focusables(*doc->doc, doc->styles, &all, true);
+            collect_focusables(*doc->doc, doc, &all, true);
             std::vector<const Element*> group;
             size_t at = 0;
             for (const auto& entry : all) {
@@ -4504,7 +5716,7 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
     // the text is kept and where the cursor sits are both the document's.
     if (down) {
         Element* focused = const_cast<Element*>(doc->styles.state.focused);
-        if (focused && is_text_field(*focused)) {
+        if (focused && is_text_field(*focused) && !text_contents_hidden(doc, *focused)) {
             InteractionState& st = doc->styles.state;
             std::string value = field_value(*focused);
             const bool multiline = focused->tag_name() == "textarea";
@@ -4539,6 +5751,27 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
             const int anchor_before = st.anchor;
             const std::string before = value;
             const int caret_before = caret;
+            const auto visual_move = [&](int direction) {
+                // Text mutations may be awaiting layout when a host sends a key.
+                weva_document_update(doc, 0);
+                const bool continuing = st.vertical_owner == focused && st.vertical_index == caret &&
+                    st.vertical_version == focused->form_version();
+                double x = continuing ? st.vertical_x : std::numeric_limits<double>::quiet_NaN();
+                PaintContext measure = measuring_context(doc);
+                measure.caret = caret_for(st);
+                size_t to = static_cast<size_t>(caret);
+                bool downstream = st.caret_downstream;
+                if (navigate_text_line(doc->tree, box_of(doc, focused), doc->ctx, measure,
+                                       direction, &x, &to, &downstream)) {
+                    st.caret_downstream = downstream;
+                    st.vertical_owner = (direction == -1 || direction == 1 ||
+                                         direction == -3 || direction == 3) ? focused : nullptr;
+                    st.vertical_version = focused->form_version();
+                    st.vertical_index = static_cast<int>(to);
+                    st.vertical_x = x;
+                }
+                return static_cast<int>(to);
+            };
             // Deleting the selection, wherever a key would have deleted one
             // character: that is what Backspace and Delete mean while
             // something is selected, and what typing does before it inserts.
@@ -4570,15 +5803,23 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                         edited = true;
                     }
                     break;
-                case WEVA_KEY_LEFT: caret = by_word ? word_left(caret) : prev(caret); break;
-                case WEVA_KEY_RIGHT: caret = by_word ? word_right(caret) : next(caret); break;
+                case WEVA_KEY_LEFT:
+                    st.caret_downstream = false;
+                    caret = !extend && !by_word && !sel.empty() ? sel.from :
+                        by_word ? word_left(caret) : prev(caret);
+                    break;
+                case WEVA_KEY_RIGHT:
+                    st.caret_downstream = true;
+                    caret = !extend && !by_word && !sel.empty() ? sel.to :
+                        by_word ? word_right(caret) : next(caret);
+                    break;
                 case WEVA_KEY_HOME:
                     // Ctrl+Home is the top of the whole field, not the start
                     // of the line the caret happens to be on.
-                    caret = (multiline && !by_word) ? line_start(value, caret) : 0;
+                    caret = (multiline && !by_word) ? visual_move(-2) : 0;
                     break;
                 case WEVA_KEY_END:
-                    caret = (multiline && !by_word) ? line_end(value, caret)
+                    caret = (multiline && !by_word) ? visual_move(2)
                                                     : static_cast<int>(value.size());
                     break;
                 case WEVA_KEY_ENTER:
@@ -4611,21 +5852,7 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                     // caret rather than scrolling, and scrolling follows from
                     // the caret being brought back into view.
                     if (!multiline) { caret = -1; break; }
-                    const int start = line_start(value, caret);
-                    const int column = caret - start;
-                    if (key == WEVA_KEY_UP) {
-                        if (start == 0) { caret = 0; break; }
-                        const int above = line_start(value, start - 1);
-                        caret = std::min(above + column, start - 1);
-                    } else {
-                        const int end = line_end(value, caret);
-                        if (end >= static_cast<int>(value.size())) {
-                            caret = static_cast<int>(value.size());
-                            break;
-                        }
-                        const int below = end + 1;
-                        caret = std::min(below + column, line_end(value, below));
-                    }
+                    caret = visual_move((key == WEVA_KEY_UP ? -1 : 1) * (by_word ? 3 : 1));
                     break;
                 }
                 default: caret = -1; break;   // not ours
@@ -4659,12 +5886,6 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
         }
     }
 
-    // Escape closes the topmost auto popover, one per press -- so a submenu
-    // closes before the menu it came from. Checked before the open <select>,
-    // because a popover opened over a dropdown is what the user sees.
-    if (down && key == WEVA_KEY_ESCAPE && !doc->popovers.empty()) {
-        if (popover_hide_top_auto(doc)) return 1;
-    }
     // Space continues an active search, including a dropdown's multiword
     // label. With no search it retains its ordinary activation behavior.
     if (down && key == WEVA_KEY_SPACE && !(modifiers & (WEVA_MOD_CTRL | WEVA_MOD_ALT | WEVA_MOD_META)) &&
@@ -4820,11 +6041,17 @@ void weva_document_text_input(weva_document_t doc, const char* utf8) {
     weva_document_try_text_input(doc, utf8);
 }
 
+weva_element_t weva_document_text_input_candidate(weva_document_t doc) {
+    if (!doc) return WEVA_ELEMENT_NONE;
+    const Element* field = doc->styles.state.focused;
+    return field && is_text_field(*field) ? doc->handle_of(field) : WEVA_ELEMENT_NONE;
+}
+
 weva_element_t weva_document_text_input_target(weva_document_t doc) {
     if (!doc) return WEVA_ELEMENT_NONE;
     const Element* field = doc->styles.state.focused;
     return field && is_text_field(*field) && !field->has_attribute("readonly") &&
-           !focus_disabled(*field, doc->styles) ? doc->handle_of(field) : WEVA_ELEMENT_NONE;
+           !focus_disabled(*field, doc) && !text_contents_hidden(doc, *field) ? doc->handle_of(field) : WEVA_ELEMENT_NONE;
 }
 
 weva_element_t weva_document_composition(weva_document_t doc, int* start, int* end) {
@@ -4958,8 +6185,7 @@ static int insert_user_text(weva_document_t doc, const char* utf8, bool paste, u
     Element* focused = const_cast<Element*>(doc->styles.state.focused);
     const bool printable = (lead >= 0x20 && lead != 0x7f) ||
                            (paste && (lead == '\n' || lead == '\r' || lead == '\t'));
-    const bool edits = focused && printable && is_text_field(*focused) &&
-                          !focused->has_attribute("readonly") && !disabled_ancestor(focused);
+    const bool edits = printable && weva_document_text_input_target(doc) != WEVA_ELEMENT_NONE;
     bool consumed = edits;
     std::string scratch;
     std::string_view accepted(utf8);
@@ -5006,8 +6232,7 @@ static int insert_user_text(weva_document_t doc, const char* utf8, bool paste, u
     const size_t copy = text_boundary(accepted, static_cast<int>(std::min(accepted.size(), sizeof(e.text) - 1)));
     std::memcpy(e.text, accepted.data(), copy);
     e.text[copy] = '\0';
-    if (doc->events.size() >= weva_document::kMaxEvents) doc->events.pop_front();
-    doc->events.emplace_back(e, accepted);
+    doc->push_event(weva_document::QueuedEvent(e, accepted));
     return consumed ? 1 : 0;
 }
 
@@ -5031,7 +6256,7 @@ int weva_document_open_select(weva_document_t doc, weva_element_t element) {
         return 1;
     }
     Element* e = doc->element_at(element);
-    if (!e || e->tag_name() != "select" || select_is_listbox(*e) || disabled_ancestor(e)) return 0;
+    if (!e || e->tag_name() != "select" || select_is_listbox(*e) || disabled_ancestor(e) || input_blocked(doc, e)) return 0;
     doc->set_open_select(e);
     doc->highlighted_option = chosen_index(*e);
     doc->select_first_row = 0;
@@ -5049,6 +6274,28 @@ namespace {
 
 void forget_element(weva_document* doc, const Element* e);
 
+// The ABI needs a terminated path, while substitution passes a string view.
+// Common paths fit on the stack; long paths retain the same owning fallback.
+class BindingPath {
+public:
+    explicit BindingPath(std::string_view path) {
+        if (path.size() < sizeof(stack_)) {
+            if (!path.empty()) std::memcpy(stack_, path.data(), path.size());
+            stack_[path.size()] = '\0';
+        } else {
+            owned_.assign(path);
+            data_ = owned_.c_str();
+        }
+    }
+    BindingPath(const BindingPath&) = delete;
+    BindingPath& operator=(const BindingPath&) = delete;
+    const char* c_str() const { return data_; }
+private:
+    char stack_[128];
+    std::string owned_;
+    const char* data_ = stack_;
+};
+
 // The host's callback, wearing the interface the substitution wants.
 class AbiBindingResolver : public BindingResolver {
 public:
@@ -5056,7 +6303,7 @@ public:
 
     bool resolve(std::string_view path, std::string* out) const override {
         if (!source_.value) return false;
-        const std::string key(path);
+        const BindingPath key(path);
         int found = 0;
         // The two-call pattern the rest of the ABI uses: ask for the length,
         // then fill. Most values are short, so the first call usually answers
@@ -5068,15 +6315,32 @@ public:
             out->assign(stack, n);
             return true;
         }
-        std::vector<char> heap(n + 1, 0);
-        source_.value(source_.user, key.c_str(), heap.data(), heap.size(), &found);
-        out->assign(heap.data(), n);
-        return found != 0;
+        std::vector<char> heap;
+        size_t required = n;
+        for (;;) {
+            // Include the terminator without allowing a callback's length to
+            // wrap. Invalid lengths use the unavailable-value behavior.
+            if (required >= heap.max_size()) {
+                std::fprintf(stderr, "weva: binding callback returned an unrepresentable value length.\n");
+                return false;
+            }
+            const size_t doubled = heap.size() <= heap.max_size() / 2 ? heap.size() * 2 : heap.max_size();
+            heap.resize(std::max(required + 1, doubled));
+            required = source_.value(source_.user, key.c_str(), heap.data(), heap.size(), &found);
+            if (!found) return false;
+            if (required < heap.size()) {
+                // This call owns both the bytes and their length. A getter may
+                // have changed since the earlier capacity probe.
+                out->assign(heap.data(), required);
+                return true;
+            }
+        }
     }
 
     int count(std::string_view path) const override {
         if (!source_.count) return -1;
-        return source_.count(source_.user, std::string(path).c_str());
+        const BindingPath key(path);
+        return source_.count(source_.user, key.c_str());
     }
 
 private:
@@ -5105,7 +6369,7 @@ int weva_document_refresh_bindings(weva_document_t doc) {
 
 int weva_document_select_word_at(weva_document_t doc, double x, double y) {
     if (!doc) return 0;
-    const Element* hit = element_at_point(doc->tree, doc->root, x, y);
+    const Element* hit = input_element_at(doc, x, y);
     if (!hit || !is_text_field(*hit)) return 0;
     weva_document_set_focus(doc, doc->handle_of(hit));
     const std::string value = field_value(*hit);
@@ -5219,11 +6483,11 @@ weva_status weva_element_selection(weva_document_t doc, weva_element_t element, 
     const Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
     const InteractionState& st = doc->styles.state;
-    // Only the focused field has one: the cursor and its anchor belong to
-    // whatever is being typed into, not to every field on the page.
     const bool mine = st.focused == e;
-    const int caret = mine ? st.caret : 0;
-    if (out_start) *out_start = mine && st.anchor >= 0 ? st.anchor : caret;
+    const auto saved = doc->field_selections.find(e);
+    const int caret = mine ? st.caret : saved != doc->field_selections.end() ? saved->second.caret : 0;
+    const int anchor = mine ? st.anchor : saved != doc->field_selections.end() ? saved->second.anchor : -1;
+    if (out_start) *out_start = anchor >= 0 ? anchor : caret;
     if (out_end) *out_end = caret;
     return WEVA_OK;
 }
@@ -5234,9 +6498,14 @@ weva_status weva_element_set_selection(weva_document_t doc, weva_element_t eleme
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
     if (!is_text_field(*e)) return WEVA_ERR_INVALID_ARGUMENT;
-    weva_document_commit_composition(doc, nullptr);
     InteractionState& st = doc->styles.state;
-    if (st.focused != e) weva_document_set_focus(doc, element);
+    if (st.focused != e) {
+        const auto status = weva_document_set_focus(doc, element);
+        if (status != WEVA_OK) return status;
+    }
+    weva_document_commit_composition(doc, nullptr);
+    st.vertical_owner = nullptr;
+    st.caret_downstream = true;
     const std::string value = field_value(*e);
     st.caret = static_cast<int>(text_boundary(value, end));
     const int anchor = static_cast<int>(text_boundary(value, start));
@@ -5244,6 +6513,22 @@ weva_status weva_element_set_selection(weva_document_t doc, weva_element_t eleme
     st.caret_age = 0;
     doc->caret_follow = true;
     doc->styles.repaint(doc->styles.state.focused);
+    return WEVA_OK;
+}
+
+weva_status weva_element_set_selection_without_focus(weva_document_t doc,
+    weva_element_t element, int start, int end) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    if (!is_text_field(*e)) return WEVA_ERR_INVALID_ARGUMENT;
+    if (doc->styles.state.focused == e)
+        return weva_element_set_selection(doc, element, start, end);
+    auto& saved = doc->field_selections[e];
+    saved.value.assign(e->form_edit_value());
+    saved.caret = static_cast<int>(text_boundary(saved.value, end));
+    const int anchor = static_cast<int>(text_boundary(saved.value, start));
+    saved.anchor = anchor == saved.caret ? -1 : anchor;
     return WEVA_OK;
 }
 
@@ -5273,7 +6558,7 @@ size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buf
             }
         }
     } else {
-        value = field_value(*e);
+        value = std::string(e->form_value());
     }
     if (buffer && capacity > 0) {
         const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
@@ -5285,6 +6570,11 @@ size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buf
     return value.size();
 }
 
+uint64_t weva_element_form_version(weva_document_t doc, weva_element_t element) {
+    const auto* control = doc ? doc->element_at(element) : nullptr;
+    return control ? static_cast<uint64_t>(control->form_version()) : 0;
+}
+
 weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
                                    const char* value) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
@@ -5293,7 +6583,9 @@ weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
     if (e == doc->styles.state.focused) weva_document_commit_composition(doc, nullptr);
     const std::string_view v(value ? value : "");
     const bool text_focused = e == doc->styles.state.focused && is_text_field(*e);
-    const std::string previous = text_focused ? field_value(*e) : std::string();
+    const bool first_text_value = is_text_field(*e) && !text_focused &&
+        doc->field_selections.find(e) == doc->field_selections.end();
+    const std::string previous = text_focused || first_text_value ? field_value(*e) : std::string();
     // A script replacing the value invalidates the undo stack: it describes a
     // field that no longer holds what it described, and putting one of its
     // snapshots back would silently discard what the script just wrote.
@@ -5307,8 +6599,14 @@ weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
     } else {
         e->set_form_value(v);
     }
+    if (first_text_value && e->form_edit_value() != previous) {
+        auto& saved = doc->field_selections[e];
+        saved.value.assign(e->form_edit_value());
+        saved.caret = static_cast<int>(saved.value.size());
+        saved.anchor = -1;
+    }
     if (text_focused) {
-        const auto current = e->form_value();
+        const auto current = e->form_edit_value();
         if (current != previous) {
             doc->styles.state.caret = static_cast<int>(current.size());
             doc->styles.state.anchor = -1;
@@ -5317,10 +6615,8 @@ weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
         }
         if (!doc->user_edited_since_focus) doc->value_at_focus = current;
     }
-    if (e->tag_name() != "select") {
-        doc->dom_touched = true;
-        if (doc->touched.size() < 64) doc->touched.push_back(e);
-    }
+    // Attribute and form-state mutation observers already schedule the exact
+    // work. Forcing cascade here defeats stable selector-state updates.
     return WEVA_OK;
 }
 
@@ -5376,13 +6672,284 @@ weva_status weva_document_reset_form(weva_document_t doc, weva_element_t form) {
     return WEVA_OK;
 }
 
-int weva_document_poll_event(weva_document_t doc, weva_event* out) {
-    if (!doc || !out || doc->events.empty()) return 0;
-    *out = doc->events.front();
-    doc->polled_event_text = std::move(doc->events.front().full_text);
-    if (doc->polled_event_text.empty()) doc->polled_event_text = out->text;
-    doc->events.pop_front();
+namespace {
+bool supports_custom_validity(const Element* element) {
+    if (!element) return false;
+    const auto tag = element->tag_name();
+    return tag == "input" || tag == "textarea" || tag == "select" || tag == "button" || tag == "fieldset";
+}
+}
+
+weva_status weva_element_set_custom_validity(weva_document_t doc, weva_element_t element, const char* message) {
+    if (!doc || !message) return WEVA_ERR_INVALID_ARGUMENT;
+    auto* control = const_cast<Element*>(doc->element_at(element));
+    if (!supports_custom_validity(control)) return WEVA_ERR_NOT_FOUND;
+    control->set_custom_validity(message);
+    return WEVA_OK;
+}
+
+size_t weva_element_custom_validity(weva_document_t doc, weva_element_t element, char* buffer, size_t capacity) {
+    const auto* control = doc ? doc->element_at(element) : nullptr;
+    const auto message = supports_custom_validity(control) ? control->custom_validity() : std::string_view();
+    if (buffer && capacity) {
+        const auto n = text_boundary(message, static_cast<int>(std::min(message.size(), capacity - 1)));
+        if (n) std::memcpy(buffer, message.data(), n);
+        buffer[n] = 0;
+    }
+    return message.size();
+}
+
+weva_status weva_element_validity(weva_document_t doc, weva_element_t element,
+                                  uint32_t* errors, int* will_validate) {
+    if (errors) *errors = 0;
+    if (will_validate) *will_validate = 0;
+    if (!doc || !errors || !will_validate) return WEVA_ERR_INVALID_ARGUMENT;
+    const auto* field = doc->element_at(element);
+    if (!supports_custom_validity(field)) return WEVA_ERR_NOT_FOUND;
+    if (field->tag_name() == "input" && field->has_attribute("pattern") && !field->form_value().empty()) {
+        const auto type = form_input_type(*field);
+        if (type == "text" || type == "search" || type == "tel" || type == "url" || type == "email" || type == "password")
+            return WEVA_ERR_UNSUPPORTED;
+    }
+    *will_validate = form_is_validation_candidate(*field) ? 1 : 0;
+    const auto length = form_text_length_validity(*field);
+    const auto number = form_number_validity(*field);
+    const auto temporal = form_temporal_validity(*field);
+    if (form_required_value_missing(*field)) *errors |= WEVA_VALIDITY_VALUE_MISSING;
+    if (form_email_type_mismatch(*field) || form_url_type_mismatch(*field)) *errors |= WEVA_VALIDITY_TYPE_MISMATCH;
+    if (length.too_long) *errors |= WEVA_VALIDITY_TOO_LONG;
+    if (length.too_short) *errors |= WEVA_VALIDITY_TOO_SHORT;
+    if (number.range_underflow || temporal.range_underflow) *errors |= WEVA_VALIDITY_RANGE_UNDERFLOW;
+    if (number.range_overflow || temporal.range_overflow) *errors |= WEVA_VALIDITY_RANGE_OVERFLOW;
+    if (number.step_mismatch || temporal.step_mismatch) *errors |= WEVA_VALIDITY_STEP_MISMATCH;
+    if (field->form_bad_input()) *errors |= WEVA_VALIDITY_BAD_INPUT;
+    if (!field->custom_validity().empty()) *errors |= WEVA_VALIDITY_CUSTOM_ERROR;
+    return WEVA_OK;
+}
+
+namespace {
+bool has_validation_error(const Element& field) {
+    return field.form_bad_input() || !field.custom_validity().empty() || form_required_value_missing(field) ||
+        form_email_type_mismatch(field) || form_url_type_mismatch(field) ||
+        !form_text_length_validity(field).valid() || !form_number_validity(field).valid() ||
+        !form_temporal_validity(field).valid();
+}
+bool validate_form_constraints(weva_document* doc, const Ref<Element>& form, const Ref<Element>& submitter) {
+    if (form->has_attribute("novalidate") || (submitter && submitter->has_attribute("formnovalidate"))) return true;
+    std::shared_ptr<weva_document::ValidationReport> report;
+    for (const auto handle : doc->document_order()) {
+        auto* field = const_cast<Element*>(doc->element_at(handle));
+        if (!field || !form_is_validation_candidate(*field) || form_owner(*field) != form.get() ||
+            !has_validation_error(*field)) continue;
+        if (!report) {
+            report = std::make_shared<weva_document::ValidationReport>();
+            report->form = form;
+        }
+        weva_event event{};
+        event.kind = WEVA_EVENT_INVALID;
+        event.target = handle;
+        doc->fill_handler(&event, field);
+        weva_document::QueuedEvent queued(event);
+        queued.invalid_target = Ref<Element>::retain(field);
+        queued.validation_report = report;
+        if (doc->push_event(std::move(queued))) ++report->pending;
+    }
+    return !report;
+}
+
+void finish_validation_event(weva_document* doc, const std::shared_ptr<weva_document::ValidationReport>& report,
+                             const Ref<Element>& field, bool prevented) {
+    if (!report) return;
+    if (!prevented && doc->handle_of(field.get()) != WEVA_ELEMENT_NONE) report->unhandled.push_back(field);
+    if (--report->pending != 0 || !report->interactive) return;
+    // Reporting follows all invalid handlers, so later handlers can change
+    // focusability or remove an earlier invalid control before reporting.
+    for (const auto& candidate : report->unhandled) {
+        const auto handle = doc->handle_of(candidate.get());
+        if (handle == WEVA_ELEMENT_NONE || !form_is_validation_candidate(*candidate)) continue;
+        weva_document_set_focus(doc, handle);
+        if (weva_document_focus(doc) == handle) break;
+    }
+}
+
+void complete_form_submission(weva_document* doc, const Ref<Element>& form,
+                              const Ref<Element>& submitter, const std::string& image_coordinates) {
+    if (!form || doc->handle_of(form.get()) == WEVA_ELEMENT_NONE) return;
+    const auto method = submitter && submitter->has_attribute("formmethod")
+        ? submitter->get_attribute("formmethod") : form->get_attribute("method");
+    constexpr std::string_view dialog_method = "dialog";
+    if (method.size() != dialog_method.size()) return;
+    for (size_t i = 0; i < method.size(); ++i) {
+        char c = method[i];
+        if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+        if (c != dialog_method[i]) return;
+    }
+    for (Node* node = form->parent(); node; node = node->parent()) {
+        if (!node->is_element()) continue;
+        auto* dialog = static_cast<Element*>(node);
+        if (dialog->tag_name() != "dialog") continue;
+        if (submitter && submitter->tag_name() == "input" && form_input_type(*submitter) == "image") {
+            weva_element_close_dialog_with_value(doc, doc->handle_of(dialog),
+                image_coordinates.empty() ? "0,0" : image_coordinates.c_str());
+            return;
+        }
+        // Evaluate the value after submission handlers, not at activation time.
+        // An absent button value is different from an explicitly empty value.
+        const std::string value = submitter ? std::string(submitter->get_attribute("value")) : "";
+        weva_element_close_dialog_with_value(doc, doc->handle_of(dialog),
+            !submitter || submitter->has_attribute("value") ? value.c_str() : nullptr);
+        return;
+    }
+}
+
+bool valid_close_request(weva_document* doc, const Ref<Element>& target, uint64_t generation) {
+    if (!target || !target->has_attribute("open") || doc->handle_of(target.get()) == WEVA_ELEMENT_NONE)
+        return false;
+    const auto it = doc->dialog_close_generations.find(target.get());
+    return it != doc->dialog_close_generations.end() && it->second == generation;
+}
+}
+
+namespace {
+weva_status explicit_validity(weva_document_t doc, weva_element_t element, int* valid, bool interactive) {
+    if (valid) *valid = 0;
+    if (!doc || !valid) return WEVA_ERR_INVALID_ARGUMENT;
+    auto* target = const_cast<Element*>(doc->element_at(element));
+    if (!target) return WEVA_ERR_NOT_FOUND;
+    const bool is_form = target->tag_name() == "form";
+    if (!is_form && !supports_custom_validity(target)) return WEVA_ERR_NOT_FOUND;
+    if (doc->polled_invalid_target) return WEVA_ERR_INVALID_STATE;
+    std::vector<Ref<Element>> invalid;
+    const auto collect = [&](weva_element_t handle) -> weva_status {
+        auto* field = const_cast<Element*>(doc->element_at(handle));
+        if (!field || !form_is_validation_candidate(*field)) return WEVA_OK;
+        if (is_form && form_owner(*field) != target) return WEVA_OK;
+        uint32_t errors = 0;
+        int will = 0;
+        const auto status = weva_element_validity(doc, handle, &errors, &will);
+        if (status != WEVA_OK) return status;
+        if (errors) invalid.push_back(Ref<Element>::retain(field));
+        return WEVA_OK;
+    };
+    if (is_form) {
+        for (const auto handle : doc->document_order()) {
+            const auto status = collect(handle);
+            if (status != WEVA_OK) return status;
+        }
+    } else {
+        const auto status = collect(element);
+        if (status != WEVA_OK) return status;
+    }
+    *valid = invalid.empty() ? 1 : 0;
+    if (invalid.empty()) return WEVA_OK;
+    const size_t protected_events = std::count_if(doc->events.begin(), doc->events.end(),
+        [](const auto& queued) { return queued.kind == WEVA_EVENT_CANCEL || queued.submit_form || queued.invalid_target || queued.popover_open_target || queued.popover_hide_target; });
+    if (protected_events >= weva_document::kMaxEvents || invalid.size() > weva_document::kMaxEvents - protected_events) return WEVA_ERR_INTERNAL;
+    auto report = std::make_shared<weva_document::ValidationReport>();
+    if (is_form) report->form = Ref<Element>::retain(target);
+    report->standalone_control = !is_form;
+    report->interactive = interactive;
+    for (const auto& field : invalid) {
+        weva_event event{};
+        event.kind = WEVA_EVENT_INVALID;
+        event.target = doc->handle_of(field.get());
+        doc->fill_handler(&event, field.get());
+        weva_document::QueuedEvent queued(event);
+        queued.invalid_target = field;
+        queued.validation_report = report;
+        if (doc->push_event(std::move(queued))) ++report->pending;
+        else return WEVA_ERR_INTERNAL;
+    }
+    return WEVA_OK;
+}
+}
+
+weva_status weva_element_check_validity(weva_document_t doc, weva_element_t element, int* valid) {
+    return explicit_validity(doc, element, valid, false);
+}
+weva_status weva_element_report_validity(weva_document_t doc, weva_element_t element, int* valid) {
+    return explicit_validity(doc, element, valid, true);
+}
+
+int weva_document_prevent_default(weva_document_t doc) {
+    if (!doc || (!doc->polled_close_target && !doc->polled_submit_form && !doc->polled_invalid_target && !doc->polled_popover_open_target)) return 0;
+    doc->polled_close_prevented = true;
     return 1;
+}
+
+int weva_document_poll_event(weva_document_t doc, weva_event* out) {
+    if (!doc || !out) return 0;
+    // Finish the previous default action only after the host's handler returned.
+    // Clear the active slot before closing, so nested event drains cannot replay it.
+    const int previous_popover_open_mode = doc->polled_popover_open_mode;
+    const bool previous_popover_restore_focus = doc->polled_popover_restore_focus;
+    Ref<Element> previous_popover_hide = std::move(doc->polled_popover_hide_target);
+    Ref<Element> previous_popover_source = std::move(doc->polled_popover_open_source);
+    Ref<Element> previous_popover = std::move(doc->polled_popover_open_target);
+    Ref<Element> previous = std::move(doc->polled_close_target);
+    std::string previous_value = std::move(doc->polled_close_value);
+    Ref<Element> previous_form = std::move(doc->polled_submit_form);
+    Ref<Element> previous_submitter = std::move(doc->polled_submitter);
+    std::string previous_coordinates = std::move(doc->polled_image_coordinates);
+    Ref<Element> previous_invalid = std::move(doc->polled_invalid_target);
+    auto previous_report = std::move(doc->polled_validation_report);
+    if (previous_invalid) finish_validation_event(doc, previous_report, previous_invalid, doc->polled_close_prevented);
+    if (previous && !doc->polled_close_prevented &&
+        valid_close_request(doc, previous, doc->polled_close_generation))
+        weva_element_close_dialog_with_value(doc, doc->handle_of(previous.get()),
+            doc->polled_has_close_value ? previous_value.c_str() : nullptr);
+    if (previous_form && !doc->polled_close_prevented)
+        complete_form_submission(doc, previous_form, previous_submitter, previous_coordinates);
+    if (previous_popover && !doc->polled_close_prevented)
+        complete_popover_open(doc, std::move(previous_popover), std::move(previous_popover_source), previous_popover_open_mode);
+    if (previous_popover_hide && doc->handle_of(previous_popover_hide.get()) != WEVA_ELEMENT_NONE)
+        popover_hide(doc, *previous_popover_hide, previous_popover_restore_focus);
+    doc->polled_close_prevented = false;
+    while (!doc->events.empty()) {
+        auto event = std::move(doc->events.front());
+        doc->events.pop_front();
+        if (event.popover_resume_open) {
+            complete_popover_open(doc, std::move(event.popover_open_target), std::move(event.popover_open_source), event.popover_open_mode, std::move(event.popover_pending_closes), true);
+            continue;
+        }
+        if (event.kind == WEVA_EVENT_CANCEL &&
+            !valid_close_request(doc, event.close_target, event.close_generation)) continue;
+        if (event.popover_hide_target &&
+            (doc->handle_of(event.popover_hide_target.get()) == WEVA_ELEMENT_NONE ||
+             !event.popover_hide_target->is_popover_open())) continue;
+        if (event.popover_open_target &&
+            (doc->handle_of(event.popover_open_target.get()) == WEVA_ELEMENT_NONE ||
+             !event.popover_open_target->has_attribute("popover") ||
+             event.popover_open_target->is_popover_open() || event.popover_open_target->is_modal())) continue;
+        if (event.submit_form && doc->handle_of(event.submit_form.get()) == WEVA_ELEMENT_NONE) continue;
+        if (event.invalid_target && (doc->handle_of(event.invalid_target.get()) == WEVA_ELEMENT_NONE ||
+            !form_is_validation_candidate(*event.invalid_target) ||
+            (!event.validation_report->standalone_control && form_owner(*event.invalid_target) != event.validation_report->form.get()) ||
+            !has_validation_error(*event.invalid_target))) {
+            finish_validation_event(doc, event.validation_report, event.invalid_target, true);
+            continue;
+        }
+        if (event.submit_form && !validate_form_constraints(doc, event.submit_form, event.submitter)) continue;
+        *out = event;
+        doc->polled_event_text = std::move(event.full_text);
+        if (doc->polled_event_text.empty()) doc->polled_event_text = out->text;
+        doc->polled_popover_restore_focus = event.popover_restore_focus;
+        doc->polled_popover_hide_target = std::move(event.popover_hide_target);
+        doc->polled_popover_open_source = std::move(event.popover_open_source);
+        doc->polled_popover_open_mode = event.popover_open_target ? popover_mode_id(*event.popover_open_target) : 0;
+        doc->polled_popover_open_target = std::move(event.popover_open_target);
+        doc->polled_close_target = std::move(event.close_target);
+        doc->polled_close_generation = event.close_generation;
+        doc->polled_has_close_value = event.has_close_value;
+        doc->polled_close_value = std::move(event.close_value);
+        doc->polled_submit_form = std::move(event.submit_form);
+        doc->polled_submitter = std::move(event.submitter);
+        doc->polled_image_coordinates = std::move(event.image_coordinates);
+        doc->polled_invalid_target = std::move(event.invalid_target);
+        doc->polled_validation_report = std::move(event.validation_report);
+        return 1;
+    }
+    return 0;
 }
 
 size_t weva_document_event_text(weva_document_t doc, char* buffer, size_t capacity) {
@@ -5432,6 +6999,8 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
         // A disabled control cannot be focused, in a browser or here, so a
         // host cannot put the keyboard somewhere the user could not.
         if (disabled_ancestor(target)) return WEVA_ERR_INVALID_ARGUMENT;
+        if (input_blocked(doc, target)) return WEVA_ERR_INVALID_STATE;
+        if (focus_unavailable_now(doc, *target)) return WEVA_ERR_INVALID_STATE;
     }
     if (st.focused == target) return WEVA_OK;
     clear_text_drag(doc);
@@ -5447,8 +7016,12 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     if (doc->open_select && doc->open_select != target)
         weva_document_open_select(doc, WEVA_ELEMENT_NONE);
     const Element* previous_focus = st.focused;
-    // A field you have just focused puts the cursor after what it holds, which
-    // is where a user expects to carry on typing.
+    if (previous_focus && is_text_field(*previous_focus)) {
+        auto& saved = doc->field_selections[previous_focus];
+        saved.caret = st.caret;
+        saved.anchor = st.anchor;
+        saved.value.assign(previous_focus->form_edit_value());
+    }
     // A text field that is losing the focus commits what it holds, if what it
     // holds has moved. Nothing else can tell an edit from a visit.
     if (previous_focus && is_text_field(*previous_focus) && doc->user_edited_since_focus &&
@@ -5457,9 +7030,16 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     }
     doc->value_at_focus = target && is_text_field(*target) ? field_value(*target) : std::string();
     doc->user_edited_since_focus = false;
-    st.caret = target ? static_cast<int>(field_value(*target).size()) : 0;
+    st.caret = 0;
     st.text_scroll_x = 0;
     st.anchor = -1;
+    if (target) {
+        const auto saved = doc->field_selections.find(target);
+        if (saved != doc->field_selections.end()) {
+            st.caret = saved->second.caret;
+            st.anchor = saved->second.anchor;
+        }
+    }
     st.caret_age = 0;
     doc->caret_follow = target != nullptr;
     const Element* previous = previous_focus;
@@ -5467,6 +7047,8 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     if (target) doc->queue_event(WEVA_EVENT_FOCUS, target, 0, 0, 0);
     const std::vector<const Element*> old_chain = st.focus_chain;
     st.focused = target;
+    st.vertical_owner = nullptr;
+    st.caret_downstream = false;
     // :focus-within is the ancestors; the element itself carries :focus.
     InteractionState::chain_of(target, &st.focus_chain);
     std::vector<const Element*> changed = old_chain;
@@ -5501,7 +7083,7 @@ int weva_document_scroll(weva_document_t doc, double x, double y, double dx, dou
     if (!doc || (dx == 0 && dy == 0)) return 0;
     // A wheel over an open list moves the LIST. It sits above the document, so
     // scrolling the page under it would move the wrong thing.
-    if (doc->open_select && select_row_at(doc, x, y) >= 0) {
+    if (doc->open_select && !input_blocked(doc, doc->open_select) && select_row_at(doc, x, y) >= 0) {
         const BoxId box = box_of(doc, doc->open_select);
         const SelectListGeometry g =
             select_list_geometry(doc->tree, box, doc->ctx, *doc->open_select);
@@ -5517,9 +7099,10 @@ int weva_document_scroll(weva_document_t doc, double x, double y, double dx, dou
     // innermost thing under it that can move. One that has hit its end passes
     // the wheel on, which is what makes a scrolled list inside a page stop
     // catching it once it is at the bottom.
-    for (BoxId id = box_at_point(doc->tree, doc->root, x, y); id != kNoBox;
+    for (BoxId id = box_at_point(doc->tree, doc->root, x, y, &doc->ctx); id != kNoBox;
          id = doc->tree[id].parent) {
         const Box& b = doc->tree[id];
+        if (b.element && input_blocked(doc, b.element)) break;
         if (!b.element || !clips_overflow(b)) continue;
         double mx = 0, my = 0;
         max_scroll(doc->tree, id, &mx, &my);
@@ -5587,6 +7170,17 @@ namespace {
 // scroll offset, its place in the hover, press and focus state. All of it is
 // keyed on the pointer, and the node dies with its last reference.
 void forget_element(weva_document* doc, const Element* e) {
+    doc->field_selections.erase(e);
+    doc->dialog_return_values.erase(e);
+    auto& close_order = doc->dialog_close_order;
+    close_order.erase(std::remove(close_order.begin(), close_order.end(), e), close_order.end());
+    doc->dialog_close_generations.erase(e);
+    doc->dialog_focus_history.erase(std::remove_if(doc->dialog_focus_history.begin(), doc->dialog_focus_history.end(),
+        [e](const auto& entry) { return entry.dialog == e; }), doc->dialog_focus_history.end());
+    for (auto& entry : doc->dialog_focus_history) if (entry.previous_focus == e) entry.previous_focus = nullptr;
+    if (doc->styles.state.vertical_owner == e) doc->styles.state.vertical_owner = nullptr;
+    doc->element_handles.erase(e);
+    ++doc->structure_version;
     if (doc->focus_follow == e) doc->focus_follow = nullptr;
     if (doc->text_drag == e) clear_text_drag(doc);
     if (doc->list_drag == e || doc->press_target == e) { doc->list_drag = nullptr; doc->list_scroll_armed = false; }
@@ -5605,6 +7199,7 @@ void forget_element(weva_document* doc, const Element* e) {
     doc->styles.forget(e);
     doc->scroll.erase(e);
     if (doc->press_target == e) doc->press_target = nullptr;
+    if (doc->popover_press_target == e) { doc->popover_press_target = nullptr; doc->popover_press_active = false; }
     if (doc->space_press_target == e) doc->space_press_target = nullptr;
     auto& radio_memory = doc->radio_focus_memory;
     radio_memory.erase(std::remove(radio_memory.begin(), radio_memory.end(), e), radio_memory.end());
@@ -5627,6 +7222,11 @@ void forget_element(weva_document* doc, const Element* e) {
     doc->binding_repeats.erase(e);
     doc->history.erase(e);
     const size_t popovers_before = doc->popovers.size();
+    doc->light_dismiss_popovers.erase(e);
+    doc->popover_parents.erase(e);
+    for (auto& entry : doc->popover_parents) if (entry.second == e) entry.second = nullptr;
+    doc->popover_previous_focus.erase(e);
+    for (auto& entry : doc->popover_previous_focus) if (entry.second == e) entry.second = nullptr;
     doc->popovers.erase(std::remove(doc->popovers.begin(), doc->popovers.end(), e),
                         doc->popovers.end());
     if (doc->popovers.size() != popovers_before) ++doc->transient_version;
@@ -5771,7 +7371,7 @@ size_t weva_document_query_all(weva_document_t doc, const char* selector, weva_e
     SelectorParseError err;
     if (!parse_selector(selector, &compiled, &err)) return 0;
     size_t found = 0;
-    for (size_t i = 0; i < doc->elements.size(); ++i) {
+    for (weva_element_t i : doc->document_order()) {
         const Element* e = doc->elements[i];
         if (!e || !selector_matches(compiled, *e, doc->styles.state)) continue;
         if (out && found < capacity) out[found] = static_cast<weva_element_t>(i);
@@ -5785,16 +7385,21 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     if (!doc || !name) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
+    if (e->tag_name() == "dialog" && std::strcmp(name, "open") == 0 &&
+        e->has_attribute("open") != (value != nullptr)) doc->dialog_close_generations.erase(e);
     const bool finish = e == doc->styles.state.focused && (std::strcmp(name, "readonly") == 0 ||
         std::strcmp(name, "disabled") == 0 || std::strcmp(name, "type") == 0);
     const bool disabling = value && (std::strcmp(name, "readonly") == 0 || std::strcmp(name, "disabled") == 0);
     const bool image_source_changed = e->tag_name() == "img" && std::strcmp(name,"src") == 0 &&
                                      e->get_attribute("src") != std::string_view(value ? value : "");
+    const bool table_span_changed = is_table_span_attribute(name) &&
+        e->get_attribute(name) != std::string_view(value ? value : "");
     if (finish && !disabling) weva_document_commit_composition(doc, nullptr);
     if (value) e->set_attribute(name, value);
     else e->remove_attribute(name);
+    if (std::strcmp(name, "open") == 0) doc->sync_dialog_open(e);
     if (finish && disabling) weva_document_commit_composition(doc, nullptr);
-    if (image_source_changed) {
+    if (image_source_changed || table_span_changed) {
         auto& inputs = doc->styles.pending_content_inputs;
         if (std::find(inputs.begin(),inputs.end(),e) == inputs.end()) inputs.push_back(e);
     }
@@ -5815,7 +7420,12 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
-    if (!replace_text(*e, text ? text : "")) return WEVA_OK;
+    if (!replace_text(*e, text ? text : "")) {
+        // Setting textarea default text replaces its selection even when the
+        // text is equal. Keep ordinary HUD text no-ops allocation-free.
+        if (e->tag_name() == "textarea") form_children_changed(*e);
+        return WEVA_OK;
+    }
     // No elements were added or removed. Re-evaluate selector scopes (notably
     // :empty and any :has dependencies) and reflow the text owner's subtree.
     // The existing incremental layout proof builds fresh inline/line boxes
@@ -5834,10 +7444,31 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     return WEVA_OK;
 }
 
+void weva_document_set_popover_request_events(weva_document_t doc, int enabled) {
+    if (doc) doc->popover_request_events = enabled != 0;
+}
+
+weva_status weva_element_request_show_popover(weva_document_t doc, weva_element_t element) {
+    return request_popover_open(doc, element);
+}
+
+weva_status weva_element_request_hide_popover(weva_document_t doc, weva_element_t element) {
+    return request_popover_hide(doc, element);
+}
+
+weva_status weva_element_request_toggle_popover(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || !e->has_attribute("popover")) return WEVA_ERR_NOT_FOUND;
+    if (e->is_popover_open()) return weva_element_request_hide_popover(doc, element);
+    return request_popover_open(doc, element);
+}
+
 weva_status weva_element_show_popover(weva_document_t doc, weva_element_t element) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e || !e->has_attribute("popover")) return WEVA_ERR_NOT_FOUND;
+    if (!e->is_popover_open() && e->is_modal()) return WEVA_ERR_INVALID_STATE;
     popover_show(doc, *e);
     return WEVA_OK;
 }
@@ -5854,37 +7485,149 @@ weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t elem
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e || !e->has_attribute("popover")) return WEVA_ERR_NOT_FOUND;
-    if (e->has_attribute("data-popover-open")) popover_hide(doc, *e);
+    if (!e->is_popover_open() && e->is_modal()) return WEVA_ERR_INVALID_STATE;
+    if (e->is_popover_open()) popover_hide(doc, *e);
     else popover_show(doc, *e);
     return WEVA_OK;
+}
+
+namespace {
+const Element* dialog_focus_candidate(weva_document* doc, const Node& parent, bool autofocus) {
+    for (const auto& child : parent.children()) {
+        if (!child->is_element()) continue;
+        const auto* e = static_cast<const Element*>(child.get());
+        int order = 0;
+        // Opening and author mutations may not have reached retained styles yet.
+        // Check the current cascade, including inertness, before choosing a delegate.
+        if ((!autofocus || e->has_attribute("autofocus")) &&
+            focus_order_of(*e, &order, true) && !focus_unavailable_now(doc, *e)) return e;
+        if (const Element* found = dialog_focus_candidate(doc, *e, autofocus)) return found;
+    }
+    return nullptr;
+}
+void focus_popover(weva_document* doc, const Element& e) {
+    const Element* focus = e.has_attribute("autofocus") ? &e : dialog_focus_candidate(doc, e, true);
+    if (!focus && e.tag_name() == "dialog") {
+        focus = dialog_focus_candidate(doc, e, false);
+        if (!focus) focus = &e;
+    }
+    if (focus) weva_document_set_focus(doc, doc->handle_of(focus));
+}
 }
 
 weva_status weva_element_show_dialog(weva_document_t doc, weva_element_t element, int modal) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e || e->tag_name() != "dialog") return WEVA_ERR_NOT_FOUND;
-    if (e->has_attribute("open") && e->has_attribute("data-modal") == (modal != 0)) return WEVA_OK;
+    if (e->has_attribute("open"))
+        return e->is_modal() == (modal != 0) ? WEVA_OK : WEVA_ERR_INVALID_STATE;
+    if (modal && e->is_popover_open()) return WEVA_ERR_INVALID_STATE;
+    // Showing a dialog dismisses unrelated auto/hint popovers. Ancestors
+    // and manual popovers remain; all closures use the normal event path.
+    for (size_t i = doc->popovers.size(); i-- > 0;) {
+        Element* popup = const_cast<Element*>(doc->popovers[i]);
+        if (popover_is_auto(*popup) && (popup == e || !is_within(e, popup))) popover_hide(doc, *popup);
+    }
+    const Element* previous_focus = doc->styles.state.focused;
     e->set_attribute("open", "");
-    // `data-modal` is what puts it in the top layer, so a dialog reopened
-    // non-modally after a modal show must lose it -- otherwise the backdrop
-    // outlives the modality that asked for it.
+    e->set_modal(modal != 0);
+    doc->sync_dialog_open(e);
+    doc->dialog_focus_history.erase(std::remove_if(doc->dialog_focus_history.begin(), doc->dialog_focus_history.end(),
+        [e](const auto& entry) { return entry.dialog == e; }), doc->dialog_focus_history.end());
+    doc->dialog_focus_history.push_back({e, previous_focus});
+    if (modal) {
+        weva_document_clear_pointer(doc);
+        if (doc->open_select) weva_document_open_select(doc, WEVA_ELEMENT_NONE);
+    }
+    const Element* focus = e->has_attribute("autofocus") ? e : dialog_focus_candidate(doc, *e, true);
+    if (!focus) focus = dialog_focus_candidate(doc, *e, false);
+    weva_document_set_focus(doc, doc->handle_of(focus ? focus : e));
+    // Keep the legacy data marker as a readable mirror. Live modality above
+    // controls the top layer and cannot be changed by author data attributes.
     if (modal) e->set_attribute("data-modal", "");
     else e->remove_attribute("data-modal");
     // The backdrop is a BOX, so this is a box-level change, not a repaint.
     note_box_input(doc, e);
+    doc->queue_event(WEVA_EVENT_TOGGLE, e, 0, 0, 0, 0, "open");
+    return WEVA_OK;
+}
+
+weva_status weva_element_request_close_dialog(weva_document_t doc, weva_element_t element) {
+    return weva_element_request_close_dialog_with_value(doc, element, nullptr);
+}
+
+weva_status weva_element_request_close_dialog_with_value(weva_document_t doc, weva_element_t element,
+                                                        const char* value) {
+    if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
+    Element* e = doc->element_at(element);
+    if (!e || e->tag_name() != "dialog") return WEVA_ERR_NOT_FOUND;
+    if (!e->has_attribute("open")) return WEVA_OK;
+    auto it = doc->dialog_close_generations.find(e);
+    if (it == doc->dialog_close_generations.end())
+        it = doc->dialog_close_generations.emplace(e, ++doc->next_close_generation).first;
+    if (!doc->queue_event(WEVA_EVENT_CANCEL, e, 0, 0, 0)) return WEVA_ERR_INVALID_STATE;
+    doc->events.back().close_target = Ref<Element>::retain(e);
+    doc->events.back().close_generation = it->second;
+    doc->events.back().has_close_value = value != nullptr;
+    if (value) doc->events.back().close_value = value;
+    return WEVA_OK;
+}
+
+size_t weva_element_dialog_return_value(weva_document_t doc, weva_element_t element,
+                                      char* buffer, size_t capacity) {
+    std::string_view value;
+    if (doc) {
+        const auto* e = doc->element_at(element);
+        const auto it = doc->dialog_return_values.find(e);
+        if (e && e->tag_name() == "dialog" && it != doc->dialog_return_values.end()) value = it->second;
+    }
+    if (buffer && capacity) {
+        const size_t n = text_boundary(value, static_cast<int>(std::min(value.size(), capacity - 1)));
+        if (n) std::memcpy(buffer, value.data(), n);
+        buffer[n] = 0;
+    }
+    return value.size();
+}
+
+weva_status weva_element_set_dialog_return_value(weva_document_t doc, weva_element_t element,
+                                                const char* value) {
+    if (!doc || !value) return WEVA_ERR_INVALID_ARGUMENT;
+    const auto* e = doc->element_at(element);
+    if (!e || e->tag_name() != "dialog") return WEVA_ERR_NOT_FOUND;
+    if (!*value) doc->dialog_return_values.erase(e);
+    else doc->dialog_return_values[e] = value;
     return WEVA_OK;
 }
 
 weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t element) {
+    return weva_element_close_dialog_with_value(doc, element, nullptr);
+}
+
+weva_status weva_element_close_dialog_with_value(weva_document_t doc, weva_element_t element,
+                                                const char* value) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e || e->tag_name() != "dialog") return WEVA_ERR_NOT_FOUND;
     const bool was_open = e->has_attribute("open");
-    if (!was_open && !e->has_attribute("data-modal")) return WEVA_OK;
+    if (!was_open) return WEVA_OK;
+    if (value) weva_element_set_dialog_return_value(doc, element, value);
+    doc->dialog_close_generations.erase(e);
+    const Element* restore = nullptr;
+    const bool restore_focus = e->is_modal() || is_within(doc->styles.state.focused, e);
+    for (const auto& entry : doc->dialog_focus_history) if (entry.dialog == e) restore = entry.previous_focus;
+    doc->dialog_focus_history.erase(std::remove_if(doc->dialog_focus_history.begin(), doc->dialog_focus_history.end(),
+        [e](const auto& entry) { return entry.dialog == e; }), doc->dialog_focus_history.end());
+    e->set_modal(false);
     e->remove_attribute("open");
+    doc->sync_dialog_open(e);
+    if (restore_focus) weva_document_set_focus(doc, doc->handle_of(restore));
+    doc->check_focus_after_dialog_close = true;
     e->remove_attribute("data-modal");
     note_box_input(doc, e);
-    if (was_open) doc->queue_event(WEVA_EVENT_TOGGLE, e, 0, 0, 0);
+    if (was_open) {
+        doc->queue_event(WEVA_EVENT_TOGGLE, e, 0, 0, 0);
+        doc->queue_event(WEVA_EVENT_CLOSE, e, 0, 0, 0);
+    }
     return WEVA_OK;
 }
 
@@ -5894,6 +7637,22 @@ weva_status weva_document_set_base_path(weva_document_t doc, const char* path) {
     doc->images.set_base_path(path ? path : "");
     if (before != doc->images.content_version()) doc->pending = Invalidation::Boxes;
     return WEVA_OK;
+}
+
+size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    std::string text;
+    for (const auto& name : doc->styles.engine.unsupported_at_rules()) {
+        if (!text.empty()) text += '\n';
+        text += "Ignored @" + name + ": unsupported stylesheet rule.";
+    }
+    if (buffer && capacity) {
+        const size_t n = std::min(text.size(), capacity - 1);
+        if (n) std::memcpy(buffer, text.data(), n);
+        buffer[n] = '\0';
+    }
+    return text.size();
 }
 
 size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t capacity) {

@@ -44,17 +44,36 @@ def main():
     if not any(path for _, path, _ in libraries):
         parser.error('Supply at least one platform library')
     host = Path(__file__).resolve().parent
+    form_state = (host.parents[1] / 'docs' / 'FORM_STATE.md').read_bytes()
+    first_section = form_state.find(b'\n## ')
+    if first_section >= 0:
+        # Repository installation status can differ from the archive being built.
+        form_state = (form_state.splitlines()[0] + b'\n\nArchive version: **' +
+                      args.version.encode('utf-8') + b'**. See [build.json](build.json) for binary identity.\n'
+                      b'The source/candidate checkpoints below are historical records, not this archive\'s installation status.\n' +
+                      form_state[first_section:])
     files = {
         'README.md': (host / 'ADDON_README.md').read_bytes(),
+        'CSS_DIAGNOSTICS.md': (host.parents[1] / 'docs' / 'CSS_DIAGNOSTICS.md').read_bytes(),
         'IME.md': (host.parents[1] / 'docs' / 'IME.md').read_bytes(),
         'TEXT_EDITING.md': (host.parents[1] / 'docs' / 'TEXT_EDITING.md').read_bytes(),
         'GODOT_TEXT_SHAPING.md': (host.parents[1] / 'docs' / 'GODOT_TEXT_SHAPING.md').read_bytes(),
-        'FORM_STATE.md': (host.parents[1] / 'docs' / 'FORM_STATE.md').read_bytes()
-            .replace(b'(../third_party/icu/README.md)', b'(ICU_DATA.md)'),
+        'FORM_STATE.md': form_state
+            .replace(b'(../third_party/icu/README.md)', b'(ICU_DATA.md)')
+            .replace(b'(../third_party/decimal/README.md)', b'(DECIMAL.md)')
+            .replace(b'(../third_party/ada/README.md)', b'(ADA.md)'),
         'ICU_LICENSE.txt': (host.parents[1] / 'third_party/icu/LICENSE.txt').read_bytes(),
         'ICU_DATA.md': (host.parents[1] / 'third_party/icu/README.md').read_bytes()
             .replace(b'(LICENSE.txt)', b'(ICU_LICENSE.txt)'),
         'UNICODE_LICENSE.txt': (host.parents[1] / 'third_party/unicode/LICENSE.txt').read_bytes(),
+        'DECIMAL_LICENSE.txt': (host.parents[1] / 'third_party/decimal/LICENSE.txt').read_bytes(),
+        'DECIMAL.md': (host.parents[1] / 'third_party/decimal/README.md').read_bytes()
+            .replace(b'(LICENSE.txt)', b'(DECIMAL_LICENSE.txt)'),
+        'ADA_LICENSE_MIT.txt': (host.parents[1] / 'third_party/ada/LICENSE-MIT').read_bytes(),
+        'ADA_LICENSE_APACHE.txt': (host.parents[1] / 'third_party/ada/LICENSE-APACHE').read_bytes(),
+        'ADA.md': (host.parents[1] / 'third_party/ada/README.md').read_bytes()
+            .replace(b'(LICENSE-MIT)', b'(ADA_LICENSE_MIT.txt)')
+            .replace(b'(LICENSE-APACHE)', b'(ADA_LICENSE_APACHE.txt)'),
         'UNICODE_DATA.md': (host.parents[1] / 'third_party/unicode/README.md').read_bytes()
             .replace(b'(LICENSE.txt)', b'(UNICODE_LICENSE.txt)'),
         'LICENSE.md': (host.parents[2] / 'LICENSE.md').read_bytes(),
@@ -64,7 +83,14 @@ def main():
     metadata = {'schema': 1, 'version': args.version, 'status': 'development-preview',
                 'godot_api': '4.7', 'architecture': 'x86_64',
                 'dependencies': {'icu': {'version': '78.3', 'linkage': 'static', 'search_locale': 'en',
-                                        'source_sha256': '3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0'}},
+                                        'source_sha256': '3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0'},
+                                 'decimal': {'upstream': 'Chromium Blink WTF Decimal',
+                                             'revision': '9596b537e435c5c23d247cb7d9925d81e8f7707e',
+                                             'linkage': 'static', 'license': 'DECIMAL_LICENSE.txt'},
+                                 'ada': {'version': '4.0.0',
+                                         'revision': 'b12a893a45809da8103bb4f1e2f6f5ee13f9100b',
+                                         'linkage': 'static', 'license': 'ADA_LICENSE_MIT.txt',
+                                         'url_pattern': False}},
                 'libraries': {}}
     descriptor = '[configuration]\nentry_symbol = "weva_library_init"\ncompatibility_minimum = "4.7"\nreloadable = true\n\n[libraries]\n'
     for platform, path, name in libraries:

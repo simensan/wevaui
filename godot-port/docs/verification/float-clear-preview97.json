@@ -1,0 +1,140 @@
+{
+  "candidate": "preview97",
+  "source_sha256": "5d6242db25dc802d37fb9925582fe5e72f457218118af1e0d2cfbdd4a51ce79d",
+  "browser": "Chrome/152.0.7977.77",
+  "status": "Two confirmed unresolved differences",
+  "cases": [
+    {
+      "name": "clear-margin",
+      "html": "<div id=p><div id=a></div><div id=c></div></div>",
+      "css": "body{margin:0}#p{width:400px;display:flow-root}#a{float:left;width:100px;height:80px}#c{height:20px;clear:left;margin-top:30px}",
+      "chrome": [
+        {
+          "id": "p",
+          "x": 0,
+          "y": 0,
+          "width": 400,
+          "height": 100
+        },
+        {
+          "id": "a",
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 80
+        },
+        {
+          "id": "c",
+          "x": 0,
+          "y": 80,
+          "width": 400,
+          "height": 20
+        }
+      ],
+      "engine": [
+        {
+          "i": 0,
+          "depth": 1,
+          "tag": "div",
+          "id": "p",
+          "cls": "",
+          "path": "",
+          "x": 0,
+          "y": 0,
+          "w": 400,
+          "h": 130
+        },
+        {
+          "i": 1,
+          "depth": 2,
+          "tag": "div",
+          "id": "a",
+          "cls": "",
+          "path": "",
+          "x": 0,
+          "y": 0,
+          "w": 100,
+          "h": 80
+        },
+        {
+          "i": 2,
+          "depth": 2,
+          "tag": "div",
+          "id": "c",
+          "cls": "",
+          "path": "",
+          "x": 0,
+          "y": 110,
+          "w": 400,
+          "h": 20
+        }
+      ]
+    },
+    {
+      "name": "already-clear",
+      "html": "<div id=p><div id=a></div><div id=c></div></div>",
+      "css": "body{margin:0}#p{width:400px;display:flow-root}#a{float:left;width:100px;height:40px}#c{height:20px;clear:left;margin-top:100px}",
+      "chrome": [
+        {
+          "id": "p",
+          "x": 0,
+          "y": 0,
+          "width": 400,
+          "height": 120
+        },
+        {
+          "id": "a",
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 40
+        },
+        {
+          "id": "c",
+          "x": 0,
+          "y": 100,
+          "width": 400,
+          "height": 20
+        }
+      ],
+      "engine": [
+        {
+          "i": 0,
+          "depth": 1,
+          "tag": "div",
+          "id": "p",
+          "cls": "",
+          "path": "",
+          "x": 0,
+          "y": 0,
+          "w": 400,
+          "h": 160
+        },
+        {
+          "i": 1,
+          "depth": 2,
+          "tag": "div",
+          "id": "a",
+          "cls": "",
+          "path": "",
+          "x": 0,
+          "y": 0,
+          "w": 100,
+          "h": 40
+        },
+        {
+          "i": 2,
+          "depth": 2,
+          "tag": "div",
+          "id": "c",
+          "cls": "",
+          "path": "",
+          "x": 0,
+          "y": 140,
+          "w": 400,
+          "h": 20
+        }
+      ]
+    }
+  ]
+}

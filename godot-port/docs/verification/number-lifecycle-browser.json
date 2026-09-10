@@ -1,0 +1,54 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "raw": "1e",
+      "action": "min",
+      "value": "",
+      "bad": true
+    },
+    {
+      "raw": "1e",
+      "action": "type-text",
+      "value": "",
+      "bad": false
+    },
+    {
+      "raw": "1e",
+      "action": "clone",
+      "value": "",
+      "bad": false
+    },
+    {
+      "raw": "1e",
+      "action": "same-public",
+      "value": "",
+      "bad": false
+    },
+    {
+      "raw": "+1",
+      "action": "min",
+      "value": "1",
+      "bad": false
+    },
+    {
+      "raw": "+1",
+      "action": "type-text",
+      "value": "1",
+      "bad": false
+    },
+    {
+      "raw": "+1",
+      "action": "clone",
+      "value": "1",
+      "bad": false
+    },
+    {
+      "raw": "+1",
+      "action": "same-public",
+      "value": "1",
+      "bad": false
+    }
+  ],
+  "scope": "Browser observations. Native core tests cover raw numeric value conversion and lifecycle; character filtering is not implemented by this change."
+}

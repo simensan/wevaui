@@ -1,0 +1,881 @@
+{
+  "status": "Experimental118b, opt-in only; installed preview115 unchanged. Not a release qualification.",
+  "properties": {
+    "library_sha256": "84c7f530746fe52f061b3264fd7060aeb3d92d3cc9dbf6a11458836ff7952c07",
+    "source_sha256": "a2ba09a5ab53890f9d758cba0cefcdafe3aa1f344d5af30ec059571733ecd266",
+    "comparisons": [
+      {
+        "renderer": "gl_compatibility",
+        "phase": "initial",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "self-modulate",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "redraw",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "parent-modulate",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "transform",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "clip",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "hide",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "show",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "empty",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "reload",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "light-included",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "light-excluded",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "visibility-excluded",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "sdf-on",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "sdf-off",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "backdrop",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "plain",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "reparent",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "material",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "material-change",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "material-clear",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "texture-nearest",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "texture-linear",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "instance-uniform",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "instance-change",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "instance-default",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "instance-reload",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "inherited-material",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "inherited-change",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "inherited-clear",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "own-material",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "initial",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "self-modulate",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "redraw",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "parent-modulate",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "transform",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "clip",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "hide",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "show",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "empty",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "reload",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "light-included",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "light-excluded",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "visibility-excluded",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "sdf-on",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "sdf-off",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "backdrop",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "plain",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "reparent",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "material",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "material-change",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "material-clear",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "texture-nearest",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "texture-linear",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "instance-uniform",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "instance-change",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "instance-default",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "instance-reload",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "inherited-material",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "inherited-change",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "inherited-clear",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "own-material",
+        "identical": true
+      }
+    ],
+    "passed": true
+  },
+  "reproduced_before_fix": {
+    "library_sha256": "d85cf0603380d2043cc445087cdf894737abe948f14c04c89fe53c423b69455d",
+    "source_sha256": "f6fabca7d7460e86d3399217d24b0de14170e2170fd6fe0a8d5c92ee22f82fa7",
+    "comparisons": [
+      {
+        "renderer": "gl_compatibility",
+        "phase": "initial",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "self-modulate",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "redraw",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "parent-modulate",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "transform",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "clip",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "hide",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "show",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "empty",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "reload",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "light-included",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "light-excluded",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "visibility-excluded",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "sdf-on",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "sdf-off",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "backdrop",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "plain",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "reparent",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "material",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "material-change",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "material-clear",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "texture-nearest",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "texture-linear",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "instance-uniform",
+        "identical": false
+      },
+      {
+        "renderer": "gl_compatibility",
+        "phase": "instance-change",
+        "identical": false
+      },
+      {
+        "renderer": "mobile",
+        "phase": "initial",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "self-modulate",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "redraw",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "parent-modulate",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "transform",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "clip",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "hide",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "show",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "empty",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "reload",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "light-included",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "light-excluded",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "visibility-excluded",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "sdf-on",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "sdf-off",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "backdrop",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "plain",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "reparent",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "material",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "material-change",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "material-clear",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "texture-nearest",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "texture-linear",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "phase": "instance-uniform",
+        "identical": false
+      },
+      {
+        "renderer": "mobile",
+        "phase": "instance-change",
+        "identical": false
+      }
+    ],
+    "passed": false
+  },
+  "profile": {
+    "scope": "Diagnostic draw logging includes warmups and initialization; no acceptance budget or isolated GPU inference. Same binary with opt-in retained batches on/off, alternating mode order.",
+    "rows": [
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "case": "vitals_update",
+        "retained": false,
+        "draws": 722,
+        "median_draw_ms": 0.3465,
+        "median_submit_ms": 0.166,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "case": "vitals_update",
+        "retained": true,
+        "draws": 722,
+        "median_draw_ms": 0.199,
+        "median_submit_ms": 0.026,
+        "median_submissions": 5.0
+      },
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "case": "settings_toggle",
+        "retained": false,
+        "draws": 122,
+        "median_draw_ms": 0.269,
+        "median_submit_ms": 0.2315,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "case": "settings_toggle",
+        "retained": true,
+        "draws": 122,
+        "median_draw_ms": 0.146,
+        "median_submit_ms": 0.0865,
+        "median_submissions": 15.0
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "case": "vitals_update",
+        "retained": false,
+        "draws": 722,
+        "median_draw_ms": 0.345,
+        "median_submit_ms": 0.181,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "case": "vitals_update",
+        "retained": true,
+        "draws": 722,
+        "median_draw_ms": 0.205,
+        "median_submit_ms": 0.033,
+        "median_submissions": 5.0
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "case": "settings_toggle",
+        "retained": false,
+        "draws": 122,
+        "median_draw_ms": 0.3105,
+        "median_submit_ms": 0.272,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "case": "settings_toggle",
+        "retained": true,
+        "draws": 122,
+        "median_draw_ms": 0.1535,
+        "median_submit_ms": 0.0935,
+        "median_submissions": 15.0
+      },
+      {
+        "repeat": 1,
+        "renderer": "gl_compatibility",
+        "case": "vitals_update",
+        "retained": true,
+        "draws": 722,
+        "median_draw_ms": 0.2,
+        "median_submit_ms": 0.026,
+        "median_submissions": 5.0
+      },
+      {
+        "repeat": 1,
+        "renderer": "gl_compatibility",
+        "case": "vitals_update",
+        "retained": false,
+        "draws": 722,
+        "median_draw_ms": 0.324,
+        "median_submit_ms": 0.16,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 1,
+        "renderer": "gl_compatibility",
+        "case": "settings_toggle",
+        "retained": true,
+        "draws": 122,
+        "median_draw_ms": 0.14,
+        "median_submit_ms": 0.084,
+        "median_submissions": 15.0
+      },
+      {
+        "repeat": 1,
+        "renderer": "gl_compatibility",
+        "case": "settings_toggle",
+        "retained": false,
+        "draws": 122,
+        "median_draw_ms": 0.258,
+        "median_submit_ms": 0.222,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 1,
+        "renderer": "mobile",
+        "case": "vitals_update",
+        "retained": true,
+        "draws": 722,
+        "median_draw_ms": 0.205,
+        "median_submit_ms": 0.033,
+        "median_submissions": 5.0
+      },
+      {
+        "repeat": 1,
+        "renderer": "mobile",
+        "case": "vitals_update",
+        "retained": false,
+        "draws": 722,
+        "median_draw_ms": 0.347,
+        "median_submit_ms": 0.184,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 1,
+        "renderer": "mobile",
+        "case": "settings_toggle",
+        "retained": true,
+        "draws": 122,
+        "median_draw_ms": 0.146,
+        "median_submit_ms": 0.092,
+        "median_submissions": 15.0
+      },
+      {
+        "repeat": 1,
+        "renderer": "mobile",
+        "case": "settings_toggle",
+        "retained": false,
+        "draws": 122,
+        "median_draw_ms": 0.3095,
+        "median_submit_ms": 0.273,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 2,
+        "renderer": "gl_compatibility",
+        "case": "vitals_update",
+        "retained": false,
+        "draws": 722,
+        "median_draw_ms": 0.322,
+        "median_submit_ms": 0.158,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 2,
+        "renderer": "gl_compatibility",
+        "case": "vitals_update",
+        "retained": true,
+        "draws": 722,
+        "median_draw_ms": 0.198,
+        "median_submit_ms": 0.026,
+        "median_submissions": 5.0
+      },
+      {
+        "repeat": 2,
+        "renderer": "gl_compatibility",
+        "case": "settings_toggle",
+        "retained": false,
+        "draws": 122,
+        "median_draw_ms": 0.279,
+        "median_submit_ms": 0.2375,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 2,
+        "renderer": "gl_compatibility",
+        "case": "settings_toggle",
+        "retained": true,
+        "draws": 122,
+        "median_draw_ms": 0.139,
+        "median_submit_ms": 0.083,
+        "median_submissions": 15.0
+      },
+      {
+        "repeat": 2,
+        "renderer": "mobile",
+        "case": "vitals_update",
+        "retained": false,
+        "draws": 722,
+        "median_draw_ms": 0.343,
+        "median_submit_ms": 0.18,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 2,
+        "renderer": "mobile",
+        "case": "vitals_update",
+        "retained": true,
+        "draws": 722,
+        "median_draw_ms": 0.206,
+        "median_submit_ms": 0.033,
+        "median_submissions": 5.0
+      },
+      {
+        "repeat": 2,
+        "renderer": "mobile",
+        "case": "settings_toggle",
+        "retained": false,
+        "draws": 122,
+        "median_draw_ms": 0.3255,
+        "median_submit_ms": 0.286,
+        "median_submissions": 42.0
+      },
+      {
+        "repeat": 2,
+        "renderer": "mobile",
+        "case": "settings_toggle",
+        "retained": true,
+        "draws": 122,
+        "median_draw_ms": 0.152,
+        "median_submit_ms": 0.093,
+        "median_submissions": 15.0
+      }
+    ]
+  },
+  "sample": {
+    "checks": [
+      {
+        "label": "gl_compatibility-baseline",
+        "passed": true
+      },
+      {
+        "label": "gl_compatibility-retained",
+        "passed": true
+      },
+      {
+        "label": "mobile-baseline",
+        "passed": true
+      },
+      {
+        "label": "mobile-retained",
+        "passed": true
+      }
+    ],
+    "pixels": [
+      {
+        "renderer": "gl_compatibility",
+        "scene": "camp",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "scene": "crafted",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "scene": "settings",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "scene": "camp",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "scene": "crafted",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "scene": "settings",
+        "identical": true
+      }
+    ],
+    "library_sha256": "84c7f530746fe52f061b3264fd7060aeb3d92d3cc9dbf6a11458836ff7952c07"
+  },
+  "limitations": [
+    "Draw profile includes initialization/warmups and logging overhead; excludes separate frame_pre_draw synchronization and GPU cost.",
+    "Frozen preview115 sample export with only candidate DLL replaced for diagnostics; its preview115 package manifest is stale and this is not a distributable package.",
+    "Custom material parameter enumeration and inherited-material dependency refresh require separate cost qualification.",
+    "Broader retained rendering lifetime and full candidate release checks remain open."
+  ]
+}

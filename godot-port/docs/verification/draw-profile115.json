@@ -1,0 +1,191 @@
+{
+  "library_sha256": "14308831ccc2e0ced94716e1f7adecf37999a8f9d2cf688baa6b859c64b00b61",
+  "scope": "Draw callback logging includes initialization and warmups; conditional draw samples, not per-frame UI cost or acceptance. Logging perturbs scheduling.",
+  "rows": [
+    {
+      "renderer": "gl_compatibility",
+      "case": "vitals_update",
+      "draws": 722,
+      "total": {
+        "median": 0.325,
+        "p95": 0.554,
+        "maximum": 99.714
+      },
+      "packing": {
+        "median": 0.005,
+        "p95": 0.007,
+        "maximum": 0.502
+      },
+      "submission": {
+        "median": 0.162,
+        "p95": 0.258,
+        "maximum": 1.035
+      },
+      "median_submissions": 42.0,
+      "median_packed_vertices": 96.0,
+      "median_reused_batches": 37.0
+    },
+    {
+      "renderer": "gl_compatibility",
+      "case": "inventory_sort",
+      "draws": 242,
+      "total": {
+        "median": 0.574,
+        "p95": 0.878,
+        "maximum": 85.563
+      },
+      "packing": {
+        "median": 0.021,
+        "p95": 0.027,
+        "maximum": 0.097
+      },
+      "submission": {
+        "median": 0.177,
+        "p95": 0.283,
+        "maximum": 0.593
+      },
+      "median_submissions": 44.0,
+      "median_packed_vertices": 1453.0,
+      "median_reused_batches": 23.0
+    },
+    {
+      "renderer": "gl_compatibility",
+      "case": "settings_typing",
+      "draws": 122,
+      "total": {
+        "median": 0.278,
+        "p95": 0.426,
+        "maximum": 100.842
+      },
+      "packing": {
+        "median": 0.018,
+        "p95": 0.026,
+        "maximum": 0.127
+      },
+      "submission": {
+        "median": 0.256,
+        "p95": 0.359,
+        "maximum": 0.502
+      },
+      "median_submissions": 54.0,
+      "median_packed_vertices": 802.0,
+      "median_reused_batches": 48.0
+    },
+    {
+      "renderer": "gl_compatibility",
+      "case": "settings_toggle",
+      "draws": 122,
+      "total": {
+        "median": 0.275,
+        "p95": 0.517,
+        "maximum": 88.659
+      },
+      "packing": {
+        "median": 0.033,
+        "p95": 0.055,
+        "maximum": 0.142
+      },
+      "submission": {
+        "median": 0.238,
+        "p95": 0.443,
+        "maximum": 0.776
+      },
+      "median_submissions": 42.0,
+      "median_packed_vertices": 1997.0,
+      "median_reused_batches": 39.0
+    },
+    {
+      "renderer": "mobile",
+      "case": "vitals_update",
+      "draws": 722,
+      "total": {
+        "median": 0.328,
+        "p95": 0.647,
+        "maximum": 85.642
+      },
+      "packing": {
+        "median": 0.005,
+        "p95": 0.007,
+        "maximum": 0.243
+      },
+      "submission": {
+        "median": 0.176,
+        "p95": 0.267,
+        "maximum": 0.838
+      },
+      "median_submissions": 42.0,
+      "median_packed_vertices": 96.0,
+      "median_reused_batches": 37.0
+    },
+    {
+      "renderer": "mobile",
+      "case": "inventory_sort",
+      "draws": 242,
+      "total": {
+        "median": 0.542,
+        "p95": 0.746,
+        "maximum": 97.199
+      },
+      "packing": {
+        "median": 0.019,
+        "p95": 0.026,
+        "maximum": 0.111
+      },
+      "submission": {
+        "median": 0.185,
+        "p95": 0.282,
+        "maximum": 0.451
+      },
+      "median_submissions": 44.0,
+      "median_packed_vertices": 1453.0,
+      "median_reused_batches": 23.0
+    },
+    {
+      "renderer": "mobile",
+      "case": "settings_typing",
+      "draws": 122,
+      "total": {
+        "median": 0.252,
+        "p95": 0.386,
+        "maximum": 88.223
+      },
+      "packing": {
+        "median": 0.014,
+        "p95": 0.02,
+        "maximum": 0.137
+      },
+      "submission": {
+        "median": 0.234,
+        "p95": 0.348,
+        "maximum": 0.469
+      },
+      "median_submissions": 54.0,
+      "median_packed_vertices": 802.0,
+      "median_reused_batches": 48.0
+    },
+    {
+      "renderer": "mobile",
+      "case": "settings_toggle",
+      "draws": 122,
+      "total": {
+        "median": 0.277,
+        "p95": 0.374,
+        "maximum": 115.383
+      },
+      "packing": {
+        "median": 0.032,
+        "p95": 0.038,
+        "maximum": 0.131
+      },
+      "submission": {
+        "median": 0.241,
+        "p95": 0.335,
+        "maximum": 0.555
+      },
+      "median_submissions": 42.0,
+      "median_packed_vertices": 1997.0,
+      "median_reused_batches": 39.0
+    }
+  ],
+  "finding": "Packed geometry reuse is effective, but the root canvas draw path resubmits all triangle batches. Normal vitals median 42 submissions, 37 reused batches. Investigate retained canvas commands with painter-order/clipping validation; no renderer optimization implemented yet."
+}

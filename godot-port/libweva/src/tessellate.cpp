@@ -29,8 +29,9 @@ Vertex vert(double x, double y, const LinearColor& c) {
 
 // Points along one corner's arc, from `start_angle` sweeping 90 degrees.
 // `cx, cy` is the ellipse centre and `rx, ry` its radii.
+template<class Emit>
 void arc_points(double cx, double cy, double rx, double ry, double start_angle, int segments,
-                std::vector<std::pair<double, double>>* out, bool uniform_corner_points = false) {
+                const Emit& emit, bool uniform_corner_points = false) {
     if (rx <= 0 || ry <= 0) {
         // A square corner is a single point, so a zero radius costs nothing
         // extra — which matters because most boxes have no radius at all.
@@ -40,36 +41,42 @@ void arc_points(double cx, double cy, double rx, double ry, double start_angle, 
         // square corner opposite a rounded one otherwise breaks the pairing.
         // The extra points are coincident, so the shape is identical.
         if (!uniform_corner_points) {
-            out->emplace_back(cx, cy);
+            emit(cx, cy);
             return;
         }
-        for (int i = 0; i <= segments; ++i) out->emplace_back(cx, cy);
+        for (int i = 0; i <= segments; ++i) emit(cx, cy);
         return;
     }
     for (int i = 0; i <= segments; ++i) {
         const double t = start_angle + (kPi * 0.5) * (static_cast<double>(i) / segments);
-        out->emplace_back(cx + rx * std::cos(t), cy + ry * std::sin(t));
+        emit(cx + rx * std::cos(t), cy + ry * std::sin(t));
     }
 }
 
 // The outline of a rounded rect, clockwise from the top-left corner in screen
 // coordinates (y down).
+template<class Emit>
+void rounded_points(const Rect& r, const BorderRadii& c, int segments,
+                    const Emit& emit, bool uniform_corner_points = false) {
+    const bool u = uniform_corner_points;
+    // Angles run from pi (left) round to pi/2 (down) because y grows downward.
+    arc_points(r.x + c.top_left.x_radius, r.y + c.top_left.y_radius, c.top_left.x_radius,
+               c.top_left.y_radius, kPi, segments, emit, u);
+    arc_points(r.right() - c.top_right.x_radius, r.y + c.top_right.y_radius,
+               c.top_right.x_radius, c.top_right.y_radius, -kPi * 0.5, segments, emit, u);
+    arc_points(r.right() - c.bottom_right.x_radius, r.bottom() - c.bottom_right.y_radius,
+               c.bottom_right.x_radius, c.bottom_right.y_radius, 0, segments, emit, u);
+    arc_points(r.x + c.bottom_left.x_radius, r.bottom() - c.bottom_left.y_radius,
+               c.bottom_left.x_radius, c.bottom_left.y_radius, kPi * 0.5, segments, emit, u);
+}
+
 std::vector<std::pair<double, double>> rounded_outline(const Rect& r, const BorderRadii& radii,
                                                        int segments,
                                                        bool uniform_corner_points = false) {
     const BorderRadii c = clamp_radii_to_rect(radii, r.width, r.height);
     std::vector<std::pair<double, double>> pts;
     pts.reserve(static_cast<size_t>(4 * (segments + 1)));
-    const bool u = uniform_corner_points;
-    // Angles run from pi (left) round to pi/2 (down) because y grows downward.
-    arc_points(r.x + c.top_left.x_radius, r.y + c.top_left.y_radius, c.top_left.x_radius,
-               c.top_left.y_radius, kPi, segments, &pts, u);
-    arc_points(r.right() - c.top_right.x_radius, r.y + c.top_right.y_radius,
-               c.top_right.x_radius, c.top_right.y_radius, -kPi * 0.5, segments, &pts, u);
-    arc_points(r.right() - c.bottom_right.x_radius, r.bottom() - c.bottom_right.y_radius,
-               c.bottom_right.x_radius, c.bottom_right.y_radius, 0, segments, &pts, u);
-    arc_points(r.x + c.bottom_left.x_radius, r.bottom() - c.bottom_left.y_radius,
-               c.bottom_left.x_radius, c.bottom_left.y_radius, kPi * 0.5, segments, &pts, u);
+    rounded_points(r, c, segments, [&](double x, double y) { pts.emplace_back(x, y); }, uniform_corner_points);
     return pts;
 }
 
@@ -266,11 +273,9 @@ constexpr double kAaHalfWidth = 0.5;
 // outward for positive. The displacement at a corner is longer than `d` (it
 // runs along the mitre), which is what keeps both of that corner's edges
 // exactly `d` away rather than only the corner point.
-std::vector<std::pair<double, double>> offset_outline(
-    const std::vector<std::pair<double, double>>& pts, double d) {
+std::pair<double, double> offset_outline_point(
+    const std::vector<std::pair<double, double>>& pts, size_t i, double d) {
     const size_t n = pts.size();
-    std::vector<std::pair<double, double>> out(n);
-    for (size_t i = 0; i < n; ++i) {
         // The neighbours have to be DISTINCT points: a square corner walked
         // with a uniform point count repeats itself, and a zero-length edge has
         // no normal.
@@ -288,8 +293,7 @@ std::vector<std::pair<double, double>> offset_outline(
         const double bx = pts[next].first - pts[i].first, by = pts[next].second - pts[i].second;
         const double la = std::sqrt(ax * ax + ay * ay), lb = std::sqrt(bx * bx + by * by);
         if (la <= 0 || lb <= 0) {
-            out[i] = pts[i];
-            continue;
+            return pts[i];
         }
         // Outward normal of each edge, for an outline wound so that the
         // interior is to the left.
@@ -298,8 +302,7 @@ std::vector<std::pair<double, double>> offset_outline(
         double mx = n1x + n2x, my = n1y + n2y;
         const double lm = std::sqrt(mx * mx + my * my);
         if (lm <= 1e-9) {
-            out[i] = pts[i];
-            continue;
+            return pts[i];
         }
         mx /= lm;
         my /= lm;
@@ -307,8 +310,13 @@ std::vector<std::pair<double, double>> offset_outline(
         // because a very sharp corner sends the mitre off to infinity.
         const double cos_half = mx * n1x + my * n1y;
         const double scale = cos_half > 0.2 ? d / cos_half : d * 5.0;
-        out[i] = {pts[i].first + mx * scale, pts[i].second + my * scale};
-    }
+        return {pts[i].first + mx * scale, pts[i].second + my * scale};
+
+}
+std::vector<std::pair<double, double>> offset_outline(
+    const std::vector<std::pair<double, double>>& pts, double d) {
+    std::vector<std::pair<double, double>> out(pts.size());
+    for (size_t i = 0; i < pts.size(); ++i) out[i] = offset_outline_point(pts, i, d);
     return out;
 }
 
@@ -331,16 +339,20 @@ void fill_outline_aa(const std::vector<std::pair<double, double>>& pts, double c
         return;
     }
 
-    const std::vector<std::pair<double, double>> in = offset_outline(pts, -kAaHalfWidth);
-    const std::vector<std::pair<double, double>> ex = offset_outline(pts, kAaHalfWidth);
     LinearColor clear = color;
     clear.a = 0;
 
     // Centre, then the inset ring, then the expanded ring.
     const uint32_t base = static_cast<uint32_t>(out->vertices.size());
     out->vertices.push_back(vert(cx, cy, color));
-    for (const auto& p : in) out->vertices.push_back(vert(p.first, p.second, color));
-    for (const auto& p : ex) out->vertices.push_back(vert(p.first, p.second, clear));
+    for (size_t i = 0; i < pts.size(); ++i) {
+        const auto p = offset_outline_point(pts, i, -kAaHalfWidth);
+        out->vertices.push_back(vert(p.first, p.second, color));
+    }
+    for (size_t i = 0; i < pts.size(); ++i) {
+        const auto p = offset_outline_point(pts, i, kAaHalfWidth);
+        out->vertices.push_back(vert(p.first, p.second, clear));
+    }
 
     const uint32_t inner = base + 1;
     const uint32_t outer = inner + n;
@@ -391,6 +403,26 @@ void tessellate_rounded_rect(const Rect& r, const BorderRadii& radii, const Line
     if (r.is_empty() || color.a <= 0) return;
     if (radii.is_zero()) {
         tessellate_rect(r, color, out, antialias);
+        return;
+    }
+    // Non-feathered fans can emit points directly into the owned mesh
+    // instead of allocating a temporary outline.
+    if (!antialias || too_thin_to_feather(r)) {
+        const BorderRadii c = clamp_radii_to_rect(radii, r.width, r.height);
+        size_t count = 0;
+        for (const auto& corner : {c.top_left, c.top_right, c.bottom_right, c.bottom_left})
+            count += corner.x_radius > 0 && corner.y_radius > 0 ? static_cast<size_t>(segments + 1) : 1;
+        if (count < 3) return;
+        out->reserve_append(count + 1, count * 3);
+        const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+        out->vertices.push_back(vert(r.x + r.width * .5, r.y + r.height * .5, color));
+        rounded_points(r, c, segments, [&](double x, double y) { out->vertices.push_back(vert(x, y, color)); });
+        const uint32_t n = static_cast<uint32_t>(count);
+        for (uint32_t i = 0; i < n; ++i) {
+            out->indices.push_back(base);
+            out->indices.push_back(base + 1 + i);
+            out->indices.push_back(base + 1 + ((i + 1) % n));
+        }
         return;
     }
     // A centre vertex plus a fan. Correct for any convex outline, which a

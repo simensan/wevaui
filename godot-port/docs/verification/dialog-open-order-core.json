@@ -1,0 +1,33 @@
+{
+  "scope": "Source-only markup/attribute/binding dialog close ordering",
+  "abi_minor": 15,
+  "source_sha256": {
+    "godot-port/libweva/include/weva_c.h": "830063bdc8dfae9f5338ad1fb6ea411b3f1520f53d21fc9369bf23ed40d0a3d5",
+    "godot-port/libweva/src/weva_c.cpp": "13cce0cc49b62f768228b6deb126b02298ef6e55ef90b3e037d764660b1a8079",
+    "godot-port/libweva/tests/test_c_abi_forms.cpp": "a01f720455ddca15172db0b8b72ec8455aca48f0dbcd22d82f78ece4a37db048",
+    "godot-port/libweva/tests/test_c_abi_binding.cpp": "1649d8bd6f3b4f79162762e9b3af3477c799818e803879cb0f0be840cbbadec8",
+    "godot-port/libweva/tests/main.cpp": "50dc3cb9e69eccfe589e38622bc13814924e06ee1fca0de52ca1c9e9f3ed9112"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 17.45
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 115.57
+  },
+  "covered": [
+    "eight Chrome-derived markup/attribute Escape cases",
+    "attribute opening order and unchanged boolean value",
+    "remove/re-add opening order",
+    "insert/remove/reload lifetime",
+    "bound open state ordering"
+  ],
+  "remaining": [
+    "native rebuild and keyboard validation",
+    "dialog return values",
+    "full CloseWatcher and task ordering"
+  ]
+}

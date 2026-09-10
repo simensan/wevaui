@@ -60,6 +60,9 @@ struct Bitmap {
 class FontInterface {
 public:
     virtual ~FontInterface() = default;
+    // Real font layout places fractional half-leading below the baseline.
+    // Deterministic synthetic backends may retain exact arithmetic.
+    virtual bool rounds_line_leading() const { return true; }
     virtual FaceHandle load_face(const std::vector<uint8_t>& ttf, int index) = 0;
     virtual bool face_metrics(FaceHandle face, double px, FaceMetrics* out) = 0;
     virtual bool glyph_index(FaceHandle face, uint32_t codepoint, uint32_t* out) = 0;
@@ -88,6 +91,7 @@ public:
 // need before a real backend exists.
 class StubFont : public FontInterface {
 public:
+    bool rounds_line_leading() const override { return false; }
     FaceHandle load_face(const std::vector<uint8_t>& ttf, int index) override;
     bool face_metrics(FaceHandle face, double px, FaceMetrics* out) override;
     bool glyph_index(FaceHandle face, uint32_t codepoint, uint32_t* out) override;

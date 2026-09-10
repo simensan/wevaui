@@ -1,0 +1,64 @@
+{
+  "scope": "Broad frozen Chrome geometry comparison after collapsed-table changes; current source only, not installed",
+  "browser": "Chrome/152.0.7977.77",
+  "metrics": "mono; Weva UA overlay; normalized line-height",
+  "viewport": [
+    1280,
+    720
+  ],
+  "dump_sha256": "d14de3eb9121cc50800980ebf7339ae42aed94f4a37659dcefe6d1aae9771683",
+  "counts": {
+    "samples": {
+      "ok": 29,
+      "DIFF": 18,
+      "CRASH": 0
+    },
+    "hand": {
+      "ok": 52,
+      "DIFF": 0,
+      "CRASH": 0
+    },
+    "harvest": {
+      "ok": 206,
+      "DIFF": 4,
+      "CRASH": 0
+    }
+  },
+  "fixture_count": 309,
+  "fully_agreeing": 287,
+  "remaining_differing": 22,
+  "changed_fixtures": [
+    {
+      "group": "samples",
+      "fixture": "leaderboard",
+      "before_difference_count": 68,
+      "after_difference_count": 2,
+      "remaining": [
+        "span.foot-meta .w: ours 320.16, chrome 321.33  (1.2px)",
+        "div.hero-meta .h: ours 64.007, chrome 63.97  (0.0px)"
+      ]
+    }
+  ],
+  "new_reported_differences": 0,
+  "core_ctest": {
+    "passed": 14,
+    "failed": 0,
+    "seconds": 26.65,
+    "log": ".utmp\\style-read-build\\Testing\\Temporary\\LastTest.log",
+    "log_sha256": "c052fd364dd36ae79a4d9fcdd2187492306b82e01095a58cd94e188a49bf54ea"
+  },
+  "source_sha256": {
+    "godot-port/libweva/src/table_layout.cpp": "13ee66946cd5c4d9fc570949d5437bd4eee8e86fbc74996c77b14a03d627c92d",
+    "godot-port/libweva/src/paint.cpp": "0ac95930d861e2ad67e3911a6d4533401d1fe981b8343dc4cffb76b3967b6ba4",
+    "godot-port/libweva/src/box.cpp": "7a6d01808cdba27d7c2bfd406e8181f38677a1a63d3e44b32dcc15d7aa3cfe1d",
+    "godot-port/libweva/src/weva_c.cpp": "09fc98b60238bb590e0d9e94f62bf4ba7d2b5158d9f0d7c4afa57405651f3b53",
+    "godot-port/libweva/src/user_agent_stylesheet.cpp": "fdd80d16d376f3e540eed20e0115b5068da067a25640c722a7c7598864b57ab9",
+    "godot-port/libweva/include/weva/table_border.h": "8005d7f2b5a92ee01adcfcee677d0ee09b7e2f4cce4acb741750d1e98265216b",
+    "godot-port/libweva/include/weva/box.h": "b3b59a2f151818f2ce4ede4b44e30641926d706881aa32adf919f6f880794122"
+  },
+  "limitations": [
+    "Frozen Chrome captures with normalized text metrics; not fresh native screenshots.",
+    "Remaining differences are preserved; this is not full Chrome parity.",
+    "Patterned borders, broader table sizing and native Godot qualification remain open."
+  ]
+}

@@ -1,0 +1,457 @@
+{
+  "executable_sha256": "3d51e956d803df1f157398a006d3cff076e14d370214035a104e5faf4466b564",
+  "library_sha256": "925ec448c51337b8e88fb695c546e2537878b4264548bcd0598f3c4da52b92cd",
+  "renderer": "mobile",
+  "resolution": [
+    3840,
+    2160
+  ],
+  "runs": [
+    {
+      "name": "offscreen-a",
+      "report": ".utmp\\safe-engine71\\outside198-presentation-offscreen-a\\summary.json",
+      "requested_window_position": [
+        -10000,
+        -10000
+      ],
+      "results": [
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 14.381,
+            "mean_ms": 3.82834333333333,
+            "median_ms": 0.92,
+            "p95_ms": 12.91,
+            "p99_ms": 13.452,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 0.004,
+            "mean_ms": 0.001575,
+            "median_ms": 0.002,
+            "p95_ms": 0.003,
+            "p99_ms": 0.003,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.354999989271164,
+            "mean_ms": 0.347108331620693,
+            "median_ms": 0.34799998998642,
+            "p95_ms": 0.351000010967255,
+            "p99_ms": 0.352999985218048,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 15.928,
+            "mean_ms": 3.93813833333333,
+            "median_ms": 0.889,
+            "p95_ms": 13.487,
+            "p99_ms": 15.692,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 0.005,
+            "mean_ms": 0.00193833333333333,
+            "median_ms": 0.002,
+            "p95_ms": 0.003,
+            "p99_ms": 0.004,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.377999991178513,
+            "mean_ms": 0.360078334659338,
+            "median_ms": 0.361000001430511,
+            "p95_ms": 0.363999992609024,
+            "p99_ms": 0.365000009536743,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        },
+        {
+          "workload": "settings_toggle",
+          "whole_frame": {
+            "max_ms": 14.259,
+            "mean_ms": 4.03658,
+            "median_ms": 1.012,
+            "p95_ms": 12.321,
+            "p99_ms": 13.343,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 1.958,
+            "mean_ms": 0.164355,
+            "median_ms": 0.003,
+            "p95_ms": 1.248,
+            "p99_ms": 1.584,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "max_ms": 1.958,
+            "mean_ms": 0.97149,
+            "median_ms": 1.186,
+            "p95_ms": 1.602,
+            "p99_ms": 1.867,
+            "samples": 100
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.418999999761581,
+            "mean_ms": 0.373061666339636,
+            "median_ms": 0.370999991893768,
+            "p95_ms": 0.391000002622604,
+            "p99_ms": 0.39300000667572,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        }
+      ]
+    },
+    {
+      "name": "onscreen-a",
+      "report": ".utmp\\safe-engine71\\outside198-presentation-onscreen-a\\summary.json",
+      "requested_window_position": [
+        0,
+        0
+      ],
+      "results": [
+        {
+          "workload": "settings_toggle",
+          "whole_frame": {
+            "max_ms": 13.899,
+            "mean_ms": 4.20069166666667,
+            "median_ms": 0.893,
+            "p95_ms": 13.104,
+            "p99_ms": 13.573,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 2.229,
+            "mean_ms": 0.185451666666666,
+            "median_ms": 0.003,
+            "p95_ms": 1.378,
+            "p99_ms": 1.858,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "max_ms": 2.229,
+            "mean_ms": 1.09921,
+            "median_ms": 1.248,
+            "p95_ms": 1.879,
+            "p99_ms": 2.195,
+            "samples": 100
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.409999996423721,
+            "mean_ms": 0.374764999846617,
+            "median_ms": 0.372000008821487,
+            "p95_ms": 0.391999989748001,
+            "p99_ms": 0.40599998831749,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 17.081,
+            "mean_ms": 3.94672833333334,
+            "median_ms": 0.853,
+            "p95_ms": 13.275,
+            "p99_ms": 15.404,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 0.009,
+            "mean_ms": 0.0021,
+            "median_ms": 0.002,
+            "p95_ms": 0.003,
+            "p99_ms": 0.004,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.519999980926514,
+            "mean_ms": 0.359963333308697,
+            "median_ms": 0.361000001430511,
+            "p95_ms": 0.363999992609024,
+            "p99_ms": 0.365000009536743,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        },
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 14.183,
+            "mean_ms": 3.83670166666666,
+            "median_ms": 0.816,
+            "p95_ms": 12.316,
+            "p99_ms": 13.5,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 0.004,
+            "mean_ms": 0.00184,
+            "median_ms": 0.002,
+            "p95_ms": 0.003,
+            "p99_ms": 0.003,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.354000002145767,
+            "mean_ms": 0.346986665477355,
+            "median_ms": 0.349000006914139,
+            "p95_ms": 0.351000010967255,
+            "p99_ms": 0.351999998092651,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        }
+      ]
+    },
+    {
+      "name": "onscreen-b",
+      "report": ".utmp\\safe-engine71\\outside198-presentation-onscreen-b\\summary.json",
+      "requested_window_position": [
+        0,
+        0
+      ],
+      "results": [
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 14.385,
+            "mean_ms": 3.91113666666667,
+            "median_ms": 0.874,
+            "p95_ms": 12.789,
+            "p99_ms": 13.644,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 0.029,
+            "mean_ms": 0.00180666666666667,
+            "median_ms": 0.002,
+            "p95_ms": 0.003,
+            "p99_ms": 0.003,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.35699999332428,
+            "mean_ms": 0.346948332438866,
+            "median_ms": 0.349000006914139,
+            "p95_ms": 0.351999998092651,
+            "p99_ms": 0.354000002145767,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 13.845,
+            "mean_ms": 4.07792,
+            "median_ms": 0.851,
+            "p95_ms": 13.169,
+            "p99_ms": 13.582,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 0.004,
+            "mean_ms": 0.001935,
+            "median_ms": 0.002,
+            "p95_ms": 0.003,
+            "p99_ms": 0.004,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.389999985694885,
+            "mean_ms": 0.358560000310342,
+            "median_ms": 0.361000001430511,
+            "p95_ms": 0.363999992609024,
+            "p99_ms": 0.372999995946884,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        },
+        {
+          "workload": "settings_toggle",
+          "whole_frame": {
+            "max_ms": 16.605,
+            "mean_ms": 4.23218,
+            "median_ms": 0.987,
+            "p95_ms": 13.461,
+            "p99_ms": 15.174,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 2.846,
+            "mean_ms": 0.225916666666666,
+            "median_ms": 0.003,
+            "p95_ms": 1.771,
+            "p99_ms": 2.16,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "max_ms": 2.846,
+            "mean_ms": 1.33932,
+            "median_ms": 1.515,
+            "p95_ms": 2.169,
+            "p99_ms": 2.406,
+            "samples": 100
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.416000008583069,
+            "mean_ms": 0.373944998681545,
+            "median_ms": 0.368999987840652,
+            "p95_ms": 0.391000002622604,
+            "p99_ms": 0.39300000667572,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        }
+      ]
+    },
+    {
+      "name": "offscreen-b",
+      "report": ".utmp\\safe-engine71\\outside198-presentation-offscreen-b\\summary.json",
+      "requested_window_position": [
+        -10000,
+        -10000
+      ],
+      "results": [
+        {
+          "workload": "settings_toggle",
+          "whole_frame": {
+            "max_ms": 14.906,
+            "mean_ms": 4.21503166666667,
+            "median_ms": 1.161,
+            "p95_ms": 12.476,
+            "p99_ms": 13.439,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 3.111,
+            "mean_ms": 0.217273333333334,
+            "median_ms": 0.003,
+            "p95_ms": 1.65,
+            "p99_ms": 2.38,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "max_ms": 3.111,
+            "mean_ms": 1.28832,
+            "median_ms": 1.291,
+            "p95_ms": 2.404,
+            "p99_ms": 3.089,
+            "samples": 100
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.414000004529953,
+            "mean_ms": 0.374486665179332,
+            "median_ms": 0.372000008821487,
+            "p95_ms": 0.391999989748001,
+            "p99_ms": 0.398999989032745,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 13.623,
+            "mean_ms": 3.82858999999999,
+            "median_ms": 0.819,
+            "p95_ms": 12.249,
+            "p99_ms": 12.755,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 0.017,
+            "mean_ms": 0.002045,
+            "median_ms": 0.002,
+            "p95_ms": 0.003,
+            "p99_ms": 0.004,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.375,
+            "mean_ms": 0.36229166701436,
+            "median_ms": 0.361999988555908,
+            "p95_ms": 0.365000009536743,
+            "p99_ms": 0.36599999666214,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        },
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 13.205,
+            "mean_ms": 3.71668666666666,
+            "median_ms": 0.805,
+            "p95_ms": 12.099,
+            "p99_ms": 12.603,
+            "samples": 600
+          },
+          "api_cpu": {
+            "max_ms": 0.006,
+            "mean_ms": 0.00184166666666667,
+            "median_ms": 0.002,
+            "p95_ms": 0.002,
+            "p99_ms": 0.003,
+            "samples": 600
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "viewport_render_gpu": {
+            "max_ms": 0.354000002145767,
+            "mean_ms": 0.349483333031336,
+            "median_ms": 0.349999994039536,
+            "p95_ms": 0.351999998092651,
+            "p99_ms": 0.351999998092651,
+            "samples": 600
+          },
+          "window_focused_samples": 600,
+          "frames": 600
+        }
+      ]
+    }
+  ],
+  "scope": "ABBA requested window-position diagnostic using one frozen export, 600 frames per workload; no budget qualification. Window visibility/occlusion was not independently observed.",
+  "conclusion": "Offscreen and onscreen frame p95 ranges overlap (12.099\u201313.487 versus 12.316\u201313.461 ms). This does not establish placement as the cause of prior 4K failures. Original failures remain unchanged."
+}

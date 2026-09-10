@@ -1,0 +1,31 @@
+{
+  "scope": "Core dialog form submission, ABI minor16; installed107 remains unchanged",
+  "source_sha256": {
+    "libweva/include/weva_c.h": "5f0cd717455e326da7aae32d920527434a22e90887dffff988bd38a7aed93328",
+    "libweva/src/weva_c.cpp": "33278a5e902270263bb4a8e6a1185884daccee4998b7a0c0a9cb9b7561028043",
+    "libweva/tests/test_c_abi_forms.cpp": "2382a2cb708aaef8888fe42c187357dde72119975c557d5fc30a0a4919892401",
+    "libweva/tests/main.cpp": "1ad617bb16dbdd06fad6a3b2ec63d7cd4d35f26878b05f3c787a7ace651c622b"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 21.45
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 121.21
+  },
+  "build_note": "Only explanatory source/header comments changed after these builds; runtime and test code are identical.",
+  "browser_cases": {
+    "result_handlers": 54,
+    "method_image": 24,
+    "implicit_keyboard_confirmation": 6
+  },
+  "remaining": [
+    "constraint validation before submit handlers; 20-case browser probe recorded",
+    "submission queue overflow and lifecycle follow-ups",
+    "click-handler cancellation and mutation ordering audit",
+    "native integration, performance, packaging and installation"
+  ]
+}

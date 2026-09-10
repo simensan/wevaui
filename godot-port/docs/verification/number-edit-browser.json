@@ -1,0 +1,310 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "raw": "",
+      "mode": "type",
+      "value": "",
+      "bad": false,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "-",
+      "mode": "type",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "+",
+      "mode": "type",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1e",
+      "mode": "type",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1e-",
+      "mode": "type",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1.",
+      "mode": "type",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "+1",
+      "mode": "type",
+      "value": "1",
+      "bad": false,
+      "missing": false,
+      "number": 1
+    },
+    {
+      "raw": "01",
+      "mode": "type",
+      "value": "01",
+      "bad": false,
+      "missing": false,
+      "number": 1
+    },
+    {
+      "raw": ".5",
+      "mode": "type",
+      "value": ".5",
+      "bad": false,
+      "missing": false,
+      "number": 0.5
+    },
+    {
+      "raw": "-.5",
+      "mode": "type",
+      "value": "-.5",
+      "bad": false,
+      "missing": false,
+      "number": -0.5
+    },
+    {
+      "raw": "1e+2",
+      "mode": "type",
+      "value": "1e+2",
+      "bad": false,
+      "missing": false,
+      "number": 100
+    },
+    {
+      "raw": "1e999",
+      "mode": "type",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "abc",
+      "mode": "type",
+      "value": "",
+      "bad": false,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1a2",
+      "mode": "type",
+      "value": "12",
+      "bad": false,
+      "missing": false,
+      "number": 12
+    },
+    {
+      "raw": "1 2",
+      "mode": "type",
+      "value": "12",
+      "bad": false,
+      "missing": false,
+      "number": 12
+    },
+    {
+      "raw": "--1",
+      "mode": "type",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1..2",
+      "mode": "type",
+      "value": "1.2",
+      "bad": false,
+      "missing": false,
+      "number": 1.2
+    },
+    {
+      "raw": "e",
+      "mode": "type",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1,2",
+      "mode": "type",
+      "value": "1.2",
+      "bad": false,
+      "missing": false,
+      "number": 1.2
+    },
+    {
+      "raw": "",
+      "mode": "insert",
+      "value": "",
+      "bad": false,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "-",
+      "mode": "insert",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "+",
+      "mode": "insert",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1e",
+      "mode": "insert",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1e-",
+      "mode": "insert",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1.",
+      "mode": "insert",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "+1",
+      "mode": "insert",
+      "value": "1",
+      "bad": false,
+      "missing": false,
+      "number": 1
+    },
+    {
+      "raw": "01",
+      "mode": "insert",
+      "value": "01",
+      "bad": false,
+      "missing": false,
+      "number": 1
+    },
+    {
+      "raw": ".5",
+      "mode": "insert",
+      "value": ".5",
+      "bad": false,
+      "missing": false,
+      "number": 0.5
+    },
+    {
+      "raw": "-.5",
+      "mode": "insert",
+      "value": "-.5",
+      "bad": false,
+      "missing": false,
+      "number": -0.5
+    },
+    {
+      "raw": "1e+2",
+      "mode": "insert",
+      "value": "1e+2",
+      "bad": false,
+      "missing": false,
+      "number": 100
+    },
+    {
+      "raw": "1e999",
+      "mode": "insert",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "abc",
+      "mode": "insert",
+      "value": "",
+      "bad": false,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1a2",
+      "mode": "insert",
+      "value": "12",
+      "bad": false,
+      "missing": false,
+      "number": 12
+    },
+    {
+      "raw": "1 2",
+      "mode": "insert",
+      "value": "12",
+      "bad": false,
+      "missing": false,
+      "number": 12
+    },
+    {
+      "raw": "--1",
+      "mode": "insert",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1..2",
+      "mode": "insert",
+      "value": "1.2",
+      "bad": false,
+      "missing": false,
+      "number": 1.2
+    },
+    {
+      "raw": "e",
+      "mode": "insert",
+      "value": "",
+      "bad": true,
+      "missing": true,
+      "number": null
+    },
+    {
+      "raw": "1,2",
+      "mode": "insert",
+      "value": "1.2",
+      "bad": false,
+      "missing": false,
+      "number": 1.2
+    }
+  ],
+  "scope": "Browser observations. Native core tests cover raw numeric value conversion and lifecycle; character filtering is not implemented by this change."
+}

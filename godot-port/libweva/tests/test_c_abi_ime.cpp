@@ -271,3 +271,26 @@ void test_abi_ime_caret_geometry() {
     CHECK(x == 0 && y == 0 && width == 0 && height == 0);
     CHECK(weva_document_caret_bounds(nullptr, nullptr, nullptr, nullptr, nullptr) == 0);
 }
+
+void test_abi_ime_candidate() {
+    CHECK(weva_document_text_input_candidate(nullptr) == WEVA_ELEMENT_NONE);
+    for (const char* type : {"text", "password", "search", "email", "url", "tel", "number", "checkbox", "radio", "range", "button"}) {
+        Document d("<input id=field><button id=other>Other</button>");
+        const auto serial = weva_document_draw_serial(d.doc);
+        weva_element_set_attribute(d.doc, d.field, "type", type);
+        const bool text = std::strcmp(type,"checkbox") && std::strcmp(type,"radio") && std::strcmp(type,"range") && std::strcmp(type,"button");
+        CHECK(weva_document_text_input_candidate(d.doc) == (text ? d.field : WEVA_ELEMENT_NONE));
+        weva_element_set_attribute(d.doc, d.field, "readonly", "");
+        CHECK(weva_document_text_input_candidate(d.doc) == (text ? d.field : WEVA_ELEMENT_NONE));
+        CHECK(weva_document_text_input_target(d.doc) == WEVA_ELEMENT_NONE);
+        CHECK(weva_document_draw_serial(d.doc) == serial);
+        weva_document_set_focus(d.doc, weva_document_query(d.doc,"#other"));
+        CHECK(weva_document_text_input_candidate(d.doc) == WEVA_ELEMENT_NONE);
+    }
+    Document d("<textarea id=field>text</textarea>");
+    CHECK(weva_document_text_input_candidate(d.doc) == d.field);
+    weva_element_set_attribute(d.doc,d.field,"style","visibility:hidden");
+    CHECK(weva_document_text_input_candidate(d.doc) == d.field);
+    weva_document_update(d.doc,0);
+    CHECK(weva_document_text_input_target(d.doc) == WEVA_ELEMENT_NONE);
+}

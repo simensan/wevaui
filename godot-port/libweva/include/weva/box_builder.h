@@ -53,8 +53,9 @@ public:
 
 class BoxBuilder {
 public:
-    BoxBuilder(BoxTree* tree, StyleProvider* styles, BoxBuildReuse* reuse = nullptr)
-        : tree_(tree), styles_(styles), reuse_(reuse) {}
+    BoxBuilder(BoxTree* tree, StyleProvider* styles, BoxBuildReuse* reuse = nullptr,
+               bool exclude_promoted_descendants = false)
+        : exclude_promoted_descendants_(exclude_promoted_descendants), tree_(tree), styles_(styles), reuse_(reuse) {}
 
     // Builds the box for one element and its subtree. Returns kNoBox for
     // `display: none`.
@@ -70,6 +71,10 @@ public:
     }
 
 private:
+    BoxId document_root_ = kNoBox;
+    bool exclude_promoted_descendants_ = false;
+    std::vector<const Element*> emitted_top_layers_;
+    void emit_missing_top_layers(const Node& node);
     void append_node_as_block_child(const Node& node, const ComputedStyle* parent_style,
                                     BoxId parent);
     void build_children(const Element& element, const ComputedStyle* style, BoxId parent);

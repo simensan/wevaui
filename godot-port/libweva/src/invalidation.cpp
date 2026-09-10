@@ -71,7 +71,7 @@ const std::vector<bool>& paint_only_table() {
 const char* const kBoxAffecting[] = {
     "display",  "position", "float",           "content",
     "quotes",   "white-space", "text-transform",
-    "column-count", "column-width",
+    "column-count", "column-width", "content-visibility",
     "counter-reset", "counter-increment", "counter-set",
 };
 

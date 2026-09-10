@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "installed_preview": 128,
+  "runtime_changed": false,
+  "test": "test_abi_incremental_has_range_scopes",
+  "test_file": "godot-port/libweva/tests/test_c_abi_incremental.cpp",
+  "test_sha256": "9984a2e25bd352f2dc591de733b69401d1b47bd2be74caabcdd8ad6afcbf6602",
+  "comparisons": 105,
+  "dependencies": [
+    "parent background",
+    "inherited parent color/currentColor border",
+    "inherited custom property consumed by descendant",
+    "ancestor :has with descendant subject",
+    "following sibling selector",
+    "nested :is with ancestor :has",
+    "negated :has"
+  ],
+  "mutations": [
+    "stable in-range value",
+    "crossing upper bound",
+    "stable out-of-range value",
+    "return in range",
+    "raise lower bound",
+    "restore lower bound",
+    "out-of-range plus disabled",
+    "remove disabled",
+    "multiple pending value writes",
+    "parent class/custom property",
+    "replace stylesheet with larger child font",
+    "remove relational stylesheet",
+    "restore relational stylesheet",
+    "value mutation followed by element removal",
+    "reload document"
+  ],
+  "comparison": [
+    "draw kinds/order",
+    "vertex values including colors/geometry",
+    "indices",
+    "effect parameters",
+    "scissors",
+    "texture dimensions and pixel bytes"
+  ],
+  "reference": "Same live DOM/form state, stylesheet recompiled to clear match cache, viewport changed and restored to force full layout/paint rebuild.",
+  "qualification": {
+    "windows_core_suites": 10,
+    "windows_main_checks": 477033,
+    "linux_sanitizer_gates": 12,
+    "passed": true
+  },
+  "limits": [
+    "Headless core draw-list equivalence; not a Chrome oracle or GPU screenshot comparison.",
+    "Performance and full native qualification remain the installed preview128 evidence.",
+    "No cascade-walk optimization implemented in this verification step."
+  ]
+}

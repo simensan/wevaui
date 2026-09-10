@@ -1,0 +1,28 @@
+{
+  "scope": "Core source dialog return values; installed105 unchanged",
+  "abi_minor": 15,
+  "source_sha256": {
+    "godot-port/libweva/include/weva_c.h": "2d0386380f932259c451bd70fcaccc5ee8611e36336eceb9ce11bc6e74b3f8c8",
+    "godot-port/libweva/src/weva_c.cpp": "963d755480ab251a7ae554c7b6011a903d28926553d0a04332a40994ff421e0d",
+    "godot-port/libweva/tests/test_c_abi_forms.cpp": "2c42802e1feed54e5d35222eeac295dd4b7db9f2ffad7add5c9d46a929ad5bcf",
+    "godot-port/libweva/tests/main.cpp": "d4a20a8e7114ff68ac9b557337aa771158b2917f2606976ec172b3fbc0547bc8"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 18.87
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 118.31,
+    "note": "Same runtime source; run preceded final test-only full Unicode readback and non-empty reload assertions, which pass in the final Windows suite."
+  },
+  "browser_cases": 24,
+  "remaining": [
+    "Godot optional-result/get/set methods",
+    "native keyboard/result validation and rebuild",
+    "form method=dialog",
+    "beforetoggle/task semantics"
+  ]
+}

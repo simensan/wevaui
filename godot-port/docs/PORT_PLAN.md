@@ -368,11 +368,20 @@ Two things the C# is careful about and the port keeps:
   its own forward chain walker. `#l1:has(ul)` must NOT match when the `<ul>` is
   an ancestor — that is a test.
 
-Deferred and reported as **non-matching rather than guessed**: the form-state
-pseudo-classes (`:valid`, `:invalid`, `:in-range`, `:required`, `:read-only`,
-`:default`, …) and `:popover-open` / `:modal`, all of which need the Forms
-layer. False is the honest answer; true would silently apply styles that should
-not apply.
+The Forms layer implements `:required`, `:optional`, `:read-only`,
+`:read-write`, `:default`, `:in-range`, and `:out-of-range`. Preview131 adds
+`:valid` and `:invalid`, including form ownership and fieldset aggregation.
+Applicable nonempty pattern constraints remain explicitly unresolved with a
+matcher diagnostic; user-validity selectors still need interaction semantics.
+See FORM_STATE.md for the browser-tested scope and limitations.
+Live modal/popover state supplies `:modal` and `:popover-open`.
+The subsequent top-layer work promotes live dialogs/popovers and backdrops to
+document-root siblings. Painting and hit testing share opening order above author
+stacking contexts; versioned form-state mutations rebuild the affected inputs.
+Modal input isolation and focus restoration use a separate document modal stack.
+Partial layout transactions preserve boxes promoted out of retained DOM parents.
+See `FORM_STATE.md` for current verification and the
+remaining contenteditable editing limitation.
 
 **Property registry and ComputedStyle done** — the storage the whole cascade
 writes into. 792 checks green.
@@ -698,10 +707,11 @@ some minutes of suspecting the keyword resolver before the pattern (only the
 ### Known-incomplete, called out rather than left implicit
 
 * ~~Conditional at-rules are not evaluated~~ — **`@media` and `@supports` now
-  gate their bodies.** `@container` still applies unconditionally, because it
-  needs per-element container sizes that only the layout engine can supply;
-  applying is the less-wrong default for a UI toolkit, and it is recorded here
-  rather than left to be discovered.
+  gate their bodies.** Size `@container` queries now use layout-owned,
+  versioned per-element inputs and settle nested changes in the same update.
+  Named/unnamed queries, ranges, relative lengths and the `container` shorthand
+  are supported. Style/scroll-state queries and container-relative length units
+  remain unsupported. See the Frontier Chrome parity report for verification.
 * ~~`var()` is unresolved~~ — **done**. `env()` and `attr()` **also done**.
 * ~~`@property`'s `inherits: false` is not honoured~~ — **done**, along with
   typed initial values and syntax validation.

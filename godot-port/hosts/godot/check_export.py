@@ -127,6 +127,8 @@ def main():
     parser.add_argument('--library', type=Path, help='Built library; defaults to project/addons/weva/bin')
     parser.add_argument('--addon', type=Path, help='Install and test a packaged addon ZIP, including its example')
     parser.add_argument('--native', action='store_true', help='Also verify native debug/release exports (requires matching templates)')
+    parser.add_argument('--debug-template', type=Path, help='Explicit custom debug template; requires --release-template and --native')
+    parser.add_argument('--release-template', type=Path, help='Explicit custom release template; requires --debug-template and --native')
     parser.add_argument('--render', action='store_true', help='Compare example pixels in native exports (requires --native, --addon and a display)')
     parser.add_argument('--keep', action='store_true', help='Keep the isolated fixture for debugging')
     args = parser.parse_args()
@@ -134,6 +136,15 @@ def main():
         parser.error('--addon and --library are alternatives')
     if args.render and not (args.native and args.addon):
         parser.error('--render requires --native and --addon')
+    custom_templates = {}
+    if args.debug_template or args.release_template:
+        if not (args.native and args.debug_template and args.release_template):
+            parser.error('Custom templates require --native, --debug-template and --release-template together')
+        for mode, path in [('debug', args.debug_template), ('release', args.release_template)]:
+            path = path.resolve()
+            if not path.is_file():
+                parser.error(f'Custom {mode} template does not exist: {path}')
+            custom_templates[mode] = path
     if sys.platform not in ('win32', 'linux'):
         parser.error('This smoke fixture currently covers Windows and Linux x86_64.')
     host = Path(__file__).resolve().parent
@@ -152,6 +163,10 @@ def main():
         project.mkdir()
         (project / 'art').mkdir()
         exported.mkdir()
+        if custom_templates:
+            (work / 'custom-templates.json').write_text(json.dumps({mode: {
+                'path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()
+            } for mode, path in custom_templates.items()}, indent=2), encoding='utf-8')
         if args.addon:
             with zipfile.ZipFile(args.addon) as archive:
                 for entry in archive.infolist():
@@ -196,7 +211,9 @@ def main():
         (project / 'ui.css').write_text('html,body{margin:0}#panel{width:40px;height:30px;background-image:url(art/pixel.png)}')
         (project / 'export_presets.cfg').write_text(f'[preset.0]\nname="Smoke"\nplatform="{platform}"\n'
             'runnable=true\nexport_filter="all_resources"\ninclude_filter="*.html,*.css"\nexclude_filter=""\n'
-            '[preset.0.options]\nbinary_format/architecture="x86_64"\n')
+            '[preset.0.options]\nbinary_format/architecture="x86_64"\n' +
+            ''.join(f'custom_template/{mode}={json.dumps(path.as_posix(), ensure_ascii=False)}\n'
+                    for mode, path in custom_templates.items()), encoding='utf-8')
         # Immediate --import/--quit can crash Godot's extension documentation
         # generation on a fresh cache (godotengine/godot#111645). Let the
         # editor initialize normally; the following run proves import finished.

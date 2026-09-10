@@ -54,6 +54,15 @@ for argument in "$@"; do
     esac
 done
 
+template_args=()
+if [ -n "${WEVA_GODOT_DEBUG_TEMPLATE:-}" ] || [ -n "${WEVA_GODOT_RELEASE_TEMPLATE:-}" ]; then
+    if [ -z "${WEVA_GODOT_DEBUG_TEMPLATE:-}" ] || [ -z "${WEVA_GODOT_RELEASE_TEMPLATE:-}" ]; then
+        printf 'Set WEVA_GODOT_DEBUG_TEMPLATE and WEVA_GODOT_RELEASE_TEMPLATE together.\n' >&2
+        exit 2
+    fi
+    template_args=(--debug-template "$WEVA_GODOT_DEBUG_TEMPLATE" --release-template "$WEVA_GODOT_RELEASE_TEMPLATE")
+fi
+
 step() { printf '\n=== %s ===\n' "$1"; }
 fail() { printf 'FAIL  %s\n' "$1"; failures=$((failures + 1)); }
 skip() { printf 'skip  %s\n' "$1"; skipped=$((skipped + 1)); }
@@ -70,6 +79,10 @@ if [ "$clean" -eq 1 ]; then
 fi
 
 # ---- build ---------------------------------------------------------------
+step "performance verification tools"
+python3 -m unittest discover -s "$ROOT/hosts/godot" -p 'test_frontier_perf*.py' \
+    || fail "performance verification tools"
+
 step "build"
 if [ ! -f "$GCC/build.ninja" ]; then
     if ! cmake -S "$ROOT" -B "$GCC" -G Ninja -DCMAKE_BUILD_TYPE=Release \
@@ -257,6 +270,23 @@ else
     skip "Godot engine text safety (needs Godot and python3)"
 fi
 
+# ---- actual templates, with ICU embedded rather than bypassed ------------
+step "Godot exported Unicode safety"
+if [ -x "$GODOT" ] && command -v python3 > /dev/null; then
+    unicode_export_temporary=$(mktemp -d) || exit 1
+    if python3 "$ROOT/tools/godot-text-shaping-repro/check_exports.py" --godot "$GODOT" \
+            "${template_args[@]}" --logs "$unicode_export_temporary/results" \
+            > "$unicode_export_temporary/check.log" 2>&1; then
+        cat "$unicode_export_temporary/check.log"
+    else
+        fail "Godot exported Unicode safety"
+        cat "$unicode_export_temporary/check.log"
+    fi
+    printf 'Exported Unicode artifacts: %s\n' "$unicode_export_temporary"
+else
+    skip "Godot exported Unicode safety (needs Godot editor, export templates and python3)"
+fi
+
 # ---- native font shaping, independent of the stub-font backend gate ------
 step "Godot font adapter"
 font_test_library=${WEVA_GODOT_FONT_TEST_LIBRARY:-$ROOT/hosts/godot/project/addons/weva/bin/libweva_font_tests.so}
@@ -287,7 +317,7 @@ if [ -x "$GODOT" ] && command -v python3 > /dev/null && [ -f "$GODOT_BUILD/CMake
             --godot-cpp-dir "$godot_cpp_source" --version "${WEVA_PACKAGE_VERSION:-0.1.0-preview.0}" \
             --output "$addon_temporary/weva-addon.zip" > /tmp/weva-export.log 2>&1 && \
        python3 "$ROOT/hosts/godot/check_export.py" --godot "$GODOT" \
-            --addon "$addon_temporary/weva-addon.zip" "${export_checks[@]}" >> /tmp/weva-export.log 2>&1; then
+            --addon "$addon_temporary/weva-addon.zip" "${export_checks[@]}" "${template_args[@]}" >> /tmp/weva-export.log 2>&1; then
         cat /tmp/weva-export.log
     else
         fail "Godot addon installation and native exports"
@@ -460,7 +490,7 @@ if [ -x "$GODOT" ]; then
     if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
             "$GODOT" --headless --path . text_editing_tests.tscn ) > /tmp/weva-text-editing.log 2>&1 &&
        grep -q 'godot text editing:.* 0 failures' /tmp/weva-text-editing.log &&
-       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-text-editing.log; then
+       ! grep -qE 'ERROR:|Unicode parsing error|FAIL ' /tmp/weva-text-editing.log; then
         grep 'godot text editing:' /tmp/weva-text-editing.log
     else
         fail "text editing integration"
@@ -498,6 +528,215 @@ if [ -x "$GODOT" ]; then
     else
         fail "form state and reset integration"
         tail -25 /tmp/weva-form-state.log
+    fi
+
+    step "dialog cancellation and result integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . dialog_cancel_tests.tscn ) > /tmp/weva-dialog-cancel.log 2>&1 &&
+       grep -q 'godot dialog cancellation:.* 0 failures' /tmp/weva-dialog-cancel.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-dialog-cancel.log; then
+        grep 'godot dialog cancellation:' /tmp/weva-dialog-cancel.log
+    else
+        fail "dialog cancellation and result integration"
+        tail -25 /tmp/weva-dialog-cancel.log
+    fi
+
+    step "form validation integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . form_validation_tests.tscn ) > /tmp/weva-form-validation.log 2>&1 &&
+       grep -q 'godot form validation:.* 0 failures' /tmp/weva-form-validation.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-form-validation.log; then
+        grep 'godot form validation:' /tmp/weva-form-validation.log
+    else
+        fail "form validation integration"
+        tail -25 /tmp/weva-form-validation.log
+    fi
+
+    step "validity selector integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . validity_selector_tests.tscn ) > /tmp/weva-validity-selectors.log 2>&1 &&
+       grep -q 'godot validity selectors:.* 0 failures' /tmp/weva-validity-selectors.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-validity-selectors.log; then
+        grep 'godot validity selectors:' /tmp/weva-validity-selectors.log
+    else
+        fail "validity selector integration"
+        tail -25 /tmp/weva-validity-selectors.log
+    fi
+
+    step "multicol sizing integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . multicol_sizing_tests.tscn ) > /tmp/weva-multicol-sizing.log 2>&1 &&
+       grep -q 'godot multicol sizing:.* 0 failures' /tmp/weva-multicol-sizing.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-multicol-sizing.log; then
+        grep 'godot multicol sizing:' /tmp/weva-multicol-sizing.log
+    else
+        fail "multicol sizing integration"
+        tail -25 /tmp/weva-multicol-sizing.log
+    fi
+
+    step "block margin integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . block_margin_tests.tscn ) > /tmp/weva-block-margins.log 2>&1 &&
+       grep -q 'godot block margins:.* 0 failures' /tmp/weva-block-margins.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-block-margins.log; then
+        grep 'godot block margins:' /tmp/weva-block-margins.log
+    else
+        fail "block margin integration"
+        tail -25 /tmp/weva-block-margins.log
+    fi
+
+    step "cumulative timing integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . timing_tests.tscn ) > /tmp/weva-timing.log 2>&1 &&
+       grep -q 'godot timing:.* 0 failures' /tmp/weva-timing.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-timing.log; then
+        grep 'godot timing:' /tmp/weva-timing.log
+    else
+        fail "cumulative timing integration"
+        tail -25 /tmp/weva-timing.log
+    fi
+
+    step "input geometry integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . input_geometry_tests.tscn ) > /tmp/weva-input-geometry.log 2>&1 &&
+       grep -q 'godot input geometry:.* 0 failures' /tmp/weva-input-geometry.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-input-geometry.log; then
+        grep 'godot input geometry:' /tmp/weva-input-geometry.log
+    else
+        fail "input geometry integration"
+        tail -25 /tmp/weva-input-geometry.log
+    fi
+
+    step "range direction integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . range_direction_tests.tscn ) > /tmp/weva-range-direction.log 2>&1 &&
+       grep -q 'range direction:.* 0 failures' /tmp/weva-range-direction.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-range-direction.log; then
+        grep 'range direction:' /tmp/weva-range-direction.log
+    else
+        fail "range direction integration"
+        tail -25 /tmp/weva-range-direction.log
+    fi
+
+    step "number keyboard integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . number_step_tests.tscn ) > /tmp/weva-number-steps.log 2>&1 &&
+       grep -q 'number steps:.* 0 failures' /tmp/weva-number-steps.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-number-steps.log; then
+        grep 'number steps:' /tmp/weva-number-steps.log
+    else
+        fail "number keyboard integration"
+        tail -25 /tmp/weva-number-steps.log
+    fi
+
+    step "popover transition integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . popover_beforetoggle_tests.tscn ) > /tmp/weva-popover-beforetoggle.log 2>&1 &&
+       grep -q 'godot popover beforetoggle:.* 0 failures' /tmp/weva-popover-beforetoggle.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-popover-beforetoggle.log; then
+        grep 'godot popover beforetoggle:' /tmp/weva-popover-beforetoggle.log
+    else
+        fail "popover transition integration"
+        tail -25 /tmp/weva-popover-beforetoggle.log
+    fi
+
+    step "hidden-panel transitions"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . hidden_transition_tests.tscn ) > /tmp/weva-hidden-transitions.log 2>&1 &&
+       grep -q 'Hidden transitions: 6 checks, 0 failures' /tmp/weva-hidden-transitions.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-hidden-transitions.log; then
+        grep 'Hidden transitions:' /tmp/weva-hidden-transitions.log
+    else
+        fail "hidden-panel transitions"
+        tail -25 /tmp/weva-hidden-transitions.log
+    fi
+
+    step "transition reversal"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . transition_reversal_tests.tscn ) > /tmp/weva-transition-reversal.log 2>&1 &&
+       grep -q 'Transition reversal: 32 checks, 0 failures' /tmp/weva-transition-reversal.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-transition-reversal.log; then
+        grep 'Transition reversal:' /tmp/weva-transition-reversal.log
+    else
+        fail "transition reversal"
+        tail -25 /tmp/weva-transition-reversal.log
+    fi
+
+    step "transition cancellation"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . transition_cancellation_tests.tscn ) > /tmp/weva-transition-cancellation.log 2>&1 &&
+       grep -q 'Transition cancellation: 18 checks, 0 failures' /tmp/weva-transition-cancellation.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-transition-cancellation.log; then
+        grep 'Transition cancellation:' /tmp/weva-transition-cancellation.log
+    else
+        fail "transition cancellation"
+        tail -25 /tmp/weva-transition-cancellation.log
+    fi
+
+    step "delayed transitions"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . delayed_transition_tests.tscn ) > /tmp/weva-delayed-transitions.log 2>&1 &&
+       grep -q 'Delayed transitions: 6 checks, 0 failures' /tmp/weva-delayed-transitions.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-delayed-transitions.log; then
+        grep 'Delayed transitions:' /tmp/weva-delayed-transitions.log
+    else
+        fail "delayed transitions"
+        tail -25 /tmp/weva-delayed-transitions.log
+    fi
+
+    step "long animation and transition lists"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . long_effect_list_tests.tscn ) > /tmp/weva-long-effects.log 2>&1 &&
+       grep -q 'Long effect lists: 16 checks, 0 failures' /tmp/weva-long-effects.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-long-effects.log; then
+        grep 'Long effect lists:' /tmp/weva-long-effects.log
+    else
+        fail "long animation and transition lists"
+        tail -25 /tmp/weva-long-effects.log
+    fi
+
+    step "incremental font warmup"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . font_warmup_tests.tscn ) > /tmp/weva-font-warmup.log 2>&1 &&
+       grep -q 'Font warmup: 4 checks, 0 failures' /tmp/weva-font-warmup.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-font-warmup.log; then
+        grep 'Font warmup:' /tmp/weva-font-warmup.log
+    else
+        fail "incremental font warmup"
+        tail -25 /tmp/weva-font-warmup.log
+    fi
+
+    step "conditional keyframes and animation timing"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . conditional_keyframe_tests.tscn ) > /tmp/weva-keyframes.log 2>&1 &&
+       grep -q 'Conditional keyframes: 204 checks, 0 failures' /tmp/weva-keyframes.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-keyframes.log; then
+        grep 'Conditional keyframes:' /tmp/weva-keyframes.log
+    else
+        fail "conditional keyframes and animation timing"
+        tail -25 /tmp/weva-keyframes.log
+    fi
+
+    step "CSS diagnostics"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . css_diagnostic_tests.tscn ) > /tmp/weva-css-diagnostics.log 2>&1 &&
+       grep -q 'CSS diagnostics: 26 checks, 0 failures' /tmp/weva-css-diagnostics.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-css-diagnostics.log; then
+        grep 'CSS diagnostics:' /tmp/weva-css-diagnostics.log
+    else
+        fail "CSS diagnostics"
+        tail -25 /tmp/weva-css-diagnostics.log
+    fi
+
+    step "unknown at-rule containment"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . unknown_at_rule_tests.tscn ) > /tmp/weva-unknown-at-rules.log 2>&1 &&
+       grep -q 'Unknown at-rule: 12 checks, 0 failures' /tmp/weva-unknown-at-rules.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL ' /tmp/weva-unknown-at-rules.log; then
+        grep 'Unknown at-rule:' /tmp/weva-unknown-at-rules.log
+    else
+        fail "unknown at-rule containment"
+        tail -25 /tmp/weva-unknown-at-rules.log
     fi
 
     step "select control integration"

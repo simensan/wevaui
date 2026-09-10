@@ -1,0 +1,118 @@
+{
+  "status": "Verified existing behavior; no runtime change",
+  "chrome": {
+    "browser": "Chrome/152.0.7977.83",
+    "rows": [
+      {
+        "modal": false,
+        "attrs": "tabindex=-1",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first tabindex=-1>First</button><button id=second>Second</button></dialog>",
+        "focused": "first"
+      },
+      {
+        "modal": false,
+        "attrs": "tabindex=-1 autofocus",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first tabindex=-1 autofocus>First</button><button id=second>Second</button></dialog>",
+        "focused": "first"
+      },
+      {
+        "modal": false,
+        "attrs": "tabindex=0",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first tabindex=0>First</button><button id=second>Second</button></dialog>",
+        "focused": "first"
+      },
+      {
+        "modal": false,
+        "attrs": "tabindex=5",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first tabindex=5>First</button><button id=second>Second</button></dialog>",
+        "focused": "first"
+      },
+      {
+        "modal": false,
+        "attrs": "disabled autofocus",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first disabled autofocus>First</button><button id=second>Second</button></dialog>",
+        "focused": "second"
+      },
+      {
+        "modal": false,
+        "attrs": "style=\"display:none\" autofocus",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first style=\"display:none\" autofocus>First</button><button id=second>Second</button></dialog>",
+        "focused": "second"
+      },
+      {
+        "modal": true,
+        "attrs": "tabindex=-1",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first tabindex=-1>First</button><button id=second>Second</button></dialog>",
+        "focused": "first"
+      },
+      {
+        "modal": true,
+        "attrs": "tabindex=-1 autofocus",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first tabindex=-1 autofocus>First</button><button id=second>Second</button></dialog>",
+        "focused": "first"
+      },
+      {
+        "modal": true,
+        "attrs": "tabindex=0",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first tabindex=0>First</button><button id=second>Second</button></dialog>",
+        "focused": "first"
+      },
+      {
+        "modal": true,
+        "attrs": "tabindex=5",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first tabindex=5>First</button><button id=second>Second</button></dialog>",
+        "focused": "first"
+      },
+      {
+        "modal": true,
+        "attrs": "disabled autofocus",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first disabled autofocus>First</button><button id=second>Second</button></dialog>",
+        "focused": "second"
+      },
+      {
+        "modal": true,
+        "attrs": "style=\"display:none\" autofocus",
+        "html": "<button id=outside>Open</button><dialog id=d><button id=first style=\"display:none\" autofocus>First</button><button id=second>Second</button></dialog>",
+        "focused": "second"
+      }
+    ],
+    "editing": [
+      {
+        "modal": false,
+        "tag": "input",
+        "focused": "field",
+        "start": 0,
+        "end": 0
+      },
+      {
+        "modal": false,
+        "tag": "textarea",
+        "focused": "field",
+        "start": 0,
+        "end": 0
+      },
+      {
+        "modal": true,
+        "tag": "input",
+        "focused": "field",
+        "start": 0,
+        "end": 0
+      },
+      {
+        "modal": true,
+        "tag": "textarea",
+        "focused": "field",
+        "start": 0,
+        "end": 0
+      }
+    ]
+  },
+  "native": {
+    "checks": 574,
+    "new_checks": 20,
+    "passed": true,
+    "log": ".utmp/safe-engine71/dialog-focus-native.log",
+    "library_sha256": "1495f736aee56a3f8168257c08c28526c311d392a0cd598b66830fb1aa8effaf"
+  },
+  "scope": "Initial modal and nonmodal focus for six button attribute combinations and input/textarea collapsed selection. Does not cover beforetoggle, browser task timing or physical IME."
+}

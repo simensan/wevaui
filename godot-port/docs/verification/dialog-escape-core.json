@@ -1,0 +1,29 @@
+{
+  "scope": "Source-only Escape policy for dialogs shown through APIs",
+  "abi_minor": 15,
+  "source_sha256": {
+    "godot-port/libweva/include/weva_c.h": "9e59befaeb62fff7dd12b002bf63f47d5e7eb0bcac18778669e734c107de64e4",
+    "godot-port/libweva/src/weva_c.cpp": "26eecf730965421930c1216a34e69ddb35eb54810672ce1cccc45f4f6a7e4a8d",
+    "godot-port/libweva/tests/test_c_abi_forms.cpp": "6bd58b9ffacf6ff847b767dbc31f00a6c864914b4c2111ed75296b96fbb81a31",
+    "godot-port/libweva/tests/main.cpp": "5eaeaf8b0910f374920a66085257fc19fe3ece115ad7974673ceab8262f06510"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 20.48
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 118.16
+  },
+  "policy_cases": 56,
+  "browser_show_cases": 20,
+  "browser_markup_attribute_cases": 8,
+  "remaining": [
+    "markup/direct-open close-request tracking",
+    "native keyboard validation and rebuild",
+    "return values",
+    "full CloseWatcher/task semantics"
+  ]
+}

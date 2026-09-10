@@ -3,6 +3,7 @@
 #include "weva/box_builder.h"
 #include "weva/cascade.h"
 #include "weva/dom.h"
+#include "weva/font_metrics.h"
 #include "weva/html.h"
 #include "weva/user_agent_stylesheet.h"
 #include <cmath>
@@ -45,6 +46,7 @@ struct Fixture {
     CascadeStyles styles;
     BoxTree tree;
     LayoutContext ctx;
+    const FontMetrics* metrics = nullptr;
     BoxId root = kNoBox;
 
     Fixture() {
@@ -76,7 +78,7 @@ struct Fixture {
         BoxBuilder builder(&tree, &styles);
         root = builder.build_document(*doc);
         if (root == kNoBox) return false;
-        BlockLayout bl(&tree, ctx);
+        BlockLayout bl(&tree, ctx, metrics);
         bl.layout_root(root, vw, vh);
         return true;
     }
@@ -222,6 +224,89 @@ void test_float_does_not_advance_flow() {
 }
 
 void test_clear() {
+    // Chrome152: signed margins, matching sides, empty clearing blocks and
+    // sibling/parent collapse. Check the following sibling as well as the clearer.
+    struct ClearCase { const char* display; int margin; bool prior; const char* clear;
+                       int height; double child_y, after_y, parent_h; };
+    for (const ClearCase test : {
+        ClearCase{"flow-root",-30,false,"left",0,80,90,100},
+        ClearCase{"flow-root",-30,false,"left",20,80,110,120},
+        ClearCase{"flow-root",-30,false,"right",0,-30,-20,80},
+        ClearCase{"flow-root",-30,false,"right",20,-30,0,80},
+        ClearCase{"flow-root",-30,true,"left",0,150,160,170},
+        ClearCase{"flow-root",-30,true,"left",20,150,180,190},
+        ClearCase{"flow-root",-30,true,"right",0,40,40,150},
+        ClearCase{"flow-root",-30,true,"right",20,40,70,150},
+        ClearCase{"flow-root",0,false,"left",0,80,90,100},
+        ClearCase{"flow-root",0,false,"left",20,80,110,120},
+        ClearCase{"flow-root",0,false,"right",0,0,10,80},
+        ClearCase{"flow-root",0,false,"right",20,0,30,80},
+        ClearCase{"flow-root",0,true,"left",0,150,160,170},
+        ClearCase{"flow-root",0,true,"left",20,150,180,190},
+        ClearCase{"flow-root",0,true,"right",0,70,70,150},
+        ClearCase{"flow-root",0,true,"right",20,70,100,150},
+        ClearCase{"flow-root",30,false,"left",0,80,80,90},
+        ClearCase{"flow-root",30,false,"left",20,80,110,120},
+        ClearCase{"flow-root",30,false,"right",0,30,30,80},
+        ClearCase{"flow-root",30,false,"right",20,30,60,80},
+        ClearCase{"flow-root",30,true,"left",0,150,150,160},
+        ClearCase{"flow-root",30,true,"left",20,150,180,190},
+        ClearCase{"flow-root",30,true,"right",0,70,70,150},
+        ClearCase{"flow-root",30,true,"right",20,70,100,150},
+        ClearCase{"flow-root",100,false,"left",0,100,100,110},
+        ClearCase{"flow-root",100,false,"left",20,100,130,140},
+        ClearCase{"flow-root",100,false,"right",0,100,100,110},
+        ClearCase{"flow-root",100,false,"right",20,100,130,140},
+        ClearCase{"flow-root",100,true,"left",0,150,150,160},
+        ClearCase{"flow-root",100,true,"left",20,150,180,190},
+        ClearCase{"flow-root",100,true,"right",0,120,120,150},
+        ClearCase{"flow-root",100,true,"right",20,120,150,160},
+        ClearCase{"block",-30,false,"left",0,80,90,100},
+        ClearCase{"block",-30,false,"left",20,80,110,120},
+        ClearCase{"block",-30,false,"right",0,0,0,10},
+        ClearCase{"block",-30,false,"right",20,0,30,40},
+        ClearCase{"block",-30,true,"left",0,150,160,170},
+        ClearCase{"block",-30,true,"left",20,150,180,190},
+        ClearCase{"block",-30,true,"right",0,40,40,50},
+        ClearCase{"block",-30,true,"right",20,40,70,80},
+        ClearCase{"block",0,false,"left",0,80,90,100},
+        ClearCase{"block",0,false,"left",20,80,110,120},
+        ClearCase{"block",0,false,"right",0,0,0,10},
+        ClearCase{"block",0,false,"right",20,0,30,40},
+        ClearCase{"block",0,true,"left",0,150,160,170},
+        ClearCase{"block",0,true,"left",20,150,180,190},
+        ClearCase{"block",0,true,"right",0,70,70,80},
+        ClearCase{"block",0,true,"right",20,70,100,110},
+        ClearCase{"block",30,false,"left",0,80,80,90},
+        ClearCase{"block",30,false,"left",20,80,110,120},
+        ClearCase{"block",30,false,"right",0,0,0,10},
+        ClearCase{"block",30,false,"right",20,0,30,40},
+        ClearCase{"block",30,true,"left",0,150,150,160},
+        ClearCase{"block",30,true,"left",20,150,180,190},
+        ClearCase{"block",30,true,"right",0,70,70,80},
+        ClearCase{"block",30,true,"right",20,70,100,110},
+        ClearCase{"block",100,false,"left",0,80,80,90},
+        ClearCase{"block",100,false,"left",20,80,110,120},
+        ClearCase{"block",100,false,"right",0,0,0,10},
+        ClearCase{"block",100,false,"right",20,0,30,40},
+        ClearCase{"block",100,true,"left",0,150,150,160},
+        ClearCase{"block",100,true,"left",20,150,180,190},
+        ClearCase{"block",100,true,"right",0,120,120,130},
+        ClearCase{"block",100,true,"right",20,120,150,160},
+    }) {
+        Fixture f;
+        const std::string css = std::string("html,body{margin:0}#p{width:400px;display:")+test.display+
+            "}#before{height:20px;margin-bottom:50px}#fl{float:left;width:100px;height:80px}#c{height:"+
+            std::to_string(test.height)+"px;clear:"+test.clear+";margin-top:"+
+            std::to_string(test.margin)+"px;margin-bottom:10px}#after{height:10px}";
+        CHECK(f.css(css));
+        CHECK(f.layout(std::string("<div id=p>")+(test.prior?"<div id=before></div>":"")+
+                       "<div id=fl></div><div id=c></div><div id=after></div></div>"));
+        CHECK(near(f.box("c").y,test.child_y));
+        CHECK(near(f.box("after").y,test.after_y));
+        CHECK(near(f.box("p").height,test.parent_h));
+    }
+
     {
         // `clear: left` pushes the box's top margin edge below the float.
         Fixture f;
@@ -250,39 +335,58 @@ void test_clear() {
         CHECK(near(f.box("after").y, 80));
     }
     {
-        // Clearance moves the box's top MARGIN edge to the clear line, and the
-        // box's own margin then applies ON TOP of that: 80 + 30, not 80.
-        //
-        // CANDIDATE DIVERGENCE. CSS 2.1 §9.5.2 says clearance is introduced
-        // so the top margin edge sits below the float, which is one reading of
-        // this; Chrome instead lets clearance absorb the margin and lands the
-        // border edge at 80. Ported as the reference has it and pinned, since
-        // "fixing" it here would guarantee a mismatch against the oracle.
+        // Clearance absorbs the top margin and places the border below the float.
         Fixture f;
         CHECK(f.css("#w { display: block }"
                     "#fl { float: left; width: 100px; height: 80px }"
                     "#after { height: 20px; clear: left; margin-top: 30px }"));
         CHECK(f.layout("<body><div id=w><div id=fl></div><div id=after></div></div></body>"));
-        CHECK(near(f.box("after").y, 110));
+        CHECK(near(f.box("after").y, 80));
     }
     {
-        // Same rule, and here it over-triggers: a 100px margin would already
-        // have cleared a float ending at 40, so the spec introduces NO
-        // clearance and the box lands at 100. The reference tests the clear
-        // line against the cursor BEFORE folding in the child's own margin, so
-        // it clears first and then adds the margin: 40 + 100.
-        //
-        // Same candidate divergence as above, in its more visible form.
+        // The margin would adjoin the ordinary parent, so the hypothetical
+        // border top is zero. Clearance prevents that parent collapse.
         Fixture f;
         CHECK(f.css("#w { display: block }"
                     "#fl { float: left; width: 100px; height: 40px }"
                     "#after { height: 20px; clear: left; margin-top: 100px }"));
         CHECK(f.layout("<body><div id=w><div id=fl></div><div id=after></div></div></body>"));
-        CHECK(near(f.box("after").y, 140));
+        CHECK(near(f.box("after").y, 40));
     }
 }
 
 void test_float_bfc_scoping() {
+    {
+        // Narrowing the panel wraps its tiles into a lower float's band.
+        // Avoidance must use the resulting height, not the initial wide layout.
+        Fixture f;
+        MonoFontMetrics metrics;
+        f.metrics = &metrics;
+        CHECK(f.css("body{margin:0}#p{width:400px;display:flow-root}"
+                    "#a{float:left;width:100px;height:100px}"
+                    "#b{float:right;clear:left;width:150px;height:200px}"
+                    "#c{display:flow-root;font-size:0;line-height:0}"
+                    "i{display:inline-block;width:180px;height:40px;vertical-align:top}"));
+        CHECK(f.layout("<div id=p><div id=a></div><div id=b></div><div id=c>"
+                       "<i></i><i></i><i></i><i></i></div></div>"));
+        CHECK(near(f.box("c").x,100)); CHECK(near(f.box("c").y,0));
+        CHECK(near(f.box("c").width,150)); CHECK(near(f.box("c").height,160));
+        CHECK(near(f.box("b").x,250)); CHECK(near(f.box("b").y,100));
+    }
+    struct Case { const char* style; double x,y,w,h; };
+    for (const Case test : {Case{"",100,0,300,20}, Case{"width:350px",0,100,350,20},
+            Case{"width:50%",100,0,200,20}, Case{"margin-left:20px;margin-right:30px",100,0,270,20},
+            Case{"width:100px;margin:auto",200,0,100,20}, Case{"min-width:350px",0,100,400,20},
+            Case{"max-width:150px",100,0,150,20}, Case{"padding:10%;border:2px solid",100,0,300,104},
+            Case{"clear:both",0,100,400,20}, Case{"margin-top:120px",0,120,400,20}, Case{"aspect-ratio:1;height:auto",100,0,300,300},
+            Case{"aspect-ratio:1;height:20px",100,0,20,20}}) {
+        Fixture f;
+        CHECK(f.css(std::string("body{margin:0}#p{width:400px;display:flow-root}#fl{float:left;width:100px;height:100px}#c{display:flow-root;height:20px;")+test.style+"}"));
+        CHECK(f.layout("<div id=p><div id=fl></div><div id=c></div></div>"));
+        CHECK(near(f.box("c").x,test.x)); CHECK(near(f.box("c").y,test.y));
+        CHECK(near(f.box("c").width,test.w)); CHECK(near(f.box("c").height,test.h));
+    }
+
     {
         // Floats do not escape their BFC: a float inside an `overflow: hidden`
         // box is invisible to content outside it.
@@ -294,16 +398,9 @@ void test_float_bfc_scoping() {
                        "<div id=outside></div></body>"));
         // The BFC encloses its float, so its own height is right...
         CHECK(near(f.box("bfc").height, 200));
-        // ...but the box after it sits at 0, overlapping it.
-        //
-        // CANDIDATE DIVERGENCE. A box whose only children are floats has no
-        // in-flow content, so is_self_collapsing calls it self-collapsing and
-        // the flow cursor never advances past it — even though §10.6.7 gave it
-        // a 200px height. The reference's IsSelfCollapsing tests the STYLE
-        // height, not the computed one, so it reaches the same answer. Chrome
-        // puts this box at 200. Pinned rather than fixed: the oracle should
-        // settle whether to change both engines.
-        CHECK(near(f.box("outside").y, 0));
+        // The following box starts after the BFC, as Chrome does. Float-only
+        // BFCs still have a real height and cannot self-collapse through it.
+        CHECK(near(f.box("outside").y, 200));
     }
     {
         // An auto-width float shrinks to fit its content rather than filling

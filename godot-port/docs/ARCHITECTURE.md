@@ -1,5 +1,84 @@
 # Architecture
 
+## Positioned content in collapsed tables
+
+The table paint pass retains ordinary content, cell backgrounds and shared borders
+in their existing order, then emits nonnegative positioned layers. Positioned
+table-cell backgrounds stay in the ordinary table layer; their content carries
+the resolved ancestor paint state into the later pass. Pointer routing uses the
+same positioned-layer predicate and reverses the layer order.
+
+An ancestor's captured range cannot be replayed if it excludes a descendant
+deferred beyond that range. A pass-local adapter suppresses capture/replay for
+those incomplete ancestor ranges, while preserving unaffected cell ranges and
+the outer table's complete range. It reads the current box/style inputs and
+does not create persistent dirty flags or globally invalidate paint caches.
+The ordinary no-change document path still skips painting and allocates nothing.
+The clipping correction is installed; remaining table stacking defects are
+recorded in [the current reproduction](verification/table-stacking190.json).
+
+Overflow clips retain their owning box, rectangle and scroll offset in an
+immutable ancestry chain. Absolute and fixed descendants remove only clips
+between themselves and their actual containing block, restoring skipped scroll
+offsets. Clip-path polygons remain applicable; rounded overflow polygons carry
+an owner so the same filtering rule applies. Pointer routing follows the same
+containing-block rule and tests rounded corners analytically.
+
+Paint replay inputs include the active absolute/fixed containing blocks and
+clip-chain values. This prevents replay when positioning changes clip applicability
+without moving the ancestor. An outgoing paint scope restores the incoming
+scissor, including cached and deferred paths. Culling preserves a subtree when
+positioned descendants can escape its overflow clip.
+
+## Table stacking source correction
+
+The current source separates the own drawing of an auto-z wrapper from its
+positioned descendants. Explicit stacking contexts retain their atomic ordering.
+For tables with negative layers, a traversal collects those layers and paints
+them before ordinary table content; the ordinary traversal skips the collected
+layers. Collection carries the same transforms, overflow ancestry and scroll
+offsets as painting. Unchanged tables still use their complete cached range.
+Split ancestor ranges are excluded from inner replay, and collection/own-only
+passes do not overwrite a complete box capture with partial output.
+
+Pointer routing reverses these layers and considers negative layers only after
+ordinary content and the table itself. Internal row/group/column boxes contribute
+table backgrounds but are not direct pointer targets; cell events still bubble
+through their DOM ancestors. This source correction is awaiting native runtime
+qualification. [Evidence](verification/table-stacking191.json).
+
+## Godot binding path reads
+
+Each dictionary segment uses a checked `Variant::get` lookup, avoiding a separate
+presence lookup and avoiding insertion of missing keys. Object segments use
+`Variant::get_named` and its validity result instead of allocating and scanning
+the object's complete property list on every refresh. Existing null values and
+missing paths still resolve to empty binding output; control writes retain their
+existing type conversion and missing-branch behavior.
+
+This changes lookup work, not freshness: values are read again on each refresh,
+so mutations of shared dictionaries and object properties remain visible. No
+dictionary-identity shortcut or persistent value cache is introduced.
+
+## Retained host shaping runs
+
+The core host-font adapter retains at most 4,096 shaped runs, keyed by face,
+text and quantized size, with full input equality checked on a hash hit. Hits
+promote a run to the most-recently-used end; an insertion at capacity removes
+only the least recently used run. Stable HUD labels therefore survive a stream
+of changing counters or names. Hash collisions replace the conflicting entry
+after shaping succeeds, without ever returning a mismatched result.
+
+Intrusive links point into unordered-map values, whose addresses survive rehash.
+Lookup promotion and eviction require no list-node allocation or cache scan.
+Changing the shaper still clears all runs and both list endpoints because the
+inputs have changed. A separate 4 MiB payload budget bounds retained entry storage,
+text capacity and glyph capacity per document. Oversized runs still shape but are
+not cached. Map buckets and allocator overhead are outside that payload count;
+the entry limit bounds their scale. Incremental eviction keeps the cache warm.
+`WEVA_FONT_CACHE_LOG` provides opt-in capacity diagnostics, sampled
+every 256 insertions (including sampled before/after single-run evictions).
+
 ## Godot Control integration
 
 Native font adoption duplicates the Array returned by `Font.get_rids()` before
@@ -54,10 +133,35 @@ owned `BindingTemplates` map while the live attribute is absent, so false → tr
 can restore it. Literal attributes retain HTML semantics; other attributes stay
 strings. This uses the existing binding invalidation and lifetime cleanup.
 
+Modal box changes have a guarded retained-layout transaction. A single dialog
+box input can rebuild the modal and its ancestor scaffold while retaining
+unchanged absolute/fixed panels under ordinary block ancestors. Input versions
+exclude panels touched by any style/paint change. The scratch pass uses the
+normal builder, layout and positioning code, then proves equal containing-chain
+geometry, fonts, borders and padding before preserving any subtree identity.
+Shared layout changes, counters/generated content, floats, sticky/anchor
+constraints and other unsupported cases fall back to full layout. Positioned
+paint boundaries also validate incoming paint state; box-ID recycling cannot
+silently retain the previous ancestor's effects or clipping. Registration uses
+per-box flags to avoid quadratic work and an ever-growing candidate list.
+The modal transaction also preserves the verified subtrees' layout indexes.
+It unindexes discarded ancestors and removes their paint/grid candidates before
+box IDs are recycled, then indexes the new scaffold while skipping retained
+roots. Later HUD mutations still invalidate through their original input
+versions and element/style mappings. `WEVA_MODAL_TRACE=1` reports aggregate
+phase timing and accepted/attempted transactions at thread teardown; it is a
+diagnostic, not a timing-budget result.
+
 Binding refreshes observe actual DOM mutations during substitution. Changed
 text and image sources enter the content-input queue; attributes restyle their
-selector scope. Only repeat structure changes rebuild the element index and
-box tree. Removed rows lose pointer-keyed state before their addresses can be
+selector scope. Reordering the same unique explicit keys moves existing rows
+and queues the containing element's content/order input. Subtree geometry and
+intrinsic exports must still pass the normal reuse proof. Membership changes
+keep reconstruction. DOM queries use an order cache keyed by the document's
+structural input version, independently of stable element handles. The reverse
+handle map is updated on registration, removal and reload; removed elements
+lose their map entries before their addresses can be reused.
+Removed rows lose pointer-keyed state before their addresses can be
 reused. Dead computed styles remain owned until the previous box/paint pass is
 replaced, then are released instead of accumulating across list refreshes.
 
@@ -67,6 +171,12 @@ retain their cascade origin. Opening a dialog and focusing a field can therefore
 share the final layout; deferred focus reveal uses the new geometry. Retained
 grid proxies must not be classified as empty by margin collapsing: their
 in-flow children remain in the retained arena until the splice.
+
+On Windows, the host activates IME on target/window changes and moves the
+candidate anchor only when its position changes. Focus/window teardown still
+deactivates IME. Reassociating an unchanged Windows input context on every
+painted caret incurred unnecessary OS work. Other platforms retain the painted
+caret refresh needed by the X11 focus handoff.
 
 The Godot host caches parsed binding paths with a bounded lifetime, while
 reading shared Dictionary values on every refresh. Small forms resolve their
@@ -119,6 +229,26 @@ order and reserves the known declaration count once. It does not scan unused
 property slots or change presence/version semantics.
 `WEVA_CASCADE_LOG=1` with `WEVA_STAGE_LOG=1` reports cascade subscopes and
 metadata/page allocation time; clocks remain disabled by default.
+
+For elapsed update-stage diagnostics without per-update output, set
+`WEVA_STAGE_TRACE=1` before starting the process. Each participating thread
+allocates one bounded buffer for its last 4,096 updates (224 KiB of records).
+It writes `WEVA_STAGE_TRACE_BEGIN`, rows, and `WEVA_STAGE_TRACE_END` to stderr
+on thread teardown. Row columns are update sequence, cascade, animation, box
+build, layout, paint, and total milliseconds. Early exits retain zero for
+unvisited stages; total also includes work after the final stage marker.
+Leave `WEVA_STAGE_LOG` unset to avoid its verbose output. The buffer is absent
+when tracing is disabled. These are elapsed timers, including scheduling
+pauses, and must not be treated as exclusive CPU execution time.
+On Windows, each row is followed by `WEVA_STAGE_CYCLES sequence cycles`, the
+executing thread's raw cycle delta across that update. Zero means unavailable
+(including unsupported platforms). Queries run only with tracing enabled.
+Cycle counts include user and kernel execution; compare them as raw counts,
+not milliseconds. The processor's cycle accounting can vary with its timer
+implementation, so they are diagnostic evidence rather than a conversion to
+CPU time. See [Microsoft's API contract](https://learn.microsoft.com/en-us/windows/win32/api/realtimeapiset/nf-realtimeapiset-querythreadcycletime).
+ Abrupt process
+termination may lose the trace; the buffer is diagnostic, not persistent logging.
 
 Line-height resolution finds the declaring style through the DOM inheritance
 chain. Lengths and percentages use that style's computed font size; numbers
@@ -512,6 +642,33 @@ rather than a second engine.
 and the whole surface fitted in a 104-line stub) — but here it is structural:
 the core links against neither engine.
 
+## Size container queries
+
+`CascadeEngine` retains conditional rules with chains of compiled size queries.
+`ContainerQueryState` owns each element's complete query-result signature; that
+signature joins the existing cascade match key. A stylesheet generation separates
+old query indices from newly compiled rules. Equal result sets can reuse cached
+matches when a panel crosses back over a breakpoint.
+
+After layout, the C ABI refreshes these inputs from eligible ancestor content
+boxes, then restyles only changed roots through `StyleMap::walk`. Style differences
+use the existing layout/paint invalidation path. Nested containers settle before
+the update publishes its frame. Clean idle frames perform no query refresh, and
+warm refreshes retain their maps/vectors. Removed nodes are pruned. The standalone
+dump runs the same input evaluation and settlement with full rebuilding.
+
+Containment suppresses intrinsic contributions as well as shrink-to-fit sizes;
+otherwise flex/grid parents would recover the very content width that an inline
+size container must hide. Font-relative query values use the container's resolved
+font and the document root's font; viewport lengths keep the viewport basis.
+
+The size-query subset includes named/unnamed selection, physical/logical size
+features, orientation/ratio, ranges, boolean expressions and supported length math.
+Style queries, scroll-state queries and container-relative units remain outside
+this implementation. See `examples/frontier_camp/CHROME_PARITY.md` for current
+browser findings and `test_container_query_allocations.cpp` for the focused
+allocation/performance guard.
+
 ## What carries over unchanged
 
 These are the parts of the C# design worth preserving verbatim:
@@ -641,3 +798,20 @@ POD; nothing crossing it allocates without a paired release.
 
 Do not design the Unity side of this yet — but do not design it *out*. The rule
 for Phase 1–6 is simply that no core API takes or returns a Godot type.
+
+ABI minor 13 adds `weva_element_set_selection_without_focus` using the existing
+byte-based anchor/caret convention. Existing focusing selection calls remain
+available; the Godot host exposes both methods.
+
+
+ABI minor 14 adds `weva_document_register_font_family(doc, family, face)`.
+Register a family after installing the font backend; CSS `font-family` stacks
+then select that face for measurement, glyph painting and caret geometry.
+The core copies the family name and owns its metrics adapter; the host owns the
+font resource and must keep it alive. A zero face removes the registration.
+Repeating an unchanged mapping does not invalidate layout. Registrations survive
+HTML reload and shaper replacement, which rebuilds all family measurement caches.
+Installing a font backend clears registrations because face IDs belong to that
+backend. Hosts must register their families again after such a replacement.
+This is a native-face registration API, not an implementation of CSS `@font-face`.
+The Godot source exposes `register_font_family(name, Font)` and watches resource changes. Installed Windows preview105 includes minor 14; its package and native exports pass the recorded verification.

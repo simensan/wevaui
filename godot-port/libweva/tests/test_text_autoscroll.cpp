@@ -11,6 +11,30 @@ bool caret_boundary(const std::string& value,int index) {
 }
 }
 void test_text_autoscroll() {
+    for (const char* kind : {"text", "textarea"}) {
+        TextScrollDoc d(kind);
+        weva_element_set_attribute(d.doc, d.at("#outer"), "style",
+            "transform-origin:0 0;transform:translate(50px,30px) scale(.75)");
+        d.update();
+        const auto b = d.bounds();
+        const auto pointer = [&](double x, double y, uint32_t buttons = 1) {
+            d.pointer(150 + .75 * (x - 100), 100 + .75 * (y - 70), buttons);
+        };
+        pointer(b.x + 20, b.y + 16);
+        pointer(b.x + 40, b.y + 16);
+        pointer(b.x + b.w + 40, b.y + b.h + 40);
+        const auto initial = d.selection();
+        CHECK(weva_document_needs_input_tick(d.doc));
+        for (int i = 0; i < 60; ++i) d.update(.05);
+        CHECK(d.selection().first == initial.first);
+        CHECK(d.selection().second == static_cast<int>(d.value.size()));
+        pointer(b.x - 40, b.y - 40);
+        for (int i = 0; i < 60; ++i) d.update(.05);
+        CHECK(d.selection().second == 0);
+        pointer(b.x - 40, b.y - 40, 0);
+        CHECK(!weva_document_needs_input_tick(d.doc));
+        CHECK(d.events().empty());
+    }
     for(const char* kind : {"text","password","textarea"}) {
         TextScrollDoc d(kind);
         const bool area=std::strcmp(kind,"textarea")==0;

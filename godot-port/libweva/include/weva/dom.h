@@ -39,6 +39,8 @@ enum class MutationKind {
     FormStateChanged,
 };
 
+enum class FormValueMutation { None, InputDefault, TextareaDefault };
+
 struct DomMutation {
     MutationKind kind;
     Node* target = nullptr;      // the node that changed, never the bubbler
@@ -46,6 +48,7 @@ struct DomMutation {
     std::string name;            // attribute name
     std::string old_value;
     std::string new_value;
+    FormValueMutation form_value = FormValueMutation::None;
 };
 
 // Insertion-ordered, name-canonicalised (ASCII-lowercased) attribute store.
@@ -84,6 +87,8 @@ public:
     Document* owner_document() const { return owner_document_; }
     const std::vector<Ref<Node>>& children() const { return children_; }
     int64_t version() const { return version_; }
+    // Monotonic input stamp covering mutations anywhere in this subtree.
+    uint64_t subtree_version() const { return subtree_version_; }
 
     Status append_child(Node* child);
     Status insert_before(Node* child, Node* reference_child);
@@ -113,6 +118,7 @@ private:
     Node* parent_ = nullptr;               // raw: children own parents' lifetime, not vice versa
     Document* owner_document_ = nullptr;
     int64_t version_ = 0;
+    uint64_t subtree_version_ = 0;
 };
 
 class TextNode : public Node {
@@ -154,7 +160,13 @@ public:
     // Storage is allocated only for controls that need it; reads after the
     // first access allocate nothing. Changes bump an input version and bubble.
     std::string_view form_value() const;
-    void set_form_value(std::string_view value, bool sanitize = true);
+    // Visible editor buffer; incomplete numeric edits have an empty public value.
+    std::string_view form_edit_value() const;
+    bool form_bad_input() const;
+    std::string_view custom_validity() const;
+    void set_custom_validity(std::string_view message);
+    void set_form_value(std::string_view value, bool sanitize = true, bool user_edit = false);
+    bool form_value_was_user_edited() const;
     bool form_checked() const;
     void set_form_checked(bool checked, bool dirty = true);
     bool form_selected() const;
@@ -163,14 +175,20 @@ public:
     int64_t form_label_version() const { return form_label_version_; }
     void reset_form_control();
     void copy_form_state_from(const Element& source);
+    bool is_modal() const;
+    uint64_t top_layer_order() const;
+    bool is_popover_open() const;
+    void set_modal(bool value);
+    void set_popover_open(bool value);
 
 private:
     friend void form_children_changed(Node& parent);
+    friend int form_validity_selector_state(const Element& element);
     friend void normalize_select(Element& select, bool fallback);
     friend void set_select_value(Element& select, std::string_view value);
     void on_attribute_changed(std::string_view name, const std::string* old_v, const std::string* new_v);
     void form_attribute_changed(std::string_view name, const std::string* old_v);
-    void form_changed();
+    void form_changed(FormValueMutation value_change = FormValueMutation::None);
     void set_selected_raw(bool selected, bool dirty);
     FormControlState& control_state() const;
 
@@ -179,6 +197,8 @@ private:
     mutable std::unique_ptr<FormControlState> form_state_;
     int64_t form_version_ = 0;
     int64_t form_label_version_ = 0;
+    mutable uint64_t validity_selector_version_ = UINT64_MAX;
+    mutable int validity_selector_state_ = 0;
 };
 
 class Document : public Node {
@@ -188,6 +208,18 @@ public:
     Element* get_element_by_id(std::string_view id);
     std::vector<Element*> get_elements_by_tag_name(std::string_view tag);
     std::vector<Element*> get_elements_by_class_name(std::string_view cls);
+
+    // Internal scheduling hook: enqueue only, never invoke application code or
+    // mutate the element here. True transfers the closing default to the host's
+    // event drain; standalone DOM users retain immediate closing behavior.
+    void set_popover_attribute_close_handler(std::function<bool(Element&)> handler) {
+        popover_attribute_close_handler_ = std::move(handler);
+    }
+    bool request_popover_attribute_close(Element& element) {
+        return popover_attribute_close_handler_ && popover_attribute_close_handler_(element);
+    }
+private:
+    std::function<bool(Element&)> popover_attribute_close_handler_;
 };
 
 // Whitespace-separated class-token membership, allocation-free.

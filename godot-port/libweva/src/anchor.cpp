@@ -116,7 +116,7 @@ void end_anchor_pass() {
     g_pass = PassAnchors{};
 }
 
-bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb) {
+bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb, bool* width_auto) {
     if (!g_open) return false;
     const ComputedStyle* style = (*tree)[box].style;
     if (!style) return false;
@@ -147,6 +147,8 @@ bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb)
         (*tree)[box].width = px;
         width_set = true;
     }
+    if (width_auto && looks_like_anchor_function(w_raw) && !width_set)
+        *width_auto = true;
     const std::string_view h_raw = style->get(kId_height);
     if (looks_like_anchor_function(h_raw) &&
         resolve_anchor_size(*tree, g_pass.get(), box, h_raw, &px)) {

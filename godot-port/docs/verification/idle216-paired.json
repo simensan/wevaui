@@ -1,0 +1,97 @@
+{
+  "status": "Diagnostic complete; original desktop failure remains recorded",
+  "method": "ABBA previous/current/current/previous frozen exports; OpenGL manual updates, 1280x720, idle only, 6000 frames plus 120 warmups each.",
+  "runs": [
+    {
+      "label": "old-a",
+      "candidate": "transition-cancellation215",
+      "library_sha256": "9b1121555c4ad4b2abce0cfc68fba55bcb332550a7f187d42618e7dd90cfa3fc",
+      "api_cpu": {
+        "max_ms": 0.46,
+        "mean_ms": 0.0107250000000001,
+        "median_ms": 0.005,
+        "p95_ms": 0.01,
+        "p99_ms": 0.254,
+        "samples": 6000
+      },
+      "core_cpu": {
+        "max_ms": 0.4285,
+        "mean_ms": 0.00109431666666707,
+        "median_ms": 0.000599999999998602,
+        "p95_ms": 0.000799999999998136,
+        "p99_ms": 0.0011999999999972,
+        "samples": 6000
+      }
+    },
+    {
+      "label": "new-a",
+      "candidate": "transition-reversal216",
+      "library_sha256": "3d77957102b93d30405b8132c9f816394bf1d3259b0ab6fd70a76fd579daf009",
+      "api_cpu": {
+        "max_ms": 0.606,
+        "mean_ms": 0.0102370000000001,
+        "median_ms": 0.005,
+        "p95_ms": 0.01,
+        "p99_ms": 0.252,
+        "samples": 6000
+      },
+      "core_cpu": {
+        "max_ms": 0.315100000000001,
+        "mean_ms": 0.00111663333333374,
+        "median_ms": 0.000599999999998602,
+        "p95_ms": 0.000900000000001455,
+        "p99_ms": 0.0011999999999972,
+        "samples": 6000
+      }
+    },
+    {
+      "label": "new-b",
+      "candidate": "transition-reversal216",
+      "library_sha256": "3d77957102b93d30405b8132c9f816394bf1d3259b0ab6fd70a76fd579daf009",
+      "api_cpu": {
+        "max_ms": 0.448,
+        "mean_ms": 0.0104031666666669,
+        "median_ms": 0.005,
+        "p95_ms": 0.01,
+        "p99_ms": 0.25,
+        "samples": 6000
+      },
+      "core_cpu": {
+        "max_ms": 0.327800000000003,
+        "mean_ms": 0.00114883333333367,
+        "median_ms": 0.000599999999998602,
+        "p95_ms": 0.000900000000001455,
+        "p99_ms": 0.00110000000000099,
+        "samples": 6000
+      }
+    },
+    {
+      "label": "old-b",
+      "candidate": "transition-cancellation215",
+      "library_sha256": "9b1121555c4ad4b2abce0cfc68fba55bcb332550a7f187d42618e7dd90cfa3fc",
+      "api_cpu": {
+        "max_ms": 0.425,
+        "mean_ms": 0.0107738333333335,
+        "median_ms": 0.005,
+        "p95_ms": 0.01,
+        "p99_ms": 0.259,
+        "samples": 6000
+      },
+      "core_cpu": {
+        "max_ms": 0.418799999999997,
+        "mean_ms": 0.00119231666666716,
+        "median_ms": 0.000599999999998602,
+        "p95_ms": 0.000799999999998136,
+        "p99_ms": 0.0011999999999972,
+        "samples": 6000
+      }
+    }
+  ],
+  "raw_evidence": ".utmp\\safe-engine71\\idle216-paired",
+  "conclusion": "All four idle API p95 values are 0.010 ms. Previous/current p99 and means are similar; this longer comparison does not reproduce the 600-frame p95 failures or establish a regression from reversal changes.",
+  "limitations": [
+    "This focused comparison does not replace the failed desktop profile.",
+    "Occasional API samples around 0.25 ms persist in both binaries; cause remains unresolved.",
+    "3D and 4K profiles were not run for candidate216 after its desktop failure. Installed addon is unchanged."
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "name": "Frontier development desktop CPU targets",
+  "description": "Provisional engineering targets for this measured RTX 5080 development machine, manual updates, static scene, 1280x720. Adapter matching does not identify the CPU or certify other hardware. CPU API timings exclude total GPU/UI cost.",
+  "scope": {
+    "resolution": [1280, 720],
+    "world": "static",
+    "automatic": false,
+    "adapter": "NVIDIA GeForce RTX 5080"
+  },
+  "renderers": ["gl_compatibility", "mobile"],
+  "minimum_runs": 3,
+  "minimum_frames": 600,
+  "minimum_warmups": 120,
+  "limits_ms": {
+    "ui_disabled": {"api_cpu": 0.05},
+    "idle": {"api_cpu": 0.05},
+    "clock_1hz": {"changed_api_cpu": 3.0},
+    "vitals_10hz": {"changed_api_cpu": 1.0},
+    "clock_update": {"changed_api_cpu": 1.0},
+    "vitals_update": {"changed_api_cpu": 1.0},
+    "redundant_signal": {"changed_api_cpu": 0.3},
+    "hover": {"changed_api_cpu": 0.5},
+    "inventory_sort": {"changed_api_cpu": 2.0},
+    "settings_typing": {"changed_api_cpu": 1.0},
+    "settings_slider": {"changed_api_cpu": 1.0},
+    "settings_toggle": {"changed_api_cpu": 3.0}
+  }
+}

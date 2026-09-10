@@ -1,0 +1,36 @@
+{
+  "scope": "Submission lifecycle and handler mutation qualification of current core source; installed107 unchanged",
+  "abi_minor": 16,
+  "runtime_changed": false,
+  "source_sha256": {
+    "libweva/src/weva_c.cpp": "33278a5e902270263bb4a8e6a1185884daccee4998b7a0c0a9cb9b7561028043",
+    "libweva/include/weva_c.h": "5f0cd717455e326da7aae32d920527434a22e90887dffff988bd38a7aed93328",
+    "libweva/tests/test_c_abi_forms.cpp": "62b6084583be526f45491e9060841c1262c60cdafdf105599a51ffc317abd6ea",
+    "libweva/tests/main.cpp": "6129b852b44202a8147afef269fd545b14d8ed61b1e2e79c6c72bb3f1a23efe9"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 20.07
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 122.99
+  },
+  "new_browser_cases": 8,
+  "total_submission_browser_regressions": 86,
+  "lifecycle_coverage": [
+    "removal/reload before submission is polled",
+    "removal/reload inside submit handler",
+    "recursive submission suppression",
+    "600 notifications with default close or veto",
+    "300 submission attempts fill bounded 256-entry queue; drain and reuse without stale veto"
+  ],
+  "remaining": [
+    "constraint validation",
+    "click default-action cancellation and mutation ordering",
+    "external submitter and nested dialog qualification",
+    "native rebuild, testing, performance and packaging"
+  ]
+}

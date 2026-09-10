@@ -1,0 +1,61 @@
+{
+  "status": "confirmed mismatches; not fixed",
+  "profile": "text-free; 1280x720; Chrome152 and current headless preview94 source",
+  "cases": [
+    {
+      "name": "left",
+      "html": "<div id=\"parent\"><div class=\"float\"></div><div id=\"content\"></div></div>",
+      "css": "body{margin:0}#parent{width:400px;display:flow-root}.float{float:left;width:100px;height:100px}#content{display:flow-root;height:20px}",
+      "comparison": [
+        "left",
+        "DIFF",
+        [
+          "div#content .x: ours 0, chrome 100  (100.0px)",
+          "div#content .w: ours 400, chrome 300  (100.0px)"
+        ],
+        0
+      ]
+    },
+    {
+      "name": "right",
+      "html": "<div id=\"parent\"><div class=\"float\"></div><div id=\"content\"></div></div>",
+      "css": "body{margin:0}#parent{width:400px;display:flow-root}.float{float:right;width:100px;height:100px}#content{display:flow-root;height:20px}",
+      "comparison": [
+        "right",
+        "DIFF",
+        [
+          "div#content .w: ours 400, chrome 300  (100.0px)"
+        ],
+        0
+      ]
+    },
+    {
+      "name": "overflow",
+      "html": "<div id=\"parent\"><div class=\"float\"></div><div id=\"content\"></div></div>",
+      "css": "body{margin:0}#parent{width:400px;display:flow-root}.float{float:left;width:100px;height:100px}#content{overflow:hidden;height:20px}",
+      "comparison": [
+        "overflow",
+        "DIFF",
+        [
+          "div#content .x: ours 0, chrome 100  (100.0px)",
+          "div#content .w: ours 400, chrome 300  (100.0px)"
+        ],
+        0
+      ]
+    },
+    {
+      "name": "two",
+      "html": "<div id=\"parent\"><div class=\"float\"></div><div class=\"float\"></div><div id=\"content\"></div></div>",
+      "css": "body{margin:0}#parent{width:400px;display:flow-root}.float{float:left;width:100px;height:100px}#content{display:flow-root;height:20px}",
+      "comparison": [
+        "two",
+        "DIFF",
+        [
+          "div#content .x: ours 0, chrome 200  (200.0px)",
+          "div#content .w: ours 400, chrome 200  (200.0px)"
+        ],
+        0
+      ]
+    }
+  ]
+}

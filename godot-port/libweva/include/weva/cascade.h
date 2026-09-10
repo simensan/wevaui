@@ -1,8 +1,10 @@
 #pragma once
 #include "weva/at_property.h"
 #include "weva/computed_style.h"
+#include "weva/container_query.h"
 #include "weva/css_rule.h"
 #include "weva/media.h"
+#include "weva/keyframes.h"
 #include "weva/selector.h"
 
 #include <cstdint>
@@ -89,6 +91,20 @@ struct OriginatedStylesheet {
     DeclarationOrigin origin = DeclarationOrigin::Author;
 };
 
+struct CompiledContainerQuery {
+    std::string name;
+    ContainerSizeQuery condition;
+};
+
+// The layout owner supplies settled query inputs. The version must identify
+// the element's complete result set (including identity when versions are
+// local counters); it is part of the cascade match-cache key.
+struct ContainerQueryProvider {
+    virtual ~ContainerQueryProvider() = default;
+    virtual bool matches(const Element& element, size_t query) const = 0;
+    virtual uint64_t version(const Element& element) const = 0;
+};
+
 class CascadeEngine {
 public:
     // Conditional at-rules are evaluated at compile time against this context,
@@ -96,9 +112,18 @@ public:
     // requires recompiling the sheets.
     void set_media_context(const MediaContext& ctx) { media_ = ctx; }
     const MediaContext& media_context() const { return media_; }
+    void set_container_provider(const ContainerQueryProvider* provider) {
+        if (container_provider_ != provider) { container_provider_ = provider; shape_cache_.clear(); }
+    }
+    const std::vector<CompiledContainerQuery>& container_queries() const { return container_queries_; }
+    uint64_t container_generation() const { return container_generation_; }
 
     void add_stylesheet(const Stylesheet* sheet, DeclarationOrigin origin);
     void clear();
+    const std::map<std::string, KeyframeAnimation>& keyframes() const { return keyframes_; }
+    // Unique unsupported at-rule names encountered in compiled stylesheet branches.
+    // Built during compilation, never during per-element style computation.
+    const std::vector<std::string>& unsupported_at_rules() const { return unsupported_at_rules_; }
 
     // Typed custom properties declared by `@property` in the compiled sheets.
     const AtPropertyRegistry& property_registry() const { return property_registry_; }
@@ -121,6 +146,9 @@ public:
     // :has() lets it reach its ancestors, and then anything they select.
     bool has_sibling_selectors() const { return cache_unsafe_sibling_composition_; }
     bool has_has_selectors() const { return cache_unsafe_has_; }
+    bool has_validity_selectors() const { return shape_key_folds_validity_; }
+    bool has_range_selectors() const { return shape_key_folds_range_; }
+    bool has_default_selectors() const { return shape_key_folds_default_; }
     // What `:hover` and `:active` can reach.
     //
     // A pointer move flips a hover chain on every frame it moves, and each flip
@@ -181,6 +209,7 @@ private:
         DeclarationOrigin origin = DeclarationOrigin::Author;
         int source_index = 0;
         int layer_ordinal = kUnlayeredOrdinal;
+        std::vector<size_t> container_conditions;
         // The rule's declarations with every shorthand replaced by its
         // longhands. Owned here rather than borrowed from the stylesheet
         // because expansion synthesises declarations that exist nowhere in the
@@ -202,10 +231,14 @@ private:
     // compare_declarations already implements. Unlayered rules keep
     // kUnlayeredOrdinal and so beat every layer.
     std::vector<std::string> layer_names_;
+    std::vector<std::string> unsupported_at_rules_;
+    std::map<std::string, KeyframeAnimation> keyframes_;
+    std::map<std::string, std::pair<int, int>> keyframe_priorities_;
     // The enclosing layer's full name while compiling a nested `@layer` block,
     // so `@layer a { @layer b { ... } }` names the inner layer `a.b`.
     std::string layer_prefix_;
     int layer_ordinal_for(std::string_view name);
+    int compare_keyframe_layers(int left, int right) const;
     // Resolves one element's custom properties: CSS-wide keywords, `@property`
     // syntax validation, and initial-value seeding. Runs before substitution.
     void resolve_custom_properties(ComputedStyle* out, const ComputedStyle* parent) const;
@@ -217,6 +250,11 @@ private:
     uint64_t try_compute_shape_key(const Element& e, const ElementStateProvider& state) const;
 
     std::vector<CompiledRule> rules_;
+    std::vector<CompiledContainerQuery> container_queries_;
+    uint64_t container_generation_ = 1;
+    std::vector<size_t> compiling_containers_;
+    const ContainerQueryProvider* container_provider_ = nullptr;
+    bool container_matches(const CompiledRule& rule, const Element& element) const;
     mutable std::map<uint64_t, std::vector<MatchedDeclaration>> shape_cache_;
     // Where an UNCACHEABLE element's matches live: an element with an inline
     // style, or any element at all when the sheets use sibling combinators or
@@ -227,9 +265,13 @@ private:
     // Sheet-wide opt-outs, computed once at rule-compile time.
     bool cache_unsafe_sibling_composition_ = false;  // `p + p`, :nth-of-type, ...
     bool cache_unsafe_has_ = false;                  // :has() depends on descendants
+    StateReach has_subject_reach_; // Possible rightmost subjects of :has-dependent rules.
     StateReach hover_reach_;                         // what :hover can match
     StateReach active_reach_;                        // what :active can match
     bool shape_key_folds_sibling_index_ = false;     // :nth-child, :first-child, :empty
+    bool shape_key_folds_range_ = false;
+    bool shape_key_folds_validity_ = false;
+    bool shape_key_folds_default_ = false;           // form-owner/tree-order dependency
     // Pseudo-element rules never match a real element, so they live in their
     // own buckets keyed by pseudo name rather than being scanned and rejected
     // once per element.
@@ -239,6 +281,8 @@ private:
     // Ids whose declaration was invalid at computed-value time in the current
     // compute() call, so the inherit/initial pass knows to refill them.
     mutable std::vector<int> dropped_;
+    // Resolution-pass snapshots; shared scratch, like winner_keys_ below.
+    mutable std::vector<int> property_ids_;
     // Per-property winning cascade key, used only by the logical-property
     // mapping. Sized once and reused across elements; `cascade_generation_`
     // distinguishes this call's entries from the previous element's.

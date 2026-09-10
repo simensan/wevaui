@@ -1,0 +1,261 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "method": "checkValidity",
+      "scope": "f",
+      "action": "none",
+      "valid": false,
+      "events": [
+        "external",
+        "a",
+        "b"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "f",
+      "action": "cancel",
+      "valid": false,
+      "events": [
+        "external",
+        "a",
+        "b"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "f",
+      "action": "fix",
+      "valid": false,
+      "events": [
+        "external",
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "f",
+      "action": "disable",
+      "valid": false,
+      "events": [
+        "external",
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "f",
+      "action": "remove",
+      "valid": false,
+      "events": [
+        "external",
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "f",
+      "action": "reassociate",
+      "valid": false,
+      "events": [
+        "external",
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "a",
+      "action": "none",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "a",
+      "action": "cancel",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "a",
+      "action": "fix",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "a",
+      "action": "disable",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "a",
+      "action": "remove",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "checkValidity",
+      "scope": "a",
+      "action": "reassociate",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "f",
+      "action": "none",
+      "valid": false,
+      "events": [
+        "external",
+        "a",
+        "b"
+      ],
+      "focus": "external"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "f",
+      "action": "cancel",
+      "valid": false,
+      "events": [
+        "external",
+        "a",
+        "b"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "f",
+      "action": "fix",
+      "valid": false,
+      "events": [
+        "external",
+        "a"
+      ],
+      "focus": "external"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "f",
+      "action": "disable",
+      "valid": false,
+      "events": [
+        "external",
+        "a"
+      ],
+      "focus": "external"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "f",
+      "action": "remove",
+      "valid": false,
+      "events": [
+        "external",
+        "a"
+      ],
+      "focus": "external"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "f",
+      "action": "reassociate",
+      "valid": false,
+      "events": [
+        "external",
+        "a"
+      ],
+      "focus": "external"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "a",
+      "action": "none",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "a"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "a",
+      "action": "cancel",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "save"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "a",
+      "action": "fix",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "a"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "a",
+      "action": "disable",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "a"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "a",
+      "action": "remove",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "a"
+    },
+    {
+      "method": "reportValidity",
+      "scope": "a",
+      "action": "reassociate",
+      "valid": false,
+      "events": [
+        "a"
+      ],
+      "focus": "a"
+    }
+  ]
+}

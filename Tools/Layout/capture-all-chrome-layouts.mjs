@@ -207,6 +207,30 @@ export async function captureOne(browser, target, {
     try {
         await page.setViewport({ width, height });
         await page.goto(pathToFileURL(loadPath).href, { waitUntil: 'networkidle0', timeout: 30000 });
+        // Expand the engine's declarative component input before measuring it.
+        // This is fixture preparation, not a browser-native custom-element claim.
+        await page.evaluate(() => {
+            const templates = new Map([...document.querySelectorAll('template[id]')]
+                .filter(t => !t.hasAttribute('data-each')).map(t => [t.id.toLowerCase(), t]));
+            for (const t of templates.values()) t.parentNode.append(t);
+            const expand = (el, depth = 0) => {
+                if (el.tagName === 'TEMPLATE' || depth >= 32) return;
+                const t = templates.get(el.localName);
+                if (t && !el.hasAttribute('data-uui-expanded')) {
+                    const light = [...el.childNodes];
+                    const fragment = t.content.cloneNode(true);
+                    for (const slot of fragment.querySelectorAll('slot')) {
+                        const name = slot.getAttribute('name') || '';
+                        const nodes = light.filter(n => (n.nodeType === 1 ? n.getAttribute('slot') || '' : '') === name);
+                        slot.replaceWith(...(nodes.length ? nodes.map(n => n.cloneNode(true)) : [...slot.childNodes]));
+                    }
+                    el.replaceChildren(fragment);
+                    el.setAttribute('data-uui-expanded', '1');
+                }
+                for (const child of el.children) expand(child, depth + 1);
+            };
+            expand(document.documentElement);
+        });
         // Layout dumps compare engine layout boxes, not transient visual
         // animation transforms. getBoundingClientRect() includes active
         // CSS animations/transitions, while Unity's headless layout dump
@@ -260,6 +284,7 @@ export async function captureOne(browser, target, {
                 const isWrapper = tag === 'HTML' || tag === 'BODY';
                 if (!isWrapper) {
                     const cs = getComputedStyle(el);
+                    if (cs.display === 'none') return;
                     if (cs.display !== 'none') {
                         const r = el.getBoundingClientRect();
                         out.push({
@@ -274,10 +299,23 @@ export async function captureOne(browser, target, {
                             h: Math.round(r.height * 100) / 100,
                             display: cs.display,
                             position: cs.position,
+                            fontSize: cs.fontSize,
+                            lineHeight: cs.lineHeight,
+                            path: (() => {
+                                const parts = [];
+                                for (let e = el; e && !['HTML','BODY'].includes(e.tagName); e = e.parentElement) {
+                                    const siblings = e.parentElement ? [...e.parentElement.children] : [e];
+                                    parts.unshift(e.localName + ':' + (siblings.indexOf(e) + 1));
+                                }
+                                return parts.join('/');
+                            })(),
                             text: el.children.length === 0 ? (el.textContent || '').trim().slice(0, 80) : '',
                         });
                     }
                 }
+                // Measuring descendants forces Chrome to lay out a skipped subtree.
+                // Keep this capture focused on the normally rendered box tree.
+                if (getComputedStyle(el).contentVisibility === 'hidden') return;
                 for (const c of el.children) walk(c, isWrapper ? depth : depth + 1, false);
             }
             // documentElement -> html (wrapper, depth not incremented)

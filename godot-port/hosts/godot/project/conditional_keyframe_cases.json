@@ -1,0 +1,140 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "name": "media",
+      "css": "@media (min-width:600px) {@keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        20,
+        100,
+        20
+      ]
+    },
+    {
+      "name": "supports",
+      "css": "@supports (display:block) {@keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "name": "unsupported-condition",
+      "css": "@supports (display:made-up) {@keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "name": "nested",
+      "css": "@supports (display:block) {@media (min-width:600px) {@keyframes pulse {from {width:100px} to {width:100px}}}}",
+      "widths": [
+        20,
+        100,
+        20
+      ]
+    },
+    {
+      "name": "unknown",
+      "css": "@unknown {@keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "name": "layer",
+      "css": "@layer theme {@keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "name": "unlayered-wins",
+      "css": "@keyframes pulse {from {width:80px} to {width:80px}} @layer theme {@keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        80,
+        80,
+        80
+      ]
+    },
+    {
+      "name": "layer-order",
+      "css": "@layer first, last; @layer last {@keyframes pulse {from {width:100px} to {width:100px}}} @layer first {@keyframes pulse {from {width:80px} to {width:80px}}}",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "name": "source-order",
+      "css": "@keyframes pulse {from {width:80px} to {width:80px}} @media (min-width:600px) {@keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        80,
+        100,
+        80
+      ]
+    },
+    {
+      "name": "parent-before-child",
+      "css": "@layer outer {@keyframes pulse {from {width:100px} to {width:100px}} @layer inner {@keyframes pulse {from {width:80px} to {width:80px}}}}",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "name": "parent-after-child",
+      "css": "@layer outer {@layer inner {@keyframes pulse {from {width:80px} to {width:80px}}} @keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "name": "nested-top-order",
+      "css": "@layer first,last; @layer last {@keyframes pulse {from {width:100px} to {width:100px}}} @layer first.inner {@keyframes pulse {from {width:80px} to {width:80px}}}",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "name": "nested-sibling-order",
+      "css": "@layer outer { @layer first,last; @layer last {@keyframes pulse {from {width:100px} to {width:100px}}} @layer first {@keyframes pulse {from {width:80px} to {width:80px}}} }",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "name": "implicit-parent-order",
+      "css": "@layer first.inner {@keyframes pulse {from {width:80px} to {width:80px}}} @layer last {@keyframes pulse {from {width:100px} to {width:100px}}} @layer first.other {@keyframes pulse {from {width:60px} to {width:60px}}}",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    },
+    {
+      "name": "nested-source-order",
+      "css": "@layer outer.inner {@keyframes pulse {from {width:80px} to {width:80px}}} @layer outer.inner {@keyframes pulse {from {width:100px} to {width:100px}}}",
+      "widths": [
+        100,
+        100,
+        100
+      ]
+    }
+  ]
+}

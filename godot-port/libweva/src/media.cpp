@@ -2,6 +2,7 @@
 
 #include "weva/css_properties.h"
 #include "weva/css_value.h"
+#include "weva/box.h"
 
 #include <cmath>
 
@@ -294,7 +295,29 @@ bool evaluate_supports_condition(std::string_view raw) {
         if (CssPropertyRegistry::is_custom_property(prop)) return true;
         if (CssPropertyRegistry::instance().id_of(prop) == kCustomPropertyId) return false;
         CssParseError err;
-        return parse_css_value(value, &err) != nullptr;
+        auto parsed = parse_css_value(value, &err);
+        if (!parsed) return false;
+        if (prop == "display") {
+            const auto lower = ascii_lower(value);
+            if (lower == "initial" || lower == "inherit" || lower == "unset" ||
+                lower == "revert" || lower == "revert-layer" ||
+                parsed->kind() == CssValueKind::VariableReference) return true;
+            if (parsed->kind() == CssValueKind::FunctionCall) {
+                const auto& call = static_cast<const CssFunctionCall&>(*parsed);
+                if (call.name == "var" && !call.arguments.empty()) {
+                    const auto& argument = *call.arguments.front();
+                    std::string_view name;
+                    if (argument.kind() == CssValueKind::Keyword)
+                        name = static_cast<const CssKeyword&>(argument).name;
+                    else if (argument.kind() == CssValueKind::Identifier)
+                        name = static_cast<const CssIdentifier&>(argument).name;
+                    return name.size() > 2 && name.substr(0, 2) == "--";
+                }
+            }
+            DisplayKind display;
+            return try_parse_display(value, &display);
+        }
+        return true;
     }
     return false;
 }

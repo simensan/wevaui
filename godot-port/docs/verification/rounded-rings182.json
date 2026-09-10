@@ -1,0 +1,34 @@
+{
+  "change": "Emit antialias ring points directly into the mesh and stream unfeathered rounded fan points without temporary outline storage.",
+  "installed": false,
+  "rounded_paint_allocations": {
+    "before": 5,
+    "after": 3,
+    "earlier_before_ownership_transfer": 7
+  },
+  "unfeathered_fan_allocations": 2,
+  "geometry_hash": "745ed0d3494f69e0",
+  "combined_geometry_hash": "61ef3248558085fe",
+  "geometry_cases": 56,
+  "checks": 36031,
+  "failures": 0,
+  "core_ctest": {
+    "passed": 14,
+    "failed": 0,
+    "seconds": 23.88
+  },
+  "focused_linux_sanitizers": {
+    "passed": 3,
+    "failed": 0,
+    "final_test_only_rerun_passed": true
+  },
+  "source_sha256": {
+    "godot-port/libweva/src/tessellate.cpp": "0e06c7edb37f4f1f903f6a1bac4d485f77a06dcf5b5c1f1ab392588c779898cd",
+    "godot-port/libweva/tests/test_draw_mesh_allocations.cpp": "c283d95e9e40b401eb46d527abdda669c13d9ba62f3042abf4d1c753054cabdc"
+  },
+  "limitations": [
+    "Allocation counts apply to focused warmed paint and tessellation cases.",
+    "Native runtime and hover profile not yet remeasured for this change.",
+    "Earlier timing failures remain open."
+  ]
+}

@@ -1,0 +1,368 @@
+{
+  "scope": "Instrumented single runs; trace analysis excludes IDs below 256 and updates <=0.05ms; raw cycles not converted to time; not timing acceptance",
+  "rows": [
+    {
+      "run": "clip189-clock_1hz",
+      "changed_api_cpu": {
+        "max_ms": 2.001,
+        "mean_ms": 0.63823,
+        "median_ms": 0.535,
+        "p95_ms": 1.338,
+        "p99_ms": 1.855,
+        "samples": 100
+      },
+      "changed_core_cpu": {
+        "max_ms": 1.1305,
+        "mean_ms": 0.33491,
+        "median_ms": 0.291600000000003,
+        "p95_ms": 0.399699999999996,
+        "p99_ms": 1.1175,
+        "samples": 100
+      },
+      "trace_changed_samples": 70,
+      "slowest_core_updates": [
+        {
+          "index": 5403,
+          "stages": [
+            0.0183,
+            0.0003,
+            0.3546,
+            0.0002,
+            0.1457
+          ],
+          "total_ms": 0.5228,
+          "cycles": 1473912
+        },
+        {
+          "index": 2103,
+          "stages": [
+            0.0205,
+            0.0003,
+            0.2324,
+            0.0002,
+            0.1417
+          ],
+          "total_ms": 0.3986,
+          "cycles": 1868425
+        },
+        {
+          "index": 2163,
+          "stages": [
+            0.0247,
+            0.0004,
+            0.2277,
+            0.0003,
+            0.1413
+          ],
+          "total_ms": 0.398,
+          "cycles": 1864672
+        },
+        {
+          "index": 2523,
+          "stages": [
+            0.0243,
+            0.0003,
+            0.2295,
+            0.0003,
+            0.1002
+          ],
+          "total_ms": 0.3577,
+          "cycles": 1675156
+        },
+        {
+          "index": 2043,
+          "stages": [
+            0.0187,
+            0.0002,
+            0.2374,
+            0.0002,
+            0.0962
+          ],
+          "total_ms": 0.3551,
+          "cycles": 1377278
+        }
+      ]
+    },
+    {
+      "run": "clip189-inventory_sort",
+      "changed_api_cpu": {
+        "max_ms": 1.711,
+        "mean_ms": 0.788605,
+        "median_ms": 0.711,
+        "p95_ms": 1.176,
+        "p99_ms": 1.319,
+        "samples": 200
+      },
+      "changed_core_cpu": {
+        "max_ms": 0.913799999999995,
+        "mean_ms": 0.447007,
+        "median_ms": 0.40870000000001,
+        "p95_ms": 0.643599999999999,
+        "p99_ms": 0.788800000000009,
+        "samples": 200
+      },
+      "trace_changed_samples": 198,
+      "slowest_core_updates": [
+        {
+          "index": 793,
+          "stages": [
+            0.1142,
+            0.0009,
+            0.3047,
+            0.0001,
+            0.4311
+          ],
+          "total_ms": 0.8529,
+          "cycles": 2064979
+        },
+        {
+          "index": 1541,
+          "stages": [
+            0.1155,
+            0.001,
+            0.3013,
+            0.0001,
+            0.299
+          ],
+          "total_ms": 0.7184,
+          "cycles": 1863269
+        },
+        {
+          "index": 1057,
+          "stages": [
+            0.1154,
+            0.001,
+            0.3341,
+            0.0002,
+            0.2608
+          ],
+          "total_ms": 0.7129,
+          "cycles": 1889065
+        },
+        {
+          "index": 1761,
+          "stages": [
+            0.299,
+            0.0012,
+            0.2474,
+            0.0001,
+            0.1593
+          ],
+          "total_ms": 0.7085,
+          "cycles": 1811195
+        },
+        {
+          "index": 1551,
+          "stages": [
+            0.1197,
+            0.001,
+            0.2963,
+            0.0001,
+            0.264
+          ],
+          "total_ms": 0.6826,
+          "cycles": 1825737
+        }
+      ]
+    },
+    {
+      "run": "stack191-clock_1hz",
+      "changed_api_cpu": {
+        "max_ms": 2.332,
+        "mean_ms": 0.50532,
+        "median_ms": 0.407,
+        "p95_ms": 1.131,
+        "p99_ms": 1.894,
+        "samples": 100
+      },
+      "changed_core_cpu": {
+        "max_ms": 1.3986,
+        "mean_ms": 0.266466,
+        "median_ms": 0.222700000000003,
+        "p95_ms": 0.371099999999998,
+        "p99_ms": 1.1365,
+        "samples": 100
+      },
+      "trace_changed_samples": 74,
+      "slowest_core_updates": [
+        {
+          "index": 4317,
+          "stages": [
+            0.8305,
+            0.0,
+            0.0003,
+            0.0,
+            0.0001
+          ],
+          "total_ms": 0.831,
+          "cycles": 14073
+        },
+        {
+          "index": 3243,
+          "stages": [
+            0.0133,
+            0.0002,
+            0.3267,
+            0.0003,
+            0.0814
+          ],
+          "total_ms": 0.4242,
+          "cycles": 1194797
+        },
+        {
+          "index": 4923,
+          "stages": [
+            0.0239,
+            0.0003,
+            0.2155,
+            0.0003,
+            0.1261
+          ],
+          "total_ms": 0.3697,
+          "cycles": 1733324
+        },
+        {
+          "index": 4983,
+          "stages": [
+            0.0187,
+            0.0003,
+            0.2051,
+            0.0003,
+            0.1048
+          ],
+          "total_ms": 0.3319,
+          "cycles": 1556005
+        },
+        {
+          "index": 5723,
+          "stages": [
+            0.3307,
+            0.0,
+            0.0002,
+            0.0,
+            0.0001
+          ],
+          "total_ms": 0.331,
+          "cycles": 10320
+        }
+      ]
+    },
+    {
+      "run": "stack191-inventory_sort",
+      "changed_api_cpu": {
+        "max_ms": 1.406,
+        "mean_ms": 0.795409999999999,
+        "median_ms": 0.718,
+        "p95_ms": 1.227,
+        "p99_ms": 1.35,
+        "samples": 200
+      },
+      "changed_core_cpu": {
+        "max_ms": 0.9041,
+        "mean_ms": 0.429721,
+        "median_ms": 0.393100000000004,
+        "p95_ms": 0.614500000000007,
+        "p99_ms": 0.883999999999986,
+        "samples": 200
+      },
+      "trace_changed_samples": 187,
+      "slowest_core_updates": [
+        {
+          "index": 1008,
+          "stages": [
+            0.1137,
+            0.0012,
+            0.2941,
+            0.0001,
+            0.4762
+          ],
+          "total_ms": 0.8873,
+          "cycles": 2095473
+        },
+        {
+          "index": 315,
+          "stages": [
+            0.1148,
+            0.0012,
+            0.3495,
+            0.0002,
+            0.4084
+          ],
+          "total_ms": 0.8756,
+          "cycles": 1980540
+        },
+        {
+          "index": 441,
+          "stages": [
+            0.1181,
+            0.0013,
+            0.4785,
+            0.0002,
+            0.1402
+          ],
+          "total_ms": 0.7397,
+          "cycles": 2149414
+        },
+        {
+          "index": 1267,
+          "stages": [
+            0.1122,
+            0.0011,
+            0.3209,
+            0.0001,
+            0.2895
+          ],
+          "total_ms": 0.7254,
+          "cycles": 1920495
+        },
+        {
+          "index": 728,
+          "stages": [
+            0.2736,
+            0.0013,
+            0.2628,
+            0.0001,
+            0.1848
+          ],
+          "total_ms": 0.7242,
+          "cycles": 1848723
+        }
+      ]
+    }
+  ],
+  "identity": {
+    "clip189-clock_1hz": {
+      "executable_sha256": "5bc5e038e5b4bd5feb4cd696450539e3575d48252bc167f41b02e9c44832776e",
+      "library_sha256": "ca570378bfe018c21f923c677196be14cf2d2ec61d7bc11cea8e1d8c8e0f5bf0",
+      "instrumented": true,
+      "passed": true
+    },
+    "clip189-inventory_sort": {
+      "executable_sha256": "5bc5e038e5b4bd5feb4cd696450539e3575d48252bc167f41b02e9c44832776e",
+      "library_sha256": "ca570378bfe018c21f923c677196be14cf2d2ec61d7bc11cea8e1d8c8e0f5bf0",
+      "instrumented": true,
+      "passed": true
+    },
+    "stack191-clock_1hz": {
+      "executable_sha256": "0d2b05eb20304fb3ceae16d0def0e08b6ad52368969344bb0924404fbbdad19b",
+      "library_sha256": "47dacd1c6c7df57c5b0ebd7ab6fe58c184c4c0c1a4c06006a04bfbd0a162e9ac",
+      "instrumented": true,
+      "passed": true
+    },
+    "stack191-inventory_sort": {
+      "executable_sha256": "0d2b05eb20304fb3ceae16d0def0e08b6ad52368969344bb0924404fbbdad19b",
+      "library_sha256": "47dacd1c6c7df57c5b0ebd7ab6fe58c184c4c0c1a4c06006a04bfbd0a162e9ac",
+      "instrumented": true,
+      "passed": true
+    }
+  },
+  "method": "One instrumented Vulkan run per binary/workload; clock 6000 frames, inventory 1200 frames, 120 warmups; installed binary first. Not randomized or timing acceptance.",
+  "findings": [
+    "Neither original timing overrun reproduced",
+    "Sample HTML/CSS contains no table layout, so these workloads do not directly execute the changed table stacking passes",
+    "Candidate trace index 4317: 0.831 ms total and 14073 raw thread cycles; consistent with a scheduling/wait pause, not proof of the original failure cause",
+    "The boxes trace stage includes incremental_layout.update before lap(boxes); it is not exclusively box construction"
+  ],
+  "original_qualification": "Still failed; no thresholds relaxed and candidate not installed",
+  "harness_note": "The first result was retained after the diagnostic identity writer used the wrong exported DLL path; the path was corrected without rerunning that completed measurement."
+}

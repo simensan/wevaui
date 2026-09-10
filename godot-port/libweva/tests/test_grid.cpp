@@ -294,7 +294,7 @@ void test_grid_line_placement() {
     }
     {
         // A named area still wins, and a name that is not in the template
-        // falls back to auto-placement rather than vanishing.
+        // resolves to implicit lines after the explicit grid.
         Fixture f;
         CHECK(f.css("#g { display: grid; width: 200px;"
                     "     grid-template-columns: 100px 100px;"
@@ -302,7 +302,7 @@ void test_grid_line_placement() {
                     "#a { grid-area: y } #b { grid-area: nope }"));
         CHECK(f.layout("<body><div id=g><div id=a></div><div id=b></div></div></body>"));
         CHECK(near(f.box("a").x, 100));
-        CHECK(near(f.box("b").x, 0));
+        CHECK(near(f.box("b").x, 200));
     }
 }
 
@@ -795,4 +795,101 @@ void test_grid_auto_flow_dense() {
         CHECK(near(f.box("c").y, 0));
         CHECK(near(f.box("c").x, 50));
     }
+}
+
+void test_grid_aspect_ratio_border_feedback_preserves_auto_height() {
+    for (const char* sizing : {"content-box", "border-box"}) {
+        Fixture f;
+        CHECK(f.css(std::string("#g{display:grid;width:400px;grid-template-columns:repeat(2,1fr);align-content:start}"
+            ".slot{display:flex;aspect-ratio:1;border:1px solid;box-sizing:") + sizing +
+            "}.wide{border-left-width:3px}"));
+        CHECK(f.layout("<div id=g><div id=a class='slot wide'>X</div><div id=b class=slot>X</div>"
+            "<div id=c class=slot>X</div><div id=d class='slot wide'>X</div></div>"));
+        const double width = std::string(sizing) == "content-box" ? 202 : 200;
+        CHECK(near(f.box("g").height,400));
+        CHECK(near(f.box("a").width,width));
+        CHECK(near(f.box("b").x,width));
+        CHECK(near(f.box("c").y,width));
+        CHECK(near(f.box("d").height,200));
+    }
+}
+
+void test_grid_named_lines_repeat_and_implicit_tracks() {
+    // Auto placement must see the full implicit grid, including definite
+    // columns belonging to items whose rows have not been placed yet.
+    for (bool column_flow : {false, true}) {
+        Fixture flow;
+        CHECK(flow.css(column_flow
+            ? "#g{display:grid;grid-auto-flow:column;grid-template-rows:40px 40px;grid-auto-rows:30px;grid-auto-columns:20px}#x{grid-row:3}#z{grid-row:5}"
+            : "#g{display:grid;grid-template-columns:40px 40px;grid-auto-columns:30px;grid-auto-rows:20px}#x{grid-column:3}#z{grid-column:5}"));
+        CHECK(flow.layout("<div id=g><div id=x>X</div><div id=y>Y</div><div id=z>Z</div></div>"));
+        CHECK(near(column_flow ? flow.box("y").y : flow.box("y").x,110));
+        CHECK(near(column_flow ? flow.box("y").x : flow.box("y").y,0));
+        CHECK(near(column_flow ? flow.box("z").y : flow.box("z").x,140));
+    }
+    Fixture implicit;
+    for (bool dense : {false, true}) {
+        Fixture columns;
+        CHECK(columns.css(std::string("#g{display:grid;grid-template-columns:40px 40px;grid-auto-rows:20px;grid-auto-flow:row") +
+            (dense ? " dense" : "") + "}#x,#y{grid-column:2}#z{grid-column:1}"));
+        CHECK(columns.layout("<div id=g><div id=x>X</div><div id=y>Y</div><div id=z>Z</div></div>"));
+        CHECK(near(columns.box("z").y,dense ? 0 : 40));
+        Fixture rows;
+        CHECK(rows.css(std::string("#g{display:grid;grid-template-columns:40px 40px;grid-auto-columns:30px;grid-auto-rows:20px;grid-auto-flow:row") +
+            (dense ? " dense" : "") + "}#x{grid-row:1;grid-column:2}#y{grid-row:1;grid-column:span 2}#z{grid-row:1}"));
+        CHECK(rows.layout("<div id=g><div id=x>X</div><div id=y>Y</div><div id=z>Z</div></div>"));
+        CHECK(near(rows.box("z").x,dense ? 0 : 140));
+    }
+    CHECK(implicit.css("#g{display:grid;grid-auto-columns:20px;grid-auto-rows:15px;justify-content:start}#x{grid-area:missing}"));
+    CHECK(implicit.layout("<div id=g><div id=x>X</div></div>"));
+    CHECK(near(implicit.box("x").x,20));
+    CHECK(near(implicit.box("x").y,15));
+
+    Fixture edges;
+    CHECK(edges.css("#g{display:grid;grid-template-columns:[a-start]40px 50px;grid-template-rows:30px;"
+        "grid-template-areas:'. a'}#x{grid-area:a}"));
+    CHECK(edges.layout("<div id=g><div id=x>X</div></div>"));
+    CHECK(near(edges.box("x").x,0));
+    CHECK(near(edges.box("x").width,90));
+
+    Fixture f;
+    CHECK(f.css("#g{display:grid;grid-template-columns:[start] repeat(3,[A] 40px [B] 50px) [end];"
+        "grid-template-rows:30px;grid-auto-columns:20px;gap:2px}#x{grid-column:A 2 / B 3;height:10px}"));
+    CHECK(f.layout("<div id=g><div id=x>X</div></div>"));
+    CHECK(near(f.box("x").x,94));
+    CHECK(near(f.box("x").width,134));
+    Fixture area;
+    CHECK(area.css("#g{display:grid;grid-template-columns:120px 180px;grid-template-rows:30px 40px;"
+        "grid-auto-columns:20px;grid-auto-rows:15px;gap:2px}#x{grid-area:missing;height:10px}"));
+    CHECK(area.layout("<div id=g><div id=x>X</div></div>"));
+    CHECK(near(area.box("x").x,326));
+    CHECK(near(area.box("x").y,91));
+    CHECK(near(area.box("x").width,20));
+    Fixture leading;
+    CHECK(leading.css("#g{display:grid;grid-template-columns:[A]40px [B]50px;grid-auto-columns:20px 25px;gap:2px}"
+        "#x{grid-column:-2 missing / -1 missing}#y{grid-column:A / B}"));
+    CHECK(leading.layout("<div id=g><div id=x>X</div><div id=y>Y</div></div>"));
+    CHECK(near(leading.box("x").x,0));
+    CHECK(near(leading.box("x").width,20));
+    CHECK(near(leading.box("y").x,49));
+    CHECK(near(leading.box("y").width,40));
+}
+
+void test_grid_stretch_respects_bounds_and_margins() {
+    for (const char* sizing : {"content-box", "border-box"}) {
+        Fixture f;
+        CHECK(f.css(std::string("#g{display:grid;grid-template-columns:40px;grid-template-rows:28px}"
+            "#x{box-sizing:") + sizing + ";padding:3px;border:2px solid;min-width:70px;min-height:34px;max-width:20px;max-height:10px}"));
+        CHECK(f.layout("<div id=g><div id=x>X</div></div>"));
+        const double extra = std::string(sizing) == "content-box" ? 10 : 0;
+        CHECK(near(f.box("x").width,70 + extra));
+        CHECK(near(f.box("x").height,34 + extra));
+    }
+    Fixture f;
+    CHECK(f.css("#g{display:grid;grid-template-columns:40px 40px;grid-template-rows:28px}"
+        "#x{margin:5px}#y{max-width:20px;max-height:10px}"));
+    CHECK(f.layout("<div id=g><div id=x>X</div><div id=y>Y</div></div>"));
+    CHECK(near(f.box("x").x,5) && near(f.box("x").y,5));
+    CHECK(near(f.box("x").width,30) && near(f.box("x").height,18));
+    CHECK(near(f.box("y").width,20) && near(f.box("y").height,10));
 }

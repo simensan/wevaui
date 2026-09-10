@@ -3,6 +3,48 @@
 **Build this before writing engine C++.** It is the single highest-leverage
 thing in the plan.
 
+## Game UI grid follow-up (2026-09-08)
+
+The in-progress candidate corrects aspect-ratio border feedback, named grid
+placement, stretch constraints and implicit/dense auto placement. The grid showcase agrees with the browser;
+inventory's accumulating position error is removed. Versioned [regression cases 48–56](../tools/oracle/regressions/grid/)
+cover these fixes; all nine match fresh Chrome captures. See the [current work and validation](../examples/frontier_camp/CHROME_PARITY.md).
+Size container queries now settle in the same update. Combat HUD geometry agrees
+with Chrome; the container corpus now has 15/15 agreements. Seven additional
+inline-bounds fixtures cover wrapping, anonymous continuations, overflow and empty
+decorated fragments. The current broad comparison has 281/304 agreements. See the
+same report for live mutation, native verification and allocation checks.
+
+Installed runtime67 and its historical 304-case counts below remain separate
+from this expanded corpus and candidate.
+
+## Runtime67 browser fixes (2026-09-07)
+
+Frontier Camp now passes all 1,276 geometry and 33 interaction checks from the
+runtime66 audit. See the [current report](../examples/frontier_camp/CHROME_PARITY.md).
+`weva_dump --chrome-metrics` enables browser-oriented fragment unions, paint
+transforms and font extents; the default mode preserves the C# reference walk.
+`chrome_sweep.py --chrome-metrics` prefers DOM paths and reports unmatched
+visible elements. The capture helper expands component templates and avoids
+forcing layout inside skipped hidden subtrees. Synthetic broad results remain
+investigation leads, not a stock-browser conformance percentage.
+
+## Fresh Chrome audit — runtime66 (2026-09-07)
+
+A fresh 304-page Chrome 152 capture and rebuilt runtime66 dump reproduce the
+candidate56 arbitration totals: 258 engine agreements, 36 reference bugs/leans,
+and 10 unresolved cases. All candidate layout dumps are unchanged from56.
+**This is not a Chrome pass:** direct comparison flags 67 pages for investigation,
+including shared engine differences that the three-way oracle does not inspect.
+The broad harness still normalizes fonts and overlays the engine UA stylesheet.
+
+A new live Frontier Camp comparison uses the exact Godot font bytes, native
+Chrome defaults and eleven interactive/resize states. Focus, value and scrolling
+match in 33/33 comparisons; 274 of 1,276 geometry values differ beyond the
+existing tolerance. Modal positioning is off by 71.5px at 720p and 431.5px at 4K;
+1024px responsive rules also fail. Runtime media context is not wired to viewport
+updates. See [the complete audit and repeatable failing check](../examples/frontier_camp/CHROME_PARITY.md).
+
 ## Input baselines and short fields — candidate56 (2026-09-07)
 
 Text-entry inputs now expose the baseline of their centered value, including
@@ -455,9 +497,9 @@ before chasing one:
   translation part of a transform. A `rotate(45deg)` on a 21px box reads as
   21 against Chrome's 29.7, which is 21 times root two and not a bug.
   `level-select` and `neon` are entirely this.
-* **Inline elements.** Chrome reports an inline element's rect as the union of
-  its line boxes and can report `y: -1` for an empty one; we report the box.
-  `card-component`'s 1280px is this, on a page that is pixel-identical.
+* **Inline elements (historical).** The current browser dump unions inline
+  fragments and anonymous block continuations. `card-component` now agrees;
+  older captures and the legacy reference walk use the original box semantics.
 * **Runs of same-identity siblings.** The two sides do not always list them in
   the same order. `repair_runs` re-pairs them by position now -- it took
   `9slice-demo` from 53 differing values to 45 and `menu`'s worst from 135px

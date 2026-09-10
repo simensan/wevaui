@@ -1,0 +1,185 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "tag": "input",
+      "min": "5",
+      "max": null,
+      "text": "ab",
+      "value": "ab",
+      "short": true,
+      "long": false
+    },
+    {
+      "tag": "input",
+      "min": "2",
+      "max": null,
+      "text": "🐎",
+      "value": "🐎",
+      "short": false,
+      "long": false
+    },
+    {
+      "tag": "input",
+      "min": "3",
+      "max": null,
+      "text": "🐎",
+      "value": "🐎",
+      "short": true,
+      "long": false
+    },
+    {
+      "tag": "input",
+      "min": "3",
+      "max": null,
+      "text": "é",
+      "value": "é",
+      "short": true,
+      "long": false
+    },
+    {
+      "tag": "input",
+      "min": "1",
+      "max": null,
+      "text": "",
+      "value": "",
+      "short": false,
+      "long": false
+    },
+    {
+      "tag": "input",
+      "min": null,
+      "max": "1",
+      "text": "ab",
+      "value": "ab",
+      "short": false,
+      "long": true
+    },
+    {
+      "tag": "input",
+      "min": null,
+      "max": "1",
+      "text": "🐎",
+      "value": "🐎",
+      "short": false,
+      "long": true
+    },
+    {
+      "tag": "input",
+      "min": "  +3x",
+      "max": null,
+      "text": "ab",
+      "value": "ab",
+      "short": true,
+      "long": false
+    },
+    {
+      "tag": "input",
+      "min": "-0",
+      "max": null,
+      "text": "ab",
+      "value": "ab",
+      "short": false,
+      "long": false
+    },
+    {
+      "tag": "input",
+      "min": "2147483648",
+      "max": null,
+      "text": "ab",
+      "value": "ab",
+      "short": false,
+      "long": false
+    },
+    {
+      "tag": "textarea",
+      "min": "5",
+      "max": null,
+      "text": "ab",
+      "value": "ab",
+      "short": true,
+      "long": false
+    },
+    {
+      "tag": "textarea",
+      "min": "2",
+      "max": null,
+      "text": "🐎",
+      "value": "🐎",
+      "short": false,
+      "long": false
+    },
+    {
+      "tag": "textarea",
+      "min": "3",
+      "max": null,
+      "text": "🐎",
+      "value": "🐎",
+      "short": true,
+      "long": false
+    },
+    {
+      "tag": "textarea",
+      "min": "3",
+      "max": null,
+      "text": "é",
+      "value": "é",
+      "short": true,
+      "long": false
+    },
+    {
+      "tag": "textarea",
+      "min": "1",
+      "max": null,
+      "text": "",
+      "value": "",
+      "short": false,
+      "long": false
+    },
+    {
+      "tag": "textarea",
+      "min": null,
+      "max": "1",
+      "text": "ab",
+      "value": "ab",
+      "short": false,
+      "long": true
+    },
+    {
+      "tag": "textarea",
+      "min": null,
+      "max": "1",
+      "text": "🐎",
+      "value": "🐎",
+      "short": false,
+      "long": true
+    },
+    {
+      "tag": "textarea",
+      "min": "  +3x",
+      "max": null,
+      "text": "ab",
+      "value": "ab",
+      "short": true,
+      "long": false
+    },
+    {
+      "tag": "textarea",
+      "min": "-0",
+      "max": null,
+      "text": "ab",
+      "value": "ab",
+      "short": false,
+      "long": false
+    },
+    {
+      "tag": "textarea",
+      "min": "2147483648",
+      "max": null,
+      "text": "ab",
+      "value": "ab",
+      "short": false,
+      "long": false
+    }
+  ]
+}

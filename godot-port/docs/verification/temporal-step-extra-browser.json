@@ -1,0 +1,1685 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "2",
+      "min": "1970-01-02",
+      "initial": null,
+      "mismatch": true,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "2",
+      "min": "1970-01-02",
+      "initial": null,
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "2",
+      "min": "1970-01-02",
+      "initial": null,
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "2",
+      "min": null,
+      "initial": "1970-01-02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "2",
+      "min": null,
+      "initial": "1970-01-02",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "2",
+      "min": null,
+      "initial": "1970-01-02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-01-02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-01-02",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-01-02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-01",
+      "step": "any",
+      "min": "1970-01-03",
+      "max": "1970-01-01",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-02",
+      "step": "any",
+      "min": "1970-01-03",
+      "max": "1970-01-01",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": true
+    },
+    {
+      "type": "date",
+      "raw": "1970-01-03",
+      "step": "any",
+      "min": "1970-01-03",
+      "max": "1970-01-01",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": true
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "2",
+      "min": "1970-02",
+      "initial": null,
+      "mismatch": true,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "2",
+      "min": "1970-02",
+      "initial": null,
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "2",
+      "min": "1970-02",
+      "initial": null,
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "2",
+      "min": null,
+      "initial": "1970-02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "2",
+      "min": null,
+      "initial": "1970-02",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "2",
+      "min": null,
+      "initial": "1970-02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-02",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-01",
+      "step": "any",
+      "min": "1970-03",
+      "max": "1970-01",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "month",
+      "raw": "1970-02",
+      "step": "any",
+      "min": "1970-03",
+      "max": "1970-01",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": true
+    },
+    {
+      "type": "month",
+      "raw": "1970-03",
+      "step": "any",
+      "min": "1970-03",
+      "max": "1970-01",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": true
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "2",
+      "min": "1970-W02",
+      "initial": null,
+      "mismatch": true,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "2",
+      "min": "1970-W02",
+      "initial": null,
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "2",
+      "min": "1970-W02",
+      "initial": null,
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "2",
+      "min": null,
+      "initial": "1970-W02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "2",
+      "min": null,
+      "initial": "1970-W02",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "2",
+      "min": null,
+      "initial": "1970-W02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-W02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-W02",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "2",
+      "min": "bad",
+      "initial": "1970-W02",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W01",
+      "step": "any",
+      "min": "1970-W03",
+      "max": "1970-W01",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "week",
+      "raw": "1970-W02",
+      "step": "any",
+      "min": "1970-W03",
+      "max": "1970-W01",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": true
+    },
+    {
+      "type": "week",
+      "raw": "1970-W03",
+      "step": "any",
+      "min": "1970-W03",
+      "max": "1970-W01",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": true
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "0",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "0",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "-1",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "-1",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "bad",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "bad",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "0.4",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "0.4",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "0.5",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "0.5",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "1.49",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "1.49",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "0.0015",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "0.002",
+      "min": "00:00:00.001",
+      "initial": null,
+      "mismatch": true,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "0.002",
+      "min": "00:00:00.001",
+      "initial": null,
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "0.002",
+      "min": "00:00:00.001",
+      "initial": null,
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "0.002",
+      "min": null,
+      "initial": "00:00:00.001",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "0.002",
+      "min": null,
+      "initial": "00:00:00.001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "0.002",
+      "min": null,
+      "initial": "00:00:00.001",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "0.002",
+      "min": "bad",
+      "initial": "00:00:00.001",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "0.002",
+      "min": "bad",
+      "initial": "00:00:00.001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "0.002",
+      "min": "bad",
+      "initial": "00:00:00.001",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "step": "any",
+      "min": "00:00:00.002",
+      "max": "00:00",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.001",
+      "step": "any",
+      "min": "00:00:00.002",
+      "max": "00:00",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": true
+    },
+    {
+      "type": "time",
+      "raw": "00:00:00.002",
+      "step": "any",
+      "min": "00:00:00.002",
+      "max": "00:00",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "0",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "0",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "0",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "-1",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "-1",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "-1",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "bad",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "bad",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "bad",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "AnY",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "0.4",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "0.4",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "0.4",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "0.5",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "0.5",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "0.5",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "1.49",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "1.49",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "1.49",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "0.0015",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "0.0015",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "0.0001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "0.002",
+      "min": "1970-01-01T00:00:00.001",
+      "initial": null,
+      "mismatch": true,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "0.002",
+      "min": "1970-01-01T00:00:00.001",
+      "initial": null,
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "0.002",
+      "min": "1970-01-01T00:00:00.001",
+      "initial": null,
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "0.002",
+      "min": null,
+      "initial": "1970-01-01T00:00:00.001",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "0.002",
+      "min": null,
+      "initial": "1970-01-01T00:00:00.001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "0.002",
+      "min": null,
+      "initial": "1970-01-01T00:00:00.001",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "0.002",
+      "min": "bad",
+      "initial": "1970-01-01T00:00:00.001",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "0.002",
+      "min": "bad",
+      "initial": "1970-01-01T00:00:00.001",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "0.002",
+      "min": "bad",
+      "initial": "1970-01-01T00:00:00.001",
+      "mismatch": true,
+      "underflow": false,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00",
+      "step": "any",
+      "min": "1970-01-01T00:00:00.002",
+      "max": "1970-01-01T00:00",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": false
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.001",
+      "step": "any",
+      "min": "1970-01-01T00:00:00.002",
+      "max": "1970-01-01T00:00",
+      "mismatch": false,
+      "underflow": true,
+      "overflow": true
+    },
+    {
+      "type": "datetime-local",
+      "raw": "1970-01-01T00:00:00.002",
+      "step": "any",
+      "min": "1970-01-01T00:00:00.002",
+      "max": "1970-01-01T00:00",
+      "mismatch": false,
+      "underflow": false,
+      "overflow": true
+    }
+  ]
+}

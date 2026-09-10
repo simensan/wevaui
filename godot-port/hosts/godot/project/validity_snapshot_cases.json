@@ -1,0 +1,269 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"text\"  ></input>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"text\" disabled ></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"text\"  readonly></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"text\"  ></input>",
+      "custom": true,
+      "flags": 513,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"number\"  ></input>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"number\" disabled ></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"number\"  readonly></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"number\"  ></input>",
+      "custom": true,
+      "flags": 513,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"email\"  ></input>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"email\" disabled ></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"email\"  readonly></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"email\"  ></input>",
+      "custom": true,
+      "flags": 513,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"url\"  ></input>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"url\" disabled ></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"url\"  readonly></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"url\"  ></input>",
+      "custom": true,
+      "flags": 513,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"checkbox\"  ></input>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"checkbox\" disabled ></input>",
+      "custom": false,
+      "flags": 1,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"checkbox\"  readonly></input>",
+      "custom": false,
+      "flags": 1,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"checkbox\"  ></input>",
+      "custom": true,
+      "flags": 513,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"radio\"  ></input>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"radio\" disabled ></input>",
+      "custom": false,
+      "flags": 1,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"radio\"  readonly></input>",
+      "custom": false,
+      "flags": 1,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"radio\"  ></input>",
+      "custom": true,
+      "flags": 513,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"hidden\"  ></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"hidden\" disabled ></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"hidden\"  readonly></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"hidden\"  ></input>",
+      "custom": true,
+      "flags": 512,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"submit\"  ></input>",
+      "custom": false,
+      "flags": 0,
+      "will": true
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"submit\" disabled ></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"submit\"  readonly></input>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<input id=\"c\" name=\"n\" required type=\"submit\"  ></input>",
+      "custom": true,
+      "flags": 512,
+      "will": true
+    },
+    {
+      "html": "<textarea id=\"c\" name=\"n\" required   ></textarea>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<textarea id=\"c\" name=\"n\" required  disabled ></textarea>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<textarea id=\"c\" name=\"n\" required   readonly></textarea>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<textarea id=\"c\" name=\"n\" required   ></textarea>",
+      "custom": true,
+      "flags": 513,
+      "will": true
+    },
+    {
+      "html": "<select id=\"c\" name=\"n\" required   ></select>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<select id=\"c\" name=\"n\" required  disabled ></select>",
+      "custom": false,
+      "flags": 1,
+      "will": false
+    },
+    {
+      "html": "<select id=\"c\" name=\"n\" required   readonly></select>",
+      "custom": false,
+      "flags": 1,
+      "will": true
+    },
+    {
+      "html": "<select id=\"c\" name=\"n\" required   ></select>",
+      "custom": true,
+      "flags": 513,
+      "will": true
+    },
+    {
+      "html": "<button id=\"c\" name=\"n\" required   ></button>",
+      "custom": false,
+      "flags": 0,
+      "will": true
+    },
+    {
+      "html": "<button id=\"c\" name=\"n\" required  disabled ></button>",
+      "custom": false,
+      "flags": 0,
+      "will": false
+    },
+    {
+      "html": "<button id=\"c\" name=\"n\" required   readonly></button>",
+      "custom": false,
+      "flags": 0,
+      "will": true
+    },
+    {
+      "html": "<button id=\"c\" name=\"n\" required   ></button>",
+      "custom": true,
+      "flags": 512,
+      "will": true
+    }
+  ]
+}

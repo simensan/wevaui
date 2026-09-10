@@ -1,0 +1,291 @@
+{
+  "status": "native_candidate_not_installed",
+  "version": "0.1.0-preview.188",
+  "build": {
+    "schema": 1,
+    "library_sha256": "da7e0234f4ebf33d03191cb72a52ba4a9232006771f7965faeb2d532a2789c50",
+    "source": {
+      "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+      "dirty": true,
+      "sha256": "9b1a86d123c1e49e98c11cde72a58df52990bb36fd12761727055ea245149556"
+    },
+    "godot_cpp": {
+      "revision": null,
+      "dirty": null,
+      "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+    },
+    "configuration": "Release",
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35222.0"
+    },
+    "cmake_version": "4.3.2",
+    "godot_api": "4.7",
+    "precision": "single",
+    "custom_api": null,
+    "sanitizers": false
+  },
+  "changes": [
+    "Respect containing blocks when clipping absolute and fixed descendants",
+    "Keep scroll offsets, rounded clipping and pointer targets consistent",
+    "Include clipping ancestry and containing blocks in paint replay inputs"
+  ],
+  "chrome": {
+    "browser": "Chrome/152.0.7977.83",
+    "overflow_cases": 128,
+    "table_cases": 96,
+    "passed": true
+  },
+  "release": {
+    "suites": 14,
+    "passed": true,
+    "seconds": 24.42
+  },
+  "sanitizers": {
+    "full_suites": 16,
+    "passed": true,
+    "seconds": 172.62,
+    "scope": "Full sweep before final rejected-hit allocation optimization; final source rebuilt and passed 1490 focused checks and 113910 allocation-guard checks"
+  },
+  "native_host": {
+    "binary_sha256": "da7e0234f4ebf33d03191cb72a52ba4a9232006771f7965faeb2d532a2789c50",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 506
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 182
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 554
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 2289
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      }
+    ],
+    "passed": true,
+    "checks": 28127
+  },
+  "sample_and_exports_passed": true,
+  "pointer_microbenchmark": {
+    "scope": "Headless pointer call and subsequent update measured separately; not native Godot or GPU timings",
+    "results": "buttons=32 rounded=0 pointer_ms_mean=0.004089 pointer_ms_p95=0.004200 update_ms_mean=0.018224 update_ms_p95=0.022500\nbuttons=32 rounded=1 pointer_ms_mean=0.004405 pointer_ms_p95=0.004900 update_ms_mean=0.025883 update_ms_p95=0.041100\nbuttons=128 rounded=0 pointer_ms_mean=0.013666 pointer_ms_p95=0.018100 update_ms_mean=0.027244 update_ms_p95=0.043200\nbuttons=128 rounded=1 pointer_ms_mean=0.013598 pointer_ms_p95=0.016000 update_ms_mean=0.036808 update_ms_p95=0.050100\n",
+    "executable_sha256": "ebe55d61babc6887019a45ecf8a518b0d51d2c186418de306b725bcac1db4c27"
+  },
+  "native_timing": {
+    "passed": false,
+    "functional_passed": true,
+    "summary": ".utmp\\safe-engine71\\overflow188-desktop\\summary.json",
+    "errors": [
+      "gl_compatibility/1/settings_typing/changed_api_cpu",
+      "mobile/3/hover/changed_api_cpu"
+    ],
+    "failures": [
+      {
+        "run": "gl_compatibility/1",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.377,
+        "limit_ms": 1.0,
+        "passed": false
+      },
+      {
+        "run": "mobile/3",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.726,
+        "limit_ms": 0.5,
+        "passed": false
+      }
+    ],
+    "checks": 72
+  },
+  "remaining": [
+    "Nested stacking contexts and negative z-order",
+    "Broader table filter and row/group combinations",
+    "Native runtime timing qualification and installation"
+  ]
+}

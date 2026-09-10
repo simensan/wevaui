@@ -1,0 +1,693 @@
+{
+  "scope": "Chrome observations for dialog form submission",
+  "result_cases": {
+    "browser": "Chrome/152.0.7977.77",
+    "rows": [
+      {
+        "kind": "button",
+        "value": null,
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "initial"
+      },
+      {
+        "kind": "button",
+        "value": null,
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "button",
+        "value": null,
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-value"
+      },
+      {
+        "kind": "button",
+        "value": null,
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "button",
+        "value": null,
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "button",
+        "value": null,
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "button",
+        "value": "",
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "button",
+        "value": "",
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "button",
+        "value": "",
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-value"
+      },
+      {
+        "kind": "button",
+        "value": "",
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "button",
+        "value": "",
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "button",
+        "value": "",
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "button",
+        "value": "accepted",
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "accepted"
+      },
+      {
+        "kind": "button",
+        "value": "accepted",
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "button",
+        "value": "accepted",
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-value"
+      },
+      {
+        "kind": "button",
+        "value": "accepted",
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "button",
+        "value": "accepted",
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "accepted"
+      },
+      {
+        "kind": "button",
+        "value": "accepted",
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "input",
+        "value": null,
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "initial"
+      },
+      {
+        "kind": "input",
+        "value": null,
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "input",
+        "value": null,
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-value"
+      },
+      {
+        "kind": "input",
+        "value": null,
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "input",
+        "value": null,
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "input",
+        "value": null,
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "input",
+        "value": "",
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "input",
+        "value": "",
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "input",
+        "value": "",
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-value"
+      },
+      {
+        "kind": "input",
+        "value": "",
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "input",
+        "value": "",
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "input",
+        "value": "",
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "input",
+        "value": "accepted",
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "accepted"
+      },
+      {
+        "kind": "input",
+        "value": "accepted",
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "input",
+        "value": "accepted",
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-value"
+      },
+      {
+        "kind": "input",
+        "value": "accepted",
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "input",
+        "value": "accepted",
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "accepted"
+      },
+      {
+        "kind": "input",
+        "value": "accepted",
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "implicit",
+        "value": null,
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": null,
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "implicit",
+        "value": null,
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": null,
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "implicit",
+        "value": null,
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": null,
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "implicit",
+        "value": "",
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": "",
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "implicit",
+        "value": "",
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": "",
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "implicit",
+        "value": "",
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": "",
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "implicit",
+        "value": "accepted",
+        "handler": "allow",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": "accepted",
+        "handler": "prevent",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "kind": "implicit",
+        "value": "accepted",
+        "handler": "set-value",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": "accepted",
+        "handler": "close",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": "handler-close"
+      },
+      {
+        "kind": "implicit",
+        "value": "accepted",
+        "handler": "reopen",
+        "submits": 1,
+        "cancels": 0,
+        "open": false,
+        "result": ""
+      },
+      {
+        "kind": "implicit",
+        "value": "accepted",
+        "handler": "remove",
+        "submits": 1,
+        "cancels": 0,
+        "open": true,
+        "result": "initial"
+      }
+    ]
+  },
+  "implicit_keyboard": {
+    "browser": "Chrome/152.0.7977.77",
+    "rows": [
+      {
+        "handler": "allow",
+        "open": false,
+        "result": "",
+        "submits": 1
+      },
+      {
+        "handler": "prevent",
+        "open": true,
+        "result": "initial",
+        "submits": 1
+      },
+      {
+        "handler": "set-value",
+        "open": false,
+        "result": "",
+        "submits": 1
+      },
+      {
+        "handler": "close",
+        "open": false,
+        "result": "handler-close",
+        "submits": 1
+      },
+      {
+        "handler": "reopen",
+        "open": false,
+        "result": "",
+        "submits": 1
+      },
+      {
+        "handler": "remove",
+        "open": true,
+        "result": "initial",
+        "submits": 1
+      }
+    ]
+  },
+  "method_and_image_cases": {
+    "browser": "Chrome/152.0.7977.77",
+    "rows": [
+      {
+        "method": "dialog",
+        "override": null,
+        "open": false,
+        "result": "yes"
+      },
+      {
+        "method": "dialog",
+        "override": "dialog",
+        "open": false,
+        "result": "yes"
+      },
+      {
+        "method": "dialog",
+        "override": "get",
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "dialog",
+        "override": "",
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "DiAlOg",
+        "override": null,
+        "open": false,
+        "result": "yes"
+      },
+      {
+        "method": "DiAlOg",
+        "override": "dialog",
+        "open": false,
+        "result": "yes"
+      },
+      {
+        "method": "DiAlOg",
+        "override": "get",
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "DiAlOg",
+        "override": "",
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "get",
+        "override": null,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "get",
+        "override": "dialog",
+        "open": false,
+        "result": "yes"
+      },
+      {
+        "method": "get",
+        "override": "get",
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "get",
+        "override": "",
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "invalid",
+        "override": null,
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "invalid",
+        "override": "dialog",
+        "open": false,
+        "result": "yes"
+      },
+      {
+        "method": "invalid",
+        "override": "get",
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "method": "invalid",
+        "override": "",
+        "open": true,
+        "result": "initial"
+      },
+      {
+        "border": 0,
+        "padding": 0,
+        "trigger": "key",
+        "open": false,
+        "result": "0,0"
+      },
+      {
+        "border": 0,
+        "padding": 0,
+        "trigger": "click",
+        "open": false,
+        "result": "21,19"
+      },
+      {
+        "border": 0,
+        "padding": 7,
+        "trigger": "key",
+        "open": false,
+        "result": "0,0"
+      },
+      {
+        "border": 0,
+        "padding": 7,
+        "trigger": "click",
+        "open": false,
+        "result": "21,19"
+      },
+      {
+        "border": 5,
+        "padding": 0,
+        "trigger": "key",
+        "open": false,
+        "result": "0,0"
+      },
+      {
+        "border": 5,
+        "padding": 0,
+        "trigger": "click",
+        "open": false,
+        "result": "16,14"
+      },
+      {
+        "border": 5,
+        "padding": 7,
+        "trigger": "key",
+        "open": false,
+        "result": "0,0"
+      },
+      {
+        "border": 5,
+        "padding": 7,
+        "trigger": "click",
+        "open": false,
+        "result": "16,14"
+      }
+    ]
+  },
+  "spec": "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-algorithm"
+}

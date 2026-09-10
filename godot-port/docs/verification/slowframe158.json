@@ -1,0 +1,1096 @@
+{
+  "scope": "Six focused native release runs, automatic 1080p 3D, clock and UI-disabled workloads; 1200 frames plus 120 warmups. Diagnostic, not replacement qualification.",
+  "functional_passed": true,
+  "timing_budget_checked": false,
+  "library_sha256": "edca485387617f6c9d3136be3ed2b6e31fd1ecd455d705b9d3b62305e4aaf2ad",
+  "source_sha256": {
+    "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+    "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+    "project.godot": "fa8fe59de99a279bd0209857292ef58fbc609d38968c6b0041b818781afa1b92",
+    "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+    "game.gd": "306b0d30baf52505537460b3fa79e58756f8e62cc9fe768a13ae5b94b3945e3b",
+    "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+    "tests/performance.gd": "b60f135921d15557f826baf8d1fc165a9fa16c9c3dc8e8682baca1fe5771c692",
+    "tests/load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+    "ui/camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+    "ui/camp.css": "e9d1c82e7dbeb565e2bba565ec0d472d367c6ba14bcf3810980f0eb92d1b1436",
+    "addons/weva/weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c"
+  },
+  "runs": [
+    {
+      "renderer": "gl_compatibility",
+      "run": 1,
+      "workload": "ui_disabled",
+      "whole_frame_p95_ms": 12.655,
+      "changed_whole_frame_p95_ms": null,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 169,
+          "viewport_render_cpu_ms": 0.91100001335144,
+          "viewport_render_gpu_ms": 0.172999992966652,
+          "whole_frame_ms": 14.837
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1110,
+          "viewport_render_cpu_ms": 1.11300003528595,
+          "viewport_render_gpu_ms": 0.175999999046326,
+          "whole_frame_ms": 14.549
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1125,
+          "viewport_render_cpu_ms": 0.851999998092651,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 14.513
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1140,
+          "viewport_render_cpu_ms": 0.964999973773956,
+          "viewport_render_gpu_ms": 0.172999992966652,
+          "whole_frame_ms": 14.456
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1066,
+          "viewport_render_cpu_ms": 0.842999994754791,
+          "viewport_render_gpu_ms": 0.174999997019768,
+          "whole_frame_ms": 14.362
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 328,
+          "viewport_render_cpu_ms": 0.845000028610229,
+          "viewport_render_gpu_ms": 0.174999997019768,
+          "whole_frame_ms": 14.298
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 128,
+          "viewport_render_cpu_ms": 0.901000022888184,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 14.266
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 136,
+          "viewport_render_cpu_ms": 0.845000028610229,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 14.192
+        }
+      ]
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 1,
+      "workload": "clock_1hz",
+      "whole_frame_p95_ms": 13.442,
+      "changed_whole_frame_p95_ms": 11.66,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 953,
+          "viewport_render_cpu_ms": 1.22699999809265,
+          "viewport_render_gpu_ms": 0.206000000238419,
+          "whole_frame_ms": 37.188
+        },
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.000700000000001921,
+          "core_updates": 1.0,
+          "frame": 1063,
+          "viewport_render_cpu_ms": 1.22500002384186,
+          "viewport_render_gpu_ms": 0.196999996900558,
+          "whole_frame_ms": 36.224
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 977,
+          "viewport_render_cpu_ms": 1.19000005722046,
+          "viewport_render_gpu_ms": 0.195999994874001,
+          "whole_frame_ms": 36.19
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000799999999998136,
+          "core_updates": 1.0,
+          "frame": 1099,
+          "viewport_render_cpu_ms": 1.27300000190735,
+          "viewport_render_gpu_ms": 0.197999998927116,
+          "whole_frame_ms": 32.15
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 1125,
+          "viewport_render_cpu_ms": 0.897000014781952,
+          "viewport_render_gpu_ms": 0.195999994874001,
+          "whole_frame_ms": 19.258
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 1257,
+          "viewport_render_cpu_ms": 0.864000022411346,
+          "viewport_render_gpu_ms": 0.196999996900558,
+          "whole_frame_ms": 19.032
+        },
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.000900000000001455,
+          "core_updates": 1.0,
+          "frame": 436,
+          "viewport_render_cpu_ms": 0.861000001430511,
+          "viewport_render_gpu_ms": 0.194000005722046,
+          "whole_frame_ms": 17.565
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 783,
+          "viewport_render_cpu_ms": 1.20299994945526,
+          "viewport_render_gpu_ms": 0.195999994874001,
+          "whole_frame_ms": 17.536
+        }
+      ]
+    },
+    {
+      "renderer": "mobile",
+      "run": 1,
+      "workload": "ui_disabled",
+      "whole_frame_p95_ms": 14.399,
+      "changed_whole_frame_p95_ms": null,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1115,
+          "viewport_render_cpu_ms": 0.190999999642372,
+          "viewport_render_gpu_ms": 0.140000000596046,
+          "whole_frame_ms": 19.07
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 916,
+          "viewport_render_cpu_ms": 0.234999999403954,
+          "viewport_render_gpu_ms": 0.138999998569489,
+          "whole_frame_ms": 15.609
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1021,
+          "viewport_render_cpu_ms": 0.168999999761581,
+          "viewport_render_gpu_ms": 0.140000000596046,
+          "whole_frame_ms": 15.586
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 958,
+          "viewport_render_cpu_ms": 0.337999999523163,
+          "viewport_render_gpu_ms": 0.140000000596046,
+          "whole_frame_ms": 15.575
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 896,
+          "viewport_render_cpu_ms": 0.197999998927116,
+          "viewport_render_gpu_ms": 0.141000002622604,
+          "whole_frame_ms": 15.572
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1010,
+          "viewport_render_cpu_ms": 0.224000006914139,
+          "viewport_render_gpu_ms": 0.138999998569489,
+          "whole_frame_ms": 15.549
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1063,
+          "viewport_render_cpu_ms": 0.188999995589256,
+          "viewport_render_gpu_ms": 0.138999998569489,
+          "whole_frame_ms": 15.534
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1053,
+          "viewport_render_cpu_ms": 0.218999996781349,
+          "viewport_render_gpu_ms": 0.140000000596046,
+          "whole_frame_ms": 15.451
+        }
+      ]
+    },
+    {
+      "renderer": "mobile",
+      "run": 1,
+      "workload": "clock_1hz",
+      "whole_frame_p95_ms": 12.772,
+      "changed_whole_frame_p95_ms": 12.821,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.000799999999998136,
+          "core_updates": 1.0,
+          "frame": 786,
+          "viewport_render_cpu_ms": 0.237000003457069,
+          "viewport_render_gpu_ms": 0.150999993085861,
+          "whole_frame_ms": 15.606
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 647,
+          "viewport_render_cpu_ms": 0.200000002980232,
+          "viewport_render_gpu_ms": 0.148000001907349,
+          "whole_frame_ms": 15.177
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 137,
+          "viewport_render_cpu_ms": 0.200000002980232,
+          "viewport_render_gpu_ms": 0.146999999880791,
+          "whole_frame_ms": 14.795
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 582,
+          "viewport_render_cpu_ms": 0.209999993443489,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 14.633
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 508,
+          "viewport_render_cpu_ms": 0.185000002384186,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 14.61
+        },
+        {
+          "api_cpu_ms": 0.047,
+          "changed": true,
+          "core_cpu_ms": 0.958500000000001,
+          "core_updates": 2.0,
+          "frame": 480,
+          "viewport_render_cpu_ms": 0.206000000238419,
+          "viewport_render_gpu_ms": 0.148000001907349,
+          "whole_frame_ms": 14.543
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 554,
+          "viewport_render_cpu_ms": 0.20100000500679,
+          "viewport_render_gpu_ms": 0.150000005960464,
+          "whole_frame_ms": 14.529
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 443,
+          "viewport_render_cpu_ms": 0.224999994039536,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 14.495
+        }
+      ]
+    },
+    {
+      "renderer": "mobile",
+      "run": 2,
+      "workload": "clock_1hz",
+      "whole_frame_p95_ms": 13.115,
+      "changed_whole_frame_p95_ms": 13.448,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 1173,
+          "viewport_render_cpu_ms": 0.190999999642372,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 16.92
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000300000000002854,
+          "core_updates": 1.0,
+          "frame": 197,
+          "viewport_render_cpu_ms": 0.19200000166893,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 15.341
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000300000000002854,
+          "core_updates": 1.0,
+          "frame": 330,
+          "viewport_render_cpu_ms": 0.216000005602837,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 15.305
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000300000000002854,
+          "core_updates": 1.0,
+          "frame": 139,
+          "viewport_render_cpu_ms": 0.172999992966652,
+          "viewport_render_gpu_ms": 0.148000001907349,
+          "whole_frame_ms": 15.16
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 178,
+          "viewport_render_cpu_ms": 0.232999995350838,
+          "viewport_render_gpu_ms": 0.150000005960464,
+          "whole_frame_ms": 15.077
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000300000000002854,
+          "core_updates": 1.0,
+          "frame": 274,
+          "viewport_render_cpu_ms": 0.224000006914139,
+          "viewport_render_gpu_ms": 0.150000005960464,
+          "whole_frame_ms": 15.01
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 406,
+          "viewport_render_cpu_ms": 0.175999999046326,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 14.948
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 218,
+          "viewport_render_cpu_ms": 0.171000003814697,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 14.93
+        }
+      ]
+    },
+    {
+      "renderer": "mobile",
+      "run": 2,
+      "workload": "ui_disabled",
+      "whole_frame_p95_ms": 12.833,
+      "changed_whole_frame_p95_ms": null,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 573,
+          "viewport_render_cpu_ms": 0.19200000166893,
+          "viewport_render_gpu_ms": 0.141000002622604,
+          "whole_frame_ms": 18.162
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 221,
+          "viewport_render_cpu_ms": 0.159999996423721,
+          "viewport_render_gpu_ms": 0.14300000667572,
+          "whole_frame_ms": 17.808
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 908,
+          "viewport_render_cpu_ms": 0.194000005722046,
+          "viewport_render_gpu_ms": 0.142000004649162,
+          "whole_frame_ms": 17.444
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1239,
+          "viewport_render_cpu_ms": 0.180000007152557,
+          "viewport_render_gpu_ms": 0.140000000596046,
+          "whole_frame_ms": 17.275
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1305,
+          "viewport_render_cpu_ms": 0.166999995708466,
+          "viewport_render_gpu_ms": 0.141000002622604,
+          "whole_frame_ms": 14.273
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1295,
+          "viewport_render_cpu_ms": 0.164000004529953,
+          "viewport_render_gpu_ms": 0.138999998569489,
+          "whole_frame_ms": 13.954
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 612,
+          "viewport_render_cpu_ms": 0.187000006437302,
+          "viewport_render_gpu_ms": 0.141000002622604,
+          "whole_frame_ms": 13.93
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 502,
+          "viewport_render_cpu_ms": 0.171000003814697,
+          "viewport_render_gpu_ms": 0.140000000596046,
+          "whole_frame_ms": 13.819
+        }
+      ]
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 2,
+      "workload": "clock_1hz",
+      "whole_frame_p95_ms": 14.263,
+      "changed_whole_frame_p95_ms": 14.113,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 1016,
+          "viewport_render_cpu_ms": 0.867999970912933,
+          "viewport_render_gpu_ms": 0.197999998927116,
+          "whole_frame_ms": 19.702
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 533,
+          "viewport_render_cpu_ms": 1.1360000371933,
+          "viewport_render_gpu_ms": 0.197999998927116,
+          "whole_frame_ms": 19.447
+        },
+        {
+          "api_cpu_ms": 0.059,
+          "changed": true,
+          "core_cpu_ms": 0.282400000000003,
+          "core_updates": 2.0,
+          "frame": 720,
+          "viewport_render_cpu_ms": 0.98199999332428,
+          "viewport_render_gpu_ms": 0.195999994874001,
+          "whole_frame_ms": 18.744
+        },
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 934,
+          "viewport_render_cpu_ms": 1.19000005722046,
+          "viewport_render_gpu_ms": 0.197999998927116,
+          "whole_frame_ms": 17.031
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 918,
+          "viewport_render_cpu_ms": 1.15499997138977,
+          "viewport_render_gpu_ms": 0.199000000953674,
+          "whole_frame_ms": 16.773
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 525,
+          "viewport_render_cpu_ms": 0.85699999332428,
+          "viewport_render_gpu_ms": 0.19200000166893,
+          "whole_frame_ms": 16.405
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 602,
+          "viewport_render_cpu_ms": 1.31099998950958,
+          "viewport_render_gpu_ms": 0.196999996900558,
+          "whole_frame_ms": 16.192
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 803,
+          "viewport_render_cpu_ms": 0.88400000333786,
+          "viewport_render_gpu_ms": 0.195999994874001,
+          "whole_frame_ms": 15.987
+        }
+      ]
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 2,
+      "workload": "ui_disabled",
+      "whole_frame_p95_ms": 14.397,
+      "changed_whole_frame_p95_ms": null,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 211,
+          "viewport_render_cpu_ms": 0.754000008106232,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 19.152
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 737,
+          "viewport_render_cpu_ms": 0.776000022888184,
+          "viewport_render_gpu_ms": 0.172000005841255,
+          "whole_frame_ms": 18.57
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 527,
+          "viewport_render_cpu_ms": 0.782000005245209,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 17.006
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 490,
+          "viewport_render_cpu_ms": 0.762000024318695,
+          "viewport_render_gpu_ms": 0.171000003814697,
+          "whole_frame_ms": 16.973
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 248,
+          "viewport_render_cpu_ms": 0.767000019550323,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 16.569
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1119,
+          "viewport_render_cpu_ms": 0.755999982357025,
+          "viewport_render_gpu_ms": 0.174999997019768,
+          "whole_frame_ms": 16.568
+        },
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 509,
+          "viewport_render_cpu_ms": 0.758000016212463,
+          "viewport_render_gpu_ms": 0.174999997019768,
+          "whole_frame_ms": 16.539
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 383,
+          "viewport_render_cpu_ms": 0.764999985694885,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 16.119
+        }
+      ]
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 3,
+      "workload": "ui_disabled",
+      "whole_frame_p95_ms": 14.601,
+      "changed_whole_frame_p95_ms": null,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 160,
+          "viewport_render_cpu_ms": 0.833999991416931,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 18.842
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 123,
+          "viewport_render_cpu_ms": 0.814000010490417,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 17.892
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 619,
+          "viewport_render_cpu_ms": 0.769999980926514,
+          "viewport_render_gpu_ms": 0.172999992966652,
+          "whole_frame_ms": 16.395
+        },
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 783,
+          "viewport_render_cpu_ms": 0.774999976158142,
+          "viewport_render_gpu_ms": 0.172999992966652,
+          "whole_frame_ms": 16.165
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 310,
+          "viewport_render_cpu_ms": 0.741999983787537,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 15.977
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 801,
+          "viewport_render_cpu_ms": 0.801999986171722,
+          "viewport_render_gpu_ms": 0.172999992966652,
+          "whole_frame_ms": 15.968
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1132,
+          "viewport_render_cpu_ms": 0.85699999332428,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 15.947
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 940,
+          "viewport_render_cpu_ms": 0.852999985218048,
+          "viewport_render_gpu_ms": 0.17399999499321,
+          "whole_frame_ms": 15.898
+        }
+      ]
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 3,
+      "workload": "clock_1hz",
+      "whole_frame_p95_ms": 14.668,
+      "changed_whole_frame_p95_ms": 9.988,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 1183,
+          "viewport_render_cpu_ms": 1.14100003242493,
+          "viewport_render_gpu_ms": 0.197999998927116,
+          "whole_frame_ms": 33.111
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 299,
+          "viewport_render_cpu_ms": 1.02600002288818,
+          "viewport_render_gpu_ms": 0.195999994874001,
+          "whole_frame_ms": 31.015
+        },
+        {
+          "api_cpu_ms": 0.003,
+          "changed": false,
+          "core_cpu_ms": 0.000799999999998136,
+          "core_updates": 1.0,
+          "frame": 1084,
+          "viewport_render_cpu_ms": 0.871999979019165,
+          "viewport_render_gpu_ms": 0.193000003695488,
+          "whole_frame_ms": 28.415
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 351,
+          "viewport_render_cpu_ms": 0.866999983787537,
+          "viewport_render_gpu_ms": 0.197999998927116,
+          "whole_frame_ms": 19.639
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000599999999998602,
+          "core_updates": 1.0,
+          "frame": 242,
+          "viewport_render_cpu_ms": 1.21899998188019,
+          "viewport_render_gpu_ms": 0.194000005722046,
+          "whole_frame_ms": 16.394
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 586,
+          "viewport_render_cpu_ms": 0.902999997138977,
+          "viewport_render_gpu_ms": 0.196999996900558,
+          "whole_frame_ms": 16.391
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 562,
+          "viewport_render_cpu_ms": 0.901000022888184,
+          "viewport_render_gpu_ms": 0.196999996900558,
+          "whole_frame_ms": 16.337
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000700000000001921,
+          "core_updates": 1.0,
+          "frame": 227,
+          "viewport_render_cpu_ms": 0.841000020503998,
+          "viewport_render_gpu_ms": 0.197999998927116,
+          "whole_frame_ms": 16.125
+        }
+      ]
+    },
+    {
+      "renderer": "mobile",
+      "run": 3,
+      "workload": "ui_disabled",
+      "whole_frame_p95_ms": 14.93,
+      "changed_whole_frame_p95_ms": null,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 185,
+          "viewport_render_cpu_ms": 0.157000005245209,
+          "viewport_render_gpu_ms": 0.138999998569489,
+          "whole_frame_ms": 17.566
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 835,
+          "viewport_render_cpu_ms": 0.171000003814697,
+          "viewport_render_gpu_ms": 0.138999998569489,
+          "whole_frame_ms": 16.46
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1013,
+          "viewport_render_cpu_ms": 0.175999999046326,
+          "viewport_render_gpu_ms": 0.141000002622604,
+          "whole_frame_ms": 16.352
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1272,
+          "viewport_render_cpu_ms": 0.18299999833107,
+          "viewport_render_gpu_ms": 0.140000000596046,
+          "whole_frame_ms": 16.279
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 206,
+          "viewport_render_cpu_ms": 0.17399999499321,
+          "viewport_render_gpu_ms": 0.138999998569489,
+          "whole_frame_ms": 16.244
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1317,
+          "viewport_render_cpu_ms": 0.200000002980232,
+          "viewport_render_gpu_ms": 0.140000000596046,
+          "whole_frame_ms": 15.988
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 908,
+          "viewport_render_cpu_ms": 0.200000002980232,
+          "viewport_render_gpu_ms": 0.137999996542931,
+          "whole_frame_ms": 15.926
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.0,
+          "core_updates": 0.0,
+          "frame": 1293,
+          "viewport_render_cpu_ms": 0.256999999284744,
+          "viewport_render_gpu_ms": 0.138999998569489,
+          "whole_frame_ms": 15.889
+        }
+      ]
+    },
+    {
+      "renderer": "mobile",
+      "run": 3,
+      "workload": "clock_1hz",
+      "whole_frame_p95_ms": 14.584,
+      "changed_whole_frame_p95_ms": 14.665,
+      "slow_frames": [
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 1066,
+          "viewport_render_cpu_ms": 0.202000007033348,
+          "viewport_render_gpu_ms": 0.150999993085861,
+          "whole_frame_ms": 19.771
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 260,
+          "viewport_render_cpu_ms": 0.20100000500679,
+          "viewport_render_gpu_ms": 0.146999999880791,
+          "whole_frame_ms": 18.737
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 138,
+          "viewport_render_cpu_ms": 0.184000000357628,
+          "viewport_render_gpu_ms": 0.150999993085861,
+          "whole_frame_ms": 16.047
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 631,
+          "viewport_render_cpu_ms": 0.226999998092651,
+          "viewport_render_gpu_ms": 0.148000001907349,
+          "whole_frame_ms": 15.972
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 463,
+          "viewport_render_cpu_ms": 0.202000007033348,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 15.748
+        },
+        {
+          "api_cpu_ms": 0.001,
+          "changed": false,
+          "core_cpu_ms": 0.000399999999999068,
+          "core_updates": 1.0,
+          "frame": 1299,
+          "viewport_render_cpu_ms": 0.178000003099442,
+          "viewport_render_gpu_ms": 0.148000001907349,
+          "whole_frame_ms": 15.618
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 533,
+          "viewport_render_cpu_ms": 0.196999996900558,
+          "viewport_render_gpu_ms": 0.149000003933907,
+          "whole_frame_ms": 15.558
+        },
+        {
+          "api_cpu_ms": 0.002,
+          "changed": false,
+          "core_cpu_ms": 0.000500000000002387,
+          "core_updates": 1.0,
+          "frame": 1055,
+          "viewport_render_cpu_ms": 0.202000007033348,
+          "viewport_render_gpu_ms": 0.150000005960464,
+          "whole_frame_ms": 15.546
+        }
+      ]
+    }
+  ],
+  "findings": [
+    "OpenGL stalls of 37.188 and 33.111 ms occurred without clock changes, paired with 0.0005/0.0006 ms measured core time.",
+    "Five UI-disabled runs had maximum frame intervals above 16.667 ms with zero core updates.",
+    "Slow frames are not exclusive to changed UI frames; the responsible host, render or scheduling stage remains unidentified.",
+    "The original 36.268 ms clock qualification failure is preserved; percentile follow-ups do not waive it."
+  ],
+  "raw_result": ".utmp/safe-engine71/slowframe158-rendered/summary.json"
+}

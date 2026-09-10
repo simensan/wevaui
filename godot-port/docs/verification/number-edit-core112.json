@@ -1,0 +1,23 @@
+{
+  "phase": "source112 numeric editing",
+  "installed_preview": 111,
+  "source_sha256": "736599df0ffa24e67b1089480ddd565f4843968f88adbe63ef18b9774609cf60",
+  "core": {
+    "suites": 10,
+    "passed": 10,
+    "seconds": 23.22
+  },
+  "sanitizers": {
+    "gates": 12,
+    "passed": 12,
+    "seconds": 136.84
+  },
+  "browser": "Chrome/152.0.7977.77",
+  "native_candidate_built": false,
+  "remaining": [
+    "Browser numeric character filtering and locale behavior",
+    "Native Godot verification",
+    "Updated runtime performance qualification",
+    "Other product readiness gaps remain open"
+  ]
+}

@@ -1563,3 +1563,622 @@ void test_abi_incremental_caret_reuse() {
     }
     weva_document_destroy(live); weva_document_destroy(full);
 }
+
+
+void test_abi_incremental_keyed_reorder() {
+    const char* html = "<main><div id=list><template data-each='Items as item' data-key='Id'>"
+        "<section class=row id='row-{{ item.Id }}'><span>{{ item.Name }}</span>"
+        "<input id='edit-{{ item.Id }}' value=original></section></template></div></main>"
+        "<aside>unchanged HUD <b>health 100</b><p>mission one</p><p>mission two</p>"
+        "<p>mission three</p><p>mission four</p><p>mission five</p><p>mission six</p></aside>";
+    const std::string base = "html,body{margin:0}#list{height:80px;width:300px;overflow:auto}"
+        ".row{height:40px;display:flex}input{width:100px}aside{background:#345;color:white}";
+    for (const char* extra : {"", ".row:nth-child(2){color:red}",
+            "#list:has(#row-b:first-of-type){color:green}",
+            ".row:nth-last-child(1 of [data-weva-index='0']){color:purple}",
+            "#list{display:grid;grid-template-columns:1fr 1fr}",
+            "#list{height:auto}.row{height:auto}", ".row{position:relative}input{position:absolute}"}) {
+        const auto cfg = config();
+        const auto live=weva_document_create(&cfg), full=weva_document_create(&cfg);
+        IncrementalBindingData data;
+        data.values = {{"Items.0.Id","a"},{"Items.0.Name","first"},{"Items.1.Id","b"},{"Items.1.Name","second"}};
+        weva_binding_source source{&data,&IncrementalBindingData::read,&IncrementalBindingData::count};
+        const auto css=base+extra;
+        for(auto doc : {live,full}) {
+            weva_document_add_css(doc,css.data(),css.size());
+            weva_document_load_html(doc,html,std::strlen(html));
+            weva_document_set_binding_source(doc,&source);
+            weva_document_refresh_bindings(doc); weva_document_update(doc,0);
+            weva_document_set_focus(doc,weva_document_query(doc,"#edit-a"));
+            weva_document_select_all(doc); weva_document_try_text_input(doc,"edited");
+            weva_document_update(doc,0);
+        }
+        const auto handle=weva_document_query(live,"#edit-a");
+        for(int step=0;step<20;++step) {
+            size_t old_count=0; const auto* old=weva_document_draw_versions(live,&old_count);
+            const std::vector<uint64_t> before(old,old+old_count);
+            std::swap(data.values["Items.0.Id"],data.values["Items.1.Id"]);
+            std::swap(data.values["Items.0.Name"],data.values["Items.1.Name"]);
+            for(auto doc : {live,full}) {
+                CHECK(weva_document_refresh_bindings(doc)>0);
+                CHECK(weva_document_refresh_bindings(doc)==0);
+            }
+            weva_document_set_viewport(full,401,300); weva_document_set_viewport(full,400,300);
+            weva_document_update(live,0); weva_document_update(full,0);
+            weva_element_t ordered[2];
+            CHECK(weva_document_query_all(live,"#list > .row",ordered,2)==2);
+            const auto first=weva_document_query(live,("#row-"+data.values["Items.0.Id"]).c_str());
+            CHECK(ordered[0]==first);
+            CHECK(weva_document_query(live,"#list > .row")==first);
+            CHECK(weva_document_query(live,"#edit-a")==handle);
+            CHECK(weva_document_focus(live)==handle);
+            char value[32]; weva_element_value(live,handle,value,sizeof(value));
+            CHECK(std::strcmp(value,"edited")==0);
+            const auto a=capture(live),b=capture(full);
+            if(a!=b) std::printf("keyed reorder %s step %d: %s\n",extra,step,a.diff(b).c_str());
+            CHECK(a==b);
+            if(!*extra) {
+                size_t count=0,reused=0; const auto* versions=weva_document_draw_versions(live,&count);
+                for(size_t i=0;i<count;++i) if(std::find(before.begin(),before.end(),versions[i])!=before.end()) ++reused;
+                CHECK(reused>0 && reused<count);
+            }
+        }
+        CHECK(weva_document_undo(live)==1);
+        char value[32]; weva_element_value(live,handle,value,sizeof(value));
+        CHECK(std::strcmp(value,"original")==0);
+        // Duplicate identities deliberately retain the conservative rebuild.
+        data.values["Items.0.Id"]=data.values["Items.1.Id"]="duplicate";
+        weva_document_refresh_bindings(live); weva_document_update(live,0);
+        CHECK(weva_document_focus(live)==WEVA_ELEMENT_NONE);
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+}
+
+void test_abi_incremental_container_queries() {
+    const char* html="<div id=outer style='width:{{ Width }}px'><div id=inner><div id=item>value</div></div></div>"
+        "<aside>Stable HUD <b>100</b></aside>";
+    const char* css="html,body{margin:0}#outer{container-type:inline-size;max-width:100%}"
+        "#inner{container-type:inline-size;width:100px}#item{width:40px;height:10px;background:red}"
+        "aside{background:blue;height:30px}"
+        "@container (width>=300px){#inner{width:300px}#item{height:35px;background:green}"
+        "#item::after{content:'';display:block;height:5px;background:yellow}}";
+    const auto cfg=config();
+    const auto live=weva_document_create(&cfg);
+    IncrementalBindingData data; data.values={{"Width","400"}};
+    weva_binding_source source{&data,&IncrementalBindingData::read,&IncrementalBindingData::count};
+    CHECK(weva_document_add_css(live,css,std::strlen(css))==WEVA_OK);
+    CHECK(weva_document_load_html(live,html,std::strlen(html))==WEVA_OK);
+    weva_document_set_binding_source(live,&source);
+    int viewport=400;
+    for (int step=0;step<10;++step) {
+        data.values["Width"]=step%2 ? "250" : "400";
+        if (step==4) viewport=200;
+        if (step==6) viewport=400;
+        weva_document_set_viewport(live,viewport,300);
+        CHECK(weva_document_refresh_bindings(live)>=0);
+        CHECK(weva_document_update(live,0)==WEVA_OK);
+        double x,y,w,h;
+        CHECK(weva_element_bounds(live,weva_document_query(live,"#item"),&x,&y,&w,&h)==WEVA_OK);
+        CHECK(std::fabs(h-((step%2==0 && viewport>=300) ? 35 : 10))<1e-6);
+        const auto frame=capture(live);
+        const auto fresh_cfg=config(viewport,300);
+        const auto fresh=weva_document_create(&fresh_cfg);
+        weva_document_add_css(fresh,css,std::strlen(css));
+        weva_document_load_html(fresh,html,std::strlen(html));
+        weva_document_set_binding_source(fresh,&source);
+        weva_document_refresh_bindings(fresh);
+        CHECK(weva_document_update(fresh,0)==WEVA_OK);
+        const auto expected=capture(fresh);
+        if (frame!=expected) std::printf("container step %d: %s\n",step,frame.diff(expected).c_str());
+        CHECK(frame==expected);
+        weva_document_destroy(fresh);
+        const auto serial=weva_document_draw_serial(live);
+        CHECK(weva_document_update(live,0)==WEVA_OK);
+        CHECK(weva_document_draw_serial(live)==serial);
+    }
+    // Replacing the sheet changes query indices and must retire the old input set.
+    const char* replacement="#outer{container-type:inline-size;width:400px}#item{height:11px}"
+        "@container (width < 300px){#item{height:27px}}";
+    CHECK(weva_document_set_css(live,replacement,std::strlen(replacement))==WEVA_OK);
+    CHECK(weva_document_update(live,0)==WEVA_OK);
+    double x,y,w,h;
+    CHECK(weva_element_bounds(live,weva_document_query(live,"#item"),&x,&y,&w,&h)==WEVA_OK);
+    CHECK(std::fabs(h-27)<1e-6); // Last bound Width is 250; inner no longer a container.
+    const auto outer=weva_document_query(live,"#outer");
+    for (int i=0;i<5;++i) {
+        CHECK(weva_element_remove(live,weva_document_query(live,"#inner"))==WEVA_OK);
+        CHECK(weva_document_update(live,0)==WEVA_OK);
+        const char* child="<div id=inner><div id=item>replacement</div></div>";
+        CHECK(weva_element_append_html(live,outer,child,std::strlen(child))!=WEVA_ELEMENT_NONE);
+        CHECK(weva_document_update(live,0)==WEVA_OK);
+        CHECK(weva_element_bounds(live,weva_document_query(live,"#item"),&x,&y,&w,&h)==WEVA_OK);
+        CHECK(std::fabs(h-27)<1e-6);
+    }
+    const char* named="#outer{container-type:inline-size}#item{height:11px}"
+        "@container Hud (width < 300px){#item{height:27px}}";
+    CHECK(weva_document_set_css(live,named,std::strlen(named))==WEVA_OK);
+    for (const char* name : {"none","Hud","hud","Hud"}) {
+        CHECK(weva_element_set_style(live,outer,"container-name",name)==WEVA_OK);
+        CHECK(weva_document_update(live,0)==WEVA_OK);
+        CHECK(weva_element_bounds(live,weva_document_query(live,"#item"),&x,&y,&w,&h)==WEVA_OK);
+        CHECK(std::fabs(h-(std::strcmp(name,"Hud")==0 ? 27 : 11))<1e-6);
+    }
+    const char* relative="html{font-size:20px}#outer{container-type:inline-size;font-size:25px}"
+        "#item{height:11px}@container (width:10em) and (width:12.5rem){#item{height:31px}}";
+    CHECK(weva_document_set_css(live,relative,std::strlen(relative))==WEVA_OK);
+    CHECK(weva_document_update(live,0)==WEVA_OK);
+    CHECK(weva_element_bounds(live,weva_document_query(live,"#item"),&x,&y,&w,&h)==WEVA_OK);
+    CHECK(std::fabs(h-31)<1e-6);
+    weva_document_destroy(live);
+}
+
+
+void test_abi_inline_fragment_bounds() {
+    const auto cfg = config();
+    auto doc = weva_document_create(&cfg);
+    const char* html = "<div id=outer><span id=wrapper><span id=nested><span id=block>"
+        "<span id=overflow></span></span></span></span></div>";
+    const char* css = "html,body{margin:0}#outer{width:300px}#block{display:block;height:10px}"
+        "#overflow{display:block;width:500px;height:80px}";
+    CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+    CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+    for (int step = 0; step < 6; ++step) {
+        const double expected = step % 2 ? 200 : 300;
+        CHECK(weva_element_set_style(doc, weva_document_query(doc,"#outer"), "width",
+            step % 2 ? "200px" : "300px") == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        for (const char* selector : {"#wrapper", "#nested", "#block"}) {
+            double x, y, w, h;
+            CHECK(weva_element_bounds(doc, weva_document_query(doc,selector), &x,&y,&w,&h) == WEVA_OK);
+            CHECK(std::fabs(x) < 1e-6 && std::fabs(y) < 1e-6);
+            CHECK(std::fabs(w-expected) < 1e-6 && std::fabs(h-10) < 1e-6);
+        }
+    }
+    CHECK(weva_element_set_style(doc, weva_document_query(doc,"#block"), "width", "100px") == WEVA_OK);
+    CHECK(weva_element_set_style(doc, weva_document_query(doc,"#block"), "position", "relative") == WEVA_OK);
+    CHECK(weva_element_set_style(doc, weva_document_query(doc,"#block"), "left", "20px") == WEVA_OK);
+    CHECK(weva_element_set_style(doc, weva_document_query(doc,"#block"), "top", "15px") == WEVA_OK);
+    CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    for (const char* selector : {"#wrapper", "#nested"}) {
+        double x, y, w, h;
+        CHECK(weva_element_bounds(doc,weva_document_query(doc,selector),&x,&y,&w,&h) == WEVA_OK);
+        CHECK(std::fabs(x) < 1e-6 && std::fabs(y) < 1e-6);
+        CHECK(std::fabs(w-200) < 1e-6 && std::fabs(h-10) < 1e-6);
+    }
+    CHECK(weva_element_set_style(doc,weva_document_query(doc,"#block"),"height","0px") == WEVA_OK);
+    CHECK(weva_document_update(doc,0) == WEVA_OK);
+    double x,y,w,h;
+    CHECK(weva_element_bounds(doc,weva_document_query(doc,"#wrapper"),&x,&y,&w,&h) == WEVA_OK);
+    CHECK(w == 0 && h == 0); // Empty continuations do not enlarge client bounds.
+    weva_document_destroy(doc);
+}
+
+void test_abi_incremental_modal_layout() {
+    {
+        const auto cfg = config();
+        const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+        const char* markup = "<section id=panel><p id=text>Health</p><div id=popup popover=manual>Menu</div></section>"
+            "<aside id=other>Other</aside><dialog id=modal><button>Confirm</button></dialog>";
+        const char* sheet = "#panel{position:absolute;left:0;top:0;width:150px;height:200px;background:blue}"
+            "#other{position:absolute;right:0;top:0;width:80px;height:90px;background:green}"
+            "#popup{left:180px;top:10px;right:auto;bottom:auto;margin:0;width:70px;height:50px}"
+            "dialog{left:180px;top:90px;width:150px;height:100px;margin:0}";
+        for (auto d : {live, full}) {
+            weva_document_add_css(d, sheet, std::strlen(sheet));
+            weva_document_load_html(d, markup, std::strlen(markup));
+            weva_document_update(d, 0);
+            weva_element_show_popover(d, weva_document_query(d, "#popup"));
+            weva_document_update(d, 0);
+        }
+        for (int step=0; step<6; ++step) {
+            for (auto d : {live, full}) {
+                const auto modal = weva_document_query(d, "#modal");
+                if (step % 2 == 0) weva_element_show_dialog(d, modal, 1);
+                else weva_element_close_dialog(d, modal);
+                if (step == 2 || step == 4)
+                    weva_element_set_style(d, weva_document_query(d, "#panel"), "content-visibility", step == 2 ? "hidden" : "visible");
+                if (step == 4) weva_element_set_text(d, weva_document_query(d, "#text"), "Updated health");
+            }
+            weva_document_set_viewport(full, 401, 300); weva_document_set_viewport(full, 400, 300);
+            weva_document_update(live, 0); weva_document_update(full, 0);
+            CHECK(capture(live) == capture(full));
+        }
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+    const char* html = "<main><section id=panel><p>Retained health</p><p>Inventory</p>"
+        "<div id=inner><b>supplies</b><p>quest one</p><p>quest two</p></div></section>"
+        "<aside id=other>Other panel</aside><dialog id=modal><form><p>Settings</p>"
+        "<input id=field value=original><button id=close>Close</button></form></dialog></main>";
+    const std::string base = "html,body{margin:0;width:100%;height:100%}main{width:100%;height:100%}"
+        "#panel{position:absolute;left:10px;top:10px;width:160px;height:160px;background:#235;color:white}"
+        "#other{position:absolute;right:10px;bottom:10px;width:80px;height:30px;background:#654}"
+        "dialog{position:absolute;left:180px;top:20px;width:180px;padding:10px}input{width:130px}";
+    for (const char* extra : {"", "main{position:relative}", "#inner{position:relative;left:4px}",
+            "main{transform:translate(3px,4px)}", "main{opacity:.7;overflow:hidden}",
+            "main:has(dialog[open]){padding:12px}", "main:has(dialog[open]){opacity:.6}",
+            "#panel{overflow:auto}#inner{height:280px}",
+            "#panel:before{content:'prefix'}", "main{counter-reset:n}#panel{counter-increment:n}",
+            "dialog::backdrop{position:static}", "#inner{position:sticky;top:0}",
+            "main{display:flex}", "#panel{anchor-name:--panel}",
+            "main{filter:opacity(.8)}"}) {
+        const auto cfg=config(); const auto live=weva_document_create(&cfg), full=weva_document_create(&cfg);
+        const auto css=base+extra;
+        for(auto doc:{live,full}) {
+            CHECK(weva_document_add_css(doc,css.data(),css.size())==WEVA_OK);
+            CHECK(weva_document_load_html(doc,html,std::strlen(html))==WEVA_OK);
+            CHECK(weva_document_update(doc,0)==WEVA_OK);
+        }
+        for(int step=0;step<24;++step) {
+            size_t old_count=0; const auto* old=weva_document_draw_versions(live,&old_count);
+            std::vector<uint64_t> previous(old,old+old_count);
+            for(auto doc:{live,full}) {
+                auto modal=weva_document_query(doc,"#modal");
+                if(step%2==0) { weva_element_show_dialog(doc,modal,1); weva_document_set_focus(doc,weva_document_query(doc,"#field")); }
+                else { weva_element_close_dialog(doc,modal); weva_document_set_focus(doc,WEVA_ELEMENT_NONE); }
+                if(step==2 && std::strstr(extra,"overflow:auto"))
+                    weva_element_set_scroll(doc,weva_document_query(doc,"#panel"),0,35);
+                if(step==8) weva_element_set_style(doc,weva_document_query(doc,"#panel"),"color","#ffcc00");
+                if(step==12) weva_element_set_style(doc,weva_document_query(doc,"#panel"),"width","170px");
+                if(step==16) weva_element_set_text(doc,weva_document_query(doc,"#other"),"changed");
+            }
+            weva_document_set_viewport(full,401,300); weva_document_set_viewport(full,400,300);
+            const auto serial_before_geometry = weva_document_draw_serial(live);
+            const Frame before_geometry = capture(live);
+            CHECK(weva_document_update_geometry(live)==WEVA_OK);
+            CHECK(weva_document_update_geometry(live)==WEVA_OK);
+            CHECK(weva_document_draw_serial(live)==serial_before_geometry);
+            CHECK(capture(live)==before_geometry);
+            CHECK(weva_document_update(live,0)==WEVA_OK); CHECK(weva_document_update(full,0)==WEVA_OK);
+            auto a=capture(live),b=capture(full);
+            if(a!=b) std::printf("modal layout %s step %d: %s\n",extra,step,a.diff(b).c_str());
+            CHECK(a==b);
+            if(!*extra && step>2 && step<8) {
+                size_t count=0,reused=0; const auto* versions=weva_document_draw_versions(live,&count);
+                for(size_t i=0;i<count;++i) if(std::find(previous.begin(),previous.end(),versions[i])!=previous.end()) ++reused;
+                CHECK(reused>0);
+                if(step%2==0) CHECK(reused<count);
+            }
+            if (step == 5 || step == 19) {
+                // A retained HUD must remain addressable by later incremental
+                // changes after the modal's boxes have been removed/recycled.
+                for (auto doc : {live, full}) {
+                    weva_element_set_style(doc, weva_document_query(doc, "#inner"), "width", step == 5 ? "65px" : "110px");
+                    weva_element_set_text(doc, weva_document_query(doc, "#other"), step == 5 ? "HUD after close" : "HUD updated again");
+                }
+                weva_document_set_viewport(full,401,300); weva_document_set_viewport(full,400,300);
+                weva_document_update(live,0); weva_document_update(full,0);
+                CHECK(capture(live)==capture(full));
+            }
+        }
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+}
+
+void test_abi_incremental_has_range_scopes() {
+    const char* html = "<form id=f><input id=n type=number min=1 max=10 value=5>"
+        "<div id=label>Inherited <span id=child>inline <b>text</b></span></div>"
+        "<div id=stable>Stable sibling</div></form><aside id=after>Following sibling</aside>";
+    const char* base = "html,body{margin:0}form{--tone:green;color:green}"
+        "input{display:block;width:180px;height:24px}#label{border:2px solid currentColor}"
+        "#stable{color:purple}form.custom{--tone:purple}";
+    for (const char* dependency : {
+            "form:has(:out-of-range){background-color:red}",
+            "form:has(:out-of-range){color:red}",
+            "form:has(:out-of-range){--tone:red}#label{color:var(--tone)}",
+            "form:has(:out-of-range) span{color:red;font-weight:bold}",
+            "form:has(:out-of-range)+aside{color:red;padding:8px}",
+            ":is(form:has(:out-of-range),aside) span{color:red}",
+            "form:not(:has(:out-of-range)){color:red}",
+            "form:invalid{background-color:red}",
+            "form:invalid{color:red}",
+            "form:invalid{--tone:red}#label{color:var(--tone)}",
+            "form:invalid span{color:red;font-weight:bold}",
+            "form:invalid+aside{color:red;padding:8px}",
+            ":is(form:invalid,aside) span{color:red}",
+            "form:valid{color:red}",
+            "form:has(:invalid){color:red}"}) {
+        const std::string original = std::string(base) + dependency;
+        std::string current = original;
+        const auto cfg = config();
+        const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+        for (const auto doc : {live, full}) {
+            CHECK(weva_document_set_css(doc,current.data(),current.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(doc,html,std::strlen(html)) == WEVA_OK);
+            CHECK(weva_document_update(doc,0) == WEVA_OK);
+        }
+        for (int step=0;step<15;++step) {
+            if (step==10) current = original + " #child{font-size:20px}";
+            if (step==11) current = base;
+            if (step==12) current = original;
+            for (const auto doc : {live,full}) {
+                const auto n=weva_document_query(doc,"#n");
+                switch (step) {
+                    case 0: weva_element_set_value(doc,n,"6"); break;
+                    case 1: weva_element_set_value(doc,n,"11"); break;
+                    case 2: weva_element_set_value(doc,n,"12"); break;
+                    case 3: weva_element_set_value(doc,n,"5"); break;
+                    case 4: weva_element_set_attribute(doc,n,"min","6"); break;
+                    case 5: weva_element_set_attribute(doc,n,"min","1"); break;
+                    case 6: weva_element_set_value(doc,n,"11"); weva_element_set_attribute(doc,n,"disabled",""); break;
+                    case 7: weva_element_set_attribute(doc,n,"disabled",nullptr); break;
+                    case 8: weva_element_set_value(doc,n,"5"); weva_element_set_value(doc,n,"12"); break;
+                    case 9: weva_element_set_attribute(doc,weva_document_query(doc,"#f"),"class","custom"); break;
+                    case 10: case 11: case 12:
+                        CHECK(weva_document_set_css(doc,current.data(),current.size()) == WEVA_OK); break;
+                    case 13: weva_element_set_value(doc,n,"5"); weva_element_remove(doc,n); break;
+                    case 14: CHECK(weva_document_load_html(doc,html,std::strlen(html)) == WEVA_OK); break;
+                }
+            }
+            // Clear the reference's match cache and force a complete layout/
+            // paint rebuild while preserving exactly the same live form state.
+            CHECK(weva_document_set_css(full,current.data(),current.size()) == WEVA_OK);
+            weva_document_set_viewport(full,401,300); weva_document_set_viewport(full,400,300);
+            CHECK(weva_document_update(live,0) == WEVA_OK);
+            CHECK(weva_document_update(full,0) == WEVA_OK);
+            const auto a=capture(live), b=capture(full);
+            if (a != b) std::printf("  has range scope %s / %d: %s\n",dependency,step,a.diff(b).c_str());
+            CHECK(a == b);
+        }
+        weva_document_destroy(live); weva_document_destroy(full);
+    }
+}
+
+void test_abi_incremental_multicol_sizing() {
+    std::string html = "<div id=m>";
+    for (int i=0;i<12;++i) html += i == 4 ? "<div id=heading class=item></div>" : "<div class=item></div>";
+    html += "</div><div id=after>After columns</div>";
+    const std::string css = "#m{width:632px;column-count:4;column-width:200px;background:#123}"
+        ".item{height:20px;background:#456;break-inside:avoid}#after{background:#789}";
+    auto cfg = config(); cfg.viewport_width = 1280; cfg.viewport_height = 720;
+    const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (const auto doc : {live,full}) {
+        CHECK(weva_document_load_html(doc,html.data(),html.size()) == WEVA_OK);
+        CHECK(weva_document_set_css(doc,css.data(),css.size()) == WEVA_OK);
+        CHECK(weva_document_update(doc,0) == WEVA_OK);
+    }
+    for (const char* style : {"width:1000px", "width:632px", "font-size:24px", "font-size:16px",
+            "column-count:2", "column-count:4", "column-width:100px", "column-width:200px",
+            "column-gap:0", "direction:rtl", "direction:ltr",
+            "direction:rtl;column-gap:0", "direction:rtl;column-count:5;column-gap:0",
+            static_cast<const char*>(nullptr),
+            "width:8px;column-width:0;column-count:auto;column-gap:0", static_cast<const char*>(nullptr)}) {
+        for (const auto doc : {live,full})
+            CHECK(weva_element_set_attribute(doc,weva_document_query(doc,"#m"),"style",style) == WEVA_OK);
+        CHECK(weva_document_set_css(full,css.data(),css.size()) == WEVA_OK);
+        weva_document_set_viewport(full,1281,720); weva_document_set_viewport(full,1280,720);
+        CHECK(weva_document_update(live,0) == WEVA_OK);
+        CHECK(weva_document_update(full,0) == WEVA_OK);
+        const auto a=capture(live), b=capture(full);
+        if (a != b) std::printf("multicol sizing %s: %s\n",style ? style : "restore",a.diff(b).c_str());
+        CHECK(a == b);
+    }
+    for (const char* style : {"column-span:all", "column-span:all;height:40px;margin:10px 0",
+            "column-span:none", "column-span:all;height:0;margin:-5px 0", "display:none",
+            "column-span:all;direction:rtl", static_cast<const char*>(nullptr)}) {
+        for (const auto doc : {live, full})
+            CHECK(weva_element_set_attribute(doc, weva_document_query(doc,"#heading"), "style", style) == WEVA_OK);
+        CHECK(weva_document_set_css(full, css.data(), css.size()) == WEVA_OK);
+        weva_document_set_viewport(full,1281,720); weva_document_set_viewport(full,1280,720);
+        CHECK(weva_document_update(live,0) == WEVA_OK);
+        CHECK(weva_document_update(full,0) == WEVA_OK);
+        CHECK(capture(live) == capture(full));
+    }
+    weva_document_destroy(live); weva_document_destroy(full);
+}
+
+void test_abi_incremental_block_margins() {
+    const std::string html = "<div id=p><div id=c></div></div><div id=after>After panel</div>";
+    struct Step { const char* target; const char* style; };
+    const Step steps[] = {{"#c","margin-left:0;margin-right:auto"},
+        {"#c","margin-left:auto;margin-right:auto"},{"#p","direction:rtl"},
+        {"#c","margin-left:auto;margin-right:11px"},{"#c","width:400px"},
+        {"#p","width:80px;direction:rtl"},
+        {"#c","width:auto;max-width:50px;margin-left:auto;margin-right:auto"},
+        {"#p","direction:ltr"},{"#c",nullptr},{"#p",nullptr}};
+    for (const char* context : {"", "#c{display:flow-root}", "#p{columns:2;column-gap:0}"}) {
+        const std::string css = std::string("#p{width:300px;background:#123}#c{width:100px;"
+            "height:20px;break-inside:avoid;margin-left:auto;margin-right:11px;background:#456}"
+            "#after{background:#789}") + context;
+        auto cfg=config();cfg.viewport_width=1280;cfg.viewport_height=720;
+        const auto live=weva_document_create(&cfg), full=weva_document_create(&cfg);
+        for (const auto doc : {live,full}) {
+            CHECK(weva_document_load_html(doc,html.data(),html.size()) == WEVA_OK);
+            CHECK(weva_document_set_css(doc,css.data(),css.size()) == WEVA_OK);
+            CHECK(weva_document_update(doc,0) == WEVA_OK);
+        }
+        for (const auto& step : steps) {
+            for (const auto doc : {live,full})
+                CHECK(weva_element_set_attribute(doc,weva_document_query(doc,step.target),"style",step.style) == WEVA_OK);
+            CHECK(weva_document_set_css(full,css.data(),css.size()) == WEVA_OK);
+            weva_document_set_viewport(full,1281,720);weva_document_set_viewport(full,1280,720);
+            CHECK(weva_document_update(live,0) == WEVA_OK);CHECK(weva_document_update(full,0) == WEVA_OK);
+            const auto a=capture(live),b=capture(full);
+            if (a != b) std::printf("block margin %s %s: %s\n",context,step.style ? step.style : "restore",a.diff(b).c_str());
+            CHECK(a == b);
+        }
+        weva_document_destroy(live);weva_document_destroy(full);
+    }
+}
+
+void test_abi_deferred_paint_geometry() {
+    CHECK(weva_document_update_geometry(nullptr) == WEVA_ERR_INVALID_ARGUMENT);
+    for (bool publish : {false, true}) {
+        auto c = config();
+        auto d = weva_document_create(&c);
+        weva_document_add_css(d,kCss,std::strlen(kCss));
+        weva_document_load_html(d,kHtml,std::strlen(kHtml));
+        const auto serial = weva_document_draw_serial(d);
+        CHECK(weva_document_update_geometry(d) == WEVA_OK);
+        CHECK(weva_document_draw_serial(d) == serial);
+        CHECK(capture(d).draws.empty());
+        double x,y,w,h;
+        CHECK(weva_element_bounds(d,weva_document_query(d,"#a"),&x,&y,&w,&h) == WEVA_OK);
+        CHECK(w > 0 && h > 0);
+        CHECK(weva_document_update_geometry(d) == WEVA_OK);
+        if (publish) {
+            CHECK(weva_document_update(d,0) == WEVA_OK);
+            CHECK(capture(d) == build(kHtml,kCss,[](weva_document_t) {}));
+            CHECK(weva_document_draw_serial(d) == serial + 1);
+        }
+        // Also exercises destruction with geometry but no published frame.
+        weva_document_destroy(d);
+    }
+    for (const auto& change : std::vector<std::pair<const char*, const char*>>{
+        {"background", "#f80"}, {"color", "#9cf"}, {"opacity", ".4"},
+        {"transform", "translate(9px, 7px)"}, {"border-radius", "15px"},
+        {"box-shadow", "0 2px 5px #000"}, {"padding", "15px"},
+        {"font-size", "19px"}, {"display", "none"}, {"position", "relative"}}) {
+        auto c = config();
+        auto d = weva_document_create(&c);
+        weva_document_add_css(d,kCss,std::strlen(kCss));
+        weva_document_load_html(d,kHtml,std::strlen(kHtml));
+        weva_document_update(d,0);
+        const Frame old = capture(d);
+        const auto serial = weva_document_draw_serial(d);
+        const auto a = weva_document_query(d,"#a");
+        weva_element_set_style(d,a,"width","177px");
+        CHECK(weva_document_update_geometry(d) == WEVA_OK);
+        CHECK(weva_document_draw_serial(d) == serial);
+        CHECK(capture(d) == old);
+        double x,y,w,h;
+        CHECK(weva_element_bounds(d,a,&x,&y,&w,&h) == WEVA_OK);
+        CHECK(w == 197);
+        weva_element_set_style(d,a,change.first,change.second);
+        CHECK(weva_document_update_geometry(d) == WEVA_OK);
+        CHECK(weva_document_update_geometry(d) == WEVA_OK);
+        CHECK(weva_document_draw_serial(d) == serial);
+        CHECK(capture(d) == old);
+        weva_document_update(d,0);
+        CHECK(weva_document_draw_serial(d) == serial + 1);
+        const Frame expected = build(kHtml,kCss,[&](weva_document_t fresh) {
+            auto target = weva_document_query(fresh,"#a");
+            weva_element_set_style(fresh,target,"width","177px");
+            weva_element_set_style(fresh,target,change.first,change.second);
+        });
+        const Frame actual = capture(d);
+        if (!(actual == expected)) std::fprintf(stderr,"deferred %s: %s\n",change.first,actual.diff(expected).c_str());
+        CHECK(actual == expected);
+        weva_document_update(d,0);
+        CHECK(weva_document_draw_serial(d) == serial + 1);
+        weva_document_destroy(d);
+    }
+}
+
+void test_abi_incremental_collapsed_table_borders() {
+    const std::string html = "<div id=container><table id=t><tbody id=g>"
+        "<tr id=r1><td id=a><div id=overlay></div></td><td id=b><div></div></td></tr>"
+        "<tr id=r2><td id=c><div></div></td><td id=d><div></div></td></tr>"
+        "</tbody></table></div><div id=after>Following panel</div>";
+    const std::string css = "#container{width:300px}#t{width:200px;border-collapse:collapse;table-layout:fixed}"
+        "td{padding:0;border:4px solid red}td>div{height:20px}#after{height:20px;background:blue}"
+        "#overlay{position:relative;width:160px;background:blue}";
+    struct Step { const char* target; const char* attribute; const char* value; };
+    const Step steps[] = {
+        {"#t","style","position:relative"},
+        {"#a","style","position:relative;background:cyan"},
+        {"#overlay","style","z-index:-1"},
+        {"#after","style","background:green"},
+        {"#a","style","position:relative;z-index:0;background:cyan"},
+        {"#after","style","background:purple"},
+        {"#a","style","position:relative;z-index:-1;background:cyan"},
+        {"#overlay","style","z-index:3"},
+        {"#after","style","background:green"},
+        {"#a","style","position:relative;background:cyan"},
+        {"#overlay","style","z-index:-1"},
+        {"#a","style",nullptr},{"#overlay","style",nullptr},{"#t","style",nullptr},
+
+        {"#after","style","background:green"},{"#after","style",nullptr},
+        {"#overlay","style","position:static"},{"#overlay","style",nullptr},
+        {"#a","style","position:relative;background:cyan"},
+        {"#overlay","style","position:static"},{"#after","style","background:green"},
+        {"#overlay","style","position:absolute;left:10px;top:4px"},
+        {"#container","style","transform:translate(8px,4px);overflow:hidden;width:120px"},
+        {"#overlay","style","background:purple;z-index:3"},
+        {"#container","style",nullptr},{"#overlay","style",nullptr},{"#a","style",nullptr},
+        {"#overlay","style","position:absolute;left:80px;top:0"},
+        {"#container","style","overflow:hidden;width:100px"},
+        {"#after","style","background:purple"},
+        {"#container","style","overflow:hidden;width:100px;position:relative"},
+        {"#after","style","background:green"},
+        {"#container","style","overflow:hidden;width:100px;position:relative;border-radius:20px"},
+        {"#overlay","style","position:fixed;left:80px;top:0"},
+        {"#container","style","overflow:hidden;width:100px;transform:translate(0,0);border-radius:20px"},
+        {"#after","style","background:purple"},
+        {"#container","style","overflow:hidden;width:100px"},
+        {"#after","style","background:green"},
+        {"#container","style",nullptr},{"#overlay","style",nullptr},
+        {"#a","style","border-color:blue"},{"#a","style","border-color:rgba(0,0,255,.5)"},
+        {"#b","style","border-left:8px solid green"},{"#b","style","border-left:2px solid green"},
+        {"#a","style","border-right:hidden"},{"#a","style",nullptr},{"#b","style",nullptr},
+        {"#r1","style","border:10px solid purple"},{"#r1","style",nullptr},
+        {"#g","style","border:6px solid orange"},{"#g","style",nullptr},
+        {"#t","style","border:8px solid green;padding:20px"},{"#t","style",nullptr},
+        {"#t","style","border-collapse:separate;border-spacing:3px"},{"#t","style",nullptr},
+        {"#a","rowspan","2"},{"#a","rowspan",nullptr},
+        {"#a","colspan","2"},{"#a","colspan",nullptr},
+        {"#r2","style","display:none"},{"#r2","style",nullptr},
+        {"#container","style","transform:translate(8px,4px);overflow:hidden;width:120px"},
+        {"#container","style",nullptr},
+        {"#t","style","direction:rtl"},{"#t","style",nullptr}
+    };
+    auto cfg = config();
+    const auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (const auto doc : {live,full}) {
+        CHECK(weva_document_load_html(doc,html.data(),html.size()) == WEVA_OK);
+        CHECK(weva_document_set_css(doc,css.data(),css.size()) == WEVA_OK);
+        CHECK(weva_document_update(doc,0) == WEVA_OK);
+    }
+    int step_index = -1;
+    const auto compare = [&]() {
+        ++step_index;
+        CHECK(weva_document_set_css(full,css.data(),css.size()) == WEVA_OK);
+        weva_document_set_viewport(full,401,300);weva_document_set_viewport(full,400,300);
+        CHECK(weva_document_update(live,0) == WEVA_OK);
+        CHECK(weva_document_update(full,0) == WEVA_OK);
+        const auto a=capture(live),b=capture(full);
+        if (a != b) std::printf("collapsed table incremental step %d: %s\n",step_index,a.diff(b).c_str());
+        CHECK(a == b);
+    };
+    for (const auto& step : steps) {
+        for (const auto doc : {live,full})
+            CHECK(weva_element_set_attribute(doc,weva_document_query(doc,step.target),step.attribute,step.value) == WEVA_OK);
+        compare();
+    }
+    for (const char* position : {"position:absolute;left:80px;top:0", "position:fixed;left:80px;top:0"}) {
+        for (const auto doc : {live,full})
+            CHECK(weva_element_set_attribute(doc,weva_document_query(doc,"#overlay"),"style",position) == WEVA_OK);
+        for (const char* owner : {"overflow:hidden;width:100px;border-radius:20px",
+                "overflow:hidden;width:100px;position:relative;border-radius:20px",
+                "overflow:hidden;width:100px;transform:translate(0,0);border-radius:20px"}) {
+            for (const auto doc : {live,full}) {
+                CHECK(weva_element_set_attribute(doc,weva_document_query(doc,"#container"),"style",owner) == WEVA_OK);
+                CHECK(weva_document_update(doc,0) == WEVA_OK);
+            }
+            for (double offset : {20.0,0.0}) {
+                for (const auto doc : {live,full})
+                    CHECK(weva_element_set_scroll(doc,weva_document_query(doc,"#container"),offset,0) == WEVA_OK);
+                compare();
+            }
+        }
+    }
+    for (const auto doc : {live,full}) CHECK(weva_element_remove(doc,weva_document_query(doc,"#r2")) == WEVA_OK);
+    compare();
+    IncrementalBindingData data;
+    data.values = {{"Rows","1"},{"Cols","1"},{"Tracks","1"}};
+    weva_binding_source source{&data,&IncrementalBindingData::read,&IncrementalBindingData::count};
+    const std::string bound_html = "<table id=t><colgroup><col style='width:40px' span='{{ Tracks }}'></colgroup>"
+        "<tbody><tr><td rowspan='{{ Rows }}' colspan='{{ Cols }}'><div></div></td><td><div></div></td></tr>"
+        "<tr><td><div></div></td><td><div></div></td></tr></tbody></table>";
+    for (const auto doc : {live,full}) {
+        CHECK(weva_document_load_html(doc,bound_html.data(),bound_html.size()) == WEVA_OK);
+        weva_document_set_binding_source(doc,&source);
+        weva_document_refresh_bindings(doc);
+        CHECK(weva_document_update(doc,0) == WEVA_OK);
+    }
+    for (const char* path : {"Rows","Cols","Tracks"}) for (const char* value : {"2","1"}) {
+        data.values[path] = value;
+        for (const auto doc : {live,full}) CHECK(weva_document_refresh_bindings(doc) > 0);
+        compare();
+    }
+    weva_document_destroy(live);weva_document_destroy(full);
+}

@@ -6,6 +6,7 @@ weva_font_tests.dll or libweva_font_tests.so. This test extension is not part
 of the packaged addon. Artifacts are retained for inspection.
 """
 import argparse
+import json
 import os
 from pathlib import Path
 import re
@@ -19,8 +20,8 @@ def main():
     parser.add_argument('--godot', required=True)
     parser.add_argument('--library', required=True, type=Path)
     parser.add_argument('--out', type=Path)
-    parser.add_argument('--import-frames', type=int, default=60,
-                        help='Editor warmup frames; instrumented builds may need longer initialization')
+    parser.add_argument('--import-frames', type=int,
+                        help='Optional editor-import diagnostic; default loads the test extension directly')
     args = parser.parse_args()
     if args.out:
         project = args.out.resolve()
@@ -39,16 +40,28 @@ def main():
         encoding='utf-8')
     (project / 'probe.gd').write_text(
         'extends SceneTree\nfunc _initialize():\n\tcall_deferred("run_checks")\n'
-        'func run_checks():\n\tquit(WevaFontBackendTests.new().run_checks())\n', encoding='utf-8')
+        'func run_checks():\n'
+        '\tif not ClassDB.class_exists("WevaFontBackendTests"):\n'
+        '\t\tGDExtensionManager.load_extension("res://font_tests.gdextension")\n'
+        '\tif not ClassDB.class_exists("WevaFontBackendTests"):\n'
+        '\t\tprinterr("FAIL font backend: test extension did not load")\n'
+        '\t\tquit(2)\n\t\treturn\n'
+        '\tvar checks = ClassDB.instantiate("WevaFontBackendTests")\n'
+        '\tquit(checks.run_checks())\n', encoding='utf-8')
     env = dict(os.environ, GODOT_SILENCE_ROOT_WARNING='1')
-    for mode, extra in [('import', ['--editor', '--quit-after', str(args.import_frames)]),
-                        ('check', ['--script', 'res://probe.gd'])]:
+    # Fixtures read raw font bytes, so no imported resource or editor is needed.
+    # Keep an explicit editor diagnostic available without coupling it to the
+    # adapter's sanitizer gate (the engine itself is not instrumented).
+    stages = [('import', ['--editor', '--quit-after', str(args.import_frames)])] if args.import_frames else []
+    for mode, extra in stages + [('check', ['--script', 'res://probe.gd'])]:
         command = [args.godot, '--headless', '--path', str(project)] + extra
         result = subprocess.run(command, env=env, capture_output=True, text=True, encoding='utf-8', timeout=120)
         log = result.stdout + result.stderr
         (project / (mode + '.log')).write_text(log, encoding='utf-8')
+        (project / (mode + '.process.json')).write_text(
+            json.dumps({'command': command, 'returncode': result.returncode}, indent=2), encoding='utf-8')
         if result.returncode or 'ERROR:' in log or 'FAIL font backend:' in log:
-            raise RuntimeError(f'{mode} failed; artifacts: {project}\n{log}')
+            raise RuntimeError(f'{mode} failed (exit {result.returncode}); artifacts: {project}\n{log}')
         if mode == 'check':
             match = re.search(r'godot font backend: (\d+) checks, 0 failures', log)
             if not match:

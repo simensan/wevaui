@@ -1,0 +1,42 @@
+{
+  "scope": "Core number-input constraints, source ABI16; installed107 unchanged",
+  "source_sha256": {
+    "libweva/include/weva/form_state.h": "7074b72f5207464c23bc5f31dc406897cd9495595eb7d444fa89079714d3119a",
+    "libweva/src/form_state.cpp": "49633c805ed54a8146a27e7aa2af47a59fe66e4377f25cda14301d4475907f2f",
+    "libweva/src/weva_c.cpp": "21372bceebf8a9529997508d2fa7bc71ffd3b88ad59a74e4964fcf73c19f5cce",
+    "libweva/CMakeLists.txt": "f3c5c705f2f2f2ebeee278a6fd612ece610de0942173b8a558d93cedd867b393",
+    "libweva/tests/test_form_state.cpp": "21b3869c9d148fbbf5551c93382b7caa444c8751dbadb3479b2f1661e802f60f",
+    "libweva/tests/test_c_abi_forms.cpp": "6de6934df67e492694de60d212fdc69ce2b765b7c1908ff35beb480d5494da5c",
+    "libweva/tests/main.cpp": "f32df9e7d210605b1905c955c7546a7779054c72581494f6c37a13025a8d97a9",
+    "third_party/decimal/decimal.cpp": "c1c7c2f93907ebea77e5ae6f98817eb74b7c882753c898827fe34b0ee4775f50",
+    "third_party/decimal/decimal.h": "3c2cbe74bd0d245e7b2ac17f35d69ca06dbeca5c5270fa553a093522ac960608",
+    "third_party/decimal/LICENSE.txt": "0bdaa742956ded2c214c475a86e1f6bb0c9d3a475d706a6a3bfefefdc10f2b38",
+    "third_party/decimal/README.md": "22259bb44f7ec98a7249f30276106732963d154a7130fd1f98d3819609019a77",
+    "hosts/godot/package_addon.py": "dacace38e34e1c1b724f6d84404091d00cd64eba09ee0e85791d6c69c4c16cae"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 20.74
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 117.5
+  },
+  "browser_cases": 49,
+  "submission_cases": 10,
+  "decimal_dependency": {
+    "upstream_revision": "9596b537e435c5c23d247cb7d9925d81e8f7707e",
+    "license": "BSD-3-Clause",
+    "adaptations": "namespace, std::string_view, assertions/abort; allocator annotations and unused display/double conversions removed; arithmetic/parser retained"
+  },
+  "packaging": "Python syntax checked; new license/provenance files and dependency record configured, actual native package not built",
+  "remaining": [
+    "email/URL type mismatch, pattern, length and custom validity",
+    "date/time and user-edit bad-input state",
+    "public check/report APIs and click default ordering",
+    "invalid batch lifecycle follow-ups",
+    "native rebuild, integration, performance and packaging"
+  ]
+}

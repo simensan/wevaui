@@ -113,9 +113,85 @@ void test_abi_hit_testing() {
 
     // Text hands the hit to the element it is set in, not to a text box.
     CHECK(weva_document_element_at(doc.d, 4, 8) == inner);
+
+    // Pointer coordinates follow the painted transform, including ancestors.
+    for (const char* transform : {"translate(120px,80px)", "translate(30vw,80px)"}) {
+        weva_element_set_attribute(doc.d, a, "style", (std::string("transform:") + transform).c_str());
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_element_at(doc.d, 130, 90) == inner);
+        CHECK(weva_document_element_at(doc.d, 10, 10) != inner);
+    }
+    weva_element_set_attribute(doc.d, inner, "style", "transform-origin:0 0;transform:scale(2)");
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_element_at(doc.d, 190, 110) == inner);
+    weva_element_set_attribute(doc.d, a, "style", "transform-origin:0 0;transform:translate(120px,80px) rotate(90deg)");
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_element_at(doc.d, 90, 150) == inner);
+    CHECK(weva_document_element_at(doc.d, 130, 90) != inner);
+    weva_element_set_attribute(doc.d, a, "style", "transform:scale(0)");
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_element_at(doc.d, 10, 10) != inner);
+    // Overflow clipping is evaluated in the transformed container's frame.
+    weva_element_set_attribute(doc.d, a, "style", "transform:translate(120px,80px);overflow:hidden;width:30px");
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_element_at(doc.d, 140, 90) == inner);
+    CHECK(weva_document_element_at(doc.d, 160, 90) != inner);
+
+    Doc slider("html,body{margin:0}input{display:block;margin:0;padding:0;border:0;width:100px;height:20px;"
+               "transform-origin:0 0;transform:translate(150px,80px) rotate(90deg)}",
+               "<input id=r type=range min=0 max=100 value=0>");
+    const auto range = weva_document_query(slider.d, "#r");
+    weva_document_set_pointer(slider.d, 140, 105, WEVA_BUTTON_PRIMARY);
+    char value[32]{};
+    weva_element_value(slider.d, range, value, sizeof(value));
+    // Thumb-centre travel is 86px (100px track minus the 14px thumb).
+    // Chrome with the same thumb geometry returns round((25-7)/86*100) = 21.
+    CHECK_EQ(std::string(value), "21");
+    // Captured dragging follows the rotated track even beyond its end.
+    weva_document_set_pointer(slider.d, 140, 200, WEVA_BUTTON_PRIMARY);
+    weva_document_set_pointer(slider.d, 140, 200, 0);
+    weva_element_value(slider.d, range, value, sizeof(value));
+    CHECK_EQ(std::string(value), "100");
 }
 
 void test_abi_hover_active_focus() {
+    {
+        Doc slider("html,body{margin:0}input{display:block;width:100px;height:30px;padding:0;border:0}",
+                   "<input id=r type=range value=10>");
+        const auto range = weva_document_query(slider.d, "#r");
+        weva_document_set_pointer(slider.d, 20, 15, WEVA_BUTTON_PRIMARY);
+        char before[32]{}, after[32]{};
+        weva_element_value(slider.d, range, before, sizeof(before));
+        weva_element_set_attribute(slider.d, range, "disabled", "");
+        weva_document_update(slider.d, 0);
+        weva_document_set_pointer(slider.d, 90, 15, WEVA_BUTTON_PRIMARY);
+        weva_document_set_pointer(slider.d, 90, 15, 0);
+        weva_element_value(slider.d, range, after, sizeof(after));
+        CHECK(std::string(before) == after);
+    }
+    {
+        Doc doc("html,body{margin:0}button{display:block;width:100px;height:60px;background:#202020}"
+                "button:hover{background:#cc0000}button:active{background:#00cc00}",
+                "<button id=off disabled on-click=forbidden>Unavailable</button>");
+        weva_document_set_pointer(doc.d, 50, 30, 0);
+        weva_document_update(doc.d, 0);
+        CHECK(has_colour(colours(doc.d), 0xcc0000));
+        weva_document_set_pointer(doc.d, 50, 30, WEVA_BUTTON_PRIMARY);
+        weva_document_update(doc.d, 0);
+        CHECK(has_colour(colours(doc.d), 0x00cc00));
+        weva_document_set_pointer(doc.d, 50, 30, 0);
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_focus(doc.d) == WEVA_ELEMENT_NONE);
+        int enter = 0, down = 0, up = 0;
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {
+            CHECK(event.kind != WEVA_EVENT_CLICK);
+            enter += event.kind == WEVA_EVENT_POINTER_ENTER;
+            down += event.kind == WEVA_EVENT_POINTER_DOWN;
+            up += event.kind == WEVA_EVENT_POINTER_UP;
+        }
+        CHECK(enter == 1 && down == 1 && up == 1);
+    }
     // ---- :hover on the element under the pointer, and on its ancestors
     {
         Doc doc("html, body { margin: 0 }"
@@ -432,6 +508,13 @@ std::string tooltip_text(weva_document_t d) {
 // The UA stylesheet has styled `.ui-tooltip` all along and nothing ever made
 // one, so `title` was inert.
 void test_abi_title_shows_a_tooltip() {
+    {
+        Doc disabled("html,body{margin:0}button{width:100px;height:40px}",
+                     "<button disabled title='Requires a workbench'>Craft</button>");
+        weva_document_set_pointer(disabled.d, 50, 20, 0);
+        weva_document_update(disabled.d, .7);
+        CHECK(tooltip_text(disabled.d) == "Requires a workbench");
+    }
     weva_config c{};
     c.viewport_width = 400;
     c.viewport_height = 300;
@@ -839,4 +922,107 @@ void test_abi_active_reach() {
     weva_document_set_pointer(doc.d, 50, 30, 0);
     weva_document_update(doc.d, 0);
     CHECK(!has_colour(colours(doc.d), 0x88ff00));
+}
+
+// Captured Chrome152 direction/endpoints; repeat after a live style change and
+// with padding/borders to exercise the same public input path as game controls.
+void test_abi_range_directions() {
+    struct Case { const char* mode; const char* direction; int key; double fraction; int value; };
+    const Case cases[] = {
+        {"horizontal-tb", "ltr", WEVA_KEY_LEFT, -1, 49},
+        {"horizontal-tb", "ltr", WEVA_KEY_RIGHT, -1, 51},
+        {"horizontal-tb", "ltr", WEVA_KEY_UP, -1, 51},
+        {"horizontal-tb", "ltr", WEVA_KEY_DOWN, -1, 49},
+        {"horizontal-tb", "ltr", WEVA_KEY_HOME, -1, 0},
+        {"horizontal-tb", "ltr", WEVA_KEY_END, -1, 100},
+        {"horizontal-tb", "ltr", WEVA_KEY_PAGE_UP, -1, 60},
+        {"horizontal-tb", "ltr", WEVA_KEY_PAGE_DOWN, -1, 40},
+        {"horizontal-tb", "ltr", 0, 0, 0},
+        {"horizontal-tb", "ltr", 0, 0.5, 50},
+        {"horizontal-tb", "ltr", 0, 1, 100},
+        {"horizontal-tb", "rtl", WEVA_KEY_LEFT, -1, 51},
+        {"horizontal-tb", "rtl", WEVA_KEY_RIGHT, -1, 49},
+        {"horizontal-tb", "rtl", WEVA_KEY_UP, -1, 51},
+        {"horizontal-tb", "rtl", WEVA_KEY_DOWN, -1, 49},
+        {"horizontal-tb", "rtl", WEVA_KEY_HOME, -1, 0},
+        {"horizontal-tb", "rtl", WEVA_KEY_END, -1, 100},
+        {"horizontal-tb", "rtl", WEVA_KEY_PAGE_UP, -1, 60},
+        {"horizontal-tb", "rtl", WEVA_KEY_PAGE_DOWN, -1, 40},
+        {"horizontal-tb", "rtl", 0, 0, 100},
+        {"horizontal-tb", "rtl", 0, 0.5, 50},
+        {"horizontal-tb", "rtl", 0, 1, 0},
+        {"vertical-rl", "ltr", WEVA_KEY_LEFT, -1, 49},
+        {"vertical-rl", "ltr", WEVA_KEY_RIGHT, -1, 51},
+        {"vertical-rl", "ltr", WEVA_KEY_UP, -1, 49},
+        {"vertical-rl", "ltr", WEVA_KEY_DOWN, -1, 51},
+        {"vertical-rl", "ltr", WEVA_KEY_HOME, -1, 0},
+        {"vertical-rl", "ltr", WEVA_KEY_END, -1, 100},
+        {"vertical-rl", "ltr", WEVA_KEY_PAGE_UP, -1, 60},
+        {"vertical-rl", "ltr", WEVA_KEY_PAGE_DOWN, -1, 40},
+        {"vertical-rl", "ltr", 0, 0, 0},
+        {"vertical-rl", "ltr", 0, 0.5, 50},
+        {"vertical-rl", "ltr", 0, 1, 100},
+        {"vertical-rl", "rtl", WEVA_KEY_LEFT, -1, 49},
+        {"vertical-rl", "rtl", WEVA_KEY_RIGHT, -1, 51},
+        {"vertical-rl", "rtl", WEVA_KEY_UP, -1, 51},
+        {"vertical-rl", "rtl", WEVA_KEY_DOWN, -1, 49},
+        {"vertical-rl", "rtl", WEVA_KEY_HOME, -1, 0},
+        {"vertical-rl", "rtl", WEVA_KEY_END, -1, 100},
+        {"vertical-rl", "rtl", WEVA_KEY_PAGE_UP, -1, 60},
+        {"vertical-rl", "rtl", WEVA_KEY_PAGE_DOWN, -1, 40},
+        {"vertical-rl", "rtl", 0, 0, 100},
+        {"vertical-rl", "rtl", 0, 0.5, 50},
+        {"vertical-rl", "rtl", 0, 1, 0},
+        {"vertical-lr", "ltr", WEVA_KEY_LEFT, -1, 49},
+        {"vertical-lr", "ltr", WEVA_KEY_RIGHT, -1, 51},
+        {"vertical-lr", "ltr", WEVA_KEY_UP, -1, 49},
+        {"vertical-lr", "ltr", WEVA_KEY_DOWN, -1, 51},
+        {"vertical-lr", "ltr", WEVA_KEY_HOME, -1, 0},
+        {"vertical-lr", "ltr", WEVA_KEY_END, -1, 100},
+        {"vertical-lr", "ltr", WEVA_KEY_PAGE_UP, -1, 60},
+        {"vertical-lr", "ltr", WEVA_KEY_PAGE_DOWN, -1, 40},
+        {"vertical-lr", "ltr", 0, 0, 0},
+        {"vertical-lr", "ltr", 0, 0.5, 50},
+        {"vertical-lr", "ltr", 0, 1, 100},
+        {"vertical-lr", "rtl", WEVA_KEY_LEFT, -1, 49},
+        {"vertical-lr", "rtl", WEVA_KEY_RIGHT, -1, 51},
+        {"vertical-lr", "rtl", WEVA_KEY_UP, -1, 51},
+        {"vertical-lr", "rtl", WEVA_KEY_DOWN, -1, 49},
+        {"vertical-lr", "rtl", WEVA_KEY_HOME, -1, 0},
+        {"vertical-lr", "rtl", WEVA_KEY_END, -1, 100},
+        {"vertical-lr", "rtl", WEVA_KEY_PAGE_UP, -1, 60},
+        {"vertical-lr", "rtl", WEVA_KEY_PAGE_DOWN, -1, 40},
+        {"vertical-lr", "rtl", 0, 0, 100},
+        {"vertical-lr", "rtl", 0, 0.5, 50},
+        {"vertical-lr", "rtl", 0, 1, 0},
+    };
+    for (int variant = 0; variant < 3; ++variant) for (const auto& row : cases) {
+        const bool vertical = std::string(row.mode) != "horizontal-tb";
+        const std::string style = std::string("position:absolute;left:20px;top:20px;width:") +
+            (vertical ? "30px;height:200px;" : "200px;height:30px;") +
+            "writing-mode:" + row.mode + ";direction:" + row.direction +
+            (variant == 2 ? ";padding:4px;border:2px solid black" : ";padding:0;border:0");
+        const std::string css = "#r{" + (variant == 1 ? std::string("width:200px;height:30px") : style) + "}";
+        Doc doc(css.c_str(), "<input id=r type=range min=0 max=100 value=50>");
+        const auto r = weva_document_query(doc.d, "#r");
+        if (variant == 1) {
+            CHECK(weva_element_set_attribute(doc.d, r, "style", style.c_str()) == WEVA_OK);
+            CHECK(weva_document_update(doc.d, 0) == WEVA_OK);
+        }
+        CHECK(weva_document_set_focus(doc.d, r) == WEVA_OK);
+        if (row.key) {
+            CHECK(weva_document_key(doc.d, row.key, 0, 1) != 0);
+        } else {
+            double x=0,y=0,w=0,h=0;
+            CHECK(weva_element_bounds(doc.d,r,&x,&y,&w,&h) == WEVA_OK);
+            const double along = std::fmax(1.0, std::fmin((vertical ? h : w)-1, (vertical ? h : w)*row.fraction));
+            x += vertical ? w*.5 : along;
+            y += vertical ? along : h*.5;
+            weva_document_set_pointer(doc.d,x,y,WEVA_BUTTON_PRIMARY);
+            weva_document_set_pointer(doc.d,x,y,0);
+        }
+        char value[32]{};
+        weva_element_value(doc.d,r,value,sizeof(value));
+        CHECK_EQ(std::string(value),std::to_string(row.value));
+    }
 }

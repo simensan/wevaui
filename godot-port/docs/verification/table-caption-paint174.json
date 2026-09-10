@@ -1,0 +1,775 @@
+{
+  "change": "Exclude caption extents from the table decoration rectangle; background, borders and inset-shadow/blur geometry use the grid frame.",
+  "installed": false,
+  "browser": "Chrome/152.0.7977.83",
+  "fixtures": [
+    {
+      "name": "collapse-top-0",
+      "html": "<table id=t><caption id=cap></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;border-spacing:2px;padding:0px;border:8px solid blue;background:lime}caption{height:10px;caption-side:top;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 46
+        },
+        {
+          "id": "cap",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 10
+        },
+        {
+          "id": "g",
+          "x": 4,
+          "y": 14,
+          "width": 192,
+          "height": 28
+        },
+        {
+          "id": "r",
+          "x": 4,
+          "y": 14,
+          "width": 192,
+          "height": 28
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 14,
+          "width": 96,
+          "height": 28
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 14,
+          "width": 96,
+          "height": 28
+        },
+        {
+          "id": "after",
+          "x": 0,
+          "y": 46,
+          "width": 400,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "name": "collapse-top-20",
+      "html": "<table id=t><caption id=cap></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;border-spacing:2px;padding:20px;border:8px solid blue;background:lime}caption{height:10px;caption-side:top;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 46
+        },
+        {
+          "id": "cap",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 10
+        },
+        {
+          "id": "g",
+          "x": 4,
+          "y": 14,
+          "width": 192,
+          "height": 28
+        },
+        {
+          "id": "r",
+          "x": 4,
+          "y": 14,
+          "width": 192,
+          "height": 28
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 14,
+          "width": 96,
+          "height": 28
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 14,
+          "width": 96,
+          "height": 28
+        },
+        {
+          "id": "after",
+          "x": 0,
+          "y": 46,
+          "width": 400,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "name": "collapse-bottom-0",
+      "html": "<table id=t><caption id=cap></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;border-spacing:2px;padding:0px;border:8px solid blue;background:lime}caption{height:10px;caption-side:bottom;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 46
+        },
+        {
+          "id": "cap",
+          "x": 0,
+          "y": 36,
+          "width": 200,
+          "height": 10
+        },
+        {
+          "id": "g",
+          "x": 4,
+          "y": 4,
+          "width": 192,
+          "height": 28
+        },
+        {
+          "id": "r",
+          "x": 4,
+          "y": 4,
+          "width": 192,
+          "height": 28
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 28
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 28
+        },
+        {
+          "id": "after",
+          "x": 0,
+          "y": 46,
+          "width": 400,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "name": "collapse-bottom-20",
+      "html": "<table id=t><caption id=cap></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;border-spacing:2px;padding:20px;border:8px solid blue;background:lime}caption{height:10px;caption-side:bottom;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 46
+        },
+        {
+          "id": "cap",
+          "x": 0,
+          "y": 36,
+          "width": 200,
+          "height": 10
+        },
+        {
+          "id": "g",
+          "x": 4,
+          "y": 4,
+          "width": 192,
+          "height": 28
+        },
+        {
+          "id": "r",
+          "x": 4,
+          "y": 4,
+          "width": 192,
+          "height": 28
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 28
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 28
+        },
+        {
+          "id": "after",
+          "x": 0,
+          "y": 46,
+          "width": 400,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "name": "separate-top-0",
+      "html": "<table id=t><caption id=cap></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:separate;border-spacing:2px;padding:0px;border:8px solid blue;background:lime}caption{height:10px;caption-side:top;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 58
+        },
+        {
+          "id": "cap",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 10
+        },
+        {
+          "id": "g",
+          "x": 10,
+          "y": 20,
+          "width": 180,
+          "height": 28
+        },
+        {
+          "id": "r",
+          "x": 10,
+          "y": 20,
+          "width": 180,
+          "height": 28
+        },
+        {
+          "id": "a",
+          "x": 10,
+          "y": 20,
+          "width": 89,
+          "height": 28
+        },
+        {
+          "id": "b",
+          "x": 101,
+          "y": 20,
+          "width": 89,
+          "height": 28
+        },
+        {
+          "id": "after",
+          "x": 0,
+          "y": 58,
+          "width": 400,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "name": "separate-top-20",
+      "html": "<table id=t><caption id=cap></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:separate;border-spacing:2px;padding:20px;border:8px solid blue;background:lime}caption{height:10px;caption-side:top;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 98
+        },
+        {
+          "id": "cap",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 10
+        },
+        {
+          "id": "g",
+          "x": 30,
+          "y": 40,
+          "width": 140,
+          "height": 28
+        },
+        {
+          "id": "r",
+          "x": 30,
+          "y": 40,
+          "width": 140,
+          "height": 28
+        },
+        {
+          "id": "a",
+          "x": 30,
+          "y": 40,
+          "width": 69,
+          "height": 28
+        },
+        {
+          "id": "b",
+          "x": 101,
+          "y": 40,
+          "width": 69,
+          "height": 28
+        },
+        {
+          "id": "after",
+          "x": 0,
+          "y": 98,
+          "width": 400,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "name": "separate-bottom-0",
+      "html": "<table id=t><caption id=cap></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:separate;border-spacing:2px;padding:0px;border:8px solid blue;background:lime}caption{height:10px;caption-side:bottom;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 58
+        },
+        {
+          "id": "cap",
+          "x": 0,
+          "y": 48,
+          "width": 200,
+          "height": 10
+        },
+        {
+          "id": "g",
+          "x": 10,
+          "y": 10,
+          "width": 180,
+          "height": 28
+        },
+        {
+          "id": "r",
+          "x": 10,
+          "y": 10,
+          "width": 180,
+          "height": 28
+        },
+        {
+          "id": "a",
+          "x": 10,
+          "y": 10,
+          "width": 89,
+          "height": 28
+        },
+        {
+          "id": "b",
+          "x": 101,
+          "y": 10,
+          "width": 89,
+          "height": 28
+        },
+        {
+          "id": "after",
+          "x": 0,
+          "y": 58,
+          "width": 400,
+          "height": 10
+        }
+      ]
+    },
+    {
+      "name": "separate-bottom-20",
+      "html": "<table id=t><caption id=cap></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:separate;border-spacing:2px;padding:20px;border:8px solid blue;background:lime}caption{height:10px;caption-side:bottom;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 98
+        },
+        {
+          "id": "cap",
+          "x": 0,
+          "y": 88,
+          "width": 200,
+          "height": 10
+        },
+        {
+          "id": "g",
+          "x": 30,
+          "y": 30,
+          "width": 140,
+          "height": 28
+        },
+        {
+          "id": "r",
+          "x": 30,
+          "y": 30,
+          "width": 140,
+          "height": 28
+        },
+        {
+          "id": "a",
+          "x": 30,
+          "y": 30,
+          "width": 69,
+          "height": 28
+        },
+        {
+          "id": "b",
+          "x": 101,
+          "y": 30,
+          "width": 69,
+          "height": 28
+        },
+        {
+          "id": "after",
+          "x": 0,
+          "y": 98,
+          "width": 400,
+          "height": 10
+        }
+      ]
+    }
+  ],
+  "browser_samples": [
+    {
+      "name": "collapse-top-0",
+      "points": [
+        [
+          50,
+          5
+        ],
+        [
+          50,
+          12
+        ],
+        [
+          50,
+          44
+        ]
+      ],
+      "chrome_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "collapse-top-20",
+      "points": [
+        [
+          50,
+          5
+        ],
+        [
+          50,
+          12
+        ],
+        [
+          50,
+          44
+        ]
+      ],
+      "chrome_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "collapse-bottom-0",
+      "points": [
+        [
+          50,
+          41
+        ],
+        [
+          50,
+          2
+        ],
+        [
+          50,
+          34
+        ]
+      ],
+      "chrome_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "collapse-bottom-20",
+      "points": [
+        [
+          50,
+          41
+        ],
+        [
+          50,
+          2
+        ],
+        [
+          50,
+          34
+        ]
+      ],
+      "chrome_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "separate-top-0",
+      "points": [
+        [
+          50,
+          5
+        ],
+        [
+          50,
+          12
+        ],
+        [
+          50,
+          56
+        ]
+      ],
+      "chrome_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "separate-top-20",
+      "points": [
+        [
+          50,
+          5
+        ],
+        [
+          50,
+          12
+        ],
+        [
+          50,
+          96
+        ]
+      ],
+      "chrome_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "separate-bottom-0",
+      "points": [
+        [
+          50,
+          53
+        ],
+        [
+          50,
+          2
+        ],
+        [
+          50,
+          46
+        ]
+      ],
+      "chrome_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "separate-bottom-20",
+      "points": [
+        [
+          50,
+          93
+        ],
+        [
+          50,
+          2
+        ],
+        [
+          50,
+          86
+        ]
+      ],
+      "chrome_rgba": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ]
+      ]
+    }
+  ],
+  "baseline_regression": {
+    "checks_failed": 12
+  },
+  "focused_table_asan_ubsan": {
+    "checks": 13932,
+    "failures": 0
+  },
+  "core_ctest": {
+    "passed": 14,
+    "failed": 0,
+    "seconds": 26.29
+  },
+  "source_sha256": {
+    "godot-port/libweva/src/paint.cpp": "feb233316fdd3a8f5415e3916511c8fbe96a9c17ddd6bcf23bf674c08479f10d",
+    "godot-port/libweva/tests/test_table.cpp": "a9a0efdac7f8f9f73a1a2f8e38f922d391610ea0c205fa43c0238f375a3ece30"
+  },
+  "limitations": [
+    "24 sampled pixel assertions across eight fixtures; not full image equality.",
+    "Inset shadows and blur use the corrected rectangle but lack dedicated caption screenshot comparisons.",
+    "Native candidate171 predates this fix.",
+    "Broader table filter and positioned-descendant paint order remains unqualified."
+  ]
+}

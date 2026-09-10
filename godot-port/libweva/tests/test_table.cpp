@@ -10,6 +10,10 @@
 #include "weva/html.h"
 #include "weva/positioning.h"
 #include "weva/table_layout.h"
+#include "weva/table_border.h"
+#include "weva/paint.h"
+#include "weva/hit_test.h"
+#include "weva/software_renderer.h"
 #include "weva/user_agent_stylesheet.h"
 
 #include <cmath>
@@ -19,6 +23,122 @@
 #include <vector>
 
 using namespace weva;
+
+void test_table_border_conflicts() {
+    using S = TableBorderStyle;
+    using O = TableBorderOrigin;
+    const auto border = [](double width, S style, O origin, int source, uint32_t order = 0) {
+        return TableBorderCandidate{width, style, origin, source, TableBorderSide::Right, order};
+    };
+    const auto hidden = border(0, S::Hidden, O::Table, 1);
+    const auto none = border(100, S::None, O::Cell, 2);
+    const auto thick = border(20, S::Double, O::Cell, 3);
+    CHECK(resolve_table_border(hidden, thick).source == 1);
+    CHECK(resolve_table_border(thick, hidden).used_width() == 0);
+    CHECK(resolve_table_border(none, thick).source == 3);
+    CHECK(resolve_table_border(thick, none).used_width() == 20);
+    CHECK(none.used_width() == 0);
+
+    // Width beats style and origin, while style beats origin at equal width.
+    CHECK(resolve_table_border(border(5, S::Dotted, O::Table, 4), thick).source == 3);
+    CHECK(resolve_table_border(border(21, S::Inset, O::Table, 4), thick).source == 4);
+    CHECK(resolve_table_border(border(20, S::Solid, O::Cell, 4),
+                               border(20, S::Double, O::Table, 5)).source == 5);
+    const S styles[] = {S::Inset, S::Groove, S::Outset, S::Ridge, S::Dotted,
+                        S::Dashed, S::Solid, S::Double};
+    for (int i = 0; i < 8; ++i) {
+        for (int j = i + 1; j < 8; ++j) {
+            const auto weaker = border(3, styles[i], O::Cell, 10);
+            const auto stronger = border(3, styles[j], O::Table, 11);
+            CHECK(resolve_table_border(weaker, stronger).source == 11);
+            CHECK(resolve_table_border(stronger, weaker).source == 11);
+        }
+    }
+    const O origins[] = {O::Table, O::ColumnGroup, O::Column, O::RowGroup, O::Row, O::Cell};
+    for (int i = 0; i < 6; ++i) {
+        for (int j = i + 1; j < 6; ++j) {
+            CHECK(resolve_table_border(border(4, S::Solid, origins[i], 12),
+                                       border(4, S::Solid, origins[j], 13)).source == 13);
+        }
+    }
+    // The collector's start/top rank controls ties, independently of visit order.
+    auto first = border(1, S::Solid, O::Cell, 14, 2);
+    first.side = TableBorderSide::Left;
+    const auto second = border(1, S::Solid, O::Cell, 15, 3);
+    CHECK(resolve_table_border(second, first).source == 14);
+    CHECK(resolve_table_border(first, second).source == 14);
+    CHECK(resolve_table_border(second, first).side == TableBorderSide::Left);
+    CHECK(resolve_table_border(first, second).used_width() == 1);
+    CHECK(resolve_table_border(TableBorderCandidate{}, first).source == 14);
+    CHECK(resolve_table_border(first, first).source == 14);
+}
+
+void test_table_border_grid() {
+    using S = TableBorderStyle;
+    using O = TableBorderOrigin;
+    const auto sides = [](double width, int source, O origin = O::Cell) {
+        TableBorderGrid::Sides result;
+        for (int side = 0; side < 4; ++side)
+            result[side] = {width, S::Solid, origin, source, static_cast<TableBorderSide>(side), 0};
+        return result;
+    };
+    TableBorderGrid grid;
+    CHECK(grid.reset(2, 2));
+    CHECK(grid.add_rectangle(0, 0, 1, 1, sides(4, 1), true));
+    CHECK(grid.add_rectangle(0, 1, 1, 1, sides(6, 2), true));
+    CHECK(grid.add_rectangle(1, 0, 1, 1, sides(2, 3), true));
+    CHECK(grid.add_rectangle(1, 1, 1, 1, sides(2, 4), true));
+    CHECK(grid.vertical(0, 1).source == 2);
+    CHECK(grid.vertical(0, 1).side == TableBorderSide::Left);
+    CHECK(grid.horizontal(1, 0).source == 1);
+    CHECK(grid.horizontal(1, 0).side == TableBorderSide::Bottom);
+    const auto a = grid.half_widths(0, 0, 1, 1);
+    CHECK(a[0] == 2 && a[1] == 3 && a[2] == 2 && a[3] == 2);
+
+    // Lower-origin borders still participate: width is considered first.
+    CHECK(grid.add_rectangle(0, 0, 2, 2, sides(8, 5, O::Table)));
+    CHECK(grid.vertical(0, 0).source == 5);
+    CHECK(grid.vertical(0, 1).source == 2); // table has no internal border
+    CHECK(grid.horizontal(1, 0).source == 1);
+
+    // A cell spanning two rows suppresses only the horizontal segment inside
+    // its rectangle. Later row contributions must not resurrect that edge.
+    CHECK(grid.reset(2, 2));
+    CHECK(grid.add_rectangle(0, 0, 2, 1, sides(4, 6), true));
+    CHECK(grid.add_rectangle(0, 0, 1, 2, sides(10, 7, O::Row)));
+    CHECK(grid.horizontal(1, 0).used_width() == 0);
+    CHECK(grid.horizontal(1, 1).used_width() == 10);
+    CHECK(grid.vertical(0, 1).used_width() == 4);
+    CHECK(grid.vertical(1, 1).used_width() == 4);
+
+    // The equivalent colspan suppresses a vertical interior segment, even
+    // when its opposing column candidates were collected first.
+    CHECK(grid.reset(2, 2));
+    CHECK(grid.add_rectangle(0, 0, 2, 1, sides(10, 8, O::Column)));
+    CHECK(grid.add_rectangle(0, 0, 1, 2, sides(3, 9), true));
+    CHECK(grid.vertical(0, 1).used_width() == 0);
+    CHECK(grid.vertical(1, 1).used_width() == 10);
+    CHECK(grid.horizontal(1, 0).used_width() == 3);
+    CHECK(grid.horizontal(1, 1).used_width() == 3);
+    const auto spanning = grid.half_widths(0, 0, 1, 2);
+    CHECK(spanning[0] == 5 && spanning[1] == 1.5 && spanning[2] == 1.5 && spanning[3] == 5);
+
+    // Reusing storage must clear suppression as well as winners.
+    CHECK(grid.reset(2, 2));
+    CHECK(grid.add_rectangle(0, 0, 1, 1, sides(5, 10), true));
+    CHECK(grid.vertical(0, 1).used_width() == 5);
+    CHECK(grid.horizontal(1, 0).source == 10);
+    CHECK(grid.vertical(1, 1).used_width() == 0);
+    CHECK(!grid.add_rectangle(0, 0, 3, 1, sides(4, 11)));
+    CHECK(!grid.add_rectangle(-1, 0, 1, 1, sides(4, 11)));
+    CHECK(!grid.add_rectangle(0, 0, 1, 0, sides(4, 11)));
+    CHECK(grid.horizontal(-1, 0).used_width() == 0);
+    CHECK(grid.vertical(0, 3).used_width() == 0);
+    CHECK(!grid.reset(-1, 2));
+    CHECK(grid.horizontal(0, 0).used_width() == 0);
+    CHECK(grid.reset(0, 0));
+    CHECK(!grid.add_rectangle(0, 0, 1, 1, sides(4, 12)));
+}
 
 namespace {
 
@@ -90,6 +210,7 @@ struct Fixture {
         BlockLayout bl(&tree, ctx, &metrics);
         bl.layout_root(root, vw, vh);
         run_positioning(&tree, root, ctx, &bl);
+        compute_visual_overflow(&tree, root);
         return true;
     }
     BoxId find(std::string_view id, BoxId from = -2) const {
@@ -123,6 +244,211 @@ struct Fixture {
 const double kLine = 16 * 1.2;
 
 } // namespace
+
+void test_table_collapsed_border_geometry() {
+    for (int width : {1, 4}) {
+        Fixture f;
+        CHECK(f.css("#t{width:200px;table-layout:fixed;border-collapse:collapse}"
+            "td{padding:0;border:" + std::to_string(width) + "px solid red}td>div{height:20px}"));
+        CHECK(f.layout("<body><table id=t><tbody id=g><tr id=r1><td id=a><div></div></td>"
+            "<td id=b><div></div></td></tr><tr id=r2><td id=c><div></div></td>"
+            "<td id=d><div></div></td></tr></tbody></table></body>"));
+        CHECK(near(f.box("t").height, 40 + 3 * width));
+        CHECK(near(f.box("g").width, 200 - width));
+        CHECK(near(f.box("g").height, 40 + 2 * width));
+        CHECK(near(f.abs_x("g"), width * 0.5));
+        CHECK(near(f.abs_y("g"), width * 0.5));
+        CHECK(near(f.box("a").border_left, width * 0.5));
+        CHECK(near(f.box("a").height, 20 + width));
+        CHECK(near(f.abs_y("c"), 20 + width * 1.5));
+        CHECK(near(f.box("a").width, (200 - width) * 0.5));
+    }
+}
+
+void test_table_collapsed_border_paint() {
+    Fixture f;
+    CHECK(f.css("#t{width:200px;table-layout:fixed;border-collapse:collapse}"
+        "td{padding:0;border:4px solid red}td>div{height:20px}#b{border-left:4px solid blue}"));
+    CHECK(f.layout("<body><table id=t><tr><td id=a><div></div></td>"
+        "<td id=b><div></div></td></tr></table></body>"));
+    const BoxId table = f.find("t");
+    const auto* borders = f.tree.table_borders(table);
+    CHECK(borders && borders->size() == 7);
+    if (!borders) return;
+    for (const auto& segment : *borders) CHECK(segment.border.source == -1);
+    SoftwareRenderer renderer(220, 60);
+    PaintContext paint;
+    paint.styles = &f.styles;
+    paint.backend = &renderer;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    CHECK(renderer.pixel(2, 12).r > .99f);
+    CHECK(renderer.pixel(50, 2).r > .99f);
+    CHECK(renderer.pixel(50, 12).a == 0);
+    // At equal width/style/origin, the left cell's red border wins in LTR.
+    CHECK(renderer.pixel(100, 12).r > .99f);
+    CHECK(renderer.pixel(100, 12).b < .01f);
+    CHECK(renderer.pixel(198, 12).r > .99f);
+
+    BoxTree imported;
+    const BoxId replacement = imported.create(BoxKind::Block);
+    imported.replace_subtree(replacement, f.tree, table);
+    CHECK(imported.table_borders(replacement) && imported.table_borders(replacement)->size() == 7);
+    f.tree.reset();
+    CHECK(!f.tree.table_borders(table));
+    renderer.clear(LinearColor::transparent());
+    paint_tree(imported, replacement, f.ctx, paint);
+    CHECK(renderer.pixel(100, 12).r > .99f);
+    imported.reset();
+    CHECK(!imported.table_borders(replacement));
+}
+
+void test_table_positioned_content_order() {
+    // Chrome: ordinary overflow remains below collapsed borders and the next
+    // cell background. Positioned content crosses both; positioned cell
+    // backgrounds themselves must still remain under the shared border.
+    for (const std::string cell : {"static", "relative"})
+    for (const std::string content : {"static", "relative", "absolute"})
+    for (const std::string first : {"transparent", "cyan"})
+    for (const std::string second : {"transparent", "yellow"}) {
+        Fixture f;
+        CHECK(f.css("html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}"
+            "td{padding:0;border:8px solid red;height:40px}#a{position:" + cell + ";background:" + first + "}"
+            "#b{background:" + second + "}#overlay{position:" + content + ";width:140px;height:20px;background:blue;" +
+            (content == "absolute" ? "left:0;top:10px;" : "") + "}"));
+        CHECK(f.layout("<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>", 240, 100));
+        SoftwareRenderer renderer(240, 100);
+        PaintContext paint;
+        paint.styles = &f.styles;
+        paint.backend = &renderer;
+        paint_tree(f.tree, f.root, f.ctx, paint);
+        const bool ordinary = cell == "static" && content == "static";
+        for (const int x : {98, 102, 120}) {
+            const auto top = renderer.pixel(x, 6);
+            CHECK(top.r > .99f && top.g < .01f && top.b < .01f && top.a > .99f);
+            const auto middle = renderer.pixel(x, 24);
+            if (ordinary && x < 104) CHECK(middle.r > .99f && middle.b < .01f);
+            else if (ordinary && second == "yellow") CHECK(middle.r > .99f && middle.g > .99f && middle.b < .01f);
+            else CHECK(middle.b > .99f && middle.r < .01f && middle.g < .01f);
+            const Element* hit = element_at_point(f.tree, f.root, x, 24, &f.ctx);
+            CHECK(hit && hit->get_attribute("id") == (ordinary && x >= 100 ? "b" : "overlay"));
+        }
+    }
+}
+
+void test_positioned_overflow_containing_blocks() {
+    // Chrome-derived controls: external containing blocks escape intermediate
+    // clips/scroll offsets; captured absolute/fixed descendants do not. Rounded
+    // clipping affects hit targets as well as pixels, including the clip itself.
+    for (const std::string position : {"absolute", "fixed"})
+    for (const std::string owner : {"static", "relative", "transform", "displaced"})
+    for (const bool rounded : {false, true}) for (const bool scrolled : {false, true})
+    for (const bool nested : {false, true}) {
+        Fixture f;
+        CHECK(f.css("html,body{margin:0;padding:0}#outer{position:relative;width:130px;height:120px;" +
+            std::string(nested ? "overflow:hidden;" : "") + "}#clip{width:100px;height:100px;overflow:hidden;" +
+            (owner == "relative" ? "position:relative;" : owner == "transform" ? "transform:translate(0,0);" : owner == "displaced" ? "margin-left:300px;" : "") +
+            (rounded ? "border-radius:20px;" : "") + "}#overlay{position:" + position +
+            ";left:80px;top:0;width:80px;height:20px;background:blue}"
+            "#ordinary{position:relative;top:40px;width:200px;height:20px;background:yellow}"));
+        CHECK(f.layout("<div id=outer><div id=clip><div id=overlay></div><div id=ordinary></div></div></div>",240,160));
+        f.tree[f.find("clip")].scroll_x = scrolled ? 20 : 0;
+        SoftwareRenderer renderer(240,160);
+        PaintContext paint; paint.styles=&f.styles; paint.backend=&renderer;
+        paint_tree(f.tree,f.root,f.ctx,paint);
+        const bool captured = owner == "transform" || (position == "absolute" && owner == "relative");
+        const auto probe = [&](int x, int y, bool blue, const char* target) {
+            const auto pixel = renderer.pixel(x,y);
+            CHECK(blue ? pixel.b > .99f && pixel.r < .01f && pixel.a > .99f : pixel.a == 0);
+            const auto* hit = element_at_point(f.tree,f.root,x,y,&f.ctx);
+            const std::string_view actual = hit ? hit->get_attribute("id") : std::string_view();
+            CHECK(actual == target);
+        };
+        probe(95,5,!captured || !rounded,captured && rounded ? "outer" : "overlay");
+        probe(120,10,!captured,captured ? "outer" : "overlay");
+        const bool outside_blue = !captured && (!nested || position == "fixed");
+        probe(140,10,outside_blue,outside_blue ? "overlay" : "");
+        probe(120,50,false,"outer"); // A following sibling must regain the clip.
+        const auto ordinary = renderer.pixel(80,50);
+        CHECK(owner == "displaced" ? ordinary.a == 0 : ordinary.r > .99f && ordinary.g > .99f && ordinary.b < .01f);
+        double x=0,y=0;
+        visual_position(f.tree,f.find("overlay"),&x,&y);
+        CHECK(near(x,80 - (captured && scrolled ? 20 : 0)) && near(y,0));
+    }
+}
+
+void test_table_translucent_border_intersections() {
+    Fixture f;
+    CHECK(f.css("#t{width:200px;table-layout:fixed;border-collapse:collapse}"
+        "td{padding:0;border:4px solid rgba(255,0,0,.5)}td>div{height:20px}"));
+    CHECK(f.layout("<body><table id=t><tr><td><div></div></td><td><div></div></td></tr>"
+        "<tr><td><div></div></td><td><div></div></td></tr></table></body>"));
+    SoftwareRenderer renderer(220, 60);
+    PaintContext paint;
+    paint.styles = &f.styles; paint.backend = &renderer;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    const float alpha = renderer.pixel(2, 12).a;
+    CHECK(alpha > .49f && alpha < .51f);
+    // Chrome paints two perpendicular layers here (alpha .75), but adjacent
+    // collinear segments must not create a third/fourth layer.
+    for (const auto point : {std::pair<int,int>{2,2}, {100,2}, {100,26}, {2,26}, {198,50}}) {
+        const float actual = renderer.pixel(point.first, point.second).a;
+        std::printf("table border alpha (%d,%d): %.6f; edge %.6f\n", point.first, point.second, actual, alpha);
+        CHECK(std::fabs(actual - (1 - (1 - alpha) * (1 - alpha))) < .001f);
+    }
+    // Verified against every pixel in the 220x60 Chrome capture. Compare
+    // floating alpha here; byte output can differ by one quantization level.
+    for (int y = 0; y < 60; ++y) for (int x = 0; x < 220; ++x) {
+        const bool vertical = y < 52 && (x < 4 || (x >= 98 && x < 102) || (x >= 196 && x < 200));
+        const bool horizontal = x < 200 && (y < 4 || (y >= 24 && y < 28) || (y >= 48 && y < 52));
+        const float expected = vertical && horizontal ? .75f : vertical || horizontal ? .5f : 0;
+        CHECK(std::fabs(renderer.pixel(x, y).a - expected) < .001f);
+    }
+
+}
+
+void test_table_unequal_border_intersections() {
+    for (const auto pair : {std::pair<int,int>{8,4}, {4,8}, {4,4}}) {
+        const int h = pair.first, v = pair.second;
+        Fixture f;
+        CHECK(f.css("#t{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:" +
+            std::to_string(v) + "px solid blue;border-top:" + std::to_string(h) +
+            "px solid red;border-bottom:" + std::to_string(h) + "px solid red}td>div{height:20px}"));
+        CHECK(f.layout("<body><table id=t><tr><td><div></div></td><td><div></div></td></tr>"
+            "<tr><td><div></div></td><td><div></div></td></tr></table></body>"));
+        SoftwareRenderer renderer(220,90);
+        PaintContext paint; paint.styles = &f.styles; paint.backend = &renderer;
+        paint_tree(f.tree,f.root,f.ctx,paint);
+        int differences = 0;
+        for (int y = 0; y < 90; ++y) for (int x = 0; x < 220; ++x) {
+            const bool vertical = y < 40 + 3*h && (x < v || (x >= 100-v/2 && x < 100+v/2) || (x >= 200-v && x < 200));
+            const bool horizontal = x < 200 && (y < h || (y >= 20+h && y < 20+2*h) || (y >= 40+2*h && y < 40+3*h));
+            // The equal-width top-right junctions are won by the cell right
+            // side; the top-left corner and lower crossings are horizontal.
+            const bool red = horizontal && (!vertical || h > v || (h == v && !(y < h && x >= 100-v/2)));
+            const auto pixel = renderer.pixel(x,y);
+            if (red ? pixel.r < .99f || pixel.b > .01f || pixel.a < .99f :
+                vertical ? pixel.b < .99f || pixel.r > .01f || pixel.a < .99f : pixel.a > .01f) ++differences;
+        }
+        if (differences) std::printf("table intersection %d/%d: %d pixel differences\n",h,v,differences);
+        CHECK(differences == 0);
+    }
+}
+
+void test_table_collapsed_content_box_width() {
+    for (bool border_box : {false,true}) for (int padding : {0,20}) for (int border : {0,8}) for (int width : {0,1,4,8,10,60,200}) {
+        Fixture f;
+        CHECK(f.css(std::string("#t{width:") + std::to_string(width) + "px;table-layout:fixed;border-collapse:collapse;box-sizing:" +
+            (border_box ? "border-box" : "content-box") + ";padding:" + std::to_string(padding) +
+            "px;border:" + std::to_string(border) + "px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}"));
+        CHECK(f.layout("<body><table id=t><tbody id=g><tr><td id=a><div></div></td>"
+            "<td><div></div></td></tr></tbody></table></body>"));
+        const double half_frame = border ? 8 : 4;
+        CHECK(near(f.box("t").width, border_box ? std::max(double(width), half_frame) : width + half_frame));
+        CHECK(near(f.box("g").width, border_box ? std::max(0.0, width - half_frame) : width));
+        CHECK(near(f.box("t").padding_left, 0));
+        CHECK(near(f.abs_x("a"), half_frame * .5));
+    }
+}
 
 void test_table_fixed_layout_columns() {
     // table-layout: fixed with collapsed borders: the first row's authored
@@ -234,6 +560,41 @@ void test_table_cells_stretch_and_vertical_align() {
 }
 
 void test_table_row_groups_and_captions() {
+    // Chrome: the wrapper's full 200px fits these three 65px blocks on one
+    // line. Grid borders and padding must not narrow or offset the caption.
+    for (bool collapse : {false,true}) for (bool bottom : {false,true}) for (int padding : {0,20}) {
+        Fixture c;
+        CHECK(c.css(std::string("#t{width:200px;table-layout:fixed;border-collapse:") +
+            (collapse ? "collapse" : "separate") + ";border-spacing:2px;padding:" + std::to_string(padding) +
+            "px;border:8px solid blue;background:lime}caption{font-size:0;line-height:0;text-align:left;caption-side:" +
+            (bottom ? "bottom" : "top") + "}caption i{display:inline-block;width:65px;height:10px}"
+            "td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}"));
+        CHECK(c.layout("<body><table id=t><caption id=cap><i></i><i></i><i></i></caption>"
+            "<tbody id=g><tr id=r><td><div></div></td><td><div></div></td></tr></tbody></table><div id=after></div></body>"));
+        const double grid_height = collapse ? 36 : 48 + 2 * padding;
+        CHECK(near(c.box("cap").width,200));
+        CHECK(near(c.box("cap").height,10));
+        CHECK(near(c.abs_x("cap"),0));
+        CHECK(near(c.abs_y("cap"),bottom ? grid_height : 0));
+        CHECK(near(c.box("t").height,grid_height + 10));
+        CHECK(near(c.abs_y("after"),grid_height + 10));
+        const double inset = collapse ? 4 : 10 + padding;
+        CHECK(near(c.abs_x("g"),inset));
+        CHECK(near(c.abs_x("r"),inset));
+        CHECK(near(c.box("g").width,200 - 2 * inset));
+        CHECK(near(c.box("r").width,200 - 2 * inset));
+        CHECK(near(c.box("g").height,28));
+        SoftwareRenderer renderer(400,300);
+        PaintContext paint; paint.backend = &renderer; paint.styles = &c.styles;
+        paint_tree(c.tree,c.root,c.ctx,paint);
+        CHECK(renderer.pixel(50,static_cast<int>(c.abs_y("cap")) + 5).a == 0);
+        const int grid_top = bottom ? 0 : 10;
+        CHECK(renderer.pixel(50,grid_top + 2).b > .99f);
+        CHECK(renderer.pixel(50,grid_top + static_cast<int>(grid_height) - 2).b > .99f);
+
+
+    }
+
     // Rows come out header → body → footer whatever the source order, each
     // group spans its rows, and a caption sits above (or, with caption-side:
     // bottom, below) the row stack.
@@ -291,4 +652,71 @@ void test_table_visibility_collapse_and_column_hints() {
     CHECK(near(h.box("a").width, 0));
     CHECK(near(h.abs_x("b"), 0));
     CHECK(near(h.box("b").width, 150));
+}
+
+// Chrome/152.0.7977.83: tools/oracle/check_table_stacking_chrome.cjs.
+// An auto-z cell does not isolate descendant stacking; an explicit zero does.
+void test_table_nested_stacking_order() {
+    for (const std::string parent_z : {"auto", "0", "2", "-1"}) {
+        for (const std::string child_z : {"3", "-1"}) for (bool wrapper : {false, true}) {
+            Fixture f;
+            CHECK(f.css("html,body{margin:0;padding:0}table{position:relative;width:200px;table-layout:fixed;border-collapse:collapse}"
+                "td{padding:0;border:8px solid red;height:40px;position:relative}#a{z-index:" + parent_z + "}#b{background:yellow}"
+                "#front{position:absolute;left:0;top:10px;width:150px;height:20px;background:blue;z-index:" + child_z + "}"
+                "#back{position:absolute;left:0;top:10px;width:80px;height:20px;background:lime;z-index:1}"
+                "#wrapper{position:relative;height:40px}"));
+            const std::string front = "<div id=front></div>";
+            CHECK(f.layout("<table id=t><tr><td id=a>" +
+                (wrapper ? "<div id=wrapper>" + front + "</div>" : front) +
+                "</td><td id=b><div id=back></div></td></tr></table>",240,100));
+            SoftwareRenderer renderer(240,100);
+            PaintContext paint; paint.styles=&f.styles; paint.backend=&renderer;
+            paint_tree(f.tree,f.root,f.ctx,paint);
+            const bool behind = parent_z == "-1" || (parent_z == "auto" && child_z == "-1");
+            const bool above = parent_z == "2" || (parent_z == "auto" && child_z == "3");
+            for (int x : {98,102,120}) {
+                const auto pixel = renderer.pixel(x,24);
+                const bool blue = !behind && (above || x < 120);
+                const bool red = behind && x < 120;
+                CHECK(near(pixel.r,red ? 1 : 0));
+                CHECK(near(pixel.g,!blue && !red ? 1 : 0));
+                CHECK(near(pixel.b,blue ? 1 : 0));
+                CHECK(near(pixel.a,1));
+                const char* expected = above ? "front" : x == 120 ? "back" : x == 102 ? "b" :
+                    parent_z == "-1" ? "t" : behind ? "a" : "front";
+                const auto* hit=element_at_point(f.tree,f.root,x,24,&f.ctx);
+                CHECK(hit && hit->get_attribute("id") == expected);
+            }
+        }
+    }
+}
+
+void test_table_opacity_stacking() {
+    for (const char* opacity : {"1","1.0","100%","1e0","+1","2"}) for (bool wrapper : {false,true}) {
+        Fixture f;
+        CHECK(f.css(std::string("html,body{margin:0;padding:0}table{position:relative;width:200px;table-layout:fixed;border-collapse:collapse}") +
+            "td{padding:0;border:8px solid red;height:40px;position:relative}#a{opacity:" + opacity + "}#b{background:yellow}"
+            "#front{position:absolute;left:0;top:10px;width:150px;height:20px;background:blue;z-index:3}"
+            "#back{position:absolute;left:0;top:10px;width:80px;height:20px;background:lime;z-index:1}"
+            "#wrapper{position:relative;height:40px}"));
+        const std::string front="<div id=front></div>";
+        CHECK(f.layout("<table id=t><tr><td id=a>" + (wrapper ? "<div id=wrapper>"+front+"</div>" : front) +
+            "</td><td id=b><div id=back></div></td></tr></table>",240,100));
+        SoftwareRenderer renderer(240,100); PaintContext paint; paint.styles=&f.styles;paint.backend=&renderer;
+        paint_tree(f.tree,f.root,f.ctx,paint);
+        CHECK(!table_positioned_isolation(f.box("a")));
+        for (int x : {98,102,120}) {
+            const auto pixel=renderer.pixel(x,24);
+            CHECK(near(pixel.r,0) && near(pixel.g,0) && near(pixel.b,1) && near(pixel.a,1));
+            const auto* hit=element_at_point(f.tree,f.root,x,24,&f.ctx);
+            CHECK(hit && hit->get_attribute("id")=="front");
+        }
+    }
+    ComputedStyle style;
+    Box box; box.style=&style; box.position=PositionType::Relative;
+    for (const char* value : {".5","50%","5e-1"}) {
+        style.set("opacity",value);
+        CHECK(near(resolve_opacity(&style),.5));
+        CHECK(table_positioned_isolation(box));
+    }
 }

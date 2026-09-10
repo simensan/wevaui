@@ -73,6 +73,14 @@ double FontInterfaceMetrics::descent(double fs) const {
     return fm.descent;
 }
 
+// Blink's CalculateLeadingSpace puts the fractional pixel below the line.
+// Keep exact arithmetic for synthetic unit-test metrics, but use the browser
+// convention for actual font backends.
+double FontInterfaceMetrics::leading_above(double height, double fs) const {
+    const double half = (height - ascent(fs) - descent(fs)) * .5;
+    return font_ && font_->rounds_line_leading() ? std::floor(half) : half;
+}
+
 double FontInterfaceMetrics::measure(std::string_view text, double fs) const {
     if (!font_ || text.empty()) return 0;
 

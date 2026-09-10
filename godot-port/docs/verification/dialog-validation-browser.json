@@ -1,0 +1,145 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "name": "required-empty",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 1
+    },
+    {
+      "name": "required-filled",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "readonly",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "disabled",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "checkbox-empty",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 1
+    },
+    {
+      "name": "checkbox-checked",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "radio-empty",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 2
+    },
+    {
+      "name": "radio-peer",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "select-empty",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 1
+    },
+    {
+      "name": "select-filled",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "email-invalid",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 1
+    },
+    {
+      "name": "email-valid",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "number-underflow",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 1
+    },
+    {
+      "name": "number-overflow",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 1
+    },
+    {
+      "name": "number-step",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 1
+    },
+    {
+      "name": "number-valid",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "pattern",
+      "open": true,
+      "result": "",
+      "submits": 0,
+      "invalid": 1
+    },
+    {
+      "name": "pattern-match",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "novalidate",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    },
+    {
+      "name": "formnovalidate",
+      "open": false,
+      "result": "yes",
+      "submits": 1,
+      "invalid": 0
+    }
+  ]
+}

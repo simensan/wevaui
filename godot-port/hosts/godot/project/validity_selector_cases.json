@@ -1,0 +1,2938 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "name": "text/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"text\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "text/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"text\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "text/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"text\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "text/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"text\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "text/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"text\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "number/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"number\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "number/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"number\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "number/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"number\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "number/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"number\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "number/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"number\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "email/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"email\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "email/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"email\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "email/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"email\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "email/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"email\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "email/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"email\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "url/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"url\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "url/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"url\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "url/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"url\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "url/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"url\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "url/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"url\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "checkbox/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"checkbox\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "checkbox/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"checkbox\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "checkbox/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"checkbox\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "checkbox/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"checkbox\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "checkbox/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"checkbox\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "radio/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"radio\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "radio/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"radio\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "radio/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"radio\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "radio/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"radio\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "radio/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"radio\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "range/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"range\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "range/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"range\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "range/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"range\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "range/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"range\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "range/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"range\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "date/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"date\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "date/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"date\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "date/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"date\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "date/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"date\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "date/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"date\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "time/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"time\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "time/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"time\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "time/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"time\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "time/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"time\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "time/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"time\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "month/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"month\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "month/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"month\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "month/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"month\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "month/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"month\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "month/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"month\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "week/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"week\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "week/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"week\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "week/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"week\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "week/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"week\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "week/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"week\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "datetime-local/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"datetime-local\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "datetime-local/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"datetime-local\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "datetime-local/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"datetime-local\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "datetime-local/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"datetime-local\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "datetime-local/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"datetime-local\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "hidden/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"hidden\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "hidden/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"hidden\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "hidden/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"hidden\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "hidden/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"hidden\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "hidden/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"hidden\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "button/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"button\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "button/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"button\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "button/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"button\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "button/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"button\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "button/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"button\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "submit/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"submit\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "submit/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"submit\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "submit/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"submit\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "submit/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"submit\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "submit/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"submit\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "reset/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"reset\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "reset/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"reset\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "reset/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"reset\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "reset/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"reset\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "reset/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"reset\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "file/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"file\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "file/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"file\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "file/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"file\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "file/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"file\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "file/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"file\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "color/plain",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"color\"   ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "color/required",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"color\" required  ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "color/disabled",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"color\"  required disabled ></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "color/readonly",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"color\"   required readonly></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "color/custom",
+      "html": "<form id=f><fieldset id=s><input id=c type=\"color\"   ></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "html": "<form id=f><fieldset id=s></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "external-owner",
+      "html": "<form id=f></form><fieldset id=s><input id=c required form=f></fieldset>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "other-owner",
+      "html": "<form id=other></form><form id=f><fieldset id=s><input id=c required form=other></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "fieldset-disabled",
+      "html": "<form id=f><fieldset id=s disabled><input id=c required></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "first-legend",
+      "html": "<form id=f><fieldset id=s disabled><legend><input id=c required></legend></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "datalist",
+      "html": "<form id=f><fieldset id=s><datalist><input id=c required></datalist></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "readonly-parent",
+      "html": "<form id=f readonly><fieldset id=s readonly><input id=c required></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "fieldset-custom",
+      "html": "<form id=f><fieldset id=s><input id=c></fieldset></form>",
+      "custom": "s",
+      "states": [
+        {
+          "id": "f",
+          "valid": true,
+          "invalid": false,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": true,
+          "invalid": false,
+          "will_validate": false,
+          "validity": false
+        },
+        {
+          "id": "c",
+          "valid": true,
+          "invalid": false,
+          "will_validate": true,
+          "validity": true
+        }
+      ]
+    },
+    {
+      "name": "button-custom",
+      "html": "<form id=f><fieldset id=s><button id=c>Save</button></fieldset></form>",
+      "custom": "c",
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "textarea",
+      "html": "<form id=f><fieldset id=s><textarea id=c required></textarea></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "html": "<form id=f><fieldset id=s><select id=c required><option value=\"\">Choose</option></select></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "number-step",
+      "html": "<form id=f><fieldset id=s><input id=c type=number min=2 step=2 value=5></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "pattern",
+      "html": "<form id=f><fieldset id=s><input id=c pattern=\"[a-z]+\" value=\"123\"></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "novalidate",
+      "html": "<form id=f novalidate><fieldset id=s><input id=c required></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    },
+    {
+      "name": "radio-group",
+      "html": "<form id=f><fieldset id=s><input id=c type=radio name=g><input type=radio name=g required></fieldset></form>",
+      "custom": null,
+      "states": [
+        {
+          "id": "f",
+          "valid": false,
+          "invalid": true,
+          "will_validate": null,
+          "validity": null
+        },
+        {
+          "id": "s",
+          "valid": false,
+          "invalid": true,
+          "will_validate": false,
+          "validity": true
+        },
+        {
+          "id": "c",
+          "valid": false,
+          "invalid": true,
+          "will_validate": true,
+          "validity": false
+        }
+      ]
+    }
+  ]
+}

@@ -119,6 +119,26 @@ func _ready() -> void:
 		await RenderingServer.frame_post_draw
 		check(viewport.get_texture().get_image().save_png(capture) == OK, "Select preview saved")
 	doc.free()
+	var transformed := WevaDocument.new()
+	transformed.use_engine_font = false
+	transformed.document_size = Vector2(640, 480)
+	transformed.css = "html,body{margin:0}select{display:block;width:160px;height:28px;font-size:14px;transform-origin:0 0;transform:translate(100px,40px) scale(1.5)}"
+	transformed.html = '<select id="moved"><option value="low">Low</option><option value="med">Medium</option><option value="high">High</option></select>'
+	viewport.add_child(transformed)
+	await get_tree().process_frame
+	for point in [Vector2(220, 60), Vector2(300, 150)]:
+		for pressed in [true, false]:
+			var event := InputEventMouseButton.new()
+			event.position = point
+			event.button_index = MOUSE_BUTTON_LEFT
+			event.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+			event.pressed = pressed
+			viewport.push_input(event, true)
+		if point.y == 60:
+			check(transformed.get_open_select() == "moved", "Native click opens transformed select")
+	check(transformed.get_element_value("#moved") == "high", "Native popup rows anchor to transformed control")
+	check(transformed.get_open_select() == "", "Transformed popup selection dismisses it")
+	transformed.free()
 	viewport.free()
 	print("godot select controls: %d checks, %d failures" % [checks, failures])
 	get_tree().quit(1 if failures else 0)

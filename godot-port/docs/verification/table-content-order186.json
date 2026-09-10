@@ -1,0 +1,1190 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "cases": [
+    {
+      "name": "static-static-transparent",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": true,
+      "chrome_hits": [
+        "overlay",
+        "b",
+        "b"
+      ],
+      "core_hits": [
+        "overlay",
+        "b",
+        "b"
+      ],
+      "hits_equal": true
+    },
+    {
+      "name": "static-static-yellow",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255
+      ],
+      "equal": true,
+      "chrome_hits": [
+        "overlay",
+        "b",
+        "b"
+      ],
+      "core_hits": [
+        "overlay",
+        "b",
+        "b"
+      ],
+      "hits_equal": true
+    },
+    {
+      "name": "static-relative-transparent",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "b",
+        "b"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "static-relative-yellow",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "b",
+        "b"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "static-absolute-transparent",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "b",
+        "b"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "static-absolute-yellow",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "b",
+        "b"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "relative-static-transparent",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "hits_equal": true
+    },
+    {
+      "name": "relative-static-yellow",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "hits_equal": true
+    },
+    {
+      "name": "relative-relative-transparent",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "hits_equal": true
+    },
+    {
+      "name": "relative-relative-yellow",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "hits_equal": true
+    },
+    {
+      "name": "relative-absolute-transparent",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "hits_equal": true
+    },
+    {
+      "name": "relative-absolute-yellow",
+      "points": [
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "core_hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ],
+      "hits_equal": true
+    }
+  ],
+  "passing": 2,
+  "total": 12,
+  "fixtures": [
+    {
+      "name": "static-static-transparent",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:static}#b{background:transparent}#overlay{position:static;width:140px;height:20px;background:blue;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 14,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "b",
+        "b"
+      ]
+    },
+    {
+      "name": "static-static-yellow",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:static}#b{background:yellow}#overlay{position:static;width:140px;height:20px;background:blue;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 14,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "b",
+        "b"
+      ]
+    },
+    {
+      "name": "static-relative-transparent",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:static}#b{background:transparent}#overlay{position:relative;width:140px;height:20px;background:blue;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 14,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "static-relative-yellow",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:static}#b{background:yellow}#overlay{position:relative;width:140px;height:20px;background:blue;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 14,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "static-absolute-transparent",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:static}#b{background:transparent}#overlay{position:absolute;width:140px;height:20px;background:blue;left:0;top:10px;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 0,
+          "y": 10,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "static-absolute-yellow",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:static}#b{background:yellow}#overlay{position:absolute;width:140px;height:20px;background:blue;left:0;top:10px;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 0,
+          "y": 10,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "relative-static-transparent",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:relative}#b{background:transparent}#overlay{position:static;width:140px;height:20px;background:blue;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 14,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "relative-static-yellow",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:relative}#b{background:yellow}#overlay{position:static;width:140px;height:20px;background:blue;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 14,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "relative-relative-transparent",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:relative}#b{background:transparent}#overlay{position:relative;width:140px;height:20px;background:blue;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 14,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "relative-relative-yellow",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:relative}#b{background:yellow}#overlay{position:relative;width:140px;height:20px;background:blue;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 14,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "relative-absolute-transparent",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:relative}#b{background:transparent}#overlay{position:absolute;width:140px;height:20px;background:blue;left:0;top:10px;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 18,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    },
+    {
+      "name": "relative-absolute-yellow",
+      "html": "<table id=t><tr><td id=a><div id=overlay></div></td><td id=b></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid red;height:40px}#a{position:relative}#b{background:yellow}#overlay{position:absolute;width:140px;height:20px;background:blue;left:0;top:10px;}",
+      "bounds": [
+        {
+          "id": "t",
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 48
+        },
+        {
+          "id": "a",
+          "x": 4,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        },
+        {
+          "id": "overlay",
+          "x": 8,
+          "y": 18,
+          "width": 140,
+          "height": 20
+        },
+        {
+          "id": "b",
+          "x": 100,
+          "y": 4,
+          "width": 96,
+          "height": 40
+        }
+      ],
+      "hits": [
+        "overlay",
+        "overlay",
+        "overlay"
+      ]
+    }
+  ],
+  "status": "open_regression",
+  "hit_cases_passing": 8,
+  "sha256": {
+    ".utmp/safe-engine71/table186-content-matrix.json": "a609fceb813eadb1352def268c74501a34ddb537fb2364bb6bcc5188da589974",
+    ".utmp/safe-engine71/table186-probe.cpp": "7561f3c9ff7681d03a7625c396837e0f1379081c7790566c3ca9a80a835a45ed",
+    ".utmp/safe-engine71/table186-probe.log": "e7c35b851355d295d74604615bd7a251eac3fe1d57bafba108bfc4acc9bde7e6",
+    "godot-port/libweva/src/paint.cpp": "3766ffb9839a4dacbbe3c1db38f061a2ad47476be71ce39f09218bd85dee8303",
+    "godot-port/libweva/src/hit_test.cpp": "53a324d971110d3fb9726d221197753134ad21ef7e49c92a98b07f2479894322",
+    "godot-port/libweva/src/positioning.cpp": "f4a3b0ee51466e0dafbc786a576b575ad50c2edf3e418975bf2a925a7db69a3a"
+  },
+  "scope": "Three sampled pixels and hit targets per fixture; not full-image parity. Current sanitizer-built core diagnostic completed without sanitizer errors. No engine fix or installed-addon change made.",
+  "next_requirements": [
+    "Preserve ordinary non-positioned table content and border ordering.",
+    "Resolve positioned descendant order consistently for paint and hit testing, including ancestor clips/transforms and z ordering.",
+    "Preserve complete version-keyed paint replay ranges; partial ancestor replay must not omit deferred descendants.",
+    "Verify live mutations against full rebuild and measure changed-table work before qualification."
+  ]
+}

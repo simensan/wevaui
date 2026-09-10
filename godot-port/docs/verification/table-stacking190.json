@@ -1,0 +1,839 @@
+{
+  "status": "confirmed_remaining_defect",
+  "browser": "Chrome/152.0.7977.83",
+  "cases": 16,
+  "pixel_passes": 12,
+  "hit_passes": 8,
+  "source_candidate": "installed preview189",
+  "failures": [
+    {
+      "name": "parent-auto-child-3-wrapper-false",
+      "points": [
+        [
+          98,
+          16
+        ],
+        [
+          102,
+          16
+        ],
+        [
+          120,
+          16
+        ],
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "front",
+        "front"
+      ],
+      "core_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "b",
+        "back"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "parent-auto-child-3-wrapper-true",
+      "points": [
+        [
+          98,
+          16
+        ],
+        [
+          102,
+          16
+        ],
+        [
+          120,
+          16
+        ],
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "front",
+        "front"
+      ],
+      "core_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "b",
+        "back"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "parent-auto-child--1-wrapper-false",
+      "points": [
+        [
+          98,
+          16
+        ],
+        [
+          102,
+          16
+        ],
+        [
+          120,
+          16
+        ],
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "a",
+        "b",
+        "b",
+        "a",
+        "b",
+        "back"
+      ],
+      "core_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "b",
+        "back"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "parent-auto-child--1-wrapper-true",
+      "points": [
+        [
+          98,
+          16
+        ],
+        [
+          102,
+          16
+        ],
+        [
+          120,
+          16
+        ],
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "equal": false,
+      "chrome_hits": [
+        "a",
+        "b",
+        "b",
+        "a",
+        "b",
+        "back"
+      ],
+      "core_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "b",
+        "back"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "parent--1-child-3-wrapper-false",
+      "points": [
+        [
+          98,
+          16
+        ],
+        [
+          102,
+          16
+        ],
+        [
+          120,
+          16
+        ],
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "equal": true,
+      "chrome_hits": [
+        "t",
+        "b",
+        "b",
+        "t",
+        "b",
+        "back"
+      ],
+      "core_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "b",
+        "back"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "parent--1-child-3-wrapper-true",
+      "points": [
+        [
+          98,
+          16
+        ],
+        [
+          102,
+          16
+        ],
+        [
+          120,
+          16
+        ],
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "equal": true,
+      "chrome_hits": [
+        "t",
+        "b",
+        "b",
+        "t",
+        "b",
+        "back"
+      ],
+      "core_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "b",
+        "back"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "parent--1-child--1-wrapper-false",
+      "points": [
+        [
+          98,
+          16
+        ],
+        [
+          102,
+          16
+        ],
+        [
+          120,
+          16
+        ],
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "equal": true,
+      "chrome_hits": [
+        "t",
+        "b",
+        "b",
+        "t",
+        "b",
+        "back"
+      ],
+      "core_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "b",
+        "back"
+      ],
+      "hits_equal": false
+    },
+    {
+      "name": "parent--1-child--1-wrapper-true",
+      "points": [
+        [
+          98,
+          16
+        ],
+        [
+          102,
+          16
+        ],
+        [
+          120,
+          16
+        ],
+        [
+          98,
+          24
+        ],
+        [
+          102,
+          24
+        ],
+        [
+          120,
+          24
+        ]
+      ],
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "core_rgba": [
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        255,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        255,
+        0,
+        0,
+        255,
+        0,
+        255,
+        0,
+        255
+      ],
+      "equal": true,
+      "chrome_hits": [
+        "t",
+        "b",
+        "b",
+        "t",
+        "b",
+        "back"
+      ],
+      "core_hits": [
+        "a",
+        "b",
+        "b",
+        "front",
+        "b",
+        "back"
+      ],
+      "hits_equal": false
+    }
+  ],
+  "scope": "Relative table cells with auto, zero, positive or negative z-index; direct or relative-wrapped absolute children; sampled overlap pixels and pointer targets",
+  "regression_test": {
+    "name": "test_table_nested_stacking_order",
+    "cases": 16,
+    "new_checks": 272,
+    "current_full_suite_checks": 501119,
+    "current_failures": 22,
+    "status": "expected failing reproduction; runtime correction pending",
+    "log": ".utmp/safe-engine71/table-stacking190-regression.log"
+  },
+  "source_progress": {
+    "status": "partial correction not installed",
+    "change": "Split auto-z wrapper drawing from positioned descendants; preserve explicit stacking contexts and reverse pointer order",
+    "pixel_passes": 14,
+    "hit_passes": 10,
+    "cases": 16,
+    "full_suite_checks": 501119,
+    "remaining_assertion_failures": 14,
+    "remaining_failures": [
+      "parent-auto-child--1-wrapper-false",
+      "parent-auto-child--1-wrapper-true",
+      "parent--1-child-3-wrapper-false",
+      "parent--1-child-3-wrapper-true",
+      "parent--1-child--1-wrapper-false",
+      "parent--1-child--1-wrapper-true"
+    ],
+    "allocation_guard": {
+      "checks": 113910,
+      "passed": true,
+      "changed_table_allocations": 58,
+      "unrelated_table_allocations": 30
+    },
+    "limitations": [
+      "Negative-z table drawing and hit routing remain incorrect",
+      "Native and sanitizer qualification of this source correction pending"
+    ]
+  }
+}

@@ -33,6 +33,13 @@ std::string tokens(std::string_view v) {
 } // namespace
 
 void test_shorthand_tokenizer() {
+    CHECK(expand("container","Card / inline-size")=="container-name=Card;container-type=inline-size");
+    CHECK(expand("container","Card Hud/size")=="container-name=Card Hud;container-type=size");
+    CHECK(expand("container","Card")=="container-name=Card;container-type=normal");
+    CHECK(expand("container","inherit")=="container-name=inherit;container-type=inherit");
+    CHECK(expand("container","/ size")=="<none>");
+    CHECK(expand("container","none Card / size")=="<none>");
+    CHECK(expand("container","Card / banana")=="<none>");
     CHECK_EQ(tokens("1px 2px"), "1px|2px");
     CHECK_EQ(tokens("  1px   2px  "), "1px|2px");
     // A parenthesised group is one token however much whitespace it contains.

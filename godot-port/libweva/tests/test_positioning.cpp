@@ -236,6 +236,15 @@ void test_absolute_placement() {
         CHECK(near(f.box("a").y, (200 - 50) * 0.5));
     }
     {
+        Fixture f;
+        CHECK(f.css("#o{position:relative;width:400px;height:200px}"
+                    "#a{position:absolute;inset:0;margin:auto;width:100px;height:fit-content}"
+                    "#child{height:50px}"));
+        CHECK(f.layout("<div id=o><div id=a><div id=child></div></div></div>"));
+        CHECK(near(f.box("a").y, 75));
+        CHECK(near(f.box("a").height, 50));
+    }
+    {
         // With NEITHER edge on an axis, the box keeps its STATIC position —
         // where it would have been in flow — rather than snapping to the
         // containing block's origin.

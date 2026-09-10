@@ -362,6 +362,12 @@ bool ComputedStyle::differs_from(const ComputedStyle& other, std::vector<int>* c
 
 std::vector<int> ComputedStyle::set_ids() const {
     std::vector<int> out;
+    copy_set_ids(out);
+    return out;
+}
+
+void ComputedStyle::copy_set_ids(std::vector<int>& out) const {
+    out.clear();
     out.reserve(static_cast<size_t>(set_count_));
     // Resolution passes visit only declarations this style owns. Iterate the
     // existing occupancy words, preserving ascending property order, instead
@@ -373,7 +379,6 @@ std::vector<int> ComputedStyle::set_ids() const {
             word &= word - 1;
         }
     }
-    return out;
 }
 
 } // namespace weva

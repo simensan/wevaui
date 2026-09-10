@@ -103,6 +103,8 @@ struct Item {
     double main = 0;
     double main_margins = 0;
     double cross_margins = 0;
+    double violation = 0;
+    double main_frame = 0;
     bool frozen = false;
     double min_main = 0;
     double max_main = -1;   // negative means none
@@ -349,6 +351,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         const double main_frame =
             column ? b.padding_top + b.padding_bottom + b.border_top + b.border_bottom
                    : b.padding_left + b.padding_right + b.border_left + b.border_right;
+        it.main_frame = main_frame;
         const double minmax_frame = is_border_box(is) ? 0 : main_frame;
         if (min_r.kind == LengthKind::Length) {
             it.min_main = std::max(0.0, min_r.pixels) + minmax_frame;
@@ -384,11 +387,18 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             const bool scroll_container =
                 (!oy.empty() && !iequals(oy, "visible") && !iequals(oy, "clip")) ||
                 (!ox.empty() && !iequals(ox, "visible") && !iequals(ox, "clip"));
-            const bool auto_main = size_raw.empty() || iequals(size_raw, "auto");
-            if (!scroll_container && auto_main) {
+            if (!scroll_container) {
                 const double frame =
                     b.padding_left + b.padding_right + b.border_left + b.border_right;
-                it.min_main = std::max(it.min_main, b.parent_layout_input.min_content + frame);
+                double minimum=b.parent_layout_input.min_content + frame;
+                // A specified width caps the content-based minimum; it does
+                // not disable it. Otherwise a fixed-width buff icon shrinks
+                // below its glyph to zero inside a narrow query container.
+                const auto specified=resolve_length(is,kId_width,ctx,
+                    b.font_size > 0 ? b.font_size : font_size,main_basis);
+                if (specified.kind==LengthKind::Length)
+                    minimum=std::min(minimum,specified.pixels+minmax_frame);
+                it.min_main = std::max(it.min_main, minimum);
             }
         }
         const ResolvedLength max_r =
@@ -399,7 +409,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         }
 
 
-        it.base = std::max(0.0, base);
+        it.base = std::max(main_frame, base);
         it.hypothetical = it.base;
         if (it.hypothetical < it.min_main) it.hypothetical = it.min_main;
         if (it.max_main >= 0 && it.hypothetical > it.max_main) it.hypothetical = it.max_main;
@@ -481,44 +491,47 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         for (size_t i = ln.begin; i < ln.end; ++i) {
             Item& it = items[i];
             it.main = it.hypothetical;
-            it.frozen = growing ? it.grow <= 0 : it.shrink <= 0;
+            it.frozen = growing ? (it.grow <= 0 || it.base > it.hypothetical)
+                                : (it.shrink <= 0 || it.base < it.hypothetical);
         }
-        // Loop because clamping an item to its min or max frees space that the
-        // remaining items must absorb — §9.7 step 4's "restart" condition.
+        double initial_free = available_main - gaps;
+        for (size_t i = ln.begin; i < ln.end; ++i) {
+            const Item& it = items[i];
+            initial_free -= (it.frozen ? it.main : it.base) + it.main_margins;
+        }
+        // CSS Flexbox §9.7: freeze only violations with the same sign as the
+        // total violation, then redistribute. Opposing clamps can cancel.
         for (size_t pass = 0; pass < n + 1; ++pass) {
-            double frozen_total = gaps;
-            double flex_factor = 0;
+            double used = gaps, weight = 0, factor = 0;
             for (size_t i = ln.begin; i < ln.end; ++i) {
                 const Item& it = items[i];
-                frozen_total += it.main_margins;
-                if (it.frozen) frozen_total += it.main;
-                else {
-                    frozen_total += it.base;
-                    flex_factor += growing ? it.grow : it.shrink * it.base;
+                used += it.main_margins + (it.frozen ? it.main : it.base);
+                if (!it.frozen) {
+                    factor += growing ? it.grow : it.shrink;
+                    weight += growing ? it.grow : it.shrink * std::max(0.0, it.base - it.main_frame);
                 }
             }
-            const double free_space = available_main - frozen_total;
-            if (flex_factor <= 0) break;
-
-            bool clamped_any = false;
+            double free_space = available_main - used;
+            if (factor < 1 && std::fabs(initial_free * factor) < std::fabs(free_space))
+                free_space = initial_free * factor;
+            double total_violation = 0;
             for (size_t i = ln.begin; i < ln.end; ++i) {
                 Item& it = items[i];
                 if (it.frozen) continue;
-                const double share = growing ? it.grow : it.shrink * it.base;
-                double target = it.base + free_space * (share / flex_factor);
-                if (target < it.min_main) {
-                    target = it.min_main;
-                    it.frozen = true;
-                    clamped_any = true;
-                } else if (it.max_main >= 0 && target > it.max_main) {
-                    target = it.max_main;
-                    it.frozen = true;
-                    clamped_any = true;
-                }
-                if (target < 0) target = 0;
-                it.main = target;
+                const double share = growing ? it.grow : it.shrink * std::max(0.0, it.base - it.main_frame);
+                const double target = it.base + (weight > 0 ? free_space * share / weight : 0);
+                it.main = std::max(it.main_frame, target);
+                if (it.max_main >= 0) it.main = std::min(it.main, it.max_main);
+                it.main = std::max(it.main, it.min_main);
+                it.violation = it.main - target;
+                total_violation += it.violation;
             }
-            if (!clamped_any) break;
+            if (std::fabs(total_violation) <= 1e-9) break;
+            for (size_t i = ln.begin; i < ln.end; ++i) {
+                Item& it = items[i];
+                if ((total_violation > 0 && it.violation > 0) ||
+                    (total_violation < 0 && it.violation < 0)) it.frozen = true;
+            }
         }
     };
     for (const Line& ln : lines) resolve_line(ln);

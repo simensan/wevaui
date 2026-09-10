@@ -37,11 +37,26 @@ ContainingBlock resolve_fixed_containing_block(const BoxTree& tree, BoxId box,
 // second group is how an `inset: 0` child of `transform: scale(1)` ends up
 // filling the viewport instead of its parent.
 bool establishes_absolute_containing_block(const Box& b);
+bool establishes_fixed_containing_block(const Box& b);
+// A positioned descendant escapes overflow between itself and its containing
+// block. The containing block itself, and its ancestors, still clip it.
+bool overflow_clip_applies(const BoxTree& tree, BoxId clip, BoxId containing_block);
+bool subtree_has_overflow_escape(const BoxTree& tree, BoxId root, const LayoutContext& ctx);
 
 // Where a box is DRAWN: the same sum with every ancestor's scroll offset taken
 // off. A host asking where an element is on screen wants this one; layout, which
 // runs before anything is scrolled, wants the other.
 void visual_position(const BoxTree& tree, BoxId box, double* x, double* y);
+
+// Whether a block promoted by block-in-inline splitting contributes a client
+// fragment to this inline element. Does not include descendant overflow.
+bool is_promoted_inline_fragment(const Box& box, const Element* element);
+
+// The anonymous continuation's rectangle in its parent's coordinates. It
+// fills the containing block, independently of the promoted child's width or
+// relative/transform offset.
+void promoted_inline_rect(const BoxTree& tree, BoxId box,
+                          double* x, double* y, double* width, double* height);
 
 // Root-relative origin, summing local offsets up the tree.
 void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y);
@@ -101,6 +116,14 @@ void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx,
 // to the element underneath.
 void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out);
 
+// Collapsed table borders belong below nonnegative positioned descendants.
+// Shared by painting and pointer routing; negative contexts retain their own
+// descendants instead of promoting those descendants through the context.
+bool table_positioned_layer(const Box& box);
+bool table_positioned_isolation(const Box& box);
+bool has_table_positioned_layer(const BoxTree& tree, BoxId root);
+bool has_table_negative_layer(const BoxTree& tree, BoxId root);
+
 // Traverses the existing sibling links when they already follow paint order.
 // Otherwise owns one sorted list for this walk. The tree and its styles must
 // stay unchanged until traversal finishes; nothing is cached between walks.
@@ -135,7 +158,7 @@ public:
     Iterator rend() const { return {this, kNoBox, true}; }
     int size() const { return count_; }
 private:
-    struct Entry { BoxId id; int z; int sequence; bool positioned_zero; };
+    struct Entry { BoxId id; int z; int sequence; bool positioned_zero; uint64_t top_order; };
     const BoxTree& tree_;
     BoxId first_ = kNoBox, last_ = kNoBox;
     int count_ = 0;

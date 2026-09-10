@@ -1,0 +1,994 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "status": "Reproduced, not fixed",
+  "cases": [
+    {
+      "case": {
+        "name": "collapse-top-0",
+        "html": "<table id=t><caption id=cap><i></i><i></i><i></i></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;border-spacing:2px;padding:0px;border:8px solid blue}caption{caption-side:top;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 46
+          },
+          {
+            "id": "cap",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 10
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 14,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 14,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 14,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 100,
+            "y": 14,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "after",
+            "x": 0,
+            "y": 46,
+            "width": 400,
+            "height": 10
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "height",
+          "chrome": 46,
+          "engine": 56
+        },
+        {
+          "id": "cap",
+          "key": "x",
+          "chrome": 0,
+          "engine": 4
+        },
+        {
+          "id": "cap",
+          "key": "y",
+          "chrome": 0,
+          "engine": 4
+        },
+        {
+          "id": "cap",
+          "key": "width",
+          "chrome": 200,
+          "engine": 192
+        },
+        {
+          "id": "cap",
+          "key": "height",
+          "chrome": 10,
+          "engine": 20
+        },
+        {
+          "id": "g",
+          "key": "y",
+          "chrome": 14,
+          "engine": 24
+        },
+        {
+          "id": "r",
+          "key": "y",
+          "chrome": 14,
+          "engine": 24
+        },
+        {
+          "id": "a",
+          "key": "y",
+          "chrome": 14,
+          "engine": 24
+        },
+        {
+          "id": "b",
+          "key": "y",
+          "chrome": 14,
+          "engine": 24
+        },
+        {
+          "id": "after",
+          "key": "y",
+          "chrome": 46,
+          "engine": 56
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "collapse-top-20",
+        "html": "<table id=t><caption id=cap><i></i><i></i><i></i></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;border-spacing:2px;padding:20px;border:8px solid blue}caption{caption-side:top;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 46
+          },
+          {
+            "id": "cap",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 10
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 14,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 14,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 14,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 100,
+            "y": 14,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "after",
+            "x": 0,
+            "y": 46,
+            "width": 400,
+            "height": 10
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "height",
+          "chrome": 46,
+          "engine": 56
+        },
+        {
+          "id": "cap",
+          "key": "x",
+          "chrome": 0,
+          "engine": 4
+        },
+        {
+          "id": "cap",
+          "key": "y",
+          "chrome": 0,
+          "engine": 4
+        },
+        {
+          "id": "cap",
+          "key": "width",
+          "chrome": 200,
+          "engine": 192
+        },
+        {
+          "id": "cap",
+          "key": "height",
+          "chrome": 10,
+          "engine": 20
+        },
+        {
+          "id": "g",
+          "key": "y",
+          "chrome": 14,
+          "engine": 24
+        },
+        {
+          "id": "r",
+          "key": "y",
+          "chrome": 14,
+          "engine": 24
+        },
+        {
+          "id": "a",
+          "key": "y",
+          "chrome": 14,
+          "engine": 24
+        },
+        {
+          "id": "b",
+          "key": "y",
+          "chrome": 14,
+          "engine": 24
+        },
+        {
+          "id": "after",
+          "key": "y",
+          "chrome": 46,
+          "engine": 56
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "collapse-bottom-0",
+        "html": "<table id=t><caption id=cap><i></i><i></i><i></i></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;border-spacing:2px;padding:0px;border:8px solid blue}caption{caption-side:bottom;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 46
+          },
+          {
+            "id": "cap",
+            "x": 0,
+            "y": 36,
+            "width": 200,
+            "height": 10
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 100,
+            "y": 4,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "after",
+            "x": 0,
+            "y": 46,
+            "width": 400,
+            "height": 10
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "height",
+          "chrome": 46,
+          "engine": 56
+        },
+        {
+          "id": "cap",
+          "key": "x",
+          "chrome": 0,
+          "engine": 4
+        },
+        {
+          "id": "cap",
+          "key": "y",
+          "chrome": 36,
+          "engine": 32
+        },
+        {
+          "id": "cap",
+          "key": "width",
+          "chrome": 200,
+          "engine": 192
+        },
+        {
+          "id": "cap",
+          "key": "height",
+          "chrome": 10,
+          "engine": 20
+        },
+        {
+          "id": "after",
+          "key": "y",
+          "chrome": 46,
+          "engine": 56
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "collapse-bottom-20",
+        "html": "<table id=t><caption id=cap><i></i><i></i><i></i></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;border-spacing:2px;padding:20px;border:8px solid blue}caption{caption-side:bottom;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 46
+          },
+          {
+            "id": "cap",
+            "x": 0,
+            "y": 36,
+            "width": 200,
+            "height": 10
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 100,
+            "y": 4,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "after",
+            "x": 0,
+            "y": 46,
+            "width": 400,
+            "height": 10
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "height",
+          "chrome": 46,
+          "engine": 56
+        },
+        {
+          "id": "cap",
+          "key": "x",
+          "chrome": 0,
+          "engine": 4
+        },
+        {
+          "id": "cap",
+          "key": "y",
+          "chrome": 36,
+          "engine": 32
+        },
+        {
+          "id": "cap",
+          "key": "width",
+          "chrome": 200,
+          "engine": 192
+        },
+        {
+          "id": "cap",
+          "key": "height",
+          "chrome": 10,
+          "engine": 20
+        },
+        {
+          "id": "after",
+          "key": "y",
+          "chrome": 46,
+          "engine": 56
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "separate-top-0",
+        "html": "<table id=t><caption id=cap><i></i><i></i><i></i></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:separate;border-spacing:2px;padding:0px;border:8px solid blue}caption{caption-side:top;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 58
+          },
+          {
+            "id": "cap",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 10
+          },
+          {
+            "id": "g",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 10,
+            "y": 20,
+            "width": 89,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 101,
+            "y": 20,
+            "width": 89,
+            "height": 28
+          },
+          {
+            "id": "after",
+            "x": 0,
+            "y": 58,
+            "width": 400,
+            "height": 10
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "height",
+          "chrome": 58,
+          "engine": 68
+        },
+        {
+          "id": "cap",
+          "key": "x",
+          "chrome": 0,
+          "engine": 8
+        },
+        {
+          "id": "cap",
+          "key": "y",
+          "chrome": 0,
+          "engine": 10
+        },
+        {
+          "id": "cap",
+          "key": "width",
+          "chrome": 200,
+          "engine": 184
+        },
+        {
+          "id": "cap",
+          "key": "height",
+          "chrome": 10,
+          "engine": 20
+        },
+        {
+          "id": "g",
+          "key": "x",
+          "chrome": 10,
+          "engine": 8
+        },
+        {
+          "id": "g",
+          "key": "y",
+          "chrome": 20,
+          "engine": 30
+        },
+        {
+          "id": "g",
+          "key": "width",
+          "chrome": 180,
+          "engine": 184
+        },
+        {
+          "id": "g",
+          "key": "height",
+          "chrome": 28,
+          "engine": 30
+        },
+        {
+          "id": "r",
+          "key": "x",
+          "chrome": 10,
+          "engine": 8
+        },
+        {
+          "id": "r",
+          "key": "y",
+          "chrome": 20,
+          "engine": 30
+        },
+        {
+          "id": "r",
+          "key": "width",
+          "chrome": 180,
+          "engine": 184
+        },
+        {
+          "id": "a",
+          "key": "y",
+          "chrome": 20,
+          "engine": 30
+        },
+        {
+          "id": "b",
+          "key": "y",
+          "chrome": 20,
+          "engine": 30
+        },
+        {
+          "id": "after",
+          "key": "y",
+          "chrome": 58,
+          "engine": 68
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "separate-top-20",
+        "html": "<table id=t><caption id=cap><i></i><i></i><i></i></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:separate;border-spacing:2px;padding:20px;border:8px solid blue}caption{caption-side:top;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 98
+          },
+          {
+            "id": "cap",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 10
+          },
+          {
+            "id": "g",
+            "x": 30,
+            "y": 40,
+            "width": 140,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 30,
+            "y": 40,
+            "width": 140,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 30,
+            "y": 40,
+            "width": 69,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 101,
+            "y": 40,
+            "width": 69,
+            "height": 28
+          },
+          {
+            "id": "after",
+            "x": 0,
+            "y": 98,
+            "width": 400,
+            "height": 10
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "height",
+          "chrome": 98,
+          "engine": 108
+        },
+        {
+          "id": "cap",
+          "key": "x",
+          "chrome": 0,
+          "engine": 28
+        },
+        {
+          "id": "cap",
+          "key": "y",
+          "chrome": 0,
+          "engine": 30
+        },
+        {
+          "id": "cap",
+          "key": "width",
+          "chrome": 200,
+          "engine": 144
+        },
+        {
+          "id": "cap",
+          "key": "height",
+          "chrome": 10,
+          "engine": 20
+        },
+        {
+          "id": "g",
+          "key": "x",
+          "chrome": 30,
+          "engine": 28
+        },
+        {
+          "id": "g",
+          "key": "y",
+          "chrome": 40,
+          "engine": 50
+        },
+        {
+          "id": "g",
+          "key": "width",
+          "chrome": 140,
+          "engine": 144
+        },
+        {
+          "id": "g",
+          "key": "height",
+          "chrome": 28,
+          "engine": 30
+        },
+        {
+          "id": "r",
+          "key": "x",
+          "chrome": 30,
+          "engine": 28
+        },
+        {
+          "id": "r",
+          "key": "y",
+          "chrome": 40,
+          "engine": 50
+        },
+        {
+          "id": "r",
+          "key": "width",
+          "chrome": 140,
+          "engine": 144
+        },
+        {
+          "id": "a",
+          "key": "y",
+          "chrome": 40,
+          "engine": 50
+        },
+        {
+          "id": "b",
+          "key": "y",
+          "chrome": 40,
+          "engine": 50
+        },
+        {
+          "id": "after",
+          "key": "y",
+          "chrome": 98,
+          "engine": 108
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "separate-bottom-0",
+        "html": "<table id=t><caption id=cap><i></i><i></i><i></i></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:separate;border-spacing:2px;padding:0px;border:8px solid blue}caption{caption-side:bottom;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 58
+          },
+          {
+            "id": "cap",
+            "x": 0,
+            "y": 48,
+            "width": 200,
+            "height": 10
+          },
+          {
+            "id": "g",
+            "x": 10,
+            "y": 10,
+            "width": 180,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 10,
+            "y": 10,
+            "width": 180,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 10,
+            "y": 10,
+            "width": 89,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 101,
+            "y": 10,
+            "width": 89,
+            "height": 28
+          },
+          {
+            "id": "after",
+            "x": 0,
+            "y": 58,
+            "width": 400,
+            "height": 10
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "height",
+          "chrome": 58,
+          "engine": 68
+        },
+        {
+          "id": "cap",
+          "key": "x",
+          "chrome": 0,
+          "engine": 8
+        },
+        {
+          "id": "cap",
+          "key": "y",
+          "chrome": 48,
+          "engine": 40
+        },
+        {
+          "id": "cap",
+          "key": "width",
+          "chrome": 200,
+          "engine": 184
+        },
+        {
+          "id": "cap",
+          "key": "height",
+          "chrome": 10,
+          "engine": 20
+        },
+        {
+          "id": "g",
+          "key": "x",
+          "chrome": 10,
+          "engine": 8
+        },
+        {
+          "id": "g",
+          "key": "width",
+          "chrome": 180,
+          "engine": 184
+        },
+        {
+          "id": "g",
+          "key": "height",
+          "chrome": 28,
+          "engine": 30
+        },
+        {
+          "id": "r",
+          "key": "x",
+          "chrome": 10,
+          "engine": 8
+        },
+        {
+          "id": "r",
+          "key": "width",
+          "chrome": 180,
+          "engine": 184
+        },
+        {
+          "id": "after",
+          "key": "y",
+          "chrome": 58,
+          "engine": 68
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "separate-bottom-20",
+        "html": "<table id=t><caption id=cap><i></i><i></i><i></i></caption><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table><div id=after></div>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:separate;border-spacing:2px;padding:20px;border:8px solid blue}caption{caption-side:bottom;font-size:0;line-height:0;text-align:left}caption i{display:inline-block;width:65px;height:10px}td{padding:0;border:4px solid red}td>div{height:20px}#after{height:10px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 98
+          },
+          {
+            "id": "cap",
+            "x": 0,
+            "y": 88,
+            "width": 200,
+            "height": 10
+          },
+          {
+            "id": "g",
+            "x": 30,
+            "y": 30,
+            "width": 140,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 30,
+            "y": 30,
+            "width": 140,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 30,
+            "y": 30,
+            "width": 69,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 101,
+            "y": 30,
+            "width": 69,
+            "height": 28
+          },
+          {
+            "id": "after",
+            "x": 0,
+            "y": 98,
+            "width": 400,
+            "height": 10
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "height",
+          "chrome": 98,
+          "engine": 108
+        },
+        {
+          "id": "cap",
+          "key": "x",
+          "chrome": 0,
+          "engine": 28
+        },
+        {
+          "id": "cap",
+          "key": "y",
+          "chrome": 88,
+          "engine": 60
+        },
+        {
+          "id": "cap",
+          "key": "width",
+          "chrome": 200,
+          "engine": 144
+        },
+        {
+          "id": "cap",
+          "key": "height",
+          "chrome": 10,
+          "engine": 20
+        },
+        {
+          "id": "g",
+          "key": "x",
+          "chrome": 30,
+          "engine": 28
+        },
+        {
+          "id": "g",
+          "key": "width",
+          "chrome": 140,
+          "engine": 144
+        },
+        {
+          "id": "g",
+          "key": "height",
+          "chrome": 28,
+          "engine": 30
+        },
+        {
+          "id": "r",
+          "key": "x",
+          "chrome": 30,
+          "engine": 28
+        },
+        {
+          "id": "r",
+          "key": "width",
+          "chrome": 140,
+          "engine": 144
+        },
+        {
+          "id": "after",
+          "key": "y",
+          "chrome": 98,
+          "engine": 108
+        }
+      ]
+    }
+  ],
+  "failing": 8,
+  "total": 8,
+  "finding": "Captions are laid out at the table content width before collapsed borders are resolved, then placed inside its border/padding. Chrome gives them the table outer width and places them outside the table grid frame.",
+  "scope": "Text-free inline-block wrapping to exclude font metric differences; top/bottom captions, separate/collapsed borders, zero/20px table padding."
+}

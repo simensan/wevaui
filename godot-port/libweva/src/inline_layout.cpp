@@ -1,6 +1,8 @@
 #include "weva/inline_layout.h"
 
 #include "weva/text_classes.h"
+#include "weva/grapheme.h"
+#include "weva/form_state.h"
 
 // For FloatContext, which line-box narrowing queries.
 #include "weva/block_layout.h"
@@ -181,58 +183,43 @@ double letter_spacing_px(const ComputedStyle* style, const LayoutContext& ctx, d
     return 0;
 }
 
-// UTF-16 code units, which is what the reference's string.Length counts: an
-// astral-plane emoji is two, everything else one. A 32px glyph with 0.01em
-// spacing measured 0.32px wider there than a code-point count gives.
+// Typographic character spacing follows grapheme clusters, including emoji.
 int letter_count(std::string_view text) {
     int n = 0;
-    for (unsigned char c : text) {
-        if ((c & 0xC0) == 0x80) continue;
-        n += (c & 0xF8) == 0xF0 ? 2 : 1;
-    }
+    size_t end = 0;
+    Graphemes clusters(text);
+    while (clusters.next(&end)) ++n;
     return n;
 }
 
-// The reference measures a whole run as width + spacing × (characters − 1),
-// spaces included. A run is placed here piece by piece, so every piece adds
-// spacing × characters and the run's FIRST piece adds one less — the sum is
-// the same however the run breaks. Counting per piece with (n − 1) each
-// dropped one spacing per space: "LV 7" at 0.16em came out 6.4px short.
+// Browser advances include spacing after the final typographic character.
+// Splitting a run into words must not remove spacing at each new fragment.
 double measure_spaced(const FontMetrics& default_metrics, std::string_view text,
-                      const InlineItem& it, bool first_piece_of_item) {
+                      const InlineItem& it, bool /* first_piece_of_item */) {
     const FontMetrics& fm = it.metrics ? *it.metrics : default_metrics;
-    double w = fm.measure(text, it.font_size);
-    if (it.letter_spacing != 0) {
-        const int n = letter_count(text) - (first_piece_of_item ? 1 : 0);
-        if (n > 0) w += it.letter_spacing * static_cast<double>(n);
-    }
-    return w;
+    return fm.measure(text, it.font_size) +
+           (it.letter_spacing == 0 ? 0 : it.letter_spacing * letter_count(text));
 }
 
-// CSS Text L3 7.2 `tab-size`, as a COUNT OF SPACES. A plain number is that
-// count; a length is converted through the space's own width, since a tab stop
-// is only ever expressed here in spaces.
-//
-// A tab in preserved text had no width control at all before this: `\t` was
-// measured as whatever the face gives it, which for the built-in one is
-// nothing, so a code listing in a <pre> lost every level of its indentation.
-double tab_size_spaces(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+// CSS Text L3 tab intervals in pixels: numbers multiply the containing block's
+// space advance; lengths resolve directly without rounding to whole spaces.
+double tab_size_pixels(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
                        double space_width) {
     const std::string_view raw = get(style, kId_tab_size);
-    if (raw.empty()) return 8;
+    if (raw.empty()) return 8 * space_width;
     // A bare number first: `tab-size: 4` is the common form and is NOT a
     // length.
     const std::string text(raw);
     char* end = nullptr;
     const double number = std::strtod(text.c_str(), &end);
     if (end != text.c_str() && (*end == '\0' || *end == ' ')) {
-        return number > 0 ? number : 8;
+        return (number >= 0 && std::isfinite(number) ? number : 8) * space_width;
     }
     const ResolvedLength r = resolve_length(raw, ctx, font_size, font_size);
-    if (r.kind == LengthKind::Length && r.pixels > 0 && space_width > 0) {
-        return r.pixels / space_width;
+    if (r.kind == LengthKind::Length && r.pixels >= 0 && std::isfinite(r.pixels)) {
+        return r.pixels;
     }
-    return 8;
+    return 8 * space_width;
 }
 
 // CSS Text L3 8.1 `word-spacing`, in pixels. `normal` is zero extra; a
@@ -328,13 +315,6 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             // top of the space's own advance. Unread until now, so a heading
             // set with `word-spacing: 4px` came out at its natural spacing.
             item.word_spacing = word_spacing_px(item.style, ctx, item.font_size);
-            // Only preserved text can contain a tab: a collapsing run turns
-            // one into a single space long before it reaches layout.
-            if (!item.collapse_whitespace) {
-                const FontMetrics& fm = item.metrics ? *item.metrics : *metrics;
-                const double space_w = fm.measure(" ", item.font_size);
-                item.tab_spaces = tab_size_spaces(item.style, ctx, item.font_size, space_w);
-            }
             out->push_back(item);
         } else if (b.kind == BoxKind::Inline && b.element &&
                    b.element->tag_name() == "br") {
@@ -417,6 +397,8 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
 
 } // namespace
 
+bool inline_edges_are_zero(const ComputedStyle* style) { return inline_edge_is_zero(style); }
+
 std::string_view resolve_text_align(const ComputedStyle* style) {
     std::string_view t = get(style, kId_text_align);
     if (t.empty()) t = "start";
@@ -442,6 +424,24 @@ std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId containe
                                       ? tree[tree[cb.parent].parent].style
                                       : nullptr),
                       metrics, &out);
+    // Numeric tab sizes use the block's space advance, even inside differently
+    // styled inline spans. Resolve lazily: ordinary HUD strings need no work.
+    std::optional<double> block_space;
+    for (auto& item : out) {
+        if (item.collapse_whitespace || item.text.find('\t') == std::string_view::npos) continue;
+        if (!block_space) {
+            const auto* style = cb.style ? cb.style : container_parent;
+            const auto* parent = cb.style ? container_parent :
+                (cb.parent != kNoBox && tree[cb.parent].parent != kNoBox
+                    ? tree[tree[cb.parent].parent].style : nullptr);
+            const double fs = font_size_px(style, parent, ctx);
+            const auto* fm = metrics_for_style(ctx, style);
+            if (!fm) fm = metrics;
+            block_space = std::max(0.0, fm->measure(" ", fs) +
+                letter_spacing_px(style, ctx, fs) + word_spacing_px(style, ctx, fs));
+        }
+        item.tab_interval = tab_size_pixels(item.style, ctx, item.font_size, *block_space);
+    }
     return out;
 }
 // ---- text-overflow: ellipsis (CSS Text Overflow L3) ----------------------
@@ -568,6 +568,7 @@ struct Fragment {
     bool is_space;
     double x;
     double width;
+    bool is_tab = false;
 };
 
 // One inline box's extent on the line being flushed.
@@ -723,7 +724,6 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                            cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr, ctx)
             : ctx.root_font_size_px;
     const double strut_ascent = strut_fm.ascent(strut_font_size);
-    const double strut_descent = strut_fm.descent(strut_font_size);
     const double strut_leading =
         declared_line_height ? *declared_line_height : strut_fm.line_height(strut_font_size);
 
@@ -739,19 +739,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
 
     double y = top_inner;
     double pen = 0;
-    double max_ascent = 0, max_descent = 0, max_leading = 0;
-    // CSS Text L3 §8.2, and the shape the reference measures in. A run's width
-    // is `text + spacing x (characters - 1)` — the spacing sits BETWEEN
-    // characters, so a run of n characters carries n-1 of them. Placing a run
-    // piece by piece reproduces that by charging n per piece and n-1 for the
-    // run's first piece.
-    //
-    // A LINE BREAK restarts that count: the piece opening the next line is a
-    // first piece again, because the spacing that would have followed the last
-    // character of the previous line has nowhere to sit. Carrying the flag
-    // across the break charged one spacing too many for every wrapped run —
-    // dialogue.html's `<strong>` sat 0.16 to the right, which at its 16px font
-    // and `letter-spacing: 0.01em` is exactly one.
+    double max_ascent = 0, max_descent = 0;
     bool first_piece = true;
 
     // CSS 2.1 §9.5: a line box beside a float is shortened to make room for it.
@@ -816,9 +804,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     const auto reset_line_metrics = [&] {
         // Seeded with the strut, not with zero: the containing block's own
         // font is present on every line whether or not any text lands there.
-        max_ascent = strut_ascent;
-        max_descent = strut_descent;
-        max_leading = strut_leading;
+        const double half_leading = strut_fm.leading_above(strut_leading, strut_font_size);
+        max_ascent = strut_ascent + half_leading;
+        max_descent = strut_leading - max_ascent;
     };
     // Markers are not content: a line holding only the opening of an inline
     // box is still at its start for the purposes of dropping a leading
@@ -851,7 +839,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 line.pop_back();
                 continue;
             }
-            if (line.back().is_space) {
+            if (line.back().is_space && line.back().item->collapse_whitespace) {
                 pen -= line.back().width;
                 trimmed_space += line.back().width;
                 line.pop_back();
@@ -933,7 +921,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             }
         }
 
-        bool only_empty_split_fragments = only_markers;
+        bool only_empty_split_fragments = only_edgeless_inlines;
         if (only_empty_split_fragments) {
             for (const Fragment& f : line) {
                 const BoxId b = f.item->is_inline_start() ? f.item->inline_box_start
@@ -962,19 +950,12 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         }
         if (line.empty()) return;
 
-        // The line's height is the tallest content on it, and its baseline the
-        // deepest ascent — so a taller span pushes the whole line down rather
-        // than overlapping the one above.
-        const double content_height = max_ascent + max_descent;
-        const double natural_height = std::max(content_height, max_leading);
-        // Half-leading is split evenly above and below, which is what keeps a
-        // line-height larger than the text centred on it — and, when the
-        // declared line-height is smaller than the content, pulls it up.
-        const double natural_baseline = (natural_height - content_height) * 0.5 + max_ascent;
+        // Each inline contributes its own half-leading above and below its
+        // baseline. A declared line-height sizes that inline, not every other
+        // participant: larger children can still make the line taller.
         const double line_height = (only_empty_split_fragments || only_edgeless_inlines)
-                                       ? 0.0
-                                       : declared_line_height.value_or(natural_height);
-        const double baseline = natural_baseline + (line_height - natural_height) * 0.5;
+                                       ? 0.0 : max_ascent + max_descent;
+        const double baseline = max_ascent;
 
         // CSS Lists L3 §3.2: an `outside` marker -- the initial value, and so
         // nearly every marker -- sits in the area BEFORE the content edge and
@@ -1011,10 +992,24 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             pen -= marker_width;
         }
 
-        double dx = line_left;
-        if (iequals(align, "right")) dx += line_width - pen;
-        else if (iequals(align, "center")) dx += (line_width - pen) * 0.5;
-        if (dx < line_left) dx = line_left;
+        // Children are relative to the line box, which already carries the
+        // float/indent inset. Adding it here as well doubles the offset.
+        // Preserve editable trailing spaces/tabs as fragments. Pre-wrap hangs
+        // them on soft wraps; at a forced/final break only the overflow hangs.
+        double hanging_space = 0;
+        for (auto it = line.rbegin(); it != line.rend(); ++it) {
+            if (it->item->is_marker() && it->width == 0) continue;
+            if (!it->is_space || it->item->collapse_whitespace ||
+                get(it->item->style, kId_white_space) != "pre-wrap") break;
+            hanging_space += it->width;
+        }
+        if (is_final || forced_break)
+            hanging_space = std::min(hanging_space, std::max(0.0, pen - line_width));
+        const double alignment_pen = pen - hanging_space;
+        double dx = 0;
+        if (iequals(align, "right")) dx += line_width - alignment_pen;
+        else if (iequals(align, "center")) dx += (line_width - alignment_pen) * 0.5;
+        if (dx < 0) dx = 0;
 
         const BoxId lb = tree->create(BoxKind::Line, nullptr, container_style);
         (*tree)[lb].y = y;
@@ -1076,7 +1071,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             // paint, takes the FIRST box an element owns, so emitting the
             // leading fragment too would report the `<span>` before the block
             // instead of after it.
-            if (only_markers && !emits_trailing_split_fragment) break;
+            if (only_edgeless_inlines && !emits_trailing_split_fragment) break;
             if (f.item->is_inline_start()) {
                 const double x0 = f.x + dx + f.item->margin_edge;
                 contribute(f.item->inline_box_start, x0, x0 + f.item->decoration, false);
@@ -1150,9 +1145,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             if (f.item->is_break()) {
                 Box& br = (*tree)[f.item->break_box];
                 br.x = f.x + dx;
-                br.y = 0;
+                const FontMetrics& fm = f.item->metrics ? *f.item->metrics : metrics;
+                br.y = baseline - fm.ascent(f.item->font_size);
                 br.width = 0;
-                br.height = line_height;
+                br.height = fm.ascent(f.item->font_size) + fm.descent(f.item->font_size);
                 tree->append_child(lb, f.item->break_box);
                 continue;
             }
@@ -1168,9 +1164,17 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             const BoxId run = tree->create(BoxKind::Text, (*tree)[f.item->source_run].element,
                                            f.item->style);
             Box& r = (*tree)[run];
-            r.text = f.text;
+            r.text = f.is_tab ? std::string_view(" ") : f.text;
+            r.preserved_tab = f.is_tab;
             r.source_node = (*tree)[f.item->source_run].source_node;
             r.source_control = (*tree)[f.item->source_run].source_control;
+            const Box& original = (*tree)[f.item->source_run];
+            const uintptr_t display = reinterpret_cast<uintptr_t>(original.text.data());
+            const uintptr_t fragment = reinterpret_cast<uintptr_t>(f.text.data());
+            if (original.control_source_offset != size_t(-1) && fragment >= display &&
+                fragment - display <= original.text.size() &&
+                f.text.size() <= original.text.size() - (fragment - display))
+                r.control_source_offset = original.control_source_offset + (fragment - display);
             r.font_size = f.item->font_size;
             r.font_family = get(f.item->style, kId_font_family);
             r.x = f.x + dx;
@@ -1182,9 +1186,15 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             r.height = fm.ascent(f.item->font_size) + fm.descent(f.item->font_size);
             tree->append_child(lb, run);
         }
-        for (const Span& sp : spans) {
-            // Attached during the loop above, at the point the box opened.
-            if (sp.fragment == kNoBox) continue;
+        for (Span& sp : spans) {
+            // A wrapping inline has no opening marker on subsequent lines,
+            // but still owns a fragment for paint, hit testing and geometry.
+            if (sp.fragment == kNoBox) {
+                sp.fragment = tree->create(BoxKind::Inline, (*tree)[sp.box].element,
+                                           (*tree)[sp.box].style);
+                (*tree)[sp.fragment].font_size = (*tree)[sp.box].font_size;
+                tree->insert_child_first(lb, sp.fragment);
+            }
             Box& fb = (*tree)[sp.fragment];
             if (only_empty_split_fragments) {
                 // A zero-height line has no baseline to hang a content area
@@ -1201,9 +1211,17 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             fb.x = sp.x0;
             // An inline box's content area sits on the baseline and is as tall
             // as the font, not as the line.
-            fb.y = baseline - metrics.ascent(fs);
+            const auto* own_metrics = metrics_for_style(ctx, fb.style);
+            const auto& fm = own_metrics ? *own_metrics : metrics;
+            const auto pad = resolve_box_sides_px(fb.style, kId_padding, ctx, fs, available_width);
+            const auto border = resolve_border_edges(fb.style, ctx, fs);
+            fb.padding_top = pad.top; fb.padding_bottom = pad.bottom;
+            fb.padding_left = pad.left; fb.padding_right = pad.right;
+            fb.border_top = border.top; fb.border_bottom = border.bottom;
+            fb.border_left = border.left; fb.border_right = border.right;
+            fb.y = baseline - fm.ascent(fs) - pad.top - border.top;
             fb.width = sp.x1 - sp.x0;
-            fb.height = metrics.ascent(fs) + metrics.descent(fs);
+            fb.height = fm.ascent(fs) + fm.descent(fs) + pad.top + pad.bottom + border.top + border.bottom;
         }
 
         line_boxes.push_back(lb);
@@ -1231,11 +1249,13 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             return;
         }
         const FontMetrics& fm = it.metrics ? *it.metrics : metrics;
-        max_ascent = std::max(max_ascent, fm.ascent(it.font_size));
-        max_descent = std::max(max_descent, fm.descent(it.font_size));
-        max_leading = std::max(max_leading, it.line_height);
+        const double a = fm.ascent(it.font_size);
+        const double half_leading = fm.leading_above(it.line_height, it.font_size);
+        max_ascent = std::max(max_ascent, a + half_leading);
+        max_descent = std::max(max_descent, it.line_height - a - half_leading);
     };
 
+    reset_line_metrics();
     for (const InlineItem& it : items) {
         if (it.is_inline_start()) {
             // No break opportunity: it records where the box opens and takes
@@ -1277,24 +1297,19 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         }
         first_piece = true;
         // Largest prefix of `word` from `from` whose measured width fits, never
-        // splitting a UTF-8 sequence. Zero when not even one character fits.
+        // splitting a grapheme. Zero when not even one character fits.
         const auto prefix_that_fits = [&](std::string_view word, size_t from,
                                           double max_width) -> size_t {
             if (max_width <= 0) return 0;
             size_t fits = 0;
-            size_t i = from;
-            while (i < word.size()) {
-                // Advance one code point: continuation bytes are 10xxxxxx.
-                size_t next = i + 1;
-                while (next < word.size() &&
-                       (static_cast<unsigned char>(word[next]) & 0xC0) == 0x80) {
-                    ++next;
-                }
+            Graphemes clusters(word.substr(from));
+            size_t count = 0;
+            while (clusters.next(&count)) {
+                const size_t next = from + count;
                 const double w =
                     measure_spaced(metrics, word.substr(from, next - from), it, first_piece);
                 if (w > max_width) break;
                 fits = next - from;
-                i = next;
             }
             return fits;
         };
@@ -1314,30 +1329,51 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // somewhere the layout did not put them. With the tab replaced by
         // spaces the two cannot disagree, which is also what the reference
         // does.
-        const auto expand_tabs = [&](std::string_view text, double pen_at_start) {
-            if (text.find('	') == std::string_view::npos) return text;
+        // Tabs have exact geometric advances, never rounded runs of spaces.
+        // Keep the source slice until emission so editable byte offsets survive.
+        const auto place_tab = [&](std::string_view source) {
             const FontMetrics& fm = it.metrics ? *it.metrics : metrics;
-            double space_w = fm.measure(" ", it.font_size);
-            if (space_w <= 0) space_w = it.font_size * 0.5;
-            const double stop = space_w * (it.tab_spaces > 0 ? it.tab_spaces : 8);
-            std::string out;
-            out.reserve(text.size() + 8);
-            double x = pen_at_start;
-            for (const char c : text) {
-                if (c != '	') {
-                    out.push_back(c);
-                    x += fm.measure(std::string_view(&c, 1), it.font_size);
-                    continue;
-                }
-                // To the next multiple of the stop, never zero: a tab always
-                // advances at least one stop.
-                const double next = (std::floor(x / stop) + 1) * stop;
-                int spaces = static_cast<int>(std::lround((next - x) / space_w));
-                if (spaces < 1) spaces = 1;
-                out.append(static_cast<size_t>(spaces), ' ');
-                x = next;
+            const double stop = it.tab_interval >= 0 ? it.tab_interval :
+                8 * fm.measure(" ", it.font_size);
+            double width = 0;
+            if (stop > 0) {
+                width = (std::floor(pen / stop) + 1) * stop - pen;
+                if (width < fm.measure("0", it.font_size) * .5) width += stop;
             }
-            return std::string_view(tree->own_text(std::move(out)));
+            first_piece = false;
+            grow_line_metrics(it);
+            line.push_back({&it, source, true, pen, width, true});
+            pen += width;
+        };
+
+        const auto place_sliced_word = [&](std::string_view word) {
+            size_t idx = 0;
+            while (idx < word.size()) {
+                double remaining = line_width - pen;
+                if (remaining <= 1e-9 && !line.empty()) {
+                    flush_line(false);
+                    remaining = line_width - pen;
+                }
+                size_t take = prefix_that_fits(word, idx, remaining);
+                if (take == 0) {
+                    // Nothing fits. Wrap and retry; on an already-empty
+                    // line take one character anyway, because a line that
+                    // can hold nothing still has to make progress.
+                    if (!line.empty()) {
+                        flush_line(false);
+                        continue;
+                    }
+                    take = next_grapheme(word.substr(idx), 0);
+                }
+                const std::string_view slice = word.substr(idx, take);
+                const double sw = measure_spaced(metrics, slice, it, first_piece);
+                first_piece = false;
+                grow_line_metrics(it);
+                line.push_back({&it, slice, false, pen, sw});
+                pen += sw;
+                idx += take;
+                if (idx < word.size()) flush_line(false);
+            }
         };
 
         size_t seg_begin = 0;
@@ -1358,13 +1394,24 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 // blank line inside a `pre` is a line: without a fragment
                 // flush_line drops it and the block comes up one line-height
                 // short.
-                const std::string_view text = expand_tabs(seg, pen);
-                const double w = measure_spaced(metrics, text, it, true);
-                if (!text.empty() || line.empty()) {
-                    grow_line_metrics(it);
-                    line.push_back({&it, text, false, pen, w});
-                    pen += w;
-                }
+                size_t at = 0;
+                do {
+                    if (at < seg.size() && seg[at] == '\t') {
+                        place_tab(seg.substr(at++, 1));
+                        continue;
+                    }
+                    const size_t tab = seg.find('\t', at);
+                    const size_t end = tab == std::string_view::npos ? seg.size() : tab;
+                    const auto text = seg.substr(at, end - at);
+                    if (!text.empty() || line.empty()) {
+                        const double w = measure_spaced(metrics, text, it, first_piece);
+                        grow_line_metrics(it);
+                        line.push_back({&it, text, false, pen, w});
+                        pen += w;
+                        first_piece = false;
+                    }
+                    at = end;
+                } while (at < seg.size());
             } else if (!it.collapse_whitespace) {
                 // `pre-wrap` and `break-spaces`: whitespace is preserved and
                 // the line STILL wraps (CSS Text L3 3.1). Placing the segment
@@ -1382,13 +1429,17 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     line.push_back({&it, seg, false, pen, 0});
                 }
                 while (at < seg.size()) {
-                    const bool spaces = seg[at] == ' ' || seg[at] == '\t';
+                    if (seg[at] == '\t') {
+                        place_tab(seg.substr(at++, 1));
+                        continue;
+                    }
+                    const bool spaces = seg[at] == ' ';
                     size_t end = at;
-                    while (end < seg.size() &&
-                           ((seg[end] == ' ' || seg[end] == '\t') == spaces)) {
+                    while (end < seg.size() && seg[end] != '\t' &&
+                           ((seg[end] == ' ') == spaces)) {
                         ++end;
                     }
-                    const std::string_view piece = expand_tabs(seg.substr(at, end - at), pen);
+                    const std::string_view piece = seg.substr(at, end - at);
                     // A preserved run of spaces is charged word-spacing per
                     // space, the same as a collapsed one is charged for the
                     // single space it becomes.
@@ -1396,10 +1447,17 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     if (spaces && it.word_spacing != 0) {
                         w += it.word_spacing * static_cast<double>(piece.size());
                     }
-                    first_piece = false;
-                    if (!spaces && line_has_content() && pen + w > line_width + kFitEpsilon) {
+                    if (!spaces && !it.break_anywhere && line_has_content() &&
+                        pen + w > line_width + kFitEpsilon) {
                         flush_line(false);
                     }
+                    if (!spaces && (it.break_anywhere ||
+                        (it.break_word && w > line_width + kFitEpsilon))) {
+                        place_sliced_word(piece);
+                        at = end;
+                        continue;
+                    }
+                    first_piece = false;
                     grow_line_metrics(it);
                     line.push_back({&it, piece, spaces, pen, w});
                     pen += w;
@@ -1444,37 +1502,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     // is placed a slice at a time: fill the rest of this line, wrap,
                     // repeat. A slice is a view into the same source buffer, so no
                     // string is built.
-                    size_t idx = 0;
-                    while (idx < t.word.size()) {
-                        double remaining = line_width - pen;
-                        if (remaining <= 1e-9 && !line.empty()) {
-                            flush_line(false);
-                            remaining = line_width - pen;
-                        }
-                        size_t take = prefix_that_fits(t.word, idx, remaining);
-                        if (take == 0) {
-                            // Nothing fits. Wrap and retry; on an already-empty
-                            // line take one character anyway, because a line that
-                            // can hold nothing still has to make progress.
-                            if (!line.empty()) {
-                                flush_line(false);
-                                continue;
-                            }
-                            take = 1;
-                            while (idx + take < t.word.size() &&
-                                   (static_cast<unsigned char>(t.word[idx + take]) & 0xC0) == 0x80) {
-                                ++take;
-                            }
-                        }
-                        const std::string_view slice = t.word.substr(idx, take);
-                        const double sw = measure_spaced(metrics, slice, it, first_piece);
-                        first_piece = false;
-                        grow_line_metrics(it);
-                        line.push_back({&it, slice, false, pen, sw});
-                        pen += sw;
-                        idx += take;
-                        if (idx < t.word.size()) flush_line(false);
-                    }
+                    place_sliced_word(t.word);
                     continue;
                 }
                 // Japanese and Chinese have no spaces, so the tokeniser hands
@@ -1619,7 +1647,53 @@ IntrinsicWidths block_child_contribution(const BoxTree& tree, BoxId c, const Lay
 template<bool Minimum, bool Maximum>
 IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
     const Box& self = tree[id];
+    if (self.kind==BoxKind::Block &&
+        (has_size_containment(self.style) || has_inline_size_containment(self.style))) {
+        const LayoutContext fallback;
+        const auto& resolved=ctx ? *ctx : fallback;
+        const double fs=font_size_px(self.style,nullptr,resolved);
+        const double width=std::max(0.0,contain_intrinsic_width(self.style,resolved,fs));
+        return {width,width};
+    }
     if (self.intrinsic_height > 0) return {self.intrinsic_width, self.intrinsic_width};
+    // A closed select has no option boxes: its label is painted by the form
+    // control path. Its options must nevertheless contribute to natural size,
+    // including unselected and hidden options, as they do in a browser.
+    if (self.element && self.element->tag_name() == "select" &&
+        !select_is_listbox(*self.element)) {
+        const LayoutContext fallback;
+        const auto& resolved = ctx ? *ctx : fallback;
+        const auto* parent = self.parent == kNoBox ? nullptr : tree[self.parent].style;
+        const double fs = self.font_size > 0 ? self.font_size : font_size_px(self.style, parent, resolved);
+        const MonoFontMetrics default_metrics;
+        const auto* metrics = metrics_for_style(resolved, self.style);
+        if (!metrics) metrics = &default_metrics;
+        const double letter_spacing = letter_spacing_px(self.style, resolved, fs);
+        const double word_spacing = word_spacing_px(self.style, resolved, fs);
+        double width = 0;
+        for (const auto* option : form_options(*self.element)) {
+            const bool grouped = option->parent() && option->parent()->is_element() &&
+                static_cast<const Element*>(option->parent())->tag_name() == "optgroup";
+            // Browser menu-list labels include four indentation spaces for a
+            // grouped option; the group heading itself is not a width input.
+            const std::string label = (grouped ? std::string("    ") : std::string()) + option_label(*option);
+            double measured = metrics->measure(label, fs);
+            if (letter_spacing != 0) measured += letter_spacing * letter_count(label);
+            if (word_spacing != 0) {
+                for (size_t i = 0; i < label.size();) {
+                    size_t bytes = 0;
+                    const int cp = utf8_at(label, i, &bytes);
+                    // The leading indentation space has no preceding word gap.
+                    if ((cp == ' ' || cp == 0xa0) && !(grouped && i == 0)) measured += word_spacing;
+                    i += bytes ? bytes : 1;
+                }
+            }
+            width = std::max(width, measured);
+        }
+        // Reserve the themed arrow area unless the author suppresses appearance.
+        width = std::ceil(width) + (get(self.style, "appearance") == "none" ? 0.0 : 20.0);
+        return {width, width};
+    }
     // A grid container's intrinsic size is its tracks', which layout_grid
     // records when it sizes them (§12 under a max-content constraint); the
     // children alone say nothing about fixed tracks or gaps. An 8-column
@@ -1646,6 +1720,7 @@ IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutCont
     IntrinsicWidths sum;
     IntrinsicWidths paragraph;   // running unwrapped width of the current run of lines
     int in_flow_blocks = 0;
+    bool first_line = true;
     for (BoxId c : tree.children(id)) {
         const Box& b = tree[c];
         if (b.position == PositionType::Absolute || b.position == PositionType::Fixed) continue;
@@ -1672,6 +1747,11 @@ IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutCont
             // 163.8px inside its 194px column. A forced break ends a paragraph.
             IntrinsicWidths line_sum;
             double widest = 0;
+            const double indent = first_line && ctx
+                ? text_indent_px(self.style, *ctx, font_size_px(self.style, nullptr, *ctx), 0)
+                : 0;
+            first_line = false;
+            bool first_run = true;
             for (BoxId r : tree.children(c)) {
                 const Box& run = tree[r];
                 // An inline box's fragment spans the runs it covers; counting
@@ -1697,10 +1777,14 @@ IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutCont
                     : IntrinsicWidths{run.width, run.width};
                 if constexpr (Minimum) {
                     line_sum.minimum += w.minimum;
-                    if (w.minimum > widest) widest = w.minimum;
+                    const double contribution = w.minimum + (first_run ? indent : 0);
+                    if (contribution > widest) widest = contribution;
                 }
                 if constexpr (Maximum) line_sum.maximum += w.maximum;
+                first_run = false;
             }
+            if constexpr (Minimum) line_sum.minimum += indent;
+            if constexpr (Maximum) line_sum.maximum += indent;
             // The space a wrap trimmed sits BETWEEN two lines of the
             // paragraph and comes back when they are joined; one trimmed
             // at the paragraph's end is gone in max-content too. The

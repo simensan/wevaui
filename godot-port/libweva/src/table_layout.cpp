@@ -1,3 +1,4 @@
+#include "weva/table_border.h"
 #include "weva/css_properties.h"
 #include "weva/table_layout.h"
 
@@ -300,6 +301,67 @@ std::vector<bool> collapsed_columns(const BoxTree& tree, BoxId table, int col_co
     return mask;
 }
 
+// Build the border grid from authored styles, before used half-widths replace
+// the cell box edges. Row/column groups contribute only their perimeters.
+TableBorderGrid collect_border_grid(const BoxTree& tree, BoxId table, const std::vector<Row>& rows,
+                                    int columns, const LayoutContext& ctx) {
+    TableBorderGrid grid;
+    const int count = static_cast<int>(rows.size());
+    grid.reset(count, columns);
+    const bool rtl = iequals(get(tree[table].style, "direction"), "rtl");
+    const auto add = [&](BoxId id, TableBorderOrigin origin, int row, int col, int rs, int cs, bool cell) {
+        if (rs <= 0 || cs <= 0) return;
+        TableBorderGrid::Sides sides;
+        static const char* style_names[] = {"border-top-style", "border-right-style", "border-bottom-style", "border-left-style"};
+        static const char* width_names[] = {"border-top-width", "border-right-width", "border-bottom-width", "border-left-width"};
+        static const char* keywords[] = {"none", "inset", "groove", "outset", "ridge", "dotted", "dashed", "solid", "double", "hidden"};
+        for (int side = 0; side < 4; ++side) {
+            auto& edge = sides[side];
+            const auto raw = get(tree[id].style, style_names[side]);
+            for (int k = 0; k < 10; ++k) if (iequals(raw, keywords[k])) edge.style = static_cast<TableBorderStyle>(k);
+            edge.width = resolve_border_width(get(tree[id].style, width_names[side]), own_font_size(tree, id, ctx), ctx);
+            edge.origin = origin;
+            edge.source = id;
+            edge.side = static_cast<TableBorderSide>(side);
+            edge.order = static_cast<uint32_t>(row) * static_cast<uint32_t>(columns) +
+                         static_cast<uint32_t>(rtl ? columns - col - cs : col);
+        }
+        grid.add_rectangle(row, col, rs, cs, sides, cell);
+    };
+    add(table, TableBorderOrigin::Table, 0, 0, count, columns, false);
+    for (int r = 0; r < count; ++r) {
+        add(rows[r].box, TableBorderOrigin::Row, r, 0, 1, columns, false);
+        if (rows[r].group != kNoBox && (r == 0 || rows[r - 1].group != rows[r].group)) {
+            int end = r + 1;
+            while (end < count && rows[end].group == rows[r].group) ++end;
+            add(rows[r].group, TableBorderOrigin::RowGroup, r, 0, end - r, columns, false);
+        }
+        for (const auto& cell : rows[r].cells)
+            add(cell.cell, TableBorderOrigin::Cell, r, cell.column,
+                std::min(cell.row_span, count - r), std::min(cell.col_span, columns - cell.column), true);
+    }
+    int col = 0;
+    for (BoxId id : tree.children(table)) {
+        if (col >= columns) break;
+        if (tree[id].display == DisplayKind::TableColumn) {
+            const int span = std::min(span_attribute(tree[id].element), columns - col);
+            add(id, TableBorderOrigin::Column, 0, col, count, span, false);
+            col += span;
+        } else if (tree[id].display == DisplayKind::TableColumnGroup) {
+            const int start = col;
+            for (BoxId child : tree.children(id)) {
+                if (tree[child].display != DisplayKind::TableColumn || col >= columns) continue;
+                const int span = std::min(span_attribute(tree[child].element), columns - col);
+                add(child, TableBorderOrigin::Column, 0, col, count, span, false);
+                col += span;
+            }
+            if (col == start) col += std::min(span_attribute(tree[id].element), columns - col);
+            add(id, TableBorderOrigin::ColumnGroup, 0, start, count, col - start, false);
+        }
+    }
+    return grid;
+}
+
 // A cell's authored width as an OUTER (border-box) width, or 0. Cells are
 // content-box unless told otherwise, so the frame is added (the reference
 // records leaderboard's fixed columns coming out 32px narrow without it).
@@ -443,11 +505,12 @@ std::string_view caption_side(const Box& cap) {
 
 double layout_table(BoxTree* tree, BoxId table, double content_width, const LayoutContext& ctx,
                     BlockLayout* block) {
+    tree->set_table_borders(table, {});
     const ComputedStyle* style = (*tree)[table].style;
     const double fs = own_font_size(*tree, table, ctx);
-    const double left_inner = (*tree)[table].padding_left + (*tree)[table].border_left;
-    const double top_inner = (*tree)[table].padding_top + (*tree)[table].border_top;
-    const double content_w = std::max(0.0, content_width);
+    double left_inner = (*tree)[table].padding_left + (*tree)[table].border_left;
+    double top_inner = (*tree)[table].padding_top + (*tree)[table].border_top;
+    double content_w = std::max(0.0, content_width);
 
     // ---- border-spacing (§17.6.1): initial 0, the UA sheet's 2px for
     // <table>, nothing under border-collapse: collapse ---------------------
@@ -472,10 +535,36 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
             captions.push_back(c);
         }
     }
-    for (BoxId cap : captions) block->layout_block(cap, content_w, style);
 
     std::vector<Row> rows = collect_rows(*tree, table);
     const int col_count = place_cells(*tree, &rows);
+    const bool collapse = style && iequals(get(style, kId_border_collapse), "collapse");
+    TableBorderGrid borders;
+    if (collapse && !rows.empty() && col_count > 0) {
+        borders = collect_border_grid(*tree, table, rows, col_count, ctx);
+        const auto outer = borders.half_widths(0, 0, static_cast<int>(rows.size()), col_count);
+        Box& box = (*tree)[table];
+        // Width was resolved before the collapsed grid existed. Preserve its
+        // used content width, replacing authored borders and ignored padding
+        // with resolved half-borders; an explicit border-box width stays outer.
+        const double previous_content = std::max(0.0, box.width - box.padding_left - box.padding_right -
+            box.border_left - box.border_right);
+        box.border_top = outer[0];
+        box.border_bottom = outer[2];
+        box.border_left = borders.vertical(0, 0).used_width() * 0.5;
+        box.border_right = borders.vertical(0, col_count).used_width() * 0.5;
+        box.padding_top = box.padding_right = box.padding_bottom = box.padding_left = 0;
+        if (!is_border_box(style)) box.width = previous_content + box.border_left + box.border_right;
+        else box.width = std::max(box.width, box.border_left + box.border_right);
+        left_inner = box.border_left;
+        top_inner = box.border_top;
+        content_w = std::max(0.0, box.width - box.border_left - box.border_right);
+    }
+
+
+    // Captions use the table wrapper width, outside its grid border/padding.
+    // Resolve that width first so wrapping uses the final collapsed frame.
+    for (BoxId cap : captions) block->layout_block(cap, (*tree)[table].width, style);
 
     // Every cell is laid out once at the table's content width. That first
     // pass is also what the reference's automatic layout reads as a cell's
@@ -485,6 +574,15 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
     for (Row& row : rows) {
         for (Placement& p : row.cells) {
             block->layout_block(p.cell, content_w, (*tree)[row.box].style);
+            if (collapse) {
+                const int row_index = static_cast<int>(&row - rows.data());
+                const auto half = borders.half_widths(row_index, p.column,
+                    std::min(p.row_span, static_cast<int>(rows.size()) - row_index), p.col_span);
+                Box& cell = (*tree)[p.cell];
+                cell.border_top = half[0]; cell.border_right = half[1];
+                cell.border_bottom = half[2]; cell.border_left = half[3];
+                block->relayout_at(p.cell, cell.width);
+            }
             const double outer = explicit_outer_width(*tree, p.cell, content_w, ctx);
             if (outer > 0) {
                 p.min_w = p.max_w = outer;
@@ -571,25 +669,28 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
     }
 
     // ---- placement ---------------------------------------------------------
-    double cursor_y = top_inner + spacing_y;
+    double cursor_y = 0;
     for (BoxId cap : captions) {
         if (caption_side((*tree)[cap]) == "bottom") continue;
         Box& cb = (*tree)[cap];
-        cb.x = left_inner;
-        cb.y = cursor_y;
-        cb.width = content_w;
-        cursor_y += cb.height;
+        cb.x = cb.margin_left;
+        cb.y = cursor_y + cb.margin_top;
+        cursor_y += cb.margin_top + cb.height + cb.margin_bottom;
     }
+    cursor_y += top_inner + spacing_y;
 
+    std::vector<double> row_lines;
+    if (collapse) row_lines.push_back(cursor_y);
     BoxId current_group = kNoBox;
     double group_start = cursor_y;
     const auto close_group = [&](BoxId g) {
         if (g == kNoBox) return;
         Box& gb = (*tree)[g];
-        gb.x = left_inner;
+        // Outer border spacing belongs to the table, not the row group.
+        gb.x = left_inner + spacing_x;
         gb.y = group_start;
-        gb.width = content_w;
-        gb.height = cursor_y - group_start;
+        gb.width = std::max(0.0, content_w - 2 * spacing_x);
+        gb.height = std::max(0.0, cursor_y - group_start - spacing_y);
     };
     for (int r = 0; r < row_count; ++r) {
         Row& row = rows[r];
@@ -599,15 +700,15 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
             group_start = cursor_y;
         }
         Box& rb = (*tree)[row.box];
-        rb.x = current_group != kNoBox ? 0 : left_inner;
+        rb.x = current_group != kNoBox ? 0 : left_inner + spacing_x;
         rb.y = current_group != kNoBox ? cursor_y - group_start : cursor_y;
-        rb.width = content_w;
+        rb.width = std::max(0.0, content_w - 2 * spacing_x);
 
         double max_cell_h = row_heights[r];
         for (const Placement& p : row.cells) {
             const double col_w = sum_columns(widths, p.column, p.col_span, spacing_x);
             Box& cb = (*tree)[p.cell];
-            cb.x = p.column < static_cast<int>(offsets.size()) ? offsets[p.column] : 0;
+            cb.x = p.column < static_cast<int>(offsets.size()) ? offsets[p.column] - spacing_x : 0;
             cb.y = 0;
             if (std::fabs(cb.width - col_w) > 1e-9) block->relayout_at(p.cell, col_w);
             if (!row.collapsed && p.row_span <= 1) max_cell_h = std::max(max_cell_h, (*tree)[p.cell].height);
@@ -638,6 +739,7 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
         (*tree)[row.box].height = max_cell_h;
         cursor_y += max_cell_h;
         if (!row.collapsed) cursor_y += spacing_y;
+        if (collapse) row_lines.push_back(cursor_y);
     }
     close_group(current_group);
 
@@ -654,12 +756,54 @@ double layout_table(BoxTree* tree, BoxId table, double content_width, const Layo
     for (BoxId cap : captions) {
         if (caption_side((*tree)[cap]) != "bottom") continue;
         Box& cb = (*tree)[cap];
-        cb.x = left_inner;
-        cb.y = cursor_y;
-        cb.width = content_w;
-        cursor_y += cb.height;
+        cb.x = cb.margin_left;
+        cb.y = cursor_y + (*tree)[table].padding_bottom + (*tree)[table].border_bottom + cb.margin_top;
+        cursor_y += cb.margin_top + cb.height + cb.margin_bottom;
     }
 
+    if (collapse && col_count > 0 && row_count > 0) {
+        std::vector<TableBorderSegment> segments;
+        const auto append = [&](TableBorderCandidate winner, double x, double y, double length, bool horizontal, bool continues_before, bool continues_after, double cross_before, double cross_after) {
+            if (winner.used_width() <= 0 || length <= 0 || !tree->valid(winner.source)) return;
+            const Box& source = (*tree)[winner.source];
+            TableBorderSegment segment;
+            segment.x = x; segment.y = y; segment.length = length; segment.horizontal = horizontal;
+            // Collinear segments meet at the grid line; only an exposed end
+            // extends into a perpendicular junction. Avoid extra alpha layers.
+            segment.start_extension = continues_before ? 0 : cross_before * .5;
+            segment.end_extension = continues_after ? 0 : cross_after * .5;
+            segment.element = source.element; segment.fallback_style = source.style;
+            winner.source = -1; // scratch-tree box identity must not be retained
+            segment.border = winner;
+            segments.push_back(segment);
+        };
+        for (int r = 0; r <= row_count; ++r)
+            for (int c = 0; c < col_count; ++c)
+                append(borders.horizontal(r, c), left_inner + offsets[c], row_lines[r], widths[c], true,
+                    borders.horizontal(r, c - 1).used_width() > 0, borders.horizontal(r, c + 1).used_width() > 0,
+                    std::max(borders.vertical(r - 1, c).used_width(), borders.vertical(r, c).used_width()),
+                    std::max(borders.vertical(r - 1, c + 1).used_width(), borders.vertical(r, c + 1).used_width()));
+        for (int r = 0; r < row_count; ++r)
+            for (int c = 0; c <= col_count; ++c) {
+                const double at = c < col_count ? offsets[c] : offsets.back() + widths.back();
+                append(borders.vertical(r, c), left_inner + at, row_lines[r], row_lines[r + 1] - row_lines[r], false,
+                    borders.vertical(r - 1, c).used_width() > 0, borders.vertical(r + 1, c).used_width() > 0,
+                    std::max(borders.horizontal(r, c - 1).used_width(), borders.horizontal(r, c).used_width()),
+                    std::max(borders.horizontal(r + 1, c - 1).used_width(), borders.horizontal(r + 1, c).used_width()));
+            }
+        // Stronger borders paint later at perpendicular junctions. Equal
+        // candidates from one cell follow Chrome's left/top/right/bottom order.
+        std::stable_sort(segments.begin(), segments.end(), [](const TableBorderSegment& a, const TableBorderSegment& b) {
+            const auto& x = a.border; const auto& y = b.border;
+            if (x.width != y.width) return x.width < y.width;
+            if (x.style != y.style) return x.style < y.style;
+            if (x.origin != y.origin) return x.origin < y.origin;
+            const auto side_rank = [](TableBorderSide side) { return (static_cast<int>(side) + 1) % 4; };
+            if (side_rank(x.side) != side_rank(y.side)) return side_rank(x.side) < side_rank(y.side);
+            return x.order > y.order;
+        });
+        tree->set_table_borders(table, std::move(segments));
+    }
     return cursor_y - top_inner;
 }
 

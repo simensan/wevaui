@@ -93,6 +93,43 @@ class WevaFontBackendTests : public RefCounted {
         return result;
     }
 
+    std::vector<PositionedSnapshot> synthetic_oracle(TextServer* ts, const RID& painted,
+            const PackedByteArray& data, const char* text, double px) {
+        // Primary synthesis preserves regular advances; rasterization and
+        // automatic fallback selection remain those of the styled native face.
+        // Neither oracle face uses the adapter's variant or shared-run paths.
+        const RID regular = ts->create_font();
+        ts->font_set_data(regular, data);
+        std::vector<PositionedSnapshot> result;
+        {
+            weva_godot::GodotFontBackend raster, metrics;
+            result = snapshot_run(raster, raster.adopt(painted), text, px);
+            const auto positions = snapshot_run(metrics, metrics.adopt(regular), text, px);
+            const RID shaped = ts->create_shaped_text();
+            TypedArray<RID> chain; chain.push_back(painted);
+            ts->shaped_text_add_string(shaped, String::utf8(text), chain, static_cast<int64_t>(std::lround(px)));
+            std::vector<bool> primary;
+            for (const Dictionary glyph : ts->shaped_text_get_glyphs(shaped)) {
+                const RID from = glyph["font_rid"];
+                const int64_t repeat = glyph["repeat"];
+                for (int64_t i = 0; i < repeat; ++i) primary.push_back(from == painted);
+            }
+            ts->free_rid(shaped);
+            check(result.size() == positions.size(), "synthesis preserves native glyph count");
+            check(result.size() == primary.size(), "native oracle identifies primary and fallback glyphs");
+            for (size_t i = 0; i < std::min(result.size(), positions.size()); ++i) {
+                check(result[i].placement.cluster == positions[i].placement.cluster,
+                      "synthesis preserves native source clusters");
+                if (i < primary.size() && primary[i]) {
+                    result[i].placement.x_advance = positions[i].placement.x_advance;
+                    result[i].advance = positions[i].advance;
+                }
+            }
+        }
+        ts->free_rid(regular);
+        return result;
+    }
+
     void check_shared_runs(TextServer* ts, const Ref<Font>& primary) {
         const Ref<FontFile> file = primary;
         check(file.is_valid() && !file->get_data().is_empty(), "shared-shaping fixture has outline data");
@@ -107,17 +144,18 @@ class WevaFontBackendTests : public RefCounted {
             {
                 // A borrowed independently configured font never uses shared
                 // synthesis storage, so it is a separate native oracle.
-                weva_godot::GodotFontBackend expected, producer;
-                const uint64_t expected_face = expected.adopt(native);
+                weva_godot::GodotFontBackend producer;
                 weva_font_backend producer_table{};
                 weva_shape_glyphs_fn shape = nullptr;
                 producer.fill(&producer_table, &shape);
                 const auto base = producer.adopt(base_fonts, data);
                 const auto face = producer_table.variant(producer_table.user_data, base, weight, italic);
                 for (double px : {13.0, 13.49, 13.51, 32.0}) for (const char* text : {"office AV ffi", "éA", "q\u0323\u0301",
-                                                               "سَلَام", "👩‍🚀A", "\u200bA"}) {
+                                                               "سَلَام", "👩‍🚀A", "\u200bA",
+                                                               "AV سَلَام ffi 👩‍🚀 q\u0323\u0301",
+                                                               "q\u0301\u0301 q\u0323\u0301"}) {
                     const int failures_before = failures_;
-                    const auto oracle = snapshot_run(expected, expected_face, text, px);
+                    const auto oracle = synthetic_oracle(ts, native, data, text, px);
                     check(snapshot_run(producer, face, text, px) == oracle,
                           "first synthesized run matches native positions, clusters and pixels");
                     {
@@ -141,7 +179,7 @@ class WevaFontBackendTests : public RefCounted {
                           "freeing another document preserves the producer's glyphs");
                     if (failures_ != failures_before) std::fprintf(stderr, "shared case: weight %d italic %d px %.2f text %s\n", weight, italic, px, text);
                 }
-                const auto saved = snapshot_run(expected, expected_face, "office AV ffi", 13);
+                const auto saved = synthetic_oracle(ts, native, data, "office AV ffi", 13);
                 // Exceed both entry and glyph budgets; the original output
                 // remains valid whether its shared entry survives or is evicted.
                 for (int i = 0; i < 240; ++i) {
@@ -157,7 +195,7 @@ class WevaFontBackendTests : public RefCounted {
                 // More than the per-run byte/glyph bounds must also work.
                 const std::string long_text(600, 'A');
                 check(snapshot_run(producer, face, long_text.c_str(), 13) ==
-                      snapshot_run(expected, expected_face, long_text.c_str(), 13),
+                      synthetic_oracle(ts, native, data, long_text.c_str(), 13),
                       "uncached long runs preserve complete positions and pixels");
             }
             ts->free_rid(native);
@@ -175,9 +213,7 @@ class WevaFontBackendTests : public RefCounted {
             const RID fallback = ts->create_font();
             ts->font_set_data(fallback, alternate);
             {
-                weva_godot::GodotFontBackend expected;
-                const auto oracle_face = expected.adopt(native);
-                const auto oracle = snapshot_run(expected, oracle_face, "office AV ffi", 13);
+                const auto oracle = synthetic_oracle(ts, native, bytes, "office AV ffi", 13);
                 replaced.clear();
                 const auto base = replaced.adopt(base_fonts, bytes);
                 const auto face = table.variant(table.user_data, base, 700, 0);
@@ -231,6 +267,19 @@ class WevaFontBackendTests : public RefCounted {
         return result;
     }
 
+    FontSnapshot synthetic_font_oracle(TextServer* ts, const RID& painted, const PackedByteArray& data) {
+        FontSnapshot result;
+        const RID regular = ts->create_font();
+        ts->font_set_data(regular, data);
+        {
+            weva_godot::GodotFontBackend raster, metrics;
+            result = snapshot(raster, raster.adopt(painted));
+            result.advance = snapshot(metrics, metrics.adopt(regular)).advance;
+        }
+        ts->free_rid(regular);
+        return result;
+    }
+
     void check_variants(TextServer* ts, const Ref<Font>& primary, const TypedArray<RID>& fonts) {
         const Ref<FontFile> file = primary;
         check(file.is_valid() && !file->get_data().is_empty(), "variant fixture has native outline data");
@@ -244,8 +293,7 @@ class WevaFontBackendTests : public RefCounted {
         ts->font_set_embolden(fixture_font, 0.6);
         FontSnapshot fixture_expected;
         {
-            weva_godot::GodotFontBackend expected;
-            fixture_expected = snapshot(expected, expected.adopt(fixture_font));
+            fixture_expected = synthetic_font_oracle(ts, fixture_font, fixture_data);
         }
         ts->free_rid(fixture_font);
         for (bool reverse : {false, true}) {
@@ -265,8 +313,7 @@ class WevaFontBackendTests : public RefCounted {
                 ts->font_set_data(expected_font, data);
                 ts->font_set_embolden(expected_font, slot ? 0.9 : 0.6);
                 {
-                    weva_godot::GodotFontBackend expected;
-                    check(saved[slot] == snapshot(expected, expected.adopt(expected_font)),
+                    check(saved[slot] == synthetic_font_oracle(ts, expected_font, data),
                           "700 and 900 match independently configured native fonts in either request order");
                 }
                 ts->free_rid(expected_font);
@@ -280,8 +327,7 @@ class WevaFontBackendTests : public RefCounted {
                 ts->font_set_embolden(expected_font, weight == 900 ? 0.9 : 0.6);
                 ts->font_set_transform(expected_font, Transform2D(1.0, 0.0, 0.2, 1.0, 0.0, 0.0));
                 {
-                    weva_godot::GodotFontBackend expected;
-                    check(actual == snapshot(expected, expected.adopt(expected_font)),
+                    check(actual == synthetic_font_oracle(ts, expected_font, data),
                           "italic and emboldening strengths combine without aliasing upright variants");
                 }
                 ts->free_rid(expected_font);

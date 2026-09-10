@@ -1,0 +1,77 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "shared": false,
+      "delayed": false,
+      "css": "#a{width:20px;height:40px;animation:pulse 2s linear infinite,flash .25s linear 0s}@keyframes pulse{from{width:100px}to{width:200px}}@keyframes flash{from{height:300px}to{height:400px}}@keyframes steady{from{opacity:.5}to{opacity:.5}}",
+      "widths": [
+        112.5,
+        130,
+        150,
+        20
+      ],
+      "expected": [
+        112.5,
+        130,
+        150,
+        20
+      ],
+      "passed": true
+    },
+    {
+      "shared": false,
+      "delayed": true,
+      "css": "#a{width:20px;height:40px;animation:pulse 2s linear infinite,flash .25s linear .5s}@keyframes pulse{from{width:100px}to{width:200px}}@keyframes flash{from{height:300px}to{height:400px}}@keyframes steady{from{opacity:.5}to{opacity:.5}}",
+      "widths": [
+        112.5,
+        130,
+        150,
+        20
+      ],
+      "expected": [
+        112.5,
+        130,
+        150,
+        20
+      ],
+      "passed": true
+    },
+    {
+      "shared": true,
+      "delayed": false,
+      "css": "#a{width:20px;height:40px;animation:pulse 2s linear infinite,flash .25s linear 0s}@keyframes pulse{from{width:100px}to{width:200px}}@keyframes flash{from{width:300px}to{width:400px}}@keyframes steady{from{opacity:.5}to{opacity:.5}}",
+      "widths": [
+        112.5,
+        130,
+        150,
+        20
+      ],
+      "expected": [
+        112.5,
+        130,
+        150,
+        20
+      ],
+      "passed": true
+    },
+    {
+      "shared": true,
+      "delayed": true,
+      "css": "#a{width:20px;height:40px;animation:pulse 2s linear infinite,flash .25s linear .5s}@keyframes pulse{from{width:100px}to{width:200px}}@keyframes flash{from{width:300px}to{width:400px}}@keyframes steady{from{opacity:.5}to{opacity:.5}}",
+      "widths": [
+        112.5,
+        340,
+        150,
+        20
+      ],
+      "expected": [
+        112.5,
+        340,
+        150,
+        20
+      ],
+      "passed": true
+    }
+  ]
+}

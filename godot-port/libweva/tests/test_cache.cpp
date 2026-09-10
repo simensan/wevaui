@@ -122,6 +122,45 @@ void test_match_cache() {
         CHECK(c.engine.cache_stats().skipped > 0);
     }
 
+    // A keyed :has subject must not disable unrelated match-cache entries.
+    for (const char* selector : {"form:has(.bad)", ".panel:has(.bad)", "#f:has(.bad)"}) {
+        C c;
+        CHECK(c.html("<form id=f class=panel><input id=a><input id=b></form>"));
+        CHECK(c.css(std::string("form,input{color:white}") + selector + "{color:red}"));
+        CHECK(c.colour("a") == "white");
+        c.engine.reset_cache_stats();
+        CHECK(c.colour("a") == "white");
+        CHECK(c.engine.cache_stats().hits == 1);
+        CHECK(c.engine.cache_stats().skipped == 0);
+        CHECK(c.colour("f") == "white");
+        c.id("b")->set_attribute("class", "bad");
+        CHECK(c.colour("f") == "red");
+        CHECK(c.colour("a") == "white");
+        c.id("b")->remove_attribute("class");
+        CHECK(c.colour("f") == "white");
+    }
+    // A :has on an ancestor affects the rightmost subject, not its own tag.
+    {
+        C c;
+        CHECK(c.html("<form id=f><input id=a><input id=b></form>"));
+        CHECK(c.css("input{color:white}form:has(.bad) input{color:red}"));
+        CHECK(c.colour("a") == "white");
+        c.id("b")->set_attribute("class", "bad");
+        CHECK(c.colour("a") == "red");
+        c.id("b")->remove_attribute("class");
+        CHECK(c.colour("a") == "white");
+    }
+    // Nested/unkeyed subjects remain conservative, including negative matching.
+    for (const char* selector : {":is(form:has(.bad),input)", ":not(:has(.bad))"}) {
+        C c;
+        CHECK(c.html("<form id=f><input id=a></form>"));
+        CHECK(c.css(std::string(selector) + "{color:red}"));
+        c.engine.collect_matches(*c.id("a"), c.state);
+        c.engine.reset_cache_stats();
+        c.engine.collect_matches(*c.id("a"), c.state);
+        CHECK(c.engine.cache_stats().skipped == 1);
+    }
+
     // ---- inline style opts an element out (it is invisible to the key)
     {
         C c;

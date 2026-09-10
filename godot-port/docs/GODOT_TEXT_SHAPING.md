@@ -12,9 +12,17 @@ ui.add_theme_font_override("font", preload("res://fonts/interface.ttf"))
 
 Use ordinary [Control theme font overrides](https://docs.godotengine.org/en/stable/classes/class_control.html#class-control-method-add-theme-font-override)
 or assign a Theme with a default font. CSS continues to determine font size
-and line height. Named CSS `font-family` stacks and `@font-face` registration
-are still separate outstanding work; this change selects the document's
-default native font and does not claim per-element family selection.
+and line height. Register project Font resources for named CSS families:
+
+```gdscript
+ui.register_font_family("Camp", preload("res://fonts/interface.ttf"))
+```
+
+Then use `font-family: Camp` on the relevant elements. CSS family stacks select
+registered faces; matching is case-insensitive. Registering the same name replaces
+its resource, and registering `null` removes it. Registrations survive HTML reloads
+and observe live Font changes. Native tests cover these operations and fallback
+to the document font after removal. CSS `@font-face` loading remains unsupported.
 
 The host retains the selected Font resource and observes its `changed` signal.
 Changes refresh shaping, measurement, glyph bitmaps and layout even when CSS
@@ -102,25 +110,46 @@ normal resource invalidation and font ownership still apply.
 `WEVA_GODOT_DISABLE_SHAPE_CACHE=1` bypasses shared runs for comparisons, and
 `WEVA_FONT_LOG=1` reports shared hits separately from native shaping calls.
 
-Native font tests now pass 10,236 checks on Windows and 10,226 on Linux,
+Synthetic primary fonts use regular shaping advances with styled rasterization.
+Runs containing automatic fallbacks or positioned marks also obtain styled
+native shaping, preserving fallback font selection and accent attachment;
+primary advances are matched by source cluster, glyph index and occurrence.
+Ordinary primary-only labels still require one native shaping pass. Fallback
+and positioned-mark runs can require two passes on a cache miss.
+
+Native font tests now pass 19,682 checks on Windows with caches enabled and
+with both variant and shared-run caches disabled,
 including both weight-request orders, italic combinations, untouched regular
 glyphs, different file data, cache eviction, other-document destruction and
 backend replacement. Shared-run checks compare positioned glyphs, byte
 clusters, native metrics and bitmap bytes against independently configured
-TextServer fonts. They cover distinct receiving-handle maps, fractional size
+TextServer fonts, combining independent regular primary advances with styled
+native offsets, fallback glyphs and raster bytes. They cover mixed Arabic,
+Latin and emoji runs, repeated combining marks, distinct receiving-handle maps, fractional size
 rounding, combining marks, Arabic, emoji, invisible controls, fallback chains,
 font replacement and runs exceeding the reuse bounds. Both sides initialize
 raster state before comparing metrics: a native bitmap-font miss can change
 provisional metrics on its first raster request. The old boolean variant key
 fails eight checks in the earlier regression. An independently
-instrumented adapter/test extension passes the Linux 10,226 checks under
-ASan/UBSan. Only the adapter and test objects are instrumented in this native
-probe; the engine/dependencies are not, and leak detection is disabled. The
-core has its separate complete sanitizer suite. This probe's test harness
-removes `RTLD_DEEPBIND` for the sanitizer runtime,
-disables Godot's crash handler and uses `--import-frames 300`; the normal
-noninstrumented checks retain the default 60-frame initialization. No loader
-shim or engine modification is included in the addon.
+instrumented adapter/test extension now passes 19,816 Linux checks under
+ASan/UBSan with caches enabled and again with both caches disabled. Only the
+adapter and test objects are instrumented in this native probe; the current
+core library, engine and dependencies are not instrumented here. Leak detection
+is disabled. The core has its separate complete sanitizer suite.
+
+The harness loads the extension directly through `GDExtensionManager` and
+instantiates the test class through `ClassDB`. Its fixture reads raw font bytes,
+so editor import is unnecessary. This avoids coupling adapter checks to an
+uninstrumented editor import/shutdown crash observed with the sanitizer loader.
+An optional `--import-frames` diagnostic retains editor coverage separately.
+Every completed process records its command and exit code beside the raw log.
+The sanitizer wrapper removes `RTLD_DEEPBIND`, disables the engine crash handler
+and places the loader shim before ASan with `verify_asan_link_order=0`.
+No loader shim or engine modification is included in the addon.
+
+Evidence: `.utmp/parity68/check-font70-sanitized5.log` and
+`/root/weva/font70-sanitized2/{cached5,uncached5}`. The same direct-loading harness
+passes 19,682 Windows checks (`.utmp/parity68/adapter-direct`).
 
 ## Positioned glyphs and automatic fallbacks
 
@@ -158,6 +187,56 @@ bidi layout, bidi caret navigation, vertical text and project font-family
 selection still need separate work. Font availability remains platform-specific.
 
 ## Stock Godot 4.7.2 limitation
+
+### Windows patched-engine bundle, 2026-09-08
+
+A clean Windows editor built from `ed1daf0bf001b61586d9930840f2f1394092c079`
+with only the script-iterator patch now passes all six isolated text-safety
+cases, the original 60-emoji-run autoscroll stress (81 checks), 8,456 host
+checks and 19,682 native font-adapter checks. The rendered Frontier comparison
+also passes all 1,276 geometry and 33 interaction checks. This build retains
+the normal 3D/rendering features, including the Direct3D and accessibility
+dependencies; it is not the earlier stripped Linux diagnostic template.
+
+Evidence is under `.utmp/safe-engine71`: `build.json`, `editor-text-safety`,
+`autoscroll-stress.json`, `host-checks/verification.json`, `adapter-check` and
+`frontier-chrome/verification.json`. The source archive SHA-256 is
+`e607e9985e1c201bc9cdc1aec8a120f0c3f53b9603f1f828e2b748534a2471ef`.
+The matching debug and release templates also pass all six cases in real exported
+project, with ICU data embedded and the source project hidden
+(`exported-text-debug-2/result.json` and `exported-text-release-2/result.json`). The fixture enables
+`internationalization/locale/include_text_server_data`; it does not use an
+external ICU file. The probe's Turkish-case check verifies that support data
+actually loaded. Standard templates disable path overrides, so this checks the
+packaged game rather than enabling diagnostic command-line behavior.
+
+Full addon verification with the explicit custom templates also passes debug,
+release and embedded-pack export, relocation and exact project/export pixel
+comparisons (`addon-exports.log`). `check_export.py` accepts `--debug-template`
+and `--release-template` together with `--native` and records their hashes.
+
+The local portable bundle is
+`.utmp/safe-engine71/weva-godot-4.7.2-scriptfix71-windows-x86_64.zip`, SHA-256
+`160e47f1c04888fb84cb05099950acb7ec4f1339014d01304503eb69dbc96978`.
+It contains the editor, both templates, runtime DLLs, licenses, patch and build
+provenance. All archived file hashes/CRCs pass, and the relocated portable
+editor repeats all six text-safety cases. It does not install a global engine.
+Use its editor and both custom templates together, with ICU data enabled.
+Stock Godot 4.7.2 remains affected; this Windows evidence does not clear other
+platforms or the addon's remaining product-readiness requirements.
+
+The reusable `tools/godot-text-shaping-repro/check_exports.py` now repeats this
+verification for both actual templates. It passes all 12 cases with the portable
+patched bundle. A negative control using that editor with stock templates fails
+five of six cases in each build mode, proving editor success cannot mask unsafe
+exports. Evidence: `.utmp/safe-engine71/{versioned-export-gate,stock-template-control}`.
+`check.sh` runs this gate and supplies the same optional custom-template paths
+to the addon export verifier.
+
+Frontier Camp now embeds TextServer data and exercises the long Unicode value
+through real state bindings and native editing. Its current verified consumer
+project/export passes 92 headless and 98 rendered assertions, including matching
+project/export pixels (`.utmp/safe-engine71/frontier-integrated/verification.json`).
 
 Stock Godot 4.7.2 can return corrupt glyph positions or crash when a string
 contains more than 32 separate emoji runs within one script run. For example,

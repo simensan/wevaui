@@ -109,6 +109,42 @@ struct Fixture {
 } // namespace
 
 void test_size_containment() {
+    for (const char* layout : {"display:flex", "display:grid;grid-template-columns:1fr 50px"}) {
+        Fixture f;
+        CHECK(f.css(std::string("#row{width:200px;")+layout+"}#panel{container-type:inline-size;flex:1}"
+            "#child{width:300px;height:10px}#other{width:50px;flex:none}"));
+        CHECK(f.layout("<div id=row><div id=panel><div id=child></div></div><div id=other></div></div>"));
+        CHECK(near(f.box("panel").width,150));
+        CHECK(near(f.box("child").width,300));
+        CHECK(near(f.box("other").x,150));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#row{display:flex;width:5px}#item{width:50px}#child{width:100px;height:10px}"));
+        CHECK(f.layout("<div id=row><div id=item><div id=child></div></div></div>"));
+        CHECK(near(f.box("item").width,50)); // specified size caps, rather than erases, auto minimum
+        CHECK(near(f.box("child").width,100));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#panel{position:absolute;container-type:inline-size;padding:5px}"
+            "#label{position:absolute;white-space:nowrap;padding:0 4px}"
+            "#wrap{width:50px}#text{display:inline-block;font-size:16px}"));
+        CHECK(f.layout("<div id=panel><div id=label>XXXX</div></div>"
+                       "<div id=wrap><div id=text>XXXX XXXX XXXX</div></div>"));
+        CHECK(f.box("label").width>8); // unbreakable text can overflow a zero-content-width parent
+        CHECK(near(f.box("text").width,50)); // ordinary text still wraps at available space
+    }
+    for (const char* containment : {"content", "strict"}) {
+        Fixture f;
+        CHECK(f.css(std::string("#c{contain:") + containment +
+            ";width:200px;padding:5px;border:1px solid}#tall{height:100px}#after{height:20px}"));
+        CHECK(f.layout("<div id=c><div id=tall></div></div><div id=after></div>"));
+        const double height=std::string(containment)=="content" ? 112 : 12;
+        CHECK(near(f.box("c").height,height));
+        CHECK(near(f.box("after").y,height));
+        CHECK(near(f.box("tall").height,100));
+    }
     {
         // `contain: size` sizes the box as though it had no contents. The
         // contents are still laid out and still have real geometry — Chrome and

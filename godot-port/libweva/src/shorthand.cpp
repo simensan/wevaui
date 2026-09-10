@@ -368,6 +368,34 @@ bool expand_shorthand(std::string_view name, std::string_view value,
                       std::vector<ShorthandLonghand>* out) {
     const std::vector<std::string_view> t = tokenize_shorthand(value);
 
+    if (name == "container") {
+        if (t.empty()) return true;
+        if (t.size()==1 && is_css_wide_keyword(t[0])) {
+            emit(out,"container-name",t[0]); emit(out,"container-type",t[0]); return true;
+        }
+        std::string names;
+        size_t i=0;
+        for (;i<t.size() && t[i]!="/";++i) {
+            CssParseError error;
+            auto parsed=parse_css_value(t[i],&error);
+            if (!parsed || (parsed->kind()!=CssValueKind::Keyword && parsed->kind()!=CssValueKind::Identifier) ||
+                is_css_wide_keyword(t[i]) || iequals(t[i],"default") || iequals(t[i],"and") ||
+                iequals(t[i],"or") || iequals(t[i],"not")) return true;
+            if (iequals(t[i],"none") && (i!=0 || (t.size()>1 && t[1]!="/"))) return true;
+            if (!names.empty()) names+=' ';
+            names+=t[i];
+        }
+        if (names.empty()) return true;
+        std::string_view type="normal";
+        if (i<t.size()) {
+            if (i+2!=t.size()) return true;
+            if (iequals(t[i+1],"inline-size")) type="inline-size";
+            else if (iequals(t[i+1],"size")) type="size";
+            else if (!iequals(t[i+1],"normal")) return true;
+        }
+        emit(out,"container-name",names); emit(out,"container-type",type); return true;
+    }
+
     // ---- 1-to-4 edge shorthands
     if (name == "margin") {
         return expand_edges(t, true, "margin-top", "margin-right", "margin-bottom",
@@ -856,6 +884,9 @@ bool expand_shorthand(std::string_view name, std::string_view value,
             std::string_view count = "1", dir = "normal", fill = "none", play = "running";
             int times = 0;
             for (std::string_view tok : tokenize_shorthand(part)) {
+                // A bare number (including zero) is an iteration count.
+                // Animation times require units.
+                if (tok == "infinite" || is_number_token(tok)) { count = tok; continue; }
                 double seconds = 0;
                 if (parse_time_seconds(tok, &seconds)) {
                     if (times == 0) dur = tok;
@@ -865,7 +896,6 @@ bool expand_shorthand(std::string_view name, std::string_view value,
                 }
                 Easing curve;
                 if (parse_easing(tok, &curve)) { ease = tok; continue; }
-                if (tok == "infinite" || is_number_token(tok)) { count = tok; continue; }
                 if (tok == "normal" || tok == "reverse" || tok == "alternate" ||
                     tok == "alternate-reverse") {
                     dir = tok;

@@ -1,0 +1,1033 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "raw": "",
+      "value": "",
+      "mismatch": false
+    },
+    {
+      "raw": "example.com",
+      "value": "example.com",
+      "mismatch": true
+    },
+    {
+      "raw": "/path",
+      "value": "/path",
+      "mismatch": true
+    },
+    {
+      "raw": "//example.com",
+      "value": "//example.com",
+      "mismatch": true
+    },
+    {
+      "raw": "https://example.com",
+      "value": "https://example.com",
+      "mismatch": false
+    },
+    {
+      "raw": "http:example.com",
+      "value": "http:example.com",
+      "mismatch": false
+    },
+    {
+      "raw": "https:/example.com",
+      "value": "https:/example.com",
+      "mismatch": false
+    },
+    {
+      "raw": "https:",
+      "value": "https:",
+      "mismatch": true
+    },
+    {
+      "raw": "http://",
+      "value": "http://",
+      "mismatch": true
+    },
+    {
+      "raw": "https://x:65535",
+      "value": "https://x:65535",
+      "mismatch": false
+    },
+    {
+      "raw": "https://x:65536",
+      "value": "https://x:65536",
+      "mismatch": true
+    },
+    {
+      "raw": "https://x:-1",
+      "value": "https://x:-1",
+      "mismatch": true
+    },
+    {
+      "raw": "https://x:abc",
+      "value": "https://x:abc",
+      "mismatch": true
+    },
+    {
+      "raw": "https://[::1]/",
+      "value": "https://[::1]/",
+      "mismatch": false
+    },
+    {
+      "raw": "https://[::1",
+      "value": "https://[::1",
+      "mismatch": true
+    },
+    {
+      "raw": "https://[gg::1]/",
+      "value": "https://[gg::1]/",
+      "mismatch": true
+    },
+    {
+      "raw": "http://127.1",
+      "value": "http://127.1",
+      "mismatch": false
+    },
+    {
+      "raw": "http://256.1.1.1",
+      "value": "http://256.1.1.1",
+      "mismatch": true
+    },
+    {
+      "raw": "http://0x7f000001",
+      "value": "http://0x7f000001",
+      "mismatch": false
+    },
+    {
+      "raw": "http://1.2.3.999",
+      "value": "http://1.2.3.999",
+      "mismatch": true
+    },
+    {
+      "raw": "http://bücher.de",
+      "value": "http://bücher.de",
+      "mismatch": false
+    },
+    {
+      "raw": "http://☃.net",
+      "value": "http://☃.net",
+      "mismatch": false
+    },
+    {
+      "raw": "http://a b",
+      "value": "http://a b",
+      "mismatch": false
+    },
+    {
+      "raw": "http://a%20b",
+      "value": "http://a%20b",
+      "mismatch": false
+    },
+    {
+      "raw": "http://%41.com",
+      "value": "http://%41.com",
+      "mismatch": false
+    },
+    {
+      "raw": "http://%zz.com",
+      "value": "http://%zz.com",
+      "mismatch": true
+    },
+    {
+      "raw": "http://x/%zz",
+      "value": "http://x/%zz",
+      "mismatch": false
+    },
+    {
+      "raw": "http://x/a b",
+      "value": "http://x/a b",
+      "mismatch": false
+    },
+    {
+      "raw": "https://user:pass@x/",
+      "value": "https://user:pass@x/",
+      "mismatch": false
+    },
+    {
+      "raw": "https://@/",
+      "value": "https://@/",
+      "mismatch": true
+    },
+    {
+      "raw": "file:///C:/game",
+      "value": "file:///C:/game",
+      "mismatch": false
+    },
+    {
+      "raw": "file://server/path",
+      "value": "file://server/path",
+      "mismatch": false
+    },
+    {
+      "raw": "file://",
+      "value": "file://",
+      "mismatch": false
+    },
+    {
+      "raw": "mailto:player@example.com",
+      "value": "mailto:player@example.com",
+      "mismatch": false
+    },
+    {
+      "raw": "urn:game:server:1",
+      "value": "urn:game:server:1",
+      "mismatch": false
+    },
+    {
+      "raw": "steam://connect/127.0.0.1",
+      "value": "steam://connect/127.0.0.1",
+      "mismatch": false
+    },
+    {
+      "raw": "data:text/plain,hello world",
+      "value": "data:text/plain,hello world",
+      "mismatch": false
+    },
+    {
+      "raw": "about:blank",
+      "value": "about:blank",
+      "mismatch": false
+    },
+    {
+      "raw": "javascript:alert(1)",
+      "value": "javascript:alert(1)",
+      "mismatch": false
+    },
+    {
+      "raw": "foo:",
+      "value": "foo:",
+      "mismatch": false
+    },
+    {
+      "raw": "foo:hello world",
+      "value": "foo:hello world",
+      "mismatch": false
+    },
+    {
+      "raw": "foo://x:99999",
+      "value": "foo://x:99999",
+      "mismatch": true
+    },
+    {
+      "raw": "foo://[bad]",
+      "value": "foo://[bad]",
+      "mismatch": true
+    },
+    {
+      "raw": "1foo:bar",
+      "value": "1foo:bar",
+      "mismatch": true
+    },
+    {
+      "raw": "a+b.c-d:foo",
+      "value": "a+b.c-d:foo",
+      "mismatch": false
+    },
+    {
+      "raw": " https://x \n",
+      "value": "https://x",
+      "mismatch": false
+    },
+    {
+      "raw": "ht\ttp://x",
+      "value": "ht\ttp://x",
+      "mismatch": false
+    },
+    {
+      "raw": "http:\\\\x",
+      "value": "http:\\\\x",
+      "mismatch": false
+    },
+    {
+      "raw": "https://x\u0000",
+      "value": "https://x\u0000",
+      "mismatch": false
+    },
+    {
+      "raw": "https://x\u0001",
+      "value": "https://x\u0001",
+      "mismatch": false
+    },
+    {
+      "raw": "http://x.",
+      "value": "http://x.",
+      "mismatch": false
+    },
+    {
+      "raw": "http://-x",
+      "value": "http://-x",
+      "mismatch": false
+    },
+    {
+      "raw": "http://a_b",
+      "value": "http://a_b",
+      "mismatch": false
+    },
+    {
+      "raw": "http://a..b",
+      "value": "http://a..b",
+      "mismatch": false
+    }
+  ],
+  "submissions": [
+    {
+      "raw": "",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "example.com",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "example.com",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "/path",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "/path",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "//example.com",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "//example.com",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://example.com",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://example.com",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http:example.com",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http:example.com",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https:/example.com",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https:/example.com",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https:",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "https:",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "http://",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x:65535",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x:65535",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x:65536",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "https://x:65536",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x:-1",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "https://x:-1",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x:abc",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "https://x:abc",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://[::1]/",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://[::1]/",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://[::1",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "https://[::1",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://[gg::1]/",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "https://[gg::1]/",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://127.1",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://127.1",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://256.1.1.1",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "http://256.1.1.1",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://0x7f000001",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://0x7f000001",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://1.2.3.999",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "http://1.2.3.999",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://bücher.de",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://bücher.de",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://☃.net",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://☃.net",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://a b",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://a b",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://a%20b",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://a%20b",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://%41.com",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://%41.com",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://%zz.com",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "http://%zz.com",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://x/%zz",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://x/%zz",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://x/a b",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://x/a b",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://user:pass@x/",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://user:pass@x/",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://@/",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "https://@/",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "file:///C:/game",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "file:///C:/game",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "file://server/path",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "file://server/path",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "file://",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "file://",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "mailto:player@example.com",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "mailto:player@example.com",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "urn:game:server:1",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "urn:game:server:1",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "steam://connect/127.0.0.1",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "steam://connect/127.0.0.1",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "data:text/plain,hello world",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "data:text/plain,hello world",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "about:blank",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "about:blank",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "javascript:alert(1)",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "javascript:alert(1)",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "foo:",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "foo:",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "foo:hello world",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "foo:hello world",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "foo://x:99999",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "foo://x:99999",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "foo://[bad]",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "foo://[bad]",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "1foo:bar",
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "1foo:bar",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a+b.c-d:foo",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a+b.c-d:foo",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": " https://x \n",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": " https://x \n",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "ht\ttp://x",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "ht\ttp://x",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http:\\\\x",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http:\\\\x",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x\u0000",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x\u0000",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x\u0001",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "https://x\u0001",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://x.",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://x.",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://-x",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://-x",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://a_b",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://a_b",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://a..b",
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "http://a..b",
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    }
+  ]
+}

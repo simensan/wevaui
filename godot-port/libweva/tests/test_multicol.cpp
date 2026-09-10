@@ -110,6 +110,81 @@ struct Fixture {
 
 void test_multicol() {
     {
+        Fixture f;
+        CHECK(f.css("#columns{width:300px;column-count:2}.span{column-span:all;height:0;margin:-5px 0}"));
+        CHECK(f.layout("<div id=columns><div class=span></div><div class=span></div></div>"));
+        CHECK(near(f.box("columns").height, 0));
+    }
+    for (int margin : {10, -5}) {
+        Fixture f;
+        CHECK(f.css("#columns{width:300px;column-count:2;column-gap:20px}.span{column-span:all;height:30px;margin:" + std::to_string(margin) + "px 0}"));
+        CHECK(f.layout("<div id=columns><div id=a class=span></div><div id=b class=span></div></div>"));
+        CHECK(near(f.box("a").y, margin));
+        CHECK(near(f.box("b").y, 30 + 2 * margin));
+        CHECK(near(f.box("columns").height, 60 + 3 * margin));
+    }
+    for (const char* direction : {"ltr", "rtl"}) {
+        Fixture f;
+        CHECK(f.css(std::string("#columns{width:300px;column-count:2;column-gap:20px;direction:") + direction +
+            "}.item{height:20px;break-inside:avoid}#heading{height:30px;column-span:all}"));
+        CHECK(f.layout("<div id=columns><div id=a class=item></div><div id=b class=item></div><div id=heading></div><div id=c class=item></div><div id=d class=item></div></div>"));
+        CHECK(near(f.box("heading").width, 300));
+        CHECK(near(f.box("heading").y, 20));
+        CHECK(near(f.box("columns").height, 70));
+        CHECK(near(f.box("a").y, 0) && near(f.box("b").y, 0));
+        CHECK(near(f.box("c").y, 50) && near(f.box("d").y, 50));
+        CHECK(near(f.box("a").x, std::string(direction) == "rtl" ? 160 : 0));
+        CHECK(near(f.box("c").x, f.box("a").x));
+    }
+    // Chrome152: used count/width/gap for whole, unbreakable cards. These
+    // checks do not claim paragraph fragmentation or spanning support.
+    {
+        struct SizingCase { const char* css; double bounds[13][4]; };
+        const SizingCase cases[] = {
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;column-gap:0}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{0,0,210.65625,20},{0,20,210.65625,20},{0,40,210.65625,20},{0,60,210.65625,20},{210.671875,0,210.65625,20},{210.671875,20,210.65625,20},{210.671875,40,210.65625,20},{210.671875,60,210.65625,20},{421.328125,0,210.65625,20},{421.328125,20,210.65625,20},{421.328125,40,210.65625,20},{421.328125,60,210.65625,20}}}, // fractional-three
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:5;column-gap:0}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,60},{0,0,126.390625,20},{0,20,126.390625,20},{0,40,126.390625,20},{126.40625,0,126.390625,20},{126.40625,20,126.390625,20},{126.40625,40,126.390625,20},{252.796875,0,126.390625,20},{252.796875,20,126.390625,20},{252.796875,40,126.390625,20},{379.203125,0,126.390625,20},{379.203125,20,126.390625,20},{379.203125,40,126.390625,20}}}, // fractional-five
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;column-gap:10.5px}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{0,0,203.65625,20},{0,20,203.65625,20},{0,40,203.65625,20},{0,60,203.65625,20},{214.171875,0,203.65625,20},{214.171875,20,203.65625,20},{214.171875,40,203.65625,20},{214.171875,60,203.65625,20},{428.328125,0,203.65625,20},{428.328125,20,203.65625,20},{428.328125,40,203.65625,20},{428.328125,60,203.65625,20}}}, // fractional-gap
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20},{216,0,200,20},{216,20,200,20},{216,40,200,20},{216,60,200,20},{432,0,200,20},{432,20,200,20},{432,40,200,20},{432,60,200,20}}}, // normal-gap
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:648px;font-size:24px;column-count:3}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,648,80},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20},{224,0,200,20},{224,20,200,20},{224,40,200,20},{224,60,200,20},{448,0,200,20},{448,20,200,20},{448,40,200,20},{448,60,200,20}}}, // normal-font
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:600px;column-count:3;column-gap:0}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,600,80},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20},{200,0,200,20},{200,20,200,20},{200,40,200,20},{200,60,200,20},{400,0,200,20},{400,20,200,20},{400,40,200,20},{400,60,200,20}}}, // zero-gap
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:4;column-width:200px}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20},{216,0,200,20},{216,20,200,20},{216,40,200,20},{216,60,200,20},{432,0,200,20},{432,20,200,20},{432,40,200,20},{432,60,200,20}}}, // width-limits-count
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:2;column-width:100px}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,120},{0,0,308,20},{0,20,308,20},{0,40,308,20},{0,60,308,20},{0,80,308,20},{0,100,308,20},{324,0,308,20},{324,20,308,20},{324,40,308,20},{324,60,308,20},{324,80,308,20},{324,100,308,20}}}, // count-limits-width
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:180px;column-count:4;column-width:200px}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,180,240},{0,0,180,20},{0,20,180,20},{0,40,180,20},{0,60,180,20},{0,80,180,20},{0,100,180,20},{0,120,180,20},{0,140,180,20},{0,160,180,20},{0,180,180,20},{0,200,180,20},{0,220,180,20}}}, // narrow-container
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-width:200px}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20},{216,0,200,20},{216,20,200,20},{216,40,200,20},{216,60,200,20},{432,0,200,20},{432,20,200,20},{432,40,200,20},{432,60,200,20}}}, // auto-count
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:8px;column-width:0;column-gap:0}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,8,40},{0,0,1,20},{0,20,1,20},{1,0,1,20},{1,20,1,20},{2,0,1,20},{2,20,1,20},{3,0,1,20},{3,20,1,20},{4,0,1,20},{4,20,1,20},{5,0,1,20},{5,20,1,20}}}, // zero-column-width
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:8px;column-width:.25px;column-gap:0}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,8,40},{0,0,1,20},{0,20,1,20},{1,0,1,20},{1,20,1,20},{2,0,1,20},{2,20,1,20},{3,0,1,20},{3,20,1,20},{4,0,1,20},{4,20,1,20},{5,0,1,20},{5,20,1,20}}}, // subpixel-column-width
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:8px;column-width:.5px;column-count:4;column-gap:0}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,8,60},{0,0,2,20},{0,20,2,20},{0,40,2,20},{2,0,2,20},{2,20,2,20},{2,40,2,20},{4,0,2,20},{4,20,2,20},{4,40,2,20},{6,0,2,20},{6,20,2,20},{6,40,2,20}}}, // subpixel-count-cap
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:600px;column-count:3;column-gap:10%}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,600,80},{0,0,160,20},{0,20,160,20},{0,40,160,20},{0,60,160,20},{220,0,160,20},{220,20,160,20},{220,40,160,20},{220,60,160,20},{440,0,160,20},{440,20,160,20},{440,40,160,20},{440,60,160,20}}}, // percentage-gap
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:640px;font-size:20px;column-count:4;column-width:10em}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,640,80},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20},{220,0,200,20},{220,20,200,20},{220,40,200,20},{220,60,200,20},{440,0,200,20},{440,20,200,20},{440,40,200,20},{440,60,200,20}}}, // relative-width
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:200px;column-count:3;column-width:40px;column-gap:400px}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,200,240},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20},{0,80,200,20},{0,100,200,20},{0,120,200,20},{0,140,200,20},{0,160,200,20},{0,180,200,20},{0,200,200,20},{0,220,200,20}}}, // large-gap
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}#m>div{width:100px}", {{0,0,632,80},{532,0,100,20},{532,20,100,20},{532,40,100,20},{532,60,100,20},{316,0,100,20},{316,20,100,20},{316,40,100,20},{316,60,100,20},{100,0,100,20},{100,20,100,20},{100,40,100,20},{100,60,100,20}}}, // rtl-fixed-card
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}#m>div{width:100px;margin-left:7px;margin-right:11px}", {{0,0,632,80},{521,0,100,20},{521,20,100,20},{521,40,100,20},{521,60,100,20},{305,0,100,20},{305,20,100,20},{305,40,100,20},{305,60,100,20},{89,0,100,20},{89,20,100,20},{89,40,100,20},{89,60,100,20}}}, // rtl-card-margins
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}#m>div{width:100px;margin-left:auto;margin-right:auto}", {{0,0,632,80},{482,0,100,20},{482,20,100,20},{482,40,100,20},{482,60,100,20},{266,0,100,20},{266,20,100,20},{266,40,100,20},{266,60,100,20},{50,0,100,20},{50,20,100,20},{50,40,100,20},{50,60,100,20}}}, // rtl-card-auto-margins
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}body{direction:rtl}#m{margin-left:0;margin-right:auto}", {{0,0,632,80},{432,0,200,20},{432,20,200,20},{432,40,200,20},{432,60,200,20},{216,0,200,20},{216,20,200,20},{216,40,200,20},{216,60,200,20},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20}}}, // rtl-inherited
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{432,0,200,20},{432,20,200,20},{432,40,200,20},{432,60,200,20},{216,0,200,20},{216,20,200,20},{216,40,200,20},{216,60,200,20},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20}}}, // rtl-three
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;column-gap:0;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{421.34375,0,210.65625,20},{421.34375,20,210.65625,20},{421.34375,40,210.65625,20},{421.34375,60,210.65625,20},{210.671875,0,210.65625,20},{210.671875,20,210.65625,20},{210.671875,40,210.65625,20},{210.671875,60,210.65625,20},{0.015625,0,210.65625,20},{0.015625,20,210.65625,20},{0.015625,40,210.65625,20},{0.015625,60,210.65625,20}}}, // rtl-fractional-three
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:5;column-gap:0;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,60},{505.609375,0,126.390625,20},{505.609375,20,126.390625,20},{505.609375,40,126.390625,20},{379.203125,0,126.390625,20},{379.203125,20,126.390625,20},{379.203125,40,126.390625,20},{252.8125,0,126.390625,20},{252.8125,20,126.390625,20},{252.8125,40,126.390625,20},{126.40625,0,126.390625,20},{126.40625,20,126.390625,20},{126.40625,40,126.390625,20}}}, // rtl-fractional-five
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;column-gap:10.5px;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{428.34375,0,203.65625,20},{428.34375,20,203.65625,20},{428.34375,40,203.65625,20},{428.34375,60,203.65625,20},{214.171875,0,203.65625,20},{214.171875,20,203.65625,20},{214.171875,40,203.65625,20},{214.171875,60,203.65625,20},{0.015625,0,203.65625,20},{0.015625,20,203.65625,20},{0.015625,40,203.65625,20},{0.015625,60,203.65625,20}}}, // rtl-gap
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:3;padding:13px 17px;border:3px solid;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,672,112},{452,16,200,20},{452,36,200,20},{452,56,200,20},{452,76,200,20},{236,16,200,20},{236,36,200,20},{236,56,200,20},{236,76,200,20},{20,16,200,20},{20,36,200,20},{20,56,200,20},{20,76,200,20}}}, // rtl-padding
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;column-count:4;column-width:200px;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{432,0,200,20},{432,20,200,20},{432,40,200,20},{432,60,200,20},{216,0,200,20},{216,20,200,20},{216,40,200,20},{216,60,200,20},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20}}}, // rtl-width-cap
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:180px;column-count:4;column-width:200px;direction:rtl}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,180,240},{0,0,180,20},{0,20,180,20},{0,40,180,20},{0,60,180,20},{0,80,180,20},{0,100,180,20},{0,120,180,20},{0,140,180,20},{0,160,180,20},{0,180,180,20},{0,200,180,20},{0,220,180,20}}}, // rtl-single
+            {"html,body{margin:0;padding:0;font-size:16px}#m{width:632px;columns:4 200px}#m>div{height:20px;margin:0;padding:0;border:0;break-inside:avoid}", {{0,0,632,80},{0,0,200,20},{0,20,200,20},{0,40,200,20},{0,60,200,20},{216,0,200,20},{216,20,200,20},{216,40,200,20},{216,60,200,20},{432,0,200,20},{432,20,200,20},{432,40,200,20},{432,60,200,20}}}, // shorthand
+        };
+        for (const auto& row : cases) {
+            Fixture f;
+            CHECK(f.css(row.css));
+            CHECK(f.layout("<div id=m><div id=c0></div><div id=c1></div><div id=c2></div><div id=c3></div><div id=c4></div><div id=c5></div><div id=c6></div><div id=c7></div><div id=c8></div><div id=c9></div><div id=c10></div><div id=c11></div></div>"));
+            for (int i=0;i<13;++i) {
+                const auto& box = f.box(i == 0 ? "m" : "c" + std::to_string(i-1));
+                CHECK(near(box.x, row.bounds[i][0]));
+                CHECK(near(box.y, row.bounds[i][1]));
+                CHECK(near(box.width, row.bounds[i][2]));
+                CHECK(near(box.height, row.bounds[i][3]));
+            }
+        }
+    }
+
+    {
         // The `columns` shorthand reaching layout, which is the point of
         // expanding it: identical geometry to the column-count case below,
         // written the way an author actually writes it. Before the expansion

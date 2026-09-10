@@ -1,0 +1,95 @@
+{
+  "chrome": {
+    "browser": "Chrome/152.0.7977.83",
+    "results": [
+      {
+        "height": 720,
+        "fixed": false,
+        "y": 226,
+        "heightOfDialog": 414,
+        "centreOffset": 73
+      },
+      {
+        "height": 720,
+        "fixed": true,
+        "y": 153,
+        "heightOfDialog": 414,
+        "centreOffset": 0
+      },
+      {
+        "height": 1080,
+        "fixed": false,
+        "y": 496,
+        "heightOfDialog": 414,
+        "centreOffset": 163
+      },
+      {
+        "height": 1080,
+        "fixed": true,
+        "y": 333,
+        "heightOfDialog": 414,
+        "centreOffset": 0
+      },
+      {
+        "height": 2160,
+        "fixed": false,
+        "y": 1306,
+        "heightOfDialog": 414,
+        "centreOffset": 433
+      },
+      {
+        "height": 2160,
+        "fixed": true,
+        "y": 873,
+        "heightOfDialog": 414,
+        "centreOffset": 0
+      }
+    ]
+  },
+  "native_after": [
+    {
+      "centre_error": 0.0,
+      "rect": [
+        420.0,
+        144.5,
+        440.0,
+        431.0
+      ],
+      "size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "centre_error": 0.0,
+      "rect": [
+        740.0,
+        324.5,
+        440.0,
+        431.0
+      ],
+      "size": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "centre_error": 0.0,
+      "rect": [
+        1700.0,
+        864.5,
+        440.0,
+        431.0
+      ],
+      "size": [
+        3840,
+        2160
+      ]
+    }
+  ],
+  "sample_integration": {
+    "checks": 93,
+    "failures": 0
+  },
+  "change": "Sample CSS top:0 replaces top:calc(50% - 214px), allowing dialog automatic margins to centre it. Native addon unchanged."
+}

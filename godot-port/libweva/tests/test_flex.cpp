@@ -1012,3 +1012,17 @@ void test_button_vertical_centering_is_flow_only() {
         CHECK(near(f.box("s").y, (64 - h) / 2));
     }
 }
+
+void test_flex_fractional_factors_and_padding() {
+    Fixture f;
+    CHECK(f.css("#r{display:flex;width:400px}#a,#b,#c{box-sizing:border-box;min-width:0;padding:0 10px;flex:1 1 0}#b{flex-grow:2}"));
+    CHECK(f.layout("<div id=r><div id=a></div><div id=b></div><div id=c></div></div>"));
+    CHECK(near(f.box("a").width,105));
+    CHECK(near(f.box("b").width,190));
+    CHECK(near(f.box("c").width,105));
+    Fixture partial;
+    CHECK(partial.css("#r{display:flex;width:400px}#a,#b{min-width:0;flex:0.25 1 0}"));
+    CHECK(partial.layout("<div id=r><div id=a></div><div id=b></div></div>"));
+    CHECK(near(partial.box("a").width,100));
+    CHECK(near(partial.box("b").width,100));
+}

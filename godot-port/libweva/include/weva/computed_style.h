@@ -142,6 +142,8 @@ public:
 
     // Ids set DIRECTLY on this style (not inherited, not initial), ascending.
     std::vector<int> set_ids() const;
+    // Snapshot in ascending order, retaining caller-owned capacity.
+    void copy_set_ids(std::vector<int>& out) const;
 
     // Compares against a freshly computed style for the same element.
     //

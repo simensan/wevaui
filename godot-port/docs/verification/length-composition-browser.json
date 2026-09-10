@@ -1,0 +1,65 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "tag": "input",
+      "action": "preedit",
+      "value": "ab",
+      "short": true
+    },
+    {
+      "tag": "input",
+      "action": "commit",
+      "value": "ab",
+      "short": true
+    },
+    {
+      "tag": "input",
+      "action": "same-script",
+      "value": "ab",
+      "short": false
+    },
+    {
+      "tag": "input",
+      "action": "other-script",
+      "value": "z",
+      "short": false
+    },
+    {
+      "tag": "input",
+      "action": "cancel",
+      "value": "",
+      "short": false
+    },
+    {
+      "tag": "textarea",
+      "action": "preedit",
+      "value": "ab",
+      "short": true
+    },
+    {
+      "tag": "textarea",
+      "action": "commit",
+      "value": "ab",
+      "short": true
+    },
+    {
+      "tag": "textarea",
+      "action": "same-script",
+      "value": "ab",
+      "short": true
+    },
+    {
+      "tag": "textarea",
+      "action": "other-script",
+      "value": "z",
+      "short": false
+    },
+    {
+      "tag": "textarea",
+      "action": "cancel",
+      "value": "",
+      "short": false
+    }
+  ]
+}

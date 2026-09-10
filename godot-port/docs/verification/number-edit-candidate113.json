@@ -1,0 +1,194 @@
+{
+  "phase": "numeric editing candidate113",
+  "installed_preview": 111,
+  "binary_sha256": "f7e1b696dfa5d3a2a77ea8aa952c20b7c719358ad485184a90e2975151ee6161",
+  "source_sha256": "abffcde8ac3a6893acd63fe865d4c6fbbb98498985b73a8bf5de3cd25e4b9b73",
+  "core": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 21.36
+  },
+  "sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 142.49
+  },
+  "chrome": {
+    "cases": 580,
+    "passed": true,
+    "receipt": "number-filter-browser113.json"
+  },
+  "host": {
+    "binary_sha256": "f7e1b696dfa5d3a2a77ea8aa952c20b7c719358ad485184a90e2975151ee6161",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 506
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 165
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 554
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12206
+      }
+    ],
+    "passed": true,
+    "checks": 21951
+  },
+  "qualified_for_installation": false,
+  "remaining": [
+    "Package/export checks and visual qualification",
+    "Runtime performance qualification",
+    "Physical IME and other locale qualification"
+  ],
+  "graphics_backends": [
+    {
+      "method": "gl_compatibility",
+      "driver": "opengl3",
+      "checks": 12206,
+      "passed": true
+    },
+    {
+      "method": "mobile",
+      "driver": "vulkan",
+      "checks": 12206,
+      "passed": true
+    }
+  ],
+  "graphics_scope": "Behavioral validation with graphics drivers active, not pixel parity"
+}

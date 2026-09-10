@@ -1,5 +1,21 @@
 # The Godot host
 
+For performance qualification with a custom Godot build, pass its matching
+release template explicitly:
+
+```sh
+python godot-port/hosts/godot/run_frontier_perf.py --godot /path/to/editor \
+  --release-template /path/to/release-template --output /path/to/new-results \
+  --budget godot-port/examples/frontier_camp/tests/performance_budget_desktop.json
+```
+
+The runner records the template SHA256 and restores the saved export presets,
+including when export fails. Selecting an editor alone does not select its
+matching export template: Godot may use a cached template. Omitting the option
+preserves Godot's selection and records its identity as unverified. With
+`--executable`, export is skipped and the executable hash identifies the tested
+artifact; establish its template provenance from the original export receipt.
+
 For a standalone game integration, open
 [`examples/frontier_camp`](../../examples/frontier_camp/README.md). It uses the
 packaged addon, Inspector-selected HTML/CSS, signal-driven `WevaView` bindings,
@@ -840,9 +856,17 @@ letters for, and the clipboard, which belongs to the platform.
     doc.get_selected_text()                        # for DisplayServer.clipboard_set
     doc.paste_text(DisplayServer.clipboard_get())  # paste as one undo step
     doc.set_element_selection("#name", 0, 5)
+    doc.set_element_selection_without_focus("#name", 5, 0) # prepare a backward range
     doc.get_element_selection("#name")             # anchor first, so you know
                                                    # which way it runs
     doc.select_word_at(point)                      # what a double click does
+
+Selection endpoints use UTF-8 byte offsets, with the anchor first. Programmatic
+focus preserves a field's selection; untouched markup starts at zero. To append,
+set both endpoints to `doc.get_element_value("#name").to_utf8_buffer().size()`.
+Tab selects input text and preserves textarea selection. The non-focusing setter
+(ABI minor 13) prepares selection without moving keyboard focus; the original
+setter focuses the field. Both clamp endpoints to valid byte boundaries.
 
 Ctrl on a motion key makes it word-sized, and the document handles that itself
 because those keys ARE in the enum: Ctrl+Left and Ctrl+Right move by the word,
@@ -1066,3 +1090,219 @@ Two things worth knowing, because both have caught someone out:
   * The animation belongs in the stylesheet. The demo's script sets a width and
     toggles a class; the easing and the low-health pulse are CSS. That is the
     reason to drive a UI this way rather than tweening from GDScript.
+
+
+### Registering CSS font families
+
+The current source provides `register_font_family(name, font)` on `WevaDocument`
+(ABI minor 14, retained in installed preview107). Pass a Godot `Font`, such as
+an imported `FontFile` or a `FontVariation`, and use that name in CSS:
+
+```gdscript
+@export var heading_font: Font
+
+func configure_fonts(doc: WevaDocument) -> void:
+    doc.register_font_family("Camp", heading_font)
+    # CSS: h1 { font-family: Camp, sans-serif; }
+```
+
+Names are case-insensitive. Pass `null` to remove a registration; registering
+the same resource again does nothing. Use an unquoted family name as the API
+argument; comma-separated stacks belong in CSS. The method returns `false` for
+an empty name or a name containing commas or quote characters.
+
+Changes take effect on the next document update. The document retains the font
+resource, watches its `changed` signal, and refreshes measurements and glyphs
+when it changes. Normal Font resource setters emit that signal; low-level bitmap
+cache edits require `emit_changed()`. HTML reload, theme replacement and disabling
+then re-enabling engine fonts preserve the registrations. Families sharing a
+resource share one change-signal connection. Registered families use their own
+fallback chains; registration does not modify the resource's RID array.
+
+This API supplies native resources to CSS family selection. CSS `@font-face`
+loading remains unsupported.
+
+
+### Cancelable dialog close requests (current source)
+
+ABI minor 15 adds `request_close_dialog(selector, result = null)`, `prevent_default()`,
+`dialog_cancel_requested(id)` and `dialog_closed(id)`. These APIs are tested in a
+native candidate and included in installed preview107.
+
+```gdscript
+func _ready() -> void:
+    ui.dialog_cancel_requested.connect(_cancel_requested)
+
+func _cancel_requested(id: String) -> void:
+    if id == "settings" and has_unsaved_changes:
+        ui.prevent_default()
+
+func dismiss_settings() -> void:
+    ui.request_close_dialog("#settings")
+```
+
+Alternatively use `on-cancel="handler_name"` on the dialog; the controller method
+receives its ID. `on-close` handles completion. These markup handlers resolve on
+the dialog itself, without ancestor fallback. Cancel handlers run while the
+dialog is open; `prevent_default()` vetoes the request. It returns `false` outside
+an active cancel event. `close_dialog()` remains an explicit, unconditional close.
+
+The outer request drains handlers before returning. Nested UI updates do not
+drain events again while a handler is running, so layout queries and updates do
+not prematurely apply a close. A handler may close, reopen, remove or reload the
+dialog; stale requests cannot close the replacement. Requests queued from inside
+another handler wait for that handler to finish.
+
+Escape dismisses auto/hint popovers first, then an open dropdown, then requests
+closing the latest opened dialog. `closedby="none"` blocks dialog dismissal;
+`any` and `closerequest` allow it. Missing/invalid values allow modal dismissal
+and block non-modal dismissal. Cancel handlers can veto Escape too.
+
+Both `close_dialog(selector, result = null)` and `request_close_dialog` accept
+an optional result. Omitted/null preserves the current result; `""` clears it.
+Use `get_dialog_return_value(selector)` to read the complete Unicode result,
+including from a close handler, and `set_dialog_return_value(selector, value)`
+to change the property without invalidating layout. A veto leaves the requested
+result unapplied. Escape supplies an empty result. For example:
+
+```gdscript
+func accept_settings() -> void:
+    ui.close_dialog("#settings", "accepted")
+
+func _dialog_closed(id: String) -> void:
+    if id == "settings":
+        print(ui.get_dialog_return_value("#settings"))
+```
+
+Form `method="dialog"`, beforetoggle cancellation and full browser task ordering
+remain open. This is not a claim of complete HTML dialog lifecycle parity.
+
+
+The source queue preserves accepted close requests under notification overflow.
+`request_close_dialog()` returns `false` if its bounded queue is already full of
+pending requests; process queued events before retrying. Ordinary notifications
+may be dropped under overflow. The rebuilt native candidate includes this policy.
+
+### Custom validation (ABI minor 16; installed preview115)
+
+`set_custom_validity(selector, message)` adds a game-specific error to an input,
+textarea, select or button. An empty message clears it. A nonempty message blocks
+normal form submission and emits `element_invalid(id)` / `on-invalid` on the
+control. Set or clear it in a field-change or submit-button click handler, before
+the submit event. For example, an `on-click="validate_name"` submit button can use:
+
+```gdscript
+func validate_name(_id: String) -> void:
+    var reserved := ui.get_element_value("#name") == "World"
+    ui.set_custom_validity("#name", "Choose another player name." if reserved else "")
+```
+
+`get_custom_validity(selector)` reads the complete stored Unicode message,
+including while disabled. It does not return built-in or localized validation
+messages. Reset preserves custom errors; cloning clears them. The candidate also
+checks required values and number-input bounds/steps. Other constraints and full
+browser validation APIs remain unfinished.
+
+
+### Cumulative core timing (installed preview115)
+
+`get_total_core_update_ms()` and `get_core_update_count()` are monotonic counters
+for the lifetime of a `WevaDocument`. Subtract snapshots taken before work and
+after the next `process_frame` to include synchronous and deferred core updates
+in that interval. Reading the counters does not trigger an update. Reloading
+markup does not reset the counters. `get_last_update_ms()` remains available for
+inspecting a single update; it cannot account for multiple updates in one frame.
+
+The timers cover the existing core-update interval. They exclude binding refresh,
+font-backend setup, host texture synchronization, event handlers, canvas drawing,
+and GPU execution. Do not label the difference as total UI cost or add it to API
+timing, which already includes any synchronous core work. The sample benchmark
+reports `changed_core_cpu` and `core_update_count` separately from API and whole-frame
+measurements. This API is available in installed115.
+
+
+Attribute reads (`has_element_attribute`, `get_element_attribute`) inspect current
+DOM state without flushing layout. This allows a batch of style/DOM writes and
+attribute checks to publish one final layout when it is needed. Geometry/style
+queries retain synchronous update behavior. Missing elements still return false
+or an empty string. The native timing tests verify this contract.
+
+
+### Validity snapshots (introduced in candidate120; installed in preview121)
+
+`get_element_validity(selector)` returns a snapshot for an input, textarea,
+select, or button. It reads pending DOM/value changes without updating layout,
+moving focus, or firing `invalid`. The dictionary has `valid`, `will_validate`,
+`value_missing`, `type_mismatch`, `pattern_mismatch`, `too_long`, `too_short`,
+`range_underflow`, `range_overflow`, `step_mismatch`, `bad_input`, and `custom_error`.
+Read it again after edits; a previously returned dictionary is not a live object.
+A disabled control may retain errors even though `will_validate` is false.
+
+```gdscript
+func name_can_be_saved() -> bool:
+    var state := ui.get_element_validity("#name")
+    if state.is_empty():
+        return false
+    return not state.will_validate or state.valid
+```
+
+Missing selectors and unsupported element types return an empty dictionary.
+A nonempty value with an applicable `pattern` also returns empty and emits a
+warning, because Unicode-v pattern validation is not implemented. It must not
+be treated as a valid result. Empty values do not require pattern matching;
+`required` still applies. This API does not yet implement form-wide
+`checkValidity()`/`reportValidity()`, localized validation messages, or validity
+pseudo-classes. Ordinary submission validation retains its existing behavior.
+The C ABI equivalent is `weva_element_validity`, returning status plus an error
+bitmask and a validation-candidate flag; both outputs are cleared on failure.
+
+
+### Explicit checking and reporting (installed preview121, ABI minor18)
+
+`check_validity(selector)` and `report_validity(selector)` accept a form or an
+input/textarea/select/button. They return whether eligible controls satisfy the
+supported constraints, fire cancelable `element_invalid`/`on-invalid` events for
+failures, and never submit. They ignore `novalidate` and `formnovalidate`; those
+attributes govern submission, not an explicit check. Form checks include external
+controls associated through `form="id"`, in document order. Disabled/barred
+controls pass without invalid events.
+
+`check_validity` preserves focus. `report_validity` focuses the first unhandled
+invalid control after invalid handlers finish; canceling every invalid event
+prevents that focus change without making the result true. Reporting currently
+provides focus and handler hooks, not a built-in localized validation popup.
+
+```gdscript
+func save_settings(_id: String) -> void:
+    if not ui.report_validity("#settings"):
+        return
+    save_settings_to_disk()
+```
+
+The C ABI equivalents return a status and a required `int* valid` output. Invalid
+events are queued; the caller must drain `weva_document_poll_event` and may call
+`weva_document_prevent_default` for the current event. Godot drains automatically.
+When called inside a normal event handler, invalid handlers run after that handler
+returns, within the same outer drain. This differs from browser recursive event
+dispatch. Calling again from an active invalid handler is explicitly unsupported
+(`WEVA_ERR_INVALID_STATE`; Godot warns and returns false). Pattern-dependent
+checks likewise fail explicitly before events are queued. Missing/non-control
+selectors return false in Godot. The bounded native event queue rejects requests
+that cannot fit all protected invalid events; it does not emit a partial report.
+
+Control mutation during earlier handlers is rechecked before each queued invalid
+event: repaired, disabled, removed or reassociated later controls are skipped.
+Tests cover these cases against Chrome, plus cancellation, valid forms, no
+submission, Save-button callbacks, unsupported patterns and queue capacity.
+[Explicit validation evidence](verification/explicit-validity121.json).
+
+### Normalized control bindings (installed preview132)
+
+Repeated state signals whose values are unchanged return zero from
+`refresh_bindings()`, including booleans bound to checkboxes and numbers normalized
+by range controls. Actual changes, validity changes and composition commits still
+publish. Model values and paths are not truncated to the short-read buffer size.
+
+The validity APIs also support fieldsets. A fieldset's own custom error is exposed
+in its validity snapshot but does not block validation or change its CSS aggregate
+`:valid`/`:invalid` result; its eligible descendant controls determine that result.

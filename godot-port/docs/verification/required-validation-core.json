@@ -1,0 +1,41 @@
+{
+  "scope": "Required-value validation and invalid-event reporting; source ABI16, installed107 unchanged",
+  "source_sha256": {
+    "libweva/include/weva/form_state.h": "c9ca156753cef8c1b6c33b8b2bcc71850a38875bf7a7438302b34b226f831cd4",
+    "libweva/src/form_state.cpp": "60bb471db7f0fd8d79e3cffe95ef45448a20b7027ff36e56baebf504ae4a9720",
+    "libweva/include/weva_c.h": "5be9022b6334431ce996883c8f0883671dd2f99ab0203055997c8879868feb8f",
+    "libweva/src/weva_c.cpp": "75301ac272bfe6315bd31348dee3d688b02c7acfbd9bdc929aab2ee1d6098940",
+    "libweva/tests/test_form_state.cpp": "04bdaaaabccba8a8c454e933b962c5d04002efd2ab5188d90591f501483fa0d7",
+    "libweva/tests/test_c_abi_forms.cpp": "94e31cc02c5f258f8e474ab4007d00e320f5c68831baa795ecee71b2e94d8edd",
+    "libweva/tests/main.cpp": "a72aa55b821e65975e0188a4546975e0742f39df209817869673e553b49e7d67",
+    "hosts/godot/src/weva_node.cpp": "68b8e61687b8681a95a1fb440ef7bf0b3610520a0bcb04f5ef9a118d96bae0e8"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 20.2
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 120.56
+  },
+  "build_note": "Only explanatory source/header comments changed after builds; runtime and test code are identical. Godot host source change has not been built or qualified.",
+  "browser_validation_cases": 30,
+  "browser_reporting_cases": 6,
+  "coverage": [
+    "validation candidates and required-value rules",
+    "submission rejection, novalidate and formnovalidate",
+    "click-handler value changes before validation",
+    "non-bubbling invalid handlers and cancellation",
+    "focus after all invalid handlers",
+    "recursive submission suppression during invalid handler"
+  ],
+  "remaining": [
+    "type mismatch, numeric bounds and step, pattern, length and custom validity",
+    "public checkValidity/reportValidity APIs",
+    "invalid batch removal/reload/overflow lifecycle follow-ups",
+    "click default-action ordering",
+    "native compilation/integration, performance and packaging"
+  ]
+}

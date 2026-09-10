@@ -19,9 +19,14 @@ namespace weva {
 class FontMetrics {
 public:
     virtual ~FontMetrics() = default;
+    // Handles belong to one backend; synthetic metrics have no paint face.
+    virtual FaceHandle rendering_face(const FontInterface*) const { return {}; }
     virtual double line_height(double font_size) const = 0;
     virtual double ascent(double font_size) const = 0;
     virtual double descent(double font_size) const = 0;
+    virtual double leading_above(double line_height, double font_size) const {
+        return (line_height - ascent(font_size) - descent(font_size)) * .5;
+    }
     // Measures a slice in place. Layout probes O(log n) prefixes of the same
     // word when wrapping, so this takes a view rather than forcing a copy per
     // probe.
@@ -76,9 +81,13 @@ class FontInterfaceMetrics : public FontMetrics {
 public:
     FontInterfaceMetrics(FontInterface* font, FaceHandle face) : font_(font), face_(face) {}
 
+    FaceHandle rendering_face(const FontInterface* backend) const override {
+        return backend == font_ ? face_ : FaceHandle{};
+    }
     double line_height(double fs) const override;
     double ascent(double fs) const override;
     double descent(double fs) const override;
+    double leading_above(double line_height, double fs) const override;
     double measure(std::string_view text, double fs) const override;
 
 private:

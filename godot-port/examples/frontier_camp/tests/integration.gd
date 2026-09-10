@@ -64,6 +64,8 @@ func run(scene: Control) -> void:
 	viewport.notify_mouse_entered()
 	await settle()
 	check(ui.last_load_error.is_empty(), "Inspector loads HTML and sibling CSS")
+	check(TextServerManager.get_primary_interface().string_to_upper("i", "tr") == "İ",
+		"engine Unicode support data is loaded, including in exported games")
 	check(ui.document_size == Vector2(1280, 720), "native Control owns the viewport")
 	check(ui.get_draw_count() > 0, "document draws")
 	check(ui.get_missing_assets().is_empty(), "HTML-relative icons and native background resolve")
@@ -139,6 +141,8 @@ func run(scene: Control) -> void:
 
 	await click("#settings-button")
 	check(game.settings_open and ui.has_element_attribute("#settings", "open"), "HTML action opens a modal dialog")
+	check(absf(ui.query_bounds("#settings").get_center().y - ui.size.y / 2.0) < 1.0, "settings dialog is vertically centred")
+	var audio_updates_before_typing: int = game.settings_applied
 	await click("#player-name")
 	key(KEY_A, 97, true)
 	for character in "Jessie":
@@ -147,6 +151,22 @@ func run(scene: Control) -> void:
 	check(game.state.model.Player.Name == "Jessie", "native typing writes back through data-model")
 	check(ui.query_text("#player-label") == "Jessie", "two-way edit updates another bound element")
 	check(game.world_actions == 1, "typing E inside a field does not forage")
+	check(game.settings_applied == audio_updates_before_typing, "name typing does not reapply unrelated audio settings")
+	# Server/state values can exceed an input's authoring limit. Exercise the
+	# original engine emoji-stack trigger through real bindings and native input.
+	var unicode_name := "á😀b".repeat(60) + " Ж😀б"
+	game.state.model.Player.Name = unicode_name
+	game.state.publish()
+	await settle()
+	check(ui.query_text("#player-label") == unicode_name, "long Unicode state reaches the HUD intact")
+	ui.set_focus("#player-name")
+	key(KEY_A, 97, true)
+	for character in "Jessie":
+		key(KEY_NONE, character.unicode_at(0))
+	await settle()
+	check(game.state.model.Player.Name == "Jessie" and ui.query_text("#player-label") == "Jessie",
+		"native editing replaces long Unicode state and updates both bindings")
+	check(game.settings_applied == audio_updates_before_typing, "replacing Unicode name leaves audio settings alone")
 	await click("#volume")
 	key(KEY_END)
 	key(KEY_LEFT)

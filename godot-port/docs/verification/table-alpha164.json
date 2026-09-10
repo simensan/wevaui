@@ -1,0 +1,98 @@
+{
+  "change": "Trim collinear shared border segments at their connecting grid line to avoid third/fourth opacity layers",
+  "installed": false,
+  "browser": "Chrome/152.0.7977.83",
+  "html": "<html><head><style>html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:4px solid rgba(255,0,0,.5)}td>div{height:20px}</style></head><body><table><tbody><tr><td><div></div></td><td><div></div></td></tr><tr><td><div></div></td><td><div></div></td></tr></tbody></table></body></html>",
+  "viewport": [
+    220,
+    60
+  ],
+  "capture_sha256": "c10fcfca62a8fab47a5f0afc4602e58b39de4371a861bd56d498475285b51168",
+  "chrome_alpha_samples": [
+    {
+      "x": 2,
+      "y": 12,
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        128
+      ]
+    },
+    {
+      "x": 2,
+      "y": 2,
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        192
+      ]
+    },
+    {
+      "x": 100,
+      "y": 2,
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        192
+      ]
+    },
+    {
+      "x": 100,
+      "y": 26,
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        192
+      ]
+    },
+    {
+      "x": 2,
+      "y": 26,
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        192
+      ]
+    },
+    {
+      "x": 198,
+      "y": 50,
+      "chrome_rgba": [
+        255,
+        0,
+        0,
+        192
+      ]
+    }
+  ],
+  "chrome_full_mask_pixels": 13200,
+  "chrome_full_mask_differences": 0,
+  "initial_test_assumption": "Single alpha layer at junctions was disproven by Chrome. Corrected expectations before applying the fix.",
+  "before_engine_intersection_alpha": [
+    0.75,
+    0.875,
+    0.9375,
+    0.875,
+    0.75
+  ],
+  "after_engine_intersection_alpha": [
+    0.75,
+    0.75,
+    0.75,
+    0.75,
+    0.75
+  ],
+  "quantization": "Float alpha .5/.75 compared with Chrome bytes 128/192; up to one byte from intermediate quantization is not claimed as exact pixel identity.",
+  "core": "498884 checks, 0 failures",
+  "sanitizers": "259 focused table checks passed before adding the full-mask assertion loop; runtime code unchanged afterwards",
+  "remaining": [
+    "Unequal widths/colors and patterned-border junctions",
+    "Live mutation/replay, blur, clipping and positioned cell content",
+    "Full qualification before installing"
+  ]
+}

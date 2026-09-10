@@ -1,0 +1,438 @@
+{
+  "status": "Uninstalled candidate; correctness and exports pass; 4K whole-frame timing fails",
+  "library_sha256": "5e172280c80891c3aed9a6c9a9b24971c56387c8cac8d9735abb3cda25374b56",
+  "fixes": [
+    "Remove the 32-entry transition-property matching cap with an allocation-free linear scan.",
+    "Replace eight fixed animation clocks with storage sized when animation-name changes; preserve clocks during name matching and list shortening."
+  ],
+  "baseline": {
+    "transition_failing_assertions": 7,
+    "animation_failing_assertions": 8,
+    "logs": [
+      ".utmp/safe-engine71/transition-list-baseline.log",
+      ".utmp/safe-engine71/animation-list-baseline.log"
+    ]
+  },
+  "core": {
+    "passed_suites": 14,
+    "seconds": 24.93,
+    "log": ".utmp/safe-engine71/animation-list-fixed.log"
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "seconds": 172.63,
+    "log": ".utmp/safe-engine71/long-effects-sanitizers.log"
+  },
+  "host": {
+    "binary_sha256": "5e172280c80891c3aed9a6c9a9b24971c56387c8cac8d9735abb3cda25374b56",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 522
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1199
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 7330
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      },
+      {
+        "name": "popover_beforetoggle_tests",
+        "passed": true,
+        "checks": 1389
+      },
+      {
+        "name": "unknown_at_rule_tests",
+        "passed": true,
+        "checks": 12
+      },
+      {
+        "name": "css_diagnostic_tests",
+        "passed": true,
+        "checks": 26
+      },
+      {
+        "name": "conditional_keyframe_tests",
+        "passed": true,
+        "checks": 204
+      },
+      {
+        "name": "font_warmup_tests",
+        "passed": true,
+        "checks": 4
+      },
+      {
+        "name": "hidden_transition_tests",
+        "passed": true,
+        "checks": 6
+      },
+      {
+        "name": "long_effect_list_tests",
+        "passed": true,
+        "checks": 16
+      }
+    ],
+    "passed": true,
+    "checks": 35490
+  },
+  "renderer_smokes": [
+    {
+      "renderer": "gl_compatibility",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "renderer": "mobile",
+      "passed": true,
+      "returncode": 0
+    }
+  ],
+  "chrome": {
+    "browser": "Chrome/152.0.7977.83",
+    "rows": [
+      {
+        "count": 32,
+        "earlierMatch": false,
+        "width": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "count": 32,
+        "earlierMatch": true,
+        "width": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "count": 33,
+        "earlierMatch": false,
+        "width": 150,
+        "expected": 150,
+        "passed": true
+      },
+      {
+        "count": 33,
+        "earlierMatch": true,
+        "width": 150,
+        "expected": 150,
+        "passed": true
+      },
+      {
+        "count": 64,
+        "earlierMatch": false,
+        "width": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "count": 64,
+        "earlierMatch": true,
+        "width": 200,
+        "expected": 200,
+        "passed": true
+      },
+      {
+        "animationPrefixCount": 8,
+        "values": [
+          150,
+          150,
+          150,
+          200,
+          20
+        ],
+        "expected": [
+          150,
+          150,
+          150,
+          200,
+          20
+        ],
+        "passed": true
+      },
+      {
+        "animationPrefixCount": 16,
+        "values": [
+          150,
+          150,
+          150,
+          200,
+          20
+        ],
+        "expected": [
+          150,
+          150,
+          150,
+          200,
+          20
+        ],
+        "passed": true
+      }
+    ]
+  },
+  "exports": {
+    "passed": true,
+    "logs": [
+      ".utmp/safe-engine71/long-effects213-sample.log",
+      ".utmp/safe-engine71/long-effects213-exports.log"
+    ]
+  },
+  "limitations": [
+    "Installed preview211 is unchanged.",
+    "Renderer checks verify native geometry and startup, not pixel equivalence for each animation phase.",
+    "Four 4K whole-frame limits fail in Vulkan settings workloads; all UI CPU limits pass. Lifecycle qualification remains pending. Earlier failed timing gates remain recorded."
+  ],
+  "performance": {
+    "desktop": {
+      "summary": ".utmp\\safe-engine71\\long-effects213-desktop\\summary.json",
+      "passed": true,
+      "passed_checks": 72,
+      "total_checks": 72,
+      "failures": []
+    },
+    "3d": {
+      "summary": ".utmp\\safe-engine71\\long-effects213-3d\\summary.json",
+      "passed": true,
+      "passed_checks": 276,
+      "total_checks": 276,
+      "failures": []
+    },
+    "4k": {
+      "summary": ".utmp\\safe-engine71\\long-effects213-4k\\summary.json",
+      "passed": false,
+      "passed_checks": 272,
+      "total_checks": 276,
+      "failures": [
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 18.204,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 20.346,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 17.687,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 18.338,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        }
+      ]
+    }
+  }
+}

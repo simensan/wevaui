@@ -27,6 +27,8 @@ struct KeyframeAnimation {
     std::vector<std::string> properties;
 };
 
+bool parse_keyframes_rule(const GenericAtRule& rule, KeyframeAnimation* out);
+
 // Collects every @keyframes rule in a sheet. A later definition of the same
 // name replaces an earlier one, as the cascade of the rule itself would.
 void collect_keyframes(const Stylesheet& sheet,

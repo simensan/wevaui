@@ -611,7 +611,7 @@ func _test_keyboard_scrolling() -> void:
 	# Typing, for a host that owns the keyboard.
 	var form := _make_doc("<body><input id='f' type='text' value='ab'></body>",
 		"html, body { margin: 0 } input { display: block; width: 120px }")
-	form.set_focus("#f")
+	form.set_element_selection("#f",2,2)
 	form.send_text("c")
 	_check(form.get_element_value("#f") == "abc", "text can be handed over directly")
 	_check(form.send_key(KEY_BACKSPACE), "and so can an editing key")
@@ -626,8 +626,8 @@ func _test_selection() -> void:
 	# it never sees Ctrl+A -- and the clipboard, which is the platform's.
 	var doc := _make_doc("<body><input id='f' type='text' value='hello world'></body>",
 		"html, body { margin: 0 } input { display: block; width: 200px }")
-	doc.set_focus("#f")
-	_check(doc.get_selected_text() == "", "a fresh field has nothing selected")
+	doc.set_element_selection("#f",11,11)
+	_check(doc.get_selected_text() == "", "an explicit end cursor has nothing selected")
 
 	_check(doc.send_key(KEY_LEFT, true, true), "shift and a movement key select")
 	_check(doc.send_key(KEY_LEFT, true, true), "and keep going")
@@ -888,7 +888,7 @@ func _test_word_editing_and_undo() -> void:
 	var doc := _make_doc(
 		"<body><input id='t' type='text' value='alpha beta gamma'></body>",
 		"html, body { margin: 0 } input { display: block; width: 300px; height: 30px }")
-	doc.set_focus("#t")
+	doc.set_element_selection("#t",16,16)
 
 	# Ctrl+Backspace eats a word.
 	doc.send_key(KEY_BACKSPACE, true, false, true)
@@ -1026,7 +1026,7 @@ func _test_modal_dialog() -> void:
 		"<body><dialog id='d'><p>Are you sure?</p></dialog>" +
 		"<div id='page'>Behind</div></body>",
 		"html, body { margin: 0 } dialog { width: 200px; height: 100px;" +
-		" box-sizing: border-box }")
+		" box-sizing: border-box; outline: none }")
 	var closed_triangles := doc.get_triangle_count()
 	_check(not doc.has_element_attribute("#d", "open"), "a dialog starts closed")
 	_check(doc.query_bounds("#d").size.y == 0, "with no box")
@@ -1039,14 +1039,19 @@ func _test_modal_dialog() -> void:
 	_check(not doc.has_element_attribute("#d", "data-modal"), "but not modal")
 
 	# showModal adds exactly one more rect: the backdrop.
+	_check(not doc.show_modal_dialog("#d"), "an open nonmodal dialog cannot change modality")
+	doc.close_dialog("#d")
 	_check(doc.show_modal_dialog("#d"), "showModal() opens it modally")
+	# Opening now focuses the dialog. Isolate backdrop geometry from its focus outline.
+	doc.set_focus("")
 	doc.update_document()
 	_check(doc.has_element_attribute("#d", "data-modal"), "and marks it so")
 	_check(doc.get_triangle_count() == shown_triangles + 2,
 		"a modal dialog draws one more quad than a plain one: the backdrop")
 
-	# Going back to non-modal takes the dim away, so a backdrop never outlives
-	# the modality that asked for it.
+	# Close before reopening in a different mode.
+	_check(not doc.show_dialog("#d"), "an open modal dialog cannot become nonmodal")
+	doc.close_dialog("#d")
 	_check(doc.show_dialog("#d"), "reopening non-modally")
 	doc.update_document()
 	_check(doc.get_triangle_count() == shown_triangles, "drops the backdrop")

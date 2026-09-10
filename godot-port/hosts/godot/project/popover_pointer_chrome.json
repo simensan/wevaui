@@ -1,0 +1,146 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "mode": "auto",
+      "cancel": false,
+      "events": [
+        {
+          "id": "other",
+          "newState": "closed",
+          "open": [
+            "other"
+          ],
+          "focus": "outside"
+        },
+        {
+          "id": "target",
+          "newState": "open",
+          "open": [],
+          "focus": "outside"
+        }
+      ],
+      "final": {
+        "open": [
+          "target"
+        ],
+        "focus": "inside"
+      }
+    },
+    {
+      "mode": "auto",
+      "cancel": true,
+      "events": [
+        {
+          "id": "other",
+          "newState": "closed",
+          "open": [
+            "other"
+          ],
+          "focus": "outside"
+        },
+        {
+          "id": "target",
+          "newState": "open",
+          "open": [],
+          "focus": "outside"
+        }
+      ],
+      "final": {
+        "open": [],
+        "focus": "outside"
+      }
+    },
+    {
+      "mode": "hint",
+      "cancel": false,
+      "events": [
+        {
+          "id": "other",
+          "newState": "closed",
+          "open": [
+            "other"
+          ],
+          "focus": "outside"
+        },
+        {
+          "id": "target",
+          "newState": "open",
+          "open": [],
+          "focus": "outside"
+        }
+      ],
+      "final": {
+        "open": [
+          "target"
+        ],
+        "focus": "inside"
+      }
+    },
+    {
+      "mode": "hint",
+      "cancel": true,
+      "events": [
+        {
+          "id": "other",
+          "newState": "closed",
+          "open": [
+            "other"
+          ],
+          "focus": "outside"
+        },
+        {
+          "id": "target",
+          "newState": "open",
+          "open": [],
+          "focus": "outside"
+        }
+      ],
+      "final": {
+        "open": [],
+        "focus": "outside"
+      }
+    },
+    {
+      "mode": "manual",
+      "cancel": false,
+      "events": [
+        {
+          "id": "target",
+          "newState": "open",
+          "open": [
+            "other"
+          ],
+          "focus": "outside"
+        }
+      ],
+      "final": {
+        "open": [
+          "other",
+          "target"
+        ],
+        "focus": "inside"
+      }
+    },
+    {
+      "mode": "manual",
+      "cancel": true,
+      "events": [
+        {
+          "id": "target",
+          "newState": "open",
+          "open": [
+            "other"
+          ],
+          "focus": "outside"
+        }
+      ],
+      "final": {
+        "open": [
+          "other"
+        ],
+        "focus": "outside"
+      }
+    }
+  ]
+}

@@ -90,6 +90,77 @@ func check_default_font_ownership(parent: Control) -> void:
 	peer.free()
 	check(font.get_rids() == original, "Default font RIDs remain unchanged after all documents are freed")
 
+func check_synthetic_bold_metrics(parent: Control) -> void:
+	for cycle in range(2):
+		var doc := make_doc(parent)
+		doc.html = '<span id="text">AV office café</span>'
+		doc.update_document(0)
+		var regular_width := doc.query_bounds("#text").size.x
+		var regular_pixels := PackedByteArray()
+		if DisplayServer.get_name() != "headless":
+			regular_pixels = await snapshot()
+		for weight in [600, 700, 900]:
+			check(doc.set_element_style("#text", "font-weight", str(weight)), "Set synthetic bold weight")
+			doc.update_document(0)
+			check(absf(doc.query_bounds("#text").size.x - regular_width) < 0.05,
+				"Synthetic bold keeps regular advances, including kerning and ligatures (%d/%d)" % [cycle, weight])
+			if not regular_pixels.is_empty():
+				check(await snapshot() != regular_pixels, "Synthetic bold still changes rendered outlines")
+		check(doc.set_element_style("#text", "font-weight", "400"), "Restore regular weight")
+		doc.update_document(0)
+		check(absf(doc.query_bounds("#text").size.x - regular_width) < 0.01, "Regular metrics survive variant reuse")
+		if not regular_pixels.is_empty():
+			check(await snapshot() == regular_pixels, "Regular glyphs survive variant reuse")
+		doc.free()
+		await settle()
+
+func check_registered_families(parent: Control) -> void:
+	var a := make_font(5, false)
+	var b := make_font(11, true)
+	var doc := make_doc(parent)
+	doc.add_theme_font_override("font", a)
+	doc.css += "#text{font-family:Missing, Camp}"
+	check(doc.register_font_family("Camp", b), "Register native CSS family")
+	doc.update_document(0)
+	check_width(doc, b, "CSS family selects its native metrics")
+	var pixels := PackedByteArray()
+	if DisplayServer.get_name() != "headless":
+		pixels = await snapshot()
+	check(doc.register_font_family("cAMP", b), "Repeated family registration is accepted")
+	doc.update_document(0)
+	check_width(doc, b, "Repeated registration preserves metrics")
+	doc.html = '<span id="text">' + TEXT + '</span>'
+	doc.update_document(0)
+	check_width(doc, b, "HTML reload retains registered family")
+	check(doc.register_font_family("Camp", a), "Replace family resource")
+	doc.update_document(0)
+	check_width(doc, a, "Replacement changes family metrics")
+	if not pixels.is_empty():
+		check(await snapshot() != pixels, "Replacement changes family glyph pixels")
+	check(doc.register_font_family("Alias", a), "Multiple families share one resource")
+	for letter in "AB":
+		a.set_glyph_advance(0, 16, letter.unicode_at(0), Vector2(9, 0))
+	a.emit_changed()
+	doc.update_document(0)
+	check_width(doc, a, "Shared family and theme resource refreshes after mutation")
+	check(doc.register_font_family("Camp", b), "Restore distinct family")
+	doc.use_engine_font = false
+	doc.update_document(0)
+	doc.use_engine_font = true
+	doc.update_document(0)
+	check_width(doc, b, "Re-enabling engine fonts restores family registration")
+	doc.add_theme_font_override("font", b)
+	doc.update_document(0)
+	check_width(doc, b, "Theme replacement retains registered family")
+	check(doc.register_font_family("Camp", null), "Remove family")
+	doc.add_theme_font_override("font", a)
+	doc.update_document(0)
+	check_width(doc, a, "Removing family restores default face")
+	check(doc.register_font_family("Alias", null), "Remove final shared registration")
+	doc.free()
+	a.emit_changed()
+	b.emit_changed()
+
 func _ready() -> void:
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(320, 120)
@@ -100,6 +171,8 @@ func _ready() -> void:
 	parent.size = Vector2(320, 120)
 	viewport.add_child(parent)
 	check_default_font_ownership(parent)
+	await check_synthetic_bold_metrics(parent)
+	await check_registered_families(parent)
 	var a := make_font(7, false)
 	var b := make_font(13, true)
 	var theme := Theme.new()

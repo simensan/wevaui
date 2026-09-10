@@ -379,6 +379,29 @@ void test_abi_scrollbar_appears() {
 
 // Dragging the thumb, which is the other half of having one.
 void test_abi_scrollbar_drag() {
+    {
+        Doc transformed(kListCss, kListHtml);
+        weva_element_set_attribute(transformed.d, weva_document_query(transformed.d, "#list"), "style",
+            "transform-origin:0 0;transform:translate(150px,20px) rotate(90deg) scale(.75)");
+        weva_document_update(transformed.d, 0);
+        const auto pointer = [&](double x, double y, uint32_t buttons) {
+            weva_document_set_pointer(transformed.d, 150 - .75 * y, 20 + .75 * x, buttons);
+            weva_document_update(transformed.d, 0);
+        };
+        pointer(195, 25, 1);
+        CHECK(transformed.top("#list") == 0);
+        pointer(195, 45, 1);
+        CHECK(transformed.top("#list") == 40);
+        pointer(20, 60, 1);
+        // Rotating the cross-axis movement leaves only floating-point residue.
+        CHECK(std::abs(transformed.top("#list") - 70) < 1e-8);
+        pointer(20, 400, 1);
+        CHECK(transformed.top("#list") == 100);
+        pointer(20, 400, 0);
+        pointer(195, 10, 1);
+        CHECK(transformed.top("#list") == 0);
+        pointer(195, 10, 0);
+    }
     Doc doc(kListCss, kListHtml);
     // 100 of view onto 200: the thumb is half the 100px track, so it has 50px
     // of travel worth 100 of scroll -- two units of list per pixel of thumb.

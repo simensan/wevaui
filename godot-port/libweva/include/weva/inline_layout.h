@@ -20,6 +20,9 @@ namespace weva {
 
 class FloatContext;
 
+// Empty inline content collapses only when it has no visible box edges.
+bool inline_edges_are_zero(const ComputedStyle* style);
+
 // One piece of inline content, flattened out of the inline box tree. The tree
 // structure is not lost — each item remembers the inline box it came from — but
 // line breaking works on a flat sequence, because a line break can fall
@@ -42,9 +45,8 @@ struct InlineItem {
     // CSS Text L3 8.1: extra space at each word separator, on top of the
     // space's own advance.
     double word_spacing = 0;
-    // CSS Text L3 7.2 `tab-size`, as a count of spaces. Only preserved text
-    // can contain a tab, so this is left at its initial 8 for everything else.
-    double tab_spaces = 8;
+    // Resolved CSS tab interval in pixels; -1 uses the default eight spaces.
+    double tab_interval = -1;
     // `normal` collapses runs of whitespace and allows breaks; `nowrap`
     // collapses but forbids them; `pre` preserves both.
     bool collapse_whitespace = true;

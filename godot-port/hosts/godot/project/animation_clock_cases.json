@@ -1,0 +1,74 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "scope": "Existing animation objects sampled at 500ms; newly created objects sampled at zero.",
+  "rows": [
+    {
+      "names": "steady, pulse",
+      "width": 125,
+      "animations": [
+        {
+          "name": "steady",
+          "time": 500
+        },
+        {
+          "name": "pulse",
+          "time": 500
+        }
+      ],
+      "expected": 125,
+      "passed": true
+    },
+    {
+      "names": "pulse, pulse",
+      "width": 100,
+      "animations": [
+        {
+          "name": "pulse",
+          "time": 500
+        },
+        {
+          "name": "pulse",
+          "time": 0
+        }
+      ],
+      "expected": 100,
+      "passed": true
+    },
+    {
+      "names": "pulse",
+      "width": 125,
+      "animations": [
+        {
+          "name": "pulse",
+          "time": 500
+        }
+      ],
+      "expected": 125,
+      "passed": true
+    },
+    {
+      "names": "replacement",
+      "width": 100,
+      "animations": [
+        {
+          "name": "replacement",
+          "time": 0
+        }
+      ],
+      "expected": 100,
+      "passed": true
+    },
+    {
+      "names": "none, pulse",
+      "width": 100,
+      "animations": [
+        {
+          "name": "pulse",
+          "time": 0
+        }
+      ],
+      "expected": 100,
+      "passed": true
+    }
+  ]
+}

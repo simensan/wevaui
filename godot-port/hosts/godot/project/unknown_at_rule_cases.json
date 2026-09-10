@@ -1,0 +1,42 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "css": "@unknown { #a { color: red } }",
+      "before": "rgb(0, 128, 0)",
+      "after": "rgb(0, 0, 255)",
+      "passed": true
+    },
+    {
+      "css": "@unknown { @media all { #a { color: red } } }",
+      "before": "rgb(0, 128, 0)",
+      "after": "rgb(0, 0, 255)",
+      "passed": true
+    },
+    {
+      "css": "@media all { @unknown { #a { color: red } } }",
+      "before": "rgb(0, 128, 0)",
+      "after": "rgb(0, 0, 255)",
+      "passed": true
+    },
+    {
+      "css": "@supports (display: block) { @unknown { #a { color: red } } }",
+      "before": "rgb(0, 128, 0)",
+      "after": "rgb(0, 0, 255)",
+      "passed": true
+    },
+    {
+      "css": "@layer theme { @unknown { #a { color: red !important } } }",
+      "before": "rgb(0, 128, 0)",
+      "after": "rgb(0, 0, 255)",
+      "passed": true
+    },
+    {
+      "css": "@keyframes fade { from { color: red } to { color: blue } }",
+      "before": "rgb(0, 128, 0)",
+      "after": "rgb(0, 0, 255)",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

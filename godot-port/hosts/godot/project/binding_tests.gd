@@ -10,6 +10,82 @@ extends Node2D
 var failures := 0
 var checks := 0
 
+class BindingObject extends RefCounted:
+	var Name := "Morgan"
+	var property_list_reads := 0
+	func _get_property_list() -> Array[Dictionary]:
+		property_list_reads += 1
+		return []
+
+class ChangingBinding extends RefCounted:
+	var values: Array = []
+	var reads := 0
+	func read(_path: String) -> Variant:
+		var index := mini(reads, values.size() - 1)
+		reads += 1
+		return values[index]
+
+func _changing_long_values() -> void:
+	for values in [["a".repeat(500), "short"], ["a".repeat(128), "調".repeat(300), "新".repeat(250)], ["a".repeat(500), null]]:
+		var source := ChangingBinding.new()
+		source.values = values
+		var view := WevaDocument.new()
+		add_child(view)
+		view.html = '<p id=value>{{ Value }}</p>'
+		view.update_document(0)
+		view.set_data_source(source.read)
+		var expected: String = "" if values.back() == null else values.back()
+		_check(view.query_text("#value") == expected, "changing long callback returns complete current UTF-8 value")
+		_check(source.reads == values.size(), "callback stops when current value fits or disappears")
+		view.free()
+
+func _normalized_model_refreshes() -> void:
+	var model := {"Volume":65.0, "Music":true, "Name":"x".repeat(300)}
+	var doc := WevaDocument.new()
+	add_child(doc)
+	doc.html = '<input id=volume type=range min=0 max=100 step=1 value=65 data-model=Volume><input id=music type=checkbox checked data-model=Music><input id=name data-model=Name>'
+	doc.data = model
+	doc.update_document(0)
+	_check(doc.refresh_bindings() == 0, "normalized initial models are unchanged")
+	_check(doc.get_element_value("#name") == model.Name, "long model value read fallback")
+	model.Volume = 65.4
+	_check(doc.refresh_bindings() == 0, "range rounding does not report a change")
+	model.Volume = 66.0
+	_check(doc.refresh_bindings() == 1, "changed range reports one change")
+	_check(doc.refresh_bindings() == 0, "normalized changed range stays unchanged")
+	model.Music = false
+	_check(doc.refresh_bindings() == 1, "checkbox toggle reports one change")
+	_check(doc.refresh_bindings() == 0, "unchecked false stays unchanged")
+	model.Music = true
+	_check(doc.refresh_bindings() == 1, "checkbox toggles back")
+	_check(doc.refresh_bindings() == 0, "checked true stays unchanged")
+	model.Name = "y".repeat(400)
+	_check(doc.refresh_bindings() == 1, "long text change reports once")
+	_check(doc.get_element_value("#name") == model.Name, "long changed model remains complete")
+	doc.free()
+
+func _checked_binding_paths() -> void:
+	var person := BindingObject.new()
+	var view := WevaDocument.new()
+	add_child(view)
+	view.html = "<p id=name>{{ Person.Name }}</p><p id=nil>{{ Values.Nil }}</p><p id=missing>{{ Values.Missing }}</p><p id=unknown>{{ Person.Unknown }}</p><input id=edit data-model='Values.Nil'>"
+	var values := {"Nil": null}
+	view.data = {"Person": person, "Values": values}
+	view.update_document(0)
+	person.property_list_reads = 0
+	for index in 10:
+		person.Name = "Traveler %d" % index
+		view.refresh_bindings()
+		view.update_document(0)
+		_check(view.query_text("#name") == person.Name, "object property reads remain live")
+	_check(person.property_list_reads == 0, "binding refresh does not enumerate object property lists")
+	_check(view.query_text("#nil").is_empty() and view.query_text("#missing").is_empty(), "nil and missing values render empty")
+	_check(view.query_text("#unknown").is_empty(), "missing object property renders empty")
+	_check(values.size() == 1 and not values.has("Missing"), "reading missing dictionary paths does not insert keys")
+	_type_into(view, "#edit", "filled")
+	_check(values.Nil == "filled", "typing replaces a present nil value")
+	view.free()
+
 func _check(condition: bool, description: String) -> void:
 	checks += 1
 	if not condition:
@@ -388,16 +464,26 @@ func _ready() -> void:
 			"and the data holds what the control now shows")
 	_check(doc.data["Settings"]["Volume"] != 75, "which is not what the script last set")
 
+	var music_changes := []
+	var music_commits := []
+	doc.data_changed.connect(func(path, value):
+		if path == "Settings.Music": music_changes.append(value))
+	doc.value_committed.connect(func(id, value):
+		if id == "music": music_commits.append(value))
 	_click(doc, "#music")
 	_check(typeof(doc.data["Settings"]["Music"]) == TYPE_BOOL, "a checkbox stays a bool")
 	_check(doc.data["Settings"]["Music"] == false, "and the click cleared it")
+	_check(music_changes.size() == 1, "checkbox input and commit publish one model change")
+	_check(music_commits.size() == 1, "model deduplication preserves the commit event")
 	_click(doc, "#music")
 	_check(doc.data["Settings"]["Music"] == true, "checking it again writes the on value back as true")
 	_check(doc.get_element_value("#music") == "on", "binding refresh preserves the checked control")
+	_check(music_changes.size() == 2, "a second checkbox click publishes one new model change")
+	_check(music_commits.size() == 2, "each checkbox click still commits")
 
 	# Everything else bound to the path follows it, without the script asking.
 	_check(doc.query_text("#echo").contains("Hopper"), "the label follows the field")
-	_check(doc.query_text("#echo").contains("62"), "and so does the number")
+	_check(doc.query_text("#echo").contains(str(doc.data["Settings"]["Volume"])), "and so does the number")
 
 	# A path the data does not have yet is made, not dropped on the floor.
 	_type_into(doc, "#loose", "made up")
@@ -520,7 +606,30 @@ func _ready() -> void:
 	_check(many.get_element_value("#reloaded") == "shared dictionary changed", "path cache reload preserves data")
 	many.queue_free()
 
+	# Reordered keys preserve the focused native control and update row context.
+	var reordered := WevaDocument.new()
+	add_child(reordered)
+	reordered.html = "<main><template data-each='Items as item' data-key='Id'><div class=row id='row-{{item.Id}}'><input id='edit-{{item.Id}}' data-model='item.Name'></div></template></main>"
+	var items := [{"Id":"a","Name":"Alpha"},{"Id":"b","Name":"Bravo"}]
+	reordered.data = {"Items":items}
+	reordered.update_document(0)
+	reordered.set_focus("#edit-a")
+	reordered.select_all()
+	reordered.send_text("Edited")
+	items.reverse()
+	reordered.refresh_bindings()
+	reordered.update_document(0)
+	_check(reordered.query_all_ids("main > .row")[0] == "row-b", "queries follow reordered DOM order")
+	_check(reordered.get_focused_id() == "edit-a", "keyed moves preserve focused input")
+	_check(reordered.get_focused_row().index == 1, "focused row exposes its new index")
+	reordered.send_text("!")
+	_check(items[1].Name == "Edited!" and items[0].Name == "Bravo", "typing after reorder writes the matching item")
+	reordered.free()
+
 	_reading_back(doc)
+	_checked_binding_paths()
+	_normalized_model_refreshes()
+	_changing_long_values()
 
 	_gamepad_focus()
 	_state_selectors()

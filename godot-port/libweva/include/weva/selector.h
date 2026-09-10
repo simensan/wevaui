@@ -76,6 +76,7 @@ enum class ElementState : uint32_t {
     // Set when the UA pre-fills a control (password manager, autofill). Hosts
     // wire this themselves; the headless provider never sets it.
     Autofill = 1u << 11,
+    Modal = 1u << 12, PopoverOpen = 1u << 13,
 };
 inline ElementState operator|(ElementState a, ElementState b) {
     return static_cast<ElementState>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));

@@ -153,8 +153,8 @@ void test_selector_match() {
         CHECK(!m.match(":hover", m.id("p1"), &st));
         CHECK(m.match("p.lead:hover", m.id("p2"), &st));
         CHECK(m.count(":hover", &st) == 1);
-        // :enabled is the absence of the disabled bit
-        CHECK(m.match(":enabled", m.id("p1"), &st));
+        // Only disableable form elements match :enabled, never ordinary text.
+        CHECK(!m.match(":enabled", m.id("p1"), &st));
     }
 
     // ---- a selector ending in a pseudo-element never matches the element

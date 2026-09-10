@@ -1,0 +1,38 @@
+{
+  "change": "Move transient rounded rectangle fallback vertex/index buffers into retaining backends through an optional ownership method; legacy const-reference renderers keep the default fallback.",
+  "installed": false,
+  "allocation_case": {
+    "before": 7,
+    "after": 5,
+    "geometry_hash_before": "745ed0d3494f69e0",
+    "geometry_hash_after": "745ed0d3494f69e0"
+  },
+  "geometry_cases": {
+    "cases": 56,
+    "hash_before": "61ef3248558085fe",
+    "hash_after": "61ef3248558085fe",
+    "checks": 36029,
+    "failures": 0
+  },
+  "core_ctest": {
+    "passed": 14,
+    "failed": 0,
+    "seconds": 24.67
+  },
+  "focused_linux_asan_ubsan": {
+    "test": "weva_draw_mesh_allocations",
+    "passed": true,
+    "seconds": 0.93
+  },
+  "source_sha256": {
+    "godot-port/libweva/include/weva/render_interface.h": "eb84348f4320987684ac92c2254fb5a4e249cce6b58b0d823b2c5b2d796a579d",
+    "godot-port/libweva/src/paint.cpp": "3766ffb9839a4dacbbe3c1db38f061a2ad47476be71ce39f09218bd85dee8303",
+    "godot-port/libweva/src/weva_c.cpp": "5a311484f569d3f7f6bd90d77d5be98e0c8dfbcbc73f5ff3b25a6389b28bbbcd",
+    "godot-port/libweva/tests/test_draw_mesh_allocations.cpp": "90dcc6d86f8867319d7dbb6a8a7fa339c424d3ff9b9d375f3d248d71e325725a"
+  },
+  "limitations": [
+    "Counts apply to the warmed retaining-backend regression fixture, not whole Godot frames.",
+    "Native rebuild and hover performance remeasurement remain pending.",
+    "C API unchanged; C++ backends must be rebuilt against the changed interface layout."
+  ]
+}

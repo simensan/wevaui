@@ -1,0 +1,41 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "tag": "input",
+      "action": "edited",
+      "value": "abz",
+      "short": true
+    },
+    {
+      "tag": "input",
+      "action": "undo",
+      "value": "ab",
+      "short": true
+    },
+    {
+      "tag": "input",
+      "action": "redo",
+      "value": "abz",
+      "short": true
+    },
+    {
+      "tag": "textarea",
+      "action": "edited",
+      "value": "abz",
+      "short": true
+    },
+    {
+      "tag": "textarea",
+      "action": "undo",
+      "value": "ab",
+      "short": true
+    },
+    {
+      "tag": "textarea",
+      "action": "redo",
+      "value": "abz",
+      "short": true
+    }
+  ]
+}

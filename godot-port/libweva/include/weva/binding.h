@@ -33,7 +33,8 @@ public:
 };
 
 // Where an attribute's template is kept once its value has been filled in.
-using BindingTemplates = std::map<const Element*, std::map<std::string, std::string>>;
+// Transparent lookup borrows interned attribute names during no-change refreshes.
+using BindingTemplates = std::map<const Element*, std::map<std::string, std::string, std::less<>>>;
 
 // True when the text has a `{{` in it at all -- the cheap test that keeps this
 // off the hot path for the overwhelming majority of nodes.

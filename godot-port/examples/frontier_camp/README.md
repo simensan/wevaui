@@ -1,7 +1,18 @@
 # Frontier Camp — standalone Godot integration
 
-Open `project.godot` in **Godot 4.7.2**, then press **F5**. The prepared local
+Installed Windows addon: **preview115 (ABI minor16)**. Sample, exports and desktop
+performance checks pass; [qualification and remaining scope](../../docs/PRODUCT_READINESS.md).
+
+
+Open `project.godot` in the verified patched **Godot 4.7.2** editor described in
+the [engine guide](../../docs/GODOT_TEXT_SHAPING.md#windows-patched-engine-bundle-2026-09-08), then press **F5**. The prepared local
 project has the Windows addon installed. This is independent of the host gallery.
+
+Use the same bundle's debug and release binaries as the Windows export preset's
+**Custom Template** paths. The project already includes ICU support data in
+exports (`internationalization/locale/include_text_server_data=true`). Stock
+Godot 4.7.2 remains affected by the long-Unicode crash; the integration tests now
+exercise that input through real bindings and editing.
 
 For a fresh checkout, extract a current addon ZIP here, or run:
 
@@ -72,8 +83,9 @@ still disables a button under HTML rules.
 
 Inventory uses `data-each="Items as item" data-key="Id"`. Controllers call
 `ui.get_row("#" + element_id).key`, so sorting/removing rows cannot redirect an
-action to the wrong item. Reordering rebuilds rows in this preview; stable
-keys preserve identity, but focus/selection need not survive a reorder.
+action to the wrong item. Reordering the same unique explicit keys moves the
+existing rows and preserves their focus, selection and undo history. Membership
+changes, duplicate/missing keys and externally interleaved rows use reconstruction.
 
 Two-way edits update the shared Dictionary before `data_changed` is emitted.
 Read the Dictionary for typed ints/bools; the signal's value is control text.
@@ -103,12 +115,46 @@ export templates are required for `--native`.
 
 ```sh
 python ../../hosts/godot/check_frontier_camp.py --godot /path/to/godot \
-  --addon /path/to/weva-preview.zip --output /new/output/folder --native
+  --addon /path/to/weva-preview.zip --output /new/output/folder --native \
+  --debug-template /path/to/patched-debug-template \
+  --release-template /path/to/patched-release-template
 ```
 
 Its output contains logs, PNGs, a verification receipt, a complete project ZIP
 and the exported game. `export_presets.cfg` includes HTML/CSS and all artwork.
+
+## Prepare a screen during loading and reuse it
+
+Instantiate the screen once while loading the level, prepare its UI while it is
+hidden, then keep that instance for later openings:
+
+```gdscript
+var screen = load("res://main.tscn").instantiate()
+screen.hide()
+add_child(screen)
+screen.ui.update_document(0) # Parse, bind, lay out and prepare textures now.
+# When gameplay needs the screen:
+screen.show()
+# Close it with screen.hide(); reuse it instead of instantiating another copy.
+```
+
+This moves construction into loading time. Hidden preparation still has a CPU
+and memory cost, and first rendering can require renderer work. Pause a hidden
+view's processing if appropriate, then resume and flush bindings before an
+immediate geometry read. Hiding does not discard the shared game model.
+
+The lightweight `boot.tscn` enters `main.tscn` in normal play. Its `--lifecycle`
+test entry runs before the first UI is created, so exported cold-construction
+measurements do not accidentally reuse a UI already loaded by the main scene.
+See [PERFORMANCE.md](PERFORMANCE.md) for release measurements and commands for
+3D load, resolution, preparation/reuse and process-memory checks.
 Export only to a platform listed in `addons/weva/build.json`. Development preview.
 
 Artwork comes from this repository's western survival sample: generated landscape
 and original editable SVG icons, covered by the repository license.
+
+## Chrome parity
+
+The runtime67 direct browser check passes all 1,276 sampled geometry and 33
+focus, typing and scroll comparisons. Broad CSS parity remains incomplete. See [CHROME_PARITY.md](CHROME_PARITY.md) for
+measurements, remaining defects and the repeatable check.

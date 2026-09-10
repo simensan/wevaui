@@ -1,0 +1,2345 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "attrs": {
+        "type": "number",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "1",
+        "step": "any"
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "1",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "2",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "2",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "2",
+        "step": "any"
+      },
+      "value": "2",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "2",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "2",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "2",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "2",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "2",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "5",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "5",
+        "step": "any"
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "5",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "8",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "8",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "8",
+        "step": "any"
+      },
+      "value": "8",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "8",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "8",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "8",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "8",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "8",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "8",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "9",
+        "step": "any"
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "9",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "bad",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "bad",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "bad",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "bad",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "number",
+        "value": "bad",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "8",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "",
+        "step": "any"
+      },
+      "value": "50",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "50",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "8",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "8",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "2",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "1",
+        "step": "any"
+      },
+      "value": "1",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "1",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "1",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "2",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "2",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "5",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "5",
+        "step": "any"
+      },
+      "value": "5",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "5",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "5",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "8",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "9",
+        "step": "any"
+      },
+      "value": "9",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "9",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "9",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "8",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "range",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "8",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-01",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08"
+      },
+      "value": "2026-01-01",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-01",
+        "step": "any"
+      },
+      "value": "2026-01-01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-01",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-01-01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-01",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08",
+        "disabled": ""
+      },
+      "value": "2026-01-01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-01",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08",
+        "readonly": ""
+      },
+      "value": "2026-01-01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-05",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08"
+      },
+      "value": "2026-01-05",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-05",
+        "step": "any"
+      },
+      "value": "2026-01-05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-05",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-01-05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-05",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08",
+        "disabled": ""
+      },
+      "value": "2026-01-05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-05",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08",
+        "readonly": ""
+      },
+      "value": "2026-01-05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-09",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08"
+      },
+      "value": "2026-01-09",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-09",
+        "step": "any"
+      },
+      "value": "2026-01-09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-09",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-01-09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-09",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08",
+        "disabled": ""
+      },
+      "value": "2026-01-09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "date",
+        "value": "2026-01-09",
+        "step": "any",
+        "min": "2026-01-02",
+        "max": "2026-01-08",
+        "readonly": ""
+      },
+      "value": "2026-01-09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "07:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00"
+      },
+      "value": "07:00",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "07:00",
+        "step": "any"
+      },
+      "value": "07:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "07:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "07:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "07:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00",
+        "disabled": ""
+      },
+      "value": "07:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "07:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00",
+        "readonly": ""
+      },
+      "value": "07:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00"
+      },
+      "value": "12:00",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any"
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00",
+        "disabled": ""
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00",
+        "readonly": ""
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "18:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00"
+      },
+      "value": "18:00",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "18:00",
+        "step": "any"
+      },
+      "value": "18:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "18:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "18:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "18:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00",
+        "disabled": ""
+      },
+      "value": "18:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "18:00",
+        "step": "any",
+        "min": "08:00",
+        "max": "17:00",
+        "readonly": ""
+      },
+      "value": "18:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "01:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00"
+      },
+      "value": "01:00",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "01:00",
+        "step": "any"
+      },
+      "value": "01:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "01:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "01:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "01:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00",
+        "disabled": ""
+      },
+      "value": "01:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "01:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00",
+        "readonly": ""
+      },
+      "value": "01:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00"
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any"
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00",
+        "disabled": ""
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "12:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00",
+        "readonly": ""
+      },
+      "value": "12:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "23:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00"
+      },
+      "value": "23:00",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "23:00",
+        "step": "any"
+      },
+      "value": "23:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "23:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "23:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "23:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00",
+        "disabled": ""
+      },
+      "value": "23:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "time",
+        "value": "23:00",
+        "step": "any",
+        "min": "22:00",
+        "max": "06:00",
+        "readonly": ""
+      },
+      "value": "23:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-01",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08"
+      },
+      "value": "2026-01",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-01",
+        "step": "any"
+      },
+      "value": "2026-01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-01",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-01",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08",
+        "disabled": ""
+      },
+      "value": "2026-01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-01",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08",
+        "readonly": ""
+      },
+      "value": "2026-01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-05",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08"
+      },
+      "value": "2026-05",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-05",
+        "step": "any"
+      },
+      "value": "2026-05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-05",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-05",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08",
+        "disabled": ""
+      },
+      "value": "2026-05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-05",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08",
+        "readonly": ""
+      },
+      "value": "2026-05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-09",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08"
+      },
+      "value": "2026-09",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-09",
+        "step": "any"
+      },
+      "value": "2026-09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-09",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-09",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08",
+        "disabled": ""
+      },
+      "value": "2026-09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "month",
+        "value": "2026-09",
+        "step": "any",
+        "min": "2026-02",
+        "max": "2026-08",
+        "readonly": ""
+      },
+      "value": "2026-09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W01",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08"
+      },
+      "value": "2026-W01",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W01",
+        "step": "any"
+      },
+      "value": "2026-W01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W01",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-W01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W01",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08",
+        "disabled": ""
+      },
+      "value": "2026-W01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W01",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08",
+        "readonly": ""
+      },
+      "value": "2026-W01",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W05",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08"
+      },
+      "value": "2026-W05",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W05",
+        "step": "any"
+      },
+      "value": "2026-W05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W05",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-W05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W05",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08",
+        "disabled": ""
+      },
+      "value": "2026-W05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W05",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08",
+        "readonly": ""
+      },
+      "value": "2026-W05",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W09",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08"
+      },
+      "value": "2026-W09",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W09",
+        "step": "any"
+      },
+      "value": "2026-W09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W09",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-W09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W09",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08",
+        "disabled": ""
+      },
+      "value": "2026-W09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "week",
+        "value": "2026-W09",
+        "step": "any",
+        "min": "2026-W02",
+        "max": "2026-W08",
+        "readonly": ""
+      },
+      "value": "2026-W09",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-01T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00"
+      },
+      "value": "2026-01-01T00:00",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-01T00:00",
+        "step": "any"
+      },
+      "value": "2026-01-01T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-01T00:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-01-01T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-01T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00",
+        "disabled": ""
+      },
+      "value": "2026-01-01T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-01T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00",
+        "readonly": ""
+      },
+      "value": "2026-01-01T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-05T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00"
+      },
+      "value": "2026-01-05T00:00",
+      "in_range": true,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-05T00:00",
+        "step": "any"
+      },
+      "value": "2026-01-05T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-05T00:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-01-05T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-05T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00",
+        "disabled": ""
+      },
+      "value": "2026-01-05T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-05T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00",
+        "readonly": ""
+      },
+      "value": "2026-01-05T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-09T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00"
+      },
+      "value": "2026-01-09T00:00",
+      "in_range": false,
+      "out_of_range": true
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-09T00:00",
+        "step": "any"
+      },
+      "value": "2026-01-09T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-09T00:00",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "2026-01-09T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-09T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00",
+        "disabled": ""
+      },
+      "value": "2026-01-09T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "datetime-local",
+        "value": "2026-01-09T00:00",
+        "step": "any",
+        "min": "2026-01-02T00:00",
+        "max": "2026-01-08T00:00",
+        "readonly": ""
+      },
+      "value": "2026-01-09T00:00",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "",
+        "step": "any"
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "1",
+        "step": "any"
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "1",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "1",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "1",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "5",
+        "step": "any"
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "5",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "5",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "5",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8"
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "9",
+        "step": "any"
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "9",
+        "step": "any",
+        "min": "bad",
+        "max": "bad"
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "disabled": ""
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    },
+    {
+      "attrs": {
+        "type": "text",
+        "value": "9",
+        "step": "any",
+        "min": "2",
+        "max": "8",
+        "readonly": ""
+      },
+      "value": "9",
+      "in_range": false,
+      "out_of_range": false
+    }
+  ]
+}

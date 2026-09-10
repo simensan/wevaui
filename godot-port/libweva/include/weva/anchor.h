@@ -111,7 +111,8 @@ bool resolve_anchor_offset(const BoxTree& tree, const AnchorRegistry& anchors, B
 // samples with out-of-flow content even with every one of them disabled --
 // their presence alone was enough to change how that function was compiled.
 // Marked cold so it stays out of the caller's hot path.
-[[gnu::cold]] bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb);
+[[gnu::cold]] bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb,
+                            bool* width_auto = nullptr);
 
 // The same for `anchor-size(<name>? width|height)`, which resolves to that
 // extent of the anchor's border box.

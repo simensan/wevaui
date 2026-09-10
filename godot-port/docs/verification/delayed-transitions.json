@@ -1,0 +1,362 @@
+{
+  "status": "Export and desktop checks pass; 1080p 3D fails four whole-frame limits; 4K not run; candidate remains uninstalled",
+  "fixes": [
+    "Zero-duration transitions with positive delay retain the old value until the delay expires, then finish at the exact boundary.",
+    "Transitions whose duration plus delay is nonpositive do not start.",
+    "Transition clocks advance without invalidating layout or paint when their output string is unchanged, including delays and stepped timing."
+  ],
+  "spec": "https://www.w3.org/TR/css-transitions-1/#starting",
+  "baseline": {
+    "log": ".utmp/safe-engine71/delayed-transition-baseline.log",
+    "failing_assertions": 6
+  },
+  "core": {
+    "log": ".utmp/safe-engine71/delayed-transition-final.log",
+    "passed_suites": 14,
+    "seconds": 22.01
+  },
+  "chrome": {
+    "log": ".utmp/safe-engine71/delayed-transitions-chrome.json",
+    "browser": "Chrome/152.0.7977.83",
+    "passed_cases": 4,
+    "coverage": "0s/1s durations with +0.5s delay sampled at 0/250/500ms; 1s duration with -1s/-2s delay creates no transition."
+  },
+  "invalidation_coverage": "Draw serial remains unchanged during delay and within a steps(2,end) plateau, and changes when the step changes width.",
+  "limitations": [
+    "Current candidate lifecycle and lower-end qualification remain open.",
+    "Installed preview211 is unchanged.",
+    "Earlier failed whole-frame timing gates remain recorded with unresolved causes."
+  ],
+  "library_sha256": "945a9c65198861e2efaafd42ddf1964054aab6fa3d28484f793a15f346b94aa8",
+  "host": {
+    "binary_sha256": "945a9c65198861e2efaafd42ddf1964054aab6fa3d28484f793a15f346b94aa8",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 522
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1199
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 7330
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      },
+      {
+        "name": "popover_beforetoggle_tests",
+        "passed": true,
+        "checks": 1389
+      },
+      {
+        "name": "unknown_at_rule_tests",
+        "passed": true,
+        "checks": 12
+      },
+      {
+        "name": "css_diagnostic_tests",
+        "passed": true,
+        "checks": 26
+      },
+      {
+        "name": "conditional_keyframe_tests",
+        "passed": true,
+        "checks": 204
+      },
+      {
+        "name": "font_warmup_tests",
+        "passed": true,
+        "checks": 4
+      },
+      {
+        "name": "hidden_transition_tests",
+        "passed": true,
+        "checks": 6
+      },
+      {
+        "name": "long_effect_list_tests",
+        "passed": true,
+        "checks": 16
+      },
+      {
+        "name": "delayed_transition_tests",
+        "passed": true,
+        "checks": 6
+      }
+    ],
+    "passed": true,
+    "checks": 35496
+  },
+  "rendered": [
+    {
+      "renderer": "gl_compatibility",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "renderer": "mobile",
+      "passed": true,
+      "returncode": 0
+    }
+  ],
+  "native_baseline": {
+    "library_sha256": "5e172280c80891c3aed9a6c9a9b24971c56387c8cac8d9735abb3cda25374b56",
+    "evidence": ".utmp/safe-engine71/delayed-transition-old-imported-host",
+    "failures_per_renderer": 3,
+    "setup_failure": ".utmp/safe-engine71/delayed-transition-old-host omitted import cache; parse error and timeout are not regression evidence"
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "seconds": 171.75,
+    "log": ".utmp/safe-engine71/delayed-transition-sanitizers.log"
+  },
+  "exports": {
+    "passed": true,
+    "sample_log": ".utmp/safe-engine71/delayed-transition214-sample.log",
+    "export_log": ".utmp/safe-engine71/delayed-transition214-exports.log"
+  },
+  "performance": {
+    "desktop": {
+      "summary": ".utmp\\safe-engine71\\delayed-transition214-desktop\\summary.json",
+      "passed": true,
+      "passed_checks": 72,
+      "total_checks": 72,
+      "failures": []
+    },
+    "3d": {
+      "summary": ".utmp\\safe-engine71\\delayed-transition214-3d\\summary.json",
+      "passed": false,
+      "passed_checks": 272,
+      "total_checks": 276,
+      "failures": [
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 16.859,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 17.261,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 16.723,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 17.228,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        }
+      ]
+    }
+  }
+}

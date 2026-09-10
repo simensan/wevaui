@@ -2,6 +2,7 @@
 #include "weva/cascade.h"
 #include "weva/dom.h"
 #include "weva/html.h"
+#include "weva/user_agent_stylesheet.h"
 #include <memory>
 #include <string>
 
@@ -54,6 +55,23 @@ MatchedDeclaration make(const Declaration* d, DeclarationOrigin o, Specificity s
 } // namespace
 
 void test_cascade_order() {
+    // Unknown blocks must not promote their contents to ordinary rules.
+    // The same applies to non-grouping rules such as animation keyframes.
+    for (const char* rule : {
+             "@unknown { #a { color: red } }",
+             "@unknown { @media all { #a { color: red } } }",
+             "@media all { @unknown { #a { color: red } } }",
+             "@supports (display: block) { @unknown { #a { color: red } } }",
+             "@layer theme { @unknown { #a { color: red !important } } }",
+             "@keyframes fade { from { color: red } to { color: blue } }"}) {
+        Fixture f;
+        CHECK(f.html("<from id=a>x</from>"));
+        CHECK(f.css(std::string("from { color: green }") + rule));
+        CHECK(f.value("a", "color") == "green");
+        // Adding a later valid sheet must invalidate cached matches normally.
+        CHECK(f.css("@media all { #a { color: blue } }"));
+        CHECK(f.value("a", "color") == "blue");
+    }
     Declaration normal{"color", "red", false};
     Declaration important{"color", "blue", true};
 
@@ -120,6 +138,34 @@ void test_cascade_order() {
 }
 
 void test_cascade_compute() {
+    {
+        Fixture f;
+        CHECK(f.html("<div id=p><button id=b>label</button><input id=i><select id=s></select>"
+                     "<textarea id=t></textarea></div>"));
+        CHECK(f.css(user_agent_stylesheet_source(), DeclarationOrigin::UserAgent));
+        CHECK(f.css("#p{letter-spacing:3px;word-spacing:4px;text-transform:uppercase;"
+                    "text-indent:5px;text-shadow:1px 1px red}"));
+        ComputedStyle parent;
+        f.engine.compute(*f.id("p"),f.state,nullptr,&parent);
+        for (const char* id : {"b","i","s","t"}) {
+            ComputedStyle child;
+            f.engine.compute(*f.id(id),f.state,&parent,&child);
+            CHECK(child.get("letter-spacing") == "normal");
+            CHECK(child.get("word-spacing") == "normal");
+            CHECK(child.get("text-transform") == "none");
+            CHECK(child.get("text-indent") == "0");
+            CHECK(child.get("text-shadow") == "none");
+        }
+        CHECK(f.css("button,input,select,textarea{letter-spacing:inherit;word-spacing:inherit;"
+                    "text-transform:inherit;text-indent:inherit;text-shadow:inherit}"));
+        for (const char* id : {"b","i","s","t"}) {
+            ComputedStyle child;
+            f.engine.compute(*f.id(id),f.state,&parent,&child);
+            for (const char* property : {"letter-spacing","word-spacing","text-transform",
+                                          "text-indent","text-shadow"})
+                CHECK(child.get(property) == parent.get(property));
+        }
+    }
     // ---- specificity resolves competing rules
     {
         Fixture f;

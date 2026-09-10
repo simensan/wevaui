@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstring>
 #include <string>
+#include <vector>
 
 namespace {
 struct Field {
@@ -58,9 +59,258 @@ struct Field {
     }
 };
 bool near(double a, double b) { return std::abs(a - b) < 0.01; }
+void same_paint(Field& actual, Field& expected) {
+    weva_document_update(actual.doc, 0);
+    weva_document_update(expected.doc, 0);
+    size_t an = 0, en = 0;
+    const auto* a = weva_document_draws(actual.doc, &an);
+    const auto* e = weva_document_draws(expected.doc, &en);
+    CHECK(an == en);
+    for (size_t i = 0; i < std::min(an, en); ++i) {
+        CHECK(a[i].vertex_count == e[i].vertex_count);
+        for (size_t j = 0; j < std::min(a[i].vertex_count, e[i].vertex_count); ++j) {
+            CHECK(near(a[i].vertices[j].x, e[i].vertices[j].x));
+            CHECK(near(a[i].vertices[j].y, e[i].vertices[j].y));
+        }
+    }
+}
+void same_selection(Field& actual, Field& expected) {
+    // Tabs split glyph runs. Compare the actual selection geometry independently
+    // of glyph batching and the order of non-overlapping glyph runs.
+    const auto band = [](Field& field) {
+        weva_document_update(field.doc, 0);
+        size_t count = 0;
+        const auto* draws = weva_document_draws(field.doc, &count);
+        std::vector<weva_vertex> result;
+        for (size_t i = 0; i < count; ++i)
+            for (size_t j = 0; j < draws[i].vertex_count; ++j)
+                if (near(draws[i].vertices[j].a, .45)) result.push_back(draws[i].vertices[j]);
+        return result;
+    };
+    const auto a = band(actual), e = band(expected);
+    CHECK(!a.empty());
+    CHECK(a.size() == e.size());
+    for (size_t i = 0; i < std::min(a.size(), e.size()); ++i) {
+        CHECK(near(a[i].x, e[i].x)); CHECK(near(a[i].y, e[i].y));
+    }
+}
 }
 
 void test_abi_text_editing_boundaries() {
+    {
+        Field d("<textarea id=f></textarea>");
+        weva_element_set_attribute(d.doc, d.field, "style", "width:40px;height:200px;word-break:break-all");
+        d.value("abcdefgh\nijkl\nmnop"); d.select(1);
+        d.key(WEVA_KEY_DOWN, WEVA_MOD_CTRL); CHECK(d.selection() == 10);
+        d.key(WEVA_KEY_UP, WEVA_MOD_CTRL); CHECK(d.selection() == 5);
+        d.key(WEVA_KEY_UP, WEVA_MOD_CTRL); CHECK(d.selection() == 0);
+        d.select(5);
+        d.key(WEVA_KEY_DOWN, WEVA_MOD_CTRL | WEVA_MOD_SHIFT);
+        int anchor = -1, end = -1;
+        weva_element_selection(d.doc, d.field, &anchor, &end);
+        CHECK(anchor == 5 && end == 10);
+        d.value("abc\n\ndef"); d.select(2);
+        d.key(WEVA_KEY_DOWN, WEVA_MOD_CTRL); CHECK(d.selection() == 4);
+        d.key(WEVA_KEY_DOWN, WEVA_MOD_CTRL); CHECK(d.selection() == 7);
+        d.key(WEVA_KEY_UP, WEVA_MOD_CTRL); CHECK(d.selection() == 4);
+        d.key(WEVA_KEY_UP, WEVA_MOD_CTRL); CHECK(d.selection() == 2);
+    }
+    for (const char* decoration : {"underline", "overline", "line-through"}) {
+        Field actual("<textarea id=f></textarea>"), expected("<textarea id=f></textarea>");
+        const std::string style = std::string("white-space:pre;tab-size:4;text-decoration:") + decoration;
+        weva_element_set_attribute(actual.doc, actual.field, "style", style.c_str());
+        weva_element_set_attribute(expected.doc, expected.field, "style", style.c_str());
+        actual.value("\t"); expected.value("    ");
+        same_paint(actual, expected);
+    }
+    for (const char* whitespace : {"pre", "pre-wrap"}) {
+        Field d("<textarea id=f></textarea>");
+        const std::string style = std::string("height:200px;width:300px;tab-size:25px;white-space:") + whitespace;
+        weva_element_set_attribute(d.doc, d.field, "style", style.c_str());
+        d.value("\t"); CHECK(near(d.caret_x(), 25));
+        d.value("\t\t"); CHECK(near(d.caret_x(), 50));
+        d.click(30); CHECK(d.selection() == 1);
+        d.click(45); CHECK(d.selection() == 2);
+        d.value("a\t\na\t"); d.select(2);
+        CHECK(near(d.caret_x(), 25));
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 5);
+        CHECK(near(d.caret_x(), 25));
+        d.key(WEVA_KEY_UP); CHECK(d.selection() == 2);
+    }
+    for (const char* whitespace : {"pre", "pre-wrap"}) {
+        Field d("<textarea id=f></textarea>");
+        const std::string style = std::string("height:200px;tab-size:0;white-space:") + whitespace;
+        weva_element_set_attribute(d.doc, d.field, "style", style.c_str());
+        d.value("a"); const double letter = d.caret_x();
+        d.value("a\t\t"); CHECK(near(d.caret_x(), letter));
+        d.key(WEVA_KEY_LEFT); CHECK(d.selection() == 2); CHECK(near(d.caret_x(), letter));
+        d.value("\t"); CHECK(near(d.caret_x(), 0));
+        CHECK_EQ(d.value(), "\t");
+    }
+    for (const char* whitespace : {"pre", "pre-wrap"}) {
+        Field d("<textarea id=f></textarea>");
+        const std::string style = std::string("height:200px;width:300px;tab-size:4;white-space:") + whitespace;
+        weva_element_set_attribute(d.doc, d.field, "style", style.c_str());
+        for (const char* prefix : {"a\t", "\t\t", "a\t \t", u8"é\t"}) {
+            const int end = int(std::strlen(prefix));
+            d.value((std::string(prefix) + "b").c_str()); d.select(end);
+            const double with_suffix = d.caret_x();
+            d.value(prefix);
+            CHECK(near(d.caret_x(), with_suffix)); // trailing tabs retain their full advance
+        }
+        d.value("a\tb"); d.select(1); const double left = d.caret_x();
+        d.select(2); const double right = d.caret_x();
+        d.click(left + (right - left) * .2); CHECK(d.selection() == 1);
+        d.click(left + (right - left) * .8); CHECK(d.selection() == 2);
+        d.value("a\t\na\t"); d.select(2);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 5);
+        d.key(WEVA_KEY_UP); CHECK(d.selection() == 2);
+        d.key(WEVA_KEY_HOME); CHECK(d.selection() == 0);
+        d.key(WEVA_KEY_END); CHECK(d.selection() == 2);
+        // Selection of the tab paints the same band as the equivalent spaces.
+        Field literal("<textarea id=f></textarea>");
+        weva_element_set_attribute(literal.doc, literal.field, "style", style.c_str());
+        d.value("a\t"); literal.value("a   ");
+        weva_element_set_selection(d.doc, d.field, 1, 2);
+        weva_element_set_selection(literal.doc, literal.field, 1, 4);
+        same_selection(d, literal);
+        // Recycled text boxes must not retain an earlier expansion map.
+        d.value("xy"); literal.value("xy");
+        same_paint(d, literal);
+    }
+    {
+        Field wrapped("<textarea id=f></textarea>"), preserved("<textarea id=f></textarea>");
+        weva_element_set_attribute(wrapped.doc, wrapped.field, "style", "white-space:pre-wrap;text-align:right;height:200px");
+        weva_element_set_attribute(preserved.doc, preserved.field, "style", "white-space:pre;text-align:right;height:200px");
+        for (const char* text : {"a   ", "a   \nb"}) {
+            wrapped.value(text); preserved.value(text);
+            wrapped.select(1); preserved.select(1);
+            CHECK(near(wrapped.caret_x(), preserved.caret_x()));
+            wrapped.select(4); preserved.select(4);
+            CHECK(near(wrapped.caret_x(), preserved.caret_x()));
+        }
+    }
+    for (const auto& example : {std::pair<const char*, const char*>{"uppercase", "AB CD\nEF GH"},
+                               {"lowercase", "ab cd\nef gh"}, {"capitalize", "Ab Cd\nEf Gh"}}) {
+        Field actual("<textarea id=f></textarea>"), expected("<textarea id=f></textarea>");
+        actual.value("ab cd\nef gh"); expected.value(example.second);
+        const std::string transform = std::string("text-transform:") + example.first + ";height:200px;width:";
+        for (const char* width : {"100px", "40px", "100px"}) {
+            weva_element_set_attribute(actual.doc, actual.field, "style", (transform + width).c_str());
+            weva_element_set_attribute(expected.doc, expected.field, "style", (std::string("height:200px;width:") + width).c_str());
+            actual.select(1); expected.select(1);
+            CHECK(near(actual.caret_x(), expected.caret_x()));
+            actual.key(WEVA_KEY_DOWN); expected.key(WEVA_KEY_DOWN);
+            CHECK(actual.selection() == expected.selection());
+            weva_element_set_selection(actual.doc, actual.field, 1, 8);
+            weva_element_set_selection(expected.doc, expected.field, 1, 8);
+            same_paint(actual, expected); // selection bands use displayed advances
+        }
+        actual.select(8); expected.select(8);
+        CHECK(near(actual.caret_x(), expected.caret_x()));
+        double x = 0, y = 0, w = 0, h = 0;
+        CHECK(weva_document_caret_bounds(actual.doc, &x, &y, &w, &h) == 1);
+        weva_document_set_pointer(actual.doc, x + .1, y + h / 2, WEVA_BUTTON_PRIMARY);
+        weva_document_set_pointer(actual.doc, x + .1, y + h / 2, 0);
+        CHECK(actual.selection() == 8);
+        CHECK_EQ(actual.value(), "ab cd\nef gh");
+        weva_element_set_selection(actual.doc, actual.field, 1, 8);
+        weva_element_set_selection(expected.doc, expected.field, 1, 8);
+        CHECK(weva_document_set_composition(actual.doc, "jk", 0, 1) == 1);
+        CHECK(weva_document_set_composition(expected.doc,
+            std::strcmp(example.first, "uppercase") == 0 ? "JK" : "jk", 0, 1) == 1);
+        same_paint(actual, expected); // mapped preedit underline and selection
+    }
+    {
+        Field d("<textarea id=f></textarea>");
+        weva_element_set_attribute(d.doc, d.field, "style", "width:32px;height:200px");
+        d.value("abcdefghi");
+        for (const char* wrap : {"soft", "off", "OFF", "hard", "unknown"}) {
+            weva_element_set_attribute(d.doc, d.field, "wrap", wrap);
+            d.select(1);
+            d.key(WEVA_KEY_DOWN);
+            CHECK(d.selection() == ((std::strcmp(wrap, "off") == 0 || std::strcmp(wrap, "OFF") == 0) ? 9 : 4));
+        }
+        weva_element_set_attribute(d.doc, d.field, "wrap", "off");
+        weva_element_set_attribute(d.doc, d.field, "style", "width:32px;height:200px;white-space:pre-wrap;overflow-wrap:break-word");
+        d.select(1); d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 4);
+    }
+    {
+        Field d("<textarea id=f></textarea>");
+        for (const char* text : {"ab cd ef", "ab\n\ncd"}) {
+            d.value(text);
+            const int expected = text[2] == '\n' ? 3 : 7;
+            d.select(expected);
+            weva_document_update(d.doc, 0);
+            double x = 0, y = 0, w = 0, h = 0;
+            CHECK(weva_document_caret_bounds(d.doc, &x, &y, &w, &h) == 1);
+            weva_document_set_pointer(d.doc, x + 0.1, y + h * 0.5, WEVA_BUTTON_PRIMARY);
+            weva_document_set_pointer(d.doc, x + 0.1, y + h * 0.5, 0);
+            CHECK(d.selection() == expected);
+        }
+    }
+    {
+        Field d("<textarea id=f></textarea>");
+        d.value("abcdef\nx\nabcdef"); d.select(4);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 8);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 13);
+        d.key(WEVA_KEY_UP); CHECK(d.selection() == 8);
+        d.key(WEVA_KEY_UP); CHECK(d.selection() == 4);
+        d.key(WEVA_KEY_DOWN);
+        d.key(WEVA_KEY_LEFT);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 9); // horizontal movement resets x
+        d.select(4);
+        d.key(WEVA_KEY_DOWN, WEVA_MOD_SHIFT);
+        d.key(WEVA_KEY_DOWN, WEVA_MOD_SHIFT);
+        int anchor = -1, end = -1;
+        weva_element_selection(d.doc, d.field, &anchor, &end);
+        CHECK(anchor == 4 && end == 13);
+        d.value("abcd\n\nabcd\n"); d.select(3);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 5);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 9);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 11);
+        d.key(WEVA_KEY_UP); CHECK(d.selection() == 9);
+        d.key(WEVA_KEY_HOME); CHECK(d.selection() == 6);
+        d.key(WEVA_KEY_END); CHECK(d.selection() == 10);
+        d.value(u8"abc\n😀x"); d.select(2);
+        d.key(WEVA_KEY_DOWN);
+        const int at = d.selection();
+        CHECK(at == 4 || at == 8 || at == 9); // never inside the four-byte emoji
+        CHECK(weva_document_try_text_input(d.doc, "Q") == 1);
+        const std::string expected = std::string(u8"abc\n😀x").insert(size_t(at), "Q");
+        CHECK_EQ(d.value(), expected);
+    }
+    {
+        Field d("<textarea id=f></textarea>");
+        d.value("a");
+        const double advance = d.caret_x();
+        const std::string style = "word-break:break-all;white-space:pre-wrap;width:" +
+            std::to_string(advance * 3.2) + "px";
+        weva_element_set_attribute(d.doc, d.field, "style", style.c_str());
+        d.value("abcdefghi"); d.select(1);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 4);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 7);
+        d.key(WEVA_KEY_UP); CHECK(d.selection() == 4);
+        d.key(WEVA_KEY_HOME); CHECK(d.selection() == 3);
+        d.key(WEVA_KEY_END); CHECK(d.selection() == 6);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 9);
+        weva_element_set_attribute(d.doc, d.field, "style", "word-break:break-all;width:1px");
+        d.value(u8"ááá"); d.select(0);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 3);
+        d.key(WEVA_KEY_DOWN); CHECK(d.selection() == 6);
+    }
+    for (const char* html : {"<input id=f>", "<textarea id=f></textarea>"}) {
+        Field d(html);
+        d.value(u8"ab😀cd界ef");
+        for (bool backward : {false, true}) {
+            for (int key : {WEVA_KEY_LEFT, WEVA_KEY_RIGHT}) {
+                weva_element_set_selection(d.doc, d.field, backward ? 8 : 2, backward ? 2 : 8);
+                d.key(key);
+                CHECK(d.selection() == (key == WEVA_KEY_LEFT ? 2 : 8));
+                CHECK_EQ(d.value(), u8"ab😀cd界ef");
+            }
+        }
+    }
     const struct { const char* text; const char* remaining; } cases[] = {
         {u8"a\u0301", "a"}, {u8"a\u0301\u0327", u8"a\u0301"}, {u8"각", u8"가"},
         {u8"😀", ""}, {u8"界", ""}, {u8"👨‍👩‍👧‍👦", ""}, {u8"👩🏽‍💻", ""},
@@ -139,10 +389,23 @@ void test_abi_input_text_scroll() {
     weva_document_update(d.doc, 0);
     d.field = weva_document_query(d.doc, "#f");
     weva_document_set_focus(d.doc, d.field);
-    CHECK(d.caret_x() > 0 && d.caret_x() < 50);
+    CHECK(near(d.caret_x(), 0)); // Reload restores the initial selection, not the old end.
 }
 
 void test_abi_text_advances_and_password() {
+    for (const char* html : {"<input id=f>", "<textarea id=f></textarea>"}) {
+        Field transformed(html);
+        transformed.value("abcdef");
+        transformed.select(2);
+        const double advance = transformed.caret_x();
+        weva_element_set_attribute(transformed.doc, transformed.field, "style",
+                                  "transform-origin:0 0;transform:translate(120px,40px) scale(2)");
+        weva_document_update(transformed.doc, 0);
+        const double x = 120 + advance * 2;
+        weva_document_set_pointer(transformed.doc, x, 55, WEVA_BUTTON_PRIMARY);
+        weva_document_set_pointer(transformed.doc, x, 55, 0);
+        CHECK(transformed.selection() == 2);
+    }
     Field d;
     d.value("a"); const double letter = d.caret_x();
     d.value("a "); const double space = d.caret_x() - letter;

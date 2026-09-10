@@ -136,29 +136,62 @@ bool has_binding(std::string_view text) {
     return text.find("{{") != std::string_view::npos;
 }
 
-std::string substitute_bindings(std::string_view text, const BindingResolver& resolver) {
-    std::string out;
-    out.reserve(text.size());
+namespace {
+template <typename Append>
+void visit_binding_parts(std::string_view text, const BindingResolver& resolver, Append&& append) {
     size_t at = 0;
     while (at < text.size()) {
         const size_t open = text.find("{{", at);
         if (open == std::string_view::npos) {
-            out.append(text.substr(at));
+            append(text.substr(at));
             break;
         }
         const size_t close = text.find("}}", open + 2);
         if (close == std::string_view::npos) {
             // An unclosed brace is text, not a broken binding: the author sees
             // what they wrote rather than losing the rest of the line.
-            out.append(text.substr(at));
+            append(text.substr(at));
             break;
         }
-        out.append(text.substr(at, open - at));
+        append(text.substr(at, open - at));
         const std::string_view path = trim(text.substr(open + 2, close - open - 2));
         std::string value;
-        if (!path.empty() && resolver.resolve(path, &value)) out.append(value);
+        if (!path.empty() && resolver.resolve(path, &value)) append(value);
         at = close + 2;
     }
+}
+
+// Read every binding in order, but materialize a new output only after its
+// first differing byte range. No resolved values survive this refresh.
+bool substitute_changed(std::string_view text, const BindingResolver& resolver,
+                        std::string_view current, std::string* output) {
+    size_t matched = 0;
+    bool changed = false;
+    visit_binding_parts(text, resolver, [&](std::string_view part) {
+        if (!changed && part.size() <= current.size() - matched &&
+            current.substr(matched, part.size()) == part) {
+            matched += part.size();
+            return;
+        }
+        if (!changed) {
+            output->assign(current.substr(0, matched));
+            changed = true;
+        }
+        output->append(part);
+    });
+    if (!changed && matched != current.size()) {
+        output->assign(current.substr(0, matched));
+        changed = true;
+    }
+    return changed;
+}
+} // namespace
+
+std::string substitute_bindings(std::string_view text, const BindingResolver& resolver) {
+    std::string out;
+    // Placeholder length is unrelated to output length: keep short values
+    // in the string's inline storage and grow only for actual output.
+    visit_binding_parts(text, resolver, [&](std::string_view part) { out.append(part); });
     return out;
 }
 
@@ -182,11 +215,13 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
     // every time a number next to it changed.
     std::vector<std::string> keys;
     keys.reserve(static_cast<size_t>(n));
+    bool explicit_keys = !key_field.empty();
     for (int i = 0; i < n; ++i) {
         const std::string item = list + "." + std::to_string(i);
         std::string key;
         if (key_field.empty() || !resolver.resolve(item + "." + key_field, &key)) {
             key = std::to_string(i);
+            explicit_keys = false;
         }
         keys.push_back(key);
     }
@@ -203,7 +238,44 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
     }
 
     int changed = 0;
-    if (!same) {
+    // A permutation of unique explicit keys moves the existing DOM rows.
+    // Preserve live controls, handles and binding templates; duplicate/missing
+    // identities and membership changes keep the ordinary reconstruction path.
+    bool reordered = false;
+    if (!same && previous && explicit_keys && rows.size() == keys.size() &&
+        previous->size() == keys.size() && !rows.empty()) {
+        std::map<std::string, Element*> keyed;
+        bool unique = true;
+        for (size_t i = 0; i < rows.size(); ++i)
+            unique = keyed.emplace((*previous)[i], rows[i]).second && unique;
+        std::vector<Element*> ordered;
+        for (const auto& key : keys) {
+            const auto found = keyed.find(key);
+            if (found == keyed.end()) { unique = false; break; }
+            ordered.push_back(found->second);
+            keyed.erase(found);
+        }
+        // Leave unrelated siblings in place. Generated rows are contiguous;
+        // externally interleaved rows use the conservative path below.
+        size_t first = 0;
+        while (first < parent->children().size() && parent->children()[first].get() != rows.front()) ++first;
+        for (size_t i = 0; i < rows.size(); ++i)
+            if (first + i >= parent->children().size() || parent->children()[first + i].get() != rows[i]) unique = false;
+        if (unique) {
+            for (size_t i = 0; i < ordered.size(); ++i) {
+                Node* at = parent->children()[first + i].get();
+                if (at != ordered[i]) {
+                    parent->insert_before(ordered[i], at);
+                    ++changed;
+                }
+                ordered[i]->set_attribute(kRowIndex, std::to_string(i));
+            }
+            rows = std::move(ordered);
+            *previous = keys;
+            reordered = true;
+        }
+    }
+    if (!same && !reordered) {
         for (Element* row : rows) {
             if (templates) templates->erase(row);
             parent->remove_child(row);
@@ -251,9 +323,6 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
         if (previous) *previous = keys;
     }
 
-    // Reused rows keep the stamps they were built with, which stay correct:
-    // `same` means the key list matched in ORDER, so no row moved.
-    //
     // Filled either way: the values inside a row change far more often than
     // the list does.
     for (size_t i = 0; i < rows.size(); ++i) {
@@ -274,8 +343,8 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
         // The SOURCE, not the current data: substituting what a previous pass
         // produced would lose the braces after the first refresh.
         if (has_binding(text.source())) {
-            const std::string filled = substitute_bindings(text.source(), resolver);
-            if (filled != text.data()) {
+            std::string filled;
+            if (substitute_changed(text.source(), resolver, text.data(), &filled)) {
                 text.set_data(filled);
                 ++changed;
             }
@@ -297,20 +366,32 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
         std::vector<std::pair<std::string, bool>> classes;
         const auto saved = templates ? templates->find(&e) : BindingTemplates::iterator{};
         for (std::size_t i = 0; i < attrs.size(); ++i) {
-            const std::string name(attrs.name_at(i));
+            const std::string_view attribute_name = attrs.name_at(i);
             const std::string_view value = attrs.value_at(i);
 
             // `data-class-<name>="Path"` toggles ONE class and leaves the rest
             // of the attribute alone, which is what makes it composable with
             // classes the author wrote by hand.
-            if (name.rfind(kClassPrefix, 0) == 0 && name.size() > std::strlen(kClassPrefix)) {
-                std::string path(value);
-                if (has_binding(value)) path = substitute_bindings(value, resolver);
+            if (attribute_name.rfind(kClassPrefix, 0) == 0 && attribute_name.size() > std::strlen(kClassPrefix)) {
+                // Attribute names are interned; literal paths need no owned
+                // copy during this synchronous read. Only expansion owns text.
+                std::string expanded_path;
+                std::string_view path = value;
+                if (has_binding(value)) {
+                    expanded_path = substitute_bindings(value, resolver);
+                    path = expanded_path;
+                }
                 std::string resolved;
                 const bool on = resolver.resolve(trim(path), &resolved) && truthy(resolved);
-                classes.emplace_back(name.substr(std::strlen(kClassPrefix)), on);
+                const std::string_view token = attribute_name.substr(std::strlen(kClassPrefix));
+                // Most signal-driven refreshes leave class membership alone.
+                // Avoid allocating the pending toggle and copying the full
+                // class list when this specific token already has its value.
+                if (has_class_token(e.class_name(), token) != on)
+                    classes.emplace_back(std::string(token), on);
                 continue;
             }
+            const std::string_view name = attribute_name;
 
             // The template is whatever was there the first time this ran, kept
             // because the substitution overwrites it.
@@ -320,15 +401,17 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
                 if (it != saved->second.end()) tmpl = it->second;
             }
             if (tmpl.empty() && has_binding(value)) {
-                tmpl = templates ? std::string_view((*templates)[&e][name] = std::string(value)) : value;
+                tmpl = templates ? std::string_view((*templates)[&e][std::string(name)] = std::string(value)) : value;
             }
             if (tmpl.empty()) continue;
-            const std::string filled = substitute_bindings(tmpl, resolver);
             if (boolean_attribute(name)) {
-                if (!truthy(filled)) removals.push_back(name);
+                const std::string filled = substitute_bindings(tmpl, resolver);
+                if (!truthy(filled)) removals.emplace_back(name);
                 else if (!value.empty()) writes.emplace_back(name, "");
-            } else if (filled != value) {
-                writes.emplace_back(name, filled);
+            } else {
+                std::string filled;
+                if (substitute_changed(tmpl, resolver, value, &filled))
+                    writes.emplace_back(name, std::move(filled));
             }
         }
         // A false boolean is absent from the live attribute map, but its
@@ -337,7 +420,7 @@ int apply_bindings(Node& root, const BindingResolver& resolver, BindingTemplates
             const auto found = templates->find(&e);
             if (found != templates->end()) {
                 for (const auto& entry : found->second) {
-                    if (!attrs.contains(entry.first) && boolean_attribute(entry.first) &&
+                    if (boolean_attribute(entry.first) && !attrs.contains(entry.first) &&
                         truthy(substitute_bindings(entry.second, resolver))) {
                         writes.emplace_back(entry.first, "");
                     }

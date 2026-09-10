@@ -451,19 +451,16 @@ void test_shrink_to_fit() {
         CHECK(near(f.box("fl").width, 60));
     }
     {
-        // CANDIDATE DIVERGENCE. CSS 2.1 §10.3.5 computes
+        // CSS 2.1 §10.3.5 computes
         // min(preferred, max(preferred-minimum, available)), which for a 20px
         // container and a 40px longest word gives 40 — the float overflows
-        // rather than squeezing below its min-content width. The reference
-        // adds a final `if (fitted > avail) fitted = avail`, which contradicts
-        // the formula and clamps to 20, so the word overflows the FLOAT rather
-        // than the float overflowing its container. Ported as the reference has
-        // it and pinned.
+        // rather than squeezing below its min-content width. The old reference
+        // clamp to available space hid this overflow and is deliberately fixed.
         Fixture f;
         CHECK(f.css("#w { display: block; width: 20px; font-size: 16px }"
                     "#fl { float: left }"));
         CHECK(f.layout("<body><div id=w><div id=fl>hello world</div></div></body>"));
-        CHECK(near(f.box("fl").width, 20));
+        CHECK(near(f.box("fl").width, 40));
     }
     {
         // The frame is added to the intrinsic content width, and min-/max-width
@@ -542,8 +539,8 @@ void test_forced_breaks() {
         const BoxId br = f.find("br");
         CHECK(br != kNoBox);
         CHECK(near(f.tree[br].width, 0));
-        // It takes the height of the line it ends, not of its own content.
-        CHECK(near(f.tree[br].height, 16));
+        // Browser geometry exposes the font box, even for a shorter line-height.
+        CHECK(near(f.tree[br].height, f.metrics.ascent(16) + f.metrics.descent(16)));
     }
     {
         // A break with nothing before it still ends a line.
@@ -795,9 +792,8 @@ void test_anonymous_block_inherits_text_align() {
 }
 
 void test_letter_spacing_widens_runs() {
-    // CSS Text L3 §8.2, the reference's convention: each measured piece grows
-    // by letter-spacing × (characters − 1). A 5-letter word gains 4 gaps; a
-    // single space gains none.
+    // Chrome includes spacing after the final typographic character too.
+    // Five characters gain five spacings; a preserved space gains one.
     Fixture plain, spaced;
     CHECK(plain.css("#w { width: 1000px; white-space: nowrap }"));
     CHECK(spaced.css("#w { width: 1000px; white-space: nowrap; letter-spacing: 2px }"));
@@ -808,7 +804,7 @@ void test_letter_spacing_widens_runs() {
     for (BoxId c : spaced.tree.children(spaced.lines("w")[0])) spaced_w += spaced.tree[c].width;
     // The whole run: "Hello world" is 11 characters, 10 gaps — spaces count,
     // as in the reference's single-line measure.
-    CHECK(near(spaced_w - plain_w, 20));
+    CHECK(near(spaced_w - plain_w, 22));
     // em resolves against the run's own font size.
     Fixture em;
     CHECK(em.css("#w { width: 1000px; white-space: nowrap; font-size: 20px;"
@@ -820,7 +816,7 @@ void test_letter_spacing_widens_runs() {
     double a = 0, b = 0;
     for (BoxId c : em.tree.children(em.lines("w")[0])) a += em.tree[c].width;
     for (BoxId c : em0.tree.children(em0.lines("w")[0])) b += em0.tree[c].width;
-    CHECK(near(a - b, 10));
+    CHECK(near(a - b, 20));
 }
 
 void test_inline_fragment_height_and_order() {
@@ -879,9 +875,8 @@ void test_font_family_registry() {
     CHECK(ctx.font_for("") == nullptr);
 }
 
-void test_letter_spacing_counts_utf16_units() {
-    // The reference counts gaps in UTF-16 code units, so an astral emoji is
-    // two: one gap of spacing on its own.
+void test_letter_spacing_counts_graphemes() {
+    // An astral emoji is one typographic character and gains one spacing.
     Fixture a, b;
     CHECK(a.css("#w { width: 1000px; white-space: nowrap; font-size: 32px }"));
     CHECK(b.css("#w { width: 1000px; white-space: nowrap; font-size: 32px;"
@@ -1292,16 +1287,10 @@ void test_block_in_inline_empty_fragments() {
 }
 
 
-// CSS Text L3 §8.2. Letter-spacing sits BETWEEN characters, so a run of n
-// characters carries n-1 of them — and a LINE BREAK restarts that count,
-// because the spacing that would follow the last character of a line has
-// nowhere to sit. Carrying the count across the break charged one spacing too
-// many for every wrapped run.
+// Wrapping preserves trailing character spacing without adding leading spacing.
 void test_letter_spacing_restarts_at_a_line_break() {
     {
-        // Two lines of four characters each. With spacing s, each line carries
-        // three gaps, so the second line's content starts at the container's
-        // edge and its width is 4 glyphs + 3 gaps — not 4 gaps.
+        // Four characters on each line each carry four spacings.
         Fixture f;
         CHECK(f.css("#w { display: block; width: 40px; font-size: 16px;"
                     "     letter-spacing: 4px }"
@@ -1314,10 +1303,10 @@ void test_letter_spacing_restarts_at_a_line_break() {
         // The second line opens at the content edge, with no leading spacing.
         CHECK(near(b.x, 0));
         const double glyph = f.metrics.measure("bbbb", 16);
-        CHECK(near(b.width, glyph + 3 * 4));
+        CHECK(near(b.width, glyph + 4 * 4));
     }
     {
-        // The same run unwrapped carries exactly the same n-1 gaps, so a wide
+        // The same run unwrapped carries exactly the same four spacings, so a wide
         // container and a narrow one agree on the run's width.
         Fixture f;
         CHECK(f.css("#w { display: block; width: 4000px; font-size: 16px;"
@@ -1325,7 +1314,7 @@ void test_letter_spacing_restarts_at_a_line_break() {
                     "#b { display: inline }"));
         CHECK(f.layout("<body><div id=w><span id=b>bbbb</span></div></body>"));
         const Box& b = f.tree[f.find_kind("b", BoxKind::Inline)];
-        CHECK(near(b.width, f.metrics.measure("bbbb", 16) + 3 * 4));
+        CHECK(near(b.width, f.metrics.measure("bbbb", 16) + 4 * 4));
     }
 }
 
@@ -1652,10 +1641,19 @@ void test_word_spacing_affects_wrapping() {
 
 // CSS Text L3 7.1 `text-indent`: the FIRST line starts inset, and no other.
 void test_text_indent() {
-    // The x of a line's first run. The child range is a forward-only view, so
+    {
+        Fixture f;
+        CHECK(f.css("#w{display:inline-block;font-size:20px;text-indent:20px}"));
+        CHECK(f.layout("<body><div id=w>aaaa bbbb</div></body>"));
+        CHECK(near(f.box("w").width,110)); // 9 half-em glyphs plus the indent.
+        CHECK(f.lines("w").size() == 1);
+    }
+    // The first run's x relative to its containing block, including the line
+    // offset. Checking only the child's local x concealed a doubled indent.
+    // The child range is a forward-only view, so
     // this takes the first thing it yields rather than comparing iterators.
     const auto run_x = [](Fixture& f, BoxId line) {
-        for (BoxId c : f.tree.children(line)) return f.tree[c].x;
+        for (BoxId c : f.tree.children(line)) return f.tree[line].x + f.tree[c].x;
         return -1.0;
     };
     const auto first_x = [&](Fixture& f) {
@@ -1798,7 +1796,22 @@ void test_tab_size() {
     CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
                         "     white-space: pre }", html), 90));
 
+    for (const char* zero : {"0", "0px", "0em"}) {
+        const std::string css = std::string("#w { display:block;width:400px;font-size:20px;white-space:pre;tab-size:") + zero + "}";
+        CHECK(near(width_of(css.c_str(), html), 10));
+    }
+    for (const char* ws : {"pre", "pre-wrap"}) {
+        for (const char* size : {"25px", "2.5"}) {
+            const std::string css = std::string("#w {display:block;width:400px;font-size:20px;white-space:") + ws + ";tab-size:" + size + "}";
+            CHECK(near(width_of(css.c_str(), html), 35));
+            CHECK(near(width_of(css.c_str(), "<body><pre id=w>ab\tx</pre></body>"), 35));
+        }
+    }
     // `tab-size: 4` puts the stop at 40px.
+    CHECK(near(width_of("#w {display:block;width:400px;font-size:20px;white-space:pre;tab-size:4}",
+        "<body><pre id=w><span style='font-size:40px'>\tx</span></pre></body>"), 60));
+    CHECK(near(width_of("#w {display:block;width:400px;font-size:20px;white-space:pre;tab-size:4}",
+        "<body><pre id=w><span style='word-spacing:5px'>\tx</span></pre></body>"), 50));
     CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
                         "     white-space: pre; tab-size: 4 }", html), 50));
 
@@ -1832,8 +1845,10 @@ void test_tabs_are_expanded_not_measured() {
     if (!ls.empty()) {
         const std::string text = f.line_text(ls[0]);
         CHECK(text.find('	') == std::string::npos);
-        // Four spaces to the stop, then the letter.
-        CHECK(text == "    x");
+        CHECK(text == " x");
+        for (BoxId c : f.tree.children(ls[0])) {
+            if (f.tree[c].text == "x") CHECK(near(f.tree[c].x, 40));
+        }
     }
 }
 
@@ -1944,5 +1959,22 @@ void test_flex_flow_reaches_layout() {
         CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div>"
                        "<div id=c class=i></div></div></body>"));
         CHECK(near(f.box("c").y, 20));   // pushed to the second line
+    }
+}
+
+void test_inline_wrapped_fragments_keep_element_identity() {
+    Fixture f;
+    CHECK(f.css("#w{width:50px;font-size:20px}#s{background:red}"));
+    CHECK(f.layout("<div id=w><span id=s>one two three</span></div>"));
+    const auto lines = f.lines("w");
+    CHECK(lines.size() == 3);
+    for (BoxId line : lines) {
+        const BoxId fragment = f.find_kind("s", BoxKind::Inline, line);
+        CHECK(fragment != kNoBox);
+        if (fragment != kNoBox) {
+            CHECK(f.tree[fragment].width > 0);
+            CHECK(near(f.tree[fragment].height, 24));
+            CHECK(f.tree[fragment].element == f.tree[f.find_kind("s", BoxKind::Inline)].element);
+        }
     }
 }

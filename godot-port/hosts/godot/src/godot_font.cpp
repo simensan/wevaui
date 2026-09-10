@@ -41,6 +41,7 @@ int64_t size_of(double px) {
 } // namespace
 
 struct SharedFontVariant {
+    std::shared_ptr<SharedFontVariant> metrics;
     struct Glyph {
         int64_t index = 0;
         weva_shaped_glyph positioned{};
@@ -119,6 +120,7 @@ std::shared_ptr<SharedFontVariant> synthetic_font(TextServer* ts, const PackedBy
     result->strength = strength;
     result->oblique = oblique;
     ts->font_set_data(font, data);
+    if (strength) result->metrics = synthetic_font(ts, data, 0, false);
     if (strength) ts->font_set_embolden(font, strength == 2 ? 0.9 : 0.6);
     if (oblique) ts->font_set_transform(font, Transform2D(1.0, 0.0, 0.2, 1.0, 0.0, 0.0));
     if (!disabled) {
@@ -148,6 +150,7 @@ void GodotFontBackend::clear() {
     if (ts) for (const RID& r : owned_) ts->free_rid(r);
     owned_.clear();
     faces_.clear();
+    metric_fonts_.clear();
     variants_.clear();
     face_data_.clear();
     glyph_sources_.clear();
@@ -245,8 +248,19 @@ int32_t GodotFontBackend::face_metrics(void* self, uint64_t face, double px, dou
     if (!font.is_valid()) return 0;
 
     const int64_t size = size_of(px);
-    if (ascent) *ascent = ts->font_get_ascent(font, size);
-    if (descent) *descent = ts->font_get_descent(font, size);
+    double a = ts->font_get_ascent(font, size);
+    double d = ts->font_get_descent(font, size);
+    if (me->face_data_.find(face) != me->face_data_.end()) {
+        // FreeType's pixel-sized metrics round each extent outward. Blink
+        // rounds the scaled design extents to the nearest pixel instead.
+        // Query an unhinted large scale to recover the design proportions;
+        // this only reads face metrics, never rasterizes oversized glyphs.
+        constexpr int64_t design_size = 16384;
+        a = std::round(ts->font_get_ascent(font, design_size) * px / design_size);
+        d = std::round(ts->font_get_descent(font, design_size) * px / design_size);
+    }
+    if (ascent) *ascent = a;
+    if (descent) *descent = d;
     // TextServer exposes no line gap: its own line height is ascent + descent,
     // and reporting a gap the engine does not itself apply would make `line-
     // height: normal` taller here than in any Godot control using the same face.
@@ -294,7 +308,9 @@ int32_t GodotFontBackend::glyph_metrics(void* self, uint64_t face, uint32_t glyp
 
     const int64_t size = size_of(px);
     const Vector2i sz(static_cast<int32_t>(size), 0);
-    const Vector2 adv = ts->font_get_glyph_advance(font, size, index);
+    const auto metric = me->metric_fonts_.find(font.get_id());
+    const Vector2 adv = ts->font_get_glyph_advance(
+        metric == me->metric_fonts_.end() ? font : metric->second, size, index);
     const Vector2 offset = ts->font_get_glyph_offset(font, sz, index);
     const Vector2 extent = ts->font_get_glyph_size(font, sz, index);
 
@@ -461,18 +477,62 @@ const std::vector<weva_shaped_glyph>& GodotFontBackend::shape_run(
     // Every font of the face, in order: TextServer falls back through the
     // list per character, and reports which font each glyph came from.
     TypedArray<RID> fonts;
-    for (const RID& r : *face_fonts) fonts.push_back(r);
+    const RID primary_render = face_fonts->front();
+    const auto metric = metric_fonts_.find(primary_render.get_id());
+    const RID primary_metrics = metric == metric_fonts_.end() ? primary_render : metric->second;
+    for (const RID& r : *face_fonts) fonts.push_back(r == primary_render ? primary_metrics : r);
     lap(shape_profile_.prepare_ms);
     ts->shaped_text_add_string(shaped, text, fonts, size);
     ts->shaped_text_shape(shaped);
     lap(shape_profile_.shape_ms);
 
-    const TypedArray<Dictionary> shaped_glyphs = ts->shaped_text_get_glyphs(shaped);
-    lap(shape_profile_.extract_ms);
-    // Build the same String keys once per run, instead of constructing six
-    // native Strings/Variants for every glyph returned by TextServer.
+    // Reuse native keys in both the synthesis check and glyph conversion.
     const Variant font_key("font_rid"), index_key("index"), start_key("start"),
                   advance_key("advance"), offset_key("offset"), repeat_key("repeat");
+    TypedArray<Dictionary> shaped_glyphs = ts->shaped_text_get_glyphs(shaped);
+    bool styled_positions = false;
+    struct PrimaryAdvances {
+        std::vector<double> values;
+        size_t consumed = 0;
+    };
+    std::map<std::pair<int64_t, int64_t>, PrimaryAdvances> primary_advances;
+    if (primary_metrics != primary_render) {
+        for (const Dictionary glyph : shaped_glyphs) {
+            const RID from = glyph[font_key];
+            const Vector2 offset = glyph[offset_key];
+            if ((from == primary_metrics && offset != Vector2()) ||
+                (from.is_valid() && from != primary_metrics &&
+                 std::find(face_fonts->begin() + 1, face_fonts->end(), from) == face_fonts->end())) {
+                styled_positions = true;
+                break;
+            }
+        }
+        if (styled_positions) {
+            // Native automatic fallbacks inherit synthesis from the primary.
+            // Preserve that selection and synthesized mark attachment offsets
+            // while taking primary advances from the regular shaper
+            // (subtracting glyph metrics loses hinted kerning).
+            for (const Dictionary glyph : shaped_glyphs) {
+                const RID from = glyph[font_key];
+                if (from == primary_metrics)
+                    primary_advances[{static_cast<int64_t>(glyph[start_key]),
+                                      static_cast<int64_t>(glyph[index_key])}].values.push_back(glyph[advance_key]);
+            }
+            const RID styled = ts->create_shaped_text();
+            if (!styled.is_valid()) {
+                ts->free_rid(shaped);
+                return shaped_run_;
+            }
+            fonts[0] = primary_render;
+            lap(shape_profile_.extract_ms);
+            ts->shaped_text_add_string(styled, text, fonts, size);
+            ts->shaped_text_shape(styled);
+            lap(shape_profile_.shape_ms);
+            shaped_glyphs = ts->shaped_text_get_glyphs(styled);
+            ts->free_rid(styled);
+        }
+    }
+    lap(shape_profile_.extract_ms);
     const int64_t glyph_count = shaped_glyphs.size();
     SharedFontVariant::Run reusable;
     bool primary_only = shared != nullptr;
@@ -480,17 +540,24 @@ const std::vector<weva_shaped_glyph>& GodotFontBackend::shape_run(
     for (int64_t i = 0; i < glyph_count; ++i) {
         const Dictionary g = shaped_glyphs[i];
         const RID from = g[font_key];
-        if (shared && from != shared->font) primary_only = false;
+        if (shared && from != (styled_positions ? primary_render : primary_metrics)) primary_only = false;
         const int64_t index = g[index_key];
         weva_shaped_glyph glyph{};
         // A valid TextServer font may be an automatic system fallback. Keep
         // it with the glyph rather than silently treating it as the primary.
         // Index zero on a valid shaped font is an invisible control glyph.
-        glyph.glyph = from.is_valid() ? (index ? retain_glyph(from, index) : 0)
+        const RID rendered = from == primary_metrics ? primary_render : from;
+        glyph.glyph = from.is_valid() ? (index ? retain_glyph(rendered, index) : 0)
                                       : retain_glyph(face_fonts->front(), 0);
         const int64_t start = std::clamp<int64_t>(g[start_key], 0, text_length);
         glyph.cluster = byte_offsets[static_cast<size_t>(start)];
         glyph.x_advance = static_cast<double>(g[advance_key]);
+        if (styled_positions && from == primary_render) {
+            const auto advance = primary_advances.find({static_cast<int64_t>(g[start_key]), index});
+            if (advance != primary_advances.end() && advance->second.consumed < advance->second.values.size()) {
+                glyph.x_advance = advance->second.values[advance->second.consumed++];
+            }
+        }
         const Vector2 offset = g[offset_key];
         glyph.x_offset = offset.x;
         glyph.y_offset = -offset.y; // core offsets are upward from the baseline
@@ -580,6 +647,7 @@ uint64_t GodotFontBackend::variant(void* self, uint64_t face, int32_t weight, in
             continue;
         }
         derived.push_back(variant->font);
+        if (variant->metrics) me->metric_fonts_[variant->font.get_id()] = variant->metrics->font;
         primary_variant = variant.get();
         me->shared_variants_.push_back(std::move(variant));
     }

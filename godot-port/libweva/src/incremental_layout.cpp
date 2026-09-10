@@ -3,9 +3,48 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <chrono>
 
 namespace weva {
 namespace {
+// Aggregate opt-in modal diagnostics in memory; print once at thread teardown.
+// No clock reads or retained trace storage are used by ordinary updates.
+struct ModalTrace {
+    double phases[8]{};
+    double total = 0;
+    size_t attempts = 0, accepted = 0;
+    ~ModalTrace() {
+        std::fprintf(stderr, "WEVA_MODAL_TRACE attempts=%zu accepted=%zu total_ms=%.6f\n", attempts, accepted, total);
+        const char* names[] = {"safety", "eligibility", "build", "flow", "positioning_overflow", "validate", "splice", "index"};
+        for (size_t i = 0; i < 8; ++i)
+            std::fprintf(stderr, "WEVA_MODAL_PHASE %s %.6f\n", names[i], phases[i]);
+    }
+};
+ModalTrace* modal_trace() {
+    static const bool enabled = std::getenv("WEVA_MODAL_TRACE") != nullptr;
+    if (!enabled) return nullptr;
+    thread_local ModalTrace trace;
+    return &trace;
+}
+struct ModalSample {
+    using Clock = std::chrono::steady_clock;
+    ModalTrace* trace = modal_trace();
+    Clock::time_point start = trace ? Clock::now() : Clock::time_point{};
+    Clock::time_point previous = start;
+    bool accepted = false;
+    void lap(size_t phase) {
+        if (!trace) return;
+        const auto now = Clock::now();
+        trace->phases[phase] += std::chrono::duration<double, std::milli>(now - previous).count();
+        previous = now;
+    }
+    ~ModalSample() {
+        if (!trace) return;
+        ++trace->attempts;
+        trace->accepted += accepted;
+        trace->total += std::chrono::duration<double, std::milli>(Clock::now() - start).count();
+    }
+};
 bool names_anchor(const ComputedStyle* style) {
     static const int anchor_name = CssPropertyRegistry::instance().id_of("anchor-name");
     if (!style) return false;
@@ -88,7 +127,7 @@ public:
         b.retained_from = kNoBox;
         // The parent's new allocation changed the input. Rebuild now, before
         // ordinary layout observes the deferred root's empty child list.
-        BoxBuilder builder(tree, styles_);
+        BoxBuilder builder(tree, styles_, nullptr, true);
         builder.materialize_children(id);
         return false;
     }
@@ -114,6 +153,7 @@ void IncrementalLayout::refresh_grid(const BoxTree& tree, BoxId id) {
         b.style->get("grid-template-columns").find("subgrid") != std::string_view::npos ||
         b.style->get("grid-template-rows").find("subgrid") != std::string_view::npos) return;
     grid_versions_[id] = input_versions_[id];
+    if (!paint_root_flags_[id]) { paint_root_flags_[id] = true; paint_roots_.push_back(id); }
     if (std::find(grid_roots_.begin(), grid_roots_.end(), id) == grid_roots_.end())
         grid_roots_.push_back(id);
 }
@@ -122,6 +162,8 @@ int IncrementalLayout::index_subtree(const BoxTree& tree, BoxId id, const Layout
     if (preserve_ && std::find(preserve_->begin(), preserve_->end(), id) != preserve_->end())
         return sizes_[id];
     const Box& b = tree[id];
+    if (b.position == PositionType::Absolute || b.position == PositionType::Fixed)
+        if (!paint_root_flags_[id]) { paint_root_flags_[id] = true; paint_roots_.push_back(id); }
     input_versions_[id] = input_serial_;
     if (b.style) {
         auto entry = by_style_.try_emplace(b.style, id);
@@ -171,6 +213,8 @@ void IncrementalLayout::index(const BoxTree& tree, BoxId root, const LayoutConte
     input_versions_.assign(tree.size(), ++input_serial_);
     grid_versions_.assign(tree.size(), 0);
     grid_roots_.clear();
+    paint_roots_.clear();
+    paint_root_flags_.assign(tree.size(), false);
     preserve_ = nullptr;
     global_dependencies_ = false;
     if (tree.valid(root)) index_subtree(tree, root, ctx);
@@ -300,7 +344,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 parent = p;
             }
             RetainedGridProbe reuse(*tree, styles, eligible);
-            BoxBuilder builder(&r.tree, styles, &reuse);
+            BoxBuilder builder(&r.tree, styles, &reuse, true);
             r.from = builder.build(*old.element, old.style);
             if (r.from == kNoBox) return false;
             // The retained parent may have blockified an inline-* item.
@@ -368,6 +412,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
         local_.resize(tree->size());
         contributions_.resize(tree->size());
         height_independent_.resize(tree->size());
+        paint_root_flags_.resize(tree->size(), false);
         input_versions_.resize(tree->size(), input_serial_);
         grid_versions_.resize(tree->size());
         index_subtree(*tree, r.into, ctx);
@@ -384,6 +429,181 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             refresh_grid(*tree, p);
         }
     }
+    return true;
+}
+
+namespace {
+// Modal changes can leave large out-of-flow panels untouched. Keep their
+// geometry only provisionally: every containing ancestor is proved below.
+class ModalProbe final : public BoxBuildReuse, public LayoutReuse {
+public:
+    ModalProbe(const BoxTree& old, const std::unordered_map<const Element*, BoxId>& eligible)
+        : old_(old), eligible_(eligible) {}
+    bool reuse_children(BoxTree* tree, BoxId id) override {
+        auto found = eligible_.find((*tree)[id].element);
+        if (found == eligible_.end()) return false;
+        const Box links = (*tree)[id];
+        (*tree)[id] = old_[found->second];
+        auto& b = (*tree)[id];
+        b.parent = links.parent;
+        b.next_sibling = links.next_sibling;
+        b.prev_sibling = links.prev_sibling;
+        b.first_child = b.last_child = kNoBox;
+        b.retained_from = found->second;
+        return true;
+    }
+    bool reuse_layout(BoxTree* tree, BoxId id) override {
+        auto& b = (*tree)[id];
+        if (b.retained_from == kNoBox) return false;
+        const auto& old = old_[b.retained_from];
+        if (b.width != old.width || (b.cross_size_imposed && b.height != old.height)) failed = true;
+        b.height = old.height;
+        return true;
+    }
+    bool failed = false;
+private:
+    const BoxTree& old_;
+    const std::unordered_map<const Element*, BoxId>& eligible_;
+};
+bool modal_geometry_equal(const Box& a, const Box& b) {
+    return same_outer(a,b) && a.x == b.x && a.y == b.y && a.font_size == b.font_size &&
+        a.padding_top == b.padding_top && a.padding_right == b.padding_right &&
+        a.padding_bottom == b.padding_bottom && a.padding_left == b.padding_left &&
+        a.border_top == b.border_top && a.border_right == b.border_right &&
+        a.border_bottom == b.border_bottom && a.border_left == b.border_left &&
+        a.position == b.position && a.display == b.display;
+}
+}
+
+bool IncrementalLayout::update_modal(BoxTree* tree, BoxId root, const Document& document,
+        const Element& modal, StyleProvider* styles, const LayoutContext& ctx,
+        const FontMetrics* metrics,
+        const std::vector<std::pair<const ComputedStyle*, Invalidation>>& changes) {
+    ModalSample sample;
+    if (!tree->valid(root) || global_dependencies_) return false;
+    const auto* modal_style = styles->style_of(modal);
+    if (!modal_style) return false;
+    const auto position = modal_style->get("position");
+    if (position != "absolute" && position != "fixed") return false;
+    const auto under_modal = [&](const Node* node) {
+        for (; node; node = node->parent()) if (node == &modal) return true;
+        return false;
+    };
+    // Counter/quote state crosses build boundaries even when styles are equal.
+    // Unsupported dependencies retain the ordinary full construction path.
+    bool safe = true;
+    const auto inspect = [&](const auto& self, const Node& node) -> void {
+        if (node.is_element()) {
+            const auto& element = static_cast<const Element&>(node);
+            const auto* style = styles->style_of(element);
+            if (style) {
+                for (const char* key : {"counter-reset", "counter-increment", "counter-set", "anchor-name"}) {
+                    auto value = style->get(key);
+                    if (!value.empty() && value != "none") safe = false;
+                }
+                if (style->get("float") != "none" || style->get("position") == "sticky") safe = false;
+                for (const auto& change : changes)
+                    if (change.first == style && change.second >= Invalidation::Layout && !under_modal(&node)) safe = false;
+            }
+            for (const char* pseudo : {"before", "after", "marker", "backdrop"}) {
+                const auto* ps = styles->pseudo_style_of(element, pseudo);
+                if (!ps) continue;
+                if (std::string_view(pseudo) != "backdrop") safe = false;
+                for (const auto& change : changes)
+                    if (change.first == ps && change.second >= Invalidation::Layout && !under_modal(&node)) safe = false;
+                if (&element == &modal && std::string_view(pseudo) == "backdrop" &&
+                    ps->get("position") != "absolute" && ps->get("position") != "fixed") safe = false;
+            }
+        }
+        for (const auto& child : node.children()) self(self, *child);
+    };
+    inspect(inspect, document);
+    sample.lap(0);
+    if (!safe) return false;
+    ++input_serial_;
+    for (const auto& change : changes) {
+        const auto found = by_style_.find(change.first);
+        if (found == by_style_.end() || !tree->valid(found->second)) continue;
+        invalidate_subtree(*tree, found->second);
+        for (BoxId p = (*tree)[found->second].parent; p != kNoBox; p = (*tree)[p].parent)
+            input_versions_[p] = input_serial_;
+    }
+    std::unordered_map<const Element*, BoxId> eligible;
+    for (const auto& entry : by_element_) {
+        const BoxId id = entry.second;
+        if (!tree->valid(id) || input_versions_[id] == input_serial_ || under_modal(entry.first)) continue;
+        const Box& b = (*tree)[id];
+        if (b.position != PositionType::Absolute && b.position != PositionType::Fixed) continue;
+        // Only ordinary ancestor chains: no flex/grid static-position exports,
+        // inline splitting, table fixups or multicolumn/counter side effects.
+        bool chain = true;
+        for (BoxId p = b.parent; p != kNoBox; p = (*tree)[p].parent)
+            if (!ordinary((*tree)[p]) || ((*tree)[p].element && under_modal((*tree)[p].element))) chain = false;
+        for (const Node* n = &modal; n; n = n->parent()) if (n == entry.first) chain = false;
+        if (chain) eligible.emplace(entry.first,id);
+    }
+    if (eligible.empty()) return false;
+    sample.lap(1);
+    BoxTree scratch;
+    ModalProbe reuse(*tree, eligible);
+    BoxBuilder builder(&scratch, styles, &reuse);
+    BoxId fresh = builder.build_document(document);
+    sample.lap(2);
+    BlockLayout block(&scratch, ctx, metrics, &reuse);
+    block.layout_root(fresh, ctx.viewport_width_px, ctx.viewport_height_px);
+    sample.lap(3);
+    run_positioning(&scratch, fresh, ctx, &block);
+    compute_visual_overflow(&scratch, fresh);
+    sample.lap(4);
+    if (reuse.failed) return false;
+    std::vector<BoxId> keep;
+    for (int id = 0; id < scratch.size(); ++id) {
+        if (scratch[id].retained_from == kNoBox) continue;
+        BoxId a = id, b = scratch[id].retained_from;
+        while (a != kNoBox && b != kNoBox) {
+            if (scratch[a].element != (*tree)[b].element || !modal_geometry_equal(scratch[a], (*tree)[b])) return false;
+            a = scratch[a].parent; b = (*tree)[b].parent;
+        }
+        if (a != b) return false;
+        keep.push_back(scratch[id].retained_from);
+    }
+    if (keep.empty()) return false;
+    sample.lap(5);
+    // The retained roots passed both input-version and ancestor-geometry
+    // checks. Preserve their index entries as well as their boxes, exactly as
+    // for an ordinary incremental replacement. Remove candidates belonging to
+    // discarded boxes before their IDs can be recycled by the splice.
+    preserve_ = &keep;
+    unindex_subtree(*tree, root);
+    const auto retained_box = [&](BoxId id) {
+        for (; id != kNoBox; id = (*tree)[id].parent)
+            if (std::find(keep.begin(), keep.end(), id) != keep.end()) return true;
+        return false;
+    };
+    paint_roots_.erase(std::remove_if(paint_roots_.begin(), paint_roots_.end(), [&](BoxId id) {
+        if (tree->valid(id) && retained_box(id)) return false;
+        paint_root_flags_[id] = false;
+        return true;
+    }), paint_roots_.end());
+    grid_roots_.erase(std::remove_if(grid_roots_.begin(), grid_roots_.end(), [&](BoxId id) {
+        return !tree->valid(id) || !retained_box(id);
+    }), grid_roots_.end());
+    tree->replace_subtree(root, scratch, fresh);
+    sample.lap(6);
+    sizes_.resize(tree->size());
+    local_.resize(tree->size());
+    contributions_.resize(tree->size());
+    height_independent_.resize(tree->size());
+    paint_root_flags_.resize(tree->size(), false);
+    input_versions_.resize(tree->size(), input_serial_);
+    grid_versions_.resize(tree->size());
+    index_subtree(*tree, root, ctx);
+    preserve_ = nullptr;
+    sample.lap(7);
+    retained_ = std::move(keep);
+    replaced_ = {root};
+    retained_grids_ = 0;
+    sample.accepted = true;
     return true;
 }
 } // namespace weva

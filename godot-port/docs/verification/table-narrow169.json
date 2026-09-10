@@ -1,0 +1,1204 @@
+{
+  "scope": "Narrow collapsed table width reproduction",
+  "browser": "Chrome/152.0.7977.83",
+  "installed": false,
+  "total_cases": 24,
+  "passing": 21,
+  "failing": 3,
+  "results": [
+    {
+      "case": {
+        "name": "content-box-0-0-10",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:10px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:0px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 14,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 10,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 10,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 5,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 7,
+            "y": 2,
+            "width": 5,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-0-0-60",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:60px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:0px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 64,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 60,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 60,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 30,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 32,
+            "y": 2,
+            "width": 30,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-0-0-200",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:0px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 204,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 200,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 200,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 100,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 102,
+            "y": 2,
+            "width": 100,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-0-8-10",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:10px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:0px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 18,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 10,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 10,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 5,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 9,
+            "y": 4,
+            "width": 5,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-0-8-60",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:60px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:0px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 68,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 60,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 60,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 30,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 34,
+            "y": 4,
+            "width": 30,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-0-8-200",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:0px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 208,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 200,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 200,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 100,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 104,
+            "y": 4,
+            "width": 100,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-20-0-10",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:10px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:20px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 14,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 10,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 10,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 5,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 7,
+            "y": 2,
+            "width": 5,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-20-0-60",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:60px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:20px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 64,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 60,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 60,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 30,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 32,
+            "y": 2,
+            "width": 30,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-20-0-200",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:20px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 204,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 200,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 200,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 100,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 102,
+            "y": 2,
+            "width": 100,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-20-8-10",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:10px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:20px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 18,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 10,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 10,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 5,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 9,
+            "y": 4,
+            "width": 5,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-20-8-60",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:60px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:20px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 68,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 60,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 60,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 30,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 34,
+            "y": 4,
+            "width": 30,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "content-box-20-8-200",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;box-sizing:content-box;padding:20px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 208,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 200,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 200,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 100,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 104,
+            "y": 4,
+            "width": 100,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-0-0-10",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:10px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:0px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 6,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 6,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 3,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 5,
+            "y": 2,
+            "width": 3,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-0-0-60",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:60px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:0px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 60,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 56,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 56,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 28,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 30,
+            "y": 2,
+            "width": 28,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-0-0-200",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:0px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 196,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 196,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 98,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 100,
+            "y": 2,
+            "width": 98,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-0-8-10",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:10px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:0px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 2,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 2,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 1,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 5,
+            "y": 4,
+            "width": 1,
+            "height": 28
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "width",
+          "chrome": 10,
+          "engine": 16
+        },
+        {
+          "id": "g",
+          "key": "width",
+          "chrome": 2,
+          "engine": 8
+        },
+        {
+          "id": "r",
+          "key": "width",
+          "chrome": 2,
+          "engine": 8
+        },
+        {
+          "id": "a",
+          "key": "width",
+          "chrome": 1,
+          "engine": 4
+        },
+        {
+          "id": "b",
+          "key": "x",
+          "chrome": 5,
+          "engine": 8
+        },
+        {
+          "id": "b",
+          "key": "width",
+          "chrome": 1,
+          "engine": 4
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "border-box-0-8-60",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:60px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:0px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 60,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 52,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 52,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 26,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 30,
+            "y": 4,
+            "width": 26,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-0-8-200",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:0px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 100,
+            "y": 4,
+            "width": 96,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-20-0-10",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:10px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:20px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 6,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 6,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 3,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 5,
+            "y": 2,
+            "width": 3,
+            "height": 24
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "width",
+          "chrome": 10,
+          "engine": 40
+        },
+        {
+          "id": "g",
+          "key": "width",
+          "chrome": 6,
+          "engine": 36
+        },
+        {
+          "id": "r",
+          "key": "width",
+          "chrome": 6,
+          "engine": 36
+        },
+        {
+          "id": "a",
+          "key": "width",
+          "chrome": 3,
+          "engine": 18
+        },
+        {
+          "id": "b",
+          "key": "x",
+          "chrome": 5,
+          "engine": 20
+        },
+        {
+          "id": "b",
+          "key": "width",
+          "chrome": 3,
+          "engine": 18
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "border-box-20-0-60",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:60px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:20px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 60,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 56,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 56,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 28,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 30,
+            "y": 2,
+            "width": 28,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-20-0-200",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:20px;border:0px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 28
+          },
+          {
+            "id": "g",
+            "x": 2,
+            "y": 2,
+            "width": 196,
+            "height": 24
+          },
+          {
+            "id": "r",
+            "x": 2,
+            "y": 2,
+            "width": 196,
+            "height": 24
+          },
+          {
+            "id": "a",
+            "x": 2,
+            "y": 2,
+            "width": 98,
+            "height": 24
+          },
+          {
+            "id": "b",
+            "x": 100,
+            "y": 2,
+            "width": 98,
+            "height": 24
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-20-8-10",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:10px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:20px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 2,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 2,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 1,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 5,
+            "y": 4,
+            "width": 1,
+            "height": 28
+          }
+        ]
+      },
+      "diff": [
+        {
+          "id": "t",
+          "key": "width",
+          "chrome": 10,
+          "engine": 56
+        },
+        {
+          "id": "g",
+          "key": "width",
+          "chrome": 2,
+          "engine": 48
+        },
+        {
+          "id": "r",
+          "key": "width",
+          "chrome": 2,
+          "engine": 48
+        },
+        {
+          "id": "a",
+          "key": "width",
+          "chrome": 1,
+          "engine": 24
+        },
+        {
+          "id": "b",
+          "key": "x",
+          "chrome": 5,
+          "engine": 28
+        },
+        {
+          "id": "b",
+          "key": "width",
+          "chrome": 1,
+          "engine": 24
+        }
+      ]
+    },
+    {
+      "case": {
+        "name": "border-box-20-8-60",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:60px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:20px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 60,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 52,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 52,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 26,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 30,
+            "y": 4,
+            "width": 26,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    },
+    {
+      "case": {
+        "name": "border-box-20-8-200",
+        "html": "<table id=t><tbody id=g><tr id=r><td id=a><div></div></td><td id=b><div></div></td></tr></tbody></table>",
+        "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse;box-sizing:border-box;padding:20px;border:8px solid blue}td{padding:0;border:4px solid red}td>div{height:20px}",
+        "bounds": [
+          {
+            "id": "t",
+            "x": 0,
+            "y": 0,
+            "width": 200,
+            "height": 36
+          },
+          {
+            "id": "g",
+            "x": 4,
+            "y": 4,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "r",
+            "x": 4,
+            "y": 4,
+            "width": 192,
+            "height": 28
+          },
+          {
+            "id": "a",
+            "x": 4,
+            "y": 4,
+            "width": 96,
+            "height": 28
+          },
+          {
+            "id": "b",
+            "x": 100,
+            "y": 4,
+            "width": 96,
+            "height": 28
+          }
+        ]
+      },
+      "diff": []
+    }
+  ],
+  "finding": "Border-box width is prematurely floored to authored padding plus full borders in block sizing, before collapsed table layout discards padding and resolves shared half-borders.",
+  "next_action": "Resolve the collapsed frame before applying width floors, preserving parent-imposed and min/max widths; qualify captions and zero-width cases as well.",
+  "dump_sha256": "d14de3eb9121cc50800980ebf7339ae42aed94f4a37659dcefe6d1aae9771683"
+}

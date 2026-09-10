@@ -1,4 +1,6 @@
+#include <cstdio>
 #include "weva/dom.h"
+#include "weva/form_state.h"
 #include "weva/selector.h"
 
 #include <algorithm>
@@ -6,10 +8,9 @@
 // Ports Runtime/Css/Selectors/SelectorMatcher.cs.
 //
 // Deferred, and reported as non-matching rather than guessed: the form-state
-// pseudo-classes (:valid, :invalid, :in-range, :out-of-range, :required,
-// :optional, :read-only, :read-write, :default, :user-valid, :user-invalid)
-// and :popover-open / :modal. All of them need the Forms layer, which is not
-// ported yet. Returning false is the honest answer; returning true would
+// pseudo-classes (:valid, :invalid,
+// :user-valid, :user-invalid). These still need
+// further Forms support. Returning false is the honest answer; returning true would
 // silently apply styles that should not apply.
 
 namespace weva {
@@ -302,26 +303,39 @@ bool match_pseudo(const PseudoClassSelector& pc, const Element& e,
         case PseudoClassKind::FocusVisible:     return bit(ElementState::FocusVisible);
         case PseudoClassKind::FocusWithin:      return bit(ElementState::FocusWithin);
         case PseudoClassKind::Active:           return bit(ElementState::Active);
-        case PseudoClassKind::Disabled:         return bit(ElementState::Disabled);
-        case PseudoClassKind::Enabled:          return !bit(ElementState::Disabled);
+        case PseudoClassKind::Disabled:         return form_supports_disabled(e) && bit(ElementState::Disabled);
+        case PseudoClassKind::Enabled:          return form_supports_disabled(e) && !bit(ElementState::Disabled);
         case PseudoClassKind::Checked:          return bit(ElementState::Checked);
         case PseudoClassKind::PlaceholderShown: return bit(ElementState::PlaceholderShown);
         case PseudoClassKind::Autofill:         return bit(ElementState::Autofill);
 
-        // Need the Forms layer; false is the honest answer until it lands.
-        case PseudoClassKind::Required:
+        case PseudoClassKind::Required: return form_is_required(e);
         case PseudoClassKind::Optional:
-        case PseudoClassKind::ReadOnly:
-        case PseudoClassKind::ReadWrite:
+            return (e.tag_name() == "input" || e.tag_name() == "select" || e.tag_name() == "textarea" ||
+                    e.tag_name() == "button") &&
+                   !form_is_required(e);
+        case PseudoClassKind::ReadOnly: return !form_is_read_write(e);
+        case PseudoClassKind::ReadWrite: return form_is_read_write(e);
+        case PseudoClassKind::Default: return form_is_default(e);
+        case PseudoClassKind::Modal: return bit(ElementState::Modal);
+        case PseudoClassKind::PopoverOpen: return bit(ElementState::PopoverOpen);
+        case PseudoClassKind::InRange: return form_range_selector_state(e) == 1;
+        case PseudoClassKind::OutOfRange: return form_range_selector_state(e) == 2;
         case PseudoClassKind::Valid:
-        case PseudoClassKind::Invalid:
-        case PseudoClassKind::InRange:
-        case PseudoClassKind::OutOfRange:
+        case PseudoClassKind::Invalid: {
+            const int validity = form_validity_selector_state(e);
+            if (validity < 0) {
+                static thread_local bool warned = false;
+                if (!warned) {
+                    std::fprintf(stderr, "weva: :valid/:invalid cannot resolve pattern constraints; neither selector matches the unresolved subject.\n");
+                    warned = true;
+                }
+            }
+            return validity == (pc.kind == PseudoClassKind::Valid ? 1 : 2);
+        }
+        // User validity additionally needs the browser's interaction policy.
         case PseudoClassKind::UserValid:
         case PseudoClassKind::UserInvalid:
-        case PseudoClassKind::Default:
-        case PseudoClassKind::PopoverOpen:
-        case PseudoClassKind::Modal:
             return false;
     }
     return false;

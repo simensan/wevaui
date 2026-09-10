@@ -497,6 +497,16 @@ void test_paint_color_resolution() {
 
 void test_paint_decorations() {
     {
+        Fixture f;
+        CHECK(f.css("input{width:200px;height:40px}"));
+        CHECK(f.layout("<input id=slider type=range>"));
+        CHECK(f.decorations("slider").vertices.empty());
+        Fixture authored;
+        CHECK(authored.css("input{width:200px;height:40px;background:red;border:2px solid blue}"));
+        CHECK(authored.layout("<input id=slider type=range>"));
+        CHECK(!authored.decorations("slider").vertices.empty());
+    }
+    {
         // Background and border become geometry in one mesh, and the background
         // extends to the BORDER box — so a semi-transparent border shows it
         // through.
@@ -855,4 +865,86 @@ void test_clip_triangles() {
     Mesh outside;
     clip_triangles(quad.vertices, quad.indices, Rect(200, 200, 10, 10), &outside);
     CHECK(outside.empty());
+}
+
+// Family measurement, glyph preparation and drawing must use the same face.
+void test_paint_registered_font_families() {
+    struct FamilyFont : StubFont {
+        std::map<std::string, uint64_t> shaped;
+        void shape(FaceHandle face, std::string_view text, double px,
+                   std::vector<ShapedGlyph>* out) override {
+            shaped[std::string(text)] = face.id;
+            StubFont::shape(builtin(), text, px, out);
+            if (face.id == 2 || face.id == 12)
+                for (auto& glyph : *out) glyph.x_advance *= 2;
+        }
+        bool face_metrics(FaceHandle, double px, FaceMetrics* out) override {
+            return StubFont::face_metrics(builtin(), px, out);
+        }
+        bool rasterize(FaceHandle, uint32_t glyph, double px, RenderMode mode, Bitmap* out) override {
+            return StubFont::rasterize(builtin(), glyph, px, mode, out);
+        }
+        FaceHandle variant(FaceHandle face, int weight, bool italic) override {
+            return {face.id + ((weight >= 600 || italic) ? 10u : 0u)};
+        }
+    } font;
+    FontInterfaceMetrics alternate(&font, {2});
+    StubFont other_backend;
+    CHECK(alternate.rendering_face(&other_backend).id == 0);
+    Fixture f;
+    f.ctx.register_font("Camp", &alternate);
+    f.ctx.register_font("Synthetic", &f.metrics);
+    CHECK(f.css("body { margin:0; font-size:16px } .camp { font-family:'Missing', 'Camp' }"
+                "#bold { font-weight:bold } #synthetic { font-family:Synthetic }"));
+    CHECK(f.layout("<body><div>Base</div><div class=camp>Wide</div>"
+                   "<div class=camp id=bold>Bold</div><input class=camp value=Input>"
+                   "<select class=camp><option>Option</option><option>Popup</option></select>"
+                   "<div id=synthetic>Fallback</div></body>"));
+    bool measured_wide = false;
+    for (int i = 0; i < f.tree.size(); ++i) {
+        if (f.tree[i].text == "Wide" && f.tree[i].parent != kNoBox &&
+            f.tree[f.tree[i].parent].kind == BoxKind::Line) {
+            CHECK(near(f.tree[i].width, 64));
+            measured_wide = true;
+        }
+    }
+    CHECK(measured_wide);
+    font.shaped.clear();
+    SoftwareRenderer backend(1000, 600);
+    GlyphAtlas atlas;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint.font = &font;
+    paint.atlas = &atlas;
+    paint.face = StubFont::builtin();
+    paint.styles = &f.styles;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    CHECK(font.shaped["Base"] == 1);
+    CHECK(font.shaped["Wide"] == 2);
+    CHECK(font.shaped["Bold"] == 12);
+    CHECK(font.shaped["Input"] == 2);
+    CHECK(font.shaped["Option"] == 2);
+    CHECK(font.shaped["Fallback"] == 1);
+    font.shaped.clear();
+    paint.popup.element = f.tree[f.find("select")].element;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    CHECK(font.shaped["Popup"] == 2);
+}
+
+void test_srgb_byte_lookup_exact() {
+    const auto reference = [](uint8_t v) {
+        if (v == 0) return 0.0f;
+        if (v == 255) return 1.0f;
+        const float f = v / 255.0f;
+        if (f <= 0.04045f) return f / 12.92f;
+        return static_cast<float>(std::pow(static_cast<double>((f + 0.055f) / 1.055f),
+                                          static_cast<double>(2.4f)));
+    };
+    for (int i=0;i<256;++i) {
+        const auto r=static_cast<uint8_t>(i), g=static_cast<uint8_t>(i*37), b=static_cast<uint8_t>(i*79);
+        CHECK(srgb_byte_to_linear(r) == reference(r));
+        const auto color=LinearColor::from_srgb(r,g,b,-0.25f);
+        CHECK(color.r == reference(r)); CHECK(color.g == reference(g)); CHECK(color.b == reference(b));
+        CHECK(color.a == -0.25f);
+    }
 }

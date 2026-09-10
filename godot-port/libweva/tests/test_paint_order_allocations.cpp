@@ -3,12 +3,15 @@
 // runner's bookkeeping cannot hide an accidental per-container allocation.
 #include "weva/positioning.h"
 #include "weva/hit_test.h"
+#include "weva/dom.h"
+#include "weva_c.h"
 #include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <new>
 #include <numeric>
+#include <string>
 
 namespace {
 bool counting = false;
@@ -139,6 +142,61 @@ int main() {
             const ChildPaintOrder empty(tree, invalid);
             check(empty.size() == 0 && !(empty.begin() != empty.end()) && !(empty.rbegin() != empty.rend()), "invalid parent is empty");
         }
+    }
+    {
+        BoxTree tree;
+        ComputedStyle style;
+        Element root_element("div");
+        style.set("overflow-x","hidden"); style.set("overflow-y","hidden");
+        style.set("border-top-left-radius","30px");
+        const BoxId root = tree.create(BoxKind::Block,&root_element,&style);
+        tree[root].width = tree[root].height = 100;
+        tree[root].position = PositionType::Relative;
+        const BoxId child = tree.create(BoxKind::Block);
+        tree[child].width = tree[child].height = 40;
+        tree[child].position = PositionType::Absolute;
+        tree.append_child(root,child);
+        check(box_at_point(tree,root,1,1) == kNoBox,"rounded corner rejects captured absolute child");
+        check(measure([&] {
+            for (int i=0;i<100;++i) check(box_at_point(tree,root,1,1) == kNoBox,"rounded corner remains outside");
+        }) == 0,"rejected rounded-clip hit allocates no clip history");
+    }
+    {
+        // A single overlay must not disable replay for the other 39 cells.
+        // The initial whole-table fallback took 119 allocations here; keep a
+        // generous bound around selective replay and require idle to stay free.
+        std::string html = "<table>";
+        for (int i = 0; i < 20; ++i) html += i == 0
+            ? "<tr><td><div id=target></div></td><td><div></div></td></tr>"
+            : "<tr><td><div></div></td><td><div></div></td></tr>";
+        html += "</table><div id=after></div>";
+        const std::string css = "html,body{margin:0}table{width:400px;table-layout:fixed;border-collapse:collapse}"
+            "td{padding:0;border:4px solid red}td>div{height:20px;background:blue}"
+            "#target{position:relative;width:240px}#after{height:20px;background:green}";
+        weva_config cfg{};
+        cfg.viewport_width = 1280; cfg.viewport_height = 720; cfg.use_user_agent_stylesheet = 1;
+        const auto doc = weva_document_create(&cfg);
+        check(weva_document_load_html(doc, html.data(), html.size()) == WEVA_OK, "table paint fixture loads");
+        check(weva_document_set_css(doc, css.data(), css.size()) == WEVA_OK, "table paint fixture styles");
+        const auto target = weva_document_query(doc, "#target");
+        const auto after = weva_document_query(doc, "#after");
+        for (int i = 0; i < 20; ++i) {
+            weva_element_set_attribute(doc, target, "style", i % 2 ? "background:#123457" : "background:#123456");
+            weva_document_update(doc, 0);
+        }
+        const size_t changed = measure([&] {
+            weva_element_set_attribute(doc, target, "style", "background:#123456");
+            weva_document_update(doc, 0);
+        });
+        check(changed <= 80, "one table overlay retains unaffected cell paint ranges");
+        check(measure([&] { weva_document_update(doc, 0); }) == 0, "positioned table idle allocates nothing");
+        const size_t unrelated = measure([&] {
+            weva_element_set_attribute(doc, after, "style", "background:#123456");
+            weva_document_update(doc, 0);
+        });
+        check(unrelated <= 30, "unrelated update retains complete positioned table range");
+        std::printf("positioned table allocations: changed %zu, unrelated %zu\n", changed, unrelated);
+        weva_document_destroy(doc);
     }
     std::printf("paint order: %d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;

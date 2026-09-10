@@ -1,6 +1,7 @@
 #pragma once
 #include "weva/computed_style.h"
 #include "weva/dom.h"
+#include "weva/table_border.h"
 
 #include <deque>
 #include <string>
@@ -9,6 +10,7 @@
 #include <string_view>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 // Ports Runtime/Layout/Boxes — the box tree that layout writes into and paint
 // reads out of.
@@ -72,6 +74,7 @@ enum class DisplayKind : uint8_t {
 // Unrecognised values compute to `inline`, which is also the initial value —
 // so an author typo degrades the way an omitted declaration would.
 DisplayKind parse_display(std::string_view value);
+bool try_parse_display(std::string_view value, DisplayKind* out);
 const char* display_name(DisplayKind d);
 
 // CSS 2.1 §17.4: table-internal displays are block-level for the purpose of
@@ -129,6 +132,12 @@ struct Box {
     // none — so this is the only empty fragment that gets emitted, and the
     // element's box then lands AFTER the block, where the reference puts it.
     bool is_last_split_fragment = false;
+
+    // Outermost inline ancestor whose box was split around this in-flow block.
+    // Its DOM ancestors through this element own the promoted block fragment
+    // for client bounds. Ordinary overflowing descendants do not contribute.
+    // Non-owning, cleared by Box{} when the pool releases the box.
+    const Element* split_inline_owner = nullptr;
 
     // Border-box geometry, relative to the parent box's content origin.
     double x = 0, y = 0, width = 0, height = 0;
@@ -235,6 +244,11 @@ struct Box {
     double font_size = 0;
     const TextNode* source_node = nullptr;
     const Element* source_control = nullptr; // textarea's live value buffer
+    // Byte-preserving source position, independent of the display buffer's
+    // address (e.g. text-transform). SIZE_MAX means no identity mapping.
+    size_t control_source_offset = size_t(-1);
+    // A preserved source tab is a one-byte placeholder with an exact advance.
+    bool preserved_tab = false;
     // Inter-character justification, added on top of the CSS letter-spacing.
     double justify_letter_spacing = 0;
 
@@ -257,6 +271,27 @@ struct Box {
         return height - padding_top - padding_bottom - border_top - border_bottom;
     }
 };
+
+// Identity-mapped control text may live in a transformed arena buffer. Other
+// text still uses its DOM-backed view. Reject expanded/unmapped display text.
+inline size_t text_source_length(const Box& box) {
+    return box.text.size();
+}
+inline size_t source_to_display(const Box& box, size_t offset) {
+    return std::min(offset, box.text.size());
+}
+inline std::optional<size_t> text_source_offset(const Box& box, std::string_view source) {
+    if (box.source_control && box.control_source_offset != size_t(-1)) {
+        const size_t at = box.control_source_offset;
+        if (at <= source.size() && text_source_length(box) <= source.size() - at) return at;
+        return std::nullopt;
+    }
+    const uintptr_t base = reinterpret_cast<uintptr_t>(source.data());
+    const uintptr_t run = reinterpret_cast<uintptr_t>(box.text.data());
+    if (run >= base && run - base <= source.size() && box.text.size() <= source.size() - (run - base))
+        return size_t(run - base);
+    return std::nullopt;
+}
 
 // Owns every box for one layout pass. `reset()` returns all storage to the free
 // pool without releasing it, so a steady-state frame allocates nothing.
@@ -301,6 +336,7 @@ public:
         owned_text_.clear();
         imported_text_.clear();
         free_boxes_.clear();
+        table_borders_.clear();
     }
     // Storage for text the tree produced itself — a `text-transform`ed run
     // — that no DOM node holds. Lives as long as the tree.
@@ -343,8 +379,18 @@ public:
     }
     int child_count(BoxId parent) const;
     BoxId child_at(BoxId parent, int index) const;
+    void set_table_borders(BoxId table, std::vector<TableBorderSegment> segments) {
+        if (segments.empty()) table_borders_.erase(table);
+        else table_borders_[table] = std::move(segments);
+    }
+    const std::vector<TableBorderSegment>* table_borders(BoxId table) const {
+        if (table_borders_.empty()) return nullptr;
+        const auto found = table_borders_.find(table);
+        return found == table_borders_.end() ? nullptr : &found->second;
+    }
 
 private:
+    std::map<BoxId, std::vector<TableBorderSegment>> table_borders_;
     std::vector<Box> boxes_;
     std::deque<std::string> owned_text_;
     std::map<BoxId, std::string> imported_text_;

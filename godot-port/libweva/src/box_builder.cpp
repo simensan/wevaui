@@ -3,6 +3,7 @@
 #include "weva/cascade.h"
 #include "weva/css_value.h"
 #include "weva/form_state.h"
+#include "weva/inline_layout.h"
 
 #include <cctype>
 #include <cstdlib>
@@ -187,6 +188,8 @@ BoxId BoxBuilder::new_block_box_for(DisplayKind display, const Element* e,
 }
 
 BoxId BoxBuilder::build(const Element& root, const ComputedStyle* root_style) {
+    document_root_ = kNoBox;
+    emitted_top_layers_.clear();
     const DisplayKind display = parse_display(get(root_style, kId_display));
     if (display == DisplayKind::None) return kNoBox;
 
@@ -199,11 +202,30 @@ BoxId BoxBuilder::build_document(const Document& doc) {
     // Neither element nor style: this stands in for the initial containing
     // block, not for `<html>`.
     const BoxId root = tree_->create(BoxKind::Block, nullptr, nullptr);
+    document_root_ = root;
+    emitted_top_layers_.clear();
     for (const Ref<Node>& child : doc.children()) {
         append_node_as_block_child(*child, nullptr, root);
     }
+    // A reused ordinary subtree does not own the boxes promoted out of it.
+    // Emit those hosts independently, without materializing the cached subtree.
+    if (reuse_) emit_missing_top_layers(doc);
     finalize_block_children(root);
     return root;
+}
+
+void BoxBuilder::emit_missing_top_layers(const Node& node) {
+    if (node.is_element()) {
+        const auto& e = static_cast<const Element&>(node);
+        const auto* style = styles_ ? styles_->style_of(e) : nullptr;
+        if (parse_display(get(style, kId_display)) == DisplayKind::None) return;
+        if (top_layer_host(e) && std::find(emitted_top_layers_.begin(), emitted_top_layers_.end(), &e) == emitted_top_layers_.end())
+            append_node_as_block_child(node, nullptr, document_root_);
+        // Cached descendants obey the same skipped-content boundary as a
+        // fresh build. Top-layer promotion does not escape this boundary.
+        if (equals_ignoring_case(get(style, "content-visibility"), "hidden")) return;
+    }
+    for (const auto& child : node.children()) emit_missing_top_layers(*child);
 }
 
 void BoxBuilder::append_node_as_block_child(const Node& node, const ComputedStyle* parent_style,
@@ -230,6 +252,15 @@ void BoxBuilder::append_node_as_block_child(const Node& node, const ComputedStyl
     //
     // The block path only. Both shapes are `position: fixed` by the UA sheet,
     // so a top-layer host arrives here whatever its author `display` said.
+    const bool promoted = document_root_ != kNoBox && top_layer_host(e);
+    if (exclude_promoted_descendants_ && top_layer_host(e)) return;
+    if (promoted) {
+        if (std::find(emitted_top_layers_.begin(), emitted_top_layers_.end(), &e) != emitted_top_layers_.end()) return;
+        emitted_top_layers_.push_back(&e);
+        parent = document_root_;
+        if (disp == DisplayKind::Contents || disp == DisplayKind::Inline) disp = DisplayKind::Block;
+        else disp = blockified(disp);
+    }
     maybe_inject_backdrop(e, parent);
 
     const bool blockify = blockifies_children((*tree_)[parent].display);
@@ -351,14 +382,16 @@ std::string marker_text(std::string_view type, int ordinal) {
 
 void BoxBuilder::build_children(const Element& element, const ComputedStyle* style,
                                 BoxId parent) {
+    if (style && equals_ignoring_case(style->get("content-visibility"), "hidden")) return;
     if (reuse_ && reuse_->reuse_children(tree_, parent)) return;
     if (element.tag_name() == "select" && !select_is_listbox(element)) return;
     if (element.tag_name() == "textarea") {
-        const auto value = element.form_value();
+        const auto value = element.form_edit_value();
         if (!value.empty()) {
             const BoxId text = tree_->create(BoxKind::Text, &element, style);
             (*tree_)[text].text = transformed_text(value, style);
             (*tree_)[text].source_control = &element;
+            if ((*tree_)[text].text.size() == value.size()) (*tree_)[text].control_source_offset = 0;
             tree_->append_child(parent, text);
         }
         finalize_block_children(parent);
@@ -524,11 +557,12 @@ void BoxBuilder::build_inline_children(const Element& element, const ComputedSty
         return;
     }
     if (element.tag_name() == "textarea") {
-        const auto value = element.form_value();
+        const auto value = element.form_edit_value();
         if (!value.empty()) {
             const BoxId text = tree_->create(BoxKind::Text, &element, style);
             (*tree_)[text].text = transformed_text(value, style);
             (*tree_)[text].source_control = &element;
+            if ((*tree_)[text].text.size() == value.size()) (*tree_)[text].control_source_offset = 0;
             tree_->append_child(parent, text);
         }
         return;
@@ -546,12 +580,10 @@ void BoxBuilder::build_inline_children(const Element& element, const ComputedSty
 
 // The elements the CSS top layer promotes, and the only two shapes v1
 // recognises: a <dialog> opened MODALLY, and an element with a `popover`
-// attribute that is open. Attribute-driven rather than a stored flag, so
-// opening or closing one takes effect on the next box build with no other
-// wiring -- the same shape the reference's TopLayer uses.
+// attribute that is open. The live state is versioned by DOM mutation events;
+// authored data attributes cannot promote an element into the top layer.
 bool top_layer_host(const Element& e) {
-    if (e.tag_name() == "dialog" && e.has_attribute("data-modal")) return true;
-    return e.has_attribute("popover") && e.has_attribute("data-popover-open");
+    return e.is_modal() || e.is_popover_open();
 }
 
 // The synthetic box behind a top-layer host. It has no element -- it is not
@@ -564,19 +596,15 @@ bool top_layer_host(const Element& e) {
 // landed on <body>, so a popover's trigger button could never be clicked a
 // second time and light-dismiss fired on every click instead.
 //
-// A browser stops clicks reaching the page under a MODAL dialog by making the
-// page inert, which is a separate mechanism neither engine models; blocking
-// them with the backdrop instead would break popovers, which are not modal.
+// Modal input isolation is enforced by the document's input router. Popovers
+// remain nonmodal, so their backdrops must not block ordinary page interaction.
 //
 // The box carries the
 // cascaded `::backdrop` style, which the UA sheet gives a half-transparent
 // black and `position: fixed`.
 //
-// v1 simplification, and the same one the reference makes and documents: the
-// real top-layer model paints these above ALL content whatever the stacking
-// contexts say, while here `position: fixed` promotes them within their own.
-// The visual result is the same unless an ancestor establishes a containing
-// block with a transform, a filter or will-change.
+// Document construction promotes the host and backdrop to root siblings.
+// ChildPaintOrder then orders both by live opening sequence above author z-index.
 // The geometry that makes it a backdrop -- `position: fixed` and zero insets,
 // so it fills the viewport -- comes from the UA stylesheet here, while the
 // reference bakes the same properties in AFTER the author cascade. The only
@@ -916,6 +944,12 @@ void BoxBuilder::append_inline_child(const Node& node, const ComputedStyle* pare
     const ComputedStyle* style = styles_ ? styles_->style_of(e) : nullptr;
     DisplayKind disp = parse_display(get(style, kId_display));
     if (disp == DisplayKind::None) return;
+    if (document_root_ != kNoBox && top_layer_host(e)) {
+        append_node_as_block_child(node, parent_style, document_root_);
+        return;
+    }
+    if (exclude_promoted_descendants_ && top_layer_host(e)) return;
+
 
     if (disp == DisplayKind::Contents) {
         for (const Ref<Node>& c : e.children()) append_inline_child(*c, style, parent);
@@ -996,6 +1030,7 @@ bool is_collapsible_whitespace_only(const BoxTree& tree, BoxId id) {
         return !(ws == "pre" || ws == "pre-wrap" || ws == "pre-line" || ws == "break-spaces");
     }
     if (b.kind != BoxKind::Inline && b.kind != BoxKind::AnonymousInline) return false;
+    if (!inline_edges_are_zero(b.style)) return false;
     for (BoxId c : tree.children(id)) {
         if (!is_collapsible_whitespace_only(tree, c)) return false;
     }
@@ -1029,6 +1064,7 @@ void BoxBuilder::split_inline_around_blocks(BoxId inline_box, std::vector<BoxId>
     };
     for (BoxId k : kids) {
         if (is_in_flow_block(*tree_, k)) {
+            (*tree_)[k].split_inline_owner = (*tree_)[inline_box].element;
             out->push_back(piece);
             out->push_back(k);
             piece = new_piece();
@@ -1039,6 +1075,7 @@ void BoxBuilder::split_inline_around_blocks(BoxId inline_box, std::vector<BoxId>
             split_inline_around_blocks(k, &sub);
             for (BoxId s : sub) {
                 if (is_in_flow_block(*tree_, s)) {
+                    (*tree_)[s].split_inline_owner = (*tree_)[inline_box].element;
                     out->push_back(piece);
                     out->push_back(s);
                     piece = new_piece();

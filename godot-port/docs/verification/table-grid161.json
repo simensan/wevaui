@@ -1,0 +1,14 @@
+{
+  "change": "Shared physical table-border segment grid with spanning-cell suppression and half-width queries",
+  "status": "Implemented and tested; layout/paint integration still pending",
+  "main_core_result": "485634 checks, 0 failures",
+  "sanitizer_scope": "209 table checks under ASAN+UBSAN, zero failures; focused run",
+  "sanitizer_log": ".utmp/safe-engine71/table161-sanitizer.log",
+  "source_sha256": "18e952306b411a83dc0aecb79c995c2835e43ea931c878e048326a5b15950c70",
+  "remaining": [
+    "Collect authored borders and normalized tie order from actual table boxes",
+    "Apply half-widths before final cell measurement and use outer table borders",
+    "Paint each resolved shared segment once",
+    "Validate Chrome geometry/pixels and incremental mutations"
+  ]
+}

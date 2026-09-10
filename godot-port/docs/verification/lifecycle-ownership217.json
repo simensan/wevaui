@@ -1,0 +1,90 @@
+{
+  "scope": "Short rendered editor lifecycle ownership diagnostic, not release performance qualification",
+  "native_sha256": "02664d4b022e1c9d1826aea403a17a6dd05ef8ec93a01275e2a8a2c37d49208a",
+  "test_sha256": "557dab63f5f6c906c50d4bbfb745a808f81c1f9919d6724c050ba1cada6764f6",
+  "cycles": 5,
+  "seconds": 2,
+  "renderer": "mobile",
+  "world": "3d",
+  "unicode_names": true,
+  "runs": [
+    {
+      "without_ui": false,
+      "passed": true,
+      "markers": [
+        {
+          "index": 0,
+          "nodes": 491.0,
+          "objects": 2033.0,
+          "phase": "before_recreate",
+          "static_bytes": 159545525,
+          "texture_bytes": 69681152,
+          "time_usec": 1284505
+        },
+        {
+          "index": 0,
+          "nodes": 491.0,
+          "objects": 2033.0,
+          "phase": "after_recreate",
+          "static_bytes": 159546785,
+          "texture_bytes": 69681152,
+          "time_usec": 1969660
+        },
+        {
+          "index": 0,
+          "nodes": 491.0,
+          "objects": 2036.0,
+          "phase": "final_teardown",
+          "static_bytes": 160171365,
+          "texture_bytes": 69681152,
+          "time_usec": 4076938
+        }
+      ],
+      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership217-fixed-ui\\run.log"
+    },
+    {
+      "without_ui": true,
+      "passed": true,
+      "markers": [
+        {
+          "index": 0,
+          "nodes": 491.0,
+          "objects": 2033.0,
+          "phase": "before_recreate",
+          "static_bytes": 159541933,
+          "texture_bytes": 69681152,
+          "time_usec": 1308355
+        },
+        {
+          "index": 0,
+          "nodes": 491.0,
+          "objects": 2033.0,
+          "phase": "after_recreate",
+          "static_bytes": 159543193,
+          "texture_bytes": 69681152,
+          "time_usec": 1982104
+        },
+        {
+          "index": 0,
+          "nodes": 491.0,
+          "objects": 2033.0,
+          "phase": "final_teardown",
+          "static_bytes": 159626593,
+          "texture_bytes": 69681152,
+          "time_usec": 4122760
+        }
+      ],
+      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership217-fixed-without\\run.log"
+    }
+  ],
+  "findings": [
+    "Before settling, final object count is +3 in both diagnostic arms.",
+    "Two additional process frames remove three objects even while the test retains the model.",
+    "Releasing the retained model removes one additional object.",
+    "Fixed test settles all teardown checkpoints and verifies the model weak reference becomes null."
+  ],
+  "limitations": [
+    "Earlier ten-minute release observation is preserved unchanged.",
+    "These short editor runs do not establish long-term release memory bounds."
+  ]
+}

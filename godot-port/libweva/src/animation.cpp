@@ -47,6 +47,16 @@ bool parse_number(std::string_view s, double* out) {
     return true;
 }
 
+bool has_list_separator(std::string_view s, char sep) {
+    int depth = 0;
+    for (char c : s) {
+        if (c == '(') ++depth;
+        else if (c == ')') { if (depth > 0) --depth; }
+        else if (depth == 0 && (sep == ' ' ? (c == ' ' || c == '\t') : c == sep)) return true;
+    }
+    return false;
+}
+
 // Splits on a separator at paren depth 0.
 std::vector<std::string_view> split(std::string_view s, char sep) {
     std::vector<std::string_view> out;
@@ -318,6 +328,9 @@ bool interpolate_css(std::string_view from, std::string_view to, double t, std::
     // what carries `padding: 4px 8px` and a multi-stop shadow. A different
     // length means a different shape, and that is discrete.
     for (const char sep : {',', ' '}) {
+        // Scalar endpoints (including functions with internal separators)
+        // cannot form matching multi-item lists. Avoid four temporary vectors.
+        if (!has_list_separator(from, sep) || !has_list_separator(to, sep)) continue;
         const std::vector<std::string_view> a = split(from, sep);
         const std::vector<std::string_view> b = split(to, sep);
         if (a.size() < 2 || a.size() != b.size()) continue;

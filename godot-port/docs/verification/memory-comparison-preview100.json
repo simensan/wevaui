@@ -1,0 +1,1832 @@
+{
+  "candidate": "Windows preview100",
+  "comparison_valid": true,
+  "scope": "One sequential pair, Vulkan 1920x1080, animated 3D, 36000 identical scene/model ticks, 6000 soak name updates, 20 measured preparation cycles. Both arms warm the same resources; baseline destroys UI before soak.",
+  "limitations": [
+    "Fixed workload count, not equal wall time or randomized repeated trials.",
+    "All process memory includes engine, renderer, allocator and warmed global font resources.",
+    "The retained-UI arm also performs modal toggles and HUD checks absent from the baseline.",
+    "Absolute process memory and differences between arm deltas do not isolate live UI allocations.",
+    "This pair does not prove an indefinite memory bound or explain the earlier 19 MiB increase."
+  ],
+  "arms": {
+    "without-ui": {
+      "verification": {
+        "passed": true,
+        "prepared_pixels_match_cold": true,
+        "executable_sha256": "2e268d1909670a89b0108166d5c2e99c465e3b7bc48ccf464b3b9d10c7f1073d",
+        "library_sha256": "88b9fdfb2407b1b1c8b0b6c7b0a2cd00d1db5e869e38d3a9f52678af46c6080a",
+        "source_sha256": {
+          "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+          "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+          "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+          "game.gd": "d3a70197907c52358ca4b30eeb098a14159b4dd39fe71900aa461be4f363e96b",
+          "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+          "tests\\integration.gd": "d5e0b6a28a882f5f42acacae5768cc04674bfa9d9de902f3e99a1f6475ad1ca2",
+          "tests\\lifecycle.gd": "6ed8a542ea3ec25dc48d19aaa174255e607c9e8e2db47a8694353c47b3c408fd",
+          "tests\\load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+          "tests\\performance.gd": "3bcedfee076af2420a2adfac6028128d19e4de1e29490462fec8b051d93d1ae6",
+          "ui\\camp.css": "240119a4baa0a2db651dc644f83c054ab87f7853446ac2ae2719f0a136f8a517",
+          "ui\\camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+          "addons\\weva\\weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c",
+          "addons\\weva\\example\\example.gd": "9d5963e2f8b0b81aca813a79fd134516e65355f6ea0d66993766915f8fd29eed",
+          "addons\\weva\\example\\example.tscn": "f164c04bc0bb1710a068a9ed234e719a122501b774df0ba95666df1677ae56c9",
+          "addons\\weva\\example\\ui.css": "998d4af10e12099fae89c3a0ae35c986674efcc7f97b25ed8002cf23bff39eb6",
+          "addons\\weva\\example\\ui.html": "1bed57345424f80dc13dc94e82f9ab7f5b9d5bd51448b8931f01de35bd7ba33f"
+        },
+        "process_memory_available": true,
+        "result": {
+          "cycles": 20,
+          "debug_build": false,
+          "engine": {
+            "build": "custom_build",
+            "hash": "unknown",
+            "hex": 263938,
+            "major": 4,
+            "minor": 7,
+            "patch": 2,
+            "status": "stable",
+            "string": "4.7.2-stable (custom_build)",
+            "timestamp": 0
+          },
+          "first_hidden": false,
+          "name_updates": 6080,
+          "passed": true,
+          "renderer": "mobile",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "results": {
+            "first_document_cpu_ms": 107.001,
+            "first_document_through_draw_ms": 109.255,
+            "first_show_cpu_ms": 0.005,
+            "first_show_through_draw_ms": 2.252,
+            "hidden_prepare_cpu_ms": 55.824,
+            "prepared_first_show_cpu_ms": 0.02,
+            "prepared_first_show_through_draw_ms": 4.566,
+            "recreate_cpu": {
+              "max_ms": 78.399,
+              "mean_ms": 62.19045,
+              "median_ms": 61.246,
+              "p95_ms": 75.62,
+              "samples": 20
+            },
+            "reuse_through_draw": {
+              "max_ms": 20.871,
+              "mean_ms": 12.33125,
+              "median_ms": 13.996,
+              "p95_ms": 19.708,
+              "samples": 20
+            },
+            "reuse_with_hidden_data_update_cpu": {
+              "max_ms": 0.864,
+              "mean_ms": 0.5247,
+              "median_ms": 0.486,
+              "p95_ms": 0.839,
+              "samples": 20
+            },
+            "scene_resource_load_ms": 31.849,
+            "soak_frames": {
+              "max_ms": 42.909,
+              "mean_ms": 8.22190899999996,
+              "median_ms": 7.0,
+              "p95_ms": 19.23,
+              "quantile_limit_ms": 100.0,
+              "quantile_overflow_samples": 0,
+              "quantile_resolution_ms": 0.01,
+              "samples": 36000
+            },
+            "soak_seconds": 296.121156
+          },
+          "soak_frame_target": 36000,
+          "soak_without_ui": true,
+          "unicode_names": true,
+          "world": "3d"
+        }
+      },
+      "raw_evidence": ".utmp\\safe-engine71\\memory100-without-ui",
+      "evidence_sha256": {
+        "verification.json": "4914efa78b53ea3192c85d6171e00a433a0d6002450e0f99e6d0dcaa434ad7a7",
+        "process-memory.json": "b718ad299154a9c95e5c379a684a50c876868feab1587f7b8bd8e696c0cff66b",
+        "run.log": "943ac5c6b399a08acf4e649b203560092552c75a3d0fb84e0320202e3b8c9b71"
+      },
+      "private_bytes_first": 863162368,
+      "private_bytes_last": 854364160,
+      "private_bytes_min": 854233088,
+      "private_bytes_max": 863162368,
+      "private_bytes_delta": -8798208,
+      "nodes": [
+        491.0
+      ],
+      "objects": [
+        1931.0,
+        1934.0
+      ],
+      "markers": [
+        {
+          "index": 0,
+          "nodes": 491.0,
+          "objects": 1934.0,
+          "phase": "soak_start",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 4872572,
+          "process_memory": {
+            "resident_bytes": 628686848,
+            "private_bytes": 863162368
+          }
+        },
+        {
+          "index": 0,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 4885434,
+          "process_memory": {
+            "resident_bytes": 628723712,
+            "private_bytes": 863162368
+          }
+        },
+        {
+          "index": 600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 9692622,
+          "process_memory": {
+            "resident_bytes": 620212224,
+            "private_bytes": 854564864
+          }
+        },
+        {
+          "index": 1200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 15226323,
+          "process_memory": {
+            "resident_bytes": 620294144,
+            "private_bytes": 854564864
+          }
+        },
+        {
+          "index": 1800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 20238925,
+          "process_memory": {
+            "resident_bytes": 620367872,
+            "private_bytes": 854564864
+          }
+        },
+        {
+          "index": 2400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 24992185,
+          "process_memory": {
+            "resident_bytes": 620441600,
+            "private_bytes": 854564864
+          }
+        },
+        {
+          "index": 3000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 30250536,
+          "process_memory": {
+            "resident_bytes": 620507136,
+            "private_bytes": 854519808
+          }
+        },
+        {
+          "index": 3600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 35307082,
+          "process_memory": {
+            "resident_bytes": 620572672,
+            "private_bytes": 854487040
+          }
+        },
+        {
+          "index": 4200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 40193947,
+          "process_memory": {
+            "resident_bytes": 620597248,
+            "private_bytes": 854487040
+          }
+        },
+        {
+          "index": 4800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 45493561,
+          "process_memory": {
+            "resident_bytes": 620597248,
+            "private_bytes": 854487040
+          }
+        },
+        {
+          "index": 5400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 51060348,
+          "process_memory": {
+            "resident_bytes": 620597248,
+            "private_bytes": 854487040
+          }
+        },
+        {
+          "index": 6000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 56271630,
+          "process_memory": {
+            "resident_bytes": 620597248,
+            "private_bytes": 854487040
+          }
+        },
+        {
+          "index": 6600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 61521010,
+          "process_memory": {
+            "resident_bytes": 620515328,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 7200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 66648109,
+          "process_memory": {
+            "resident_bytes": 620515328,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 7800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 71511100,
+          "process_memory": {
+            "resident_bytes": 620515328,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 8400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 76770036,
+          "process_memory": {
+            "resident_bytes": 620515328,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 9000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 81964795,
+          "process_memory": {
+            "resident_bytes": 619401216,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 9600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 86886575,
+          "process_memory": {
+            "resident_bytes": 619401216,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 10200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 91958047,
+          "process_memory": {
+            "resident_bytes": 619401216,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 10800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 96798210,
+          "process_memory": {
+            "resident_bytes": 619401216,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 11400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 101880807,
+          "process_memory": {
+            "resident_bytes": 619401216,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 12000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 107308023,
+          "process_memory": {
+            "resident_bytes": 619401216,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 12600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 112095402,
+          "process_memory": {
+            "resident_bytes": 619401216,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 13200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 117302228,
+          "process_memory": {
+            "resident_bytes": 619405312,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 13800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 122427483,
+          "process_memory": {
+            "resident_bytes": 619405312,
+            "private_bytes": 854335488
+          }
+        },
+        {
+          "index": 14400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 127193178,
+          "process_memory": {
+            "resident_bytes": 619388928,
+            "private_bytes": 854302720
+          }
+        },
+        {
+          "index": 15000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 131890517,
+          "process_memory": {
+            "resident_bytes": 619388928,
+            "private_bytes": 854302720
+          }
+        },
+        {
+          "index": 15600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 137109659,
+          "process_memory": {
+            "resident_bytes": 619360256,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 16200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 142203794,
+          "process_memory": {
+            "resident_bytes": 619360256,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 16800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 147206174,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 17400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 152427332,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 18000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 157400615,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 18600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 162448183,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 19200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 167604251,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 19800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 172684125,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 20400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 177713962,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 21000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 182994839,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 21600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 188016039,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 22200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 193064220,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 22800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 198254558,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 23400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 203192723,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 24000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 208383191,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 24600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 213136196,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 25200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 217710626,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 25800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 222464743,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 26400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 227283352,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 27000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 231958567,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 27600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 237006974,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 28200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 241679899,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 28800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 246383229,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 29400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 251254222,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 30000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 256425347,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 30600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 261721132,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 31200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 267081703,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 31800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 272437020,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 32400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 277494516,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 33000,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 282358091,
+          "process_memory": {
+            "resident_bytes": 618762240,
+            "private_bytes": 854233088
+          }
+        },
+        {
+          "index": 33600,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 286486108,
+          "process_memory": {
+            "resident_bytes": 618848256,
+            "private_bytes": 854298624
+          }
+        },
+        {
+          "index": 34200,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 290034377,
+          "process_memory": {
+            "resident_bytes": 618946560,
+            "private_bytes": 854364160
+          }
+        },
+        {
+          "index": 34800,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 293502804,
+          "process_memory": {
+            "resident_bytes": 618946560,
+            "private_bytes": 854364160
+          }
+        },
+        {
+          "index": 35400,
+          "nodes": 491.0,
+          "objects": 1931.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 297212224,
+          "process_memory": {
+            "resident_bytes": 618946560,
+            "private_bytes": 854364160
+          }
+        }
+      ]
+    },
+    "with-ui": {
+      "verification": {
+        "passed": true,
+        "prepared_pixels_match_cold": true,
+        "executable_sha256": "2e268d1909670a89b0108166d5c2e99c465e3b7bc48ccf464b3b9d10c7f1073d",
+        "library_sha256": "88b9fdfb2407b1b1c8b0b6c7b0a2cd00d1db5e869e38d3a9f52678af46c6080a",
+        "source_sha256": {
+          "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+          "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+          "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+          "game.gd": "d3a70197907c52358ca4b30eeb098a14159b4dd39fe71900aa461be4f363e96b",
+          "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+          "tests\\integration.gd": "d5e0b6a28a882f5f42acacae5768cc04674bfa9d9de902f3e99a1f6475ad1ca2",
+          "tests\\lifecycle.gd": "6ed8a542ea3ec25dc48d19aaa174255e607c9e8e2db47a8694353c47b3c408fd",
+          "tests\\load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+          "tests\\performance.gd": "3bcedfee076af2420a2adfac6028128d19e4de1e29490462fec8b051d93d1ae6",
+          "ui\\camp.css": "240119a4baa0a2db651dc644f83c054ab87f7853446ac2ae2719f0a136f8a517",
+          "ui\\camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+          "addons\\weva\\weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c",
+          "addons\\weva\\example\\example.gd": "9d5963e2f8b0b81aca813a79fd134516e65355f6ea0d66993766915f8fd29eed",
+          "addons\\weva\\example\\example.tscn": "f164c04bc0bb1710a068a9ed234e719a122501b774df0ba95666df1677ae56c9",
+          "addons\\weva\\example\\ui.css": "998d4af10e12099fae89c3a0ae35c986674efcc7f97b25ed8002cf23bff39eb6",
+          "addons\\weva\\example\\ui.html": "1bed57345424f80dc13dc94e82f9ab7f5b9d5bd51448b8931f01de35bd7ba33f"
+        },
+        "process_memory_available": true,
+        "result": {
+          "cycles": 20,
+          "debug_build": false,
+          "engine": {
+            "build": "custom_build",
+            "hash": "unknown",
+            "hex": 263938,
+            "major": 4,
+            "minor": 7,
+            "patch": 2,
+            "status": "stable",
+            "string": "4.7.2-stable (custom_build)",
+            "timestamp": 0
+          },
+          "first_hidden": false,
+          "name_updates": 6080,
+          "passed": true,
+          "renderer": "mobile",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "results": {
+            "first_document_cpu_ms": 88.801,
+            "first_document_through_draw_ms": 90.981,
+            "first_show_cpu_ms": 0.004,
+            "first_show_through_draw_ms": 2.174,
+            "hidden_prepare_cpu_ms": 31.454,
+            "prepared_first_show_cpu_ms": 0.013,
+            "prepared_first_show_through_draw_ms": 0.955,
+            "recreate_cpu": {
+              "max_ms": 50.429,
+              "mean_ms": 37.0004,
+              "median_ms": 37.419,
+              "p95_ms": 47.386,
+              "samples": 20
+            },
+            "reuse_through_draw": {
+              "max_ms": 14.776,
+              "mean_ms": 3.7251,
+              "median_ms": 1.114,
+              "p95_ms": 11.499,
+              "samples": 20
+            },
+            "reuse_with_hidden_data_update_cpu": {
+              "max_ms": 0.666,
+              "mean_ms": 0.34115,
+              "median_ms": 0.315,
+              "p95_ms": 0.596,
+              "samples": 20
+            },
+            "scene_resource_load_ms": 38.729,
+            "soak_frames": {
+              "max_ms": 34.636,
+              "mean_ms": 6.08062830555558,
+              "median_ms": 6.06,
+              "p95_ms": 12.88,
+              "quantile_limit_ms": 100.0,
+              "quantile_overflow_samples": 0,
+              "quantile_resolution_ms": 0.01,
+              "samples": 36000
+            },
+            "soak_seconds": 219.052084
+          },
+          "soak_frame_target": 36000,
+          "soak_without_ui": false,
+          "unicode_names": true,
+          "world": "3d"
+        }
+      },
+      "raw_evidence": ".utmp\\safe-engine71\\memory100-with-ui",
+      "evidence_sha256": {
+        "verification.json": "8aa7e7be302fde88bbea6b6a3e495d04cf29865c21e4d5b1b728c61ce6c7b7cb",
+        "process-memory.json": "3c80aa8d672d451469a7f417f76d4858b389eb75b5389b81a038096113f3d83d",
+        "run.log": "ef82db1d0397b48b3141f131e806c1f55fccd1c24329298b20baa7e0f97140f8"
+      },
+      "private_bytes_first": 864518144,
+      "private_bytes_last": 869519360,
+      "private_bytes_min": 857837568,
+      "private_bytes_max": 873869312,
+      "private_bytes_delta": 5001216,
+      "nodes": [
+        496.0
+      ],
+      "objects": [
+        1949.0,
+        1950.0
+      ],
+      "markers": [
+        {
+          "index": 0,
+          "nodes": 496.0,
+          "objects": 1950.0,
+          "phase": "soak_start",
+          "static_bytes": 0,
+          "texture_bytes": 69681152,
+          "time_usec": 3266688,
+          "process_memory": {
+            "resident_bytes": 631443456,
+            "private_bytes": 864518144
+          }
+        },
+        {
+          "index": 0,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 73089024,
+          "time_usec": 3278383,
+          "process_memory": {
+            "resident_bytes": 631881728,
+            "private_bytes": 864518144
+          }
+        },
+        {
+          "index": 600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 5298751,
+          "process_memory": {
+            "resident_bytes": 633102336,
+            "private_bytes": 865292288
+          }
+        },
+        {
+          "index": 1200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 7265674,
+          "process_memory": {
+            "resident_bytes": 625545216,
+            "private_bytes": 857837568
+          }
+        },
+        {
+          "index": 1800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 9219778,
+          "process_memory": {
+            "resident_bytes": 625979392,
+            "private_bytes": 858238976
+          }
+        },
+        {
+          "index": 2400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 11146141,
+          "process_memory": {
+            "resident_bytes": 626634752,
+            "private_bytes": 858824704
+          }
+        },
+        {
+          "index": 3000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 13078668,
+          "process_memory": {
+            "resident_bytes": 627335168,
+            "private_bytes": 859377664
+          }
+        },
+        {
+          "index": 3600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 14976370,
+          "process_memory": {
+            "resident_bytes": 628396032,
+            "private_bytes": 860426240
+          }
+        },
+        {
+          "index": 4200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 16636021,
+          "process_memory": {
+            "resident_bytes": 629194752,
+            "private_bytes": 861118464
+          }
+        },
+        {
+          "index": 4800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 20883467,
+          "process_memory": {
+            "resident_bytes": 629825536,
+            "private_bytes": 861671424
+          }
+        },
+        {
+          "index": 5400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 25024341,
+          "process_memory": {
+            "resident_bytes": 630714368,
+            "private_bytes": 862605312
+          }
+        },
+        {
+          "index": 6000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 29190674,
+          "process_memory": {
+            "resident_bytes": 631398400,
+            "private_bytes": 863195136
+          }
+        },
+        {
+          "index": 6600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 33379148,
+          "process_memory": {
+            "resident_bytes": 631791616,
+            "private_bytes": 863621120
+          }
+        },
+        {
+          "index": 7200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 37521750,
+          "process_memory": {
+            "resident_bytes": 632393728,
+            "private_bytes": 864124928
+          }
+        },
+        {
+          "index": 7800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 41876500,
+          "process_memory": {
+            "resident_bytes": 633061376,
+            "private_bytes": 864759808
+          }
+        },
+        {
+          "index": 8400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 46208346,
+          "process_memory": {
+            "resident_bytes": 633565184,
+            "private_bytes": 865288192
+          }
+        },
+        {
+          "index": 9000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 50395126,
+          "process_memory": {
+            "resident_bytes": 634109952,
+            "private_bytes": 865792000
+          }
+        },
+        {
+          "index": 9600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 54764472,
+          "process_memory": {
+            "resident_bytes": 634896384,
+            "private_bytes": 866615296
+          }
+        },
+        {
+          "index": 10200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 59198340,
+          "process_memory": {
+            "resident_bytes": 635289600,
+            "private_bytes": 866992128
+          }
+        },
+        {
+          "index": 10800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 63513628,
+          "process_memory": {
+            "resident_bytes": 636010496,
+            "private_bytes": 867725312
+          }
+        },
+        {
+          "index": 11400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 66647394,
+          "process_memory": {
+            "resident_bytes": 636538880,
+            "private_bytes": 868229120
+          }
+        },
+        {
+          "index": 12000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 68773593,
+          "process_memory": {
+            "resident_bytes": 637313024,
+            "private_bytes": 868950016
+          }
+        },
+        {
+          "index": 12600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 71090717,
+          "process_memory": {
+            "resident_bytes": 638074880,
+            "private_bytes": 869580800
+          }
+        },
+        {
+          "index": 13200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 73228467,
+          "process_memory": {
+            "resident_bytes": 638652416,
+            "private_bytes": 870273024
+          }
+        },
+        {
+          "index": 13800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 74583542,
+          "process_memory": {
+            "resident_bytes": 639254528,
+            "private_bytes": 870776832
+          }
+        },
+        {
+          "index": 14400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 77979884,
+          "process_memory": {
+            "resident_bytes": 639832064,
+            "private_bytes": 871342080
+          }
+        },
+        {
+          "index": 15000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 79804883,
+          "process_memory": {
+            "resident_bytes": 640438272,
+            "private_bytes": 871976960
+          }
+        },
+        {
+          "index": 15600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 81371194,
+          "process_memory": {
+            "resident_bytes": 639483904,
+            "private_bytes": 871010304
+          }
+        },
+        {
+          "index": 16200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 83005977,
+          "process_memory": {
+            "resident_bytes": 638038016,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 16800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 84785711,
+          "process_memory": {
+            "resident_bytes": 638033920,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 17400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 86279598,
+          "process_memory": {
+            "resident_bytes": 638029824,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 18000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 91650358,
+          "process_memory": {
+            "resident_bytes": 638021632,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 18600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 96344402,
+          "process_memory": {
+            "resident_bytes": 638017536,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 19200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 100837026,
+          "process_memory": {
+            "resident_bytes": 638017536,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 19800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 105444335,
+          "process_memory": {
+            "resident_bytes": 638029824,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 20400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 109897574,
+          "process_memory": {
+            "resident_bytes": 638021632,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 21000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 114431152,
+          "process_memory": {
+            "resident_bytes": 638017536,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 21600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 118879138,
+          "process_memory": {
+            "resident_bytes": 638013440,
+            "private_bytes": 869572608
+          }
+        },
+        {
+          "index": 22200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 123198435,
+          "process_memory": {
+            "resident_bytes": 637988864,
+            "private_bytes": 869539840
+          }
+        },
+        {
+          "index": 22800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 127404811,
+          "process_memory": {
+            "resident_bytes": 637984768,
+            "private_bytes": 869539840
+          }
+        },
+        {
+          "index": 23400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 131686728,
+          "process_memory": {
+            "resident_bytes": 637988864,
+            "private_bytes": 869539840
+          }
+        },
+        {
+          "index": 24000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 135883056,
+          "process_memory": {
+            "resident_bytes": 637952000,
+            "private_bytes": 869474304
+          }
+        },
+        {
+          "index": 24600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 140061654,
+          "process_memory": {
+            "resident_bytes": 637956096,
+            "private_bytes": 869474304
+          }
+        },
+        {
+          "index": 25200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 144310078,
+          "process_memory": {
+            "resident_bytes": 637956096,
+            "private_bytes": 869474304
+          }
+        },
+        {
+          "index": 25800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 148439604,
+          "process_memory": {
+            "resident_bytes": 637943808,
+            "private_bytes": 869474304
+          }
+        },
+        {
+          "index": 26400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 152625180,
+          "process_memory": {
+            "resident_bytes": 636338176,
+            "private_bytes": 869748736
+          }
+        },
+        {
+          "index": 27000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 156706906,
+          "process_memory": {
+            "resident_bytes": 636780544,
+            "private_bytes": 870297600
+          }
+        },
+        {
+          "index": 27600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 161015887,
+          "process_memory": {
+            "resident_bytes": 637272064,
+            "private_bytes": 870846464
+          }
+        },
+        {
+          "index": 28200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 165467016,
+          "process_memory": {
+            "resident_bytes": 637837312,
+            "private_bytes": 871395328
+          }
+        },
+        {
+          "index": 28800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 169809766,
+          "process_memory": {
+            "resident_bytes": 638431232,
+            "private_bytes": 871944192
+          }
+        },
+        {
+          "index": 29400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 174218289,
+          "process_memory": {
+            "resident_bytes": 639016960,
+            "private_bytes": 872493056
+          }
+        },
+        {
+          "index": 30000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 178549461,
+          "process_memory": {
+            "resident_bytes": 639512576,
+            "private_bytes": 873041920
+          }
+        },
+        {
+          "index": 30600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 182869557,
+          "process_memory": {
+            "resident_bytes": 640344064,
+            "private_bytes": 873869312
+          }
+        },
+        {
+          "index": 31200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 187155644,
+          "process_memory": {
+            "resident_bytes": 626450432,
+            "private_bytes": 862666752
+          }
+        },
+        {
+          "index": 31800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 191546547,
+          "process_memory": {
+            "resident_bytes": 627007488,
+            "private_bytes": 863129600
+          }
+        },
+        {
+          "index": 32400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 195885236,
+          "process_memory": {
+            "resident_bytes": 627167232,
+            "private_bytes": 864104448
+          }
+        },
+        {
+          "index": 33000,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 200100070,
+          "process_memory": {
+            "resident_bytes": 627597312,
+            "private_bytes": 864653312
+          }
+        },
+        {
+          "index": 33600,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 204181114,
+          "process_memory": {
+            "resident_bytes": 628236288,
+            "private_bytes": 868675584
+          }
+        },
+        {
+          "index": 34200,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 208637209,
+          "process_memory": {
+            "resident_bytes": 629026816,
+            "private_bytes": 869519360
+          }
+        },
+        {
+          "index": 34800,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 213334799,
+          "process_memory": {
+            "resident_bytes": 629432320,
+            "private_bytes": 869519360
+          }
+        },
+        {
+          "index": 35400,
+          "nodes": 496.0,
+          "objects": 1949.0,
+          "phase": "soak",
+          "static_bytes": 0,
+          "texture_bytes": 70795264,
+          "time_usec": 217787139,
+          "process_memory": {
+            "resident_bytes": 630145024,
+            "private_bytes": 869519360
+          }
+        }
+      ]
+    }
+  }
+}

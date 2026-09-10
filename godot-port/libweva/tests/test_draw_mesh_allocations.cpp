@@ -72,11 +72,15 @@ struct KeepingBackend : weva::RenderInterface {
     }
     void render_rounded_rect(const weva::RoundedRect& shape, const std::vector<weva::Vertex>& v,
                              const std::vector<uint32_t>& i) override {
+        render_rounded_rect_owned(shape,v,i);
+    }
+    void render_rounded_rect_owned(const weva::RoundedRect& shape, std::vector<weva::Vertex> v,
+                                   std::vector<uint32_t> i) override {
         events.add(4); events.add(shape.x); events.add(shape.y);
         events.add(shape.width); events.add(shape.height);
         for (const auto& corner : shape.radii) for (double r : corner) events.add(r);
         events.add(shape.color.r); events.add(shape.color.g); events.add(shape.color.b); events.add(shape.color.a);
-        weva::Mesh m; m.vertices = v; m.indices = i;
+        weva::Mesh m; m.vertices = std::move(v); m.indices = std::move(i);
         events.mesh(m); draws.push_back(std::move(m));
     }
     weva::TextureHandle load_texture(std::string_view, weva::Vec2i*) override { return {}; }
@@ -139,6 +143,33 @@ int main() {
         style.set("background-color", "#2233ff");
         paint_tree(tree, root, ctx, &next);
         check(saved == backend.geometry(), "previous backend buffers survive a later paint");
+    }
+    {
+        ComputedStyle rounded;
+        rounded.set("background-color", "#123456");
+        rounded.set("border-top-left-radius", "8px");
+        BoxTree tree;
+        const BoxId root = tree.create(BoxKind::Block, nullptr, &rounded);
+        size_box(tree[root],0,0,80,30);
+        KeepingBackend backend;
+        paint_tree(tree,root,ctx,&backend);
+        const uint64_t expected = backend.geometry();
+        backend.draws.clear();
+        const size_t count = measure([&] { paint_tree(tree,root,ctx,&backend); });
+        check(backend.geometry() == expected, "rounded geometry stable after warmup");
+        check(count <= 3, "rounded submission avoids buffer copies and temporary AA rings");
+        std::printf("rounded paint allocations: %zu; hash %016llx\n",count,
+            static_cast<unsigned long long>(expected));
+    }
+    {
+        BorderRadii radius;
+        radius.top_left.x_radius = radius.top_left.y_radius = 8;
+        Mesh direct;
+        const size_t count = measure([&] {
+            tessellate_rounded_rect(Rect(0,0,80,30),radius,LinearColor::white(),&direct,8,false);
+        });
+        check(count == 2, "unfeathered rounded fan allocates only its two output buffers");
+        check(direct.vertices.size() == 13 && direct.indices.size() == 36, "mixed rounded/square fan topology preserved");
     }
     Mesh positive;
     check(measure([&] { tessellate_rect(Rect(0, 0, 10, 10), LinearColor::white(), &positive); }) > 0,

@@ -1,0 +1,225 @@
+{
+  "qualification": false,
+  "scope": "Instrumented installed runtime, automatic 1080p 3D, OpenGL, reverse order, typing and toggle only. Opening samples include preparation and warmups.",
+  "opening_samples": 62,
+  "opening_stages_ms": {
+    "update": {
+      "median": 0.732,
+      "p95_floor_rank": 1.0738,
+      "max": 1.3142
+    },
+    "close": {
+      "median": 0.0001,
+      "p95_floor_rank": 0.0002,
+      "max": 0.0002
+    },
+    "caret": {
+      "median": 0.0038,
+      "p95_floor_rank": 0.0071,
+      "max": 0.014
+    },
+    "active": {
+      "median": 0.29945,
+      "p95_floor_rank": 0.5119,
+      "max": 0.9179
+    },
+    "position": {
+      "median": 0.02855,
+      "p95_floor_rank": 0.0576,
+      "max": 0.1645
+    }
+  },
+  "workloads": [
+    {
+      "api_cpu": {
+        "max_ms": 0.803,
+        "mean_ms": 0.0776766666666668,
+        "median_ms": 0.003,
+        "p95_ms": 0.492,
+        "p99_ms": 0.631,
+        "samples": 600
+      },
+      "binding_cpu": {
+        "max_ms": 0.0,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0,
+        "samples": 600
+      },
+      "binding_refreshes": 0,
+      "canvas_draw_calls": 54,
+      "changed_api_cpu": {
+        "max_ms": 0.803,
+        "mean_ms": 0.44992,
+        "median_ms": 0.416,
+        "p95_ms": 0.637,
+        "p99_ms": 0.708,
+        "samples": 100
+      },
+      "changed_core_cpu": {
+        "max_ms": 0.410200000000003,
+        "mean_ms": 0.209181,
+        "median_ms": 0.18950000000001,
+        "p95_ms": 0.299500000000009,
+        "p99_ms": 0.358699999999999,
+        "samples": 100
+      },
+      "changed_whole_frame": {
+        "max_ms": 20.517,
+        "mean_ms": 6.18259,
+        "median_ms": 2.987,
+        "p95_ms": 17.547,
+        "p99_ms": 20.208,
+        "samples": 100
+      },
+      "core_cpu": {
+        "max_ms": 4.8019,
+        "mean_ms": 0.0640358333333337,
+        "median_ms": 0.0219000000000023,
+        "p95_ms": 0.23429999999999,
+        "p99_ms": 0.312299999999993,
+        "samples": 600
+      },
+      "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+      "core_update_count": {
+        "max": 3.0,
+        "mean": 1.175,
+        "median": 1.0,
+        "p95": 2.0,
+        "p99": 2.0,
+        "samples": 600
+      },
+      "elements": 116,
+      "frames": 600,
+      "godot_static_memory_change_bytes": null,
+      "scene_draw_calls": 1126,
+      "scene_primitives": 115490,
+      "texture_memory_bytes": 24544511,
+      "viewport_render_cpu": {
+        "max_ms": 1.79200005531311,
+        "mean_ms": 1.03348666876554,
+        "median_ms": 0.955999970436096,
+        "p95_ms": 1.30200004577637,
+        "p99_ms": 1.54100000858307,
+        "samples": 600
+      },
+      "viewport_render_gpu": {
+        "max_ms": 0.462000012397766,
+        "mean_ms": 0.215890002350012,
+        "median_ms": 0.215000003576279,
+        "p95_ms": 0.216999992728233,
+        "p99_ms": 0.222000002861023,
+        "samples": 600
+      },
+      "warmups": 120,
+      "weva_draw_commands": 205,
+      "weva_triangles": 4658,
+      "whole_frame": {
+        "max_ms": 21.544,
+        "mean_ms": 5.09858666666667,
+        "median_ms": 2.072,
+        "p95_ms": 16.416,
+        "p99_ms": 19.524,
+        "samples": 600
+      },
+      "workload": "settings_typing"
+    },
+    {
+      "api_cpu": {
+        "max_ms": 2.741,
+        "mean_ms": 0.207186666666666,
+        "median_ms": 0.003,
+        "p95_ms": 1.567,
+        "p99_ms": 2.152,
+        "samples": 600
+      },
+      "binding_cpu": {
+        "max_ms": 0.0,
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0,
+        "p99_ms": 0.0,
+        "samples": 600
+      },
+      "binding_refreshes": 0,
+      "canvas_draw_calls": 42,
+      "changed_api_cpu": {
+        "max_ms": 2.741,
+        "mean_ms": 1.22738,
+        "median_ms": 1.35,
+        "p95_ms": 2.198,
+        "p99_ms": 2.565,
+        "samples": 100
+      },
+      "changed_core_cpu": {
+        "max_ms": 1.71969999999999,
+        "mean_ms": 0.917295000000002,
+        "median_ms": 0.877499999999998,
+        "p95_ms": 1.24659999999997,
+        "p99_ms": 1.4649,
+        "samples": 100
+      },
+      "changed_whole_frame": {
+        "max_ms": 21.189,
+        "mean_ms": 8.90007,
+        "median_ms": 7.97,
+        "p95_ms": 18.358,
+        "p99_ms": 20.911,
+        "samples": 100
+      },
+      "core_cpu": {
+        "max_ms": 7.01740000000001,
+        "mean_ms": 0.187550000000001,
+        "median_ms": 0.0219999999999914,
+        "p95_ms": 0.934799999999967,
+        "p99_ms": 1.24659999999997,
+        "samples": 600
+      },
+      "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+      "core_update_count": {
+        "max": 4.0,
+        "mean": 1.5,
+        "median": 1.0,
+        "p95": 4.0,
+        "p99": 4.0,
+        "samples": 600
+      },
+      "elements": 116,
+      "frames": 600,
+      "godot_static_memory_change_bytes": null,
+      "scene_draw_calls": 1126,
+      "scene_primitives": 115490,
+      "texture_memory_bytes": 24544511,
+      "viewport_render_cpu": {
+        "max_ms": 1.61699998378754,
+        "mean_ms": 0.989008334179719,
+        "median_ms": 0.931999981403351,
+        "p95_ms": 1.27699995040894,
+        "p99_ms": 1.46899998188019,
+        "samples": 600
+      },
+      "viewport_render_gpu": {
+        "max_ms": 14.585000038147,
+        "mean_ms": 0.232601666922371,
+        "median_ms": 0.209999993443489,
+        "p95_ms": 0.216999992728233,
+        "p99_ms": 0.363999992609024,
+        "samples": 600
+      },
+      "warmups": 120,
+      "weva_draw_commands": 170,
+      "weva_triangles": 3148,
+      "whole_frame": {
+        "max_ms": 21.615,
+        "mean_ms": 5.18388999999999,
+        "median_ms": 1.972,
+        "p95_ms": 16.847,
+        "p99_ms": 20.278,
+        "samples": 600
+      },
+      "workload": "settings_toggle"
+    }
+  ],
+  "interpretation": "IME activation and the preceding core update both cost time. This trace does not reproduce or explain the uninstrumented typing outlier. Logging perturbs scheduling; no failed acceptance result is replaced."
+}

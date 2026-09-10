@@ -1,0 +1,463 @@
+{
+  "summary": ".utmp/safe-engine71/animation205-4k/summary.json",
+  "library_sha256": "703053bc94a6f5908aebab5b174ea67985a3590bfbd2bddf1cdf2e524399e318",
+  "functional_passed": true,
+  "timing_passed": false,
+  "timing_checks": 276,
+  "failed_checks": [
+    {
+      "run": "gl_compatibility/3",
+      "workload": "settings_toggle",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 17.16,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/1",
+      "workload": "idle",
+      "metric": "whole_frame",
+      "samples": 600,
+      "minimum_samples": 600,
+      "p95_rank": 570,
+      "p95_ms": 16.75,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/1",
+      "workload": "clock_1hz",
+      "metric": "changed_whole_frame",
+      "samples": 10,
+      "minimum_samples": 10,
+      "p95_rank": 10,
+      "p95_ms": 19.166,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/1",
+      "workload": "vitals_10hz",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 18.651,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/1",
+      "workload": "inventory_sort",
+      "metric": "whole_frame",
+      "samples": 600,
+      "minimum_samples": 600,
+      "p95_rank": 570,
+      "p95_ms": 17.559,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/1",
+      "workload": "inventory_sort",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 18.714,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/1",
+      "workload": "settings_slider",
+      "metric": "whole_frame",
+      "samples": 600,
+      "minimum_samples": 600,
+      "p95_rank": 570,
+      "p95_ms": 17.658,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/1",
+      "workload": "settings_slider",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 19.344,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/2",
+      "workload": "redundant_signal",
+      "metric": "whole_frame",
+      "samples": 600,
+      "minimum_samples": 600,
+      "p95_rank": 570,
+      "p95_ms": 17.381,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/2",
+      "workload": "redundant_signal",
+      "metric": "changed_whole_frame",
+      "samples": 600,
+      "minimum_samples": 10,
+      "p95_rank": 570,
+      "p95_ms": 17.381,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/2",
+      "workload": "settings_typing",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 16.995,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/2",
+      "workload": "settings_toggle",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 18.345,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/3",
+      "workload": "vitals_10hz",
+      "metric": "whole_frame",
+      "samples": 600,
+      "minimum_samples": 600,
+      "p95_rank": 570,
+      "p95_ms": 16.978,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/3",
+      "workload": "vitals_10hz",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 18.242,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/3",
+      "workload": "inventory_sort",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 16.753,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/3",
+      "workload": "settings_typing",
+      "metric": "whole_frame",
+      "samples": 600,
+      "minimum_samples": 600,
+      "p95_rank": 570,
+      "p95_ms": 16.704,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/3",
+      "workload": "settings_slider",
+      "metric": "whole_frame",
+      "samples": 600,
+      "minimum_samples": 600,
+      "p95_rank": 570,
+      "p95_ms": 16.744,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/3",
+      "workload": "settings_slider",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 16.898,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    },
+    {
+      "run": "mobile/3",
+      "workload": "settings_toggle",
+      "metric": "changed_whole_frame",
+      "samples": 100,
+      "minimum_samples": 10,
+      "p95_rank": 95,
+      "p95_ms": 16.76,
+      "limit_ms": 16.666666666666668,
+      "passed": false
+    }
+  ],
+  "all_samples_focused": true,
+  "scope": "RTX 5080 Windows 4K automatic 3D. Failed whole-frame limits do not isolate UI CPU/GPU overhead or establish the cause.",
+  "diagnostic_rows": [
+    {
+      "renderer": "gl_compatibility",
+      "run": 1,
+      "workload": "ui_disabled",
+      "whole_frame": 14.362,
+      "api_cpu": 0.003,
+      "core_cpu": 0.0,
+      "viewport_render_cpu": 1.16199994087219,
+      "viewport_render_gpu": 0.347000002861023
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 1,
+      "workload": "idle",
+      "whole_frame": 15.793,
+      "api_cpu": 0.003,
+      "core_cpu": 0.000999999999997669,
+      "viewport_render_cpu": 1.20299994945526,
+      "viewport_render_gpu": 0.377999991178513
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 1,
+      "workload": "settings_slider",
+      "whole_frame": 15.268,
+      "api_cpu": 0.258,
+      "core_cpu": 0.206200000000024,
+      "viewport_render_cpu": 1.39699995517731,
+      "viewport_render_gpu": 0.437000006437302
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 1,
+      "workload": "settings_toggle",
+      "whole_frame": 15.432,
+      "api_cpu": 1.646,
+      "core_cpu": 0.913099999999986,
+      "viewport_render_cpu": 1.33599996566772,
+      "viewport_render_gpu": 0.437000006437302
+    },
+    {
+      "renderer": "mobile",
+      "run": 1,
+      "workload": "ui_disabled",
+      "whole_frame": 16.479,
+      "api_cpu": 0.002,
+      "core_cpu": 0.0,
+      "viewport_render_cpu": 0.476999998092651,
+      "viewport_render_gpu": 0.351000010967255
+    },
+    {
+      "renderer": "mobile",
+      "run": 1,
+      "workload": "idle",
+      "whole_frame": 16.75,
+      "api_cpu": 0.003,
+      "core_cpu": 0.000700000000001921,
+      "viewport_render_cpu": 0.330000013113022,
+      "viewport_render_gpu": 0.363999992609024
+    },
+    {
+      "renderer": "mobile",
+      "run": 1,
+      "workload": "settings_slider",
+      "whole_frame": 17.658,
+      "api_cpu": 0.193,
+      "core_cpu": 0.15809999999999,
+      "viewport_render_cpu": 0.333000004291534,
+      "viewport_render_gpu": 0.391000002622604
+    },
+    {
+      "renderer": "mobile",
+      "run": 1,
+      "workload": "settings_toggle",
+      "whole_frame": 14.848,
+      "api_cpu": 1.701,
+      "core_cpu": 0.902199999999993,
+      "viewport_render_cpu": 0.342999994754791,
+      "viewport_render_gpu": 0.391000002622604
+    },
+    {
+      "renderer": "mobile",
+      "run": 2,
+      "workload": "settings_toggle",
+      "whole_frame": 14.886,
+      "api_cpu": 1.544,
+      "core_cpu": 0.842900000000014,
+      "viewport_render_cpu": 0.499000012874603,
+      "viewport_render_gpu": 0.391000002622604
+    },
+    {
+      "renderer": "mobile",
+      "run": 2,
+      "workload": "settings_slider",
+      "whole_frame": 15.1,
+      "api_cpu": 0.19,
+      "core_cpu": 0.158799999999985,
+      "viewport_render_cpu": 0.33899998664856,
+      "viewport_render_gpu": 0.391999989748001
+    },
+    {
+      "renderer": "mobile",
+      "run": 2,
+      "workload": "idle",
+      "whole_frame": 14.964,
+      "api_cpu": 0.003,
+      "core_cpu": 0.000999999999976353,
+      "viewport_render_cpu": 0.38400000333786,
+      "viewport_render_gpu": 0.363999992609024
+    },
+    {
+      "renderer": "mobile",
+      "run": 2,
+      "workload": "ui_disabled",
+      "whole_frame": 15.537,
+      "api_cpu": 0.003,
+      "core_cpu": 0.0,
+      "viewport_render_cpu": 0.381999999284744,
+      "viewport_render_gpu": 0.351000010967255
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 2,
+      "workload": "settings_toggle",
+      "whole_frame": 14.844,
+      "api_cpu": 1.658,
+      "core_cpu": 0.915800000000004,
+      "viewport_render_cpu": 1.40499997138977,
+      "viewport_render_gpu": 0.437999993562698
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 2,
+      "workload": "settings_slider",
+      "whole_frame": 14.634,
+      "api_cpu": 0.153,
+      "core_cpu": 0.122599999999977,
+      "viewport_render_cpu": 1.22200000286102,
+      "viewport_render_gpu": 0.439999997615814
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 2,
+      "workload": "idle",
+      "whole_frame": 14.352,
+      "api_cpu": 0.003,
+      "core_cpu": 0.000999999999976353,
+      "viewport_render_cpu": 1.27100002765656,
+      "viewport_render_gpu": 0.379999995231628
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 2,
+      "workload": "ui_disabled",
+      "whole_frame": 14.48,
+      "api_cpu": 0.003,
+      "core_cpu": 0.0,
+      "viewport_render_cpu": 1.11199998855591,
+      "viewport_render_gpu": 0.349999994039536
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 3,
+      "workload": "ui_disabled",
+      "whole_frame": 14.785,
+      "api_cpu": 0.003,
+      "core_cpu": 0.0,
+      "viewport_render_cpu": 1.14499998092651,
+      "viewport_render_gpu": 0.34799998998642
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 3,
+      "workload": "idle",
+      "whole_frame": 14.491,
+      "api_cpu": 0.003,
+      "core_cpu": 0.000999999999997669,
+      "viewport_render_cpu": 1.23800003528595,
+      "viewport_render_gpu": 0.377999991178513
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 3,
+      "workload": "settings_slider",
+      "whole_frame": 14.693,
+      "api_cpu": 0.213,
+      "core_cpu": 0.177599999999984,
+      "viewport_render_cpu": 1.35500001907349,
+      "viewport_render_gpu": 0.437999993562698
+    },
+    {
+      "renderer": "gl_compatibility",
+      "run": 3,
+      "workload": "settings_toggle",
+      "whole_frame": 15.592,
+      "api_cpu": 1.783,
+      "core_cpu": 0.91719999999998,
+      "viewport_render_cpu": 1.34899997711182,
+      "viewport_render_gpu": 0.437000006437302
+    },
+    {
+      "renderer": "mobile",
+      "run": 3,
+      "workload": "ui_disabled",
+      "whole_frame": 14.954,
+      "api_cpu": 0.002,
+      "core_cpu": 0.0,
+      "viewport_render_cpu": 0.48199999332428,
+      "viewport_render_gpu": 0.351000010967255
+    },
+    {
+      "renderer": "mobile",
+      "run": 3,
+      "workload": "idle",
+      "whole_frame": 15.357,
+      "api_cpu": 0.003,
+      "core_cpu": 0.000700000000001921,
+      "viewport_render_cpu": 0.331000000238419,
+      "viewport_render_gpu": 0.363999992609024
+    },
+    {
+      "renderer": "mobile",
+      "run": 3,
+      "workload": "settings_slider",
+      "whole_frame": 16.744,
+      "api_cpu": 0.166,
+      "core_cpu": 0.132200000000012,
+      "viewport_render_cpu": 0.310000002384186,
+      "viewport_render_gpu": 0.393999993801117
+    },
+    {
+      "renderer": "mobile",
+      "run": 3,
+      "workload": "settings_toggle",
+      "whole_frame": 15.033,
+      "api_cpu": 1.316,
+      "core_cpu": 0.704699999999889,
+      "viewport_render_cpu": 0.310000002384186,
+      "viewport_render_gpu": 0.391000002622604
+    }
+  ],
+  "interpretation": "GPU and viewport CPU p95 are much smaller than whole-frame p95 in these samples. Separate quantiles cannot be subtracted to attribute stalls; paired frame-phase or OS tracing is needed. UI-disabled whole-frame stalls also occur, so the current evidence does not establish UI rendering as their cause."
+}

@@ -57,6 +57,13 @@ signed-overflow diagnostic and a failing exit. Raw positive-control output
 is retained under the build's `sanitizer-probes/` directory. These intentional
 failures never execute inside the core tests or a distributed addon.
 
+The deliberate ASan probe disables symbol lookup for that child process only.
+An observed WSL run detected the overflow immediately but stalled while printing
+its stack, causing the 30-second probe timeout. Raw addresses are sufficient for
+this gate: it still requires the exact overflow diagnostic and a nonzero exit.
+The uninstrumented negative control remains rejected. Ordinary test reports
+retain their normal symbolization settings.
+
 The remaining tests must pass normally. `WEVA_INCREMENTAL_CORPUS` is necessary
 to include mutations of the shipped samples compared with full recomputation;
 without it, the main test executable runs only its ordinary fixtures. Keep

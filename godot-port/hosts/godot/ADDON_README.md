@@ -61,7 +61,9 @@ Use `<template data-each="Items as item" data-key="Id">` for repeated rows.
 Inside, `id="use-{{ item.Id }}"` identifies a button (use CSS-safe item keys).
 `ui.get_row("#" + id)` returns its stable `key` and current `index`. Select live
 rows with `#inventory > .item`; `.item` also matches retained template contents.
-Sorting currently rebuilds rows, so focus/selection need not survive a reorder.
+Sorting the same unique explicit keys preserves the existing rows, including
+focus, selection and undo history. Membership changes, duplicate/missing keys
+and externally interleaved rows keep the reconstruction path.
 
 `ui.load_files("res://ui/hud.html")` supports programmatic loading. It returns
 a Godot Error and fills `last_load_error` if a file cannot be opened, preserving
@@ -71,6 +73,9 @@ file watcher in this helper.
 For gameplay behind a HUD, set `pointer-events: none` on `html`, `body` and the
 HUD root, then `pointer-events: auto` on panels/controls. Put game actions in
 `_unhandled_input`. Use CSS width/height for image sizing in this preview.
+
+For a complete settings panel with typed bindings, click callbacks and reset
+handling, see [Form authoring](FORM_STATE.md#authoring-a-settings-panel).
 
 ## Native document API
 
@@ -86,8 +91,9 @@ player edits back. `ui.set_controller(self)` routes an HTML
 The document uses its inherited Godot theme font. To select a project font,
 use `ui.add_theme_font_override("font", preload("res://fonts/interface.ttf"))`
 or assign a Theme with a default font. Live Font resource changes refresh
-layout and glyphs. CSS still sets font size and line height; per-element CSS
-family selection remains unfinished. See `GODOT_TEXT_SHAPING.md` for details.
+layout and glyphs. Register a named face with `ui.register_font_family("Camp", font)`
+and select it using CSS `font-family: Camp`. CSS still sets size and line height.
+CSS `@font-face` loading remains unsupported. See `GODOT_TEXT_SHAPING.md` for details.
 
 ## Export
 
@@ -141,9 +147,12 @@ paste and composition commit. Script values may exceed it. Native paste and
 See `TEXT_EDITING.md` for the browser profiles and remaining editing limits.
 
 Stock Godot 4.7.2 has a text-shaping defect above 32 separate emoji runs that
-can corrupt positions or crash, including without this addon. A candidate
-engine fix passes isolated tests but is not included here. Read
-`GODOT_TEXT_SHAPING.md` before using unrestricted Unicode text in a release.
+can corrupt positions or crash, including without this addon. A separate patched
+Windows editor/template bundle passes editor and exported-game checks; this
+addon archive does not replace the engine. Use matching verified templates and
+enable `internationalization/locale/include_text_server_data` in your project.
+Godot's TextServer data is separate from Weva's embedded select-search ICU data.
+Read `GODOT_TEXT_SHAPING.md` before using unrestricted Unicode text in a release.
 
 Form values retain their markup defaults. A `type="reset"` button or
 `ui.reset_form("#settings")` restores the form and its writable `data-model`
@@ -175,3 +184,7 @@ The native libraries contain Unicode character data under Unicode License V3;
 see `UNICODE_LICENSE.txt` and `UNICODE_DATA.md`.
 Select search embeds ICU 78.3 and its data; see `ICU_LICENSE.txt` and
 `ICU_DATA.md`. No separate ICU installation is needed.
+
+Unsupported CSS at-rules produce warnings when replacing stylesheets.
+Use `get_css_diagnostics()` to inspect the current compiled rules without
+updating the document; requires ABI minor 24. See [CSS diagnostics](CSS_DIAGNOSTICS.md).

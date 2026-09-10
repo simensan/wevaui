@@ -79,6 +79,9 @@ const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
 const int kId_width = CssPropertyRegistry::instance().id_of("width");
 
 const int kId_padding = CssPropertyRegistry::instance().id_of("padding");
+const int kId_direction = CssPropertyRegistry::instance().id_of("direction");
+const int kId_margin_left = CssPropertyRegistry::instance().id_of("margin-left");
+const int kId_margin_right = CssPropertyRegistry::instance().id_of("margin-right");
 const int kId_margin = CssPropertyRegistry::instance().id_of("margin");
 
 std::string_view get(const ComputedStyle* s, int id) {
@@ -89,6 +92,7 @@ std::string_view get(const ComputedStyle* s, int id) {
 // so it is constructed on first use and these cannot outrun it.
 const int kId_clear = CssPropertyRegistry::instance().id_of("clear");
 const int kId_contain = CssPropertyRegistry::instance().id_of("contain");
+const int kId_container_type = CssPropertyRegistry::instance().id_of("container-type");
 const int kId_contain_intrinsic_height = CssPropertyRegistry::instance().id_of("contain-intrinsic-height");
 const int kId_contain_intrinsic_size = CssPropertyRegistry::instance().id_of("contain-intrinsic-size");
 const int kId_contain_intrinsic_width = CssPropertyRegistry::instance().id_of("contain-intrinsic-width");
@@ -237,6 +241,20 @@ PositionType parse_position_type(std::string_view raw) {
     return PositionType::Static;
 }
 
+double resolve_block_inline_offset(Box& box, double containing_width, bool rtl) {
+    const bool auto_left = get(box.style, kId_margin_left) == "auto";
+    const bool auto_right = get(box.style, kId_margin_right) == "auto";
+    if (auto_left != auto_right) {
+        // A single auto margin absorbs positive remaining space. In overflow
+        // it becomes zero; the containing block's direction chooses the edge.
+        const double fixed = auto_left ? box.margin_right : box.margin_left;
+        const double remaining = std::max(0.0, containing_width - box.width - fixed);
+        if (auto_left) box.margin_left = remaining;
+        else box.margin_right = remaining;
+    }
+    return rtl ? containing_width - box.width - box.margin_right : box.margin_left;
+}
+
 double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
                        const ComputedStyle* parent_style, const LayoutContext& ctx) {
     LayoutProfilePart profile(0);
@@ -272,12 +290,25 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     static const int kPosition = CssPropertyRegistry::instance().id_of("position");
     box.position =
         parse_position_type(style ? style->get(kPosition) : std::string_view());
+    // A top-layer box establishes its containing block at the document root.
+    // Non-absolute/fixed author positions have absolute used positioning.
+    const Element* top_host = box.element ? box.element : box.pseudo_host;
+    if (box.kind == BoxKind::Block && box.parent != kNoBox && (*tree)[box.parent].parent == kNoBox &&
+        top_host && top_host->top_layer_order() && box.position != PositionType::Fixed)
+        box.position = PositionType::Absolute;
 
     const bool border_box = is_border_box(style);
     const double width_frame =
         box.padding_left + box.padding_right + box.border_left + box.border_right;
     const double height_frame =
         box.padding_top + box.padding_bottom + box.border_top + box.border_bottom;
+    // A collapsed table's authored frame is not its used frame: padding is
+    // ignored and winning shared borders contribute half widths. Defer that
+    // floor until layout_table resolves the grid, retaining the requested width.
+    static const int kBorderCollapse = CssPropertyRegistry::instance().id_of("border-collapse");
+    const bool collapsed_table = (box.display == DisplayKind::Table || box.display == DisplayKind::InlineTable) &&
+        iequals(get(style, kBorderCollapse), "collapse");
+    const double width_floor = collapsed_table ? 0.0 : width_frame;
 
     const ResolvedLength width_r =
         resolve_length(style, kId_width, ctx, fs, containing_block_width, lh);
@@ -323,11 +354,11 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
         // under the `* { box-sizing: border-box }` that nearly every modern
         // stylesheet opens with, so the marker vanished entirely. The same
         // floor applies to a percentage, and to the height below.
-        resolved_width = border_box ? std::max(width_r.pixels, width_frame)
+        resolved_width = border_box ? std::max(width_r.pixels, width_floor)
                                     : width_r.pixels + width_frame;
     } else if (width_r.kind == LengthKind::Percent) {
         const double base = containing_block_width * width_r.percent * 0.01;
-        resolved_width = border_box ? std::max(base, width_frame) : base + width_frame;
+        resolved_width = border_box ? std::max(base, width_floor) : base + width_frame;
     } else {
         resolved_width = avail;
     }
@@ -450,11 +481,14 @@ bool participates_in_flow(const Box& b) {
 // is what reads it — `contain: layout size` and `contain: strict` both apply.
 bool has_size_containment(const ComputedStyle* style) {
     if (!style) return false;
+    if (iequals(get(style, kId_container_type), "size")) return true;
     const std::string_view cv = get(style, kId_content_visibility);
     if (iequals(cv, "hidden")) return true;
     const std::string_view contain = get(style, kId_contain);
     if (contain.empty() || iequals(contain, "none")) return false;
-    if (iequals(contain, "strict") || iequals(contain, "content")) return true;
+    // `content` expands to layout/style/paint, deliberately excluding size.
+    // Treating it as strict collapses auto-sized game panels around their UI.
+    if (iequals(contain, "strict")) return true;
     // Word-boundary search, so `contain: inline-size` does not read as `size`.
     size_t at = contain.find("size");
     while (at != std::string_view::npos) {
@@ -471,21 +505,8 @@ bool has_size_containment(const ComputedStyle* style) {
 // axis only. The box has no contents to take a width from; its height still
 // comes from them.
 //
-// `contain: inline-size` ONLY, and deliberately not `container-type`.
-//
-// The longhand is a clean port gap: the reference implements it and this did
-// not, so an absolutely positioned tray came out 189px wide where the
-// reference and Chrome both say 26 -- its padding and border and nothing else.
-//
-// `container-type: inline-size` also applies inline-size containment per
-// Containment L3 §3.1, and adding it here was tried and backed out. It gets
-// the CONTAINER right and its contents wrong: Chrome lays the children out at
-// their own intrinsic size, overflowing the zero-width content box, where this
-// engine collapses them to zero with it. Chrome then also applies the
-// container QUERY, which restyles them again -- and that half is deliberately
-// not ported (see the note in cascade.cpp). Half the feature moved combat-hud
-// from agreeing with the reference to differing from it while still matching
-// neither, which is worse than the gap. Left for whenever the query loop lands.
+// Query containers also apply inline-size containment. Their descendant rules
+// are settled by the layout owner after this pass produces container sizes.
 bool has_inline_size_containment(const ComputedStyle* style) {
     if (!style) return false;
     const auto has_token = [](std::string_view list, std::string_view word) {
@@ -499,7 +520,8 @@ bool has_inline_size_containment(const ComputedStyle* style) {
         }
         return false;
     };
-    return has_token(get(style, kId_contain), "inline-size");
+    return has_token(get(style, kId_contain), "inline-size") ||
+        iequals(get(style, kId_container_type), "inline-size");
 }
 
 // The substitute content size a size-contained box uses, from
@@ -569,6 +591,8 @@ bool is_flex_grid_item(const BoxTree& tree, const Box& b) {
 
 bool establishes_new_bfc(const Box& b) {
     if (!b.style) return false;
+    const auto container_type=get(b.style, kId_container_type);
+    if (iequals(container_type,"size") || iequals(container_type,"inline-size")) return true;
     // The `overflow` shorthand expands to overflow-x / overflow-y, so the
     // `overflow` slot itself normally holds its initial value even when the
     // author wrote `overflow: hidden`. Both axis longhands have to be checked.
@@ -698,11 +722,13 @@ bool is_self_collapsing(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
         };
         if (has_size("height") || has_size("min-height")) return false;
     }
-    // Any in-flow child at all disqualifies it. A child that does not
-    // participate in flow (float, out-of-flow) is skipped, so a box holding
-    // only floats still self-collapses.
+    // Empty descendants can collapse through their parent as well. A footer
+    // containing only an empty paragraph must not trap its margin inside an
+    // otherwise auto-height section.
+    if (establishes_new_bfc(b)) return false;
     for (BoxId c : tree.children(id)) {
         if (tree[c].kind == BoxKind::Block && !participates_in_flow(tree[c])) continue;
+        if (tree[c].kind == BoxKind::Block && is_self_collapsing(tree, c, ctx, font_size)) continue;
         return false;
     }
     return true;
@@ -724,6 +750,17 @@ ClearType parse_clear_type(std::string_view raw) {
     if (iequals(raw, "right") || iequals(raw, "inline-end")) return ClearType::Right;
     if (iequals(raw, "both")) return ClearType::Both;
     return ClearType::None;
+}
+
+double FloatContext::available_band(double top, double bottom, double* left, double* right) const {
+    double next = 0;
+    for (const Entry& f : floats_) {
+        if (f.bottom <= top || f.top >= std::max(top + 0.001, bottom)) continue;
+        if (f.side == FloatType::Left) *left = std::max(*left, f.right);
+        if (f.side == FloatType::Right) *right = std::min(*right, f.left);
+        if (next == 0 || f.bottom < next) next = f.bottom;
+    }
+    return next;
 }
 
 double FloatContext::left_extent_at(double y) const {
@@ -773,15 +810,21 @@ double FloatContext::find_placement_y(double y, double width, FloatType side,
     }
 }
 
-double FloatContext::clear_bottom(ClearType c) const {
+double FloatContext::clear_bottom(ClearType c, bool* found) const {
+    if (found) *found = false;
     if (c == ClearType::None) return 0;
     double max = 0;
+    bool matched = false;
     for (const Entry& f : floats_) {
         const bool match = c == ClearType::Both ||
                            (c == ClearType::Left && f.side == FloatType::Left) ||
                            (c == ClearType::Right && f.side == FloatType::Right);
-        if (match && f.bottom > max) max = f.bottom;
+        if (match) {
+            if (!matched || f.bottom > max) max = f.bottom;
+            matched = true;
+        }
     }
+    if (found) *found = matched;
     return max;
 }
 
@@ -791,6 +834,12 @@ double FloatContext::max_bottom() const {
         if (f.bottom > max) max = f.bottom;
     }
     return max;
+}
+
+double FloatContext::max_top() const {
+    double top = 0;
+    for (const Entry& f : floats_) top = std::max(top, f.top);
+    return top;
 }
 
 void BlockLayout::layout_float_box(BoxId id, double containing_block_width) {
@@ -810,8 +859,9 @@ void BlockLayout::place_float(BoxId container, BoxId float_box, double top_y,
     // A float honours `clear` too: its top margin edge sits below any matching
     // float already in this BFC.
     if (current_floats_) {
-        const double clear_local = current_floats_->clear_bottom(f.clear) - bfc_origin_y_;
-        if (clear_local > top_y) top_y = clear_local;
+        bool found;
+        const double clear_local = current_floats_->clear_bottom(f.clear, &found) - bfc_origin_y_;
+        if (found && clear_local > top_y) top_y = clear_local;
     }
 
     const double bfc_content_left = bfc_origin_x_ + c.padding_left + c.border_left;
@@ -819,18 +869,18 @@ void BlockLayout::place_float(BoxId container, BoxId float_box, double top_y,
     const double margin_box_h = f.margin_top + f.height + f.margin_bottom;
     double bfc_top = bfc_origin_y_ + top_y;
 
-    if (current_floats_) {
-        bfc_top = current_floats_->find_placement_y(bfc_top, margin_box_w, f.float_type,
-                                                    content_w);
+    if (current_floats_) bfc_top = std::max(bfc_top, current_floats_->max_top());
+    double left = bfc_content_left, right = bfc_content_left + content_w;
+    for (;;) {
+        left = bfc_content_left; right = bfc_content_left + content_w;
+        const double next = current_floats_ ? current_floats_->available_band(
+            bfc_top, bfc_top + margin_box_h, &left, &right) : 0;
+        if (right - left >= margin_box_w || next <= bfc_top) break;
+        bfc_top = next;
     }
-    const double left_in = current_floats_ ? current_floats_->left_extent_at(bfc_top) : 0;
-    const double right_in =
-        current_floats_ ? current_floats_->right_extent_at(bfc_top, content_w) : 0;
-
-    const double bfc_x = f.float_type == FloatType::Left
-                             ? bfc_content_left + left_in + f.margin_left
-                             : bfc_content_left + content_w - right_in - margin_box_w +
-                                   f.margin_left;
+    // Band edges are already BFC-local. Adding the content inset again made
+    // every subsequent float drift by another padding/border width.
+    const double bfc_x = (f.float_type == FloatType::Left ? left : right - margin_box_w) + f.margin_left;
 
     // Written back in coordinates local to the container, which is what every
     // other box in the tree uses.
@@ -982,7 +1032,7 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
             // baseline even for an empty value, a short field or clipped overflow.
             const double top = a.border_top + a.padding_top;
             const double content_height = a.height - top - a.padding_bottom - a.border_bottom;
-            it.atom_baseline = top + (content_height - fm->line_height(it.font_size)) * 0.5 +
+            it.atom_baseline = top + fm->leading_above(content_height, it.font_size) +
                                fm->ascent(it.font_size);
         } else if (input_type == "checkbox" || input_type == "radio" || input_type == "range") {
             it.atom_baseline = a.height;
@@ -995,6 +1045,24 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
             }
             if (last_line != kNoBox) {
                 it.atom_baseline = (*tree_)[last_line].y + (*tree_)[last_line].baseline;
+            } else if (a.display == DisplayKind::Flex || a.display == DisplayKind::InlineFlex) {
+                // Inline flex exposes the first item's first baseline, including
+                // an anonymous flex item created around raw text.
+                const auto first_line = [&](auto&& self, BoxId id, double y) -> std::optional<double> {
+                    const Box& child = (*tree_)[id];
+                    y += child.y;
+                    if (child.kind == BoxKind::Line) return y + child.baseline;
+                    for (BoxId nested : tree_->children(id))
+                        if (auto baseline = self(self, nested, y)) return baseline;
+                    return std::nullopt;
+                };
+                it.atom_baseline = a.height;
+                for (BoxId child : tree_->children(it.atom_box)) {
+                    if (auto baseline = first_line(first_line, child, 0)) {
+                        it.atom_baseline = *baseline;
+                        break;
+                    }
+                }
             } else {
                 const double content_bottom = a.height - a.padding_bottom - a.border_bottom;
                 it.atom_baseline = content_bottom < 0 ? a.height : content_bottom;
@@ -1123,12 +1191,11 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     relayout_content_at(id, 1e6, fs, parent_style);
     double max_content = max_content_width(*tree_, id, &ctx_) + frame;
     relayout_content_at(id, 1, fs, parent_style);
-    double min_content = max_content_width(*tree_, id, &ctx_) + frame;
+    double min_content = min_content_width(*tree_, id, &ctx_) + frame;
     if (max_content < frame) max_content = frame;
     if (min_content < frame) min_content = frame;
 
     double fitted = std::min(max_content, std::max(min_content, avail));
-    if (fitted > avail) fitted = avail;
     if (fitted < 0) fitted = 0;
 
     // §10.3.5: the shrink-to-fit result is still clamped by min- and max-width,
@@ -1195,12 +1262,8 @@ void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
     // so the source runs can no longer be walked. The collected items are
     // cached per container for the duration of the pass and reused, which is
     // both cheaper and simpler than snapshotting and restoring the child list.
-    if ((*tree_)[id].contains_inlines) {
-        const double h = layout_inline_content(id, (*tree_)[id].content_width(), parent_style);
-        finalize_block_size(id, font_size,
-                            (*tree_)[id].padding_top + (*tree_)[id].border_top + h);
-        return;
-    }
+    // Enter through layout_content so reflow preserves the same independent
+    // float context and owning style as the initial inline pass.
     layout_content(id, font_size, width, parent_style);
 }
 
@@ -1244,6 +1307,13 @@ void BlockLayout::layout_block(BoxId id, double available_width,
     }
 
     const Box& b = (*tree_)[id];
+    if (b.element && b.element->tag_name() == "select" &&
+        !select_is_listbox(*b.element) && get(b.style, kId_width) == "auto") {
+        // Closed controls keep their natural width when displayed as blocks.
+        // Flex/grid may subsequently impose their resolved item width.
+        shrink_to_fit(id, available_width, parent_style);
+        return;
+    }
     if (b.first_child == kNoBox) {
         finalize_block_size(id, fs, b.padding_top + b.border_top);
         return;
@@ -1293,7 +1363,7 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     // item is a BFC root in its own right — so returning before the float
     // bookkeeping below is safe rather than an omission.
     if ((*tree_)[id].is_multicol) {
-        const double h = layout_multicol(tree_, id, content_w, ctx_, this);
+        const double h = layout_multicol(tree_, id, content_w, font_size, ctx_, this);
         finalize_block_size(id, font_size, top_inner + h);
         return;
     }
@@ -1311,7 +1381,8 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     if ((*tree_)[id].display == DisplayKind::Table ||
         (*tree_)[id].display == DisplayKind::InlineTable) {
         const double h = layout_table(tree_, id, content_w, ctx_, this);
-        finalize_block_size(id, font_size, top_inner + h);
+        // Collapsed tables resolve their outer half-borders during layout.
+        finalize_block_size(id, font_size, (*tree_)[id].padding_top + (*tree_)[id].border_top + h);
         return;
     }
     if ((*tree_)[id].display == DisplayKind::Flex ||
@@ -1349,43 +1420,12 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         bfc_origin_y_ = prev_bfc_y + (*tree_)[id].y;
     }
 
-    // Children are laid out first so their heights are known before any of
-    // them is placed. Floats are also PLACED here, against a running estimate
-    // of the cursor, so the float context is populated before a later sibling
-    // lays out content that has to flow around them. The estimate ignores
-    // margin collapsing, which the placement loop below applies exactly; the
-    // cost of a mismatch is at most one float row, and the reference accepts
-    // the same trade.
+    // Keep sibling IDs stable while child layout creates anonymous/line boxes.
+    // Lay out in source order: later floats must see the actual preceding flow.
     std::vector<BoxId> inflow;
-    double approx_cursor = top_inner;
     for (BoxId c : tree_->children(id)) {
-        // Only block-level children reach here: a container holding inline
-        // content returned above.
-        if (tree_->operator[](c).kind != BoxKind::Block &&
-            tree_->operator[](c).kind != BoxKind::AnonymousBlock) {
-            continue;
-        }
-        // Stamped before layout: the placement loop reads them, and
-        // apply_box_model consults is_float() to skip auto-margin centring.
-        {
-            Box& cb = (*tree_)[c];
-            cb.float_type = parse_float_type(get(cb.style, kId_float));
-            cb.clear = parse_clear_type(get(cb.style, kId_clear));
-        }
-        if ((*tree_)[c].is_float()) {
-            layout_float_box(c, content_w);
-            if (current_floats_) place_float(id, c, approx_cursor, content_w);
-        } else {
-            // Descendants may query the float context during their own layout
-            // and need a meaningful BFC-local y, so the estimate is stamped
-            // before recursing. The placement loop replaces it with the exact
-            // value.
-            (*tree_)[c].y = approx_cursor + (*tree_)[c].margin_top;
-            layout_block(c, content_w, own_style);
-            const Box& cb = (*tree_)[c];
-            approx_cursor += cb.margin_top + cb.height + cb.margin_bottom;
-        }
-        inflow.push_back(c);
+        if ((*tree_)[c].kind == BoxKind::Block || (*tree_)[c].kind == BoxKind::AnonymousBlock)
+            inflow.push_back(c);
     }
 
     // The synthetic root has no style and no margins of its own: it is the
@@ -1416,6 +1456,29 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     bool any_collapsible_seen = false;
 
     for (BoxId cid : inflow) {
+        (*tree_)[cid].float_type = parse_float_type(get((*tree_)[cid].style, kId_float));
+        (*tree_)[cid].clear = parse_clear_type(get((*tree_)[cid].style, kId_clear));
+        if ((*tree_)[cid].is_float()) {
+            layout_float_box(cid, content_w);
+            place_float(id, cid, cursor + (chain_attaches_to_parent_top ? 0 : chain_max_pos + chain_min_neg), content_w);
+            any_collapsible_seen = true;
+            continue;
+        }
+        // Resolve the provisional border top before descendants inspect floats.
+        double provisional_top = cursor;
+        if (current_floats_ && current_floats_->count()) {
+            apply_box_model(tree_, cid, content_w, own_style, ctx_);
+            if (!chain_attaches_to_parent_top)
+                provisional_top += std::max(chain_max_pos, (*tree_)[cid].margin_top) +
+                                   std::min(chain_min_neg, (*tree_)[cid].margin_top);
+            if ((*tree_)[cid].clear != ClearType::None) {
+                bool found;
+                const double clear_top = current_floats_->clear_bottom((*tree_)[cid].clear, &found) - bfc_origin_y_;
+                if (found) provisional_top = std::max(provisional_top, clear_top);
+            }
+        }
+        (*tree_)[cid].y = provisional_top;
+        layout_block(cid, content_w, own_style);
         Box& c = (*tree_)[cid];
         const double left_inner = (*tree_)[id].padding_left + (*tree_)[id].border_left;
 
@@ -1426,19 +1489,22 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
             any_collapsible_seen = true;
             continue;
         }
-        // §9.5.2: `clear` pushes the box's TOP MARGIN edge below the bottom of
-        // any matching float, even where margin collapsing would place it
-        // higher. The chain that has accumulated so far is spent on the move
-        // rather than added to it, so it resets.
-        if (c.clear != ClearType::None && current_floats_) {
-            const double clear_local = current_floats_->clear_bottom(c.clear) - bfc_origin_y_;
-            const double would_be_top = cursor + chain_max_pos + chain_min_neg;
-            if (clear_local > would_be_top) {
+        // Clearance positions the border edge below matching floats. Test the
+        // hypothetical collapsed position first: an already sufficient margin
+        // needs no clearance, and a margin adjoining the parent lives outside it.
+        if (c.clear != ClearType::None && current_floats_ && !is_out_of_flow(c)) {
+            bool found;
+            const double clear_local = current_floats_->clear_bottom(c.clear, &found) - bfc_origin_y_;
+            const double would_be_top = cursor + (chain_attaches_to_parent_top ? 0 :
+                std::max(chain_max_pos, c.margin_top) + std::min(chain_min_neg, c.margin_top));
+            if (found && clear_local > would_be_top) {
                 if (chain_attaches_to_parent_top) {
                     (*tree_)[id].margin_top = chain_max_pos + chain_min_neg;
                     chain_attaches_to_parent_top = false;
                 }
-                cursor = clear_local;
+                // The child's margin is folded in below; absorb it here rather
+                // than adding it a second time on top of the float's bottom.
+                cursor = clear_local - c.margin_top;
                 chain_max_pos = 0;
                 chain_min_neg = 0;
             }
@@ -1475,10 +1541,10 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         // A self-collapsing block adds BOTH its margins to the active chain and
         // contributes no height, so the chain passes straight through it.
         if (is_self_collapsing(*tree_, cid, ctx_, font_size)) {
+            c.x = left_inner + resolve_block_inline_offset(c, content_w, get(own_style, kId_direction) == "rtl");
+            c.y = chain_attaches_to_parent_top ? cursor : cursor + chain_max_pos + chain_min_neg;
             if (child_bottom > chain_max_pos) chain_max_pos = child_bottom;
             if (child_bottom < chain_min_neg) chain_min_neg = child_bottom;
-            c.x = left_inner + c.margin_left;
-            c.y = chain_attaches_to_parent_top ? cursor : cursor + chain_max_pos + chain_min_neg;
             any_collapsible_seen = true;
             continue;
         }
@@ -1494,8 +1560,53 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         } else {
             c.y = cursor + gap;
         }
-        c.x = left_inner + c.margin_left;
-        cursor = c.y + c.height;
+        c.x = left_inner + resolve_block_inline_offset(c, content_w, get(own_style, kId_direction) == "rtl");
+        if (current_floats_ && current_floats_->count() && establishes_new_bfc(c)) {
+            const double fs = font_size_px(c.style, own_style, ctx_);
+            const auto margins = resolve_box_sides_px(c.style, kId_margin, ctx_, fs, content_w);
+            const bool auto_left = margins.left_raw == "auto", auto_right = margins.right_raw == "auto";
+            const double ml = auto_left ? 0 : c.margin_left, mr = auto_right ? 0 : c.margin_right;
+            const double frame = c.padding_left + c.padding_right + c.border_left + c.border_right;
+            const auto min_width = resolve_length(c.style, kId_min_width, ctx_, fs, content_w);
+            const double minimum = min_width.kind == LengthKind::Length || min_width.kind == LengthKind::Percent
+                ? std::max(frame, (min_width.kind == LengthKind::Percent ? content_w * min_width.percent * 0.01 : min_width.pixels) + (get(c.style, "box-sizing") == "border-box" ? 0 : frame)) : frame;
+            double ratio = 0;
+            const auto height = resolve_length(c.style, kId_height, ctx_, fs, std::nullopt);
+            const bool has_ratio = try_resolve_aspect_ratio(c.style, &ratio) &&
+                                   height.kind == LengthKind::Length && height.pixels > 0;
+            const bool fill = resolve_length(c.style, kId_width, ctx_, fs, content_w).kind == LengthKind::Auto &&
+                              !has_ratio && c.intrinsic_width <= 0;
+            const double natural_width = c.width;
+            for (;;) {
+                // Reflow can rebuild descendants and invalidate Box references.
+                Box& candidate = (*tree_)[cid];
+                const double origin = bfc_origin_x_ + left_inner;
+                double left = origin, right = origin + content_w;
+                const double next = current_floats_->available_band(bfc_origin_y_ + candidate.y,
+                    bfc_origin_y_ + candidate.y + candidate.height, &left, &right);
+                left = std::max(left, origin + ml);
+                right = std::min(right, origin + content_w - mr);
+                const double space = std::max(0.0, right - left);
+                const double width = fill ? std::max(minimum, std::min(natural_width, space)) : natural_width;
+                if (width > space + 0.001 && next > bfc_origin_y_ + candidate.y) {
+                    candidate.y = next - bfc_origin_y_;
+                    continue;
+                }
+                candidate.x = left - bfc_origin_x_;
+                const double extra = std::max(0.0, space - width);
+                if (auto_left) candidate.x += auto_right ? extra * 0.5 : extra;
+                if (std::abs(candidate.width - width) > 0.001) {
+                    const double previous_height = candidate.height;
+                    relayout_at(cid, width);
+                    // Wrapping may extend into a lower preceding float. Check the
+                    // enlarged border box before accepting this band. A smaller
+                    // height cannot add an intersection and needs no retry.
+                    if ((*tree_)[cid].height > previous_height + 0.001) continue;
+                }
+                break;
+            }
+        }
+        cursor = (*tree_)[cid].y + (*tree_)[cid].height;
         // The next chain starts with this child's bottom margin.
         chain_max_pos = child_bottom > 0 ? child_bottom : 0;
         chain_min_neg = child_bottom < 0 ? child_bottom : 0;

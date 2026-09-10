@@ -2,12 +2,14 @@
 #include "weva/grapheme.h"
 #include "weva/form_values.h"
 #include "weva/form_state.h"
+#include "weva/range_track.h"
 #include "weva/box_builder.h"
 
 #include "weva/background.h"
 #include "weva/border_image.h"
 #include "weva/block_layout.h"
 #include "weva/css_value.h"
+#include "weva/css_token.h"
 #include "weva/positioning.h"
 #include "weva/scrollbar.h"
 
@@ -91,6 +93,7 @@ void TextureCache::release_all(RenderInterface* backend) {
 // its own: a road rotated across a round map is clipped where it lands, not
 // where it was laid out.
 struct ClipNode {
+    BoxId overflow_owner = kNoBox; // clip-path is never escaped by positioning.
     std::vector<ClipPoint> polygon;
     std::shared_ptr<const ClipNode> parent;
     // The polygon triangulated, bounded, and with its inscribed rectangle
@@ -207,25 +210,42 @@ struct ColorFilter {
     }
 };
 
+struct OverflowClip {
+    BoxId owner;
+    Recti rect;
+    double scroll_x, scroll_y;
+    std::shared_ptr<const OverflowClip> parent;
+};
+
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property);
 
 bool PaintReplayInputs::operator==(const PaintReplayInputs& o) const {
     if (x != o.x || y != o.y || opacity != o.opacity || canvas_owner != o.canvas_owner ||
         transformed != o.transformed || (transformed && xform != o.xform) ||
-        scissor.has_value() != o.scissor.has_value()) return false;
+        scissor.has_value() != o.scissor.has_value() || absolute_cb != o.absolute_cb || fixed_cb != o.fixed_cb) return false;
     if (scissor && (scissor->x != o.scissor->x || scissor->y != o.scissor->y ||
                     scissor->width != o.scissor->width || scissor->height != o.scissor->height)) return false;
     const ClipNode* a = clip.get();
     const ClipNode* b = o.clip.get();
     while (a && b) {
         if (a == b) break;
-        if (a->polygon.size() != b->polygon.size()) return false;
+        if (a->overflow_owner != b->overflow_owner || a->polygon.size() != b->polygon.size()) return false;
         for (size_t i = 0; i < a->polygon.size(); ++i)
             if (a->polygon[i].x != b->polygon[i].x || a->polygon[i].y != b->polygon[i].y) return false;
         a = a->parent.get();
         b = b->parent.get();
     }
     if (bool(a) != bool(b) || bool(filter) != bool(o.filter)) return false;
+    const auto* oa = overflow.get();
+    const auto* ob = o.overflow.get();
+    while (oa && ob) {
+        if (oa == ob) break;
+        if (oa->owner != ob->owner || oa->rect.x != ob->rect.x || oa->rect.y != ob->rect.y ||
+            oa->rect.width != ob->rect.width || oa->rect.height != ob->rect.height ||
+            oa->scroll_x != ob->scroll_x || oa->scroll_y != ob->scroll_y) return false;
+        oa = oa->parent.get(); ob = ob->parent.get();
+    }
+    if (bool(oa) != bool(ob)) return false;
     if (filter && filter != o.filter) {
         if (filter->alpha != o.filter->alpha) return false;
         for (int r = 0; r < 3; ++r) {
@@ -1011,16 +1031,6 @@ void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding
     }
 }
 
-double opacity_of(const ComputedStyle* style) {
-    const std::string_view raw = get(style, "opacity");
-    if (raw.empty()) return 1;
-    const std::string s(raw);
-    char* end = nullptr;
-    const double v = std::strtod(s.c_str(), &end);
-    if (end == s.c_str()) return 1;
-    return std::clamp(*end == '%' ? v / 100.0 : v, 0.0, 1.0);
-}
-
 bool clips_children(const ComputedStyle* style) {
     for (const char* prop : {"overflow-x", "overflow-y"}) {
         const std::string_view v = get(style, prop);
@@ -1153,6 +1163,8 @@ struct PaintState {
     Transform2D xform;   // accumulated, in absolute coordinates
     std::shared_ptr<const ClipNode> clip;
     std::shared_ptr<const ColorFilter> filter;
+    std::shared_ptr<const OverflowClip> overflow;
+    BoxId absolute_cb = kNoBox, fixed_cb = kNoBox;
 };
 
 bool ci_equal(std::string_view a, std::string_view b);
@@ -1275,7 +1287,7 @@ bool parse_color_filter(const ComputedStyle* style, const LayoutContext& ctx, do
 
 // Pushes a polygon clip onto the state's chain, mapping it through the
 // transform in force so it lives in screen space (see ClipNode).
-void push_clip(PaintState* state, std::vector<ClipPoint> polygon) {
+void push_clip(PaintState* state, std::vector<ClipPoint> polygon, BoxId overflow_owner = kNoBox) {
     if (polygon.size() < 3) return;
     if (state->transformed) {
         for (ClipPoint& p : polygon) {
@@ -1286,6 +1298,7 @@ void push_clip(PaintState* state, std::vector<ClipPoint> polygon) {
         }
     }
     auto n = std::make_shared<ClipNode>();
+    n->overflow_owner = overflow_owner;
     n->polygon = std::move(polygon);
     n->prepare();
     n->parent = state->clip;
@@ -1467,14 +1480,22 @@ Recti intersect(const Recti& a, const Recti& b) {
 // texture that no longer exists, which a host that maps ids faithfully renders
 // untextured — and which, under a real GPU backend, frees a texture a queued
 // draw is still using. Shaping twice is cheap next to that.
-// The face a run draws with: the document face, or the host's bold / italic
-// variant of it for the run's font-weight and font-style.
-FaceHandle face_for_run(const Box& b, const PaintContext& paint) {
-    if (!paint.font) return paint.face;
+// Use the same registered family for layout and paint. A metrics-only family
+// or a face from another backend keeps the document's rendering fallback.
+FaceHandle family_face(const ComputedStyle* style, const LayoutContext& ctx,
+                       const PaintContext& paint) {
+    if (ctx.fonts.empty()) return paint.face;
+    const auto* metrics = ctx.font_for(get(style, "font-family"));
+    const auto face = metrics ? metrics->rendering_face(paint.font) : FaceHandle{};
+    return face.id ? face : paint.face;
+}
+FaceHandle face_for_run(const Box& b, const LayoutContext& ctx, const PaintContext& paint) {
+    const auto face = family_face(b.style, ctx, paint);
+    if (!paint.font) return face;
     const int weight = resolve_font_weight(b.style);
     const bool italic = resolve_font_italic(b.style);
-    if (weight < 600 && !italic) return paint.face;
-    return paint.font->variant(paint.face, weight, italic);
+    if (weight < 600 && !italic) return face;
+    return paint.font->variant(face, weight, italic);
 }
 
 // A thick line as one quad: the segment's direction, its normal, and the four
@@ -1595,7 +1616,7 @@ bool form_control_text(const Box& b, ControlText* out) {
             type == "file" || type == "color" || type == "image") {
             return false;
         }
-        const std::string_view value = e.form_value();
+        const std::string_view value = e.form_edit_value();
         out->source = value;
         if (type == "submit" || type == "button" || type == "reset") {
             out->text = !value.empty() ? std::string(value)
@@ -1633,7 +1654,7 @@ bool form_control_text(const Box& b, ControlText* out) {
     }
     if (tag == "textarea") {
         out->centered = false;
-        if (!e.form_value().empty()) return false;
+        if (!e.form_edit_value().empty()) return false;
         const std::string_view ph = e.get_attribute("placeholder");
         if (ph.empty()) return false;
         out->text = std::string(ph);
@@ -1649,9 +1670,9 @@ bool is_form_control(const Box& b) {
     return tag == "input" || tag == "select" || tag == "textarea";
 }
 
-double control_text_offset(const Box& b, bool centered, double content_height, double line_height) {
+double control_text_offset(const Box& b, bool centered, double content_height, const FontMetrics& metrics, double fs) {
     if (!centered) return 0;
-    const double offset = (content_height - line_height) * 0.5;
+    const double offset = metrics.leading_above(content_height, fs);
     // Short text fields keep their line centered; buttons and selects retain
     // their non-negative content offset.
     return b.element && form_is_text_entry(*b.element) ? offset : std::max(0.0, offset);
@@ -1800,6 +1821,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
                         const PaintState& state, const Transform2D* xf) {
     const Element& e = *b.element;
     const std::string_view tag = e.tag_name();
+    const bool skip_contents = b.style && b.style->get("content-visibility") == "hidden";
     const double cl = x + b.border_left + b.padding_left;
     const double ct = y + b.border_top + b.padding_top;
     const double cw = b.width - b.border_left - b.border_right - b.padding_left - b.padding_right;
@@ -1847,39 +1869,46 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             double frac = range.max > range.min ? (range.value - range.min) / (range.max - range.min) : 0;
             if (!(frac >= 0)) frac = 0;
             if (frac > 1) frac = 1;
-            if (cw <= 0) return;
-            const double content_h = ch > 0 ? ch : b.height;
-            const double cy = ct + content_h * 0.5;
+            const RangeTrack track(b, x, y);
+            if (track.length <= 0 || track.cross <= 0) return;
+            if (track.reversed) frac = 1 - frac;
             const LinearColor accent = accent_color_of(b.style);
-            const double rail_h = std::min(content_h, 6.0);
-            const double thumb = std::max(rail_h, std::min(content_h, 14.0));
-            const double rail_top = cy - rail_h * 0.5;
-            const double usable = std::max(0.0, cw - thumb);
-            const double cx = cl + thumb * 0.5 + frac * usable;
+            const double thumb = track.thumb;
+            const double centre = thumb * .5 + frac * track.travel;
+            const double cx = track.vertical ? cl + track.cross * .5 : cl + centre;
+            const double cy = track.vertical ? ct + centre : ct + track.cross * .5;
+            const auto rail_rect = [&](double start, double length) {
+                return track.vertical
+                    ? Rect(cl + (track.cross - track.rail) * .5, ct + start, track.rail, length)
+                    : Rect(cl + start, ct + (track.cross - track.rail) * .5, length, track.rail);
+            };
             LinearColor groove = accent;
             groove.a *= 0.3f;
-            fill_rounded(Rect(cl, rail_top, cw, rail_h), rail_h * 0.5, groove, paint.backend,
+            fill_rounded(rail_rect(0, track.length), track.rail * 0.5, groove, paint.backend,
                          state.opacity, xf, state.clip.get(), state.filter.get());
-            if (cx - cl > 0) {
-                fill_rounded(Rect(cl, rail_top, cx - cl, rail_h), rail_h * 0.5, accent, paint.backend,
+            const double fill_start = track.reversed ? centre : 0;
+            const double fill_length = track.reversed ? track.length - centre : centre;
+            if (fill_length > 0) {
+                fill_rounded(rail_rect(fill_start, fill_length), track.rail * 0.5, accent, paint.backend,
                              state.opacity, xf, state.clip.get(), state.filter.get());
             }
-            fill_rounded(Rect(cx - thumb * 0.5, cy - thumb * 0.5, thumb, thumb), thumb * 0.5, accent,
-                         paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
+            if (!skip_contents)
+                fill_rounded(Rect(cx - thumb * 0.5, cy - thumb * 0.5, thumb, thumb), thumb * 0.5, accent,
+                             paint.backend, state.opacity, xf, state.clip.get(), state.filter.get());
             return;
         }
     }
 
     ControlText t;
-    const bool has_text = form_control_text(b, &t);
+    const bool has_text = !skip_contents && form_control_text(b, &t);
     if (has_text && paint.font && paint.atlas && cw > 0 && ch > 0) {
-        const FaceHandle face = face_for_run(b, paint);
+        const FaceHandle face = face_for_run(b, ctx, paint);
         FontInterfaceMetrics default_metrics(paint.font, face);
         const FontMetrics* m = control_metrics(ctx, b.style);
         if (!m) m = &default_metrics;
         const double ascent = m->ascent(fs);
         const double line_h = m->line_height(fs);
-        const double text_top = ct + control_text_offset(b, t.centered, ch, line_h);
+        const double text_top = ct + control_text_offset(b, t.centered, ch, *m, fs);
         const double baseline = text_top + ascent;
         LinearColor color = resolve_color(b.style, "color");
         if (t.placeholder) color = LinearColor(color.r * 0.5f, color.g * 0.5f, color.b * 0.5f, color.a * 0.5f);
@@ -1992,8 +2021,8 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
         return;
     }
     const Box& b = tree[id];
-    if (b.kind == BoxKind::Text && !b.text.empty() && paint.font && paint.atlas) {
-        const FaceHandle face = face_for_run(b, paint);
+    if (b.kind == BoxKind::Text && !b.preserved_tab && !b.text.empty() && paint.font && paint.atlas) {
+        const FaceHandle face = face_for_run(b, ctx, paint);
         std::vector<ShapedGlyph> glyphs;
         paint.font->shape(face, b.text, b.font_size, &glyphs);
         for (const ShapedGlyph& g : glyphs) {
@@ -2003,10 +2032,11 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
     // Control overlays draw text no box carries; their glyphs go into the
     // same single up-front upload.
     ControlText t;
-    if (paint.font && paint.atlas && is_form_control(b) && form_control_text(b, &t)) {
+    if (paint.font && paint.atlas && is_form_control(b) &&
+        (!b.style || b.style->get("content-visibility") != "hidden") && form_control_text(b, &t)) {
         const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
         const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
-        const FaceHandle face = face_for_run(b, paint);
+        const FaceHandle face = face_for_run(b, ctx, paint);
         std::vector<ShapedGlyph> glyphs;
         paint.font->shape(face, t.text, fs, &glyphs);
         for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, face, g.glyph, fs);
@@ -2029,7 +2059,8 @@ PopupTextStyle popup_text_style(const Element& row, const Box& select,
     const auto* parent = row.parent() && row.parent()->is_element() && paint.styles
         ? paint.styles->style_of(static_cast<const Element&>(*row.parent())) : select.style;
     const int weight = paint.styles ? resolve_font_weight(style) : row.tag_name() == "optgroup" ? 700 : resolve_font_weight(style);
-    const auto face = paint.font ? paint.font->variant(paint.face, weight, resolve_font_italic(style)) : paint.face;
+    const auto base_face = family_face(style, ctx, paint);
+    const auto face = paint.font ? paint.font->variant(base_face, weight, resolve_font_italic(style)) : base_face;
     return {style, face, paint.styles && style ? font_size_px(style, parent, ctx) : select_size};
 }
 void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
@@ -2467,6 +2498,7 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
 // keeps the band on the glyphs at any letter-spacing.
 double measured_width(std::string_view text, const Box& run, const LinearColor&,
                       const PaintContext& paint, const FaceHandle& face, double spacing) {
+    if (run.preserved_tab) return text.empty() ? 0 : run.width;
     return text_advance(text, run.font_size, paint, face, spacing);
 }
 
@@ -2583,6 +2615,55 @@ bool border_keyword(std::string_view value, std::string_view keyword) {
     return true;
 }
 
+bool collapsed_table_part(const Box& b) {
+    return is_table_display(b.display) && b.display != DisplayKind::TableCaption &&
+           border_keyword(get(b.style, "border-collapse"), "collapse");
+}
+
+void paint_table_borders(const std::vector<TableBorderSegment>& segments, double x, double y,
+                         const PaintContext& paint, const PaintState& state, const Transform2D* xf) {
+    Mesh mesh;
+    static const char* colors[] = {"border-top-color", "border-right-color", "border-bottom-color", "border-left-color"};
+    for (const auto& segment : segments) {
+        const auto* style = paint.styles && segment.element ? paint.styles->style_of(*segment.element) : segment.fallback_style;
+        if (!style) continue;
+        auto property = std::string_view(colors[static_cast<int>(segment.border.side)]);
+        if (get(style, property).empty() || border_keyword(get(style, property), "currentcolor")) property = "color";
+        const auto color = resolve_color(style, property);
+        const double width = segment.border.used_width();
+        if (width <= 0 || color.a <= 0) continue;
+        const auto rect = [&](double along, double across, double length, double thickness) {
+            return segment.horizontal ? Rect(x + segment.x + along, y + segment.y + across, length, thickness)
+                                      : Rect(x + segment.x + across, y + segment.y + along, thickness, length);
+        };
+        const auto fill = [&](double across, double thickness, const LinearColor& tint) {
+            tessellate_rect(rect(-segment.start_extension, across, segment.length + segment.start_extension + segment.end_extension, thickness), tint, &mesh, false);
+        };
+        const auto kind = segment.border.style;
+        if (kind == TableBorderStyle::Double && width >= 3) {
+            const double stripe = width / 3;
+            fill(-width * .5, stripe, color);
+            fill(width * .5 - stripe, stripe, color);
+        } else if (kind == TableBorderStyle::Dotted || kind == TableBorderStyle::Dashed) {
+            const double dash = kind == TableBorderStyle::Dotted ? width : 3 * width;
+            for (double at = 0; at < segment.length; at += dash * 2) {
+                const Rect r = rect(at, -width * .5, std::min(dash, segment.length - at), width);
+                if (kind == TableBorderStyle::Dotted) {
+                    BorderRadii radius;
+                    radius.top_left = radius.top_right = radius.bottom_left = radius.bottom_right = {width * .5, width * .5};
+                    tessellate_rounded_rect(r, radius, color, &mesh);
+                } else tessellate_rect(r, color, &mesh, false);
+            }
+        } else if (kind == TableBorderStyle::Inset || kind == TableBorderStyle::Ridge ||
+                   kind == TableBorderStyle::Outset || kind == TableBorderStyle::Groove) {
+            const bool ridge = kind == TableBorderStyle::Inset || kind == TableBorderStyle::Ridge;
+            fill(-width * .5, width * .5, bevel_color(style, property, !ridge));
+            fill(0, width * .5, bevel_color(style, property, ridge));
+        } else fill(-width * .5, width, color);
+    }
+    draw_mesh(std::move(mesh), paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
+}
+
 // The recursive walk already resolved this box's radii and background color
 // for effects and layered backgrounds. Keep one decoration implementation,
 // accepting those values so an ordinary fill/border does not resolve them again.
@@ -2594,7 +2675,7 @@ void paint_resolved_decorations(const Box& b, const Rect& border_box, const Bord
     // Background under the border: transparent borders reveal it.
     if (with_background && bg.a > 0) tessellate_rounded_rect(border_box, radii, bg, out);
     // A border image replaces the ordinary border, including transparent texels.
-    if (!skip_border &&
+    if (!skip_border && !collapsed_table_part(b) &&
         (b.border_top > 0 || b.border_right > 0 || b.border_bottom > 0 || b.border_left > 0)) {
         const auto side = [&](std::string_view property, std::string_view style_property, bool leading) {
             const std::string_view raw = get(b.style, property);
@@ -2624,16 +2705,131 @@ const Element* owner_element(const BoxTree& tree, BoxId id) {
     return nullptr;
 }
 
+struct TablePositionedPaint {
+    BoxId id;
+    double origin_x, origin_y;
+    PaintState state;
+    int rank;
+    size_t sequence;
+    bool own_only = false;
+};
+
+std::shared_ptr<const OverflowClip> applicable_overflow(const BoxTree& tree, BoxId cb,
+        const std::shared_ptr<const OverflowClip>& node, double* scroll_x, double* scroll_y) {
+    if (!node) return {};
+    auto parent = applicable_overflow(tree, cb, node->parent, scroll_x, scroll_y);
+    if (!overflow_clip_applies(tree, node->owner, cb)) {
+        *scroll_x += node->scroll_x; *scroll_y += node->scroll_y;
+        return parent;
+    }
+    if (parent == node->parent) return node;
+    auto copy = std::make_shared<OverflowClip>(*node);
+    copy->parent = std::move(parent);
+    return copy;
+}
+
+std::shared_ptr<const ClipNode> applicable_clip_polygons(const BoxTree& tree, BoxId cb,
+        const std::shared_ptr<const ClipNode>& node) {
+    if (!node) return {};
+    auto parent = applicable_clip_polygons(tree, cb, node->parent);
+    if (node->overflow_owner != kNoBox && !overflow_clip_applies(tree, node->overflow_owner, cb)) return parent;
+    if (parent == node->parent) return node;
+    auto copy = std::make_shared<ClipNode>(*node);
+    copy->parent = std::move(parent);
+    return copy;
+}
+
+// Only ancestors whose draw ranges are split by a promoted descendant lose
+// inner replay. Unrelated cells retain their complete ranges and the table's
+// outer capture still contains every draw in final order.
+class TablePositionedReuse final : public PaintReuse {
+public:
+    TablePositionedReuse(PaintReuse* source, const BoxTree& tree, BoxId table) : source_(source) {
+        for (const BoxId child : tree.children(table)) collect(tree, child);
+        std::sort(split_.begin(), split_.end());
+    }
+    void begin_paint(TextureHandle atlas) override { source_->begin_paint(atlas); }
+    bool replay(BoxId id) override { return complete(id) && source_->replay(id); }
+    bool tracks_inputs(BoxId id) const override { return complete(id) && source_->tracks_inputs(id); }
+    bool replay(BoxId id, const PaintReplayInputs& inputs) override {
+        return complete(id) && source_->replay(id, inputs);
+    }
+    void begin_box(BoxId id) override { if (complete(id)) source_->begin_box(id); }
+    void end_box(BoxId id) override { if (complete(id)) source_->end_box(id); }
+private:
+    bool collect(const BoxTree& tree, BoxId id) {
+        const Box& box = tree[id];
+        if (box.position != PositionType::Static && box.z_index && *box.z_index < 0) return true;
+        bool split = table_positioned_layer(box);
+        if (!split) for (const BoxId child : tree.children(id)) split = collect(tree, child) || split;
+        if (split) split_.push_back(id);
+        return split;
+    }
+    bool complete(BoxId id) const { return !std::binary_search(split_.begin(), split_.end(), id); }
+    PaintReuse* source_;
+    std::vector<BoxId> split_;
+};
+
 void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, double origin_x,
                      double origin_y, const PaintContext& paint, TextureHandle atlas_texture,
-                     BoxId canvas_owner, PaintState state) {
+                     BoxId canvas_owner, PaintState state,
+                     std::vector<TablePositionedPaint>* table_positioned = nullptr,
+                     std::optional<int> table_layer = std::nullopt, bool table_isolation = false,
+                     bool own_only = false, bool negative_scan = false,
+                     std::vector<TablePositionedPaint>* table_negative = nullptr) {
     const Box& b = tree[id];
+    struct RestoreScissor {
+        RenderInterface* backend;
+        std::optional<Recti> before;
+        bool changed = false;
+        ~RestoreScissor() { if (changed && backend) backend->set_scissor(before ? &*before : nullptr); }
+    } restore_scissor{paint.backend, state.scissor};
+    if (state.overflow && (b.position == PositionType::Absolute || b.position == PositionType::Fixed)) {
+        const BoxId cb = (b.position == PositionType::Absolute
+            ? resolve_absolute_containing_block(tree, id, ctx) : resolve_fixed_containing_block(tree, id, ctx)).box;
+        double scroll_x = 0, scroll_y = 0;
+        auto overflow = applicable_overflow(tree, cb, state.overflow, &scroll_x, &scroll_y);
+        if (overflow != state.overflow) {
+            origin_x += scroll_x; origin_y += scroll_y;
+            state.overflow = std::move(overflow);
+            state.scissor.reset();
+            for (auto node = state.overflow; node; node = node->parent)
+                state.scissor = state.scissor ? intersect(*state.scissor, node->rect) : node->rect;
+            state.clip = applicable_clip_polygons(tree, cb, state.clip);
+            restore_scissor.changed = true;
+            if (paint.backend) paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
+        }
+    }
+    if (table_negative && b.position != PositionType::Static && b.z_index && *b.z_index < 0) {
+        if (negative_scan)
+            table_negative->push_back({id, origin_x, origin_y, state, *b.z_index, table_negative->size()});
+        return;
+    }
+    if (negative_scan && table_positioned_isolation(b)) return;
+    const bool table_decoration = collapsed_table_part(b) && b.display != DisplayKind::Table &&
+                                  b.display != DisplayKind::InlineTable;
+    bool descendants_only = negative_scan;
+    if (table_positioned && !table_decoration && (table_layer || table_positioned_layer(b))) {
+        const bool split = !table_isolation && !table_positioned_isolation(b) && has_table_positioned_layer(tree,id);
+        const int rank = table_isolation ? table_layer.value_or(0) :
+            (b.position != PositionType::Static && b.z_index ? *b.z_index : table_layer.value_or(0));
+        table_positioned->push_back({id, origin_x, origin_y, state, rank, table_positioned->size(), split});
+        if (!split) return;
+        descendants_only = true;
+    }
+    // A positioned cell's decorations remain in the table layer. Only a real
+    // stacking context isolates the rank of its positioned descendants.
+    if (table_decoration && table_positioned_layer(b) && !table_layer) {
+        table_layer = b.z_index.value_or(0);
+        table_isolation = table_positioned_isolation(b);
+    }
     const double x = origin_x + b.x;
     const double y = origin_y + b.y;
-    if (paint.reuse) {
+    if (paint.reuse && !own_only && !descendants_only) {
         if (paint.reuse->tracks_inputs(id)) {
             const PaintReplayInputs inputs{x, y, state.opacity, state.scissor, state.transformed,
-                                            state.xform, state.clip, state.filter, canvas_owner};
+                                            state.xform, state.clip, state.filter, canvas_owner,
+                                            state.overflow, state.absolute_cb, state.fixed_cb};
             if (paint.reuse->replay(id, inputs)) return;
         } else if (paint.reuse->replay(id)) return;
     }
@@ -2642,7 +2838,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         BoxId id;
         Capture(PaintReuse* r, BoxId b) : reuse(r), id(b) { if (reuse) reuse->begin_box(id); }
         ~Capture() { if (reuse) reuse->end_box(id); }
-    } capture(paint.reuse, id);
+    } capture(own_only || descendants_only ? nullptr : paint.reuse, id);
 
     // Nothing this box or anything under it can paint reaches the clip it is
     // inside, so the whole subtree is skipped here rather than walked and
@@ -2664,10 +2860,12 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         // case, which is the one that matters.
         if (state.scissor) {
             const Recti& r = *state.scissor;
-            if (cx1 < r.x || cx0 > r.x + r.width || cy1 < r.y || cy0 > r.y + r.height) return;
+            if ((cx1 < r.x || cx0 > r.x + r.width || cy1 < r.y || cy0 > r.y + r.height) &&
+                !subtree_has_overflow_escape(tree, id, ctx)) return;
         }
         for (const ClipNode* n = state.clip.get(); n; n = n->parent.get()) {
-            if (!n->intersects_box(cx0, cy0, cx1, cy1)) return;
+            if (!n->intersects_box(cx0, cy0, cx1, cy1) &&
+                (n->overflow_owner == kNoBox || !subtree_has_overflow_escape(tree, id, ctx))) return;
         }
     }
 
@@ -2677,17 +2875,33 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // bar behind every header's text.
     const bool decorated = b.kind != BoxKind::Line && b.kind != BoxKind::AnonymousBlock &&
                            b.kind != BoxKind::AnonymousInline && b.kind != BoxKind::Text;
-    if (decorated && b.style) state.opacity *= opacity_of(b.style);
+    if (establishes_absolute_containing_block(b)) state.absolute_cb = id;
+    if (establishes_fixed_containing_block(b)) state.fixed_cb = id;
+    if (decorated && b.style) state.opacity *= resolve_opacity(b.style);
     // `visibility: hidden` paints nothing of the box itself; its children
     // inherit the value and paint nothing either unless they override it.
-    const bool hidden = b.style && get(b.style, "visibility") == "hidden";
+    const bool hidden = descendants_only || (b.style && get(b.style, "visibility") == "hidden");
 
     const BoxId parent = b.parent;
     const ComputedStyle* ps = parent == kNoBox ? nullptr : tree[parent].style;
     const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
-    const Rect border_box(x, y, b.width, b.height);
+    Rect border_box(x, y, b.width, b.height);
+    if (b.display == DisplayKind::Table || b.display == DisplayKind::InlineTable) {
+        double top_captions = 0, bottom_captions = 0;
+        for (BoxId child : tree.children(id)) {
+            const Box& caption = tree[child];
+            if (caption.display != DisplayKind::TableCaption) continue;
+            const double extent = caption.margin_top + caption.height + caption.margin_bottom;
+            if (get(caption.style, "caption-side") == "bottom") bottom_captions += extent;
+            else top_captions += extent;
+        }
+        // Layout retains the wrapper (including captions) for flow and input.
+        // The table's own background and border decorate only its grid frame.
+        border_box.y += top_captions;
+        border_box.height = std::max(0.0, border_box.height - top_captions - bottom_captions);
+    }
     const BorderRadii radii =
-        decorated && b.style ? resolve_border_radii(b.style, b.width, b.height, ctx, fs)
+        decorated && b.style ? resolve_border_radii(b.style, border_box.width, border_box.height, ctx, fs)
                              : BorderRadii::zero();
 
     // A transform applies to the box and everything in it, about its origin
@@ -2717,13 +2931,13 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // children paint sharp on top.
     const double blur = decorated && b.style ? blur_filter_radius(b.style, ctx, fs) : 0;
     bool blurred = false;
-    if (blur > 0 && !hidden && b.width > 0 && b.height > 0 && paint.backend && id != canvas_owner) {
+    if (blur > 0 && !hidden && border_box.width > 0 && border_box.height > 0 && paint.backend && id != canvas_owner) {
         ProfileScope prof(&g_paint_profile.filters);
         const std::vector<BackgroundLayer> layers = layers_of(b, paint);
         const LinearColor bg = resolve_color(b.style, "background-color");
         if (bg.a > 0 || has_paintable_layer(layers)) {
             const double pad_px = 3 * blur;
-            const double full_w = b.width + 2 * pad_px, full_h = b.height + 2 * pad_px;
+            const double full_w = border_box.width + 2 * pad_px, full_h = border_box.height + 2 * pad_px;
             const double scale = std::min(1.0, 1024.0 / std::max(full_w, full_h));
             const int tex_w = std::max(1, static_cast<int>(std::ceil(full_w * scale)));
             const int tex_h = std::max(1, static_cast<int>(std::ceil(full_h * scale)));
@@ -2733,7 +2947,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             std::string key;
             TextureHandle tex;
             if (paint.texture_cache && b.style) {
-                key = background_key(b.style, bg, b.width, b.height, radii, fs, blur, nullptr,
+                key = background_key(b.style, bg, border_box.width, border_box.height, radii, fs, blur, nullptr,
                                      &layers, tex_w, tex_h);
                 append_image_version(key, paint);
                 tex = paint.texture_cache->get(key);
@@ -2743,7 +2957,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 std::vector<uint8_t> rgba;
                 {
                     ProfileScope raster(&g_paint_profile.filter_raster);
-                    rasterize_background_padded(layers, bg, b.width, b.height, tex_w, tex_h, pad, &radii,
+                    rasterize_background_padded(layers, bg, border_box.width, border_box.height, tex_w, tex_h, pad, &radii,
                                                 ctx, fs, &rgba);
                 }
                 {
@@ -2757,7 +2971,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
                 else if (paint.owned_textures) paint.owned_textures->push_back(tex);
             }
-            const Rect area(x - pad_px, y - pad_px, full_w, full_h);
+            const Rect area(border_box.x - pad_px, border_box.y - pad_px, full_w, full_h);
             Mesh mesh;
             // The blurred image supplies its own soft edge; a feather would
             // only blur an already-blurred boundary.
@@ -2854,7 +3068,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
 
     // A border image, which replaces the border drawn below.
     const bool border_image_drawn =
-        decorated && !hidden && !blurred && b.width > 0 && b.height > 0 &&
+        decorated && !hidden && !blurred && !collapsed_table_part(b) && b.width > 0 && b.height > 0 &&
         paint_border_image(b, border_box, ctx, fs, paint, state.opacity, xf, state.clip.get(),
                            state.filter.get());
 
@@ -2918,7 +3132,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             shape.color = c;
             Mesh fallback;
             tessellate_rounded_rect(border_box, radii, c, &fallback);
-            paint.backend->render_rounded_rect(shape, fallback.vertices, fallback.indices);
+            paint.backend->render_rounded_rect_owned(shape, std::move(fallback.vertices), std::move(fallback.indices));
             background_done = true;
         }
 
@@ -2934,9 +3148,9 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         paint_outline(b, x, y, ctx, radii, paint, state.opacity, xf, state.clip.get(),
                       state.filter.get());
         if (!shadows.empty()) {
-            const Rect padding_box(x + b.border_left, y + b.border_top,
-                                   b.width - b.border_left - b.border_right,
-                                   b.height - b.border_top - b.border_bottom);
+            const Rect padding_box(border_box.x + b.border_left, border_box.y + b.border_top,
+                                   border_box.width - b.border_left - b.border_right,
+                                   border_box.height - b.border_top - b.border_bottom);
             if (padding_box.width > 0 && padding_box.height > 0) {
                 paint_inset_shadows(shadows, padding_box,
                                     inset_radii(radii, b.border_top, b.border_right, b.border_bottom,
@@ -2966,34 +3180,27 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         draw_mesh(std::move(ring), paint.backend, {}, state.opacity, xf, state.clip.get(), state.filter.get());
     }
 
-    // The selection band, behind the glyphs of this run. Each run views into
-    // the value's own buffer, so the difference of the pointers says which
-    // slice of the value it holds, and the part of that slice inside the
-    // selected range is the part to paint.
+    // The selection band uses the run's source mapping, including styled
+    // display buffers that no longer view the editable value directly.
     if (b.kind == BoxKind::Text && !b.text.empty() && !hidden && paint.font && paint.atlas &&
         (paint.caret.selection_to > paint.caret.selection_from ||
          paint.caret.composition_to > paint.caret.composition_from) && !paint.caret.source.empty()) {
-        const char* base = paint.caret.source.data();
-        const char* run = b.text.data();
-        if (run >= base && run + b.text.size() <= base + paint.caret.source.size() &&
+        const auto source_at = text_source_offset(b, paint.caret.source);
+        if (source_at &&
             owner_element(tree, id) == paint.caret.element) {
-            const size_t off = static_cast<size_t>(run - base);
-            const size_t from = paint.caret.selection_from > off ? paint.caret.selection_from - off
-                                                                 : 0;
-            const size_t to = paint.caret.selection_to > off
-                                  ? std::min(paint.caret.selection_to - off, b.text.size())
-                                  : 0;
+            const size_t off = *source_at;
+            const size_t from = source_to_display(b, paint.caret.selection_from > off ? paint.caret.selection_from - off : 0);
+            const size_t to = source_to_display(b, paint.caret.selection_to > off ? paint.caret.selection_to - off : 0);
             paint_selection_band(b, x, y, from, to, resolve_color(b.style, "color"), paint,
-                                 face_for_run(b, paint),
+                                 face_for_run(b, ctx, paint),
                                  letter_spacing_of(b.style, ctx, b.font_size) +
                                      b.justify_letter_spacing,
                                  paint.backend, state.opacity, xf, state.clip.get(),
                                  state.filter.get());
-            const size_t composition_from = paint.caret.composition_from > off ? paint.caret.composition_from - off : 0;
-            const size_t composition_to = paint.caret.composition_to > off
-                ? std::min(paint.caret.composition_to - off, b.text.size()) : 0;
+            const size_t composition_from = source_to_display(b, paint.caret.composition_from > off ? paint.caret.composition_from - off : 0);
+            const size_t composition_to = source_to_display(b, paint.caret.composition_to > off ? paint.caret.composition_to - off : 0);
             paint_selection_band(b, x, y, composition_from, composition_to, resolve_color(b.style, "color"), paint,
-                                 face_for_run(b, paint),
+                                 face_for_run(b, ctx, paint),
                                  letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing,
                                  paint.backend, state.opacity, xf, state.clip.get(), state.filter.get(), true);
         }
@@ -3001,7 +3208,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
 
     // A text run's own y is its top; the baseline is where the glyphs sit, and
     // the line box put it there.
-    if (b.kind == BoxKind::Text && !b.text.empty() && paint.font && paint.atlas && !hidden) {
+    if (b.kind == BoxKind::Text && !b.preserved_tab && !b.text.empty() && paint.font && paint.atlas && !hidden) {
         const BoxId line = b.parent;
         const double baseline =
             line != kNoBox && tree[line].kind == BoxKind::Line ? origin_y + tree[line].baseline
@@ -3009,7 +3216,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         const double spacing =
             letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;
         const LinearColor text_color = resolve_color(b.style, "color");
-        const FaceHandle run_face = face_for_run(b, paint);
+        const FaceHandle run_face = face_for_run(b, ctx, paint);
         // text-shadow first, under the glyphs: the offset run in the shadow
         // colour. A blur is a 5x5 Gaussian kernel of glyph copies, sigma =
         // blur / 2, weights normalised so the stack's coverage approaches
@@ -3093,6 +3300,20 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         draw_mesh(std::move(text), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
     }
 
+    // A preserved tab has no glyph ink, but text decoration spans its advance.
+    if (b.kind == BoxKind::Text && b.preserved_tab && !hidden && paint.font && paint.atlas) {
+        if (const int deco = decoration_flags_of(b.style)) {
+            const BoxId line = b.parent;
+            const double baseline = line != kNoBox && tree[line].kind == BoxKind::Line
+                ? origin_y + tree[line].baseline : y + b.height;
+            const FontMetrics* dm = control_metrics(ctx, b.style);
+            const double ascent = dm ? dm->ascent(b.font_size) : b.font_size * 0.8;
+            paint_text_decorations(deco, x, baseline, b.width, ascent, b.font_size,
+                b.style, ctx, resolve_color(b.style, "color"), paint, state.opacity,
+                xf, state.clip.get(), state.filter.get());
+        }
+    }
+
     // The caret, in the run that was found to hold it. Which run, and how far
     // into it, was settled after layout: paint cannot work that out per run
     // without missing the cursor at a line end, where the newline belongs to
@@ -3100,11 +3321,11 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     if (b.kind == BoxKind::Text && id == paint.caret.run && paint.caret.visible && !hidden &&
         paint.font && paint.atlas) {
         const LinearColor caret_color = resolve_color(b.style, "color");
-        const FaceHandle caret_face = face_for_run(b, paint);
+        const FaceHandle caret_face = face_for_run(b, ctx, paint);
         const double caret_spacing =
             letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;
-        const double advance = text_advance(b.text.substr(0, std::min(paint.caret.run_offset, b.text.size())),
-                                           b.font_size, paint, caret_face, caret_spacing);
+        const double advance = measured_width(b.text.substr(0, std::min(paint.caret.run_offset, b.text.size())),
+                                           b, caret_color, paint, caret_face, caret_spacing);
         Mesh bar;
         tessellate_rect(Rect(x + advance, y, 1.0, b.height > 0 ? b.height : b.font_size),
                         caret_color, &bar, false);
@@ -3114,6 +3335,10 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // `overflow` other than visible clips the children to the padding box
     // (§11.1.1) — a rectangle for now: the corners of a rounded scroller are
     // not rounded off.
+    const auto* table_segments = (b.display == DisplayKind::Table || b.display == DisplayKind::InlineTable)
+        ? tree.table_borders(id) : nullptr;
+    std::optional<PaintState> table_border_state;
+    if (table_segments) table_border_state = state;
     const std::optional<Recti> outer_scissor = state.scissor;
     if (decorated && b.style && clips_children(b.style)) {
         const double px0 = x + b.border_left, py0 = y + b.border_top;
@@ -3136,6 +3361,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         Recti r{static_cast<int>(std::floor(cx0)), static_cast<int>(std::floor(cy0)),
                 std::max(0, static_cast<int>(std::ceil(cx1)) - static_cast<int>(std::floor(cx0))),
                 std::max(0, static_cast<int>(std::ceil(cy1)) - static_cast<int>(std::floor(cy0)))};
+        state.overflow = std::make_shared<OverflowClip>(OverflowClip{id, r, b.scroll_x, b.scroll_y, state.overflow});
         if (state.scissor) r = intersect(*state.scissor, r);
         state.scissor = r;
         paint.backend->set_scissor(&r);
@@ -3143,10 +3369,10 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         // Backgrounds §5.3): the corners are cut geometrically, since the
         // scissor is only the bounding rectangle.
         const BorderRadii inner =
-            inset_radii(radii, b.border_top, b.border_right, b.border_bottom, b.border_left);
+            inset_radii(clamp_radii_to_rect(radii, b.width, b.height), b.border_top, b.border_right, b.border_bottom, b.border_left);
         if (!inner.top_left.is_zero() || !inner.top_right.is_zero() ||
             !inner.bottom_right.is_zero() || !inner.bottom_left.is_zero()) {
-            push_clip(&state, rounded_rect_outline(Rect(px0, py0, px1 - px0, py1 - py0), inner));
+            push_clip(&state, rounded_rect_outline(Rect(px0, py0, px1 - px0, py1 - py0), inner), id);
         }
     }
 
@@ -3161,14 +3387,61 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // top of a later sibling could not be clicked.
     const ChildPaintOrder order(tree, id);
     const double child_x = x - b.scroll_x, child_y = y - b.scroll_y;
-    for (const BoxId c : order) {
-        paint_recursive(tree, c, ctx, child_x, child_y, paint, atlas_texture, canvas_owner, state);
+    std::vector<TablePositionedPaint> local_positioned;
+    const bool owns_positioned = !own_only && !negative_scan && !table_positioned && table_segments && has_table_positioned_layer(tree, id);
+    auto* positioned = owns_positioned ? &local_positioned : table_positioned;
+    if (b.position != PositionType::Static && b.z_index && *b.z_index < 0) positioned = nullptr;
+    std::optional<PaintContext> table_paint;
+    std::optional<TablePositionedReuse> table_reuse;
+    if (owns_positioned && paint.reuse) {
+        table_reuse.emplace(paint.reuse, tree, id);
+        table_paint.emplace(paint);
+        table_paint->reuse = &*table_reuse;
     }
+    const PaintContext& child_paint = table_paint ? *table_paint : paint;
+    std::vector<TablePositionedPaint> local_negative;
+    auto* negative = table_negative;
+    if (owns_positioned && has_table_negative_layer(tree,id)) {
+        negative = &local_negative;
+        for (const BoxId c : order)
+            paint_recursive(tree,c,ctx,child_x,child_y,child_paint,atlas_texture,canvas_owner,state,
+                            nullptr,std::nullopt,false,false,true,negative);
+        std::sort(local_negative.begin(),local_negative.end(),[](const auto& a,const auto& c) {
+            return a.rank != c.rank ? a.rank < c.rank : a.sequence < c.sequence;
+        });
+        for (const auto& entry : local_negative) {
+            if (paint.backend) paint.backend->set_scissor(entry.state.scissor ? &*entry.state.scissor : nullptr);
+            paint_recursive(tree,entry.id,ctx,entry.origin_x,entry.origin_y,paint,atlas_texture,canvas_owner,entry.state);
+        }
+        if (paint.backend) paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
+    }
+    for (const BoxId c : order) {
+        if (own_only) break;
+        paint_recursive(tree, c, ctx, child_x, child_y, child_paint, atlas_texture, canvas_owner, state, positioned, table_layer, table_isolation, false, negative_scan, negative);
+    }
+
+    if (!hidden && !blurred && paint.backend && table_segments) {
+        paint.backend->set_scissor(outer_scissor ? &*outer_scissor : nullptr);
+        paint_table_borders(*table_segments, x, y, paint, *table_border_state, xf);
+        paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
+    }
+    if (owns_positioned) {
+        std::sort(local_positioned.begin(), local_positioned.end(), [](const auto& a, const auto& c) {
+            return a.rank != c.rank ? a.rank < c.rank : a.sequence < c.sequence;
+        });
+        for (const auto& entry : local_positioned) {
+            if (paint.backend) paint.backend->set_scissor(entry.state.scissor ? &*entry.state.scissor : nullptr);
+            paint_recursive(tree, entry.id, ctx, entry.origin_x, entry.origin_y,
+                            paint, atlas_texture, canvas_owner, entry.state, nullptr, std::nullopt, false, entry.own_only);
+        }
+        if (paint.backend) paint.backend->set_scissor(state.scissor ? &*state.scissor : nullptr);
+    }
+
 
     // The scrollbars, over the content and inside the container's own clip:
     // a list you can scroll with no bar on it gives no sign that there is more
     // of it, which reads as a list that is simply cut off.
-    if (decorated && b.style && clips_children(b.style)) {
+    if (!descendants_only && decorated && b.style && clips_children(b.style)) {
         for (const bool vertical : {false, true}) {
             const Scrollbar bar = scrollbar_of(tree, id, vertical, x, y);
             if (!bar.visible) continue;
@@ -3239,6 +3512,19 @@ BoxId paint_canvas(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
 
 } // namespace
 
+double resolve_opacity(const ComputedStyle* style) {
+    std::string_view raw = style ? style->get("opacity") : std::string_view();
+    const auto space = [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f'; };
+    while (!raw.empty() && space(raw.front())) raw.remove_prefix(1);
+    while (!raw.empty() && space(raw.back())) raw.remove_suffix(1);
+    if (raw.empty()) return 1;
+    const bool percent = raw.back() == '%';
+    if (percent) raw.remove_suffix(1);
+    double value = 1;
+    if (!css_parse_double(raw,&value) || !std::isfinite(value)) return 1;
+    return std::clamp(percent ? value / 100.0 : value,0.0,1.0);
+}
+
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property) {
     ProfileScope prof(&g_paint_profile.colors);
     if (!style) return LinearColor::transparent();
@@ -3258,6 +3544,11 @@ LinearColor resolve_color(const ComputedStyle* style, std::string_view property)
     if (!v || v->kind() != CssValueKind::Color) return LinearColor::transparent();
     const auto& c = static_cast<const CssColor&>(*v);
     return LinearColor::from_srgb(c.r, c.g, c.b, c.a);
+}
+
+bool resolve_transform(const ComputedStyle* style, const LayoutContext& ctx,
+                       double font_size, double width, double height, Transform2D* out) {
+    return parse_transform(style, ctx, font_size, width, height, out);
 }
 
 BorderRadii resolve_border_radii(const ComputedStyle* style, double width, double height,
@@ -3409,7 +3700,7 @@ double input_text_scroll(const BoxTree& tree, BoxId box, const LayoutContext& ct
     if (width <= 1) return 0;
     const auto* parent_style = b.parent == kNoBox ? nullptr : tree[b.parent].style;
     const double fs = font_size_px(b.style, parent_style, ctx);
-    const auto face = face_for_run(b, paint);
+    const auto face = face_for_run(b, ctx, paint);
     const double spacing = letter_spacing_of(b.style, ctx, fs);
     const double total = text_advance(text.text, fs, paint, face, spacing);
     const double maximum = std::max(0.0, total - width + 1);
@@ -3423,6 +3714,33 @@ double input_text_scroll(const BoxTree& tree, BoxId box, const LayoutContext& ct
     return std::clamp(scroll, 0.0, maximum);
 }
 
+static Rect transform_layout_rect(const BoxTree& tree, BoxId target, const LayoutContext& ctx, Rect rect) {
+    double x = 0, y = 0;
+    Transform2D transform;
+    for (BoxId id = target; id != kNoBox; id = tree[id].parent) {
+        const Box& ancestor = tree[id];
+        if (ancestor.kind == BoxKind::Text || ancestor.kind == BoxKind::Line ||
+            ancestor.kind == BoxKind::AnonymousBlock || ancestor.kind == BoxKind::AnonymousInline || !ancestor.style) continue;
+        const auto* parent_style = ancestor.parent == kNoBox ? nullptr : tree[ancestor.parent].style;
+        const double fs = font_size_px(ancestor.style, parent_style, ctx);
+        Transform2D local;
+        if (!parse_transform(ancestor.style, ctx, fs, ancestor.width, ancestor.height, &local)) continue;
+        visual_position(tree, id, &x, &y);
+        transform = transform.multiply(Transform2D::translate(static_cast<float>(-x), static_cast<float>(-y))
+            .multiply(local).multiply(Transform2D::translate(static_cast<float>(x), static_cast<float>(y))));
+    }
+    const double xs[] = {rect.x, rect.x + rect.width, rect.x + rect.width, rect.x};
+    const double ys[] = {rect.y, rect.y, rect.y + rect.height, rect.y + rect.height};
+    double left = 0, top = 0, right = 0, bottom = 0;
+    for (int i = 0; i < 4; ++i) {
+        transform.apply(xs[i], ys[i], &x, &y);
+        if (i == 0) { left = right = x; top = bottom = y; }
+        else { left = std::min(left, x); right = std::max(right, x); top = std::min(top, y); bottom = std::max(bottom, y); }
+    }
+    rect = Rect(left, top, right - left, bottom - top);
+    return rect;
+}
+
 bool text_caret_bounds(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
                        const PaintContext& paint, Rect* out) {
     if (!out || !tree.valid(box) || !paint.font || !paint.atlas) return false;
@@ -3433,7 +3751,7 @@ bool text_caret_bounds(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
     double x = 0, y = 0;
     visual_position(tree, target, &x, &y);
     const auto color = resolve_color(b.style, "color");
-    const auto face = face_for_run(b, paint);
+    const auto face = face_for_run(b, ctx, paint);
     if (target != box) {
         const size_t offset = std::min(paint.caret.run_offset, b.text.size());
         x += measured_width(b.text.substr(0, offset), b, color, paint, face,
@@ -3452,36 +3770,107 @@ bool text_caret_bounds(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
         const size_t offset = text.placeholder ? 0 : text.display_offset(static_cast<size_t>(std::max(0, paint.caret.index)));
         const double advance = text_advance(std::string_view(text.text).substr(0, offset), fs, paint, face,
                                             letter_spacing_of(b.style, ctx, fs));
-        const double top = control_text_offset(b, text.centered, content_height, line_height);
+        const double top = control_text_offset(b, text.centered, content_height, *metrics, fs);
         const double visible_top = std::max(0.0, top);
         const double visible_bottom = std::min(content_height, top + line_height);
         *out = Rect(x + b.border_left + b.padding_left + advance - paint.caret.text_scroll_x,
                     y + b.border_top + b.padding_top + visible_top,
                     1, std::max(0.0, visible_bottom - visible_top));
     }
-    Transform2D transform;
-    for (BoxId id = target; id != kNoBox; id = tree[id].parent) {
-        const Box& ancestor = tree[id];
-        if (ancestor.kind == BoxKind::Text || ancestor.kind == BoxKind::Line ||
-            ancestor.kind == BoxKind::AnonymousBlock || ancestor.kind == BoxKind::AnonymousInline || !ancestor.style) continue;
-        const auto* parent_style = ancestor.parent == kNoBox ? nullptr : tree[ancestor.parent].style;
-        const double fs = font_size_px(ancestor.style, parent_style, ctx);
-        Transform2D local;
-        if (!parse_transform(ancestor.style, ctx, fs, ancestor.width, ancestor.height, &local)) continue;
-        visual_position(tree, id, &x, &y);
-        transform = transform.multiply(Transform2D::translate(static_cast<float>(-x), static_cast<float>(-y))
-            .multiply(local).multiply(Transform2D::translate(static_cast<float>(x), static_cast<float>(y))));
-    }
-    const double xs[] = {out->x, out->x + out->width, out->x + out->width, out->x};
-    const double ys[] = {out->y, out->y, out->y + out->height, out->y + out->height};
-    double left = 0, top = 0, right = 0, bottom = 0;
-    for (int i = 0; i < 4; ++i) {
-        transform.apply(xs[i], ys[i], &x, &y);
-        if (i == 0) { left = right = x; top = bottom = y; }
-        else { left = std::min(left, x); right = std::max(right, x); top = std::min(top, y); bottom = std::max(bottom, y); }
-    }
-    *out = Rect(left, top, right - left, bottom - top);
+    *out = transform_layout_rect(tree, target, ctx, *out);
     return out->height > 0;
+}
+
+static size_t mapped_offset_nearest(const Box& run, double x, double spacing,
+                                    FaceHandle face, const PaintContext& paint) {
+    if (run.preserved_tab) return x < run.width * .5 ? 0 : 1;
+    return offset_nearest(run.text, x, run.font_size, spacing, face, paint);
+}
+
+bool navigate_text_line(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                        const PaintContext& paint, int direction, double* preferred_x,
+                        size_t* offset, bool* downstream) {
+    if (!tree.valid(box) || !tree[box].element) return false;
+    const std::string_view source = tree[box].element->form_edit_value();
+    if (source.empty()) { *offset = 0; *downstream = false; return true; }
+    struct Run { BoxId id, line; double x; size_t start; };
+    std::vector<Run> runs;
+    const auto collect = [&](auto&& self, BoxId id, double x) -> void {
+        for (BoxId child = tree[id].first_child; child != kNoBox; child = tree[child].next_sibling) {
+            const auto& b = tree[child];
+            const double cx = x + b.x;
+            const auto source_at = text_source_offset(b, source);
+            if (b.kind == BoxKind::Text && tree[id].kind == BoxKind::Line &&
+                b.source_control == tree[box].element && source_at)
+                runs.push_back({child, id, cx, *source_at});
+            self(self, child, cx);
+        }
+    };
+    collect(collect, box, 0);
+    if (runs.empty()) return false;
+    const size_t index = std::min(source.size(), size_t(std::max(0, paint.caret.index)));
+    size_t current = 0;
+    bool found = false;
+    for (size_t i = 0; i < runs.size(); ++i) {
+        const auto& r = runs[i];
+        if (index >= r.start && index <= r.start + text_source_length(tree[r.id])) {
+            current = i; found = true;
+            if (!paint.caret.downstream) break;
+        } else if (!found && r.start <= index) current = i;
+    }
+    const Run& active = runs[current];
+    const Box& active_box = tree[active.id];
+    if (!std::isfinite(*preferred_x)) {
+        const auto face = face_for_run(active_box, ctx, paint);
+        *preferred_x = active.x + measured_width(active_box.text.substr(0, source_to_display(active_box, index > active.start ? index - active.start : 0)),
+            active_box, {}, paint, face,
+            letter_spacing_of(active_box.style, ctx, active_box.font_size) + active_box.justify_letter_spacing);
+    }
+    size_t first = current, last = current;
+    while (first > 0 && runs[first - 1].line == active.line) --first;
+    while (last + 1 < runs.size() && runs[last + 1].line == active.line) ++last;
+    if (direction == -2) { *offset = runs[first].start; *downstream = true; return true; }
+    if (direction == 2) {
+        *offset = runs[last].start + text_source_length(tree[runs[last].id]);
+        *downstream = false; return true;
+    }
+    if (direction == -3) {
+        const size_t boundary = index == 0 ? std::string_view::npos : source.rfind('\n', index - 1);
+        if (boundary == std::string_view::npos) { *offset = 0; *downstream = true; return true; }
+        last = 0;
+        while (last + 1 < runs.size() && runs[last + 1].start <= boundary) ++last;
+        first = last;
+        while (first > 0 && runs[first - 1].line == runs[last].line) --first;
+    } else if (direction == 3) {
+        const size_t boundary = source.find('\n', index);
+        if (boundary == std::string_view::npos) { *offset = source.size(); *downstream = false; return true; }
+        first = 0;
+        while (first + 1 < runs.size() && runs[first].start < boundary + 1) ++first;
+        last = first;
+        while (last + 1 < runs.size() && runs[last + 1].line == runs[first].line) ++last;
+    } else if (direction < 0) {
+        if (first == 0) { *offset = 0; *downstream = true; return true; }
+        last = first - 1; first = last;
+        while (first > 0 && runs[first - 1].line == runs[last].line) --first;
+    } else {
+        if (last + 1 == runs.size()) { *offset = source.size(); *downstream = false; return true; }
+        first = last + 1; last = first;
+        while (last + 1 < runs.size() && runs[last + 1].line == runs[first].line) ++last;
+    }
+    size_t best = first;
+    double distance = 1e300;
+    for (size_t i = first; i <= last; ++i) {
+        const auto& r = runs[i];
+        const double d = std::max({r.x - *preferred_x, *preferred_x - r.x - tree[r.id].width, 0.0});
+        if (d < distance) { distance = d; best = i; }
+    }
+    const Run& target = runs[best];
+    const Box& run = tree[target.id];
+    *offset = target.start + mapped_offset_nearest(run, *preferred_x - target.x,
+        letter_spacing_of(run.style, ctx, run.font_size) + run.justify_letter_spacing,
+        face_for_run(run, ctx, paint), paint);
+    *downstream = *offset == runs[first].start;
+    return true;
 }
 
 size_t control_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
@@ -3497,7 +3886,7 @@ size_t control_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContex
     const double content_left = ox + b.border_left + b.padding_left;
     const double scroll = paint.caret.element == b.element ? paint.caret.text_scroll_x : 0;
     return t.source_offset(offset_nearest(t.text, x - content_left + scroll, fs,
-                         letter_spacing_of(b.style, ctx, fs), face_for_run(b, paint), paint));
+                         letter_spacing_of(b.style, ctx, fs), face_for_run(b, ctx, paint), paint));
 }
 
 size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
@@ -3516,11 +3905,11 @@ size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& c
         for (BoxId c = tree[id].first_child; c != kNoBox; c = tree[c].next_sibling) {
             const Box& cb = tree[c];
             const double cx = ox + cb.x, cy = oy + cb.y;
-            if (cb.kind == BoxKind::Text && !cb.text.empty() && tree[cb.parent].kind == BoxKind::Line &&
-                cb.text.data() >= source.data() &&
-                cb.text.data() + cb.text.size() <= source.data() + source.size()) {
+            const auto source_at = text_source_offset(cb, source);
+            if (cb.kind == BoxKind::Text && tree[cb.parent].kind == BoxKind::Line &&
+                source_at) {
                 runs.push_back({c, cx, cy, cb.height,
-                                static_cast<size_t>(cb.text.data() - source.data())});
+                                *source_at});
             }
             collect(c, cx - cb.scroll_x, cy - cb.scroll_y);
         }
@@ -3533,20 +3922,23 @@ size_t run_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContext& c
     // nearest one above or below when the point is past the text.
     const Candidate* best = &runs.front();
     double best_distance = 1e300;
+    double best_x_distance = 1e300;
     for (const Candidate& r : runs) {
         const double centre = r.y + r.height * 0.5;
         const double distance = std::fabs(y - centre);
-        if (distance < best_distance) {
+        const double x_distance = std::max({r.x - x, x - r.x - tree[r.id].width, 0.0});
+        if (distance < best_distance || (distance == best_distance && x_distance < best_x_distance)) {
             best_distance = distance;
+            best_x_distance = x_distance;
             best = &r;
         }
     }
     // Then the character within that line's run, or the one nearest on it.
     const Box& run = tree[best->id];
-    return best->offset + offset_nearest(run.text, x - best->x, run.font_size,
+    return best->offset + mapped_offset_nearest(run, x - best->x,
                                          letter_spacing_of(run.style, ctx, run.font_size) +
                                              run.justify_letter_spacing,
-                                         face_for_run(run, paint), paint);
+                                         face_for_run(run, ctx, paint), paint);
 }
 
 std::vector<const Element*> select_options(const Element& select) {
@@ -3574,10 +3966,12 @@ SelectListGeometry select_list_geometry(const BoxTree& tree, BoxId select_box,
     // difference between a long list and a truncated one.
     const double height = std::min(g.row_height * g.count, 320.0);
     g.rows = std::max(1, static_cast<int>(height / g.row_height));
-    g.box = Rect(x, y + b.height, b.width, height);
+    const Rect anchor = transform_layout_rect(tree, select_box, ctx, Rect(x, y, b.width, b.height));
+    if (anchor.width <= 0 || anchor.height <= 0) return g;
+    g.box = Rect(anchor.x, anchor.bottom(), anchor.width, height);
     // Flipped above when there is no room below, the way a native list does.
-    if (g.box.bottom() > ctx.viewport_height_px && y - height >= 0) {
-        g.box.y = y - height;
+    if (g.box.bottom() > ctx.viewport_height_px && anchor.y - height >= 0) {
+        g.box.y = anchor.y - height;
     }
     g.visible = true;
     return g;

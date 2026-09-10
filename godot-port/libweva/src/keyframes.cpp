@@ -51,42 +51,47 @@ bool parse_offset(std::string_view raw, double* out) {
 
 }   // namespace
 
+bool parse_keyframes_rule(const GenericAtRule& at, KeyframeAnimation* out) {
+    if (!out || !iequals(at.name, "keyframes")) return false;
+    const std::string_view name = trim(at.prelude);
+    if (name.empty()) return false;
+
+    KeyframeAnimation animation;
+    animation.name = std::string(name);
+    for (const RulePtr& nested : at.nested_rules) {
+        if (!nested || nested->kind() != RuleKind::Style) continue;
+        const auto& frame_rule = static_cast<const StyleRule&>(*nested);
+        for (const std::string& selector : frame_rule.selectors) {
+            double offset = 0;
+            if (!parse_offset(selector, &offset)) continue;
+            Keyframe frame;
+            frame.offset = std::clamp(offset, 0.0, 1.0);
+            frame.declarations = frame_rule.declarations;
+            animation.frames.push_back(std::move(frame));
+        }
+    }
+    if (animation.frames.empty()) return false;
+    std::stable_sort(animation.frames.begin(), animation.frames.end(),
+                     [](const Keyframe& a, const Keyframe& b) { return a.offset < b.offset; });
+    for (const Keyframe& f : animation.frames) {
+        for (const Declaration& d : f.declarations) {
+            if (std::find(animation.properties.begin(), animation.properties.end(),
+                          d.property) == animation.properties.end()) {
+                animation.properties.push_back(d.property);
+            }
+        }
+    }
+    *out = std::move(animation);
+    return true;
+}
+
 void collect_keyframes(const Stylesheet& sheet, std::map<std::string, KeyframeAnimation>* out) {
     if (!out) return;
-    for (const RulePtr& r : sheet.rules) {
-        if (!r || r->kind() != RuleKind::At) continue;
-        const auto& at = static_cast<const GenericAtRule&>(*r);
-        if (!iequals(at.name, "keyframes")) continue;
-        const std::string_view name = trim(at.prelude);
-        if (name.empty()) continue;
-
+    for (const RulePtr& rule : sheet.rules) {
+        if (!rule || rule->kind() != RuleKind::At) continue;
         KeyframeAnimation animation;
-        animation.name = std::string(name);
-        for (const RulePtr& nested : at.nested_rules) {
-            if (!nested || nested->kind() != RuleKind::Style) continue;
-            const auto& frame_rule = static_cast<const StyleRule&>(*nested);
-            for (const std::string& selector : frame_rule.selectors) {
-                double offset = 0;
-                if (!parse_offset(selector, &offset)) continue;
-                Keyframe frame;
-                frame.offset = std::clamp(offset, 0.0, 1.0);
-                frame.declarations = frame_rule.declarations;
-                animation.frames.push_back(std::move(frame));
-            }
-        }
-        if (animation.frames.empty()) continue;
-        std::stable_sort(animation.frames.begin(), animation.frames.end(),
-                         [](const Keyframe& a, const Keyframe& b) { return a.offset < b.offset; });
-        for (const Keyframe& f : animation.frames) {
-            for (const Declaration& d : f.declarations) {
-                if (std::find(animation.properties.begin(), animation.properties.end(),
-                              d.property) == animation.properties.end()) {
-                    animation.properties.push_back(d.property);
-                }
-            }
-        }
-        // A later @keyframes of the same name replaces the earlier one whole.
-        (*out)[animation.name] = std::move(animation);
+        if (parse_keyframes_rule(static_cast<const GenericAtRule&>(*rule), &animation))
+            (*out)[animation.name] = std::move(animation);
     }
 }
 

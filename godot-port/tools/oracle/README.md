@@ -163,3 +163,17 @@ harness counts as a real difference rather than a reference bug. The fix has to
 be the button's whole intrinsic box, in the C# engine and the port together,
 since the reference is what the port is measured against. Left undone
 deliberately, with the numbers here so it can be picked up.
+
+## Comparing renderer pixels with browser screenshots
+
+Chrome PNG pixels are sRGB bytes. `SoftwareRenderer::pixel()` returns linear
+RGB for numeric rendering assertions; multiplying its RGB channels by 255 is
+not a valid PNG comparison. Use `SoftwareRenderer::to_srgb_rgba()` and compare
+the resulting straight-alpha byte channels with the browser PNG. Fully saturated
+primary colors can hide this mistake; nearly opaque colors exposed it in the
+table-opacity probe.
+
+`check_table_opacity_chrome.cjs <output.json>` captures equivalent opaque CSS
+forms and a partially transparent control, including overlap hit targets. It
+uses the same Chrome installation and Puppeteer dependency as the other focused
+Windows oracles. [Qualification](../../docs/verification/opacity193.json).

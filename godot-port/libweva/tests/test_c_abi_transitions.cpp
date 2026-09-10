@@ -51,6 +51,198 @@ const char* kHtml = "<div id=a>x</div>";
 }   // namespace
 
 void test_abi_transition_runs() {
+    struct EasedReversalCase { const char* easing; double forward; double widths[4]; };
+    // Chrome 152 getBoundingClientRect samples; tolerate its 1/64px rounding.
+    const EasedReversalCase eased_cases[] = {
+        {"ease", .2, {159.046875,145.671875,168.09375,300}},
+        {"ease", .7, {288.140625,281.375,300,300}},
+        {"ease-in-out", .2, {116.328125,105.09375,109.140625,300}},
+        {"ease-in-out", .7, {262.515625,261.3125,281.796875,300}},
+        {"cubic-bezier(.3,-.8,.7,1.8)", .2, {76.484375,100,70.28125,300}},
+        {"cubic-bezier(.3,-.8,.7,1.8)", .7, {293.96875,314.140625,300,300}},
+        {"steps(4,end)", .2, {100,100,100,300}},
+        {"steps(4,end)", .7, {200,200,200,300}},
+    };
+    for (const auto& c : eased_cases) {
+        const std::string css = std::string("#a{width:100px;height:20px;transition:width 1s ") + c.easing + "}";
+        Doc doc(css.c_str(), kHtml);
+        const auto check_width = [&](int sample) {
+            const double actual = doc.width_of("#a");
+            if (std::fabs(actual - c.widths[sample]) >= .05)
+                std::fprintf(stderr, "reversal %s at %.2f sample %d: got %.6f expected %.6f\n",
+                    c.easing, c.forward, sample, actual, c.widths[sample]);
+            CHECK(std::fabs(actual - c.widths[sample]) < .05);
+        };
+        const auto element = weva_document_query(doc.d, "#a");
+        weva_element_set_style(doc.d, element, "width", "300px");
+        weva_document_update(doc.d, 0);
+        weva_document_update(doc.d, c.forward);
+        check_width(0);
+        weva_element_set_style(doc.d, element, "width", "100px");
+        weva_document_update(doc.d, 0);
+        weva_document_update(doc.d, .05);
+        check_width(1);
+        weva_element_set_style(doc.d, element, "width", "300px");
+        weva_document_update(doc.d, 0);
+        weva_document_update(doc.d, .1);
+        check_width(2);
+        weva_document_update(doc.d, 1);
+        check_width(3);
+    }
+    for (bool negative_delay : {false, true}) {
+        Doc doc("#a{width:100px;transition:width 1s linear}", kHtml);
+        const auto element = weva_document_query(doc.d, "#a");
+        weva_element_set_style(doc.d, element, "width", "300px");
+        weva_document_update(doc.d, 0);
+        weva_document_update(doc.d, .5);
+        weva_element_set_style(doc.d, element, "transition-delay", negative_delay ? "-.2s" : ".2s");
+        weva_element_set_style(doc.d, element, "width", "100px");
+        weva_document_update(doc.d, 0);
+        CHECK(std::fabs(doc.width_of("#a") - (negative_delay ? 180 : 200)) < .01);
+        weva_document_update(doc.d, negative_delay ? .15 : .45);
+        CHECK(std::fabs(doc.width_of("#a") - 150) < .01);
+        weva_document_update(doc.d, .3);
+        CHECK(std::fabs(doc.width_of("#a") - 100) < .01);
+        CHECK(weva_document_is_animating(doc.d) == 0);
+    }
+    for (bool reverse_again : {false, true}) {
+        Doc doc("#a{width:100px;height:20px;transition:width 1s linear}", kHtml);
+        const auto element = weva_document_query(doc.d, "#a");
+        weva_element_set_style(doc.d, element, "width", "300px");
+        weva_document_update(doc.d, 0);
+        weva_document_update(doc.d, .5);
+        CHECK(std::fabs(doc.width_of("#a") - 200) < .01);
+        weva_element_set_style(doc.d, element, "width", "100px");
+        weva_document_update(doc.d, 0);
+        weva_document_update(doc.d, .25);
+        CHECK(std::fabs(doc.width_of("#a") - 150) < .01);
+        weva_element_set_style(doc.d, element, "width", reverse_again ? "300px" : "400px");
+        weva_document_update(doc.d, 0);
+        weva_document_update(doc.d, .25);
+        CHECK(std::fabs(doc.width_of("#a") - (reverse_again ? 200 : 212.5)) < .01);
+        weva_document_update(doc.d, reverse_again ? .5 : .75);
+        CHECK(std::fabs(doc.width_of("#a") - (reverse_again ? 300 : 400)) < .01);
+        CHECK(weva_document_is_animating(doc.d) == 0);
+    }
+    for (const char* value : {"none", "opacity", "0s"}) {
+        for (bool retarget : {false, true}) {
+            Doc doc("#a{width:100px;height:20px;transition:width 1s linear}", kHtml);
+            const auto element = weva_document_query(doc.d, "#a");
+            CHECK(weva_element_set_style(doc.d, element, "width", "300px") == WEVA_OK);
+            weva_document_update(doc.d, 0);
+            weva_document_update(doc.d, .5);
+            CHECK(std::fabs(doc.width_of("#a") - 200) < .01);
+            const bool duration_only = value[0] == '0';
+            CHECK(weva_element_set_style(doc.d, element, duration_only ? "transition-duration" : "transition-property", value) == WEVA_OK);
+            if (retarget) CHECK(weva_element_set_style(doc.d, element, "width", "400px") == WEVA_OK);
+            weva_document_update(doc.d, 0);
+            const bool continues = duration_only && !retarget;
+            CHECK(std::fabs(doc.width_of("#a") - (continues ? 200 : retarget ? 400 : 300)) < .01);
+            CHECK(weva_document_is_animating(doc.d) == (continues ? 1 : 0));
+            const auto serial = weva_document_draw_serial(doc.d);
+            weva_document_update(doc.d, .25);
+            CHECK(std::fabs(doc.width_of("#a") - (continues ? 250 : retarget ? 400 : 300)) < .01);
+            if (!continues) CHECK(weva_document_draw_serial(doc.d) == serial);
+        }
+    }
+    {
+        Doc doc("#a{width:100px;transition:width 1s steps(2,end)}", kHtml);
+        const auto element = weva_document_query(doc.d, "#a");
+        CHECK(weva_element_set_style(doc.d, element, "width", "300px") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        const auto before_step = weva_document_draw_serial(doc.d);
+        weva_document_update(doc.d, .25);
+        CHECK(std::fabs(doc.width_of("#a") - 100) < 0.01);
+        CHECK(weva_document_draw_serial(doc.d) == before_step);
+        weva_document_update(doc.d, .25);
+        CHECK(std::fabs(doc.width_of("#a") - 200) < 0.01);
+        CHECK(weva_document_draw_serial(doc.d) != before_step);
+        const auto after_step = weva_document_draw_serial(doc.d);
+        weva_document_update(doc.d, .25);
+        CHECK(weva_document_draw_serial(doc.d) == after_step);
+    }
+    for (const char* duration : {"0s", "1s"}) {
+        const std::string css = std::string("#a{width:100px;height:20px;transition:width ") + duration + " linear .5s}";
+        Doc doc(css.c_str(), kHtml);
+        const auto element = weva_document_query(doc.d, "#a");
+        CHECK(weva_element_set_style(doc.d, element, "width", "300px") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_is_animating(doc.d) == 1);
+        CHECK(std::fabs(doc.width_of("#a") - 100) < 0.01);
+        const auto serial = weva_document_draw_serial(doc.d);
+        weva_document_update(doc.d, .25);
+        CHECK(std::fabs(doc.width_of("#a") - 100) < 0.01);
+        CHECK(weva_document_draw_serial(doc.d) == serial);
+        weva_document_update(doc.d, .25);
+        CHECK(std::fabs(doc.width_of("#a") - (duration[0] == '0' ? 300 : 100)) < 0.01);
+        CHECK(weva_document_is_animating(doc.d) == (duration[0] == '0' ? 0 : 1));
+    }
+    for (const char* delay : {"-1s", "-2s"}) {
+        const std::string css = std::string("#a{width:100px;transition:width 1s linear ") + delay + "}";
+        Doc doc(css.c_str(), kHtml);
+        const auto element = weva_document_query(doc.d, "#a");
+        CHECK(weva_element_set_style(doc.d, element, "width", "300px") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        CHECK(std::fabs(doc.width_of("#a") - 300) < 0.01);
+        CHECK(weva_document_is_animating(doc.d) == 0);
+    }
+    // Long property lists must retain late matches and last-match precedence.
+    for (int prefix_count : {32, 33, 64}) {
+        for (bool earlier_match : {false, true}) {
+            std::string properties = earlier_match ? "width" : "opacity";
+            for (int i = 1; i < prefix_count; ++i) properties += ",opacity";
+            properties += ",width";
+            const std::string css = "#a{width:100px;height:20px;transition-property:" + properties +
+                ";transition-duration:1s,2s;transition-timing-function:linear}";
+            Doc doc(css.c_str(), kHtml);
+            const auto element = weva_document_query(doc.d, "#a");
+            CHECK(weva_element_set_style(doc.d, element, "width", "300px") == WEVA_OK);
+            weva_document_update(doc.d, 0);
+            CHECK(weva_document_is_animating(doc.d) == 1);
+            weva_document_update(doc.d, 0.5);
+            const double expected = prefix_count % 2 ? 150 : 200;
+            CHECK(std::fabs(doc.width_of("#a") - expected) < 0.01);
+        }
+    }
+    for (const char* target : {"#a", "#panel"}) {
+        Doc doc("#a{width:100px;height:20px;transition:width 1s linear}",
+                "<div id=panel><div id=a>x</div></div>");
+        const auto element = weva_document_query(doc.d, "#a");
+        const auto panel = weva_document_query(doc.d, target);
+        CHECK(weva_element_set_style(doc.d, element, "width", "300px") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        weva_document_update(doc.d, 0.5);
+        CHECK(std::fabs(doc.width_of("#a") - 200) < 0.01);
+        CHECK(weva_element_set_style(doc.d, panel, "display", "none") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_is_animating(doc.d) == 0);
+        const auto serial = weva_document_draw_serial(doc.d);
+        weva_document_update(doc.d, 0.25);
+        CHECK(weva_document_draw_serial(doc.d) == serial);
+        CHECK(weva_element_set_style(doc.d, element, "width", "400px") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_is_animating(doc.d) == 0);
+        CHECK(weva_element_set_style(doc.d, panel, "display", "block") == WEVA_OK);
+        CHECK(weva_element_set_style(doc.d, element, "width", "500px") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        CHECK(std::fabs(doc.width_of("#a") - 500) < 0.01);
+        CHECK(weva_document_is_animating(doc.d) == 0);
+        CHECK(weva_element_set_style(doc.d, element, "width", "600px") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_is_animating(doc.d) == 1);
+        weva_document_update(doc.d, 0.5);
+        CHECK(std::fabs(doc.width_of("#a") - 550) < 0.01);
+    }
+    {
+        Doc doc("#a{width:100px;height:20px;transition:width 1s linear}", kHtml);
+        const auto element = weva_document_query(doc.d, "#a");
+        CHECK(weva_element_set_style(doc.d, element, "width", "300px") == WEVA_OK);
+        CHECK(weva_element_set_style(doc.d, element, "visibility", "hidden") == WEVA_OK);
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_is_animating(doc.d) == 1);
+        weva_document_update(doc.d, 0.5);
+        CHECK(std::fabs(doc.width_of("#a") - 200) < 0.01);
+    }
     // ---- a width transition, from a :hover rule
     {
         Doc doc("html, body { margin: 0 }"
@@ -128,9 +320,9 @@ void test_abi_transition_runs() {
         weva_document_update(doc.d, 0);
         CHECK(std::fabs(doc.width_of("#a") - mid) < 1.0);
         weva_document_update(doc.d, 0.5);
-        const double halfway_back = doc.width_of("#a");
-        CHECK(halfway_back < mid);
-        CHECK(halfway_back > 140 && halfway_back < 160);
+        // The reverse travels half the distance in half the original duration.
+        CHECK(std::fabs(doc.width_of("#a") - 100) < .01);
+        CHECK(weva_document_is_animating(doc.d) == 0);
     }
 
     // ---- a delay holds the start value

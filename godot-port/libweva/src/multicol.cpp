@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 namespace weva {
@@ -31,6 +32,7 @@ std::string_view get(const ComputedStyle* s, int id) {
 const int kId_column_count = CssPropertyRegistry::instance().id_of("column-count");
 const int kId_column_gap = CssPropertyRegistry::instance().id_of("column-gap");
 const int kId_column_width = CssPropertyRegistry::instance().id_of("column-width");
+const int kId_direction = CssPropertyRegistry::instance().id_of("direction");
 const int kId_position = CssPropertyRegistry::instance().id_of("position");
 
 
@@ -47,14 +49,13 @@ bool iequals(std::string_view a, std::string_view b) {
 
 } // namespace
 
-double layout_multicol(BoxTree* tree, BoxId container, double content_width,
+double layout_multicol(BoxTree* tree, BoxId container, double content_width, double font_size,
                        const LayoutContext& ctx, BlockLayout* block) {
     if (!tree || !block || container == kNoBox) return 0;
     const ComputedStyle* style = (*tree)[container].style;
-    const double font_size =
-        (*tree)[container].font_size > 0 ? (*tree)[container].font_size : ctx.root_font_size_px;
 
-    double gap = 0;
+    // In multicol (unlike grid/flex), normal is one em.
+    double gap = font_size;
     {
         const std::string_view raw = get(style, kId_column_gap);
         if (!raw.empty() && !iequals(raw, "normal")) {
@@ -64,30 +65,49 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
         }
     }
 
-    // §3.4: the used column count comes from `column-count` when it is set, and
-    // otherwise from how many columns of `column-width` fit — the last column
-    // needs no gap after it, hence the (available + gap) / (width + gap) form.
+    // §3.4: when both properties are set, column-count is a maximum.
+    // Otherwise use the count or the number of preferred widths that fit.
+    // Clamp before integer conversion, including extremely large CSS values.
     int count = 0;
     const std::string_view count_raw = get(style, kId_column_count);
     if (!count_raw.empty() && !iequals(count_raw, "auto")) {
         const ResolvedLength r = resolve_length(style, kId_column_count, ctx, font_size,
                                                 std::nullopt);
-        if (r.kind == LengthKind::Length) count = static_cast<int>(r.pixels);
+        if (r.kind == LengthKind::Length && r.pixels > 0)
+            count = static_cast<int>(std::min(r.pixels, static_cast<double>(std::numeric_limits<int>::max())));
     }
-    if (count <= 0) {
-        const std::string_view width_raw = get(style, kId_column_width);
-        if (!width_raw.empty() && !iequals(width_raw, "auto")) {
-            const ResolvedLength r =
-                resolve_length(style, kId_column_width, ctx, font_size, content_width);
-            if (r.kind == LengthKind::Length && r.pixels > 0) {
-                count = static_cast<int>(std::floor((content_width + gap) / (r.pixels + gap)));
-            }
+    const std::string_view width_raw = get(style, kId_column_width);
+    if (!width_raw.empty() && !iequals(width_raw, "auto")) {
+        const ResolvedLength r =
+            resolve_length(style, kId_column_width, ctx, font_size, content_width);
+        if (r.kind == LengthKind::Length && r.pixels >= 0) {
+            // A zero/subpixel preferred width is legal; Chrome uses the
+            // specified minimum used width of one CSS pixel.
+            const double preferred = std::max(1.0, r.pixels);
+            const double fitting = std::floor((content_width + gap) / (preferred + gap));
+            const int fit = fitting >= 1 ? static_cast<int>(std::min(fitting,
+                static_cast<double>(std::numeric_limits<int>::max()))) : 1;
+            count = count > 0 ? std::min(count, fit) : fit;
         }
     }
     if (count <= 0) count = 1;
 
-    const double column_width =
-        std::max(0.0, (content_width - gap * (count - 1)) / static_cast<double>(count));
+    // Chrome allocates column widths in 1/64 CSS-pixel units, but rounds
+    // each origin from the ideal stride. Rounding the stride first would
+    // accumulate an error across columns. Split off the integral part to
+    // avoid overflow when quantizing very large authored dimensions.
+    const auto layout_floor = [](double value) {
+        double whole = 0;
+        const double fraction = std::modf(value, &whole);
+        return whole + std::floor(fraction * 64) / 64;
+    };
+    const auto layout_round = [](double value) {
+        double whole = 0;
+        const double fraction = std::modf(value, &whole);
+        return whole + std::round(fraction * 64) / 64;
+    };
+    const double stride = (content_width + gap) / static_cast<double>(count);
+    const double column_width = layout_floor(std::max(0.0, stride - gap));
 
     // Children are laid out at the column width first: balancing needs their
     // heights, and their heights depend on that width.
@@ -100,11 +120,16 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
             block->layout_block(c, content_width, style);
             continue;
         }
-        block->layout_block(c, column_width, style);
+        const bool spans = iequals(get(cb.style, "column-span"), "all");
+        block->layout_block(c, spans ? content_width : column_width, style);
         children.push_back(c);
     }
     if (children.empty()) return 0;
 
+    // A spanning block terminates one balanced column set and starts another.
+    // Keep ordinary child placement shared by every set.
+    const auto layout_columns = [&](const std::vector<BoxId>& children, double y_offset) {
+    if (children.empty()) return 0.0;
     double total = 0;
     for (BoxId c : children) {
         const Box& b = (*tree)[c];
@@ -171,6 +196,7 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
     const double left_inner = (*tree)[container].padding_left + (*tree)[container].border_left;
     const double top_inner = (*tree)[container].padding_top + (*tree)[container].border_top;
 
+    const bool rtl = iequals(get(style, kId_direction), "rtl");
     int column = 0;
     double column_top = 0;
     double tallest = 0;
@@ -184,14 +210,50 @@ double layout_multicol(BoxTree* tree, BoxId container, double content_width,
             ++column;
             column_top = 0;
         }
-        b.x = left_inner + static_cast<double>(column) * (column_width + gap) + b.margin_left;
-        b.y = top_inner + column_top + b.margin_top;
+        // Column order follows the container's inline base direction. Mirror
+        // the allocated column box, preserving its fractional width remainder.
+        const double offset = layout_round(static_cast<double>(column) * stride);
+        const double column_left = rtl ? content_width - column_width - offset : offset;
+        const double child_left = resolve_block_inline_offset(b, column_width, rtl);
+        b.x = left_inner + column_left + child_left;
+        b.y = top_inner + y_offset + column_top + b.margin_top;
         // A child laid out at the container's width before this pass would be
         // the wrong width in its column.
         column_top += outer_height;
         tallest = std::max(tallest, column_top);
     }
     return tallest;
+    };
+
+    bool has_span = false;
+    for (BoxId c : children) has_span |= iequals(get((*tree)[c].style, "column-span"), "all");
+    if (!has_span) return layout_columns(children, 0);
+    std::vector<BoxId> run;
+    double y = 0;
+    const double left = (*tree)[container].padding_left + (*tree)[container].border_left;
+    const double top = (*tree)[container].padding_top + (*tree)[container].border_top;
+    const bool rtl = iequals(get(style, kId_direction), "rtl");
+    bool previous_was_span = false;
+    double previous_bottom_margin = 0;
+    for (BoxId c : children) {
+        Box& b = (*tree)[c];
+        if (!iequals(get(b.style, "column-span"), "all")) {
+            run.push_back(c);
+            previous_was_span = false;
+            continue;
+        }
+        y += layout_columns(run, y);
+        run.clear();
+        if (previous_was_span)
+            y += collapse_margins(previous_bottom_margin, b.margin_top) -
+                 previous_bottom_margin - b.margin_top;
+        b.x = left + resolve_block_inline_offset(b, content_width, rtl);
+        b.y = top + y + b.margin_top;
+        y += b.margin_top + b.height + b.margin_bottom;
+        previous_was_span = true;
+        previous_bottom_margin = b.margin_bottom;
+    }
+    return std::max(0.0, y + layout_columns(run, y));
 }
 
 } // namespace weva

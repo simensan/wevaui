@@ -34,6 +34,13 @@ BorderRadii resolve_border_radii(const ComputedStyle* style, double width, doubl
 // Registered properties share ComputedStyle's invalidated-on-write parse cache.
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property);
 
+// Shared numeric opacity for painting and stacking-context classification.
+double resolve_opacity(const ComputedStyle* style);
+
+// The same local transform used by painting, for geometry inspection tools.
+bool resolve_transform(const ComputedStyle* style, const LayoutContext& ctx,
+                       double font_size, double width, double height, Transform2D* out);
+
 // Paints `root` and its subtree. Boxes are walked in tree order, which is
 // document order — stacking contexts and z-index ordering are a later slice, so
 // a positive z-index does not yet lift a box above a later sibling.
@@ -99,6 +106,7 @@ struct CaretState {
     // runs meet.
     BoxId run = kNoBox;
     size_t run_offset = 0;   // characters of `run` before the cursor
+    bool downstream = false; // shared soft-wrap boundary belongs to next line
 
     // The selected range, in bytes into the field's value, low end first --
     // empty when there is only a cursor. Drawn as a band behind the glyphs,
@@ -122,6 +130,7 @@ struct SelectPopup {
 // Optional retained draw-list seam. A replay must reproduce the complete
 // subtree, including backend state changes, or return false without drawing.
 struct ClipNode;
+struct OverflowClip;
 struct ColorFilter;
 
 // Incoming paint inputs at a retained layout boundary. Clips and filters are
@@ -134,6 +143,8 @@ struct PaintReplayInputs {
     std::shared_ptr<const ClipNode> clip;
     std::shared_ptr<const ColorFilter> filter;
     BoxId canvas_owner = kNoBox;
+    std::shared_ptr<const OverflowClip> overflow;
+    BoxId absolute_cb = kNoBox, fixed_cb = kNoBox;
     bool operator==(const PaintReplayInputs& other) const;
 };
 
@@ -228,6 +239,13 @@ size_t control_text_offset_at(const BoxTree& tree, BoxId box, const LayoutContex
 // The geometry uses the same face, prefix measurement and line metrics as paint.
 bool text_caret_bounds(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
                        const PaintContext& paint, Rect* out);
+
+// Navigate actual textarea line fragments. direction: -1/+1 up/down,
+// -2/+2 line start/end, -3/+3 previous/next paragraph retaining the column.
+// NaN preferred_x starts a new vertical-motion sequence.
+bool navigate_text_line(const BoxTree& tree, BoxId box, const LayoutContext& ctx,
+                        const PaintContext& paint, int direction, double* preferred_x,
+                        size_t* offset, bool* downstream);
 
 // Clamp the focused input's text viewport, optionally revealing its caret.
 // Timed selection scrolling controls the viewport independently of the caret.

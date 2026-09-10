@@ -17,6 +17,7 @@ BoxId BoxTree::create(BoxKind kind, const Element* element, const ComputedStyle*
 }
 
 void BoxTree::release_subtree(BoxId root) {
+    if (!table_borders_.empty()) table_borders_.erase(root);
     for (BoxId c = (*this)[root].first_child; c != kNoBox;) {
         const BoxId next = (*this)[c].next_sibling;
         release_subtree(c);
@@ -28,6 +29,8 @@ void BoxTree::release_subtree(BoxId root) {
 }
 
 void BoxTree::import_subtree(BoxId into, const BoxTree& source, BoxId from) {
+    if (const auto* borders = source.table_borders(from)) table_borders_[into] = *borders;
+    else if (!table_borders_.empty()) table_borders_.erase(into);
     (*this)[into] = source[from];
     Box& b = (*this)[into];
     b.parent = b.first_child = b.last_child = b.prev_sibling = b.next_sibling = kNoBox;
@@ -41,7 +44,7 @@ void BoxTree::import_subtree(BoxId into, const BoxTree& source, BoxId from) {
         dom_text = run >= start && run + b.text.size() <= start + source_text.size();
     }
     if (b.source_control) {
-        const auto source_text = b.source_control->form_value();
+        const auto source_text = b.source_control->form_edit_value();
         const uintptr_t start = reinterpret_cast<uintptr_t>(source_text.data());
         const uintptr_t run = reinterpret_cast<uintptr_t>(b.text.data());
         dom_text = run >= start && run + b.text.size() <= start + source_text.size();
@@ -248,7 +251,7 @@ constexpr DisplayEntry kDisplays[] = {
 
 } // namespace
 
-DisplayKind parse_display(std::string_view value) {
+bool try_parse_display(std::string_view value, DisplayKind* out) {
     // Trim and lowercase in place rather than allocating: this runs once per
     // element per build.
     const auto ws = [](char c) {
@@ -258,7 +261,7 @@ DisplayKind parse_display(std::string_view value) {
     while (b < e && ws(value[b])) ++b;
     while (e > b && ws(value[e - 1])) --e;
     value = value.substr(b, e - b);
-    if (value.empty()) return DisplayKind::Inline;
+    if (value.empty() || !out) return false;
 
     for (const DisplayEntry& d : kDisplays) {
         const std::string_view name(d.name);
@@ -269,8 +272,14 @@ DisplayKind parse_display(std::string_view value) {
             if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
             if (c != name[i]) { eq = false; break; }
         }
-        if (eq) return d.kind;
+        if (eq) { *out = d.kind; return true; }
     }
+    return false;
+}
+
+DisplayKind parse_display(std::string_view value) {
+    DisplayKind result;
+    if (try_parse_display(value, &result)) return result;
     // An unrecognised display behaves as the initial value rather than
     // suppressing the box — a typo should not delete content.
     return DisplayKind::Inline;

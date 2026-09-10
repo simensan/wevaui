@@ -6,6 +6,7 @@
 #include "weva/shorthand.h"
 #include "weva/logical.h"
 #include "weva/dom.h"
+#include "weva/form_state.h"
 #include "weva/variable_resolver.h"
 
 #include <algorithm>
@@ -206,17 +207,27 @@ int compare_for_cascade(const CascadeKey& x, const CascadeKey& y) {
 }
 
 void CascadeEngine::clear() {
+    ++container_generation_;
     rules_.clear();
+    container_queries_.clear();
+    compiling_containers_.clear();
     property_registry_.clear();
     pseudo_rules_.clear();
     layer_names_.clear();
+    unsupported_at_rules_.clear();
+    keyframes_.clear();
+    keyframe_priorities_.clear();
     layer_prefix_.clear();
     shape_cache_.clear();
     cache_unsafe_sibling_composition_ = false;
     cache_unsafe_has_ = false;
+    has_subject_reach_ = StateReach{};
     hover_reach_ = StateReach{};
     active_reach_ = StateReach{};
     shape_key_folds_sibling_index_ = false;
+    shape_key_folds_range_ = false;
+    shape_key_folds_validity_ = false;
+    shape_key_folds_default_ = false;
 }
 
 namespace {
@@ -388,6 +399,39 @@ const Element* parent_el(const Element& e) {
     return (p && p->is_element()) ? static_cast<const Element*>(p) : nullptr;
 }
 
+bool uses_default(const CompoundSequence& seq) {
+    for (const auto& compound : seq.compounds) for (const auto& part : compound.parts) {
+        if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+        const auto& pc = static_cast<const PseudoClassSelector&>(*part);
+        if (pc.kind == PseudoClassKind::Default) return true;
+        for (const auto& inner : pc.inner_list) if (uses_default(*inner)) return true;
+        for (const auto& inner : pc.nth_of_filter) if (uses_default(*inner)) return true;
+    }
+    return false;
+}
+
+bool uses_range(const CompoundSequence& seq) {
+    for (const auto& compound : seq.compounds) for (const auto& part : compound.parts) {
+        if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+        const auto& pc = static_cast<const PseudoClassSelector&>(*part);
+        if (pc.kind == PseudoClassKind::InRange || pc.kind == PseudoClassKind::OutOfRange) return true;
+        for (const auto& inner : pc.inner_list) if (uses_range(*inner)) return true;
+        for (const auto& inner : pc.nth_of_filter) if (uses_range(*inner)) return true;
+    }
+    return false;
+}
+
+bool uses_validity(const CompoundSequence& seq) {
+    for (const auto& compound : seq.compounds) for (const auto& part : compound.parts) {
+        if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+        const auto& pc = static_cast<const PseudoClassSelector&>(*part);
+        if (pc.kind == PseudoClassKind::Valid || pc.kind == PseudoClassKind::Invalid) return true;
+        for (const auto& inner : pc.inner_list) if (uses_validity(*inner)) return true;
+        for (const auto& inner : pc.nth_of_filter) if (uses_validity(*inner)) return true;
+    }
+    return false;
+}
+
 } // namespace
 
 uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
@@ -399,9 +443,19 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     if (e.has_attribute("style")) return 0;
     // Sibling composition and :has() are unrepresentable in a per-element key.
     if (cache_unsafe_sibling_composition_) return 0;
-    if (cache_unsafe_has_) return 0;
+    // A :has-dependent rule can affect only its rightmost subject. Elements
+    // excluded by every such subject's mandatory keys still use the ordinary
+    // input-keyed cache. Unkeyed/nested subjects conservatively reach everyone.
+    if (cache_unsafe_has_ && state_observable(has_subject_reach_, e)) return 0;
 
     uint64_t h = kFnvOffset;
+    if (shape_key_folds_validity_) { h ^= form_validity_selector_state(e); h *= kFnvPrime; }
+    if (shape_key_folds_range_) { h ^= form_range_selector_state(e); h *= kFnvPrime; }
+    if (shape_key_folds_default_) { h ^= form_is_default(e); h *= kFnvPrime; }
+    if (!container_queries_.empty()) {
+        h ^= container_provider_ ? container_provider_->version(e) : 0;
+        h *= kFnvPrime;
+    }
     h ^= hash_str(e.tag_name()); h *= kFnvPrime;
     h ^= hash_str(e.id());       h *= kFnvPrime;
     h ^= hash_class_tokens(e.class_name()); h *= kFnvPrime;
@@ -443,6 +497,9 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     // the child's. Likewise `div:hover span` puts the state on the LEFT of a
     // combinator, so the span's own state is irrelevant but the parent's is not.
     for (const Element* a = parent_el(e); a; a = parent_el(*a)) {
+        if (shape_key_folds_validity_) { h ^= form_validity_selector_state(*a); h *= kFnvPrime; }
+        if (shape_key_folds_range_) { h ^= form_range_selector_state(*a); h *= kFnvPrime; }
+        if (shape_key_folds_default_) { h ^= form_is_default(*a); h *= kFnvPrime; }
         uint64_t anc = 0;
         anc ^= hash_str(a->tag_name());
         anc ^= hash_str(a->id()) * 257ULL;
@@ -497,6 +554,35 @@ int CascadeEngine::layer_ordinal_for(std::string_view name) {
     return static_cast<int>(layer_names_.size() - 1);
 }
 
+int CascadeEngine::compare_keyframe_layers(int left, int right) const {
+    if (left == right) return 0;
+    if (left == kUnlayeredOrdinal) return 1;
+    if (right == kUnlayeredOrdinal) return -1;
+    const std::string_view a = layer_names_[static_cast<size_t>(left)];
+    const std::string_view b = layer_names_[static_cast<size_t>(right)];
+    // A dotted first mention also establishes its ancestors. Compare the
+    // first differing sibling, not the global registration time of a leaf.
+    const auto first_mention = [&](std::string_view prefix) {
+        for (size_t i = 0; i < layer_names_.size(); ++i) {
+            const std::string_view name = layer_names_[i];
+            if (name == prefix || (name.size() > prefix.size() &&
+                name.substr(0, prefix.size()) == prefix && name[prefix.size()] == '.')) return i;
+        }
+        return layer_names_.size();
+    };
+    size_t offset = 0;
+    for (;;) {
+        const size_t ae = std::min(a.find('.', offset), a.size());
+        const size_t be = std::min(b.find('.', offset), b.size());
+        const auto ap = a.substr(0, ae), bp = b.substr(0, be);
+        if (ap != bp) return first_mention(ap) < first_mention(bp) ? -1 : 1;
+        // Rules directly in a layer outrank its nested layers.
+        if (ae == a.size()) return 1;
+        if (be == b.size()) return -1;
+        offset = ae + 1;
+    }
+}
+
 bool CascadeEngine::state_observable(const StateReach& reach, const Element& e) const {
     if (reach.everything) return true;
     if (reach.empty()) return false;
@@ -530,9 +616,16 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 // Classify BEFORE moving: the shape cache's soundness depends
                 // on spotting sibling-composition and :has() selectors anywhere
                 // in the sheet.
+                bool selector_has = false;
                 classify_selector(cs.sequence, &cache_unsafe_sibling_composition_,
-                                  &cache_unsafe_has_, &shape_key_folds_sibling_index_,
+                                  &selector_has, &shape_key_folds_sibling_index_,
                                   &hover_reach_, &active_reach_, false);
+                cache_unsafe_has_ = cache_unsafe_has_ || selector_has;
+                if (selector_has && !cs.sequence.compounds.empty())
+                    collect_keys(cs.sequence.compounds.back(), &has_subject_reach_);
+                shape_key_folds_range_ = shape_key_folds_range_ || uses_range(cs.sequence);
+                shape_key_folds_validity_ = shape_key_folds_validity_ || uses_validity(cs.sequence);
+                shape_key_folds_default_ = shape_key_folds_default_ || uses_default(cs.sequence);
                 const std::string* pseudo = cs.sequence.pseudo_element();
                 std::string pseudo_name = pseudo ? *pseudo : std::string();
                 CompiledRule cr;
@@ -541,6 +634,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 cr.origin = origin;
                 cr.source_index = (*source_index)++;
                 cr.layer_ordinal = layer_ordinal;
+                cr.container_conditions = compiling_containers_;
                 cr.declarations = expand_declarations(sr->declarations);
                 if (!pseudo_name.empty()) {
                     pseudo_rules_[pseudo_name].push_back(std::move(cr));
@@ -558,6 +652,19 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 if (!evaluate_media_query(ar->prelude, media_)) continue;
             } else if (ar->name == "supports") {
                 if (!evaluate_supports(ar->prelude)) continue;
+            } else if (ar->name == "keyframes") {
+                KeyframeAnimation animation;
+                if (parse_keyframes_rule(*ar, &animation)) {
+                    const auto priority = std::make_pair(static_cast<int>(origin), layer_ordinal);
+                    const auto prior = keyframe_priorities_.find(animation.name);
+                    if (prior == keyframe_priorities_.end() || priority.first > prior->second.first ||
+                        (priority.first == prior->second.first &&
+                         compare_keyframe_layers(priority.second, prior->second.second) >= 0)) {
+                        keyframe_priorities_[animation.name] = priority;
+                        keyframes_[animation.name] = std::move(animation);
+                    }
+                }
+                continue;
             } else if (ar->name == "property") {
                 // CSS Properties & Values L1. An invalid rule contributes no
                 // descriptor and is otherwise inert, so it is dropped here
@@ -586,7 +693,10 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                             std::string_view(ar->prelude).substr(
                                 start, comma == std::string::npos ? std::string::npos
                                                                   : comma - start);
-                        layer_ordinal_for(trim_ascii(piece));
+                        std::string full = layer_prefix_;
+                        if (!full.empty()) full += '.';
+                        full.append(trim_ascii(piece));
+                        layer_ordinal_for(full);
                         if (comma == std::string::npos) break;
                         start = comma + 1;
                     }
@@ -610,15 +720,32 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 layer_prefix_ = saved_prefix;
                 continue;
             } else if (ar->name == "container") {
-                // @container needs per-element container sizes, which only a
-                // layout pass can supply. The reference evaluates these rules
-                // through a box-lookup hook that is null until a box tree
-                // exists, so in its single headless pass — the oracle — they
-                // never apply. Applying them unconditionally here put a card's
-                // `@container card (min-width: 280px) { h2 { font-size: 22px } }`
-                // on every page the reference lays out at 18px. Skipped until
-                // both engines have the layout-then-restyle loop this needs;
-                // Chrome applies them, and this is recorded in PORT_PLAN.md.
+                auto condition = trim_ascii(ar->prelude);
+                CompiledContainerQuery query;
+                const auto space = condition.find_first_of(" \t\r\n\f");
+                const auto paren = condition.find('(');
+                if (space != std::string_view::npos && space < paren &&
+                    !iequals_ascii(condition.substr(0,space), "not")) {
+                    query.name = condition.substr(0,space);
+                    condition = trim_ascii(condition.substr(space));
+                }
+                if (!query.condition.parse(condition)) continue;
+                const size_t index = container_queries_.size();
+                container_queries_.push_back(std::move(query));
+                compiling_containers_.push_back(index);
+                compile_rules(ar->nested_rules, origin, source_index, layer_ordinal);
+                compiling_containers_.pop_back();
+                continue;
+            } else {
+                // Only recognized grouping rules may contribute style rules.
+                // Unknown blocks are ignored as a unit (CSS Syntax 3), while
+                // descriptors/keyframes are consumed by their own subsystems.
+                // Recursing here leaked nested selectors into the global cascade.
+                if (origin != DeclarationOrigin::UserAgent && ar->name != "keyframes" &&
+                    ar->name != "charset" &&
+                    std::find(unsupported_at_rules_.begin(), unsupported_at_rules_.end(), ar->name) == unsupported_at_rules_.end()) {
+                    unsupported_at_rules_.push_back(ar->name);
+                }
                 continue;
             }
             compile_rules(ar->nested_rules, origin, source_index, layer_ordinal);
@@ -628,6 +755,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
 
 void CascadeEngine::add_stylesheet(const Stylesheet* sheet, DeclarationOrigin origin) {
     if (!sheet) return;
+    ++container_generation_;
     int source_index = static_cast<int>(rules_.size());
     compile_rules(sheet->rules, origin, &source_index, kUnlayeredOrdinal);
     // Cached match lists were computed against the previous rule set. Without
@@ -635,6 +763,13 @@ void CascadeEngine::add_stylesheet(const Stylesheet* sheet, DeclarationOrigin or
     // that miss the cache — which looks like a selector bug, not a staleness
     // bug, and is exactly how it first showed up here.
     shape_cache_.clear();
+}
+
+bool CascadeEngine::container_matches(const CompiledRule& rule, const Element& element) const {
+    for (size_t query : rule.container_conditions) {
+        if (!container_provider_ || !container_provider_->matches(element,query)) return false;
+    }
+    return true;
 }
 
 const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
@@ -656,6 +791,7 @@ const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
     std::vector<MatchedDeclaration>& out = uncached_matches_;
     out.clear();
     for (const CompiledRule& cr : rules_) {
+        if (!container_matches(cr,e)) continue;
         if (!selector_matches(cr.selector, e, state)) continue;
         const Specificity spec = cr.selector.specificity();
         int in_rule = 0;
@@ -702,7 +838,9 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     winner_keys_.resize(static_cast<size_t>(reg.count()));
     const auto& collected = collect_matches(e, state);
     profile.lap(0);
-    std::vector<MatchedDeclaration> matches = collected;
+    // No subsequent operation collects matches again or mutates their storage.
+    // Borrow the cached/uncached list through application and keyword rollback.
+    const auto& matches = collected;
     profile.lap(1);
     // Custom properties first, in cascade order among themselves, so that a
     // shorthand carrying var() can be expanded AT ITS CASCADE POSITION in the
@@ -841,7 +979,8 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     {
         std::vector<std::pair<int, std::string>> rewrites;
         std::vector<int> env_drops;
-        for (int id : out->set_ids()) {
+        out->copy_set_ids(property_ids_);
+        for (int id : property_ids_) {
             std::string raw(out->get(id));
             bool changed = false;
             if (raw.find("attr(") != std::string::npos || raw.find("ATTR(") != std::string::npos) {
@@ -864,7 +1003,8 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     {
         std::vector<std::pair<int, std::string>> rewrites;
         std::vector<int> drops;
-        for (int id : out->set_ids()) {
+        out->copy_set_ids(property_ids_);
+        for (int id : property_ids_) {
             std::string_view raw = out->get(id);
             if (raw.find("var(") == std::string_view::npos &&
                 raw.find("VAR(") == std::string_view::npos) {
@@ -914,7 +1054,8 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         bool font_inherited = false;
         bool line_inherited = false;
         std::vector<std::pair<int, std::string>> rewrites;
-        for (int id : out->set_ids()) {
+        out->copy_set_ids(property_ids_);
+        for (int id : property_ids_) {
             const std::string_view raw = out->get(id);
             if (!is_css_wide_keyword(trim_ws(raw))) continue;
             const std::string_view name = reg.name_of(id);
@@ -949,6 +1090,12 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         for (auto& r : rewrites) out->set(r.first, r.second);
         if (font_inherited) out->mark_font_size_inherited();
         if (line_inherited) out->mark_line_height_inherited();
+    }
+    // Top-layer positioning is a computed-value adjustment after the cascade.
+    if (e.is_modal() || e.is_popover_open()) {
+        const auto position = out->get("position");
+        if (position != "absolute" && position != "fixed") out->set("position", "absolute");
+        if (out->get("display") == "contents") out->set("display", "block");
     }
 }
 
@@ -1019,6 +1166,7 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
     // the sequence is matched directly here.
     std::vector<MatchedDeclaration> matches;
     for (const CompiledRule& cr : it->second) {
+        if (!container_matches(cr,host)) continue;
         if (!selector_matches_sequence_ignoring_pseudo(cr.selector.sequence, host, state)) {
             continue;
         }
@@ -1066,7 +1214,8 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
     {
         std::vector<std::pair<int, std::string>> rewrites;
         std::vector<int> drops;
-        for (int id : out->set_ids()) {
+        out->copy_set_ids(property_ids_);
+        for (int id : property_ids_) {
             std::string_view raw = out->get(id);
             if (raw.find("var(") == std::string_view::npos &&
                 raw.find("VAR(") == std::string_view::npos) {

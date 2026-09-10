@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 12
+#define WEVA_ABI_VERSION_MINOR 24
 
 uint32_t weva_abi_version(void);
 
@@ -41,7 +41,8 @@ typedef enum weva_status {
     WEVA_ERR_PARSE = 2,
     WEVA_ERR_NOT_FOUND = 3,
     WEVA_ERR_UNSUPPORTED = 4,
-    WEVA_ERR_INTERNAL = 5
+    WEVA_ERR_INTERNAL = 5,
+    WEVA_ERR_INVALID_STATE = 6
 } weva_status;
 
 typedef struct weva_document* weva_document_t;
@@ -241,6 +242,16 @@ void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend
  * their callers keep their original binary layout and behavior. */
 weva_status weva_document_set_font_shaper(weva_document_t doc, weva_shape_glyphs_fn shape);
 
+/* Register one CSS family name (not a comma-separated stack) with a face from
+ * the installed font backend. Names are copied and matched case-insensitively.
+ * A zero face removes the registration. Repeating the same mapping is a no-op.
+ * Changes take effect on the next update. Registrations survive HTML reload and
+ * shaper changes; installing/replacing the font backend clears them, since face
+ * identities belong to that backend. The host keeps face resources alive. */
+weva_status weva_document_register_font_family(weva_document_t doc, const char* family,
+                                               uint64_t face);
+
+
 weva_document_t weva_document_create(const weva_config* config);
 void weva_document_destroy(weva_document_t doc);
 
@@ -270,6 +281,12 @@ weva_status weva_document_content_size(weva_document_t doc, double* out_width,
  * published stay valid. A host may therefore call this every frame. */
 weva_status weva_document_update(weva_document_t doc, double dt_seconds);
 
+/* Resolve current styles, geometry and input state without advancing clocks
+ * or publishing paint. Existing draw views/serial remain unchanged; the next
+ * ordinary update paints accumulated input changes. For input hit testing
+ * between events. Available since ABI minor 22. */
+weva_status weva_document_update_geometry(weva_document_t doc);
+
 /* Separate animation and input clocks. The original update passes the same
  * elapsed time to both. A host pausing CSS animations can continue timed
  * gestures with animation_seconds=0 and real frame time for input_seconds.
@@ -291,6 +308,10 @@ int weva_document_needs_input_tick(weva_document_t doc);
  * with 150 draws and 7,280 vertices it was several milliseconds a frame, every
  * frame, for nothing. */
 uint64_t weva_document_draw_serial(weva_document_t doc);
+/* Current interaction input version, for host update synchronization. Reading
+ * does not update or mutate the document; zero for a null document. Compare
+ * against the version consumed by the host's last update, not focus identity. */
+uint64_t weva_document_interaction_version(weva_document_t doc);
 
 /* Whether any transition is still running, so a host knows to keep handing
  * over time and redrawing. False for a document that has settled. */
@@ -383,7 +404,17 @@ typedef enum weva_event_kind {
     WEVA_EVENT_COMPOSITION_UPDATE,
     WEVA_EVENT_COMPOSITION_END,
     // Defaults have been restored. Queued notifications cannot cancel reset.
-    WEVA_EVENT_RESET
+    WEVA_EVENT_RESET,
+    /* A dialog finished closing. Non-bubbling, non-cancelable; on-close. */
+    WEVA_EVENT_CLOSE,
+    /* A requested dialog close. Non-bubbling; prevent_default may veto it. */
+    WEVA_EVENT_CANCEL,
+    /* A control failed validation. Non-bubbling; on-invalid. Preventing this
+     * event suppresses default focus reporting, not the failed submission. */
+    WEVA_EVENT_INVALID,
+    /* Popover transition request. Non-bubbling; text is "open" or "closed".
+     * Only opening requests are cancellable. */
+    WEVA_EVENT_BEFORE_TOGGLE
 } weva_event_kind;
 
 /* Held modifiers, as a bitmask on weva_event.modifiers. */
@@ -421,8 +452,9 @@ typedef struct weva_event {
     uint32_t buttons;          /* buttons held at the time */
     int32_t key;               /* one of weva_key, for the key events */
     uint32_t modifiers;        /* weva_key_modifier bitmask */
-    /* The text a key produced, UTF-8 and null-terminated. Inline rather than a
-     * pointer so an event stays copyable and outlives nothing. */
+    /* The text a key produced, UTF-8 and null-terminated. For TOGGLE, the
+     * captured new state: "open" or "closed". Inline rather than a pointer
+     * so an event stays copyable and outlives nothing. */
     char text[8];
     /* What the markup called this: the value of `on-<event>` on the element or
      * the nearest ancestor that has one, empty when nobody named a handler.
@@ -552,6 +584,12 @@ int weva_document_paste_text(weva_document_t doc, const char* utf8);
  * CSS visibility. Useful for activating a platform IME only over text input. */
 weva_element_t weva_document_text_input_target(weva_document_t doc);
 
+/* The focused text-control candidate based only on current DOM tag/type.
+ * Does not resolve CSS, publish layout or test editability. A host can avoid
+ * flushing geometry for IME when this is NONE; otherwise update and query
+ * text_input_target before activating IME. Available since ABI minor 21. */
+weva_element_t weva_document_text_input_candidate(weva_document_t doc);
+
 /* Replace the current preedit, starting a composition at the selection if
  * necessary. start/end are UTF-8 byte offsets within utf8, clamped to character
  * boundaries. Provisional text is visible in the value, as in HTML input.
@@ -608,8 +646,10 @@ weva_element_t weva_document_focus_step(weva_document_t doc, int backwards, int 
 weva_element_t weva_document_focus_move(weva_document_t doc, double dx, double dy);
 
 /* Focus, or WEVA_ELEMENT_NONE to drop it. Sets :focus and :focus-visible on
- * the element and :focus-within on its ancestors. Focus is the host's to
- * decide -- the document has no notion of tab order yet. */
+ * the element and :focus-within on its ancestors. Disabled controls return
+ * WEVA_ERR_INVALID_ARGUMENT; hidden or modal-blocked targets return
+ * WEVA_ERR_INVALID_STATE without changing focus. Pending style mutations are
+ * considered. Tab and directional navigation use the focus APIs above. */
 weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element);
 
 /* What has the focus, or WEVA_ELEMENT_NONE. The focus moves without a host
@@ -685,14 +725,22 @@ size_t weva_document_selected_text(weva_document_t doc, char* buffer, size_t cap
 
 /* Where the selection is, in BYTES into the field's value, with `start` the
  * end the user began from -- so a backwards selection reports start > end.
- * Both equal when there is only a cursor. */
+ * Both equal when there is only a cursor. Visited fields retain this state
+ * across focus changes; replacing their value moves the saved cursor to its end. */
 weva_status weva_element_selection(weva_document_t doc, weva_element_t element, int* out_start,
                                    int* out_end);
 
 /* Sets it, for a host driving its own selection UI. `start` is the end that
- * stays put; passing the two equal leaves a plain cursor. */
+ * stays put; passing the two equal leaves a plain cursor. This host helper
+ * focuses the field; it is not the non-focusing DOM setSelectionRange method. */
 weva_status weva_element_set_selection(weva_document_t doc, weva_element_t element, int start,
                                        int end);
+
+/* Same byte-based anchor/caret convention, without changing document focus.
+ * Can prepare a selection in a hidden or disabled field. Only a currently
+ * focused field updates its visible caret or commits its own composition. */
+weva_status weva_element_set_selection_without_focus(weva_document_t doc,
+    weva_element_t element, int start, int end);
 
 /* ---- Data binding ------------------------------------------------------
  *
@@ -711,7 +759,10 @@ typedef struct weva_binding_source {
     /* Fills `buffer` with the value at `path` and returns its length, the way
      * every other string accessor here does. Set `*found` to 0 for a path the
      * host does not know: the binding then shows nothing, rather than the
-     * host having to invent a value for it. */
+     * host having to invent a value for it. The callback may be called again
+     * with a larger buffer. Each return length must describe the value written
+     * by that call; changing values are retried until one fits. An impossible
+     * buffer length is diagnosed and treated as an unavailable value. */
     size_t (*value)(void* user, const char* path, char* buffer, size_t capacity, int* found);
     /* How many items are in the list at `path`, or -1 when it is not a list.
      * Only `data-each` asks; a host with no lists can leave this null.
@@ -864,6 +915,11 @@ size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buf
  * sanitized; maxlength does not limit programmatic writes. Checkbox/radio
  * use "on"/"" and multiple selects use comma-separated values. No input or
  * change event is raised; this sets the control's dirty value/checked flag. */
+/* Minor 20: live form-state input version, including validity/edit-source
+ * changes that do not alter the public value. Missing document/element -> 0.
+ * Compare only within one document lifetime and element identity. */
+uint64_t weva_element_form_version(weva_document_t doc, weva_element_t element);
+
 weva_status weva_element_set_value(weva_document_t doc, weva_element_t element,
                                    const char* value);
 
@@ -895,15 +951,89 @@ size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const
 /* Opens a <dialog>. `modal` non-zero shows it MODALLY: it joins the top layer
  * and gets a `::backdrop` behind it, which is the whole visible difference and
  * the reason showModal exists. Returns WEVA_ERR_NOT_FOUND for anything that is
- * not a <dialog>.
+ * not a <dialog>. Repeating the same show mode is a no-op. Changing mode
+ * while open, or showing a modal dialog currently shown as a popover,
+ * returns WEVA_ERR_INVALID_STATE without mutation. Close before changing mode.
+ * A successful opening queues TOGGLE with text="open".
  *
- * Escape is deliberately NOT wired here, matching the reference: what key
- * cancels a dialog is a platform question, so a host binds it and calls
- * weva_element_close_dialog itself. */
+ * Keyboard Escape requests cancellation of the latest opened dialog after
+ * open popovers/selects handle it, according to its closedby policy. Hosts drain
+ * events and may prevent the cancel default. Markup/attribute openings also
+ * register close order; the complete browser CloseWatcher model remains partial. */
 weva_status weva_element_show_dialog(weva_document_t doc, weva_element_t element, int modal);
 
-/* Closes it, modal or not, and takes it back out of the top layer. */
+/* Closes it, modal or not, and takes it back out of the top layer.
+ * Queues CLOSE after restoring focus. Closing an already closed dialog is a
+ * no-op; directly removing the open attribute does not queue CLOSE. */
 weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t element);
+
+/* Queue a cancelable close request for an open dialog. Hosts must drain events:
+ * CANCEL is delivered while open; the next poll applies its default close unless
+ * prevented. This keeps callbacks outside core mutation/layout code. A request
+ * becomes stale if the dialog is closed, reopened, removed or the document reloads.
+ * If the bounded queue contains only pending default actions, returns
+ * WEVA_ERR_INVALID_STATE without queuing another request. Drain events and retry.
+ * Ordinary event overflow cannot discard an accepted close request.
+ * Unlike JavaScript requestClose(), this C queue API completes during event drain. */
+weva_status weva_element_request_close_dialog(weva_document_t doc, weva_element_t element);
+/* Veto the currently polled CANCEL, SUBMIT, INVALID or opening BEFORE_TOGGLE. Returns 1 if cancelable, else 0.
+ * Call before polling the next event; other queued events are not cancelable. */
+int weva_document_prevent_default(weva_document_t doc);
+
+/* Game-specific validation error. Empty clears it; reset preserves it and a
+ * clone starts without it. Supported on input, textarea, select, button and fieldset.
+ * Getter returns the stored message even while the control is barred from
+ * validation; it is not the browser's computed/localized validationMessage.
+ * Returns full UTF-8 byte length, with a terminated prefix when capacity permits. */
+weva_status weva_element_set_custom_validity(weva_document_t doc, weva_element_t element, const char* message);
+size_t weva_element_custom_validity(weva_document_t doc, weva_element_t element, char* buffer, size_t capacity);
+
+/* Read-only validity snapshot for input, textarea, select, button and fieldset. No layout,
+ * focus changes or invalid events. Zero errors means ValidityState.valid, even
+ * when will_validate is false. Both outputs are required and cleared on error.
+ * Unsupported controls return NOT_FOUND. A nonempty input value with an
+ * applicable pattern returns UNSUPPORTED rather than a misleading valid result;
+ * pattern's bit is reserved until Unicode-v pattern validation is implemented. */
+typedef enum weva_validity_error {
+    WEVA_VALIDITY_VALUE_MISSING = 1u << 0,
+    WEVA_VALIDITY_TYPE_MISMATCH = 1u << 1,
+    WEVA_VALIDITY_PATTERN_MISMATCH = 1u << 2,
+    WEVA_VALIDITY_TOO_LONG = 1u << 3,
+    WEVA_VALIDITY_TOO_SHORT = 1u << 4,
+    WEVA_VALIDITY_RANGE_UNDERFLOW = 1u << 5,
+    WEVA_VALIDITY_RANGE_OVERFLOW = 1u << 6,
+    WEVA_VALIDITY_STEP_MISMATCH = 1u << 7,
+    WEVA_VALIDITY_BAD_INPUT = 1u << 8,
+    WEVA_VALIDITY_CUSTOM_ERROR = 1u << 9
+} weva_validity_error;
+weva_status weva_element_validity(weva_document_t doc, weva_element_t element,
+                                  uint32_t* errors, int* will_validate);
+/* Explicit validation of a form or supported control; ignores novalidate and
+ * formnovalidate. Queues cancelable INVALID events, drained through poll_event.
+ * check never changes focus; report focuses the first unhandled invalid control
+ * after handlers finish. No submission occurs. valid is required, cleared on
+ * errors; cancellation does not turn false into true. Pattern-dependent checks
+ * return UNSUPPORTED before queuing events. Calling during an active INVALID
+ * handler returns INVALID_STATE (nested validation is not implemented). */
+weva_status weva_element_check_validity(weva_document_t doc, weva_element_t element, int* valid);
+weva_status weva_element_report_validity(weva_document_t doc, weva_element_t element, int* valid);
+
+/* Dialog result property: initially empty; survives closing/reopening. These
+ * property accesses do not mutate attributes or trigger layout. Getter returns
+ * full UTF-8 byte length and copies a terminated prefix when capacity permits. */
+size_t weva_element_dialog_return_value(weva_document_t doc, weva_element_t element,
+                                      char* buffer, size_t capacity);
+weva_status weva_element_set_dialog_return_value(weva_document_t doc, weva_element_t element,
+                                                const char* value);
+/* Null preserves the current result; a non-null empty string clears it.
+ * Closing an already closed dialog does not change its result. A request's
+ * result is copied and applied only when its cancel default actually closes. */
+weva_status weva_element_close_dialog_with_value(weva_document_t doc, weva_element_t element,
+                                                const char* value);
+weva_status weva_element_request_close_dialog_with_value(weva_document_t doc, weva_element_t element,
+                                                        const char* value);
+
+
 
 /* Opens, closes or flips a popover -- an element with a `popover` attribute.
  * An open one joins the top layer and gets a `::backdrop`, exactly as a modal
@@ -914,7 +1044,21 @@ weva_status weva_element_close_dialog(weva_document_t doc, weva_element_t elemen
  * and Escape closes the topmost one. They are here for a script that opens a
  * menu from something other than a click.
  *
- * Returns WEVA_ERR_NOT_FOUND for an element with no `popover` attribute. */
+ * Returns WEVA_ERR_NOT_FOUND for an element with no `popover` attribute.
+ * Opening a modal dialog as a popover returns WEVA_ERR_INVALID_STATE. */
+/* Queues BEFORE_TOGGLE while the popover is still closed. Drain poll_event;
+ * prevent_default may veto opening. The next poll revalidates live element
+ * state and opens only if it remains eligible. No core callback is invoked.
+ * Immediate legacy operations below do not dispatch this request event.
+ * Available since ABI minor 23. */
+/* Opt in to queued opening requests for popovertarget activation. Off by
+ * default for legacy C hosts; Godot enables it and drains input events. */
+void weva_document_set_popover_request_events(weva_document_t doc, int enabled);
+weva_status weva_element_request_show_popover(weva_document_t doc, weva_element_t element);
+/* Closing dispatches non-cancellable BEFORE_TOGGLE while still open. */
+weva_status weva_element_request_hide_popover(weva_document_t doc, weva_element_t element);
+/* Selects the opening or closing request from the current state. */
+weva_status weva_element_request_toggle_popover(weva_document_t doc, weva_element_t element);
 weva_status weva_element_show_popover(weva_document_t doc, weva_element_t element);
 weva_status weva_element_hide_popover(weva_document_t doc, weva_element_t element);
 weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t element);
@@ -956,6 +1100,13 @@ weva_status weva_document_set_base_path(weva_document_t doc, const char* path);
  * Returns how many there are; the buffer follows the usual two-call
  * convention. Zero is the answer a working document gives. */
 size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t capacity);
+
+/* Unsupported at-rules in compiled stylesheet branches, one diagnostic
+ * per unique name. Replaced on set_css; updated on viewport recompilation.
+ * Returns required UTF-8 bytes excluding NUL. A provided nonempty buffer is
+ * always terminated; truncation does not change the required size. No update,
+ * layout or events are triggered. This is not a complete CSS support audit. */
+size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t capacity);
 
 /* How the core obtains an asset's bytes. Returns the number of bytes the asset
  * HAS, writing up to `capacity` of them -- the two-call convention the rest of

@@ -1,0 +1,125 @@
+{
+  "version": "0.1.0-preview.137",
+  "installed": false,
+  "abi_minor": 20,
+  "library_sha256": "c2f163dcb5c78d521e35271065dadb8014cffec499d2ab7855dbb4d1111c16d1",
+  "source_sha256": "6bffe12ee05ab8c1f3ab8eeed31be83e3e7f2f2a1d3d0f23e9d9105e2c8338dc",
+  "changes": [
+    "Reuse per-document style-difference list capacity across merges",
+    "Return single parsed CSS values without allocating temporary list buffers",
+    "Includes candidate135 alignment and candidate136 exact color fixes"
+  ],
+  "allocation_diagnostic": {
+    "scope": "Representative headless C ABI UI with 24 static cards and alternating button hover; fallback font, excludes Godot, construction and reporting; counts C++ new/new[]",
+    "before": {
+      "updates": 1000,
+      "allocations": 113314,
+      "bytes": 9960263,
+      "functional_passed": true
+    },
+    "after": {
+      "updates": 1000,
+      "allocations": 75314,
+      "bytes": 9384263,
+      "functional_passed": true
+    },
+    "allocations_removed_per_update": 38,
+    "new_harness": "libweva/tests/test_update_allocations.cpp",
+    "captured_stacks": "Windows DbgHelp public symbol attribution; not a wall-time profile"
+  },
+  "scalar_parser_gate": {
+    "parses": 3000,
+    "allocations": 3000,
+    "temporary_lists": 0,
+    "values_checked": [
+      "Color",
+      "Length",
+      "Number"
+    ],
+    "passed": true
+  },
+  "core": {
+    "suites": 13,
+    "main_checks": 482021,
+    "incremental_full_comparisons": 271,
+    "passed": true
+  },
+  "sanitizers": {
+    "gates": 15,
+    "passed": true,
+    "symbolization": false
+  },
+  "host": {
+    "entries": 36,
+    "checks": 27811,
+    "passed": true
+  },
+  "sample_and_native_exports_passed": true,
+  "prior_failed_qualifications": [
+    "block-margins135.json",
+    "color136.json"
+  ],
+  "remaining": [
+    "Runtime timing variability not yet resolved by these allocation measurements",
+    "Broader layout, lifecycle, input and device qualification remains open"
+  ],
+  "performance": {
+    "runs": 6,
+    "gates": 72,
+    "passed_gates": 71,
+    "passed": false,
+    "functional_passed": true,
+    "failures": [
+      {
+        "run": "mobile/2",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.313,
+        "limit_ms": 0.3,
+        "passed": false
+      }
+    ],
+    "scope": "Manual/static1280x720 API CPU; Ryzen7 9800X3D / RTX5080 development desktop"
+  },
+  "broad_layout": {
+    "fixtures": 309,
+    "agree": 287,
+    "different": 22,
+    "changed_reports": [],
+    "profile": "Frozen Chrome152 synthetic-font/UA-overlay profile"
+  },
+  "binding_diagnostic": {
+    "instrumented": true,
+    "runs": {
+      "134": {
+        "samples": 600,
+        "change_counts": [
+          0
+        ],
+        "core_binding": {
+          "median_ms": 0.0785,
+          "p95_ms": 0.1479
+        },
+        "native_models": {
+          "median_ms": 0.010450000000000001,
+          "p95_ms": 0.0173
+        }
+      },
+      "137": {
+        "samples": 600,
+        "change_counts": [
+          0
+        ],
+        "core_binding": {
+          "median_ms": 0.0716,
+          "p95_ms": 0.1555
+        },
+        "native_models": {
+          "median_ms": 0.011,
+          "p95_ms": 0.0189
+        }
+      }
+    },
+    "interpretation": "Unchanged notifications return zero changes in both binaries. Core binding refresh dominates measured model application; diagnostic timing does not supersede failed acceptance."
+  }
+}

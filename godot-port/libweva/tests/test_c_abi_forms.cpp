@@ -17,6 +17,13 @@
 
 namespace {
 
+// Editing/scrolling scenarios that start at the end must request that position;
+// programmatic focus alone preserves the initial zero selection.
+void place_caret_at_end(weva_document_t doc, weva_element_t field) {
+    const int end = static_cast<int>(weva_element_value(doc, field, nullptr, 0));
+    CHECK(weva_element_set_selection(doc, field, end, end) == WEVA_OK);
+}
+
 weva_config config() {
     weva_config c{};
     c.viewport_width = 400;
@@ -183,6 +190,26 @@ void test_abi_radio_group() {
 }
 
 void test_abi_range_drag() {
+    {
+        Doc tall("html,body{margin:0}input{display:block;width:200px;height:40px}",
+                 "<input id=r type=range min=0 max=100 value=50>");
+        double x,y,w,h; tall.bounds("#r",&x,&y,&w,&h);
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(tall.d,&count);
+        double top = 1e9, bottom = -1e9;
+        for (size_t i=0;i<count;++i) for (size_t v=0;v<draws[i].vertex_count;++v) {
+            top = std::min(top,static_cast<double>(draws[i].vertices[v].y));
+            bottom = std::max(bottom,static_cast<double>(draws[i].vertices[v].y));
+        }
+        CHECK(std::fabs((top+bottom)/2-(y+h/2)) < 0.01);
+        // The 14px thumb has a subpixel antialias fringe on either side.
+        CHECK(bottom-top >= 14 && bottom-top < 16);
+        // Empty space above the rail is still part of the input's hit area.
+        weva_document_set_pointer(tall.d,x+w*.25,y+1,1);
+        weva_document_update(tall.d,0);
+        const double value = std::atof(tall.value("#r").c_str());
+        CHECK(value > 20 && value < 30);
+    }
     Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 20px }",
             "<input id=r type=range min=0 max=100 value=50>");
     CHECK(doc.value("#r") == "50");
@@ -359,9 +386,9 @@ void test_abi_caret() {
             "<input id=t type=text value=abcd>");
     const weva_element_t t = weva_document_query(doc.d, "#t");
     CHECK(weva_document_set_focus(doc.d, t) == WEVA_OK);
+    place_caret_at_end(doc.d, t);
 
-    // Focus puts the cursor after what the field holds, where a user expects
-    // to carry on typing.
+    // The explicit end-position setup appends, while Home below inserts in front.
     weva_document_text_input(doc.d, "X");
     CHECK(doc.value("#t") == "abcdX");
 
@@ -466,6 +493,7 @@ void test_abi_textarea_edits_its_content() {
     CHECK(doc.value("#t") == "hello");   // read from the content
 
     weva_document_set_focus(doc.d, t);
+    place_caret_at_end(doc.d, t);
     weva_document_text_input(doc.d, "!");
     weva_document_update(doc.d, 0);
     CHECK(doc.value("#t") == "hello!");
@@ -524,6 +552,7 @@ void test_abi_textarea_line_keys() {
             "<textarea id=t>alpha\nbeta\ngamma</textarea>");
     const weva_element_t t = weva_document_query(doc.d, "#t");
     weva_document_set_focus(doc.d, t);   // caret at the end, after "gamma"
+    place_caret_at_end(doc.d, t);
 
     // Home is the start of THIS line, not of the whole value.
     CHECK(weva_document_key(doc.d, WEVA_KEY_HOME, 0, 1) == 1);
@@ -601,9 +630,10 @@ void test_abi_textarea_caret() {
     // Nothing focused, no caret.
     CHECK(caret_of(doc.d).first < 0);
 
-    // Focused, the caret sits after the last character: on the second line,
+    // Explicitly positioned at the end, the caret sits on the second line,
     // two characters in.
     weva_document_set_focus(doc.d, t);
+    place_caret_at_end(doc.d, t);
     weva_document_update(doc.d, 0);
     const std::pair<double, double> at_end = caret_of(doc.d);
     CHECK(at_end.first > 0);
@@ -660,6 +690,7 @@ void test_abi_textarea_scrolls_to_caret() {
     // Focusing puts the cursor at the end, which is on the last line -- so the
     // view goes there with it.
     weva_document_set_focus(doc.d, t);
+    place_caret_at_end(doc.d, t);
     weva_document_update(doc.d, 0);
     weva_element_scroll(doc.d, t, nullptr, &y, nullptr, &most);
     CHECK(y == most);
@@ -696,6 +727,7 @@ void test_abi_selection_keys() {
             "<input id=t type=text value=abcdef>");
     const weva_element_t t = weva_document_query(doc.d, "#t");
     weva_document_set_focus(doc.d, t);   // cursor after "abcdef"
+    place_caret_at_end(doc.d, t);
     CHECK(selected(doc.d).empty());
 
     // Shift+Left twice takes the last two characters.
@@ -827,6 +859,14 @@ void test_abi_selection_is_drawn() {
     weva_element_set_selection(doc.d, t, 3, 3);
     weva_document_update(doc.d, 0);
     CHECK(band_width(doc.d) == 0);
+
+    weva_element_set_selection(doc.d, t, 0, 5);
+    weva_element_set_style(doc.d, t, "content-visibility", "hidden");
+    weva_document_update(doc.d, 0);
+    CHECK(band_width(doc.d) == 0);
+    weva_element_set_style(doc.d, t, "content-visibility", "visible");
+    weva_document_update(doc.d, 0);
+    CHECK(band_width(doc.d) > two);
 
     // And in a textarea, where the value is laid out as runs.
     Doc area("html, body { margin: 0 }"
@@ -981,6 +1021,85 @@ const char* kSelectHtml =
 // one. The list is not in the box tree: it covers whatever it opens over, so
 // it is painted after everything and hit tested before everything.
 void test_abi_select_opens_and_chooses() {
+    {
+        Doc grouped("select{width:auto;min-width:0;padding:0;border:0;appearance:none;font:20px monospace}",
+                    "<select id=s><optgroup label='A much longer group heading'><option>Low</option></optgroup></select><select id=plain><option>Low</option></select>");
+        double x = 0, y = 0, width = 0, height = 0, plain_width = 0;
+        grouped.bounds("#s", &x, &y, &width, &height);
+        grouped.bounds("#plain", &x, &y, &plain_width, &height);
+        CHECK(width > plain_width + 20);
+        const double original = width;
+        const auto select = weva_document_query(grouped.d, "#s");
+        weva_element_set_attribute(grouped.d, select, "style", "word-spacing:3px");
+        weva_document_update(grouped.d, 0);
+        grouped.bounds("#s", &x, &y, &width, &height);
+        CHECK(std::abs(width - original - 9) < 1.01);
+        weva_element_set_attribute(grouped.d, select, "style", "letter-spacing:2px");
+        weva_document_update(grouped.d, 0);
+        grouped.bounds("#s", &x, &y, &width, &height);
+        CHECK(std::abs(width - original - 14) < 1.01);
+    }
+    for (const char* layout : {"", "display:flex", "display:grid;grid-template-columns:max-content"}) {
+        const std::string html = std::string("<div style='") + layout + "'><select id=s><option>Low</option><option id=long>Very long quality</option></select></div>";
+        Doc natural("select{width:auto;min-width:0;padding:0;border:0;appearance:none;font:20px monospace}", html.c_str());
+        double x = 0, y = 0, width = 0, height = 0;
+        natural.bounds("#s", &x, &y, &width, &height);
+        CHECK(width > 100);
+        const double original_width = width;
+        const auto select = weva_document_query(natural.d, "#s");
+        CHECK(weva_element_set_attribute(natural.d, select, "style", "letter-spacing:2px") == WEVA_OK);
+        weva_document_update(natural.d, 0);
+        natural.bounds("#s", &x, &y, &width, &height);
+        CHECK(width > original_width + 30);
+        CHECK(weva_element_set_attribute(natural.d, select, "style", "word-spacing:3px") == WEVA_OK);
+        weva_document_update(natural.d, 0);
+        natural.bounds("#s", &x, &y, &width, &height);
+        CHECK(std::abs(width - original_width - 6) < 1.01);
+        CHECK(weva_element_set_attribute(natural.d, select, "style", "display:block") == WEVA_OK);
+        weva_document_update(natural.d, 0);
+        natural.bounds("#s", &x, &y, &width, &height);
+        CHECK(std::abs(width - original_width) < 0.01);
+        const auto option = weva_document_query(natural.d, "#long");
+        CHECK(weva_element_set_attribute(natural.d, option, "label", "Mid") == WEVA_OK);
+        weva_document_update(natural.d, 0);
+        natural.bounds("#s", &x, &y, &width, &height);
+        CHECK(width > 0 && width < original_width);
+    }
+    // Settings controls must accept compact authored widths without requiring
+    // authors to know and undo a separate minimum in the default stylesheet.
+    for (const auto& sizing : std::vector<std::pair<std::string, double>>{
+             {"width:90px", 90}, {"width:50%", 160},
+             {"width:90px;min-width:110px", 110}, {"width:90px;max-width:75px", 75},
+             {"", 218}}) {
+        for (const char* mode : {"", " multiple size=3"}) {
+            const std::string html = std::string("<div style='width:320px'><select id=s") + mode +
+                "><option>Low</option><option>Medium</option></select></div>";
+            const std::string css = "select{" + sizing.first + "}";
+            Doc sized(css.c_str(), html.c_str());
+            double x = 0, y = 0, width = 0, height = 0;
+            sized.bounds("#s", &x, &y, &width, &height);
+            CHECK(std::abs(width - sizing.second) < 0.01);
+        }
+    }
+    // The overlay stays upright and anchors to the painted control bounds.
+    for (bool above : {false, true}) {
+        Doc moved(kSelectCss, kSelectHtml);
+        const auto select = weva_document_query(moved.d, "#s");
+        const double top = above ? 240 : 40;
+        const std::string style = "transform-origin:0 0;transform:translate(100px," +
+            std::to_string(top) + "px) scale(1.5)";
+        weva_element_set_attribute(moved.d, select, "style", style.c_str());
+        weva_document_update(moved.d, 0);
+        weva_document_set_pointer(moved.d, 220, top + 20, 1);
+        weva_document_set_pointer(moved.d, 220, top + 20, 0);
+        CHECK(weva_document_open_select_element(moved.d) == select);
+        // 14px stub font: three 28px rows, flipped above near the viewport edge.
+        const double popup_top = above ? top - 84 : top + 42;
+        weva_document_set_pointer(moved.d, 300, popup_top + 68, 1);
+        weva_document_update(moved.d, 0);
+        CHECK(moved.value("#s") == "high");
+        CHECK(weva_document_open_select_element(moved.d) == WEVA_ELEMENT_NONE);
+    }
     Doc doc(kSelectCss, kSelectHtml);
     const weva_element_t s = weva_document_query(doc.d, "#s");
     CHECK(doc.value("#s") == "med");   // the value is the chosen option's
@@ -1444,6 +1563,7 @@ void test_abi_word_motion_keys() {
             "<input id=t type=text value='the quick brown fox'>");
     const weva_element_t t = weva_document_query(doc.d, "#t");
     weva_document_set_focus(doc.d, t);   // cursor at the end, offset 19
+    place_caret_at_end(doc.d, t);
 
     const auto caret = [&]() {
         int start = 0, end = 0;
@@ -1479,6 +1599,7 @@ void test_abi_word_delete_keys() {
             "<input id=t type=text value='alpha beta gamma'>");
     const weva_element_t t = weva_document_query(doc.d, "#t");
     weva_document_set_focus(doc.d, t);
+    place_caret_at_end(doc.d, t);
 
     weva_document_key(doc.d, WEVA_KEY_BACKSPACE, WEVA_MOD_CTRL, 1);
     CHECK(doc.value("#t") == "alpha beta ");
@@ -1507,6 +1628,7 @@ void test_abi_document_extent_keys() {
             "<textarea id=a>first line\nsecond line\nthird line</textarea>");
     const weva_element_t a = weva_document_query(doc.d, "#a");
     weva_document_set_focus(doc.d, a);
+    place_caret_at_end(doc.d, a);
     const auto caret = [&]() {
         int start = 0, end = 0;
         weva_element_selection(doc.d, a, &start, &end);
@@ -1775,12 +1897,15 @@ void test_abi_dialog_backdrop() {
     CHECK(doc.backdrops() == 0);
 
     // Modal: now there is one.
+    CHECK(weva_element_show_dialog(doc.d, d, 1) == WEVA_ERR_INVALID_STATE);
+    CHECK(weva_element_close_dialog(doc.d, d) == WEVA_OK);
     CHECK(weva_element_show_dialog(doc.d, d, 1) == WEVA_OK);
     weva_document_update(doc.d, 0);
     CHECK(doc.backdrops() == 1);
 
-    // Reopening non-modally takes it away again -- the backdrop must not
-    // outlive the modality that asked for it.
+    // Modality cannot change while open. Close before reopening non-modally.
+    CHECK(weva_element_show_dialog(doc.d, d, 0) == WEVA_ERR_INVALID_STATE);
+    CHECK(weva_element_close_dialog(doc.d, d) == WEVA_OK);
     CHECK(weva_element_show_dialog(doc.d, d, 0) == WEVA_OK);
     weva_document_update(doc.d, 0);
     CHECK(doc.backdrops() == 0);
@@ -1806,12 +1931,15 @@ void test_abi_popover_backdrop() {
     weva_document_update(doc.d, 0);
     CHECK(doc.backdrops() == 0);
 
-    // The attribute pair is the whole state: no controller, no stored flag.
+    // Authored data attributes are not browser popover state.
     CHECK(weva_element_set_attribute(doc.d, p, "data-popover-open", "") == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.backdrops() == 0);
+    CHECK(weva_element_show_popover(doc.d, p) == WEVA_OK);
     weva_document_update(doc.d, 0);
     CHECK(doc.backdrops() == 1);
 
-    CHECK(weva_element_set_attribute(doc.d, p, "data-popover-open", nullptr) == WEVA_OK);
+    CHECK(weva_element_hide_popover(doc.d, p) == WEVA_OK);
     weva_document_update(doc.d, 0);
     CHECK(doc.backdrops() == 0);
 }
@@ -1829,6 +1957,263 @@ bool open_popover(weva_document_t d, const char* selector) {
 // which is the point of the attribute. The port recognised `data-popover-open`
 // for the backdrop and had nothing that ever set it.
 void test_abi_popover_trigger() {
+    // Keep a replacement continuation and its captured parent alive across
+    // handler mutations; discarded plans must never affect replacement DOM.
+    for (int mutation = 0; mutation < 6; ++mutation) {
+        Doc lifetime("", "<div id=parent popover><div id=child popover>Child</div></div><div id=target popover>New</div>");
+        for (const char* id : {"#parent", "#child"})
+            CHECK(weva_element_show_popover(lifetime.d, weva_document_query(lifetime.d, id)) == WEVA_OK);
+        weva_event event{};
+        while (weva_document_poll_event(lifetime.d, &event)) {}
+        const auto target = weva_document_query(lifetime.d, "#target");
+        CHECK(weva_element_request_show_popover(lifetime.d, target) == WEVA_OK);
+        CHECK(weva_document_poll_event(lifetime.d, &event) == 1);
+        CHECK(event.kind == WEVA_EVENT_BEFORE_TOGGLE && event.target == target);
+        CHECK(weva_document_poll_event(lifetime.d, &event) == 1);
+        CHECK(event.kind == WEVA_EVENT_BEFORE_TOGGLE && event.target == weva_document_query(lifetime.d, "#child"));
+        if (mutation == 0) CHECK(weva_element_remove(lifetime.d, target) == WEVA_OK);
+        if (mutation == 1) CHECK(weva_element_set_attribute(lifetime.d, target, "popover", "manual") == WEVA_OK);
+        if (mutation == 2) CHECK(weva_element_remove(lifetime.d, weva_document_query(lifetime.d, "#parent")) == WEVA_OK);
+        if (mutation == 3) {
+            const char* fresh = "<div id=target popover>Replacement document</div>";
+            CHECK(weva_document_load_html(lifetime.d, fresh, std::strlen(fresh)) == WEVA_OK);
+        }
+        if (mutation == 4) {
+            weva_document_destroy(lifetime.d);
+            lifetime.d = nullptr;
+            continue;
+        }
+        int drained = 0;
+        while (drained < 100 && weva_document_poll_event(lifetime.d, &event)) ++drained;
+        CHECK(drained < 100);
+        CHECK(open_popover(lifetime.d, "#target") == (mutation == 2 || mutation == 5));
+        CHECK(!open_popover(lifetime.d, "#parent"));
+        CHECK(!open_popover(lifetime.d, "#child"));
+        weva_document_update(lifetime.d, 0);
+    }
+    {
+        std::string html = "<div id=parent popover><div id=child popover>Child</div></div><div id=target popover>New</div><div id=pinned popover=manual>Pinned</div>";
+        for (int i = 0; i < 256; ++i)
+            html += "<div id=s" + std::to_string(i) + " popover=manual>Queued</div>";
+        Doc saturated("", html.c_str());
+        for (const char* id : {"#parent", "#child", "#pinned"})
+            CHECK(weva_element_show_popover(saturated.d, weva_document_query(saturated.d, id)) == WEVA_OK);
+        weva_event event{};
+        while (weva_document_poll_event(saturated.d, &event)) {}
+        const auto target = weva_document_query(saturated.d, "#target");
+        CHECK(weva_element_request_show_popover(saturated.d, target) == WEVA_OK);
+        CHECK(weva_document_poll_event(saturated.d, &event) == 1);
+        CHECK(event.kind == WEVA_EVENT_BEFORE_TOGGLE && event.target == target);
+        for (int i = 0; i < 256; ++i) {
+            const auto selector = "#s" + std::to_string(i);
+            CHECK(weva_element_request_show_popover(saturated.d, weva_document_query(saturated.d, selector.c_str())) == WEVA_OK);
+        }
+        int closing = 0, vetoed = 0;
+        while (weva_document_poll_event(saturated.d, &event)) {
+            if (event.kind != WEVA_EVENT_BEFORE_TOGGLE) continue;
+            if (std::strcmp(event.text, "closed") == 0) {
+                ++closing;
+                CHECK(weva_element_has_attribute(saturated.d, event.target, "data-popover-open"));
+                CHECK(weva_element_request_hide_popover(saturated.d, weva_document_query(saturated.d, "#pinned")) == WEVA_ERR_INVALID_STATE);
+            } else {
+                CHECK(event.target != target);
+                CHECK(weva_document_prevent_default(saturated.d) == 1);
+                ++vetoed;
+            }
+        }
+        CHECK(closing == 2 && vetoed == 256);
+        CHECK(open_popover(saturated.d, "#target"));
+        CHECK(!open_popover(saturated.d, "#parent") && !open_popover(saturated.d, "#child"));
+        CHECK(open_popover(saturated.d, "#pinned"));
+    }
+    {
+        std::string html = "<div id=parent popover><div id=child popover>Child</div></div>";
+        for (int i = 0; i < 255; ++i)
+            html += "<div id=q" + std::to_string(i) + " popover=manual>Queued</div>";
+        Doc pressure("", html.c_str());
+        for (const char* id : {"#parent", "#child"})
+            CHECK(weva_element_show_popover(pressure.d, weva_document_query(pressure.d, id)) == WEVA_OK);
+        weva_event event{};
+        while (weva_document_poll_event(pressure.d, &event)) {}
+        for (int i = 0; i < 255; ++i) {
+            const auto selector = "#q" + std::to_string(i);
+            CHECK(weva_element_request_show_popover(pressure.d, weva_document_query(pressure.d, selector.c_str())) == WEVA_OK);
+        }
+        CHECK(weva_element_request_hide_popover(pressure.d, weva_document_query(pressure.d, "#parent")) == WEVA_ERR_INVALID_STATE);
+        int closing = 0;
+        while (weva_document_poll_event(pressure.d, &event)) {
+            if (event.kind != WEVA_EVENT_BEFORE_TOGGLE) continue;
+            if (std::strcmp(event.text, "closed") == 0) ++closing;
+            else CHECK(weva_document_prevent_default(pressure.d) == 1);
+        }
+        CHECK(closing == 0);
+        CHECK(open_popover(pressure.d, "#parent"));
+        CHECK(open_popover(pressure.d, "#child"));
+    }
+    for (int close_path = 0; close_path < 4; ++close_path) {
+        Doc dismiss("", "<div id=parent popover><div id=child popover>Child</div></div><div id=pinned popover=manual>Pinned</div>");
+        weva_document_set_popover_request_events(dismiss.d, 1);
+        for (const char* id : {"#parent", "#child", "#pinned"})
+            CHECK(weva_element_show_popover(dismiss.d, weva_document_query(dismiss.d, id)) == WEVA_OK);
+        weva_event event{};
+        while (weva_document_poll_event(dismiss.d, &event)) {}
+        const auto version = weva_document_transient_version(dismiss.d);
+        if (close_path >= 2) {
+            CHECK(weva_element_set_attribute(dismiss.d, weva_document_query(dismiss.d, "#parent"), "popover", close_path == 2 ? "manual" : nullptr) == WEVA_OK);
+        } else if (close_path == 1) {
+            CHECK(weva_element_request_hide_popover(dismiss.d, weva_document_query(dismiss.d, "#parent")) == WEVA_OK);
+        } else {
+            CHECK(weva_document_dismiss_transients(dismiss.d, version) == 1);
+            CHECK(weva_document_dismiss_transients(dismiss.d, version) == 1);
+        }
+        CHECK(open_popover(dismiss.d, "#child"));
+        int closes = 0;
+        while (weva_document_poll_event(dismiss.d, &event)) {
+            if (event.kind != WEVA_EVENT_BEFORE_TOGGLE) continue;
+            CHECK(std::strcmp(event.text, "closed") == 0);
+            CHECK(weva_element_has_attribute(dismiss.d, event.target, "data-popover-open"));
+            CHECK(weva_document_prevent_default(dismiss.d) == 0);
+            CHECK(event.target == weva_document_query(dismiss.d, closes == 0 ? "#child" : "#parent"));
+            ++closes;
+        }
+        CHECK(closes == 2);
+        CHECK(!open_popover(dismiss.d, "#child"));
+        CHECK(!open_popover(dismiss.d, "#parent"));
+        CHECK(open_popover(dismiss.d, "#pinned"));
+    }
+    // Requests own a default action and must survive notification pressure.
+    {
+        std::string html;
+        for (int i = 0; i < 257; ++i)
+            html += "<div id=p" + std::to_string(i) + " popover=manual>Menu</div>";
+        Doc pressure("", html.c_str());
+        for (int i = 0; i < 256; ++i) {
+            const auto selector = "#p" + std::to_string(i);
+            CHECK(weva_element_request_show_popover(pressure.d,
+                weva_document_query(pressure.d, selector.c_str())) == WEVA_OK);
+        }
+        CHECK(weva_element_request_show_popover(pressure.d,
+            weva_document_query(pressure.d, "#p256")) == WEVA_ERR_INVALID_STATE);
+        // Immediate opens add ordinary toggle notifications to a full queue.
+        CHECK(weva_element_show_popover(pressure.d,
+            weva_document_query(pressure.d, "#p256")) == WEVA_OK);
+        weva_event event{};
+        int before = 0;
+        while (weva_document_poll_event(pressure.d, &event)) {
+            if (event.kind == WEVA_EVENT_BEFORE_TOGGLE) {
+                ++before;
+                CHECK(weva_document_prevent_default(pressure.d) == 1);
+            }
+        }
+        CHECK(before == 256);
+        CHECK(!open_popover(pressure.d, "#p0"));
+        CHECK(!open_popover(pressure.d, "#p255"));
+    }
+    // Cancellable opening runs before stack dismissal or autofocus. Handlers
+    // may mutate/remove/reload the document; draining must revalidate ownership.
+    for (const auto mode : {"auto", "hint", "manual"}) for (int action = 0; action < 8; ++action) {
+        const std::string html = std::string("<button id=outside>Outside</button><div id=other popover=") + mode +
+            ">Existing</div><section on-beforetoggle=ancestor><div id=target popover=" + mode +
+            "><input id=inside autofocus></div></section>";
+        Doc request("", html.c_str());
+        const auto outside = weva_document_query(request.d, "#outside");
+        const auto other = weva_document_query(request.d, "#other");
+        const auto target = weva_document_query(request.d, "#target");
+        CHECK(weva_document_set_focus(request.d, outside) == WEVA_OK);
+        CHECK(weva_element_show_popover(request.d, other) == WEVA_OK);
+        weva_event event{};
+        while (weva_document_poll_event(request.d, &event)) {}
+        CHECK(weva_element_request_show_popover(request.d, target) == WEVA_OK);
+        CHECK(weva_element_request_show_popover(request.d, target) == WEVA_OK);
+        CHECK(!open_popover(request.d, "#target"));
+        CHECK(weva_document_poll_event(request.d, &event) == 1);
+        CHECK(event.kind == WEVA_EVENT_BEFORE_TOGGLE);
+        CHECK(event.target == target && std::strcmp(event.text, "open") == 0);
+        CHECK(event.handler[0] == 0); // non-bubbling
+        CHECK(weva_document_focus(request.d) == outside);
+        CHECK(open_popover(request.d, "#other"));
+        CHECK(!open_popover(request.d, "#target"));
+        if (action == 1) CHECK(weva_document_prevent_default(request.d) == 1);
+        if (action == 2) CHECK(weva_element_remove(request.d, target) == WEVA_OK);
+        if (action == 3) CHECK(weva_element_set_attribute(request.d, target, "popover", nullptr) == WEVA_OK);
+        if (action == 4) {
+            const char* fresh = "<div id=target popover>Replacement</div>";
+            CHECK(weva_document_load_html(request.d, fresh, std::strlen(fresh)) == WEVA_OK);
+        }
+        if (action == 5) CHECK(weva_element_request_show_popover(request.d, target) == WEVA_OK);
+        if (action == 6) {
+            weva_document_update(request.d, 0);
+            CHECK(!open_popover(request.d, "#target"));
+            CHECK(weva_document_prevent_default(request.d) == 1);
+        }
+        if (action == 7) {
+            CHECK(weva_element_show_popover(request.d, target) == WEVA_OK);
+            CHECK(weva_element_hide_popover(request.d, target) == WEVA_OK);
+            CHECK(weva_document_prevent_default(request.d) == 1);
+        }
+        int extra_before = 0;
+        while (weva_document_poll_event(request.d, &event))
+            if (event.kind == WEVA_EVENT_BEFORE_TOGGLE && std::strcmp(event.text, "open") == 0) ++extra_before;
+        CHECK(extra_before == 0);
+        const bool opened = action == 0 || action == 5;
+        CHECK(open_popover(request.d, "#target") == opened);
+        if (action != 4 && action != 7) {
+            CHECK(open_popover(request.d, "#other") == (!opened || std::strcmp(mode, "manual") == 0));
+            CHECK(weva_document_focus(request.d) ==
+                (opened ? weva_document_query(request.d, "#inside") : outside));
+        }
+        CHECK(weva_document_prevent_default(request.d) == 0);
+    }
+    // Saved focus must not survive destruction/reload as a dangling pointer.
+    for (int mutation = 0; mutation < 3; ++mutation) {
+        Doc lifetime("", "<button id=outside>Open</button><div id=p popover><input id=field autofocus></div>");
+        weva_document_update(lifetime.d, 0);
+        const auto outside = weva_document_query(lifetime.d, "#outside");
+        const auto popup = weva_document_query(lifetime.d, "#p");
+        CHECK(weva_document_set_focus(lifetime.d, outside) == WEVA_OK);
+        CHECK(weva_element_show_popover(lifetime.d, popup) == WEVA_OK);
+        CHECK(weva_document_focus(lifetime.d) == weva_document_query(lifetime.d, "#field"));
+        if (mutation == 0) {
+            CHECK(weva_element_remove(lifetime.d, outside) == WEVA_OK);
+            CHECK(weva_element_hide_popover(lifetime.d, popup) == WEVA_OK);
+        } else if (mutation == 1) CHECK(weva_element_remove(lifetime.d, popup) == WEVA_OK);
+        else {
+            const char* html = "<button id=replacement>New</button>";
+            CHECK(weva_document_load_html(lifetime.d, html, std::strlen(html)) == WEVA_OK);
+        }
+        weva_document_update(lifetime.d, 0);
+        CHECK(weva_document_focus(lifetime.d) == WEVA_ELEMENT_NONE);
+    }
+    // Chrome sibling, DOM-child and invoker-linked stacks, all mode pairs.
+    for (int action = 0; action < 4; ++action)
+    for (int relation = 0; relation < 3; ++relation)
+    for (const auto first : {"auto", "manual", "hint"})
+    for (const auto second : {"auto", "manual", "hint"}) {
+        const std::string child = std::string("<div id=child popover=") + second + ">Child</div>";
+        const std::string html = std::string("<div id=parent popover=") + first +
+            "><button id=trigger popovertarget=child>Open</button>" +
+            (relation == 1 ? child : "") + "</div>" + (relation == 1 ? "" : child);
+        Doc stack("", html.c_str());
+        CHECK(weva_element_show_popover(stack.d, weva_document_query(stack.d, "#parent")) == WEVA_OK);
+        if (relation == 2) {
+            weva_document_update(stack.d, 0);
+            CHECK(weva_document_set_focus(stack.d, weva_document_query(stack.d, "#trigger")) == WEVA_OK);
+            CHECK(weva_document_key(stack.d, WEVA_KEY_ENTER, 0, 1) == 1);
+        } else CHECK(weva_element_show_popover(stack.d, weva_document_query(stack.d, "#child")) == WEVA_OK);
+        const bool dismiss = relation == 0 &&
+            ((std::string(second) == "auto" && std::string(first) != "manual") ||
+             (std::string(second) == "hint" && std::string(first) == "hint"));
+        CHECK(open_popover(stack.d, "#parent") == !dismiss);
+        CHECK(open_popover(stack.d, "#child"));
+        if (action && relation != 0) {
+            const auto parent = weva_document_query(stack.d, "#parent");
+            if (action == 1) CHECK(weva_element_hide_popover(stack.d, parent) == WEVA_OK);
+            else CHECK(weva_element_set_attribute(stack.d, parent, "popover", action == 2 ? nullptr : "manual") == WEVA_OK);
+            const bool manual_parent = std::string(first) == "manual";
+            CHECK(open_popover(stack.d, "#parent") == (manual_parent && action == 3));
+            CHECK(open_popover(stack.d, "#child") == (manual_parent || std::string(second) == "manual"));
+        }
+    }
     Doc doc("html, body { margin: 0 } button { display: block; width: 100px; height: 30px }"
             " [popover] { width: 120px; height: 60px }",
             "<button id=b popovertarget=menu><span id=lbl>Open</span></button>"
@@ -1901,6 +2286,19 @@ void test_abi_popover_light_dismiss_after_trigger() {
 
 // Light dismiss: the behaviour that makes a menu a menu.
 void test_abi_popover_light_dismiss() {
+    for (int gesture = 0; gesture < 5; ++gesture) {
+        Doc boundary("body{margin:0}#page{height:450px}[popover]{margin:0;position:fixed;left:200px;top:100px;width:100px;height:60px;padding:0;border:0}",
+                     "<div id=page><button id=outside>Outside</button></div><div id=p popover>Menu</div>");
+        const auto popup = weva_document_query(boundary.d, "#p");
+        CHECK(weva_element_show_popover(boundary.d, popup) == WEVA_OK);
+        weva_document_update(boundary.d, 0);
+        const bool from_inside = gesture == 1 || gesture == 3;
+        const bool to_inside = gesture == 2 || gesture == 3;
+        weva_document_set_pointer(boundary.d, from_inside ? 220 : 20, from_inside ? 120 : 10, WEVA_BUTTON_PRIMARY);
+        if (gesture == 4) weva_document_clear_pointer(boundary.d);
+        weva_document_set_pointer(boundary.d, to_inside ? 220 : 20, to_inside ? 120 : 350, 0);
+        CHECK(open_popover(boundary.d, "#p") == (gesture != 0));
+    }
     Doc doc("html, body { margin: 0 } #page { height: 200px }"
             " [popover] { top: 10px; left: 10px; width: 120px; height: 60px }",
             "<div id=page>Page</div>"
@@ -1943,9 +2341,8 @@ void test_abi_popover_light_dismiss() {
 // from, and a manual popover in between is stepped over rather than closed.
 void test_abi_popover_escape_walks_the_stack() {
     Doc doc("html, body { margin: 0 } [popover] { width: 120px; height: 60px }",
-            "<div id=menu popover>Menu</div>"
-            "<div id=pinned popover=manual>Pinned</div>"
-            "<div id=submenu popover>Submenu</div>");
+            "<div id=menu popover>Menu<div id=submenu popover>Submenu</div></div>"
+            "<div id=pinned popover=manual>Pinned</div>");
     weva_element_show_popover(doc.d, weva_document_query(doc.d, "#menu"));
     weva_element_show_popover(doc.d, weva_document_query(doc.d, "#pinned"));
     weva_element_show_popover(doc.d, weva_document_query(doc.d, "#submenu"));
@@ -2056,4 +2453,1452 @@ void test_abi_label_forwarding_edge_cases() {
     weva_document_update(doc.d, 0);
     CHECK(doc.value("#vol") == "40");
     CHECK(weva_document_focus(doc.d) == weva_document_query(doc.d, "#vol"));
+}
+
+void test_abi_dialog_close_notification() {
+    for (int modal : {0, 1}) {
+        Doc doc("", "<div on-close=ancestor><dialog id=d on-close=closed><button>OK</button></dialog></div>");
+        const auto d = weva_document_query(doc.d, "#d");
+        weva_event event{};
+        auto drain = [&] { while (weva_document_poll_event(doc.d, &event)) {} };
+        CHECK(weva_element_show_dialog(doc.d, d, modal) == WEVA_OK);
+        drain();
+        CHECK(weva_element_close_dialog(doc.d, d) == WEVA_OK);
+        int closed = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind != WEVA_EVENT_CLOSE) continue;
+            ++closed;
+            CHECK(event.target == d);
+            CHECK(std::strcmp(event.handler, "closed") == 0);
+        }
+        CHECK(closed == 1);
+        CHECK(weva_element_close_dialog(doc.d, d) == WEVA_OK);
+        CHECK(!weva_document_poll_event(doc.d, &event));
+        CHECK(weva_element_set_attribute(doc.d, d, "on-close", nullptr) == WEVA_OK);
+        CHECK(weva_element_show_dialog(doc.d, d, modal) == WEVA_OK);
+        drain();
+        CHECK(weva_element_close_dialog(doc.d, d) == WEVA_OK);
+        closed = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind != WEVA_EVENT_CLOSE) continue;
+            ++closed;
+            CHECK(event.handler[0] == 0); // Does not reach the ancestor handler.
+        }
+        CHECK(closed == 1);
+        CHECK(weva_element_show_dialog(doc.d, d, modal) == WEVA_OK);
+        drain();
+        CHECK(weva_element_set_attribute(doc.d, d, "open", nullptr) == WEVA_OK);
+        CHECK(weva_document_update(doc.d, 0) == WEVA_OK);
+        while (weva_document_poll_event(doc.d, &event)) CHECK(event.kind != WEVA_EVENT_CLOSE);
+    }
+}
+
+void test_abi_dialog_cancel_request() {
+    for (int modal : {0, 1}) for (int action = 0; action < 7; ++action) {
+        Doc doc("", "<div on-cancel=ancestor><dialog id=d on-cancel=cancelled><button>OK</button></dialog></div>");
+        auto d = weva_document_query(doc.d, "#d");
+        weva_event event{};
+        auto drain = [&] { while (weva_document_poll_event(doc.d, &event)) {} };
+        CHECK(weva_document_prevent_default(doc.d) == 0);
+        CHECK(weva_element_show_dialog(doc.d, d, modal) == WEVA_OK);
+        drain();
+        CHECK(weva_element_request_close_dialog(doc.d, d) == WEVA_OK);
+        CHECK(weva_element_has_attribute(doc.d, d, "open"));
+        CHECK(weva_document_poll_event(doc.d, &event));
+        CHECK(event.kind == WEVA_EVENT_CANCEL);
+        CHECK(std::strcmp(event.handler, "cancelled") == 0);
+        CHECK(weva_element_has_attribute(doc.d, d, "open"));
+        if (action == 1) CHECK(weva_document_prevent_default(doc.d) == 1);
+        if (action == 2 || action == 3) {
+            CHECK(weva_element_close_dialog(doc.d, d) == WEVA_OK);
+            if (action == 3) CHECK(weva_element_show_dialog(doc.d, d, modal) == WEVA_OK);
+        }
+        if (action == 4) CHECK(weva_element_remove(doc.d, d) == WEVA_OK);
+        if (action == 6) {
+            CHECK(weva_element_set_attribute(doc.d, d, "open", nullptr) == WEVA_OK);
+            CHECK(weva_element_set_attribute(doc.d, d, "open", "") == WEVA_OK);
+        }
+        if (action == 5) {
+            const char* replacement = "<dialog id=d open>Replacement</dialog>";
+            CHECK(weva_document_load_html(doc.d, replacement, std::strlen(replacement)) == WEVA_OK);
+            d = weva_document_query(doc.d, "#d");
+        }
+        int closes = 0;
+        while (weva_document_poll_event(doc.d, &event)) if (event.kind == WEVA_EVENT_CLOSE) ++closes;
+        CHECK(closes == ((action == 0 || action == 2 || action == 3) ? 1 : 0));
+        if (action != 4)
+            CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == (action == 1 || action == 3 || action == 5 || action == 6));
+        CHECK(weva_document_prevent_default(doc.d) == 0);
+    }
+    Doc doc("", "<div on-cancel=ancestor><dialog id=d>Hi</dialog></div>");
+    auto d = weva_document_query(doc.d, "#d");
+    weva_event event{};
+    CHECK(weva_element_request_close_dialog(doc.d, d) == WEVA_OK);
+    CHECK(!weva_document_poll_event(doc.d, &event));
+    CHECK(weva_element_show_dialog(doc.d, d, 1) == WEVA_OK);
+    while (weva_document_poll_event(doc.d, &event)) {}
+    // A queue full of pending actions explicitly rejects additional requests.
+    for (int i = 0; i < 300; ++i)
+        CHECK(weva_element_request_close_dialog(doc.d, d) == (i < 256 ? WEVA_OK : WEVA_ERR_INVALID_STATE));
+    CHECK(weva_document_poll_event(doc.d, &event));
+    CHECK(event.kind == WEVA_EVENT_CANCEL && event.handler[0] == 0);
+    int closes = 0;
+    while (weva_document_poll_event(doc.d, &event)) if (event.kind == WEVA_EVENT_CLOSE) ++closes;
+    CHECK(closes == 1);
+    CHECK(!weva_element_has_attribute(doc.d, d, "open"));
+}
+
+void test_abi_dialog_cancel_survives_notifications() {
+    for (bool veto : {false, true}) {
+        Doc doc("", "<dialog id=d><input id=i value=abc></dialog>");
+        auto d = weva_document_query(doc.d, "#d");
+        weva_event event{};
+        CHECK(weva_element_show_dialog(doc.d, d, 1) == WEVA_OK);
+        while (weva_document_poll_event(doc.d, &event)) {}
+        CHECK(weva_element_request_close_dialog(doc.d, d) == WEVA_OK);
+        for (int i = 0; i < 600; ++i) weva_document_key(doc.d, WEVA_KEY_OTHER, 0, i % 2);
+        CHECK(weva_document_poll_event(doc.d, &event));
+        CHECK(event.kind == WEVA_EVENT_CANCEL);
+        CHECK(weva_element_has_attribute(doc.d, d, "open"));
+        if (veto) CHECK(weva_document_prevent_default(doc.d));
+        int closes = 0;
+        while (weva_document_poll_event(doc.d, &event)) if (event.kind == WEVA_EVENT_CLOSE) ++closes;
+        CHECK(closes == (veto ? 0 : 1));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == veto);
+    }
+}
+
+void test_abi_dialog_escape_policy() {
+    for (bool modal : {false, true}) for (bool lower : {false, true})
+    for (const char* policy : {"", "none", "closerequest", "any", "invalid", "NoNe", "CloseRequest"})
+    for (bool veto : {false, true}) {
+        Doc doc("", "<dialog id=a><button>A</button></dialog><dialog id=b><button>B</button></dialog>");
+        const auto a = weva_document_query(doc.d, "#a"), b = weva_document_query(doc.d, "#b");
+        CHECK(weva_element_set_attribute(doc.d, b, "closedby", policy) == WEVA_OK);
+        if (lower) CHECK(weva_element_show_dialog(doc.d, a, 1) == WEVA_OK);
+        CHECK(weva_element_show_dialog(doc.d, b, modal) == WEVA_OK);
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {}
+        const bool none = std::strcmp(policy, "none") == 0 || std::strcmp(policy, "NoNe") == 0;
+        const bool requested = !none && (modal || std::strcmp(policy, "any") == 0 ||
+            std::strcmp(policy, "closerequest") == 0 || std::strcmp(policy, "CloseRequest") == 0);
+        CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == int(requested));
+        int cancels = 0, closes = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_CANCEL) {
+                ++cancels;
+                CHECK(event.target == b);
+                if (veto) CHECK(weva_document_prevent_default(doc.d));
+            }
+            if (event.kind == WEVA_EVENT_CLOSE) ++closes;
+        }
+        CHECK(cancels == int(requested));
+        CHECK(closes == int(requested && !veto));
+        CHECK(bool(weva_element_has_attribute(doc.d, a, "open")) == lower);
+        CHECK(bool(weva_element_has_attribute(doc.d, b, "open")) == (!requested || veto));
+    }
+}
+
+void test_abi_dialog_attribute_open_order() {
+    for (bool markup : {false, true}) for (const char* policy : {"none", "any", "closerequest", "invalid"}) {
+        std::string html = "<dialog id=d closedby=" + std::string(policy) + (markup ? " open" : "") + ">Hi</dialog>";
+        Doc doc("", html.c_str());
+        const auto d = weva_document_query(doc.d, "#d");
+        if (!markup) CHECK(weva_element_set_attribute(doc.d, d, "open", "") == WEVA_OK);
+        const bool closes = std::strcmp(policy, "any") == 0 || std::strcmp(policy, "closerequest") == 0;
+        CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == int(closes));
+        weva_event event{};
+        int cancels = 0;
+        while (weva_document_poll_event(doc.d, &event)) if (event.kind == WEVA_EVENT_CANCEL) ++cancels;
+        CHECK(cancels == int(closes));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == !closes);
+    }
+    Doc doc("", "<div id=host><dialog id=a closedby=any>A</dialog><dialog id=b closedby=any>B</dialog></div>");
+    auto a = weva_document_query(doc.d, "#a"), b = weva_document_query(doc.d, "#b");
+    const auto escape = [&](weva_element_t expected, bool veto) {
+        CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 1);
+        weva_event event{};
+        int cancels = 0;
+        while (weva_document_poll_event(doc.d, &event)) if (event.kind == WEVA_EVENT_CANCEL) {
+            ++cancels;
+            CHECK(event.target == expected);
+            if (veto) CHECK(weva_document_prevent_default(doc.d));
+        }
+        CHECK(cancels == 1);
+    };
+    CHECK(weva_element_set_attribute(doc.d, b, "open", "") == WEVA_OK);
+    CHECK(weva_element_set_attribute(doc.d, a, "open", "") == WEVA_OK);
+    CHECK(weva_element_set_attribute(doc.d, b, "open", "other") == WEVA_OK);
+    escape(a, true); // Changing an existing boolean attribute does not reopen.
+    CHECK(weva_element_set_attribute(doc.d, b, "open", nullptr) == WEVA_OK);
+    CHECK(weva_element_set_attribute(doc.d, b, "open", "") == WEVA_OK);
+    escape(b, false);
+    escape(a, false);
+    const char* added = "<dialog id=c open closedby=any>Inserted</dialog>";
+    auto c = weva_element_append_html(doc.d, weva_document_query(doc.d, "#host"), added, std::strlen(added));
+    CHECK(c != WEVA_ELEMENT_NONE);
+    escape(c, false);
+    CHECK(weva_element_set_attribute(doc.d, a, "open", "") == WEVA_OK);
+    CHECK(weva_element_remove(doc.d, a) == WEVA_OK);
+    const char* replacement = "<dialog id=z open closedby=any>Reloaded</dialog>";
+    CHECK(weva_document_load_html(doc.d, replacement, std::strlen(replacement)) == WEVA_OK);
+    escape(weva_document_query(doc.d, "#z"), false);
+}
+
+void test_abi_dialog_return_values() {
+    struct Case { const char* action; const char* argument; const char* handler; bool open; const char* value; };
+    // Captured from Chrome/152.0.7977.77, dialog-result-chrome.json.
+    const Case cases[] = {
+        {"close", "omit", "allow", false, "initial"},
+        {"close", "omit", "set", false, "initial"},
+        {"close", "omit", "prevent", false, "initial"},
+        {"close", "omit", "close", false, "initial"},
+        {"close", "empty", "allow", false, ""},
+        {"close", "empty", "set", false, ""},
+        {"close", "empty", "prevent", false, ""},
+        {"close", "empty", "close", false, ""},
+        {"close", "value", "allow", false, "accepted"},
+        {"close", "value", "set", false, "accepted"},
+        {"close", "value", "prevent", false, "accepted"},
+        {"close", "value", "close", false, "accepted"},
+        {"request", "omit", "allow", false, "initial"},
+        {"request", "omit", "set", false, "handler"},
+        {"request", "omit", "prevent", true, "initial"},
+        {"request", "omit", "close", false, "handler-close"},
+        {"request", "empty", "allow", false, ""},
+        {"request", "empty", "set", false, ""},
+        {"request", "empty", "prevent", true, "initial"},
+        {"request", "empty", "close", false, "handler-close"},
+        {"request", "value", "allow", false, "accepted"},
+        {"request", "value", "set", false, "accepted"},
+        {"request", "value", "prevent", true, "initial"},
+        {"request", "value", "close", false, "handler-close"},
+    };
+    for (const auto& row : cases) {
+        Doc doc("", "<dialog id=d>Hi</dialog>");
+        const auto d = weva_document_query(doc.d, "#d");
+        CHECK(weva_element_dialog_return_value(doc.d, d, nullptr, 0) == 0);
+        CHECK(weva_element_set_dialog_return_value(doc.d, d, "initial") == WEVA_OK);
+        CHECK(weva_element_show_dialog(doc.d, d, 1) == WEVA_OK);
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {}
+        const char* value = std::strcmp(row.argument, "omit") == 0 ? nullptr :
+            std::strcmp(row.argument, "empty") == 0 ? "" : "accepted";
+        if (std::strcmp(row.action, "close") == 0) {
+            CHECK(weva_element_close_dialog_with_value(doc.d, d, value) == WEVA_OK);
+        } else CHECK(weva_element_request_close_dialog_with_value(doc.d, d, value) == WEVA_OK);
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind != WEVA_EVENT_CANCEL) continue;
+            if (std::strcmp(row.handler, "set") == 0)
+                CHECK(weva_element_set_dialog_return_value(doc.d, d, "handler") == WEVA_OK);
+            if (std::strcmp(row.handler, "prevent") == 0) CHECK(weva_document_prevent_default(doc.d));
+            if (std::strcmp(row.handler, "close") == 0)
+                CHECK(weva_element_close_dialog_with_value(doc.d, d, "handler-close") == WEVA_OK);
+        }
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == row.open);
+        char result[64]{};
+        CHECK(weva_element_dialog_return_value(doc.d, d, result, sizeof(result)) == std::strlen(row.value));
+        CHECK(std::strcmp(result, row.value) == 0);
+        if (!row.open) {
+            CHECK(weva_element_close_dialog_with_value(doc.d, d, "ignored") == WEVA_OK);
+            weva_element_dialog_return_value(doc.d, d, result, sizeof(result));
+            CHECK(std::strcmp(result, row.value) == 0);
+        }
+        CHECK(!weva_element_has_attribute(doc.d, d, "returnValue"));
+        CHECK(!weva_element_has_attribute(doc.d, d, "value"));
+    }
+    Doc doc("", "<dialog id=d>Hi</dialog>");
+    auto d = weva_document_query(doc.d, "#d");
+    const char* unicode = "\xF0\x9F\x98\x80" "x";
+    CHECK(weva_element_set_dialog_return_value(doc.d, d, unicode) == WEVA_OK);
+    char small[4] = {'x','x','x','x'};
+    CHECK(weva_element_dialog_return_value(doc.d, d, small, sizeof(small)) == 5);
+    CHECK(small[0] == 0); // No partial UTF-8 codepoint.
+    char complete[8]{};
+    CHECK(weva_element_dialog_return_value(doc.d, d, complete, sizeof(complete)) == 5);
+    CHECK(std::strcmp(complete, unicode) == 0);
+    CHECK(weva_element_show_dialog(doc.d, d, 1) == WEVA_OK);
+    weva_event event{};
+    while (weva_document_poll_event(doc.d, &event)) {}
+    std::string copied(1000, 'x');
+    CHECK(weva_element_request_close_dialog_with_value(doc.d, d, copied.c_str()) == WEVA_OK);
+    copied = "changed after request";
+    while (weva_document_poll_event(doc.d, &event)) {}
+    CHECK(weva_element_dialog_return_value(doc.d, d, nullptr, 0) == 1000);
+    CHECK(weva_element_show_dialog(doc.d, d, 1) == WEVA_OK);
+    CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 1);
+    while (weva_document_poll_event(doc.d, &event)) {}
+    CHECK(weva_element_dialog_return_value(doc.d, d, nullptr, 0) == 0);
+    CHECK(weva_element_set_dialog_return_value(doc.d, d, "must not survive reload") == WEVA_OK);
+    const char* replacement = "<dialog id=d>New</dialog>";
+    CHECK(weva_document_load_html(doc.d, replacement, std::strlen(replacement)) == WEVA_OK);
+    d = weva_document_query(doc.d, "#d");
+    CHECK(weva_element_dialog_return_value(doc.d, d, nullptr, 0) == 0);
+}
+
+void test_abi_custom_validity() {
+    for (const char* tag : {"input", "textarea", "select", "button"}) for (int action = 0; action < 4; ++action) {
+        const std::string html = std::string("<dialog id=d><form id=f method=dialog><") + tag + " id=c>" +
+            (std::strcmp(tag, "select") == 0 ? "<option>Yes</option>" : "") + "</" + tag + "><button id=s>OK</button></form></dialog>";
+        Doc doc("", html.c_str());
+        const auto d = weva_document_query(doc.d, "#d"), c = weva_document_query(doc.d, "#c"), s = weva_document_query(doc.d, "#s");
+        CHECK(weva_element_set_custom_validity(doc.d, c, "Reserved name") == WEVA_OK);
+        if (action == 1) CHECK(weva_element_set_custom_validity(doc.d, c, "") == WEVA_OK);
+        if (action == 2) weva_document_reset_form(doc.d, weva_document_query(doc.d, "#f"));
+        if (action == 3) weva_element_set_attribute(doc.d, c, "disabled", "");
+        char message[64]{};
+        weva_element_custom_validity(doc.d, c, message, sizeof(message));
+        CHECK(std::strcmp(message, action == 1 ? "" : "Reserved name") == 0);
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, s);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_event event{};
+        int invalid = 0, submits = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_SUBMIT) ++submits;
+            if (event.kind == WEVA_EVENT_INVALID) { ++invalid; CHECK(event.target == c); CHECK(weva_document_prevent_default(doc.d)); }
+        }
+        const bool rejected = action == 0 || action == 2;
+        CHECK(submits == (rejected ? 0 : 1));
+        CHECK(invalid == (rejected ? 1 : 0));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == rejected);
+        CHECK(!weva_element_has_attribute(doc.d, c, "customValidity"));
+    }
+    Doc doc("", "<input id=c><div id=x></div>");
+    const auto c = weva_document_query(doc.d, "#c");
+    const std::string message = std::string("\xF0\x9F\x90\x8E") + std::string(1000, 'x');
+    CHECK(weva_element_set_custom_validity(doc.d, c, message.c_str()) == WEVA_OK);
+    char small[4]{};
+    CHECK(weva_element_custom_validity(doc.d, c, small, sizeof(small)) == message.size());
+    CHECK(small[0] == 0);
+    std::vector<char> full(message.size() + 1);
+    weva_element_custom_validity(doc.d, c, full.data(), full.size());
+    CHECK(std::string(full.data()) == message);
+    CHECK(weva_element_set_custom_validity(doc.d, c, nullptr) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_element_set_custom_validity(doc.d, weva_document_query(doc.d, "#x"), "bad") == WEVA_ERR_NOT_FOUND);
+}
+
+void test_abi_invalid_reporting_lifecycle() {
+    for (int action = 0; action < 6; ++action) {
+        Doc doc("", "<dialog id=d><form method=dialog><input id=a required><input id=b required><button id=s>OK</button></form></dialog>");
+        auto d = weva_document_query(doc.d, "#d");
+        const auto a = weva_document_query(doc.d, "#a"), b = weva_document_query(doc.d, "#b");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_event event{};
+        int invalid = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            CHECK(event.kind != WEVA_EVENT_SUBMIT);
+            if (event.kind != WEVA_EVENT_INVALID) continue;
+            ++invalid;
+            if (event.target != a) continue;
+            if (action == 0) weva_element_remove(doc.d, a);
+            if (action == 1) weva_element_remove(doc.d, b);
+            if (action == 2) weva_element_set_attribute(doc.d, b, "disabled", "");
+            if (action == 3) weva_element_set_value(doc.d, b, "fixed");
+            if (action == 4) {
+                const char* replacement = "<dialog id=d open>New document</dialog>";
+                weva_document_load_html(doc.d, replacement, std::strlen(replacement));
+                d = weva_document_query(doc.d, "#d");
+            }
+            if (action == 5) for (int i = 0; i < 600; ++i) weva_document_key(doc.d, WEVA_KEY_OTHER, 0, i % 2);
+        }
+        CHECK(invalid == (action == 0 || action == 5 ? 2 : 1));
+        CHECK(weva_element_has_attribute(doc.d, d, "open"));
+        if (action != 4) CHECK(weva_document_focus(doc.d) == (action == 0 ? b : a));
+        CHECK(!weva_document_prevent_default(doc.d));
+    }
+}
+
+void test_abi_number_submission() {
+    for (const char* value : {"", "-1", "1", "2", "11"}) for (bool bypass : {false, true}) {
+        Doc doc("", "<dialog id=d><form method=dialog><input id=c type=number min=0 max=10 step=2><button id=s value=accepted>OK</button></form></dialog>");
+        const auto d = weva_document_query(doc.d, "#d"), c = weva_document_query(doc.d, "#c"), s = weva_document_query(doc.d, "#s");
+        weva_element_set_value(doc.d, c, value);
+        if (bypass) weva_element_set_attribute(doc.d, s, "formnovalidate", "");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, s);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_event event{};
+        int invalid = 0, submits = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_SUBMIT) ++submits;
+            if (event.kind == WEVA_EVENT_INVALID) { ++invalid; CHECK(event.target == c); }
+        }
+        const bool rejected = !bypass && *value && std::strcmp(value, "2") != 0;
+        CHECK(invalid == (rejected ? 1 : 0));
+        CHECK(submits == (rejected ? 0 : 1));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == rejected);
+    }
+}
+
+void test_abi_required_submission() {
+    for (bool fill : {false, true}) {
+        Doc doc("", "<dialog id=d><form method=dialog><input id=c required><button id=s>OK</button></form></dialog>");
+        const auto d = weva_document_query(doc.d, "#d"), c = weva_document_query(doc.d, "#c"), s = weva_document_query(doc.d, "#s");
+        weva_element_set_value(doc.d, c, fill ? "" : "initial");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, s);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+        weva_event event{};
+        int submits = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_CLICK) weva_element_set_value(doc.d, c, fill ? "filled by click handler" : "");
+            if (event.kind == WEVA_EVENT_SUBMIT) ++submits;
+        }
+        CHECK(submits == (fill ? 1 : 0));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == !fill);
+    }
+    for (const char* value : {"", "yes"}) for (int bypass = 0; bypass < 3; ++bypass) {
+        Doc doc("", "<dialog id=d><form id=f method=dialog on-invalid=ancestor><input id=c required on-invalid=invalid><button id=s value=accepted>OK</button></form></dialog>");
+        const auto d = weva_document_query(doc.d, "#d"), c = weva_document_query(doc.d, "#c"), s = weva_document_query(doc.d, "#s");
+        weva_element_set_value(doc.d, c, value);
+        if (bypass == 1) weva_element_set_attribute(doc.d, weva_document_query(doc.d, "#f"), "novalidate", "");
+        if (bypass == 2) weva_element_set_attribute(doc.d, s, "formnovalidate", "");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, s);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+        weva_event event{};
+        int invalid = 0, submits = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_SUBMIT) ++submits;
+            if (event.kind == WEVA_EVENT_INVALID) {
+                ++invalid;
+                CHECK(event.target == c && std::strcmp(event.handler, "invalid") == 0);
+                CHECK(weva_document_focus(doc.d) == s);
+            }
+        }
+        const bool rejected = !*value && !bypass;
+        CHECK(invalid == (rejected ? 1 : 0));
+        CHECK(submits == (rejected ? 0 : 1));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == rejected);
+        if (rejected) CHECK(weva_document_focus(doc.d) == c);
+    }
+    for (int veto = 0; veto < 3; ++veto) {
+        Doc doc("", "<dialog id=d><form method=dialog on-invalid=ancestor><input id=a required><input id=b required><button id=s>OK</button></form></dialog>");
+        const auto d = weva_document_query(doc.d, "#d"), a = weva_document_query(doc.d, "#a"), b = weva_document_query(doc.d, "#b"), s = weva_document_query(doc.d, "#s");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, s);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_event event{};
+        int invalid = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            CHECK(event.kind != WEVA_EVENT_SUBMIT);
+            if (event.kind != WEVA_EVENT_INVALID) continue;
+            ++invalid;
+            CHECK(event.handler[0] == 0); // Invalid does not bubble to form handler.
+            CHECK(weva_document_focus(doc.d) == s); // All handlers run before focus reporting.
+            if (veto == 2 || (veto == 1 && event.target == a)) CHECK(weva_document_prevent_default(doc.d));
+            // Validation is part of submission: reentry from an invalid handler
+            // must not enqueue another validation/submission cycle.
+            weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+            weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+            weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+        }
+        CHECK(invalid == 2);
+        CHECK(weva_element_has_attribute(doc.d, d, "open"));
+        CHECK(weva_document_focus(doc.d) == (veto == 2 ? s : veto == 1 ? b : a));
+        CHECK(!weva_document_prevent_default(doc.d));
+    }
+}
+
+void test_abi_dialog_submission_lifecycle() {
+    const char* html = "<dialog id=d><form id=f method=dialog><button id=s value=yes>OK</button></form></dialog>";
+    for (bool during_handler : {false, true}) for (bool reload : {false, true}) {
+        Doc doc("", html);
+        auto d = weva_document_query(doc.d, "#d");
+        const auto f = weva_document_query(doc.d, "#f");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {}
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+        if (during_handler) {
+            bool found = false;
+            while (weva_document_poll_event(doc.d, &event)) {
+                if (event.kind == WEVA_EVENT_SUBMIT) { found = true; break; }
+            }
+            CHECK(found);
+        }
+        if (reload) {
+            const char* replacement = "<dialog id=d open>Replacement</dialog>";
+            CHECK(weva_document_load_html(doc.d, replacement, std::strlen(replacement)) == WEVA_OK);
+            d = weva_document_query(doc.d, "#d");
+        } else CHECK(weva_element_remove(doc.d, f) == WEVA_OK);
+        while (weva_document_poll_event(doc.d, &event)) {
+            CHECK(event.kind != WEVA_EVENT_SUBMIT);
+            CHECK(event.kind != WEVA_EVENT_CLOSE);
+        }
+        CHECK(weva_element_has_attribute(doc.d, d, "open"));
+        CHECK(!weva_document_prevent_default(doc.d));
+    }
+    for (bool veto : {false, true}) {
+        Doc doc("", html);
+        const auto d = weva_document_query(doc.d, "#d");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {}
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+        for (int i = 0; i < 600; ++i) weva_document_key(doc.d, WEVA_KEY_OTHER, 0, i % 2);
+        int submits = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind != WEVA_EVENT_SUBMIT) continue;
+            ++submits;
+            if (veto) CHECK(weva_document_prevent_default(doc.d));
+            // Recursive activation must not produce another submission.
+            weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+            weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+        }
+        CHECK(submits == 1);
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == veto);
+    }
+    Doc doc("", html);
+    const auto d = weva_document_query(doc.d, "#d");
+    weva_element_show_dialog(doc.d, d, 1);
+    weva_document_update(doc.d, 0);
+    weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+    weva_event event{};
+    while (weva_document_poll_event(doc.d, &event)) {}
+    for (int i = 0; i < 300; ++i) {
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+    }
+    int submits = 0;
+    while (weva_document_poll_event(doc.d, &event)) {
+        if (event.kind == WEVA_EVENT_SUBMIT) { ++submits; CHECK(weva_document_prevent_default(doc.d)); }
+    }
+    CHECK(submits == 256);
+    CHECK(weva_element_has_attribute(doc.d, d, "open"));
+    // Draining restores capacity and leaves no stale veto on the next request.
+    weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+    weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+    while (weva_document_poll_event(doc.d, &event)) {}
+    CHECK(!weva_element_has_attribute(doc.d, d, "open"));
+}
+
+void test_abi_dialog_submission_handler_mutations() {
+    for (const char* action : {"owner-get", "owner-dialog", "owner-missing", "remove-button", "type-button", "form-get", "override-get", "override-dialog"}) {
+        Doc doc("", "<dialog id=d><form id=f method=dialog><button id=s value=yes>OK</button></form></dialog><form id=g method=get></form>");
+        const auto d = weva_document_query(doc.d, "#d"), f = weva_document_query(doc.d, "#f"), s = weva_document_query(doc.d, "#s");
+        weva_element_set_dialog_return_value(doc.d, d, "initial");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, s);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+        weva_event event{};
+        int submits = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind != WEVA_EVENT_SUBMIT) continue;
+            ++submits;
+            if (std::strncmp(action, "owner-", 6) == 0) {
+                if (std::strcmp(action, "owner-dialog") == 0)
+                    weva_element_set_attribute(doc.d, weva_document_query(doc.d, "#g"), "method", "dialog");
+                weva_element_set_attribute(doc.d, s, "form", std::strcmp(action, "owner-missing") == 0 ? "missing" : "g");
+            }
+            if (std::strcmp(action, "remove-button") == 0) weva_element_remove(doc.d, s);
+            if (std::strcmp(action, "type-button") == 0) weva_element_set_attribute(doc.d, s, "type", "button");
+            if (std::strcmp(action, "form-get") == 0 || std::strcmp(action, "override-dialog") == 0)
+                weva_element_set_attribute(doc.d, f, "method", "get");
+            if (std::strcmp(action, "override-get") == 0) weva_element_set_attribute(doc.d, s, "formmethod", "get");
+            if (std::strcmp(action, "override-dialog") == 0) weva_element_set_attribute(doc.d, s, "formmethod", "dialog");
+        }
+        const bool open = std::strcmp(action, "form-get") == 0 || std::strcmp(action, "override-get") == 0;
+        CHECK(submits == 1);
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == open);
+        char result[64]{};
+        weva_element_dialog_return_value(doc.d, d, result, sizeof(result));
+        CHECK(std::strcmp(result, open ? "initial" : "yes") == 0);
+    }
+}
+
+void test_abi_dialog_form_submission_overrides() {
+    for (const char* method : {"dialog", "DiAlOg", "get", "invalid"}) {
+        for (const char* override_method : {static_cast<const char*>(nullptr), "dialog", "get", ""}) {
+            std::string html = std::string("<dialog id=d><form method='") + method + "'><button id=s value=yes";
+            if (override_method) html += std::string(" formmethod='") + override_method + "'";
+            html += ">OK</button></form></dialog>";
+            Doc doc("", html.c_str());
+            const auto d = weva_document_query(doc.d, "#d");
+            weva_element_set_dialog_return_value(doc.d, d, "initial");
+            weva_element_show_dialog(doc.d, d, 1);
+            weva_document_update(doc.d, 0);
+            weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+            weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+            weva_event event{};
+            while (weva_document_poll_event(doc.d, &event)) {}
+            const bool closes = override_method ? std::strcmp(override_method, "dialog") == 0 :
+                std::strcmp(method, "dialog") == 0 || std::strcmp(method, "DiAlOg") == 0;
+            CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == !closes);
+            char result[64]{};
+            weva_element_dialog_return_value(doc.d, d, result, sizeof(result));
+            CHECK(std::strcmp(result, closes ? "yes" : "initial") == 0);
+        }
+    }
+    for (int border : {0, 5}) for (int padding : {0, 7}) for (bool pointer : {false, true}) {
+        const std::string css = "input {width:100px;height:40px;border:" + std::to_string(border) +
+            "px solid;padding:" + std::to_string(padding) + "px}";
+        Doc doc(css.c_str(), "<dialog id=d><form method=dialog><input id=s type=image></form></dialog>");
+        const auto d = weva_document_query(doc.d, "#d"), s = weva_document_query(doc.d, "#s");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, s);
+        if (pointer) {
+            double x, y, w, h;
+            CHECK(weva_element_bounds(doc.d, s, &x, &y, &w, &h) == WEVA_OK);
+            doc.click(x + 20.8, y + 18.6);
+        } else weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {}
+        CHECK(!weva_element_has_attribute(doc.d, d, "open"));
+        char result[64]{};
+        weva_element_dialog_return_value(doc.d, d, result, sizeof(result));
+        CHECK(std::strcmp(result, !pointer ? "0,0" : border ? "16,14" : "21,19") == 0);
+    }
+}
+
+// Chrome152: submission handlers run before dialog method/value resolution.
+void test_abi_dialog_form_submission() {
+    struct Case { const char* kind; const char* value; const char* handler; bool open; const char* result; };
+    const Case cases[] = {
+        {"button", nullptr, "allow", false, "initial"},
+        {"button", nullptr, "prevent", true, "initial"},
+        {"button", nullptr, "set-value", false, "handler-value"},
+        {"button", nullptr, "close", false, "handler-close"},
+        {"button", nullptr, "reopen", false, "handler-close"},
+        {"button", nullptr, "remove", true, "initial"},
+        {"button", "", "allow", false, ""},
+        {"button", "", "prevent", true, "initial"},
+        {"button", "", "set-value", false, "handler-value"},
+        {"button", "", "close", false, "handler-close"},
+        {"button", "", "reopen", false, ""},
+        {"button", "", "remove", true, "initial"},
+        {"button", "accepted", "allow", false, "accepted"},
+        {"button", "accepted", "prevent", true, "initial"},
+        {"button", "accepted", "set-value", false, "handler-value"},
+        {"button", "accepted", "close", false, "handler-close"},
+        {"button", "accepted", "reopen", false, "accepted"},
+        {"button", "accepted", "remove", true, "initial"},
+        {"input", nullptr, "allow", false, "initial"},
+        {"input", nullptr, "prevent", true, "initial"},
+        {"input", nullptr, "set-value", false, "handler-value"},
+        {"input", nullptr, "close", false, "handler-close"},
+        {"input", nullptr, "reopen", false, "handler-close"},
+        {"input", nullptr, "remove", true, "initial"},
+        {"input", "", "allow", false, ""},
+        {"input", "", "prevent", true, "initial"},
+        {"input", "", "set-value", false, "handler-value"},
+        {"input", "", "close", false, "handler-close"},
+        {"input", "", "reopen", false, ""},
+        {"input", "", "remove", true, "initial"},
+        {"input", "accepted", "allow", false, "accepted"},
+        {"input", "accepted", "prevent", true, "initial"},
+        {"input", "accepted", "set-value", false, "handler-value"},
+        {"input", "accepted", "close", false, "handler-close"},
+        {"input", "accepted", "reopen", false, "accepted"},
+        {"input", "accepted", "remove", true, "initial"},
+        {"implicit", nullptr, "allow", false, ""},
+        {"implicit", nullptr, "prevent", true, "initial"},
+        {"implicit", nullptr, "set-value", false, ""},
+        {"implicit", nullptr, "close", false, "handler-close"},
+        {"implicit", nullptr, "reopen", false, ""},
+        {"implicit", nullptr, "remove", true, "initial"},
+        {"implicit", "", "allow", false, ""},
+        {"implicit", "", "prevent", true, "initial"},
+        {"implicit", "", "set-value", false, ""},
+        {"implicit", "", "close", false, "handler-close"},
+        {"implicit", "", "reopen", false, ""},
+        {"implicit", "", "remove", true, "initial"},
+        {"implicit", "accepted", "allow", false, ""},
+        {"implicit", "accepted", "prevent", true, "initial"},
+        {"implicit", "accepted", "set-value", false, ""},
+        {"implicit", "accepted", "close", false, "handler-close"},
+        {"implicit", "accepted", "reopen", false, ""},
+        {"implicit", "accepted", "remove", true, "initial"},
+    };
+    for (const auto& row : cases) {
+        const bool implicit = std::strcmp(row.kind, "implicit") == 0;
+        std::string html = "<dialog id=d><form id=f method=dialog><input id=field>";
+        if (!implicit) {
+            html += std::string("<") + row.kind + " id=submitter type=submit";
+            if (row.value) html += std::string(" value='") + row.value + "'";
+            html += ">";
+            if (std::strcmp(row.kind, "button") == 0) html += "Submit</button>";
+        }
+        html += "</form></dialog>";
+        Doc doc("", html.c_str());
+        auto d = weva_document_query(doc.d, "#d");
+        auto f = weva_document_query(doc.d, "#f");
+        auto button = weva_document_query(doc.d, "#submitter");
+        weva_element_set_dialog_return_value(doc.d, d, "initial");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, implicit ? weva_document_query(doc.d, "#field") : button);
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {}
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 0);
+        int submits = 0, cancels = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_CANCEL) ++cancels;
+            if (event.kind != WEVA_EVENT_SUBMIT) continue;
+            ++submits;
+            CHECK(event.target == f);
+            CHECK(weva_element_has_attribute(doc.d, d, "open"));
+            if (std::strcmp(row.handler, "prevent") == 0) CHECK(weva_document_prevent_default(doc.d));
+            if (std::strcmp(row.handler, "set-value") == 0 && !implicit)
+                weva_element_set_value(doc.d, button, "handler-value");
+            if (std::strcmp(row.handler, "close") == 0 || std::strcmp(row.handler, "reopen") == 0)
+                weva_element_close_dialog_with_value(doc.d, d, "handler-close");
+            if (std::strcmp(row.handler, "reopen") == 0) weva_element_show_dialog(doc.d, d, 1);
+            if (std::strcmp(row.handler, "remove") == 0) weva_element_remove(doc.d, f);
+        }
+        CHECK(submits == 1 && cancels == 0);
+        CHECK(!weva_document_prevent_default(doc.d));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == row.open);
+        char result[64]{};
+        weva_element_dialog_return_value(doc.d, d, result, sizeof(result));
+        CHECK(std::strcmp(result, row.result) == 0);
+    }
+}
+
+void test_abi_email_validation() {
+    struct Case { const char* raw; const char* sanitized; bool multiple, mismatch; };
+    const Case cases[] = {
+        {"", "", false, false},
+        {"a", "a", false, true},
+        {"a@b", "a@b", false, false},
+        {"a@b.c", "a@b.c", false, false},
+        {"a@-b", "a@-b", false, true},
+        {"a@b-", "a@b-", false, true},
+        {"a@b_c", "a@b_c", false, true},
+        {"a@b..c", "a@b..c", false, true},
+        {"a@b.", "a@b.", false, true},
+        {".a@b", ".a@b", false, false},
+        {"a..b@c", "a..b@c", false, false},
+        {"a.@b", "a.@b", false, false},
+        {"!#$%&'*+-/=?^_`{|}~@b", "!#$%&'*+-/=?^_`{|}~@b", false, false},
+        {"a b@c", "a b@c", false, true},
+        {"a@@b", "a@@b", false, true},
+        {"a@bücher.de", "a@bücher.de", false, true},
+        {"a@xn--bcher-kva.de", "a@xn--bcher-kva.de", false, false},
+        {"é@b", "é@b", false, true},
+        {"a@[127.0.0.1]", "a@[127.0.0.1]", false, true},
+        {"a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", false, false},
+        {"a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", false, true},
+        {"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b", false, false},
+        {"a@b,c@d", "a@b,c@d", false, true},
+        {"a@b,", "a@b,", false, true},
+        {" , ", ",", false, true},
+        {" a@b \n", "a@b", false, false},
+        {"a@b, c@d", "a@b, c@d", false, true},
+        {"a@b,,c@d", "a@b,,c@d", false, true},
+        {"", "", true, false},
+        {"a", "a", true, true},
+        {"a@b", "a@b", true, false},
+        {"a@b.c", "a@b.c", true, false},
+        {"a@-b", "a@-b", true, true},
+        {"a@b-", "a@b-", true, true},
+        {"a@b_c", "a@b_c", true, true},
+        {"a@b..c", "a@b..c", true, true},
+        {"a@b.", "a@b.", true, true},
+        {".a@b", ".a@b", true, false},
+        {"a..b@c", "a..b@c", true, false},
+        {"a.@b", "a.@b", true, false},
+        {"!#$%&'*+-/=?^_`{|}~@b", "!#$%&'*+-/=?^_`{|}~@b", true, false},
+        {"a b@c", "a b@c", true, true},
+        {"a@@b", "a@@b", true, true},
+        {"a@bücher.de", "a@bücher.de", true, true},
+        {"a@xn--bcher-kva.de", "a@xn--bcher-kva.de", true, false},
+        {"é@b", "é@b", true, true},
+        {"a@[127.0.0.1]", "a@[127.0.0.1]", true, true},
+        {"a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", true, false},
+        {"a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", true, true},
+        {"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b", true, false},
+        {"a@b,c@d", "a@b,c@d", true, false},
+        {"a@b,", "a@b,", true, true},
+        {" , ", ",", true, true},
+        {" a@b \n", "a@b", true, false},
+        {"a@b, c@d", "a@b,c@d", true, false},
+        {"a@b,,c@d", "a@b,,c@d", true, true},
+    };
+    for (const auto& row : cases) for (bool bypass : {false, true}) {
+        Doc doc("", "<dialog id=d><form id=f method=dialog><input id=c type=email><button id=s>OK</button></form></dialog>");
+        const auto d = weva_document_query(doc.d, "#d"), c = weva_document_query(doc.d, "#c");
+        if (row.multiple) weva_element_set_attribute(doc.d, c, "multiple", "");
+        if (bypass) weva_element_set_attribute(doc.d, weva_document_query(doc.d, "#f"), "novalidate", "");
+        weva_element_set_value(doc.d, c, row.raw);
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        int invalid = 0, submits = 0;
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_INVALID) { ++invalid; CHECK(event.target == c); }
+            if (event.kind == WEVA_EVENT_SUBMIT) ++submits;
+        }
+        const bool rejected = row.mismatch && !bypass;
+        CHECK(invalid == (rejected ? 1 : 0));
+        CHECK(submits == (rejected ? 0 : 1));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == rejected);
+    }
+}
+
+void test_abi_url_validation() {
+    struct Case { std::string raw, sanitized; bool mismatch; };
+    const Case cases[] = {
+        {{"", 0}, {"", 0}, false},
+        {{"example.com", 11}, {"example.com", 11}, true},
+        {{"/path", 5}, {"/path", 5}, true},
+        {{"//example.com", 13}, {"//example.com", 13}, true},
+        {{"https://example.com", 19}, {"https://example.com", 19}, false},
+        {{"http:example.com", 16}, {"http:example.com", 16}, false},
+        {{"https:/example.com", 18}, {"https:/example.com", 18}, false},
+        {{"https:", 6}, {"https:", 6}, true},
+        {{"http://", 7}, {"http://", 7}, true},
+        {{"https://x:65535", 15}, {"https://x:65535", 15}, false},
+        {{"https://x:65536", 15}, {"https://x:65536", 15}, true},
+        {{"https://x:-1", 12}, {"https://x:-1", 12}, true},
+        {{"https://x:abc", 13}, {"https://x:abc", 13}, true},
+        {{"https://[::1]/", 14}, {"https://[::1]/", 14}, false},
+        {{"https://[::1", 12}, {"https://[::1", 12}, true},
+        {{"https://[gg::1]/", 16}, {"https://[gg::1]/", 16}, true},
+        {{"http://127.1", 12}, {"http://127.1", 12}, false},
+        {{"http://256.1.1.1", 16}, {"http://256.1.1.1", 16}, true},
+        {{"http://0x7f000001", 17}, {"http://0x7f000001", 17}, false},
+        {{"http://1.2.3.999", 16}, {"http://1.2.3.999", 16}, true},
+        {{"http://b\303\274cher.de", 17}, {"http://b\303\274cher.de", 17}, false},
+        {{"http://\342\230\203.net", 14}, {"http://\342\230\203.net", 14}, false},
+        // URL Standard forbids domain spaces; Chrome 152 accepts this case.
+        {{"http://a b", 10}, {"http://a b", 10}, true},
+        {{"http://a%20b", 12}, {"http://a%20b", 12}, true},
+        {{"http://%41.com", 14}, {"http://%41.com", 14}, false},
+        {{"http://%zz.com", 14}, {"http://%zz.com", 14}, true},
+        {{"http://x/%zz", 12}, {"http://x/%zz", 12}, false},
+        {{"http://x/a b", 12}, {"http://x/a b", 12}, false},
+        {{"https://user:pass@x/", 20}, {"https://user:pass@x/", 20}, false},
+        {{"https://@/", 10}, {"https://@/", 10}, true},
+        {{"file:///C:/game", 15}, {"file:///C:/game", 15}, false},
+        {{"file://server/path", 18}, {"file://server/path", 18}, false},
+        {{"file://", 7}, {"file://", 7}, false},
+        {{"mailto:player@example.com", 25}, {"mailto:player@example.com", 25}, false},
+        {{"urn:game:server:1", 17}, {"urn:game:server:1", 17}, false},
+        {{"steam://connect/127.0.0.1", 25}, {"steam://connect/127.0.0.1", 25}, false},
+        {{"data:text/plain,hello world", 27}, {"data:text/plain,hello world", 27}, false},
+        {{"about:blank", 11}, {"about:blank", 11}, false},
+        {{"javascript:alert(1)", 19}, {"javascript:alert(1)", 19}, false},
+        {{"foo:", 4}, {"foo:", 4}, false},
+        {{"foo:hello world", 15}, {"foo:hello world", 15}, false},
+        {{"foo://x:99999", 13}, {"foo://x:99999", 13}, true},
+        {{"foo://[bad]", 11}, {"foo://[bad]", 11}, true},
+        {{"1foo:bar", 8}, {"1foo:bar", 8}, true},
+        {{"a+b.c-d:foo", 11}, {"a+b.c-d:foo", 11}, false},
+        {{" https://x \012", 12}, {"https://x", 9}, false},
+        {{"ht\011tp://x", 9}, {"ht\011tp://x", 9}, false},
+        {{"http:\134\134x", 8}, {"http:\134\134x", 8}, false},
+        {{"https://x\000", 10}, {"https://x\000", 10}, false},
+        {{"https://x\001", 10}, {"https://x\001", 10}, false},
+        {{"http://x.", 9}, {"http://x.", 9}, false},
+        {{"http://-x", 9}, {"http://-x", 9}, false},
+        {{"http://a_b", 10}, {"http://a_b", 10}, false},
+        {{"http://a..b", 11}, {"http://a..b", 11}, false},
+    };
+    for (const auto& row : cases) for (bool bypass : {false, true}) {
+        // The C setter takes a terminated string; embedded NUL is covered by the core helper.
+        if (row.raw.find('\0') != std::string::npos) continue;
+        Doc doc("", "<dialog id=d><form id=f method=dialog><input id=c type=url><button id=s>OK</button></form></dialog>");
+        const auto d = weva_document_query(doc.d, "#d"), c = weva_document_query(doc.d, "#c");
+        if (bypass) weva_element_set_attribute(doc.d, weva_document_query(doc.d, "#f"), "novalidate", "");
+        weva_element_set_value(doc.d, c, row.raw.c_str());
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        int invalid = 0, submits = 0;
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_INVALID) { ++invalid; CHECK(event.target == c); }
+            if (event.kind == WEVA_EVENT_SUBMIT) ++submits;
+        }
+        const bool rejected = row.mismatch && !bypass;
+        CHECK(invalid == (rejected ? 1 : 0));
+        CHECK(submits == (rejected ? 0 : 1));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == rejected);
+    }
+}
+
+void test_abi_length_validation() {
+    struct Case { const char *tag, *minimum, *maximum, *value; bool short_value, long_value; };
+    const Case cases[] = {
+        {"input", "5", nullptr, "ab", true, false},
+        {"input", "2", nullptr, "🐎", false, false},
+        {"input", "3", nullptr, "🐎", true, false},
+        {"input", "3", nullptr, "é", true, false},
+        {"input", "1", nullptr, "", false, false},
+        {"input", nullptr, "1", "ab", false, true},
+        {"input", nullptr, "1", "🐎", false, true},
+        {"input", "  +3x", nullptr, "ab", true, false},
+        {"input", "-0", nullptr, "ab", false, false},
+        {"input", "2147483648", nullptr, "ab", false, false},
+        {"textarea", "5", nullptr, "ab", true, false},
+        {"textarea", "2", nullptr, "🐎", false, false},
+        {"textarea", "3", nullptr, "🐎", true, false},
+        {"textarea", "3", nullptr, "é", true, false},
+        {"textarea", "1", nullptr, "", false, false},
+        {"textarea", nullptr, "1", "ab", false, true},
+        {"textarea", nullptr, "1", "🐎", false, true},
+        {"textarea", "  +3x", nullptr, "ab", true, false},
+        {"textarea", "-0", nullptr, "ab", false, false},
+        {"textarea", "2147483648", nullptr, "ab", false, false},
+    };
+    for (const auto& row : cases) for (bool user : {false, true}) for (bool bypass : {false, true}) {
+        const std::string html = std::string("<dialog id=d><form id=f method=dialog><") + row.tag +
+            " id=c></" + row.tag + "><button id=s>OK</button></form></dialog>";
+        Doc doc("", html.c_str());
+        const auto d = weva_document_query(doc.d, "#d"), c = weva_document_query(doc.d, "#c");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        if (user) {
+            weva_document_set_focus(doc.d, c);
+            if (*row.value) CHECK(weva_document_try_text_input(doc.d, row.value));
+        } else weva_element_set_value(doc.d, c, row.value);
+        if (row.minimum) weva_element_set_attribute(doc.d, c, "minlength", row.minimum);
+        if (row.maximum) weva_element_set_attribute(doc.d, c, "maxlength", row.maximum);
+        if (bypass) weva_element_set_attribute(doc.d, weva_document_query(doc.d, "#f"), "novalidate", "");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_event event{}; int invalid = 0, submits = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_INVALID) { ++invalid; CHECK(event.target == c); }
+            if (event.kind == WEVA_EVENT_SUBMIT) ++submits;
+        }
+        const bool rejected = user && !bypass && (row.short_value || row.long_value);
+        CHECK(invalid == (rejected ? 1 : 0));
+        CHECK(submits == (rejected ? 0 : 1));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == rejected);
+    }
+}
+
+void test_abi_temporal_constraints() {
+    struct Case { const char *type, *value, *minimum, *maximum, *step, *initial; bool underflow, overflow, mismatch; };
+    const Case cases[] = {
+        {"date", "1970-01-01", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "2", nullptr, false, false, true},
+        {"date", "1970-01-03", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "1.5", nullptr, false, false, true},
+        {"date", "1970-01-03", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "2", nullptr, false, false, true},
+        {"month", "1970-03", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "1.5", nullptr, false, false, true},
+        {"month", "1970-03", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "2", nullptr, false, false, true},
+        {"week", "1970-W03", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "1.5", nullptr, false, false, true},
+        {"week", "1970-W03", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"time", "00:00", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"time", "00:00:01", nullptr, nullptr, nullptr, nullptr, false, false, true},
+        {"time", "00:01", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"time", "00:00", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"time", "00:00:01", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"time", "00:01", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"time", "00:00", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"time", "00:00:01", nullptr, nullptr, "2", nullptr, false, false, true},
+        {"time", "00:01", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"time", "00:00", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"time", "00:00:01", nullptr, nullptr, "1.5", nullptr, false, false, true},
+        {"time", "00:01", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"time", "00:00", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"time", "00:00:01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"time", "00:01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:01", nullptr, nullptr, nullptr, nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:01", nullptr, nullptr, nullptr, nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:01", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:01", nullptr, nullptr, "any", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:01", nullptr, nullptr, "2", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:01", nullptr, nullptr, "2", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:01", nullptr, nullptr, "1.5", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:01", nullptr, nullptr, "1.5", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"time", "00:00", "22:00", "05:00", nullptr, nullptr, false, false, false},
+        {"time", "05:00", "22:00", "05:00", nullptr, nullptr, false, false, false},
+        {"time", "12:00", "22:00", "05:00", nullptr, nullptr, true, true, false},
+        {"time", "22:00", "22:00", "05:00", nullptr, nullptr, false, false, false},
+        {"time", "23:00", "22:00", "05:00", nullptr, nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"date", "1970-01-01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"date", "1970-01-02", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"date", "1970-01-01", "1970-01-02", nullptr, "2", nullptr, true, false, true},
+        {"date", "1970-01-02", "1970-01-02", nullptr, "2", nullptr, false, false, false},
+        {"date", "1970-01-03", "1970-01-02", nullptr, "2", nullptr, false, false, true},
+        {"date", "1970-01-01", nullptr, nullptr, "2", "1970-01-02", false, false, true},
+        {"date", "1970-01-02", nullptr, nullptr, "2", "1970-01-02", false, false, false},
+        {"date", "1970-01-03", nullptr, nullptr, "2", "1970-01-02", false, false, true},
+        {"date", "1970-01-01", "bad", nullptr, "2", "1970-01-02", false, false, true},
+        {"date", "1970-01-02", "bad", nullptr, "2", "1970-01-02", false, false, false},
+        {"date", "1970-01-03", "bad", nullptr, "2", "1970-01-02", false, false, true},
+        {"date", "1970-01-01", "1970-01-03", "1970-01-01", "any", nullptr, true, false, false},
+        {"date", "1970-01-02", "1970-01-03", "1970-01-01", "any", nullptr, true, true, false},
+        {"date", "1970-01-03", "1970-01-03", "1970-01-01", "any", nullptr, false, true, false},
+        {"month", "1970-01", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"month", "1970-01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"month", "1970-02", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"month", "1970-01", "1970-02", nullptr, "2", nullptr, true, false, true},
+        {"month", "1970-02", "1970-02", nullptr, "2", nullptr, false, false, false},
+        {"month", "1970-03", "1970-02", nullptr, "2", nullptr, false, false, true},
+        {"month", "1970-01", nullptr, nullptr, "2", "1970-02", false, false, true},
+        {"month", "1970-02", nullptr, nullptr, "2", "1970-02", false, false, false},
+        {"month", "1970-03", nullptr, nullptr, "2", "1970-02", false, false, true},
+        {"month", "1970-01", "bad", nullptr, "2", "1970-02", false, false, true},
+        {"month", "1970-02", "bad", nullptr, "2", "1970-02", false, false, false},
+        {"month", "1970-03", "bad", nullptr, "2", "1970-02", false, false, true},
+        {"month", "1970-01", "1970-03", "1970-01", "any", nullptr, true, false, false},
+        {"month", "1970-02", "1970-03", "1970-01", "any", nullptr, true, true, false},
+        {"month", "1970-03", "1970-03", "1970-01", "any", nullptr, false, true, false},
+        {"week", "1970-W01", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"week", "1970-W01", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"week", "1970-W02", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"week", "1970-W01", "1970-W02", nullptr, "2", nullptr, true, false, true},
+        {"week", "1970-W02", "1970-W02", nullptr, "2", nullptr, false, false, false},
+        {"week", "1970-W03", "1970-W02", nullptr, "2", nullptr, false, false, true},
+        {"week", "1970-W01", nullptr, nullptr, "2", "1970-W02", false, false, true},
+        {"week", "1970-W02", nullptr, nullptr, "2", "1970-W02", false, false, false},
+        {"week", "1970-W03", nullptr, nullptr, "2", "1970-W02", false, false, true},
+        {"week", "1970-W01", "bad", nullptr, "2", "1970-W02", false, false, true},
+        {"week", "1970-W02", "bad", nullptr, "2", "1970-W02", false, false, false},
+        {"week", "1970-W03", "bad", nullptr, "2", "1970-W02", false, false, true},
+        {"week", "1970-W01", "1970-W03", "1970-W01", "any", nullptr, true, false, false},
+        {"week", "1970-W02", "1970-W03", "1970-W01", "any", nullptr, true, true, false},
+        {"week", "1970-W03", "1970-W03", "1970-W01", "any", nullptr, false, true, false},
+        {"time", "00:00", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "0", nullptr, false, false, true},
+        {"time", "00:00:00.002", nullptr, nullptr, "0", nullptr, false, false, true},
+        {"time", "00:00", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "-1", nullptr, false, false, true},
+        {"time", "00:00:00.002", nullptr, nullptr, "-1", nullptr, false, false, true},
+        {"time", "00:00", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "bad", nullptr, false, false, true},
+        {"time", "00:00:00.002", nullptr, nullptr, "bad", nullptr, false, false, true},
+        {"time", "00:00", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"time", "00:00:00.002", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"time", "00:00", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "0.4", nullptr, false, false, true},
+        {"time", "00:00:00.002", nullptr, nullptr, "0.4", nullptr, false, false, true},
+        {"time", "00:00", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "0.5", nullptr, false, false, true},
+        {"time", "00:00:00.002", nullptr, nullptr, "0.5", nullptr, false, false, true},
+        {"time", "00:00", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "1.49", nullptr, false, false, true},
+        {"time", "00:00:00.002", nullptr, nullptr, "1.49", nullptr, false, false, true},
+        {"time", "00:00", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "0.0015", nullptr, false, false, true},
+        {"time", "00:00:00.002", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"time", "00:00", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"time", "00:00:00.001", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"time", "00:00:00.002", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"time", "00:00", "00:00:00.001", nullptr, "0.002", nullptr, true, false, true},
+        {"time", "00:00:00.001", "00:00:00.001", nullptr, "0.002", nullptr, false, false, false},
+        {"time", "00:00:00.002", "00:00:00.001", nullptr, "0.002", nullptr, false, false, true},
+        {"time", "00:00", nullptr, nullptr, "0.002", "00:00:00.001", false, false, true},
+        {"time", "00:00:00.001", nullptr, nullptr, "0.002", "00:00:00.001", false, false, false},
+        {"time", "00:00:00.002", nullptr, nullptr, "0.002", "00:00:00.001", false, false, true},
+        {"time", "00:00", "bad", nullptr, "0.002", "00:00:00.001", false, false, true},
+        {"time", "00:00:00.001", "bad", nullptr, "0.002", "00:00:00.001", false, false, false},
+        {"time", "00:00:00.002", "bad", nullptr, "0.002", "00:00:00.001", false, false, true},
+        {"time", "00:00", "00:00:00.002", "00:00", "any", nullptr, false, false, false},
+        {"time", "00:00:00.001", "00:00:00.002", "00:00", "any", nullptr, true, true, false},
+        {"time", "00:00:00.002", "00:00:00.002", "00:00", "any", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "0", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "0", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "0", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "-1", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "-1", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "-1", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "bad", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "bad", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "bad", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "AnY", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "0.4", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "0.4", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "0.4", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "0.5", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "0.5", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "0.5", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "1.49", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "1.49", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "1.49", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "0.0015", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "0.0015", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "0.0001", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00", "1970-01-01T00:00:00.001", nullptr, "0.002", nullptr, true, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.001", "1970-01-01T00:00:00.001", nullptr, "0.002", nullptr, false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.002", "1970-01-01T00:00:00.001", nullptr, "0.002", nullptr, false, false, true},
+        {"datetime-local", "1970-01-01T00:00", nullptr, nullptr, "0.002", "1970-01-01T00:00:00.001", false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.001", nullptr, nullptr, "0.002", "1970-01-01T00:00:00.001", false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.002", nullptr, nullptr, "0.002", "1970-01-01T00:00:00.001", false, false, true},
+        {"datetime-local", "1970-01-01T00:00", "bad", nullptr, "0.002", "1970-01-01T00:00:00.001", false, false, true},
+        {"datetime-local", "1970-01-01T00:00:00.001", "bad", nullptr, "0.002", "1970-01-01T00:00:00.001", false, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.002", "bad", nullptr, "0.002", "1970-01-01T00:00:00.001", false, false, true},
+        {"datetime-local", "1970-01-01T00:00", "1970-01-01T00:00:00.002", "1970-01-01T00:00", "any", nullptr, true, false, false},
+        {"datetime-local", "1970-01-01T00:00:00.001", "1970-01-01T00:00:00.002", "1970-01-01T00:00", "any", nullptr, true, true, false},
+        {"datetime-local", "1970-01-01T00:00:00.002", "1970-01-01T00:00:00.002", "1970-01-01T00:00", "any", nullptr, false, true, false},
+    };
+    for (const auto& row : cases) for (bool bypass : {false, true}) {
+        Doc doc("", "<dialog id=d><form id=f method=dialog><input id=c><button id=s>OK</button></form></dialog>");
+        const auto d = weva_document_query(doc.d, "#d"), c = weva_document_query(doc.d, "#c");
+        weva_element_set_attribute(doc.d, c, "type", row.type);
+        if (row.minimum) weva_element_set_attribute(doc.d, c, "min", row.minimum);
+        if (row.maximum) weva_element_set_attribute(doc.d, c, "max", row.maximum);
+        if (row.step) weva_element_set_attribute(doc.d, c, "step", row.step);
+        if (row.initial) weva_element_set_attribute(doc.d, c, "value", row.initial);
+        weva_element_set_value(doc.d, c, row.value);
+        if (bypass) weva_element_set_attribute(doc.d, weva_document_query(doc.d, "#f"), "novalidate", "");
+        weva_element_show_dialog(doc.d, d, 1);
+        weva_document_update(doc.d, 0);
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#s"));
+        weva_document_key(doc.d, WEVA_KEY_ENTER, 0, 1);
+        weva_event event{}; int invalid = 0, submits = 0;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind == WEVA_EVENT_INVALID) { ++invalid; CHECK(event.target == c); }
+            if (event.kind == WEVA_EVENT_SUBMIT) ++submits;
+        }
+        const bool rejected = !bypass && (row.underflow || row.overflow || row.mismatch);
+        CHECK(invalid == (rejected ? 1 : 0));
+        CHECK(submits == (rejected ? 0 : 1));
+        CHECK(bool(weva_element_has_attribute(doc.d, d, "open")) == rejected);
+    }
+}
+
+void test_abi_validity_snapshot() {
+    struct Case { const char* html; bool custom; uint32_t flags; int will; };
+    const Case cases[] = {
+        {"<input id=\"c\" name=\"n\" required type=\"text\"  ></input>", false, 1, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"text\" disabled ></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"text\"  readonly></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"text\"  ></input>", true, 513, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"number\"  ></input>", false, 1, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"number\" disabled ></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"number\"  readonly></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"number\"  ></input>", true, 513, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"email\"  ></input>", false, 1, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"email\" disabled ></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"email\"  readonly></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"email\"  ></input>", true, 513, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"url\"  ></input>", false, 1, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"url\" disabled ></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"url\"  readonly></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"url\"  ></input>", true, 513, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"checkbox\"  ></input>", false, 1, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"checkbox\" disabled ></input>", false, 1, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"checkbox\"  readonly></input>", false, 1, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"checkbox\"  ></input>", true, 513, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"radio\"  ></input>", false, 1, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"radio\" disabled ></input>", false, 1, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"radio\"  readonly></input>", false, 1, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"radio\"  ></input>", true, 513, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"hidden\"  ></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"hidden\" disabled ></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"hidden\"  readonly></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"hidden\"  ></input>", true, 512, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"submit\"  ></input>", false, 0, 1},
+        {"<input id=\"c\" name=\"n\" required type=\"submit\" disabled ></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"submit\"  readonly></input>", false, 0, 0},
+        {"<input id=\"c\" name=\"n\" required type=\"submit\"  ></input>", true, 512, 1},
+        {"<textarea id=\"c\" name=\"n\" required   ></textarea>", false, 1, 1},
+        {"<textarea id=\"c\" name=\"n\" required  disabled ></textarea>", false, 0, 0},
+        {"<textarea id=\"c\" name=\"n\" required   readonly></textarea>", false, 0, 0},
+        {"<textarea id=\"c\" name=\"n\" required   ></textarea>", true, 513, 1},
+        {"<select id=\"c\" name=\"n\" required   ></select>", false, 1, 1},
+        {"<select id=\"c\" name=\"n\" required  disabled ></select>", false, 1, 0},
+        {"<select id=\"c\" name=\"n\" required   readonly></select>", false, 1, 1},
+        {"<select id=\"c\" name=\"n\" required   ></select>", true, 513, 1},
+        {"<button id=\"c\" name=\"n\" required   ></button>", false, 0, 1},
+        {"<button id=\"c\" name=\"n\" required  disabled ></button>", false, 0, 0},
+        {"<button id=\"c\" name=\"n\" required   readonly></button>", false, 0, 1},
+        {"<button id=\"c\" name=\"n\" required   ></button>", true, 512, 1},
+
+    };
+    for (const auto& row : cases) {
+        Doc doc("", row.html);
+        const auto c = weva_document_query(doc.d, "#c");
+        if (row.custom) CHECK(weva_element_set_custom_validity(doc.d, c, "Reserved") == WEVA_OK);
+        uint32_t errors = 0xffffffff;
+        int will = -1;
+        CHECK(weva_element_validity(doc.d, c, &errors, &will) == WEVA_OK);
+        CHECK(errors == row.flags);
+        CHECK(will == row.will);
+        weva_event event{};
+        CHECK(!weva_document_poll_event(doc.d, &event));
+    }
+    Doc doc("", "<input id='c' type='number' min='10' max='2' step='2' value='5'><div id='x'></div>");
+    const auto c = weva_document_query(doc.d, "#c");
+    uint32_t errors = 0;
+    int will = 0;
+    CHECK(weva_element_validity(doc.d, c, &errors, &will) == WEVA_OK);
+    CHECK(errors == (WEVA_VALIDITY_RANGE_UNDERFLOW | WEVA_VALIDITY_RANGE_OVERFLOW | WEVA_VALIDITY_STEP_MISMATCH));
+    CHECK(weva_element_set_value(doc.d, c, "12") == WEVA_OK);
+    CHECK(weva_element_validity(doc.d, c, &errors, &will) == WEVA_OK);
+    CHECK(errors == WEVA_VALIDITY_RANGE_OVERFLOW);
+    CHECK(weva_element_validity(doc.d, weva_document_query(doc.d, "#x"), &errors, &will) == WEVA_ERR_NOT_FOUND);
+    CHECK(errors == 0 && will == 0);
+    CHECK(weva_element_validity(nullptr, c, &errors, &will) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_element_validity(doc.d, c, nullptr, &will) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_element_validity(doc.d, c, &errors, nullptr) == WEVA_ERR_INVALID_ARGUMENT);
+    for (const auto* type : {"email", "url"}) {
+        const std::string html = std::string("<input id='c' type='") + type + "' value='invalid'>";
+        Doc invalid("", html.c_str());
+        CHECK(weva_element_validity(invalid.d, weva_document_query(invalid.d, "#c"), &errors, &will) == WEVA_OK);
+        CHECK(errors == WEVA_VALIDITY_TYPE_MISMATCH);
+    }
+    Doc editing("", "<textarea id='c' minlength='3'></textarea>");
+    const auto text = weva_document_query(editing.d, "#c");
+    weva_document_set_focus(editing.d, text);
+    weva_document_text_input(editing.d, "ab");
+    CHECK(weva_element_validity(editing.d, text, &errors, &will) == WEVA_OK);
+    CHECK(errors == WEVA_VALIDITY_TOO_SHORT);
+    CHECK(weva_element_set_attribute(editing.d, text, "maxlength", "1") == WEVA_OK);
+    CHECK(weva_element_validity(editing.d, text, &errors, &will) == WEVA_OK);
+    CHECK(errors == (WEVA_VALIDITY_TOO_SHORT | WEVA_VALIDITY_TOO_LONG));
+    Doc bad("", "<input id='c' type='number'>");
+    const auto number = weva_document_query(bad.d, "#c");
+    weva_document_set_focus(bad.d, number);
+    weva_document_text_input(bad.d, "-");
+    CHECK(weva_element_validity(bad.d, number, &errors, &will) == WEVA_OK);
+    CHECK(errors == WEVA_VALIDITY_BAD_INPUT);
+    Doc pattern("", "<input id='p' pattern='[a-z]+' value='abc'>");
+    CHECK(weva_element_validity(pattern.d, weva_document_query(pattern.d, "#p"), &errors, &will) == WEVA_ERR_UNSUPPORTED);
+    CHECK(errors == 0 && will == 0);
+}
+
+void test_abi_explicit_validity() {
+    struct Case { bool report; const char *scope, *action, *events, *focus; };
+    const Case cases[] = {
+        {false, "f", "none", "external,a,b", "save"},
+        {false, "f", "cancel", "external,a,b", "save"},
+        {false, "f", "fix", "external,a", "save"},
+        {false, "f", "disable", "external,a", "save"},
+        {false, "f", "remove", "external,a", "save"},
+        {false, "f", "reassociate", "external,a", "save"},
+        {false, "a", "none", "a", "save"},
+        {false, "a", "cancel", "a", "save"},
+        {false, "a", "fix", "a", "save"},
+        {false, "a", "disable", "a", "save"},
+        {false, "a", "remove", "a", "save"},
+        {false, "a", "reassociate", "a", "save"},
+        {true, "f", "none", "external,a,b", "external"},
+        {true, "f", "cancel", "external,a,b", "save"},
+        {true, "f", "fix", "external,a", "external"},
+        {true, "f", "disable", "external,a", "external"},
+        {true, "f", "remove", "external,a", "external"},
+        {true, "f", "reassociate", "external,a", "external"},
+        {true, "a", "none", "a", "a"},
+        {true, "a", "cancel", "a", "save"},
+        {true, "a", "fix", "a", "a"},
+        {true, "a", "disable", "a", "a"},
+        {true, "a", "remove", "a", "a"},
+        {true, "a", "reassociate", "a", "a"},
+
+    };
+    for (const auto& row : cases) {
+        Doc doc("", "<input id='external' form='f' required><form id='f' novalidate><input id='a' required><input id='b' required><button id='save'>Save</button></form><form id='other'></form>");
+        const auto a = weva_document_query(doc.d, "#a"), b = weva_document_query(doc.d, "#b");
+        const auto save = weva_document_query(doc.d, "#save");
+        weva_document_set_focus(doc.d, save);
+        weva_event event{};
+        while (weva_document_poll_event(doc.d, &event)) {}
+        int valid = -1;
+        const auto target = weva_document_query(doc.d, (std::string("#") + row.scope).c_str());
+        CHECK((row.report ? weva_element_report_validity(doc.d, target, &valid) : weva_element_check_validity(doc.d, target, &valid)) == WEVA_OK);
+        CHECK(valid == 0);
+        std::string seen;
+        while (weva_document_poll_event(doc.d, &event)) {
+            if (event.kind != WEVA_EVENT_INVALID) { CHECK(event.kind != WEVA_EVENT_SUBMIT); continue; }
+            char id[32]{};
+            weva_element_attribute(doc.d, event.target, "id", id, sizeof(id));
+            if (!seen.empty()) seen += ',';
+            seen += id;
+            if (std::string(row.action) == "cancel") CHECK(weva_document_prevent_default(doc.d) == 1);
+            if (event.target == a) {
+                if (std::string(row.action) == "fix") weva_element_set_value(doc.d, b, "ok");
+                if (std::string(row.action) == "disable") weva_element_set_attribute(doc.d, b, "disabled", "");
+                if (std::string(row.action) == "remove") weva_element_remove(doc.d, b);
+                if (std::string(row.action) == "reassociate") weva_element_set_attribute(doc.d, b, "form", "other");
+                int nested = -1;
+                CHECK(weva_element_check_validity(doc.d, target, &nested) == WEVA_ERR_INVALID_STATE);
+                CHECK(nested == 0);
+            }
+        }
+        CHECK(seen == row.events);
+        CHECK(weva_document_focus(doc.d) == weva_document_query(doc.d, (std::string("#") + row.focus).c_str()));
+    }
+    Doc doc("", "<form id='f'><input required disabled><input id='c' required value='ok'></form><div id='x'></div>");
+    int valid = -1;
+    CHECK(weva_element_check_validity(doc.d, weva_document_query(doc.d, "#f"), &valid) == WEVA_OK);
+    CHECK(valid == 1);
+    weva_event event{};
+    CHECK(!weva_document_poll_event(doc.d, &event));
+    CHECK(weva_element_report_validity(doc.d, weva_document_query(doc.d, "#x"), &valid) == WEVA_ERR_NOT_FOUND);
+    CHECK(valid == 0);
+    CHECK(weva_element_check_validity(nullptr, 0, &valid) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_element_check_validity(doc.d, 0, nullptr) == WEVA_ERR_INVALID_ARGUMENT);
+    Doc pattern("", "<form id='f'><input required><input value='abc' pattern='[a-z]+'></form>");
+    CHECK(weva_element_check_validity(pattern.d, weva_document_query(pattern.d, "#f"), &valid) == WEVA_ERR_UNSUPPORTED);
+    CHECK(valid == 0);
+    CHECK(!weva_document_poll_event(pattern.d, &event));
+    std::string crowded_html = "<form id='f'>";
+    for (int i = 0; i < 257; ++i) crowded_html += "<input required>";
+    crowded_html += "</form>";
+    Doc crowded("", crowded_html.c_str());
+    CHECK(weva_element_check_validity(crowded.d, weva_document_query(crowded.d, "#f"), &valid) == WEVA_ERR_INTERNAL);
+    CHECK(valid == 0);
+    CHECK(!weva_document_poll_event(crowded.d, &event));
+}
+
+void test_abi_interaction_version() {
+    CHECK(weva_document_interaction_version(nullptr) == 0);
+    Doc doc("", "<button id='a'>A</button><button id='b'>B</button>");
+    const auto a = weva_document_query(doc.d, "#a"), b = weva_document_query(doc.d, "#b");
+    const auto initial = weva_document_interaction_version(doc.d);
+    CHECK(weva_document_interaction_version(doc.d) == initial);
+    CHECK(weva_document_set_focus(doc.d, a) == WEVA_OK);
+    const auto focused = weva_document_interaction_version(doc.d);
+    CHECK(focused != initial);
+    CHECK(weva_document_set_focus(doc.d, a) == WEVA_OK);
+    CHECK(weva_document_interaction_version(doc.d) == focused);
+    CHECK(weva_document_update(doc.d, 0) == WEVA_OK);
+    CHECK(weva_document_interaction_version(doc.d) == focused);
+    CHECK(weva_document_set_focus(doc.d, b) == WEVA_OK);
+    CHECK(weva_document_set_focus(doc.d, a) == WEVA_OK);
+    CHECK(weva_document_interaction_version(doc.d) != focused);
+    CHECK(weva_document_focus(doc.d) == a);
 }

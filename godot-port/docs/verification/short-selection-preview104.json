@@ -1,0 +1,689 @@
+{
+  "candidate": "Installed preview104, unchanged native binary",
+  "library_sha256": "0bf8888c46bb27dbafad86f680048ebb52eb08ba2e4f45b3036c73dc963ecaf9",
+  "browser": "Chrome/152.0.7977.77",
+  "additional_cases": [
+    {
+      "replacement": "x",
+      "tag": "input",
+      "dirty": false,
+      "focused": false,
+      "action": "default",
+      "value": "x",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "x",
+      "tag": "input",
+      "dirty": false,
+      "focused": false,
+      "action": "attribute",
+      "value": "x",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "x",
+      "tag": "input",
+      "dirty": false,
+      "focused": true,
+      "action": "default",
+      "value": "x",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "x",
+      "tag": "input",
+      "dirty": false,
+      "focused": true,
+      "action": "attribute",
+      "value": "x",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "x",
+      "tag": "input",
+      "dirty": true,
+      "focused": false,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "x",
+      "tag": "input",
+      "dirty": true,
+      "focused": false,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "x",
+      "tag": "input",
+      "dirty": true,
+      "focused": true,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "x",
+      "tag": "input",
+      "dirty": true,
+      "focused": true,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "x",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": false,
+      "action": "default",
+      "value": "x",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "x",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": false,
+      "action": "attribute",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "x",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": true,
+      "action": "default",
+      "value": "x",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "x",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": true,
+      "action": "attribute",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "x",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": false,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "x",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": false,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "x",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": true,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "x",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": true,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "",
+      "tag": "input",
+      "dirty": false,
+      "focused": false,
+      "action": "default",
+      "value": "",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "",
+      "tag": "input",
+      "dirty": false,
+      "focused": false,
+      "action": "attribute",
+      "value": "",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "",
+      "tag": "input",
+      "dirty": false,
+      "focused": true,
+      "action": "default",
+      "value": "",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "",
+      "tag": "input",
+      "dirty": false,
+      "focused": true,
+      "action": "attribute",
+      "value": "",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "",
+      "tag": "input",
+      "dirty": true,
+      "focused": false,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "",
+      "tag": "input",
+      "dirty": true,
+      "focused": false,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "",
+      "tag": "input",
+      "dirty": true,
+      "focused": true,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "",
+      "tag": "input",
+      "dirty": true,
+      "focused": true,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": false,
+      "action": "default",
+      "value": "",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": false,
+      "action": "attribute",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": true,
+      "action": "default",
+      "value": "",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": true,
+      "action": "attribute",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": false,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": false,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": true,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": true,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "input",
+      "dirty": false,
+      "focused": false,
+      "action": "default",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "input",
+      "dirty": false,
+      "focused": false,
+      "action": "attribute",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "input",
+      "dirty": false,
+      "focused": true,
+      "action": "default",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "input",
+      "dirty": false,
+      "focused": true,
+      "action": "attribute",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "input",
+      "dirty": true,
+      "focused": false,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "input",
+      "dirty": true,
+      "focused": false,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "input",
+      "dirty": true,
+      "focused": true,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "input",
+      "dirty": true,
+      "focused": true,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": false,
+      "action": "default",
+      "value": "abcdef\n",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": false,
+      "action": "attribute",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": true,
+      "action": "default",
+      "value": "abcdef\n",
+      "selection": [
+        0,
+        0,
+        "forward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "textarea",
+      "dirty": false,
+      "focused": true,
+      "action": "attribute",
+      "value": "abcdef",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": false,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": false,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "b"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": true,
+      "action": "default",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    },
+    {
+      "replacement": "abcdef\n",
+      "tag": "textarea",
+      "dirty": true,
+      "focused": true,
+      "action": "attribute",
+      "value": "edited",
+      "selection": [
+        1,
+        4,
+        "backward"
+      ],
+      "active": "a"
+    }
+  ],
+  "additional_case_count": 48,
+  "combined_selection_case_count": 80,
+  "core_test_passed": true,
+  "installed_form_checks": 506,
+  "evidence_sha256": {
+    "selection-short96-chrome.json": "72ffae51280cbba90df7da7e6d94262711e21076be48329ff8b086539b0bc41f",
+    "selection-short-tests.log": "9a44f5b85b9e1fbf310d91eafa6c95f4cc808a6a8f57ae5e03d53edb1def4968",
+    "installed104-short-selection.log": "812f666d5c9e7718a3d03595a84adca5ca17f77064c29499d893b86a0d6001e3"
+  },
+  "scope": "Short, empty and newline-sanitized default/attribute values; ASCII selection endpoints; input[type=text] and textarea; pristine/edited and focused/blurred. No new runtime fix or timing remeasurement."
+}

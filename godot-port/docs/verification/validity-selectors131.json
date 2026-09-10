@@ -1,0 +1,222 @@
+{
+  "candidate": "0.1.0-preview.131",
+  "installed": false,
+  "installed_preview_remains": 130,
+  "abi_minor": 19,
+  "library_sha256": "1fd5eb47955932e7f50814277ec2e7197b05517b0305ffa58f428e651a966d31",
+  "source_sha256": "66ae82ee9e645c5c4c02afdf02478e682b34cea4dc1b064e9e76bff615d55cf2",
+  "chrome_cases": 105,
+  "supported_chrome_cases": 104,
+  "explicit_unsupported_pattern_cases": 1,
+  "core": {
+    "suites": 11,
+    "passed": true,
+    "main_checks": 478345,
+    "incremental_full_draw_comparisons": 225
+  },
+  "sanitizers": {
+    "gates": 13,
+    "passed": true,
+    "symbolization": false
+  },
+  "host": {
+    "entries": 34,
+    "checks": 24502,
+    "passed": true
+  },
+  "sample_and_native_exports_passed": true,
+  "validity_performance": {
+    "timing_gate": false,
+    "uncached_runs": 2,
+    "cached_runs": 6,
+    "before": {
+      "12/none/same_range": {
+        "min_p95_ms": 0.04,
+        "max_p95_ms": 0.05
+      },
+      "12/none/cross_range": {
+        "min_p95_ms": 0.04,
+        "max_p95_ms": 0.042
+      },
+      "12/field/same_range": {
+        "min_p95_ms": 0.043,
+        "max_p95_ms": 0.051
+      },
+      "12/field/cross_range": {
+        "min_p95_ms": 0.65,
+        "max_p95_ms": 0.976
+      },
+      "12/parent/same_range": {
+        "min_p95_ms": 0.044,
+        "max_p95_ms": 0.097
+      },
+      "12/parent/cross_range": {
+        "min_p95_ms": 0.665,
+        "max_p95_ms": 1.067
+      },
+      "12/field_paint/same_range": {
+        "min_p95_ms": 0.046,
+        "max_p95_ms": 0.058
+      },
+      "12/field_paint/cross_range": {
+        "min_p95_ms": 0.454,
+        "max_p95_ms": 0.462
+      },
+      "12/parent_paint/same_range": {
+        "min_p95_ms": 0.043,
+        "max_p95_ms": 0.068
+      },
+      "12/parent_paint/cross_range": {
+        "min_p95_ms": 0.579,
+        "max_p95_ms": 0.816
+      },
+      "48/none/same_range": {
+        "min_p95_ms": 0.046,
+        "max_p95_ms": 0.087
+      },
+      "48/none/cross_range": {
+        "min_p95_ms": 0.054,
+        "max_p95_ms": 0.087
+      },
+      "48/field/same_range": {
+        "min_p95_ms": 0.053,
+        "max_p95_ms": 0.094
+      },
+      "48/field/cross_range": {
+        "min_p95_ms": 5.433,
+        "max_p95_ms": 5.987
+      },
+      "48/parent/same_range": {
+        "min_p95_ms": 0.048,
+        "max_p95_ms": 0.058
+      },
+      "48/parent/cross_range": {
+        "min_p95_ms": 5.491,
+        "max_p95_ms": 5.547
+      },
+      "48/field_paint/same_range": {
+        "min_p95_ms": 0.048,
+        "max_p95_ms": 0.062
+      },
+      "48/field_paint/cross_range": {
+        "min_p95_ms": 4.956,
+        "max_p95_ms": 5.703
+      },
+      "48/parent_paint/same_range": {
+        "min_p95_ms": 0.048,
+        "max_p95_ms": 0.057
+      },
+      "48/parent_paint/cross_range": {
+        "min_p95_ms": 5.243,
+        "max_p95_ms": 5.465
+      }
+    },
+    "after": {
+      "12/none/same_range": {
+        "min_p95_ms": 0.072,
+        "max_p95_ms": 0.083
+      },
+      "12/none/cross_range": {
+        "min_p95_ms": 0.074,
+        "max_p95_ms": 0.099
+      },
+      "12/field/same_range": {
+        "min_p95_ms": 0.059,
+        "max_p95_ms": 0.092
+      },
+      "12/field/cross_range": {
+        "min_p95_ms": 0.511,
+        "max_p95_ms": 0.597
+      },
+      "12/parent/same_range": {
+        "min_p95_ms": 0.079,
+        "max_p95_ms": 0.086
+      },
+      "12/parent/cross_range": {
+        "min_p95_ms": 0.489,
+        "max_p95_ms": 0.617
+      },
+      "12/field_paint/same_range": {
+        "min_p95_ms": 0.085,
+        "max_p95_ms": 0.091
+      },
+      "12/field_paint/cross_range": {
+        "min_p95_ms": 0.266,
+        "max_p95_ms": 0.318
+      },
+      "12/parent_paint/same_range": {
+        "min_p95_ms": 0.066,
+        "max_p95_ms": 0.176
+      },
+      "12/parent_paint/cross_range": {
+        "min_p95_ms": 0.367,
+        "max_p95_ms": 0.492
+      },
+      "48/none/same_range": {
+        "min_p95_ms": 0.067,
+        "max_p95_ms": 0.087
+      },
+      "48/none/cross_range": {
+        "min_p95_ms": 0.086,
+        "max_p95_ms": 0.092
+      },
+      "48/field/same_range": {
+        "min_p95_ms": 0.091,
+        "max_p95_ms": 0.114
+      },
+      "48/field/cross_range": {
+        "min_p95_ms": 1.294,
+        "max_p95_ms": 1.457
+      },
+      "48/parent/same_range": {
+        "min_p95_ms": 0.062,
+        "max_p95_ms": 0.1
+      },
+      "48/parent/cross_range": {
+        "min_p95_ms": 1.29,
+        "max_p95_ms": 1.395
+      },
+      "48/field_paint/same_range": {
+        "min_p95_ms": 0.071,
+        "max_p95_ms": 0.101
+      },
+      "48/field_paint/cross_range": {
+        "min_p95_ms": 0.608,
+        "max_p95_ms": 0.626
+      },
+      "48/parent_paint/same_range": {
+        "min_p95_ms": 0.067,
+        "max_p95_ms": 0.092
+      },
+      "48/parent_paint/cross_range": {
+        "min_p95_ms": 0.913,
+        "max_p95_ms": 1.245
+      }
+    }
+  },
+  "ordinary_ui": {
+    "runs": 6,
+    "functional_passed": true,
+    "timing_passed": false,
+    "passed_checks": 71,
+    "total_checks": 72,
+    "failures": [
+      {
+        "run": "mobile/3",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.301,
+        "limit_ms": 0.3,
+        "passed": false
+      }
+    ],
+    "policy": "Every measured run must meet every CPU p95 limit; no averaging away failures."
+  },
+  "scope": "Patched engine71, Windows RTX 5080 desktop, 1280x720 manual/static API CPU. No full GPU or low-end qualification.",
+  "remaining": [
+    "Unicode-v pattern constraints",
+    "user-validity interaction policy",
+    "ordinary UI redundant notification timing failure",
+    "broader release checklist in PRODUCT_READINESS.md"
+  ]
+}

@@ -176,6 +176,14 @@ public:
         (void)vertices; (void)indices; (void)effect;
     }
 
+    // Ownership path for transient fallback geometry. Existing backends keep
+    // their const-reference override; retaining backends can move the buffers.
+    virtual void render_rounded_rect_owned(const RoundedRect& shape,
+                                          std::vector<Vertex> vertices,
+                                          std::vector<uint32_t> indices) {
+        render_rounded_rect(shape, vertices, indices);
+    }
+
     // Draws a rounded rectangle. The default uploads the tessellation, so a
     // backend gets the shape whether or not it overrides this; one that can
     // evaluate the rounded box per pixel overrides it and gets exact coverage.

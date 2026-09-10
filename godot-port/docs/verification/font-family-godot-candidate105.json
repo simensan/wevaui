@@ -1,0 +1,38 @@
+{
+  "scope": "Candidate native Godot family registration; not packaged or installed",
+  "abi_minor": 14,
+  "binary_sha256": "06f13e83af4ab87331b95ce27d067db6441471055dfa706fb9b46758f8b78db5",
+  "headless_host": {
+    "checks": 9191,
+    "entries": 27,
+    "passed": true
+  },
+  "rendered_theme_fonts": [
+    {
+      "renderer": "gl",
+      "passed": true,
+      "checks": 127
+    },
+    {
+      "renderer": "vk",
+      "passed": true,
+      "checks": 127
+    }
+  ],
+  "covered": [
+    "family resource registration and replacement",
+    "actual native metrics and glyph pixel changes",
+    "case-insensitive repeated registration",
+    "resource mutation with shared family/theme font",
+    "HTML reload",
+    "engine font disable/enable",
+    "theme replacement",
+    "removal and destruction signal disconnection"
+  ],
+  "remaining": [
+    "package/export/sample validation",
+    "performance budget qualification",
+    "installation",
+    "CSS @font-face"
+  ]
+}

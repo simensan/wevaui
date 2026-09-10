@@ -1,0 +1,38 @@
+{
+  "scope": "User-edit-aware text length validity; core source newer than installed109",
+  "source_sha256": {
+    "libweva/include/weva/dom.h": "c67b3a740a317e4d9da8fc825a041ba899a4b942df0ef983717e02548a8e8c0c",
+    "libweva/include/weva/form_state.h": "a9dcc322f370d58dea80d5d6e873d4f5f5d732fb3d5c3799f2c46eee0f46f59d",
+    "libweva/src/form_state.cpp": "12bfc8f79909d4dc2cf149a636cdd1d6f44c36f2b14de7c09f8ed6842fd1cdde",
+    "libweva/src/weva_c.cpp": "55cea98210471950951387de79cb85aac79b1cbcad0f5a36a4e84a22444bea06",
+    "libweva/tests/test_form_state.cpp": "837f5e0fce28e2036850124dc523ec9ca04ec5595b8033188efce3d2d28ed401",
+    "libweva/tests/test_c_abi_forms.cpp": "3ea8b9ad3ba5d79e23b30e3493299ab7d72616ccff401f181c9500c014349db5",
+    "libweva/tests/main.cpp": "b11225953cf215fd847cd317af02db7bef55f47afef41ac7e665c33316f63751"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 21.97
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 135.39
+  },
+  "browser_value_cases": 20,
+  "core_edit_origin_cases": 16,
+  "browser_edit_origin_cases": 18,
+  "c_api_submission_cases": 80,
+  "browser_undo_observations": 6,
+  "browser_receipts": [
+    "length-values-browser.json",
+    "length-edit-browser.json",
+    "length-undo-browser.json"
+  ],
+  "limits": [
+    "setRangeText browser observations are not an implemented public API",
+    "Native rebuild, composition/IME, exports and performance qualification pending",
+    "Installed preview109 unchanged",
+    "Pattern/date-time/bad-input constraints and public validity APIs/selectors remain unfinished"
+  ]
+}

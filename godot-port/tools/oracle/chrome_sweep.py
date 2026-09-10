@@ -67,7 +67,7 @@ def repair_runs(ours, theirs, pairs):
             pairs[i] = j
 
 
-def compare(case, corpus, weva_dump, width, height, out_dir):
+def compare(case, corpus, weva_dump, width, height, out_dir, chrome_metrics=False):
     html = os.path.join(corpus, case + ".html")
     css = os.path.join(corpus, case + ".css")
     if not os.path.exists(css):
@@ -79,6 +79,8 @@ def compare(case, corpus, weva_dump, width, height, out_dir):
     cmd = [weva_dump, html, str(width), str(height), out]
     if css:
         cmd.append(css)
+    if chrome_metrics:
+        cmd.append('--chrome-metrics')
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0 or not os.path.exists(out):
         return (case, "CRASH", r.stderr.strip().splitlines()[-1:] or [""], 0)
@@ -86,8 +88,12 @@ def compare(case, corpus, weva_dump, width, height, out_dir):
     with open(out) as f:
         ours = json.load(f).get("elements", [])
     theirs = chrome.get("elements", [])
-    pairs, _ = align(ours, theirs)
-    repair_runs(ours, theirs, pairs)
+    if chrome_metrics and all(e.get("path") for e in ours) and all(e.get("path") for e in theirs):
+        paths = {e["path"]: j for j, e in enumerate(theirs)}
+        pairs = {i: paths[e["path"]] for i, e in enumerate(ours) if e["path"] in paths}
+    else:
+        pairs, _ = align(ours, theirs)
+        repair_runs(ours, theirs, pairs)
     # Sorted by how FAR apart they are, not by document order.
     #
     # The whole value of this tool is that a page's largest disagreement tells
@@ -110,7 +116,18 @@ def compare(case, corpus, weva_dump, width, height, out_dir):
                               ours[i].get(k), theirs[j].get(k), delta)))
     scored.sort(key=lambda t: -t[0])
     bad = [line for _, line in scored]
-    unpaired = len(ours) - len(pairs)
+    matched = set(pairs.values())
+    missing_ours = [i for i in range(len(ours)) if i not in pairs]
+    # display:contents has no principal box. Hidden descendants likewise have
+    # no observable geometry; every unmatched nonempty browser rect is a finding.
+    missing_theirs = [j for j, e in enumerate(theirs) if j not in matched
+                      and e.get("display") != "contents"
+                      and (float(e.get("w") or 0) != 0 or float(e.get("h") or 0) != 0)]
+    unpaired = len(missing_ours) + len(missing_theirs)
+    for side, elements, indices in (("candidate", ours, missing_ours), ("Chrome", theirs, missing_theirs)):
+        for i in indices:
+            e = elements[i]
+            bad.append("Unmatched %s element %s (%s)" % (side, e.get("path", ""), _ident(e)))
     return (case, "DIFF" if bad else "ok", bad, unpaired)
 
 
@@ -123,6 +140,7 @@ def main():
     ap.add_argument("--out-dir", default="/tmp/chrome-sweep")
     ap.add_argument("--only")
     ap.add_argument("--show", type=int, default=3, help="differing values to print per case")
+    ap.add_argument("--chrome-metrics", action="store_true", help="Use browser-rounded synthetic font extents")
     a = ap.parse_args()
     os.makedirs(a.out_dir, exist_ok=True)
 
@@ -132,7 +150,7 @@ def main():
 
     diffs, crashes, clean, skipped = [], [], 0, 0
     for case in cases:
-        r = compare(case, a.corpus, a.weva_dump, a.width, a.height, a.out_dir)
+        r = compare(case, a.corpus, a.weva_dump, a.width, a.height, a.out_dir, a.chrome_metrics)
         if r is None:
             skipped += 1
             continue

@@ -1,0 +1,217 @@
+{
+  "status": "Diagnostic complete; presentation stall cause unresolved; no release gate replaced",
+  "library_sha256": "3f40c15a0e8c0b0a04eca33b2a7e16860f248f55763b01bbfaf927ebbffaeb6a",
+  "raw_evidence": ".utmp\\safe-engine71\\overwolf212-paired",
+  "method": "ABBA normal/disabled/disabled/normal; same frozen release executable; Vulkan 4K 3D; 6000 frames per UI-disabled and idle workload; 120 warmups; loader logging enabled in all runs; no stack sampler.",
+  "process_only_environment": {
+    "DISABLE_VULKAN_OW_OVERLAY_LAYER": "1",
+    "DISABLE_VULKAN_OW_OBS_CAPTURE": "1"
+  },
+  "environment_source": "Installed Overwolf 0.309.0.14 implicit-layer manifests, disable_environment fields",
+  "loader_reference": "https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderApplicationInterface.md",
+  "runs": [
+    {
+      "label": "normal-a",
+      "overwolf_layers_disabled": false,
+      "inserted_layers": [
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_OW_OBS_HOOK\" (C:\\Program Files (x86)\\Overwolf\\0.309.0.14\\.\\ow-graphics-vulkan.dll)",
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_OW_OVERLAY\" (C:\\Program Files (x86)\\Overwolf\\0.309.0.14\\.\\owclient.dll)",
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_NV_present\" (C:\\windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_12ab2876952d3f1f\\.\\nvoglv64.dll)",
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_NV_optimus\" (C:\\windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_12ab2876952d3f1f\\.\\nvoglv64.dll)"
+      ],
+      "metrics": [
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 26.283,
+            "mean_ms": 1.26708933333333,
+            "median_ms": 0.697,
+            "p95_ms": 1.329,
+            "p99_ms": 17.424,
+            "samples": 6000
+          },
+          "core_cpu": {
+            "max_ms": 0.0,
+            "mean_ms": 0.0,
+            "median_ms": 0.0,
+            "p95_ms": 0.0,
+            "p99_ms": 0.0,
+            "samples": 6000
+          }
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 1.431,
+            "mean_ms": 0.718421166666668,
+            "median_ms": 0.684,
+            "p95_ms": 0.963,
+            "p99_ms": 1.048,
+            "samples": 6000
+          },
+          "core_cpu": {
+            "max_ms": 0.113599999999998,
+            "mean_ms": 0.000520100000001033,
+            "median_ms": 0.000500000000002387,
+            "p95_ms": 0.000599999999998602,
+            "p99_ms": 0.000599999999998602,
+            "samples": 6000
+          }
+        }
+      ]
+    },
+    {
+      "label": "disabled-a",
+      "overwolf_layers_disabled": true,
+      "inserted_layers": [
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_NV_present\" (C:\\windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_12ab2876952d3f1f\\.\\nvoglv64.dll)",
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_NV_optimus\" (C:\\windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_12ab2876952d3f1f\\.\\nvoglv64.dll)"
+      ],
+      "metrics": [
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 1.446,
+            "mean_ms": 0.736722166666667,
+            "median_ms": 0.695,
+            "p95_ms": 1.024,
+            "p99_ms": 1.173,
+            "samples": 6000
+          },
+          "core_cpu": {
+            "max_ms": 0.0,
+            "mean_ms": 0.0,
+            "median_ms": 0.0,
+            "p95_ms": 0.0,
+            "p99_ms": 0.0,
+            "samples": 6000
+          }
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 1.591,
+            "mean_ms": 0.724206500000002,
+            "median_ms": 0.69,
+            "p95_ms": 0.972,
+            "p99_ms": 1.053,
+            "samples": 6000
+          },
+          "core_cpu": {
+            "max_ms": 0.00969999999999871,
+            "mean_ms": 0.000502383333332181,
+            "median_ms": 0.000499999999998835,
+            "p95_ms": 0.000599999999998602,
+            "p99_ms": 0.000599999999998602,
+            "samples": 6000
+          }
+        }
+      ]
+    },
+    {
+      "label": "disabled-b",
+      "overwolf_layers_disabled": true,
+      "inserted_layers": [
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_NV_present\" (C:\\windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_12ab2876952d3f1f\\.\\nvoglv64.dll)",
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_NV_optimus\" (C:\\windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_12ab2876952d3f1f\\.\\nvoglv64.dll)"
+      ],
+      "metrics": [
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 85.777,
+            "mean_ms": 0.750081,
+            "median_ms": 0.686,
+            "p95_ms": 1.021,
+            "p99_ms": 1.17,
+            "samples": 6000
+          },
+          "core_cpu": {
+            "max_ms": 0.0,
+            "mean_ms": 0.0,
+            "median_ms": 0.0,
+            "p95_ms": 0.0,
+            "p99_ms": 0.0,
+            "samples": 6000
+          }
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 1.242,
+            "mean_ms": 0.716582499999997,
+            "median_ms": 0.684,
+            "p95_ms": 0.956,
+            "p99_ms": 1.037,
+            "samples": 6000
+          },
+          "core_cpu": {
+            "max_ms": 0.00159999999999982,
+            "mean_ms": 0.000508766666665515,
+            "median_ms": 0.000499999999998835,
+            "p95_ms": 0.000599999999998602,
+            "p99_ms": 0.000699999999998369,
+            "samples": 6000
+          }
+        }
+      ]
+    },
+    {
+      "label": "normal-b",
+      "overwolf_layers_disabled": false,
+      "inserted_layers": [
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_OW_OBS_HOOK\" (C:\\Program Files (x86)\\Overwolf\\0.309.0.14\\.\\ow-graphics-vulkan.dll)",
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_OW_OVERLAY\" (C:\\Program Files (x86)\\Overwolf\\0.309.0.14\\.\\owclient.dll)",
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_NV_present\" (C:\\windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_12ab2876952d3f1f\\.\\nvoglv64.dll)",
+        "[Vulkan Loader] INFO | LAYER:   Insert instance layer \"VK_LAYER_NV_optimus\" (C:\\windows\\System32\\DriverStore\\FileRepository\\nv_dispi.inf_amd64_12ab2876952d3f1f\\.\\nvoglv64.dll)"
+      ],
+      "metrics": [
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 1.529,
+            "mean_ms": 0.737955166666664,
+            "median_ms": 0.696,
+            "p95_ms": 1.032,
+            "p99_ms": 1.164,
+            "samples": 6000
+          },
+          "core_cpu": {
+            "max_ms": 0.0,
+            "mean_ms": 0.0,
+            "median_ms": 0.0,
+            "p95_ms": 0.0,
+            "p99_ms": 0.0,
+            "samples": 6000
+          }
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 1.318,
+            "mean_ms": 0.71594283333333,
+            "median_ms": 0.685,
+            "p95_ms": 0.957,
+            "p99_ms": 1.017,
+            "samples": 6000
+          },
+          "core_cpu": {
+            "max_ms": 0.00120000000000076,
+            "mean_ms": 0.000521099999998799,
+            "median_ms": 0.000499999999998835,
+            "p95_ms": 0.000599999999998602,
+            "p99_ms": 0.000699999999998369,
+            "samples": 6000
+          }
+        }
+      ]
+    }
+  ],
+  "conclusion": "Excluding both Overwolf Vulkan layers did not eliminate long UI-disabled frames: disabled-b maximum was 85.777 ms with zero core updates. Most p95 values were near 1 ms, so these runs did not reproduce the earlier sustained p95 failure. This does not establish that Overwolf has no effect or explain the OpenGL failures.",
+  "limitations": [
+    "Two runs per condition on one Windows RTX 5080 machine.",
+    "Loader layer exclusion does not prove absence of every external injected hook.",
+    "Existing failed 4K qualification remains failed.",
+    "No user application, registry setting or global environment changed."
+  ]
+}

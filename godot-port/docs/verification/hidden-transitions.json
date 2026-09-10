@@ -1,0 +1,388 @@
+{
+  "status": "uninstalled candidate; correctness passes; 4K whole-frame timing fails",
+  "spec": "https://www.w3.org/TR/css-transitions-2/#starting-of-transitions",
+  "fix": "Cancel running transitions when the element or its ancestor becomes display:none, preserve the latest target after hidden mutations, and suppress transitions from a hidden before-change state on reopening.",
+  "bookkeeping": "Parent-first cascade records previous rendering state per hidden element. Scoped walks reuse parent state. Destruction and full reset clear the state. Runtime cancellation examines only nonempty transition lists, including zero-time updates.",
+  "baseline": {
+    "log": ".utmp/safe-engine71/hidden-transition-baseline.log",
+    "failures": 8
+  },
+  "fixed": {
+    "log": ".utmp/safe-engine71/hidden-transition-final.log",
+    "passed_suites": 14,
+    "seconds": 24.6,
+    "coverage": [
+      "Self and ancestor hiding cancel animation work immediately",
+      "Hidden time advances do not publish new paint",
+      "Changes while hidden preserve the latest target",
+      "Simultaneous reopening and value change does not start a transition",
+      "Subsequent visible changes transition normally",
+      "visibility:hidden transitions continue"
+    ]
+  },
+  "limitations": [
+    "4K profile failed three whole-frame limits, including UI-disabled; all UI API/core CPU checks passed. Cause remains unresolved.",
+    "No lifecycle run for this binary yet.",
+    "Installed addon remains preview211."
+  ],
+  "library_sha256": "3f40c15a0e8c0b0a04eca33b2a7e16860f248f55763b01bbfaf927ebbffaeb6a",
+  "chrome": {
+    "browser": "Chrome/152.0.7977.83",
+    "rows": [
+      {
+        "target": "#a",
+        "values": [
+          200,
+          0,
+          0,
+          500,
+          0,
+          550
+        ],
+        "expected": [
+          200,
+          0,
+          0,
+          500,
+          0,
+          550
+        ],
+        "passed": true
+      },
+      {
+        "target": "#panel",
+        "values": [
+          200,
+          0,
+          0,
+          500,
+          0,
+          550
+        ],
+        "expected": [
+          200,
+          0,
+          0,
+          500,
+          0,
+          550
+        ],
+        "passed": true
+      }
+    ]
+  },
+  "host": {
+    "binary_sha256": "3f40c15a0e8c0b0a04eca33b2a7e16860f248f55763b01bbfaf927ebbffaeb6a",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 522
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1199
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 7330
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      },
+      {
+        "name": "popover_beforetoggle_tests",
+        "passed": true,
+        "checks": 1389
+      },
+      {
+        "name": "unknown_at_rule_tests",
+        "passed": true,
+        "checks": 12
+      },
+      {
+        "name": "css_diagnostic_tests",
+        "passed": true,
+        "checks": 26
+      },
+      {
+        "name": "conditional_keyframe_tests",
+        "passed": true,
+        "checks": 204
+      },
+      {
+        "name": "font_warmup_tests",
+        "passed": true,
+        "checks": 4
+      },
+      {
+        "name": "hidden_transition_tests",
+        "passed": true,
+        "checks": 6
+      }
+    ],
+    "passed": true,
+    "checks": 35474
+  },
+  "rendered": [
+    {
+      "renderer": "gl_compatibility",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "renderer": "mobile",
+      "passed": true,
+      "returncode": 0
+    }
+  ],
+  "sanitizers": {
+    "log": ".utmp\\safe-engine71\\hidden-transition-sanitizers.log",
+    "passed_suites": 16,
+    "seconds": 166.86
+  },
+  "exports": {
+    "sample_log": ".utmp\\safe-engine71\\hidden-transition212-sample.log",
+    "export_log": ".utmp\\safe-engine71\\hidden-transition212-exports.log",
+    "passed": true
+  },
+  "performance": {
+    "desktop": {
+      "summary": ".utmp\\safe-engine71\\hidden-transition212-desktop\\summary.json",
+      "library_sha256": "3f40c15a0e8c0b0a04eca33b2a7e16860f248f55763b01bbfaf927ebbffaeb6a",
+      "passed": true,
+      "passed_checks": 72,
+      "total_checks": 72,
+      "failures": []
+    },
+    "3d": {
+      "summary": ".utmp\\safe-engine71\\hidden-transition212-3d\\summary.json",
+      "library_sha256": "3f40c15a0e8c0b0a04eca33b2a7e16860f248f55763b01bbfaf927ebbffaeb6a",
+      "passed": true,
+      "passed_checks": 276,
+      "total_checks": 276,
+      "failures": []
+    },
+    "4k": {
+      "summary": ".utmp\\safe-engine71\\hidden-transition212-4k\\summary.json",
+      "library_sha256": "3f40c15a0e8c0b0a04eca33b2a7e16860f248f55763b01bbfaf927ebbffaeb6a",
+      "passed": false,
+      "passed_checks": 273,
+      "total_checks": 276,
+      "failures": [
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "changed_whole_frame",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 17.383,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        },
+        {
+          "run": "mobile/1",
+          "workload": "ui_disabled",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 16.825,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "changed_whole_frame",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 18.09,
+          "limit_ms": 16.666666666666668,
+          "passed": false
+        }
+      ]
+    }
+  }
+}

@@ -12,6 +12,7 @@ func _ready() -> void:
 	# This is the entire setup: markup lives on the UI node in the Inspector.
 	ui.bind_state(state.model, self, state.changed)
 	ui.data_changed.connect(_on_data_changed)
+	ui.dialog_closed.connect(_on_dialog_closed)
 	$Clock.timeout.connect(state.tick)
 	_apply_settings()
 	for arg in OS.get_cmdline_user_args():
@@ -50,31 +51,52 @@ func close_settings(_id: String) -> void:
 	ui.close_dialog("#settings")
 	ui.set_focus("#settings-button")
 
-func _on_data_changed(_path: String, _text: String) -> void:
+func _on_dialog_closed(id: String) -> void:
+	if id == "settings":
+		# Read current state in case a handler reopened it before this notification.
+		settings_open = ui.has_element_attribute("#settings", "open")
+
+func _on_data_changed(path: String, _text: String) -> void:
 	# Native data-model already wrote a typed value into state.model.
-	_apply_settings()
+	if path == "Settings.Volume" or path == "Settings.Music":
+		_apply_settings()
 
 func _apply_settings() -> void:
 	settings_applied += 1
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.0001, state.model.Settings.Volume / 100.0)))
 	AudioServer.set_bus_mute(0, not state.model.Settings.Music)
 
+func _record_performance_world_input(event: InputEvent) -> void:
+	if "--perf" not in OS.get_cmdline_user_args():
+		return
+	var record := {"workload": get_meta("performance_workload", "setup"),
+		"process_frame": Engine.get_process_frames(), "device": event.device,
+		"event_class": event.get_class(), "event": event.as_text(),
+		"world_actions_before": world_actions}
+	if event is InputEventMouse:
+		record["position"] = [event.position.x, event.position.y]
+	if event is InputEventKey:
+		record["keycode"] = event.keycode
+		record["physical_keycode"] = event.physical_keycode
+	printerr("FRONTIER_WORLD_INPUT ", JSON.stringify(record))
+
 func _unhandled_input(event: InputEvent) -> void:
 	# Accepted UI clicks and text edits never reach gameplay.
 	if settings_open:
-		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-			close_settings("")
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_record_performance_world_input(event)
 		world_actions += 1
 		state.forage()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_E:
+			_record_performance_world_input(event)
 			world_actions += 1
 			state.forage()
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_H:
+			_record_performance_world_input(event)
 			state.take_damage()
 			get_viewport().set_input_as_handled()

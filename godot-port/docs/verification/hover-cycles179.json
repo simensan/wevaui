@@ -1,0 +1,240 @@
+{
+  "change": "Raw executing-thread cycle delta in opt-in buffered update diagnostics. Platform call isolated; unsupported platforms return unavailable.",
+  "installed": false,
+  "binary_sha256": "c1d9f8d505ca4b65250445cc3e97557ab49130819607118050c0036628b512da",
+  "source_sha256": {
+    "godot-port/libweva/src/weva_c.cpp": "36b8d63674f159e91f097f5bbe3fb27762307ce8491459beee078cb1489cbe0d",
+    "godot-port/libweva/src/diagnostic_cycles.cpp": "98a535168f5a3e5f0cc57f3ab0b05d205b07848bd3fdff73ab47e784b2d4a9ba",
+    "godot-port/libweva/src/diagnostic_cycles.h": "067b4a07ad84b67db63ec354ed863d824c97e8a4cf7c8fd69e638524b4c6bb83",
+    "godot-port/libweva/CMakeLists.txt": "0f8c5ed330b98de33c8addc3cb48aa319121933f114dd3afb0443baa0adbecc3"
+  },
+  "analysis": {
+    "rows": 2523,
+    "measured_updates": 2400,
+    "medians": {
+      "total": 0.09185,
+      "cycles": 425473.5
+    },
+    "slowest": [
+      {
+        "sequence": 1458,
+        "cascade": 0.2496,
+        "animate": 0.0006,
+        "boxes": 0.0003,
+        "layout": 0.0001,
+        "paint": 0.3601,
+        "total": 0.6146,
+        "cycles": 1178847
+      },
+      {
+        "sequence": 907,
+        "cascade": 0.3651,
+        "animate": 0.0015,
+        "boxes": 0.0002,
+        "layout": 0.0001,
+        "paint": 0.1401,
+        "total": 0.5099,
+        "cycles": 636569
+      },
+      {
+        "sequence": 2034,
+        "cascade": 0.1054,
+        "animate": 0.0005,
+        "boxes": 0.0003,
+        "layout": 0.0002,
+        "paint": 0.2905,
+        "total": 0.3994,
+        "cycles": 688169
+      },
+      {
+        "sequence": 2033,
+        "cascade": 0.0825,
+        "animate": 0.0007,
+        "boxes": 0.0003,
+        "layout": 0.0003,
+        "paint": 0.3088,
+        "total": 0.3961,
+        "cycles": 1068140
+      },
+      {
+        "sequence": 1977,
+        "cascade": 0.0544,
+        "animate": 0.0004,
+        "boxes": 0.0003,
+        "layout": 0.0003,
+        "paint": 0.3298,
+        "total": 0.3878,
+        "cycles": 725228
+      },
+      {
+        "sequence": 240,
+        "cascade": 0.2987,
+        "animate": 0.0003,
+        "boxes": 0.0001,
+        "layout": 0.0001,
+        "paint": 0.0524,
+        "total": 0.353,
+        "cycles": 458311
+      },
+      {
+        "sequence": 533,
+        "cascade": 0.2841,
+        "animate": 0.0002,
+        "boxes": 0.0001,
+        "layout": 0.0001,
+        "paint": 0.0514,
+        "total": 0.3374,
+        "cycles": 440954
+      },
+      {
+        "sequence": 2231,
+        "cascade": 0.0327,
+        "animate": 0.0002,
+        "boxes": 0.0002,
+        "layout": 0.0,
+        "paint": 0.299,
+        "total": 0.3337,
+        "cycles": 506629
+      },
+      {
+        "sequence": 1188,
+        "cascade": 0.0551,
+        "animate": 0.0002,
+        "boxes": 0.0002,
+        "layout": 0.0,
+        "paint": 0.2704,
+        "total": 0.3276,
+        "cycles": 392636
+      },
+      {
+        "sequence": 579,
+        "cascade": 0.1204,
+        "animate": 0.0007,
+        "boxes": 0.0004,
+        "layout": 0.0001,
+        "paint": 0.1918,
+        "total": 0.3183,
+        "cycles": 1488454
+      },
+      {
+        "sequence": 1566,
+        "cascade": 0.0632,
+        "animate": 0.0004,
+        "boxes": 0.0005,
+        "layout": 0.0001,
+        "paint": 0.243,
+        "total": 0.3107,
+        "cycles": 1411521
+      },
+      {
+        "sequence": 270,
+        "cascade": 0.039,
+        "animate": 0.0003,
+        "boxes": 0.0001,
+        "layout": 0.0,
+        "paint": 0.252,
+        "total": 0.2931,
+        "cycles": 466287
+      }
+    ],
+    "largest_cycles": [
+      {
+        "sequence": 579,
+        "cascade": 0.1204,
+        "animate": 0.0007,
+        "boxes": 0.0004,
+        "layout": 0.0001,
+        "paint": 0.1918,
+        "total": 0.3183,
+        "cycles": 1488454
+      },
+      {
+        "sequence": 1566,
+        "cascade": 0.0632,
+        "animate": 0.0004,
+        "boxes": 0.0005,
+        "layout": 0.0001,
+        "paint": 0.243,
+        "total": 0.3107,
+        "cycles": 1411521
+      },
+      {
+        "sequence": 1963,
+        "cascade": 0.1077,
+        "animate": 0.0007,
+        "boxes": 0.0004,
+        "layout": 0.0004,
+        "paint": 0.1559,
+        "total": 0.2688,
+        "cycles": 1255780
+      },
+      {
+        "sequence": 1974,
+        "cascade": 0.062,
+        "animate": 0.0004,
+        "boxes": 0.0003,
+        "layout": 0.0004,
+        "paint": 0.1951,
+        "total": 0.2617,
+        "cycles": 1224820
+      },
+      {
+        "sequence": 1980,
+        "cascade": 0.1031,
+        "animate": 0.0007,
+        "boxes": 0.0004,
+        "layout": 0.0003,
+        "paint": 0.1507,
+        "total": 0.2596,
+        "cycles": 1214031
+      },
+      {
+        "sequence": 2011,
+        "cascade": 0.0795,
+        "animate": 0.0005,
+        "boxes": 0.0003,
+        "layout": 0.0003,
+        "paint": 0.171,
+        "total": 0.2566,
+        "cycles": 1201835
+      },
+      {
+        "sequence": 1567,
+        "cascade": 0.0901,
+        "animate": 0.0008,
+        "boxes": 0.0007,
+        "layout": 0.0002,
+        "paint": 0.1578,
+        "total": 0.2526,
+        "cycles": 1182132
+      },
+      {
+        "sequence": 1458,
+        "cascade": 0.2496,
+        "animate": 0.0006,
+        "boxes": 0.0003,
+        "layout": 0.0001,
+        "paint": 0.3601,
+        "total": 0.6146,
+        "cycles": 1178847
+      }
+    ]
+  },
+  "functional_passed": true,
+  "core_ctest": {
+    "passed": 14,
+    "failed": 0,
+    "seconds": 24.33
+  },
+  "linux_asan_ubsan_focused_abi": {
+    "checks": 202,
+    "failures": 0
+  },
+  "interpretation": "Disproportionate elapsed and cycle increases in some samples suggest scheduling contributes; others also consume materially more cycles. This does not prove a single cause or clear the original uninstrumented budget failure.",
+  "api_contract": "https://learn.microsoft.com/en-us/windows/win32/api/realtimeapiset/nf-realtimeapiset-querythreadcycletime",
+  "limitations": [
+    "Raw cycles are not converted to time.",
+    "Thread-cycle implementation and processor frequency behavior limit interpretation.",
+    "One diagnostic run, not paired timing qualification."
+  ]
+}

@@ -1,0 +1,343 @@
+{
+  "status": "Desktop fails two idle API limits; longer paired idle diagnostic does not reproduce; 3D/4K not run; candidate uninstalled",
+  "baseline": {
+    "log": ".utmp/safe-engine71/eased-reversal-diagnostic.log",
+    "failing_assertions": 4
+  },
+  "fixes": [
+    "Match Chromium's clamped reversal factor for negative overshoot.",
+    "Cancel transitions when a new target equals the displayed value, including the unchanged-style early return during a stepped hold."
+  ],
+  "chrome": {
+    "log": ".utmp/safe-engine71/eased-reversal-chrome.json",
+    "browser": "Chrome/152.0.7977.83",
+    "cases": 8,
+    "samples_per_case": 4,
+    "maximum_allowed_width_difference_px": 0.05,
+    "coverage": "ease, ease-in-out, overshooting cubic-bezier(.3,-.8,.7,1.8), and steps(4,end); reverse after 200ms/700ms, sample return at 50ms, reverse again and sample at 100ms/1100ms."
+  },
+  "core": {
+    "log": ".utmp/safe-engine71/eased-reversal-final.log",
+    "passed_suites": 14,
+    "seconds": 25.18
+  },
+  "browser_spec_difference": {
+    "description": "The CSS Transitions draft takes the absolute value before clamping the shortening factor. Chromium clamps directly. This implementation follows measured Chrome behavior for negative overshoot.",
+    "chromium_source": "https://chromium.googlesource.com/chromium/src/+/aecca2205adc5a302f707bca1877523031c51f5e/third_party/blink/renderer/core/animation/css/css_animations.cc",
+    "spec": "https://www.w3.org/TR/css-transitions-1/#starting"
+  },
+  "limitations": [
+    "Current lifecycle, runtime allocation and lower-end hardware qualification remain open.",
+    "Renderer tests sample geometry, not pixel equivalence at every animation phase.",
+    "Installed preview211 remains unchanged; previous whole-frame failures remain recorded with unresolved causes."
+  ],
+  "library_sha256": "3d77957102b93d30405b8132c9f816394bf1d3259b0ab6fd70a76fd579daf009",
+  "host": {
+    "binary_sha256": "3d77957102b93d30405b8132c9f816394bf1d3259b0ab6fd70a76fd579daf009",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 522
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1199
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 7330
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      },
+      {
+        "name": "popover_beforetoggle_tests",
+        "passed": true,
+        "checks": 1389
+      },
+      {
+        "name": "unknown_at_rule_tests",
+        "passed": true,
+        "checks": 12
+      },
+      {
+        "name": "css_diagnostic_tests",
+        "passed": true,
+        "checks": 26
+      },
+      {
+        "name": "conditional_keyframe_tests",
+        "passed": true,
+        "checks": 204
+      },
+      {
+        "name": "font_warmup_tests",
+        "passed": true,
+        "checks": 4
+      },
+      {
+        "name": "hidden_transition_tests",
+        "passed": true,
+        "checks": 6
+      },
+      {
+        "name": "long_effect_list_tests",
+        "passed": true,
+        "checks": 16
+      },
+      {
+        "name": "delayed_transition_tests",
+        "passed": true,
+        "checks": 6
+      },
+      {
+        "name": "transition_cancellation_tests",
+        "passed": true,
+        "checks": 18
+      },
+      {
+        "name": "transition_reversal_tests",
+        "passed": true,
+        "checks": 32
+      }
+    ],
+    "passed": true,
+    "checks": 35546
+  },
+  "renderer_geometry_checks": [
+    {
+      "renderer": "gl_compatibility",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "renderer": "mobile",
+      "passed": true,
+      "returncode": 0
+    }
+  ],
+  "sanitizers": {
+    "passed_suites": 16,
+    "seconds": 171.07,
+    "log": ".utmp/safe-engine71/transition-reversal-sanitizers.log"
+  },
+  "exports": {
+    "passed": true,
+    "logs": [
+      ".utmp/safe-engine71/transition-reversal216-sample.log",
+      ".utmp/safe-engine71/transition-reversal216-exports.log"
+    ]
+  },
+  "performance": {
+    "desktop": {
+      "summary": ".utmp\\safe-engine71\\transition-reversal216-desktop\\summary.json",
+      "passed": false,
+      "passed_checks": 70,
+      "total_checks": 72,
+      "failures": [
+        {
+          "run": "gl_compatibility/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.145,
+          "limit_ms": 0.05,
+          "passed": false
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.242,
+          "limit_ms": 0.05,
+          "passed": false
+        }
+      ]
+    }
+  }
+}

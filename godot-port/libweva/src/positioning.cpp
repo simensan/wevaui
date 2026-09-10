@@ -1,4 +1,5 @@
 #include "weva/css_properties.h"
+#include "weva/paint.h"
 #include "weva/anchor.h"
 #include "weva/positioning.h"
 
@@ -11,6 +12,28 @@
 #include <string>
 
 namespace weva {
+
+bool is_promoted_inline_fragment(const Box& box, const Element* element) {
+    if (!box.split_inline_owner) return false;
+    const Node* node = box.element ? box.element->parent() : box.pseudo_host;
+    for (; node; node = node->parent()) {
+        if (node == element) return true;
+        if (node == box.split_inline_owner) break;
+    }
+    return false;
+}
+
+void promoted_inline_rect(const BoxTree& tree, BoxId id,
+                          double* x, double* y, double* width, double* height) {
+    const Box& box = tree[id];
+    const Box& parent = tree[box.parent];
+    *x = parent.border_left + parent.padding_left;
+    *y = box.y;
+    if (box.position == PositionType::Relative)
+        *y -= box.offset_top.value_or(-box.offset_bottom.value_or(0));
+    *width = parent.content_width();
+    *height = box.height;
+}
 
 namespace {
 
@@ -119,23 +142,10 @@ bool has_explicit_size(const ComputedStyle* style, std::string_view property) {
     return !raw.empty() && !iequals(raw, "auto");
 }
 
-// A size is DEFINITE only when it resolves to a length or a percentage.
-// `fit-content`, `min-content` and `max-content` are explicit but not definite,
-// and the difference decides whether auto margins centre the box.
-//
-// The `<dialog>` UA sheet is the case that makes this matter: it pins all four
-// edges with `margin: auto`, `width: fit-content` and `height: fit-content`.
-// An author writing `top: 80px; left: 80px; width: 240px` gets a box centred
-// HORIZONTALLY (width is definite) but sitting at top 80 (height is not), and
-// treating both axes alike put the dialog 217px lower. Chrome and the reference
-// agree on 80; the corpus carries Chrome's own numbers, which is how this was
-// settled rather than argued.
-bool is_definite_size(const ComputedStyle* style, std::string_view property,
-                      const LayoutContext& ctx, double font_size, double basis) {
-    const std::string_view raw = get(style, property);
-    if (raw.empty() || iequals(raw, "auto")) return false;
-    const ResolvedLength r = resolve_length(style, property, ctx, font_size, basis);
-    return r.kind == LengthKind::Length || r.kind == LengthKind::Percent;
+// Intrinsic sizes have a used size after layout. With both insets specified,
+// auto margins distribute the remaining space for those sizes too.
+bool has_used_size(const ComputedStyle* style, std::string_view property) {
+    return has_explicit_size(style, property);
 }
 
 } // namespace
@@ -152,11 +162,23 @@ void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y) {
 
 void visual_position(const BoxTree& tree, BoxId box, double* x, double* y) {
     double ax = 0, ay = 0;
+    BoxId containing = kNoBox;
+    bool skip_intermediate_scroll = false;
     for (BoxId b = box; b != kNoBox; b = tree[b].parent) {
         ax += tree[b].x;
         ay += tree[b].y;
+        if (tree[b].position == PositionType::Absolute || tree[b].position == PositionType::Fixed) {
+            containing = kNoBox;
+            for (BoxId p = tree[b].parent; p != kNoBox; p = tree[p].parent) {
+                if (tree[b].position == PositionType::Absolute
+                        ? establishes_absolute_containing_block(tree[p])
+                        : establishes_fixed_containing_block(tree[p])) { containing = p; break; }
+            }
+            skip_intermediate_scroll = true;
+        }
         const BoxId parent = tree[b].parent;
-        if (parent != kNoBox) {
+        if (parent == containing) skip_intermediate_scroll = false;
+        if (parent != kNoBox && !skip_intermediate_scroll) {
             ax -= tree[parent].scroll_x;
             ay -= tree[parent].scroll_y;
         }
@@ -336,7 +358,8 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     // extent is a position on ANOTHER element's border box, so it replaces
     // what the ordinary length path just resolved. One cold call rather than a
     // test per property -- see the note on apply_anchor_overrides.
-    if (apply_anchor_overrides(tree, id, cb) && block) {
+    bool anchor_width_auto = false;
+    if (apply_anchor_overrides(tree, id, cb, &anchor_width_auto) && block) {
         block->relayout_at(id, (*tree)[id].width);
     }
 
@@ -345,14 +368,14 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     const bool vert_pinned = (*tree)[id].offset_top.has_value() && (*tree)[id].offset_bottom.has_value();
 
     // Both edges pinned and no explicit size: the box stretches between them.
-    const bool stretch_w = horiz_pinned && !has_explicit_size(style, "width");
+    const bool stretch_w = horiz_pinned && (!has_explicit_size(style, "width") || anchor_width_auto);
     const bool stretch_h = vert_pinned && !has_explicit_size(style, "height");
 
     // CSS 2.1 §10.3.7: an auto width with at most one horizontal edge set is
     // shrink-to-fit. Block layout sized the box against its containing block
     // as if it were in flow, which left `position: absolute; left: 0` labels
     // the full width of the page.
-    if (block && !horiz_pinned && !has_explicit_size(style, "width")) {
+    if (block && !horiz_pinned && (!has_explicit_size(style, "width") || anchor_width_auto)) {
         const double avail = std::max(
             0.0, cb.width - (*tree)[id].margin_left - (*tree)[id].margin_right);
         block->shrink_to_fit(id, avail, ps);
@@ -412,16 +435,16 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
     double extra_left = 0, extra_top = 0;
     const BoxSideValues mar = box_sides(style, kId_margin);
     if (horiz_pinned && iequals(mar.left, "auto") && iequals(mar.right, "auto") &&
-        is_definite_size(style, "width", ctx, fs, cb.width)) {
+        has_used_size(style, "width")) {
         const double slack = cb.width - *box.offset_left - *box.offset_right -
                              box.margin_left - box.margin_right - box.width;
         if (slack > 0) extra_left = slack * 0.5;
     }
     if (vert_pinned && iequals(mar.top, "auto") && iequals(mar.bottom, "auto") &&
-        is_definite_size(style, "height", ctx, fs, cb.height)) {
+        has_used_size(style, "height")) {
         const double slack = cb.height - *box.offset_top - *box.offset_bottom -
                              box.margin_top - box.margin_bottom - box.height;
-        if (slack > 0) extra_top = slack * 0.5;
+        extra_top = slack * 0.5;
     }
 
     double parent_x = 0, parent_y = 0;
@@ -611,9 +634,16 @@ ChildPaintOrder::ChildPaintOrder(const BoxTree& tree, BoxId container) : tree_(t
             const std::string_view zr = cb.style->get(kId_z_index);
             if (!zr.empty() && zr != "auto") z = std::atoi(std::string(zr).c_str());
         }
-        return Entry{c, z, sequence, z == 0 && is_positioned};
+        // Promoted hosts/backdrops are root siblings. Their opening order
+        // outranks every author z-index, with the backdrop preceding its host.
+        const Element* host = cb.element ? cb.element : cb.pseudo_host;
+        const uint64_t top_order = b.parent == kNoBox && cb.kind == BoxKind::Block && host
+            ? host->top_layer_order() : 0;
+        return Entry{c, z, sequence, z == 0 && is_positioned, top_order};
     };
     const auto by_z = [](const Entry& a, const Entry& c) {
+        if (a.top_order != c.top_order) return a.top_order < c.top_order;
+        if (a.top_order) return a.sequence < c.sequence;
         if (a.z != c.z) return a.z < c.z;
         if (a.positioned_zero != c.positioned_zero) return !a.positioned_zero;
         return a.sequence < c.sequence;
@@ -633,6 +663,59 @@ ChildPaintOrder::ChildPaintOrder(const BoxTree& tree, BoxId container) : tree_(t
     // The explicit tree sequence breaks every tie, so sort needs neither
     // stability nor the temporary allocation used by stable_sort.
     std::sort(sorted_.begin(), sorted_.end(), by_z);
+}
+
+bool establishes_fixed_containing_block(const Box& b) { return has_containing_block_property(b); }
+
+bool overflow_clip_applies(const BoxTree& tree, BoxId clip, BoxId containing_block) {
+    for (BoxId id = containing_block; id != kNoBox; id = tree[id].parent)
+        if (id == clip) return true;
+    return false;
+}
+
+bool subtree_has_overflow_escape(const BoxTree& tree, BoxId root, const LayoutContext& ctx) {
+    const Box& b = tree[root];
+    if (b.position == PositionType::Absolute || b.position == PositionType::Fixed) {
+        const BoxId cb = (b.position == PositionType::Absolute
+            ? resolve_absolute_containing_block(tree, root, ctx)
+            : resolve_fixed_containing_block(tree, root, ctx)).box;
+        for (BoxId p = b.parent; p != cb && p != kNoBox; p = tree[p].parent)
+            if (clips_overflow(tree[p])) return true;
+    }
+    for (const BoxId child : tree.children(root))
+        if (subtree_has_overflow_escape(tree, child, ctx)) return true;
+    return false;
+}
+
+bool table_positioned_isolation(const Box& box) {
+    if (box.z_index || box.position == PositionType::Fixed || box.position == PositionType::Sticky ||
+        has_containing_block_property(box)) return true;
+    if (!box.style) return false;
+    return resolve_opacity(box.style) < 1 || box.style->get("isolation") == "isolate" ||
+        (!box.style->get("mix-blend-mode").empty() && box.style->get("mix-blend-mode") != "normal");
+}
+
+bool table_positioned_layer(const Box& box) {
+    return box.kind == BoxKind::Block && box.position != PositionType::Static &&
+           (!box.z_index || *box.z_index >= 0);
+}
+
+bool has_table_positioned_layer(const BoxTree& tree, BoxId root) {
+    for (const BoxId child : tree.children(root)) {
+        const Box& box = tree[child];
+        if (box.kind == BoxKind::Block && box.position != PositionType::Static) return true;
+        if (has_table_positioned_layer(tree, child)) return true;
+    }
+    return false;
+}
+
+bool has_table_negative_layer(const BoxTree& tree, BoxId root) {
+    for (const BoxId child : tree.children(root)) {
+        const Box& box = tree[child];
+        if (box.position != PositionType::Static && box.z_index && *box.z_index < 0) return true;
+        if (!table_positioned_isolation(box) && has_table_negative_layer(tree, child)) return true;
+    }
+    return false;
 }
 
 void paint_order_children(const BoxTree& tree, BoxId container, std::vector<BoxId>* out) {

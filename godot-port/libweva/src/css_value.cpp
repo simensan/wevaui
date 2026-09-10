@@ -736,6 +736,16 @@ CssValuePtr parse_css_value(std::string_view text, CssParseError* error) {
     std::vector<CssValuePtr> current;
 
     r.skip_ws();
+    // Most computed properties contain one value. Parse it using the normal
+    // grammar, and avoid constructing two temporary list buffers when it is
+    // the entire input. Whitespace, functions and errors follow the same Reader.
+    if (!r.at_end() && r.peek().kind != CssTokenKind::Comma) {
+        CssValuePtr first = parse_single(r);
+        if (r.failed) return nullptr;
+        r.skip_ws();
+        if (first && r.at_end()) return first;
+        if (first) current.push_back(std::move(first));
+    }
     while (!r.at_end()) {
         if (r.peek().kind == CssTokenKind::Comma) {
             r.advance();

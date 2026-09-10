@@ -1,0 +1,496 @@
+{
+  "status": "installed development preview211",
+  "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+  "host": {
+    "binary_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 522
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1199
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 7330
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      },
+      {
+        "name": "popover_beforetoggle_tests",
+        "passed": true,
+        "checks": 1389
+      },
+      {
+        "name": "unknown_at_rule_tests",
+        "passed": true,
+        "checks": 12
+      },
+      {
+        "name": "css_diagnostic_tests",
+        "passed": true,
+        "checks": 26
+      },
+      {
+        "name": "conditional_keyframe_tests",
+        "passed": true,
+        "checks": 204
+      },
+      {
+        "name": "font_warmup_tests",
+        "passed": true,
+        "checks": 4
+      }
+    ],
+    "passed": true,
+    "checks": 35468
+  },
+  "rendered_comparison": [
+    {
+      "name": "old-gl_compatibility-cold",
+      "passed": true,
+      "pixels_match_old": true,
+      "image_sha256": "7a7a0b1fecf2d2d9a1c0a2396e51d2d53fe58e50c158f61932dd52342138e962",
+      "library_sha256": "d06990e8c335984e6b37a5b10a534431c8f1fb9fa81e9a7e5954da06dd7acd13",
+      "timing": {
+        "construction_cpu_ms": 63.532,
+        "mode": "cold",
+        "warmup_elapsed_ms": 0.004
+      }
+    },
+    {
+      "name": "old-mobile-cold",
+      "passed": true,
+      "pixels_match_old": true,
+      "image_sha256": "e43db9154340e4968aadb90af0dcbdcb7e8f4ae490d42fbc318d015fb5dab4ec",
+      "library_sha256": "d06990e8c335984e6b37a5b10a534431c8f1fb9fa81e9a7e5954da06dd7acd13",
+      "timing": {
+        "construction_cpu_ms": 65.022,
+        "mode": "cold",
+        "warmup_elapsed_ms": 0.003
+      }
+    },
+    {
+      "name": "new-gl_compatibility-cold",
+      "passed": true,
+      "pixels_match_old": true,
+      "image_sha256": "7a7a0b1fecf2d2d9a1c0a2396e51d2d53fe58e50c158f61932dd52342138e962",
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+      "timing": {
+        "construction_cpu_ms": 64.139,
+        "mode": "cold",
+        "warmup_elapsed_ms": 0.006
+      }
+    },
+    {
+      "name": "new-gl_compatibility-partial",
+      "passed": true,
+      "pixels_match_old": true,
+      "image_sha256": "7a7a0b1fecf2d2d9a1c0a2396e51d2d53fe58e50c158f61932dd52342138e962",
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+      "timing": {
+        "construction_cpu_ms": 64.924,
+        "mode": "partial",
+        "warmup_elapsed_ms": 1.681
+      }
+    },
+    {
+      "name": "new-gl_compatibility-full",
+      "passed": true,
+      "pixels_match_old": true,
+      "image_sha256": "7a7a0b1fecf2d2d9a1c0a2396e51d2d53fe58e50c158f61932dd52342138e962",
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+      "timing": {
+        "construction_cpu_ms": 22.06,
+        "mode": "full",
+        "warmup_elapsed_ms": 50.854
+      }
+    },
+    {
+      "name": "new-mobile-cold",
+      "passed": true,
+      "pixels_match_old": true,
+      "image_sha256": "e43db9154340e4968aadb90af0dcbdcb7e8f4ae490d42fbc318d015fb5dab4ec",
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+      "timing": {
+        "construction_cpu_ms": 66.518,
+        "mode": "cold",
+        "warmup_elapsed_ms": 0.004
+      }
+    },
+    {
+      "name": "new-mobile-partial",
+      "passed": true,
+      "pixels_match_old": true,
+      "image_sha256": "e43db9154340e4968aadb90af0dcbdcb7e8f4ae490d42fbc318d015fb5dab4ec",
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+      "timing": {
+        "construction_cpu_ms": 64.741,
+        "mode": "partial",
+        "warmup_elapsed_ms": 1.413
+      }
+    },
+    {
+      "name": "new-mobile-full",
+      "passed": true,
+      "pixels_match_old": true,
+      "image_sha256": "e43db9154340e4968aadb90af0dcbdcb7e8f4ae490d42fbc318d015fb5dab4ec",
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+      "timing": {
+        "construction_cpu_ms": 22.096,
+        "mode": "full",
+        "warmup_elapsed_ms": 63.924
+      }
+    }
+  ],
+  "sample_log": ".utmp\\safe-engine71\\font-warmup211-sample.log",
+  "export_log": ".utmp\\safe-engine71\\font-warmup211-exports.log",
+  "limitations": [
+    "Focused timing is a five-paragraph multilingual document, not the Frontier HUD. One run per mode/renderer.",
+    "Warmup shifts font loading to earlier frames; elapsed warmup includes frame waits and is not a CPU-only metric.",
+    "A single font may exceed a frame budget; the earlier emoji step measured 19 ms.",
+    "Current ten-minute lifecycle and lower-end hardware qualification remain open; build210 lifecycle is historical evidence."
+  ],
+  "installation": {
+    "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8",
+    "version": "0.1.0-preview.211",
+    "release_qualified": false,
+    "qualification_scope": "Development installation of incremental shared-font warmup and sample loading integration. Current exact-library host, rendered fallback parity, sample/export and three timing profiles pass. Core and core-sanitizer evidence is inherited from unchanged core source in build210; the changed Godot host is tested natively. Broader readiness remains open.",
+    "timing_profiles": "Current candidate desktop and automatic 1080p 3D timing pass. Previous build207 hover, build208 whole-frame and build209 desktop failures remain historical evidence with unproven causes. Current 4K timing passes. The ten-minute lifecycle result belongs to build210; current-candidate lifecycle and lower-end hardware qualification remain open. Development install only.",
+    "targets": {
+      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+    },
+    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed211-backup",
+    "updated_files": [
+      "ADA.md",
+      "ADA_LICENSE_APACHE.txt",
+      "ADA_LICENSE_MIT.txt",
+      "CSS_DIAGNOSTICS.md",
+      "DECIMAL.md",
+      "DECIMAL_LICENSE.txt",
+      "FORM_STATE.md",
+      "GODOT_CPP_LICENSE.md",
+      "GODOT_TEXT_SHAPING.md",
+      "ICU_DATA.md",
+      "ICU_LICENSE.txt",
+      "IME.md",
+      "LICENSE.md",
+      "README.md",
+      "TEXT_EDITING.md",
+      "UNICODE_DATA.md",
+      "UNICODE_LICENSE.txt",
+      "bin/weva_godot.dll",
+      "bin/weva_godot.dll.build.json",
+      "build.json"
+    ]
+  },
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 1199,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 522,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 186,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 21,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "validity_selector_tests",
+      "checks": 658,
+      "passed": true
+    },
+    {
+      "name": "multicol_sizing_tests",
+      "checks": 7330,
+      "passed": true
+    },
+    {
+      "name": "block_margin_tests",
+      "checks": 1009,
+      "passed": true
+    },
+    {
+      "name": "input_geometry_tests",
+      "checks": 5,
+      "passed": true
+    },
+    {
+      "name": "range_direction_tests",
+      "checks": 66,
+      "passed": true
+    },
+    {
+      "name": "number_step_tests",
+      "checks": 234,
+      "passed": true
+    },
+    {
+      "name": "popover_beforetoggle_tests",
+      "checks": 1389,
+      "passed": true
+    },
+    {
+      "name": "unknown_at_rule_tests",
+      "checks": 12,
+      "passed": true
+    },
+    {
+      "name": "css_diagnostic_tests",
+      "checks": 26,
+      "passed": true
+    },
+    {
+      "name": "conditional_keyframe_tests",
+      "checks": 204,
+      "passed": true
+    },
+    {
+      "name": "font_warmup_tests",
+      "checks": 4,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 95,
+      "passed": true
+    }
+  ],
+  "performance": {
+    "desktop": {
+      "summary": ".utmp\\safe-engine71\\font-warmup211-desktop\\summary.json",
+      "passed": true,
+      "checks": 72,
+      "frames_per_workload": 600,
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8"
+    },
+    "3d": {
+      "summary": ".utmp\\safe-engine71\\font-warmup211-3d\\summary.json",
+      "passed": true,
+      "checks": 276,
+      "frames_per_workload": 600,
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8"
+    },
+    "4k": {
+      "summary": ".utmp\\safe-engine71\\font-warmup211-4k\\summary.json",
+      "passed": true,
+      "checks": 276,
+      "frames_per_workload": 600,
+      "library_sha256": "337c29e46ed4cf5dd20c07f272e276078b8b86d32c266ce21c6d820353fda3a8"
+    }
+  }
+}

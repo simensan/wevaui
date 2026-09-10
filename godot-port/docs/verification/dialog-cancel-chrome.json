@@ -1,0 +1,1241 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "scope": "27 native dialog lifecycle cases; close/requestClose/Escape, open mode, cancellation and reentrant close",
+  "rows": [
+    {
+      "mode": "closed",
+      "action": "close",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "closed",
+      "action": "close",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "closed",
+      "action": "close",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "closed",
+      "action": "request",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "closed",
+      "action": "request",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "closed",
+      "action": "request",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "closed",
+      "action": "escape",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "closed",
+      "action": "escape",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "closed",
+      "action": "escape",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "initial",
+          "active": "outside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "close",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "close",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "close",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "request",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "request",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "request",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "handler-result",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "handler-result",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "handler-result",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "handler-result",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "escape",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "escape",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "nonmodal",
+      "action": "escape",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": []
+      },
+      "settled": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": []
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "close",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "close",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "close",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "request",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "accepted",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "accepted",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "request",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "request",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "handler-result",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "handler-result",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "handler-result",
+            "active": "outside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "handler-result",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "escape",
+      "handler": "allow",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "",
+            "active": "outside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "",
+            "active": "outside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "",
+            "active": "outside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "",
+            "active": "outside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "escape",
+      "handler": "prevent",
+      "immediate": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": true,
+          "value": "initial",
+          "active": "inside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          }
+        ]
+      }
+    },
+    {
+      "mode": "modal",
+      "action": "escape",
+      "handler": "close-in-cancel",
+      "immediate": {
+        "state": {
+          "open": false,
+          "value": "handler-result",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "handler-result",
+            "active": "outside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "handler-result",
+            "active": "outside"
+          }
+        ]
+      },
+      "settled": {
+        "state": {
+          "open": false,
+          "value": "handler-result",
+          "active": "outside"
+        },
+        "events": [
+          {
+            "event": "cancel",
+            "cancelable": true,
+            "bubbles": false,
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "beforetoggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": true,
+            "value": "initial",
+            "active": "inside"
+          },
+          {
+            "event": "close",
+            "cancelable": false,
+            "bubbles": false,
+            "open": false,
+            "value": "handler-result",
+            "active": "outside"
+          },
+          {
+            "event": "toggle",
+            "cancelable": false,
+            "bubbles": false,
+            "oldState": "open",
+            "newState": "closed",
+            "open": false,
+            "value": "handler-result",
+            "active": "outside"
+          }
+        ]
+      }
+    }
+  ],
+  "reference": "https://html.spec.whatwg.org/multipage/interactive-elements.html#the-dialog-element",
+  "limits": "Browser observations, not a full engine parity pass. Immediate Escape snapshots include asynchronous input delivery; do not compare their timing to synchronous close/requestClose snapshots. Core cancellation, return values, beforetoggle and task coalescing remain open."
+}

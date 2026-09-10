@@ -15,10 +15,14 @@ public:
     bool update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 const LayoutContext& ctx, const FontMetrics* metrics,
                 const std::vector<std::pair<const ComputedStyle*, Invalidation>>& changes);
+    bool update_modal(BoxTree* tree, BoxId root, const Document& document,
+                      const Element& modal, StyleProvider* styles,
+                      const LayoutContext& ctx, const FontMetrics* metrics,
+                      const std::vector<std::pair<const ComputedStyle*, Invalidation>>& changes);
     const std::vector<BoxId>& replaced() const { return replaced_; }
     size_t retained_grids() const { return retained_grids_; }
     const std::vector<BoxId>& retained() const { return retained_; }
-    const std::vector<BoxId>& paint_candidates() const { return grid_roots_; }
+    const std::vector<BoxId>& paint_candidates() const { return paint_roots_; }
     const std::unordered_map<const ComputedStyle*, BoxId>& style_boxes() const { return by_style_; }
     BoxId box_of(const Element* element) const {
         const auto it = by_element_.find(element);
@@ -33,9 +37,9 @@ private:
     std::vector<std::pair<double, double>> contributions_;
     std::vector<BoxId> replaced_;
     std::vector<BoxId> retained_;
-    std::vector<bool> height_independent_;
+    std::vector<bool> height_independent_, paint_root_flags_;
     std::vector<uint64_t> input_versions_, grid_versions_;
-    std::vector<BoxId> grid_roots_;
+    std::vector<BoxId> grid_roots_, paint_roots_;
     uint64_t input_serial_ = 0;
     size_t retained_grids_ = 0;
     const std::vector<BoxId>* preserve_ = nullptr;

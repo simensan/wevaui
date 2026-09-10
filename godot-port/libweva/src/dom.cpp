@@ -2,6 +2,7 @@
 #include "weva/form_state.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 
 namespace weva {
@@ -88,6 +89,14 @@ bool Node::has_ancestor(const Node* candidate) const {
 }
 
 void Node::raise_bubbling(const DomMutation& m) {
+    // Stamp all inputs before callbacks: an observer may query validity or
+    // perform another mutation. Unique stamps survive detach/reparent and
+    // allocator address reuse without retaining nodes in the validity cache.
+    static std::atomic<uint64_t> next_mutation{0};
+    const auto stamp = next_mutation.fetch_add(1, std::memory_order_relaxed) + 1;
+    for (Node* n = this; n; n = n->parent_) n->subtree_version_ = stamp;
+    if (m.related) m.related->subtree_version_ = stamp;
+
     for (Node* n = this; n != nullptr; n = n->parent_) {
         // Copy: an observer may detach itself or mutate the tree.
         auto snapshot = n->observers_;

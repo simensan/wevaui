@@ -44,6 +44,8 @@ class WevaDocument : public godot::Control {
     GDCLASS(WevaDocument, godot::Control)
 
 public:
+    // Main thread: loads at most one shared compatibility font. True when done.
+    static bool warmup_fonts_step();
     WevaDocument();
     ~WevaDocument() override;
 
@@ -152,7 +154,17 @@ public:
     // which key cancels a dialog is a platform question.
     bool show_dialog(const godot::String& selector);
     bool show_modal_dialog(const godot::String& selector);
-    bool close_dialog(const godot::String& selector);
+    bool close_dialog(const godot::String& selector, const godot::Variant& result = godot::Variant());
+    bool request_close_dialog(const godot::String& selector, const godot::Variant& result = godot::Variant());
+    godot::String get_dialog_return_value(const godot::String& selector);
+    bool set_custom_validity(const godot::String& selector, const godot::String& message);
+    godot::String get_custom_validity(const godot::String& selector);
+    godot::Dictionary get_element_validity(const godot::String& selector);
+    bool check_validity(const godot::String& selector);
+    bool report_validity(const godot::String& selector);
+    bool run_validity(const godot::String& selector, bool report);
+    bool set_dialog_return_value(const godot::String& selector, const godot::String& value);
+    bool prevent_default();
 
     // Popovers. A `<button popovertarget="menu">` works its own with no script
     // at all, an `auto` one closes on a click outside it or on Escape -- these
@@ -219,6 +231,7 @@ public:
     godot::String get_open_select();
     godot::String get_selected_text();
     bool set_element_selection(const godot::String& selector, int start, int end);
+    bool set_element_selection_without_focus(const godot::String& selector, int start, int end);
     godot::Vector2i get_element_selection(const godot::String& selector);
 
     // Moves focus in tab order and returns the id that now has it, or "" when
@@ -238,6 +251,7 @@ public:
     // the core's built-in 5x7 face, which is what the backend comparison needs:
     // holding the font fixed is the only way a pixel difference between this
     // host and the reference rasteriser means anything.
+    bool register_font_family(const godot::String& family, const godot::Ref<godot::Font>& font);
     void set_use_engine_font(bool use);
     bool get_use_engine_font() const { return use_engine_font_; }
 
@@ -293,6 +307,8 @@ public:
     // has no animation does no work, so a static page reads zero rather than
     // some small idle number, which is the honest answer.
     double get_last_update_ms() const;
+    double get_total_core_update_ms() const;
+    int64_t get_core_update_count() const;
     // False when the engine gave us no usable face and the core's stub font is
     // still in play — worth being able to assert on, since text that renders
     // with the 5x7 stub looks like a font choice rather than a failure.
@@ -327,12 +343,23 @@ protected:
 
 private:
     // `dt` advances transitions; zero means "only if something is dirty".
-    void ensure_updated(double dt = 0, double input_dt = -1);
+    void ensure_updated(double dt = 0, double input_dt = -1, bool geometry_only = false);
 
     // Adds one published draw's triangles to a canvas item.
     void add_triangles(const godot::RID& item, const weva_draw* draws, size_t count = 1,
-                       const uint64_t* versions = nullptr);
+                       const uint64_t* versions = nullptr, bool retain = false);
+    void release_retained_batches(size_t from = 0);
+    void sync_retained_state();
+    void sync_retained_uniforms();
+    godot::RID retained_material_;
+    bool retained_parent_material_ = false;
+    std::vector<std::pair<godot::StringName, godot::Variant>> retained_uniforms_;
+    bool retained_sync_connected_ = false;
+    godot::Callable retained_sync_callback_;
+    godot::Color retained_self_modulate_{1, 1, 1, 1};
+    uint32_t retained_light_mask_ = 1;
     struct PackedBatch {
+        godot::RID retained_item, retained_texture;
         std::vector<uint64_t> versions;
         godot::PackedVector2Array points, uvs;
         godot::PackedColorArray colors;
@@ -360,11 +387,12 @@ private:
     godot::String css_;
     godot::Vector2 size_{0, 0};
     bool dirty_ = true;
+    bool paint_pending_ = false;
     double last_update_ms_ = 0;
+    double total_core_update_ms_ = 0;
+    int64_t core_update_count_ = 0;
+    uint64_t consumed_interaction_version_ = 0;
     uint64_t last_input_tick_usec_ = 0;
-    // The draw list this node has already submitted, so an update that
-    // published nothing does not force a redraw of the identical frame.
-    uint64_t drawn_serial_ = 0;
     godot::Dictionary data_;
     bool bindings_active_ = false;
     // Cache parsed paths, never data values: shared Dictionaries and Callable
@@ -396,6 +424,7 @@ private:
 
     // Drains the document's event queue into signals.
     void pump_events();
+    bool pumping_events_ = false;
     godot::String id_of(uint32_t element);
     // By HANDLE, not by selector. A row a `data-each` produced has no id, so
     // "#" + id_of(e) finds nothing and reads back an empty value.
@@ -413,6 +442,7 @@ public:
     // "why is my icon not showing", which is otherwise indistinguishable from
     // a page that simply has no icon.
     godot::PackedStringArray get_missing_assets();
+    godot::PackedStringArray get_css_diagnostics() const;
 
     // One inline declaration, leaving the rest of the element's `style` alone.
     // An empty value removes it, handing the property back to the stylesheet.
@@ -477,6 +507,11 @@ private:
     bool use_engine_font_ = true;
     godot::Ref<godot::Font> theme_font_;
     godot::Callable theme_font_changed_;
+    std::map<godot::String, godot::Ref<godot::Font>> family_fonts_;
+    std::vector<godot::Ref<godot::Font>> retired_family_fonts_;
+    godot::Callable family_font_changed_;
+    void family_font_resource_changed();
+    void disconnect_family_fonts();
     bool theme_font_dirty_ = true;
     bool font_resource_dirty_ = false;
     void font_resource_changed();

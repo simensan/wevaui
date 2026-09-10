@@ -17,12 +17,14 @@
 #include "weva/box.h"
 #include "weva/box_builder.h"
 #include "weva/cascade.h"
+#include "weva/container_query_state.h"
 #include "weva/css_rule.h"
 #include "weva/dom.h"
 #include "weva/font_metrics.h"
 #include "weva/html.h"
 #include "weva/intern.h"
 #include "weva/positioning.h"
+#include "weva/paint.h"
 #include "weva/style_resolver.h"
 #include "weva/user_agent_stylesheet.h"
 
@@ -42,7 +44,7 @@ namespace {
 
 struct ElementRect {
     int depth = 0;
-    std::string tag, id, cls;
+    std::string tag, id, cls, path;
     double x = 0, y = 0, w = 0, h = 0;
 };
 
@@ -113,6 +115,7 @@ void write_json(const std::string& out_path, const std::string& source,
         sb += "\"tag\":\"" + json_escape(b.tag) + "\",";
         sb += "\"id\":\"" + json_escape(b.id) + "\",";
         sb += "\"cls\":\"" + json_escape(b.cls) + "\",";
+        sb += "\"path\":\"" + json_escape(b.path) + "\",";
         sb += "\"x\":" + format_num(b.x) + ",";
         sb += "\"y\":" + format_num(b.y) + ",";
         sb += "\"w\":" + format_num(b.w) + ",";
@@ -310,9 +313,103 @@ void walk(const weva::BoxTree& tree, weva::BoxId id, double parent_x, double par
     }
 }
 
+// getBoundingClientRect includes transforms and unions all inline fragments.
+// The legacy reference walk intentionally does neither; keep it separately.
+void browser_walk(const weva::BoxTree& tree, weva::BoxId id,
+                  const weva::LayoutContext& ctx, const weva::Transform2D& parent,
+                  int depth, std::vector<ElementRect>* out,
+                  std::map<const weva::Element*, size_t>* seen) {
+    const auto& b = tree[id];
+    auto local = weva::Transform2D::identity();
+    if (b.style && b.kind != weva::BoxKind::Inline && b.kind != weva::BoxKind::Text &&
+        b.kind != weva::BoxKind::Line && b.kind != weva::BoxKind::AnonymousBlock &&
+        b.kind != weva::BoxKind::AnonymousInline)
+        weva::resolve_transform(b.style, ctx, b.font_size, b.width, b.height, &local);
+    const auto xf = local.multiply(weva::Transform2D::translate(b.x, b.y)).multiply(parent);
+    const bool wrapper = b.element && (b.element->tag_name() == "html" || b.element->tag_name() == "body");
+    const bool principal = b.element && !wrapper && b.kind != weva::BoxKind::Line &&
+        b.kind != weva::BoxKind::AnonymousBlock && b.kind != weva::BoxKind::AnonymousInline &&
+        b.kind != weva::BoxKind::Text;
+    if (principal) {
+        double left = 1e30, top = 1e30, right = -1e30, bottom = -1e30;
+        for (double x : {0.0, b.width}) for (double y : {0.0, b.height}) {
+            double px, py; xf.apply(x, y, &px, &py);
+            left = std::min(left, px); top = std::min(top, py);
+            right = std::max(right, px); bottom = std::max(bottom, py);
+        }
+        const auto existing = seen->find(b.element);
+        if (existing != seen->end()) {
+            auto& r = (*out)[existing->second];
+            if (b.width != 0 && b.height != 0) {
+                if (r.w == 0 || r.h == 0) {
+                    r.x = left; r.y = top; r.w = right - left; r.h = bottom - top;
+                } else {
+                    const double rr = std::max(r.x + r.w, right), bb = std::max(r.y + r.h, bottom);
+                    r.x = std::min(r.x, left); r.y = std::min(r.y, top);
+                    r.w = rr - r.x; r.h = bb - r.y;
+                }
+            }
+        } else {
+            ElementRect r;
+            r.tag = b.element->tag_name(); r.id = b.element->id(); r.cls = b.element->class_name();
+            const weva::Node* node = b.element;
+            while (node && node->is_element()) {
+                const auto* e = static_cast<const weva::Element*>(node);
+                if (e->tag_name() == "html" || e->tag_name() == "body") break;
+                int index = 0;
+                if (node->parent()) for (const auto& sibling : node->parent()->children()) {
+                    if (sibling->is_element()) ++index;
+                    if (sibling.get() == node) break;
+                }
+                const std::string part = std::string(e->tag_name()) + ":" + std::to_string(index);
+                r.path = part + (r.path.empty() ? "" : "/" + r.path);
+                node = node->parent();
+            }
+            r.depth = depth; r.x = left; r.y = top; r.w = right - left; r.h = bottom - top;
+            (*seen)[b.element] = out->size(); out->push_back(r);
+        }
+    }
+    if (b.split_inline_owner && b.height != 0) {
+        double cx, cy, cw, ch;
+        weva::promoted_inline_rect(tree, id, &cx, &cy, &cw, &ch);
+        double left = 1e30, top = 1e30, right = -1e30, bottom = -1e30;
+        for (double x : {cx, cx + cw}) for (double y : {cy, cy + ch}) {
+            double px, py; parent.apply(x, y, &px, &py);
+            left = std::min(left, px); top = std::min(top, py);
+            right = std::max(right, px); bottom = std::max(bottom, py);
+        }
+        const weva::Node* node = cw == 0 ? nullptr : (b.element ? b.element->parent() : b.pseudo_host);
+        for (; node; node = node->parent()) {
+            if (node->is_element()) {
+                const auto* element = static_cast<const weva::Element*>(node);
+                const auto found = seen->find(element);
+                if (found != seen->end() && weva::is_promoted_inline_fragment(b, element)) {
+                    auto& r = (*out)[found->second];
+                    if (r.w == 0 || r.h == 0) {
+                        r.x = left; r.y = top; r.w = right - left; r.h = bottom - top;
+                    } else {
+                        const double rr = std::max(r.x + r.w, right), bb = std::max(r.y + r.h, bottom);
+                        r.x = std::min(r.x, left); r.y = std::min(r.y, top);
+                        r.w = rr - r.x; r.h = bb - r.y;
+                    }
+                }
+            }
+            if (node == b.split_inline_owner) break;
+        }
+    }
+    const auto child_xf = weva::Transform2D::translate(-b.scroll_x, -b.scroll_y).multiply(xf);
+    for (auto child : tree.children(id))
+        browser_walk(tree, child, ctx, child_xf, wrapper ? depth : depth + 1, out, seen);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
+    bool chrome_metrics = false;
+    if (argc > 1 && std::string_view(argv[argc - 1]) == "--chrome-metrics") {
+        chrome_metrics = true;
+        --argc;
+    }
     if (argc < 4) {
         std::fprintf(stderr,
             "Usage: weva_dump <htmlPath> <width> <height> [outPath] [cssPath]\n");
@@ -364,6 +461,10 @@ int main(int argc, char** argv) {
     // same origins the C# uses — origin ordering is half of the cascade, so a
     // difference here would show up as a divergence in every rule.
     weva::CascadeEngine cascade;
+    weva::MediaContext media;
+    media.viewport_width_px = width;
+    media.viewport_height_px = height;
+    cascade.set_media_context(media);
     weva::Stylesheet ua_sheet;
     weva::CssParseError css_error;
     if (weva::parse_stylesheet(weva::user_agent_stylesheet_source(), false, &ua_sheet,
@@ -380,6 +481,8 @@ int main(int argc, char** argv) {
     }
 
     StyleMap styles{cascade};
+    weva::ContainerQueryState container_queries;
+    container_queries.attach(&cascade);
     for (const weva::Ref<weva::Node>& child : document->children()) {
         if (child->node_type() == weva::NodeType::Element) {
             styles.walk(static_cast<const weva::Element&>(*child), nullptr);
@@ -390,11 +493,26 @@ int main(int argc, char** argv) {
     // MonoFontMetrics instead, which is a different face — the dump has to
     // match the oracle, not the ABI, or every text measurement diverges for a
     // reason that has nothing to do with the engine.
-    const weva::MonoFontMetrics metrics = weva::MonoFontMetrics::chrome_sans_serif();
+    struct BrowserMetrics : weva::MonoFontMetrics {
+        bool round_extents;
+        BrowserMetrics(double advance, bool round)
+            : MonoFontMetrics(advance, 1.143, .85, .293), round_extents(round) {}
+        double leading_above(double height, double fs) const override {
+            const double half = MonoFontMetrics::leading_above(height, fs);
+            return round_extents ? std::floor(half) : half;
+        }
+        double ascent(double fs) const override {
+            return round_extents ? std::round(fs * .85) : MonoFontMetrics::ascent(fs);
+        }
+        double descent(double fs) const override {
+            return round_extents ? std::round(fs * .293) : MonoFontMetrics::descent(fs);
+        }
+    };
+    const BrowserMetrics metrics(.45, chrome_metrics);
     // BaselineGen also registers ChromeMonospace under `monospace`, so a
     // <code> run measures at 0.6em per glyph there; without the same
     // registration every code snippet on a page was 25% narrower here.
-    const weva::MonoFontMetrics monospace = weva::MonoFontMetrics::chrome_monospace();
+    const BrowserMetrics monospace(.6, chrome_metrics);
     // Images, resolved against the DOCUMENT's directory the way a browser
     // resolves them. Without this the dump cannot load one, an <img> has no
     // intrinsic size and lays out at zero -- and since the C# reference reads
@@ -411,7 +529,7 @@ int main(int argc, char** argv) {
 
     weva::BoxTree tree;
     weva::BoxBuilder builder(&tree, &styles);
-    const weva::BoxId root = builder.build_document(*document);
+    weva::BoxId root = builder.build_document(*document);
     if (root == weva::kNoBox) {
         std::fprintf(stderr, "weva_dump: no box tree\n");
         return 1;
@@ -419,9 +537,31 @@ int main(int argc, char** argv) {
     weva::BlockLayout block(&tree, ctx, &metrics);
     block.layout_root(root, ctx.viewport_width_px, ctx.viewport_height_px);
     weva::run_positioning(&tree, root, ctx, &block);
+    size_t remaining=styles.by_element.size()+1;
+    while (!cascade.container_queries().empty() &&
+           container_queries.refresh(*document,tree,root,styles,ctx)) {
+        if (!remaining--) {
+            std::fprintf(stderr,"weva_dump: container size queries did not settle\n");
+            return 1;
+        }
+        // The dump has no incremental state. Clear both normal and pseudo
+        // styles so a conditional pseudo that disappeared cannot survive.
+        tree.reset();
+        styles.owned.clear(); styles.by_element.clear(); styles.pseudo_by_element.clear();
+        for (const auto& child:document->children())
+            if (child->is_element()) styles.walk(static_cast<const weva::Element&>(*child),nullptr);
+        root=builder.build_document(*document);
+        if (root==weva::kNoBox) return 1;
+        weva::BlockLayout query_layout(&tree,ctx,&metrics);
+        query_layout.layout_root(root,ctx.viewport_width_px,ctx.viewport_height_px);
+        weva::run_positioning(&tree,root,ctx,&query_layout);
+    }
 
     std::set<const weva::Element*> seen;
-    walk(tree, root, 0, 0, 0, &boxes, &seen);
+    if (chrome_metrics) {
+        std::map<const weva::Element*, size_t> browser_seen;
+        browser_walk(tree, root, ctx, weva::Transform2D::identity(), 0, &boxes, &browser_seen);
+    } else walk(tree, root, 0, 0, 0, &boxes, &seen);
 
     // The basename, not the path: BaselineGen writes Path.GetFileName, and a
     // whole-file diff of the two dumps has to compare equal.

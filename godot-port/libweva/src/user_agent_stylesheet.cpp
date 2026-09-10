@@ -35,7 +35,7 @@ body { display: block; }
 head, head *, title, meta, link, style, script, noscript, base { display: none; }
 
 div, section, article, header, footer, nav, main, aside,
-form, ul, ol, hr, blockquote { display: block; }
+form, fieldset, ul, ol, hr, blockquote { display: block; }
 li { display: list-item; }
 
 p { display: block; margin-top: 1em; margin-bottom: 1em; }
@@ -52,7 +52,7 @@ a, span, strong, em, b, i, u, code, small, br, label { display: inline; }
 b, strong { font-weight: bold; }
 i, em     { font-style: italic; }
 u         { text-decoration: underline; }
-code      { font-family: monospace; }
+code, kbd, samp { font-family: monospace; }
 small     { font-size: 0.83em; }
 pre       { display: block; font-family: monospace; white-space: pre; margin-top: 1em; margin-bottom: 1em; }
 
@@ -63,6 +63,10 @@ ul { list-style-type: disc; }
 ol { list-style-type: decimal; }
 
 button, input, select, textarea, img { display: inline-block; }
+/* Form controls reset inherited text effects in browser UA styles. Authors
+   can opt back in with the normal cascade (including explicit inherit). */
+button, input, select, textarea { letter-spacing: normal; word-spacing: normal;
+    text-transform: none; text-indent: 0; text-shadow: none; }
 /* Native <button> rendering: Chrome lays the label out in an inline-block
    box with the contents CENTERED. We match that with `display: inline-block`
    + `text-align: center` — which centres the label HORIZONTALLY at ANY button
@@ -87,7 +91,8 @@ input, textarea, select { padding: 1px 2px; border: 1px solid #767676; }
    DROPS from the painted runs is whitespace (hung trailing spaces,
    consumed newlines), so painted runs align back to model text indices
    deterministically (Forms.TextAreaCaretMap). */
-textarea { white-space: pre-wrap; }
+textarea { white-space: pre-wrap; overflow-wrap: break-word; }
+textarea[wrap="off" i] { white-space: pre; overflow-wrap: normal; }
 /* Chrome UA: a textarea SCROLLS its content. Beyond the visual effect this
    settles its baseline — CSS 2.1 10.8.1 puts an inline-block's baseline at the
    bottom MARGIN edge once overflow is not `visible`, instead of at its last
@@ -96,7 +101,7 @@ textarea { white-space: pre-wrap; }
    it off by a line, and the two engines disagreed about which line. */
 textarea { overflow: auto; }
 
-table { display: table; border-collapse: separate; border-spacing: 2px; }
+table { display: table; box-sizing: border-box; border-collapse: separate; border-spacing: 2px; }
 thead { display: table-header-group; }
 tbody { display: table-row-group; }
 tfoot { display: table-footer-group; }
@@ -164,11 +169,13 @@ q::after  { content: close-quote; }
    among UA rules by document order, so these override the generic
    `input, textarea, select` padding/border above. */
 input { display: inline-block; box-sizing: border-box; width: 218px; height: 34px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
-input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding: 0; margin: 0 4px 0 0; }
+input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; padding: 0; margin: 3px 3px 3px 4px; }
 input[type="hidden"] { display: none; }
-input[type="radio"] { border-radius: 8px; }
+input[type="radio"] { border-radius: 8px; margin: 3px 3px 0 5px; }
 textarea { display: inline-block; box-sizing: border-box; width: 218px; height: 90px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
-select { display: inline-block; box-sizing: border-box; min-width: 218px; height: 34px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
+/* Keep the themed default size overridable through width alone, like input
+   and textarea. A UA min-width would also defeat an author's max-width. */
+select { display: inline-block; box-sizing: border-box; width: 218px; height: 34px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
 /* A closed <select> renders only the selected option's text via its own
    paint path; its <option> children are not laid out in flow. */
 option { display: block; padding: 2px 4px; font-weight: normal; white-space: nowrap; }
@@ -188,13 +195,15 @@ select[size] option:checked, select[multiple] option:checked {
 select[size] optgroup, select[multiple] optgroup { display: block; }
 dialog { display: none; position: fixed; padding: 16px; border: 1px solid #ccc; border-radius: 8px; background: white; }
 dialog[open] { display: block; }
-[popover] { display: none; position: fixed; padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: white; }
-[popover][data-popover-open] { display: block; }
+[popover] { display: none; position: fixed; inset: 0; margin: auto; width: fit-content; height: fit-content; padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: white; }
+[popover]:popover-open { display: block; }
 ::backdrop { position: fixed; top: 0; right: 0; bottom: 0; left: 0; display: block; box-sizing: border-box; background: rgba(0, 0, 0, 0.5); pointer-events: none; }
 :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 :disabled { opacity: 0.5; cursor: not-allowed; }
-/* range slider: the track footprint; paint adds the fill and the thumb. */
-input[type="range"] { width: 200px; height: 18px; padding: 0; border: 1px solid #ccc; border-radius: 9px; background: #e5e7eb; cursor: pointer; }
+/* The element is the slider's interaction area. Its native rail and thumb are
+   painted inside it; a UA background must not become a second, full-height rail.
+   Author backgrounds and borders still use the ordinary box paint path. */
+input[type="range"] { margin: 2px; width: 200px; height: 18px; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: pointer; }
 .ui-tooltip { padding: 4px 8px; border-radius: 4px; background: rgba(15, 23, 42, 0.95); color: #f8fafc; font-size: 12px; line-height: 1.3; max-width: 240px; pointer-events: none; }
 .ui-menu { display: flex; flex-direction: column; min-width: 160px; padding: 4px 0; border: 1px solid #d1d5db; border-radius: 6px; background: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); font-size: 13px; }
 .ui-menu-item { display: flex; align-items: center; padding: 6px 12px; cursor: pointer; gap: 8px; }

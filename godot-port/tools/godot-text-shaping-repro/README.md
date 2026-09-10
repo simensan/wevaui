@@ -53,6 +53,27 @@ godot --headless --path godot-port/tools/godot-text-shaping-repro \
 
 ## Cause and patch
 
+### Exported games
+
+`check_exports.py` tests the editor's actual debug and release exports, including
+templates compiled with path overrides disabled:
+
+```sh
+python3 godot-port/tools/godot-text-shaping-repro/check_exports.py \
+  --godot /path/to/editor --debug-template /path/to/debug-template \
+  --release-template /path/to/release-template --logs /new/export-results
+```
+
+Both custom template arguments are optional together; omitting them tests the
+installed templates. The fixture embeds ICU support data, checks that it loaded,
+hides the source project and relocates the games before launch. Every build mode
+must report its correct debug/release identity and pass every case. The runtime
+probe preserves the standalone assertions while adapting the entry point to a
+scene. Logs, process exits, executable/pack hashes and selected template hashes
+are retained. `godot-port/check.sh` runs this gate independently of editor checks.
+
+### Engine change
+
 In `modules/text_server_adv/script_iterator.cpp`, the first heap allocations
 for the emoji and parentheses stacks omit their existing stack entries. The
 emoji buffer is freed at the end of each script run without resetting the

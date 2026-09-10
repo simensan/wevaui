@@ -1,9 +1,10 @@
 # Godot release verification
 
 The addon is a development preview. Stock Godot 4.7.2 still corrupts long emoji
-runs and crashes on mixed-script inputs. The repository contains a candidate
-engine patch, but no supported editor/export-template distribution containing
-that patch. A passing addon build or export cannot clear this blocker. See
+runs and crashes on mixed-script inputs. A local patched Windows editor/template
+bundle now passes the crash reproductions in actual exports with ICU embedded.
+Use the matching editor and both templates; a passing addon build alone cannot
+establish engine text safety. See
 [text shaping](GODOT_TEXT_SHAPING.md) and the full
 [product requirements](PRODUCT_READINESS.md).
 
@@ -51,9 +52,37 @@ WEVA_EXPORT_RENDER=1 WEVA_PACKAGE_VERSION=0.1.0-preview.59 \
 ```
 
 `check.sh` currently orchestrates Linux builds. A Windows package needs its own
-core/sanitizer checks and `check_export.py --native --render --keep` run. Use
+core/sanitizer checks, exported Unicode gate below, and
+`check_export.py --native --render --keep` run. Use
 the actual packaged DLL; a Linux pass does not verify it. The
 [desktop export guide](DESKTOP_EXPORTS.md) describes the fixtures and limits.
+
+For custom engines, set `WEVA_GODOT_DEBUG_TEMPLATE` and
+`WEVA_GODOT_RELEASE_TEMPLATE` together. `check.sh` passes the same paths to the
+exported Unicode and addon export gates. With neither variable set, both use
+the editor's installed templates, which must still pass the actual tests.
+
+On Windows or Linux, run the Unicode export gate directly with:
+
+```sh
+python godot-port/tools/godot-text-shaping-repro/check_exports.py \
+  --godot /path/to/editor --debug-template /path/to/debug-template \
+  --release-template /path/to/release-template --logs /new/artifact/directory
+```
+
+It exports both modes with ICU embedded, hides the source project, relocates
+the games, verifies their build modes and runs all six cases separately. No
+external ICU file or template path override is used at runtime. A patched
+editor with stock templates fails this gate. The same explicit template flags
+are supported by `check_export.py` and `check_frontier_camp.py`.
+
+Performance re-exports also need the matching template. Pass
+`run_frontier_perf.py --godot /path/to/editor --release-template /path/to/release-template`
+with the chosen output and timing profile. The runner records the template hash
+and restores project presets after export. An editor hash alone does not identify
+the engine in an exported game. The explicit-template desktop and 1080p 3D
+qualification is recorded in [the current receipt](verification/template184.json),
+alongside the retained default-template Unicode lifecycle failure.
 
 Release mode rejects skipped checks, any layout-oracle findings and missing
 native export pixel checks. Core verification uses CTest's full target list,

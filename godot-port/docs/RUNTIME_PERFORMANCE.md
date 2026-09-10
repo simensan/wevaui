@@ -1,5 +1,89 @@
 # In-game UI performance
 
+A five-minute lifecycle follow-up passes 200 recreations and 161,306 Unicode
+soak frames. Private-memory medians settle near 862.11 MB in the last two
+minutes; node/object counts stay constant. Prepared reuse CPU p95 is 0.404 ms,
+but reuse through draw p95 is 11.341 ms and cold construction CPU is 83.260 ms.
+This is a memory/lifecycle observation, not a new timing-budget pass.
+[Follow-up evidence](verification/lifecycle185.json).
+
+The installed addon has now been measured with an explicitly selected and hashed
+patched Godot release template. The normal desktop profile passes all 72 timing
+checks across three OpenGL and three Vulkan runs. API p95 ranges: vitals at 10Hz
+0.276–0.707 ms, inventory sorting 0.737–1.216 ms, settings toggles 1.391–1.808 ms,
+typing 0.391–0.830 ms, hover 0.202–0.444 ms. The automatic 1080p deterministic
+3D profile passes all 276 timing checks. These runs do not prove a causal speedup.
+
+The same installed addon passes 200 UI recreations and a 120-second Unicode soak
+(127,069 frames, 21,619 name updates) on the explicit patched runtime. Cold first
+construction costs 70.620 ms CPU; hidden preparation costs 19.044 ms. Prepared
+reuse with hidden data updates costs 0.658 ms CPU p95 and 1.580 ms through draw
+p95. Prepared/cold screenshots match. Private process memory rises from 852.72 MB
+at soak start to 861.59 MB at the last soak marker and ends at 859.48 MB after
+teardown; this is not proof of long-term memory stability.
+
+The earlier performance exporter selected a cached/default template despite
+using the patched editor. Its manual and 3D measurements apply to that recorded
+executable, not to the intended patched runtime. Its Unicode lifecycle run
+crashed with Windows heap corruption (0xC0000374); the cause remains unproven.
+The exporter now accepts `--release-template`, records its SHA256 and restores
+export presets even on failure. Both renderer smoke exports and 23 harness
+tests pass. Stock-engine compatibility, 4K requalification, longer memory runs
+and other hardware remain open.
+[Explicit-template qualification](verification/template184.json).
+
+## Previous installed build measurements
+
+Previous automatic 1080p 3D measurement: all six functional runs pass, but only
+275/276 timing gates pass. OpenGL run 3's clock-update whole-frame p95 is
+36.268 ms against 16.667 ms. That workload's maximum core update time is
+0.967 ms; the cause of the remaining interval is not established. There are
+only ten changed clock samples, so this p95 equals the worst changed interval.
+The failed gate is retained. All UI API and core timing limits pass. Current
+4K remains unmeasured. Full results are in the class157 verification record.
+
+
+The installed long class-binding fix passes all 72 desktop timing checks in six
+runs (three OpenGL, three Vulkan), 600 measured frames after 120 warmups at 720p.
+API p95 ranges: HUD 0.373–0.501 ms, inventory sorting 0.966–1.119 ms, typing
+0.439–0.559 ms, toggles 1.429–1.949 ms, redundant signals 0.163–0.202 ms and
+hover 0.210–0.334 ms. Typing makes zero audio-setting updates in all six runs.
+These current desktop results do not establish a causal speedup or qualify
+other hardware. The automatic 1080p result above supersedes the earlier pending status.
+
+The following results describe the preceding build.
+
+The previous core build (checkpoint155) passed all 72 regular desktop timing
+checks. In its original 1080p automatic 3D profile, all functional checks and
+275/276 timing checks passed; one typing run reached 1.207 ms against a 1 ms limit.
+After correcting unrelated audio updates in the sample's name handler, six focused
+typing runs passed all 24 unchanged typing limits. That focused follow-up is not
+a repeated full 3D profile. 4K has not been repeated on this core build.
+[Results, including the original failure](verification/binding155.json).
+
+Regular manual/static 720p elapsed API p95 ranges across all six runs, before the
+sample audio correction:
+
+- Vitals: 0.446–0.450 ms.
+- Inventory sorting: 0.917–1.390 ms.
+- Typing: 0.399–0.791 ms.
+- Settings toggles: 1.278–2.500 ms.
+- Redundant signals: 0.174–0.211 ms.
+- Hover: 0.303–0.313 ms.
+
+After the audio correction, automatic 1080p 3D typing measured 0.359–0.762 ms
+API p95, with zero audio-setting updates during each run. Every run uses 600
+measured frames after 120 warmups on the Ryzen 7 9800X3D / RTX 5080 desktop.
+API/core intervals overlap; whole-frame intervals include scene and scheduling.
+These unpaired runs do not establish a causal speedup or certify other hardware.
+
+The C++ allocation gate proves a separate improvement: unchanged long HUD text
+and attributes drop from 5,000 to zero allocations over 1,000 refreshes. All
+3,000 resolver calls still occur; no resolved values are retained between refreshes.
+Large resolver results, repeat bookkeeping and host conversions can still allocate.
+Reproduce with the `weva_binding_allocations` CTest target. Measurements below are
+historical.
+
 `hosts/godot/project/game_ui_bench.gd` exercises the public Godot API with
 ordinary game UI. It uses native fonts, a 1280x720 document, 120 warmup frames,
 600 measured frames and a deterministic 1/60 simulation step by default.
@@ -70,16 +154,24 @@ has separate measurements in [PERFORMANCE.md](PERFORMANCE.md).
 
 ## Western survival sample: direct text updates
 
-The newer standalone [Frontier Camp performance report](../examples/frontier_camp/PERFORMANCE.md)
+The [Frontier Camp performance report](../examples/frontier_camp/PERFORMANCE.md)
 measures the actual game's bindings and native input in Windows release exports.
-Runtime64 fixes the full-rebuild binding path and broad caret repainting. In
-three paired release runs per renderer, continuous bound meter updates fall
-from about 1.45 ms to 0.33–0.44 ms p95. At 10 Hz, changing-frame p95 is
-0.52–0.58 ms; idle ticks remain 0.006–0.007 ms. All 84 before/after screenshots
-are identical. Inventory reordering and dialog transitions still cost about
-2–3 ms, and the low-frequency clock has larger tails in the short sample.
-See that report for the full measurements and limits; these are separate
-workloads from the older HUD measurements below.
+Runtime65 retains keyed rows when sorting and avoids repeated Windows IME
+activation on typing. Three matched pairs per renderer measure sorting at
+0.84–0.97 ms p95 and typing at 0.48–0.56 ms, about half their runtime64 costs.
+Continuous bound meter updates remain 0.35–0.49 ms p95 on this desktop.
+Runtime66 subsequently adds retained modal layout: a new matched control
+measures settings p95 at 2.380→1.483 ms on OpenGL and 1.936→1.477 ms on Vulkan.
+All 84 screenshots match; shared/unsupported layout dependencies still rebuild.
+See the [modal report](../examples/frontier_camp/MODAL_PERFORMANCE.md), including
+the non-modal follow-up.
+
+The [load and lifecycle report](../examples/frontier_camp/LOAD_AND_LIFECYCLE.md)
+adds animated 3D load at 1080p/4K, normal automatic scheduling, cold construction,
+hidden preparation/reuse and OS process-memory sampling in release exports.
+It records what was actually exercised; lower-end hardware and a target game's
+full performance budget remain unverified. These are separate workloads from
+the older HUD measurements below.
 
 The [Dust & Iron sample](../hosts/godot/project/samples/western_survival/README.md)
 adds a larger authored HUD with a retained, initially hidden 24-slot inventory.
@@ -196,3 +288,29 @@ exactly, and the installed sample passes 56 checks in both Compatibility and
 Forward Mobile. The installed DLL SHA-256 is
 `7465354b775542d256fbfc20a0780bdafb6d982ab34f46ed02c0be77a5dd384c`.
 Local receipts and captures are under `.utmp/runtime62/`.
+
+## Preview131 candidate validity styling
+
+The new validity-selector diagnostic covers 12/48 fields with stable and changed
+validity. Caching by DOM mutation version reduces 48-field direct color-change
+API p95 from 4.956–5.703 ms (two uncached runs) to 0.608–0.626 ms (six cached runs).
+Parent highlighting is 0.913–1.245 ms; direct/parent width changes are
+1.290–1.457 ms. These measurements exclude input setup, assertions, drawing and GPU.
+
+The ordinary six-run survival profile is **not passing**: 71/72 checks pass and
+one Vulkan redundant-notification row is 0.301 ms versus the unchanged 0.300 ms
+limit. Binding refresh accounts for 0.281 ms p95 in that row; core update is
+0.0005 ms p95. Preview130 remains installed while that path is investigated.
+[Evidence](verification/validity-selectors131.json).
+
+## Installed preview132 binding follow-up
+
+The unchanged six-run ordinary UI budget now passes **72/72** checks after actual
+binding changes. Redundant notification API p95 is **0.091–0.280 ms**, under the
+unchanged 0.300 ms limit. The earlier preview131 failure remains preserved above;
+preview132 is installed in both projects with preview130 backed up.
+
+Short control reads avoid temporary heap buffers. Normalized model updates compare
+form-state versions, avoiding false changes/redraws while preserving validity and
+composition changes. The focused unchanged-class allocation gate falls from
+2,000 allocations per 1,000 refreshes to zero. [Evidence](verification/bindings132.json).

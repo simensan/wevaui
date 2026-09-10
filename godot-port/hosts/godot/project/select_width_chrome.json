@@ -1,0 +1,46 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "scope": "Authored select widths and constraints; does not establish native default appearance or intrinsic width parity.",
+  "rows": [
+    {
+      "multiple": false,
+      "css": "width:90px",
+      "width": 90
+    },
+    {
+      "multiple": false,
+      "css": "width:50%",
+      "width": 160
+    },
+    {
+      "multiple": false,
+      "css": "width:90px;min-width:110px",
+      "width": 110
+    },
+    {
+      "multiple": false,
+      "css": "width:90px;max-width:75px",
+      "width": 75
+    },
+    {
+      "multiple": true,
+      "css": "width:90px",
+      "width": 90
+    },
+    {
+      "multiple": true,
+      "css": "width:50%",
+      "width": 160
+    },
+    {
+      "multiple": true,
+      "css": "width:90px;min-width:110px",
+      "width": 110
+    },
+    {
+      "multiple": true,
+      "css": "width:90px;max-width:75px",
+      "width": 75
+    }
+  ]
+}

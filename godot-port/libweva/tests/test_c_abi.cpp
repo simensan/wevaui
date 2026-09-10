@@ -104,7 +104,211 @@ void test_abi_load_and_update() {
     weva_document_destroy(d);
 }
 
+void test_abi_field_selection_memory() {
+    auto config = default_config();
+    auto d = weva_document_create(&config);
+    CHECK(load(d,"<input id=a value=abcdef><input id=b value=second><button id=c>Apply</button>") == WEVA_OK);
+    CHECK(weva_document_update(d,0) == WEVA_OK);
+    const auto a=weva_document_query(d,"#a"), b=weva_document_query(d,"#b"), c=weva_document_query(d,"#c");
+    const auto selection = [&](weva_element_t e,int anchor,int caret) {
+        int start=-1,end=-1;
+        CHECK(weva_element_selection(d,e,&start,&end) == WEVA_OK);
+        CHECK(start == anchor && end == caret);
+    };
+    CHECK(weva_document_set_focus(d,a) == WEVA_OK);
+    selection(a,0,0);
+    CHECK(weva_element_set_value(d,b,"replacement") == WEVA_OK);
+    selection(b,11,11);
+    CHECK(weva_element_set_selection(d,a,4,1) == WEVA_OK);
+    CHECK(weva_document_set_focus(d,b) == WEVA_OK);
+    selection(a,4,1);
+    CHECK(weva_document_set_focus(d,a) == WEVA_OK);
+    selection(a,4,1);
+    CHECK(weva_document_set_focus(d,c) == WEVA_OK);
+    selection(a,4,1);
+    CHECK(weva_document_set_focus(d,a) == WEVA_OK);
+    selection(a,4,1);
+    CHECK(weva_document_set_focus(d,b) == WEVA_OK);
+    CHECK(weva_element_set_value(d,a,"xy") == WEVA_OK);
+    selection(a,2,2);
+    CHECK(weva_document_set_focus(d,a) == WEVA_OK);
+    selection(a,2,2);
+    CHECK(weva_element_set_selection(d,a,0,1) == WEVA_OK);
+    CHECK(weva_document_set_focus(d,b) == WEVA_OK);
+    CHECK(weva_element_set_value(d,a,"xy") == WEVA_OK);
+    selection(a,0,1); // No-op value assignments preserve selection.
+    CHECK(weva_element_set_selection_without_focus(d,a,2,0) == WEVA_OK);
+    CHECK(weva_document_focus(d) == b);
+    selection(a,2,0);
+    CHECK(weva_document_set_focus(d,a) == WEVA_OK);
+    selection(a,2,0);
+    CHECK(weva_document_set_focus(d,b) == WEVA_OK);
+    CHECK(weva_element_set_attribute(d,a,"disabled","") == WEVA_OK);
+    CHECK(weva_element_set_selection_without_focus(d,a,-20,200) == WEVA_OK);
+    CHECK(weva_document_focus(d) == b);
+    selection(a,0,2);
+    CHECK(weva_element_set_selection_without_focus(d,c,0,1) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(load(d,"<input id=a value=abcdef>") == WEVA_OK);
+    selection(weva_document_query(d,"#a"),0,0);
+    CHECK(load(d,"<button id=start>Start</button><input id=a value=abcdef><textarea id=t>abcdef</textarea>") == WEVA_OK);
+    CHECK(weva_document_update(d,0) == WEVA_OK);
+    CHECK(weva_document_set_focus(d,weva_document_query(d,"#start")) == WEVA_OK);
+    CHECK(weva_document_focus_next(d,0) == weva_document_query(d,"#a"));
+    selection(weva_document_query(d,"#a"),0,6);
+    CHECK(weva_document_focus_next(d,0) == weva_document_query(d,"#t"));
+    selection(weva_document_query(d,"#t"),0,0);
+    weva_document_destroy(d);
+}
+
+void test_abi_selection_default_lifecycle() {
+    // Chrome 152: text inputs and textareas, pristine/dirty, focused/blurred.
+    struct Case { bool textarea, dirty, focused; const char* action; const char* value; int anchor, caret; const char* replacement = nullptr; };
+    const Case cases[] = {
+        {false, false, false, "reset", "abcdef", 4, 1},
+        {false, false, false, "default", "new default", 4, 1},
+        {false, false, false, "same-default", "abcdef", 4, 1},
+        {false, false, false, "attribute", "new attribute", 4, 1},
+        {false, false, true, "reset", "abcdef", 4, 1},
+        {false, false, true, "default", "new default", 0, 0},
+        {false, false, true, "same-default", "abcdef", 4, 1},
+        {false, false, true, "attribute", "new attribute", 0, 0},
+        {false, true, false, "reset", "abcdef", 6, 6},
+        {false, true, false, "default", "edited", 4, 1},
+        {false, true, false, "same-default", "edited", 4, 1},
+        {false, true, false, "attribute", "edited", 4, 1},
+        {false, true, true, "reset", "abcdef", 6, 6},
+        {false, true, true, "default", "edited", 4, 1},
+        {false, true, true, "same-default", "edited", 4, 1},
+        {false, true, true, "attribute", "edited", 4, 1},
+        {true, false, false, "reset", "abcdef", 4, 1},
+        {true, false, false, "default", "new default", 0, 0},
+        {true, false, false, "same-default", "abcdef", 0, 0},
+        {true, false, false, "attribute", "abcdef", 4, 1},
+        {true, false, true, "reset", "abcdef", 4, 1},
+        {true, false, true, "default", "new default", 0, 0},
+        {true, false, true, "same-default", "abcdef", 0, 0},
+        {true, false, true, "attribute", "abcdef", 4, 1},
+        {true, true, false, "reset", "abcdef", 6, 6},
+        {true, true, false, "default", "edited", 4, 1},
+        {true, true, false, "same-default", "edited", 4, 1},
+        {true, true, false, "attribute", "edited", 4, 1},
+        {true, true, true, "reset", "abcdef", 6, 6},
+        {true, true, true, "default", "edited", 4, 1},
+        {true, true, true, "same-default", "edited", 4, 1},
+        {true, true, true, "attribute", "edited", 4, 1},
+        {false, false, false, "default", "x", 4, 1, "x"},
+        {false, false, false, "attribute", "x", 4, 1, "x"},
+        {false, false, true, "default", "x", 0, 0, "x"},
+        {false, false, true, "attribute", "x", 0, 0, "x"},
+        {false, true, false, "default", "edited", 4, 1, "x"},
+        {false, true, false, "attribute", "edited", 4, 1, "x"},
+        {false, true, true, "default", "edited", 4, 1, "x"},
+        {false, true, true, "attribute", "edited", 4, 1, "x"},
+        {true, false, false, "default", "x", 0, 0, "x"},
+        {true, false, false, "attribute", "abcdef", 4, 1, "x"},
+        {true, false, true, "default", "x", 0, 0, "x"},
+        {true, false, true, "attribute", "abcdef", 4, 1, "x"},
+        {true, true, false, "default", "edited", 4, 1, "x"},
+        {true, true, false, "attribute", "edited", 4, 1, "x"},
+        {true, true, true, "default", "edited", 4, 1, "x"},
+        {true, true, true, "attribute", "edited", 4, 1, "x"},
+        {false, false, false, "default", "", 4, 1, ""},
+        {false, false, false, "attribute", "", 4, 1, ""},
+        {false, false, true, "default", "", 0, 0, ""},
+        {false, false, true, "attribute", "", 0, 0, ""},
+        {false, true, false, "default", "edited", 4, 1, ""},
+        {false, true, false, "attribute", "edited", 4, 1, ""},
+        {false, true, true, "default", "edited", 4, 1, ""},
+        {false, true, true, "attribute", "edited", 4, 1, ""},
+        {true, false, false, "default", "", 0, 0, ""},
+        {true, false, false, "attribute", "abcdef", 4, 1, ""},
+        {true, false, true, "default", "", 0, 0, ""},
+        {true, false, true, "attribute", "abcdef", 4, 1, ""},
+        {true, true, false, "default", "edited", 4, 1, ""},
+        {true, true, false, "attribute", "edited", 4, 1, ""},
+        {true, true, true, "default", "edited", 4, 1, ""},
+        {true, true, true, "attribute", "edited", 4, 1, ""},
+        {false, false, false, "default", "abcdef", 4, 1, "abcdef\n"},
+        {false, false, false, "attribute", "abcdef", 4, 1, "abcdef\n"},
+        {false, false, true, "default", "abcdef", 4, 1, "abcdef\n"},
+        {false, false, true, "attribute", "abcdef", 4, 1, "abcdef\n"},
+        {false, true, false, "default", "edited", 4, 1, "abcdef\n"},
+        {false, true, false, "attribute", "edited", 4, 1, "abcdef\n"},
+        {false, true, true, "default", "edited", 4, 1, "abcdef\n"},
+        {false, true, true, "attribute", "edited", 4, 1, "abcdef\n"},
+        {true, false, false, "default", "abcdef\n", 0, 0, "abcdef\n"},
+        {true, false, false, "attribute", "abcdef", 4, 1, "abcdef\n"},
+        {true, false, true, "default", "abcdef\n", 0, 0, "abcdef\n"},
+        {true, false, true, "attribute", "abcdef", 4, 1, "abcdef\n"},
+        {true, true, false, "default", "edited", 4, 1, "abcdef\n"},
+        {true, true, false, "attribute", "edited", 4, 1, "abcdef\n"},
+        {true, true, true, "default", "edited", 4, 1, "abcdef\n"},
+        {true, true, true, "attribute", "edited", 4, 1, "abcdef\n"},
+    };
+    for (const auto& c : cases) {
+        auto config = default_config();
+        auto d = weva_document_create(&config);
+        CHECK(load(d, c.textarea ? "<form id=f><textarea id=a>abcdef</textarea><button id=b type=button>Apply</button></form>"
+                                : "<form id=f><input id=a value=abcdef><button id=b type=button>Apply</button></form>") == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        const auto a = weva_document_query(d, "#a"), b = weva_document_query(d, "#b");
+        if (c.dirty) CHECK(weva_element_set_value(d, a, "edited") == WEVA_OK);
+        CHECK(weva_element_set_selection(d, a, 4, 1) == WEVA_OK);
+        if (!c.focused) CHECK(weva_document_set_focus(d, b) == WEVA_OK);
+        if (std::strcmp(c.action, "reset") == 0) {
+            CHECK(weva_document_reset_form(d, weva_document_query(d, "#f")) == WEVA_OK);
+        } else if (std::strcmp(c.action, "attribute") == 0) {
+            CHECK(weva_element_set_attribute(d, a, "value", c.replacement ? c.replacement : "new attribute") == WEVA_OK);
+        } else {
+            const char* value = std::strcmp(c.action, "same-default") == 0 ? "abcdef" : (c.replacement ? c.replacement : "new default");
+            if (c.textarea) CHECK(weva_element_set_text(d, a, value) == WEVA_OK);
+            else CHECK(weva_element_set_attribute(d, a, "value", value) == WEVA_OK);
+        }
+        char value[128]{};
+        weva_element_value(d, a, value, sizeof(value));
+        int anchor = -1, caret = -1;
+        CHECK(weva_element_selection(d, a, &anchor, &caret) == WEVA_OK);
+        if (std::strcmp(value, c.value) != 0 || anchor != c.anchor || caret != c.caret)
+            std::fprintf(stderr, "selection lifecycle textarea=%d dirty=%d focused=%d action=%s value=%s selection=%d,%d expected=%d,%d\n", c.textarea,c.dirty,c.focused,c.action,value,anchor,caret,c.anchor,c.caret);
+        CHECK(std::strcmp(value, c.value) == 0);
+        CHECK(anchor == c.anchor && caret == c.caret);
+        CHECK(weva_document_focus(d) == (c.focused ? a : b));
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        CHECK(weva_element_selection(d, a, &anchor, &caret) == WEVA_OK);
+        CHECK(anchor == c.anchor && caret == c.caret);
+        weva_document_destroy(d);
+    }
+}
+
 void test_abi_stylesheet_replacement() {
+    {
+        const auto config = default_config();
+        auto document = weva_document_create(&config);
+        const char* css = "@font-face {font-family:Camp;src:url(camp.ttf)}"
+                          "@font-face {font-family:Other;src:url(other.ttf)}"
+                          "@media (min-width: 4000px) {@future {div{color:red}}}"
+                          "@keyframes fade {from{opacity:0}to{opacity:1}}";
+        CHECK(weva_document_set_css(document, css, std::strlen(css)) == WEVA_OK);
+        const std::string expected = "Ignored @font-face: unsupported stylesheet rule.";
+        CHECK(weva_document_css_diagnostics(document, nullptr, 0) == expected.size());
+        std::vector<char> text(expected.size() + 1);
+        CHECK(weva_document_css_diagnostics(document, text.data(), text.size()) == expected.size());
+        CHECK(std::string(text.data()) == expected);
+        char small[4] = {'x','x','x','x'};
+        CHECK(weva_document_css_diagnostics(document, small, sizeof(small)) == expected.size());
+        CHECK(std::string(small) == "Ign");
+        CHECK(weva_document_css_diagnostics(nullptr, small, sizeof(small)) == 0);
+        CHECK(small[0] == '\0');
+        weva_document_set_viewport(document, 4096, 720);
+        const size_t expanded = weva_document_css_diagnostics(document, nullptr, 0);
+        text.resize(expanded + 1);
+        weva_document_css_diagnostics(document, text.data(), text.size());
+        CHECK(std::string(text.data()) == expected + "\nIgnored @future: unsupported stylesheet rule.");
+        CHECK(weva_document_set_css(document, nullptr, 0) == WEVA_OK);
+        CHECK(weva_document_css_diagnostics(document, small, sizeof(small)) == 0);
+        CHECK(small[0] == '\0');
+        weva_document_destroy(document);
+    }
     const auto cfg = default_config();
     auto d = weva_document_create(&cfg);
     const auto set_css = [&](const char* css) {
@@ -276,6 +480,19 @@ void test_abi_viewport_and_restyle() {
     CHECK(weva_document_update(d, 0) == WEVA_OK);
     CHECK(weva_element_bounds(d, weva_document_query(d, "#a"), &x, &y, &w, &h) == WEVA_OK);
     CHECK(near(w, 200));
+
+    CHECK(add_css(d, "@media(max-width:250px){#a{width:73px}}"
+                     "@media(orientation:portrait){#a{height:27px}}") == WEVA_OK);
+    for (int pass = 0; pass < 3; ++pass) {
+        weva_document_set_viewport(d, 200, 300);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        CHECK(weva_element_bounds(d, weva_document_query(d, "#a"), &x, &y, &w, &h) == WEVA_OK);
+        CHECK(near(w, 73) && near(h, 27));
+        weva_document_set_viewport(d, 400, 100);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        CHECK(weva_element_bounds(d, weva_document_query(d, "#a"), &x, &y, &w, &h) == WEVA_OK);
+        CHECK(near(w, 200) && near(h, 10));
+    }
 
     weva_document_destroy(d);
 }
@@ -693,6 +910,109 @@ void test_abi_positioned_font_shaping() {
     weva_document_destroy(d);
 }
 
+void test_abi_shape_cache_retains_hot_labels() {
+    struct State { int hot_calls = 0; int calls = 0; } state;
+    weva_config cfg = default_config(400, 150);
+    auto d = weva_document_create(&cfg);
+    weva_font_backend fb{};
+    fb.user_data = &state;
+    fb.shape = [](void* user, uint64_t, const char* text, size_t len, double px,
+                  uint32_t* glyphs, double* advances, uint32_t* clusters, size_t capacity) -> size_t {
+        ++static_cast<State*>(user)->calls;
+        if (std::string_view(text, len) == "HUD") ++static_cast<State*>(user)->hot_calls;
+        for (size_t i = 0; glyphs && i < std::min(len, capacity); ++i) {
+            glyphs[i] = static_cast<unsigned char>(text[i]);
+            advances[i] = px;
+            clusters[i] = static_cast<uint32_t>(i);
+        }
+        return len;
+    };
+    weva_document_set_font_backend(d, &fb, 7);
+    CHECK(load(d, "<span id=a>HUD</span>") == WEVA_OK);
+    CHECK(add_css(d, "#a{display:inline-block;font-size:16px}") == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    const auto a = weva_document_query(d, "#a");
+    const int warm_calls = state.hot_calls;
+    CHECK(warm_calls > 0);
+    for (int i = 0; i < 4500; ++i) {
+        const auto label = "Label" + std::to_string(i);
+        CHECK(weva_element_set_text(d, a, label.c_str()) == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        CHECK(weva_element_set_text(d, a, "HUD") == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+    }
+    CHECK(state.hot_calls == warm_calls);
+    double width = 0;
+    CHECK(weva_element_bounds(d, a, nullptr, nullptr, &width, nullptr) == WEVA_OK);
+    CHECK(near(width, 48));
+    const int calls = state.calls;
+    CHECK(weva_element_set_text(d, a, "Label4499") == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(state.calls == calls); // The most recent changing label remains hot too.
+    CHECK(weva_element_set_text(d, a, "Label0") == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(state.calls > calls); // Cold runs are actually evicted; storage is bounded.
+    CHECK(weva_element_bounds(d, a, nullptr, nullptr, &width, nullptr) == WEVA_OK);
+    CHECK(near(width, 96));
+    weva_document_destroy(d);
+}
+
+void test_abi_shape_cache_bounds_long_labels() {
+    struct State { int hot_calls = 0; int calls = 0; } state;
+    auto d = weva_document_create(nullptr);
+    weva_font_backend fb{};
+    fb.user_data = &state;
+    fb.shape = [](void* user, uint64_t, const char* text, size_t len, double,
+                  uint32_t* glyphs, double* advances, uint32_t* clusters, size_t capacity) -> size_t {
+        auto& s = *static_cast<State*>(user);
+        ++s.calls;
+        if (std::string_view(text, len) == "HUD") ++s.hot_calls;
+        const bool oversized = std::string_view(text, len) == "oversized";
+        const size_t count = oversized ? 120000 : len;
+        for (size_t i = 0; glyphs && i < std::min(count, capacity); ++i) {
+            glyphs[i] = static_cast<unsigned char>(text[oversized ? 0 : i]);
+            advances[i] = 1;
+            clusters[i] = oversized ? 0 : static_cast<uint32_t>(i);
+        }
+        return count;
+    };
+    weva_document_set_font_backend(d, &fb, 7);
+    CHECK(load(d, "<span id=a>HUD</span>") == WEVA_OK);
+    CHECK(add_css(d, "#a{display:inline-block;white-space:nowrap}") == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    const auto a = weva_document_query(d, "#a");
+    const auto set = [&](const std::string& label) {
+        CHECK(weva_element_set_text(d, a, label.c_str()) == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+    };
+    const int warm = state.hot_calls;
+    // Far fewer than 4096 entries, but over 4 MiB of shaped payload. The
+    // changing labels must evict cold data without displacing a hot HUD label.
+    for (int i = 0; i < 100; ++i) {
+        set(std::string(2048, 'x') + std::to_string(i));
+        set("HUD");
+    }
+    CHECK(state.hot_calls == warm);
+    int before = state.calls;
+    set(std::string(2048, 'x') + "99");
+    CHECK(state.calls == before);
+    before = state.calls;
+    set(std::string(2048, 'x') + "0");
+    CHECK(state.calls > before);
+    double width = 0;
+    CHECK(weva_element_bounds(d, a, nullptr, nullptr, &width, nullptr) == WEVA_OK);
+    CHECK(near(width, 2049)); // Eviction does not alter the shaped result.
+    set("oversized");
+    CHECK(weva_element_bounds(d, a, nullptr, nullptr, &width, nullptr) == WEVA_OK);
+    CHECK(near(width, 120000));
+    set("HUD");
+    CHECK(state.hot_calls == warm); // A huge result cannot evict the working set.
+    before = state.calls;
+    set("oversized");
+    CHECK(state.calls > before); // Oversized results are shaped but not retained.
+    weva_document_destroy(d);
+}
+
 void test_abi_content_size() {
     // The viewport is the floor: a page that fits reports the box it was laid
     // out in, so a host asking "is there anything to scroll to" gets no.
@@ -1083,5 +1403,74 @@ void test_abi_text_decoration_shorthand_paints() {
     // And with no colour in the shorthand the rule is NOT red: it takes the
     // text's colour, so the red filter finds nothing.
     CHECK(red_rules("underline dotted").empty());
+    weva_document_destroy(d);
+}
+
+void test_abi_registered_font_families() {
+    auto cfg = default_config(800, 200);
+    auto d = weva_document_create(&cfg);
+    HostFontState state;
+    weva_font_backend fb{};
+    fb.user_data = &state;
+    fb.face_metrics = host_face_metrics;
+    fb.glyph_index = host_glyph_index;
+    fb.glyph_metrics = host_glyph_metrics;
+    fb.rasterize = host_rasterize;
+    fb.shape = [](void* ud, uint64_t face, const char* text, size_t len, double px,
+                  uint32_t* glyphs, double* advances, uint32_t* clusters, size_t cap) -> size_t {
+        return host_shape(ud, face, text, len, px * face, glyphs, advances, clusters, cap);
+    };
+    fb.variant = [](void*, uint64_t face, int32_t weight, int32_t italic) -> uint64_t {
+        return face + ((weight >= 600 || italic) ? 1 : 0);
+    };
+    CHECK(weva_document_register_font_family(nullptr, "Camp", 2) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_document_register_font_family(d, "Camp", 2) == WEVA_ERR_INVALID_ARGUMENT);
+    weva_document_set_font_backend(d, &fb, 1);
+    CHECK(weva_document_register_font_family(d, nullptr, 2) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_document_register_font_family(d, "   ", 2) == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_document_register_font_family(d, "Camp", 2) == WEVA_OK);
+    const auto setup = [&] {
+        CHECK(load(d, "<body><span id=a>abc</span><span id=b>abc</span></body>") == WEVA_OK);
+        CHECK(add_css(d, "span{display:inline-block;font:10px Camp}#b{font-weight:bold}") == WEVA_OK);
+    };
+    const auto widths = [&](double a, double b) {
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        double x, y, w, h;
+        CHECK(weva_element_bounds(d, weva_document_query(d, "#a"), &x, &y, &w, &h) == WEVA_OK);
+        CHECK(near(w, a));
+        CHECK(weva_element_bounds(d, weva_document_query(d, "#b"), &x, &y, &w, &h) == WEVA_OK);
+        CHECK(near(w, b));
+    };
+    setup();
+    widths(60, 90);
+    int shapes = state.shapes;
+    CHECK(weva_document_register_font_family(d, "cAMP", 2) == WEVA_OK);
+    widths(60, 90);
+    CHECK(state.shapes == shapes);
+    CHECK(weva_document_register_font_family(d, "Camp", 4) == WEVA_OK);
+    widths(120, 150);
+    const weva_shape_glyphs_fn positioned = [](void* ud, uint64_t face, const char* text,
+                                              size_t len, double px, weva_shaped_glyph* out,
+                                              size_t cap) -> size_t {
+        ++static_cast<HostFontState*>(ud)->positioned_shapes;
+        for (size_t i = 0; out && i < len && i < cap; ++i)
+            out[i] = {static_cast<uint32_t>(text[i]), static_cast<uint32_t>(i), px * face * .5, 0, 0, 0};
+        return len;
+    };
+    CHECK(weva_document_set_font_shaper(d, positioned) == WEVA_OK);
+    widths(60, 75);
+    setup(); // Family resources survive document replacement.
+    widths(60, 75);
+    CHECK(weva_document_set_font_shaper(d, nullptr) == WEVA_OK);
+    widths(120, 150);
+    CHECK(weva_document_register_font_family(d, "CAMP", 0) == WEVA_OK);
+    widths(30, 60);
+    CHECK(weva_document_register_font_family(d, "Camp", 2) == WEVA_OK);
+    widths(60, 90);
+    weva_document_set_font_backend(d, &fb, 1);
+    widths(30, 60); // Backend replacement must not retain old face identities.
+    CHECK(weva_document_register_font_family(d, "Camp", 2) == WEVA_OK);
+    weva_document_set_font_backend(d, nullptr, 0);
+    widths(15, 15);
     weva_document_destroy(d);
 }
