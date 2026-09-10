@@ -136,9 +136,10 @@ neighbors explicitly. Use `interactive = false` and explicit input methods
 when your game owns routing. Game actions belong in `_unhandled_input` so
 accepted GUI events do not also trigger gameplay.
 
-A controller works without any script: while the node holds Godot focus
-(`ui.grab_focus()` when a screen opens), joypad events answer as the
-keyboard they stand in for. `ui_left/right/up/down` (the D-pad and left
+A controller works without any script. When no Control holds focus, the
+first pad press or stick push wakes the document on its first control and
+is spent doing so; from then on (or after `ui.grab_focus()`), joypad events
+answer as the keyboard they stand in for. `ui_left/right/up/down` (the D-pad and left
 stick by default) move focus by geometry, so a grid of buttons reads as a
 grid; a slider, radio group or text caret takes left/right first, and a
 `<select>`, `<textarea>` or number field takes up/down, so a settings screen

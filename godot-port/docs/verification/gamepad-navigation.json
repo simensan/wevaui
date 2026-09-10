@@ -1,11 +1,11 @@
 {
   "scope": "Gamepad navigation on the Godot host: joypad events drive HTML focus, activation and dismissal through ui_* actions with conventional fallbacks. Windows, synthetic joypad events; no physical controller. Candidate not installed.",
-  "library_sha256": "5ad716d2d047944b968d58e1033610012af20eb25abd5ba0b915355775617c74",
+  "library_sha256": "9d713963fb1c59f2e388ea8752aaaa9a9ae00546e87c50b58f2c25efef68052a",
   "abi_minor": 25,
   "source": {
-    "hosts/godot/src/weva_node.cpp": "82c66c0054a88bb0c9b580e74221b9803aacc80e3a54d030d70e1b07dc48a716",
+    "hosts/godot/src/weva_node.cpp": "778132f1f56c3836bfe305aef8c434885a7643a305bdebdc94baaa3176b96978",
     "libweva/src/weva_c.cpp": "b6a354ca6b0b801394e75dabcb1d3cf584f6c16f4bfe94a4407179d24050abef",
-    "hosts/godot/project/gamepad_navigation_tests.gd": "e4f919cc532ab1326dfd3cfc1618149218a8655742dec3692b617f63f6a34b8a"
+    "hosts/godot/project/gamepad_navigation_tests.gd": "d1052dd2f95534a26d9902ec467acf062812f41eebd693bbedc939fe8ab03077"
   },
   "default_input_map_observation": "On this engine ui_left/right/up/down carry D-pad and left-stick bindings; ui_accept, ui_cancel and ui_focus_next/prev carry keyboard bindings only, hence the A/B/shoulder fallbacks.",
   "core": {
@@ -21,20 +21,24 @@
   "host": {
     "passed": true,
     "entries": 51,
-    "checks": 35588,
-    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite6/receipt.json",
+    "checks": 35590,
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite7/receipt.json",
     "gamepad_navigation_tests": {
       "passed": true,
-      "checks": 31,
+      "checks": 33,
       "failures": 0
     }
   },
   "gamepad_on_stock_4_7_1": {
-    "checks": 31,
+    "checks": 33,
     "failures": 0,
     "log": ".utmp/safe-engine71/shaping-checks/gamepad-stock.log"
   },
-  "sample": "frontier integration: 95 checks, 0 failures",
+  "sample": {
+    "headless": "frontier integration: 101 checks, 0 failures",
+    "mobile": "frontier integration: 101 checks, 0 failures",
+    "note": "includes the controller case: wake, accept opens settings, pad moves rows and adjusts the volume slider, cancel closes"
+  },
   "limitations": [
     "Synthetic InputEventJoypadButton/Motion through a SubViewport; no physical controller.",
     "Exports and timing profiles not rerun; not installed."

@@ -424,6 +424,9 @@ private:
     // A direction the pad is still holding repeats like a held key: the
     // index into the direction table, how to poll it, and when it fires next.
     int held_direction_ = -1;
+    // The joypad event that woke an unfocused document: it is spent on
+    // taking focus and must not also navigate once it reaches _gui_input.
+    godot::Ref<godot::InputEvent> wake_event_;
     bool held_by_action_ = false;
     int held_device_ = 0;
     uint64_t repeat_at_usec_ = 0;

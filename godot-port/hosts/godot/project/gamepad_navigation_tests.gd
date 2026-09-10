@@ -60,8 +60,11 @@ func _ready() -> void:
 	doc.element_clicked.connect(func(id): clicks.append(id))
 	doc.form_submitted.connect(func(id): submits.append(id))
 
-	doc.grab_focus()
-	check(doc.get_focused_id() == "b1", "focusing the Control focuses the first HTML control")
+	check(not doc.has_focus(), "nothing holds focus before the controller is touched")
+	button(JOY_BUTTON_DPAD_RIGHT)
+	check(doc.has_focus() and doc.get_focused_id() == "b1", "the first pad press wakes the document on its first control without moving")
+	check(viewport.is_input_handled(), "and is spent doing so")
+	button(JOY_BUTTON_DPAD_RIGHT, false)
 	button(JOY_BUTTON_DPAD_RIGHT)
 	check(doc.get_focused_id() == "b2", "D-pad right moves focus to the button beside it")
 	check(viewport.is_input_handled(), "a consumed pad press does not reach gameplay")

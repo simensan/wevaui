@@ -1090,6 +1090,23 @@ void WevaDocument::_input(const Ref<InputEvent>& event) {
     // the deferred call also covers the last event of a frame.
     dismiss_outside_transients();
     if (!interactive_ || !doc_ || !is_visible_in_tree()) return;
+    // A controller's first press on a screen nobody has focused wakes the
+    // document, the way a mouse click would: this node takes Godot focus,
+    // FOCUS_ENTER selects the first HTML control, and that press is spent.
+    // Only when nothing else holds focus, so a game that put focus on its
+    // own Control keeps it.
+    const Ref<InputEventJoypadButton> wake_button = event;
+    const Ref<InputEventJoypadMotion> wake_motion = event;
+    if (gamepad_navigation_ && !has_focus() && get_focus_mode() != FOCUS_NONE &&
+        ((wake_button.is_valid() && wake_button->is_pressed()) ||
+         (wake_motion.is_valid() && (wake_motion->get_axis_value() > 0.5f || wake_motion->get_axis_value() < -0.5f)))) {
+        Viewport* viewport = get_viewport();
+        if (viewport && viewport->gui_get_focus_owner() == nullptr) {
+            wake_event_ = event;
+            grab_focus();
+            return;
+        }
+    }
     const Ref<InputEventMouseButton> button = event;
     if (button.is_null() || !button->is_pressed() || button->get_button_index() != MOUSE_BUTTON_LEFT) return;
     pointer_focus_entry_ = true;
@@ -1178,6 +1195,12 @@ void WevaDocument::_gui_input(const Ref<InputEvent>& event) {
     const Ref<InputEventJoypadButton> joypad_button = event;
     const Ref<InputEventJoypadMotion> joypad_motion = event;
     if (joypad_button.is_valid() || joypad_motion.is_valid()) {
+        const bool woke = wake_event_.is_valid() && wake_event_ == event;
+        wake_event_.unref();
+        if (woke) {
+            accept_event();
+            return;
+        }
         if (gamepad_navigation_ && navigation_action(event)) {
             dirty_ = true;
             queue_redraw();
