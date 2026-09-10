@@ -23,6 +23,17 @@ Recreation teardown returns to 491 nodes/1,934 objects; final soak teardown is
 491 nodes/1,937 objects. This finite result does not establish leak freedom or
 clear the prior timing failures. [Lifecycle evidence](verification/lifecycle217.json).
 
+A controller now drives the document without scripting. Joypad button and
+axis events reaching the focused node answer as the keyboard their `ui_*`
+actions stand in for: the pad and stick move focus by geometry (a slider,
+radio group or caret takes left/right first; a `<select>`, `<textarea>` or
+number field takes up/down), accept is Space on a control and Enter in a
+field, cancel is Escape and is consumed only when something closed. Actions
+without a joypad binding fall back to A, B, the D-pad and the shoulders.
+The core adds `weva_element_tag_name` for this. Twenty-seven host checks push
+real joypad events through a viewport; physical controller acceptance and
+held-direction repeat remain open. [Gamepad evidence](verification/gamepad-navigation.json).
+
 Stylesheets can now declare fonts with `@font-face { font-family; src: url() }`.
 The core lists the rules (ABI minor 25, `weva_document_font_faces`) and the
 Godot host loads each source, resolved against the base path like an image,
@@ -299,7 +310,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Installable addon | Current Windows package and fresh consumer pass. Historical Linux package results cannot certify the current preview. |
 | Native desktop exports | Current patched Windows debug/release/embedded exports pass. Document text past the engine's shaping limits now works on the stock Windows 4.7.1 editor; stock exports, other platforms and native-control text remain unverified. |
 | Replaced images in flex layouts | Current intrinsic-size suite and rendered example pass. Broader layout agreement is assessed separately below. |
-| Native GUI integration | Current input suite covers Control focus, native overlays, document visibility and routed input. Physical touch/gamepad acceptance is still needed. |
+| Native GUI integration | Current input suite covers Control focus, native overlays, document visibility and routed input. Joypad events now drive HTML focus, activation and dismissal through the project's ui_* actions with conventional button fallbacks (gamepad_navigation_tests: 27 checks with real joypad button and axis events). Physical touch/gamepad acceptance is still needed. |
 | Text editing and popup lifecycle | Current dialog suite: 1,199 checks; popover beforetoggle suite: 1,389 checks, including opening vetoes, ordered closing, mutation and queue-pressure cases. Form method=dialog is covered. Full browser task timing, remaining dialog lifecycle and physical input-method acceptance remain open. [Popover evidence](verification/popover-beforetoggle.json). |
 | Keyboard form actions | Current keyboard suite passes. Shared activation exists; complete form validation, picker behavior and command lifecycle are not thereby verified. |
 | Two-way input bindings | Current binding, form-state and sample checks pass, including boolean and Unicode changes. |

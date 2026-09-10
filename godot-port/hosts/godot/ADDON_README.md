@@ -136,6 +136,20 @@ neighbors explicitly. Use `interactive = false` and explicit input methods
 when your game owns routing. Game actions belong in `_unhandled_input` so
 accepted GUI events do not also trigger gameplay.
 
+A controller works without any script: while the node holds Godot focus
+(`ui.grab_focus()` when a screen opens), joypad events answer as the
+keyboard they stand in for. `ui_left/right/up/down` (the D-pad and left
+stick by default) move focus by geometry, so a grid of buttons reads as a
+grid; a slider, radio group or text caret takes left/right first, and a
+`<select>`, `<textarea>` or number field takes up/down, so a settings screen
+moves between rows vertically and adjusts a row horizontally. `ui_accept`
+is Space on a control and Enter in a field; `ui_cancel` is Escape and is
+consumed only when it closed something, so your own back action still fires.
+Actions with no joypad binding fall back to A, B, the D-pad and the
+shoulders; map them in the InputMap to change that. Consumed presses are
+handled, releases pass through. `gamepad_navigation = false` leaves every
+joypad event to the game; `focus_move(direction)` remains for custom schemes.
+
 Held edit keys, Unicode key events, Ctrl/Cmd+A/C/X/V/Z and redo are routed.
 Buttons activate on Enter down or Space release. Checkbox/radio Space,
 radio arrows, slider arrows/Home/End/PageUp/PageDown, summaries and popover

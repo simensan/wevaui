@@ -948,6 +948,12 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element, c
 size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const char* name,
                               char* buffer, size_t capacity);
 
+/* The element's lowercase tag name ("input", "button"), same buffer
+ * convention. What a host needs to decide how a gamepad's accept should read
+ * for whatever has focus: Space on a control, Enter in a field. Available
+ * since ABI minor 25. */
+size_t weva_element_tag_name(weva_document_t doc, weva_element_t element, char* buffer, size_t capacity);
+
 /* Opens a <dialog>. `modal` non-zero shows it MODALLY: it joins the top layer
  * and gets a `::backdrop` behind it, which is the whole visible difference and
  * the reason showModal exists. Returns WEVA_ERR_NOT_FOUND for anything that is

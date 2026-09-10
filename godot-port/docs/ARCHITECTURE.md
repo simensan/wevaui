@@ -821,4 +821,10 @@ lines, the source being the first `url()` entry resolved against the base path
 like an image. The core still loads no fonts; a host loads each source and
 calls `weva_document_register_font_family`. `@font-face` no longer appears in
 the unsupported-rule diagnostics.
+
+ABI minor 25 also adds `weva_element_tag_name(doc, element, buffer, capacity)`,
+the lowercase tag of a handle with the attribute buffer convention. The Godot
+host reads it for gamepad navigation: an accept on a field is Enter, on a
+control Space, and vertical pad movement stays inside a `<select>`,
+`<textarea>` or number field.
 The Godot source exposes `register_font_family(name, Font)` and watches resource changes. Installed Windows preview105 includes minor 14; its package and native exports pass the recorded verification.

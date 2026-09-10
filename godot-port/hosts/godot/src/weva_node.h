@@ -78,6 +78,14 @@ public:
     void set_interactive(bool on);
     bool get_interactive() const { return interactive_; }
 
+    // A controller has no keys. With this on (the default), joypad events
+    // that the project's ui_* actions describe become what a browser would
+    // do with a keyboard: the pad and stick move HTML focus by direction,
+    // ui_accept activates, ui_cancel dismisses. The Control must hold Godot
+    // focus, as for typing: grab_focus() when the screen opens.
+    void set_gamepad_navigation(bool on) { gamepad_navigation_ = on; }
+    bool get_gamepad_navigation() const { return gamepad_navigation_; }
+
     // Stops the clock. Transitions and @keyframes hold where they are, which
     // a game wants when it pauses and a CAPTURE requires: comparing two
     // backends means comparing them at the same instant, and a renderer that
@@ -408,6 +416,9 @@ private:
     godot::Callable data_source_;
     godot::ObjectID controller_;
     bool interactive_ = true;
+    bool gamepad_navigation_ = true;
+    bool navigation_action(const godot::Ref<godot::InputEvent>& event);
+    godot::String focused_tag(godot::String* type) const;
     bool paused_ = false;
     // The last position handed to the document, so a move that does not change
     // the element still costs nothing: the document already skips an update

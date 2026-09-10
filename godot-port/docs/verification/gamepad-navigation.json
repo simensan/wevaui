@@ -1,0 +1,43 @@
+{
+  "scope": "Gamepad navigation on the Godot host: joypad events drive HTML focus, activation and dismissal through ui_* actions with conventional fallbacks. Windows, synthetic joypad events; no physical controller. Candidate not installed.",
+  "library_sha256": "05f1c64908cb4b5d39f9b34e8a68e0ab39949992ae2cc4164f83448e35f9bcff",
+  "abi_minor": 25,
+  "source": {
+    "hosts/godot/src/weva_node.cpp": "b4d433438a132b0b979fb47b23331f2f90ffa72cc1043d3dbd7b60df9596b713",
+    "libweva/src/weva_c.cpp": "b6a354ca6b0b801394e75dabcb1d3cf584f6c16f4bfe94a4407179d24050abef",
+    "hosts/godot/project/gamepad_navigation_tests.gd": "547508511273e2686c530c10b6d1d2cea86973c71d6fee72c80c1ef59b05598d"
+  },
+  "default_input_map_observation": "On this engine ui_left/right/up/down carry D-pad and left-stick bindings; ui_accept, ui_cancel and ui_focus_next/prev carry keyboard bindings only, hence the A/B/shoulder fallbacks.",
+  "core": {
+    "passed_suites": 14,
+    "total_suites": 14,
+    "log": ".utmp/safe-engine71/shaping-native/gp-core-ctest.log"
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "total_suites": 16,
+    "log": ".utmp/safe-engine71/shaping-native/gp-san-ctest.log"
+  },
+  "host": {
+    "passed": true,
+    "entries": 51,
+    "checks": 35584,
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite5/receipt.json",
+    "gamepad_navigation_tests": {
+      "passed": true,
+      "checks": 27,
+      "failures": 0
+    }
+  },
+  "gamepad_on_stock_4_7_1": {
+    "checks": 27,
+    "failures": 0,
+    "log": ".utmp/safe-engine71/shaping-checks/gamepad-stock.log"
+  },
+  "sample": "frontier integration: 95 checks, 0 failures",
+  "limitations": [
+    "Synthetic InputEventJoypadButton/Motion through a SubViewport; no physical controller.",
+    "No held-direction repeat.",
+    "Exports and timing profiles not rerun; not installed."
+  ]
+}

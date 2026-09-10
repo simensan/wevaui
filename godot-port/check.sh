@@ -453,6 +453,17 @@ if [ -x "$GODOT" ]; then
         tail -25 /tmp/weva-font-face.log
     fi
 
+    step "gamepad navigation integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . gamepad_navigation_tests.tscn ) > /tmp/weva-gamepad.log 2>&1 &&
+       grep -q 'godot gamepad navigation:.* 0 failures' /tmp/weva-gamepad.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-gamepad.log; then
+        grep 'godot gamepad navigation:' /tmp/weva-gamepad.log
+    else
+        fail "gamepad navigation integration"
+        tail -25 /tmp/weva-gamepad.log
+    fi
+
     step "line height integration"
     if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
             "$GODOT" --headless --path . line_height_tests.tscn ) > /tmp/weva-line-height.log 2>&1 &&

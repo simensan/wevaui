@@ -7943,6 +7943,20 @@ int weva_element_has_attribute(weva_document_t doc, weva_element_t element, cons
     return e && e->has_attribute(name) ? 1 : 0;
 }
 
+size_t weva_element_tag_name(weva_document_t doc, weva_element_t element, char* buffer, size_t capacity) {
+    if (buffer && capacity > 0) buffer[0] = '\0';
+    if (!doc) return 0;
+    const Element* e = doc->element_at(element);
+    if (!e) return 0;
+    const std::string& value = e->tag_name();
+    if (buffer && capacity > 0) {
+        const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
+        if (n > 0) std::memcpy(buffer, value.data(), n);
+        buffer[n] = '\0';
+    }
+    return value.size();
+}
+
 size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const char* name,
                               char* buffer, size_t capacity) {
     if (!doc || !name) return 0;

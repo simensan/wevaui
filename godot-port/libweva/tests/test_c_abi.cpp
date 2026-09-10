@@ -310,6 +310,28 @@ void test_abi_stylesheet_replacement() {
         weva_document_destroy(document);
     }
     {
+        // Tag names come back through the same buffer protocol as attributes.
+        const auto config = default_config();
+        auto document = weva_document_create(&config);
+        const char* html = "<body><input id=f type=text><button id=b>Go</button></body>";
+        CHECK(weva_document_load_html(document, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(document, 0) == WEVA_OK);
+        const weva_element_t field = weva_document_focus_next(document, 0);
+        CHECK(field != WEVA_ELEMENT_NONE);
+        char tag[8] = {'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x'};
+        CHECK(weva_element_tag_name(document, field, tag, sizeof(tag)) == 5);
+        CHECK(std::string(tag) == "input");
+        const weva_element_t button = weva_document_focus_next(document, 0);
+        CHECK(weva_element_tag_name(document, button, nullptr, 0) == 6);
+        char small[3] = {'x', 'x', 'x'};
+        CHECK(weva_element_tag_name(document, button, small, sizeof(small)) == 6);
+        CHECK(std::string(small) == "bu");
+        CHECK(weva_element_tag_name(document, WEVA_ELEMENT_NONE, small, sizeof(small)) == 0);
+        CHECK(small[0] == '\0');
+        CHECK(weva_element_tag_name(nullptr, button, small, sizeof(small)) == 0);
+        weva_document_destroy(document);
+    }
+    {
         // @font-face is parsed, not ignored: the host loads what it lists.
         const auto config = default_config();
         auto document = weva_document_create(&config);

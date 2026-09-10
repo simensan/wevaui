@@ -2,6 +2,9 @@
 
 #include <godot_cpp/classes/viewport.hpp>
 #include <godot_cpp/classes/input.hpp>
+#include <godot_cpp/classes/input_event_joypad_button.hpp>
+#include <godot_cpp/classes/input_event_joypad_motion.hpp>
+#include <godot_cpp/classes/input_map.hpp>
 #include <godot_cpp/classes/display_server.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/main_loop.hpp>
@@ -630,6 +633,9 @@ void WevaDocument::_bind_methods() {
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "tooltip_delay"), "set_tooltip_delay",
                  "get_tooltip_delay");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interactive"), "set_interactive", "get_interactive");
+    ClassDB::bind_method(D_METHOD("set_gamepad_navigation", "on"), &WevaDocument::set_gamepad_navigation);
+    ClassDB::bind_method(D_METHOD("get_gamepad_navigation"), &WevaDocument::get_gamepad_navigation);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gamepad_navigation"), "set_gamepad_navigation", "get_gamepad_navigation");
     ClassDB::bind_method(D_METHOD("set_paused", "on"), &WevaDocument::set_paused);
     ClassDB::bind_method(D_METHOD("get_paused"), &WevaDocument::get_paused);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "paused"), "set_paused", "get_paused");
@@ -1166,6 +1172,21 @@ void WevaDocument::_gui_input(const Ref<InputEvent>& event) {
         return;
     }
 
+    // A controller reaches the focused Control as joypad events. The project's
+    // ui_* actions say what they mean; the document answers as a browser
+    // would to the keyboard those actions stand in for.
+    const Ref<InputEventJoypadButton> joypad_button = event;
+    const Ref<InputEventJoypadMotion> joypad_motion = event;
+    if (joypad_button.is_valid() || joypad_motion.is_valid()) {
+        if (gamepad_navigation_ && navigation_action(event)) {
+            dirty_ = true;
+            queue_redraw();
+            pump_events();
+            accept_event();
+        }
+        return;
+    }
+
     // A finger dragging pans what is under it. There is no mouse equivalent --
     // a browser does not pan on drag, and doing so would fight every button
     // and slider in the document -- but on a touchscreen it is the only way to
@@ -1414,6 +1435,93 @@ Vector2 WevaDocument::get_element_scroll_max(const String& selector) {
 // `interactive` makes the document receive Godot's routed GUI events.
 // A game with its own input map can hand events over one at a time through
 // these explicit document-coordinate operations.
+
+String WevaDocument::focused_tag(String* type) const {
+    if (type) *type = String();
+    if (!doc_) return String();
+    const weva_element_t focused = weva_document_focus(doc_);
+    if (focused == WEVA_ELEMENT_NONE) return String();
+    char tag[32] = {};
+    weva_element_tag_name(doc_, focused, tag, sizeof(tag));
+    if (type) {
+        char kind[32] = {};
+        weva_element_attribute(doc_, focused, "type", kind, sizeof(kind));
+        *type = String::utf8(kind).to_lower();
+    }
+    return String::utf8(tag);
+}
+
+// ui_accept is Space on a control and Enter in a field, the two keys a
+// browser activates with; ui_cancel is Escape and is only claimed when the
+// document closed something, so the game's own back action still works.
+// Left/right reach the focused element first (a slider's value, a caret, a
+// radio group) and move focus only when it did not want them; up/down move
+// focus unless the element is one whose value they change (<select>,
+// <textarea>, number fields). A menu of sliders therefore reads as a
+// settings screen: down and up between rows, left and right on the row.
+bool WevaDocument::navigation_action(const Ref<InputEvent>& event) {
+    InputMap* map = InputMap::get_singleton();
+    if (!map || !doc_) return false;
+    // Godot's default map gives the pad and stick to ui_left/right/up/down
+    // but binds no joypad button to ui_accept or ui_cancel. An action the
+    // project mapped to the pad is honoured as mapped; one it left without
+    // any joypad binding answers to the conventional button instead.
+    const Ref<InputEventJoypadButton> joypad_button = event;
+    const auto pressed = [&](const char* action, JoyButton fallback) {
+        if (!map->has_action(action)) return false;
+        bool mapped = false;
+        const TypedArray<InputEvent> events = map->action_get_events(action);
+        for (int64_t i = 0; i < events.size() && !mapped; ++i) {
+            const Ref<InputEvent> bound = events[i];
+            mapped = bound.is_valid() && (bound->is_class("InputEventJoypadButton") || bound->is_class("InputEventJoypadMotion"));
+        }
+        if (mapped) return event->is_action_pressed(action);
+        return joypad_button.is_valid() && joypad_button->is_pressed() && joypad_button->get_button_index() == fallback;
+    };
+    const auto tap = [&](int code) {
+        const bool down = weva_document_key(doc_, code, 0, 1) != 0;
+        const bool up = weva_document_key(doc_, code, 0, 0) != 0;
+        return down || up;
+    };
+    String type;
+    const String tag = focused_tag(&type);
+    const bool text_field = tag == "textarea" ||
+        (tag == "input" && (type.is_empty() || type == "text" || type == "search" || type == "password" ||
+                            type == "email" || type == "url" || type == "tel" || type == "number"));
+    if (pressed("ui_accept", JOY_BUTTON_A)) {
+        if (text_field) tap(WEVA_KEY_ENTER);
+        else if (!tap(WEVA_KEY_SPACE)) tap(WEVA_KEY_ENTER);
+        return true;
+    }
+    if (pressed("ui_cancel", JOY_BUTTON_B)) return tap(WEVA_KEY_ESCAPE);
+    if (pressed("ui_focus_next", JOY_BUTTON_RIGHT_SHOULDER)) {
+        weva_document_focus_next(doc_, 0);
+        return true;
+    }
+    if (pressed("ui_focus_prev", JOY_BUTTON_LEFT_SHOULDER)) {
+        weva_document_focus_next(doc_, 1);
+        return true;
+    }
+    struct Direction {
+        const char* action;
+        JoyButton fallback;
+        int key;
+        double dx, dy;
+    };
+    static const Direction directions[] = {
+        {"ui_left", JOY_BUTTON_DPAD_LEFT, WEVA_KEY_LEFT, -1, 0}, {"ui_right", JOY_BUTTON_DPAD_RIGHT, WEVA_KEY_RIGHT, 1, 0},
+        {"ui_up", JOY_BUTTON_DPAD_UP, WEVA_KEY_UP, 0, -1}, {"ui_down", JOY_BUTTON_DPAD_DOWN, WEVA_KEY_DOWN, 0, 1}};
+    for (const Direction& d : directions) {
+        if (!pressed(d.action, d.fallback)) continue;
+        const bool vertical = d.dy != 0;
+        const bool element_first = !vertical || tag == "select" || tag == "textarea" ||
+                                   (tag == "input" && type == "number");
+        if (element_first && tap(d.key)) return true;
+        weva_document_focus_move(doc_, d.dx, d.dy);
+        return true;
+    }
+    return false;
+}
 
 bool WevaDocument::send_key(int keycode, bool pressed, bool shift, bool ctrl) {
     if (!doc_) return false;
