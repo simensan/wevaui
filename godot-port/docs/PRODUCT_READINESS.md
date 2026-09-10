@@ -2,14 +2,29 @@
 
 This is a development preview. The game-UI goal is not complete.
 
-Current source avoids temporary list vectors during scalar interpolation. A
+**Where things stand (2026-09-10).** Both local addons hold build220 (ABI
+minor25). For a game developer it adds, on top of build211: document text with
+many emoji or brackets no longer corrupts or crashes on the stock engine;
+`@font-face` loads a game's own fonts, with real bold and italic files;
+a controller drives HTML menus without scripting (directional focus, accept,
+cancel, held repeat, opt-in wake); and `WevaView` reloads an edited HTML or
+CSS file while the game runs. Every profile passed on this machine for that
+build: core and sanitizer suites, 52 host entries, the sample on the patched
+and the official stock 4.7.1 editor, native exports, desktop, 1080p and 4K
+timing, and the ten-minute lifecycle soak; details and receipts follow. Still
+open: lower-end hardware, a physical controller, physical IME and touch,
+stock-template exports, and the residual layout differences listed under
+browser layout behavior. The paragraphs below are in reverse order of
+arrival; earlier candidates' failures are preserved as recorded.
+
+Candidate217 (superseded by build220 below) avoided temporary list vectors during scalar interpolation. A
 focused allocation test falls from 18,000 to 6,000 allocations across 3,000 width,
 number and percentage samples with unchanged results. All 14 core suites, 49
 native host entries (35,546 checks), 16 sanitizer suites, both renderer geometry
 comparisons and sample/exports pass. Desktop timing passes 72/72. Automatic
 1080p 3D passes 268/276: eight OpenGL whole-frame limits fail at 16.703–17.072 ms
 p95, against 16.667 ms. All UI API/core CPU limits pass. The run stopped before
-4K. The ten-minute lifecycle check below passes; it is not installed. The allocation
+4K. The ten-minute lifecycle check below passes; it was not installed. The allocation
 measurement covers interpolation, not whole-document allocation or frame time.
 [Interpolation allocation evidence](verification/interpolation-allocations.json).
 
