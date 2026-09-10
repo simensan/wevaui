@@ -23,6 +23,17 @@ Recreation teardown returns to 491 nodes/1,934 objects; final soak teardown is
 491 nodes/1,937 objects. This finite result does not establish leak freedom or
 clear the prior timing failures. [Lifecycle evidence](verification/lifecycle217.json).
 
+Stylesheets can now declare fonts with `@font-face { font-family; src: url() }`.
+The core lists the rules (ABI minor 25, `weva_document_font_faces`) and the
+Godot host loads each source, resolved against the base path like an image,
+and registers the family, preferring the normal weight/style rule when several
+faces are declared and never replacing a family the game registered itself. A
+source that cannot load warns and falls back. Eleven host checks cover loading,
+base-path resolution, a missing source, precedence, face choice and removal on
+CSS replacement; the ABI test covers parsing, resolution and media gating.
+Per-weight face matching, `unicode-range`, `font-display` and `local()` remain
+unimplemented.
+
 The Godot font adapter now shapes document text with more than 32 emoji
 sub-runs or 128 open brackets in pieces the stock engine's script iterator can
 hold, splitting only where the engine itself starts a sub-run or pushes a
@@ -294,7 +305,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Two-way input bindings | Current binding, form-state and sample checks pass, including boolean and Unicode changes. |
 | IME composition | Current simulated composition checks pass on the patched engine. Physical Windows IME and broader input-method acceptance are missing. Historical Linux diagnostic patches are separate. |
 | Long fields and Unicode editing | Current editing/autoscroll/maxlength/typeahead checks pass. Bidi caret behavior and broader language tailoring remain open. |
-| Native font positioning and themes | Current headless theme/font/inheritance and native family registration paths pass. The detailed theme/font pixel qualification was on preview105 and remains historical. CSS @font-face loading, face weight/style matching and broader text layout remain open; unsupported at-rules now produce diagnostics. |
+| Native font positioning and themes | Current headless theme/font/inheritance and native family registration paths pass. The detailed theme/font pixel qualification was on preview105 and remains historical. CSS `@font-face` now loads and registers one face per family on the Godot host (font_face_tests: loading, base-path resolution, missing source, precedence, face choice, removal); per-weight/style face matching, `unicode-range` and broader text layout remain open; unsupported at-rules produce diagnostics. |
 | Viewport-relative font-size cache | Current font-size/line-height/inheritance suites pass. This does not establish every CSS text-layout mode. |
 | Text length limits and paste | Current maxlength insertion, user-edit-aware length validity and submission checks pass. Public validity APIs are implemented; Unicode-v patterns and broader physical editing qualification remain open. |
 | Native IME comparison | Historical physical Linux reproduction and private engine/input-method fixes are documented in IME.md. They do not certify the shipped Windows configuration or stock Linux. |

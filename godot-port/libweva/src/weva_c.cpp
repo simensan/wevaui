@@ -7655,6 +7655,22 @@ size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t c
     return text.size();
 }
 
+size_t weva_document_font_faces(weva_document_t doc, char* buffer, size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    std::string text;
+    for (const auto& face : doc->styles.engine.font_faces()) {
+        if (!text.empty()) text += '\n';
+        text += face.family + '\t' + doc->images.resolve(face.src) + '\t' + face.weight + '\t' + face.style;
+    }
+    if (buffer && capacity) {
+        const size_t n = std::min(text.size(), capacity - 1);
+        if (n) std::memcpy(buffer, text.data(), n);
+        buffer[n] = '\0';
+    }
+    return text.size();
+}
+
 size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t capacity) {
     if (buffer && capacity > 0) buffer[0] = '\0';
     if (!doc) return 0;

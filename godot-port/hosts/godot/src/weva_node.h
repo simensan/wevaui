@@ -509,6 +509,15 @@ private:
     godot::Callable theme_font_changed_;
     std::map<godot::String, godot::Ref<godot::Font>> family_fonts_;
     std::vector<godot::Ref<godot::Font>> retired_family_fonts_;
+    // Families registered from the stylesheet's `@font-face` rules, keyed like
+    // family_fonts_, with the resolved source each was loaded from. A family
+    // the game registered itself is never replaced by CSS.
+    struct CssFontFace {
+        godot::String path;
+        godot::Ref<godot::Font> font;
+    };
+    std::map<godot::String, CssFontFace> css_font_faces_;
+    void sync_css_font_faces();
     godot::Callable family_font_changed_;
     void family_font_resource_changed();
     void disconnect_family_fonts();

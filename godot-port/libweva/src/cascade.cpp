@@ -17,6 +17,66 @@
 namespace weva {
 
 namespace {
+// `@font-face` descriptor values. A family is one quoted or unquoted name;
+// `src` is a comma list of url()/local() entries and the first url() wins,
+// mirroring the Unity package (FontFaceRule: first usable url()).
+std::string_view descriptor_trim(std::string_view value) {
+    while (!value.empty() && (value.front() == ' ' || value.front() == '\t' || value.front() == '\n')) value.remove_prefix(1);
+    while (!value.empty() && (value.back() == ' ' || value.back() == '\t' || value.back() == '\n')) value.remove_suffix(1);
+    return value;
+}
+
+std::string_view unquote_family(std::string_view value) {
+    value = descriptor_trim(value);
+    if (value.size() >= 2 && (value.front() == '"' || value.front() == '\'') && value.back() == value.front())
+        value = descriptor_trim(value.substr(1, value.size() - 2));
+    return value;
+}
+
+// Comma entries outside parentheses and quotes: `url("a,b.ttf") format("x"), local(y)`.
+std::vector<std::string_view> split_src_entries(std::string_view value) {
+    std::vector<std::string_view> entries;
+    int depth = 0;
+    char quote = 0;
+    size_t start = 0;
+    for (size_t i = 0; i < value.size(); ++i) {
+        const char c = value[i];
+        if (quote) {
+            if (c == quote) quote = 0;
+        } else if (c == '"' || c == '\'') {
+            quote = c;
+        } else if (c == '(') {
+            ++depth;
+        } else if (c == ')') {
+            if (depth > 0) --depth;
+        } else if (c == ',' && depth == 0) {
+            entries.push_back(value.substr(start, i - start));
+            start = i + 1;
+        }
+    }
+    entries.push_back(value.substr(start));
+    return entries;
+}
+
+std::string first_font_url(std::string_view value) {
+    for (std::string_view entry : split_src_entries(value)) {
+        entry = descriptor_trim(entry);
+        if (entry.size() < 5) continue;
+        std::string head(entry.substr(0, 4));
+        for (char& c : head) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        if (head != "url(") continue;
+        const size_t close = entry.find(')');
+        if (close == std::string_view::npos) continue;
+        std::string_view inner = descriptor_trim(entry.substr(4, close - 4));
+        if (inner.size() >= 2 && (inner.front() == '"' || inner.front() == '\'') && inner.back() == inner.front())
+            inner = inner.substr(1, inner.size() - 2);
+        if (!inner.empty()) return std::string(inner);
+    }
+    return {};
+}
+} // namespace
+
+namespace {
 
 struct CascadePhaseProfile {
     using Clock = std::chrono::steady_clock;
@@ -215,6 +275,7 @@ void CascadeEngine::clear() {
     pseudo_rules_.clear();
     layer_names_.clear();
     unsupported_at_rules_.clear();
+    font_faces_.clear();
     keyframes_.clear();
     keyframe_priorities_.clear();
     layer_prefix_.clear();
@@ -652,6 +713,31 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 if (!evaluate_media_query(ar->prelude, media_)) continue;
             } else if (ar->name == "supports") {
                 if (!evaluate_supports(ar->prelude)) continue;
+            } else if (ar->name == "font-face") {
+                // Descriptors only; the block never contributes style rules.
+                if (ar->has_block && origin != DeclarationOrigin::UserAgent) {
+                    FontFace face;
+                    for (const Declaration& d : ar->declarations) {
+                        const std::string_view value = descriptor_trim(d.value_text);
+                        if (d.property == "font-family") {
+                            if (face.family.empty()) face.family = std::string(unquote_family(value));
+                        } else if (d.property == "src") {
+                            if (face.src.empty()) face.src = first_font_url(value);
+                        } else if (d.property == "font-weight") {
+                            if (face.weight.empty()) face.weight = std::string(value);
+                        } else if (d.property == "font-style") {
+                            if (face.style.empty()) face.style = std::string(value);
+                        }
+                    }
+                    if (!face.family.empty() && !face.src.empty()) {
+                        const bool seen = std::any_of(font_faces_.begin(), font_faces_.end(), [&](const FontFace& f) {
+                            return f.family == face.family && f.src == face.src &&
+                                   f.weight == face.weight && f.style == face.style;
+                        });
+                        if (!seen) font_faces_.push_back(std::move(face));
+                    }
+                }
+                continue;
             } else if (ar->name == "keyframes") {
                 KeyframeAnimation animation;
                 if (parse_keyframes_rule(*ar, &animation)) {

@@ -442,6 +442,17 @@ if [ -x "$GODOT" ]; then
         tail -25 /tmp/weva-theme-font.log
     fi
 
+    step "font face integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . font_face_tests.tscn ) > /tmp/weva-font-face.log 2>&1 &&
+       grep -q 'godot font face:.* 0 failures' /tmp/weva-font-face.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-font-face.log; then
+        grep 'godot font face:' /tmp/weva-font-face.log
+    else
+        fail "font face integration"
+        tail -25 /tmp/weva-font-face.log
+    fi
+
     step "line height integration"
     if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
             "$GODOT" --headless --path . line_height_tests.tscn ) > /tmp/weva-line-height.log 2>&1 &&

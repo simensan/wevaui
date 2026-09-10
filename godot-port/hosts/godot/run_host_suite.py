@@ -33,6 +33,7 @@ SCENES = [
     'number_step_tests', 'popover_beforetoggle_tests', 'unknown_at_rule_tests', 'css_diagnostic_tests',
     'conditional_keyframe_tests', 'font_warmup_tests', 'hidden_transition_tests', 'long_effect_list_tests',
     'delayed_transition_tests', 'transition_cancellation_tests', 'transition_reversal_tests',
+    'font_face_tests',
 ]
 SCRIPTS = {'survival_smoke': 'res://samples/western_survival/survival_smoke.gd'}
 SUMMARY = re.compile(r'(\d+) checks, (\d+) failures')
@@ -80,7 +81,10 @@ def main():
             print(f'{name:32} FAIL missing scene', flush=True)
     for name, script in SCRIPTS.items():
         run(name, ['--script', script], args.timeout)
-    library = next(iter(sorted((project / 'addons/weva/bin').glob('*weva_godot.*'))), None)
+    library_name = {'win32': 'weva_godot.dll', 'darwin': 'libweva_godot.dylib'}.get(sys.platform, 'libweva_godot.so')
+    library = project / 'addons/weva/bin' / library_name
+    if not library.is_file():
+        library = None
     receipt = {'passed': all(r['passed'] for r in results), 'entries': len(results),
                'checks': sum(r['checks'] for r in results), 'godot': args.godot, 'project': str(project),
                'binary_sha256': hashlib.sha256(library.read_bytes()).hexdigest() if library else None,

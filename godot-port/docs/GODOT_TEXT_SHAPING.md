@@ -22,7 +22,17 @@ Then use `font-family: Camp` on the relevant elements. CSS family stacks select
 registered faces; matching is case-insensitive. Registering the same name replaces
 its resource, and registering `null` removes it. Registrations survive HTML reloads
 and observe live Font changes. Native tests cover these operations and fallback
-to the document font after removal. CSS `@font-face` loading remains unsupported.
+to the document font after removal.
+
+Since ABI minor 25 the core also lists the stylesheet's `@font-face` rules
+(`weva_document_font_faces`: family, first `url()` source resolved against the
+base path, `font-weight` and `font-style` descriptor texts), and the Godot host
+loads each source and registers the family on every CSS or base-path change.
+The host keeps one face per family, preferring the normal weight/style rule;
+other weights and styles are synthesized, and `unicode-range`, `font-display`
+and `local()` are not honoured. A game's own `register_font_family` takes
+precedence. `hosts/godot/project/font_face_tests.tscn` covers loading, base-path
+resolution, a missing source, precedence, face choice and rule removal.
 
 The host retains the selected Font resource and observes its `changed` signal.
 Changes refresh shaping, measurement, glyph bitmaps and layout even when CSS

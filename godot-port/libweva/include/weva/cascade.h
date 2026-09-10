@@ -125,6 +125,19 @@ public:
     // Built during compilation, never during per-element style computation.
     const std::vector<std::string>& unsupported_at_rules() const { return unsupported_at_rules_; }
 
+    // `@font-face` rules in compiled stylesheet branches, in source order. The
+    // core does not load fonts: a host reads these, loads each source through
+    // its own font machinery and registers the family. `src` is the first
+    // url() entry as written (unresolved, unquoted); local() entries are
+    // skipped. `weight` and `style` are the descriptor texts, empty when absent.
+    struct FontFace {
+        std::string family;
+        std::string src;
+        std::string weight;
+        std::string style;
+    };
+    const std::vector<FontFace>& font_faces() const { return font_faces_; }
+
     // Typed custom properties declared by `@property` in the compiled sheets.
     const AtPropertyRegistry& property_registry() const { return property_registry_; }
 
@@ -232,6 +245,7 @@ private:
     // kUnlayeredOrdinal and so beat every layer.
     std::vector<std::string> layer_names_;
     std::vector<std::string> unsupported_at_rules_;
+    std::vector<FontFace> font_faces_;
     std::map<std::string, KeyframeAnimation> keyframes_;
     std::map<std::string, std::pair<int, int>> keyframe_priorities_;
     // The enclosing layer's full name while compiling a nested `@layer` block,

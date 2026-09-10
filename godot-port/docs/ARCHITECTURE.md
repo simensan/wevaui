@@ -814,4 +814,11 @@ HTML reload and shaper replacement, which rebuilds all family measurement caches
 Installing a font backend clears registrations because face IDs belong to that
 backend. Hosts must register their families again after such a replacement.
 This is a native-face registration API, not an implementation of CSS `@font-face`.
+
+ABI minor 25 adds `weva_document_font_faces(doc, buffer, capacity)`: the
+compiled stylesheets' `@font-face` rules as `family<TAB>source<TAB>weight<TAB>style`
+lines, the source being the first `url()` entry resolved against the base path
+like an image. The core still loads no fonts; a host loads each source and
+calls `weva_document_register_font_family`. `@font-face` no longer appears in
+the unsupported-rule diagnostics.
 The Godot source exposes `register_font_family(name, Font)` and watches resource changes. Installed Windows preview105 includes minor 14; its package and native exports pass the recorded verification.

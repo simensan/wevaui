@@ -284,12 +284,12 @@ void test_abi_stylesheet_replacement() {
     {
         const auto config = default_config();
         auto document = weva_document_create(&config);
-        const char* css = "@font-face {font-family:Camp;src:url(camp.ttf)}"
-                          "@font-face {font-family:Other;src:url(other.ttf)}"
+        const char* css = "@page {margin:0}"
+                          "@page :first {margin:1cm}"
                           "@media (min-width: 4000px) {@future {div{color:red}}}"
                           "@keyframes fade {from{opacity:0}to{opacity:1}}";
         CHECK(weva_document_set_css(document, css, std::strlen(css)) == WEVA_OK);
-        const std::string expected = "Ignored @font-face: unsupported stylesheet rule.";
+        const std::string expected = "Ignored @page: unsupported stylesheet rule.";
         CHECK(weva_document_css_diagnostics(document, nullptr, 0) == expected.size());
         std::vector<char> text(expected.size() + 1);
         CHECK(weva_document_css_diagnostics(document, text.data(), text.size()) == expected.size());
@@ -307,6 +307,38 @@ void test_abi_stylesheet_replacement() {
         CHECK(weva_document_set_css(document, nullptr, 0) == WEVA_OK);
         CHECK(weva_document_css_diagnostics(document, small, sizeof(small)) == 0);
         CHECK(small[0] == '\0');
+        weva_document_destroy(document);
+    }
+    {
+        // @font-face is parsed, not ignored: the host loads what it lists.
+        const auto config = default_config();
+        auto document = weva_document_create(&config);
+        CHECK(weva_document_set_base_path(document, "ui/") == WEVA_OK);
+        const char* css = "@font-face { font-family: \"Camp Display\"; src: local(Camp), url('fonts/camp.ttf') format('truetype'), url(camp.woff2); font-weight: 700; font-style: italic }"
+                          "@font-face{font-family:Mono;src:url(mono.ttf)}"
+                          "@font-face{font-family:Mono;src:url(mono.ttf)}"
+                          "@font-face{font-family:NoSource;src:local(Nope)}"
+                          "@media (min-width: 4000px) {@font-face{font-family:Wide;src:url(/abs/wide.ttf)}}"
+                          "@font-face{font-family:Rel;src:url(../shared/rel.ttf)}";
+        CHECK(weva_document_set_css(document, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_css_diagnostics(document, nullptr, 0) == 0);
+        const std::string expected = "Camp Display\tui/fonts/camp.ttf\t700\titalic\nMono\tui/mono.ttf\t\t\nRel\tui/../shared/rel.ttf\t\t";
+        CHECK(weva_document_font_faces(document, nullptr, 0) == expected.size());
+        std::vector<char> text(expected.size() + 1);
+        CHECK(weva_document_font_faces(document, text.data(), text.size()) == expected.size());
+        CHECK(std::string(text.data()) == expected);
+        char small[4] = {'x','x','x','x'};
+        CHECK(weva_document_font_faces(document, small, sizeof(small)) == expected.size());
+        CHECK(std::string(small) == "Cam");
+        CHECK(weva_document_font_faces(nullptr, small, sizeof(small)) == 0);
+        CHECK(small[0] == '\0');
+        weva_document_set_viewport(document, 4096, 720);
+        const size_t expanded = weva_document_font_faces(document, nullptr, 0);
+        text.resize(expanded + 1);
+        weva_document_font_faces(document, text.data(), text.size());
+        CHECK(std::string(text.data()) == "Camp Display\tui/fonts/camp.ttf\t700\titalic\nMono\tui/mono.ttf\t\t\nWide\t/abs/wide.ttf\t\t\nRel\tui/../shared/rel.ttf\t\t");
+        CHECK(weva_document_set_css(document, nullptr, 0) == WEVA_OK);
+        CHECK(weva_document_font_faces(document, small, sizeof(small)) == 0);
         weva_document_destroy(document);
     }
     const auto cfg = default_config();

@@ -5,10 +5,10 @@
 versions do not include this API; consult the addon's `build.json`.
 
 Replacing a document's CSS emits Godot warnings for unsupported at-rules such
-as `@font-face`. Repeated rules with the same name produce one diagnostic.
-The rules remain ignored; warnings do not make custom-font loading supported.
-Use the existing native font-family registration API until CSS font loading
-is implemented.
+as `@page`. Repeated rules with the same name produce one diagnostic. The
+rules remain ignored. `@font-face` is not among them since ABI minor 25: the
+host loads and registers its sources (see GODOT_TEXT_SHAPING.md), and a source
+that cannot load is reported by its own warning.
 
 ```gdscript
 ui.css = stylesheet_text

@@ -1,0 +1,76 @@
+{
+  "scope": "CSS @font-face loading on the Godot host: the core lists rules (ABI minor 25), the host loads sources and registers families. Windows only; candidate not installed.",
+  "library_sha256": "64ea530028cc86014227f094d836a5e70912d4baf03c398917e4247627ef0b32",
+  "abi_minor": 25,
+  "source": {
+    "libweva/src/cascade.cpp": "dc1a1ec4aee03ee99352c97e53d0d4d283e12870bfc0b2439b95cf85fc85d5ff",
+    "libweva/include/weva/cascade.h": "0d7dd30e95ef7f7bf494b9be59dc5856afba6105f9768887d46e7f337e702f1e",
+    "libweva/src/weva_c.cpp": "53ac62793b63b62dbb9125dfe2a8e6ebd6fd498a174b45abe7785f90a2c63d9a",
+    "libweva/include/weva_c.h": "0f78f0d9fc3c900df5652ca7f755231a67eb1d717a98e17390f21b0a81dcd871",
+    "hosts/godot/src/weva_node.cpp": "9d9f5a6c30d5790f7f84e96a04d4bcd8e2272d23572fd945284d74545bb100ca",
+    "hosts/godot/project/font_face_tests.gd": "c9a5d915b6a9da409e543bfae4b74595bcd8527a9c944456b40c08d8820668bd"
+  },
+  "core": {
+    "passed_suites": 14,
+    "total_suites": 14,
+    "log": ".utmp/safe-engine71/shaping-native/ff-core-ctest.log",
+    "note": "test_c_abi covers parsing, quoting, local() skipping, base-path resolution, duplicate suppression, media gating and buffer protocol"
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "total_suites": 16,
+    "log": ".utmp/safe-engine71/shaping-native/ff-san-ctest.log"
+  },
+  "host": {
+    "passed": true,
+    "entries": 50,
+    "checks": 35557,
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite4/receipt.json",
+    "font_face_tests": {
+      "name": "font_face_tests",
+      "passed": true,
+      "checks": 11,
+      "failures": 0,
+      "exit": 0,
+      "seconds": 0.3,
+      "command": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/safe-engine71/weva-godot-4.7.2-scriptfix71-windows-x86_64/editor/godot.windows.editor.x86_64.exe",
+        "--headless",
+        "--path",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\shaping-host\\hosts\\godot\\project",
+        "font_face_tests.tscn"
+      ]
+    },
+    "css_diagnostic_tests": {
+      "name": "css_diagnostic_tests",
+      "passed": true,
+      "checks": 26,
+      "failures": 0,
+      "exit": 0,
+      "seconds": 0.3,
+      "command": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/safe-engine71/weva-godot-4.7.2-scriptfix71-windows-x86_64/editor/godot.windows.editor.x86_64.exe",
+        "--headless",
+        "--path",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\shaping-host\\hosts\\godot\\project",
+        "css_diagnostic_tests.tscn"
+      ]
+    }
+  },
+  "font_face_on_stock_4_7_1": {
+    "checks": 11,
+    "failures": 0,
+    "log": ".utmp/safe-engine71/shaping-checks/font-face-stock.log"
+  },
+  "sample": {
+    "headless": "frontier integration: 95 checks, 0 failures"
+  },
+  "findings": [
+    "@font-face url() sources load and register through the same asset convention as images, on the patched and the stock editor.",
+    "The diagnostics fixture now uses @page as its unsupported rule; @font-face is no longer reported.",
+    "One face per family; per-weight/style matching, unicode-range, font-display and local() are not implemented."
+  ],
+  "limitations": [
+    "Windows only; exports and timing profiles not rerun; candidate not installed."
+  ]
+}

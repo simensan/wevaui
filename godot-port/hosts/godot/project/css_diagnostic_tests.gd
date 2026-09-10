@@ -16,8 +16,10 @@ func _ready() -> void:
 	doc.html = '<div id="label">Camp</div>'
 	add_child(doc)
 	require(doc.get_css_diagnostics().is_empty(), "empty initially")
-	doc.css = '@font-face{font-family:Camp;src:url(camp.ttf)} @font-face{font-family:Other;src:url(other.ttf)} @media(min-width:1000px){@future{div{color:red}}} @keyframes fade{from{opacity:0}to{opacity:1}}'
-	var expected := PackedStringArray(["Ignored @font-face: unsupported stylesheet rule."])
+	# @font-face is loaded by the host (font_face_tests), so @page stands in
+	# for an unsupported rule here.
+	doc.css = '@page{margin:0} @page :first{margin:1cm} @media(min-width:1000px){@future{div{color:red}}} @keyframes fade{from{opacity:0}to{opacity:1}}'
+	var expected := PackedStringArray(["Ignored @page: unsupported stylesheet rule."])
 	require(doc.get_css_diagnostics() == expected, "deduplicated; inactive media and keyframes omitted")
 	var updates: int = doc.get_core_update_count()
 	for index in 20:

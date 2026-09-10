@@ -143,11 +143,91 @@ size_t WevaDocument::read_asset(void* user_data, const char* path, uint8_t* buff
     return length;
 }
 
+namespace {
+// One font per `@font-face` source, by the same path convention as images:
+// an imported font resource when the importer knows the path, otherwise the
+// raw file (user://, absolute paths, Keep File, headless runs).
+Ref<Font> load_css_font(String path) {
+    if (!path.begins_with("res://") && !path.begins_with("user://") && !path.is_absolute_path())
+        path = "res://" + path;
+    ResourceLoader* loader = ResourceLoader::get_singleton();
+    if (path.begins_with("res://") && loader && loader->exists(path, "Font")) {
+        const Ref<Font> font = loader->load(path, "Font");
+        if (font.is_valid()) return font;
+    }
+    if (!FileAccess::file_exists(path)) return Ref<Font>();
+    Ref<FontFile> file;
+    file.instantiate();
+    if (file->load_dynamic_font(path) != OK) return Ref<Font>();
+    return file;
+}
+
+bool normal_face(const String& weight, const String& style) {
+    const String w = weight.strip_edges().to_lower();
+    const String s = style.strip_edges().to_lower();
+    return (w.is_empty() || w == "normal" || w == "400") && (s.is_empty() || s == "normal");
+}
+} // namespace
+
+// The core lists `@font-face` rules; this loads their sources and registers
+// the families so `font-family: "Camp Display"` selects them. One face per
+// family: the normal-weight, normal-style rule when there is one, else the
+// first, with the backend synthesizing bold and italic. Families the game
+// registered through register_font_family keep their font.
+void WevaDocument::sync_css_font_faces() {
+    if (!doc_) return;
+    const size_t bytes = weva_document_font_faces(doc_, nullptr, 0);
+    std::vector<char> text(bytes + 1);
+    weva_document_font_faces(doc_, text.data(), text.size());
+    struct Wanted {
+        String family, path;
+        bool normal = false;
+    };
+    std::map<String, Wanted> wanted;
+    for (const String& line : String::utf8(text.data()).split("\n", false)) {
+        const PackedStringArray fields = line.split("\t");
+        if (fields.size() < 2 || fields[0].is_empty() || fields[1].is_empty()) continue;
+        const String key = fields[0].strip_edges().to_lower();
+        if (key.is_empty() || key.contains(",") || key.contains("\"") || key.contains("'")) continue;
+        const bool normal = normal_face(fields.size() > 2 ? fields[2] : String(), fields.size() > 3 ? fields[3] : String());
+        auto it = wanted.find(key);
+        if (it == wanted.end()) wanted[key] = {fields[0].strip_edges(), fields[1], normal};
+        else if (normal && !it->second.normal) it->second = {fields[0].strip_edges(), fields[1], normal};
+    }
+    // Drop CSS registrations the stylesheet no longer declares, or that the
+    // game has since replaced with its own font.
+    for (auto it = css_font_faces_.begin(); it != css_font_faces_.end();) {
+        const auto current = family_fonts_.find(it->first);
+        const bool ours = current != family_fonts_.end() && current->second == it->second.font;
+        const auto want = wanted.find(it->first);
+        if (!ours) {
+            it = css_font_faces_.erase(it);
+        } else if (want == wanted.end()) {
+            register_font_family(it->first, Ref<Font>());
+            it = css_font_faces_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (const auto& entry : wanted) {
+        const auto existing = css_font_faces_.find(entry.first);
+        if (existing != css_font_faces_.end() && existing->second.path == entry.second.path) continue;
+        if (existing == css_font_faces_.end() && family_fonts_.count(entry.first)) continue; // the game's own registration wins
+        const Ref<Font> font = load_css_font(entry.second.path);
+        if (font.is_null()) {
+            UtilityFunctions::push_warning("Weva CSS: @font-face ", entry.second.family, " could not load ", entry.second.path);
+            continue;
+        }
+        if (register_font_family(entry.first, font)) css_font_faces_[entry.first] = {entry.second.path, font};
+    }
+}
+
 void WevaDocument::set_base_path(const String& path) {
     base_path_ = path;
     if (doc_) {
         const CharString utf8 = path.utf8();
         weva_document_set_base_path(doc_, utf8.get_data());
+        sync_css_font_faces();
         dirty_ = true;
         queue_redraw();
     }
@@ -755,6 +835,7 @@ void WevaDocument::set_css(const String& css) {
         }
     }
     css_ = css;
+    sync_css_font_faces();
     for (const String& diagnostic : get_css_diagnostics()) {
         UtilityFunctions::push_warning("Weva CSS: ", diagnostic);
     }

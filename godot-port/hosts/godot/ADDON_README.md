@@ -93,7 +93,21 @@ use `ui.add_theme_font_override("font", preload("res://fonts/interface.ttf"))`
 or assign a Theme with a default font. Live Font resource changes refresh
 layout and glyphs. Register a named face with `ui.register_font_family("Camp", font)`
 and select it using CSS `font-family: Camp`. CSS still sets size and line height.
-CSS `@font-face` loading remains unsupported. See `GODOT_TEXT_SHAPING.md` for details.
+
+Stylesheets can also declare fonts the standard way:
+
+```css
+@font-face { font-family: "Camp Display"; src: url("fonts/display.ttf"); }
+h1 { font-family: "Camp Display", sans-serif; }
+```
+
+The `src` url resolves like an image url, against `base_path` (the markup's
+directory when loaded through `WevaView`), through the importer when the font
+is an imported resource and from the raw file otherwise. One face is registered
+per family: the rule with normal weight and style when several are declared,
+with bold and italic synthesized; `local()` sources are skipped. A family the
+game registered itself keeps its font. A source that cannot load warns and the
+family falls back. See `GODOT_TEXT_SHAPING.md` for details.
 
 ## Export
 

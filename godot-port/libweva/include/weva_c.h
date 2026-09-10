@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 24
+#define WEVA_ABI_VERSION_MINOR 25
 
 uint32_t weva_abi_version(void);
 
@@ -1107,6 +1107,16 @@ size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t ca
  * always terminated; truncation does not change the required size. No update,
  * layout or events are triggered. This is not a complete CSS support audit. */
 size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t capacity);
+
+/* `@font-face` rules from compiled stylesheet branches, one per line as
+ * "family<TAB>source<TAB>font-weight<TAB>font-style" in source order; the last
+ * two fields are the descriptor texts and may be empty. The source is the
+ * first url() entry resolved against the document base path exactly like an
+ * image URL, so a host loads it through the same asset convention, then calls
+ * weva_document_register_font_family with the face it made. The core never
+ * loads fonts itself. Same buffer convention as css_diagnostics; replaced on
+ * set_css and viewport recompilation. Available since ABI minor 25. */
+size_t weva_document_font_faces(weva_document_t doc, char* buffer, size_t capacity);
 
 /* How the core obtains an asset's bytes. Returns the number of bytes the asset
  * HAS, writing up to `capacity` of them -- the two-call convention the rest of
