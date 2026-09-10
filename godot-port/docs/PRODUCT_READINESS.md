@@ -34,9 +34,17 @@ then pass 276/276 each. On the identical busy scene (1,126 OpenGL draws,
 115,490 primitives, vsync off, same adapter) whole-frame p95 is 0.7-1.8 ms
 with the UI disabled and 1-4 ms with it, where every earlier session measured
 8-17 ms; Overwolf, the NVIDIA container and Steam were running as before, so
-the earlier waits' cause stays unidentified, but they were never UI cost. The
-lifecycle soak, lower-end hardware and a physical controller remain unrun for
-this build. [Build220 qualification](verification/qualification220.json).
+the earlier waits' cause stays unidentified, but they were never UI cost.
+Build220's ten-minute Vulkan 1080p 3D lifecycle check passes 200 recreations
+and 688,364 soak frames with 115,168 mixed-script name updates (2.3 times the
+preview217 run): cold construction 85.3 ms CPU, prepared reuse with hidden data
+updates 0.827 ms CPU p95, soak frame p95 2.08 ms and maximum 23.4 ms. Private
+memory minute medians rise from 821.7 to 823.3 MiB and hold from minute six;
+teardown returns to 491 nodes and 1,930 objects after recreation and 1,937
+after the soak, the bounded pattern classified above. Lower-end hardware and a
+physical controller remain unrun for this build.
+[Build220 qualification](verification/qualification220.json),
+[lifecycle evidence](verification/lifecycle220.json).
 
 The earlier preview219 candidate (shaping pieces, `@font-face`
 with real variants, gamepad navigation) was qualified as far as that session's
@@ -378,9 +386,8 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 
 ## Next work
 
-1. Run the ten-minute lifecycle soak on build220. Consider giving the
-   whole-frame gate a UI-attributable delta limit next to the absolute one, so
-   an external presentation wait (see
+1. Consider giving the whole-frame gate a UI-attributable delta limit next
+   to the absolute one, so an external presentation wait (see
    [frame-attribution217.json](verification/frame-attribution217.json) and the
    build220 numbers above) is reported as such rather than as a UI failure.
 2. Diagnose the intermittent whole-frame stalls and verify the eventual release

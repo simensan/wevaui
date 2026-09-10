@@ -108,7 +108,6 @@
     }
   },
   "not_run": [
-    "lifecycle soak",
     "lower-end hardware",
     "physical controller"
   ],
@@ -1287,5 +1286,49 @@
         "delta_vs_ui_disabled_ms": 0.992
       }
     ]
+  },
+  "lifecycle": {
+    "passed": true,
+    "receipt": "lifecycle220.json",
+    "first_document_cpu_ms": 85.331,
+    "reuse_with_hidden_data_update_cpu": {
+      "max_ms": 0.875,
+      "mean_ms": 0.40112,
+      "median_ms": 0.301,
+      "p95_ms": 0.827,
+      "samples": 200
+    },
+    "soak_frames": {
+      "max_ms": 23.374,
+      "mean_ms": 0.86993945209223,
+      "median_ms": 0.51,
+      "p95_ms": 2.08,
+      "quantile_limit_ms": 100.0,
+      "quantile_overflow_samples": 0,
+      "quantile_resolution_ms": 0.01,
+      "samples": 688364
+    },
+    "teardown_markers": [
+      {
+        "phase": "before_recreate",
+        "index": 0,
+        "nodes": 491.0,
+        "objects": 1930.0
+      },
+      {
+        "phase": "after_recreate",
+        "index": 0,
+        "nodes": 491.0,
+        "objects": 1930.0
+      },
+      {
+        "phase": "final_teardown",
+        "index": 0,
+        "nodes": 491.0,
+        "objects": 1937.0
+      }
+    ],
+    "private_mib_first_minute": 821.676,
+    "private_mib_last_minute": 829.73
   }
 }

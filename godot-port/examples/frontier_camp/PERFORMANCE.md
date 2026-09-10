@@ -8,8 +8,12 @@ desktop timing profile, all passing) is in
 [qualification220.json](../../docs/verification/qualification220.json). The
 automatic 1080p and 4K 3D profiles pass 276/276 each with whole-frame p95 of
 1-4 ms on the same busy scene that measured 8-17 ms in every earlier session
-(the earlier waits were external and remain unexplained). The lifecycle soak
-was not rerun for it. The build211 record follows.
+(the earlier waits were external and remain unexplained). Its ten-minute
+Vulkan 1080p 3D lifecycle check passes 200 recreations and 688,364 soak frames
+with mixed-script name churn: cold construction 85.3 ms CPU, prepared reuse
+0.827 ms CPU p95, soak p95 2.08 ms, private memory 821.7 to 823.3 MiB and level
+from minute six ([lifecycle220.json](../../docs/verification/lifecycle220.json)).
+The build211 record follows.
 
 Build211 (ABI minor24) previously contained incremental
 font warmup in the sample loading screen, animation

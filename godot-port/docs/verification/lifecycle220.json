@@ -1,0 +1,204 @@
+{
+  "verification": {
+    "passed": true,
+    "prepared_pixels_match_cold": true,
+    "font_cache_log_requested": false,
+    "font_cache_log_observed": false,
+    "executable_sha256": "88efc77f764d787ad6657f4881013351f36c4ce23fe2745074eb0f5e294c9f4e",
+    "library_sha256": "590a7536fff3fd9e81ade07bbbb19224e184a56c3970bfee3214ff325800fd69",
+    "source_sha256": {
+      "boot.gd": "210c9b24eeedcfbe38ab818270f0739a536cac365270933e0a555d47ea476da2",
+      "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+      "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+      "game.gd": "460b0dc99321cb35b285724984fcd69069c0e07905667479f214bd102a505913",
+      "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+      "tests\\integration.gd": "ef82e3168b9534f67722743653377073f052db491bcd4c84390d25f209f9ae93",
+      "tests\\lifecycle.gd": "f128f2dedf3bc02f56e1a5a013c605167c9c412f2be340fb0c2ac97636d2e53d",
+      "tests\\load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+      "tests\\performance.gd": "78c0e787433f5050e113ecd588a86ee237f5a2da2d4312e10aa988bd0cc1b226",
+      "ui\\camp.css": "e9d1c82e7dbeb565e2bba565ec0d472d367c6ba14bcf3810980f0eb92d1b1436",
+      "ui\\camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+      "addons\\weva\\weva_view.gd": "613adb0e48efb20cacfa561dd46b2d8df778a2b814c3ae58303d07ea5730fd9b",
+      "addons\\weva\\example\\example.gd": "9d5963e2f8b0b81aca813a79fd134516e65355f6ea0d66993766915f8fd29eed",
+      "addons\\weva\\example\\example.tscn": "f164c04bc0bb1710a068a9ed234e719a122501b774df0ba95666df1677ae56c9",
+      "addons\\weva\\example\\ui.css": "998d4af10e12099fae89c3a0ae35c986674efcc7f97b25ed8002cf23bff39eb6",
+      "addons\\weva\\example\\ui.html": "1bed57345424f80dc13dc94e82f9ab7f5b9d5bd51448b8931f01de35bd7ba33f"
+    },
+    "process_memory_available": true,
+    "result": {
+      "cycles": 200,
+      "debug_build": false,
+      "engine": {
+        "build": "custom_build",
+        "hash": "unknown",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (custom_build)",
+        "timestamp": 0
+      },
+      "first_hidden": false,
+      "name_updates": 115168,
+      "passed": true,
+      "renderer": "mobile",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "results": {
+        "first_document_cpu_ms": 85.331,
+        "first_document_through_draw_ms": 87.488,
+        "first_show_cpu_ms": 0.004,
+        "first_show_through_draw_ms": 2.153,
+        "hidden_prepare_cpu_ms": 25.574,
+        "prepared_first_show_cpu_ms": 0.011,
+        "prepared_first_show_through_draw_ms": 1.192,
+        "recreate_cpu": {
+          "max_ms": 50.721,
+          "mean_ms": 26.32114,
+          "median_ms": 25.835,
+          "p95_ms": 32.572,
+          "samples": 200
+        },
+        "reuse_through_draw": {
+          "max_ms": 9.833,
+          "mean_ms": 2.620735,
+          "median_ms": 1.347,
+          "p95_ms": 8.41,
+          "samples": 200
+        },
+        "reuse_with_hidden_data_update_cpu": {
+          "max_ms": 0.875,
+          "mean_ms": 0.40112,
+          "median_ms": 0.301,
+          "p95_ms": 0.827,
+          "samples": 200
+        },
+        "scene_resource_load_ms": 40.261,
+        "soak_frames": {
+          "max_ms": 23.374,
+          "mean_ms": 0.86993945209223,
+          "median_ms": 0.51,
+          "p95_ms": 2.08,
+          "quantile_limit_ms": 100.0,
+          "quantile_overflow_samples": 0,
+          "quantile_resolution_ms": 0.01,
+          "samples": 688364
+        },
+        "soak_seconds": 600.00092
+      },
+      "soak_frame_target": 0,
+      "soak_names": true,
+      "soak_rounds": 1,
+      "soak_settings": true,
+      "soak_sort": true,
+      "soak_without_ui": false,
+      "unicode_names": true,
+      "world": "3d"
+    }
+  },
+  "source": ".utmp\\safe-engine71\\qual220-lifecycle",
+  "soak_private_memory_minutes": [
+    {
+      "minute": 0,
+      "samples": 275,
+      "median_private_mib": 821.676,
+      "min_private_mib": 816.125,
+      "max_private_mib": 821.75
+    },
+    {
+      "minute": 1,
+      "samples": 280,
+      "median_private_mib": 821.531,
+      "min_private_mib": 821.5,
+      "max_private_mib": 821.531
+    },
+    {
+      "minute": 2,
+      "samples": 283,
+      "median_private_mib": 821.438,
+      "min_private_mib": 821.438,
+      "max_private_mib": 821.5
+    },
+    {
+      "minute": 3,
+      "samples": 294,
+      "median_private_mib": 821.438,
+      "min_private_mib": 821.438,
+      "max_private_mib": 821.625
+    },
+    {
+      "minute": 4,
+      "samples": 285,
+      "median_private_mib": 822.477,
+      "min_private_mib": 821.59,
+      "max_private_mib": 822.668
+    },
+    {
+      "minute": 5,
+      "samples": 289,
+      "median_private_mib": 822.797,
+      "min_private_mib": 822.637,
+      "max_private_mib": 822.98
+    },
+    {
+      "minute": 6,
+      "samples": 247,
+      "median_private_mib": 823.125,
+      "min_private_mib": 822.98,
+      "max_private_mib": 823.426
+    },
+    {
+      "minute": 7,
+      "samples": 238,
+      "median_private_mib": 823.426,
+      "min_private_mib": 823.324,
+      "max_private_mib": 823.426
+    },
+    {
+      "minute": 8,
+      "samples": 265,
+      "median_private_mib": 823.324,
+      "min_private_mib": 823.324,
+      "max_private_mib": 823.324
+    },
+    {
+      "minute": 9,
+      "samples": 283,
+      "median_private_mib": 823.324,
+      "min_private_mib": 823.324,
+      "max_private_mib": 823.355
+    },
+    {
+      "minute": 10,
+      "samples": 2,
+      "median_private_mib": 829.73,
+      "min_private_mib": 829.73,
+      "max_private_mib": 829.73
+    }
+  ],
+  "soak_private_mib_peak": 829.73,
+  "teardown_markers": [
+    {
+      "phase": "before_recreate",
+      "index": 0,
+      "nodes": 491.0,
+      "objects": 1930.0
+    },
+    {
+      "phase": "after_recreate",
+      "index": 0,
+      "nodes": 491.0,
+      "objects": 1930.0
+    },
+    {
+      "phase": "final_teardown",
+      "index": 0,
+      "nodes": 491.0,
+      "objects": 1937.0
+    }
+  ],
+  "scope": "Installed build220, Windows RTX 5080, Vulkan 1080p 3D, mixed-script name churn, 200 recreations and ten-minute soak. Finite memory observation, not proof of leak freedom."
+}
