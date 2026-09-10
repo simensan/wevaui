@@ -4,6 +4,16 @@ Write a game's UI in HTML and CSS and connect it to GDScript with data bindings
 and controller methods. This preview targets Godot 4.7 desktop builds. The
 archive's `build.json` lists the platform libraries actually included.
 
+**What has been tested.** Godot 4.7.1 and 4.7.2 on Windows (the official
+editor and a patched one), Linux headless for the test suites, and one desktop
+GPU (an RTX 5080) for the timing and lifecycle profiles. macOS is not built.
+Mouse, keyboard and gamepad input are verified with synthetic events; a
+physical controller, touch screen and system IME have not been used. Lower-end
+hardware is unmeasured. The official 4.7.1 editor with its official export
+templates imports, runs and exports the sample project. Text in Weva documents
+is safe on the stock engine; text in native Godot controls still needs the
+patched engine for very long emoji-heavy strings (see `GODOT_TEXT_SHAPING.md`).
+
 ## Install and run
 
 1. Extract the archive into your Godot project's root. It adds `addons/weva/`.

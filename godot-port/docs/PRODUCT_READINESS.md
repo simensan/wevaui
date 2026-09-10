@@ -15,11 +15,15 @@ patched editor, native exports and desktop timing
 which differs only by the keyboard, passed every profile on this machine:
 core and sanitizer suites, the sample on the official stock 4.7.1 editor,
 1080p and 4K timing, and the ten-minute lifecycle soak; details and receipts
-follow. Still
-open: lower-end hardware, a physical controller, physical IME and touch,
-stock-template exports, and the residual layout differences listed under
-browser layout behavior. The paragraphs below are in reverse order of
-arrival; earlier candidates' failures are preserved as recorded.
+follow. With the official 4.7.1 editor and its official export templates, a
+fresh consumer project imports, passes the sample headless and rendered,
+exports, and the exported game passes the same checks relocated
+([qualification221.json](verification/qualification221.json)), so neither the
+patched editor nor its templates are needed for a Weva game. Still open:
+lower-end hardware, a physical controller, physical IME and touch, macOS,
+and the residual layout differences listed under browser layout behavior.
+The paragraphs below are in reverse order of arrival; earlier candidates'
+failures are preserved as recorded.
 
 Candidate217 (superseded by build220 below) avoided temporary list vectors during scalar interpolation. A
 focused allocation test falls from 18,000 to 6,000 allocations across 3,000 width,
@@ -400,7 +404,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Exported artwork and markup | Verified Windows subset: package example and relocated exports cover HTML/CSS and imported artwork. |
 | Reproducible native builds | Package/build metadata matches source and dependency content; toolchain configuration is recorded. Cross-toolchain bit-identical builds are not established. See RELEASE.md. |
 | Installable addon | Current Windows package and fresh consumer pass. Historical Linux package results cannot certify the current preview. |
-| Native desktop exports | Current patched Windows debug/release/embedded exports pass. The full host suite and the sample pass on the stock Windows 4.7.1 editor with build220; stock-template exports, other platforms and native-control text remain unverified. |
+| Native desktop exports | Patched Windows debug/release/embedded exports pass, and with build221 the official 4.7.1 editor and official export templates also produce a passing export of the fresh consumer project (104 headless and 114 rendered checks in the relocated game). Other platforms and native-control text remain unverified. |
 | Replaced images in flex layouts | Current intrinsic-size suite and rendered example pass. Broader layout agreement is assessed separately below. |
 | Native GUI integration | Current input suite covers Control focus, native overlays, document visibility and routed input. Joypad events now drive HTML focus, activation and dismissal through the project's ui_* actions with conventional button fallbacks (gamepad_navigation_tests: 33 checks with real joypad button and axis events, including wake on first press and held-direction repeat). Physical touch/gamepad acceptance is still needed. |
 | Text editing and popup lifecycle | Current dialog suite: 1,199 checks; popover beforetoggle suite: 1,389 checks, including opening vetoes, ordered closing, mutation and queue-pressure cases. Form method=dialog is covered. Controller text entry goes through `WevaView`'s on-screen keyboard (24 checks). Full browser task timing, remaining dialog lifecycle and physical input-method acceptance remain open. [Popover evidence](verification/popover-beforetoggle.json). |

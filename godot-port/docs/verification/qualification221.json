@@ -89,5 +89,20 @@
       "entries": 53,
       "checks": 35635
     }
+  },
+  "stock_editor_and_templates": {
+    "editor": "official Godot 4.7.1.stable.mono Windows editor",
+    "templates": "official Godot_v4.7.1-stable_export_templates.tpz (windows_release_x86_64.exe, windows_debug_x86_64.exe), downloaded 2026-09-10",
+    "fresh_consumer_and_native_export": [
+      "import: passed",
+      "headless: frontier integration: 104 checks, 0 failures",
+      "gl_compatibility: frontier integration: 114 checks, 0 failures",
+      "mobile: frontier integration: 114 checks, 0 failures",
+      "export: passed",
+      "export-headless: frontier integration: 104 checks, 0 failures",
+      "export-render: frontier integration: 114 checks, 0 failures"
+    ],
+    "output": ".utmp/safe-engine71/stock221-frontier",
+    "note": "The sample project already sets internationalization/locale/include_text_server_data=true so the exported game carries ICU data."
   }
 }

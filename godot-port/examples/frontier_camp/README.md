@@ -7,14 +7,16 @@ installed version. Sample, exports and desktop performance checks pass;
 
 Open `project.godot` in Godot 4.7 and press **F5**. With build221 the sample's
 own checks pass on the official stock 4.7.1 editor, headless and rendered,
-including the long-Unicode name churn; the verified patched **Godot 4.7.2**
-editor described in the [engine guide](../../docs/GODOT_TEXT_SHAPING.md#windows-patched-engine-bundle-2026-09-08)
-remains the choice for text in native Godot controls and for the exports below.
+including the long-Unicode name churn, and the official 4.7.1 export templates
+produce a passing export; the verified patched **Godot 4.7.2** editor described
+in the [engine guide](../../docs/GODOT_TEXT_SHAPING.md#windows-patched-engine-bundle-2026-09-08)
+remains the choice only for text in native Godot controls.
 The prepared local project has the Windows addon installed. This is independent
 of the host gallery.
 
-Use the same bundle's debug and release binaries as the Windows export preset's
-**Custom Template** paths. The project already includes ICU support data in
+The Windows export preset works with the official templates; the patched
+bundle's debug and release binaries can be set as its **Custom Template** paths
+instead. The project already includes ICU support data in
 exports (`internationalization/locale/include_text_server_data=true`). The
 addon shapes long emoji-heavy text in pieces, so this sample's long-Unicode
 name churn also completes on the official stock 4.7.1 editor; the engine's own
