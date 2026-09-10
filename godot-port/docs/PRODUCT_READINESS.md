@@ -38,6 +38,13 @@ installed, and the profile must be rerun on a quiet machine; 1080p/4K, the
 lifecycle soak and lower-end hardware were not run.
 [Qualification receipt](verification/qualification219.json).
 
+`WevaView` now reloads its HTML and CSS files when they change on disk while
+the game runs (debug builds by default), reapplying a stylesheet edit without
+touching the document or its bindings and reloading markup with the bound data
+re-applied, after the file's modified time has been stable for one poll.
+Eleven host checks edit files under `user://` and verify both paths, binding
+survival and the off switch. [Live reload evidence](verification/live-reload.json).
+
 A controller now drives the document without scripting. Joypad button and
 axis events reaching the focused node answer as the keyboard their `ui_*`
 actions stand in for: the pad and stick move focus by geometry (a slider,

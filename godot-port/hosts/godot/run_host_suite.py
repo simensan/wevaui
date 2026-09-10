@@ -33,7 +33,7 @@ SCENES = [
     'number_step_tests', 'popover_beforetoggle_tests', 'unknown_at_rule_tests', 'css_diagnostic_tests',
     'conditional_keyframe_tests', 'font_warmup_tests', 'hidden_transition_tests', 'long_effect_list_tests',
     'delayed_transition_tests', 'transition_cancellation_tests', 'transition_reversal_tests',
-    'font_face_tests', 'gamepad_navigation_tests',
+    'font_face_tests', 'gamepad_navigation_tests', 'live_reload_tests',
 ]
 SCRIPTS = {'survival_smoke': 'res://samples/western_survival/survival_smoke.gd'}
 SUMMARY = re.compile(r'(\d+) checks, (\d+) failures')

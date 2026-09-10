@@ -77,6 +77,18 @@ HUD root, then `pointer-events: auto` on panels/controls. Put game actions in
 For a complete settings panel with typed bindings, click callbacks and reset
 handling, see [Form authoring](FORM_STATE.md#authoring-a-settings-panel).
 
+## Edit while it runs
+
+`WevaView` watches its HTML and CSS files while the game runs and reloads
+them when they change on disk (`live_reload`, on in debug builds such as the
+editor's F5 and off in exported releases; `live_reload_interval` sets the
+poll, 0.5 s by default). Save the stylesheet and the change shows without a
+restart, keeping the document, its state and bindings; save the markup and
+the HTML reloads with the bound data re-applied. A file is read once its
+modified time has stayed put for one interval, so a half-written save is
+skipped. `files_reloaded(markup_changed, stylesheet_changed)` fires after
+each reload.
+
 ## Native document API
 
 Create a `WevaDocument` Control from GDScript, set `html` and `css`, then add

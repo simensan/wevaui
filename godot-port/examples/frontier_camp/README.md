@@ -42,6 +42,8 @@ runtime. The addon must contain `weva_view.gd` and your platform's library.
   `gamepad_wake`): the first press wakes the UI on **Settings**, A opens it,
   the pad moves between rows and adjusts the slider, B closes it.
 - A native Timer advances the clock and restores stamina once camp is built.
+- With preview219 or later, edit `ui/camp.css` or `ui/camp.html` while the
+  game runs: the view reloads the file and keeps the game state.
 
 This UI sample uses a static landscape and a small resource/crafting simulation.
 Window sizes start at 1024 × 720. No settings are saved; restarting restores

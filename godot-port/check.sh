@@ -464,6 +464,17 @@ if [ -x "$GODOT" ]; then
         tail -25 /tmp/weva-gamepad.log
     fi
 
+    step "live reload integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . live_reload_tests.tscn ) > /tmp/weva-live-reload.log 2>&1 &&
+       grep -q 'godot live reload:.* 0 failures' /tmp/weva-live-reload.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-live-reload.log; then
+        grep 'godot live reload:' /tmp/weva-live-reload.log
+    else
+        fail "live reload integration"
+        tail -25 /tmp/weva-live-reload.log
+    fi
+
     step "line height integration"
     if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
             "$GODOT" --headless --path . line_height_tests.tscn ) > /tmp/weva-line-height.log 2>&1 &&
