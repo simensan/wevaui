@@ -19,7 +19,10 @@ follow. With the official 4.7.1 editor and its official export templates, a
 fresh consumer project imports, passes the sample headless and rendered,
 exports, and the exported game passes the same checks relocated
 ([qualification221.json](verification/qualification221.json)), so neither the
-patched editor nor its templates are needed for a Weva game. Still open:
+patched editor nor its templates are needed for a Weva game. A combined
+Windows and Linux addon zip built from this source (`alpha_artifact` in the
+same receipt) installs on stock Linux Godot and passes the packaged example
+and pack-export smokes there. Still open:
 lower-end hardware, a physical controller, physical IME and touch, macOS,
 and the residual layout differences listed under browser layout behavior.
 The paragraphs below are in reverse order of arrival; earlier candidates'
@@ -403,7 +406,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Fresh-project import | Verified on the tested Windows engine in the current import and fresh consumer checks. Repeat for every declared native platform. |
 | Exported artwork and markup | Verified Windows subset: package example and relocated exports cover HTML/CSS and imported artwork. |
 | Reproducible native builds | Package/build metadata matches source and dependency content; toolchain configuration is recorded. Cross-toolchain bit-identical builds are not established. See RELEASE.md. |
-| Installable addon | Current Windows package and fresh consumer pass. Historical Linux package results cannot certify the current preview. |
+| Installable addon | Current Windows package and fresh consumer pass, and a combined Windows and Linux preview221 zip installs on stock Linux Godot and passes the packaged example and pack-export smokes ([qualification221.json](verification/qualification221.json), `alpha_artifact`). Native Linux exports need Linux templates, not installed here. |
 | Native desktop exports | Patched Windows debug/release/embedded exports pass, and with build221 the official 4.7.1 editor and official export templates also produce a passing export of the fresh consumer project (104 headless and 114 rendered checks in the relocated game). Other platforms and native-control text remain unverified. |
 | Replaced images in flex layouts | Current intrinsic-size suite and rendered example pass. Broader layout agreement is assessed separately below. |
 | Native GUI integration | Current input suite covers Control focus, native overlays, document visibility and routed input. Joypad events now drive HTML focus, activation and dismissal through the project's ui_* actions with conventional button fallbacks (gamepad_navigation_tests: 33 checks with real joypad button and axis events, including wake on first press and held-direction repeat). Physical touch/gamepad acceptance is still needed. |

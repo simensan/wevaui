@@ -104,5 +104,18 @@
     ],
     "output": ".utmp/safe-engine71/stock221-frontier",
     "note": "The sample project already sets internationalization/locale/include_text_server_data=true so the exported game carries ICU data."
+  },
+  "alpha_artifact": {
+    "zip": ".utmp/safe-engine71/weva-alpha-preview221-windows-linux.zip",
+    "sha256": "034b3585d0b29fea4ef8aa7294e9e0b14b00df99798b977fce57ff09cd5b4966",
+    "size_bytes": 6648407,
+    "contents": "27 files: Windows weva_godot.dll (this qualification) and Linux libweva_godot.so built from the same source with gcc in WSL, weva_view.gd, example, licences, build.json for both platforms",
+    "linux_install_check": [
+      "godot export smoke (project): 8 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (pack): 10 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures"
+    ],
+    "linux_note": "Stock Linux Godot 4.7.2 headless: packaged example and pack export smokes; native Linux export smokes need Linux templates, which are not installed."
   }
 }
