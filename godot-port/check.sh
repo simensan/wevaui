@@ -475,6 +475,17 @@ if [ -x "$GODOT" ]; then
         tail -25 /tmp/weva-live-reload.log
     fi
 
+    step "on-screen keyboard integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . onscreen_keyboard_tests.tscn ) > /tmp/weva-onscreen-keyboard.log 2>&1 &&
+       grep -q 'godot on-screen keyboard:.* 0 failures' /tmp/weva-onscreen-keyboard.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-onscreen-keyboard.log; then
+        grep 'godot on-screen keyboard:' /tmp/weva-onscreen-keyboard.log
+    else
+        fail "on-screen keyboard integration"
+        tail -25 /tmp/weva-onscreen-keyboard.log
+    fi
+
     step "line height integration"
     if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
             "$GODOT" --headless --path . line_height_tests.tscn ) > /tmp/weva-line-height.log 2>&1 &&

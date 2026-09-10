@@ -91,6 +91,17 @@ re-applied, after the file's modified time has been stable for one poll.
 Eleven host checks edit files under `user://` and verify both paths, binding
 survival and the off switch. [Live reload evidence](verification/live-reload.json).
 
+A controller can now type: a pad accept on a focused text field emits
+`text_entry_requested` and `WevaView` opens an on-screen keyboard along the
+bottom of the view, an HTML document of its own that the pad navigates and
+whose keys type into the field through the ordinary text path, the field
+keeping its focus and caret (`retain_html_focus`). Shift, a symbol page,
+Space, Back, Enter and Done behave as on a phone keyboard; cancel closes it.
+Games can restyle it, size it, or turn it off and answer the signal with a
+platform keyboard. Twenty-four host checks type through it with pad events;
+the sample's controller case types into the bound name field and captures
+the keyboard. [Keyboard evidence](verification/onscreen-keyboard.json).
+
 A controller now drives the document without scripting. Joypad button and
 axis events reaching the focused node answer as the keyboard their `ui_*`
 actions stand in for: the pad and stick move focus by geometry (a slider,
@@ -388,7 +399,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Native desktop exports | Current patched Windows debug/release/embedded exports pass. The full host suite and the sample pass on the stock Windows 4.7.1 editor with build220; stock-template exports, other platforms and native-control text remain unverified. |
 | Replaced images in flex layouts | Current intrinsic-size suite and rendered example pass. Broader layout agreement is assessed separately below. |
 | Native GUI integration | Current input suite covers Control focus, native overlays, document visibility and routed input. Joypad events now drive HTML focus, activation and dismissal through the project's ui_* actions with conventional button fallbacks (gamepad_navigation_tests: 33 checks with real joypad button and axis events, including wake on first press and held-direction repeat). Physical touch/gamepad acceptance is still needed. |
-| Text editing and popup lifecycle | Current dialog suite: 1,199 checks; popover beforetoggle suite: 1,389 checks, including opening vetoes, ordered closing, mutation and queue-pressure cases. Form method=dialog is covered. Full browser task timing, remaining dialog lifecycle and physical input-method acceptance remain open. [Popover evidence](verification/popover-beforetoggle.json). |
+| Text editing and popup lifecycle | Current dialog suite: 1,199 checks; popover beforetoggle suite: 1,389 checks, including opening vetoes, ordered closing, mutation and queue-pressure cases. Form method=dialog is covered. Controller text entry goes through `WevaView`'s on-screen keyboard (24 checks). Full browser task timing, remaining dialog lifecycle and physical input-method acceptance remain open. [Popover evidence](verification/popover-beforetoggle.json). |
 | Keyboard form actions | Current keyboard suite passes. Shared activation exists; complete form validation, picker behavior and command lifecycle are not thereby verified. |
 | Two-way input bindings | Current binding, form-state and sample checks pass, including boolean and Unicode changes. |
 | IME composition | Current simulated composition checks pass on the patched engine. Physical Windows IME and broader input-method acceptance are missing. Historical Linux diagnostic patches are separate. |

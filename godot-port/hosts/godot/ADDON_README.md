@@ -165,14 +165,28 @@ stick by default) move focus by geometry, so a grid of buttons reads as a
 grid; a slider, radio group or text caret takes left/right first, and a
 `<select>`, `<textarea>` or number field takes up/down, so a settings screen
 moves between rows vertically and adjusts a row horizontally. `ui_accept`
-is Space on a control and Enter in a field; `ui_cancel` is Escape and is
-consumed only when it closed something, so your own back action still fires.
+is Space on a control; on a text field it asks for text entry (below);
+`ui_cancel` is Escape and is consumed only when it closed something, so your
+own back action still fires.
 Actions with no joypad binding fall back to A, B, the D-pad and the
 shoulders; map them in the InputMap to change that. A held direction
 repeats after 400 ms at ten steps a second, like a held arrow key. Consumed
 presses are handled, releases pass through. `gamepad_navigation = false`
 leaves every joypad event to the game; `focus_move(direction)` remains for
 custom schemes.
+
+A controller cannot type, so a pad accept on a focused text field opens
+`WevaView`'s on-screen keyboard along the bottom of the view: itself an HTML
+document the pad navigates (letters, digits, a symbol page, Shift, Space,
+Back, Enter, Done), typing into the field through the same text path a
+physical keyboard uses. The field keeps its focus and caret meanwhile, Enter
+acts as the key would (a newline in a textarea, an implicit submission in a
+form) and closes it, Done or cancel closes it, and the pad returns to the
+view with the field still focused. `on_screen_keyboard_height` sets its
+share of the view and `on_screen_keyboard_css` restyles it (`.key`,
+`.key.wide`, `:focus-visible`). Set `on_screen_keyboard = false` and answer
+the `text_entry_requested(id)` signal yourself for a platform keyboard, or
+`gamepad_text_entry = false` to make accept plain Enter.
 
 Held edit keys, Unicode key events, Ctrl/Cmd+A/C/X/V/Z and redo are routed.
 Buttons activate on Enter down or Space release. Checkbox/radio Space,

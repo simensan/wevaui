@@ -92,6 +92,18 @@ public:
     // grab_focus() when the screen opens.
     void set_gamepad_wake(bool on) { gamepad_wake_ = on; }
     bool get_gamepad_wake() const { return gamepad_wake_; }
+    // With this on (the default), a pad accept on a focused text field emits
+    // text_entry_requested(id) instead of Enter, so something can offer a
+    // way to type: WevaView shows its on-screen keyboard, or a game answers
+    // with a platform keyboard. Off, accept is Enter as on a keyboard.
+    void set_gamepad_text_entry(bool on) { gamepad_text_entry_ = on; }
+    bool get_gamepad_text_entry() const { return gamepad_text_entry_; }
+    // Keeps the HTML focus (and its caret) while another Control holds Godot
+    // focus, for a companion such as an on-screen keyboard that types into
+    // the focused field through send_text/send_key. Normally losing Godot
+    // focus clears the HTML focus.
+    void set_retain_html_focus(bool on) { retain_html_focus_ = on; }
+    bool get_retain_html_focus() const { return retain_html_focus_; }
 
     // Stops the clock. Transitions and @keyframes hold where they are, which
     // a game wants when it pauses and a CAPTURE requires: comparing two
@@ -430,6 +442,8 @@ private:
     bool interactive_ = true;
     bool gamepad_navigation_ = true;
     bool gamepad_wake_ = false;
+    bool gamepad_text_entry_ = true;
+    bool retain_html_focus_ = false;
     bool navigation_action(const godot::Ref<godot::InputEvent>& event);
     bool navigate_direction(int index, const godot::String& tag, const godot::String& type);
     void repeat_navigation(uint64_t now_usec);

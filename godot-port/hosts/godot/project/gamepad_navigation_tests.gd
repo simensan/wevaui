@@ -109,9 +109,15 @@ func _ready() -> void:
 	tap(JOY_BUTTON_DPAD_UP)
 	check(doc.get_element_value("#pick") == "First", "and up changes it back")
 
+	var requests: Array[String] = []
+	doc.text_entry_requested.connect(func(id): requests.append(id))
 	doc.set_focus("#user")
 	tap(JOY_BUTTON_A)
-	check(submits == ["login"], "accept in a form field submits like Enter")
+	check(requests == ["user"] and submits.is_empty(), "accept in a text field asks for text entry instead of submitting")
+	doc.gamepad_text_entry = false
+	tap(JOY_BUTTON_A)
+	check(submits == ["login"] and requests.size() == 1, "with text entry off, accept in a form field submits like Enter")
+	doc.gamepad_text_entry = true
 
 	doc.set_focus("#trigger")
 	tap(JOY_BUTTON_A)

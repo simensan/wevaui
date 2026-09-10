@@ -737,6 +737,12 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_gamepad_wake", "on"), &WevaDocument::set_gamepad_wake);
     ClassDB::bind_method(D_METHOD("get_gamepad_wake"), &WevaDocument::get_gamepad_wake);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gamepad_wake"), "set_gamepad_wake", "get_gamepad_wake");
+    ClassDB::bind_method(D_METHOD("set_gamepad_text_entry", "on"), &WevaDocument::set_gamepad_text_entry);
+    ClassDB::bind_method(D_METHOD("get_gamepad_text_entry"), &WevaDocument::get_gamepad_text_entry);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "gamepad_text_entry"), "set_gamepad_text_entry", "get_gamepad_text_entry");
+    ClassDB::bind_method(D_METHOD("set_retain_html_focus", "on"), &WevaDocument::set_retain_html_focus);
+    ClassDB::bind_method(D_METHOD("get_retain_html_focus"), &WevaDocument::get_retain_html_focus);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "retain_html_focus"), "set_retain_html_focus", "get_retain_html_focus");
     ClassDB::bind_method(D_METHOD("set_paused", "on"), &WevaDocument::set_paused);
     ClassDB::bind_method(D_METHOD("get_paused"), &WevaDocument::get_paused);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "paused"), "set_paused", "get_paused");
@@ -843,6 +849,7 @@ void WevaDocument::_bind_methods() {
     ADD_SIGNAL(MethodInfo("handler_invoked", PropertyInfo(Variant::STRING, "handler"),
                           PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_clicked", PropertyInfo(Variant::STRING, "id")));
+    ADD_SIGNAL(MethodInfo("text_entry_requested", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_pressed", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_released", PropertyInfo(Variant::STRING, "id")));
     ADD_SIGNAL(MethodInfo("element_entered", PropertyInfo(Variant::STRING, "id")));
@@ -1450,7 +1457,7 @@ void WevaDocument::_notification(int what) {
         pump_events();
     }
     if (what == NOTIFICATION_FOCUS_EXIT) held_direction_ = -1;
-    if (what == NOTIFICATION_FOCUS_EXIT && doc_) set_focus(String());
+    if (what == NOTIFICATION_FOCUS_EXIT && doc_ && !retain_html_focus_) set_focus(String());
     if (what == NOTIFICATION_VISIBILITY_CHANGED && is_inside_tree() && !is_visible_in_tree()) clear_pointer();
     if (what == NOTIFICATION_EXIT_TREE && doc_) {
         weva_document_clear_pointer(doc_);
@@ -1639,8 +1646,15 @@ bool WevaDocument::navigation_action(const Ref<InputEvent>& event) {
         (tag == "input" && (type.is_empty() || type == "text" || type == "search" || type == "password" ||
                             type == "email" || type == "url" || type == "tel" || type == "number"));
     if (pressed("ui_accept", JOY_BUTTON_A)) {
-        if (text_field) tap(WEVA_KEY_ENTER);
-        else if (!tap(WEVA_KEY_SPACE)) tap(WEVA_KEY_ENTER);
+        if (text_field && gamepad_text_entry_) {
+            // A pad cannot type. Whoever listens supplies the keyboard; the
+            // field keeps its focus and caret meanwhile.
+            emit_signal("text_entry_requested", get_focused_id());
+        } else if (text_field) {
+            tap(WEVA_KEY_ENTER);
+        } else if (!tap(WEVA_KEY_SPACE)) {
+            tap(WEVA_KEY_ENTER);
+        }
         return true;
     }
     if (pressed("ui_cancel", JOY_BUTTON_B)) return tap(WEVA_KEY_ESCAPE);
