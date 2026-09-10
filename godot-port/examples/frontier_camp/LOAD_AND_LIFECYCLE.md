@@ -314,6 +314,13 @@ Both arms publish the same health/name changes and inventory sorts at the same
 frame indices. Only the retained-UI arm can toggle a modal or validate HUD output;
 the baseline instead checks that no binding listeners survive teardown.
 
+For ownership isolation the harness also reads `WEVA_FRONTIER_SOAK_SETTINGS`,
+`WEVA_FRONTIER_SOAK_SORT` and `WEVA_FRONTIER_SOAK_NAMES` (set to `0` to drop that
+soak workload) and `WEVA_FRONTIER_SOAK_ROUNDS` (repeat the soak plus teardown that
+many times, emitting a `round_teardown` marker after each). Flat object counts
+across rounds classify retention as bounded; a rising count means accumulation.
+The runner does not expose these; launch the project directly with `-- --lifecycle`.
+
 Use the same export, renderer, cycles and frame target in two sequential runs with
 different output directories. A frame target of 36,000 generates 6,000 soak name
 updates, exceeding the string-cache limit. Compare memory by matching marker

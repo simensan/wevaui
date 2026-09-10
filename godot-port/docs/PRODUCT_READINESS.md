@@ -23,6 +23,28 @@ Recreation teardown returns to 491 nodes/1,934 objects; final soak teardown is
 491 nodes/1,937 objects. This finite result does not establish leak freedom or
 clear the prior timing failures. [Lifecycle evidence](verification/lifecycle217.json).
 
+A three-round ownership isolation on candidate217 classifies the retained
+objects as bounded, not accumulating. Five short Vulkan 1080p 3D editor arms
+(everything enabled; settings open/close, name churn or sorting disabled; UI
+disabled) each repeat the soak and teardown three times. Every arm returns to
+the same object count after each round, with zero growth between rounds and
+constant texture memory. Settings open/close accounts for three retained objects,
+name churn for two, sorting for none, and the UI-disabled arm also retains two.
+Their individual owners remain unidentified; this is a one-time cache-sized
+effect, and no further time is planned on it without a normal-use symptom.
+[Ownership classification](verification/lifecycle-ownership218.json).
+
+Attributing candidate217's failed 1080p whole-frame checks: the UI-disabled
+baseline of the same busy scene measures 14.2–16.0 ms p95 in five of six runs,
+so the 16.667 ms limit leaves under 1 ms for the UI. Workloads with the UI active
+stay within about ±1.5 ms of their run's own baseline, UI API CPU p95 never
+exceeds 1.61 ms, and all eight failures are OpenGL runs over the limit by
+0.04–0.41 ms, less than the baseline's run-to-run spread. The data shows no
+UI-attributable regression; the failures measure scene plus presentation cost.
+The gate is unchanged and remains failed. Making it pass would require either a
+UI-attributable delta limit or a lighter test scene, which is a product decision.
+[Frame attribution](verification/frame-attribution217.json).
+
 The lifecycle harness now releases its retained soak model and waits for teardown
 cleanup before sampling. Short rendered editor checks verify model destruction in
 both UI-present and UI-disabled runs. The corrected checkpoints still show three

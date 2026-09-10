@@ -1,6 +1,7 @@
 # Frontier Camp — standalone Godot integration
 
-Installed Windows addon: **preview115 (ABI minor16)**. Sample, exports and desktop
+Installed Windows addon: **preview211 (ABI minor24)**; `addons/weva/build.json` records the
+installed version. Sample, exports and desktop
 performance checks pass; [qualification and remaining scope](../../docs/PRODUCT_READINESS.md).
 
 

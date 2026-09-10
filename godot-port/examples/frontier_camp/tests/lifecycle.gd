@@ -8,6 +8,12 @@ var cycles := 200
 var seconds := 120.0
 var soak_frames := 0
 var soak_without_ui := false
+# Ownership isolation: each soak workload can be disabled, and the soak plus
+# teardown can repeat so retained objects classify as bounded or accumulating.
+var soak_settings := true
+var soak_sort := true
+var soak_names := true
+var soak_rounds := 1
 var unicode_names := false
 var name_updates := 0
 var extent := Vector2i(1920, 1080)
@@ -111,6 +117,10 @@ func run(scene_tree: SceneTree) -> void:
 	if OS.has_environment("WEVA_FRONTIER_SECONDS"): seconds = float(OS.get_environment("WEVA_FRONTIER_SECONDS"))
 	if OS.has_environment("WEVA_FRONTIER_SOAK_FRAMES"): soak_frames = int(OS.get_environment("WEVA_FRONTIER_SOAK_FRAMES"))
 	soak_without_ui = OS.get_environment("WEVA_FRONTIER_SOAK_WITHOUT_UI") == "1"
+	soak_settings = OS.get_environment("WEVA_FRONTIER_SOAK_SETTINGS") != "0"
+	soak_sort = OS.get_environment("WEVA_FRONTIER_SOAK_SORT") != "0"
+	soak_names = OS.get_environment("WEVA_FRONTIER_SOAK_NAMES") != "0"
+	if OS.has_environment("WEVA_FRONTIER_SOAK_ROUNDS"): soak_rounds = maxi(1, int(OS.get_environment("WEVA_FRONTIER_SOAK_ROUNDS")))
 	unicode_names = OS.get_environment("WEVA_FRONTIER_UNICODE") == "1"
 	if unicode_names:
 		require(TextServerManager.get_primary_interface().string_to_upper("i", "tr") == "İ", "Unicode lifecycle has ICU data")
@@ -208,7 +218,23 @@ func run(scene_tree: SceneTree) -> void:
 	await tree.process_frame
 	await tree.process_frame
 	marker("after_recreate")
-	game = create_game(false)
+	for round_index in soak_rounds:
+		await soak_round(round_index)
+	marker("final_teardown")
+	var report := {"passed": not failed, "debug_build": OS.is_debug_build(), "engine": Engine.get_version_info(),
+		"first_hidden": first_hidden,
+		"soak_frame_target": soak_frames, "soak_without_ui": soak_without_ui,
+		"soak_settings": soak_settings, "soak_sort": soak_sort, "soak_names": soak_names, "soak_rounds": soak_rounds,
+		"unicode_names": unicode_names, "name_updates": name_updates,
+		"renderer": RenderingServer.get_current_rendering_method(), "resolution": [extent.x, extent.y],
+		"world": "3d" if world != null else "static", "cycles": cycles, "results": results}
+	if not output.is_empty(): FileAccess.open(output.path_join("lifecycle.json"), FileAccess.WRITE).store_string(JSON.stringify(report, "\t"))
+	print("FRONTIER_LIFECYCLE_COMPLETE ", not failed)
+	tree.quit(1 if failed else 0)
+
+func soak_round(round_index: int) -> void:
+	var start := 0
+	var game := create_game(false)
 	# Both arms warm identical UI resources first. The baseline then releases
 	# the document while retaining the same model and deterministic scene drive.
 	var soak_state = game.state
@@ -229,10 +255,10 @@ func run(scene_tree: SceneTree) -> void:
 		if world != null: world.set_step(frame)
 		if frame % 6 == 0:
 			soak_state.model.Player.Health = 40 + (frame / 6) % 60
-			update_state_name(soak_state, name_updates)
+			if soak_names: update_state_name(soak_state, name_updates)
 			soak_state.publish()
-		if frame % 60 == 0: soak_state.sort_items()
-		if game != null and frame % 120 == 0:
+		if soak_sort and frame % 60 == 0: soak_state.sort_items()
+		if soak_settings and game != null and frame % 120 == 0:
 			if game.settings_open: game.close_settings("")
 			else: game.open_settings("")
 		await tree.process_frame
@@ -250,7 +276,7 @@ func run(scene_tree: SceneTree) -> void:
 	results["soak_seconds"] = (Time.get_ticks_usec() - soak_start) / 1000000.0
 	results["soak_frames"] = soak_stats(interval_buckets, frame, interval_total, interval_max, interval_overflow)
 	if game != null: check_game(game)
-	await capture("soak")
+	await capture("soak" if round_index == 0 else "soak-round-%d" % round_index)
 	if game != null: await drop_game(game)
 	# The soak driver owns the model independently of the view. Release it and
 	# let completed coroutine/renderer cleanup settle before the final sample.
@@ -260,13 +286,4 @@ func run(scene_tree: SceneTree) -> void:
 	await tree.process_frame
 	require(old_soak_state.get_ref() == null, "soak state released after teardown")
 	old_soak_state = null
-	marker("final_teardown")
-	var report := {"passed": not failed, "debug_build": OS.is_debug_build(), "engine": Engine.get_version_info(),
-		"first_hidden": first_hidden,
-		"soak_frame_target": soak_frames, "soak_without_ui": soak_without_ui,
-		"unicode_names": unicode_names, "name_updates": name_updates,
-		"renderer": RenderingServer.get_current_rendering_method(), "resolution": [extent.x, extent.y],
-		"world": "3d" if world != null else "static", "cycles": cycles, "results": results}
-	if not output.is_empty(): FileAccess.open(output.path_join("lifecycle.json"), FileAccess.WRITE).store_string(JSON.stringify(report, "\t"))
-	print("FRONTIER_LIFECYCLE_COMPLETE ", not failed)
-	tree.quit(1 if failed else 0)
+	if soak_rounds > 1: marker("round_teardown", round_index)
