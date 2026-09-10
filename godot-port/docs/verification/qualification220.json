@@ -1345,5 +1345,37 @@
       "receipt": ".utmp/safe-engine71/shaping-checks/host-suite-stock/receipt.json"
     },
     "note": "Every host scene and the sample pass on the stock editor with build220; exports were produced with the patched templates and stock templates are not installed here."
+  },
+  "linux_check_sh": {
+    "log": ".utmp/safe-engine71/qual220/check-sh.log",
+    "result": "6 gates failed: the three live layout-oracle corpora and the two stock-engine text-safety probes; every other gate passed (core, sanitizers, host scenes, renders, exports)",
+    "failed_gates": [
+      "FAIL incomplete or failing oracle (47 fixtures, exit 1)",
+      "FAIL  layout oracle (samples); see /tmp/weva-oracle-samples.log",
+      "FAIL incomplete or failing oracle (52 fixtures, exit 1)",
+      "FAIL  layout oracle (hand); see /tmp/weva-oracle-hand.log",
+      "FAIL incomplete or failing oracle (210 fixtures, exit 1)",
+      "FAIL  layout oracle (harvest); see /tmp/weva-oracle-harvest.log",
+      "FAIL  Godot engine text safety",
+      "FAIL emoji33: exit code 1, missing successful case summary, engine or assertion error",
+      "FAIL emoji65: exit code 1, missing successful case summary, engine or assertion error",
+      "FAIL emoji256: exit code 1, missing successful case summary, engine or assertion error",
+      "FAIL multiple_scripts: exit code -6, missing successful case summary",
+      "FAIL multiple_growing_scripts: exit code -6, missing successful case summary",
+      "FAIL  Godot exported Unicode safety",
+      "FAIL  Godot addon installation and native exports"
+    ],
+    "host_scene_lines": 45,
+    "layout_oracle_samples": {
+      "fail_pages": 20,
+      "reference_bug_pages": 16,
+      "identical_at_handoff_commit_28bb9fe8": true,
+      "logs": [
+        ".utmp/safe-engine71/qual220/oracle-samples.log",
+        ".utmp/safe-engine71/qual220/oracle-samples-28bb9fe8.log"
+      ],
+      "note": "Run with --reuse-reference; whether the reused C# references are stale against the current C# engine was not checked."
+    },
+    "text_safety_probes": "expected: the standalone reproduction and exported-Unicode probes document the stock Linux engine defect (GODOT_TEXT_SHAPING.md); the adapter workaround is verified separately."
   }
 }

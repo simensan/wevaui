@@ -46,8 +46,11 @@ Windows 4.7.1 editor the installed build passes the full host suite (52
 entries, 35,610 checks) and the sample headless and rendered, so the patched
 editor is no longer needed to run or test document UI; it remains the choice
 for text in native Godot controls, and exports still use its templates (stock
-templates are not installed here). Lower-end hardware and a physical
-controller remain unrun for this build.
+templates are not installed here). The Linux `check.sh` gate on this source
+passes everything except the three live layout-oracle corpora, whose output is
+identical at the handoff commit, and the two text-safety probes that document
+the stock engine defect. Lower-end hardware and a physical controller remain
+unrun for this build.
 [Build220 qualification](verification/qualification220.json),
 [lifecycle evidence](verification/lifecycle220.json).
 
@@ -385,7 +388,7 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Cold opening, reuse, busy 3D and memory | Current desktop and 1080p timing pass. Build205 historical lifecycle: 200 recreations, 600 seconds, 100.158 ms cold CPU and 0.384 ms prepared reuse CPU p95; private-memory minute medians rose 822.824 to 824.008 MiB. Its 4K timing failed 19/276 checks. Current 4K passes 276/276; current lifecycle and longer/device qualification remain open. [Lifecycle](verification/lifecycle205.json), [4K](verification/load205-4k.json). |
 | Experimental retained renderer | Remains disabled by default. Existing pixel/material comparisons cover a subset; pre-draw synchronization, custom materials, GPU cost and broader lifetime qualification are still open. See [history](PRODUCT_READINESS_HISTORY.md#experimental-retained-renderer). |
 | Hardware/platform acceptance | Lower-end hardware, physical touch/gamepad/IME and accessibility remain incomplete. Native exports must be verified for each platform actually declared supported. |
-| Browser layout behavior | Build201 core against the frozen 309-case corpus: 285 agree, 24 differ, zero crashes. Direct spanning headings are corrected; paragraph fragmentation and vertical writing still produce large differences. Three select fixtures use outdated UA defaults in their frozen references; separate refreshed captures explain those width differences without changing the frozen report. This synthetic geometry profile does not establish native pixel parity. See [layout audit](LAYOUT_AUDIT.md) and [current evidence](verification/column-span.json); no finding is waived. |
+| Browser layout behavior | The live `check.sh` layout oracle (C# reference dumps reused, Chrome arbitration) reports 20 of 35 sample pages differing with the build220 core and the identical 20 with the handoff commit 28bb9fe8, so this session changed no layout; whether those reused references are current was not checked ([qualification220.json](verification/qualification220.json), `linux_check_sh`). Build201 core against the frozen 309-case corpus: 285 agree, 24 differ, zero crashes. Direct spanning headings are corrected; paragraph fragmentation and vertical writing still produce large differences. Three select fixtures use outdated UA defaults in their frozen references; separate refreshed captures explain those width differences without changing the frozen report. This synthetic geometry profile does not establish native pixel parity. See [layout audit](LAYOUT_AUDIT.md) and [current evidence](verification/column-span.json); no finding is waived. |
 | Remaining game form integration | CSS horizontal RTL and vertical-rl/vertical-lr range direction/orientation are now verified. Number arrow stepping is covered by 76 Chrome cases and 234 native checks. Sideways writing modes, picker values/controls and full validation remain partial or absent. Review implementations against concrete game requirements and browser probes before claiming completion. |
 | Release verification | Build, package, compatibility declarations, docs and every required gate must refer to the same candidate. Current broad layout findings and external acceptance prevent an unconditional release-ready claim. |
 
