@@ -87,6 +87,276 @@
   "limitations": [
     "Windows RTX 5080 only; Linux/macOS and other engine versions unverified.",
     "Text in native Godot controls bypasses the adapter and still needs the engine patch.",
-    "Sanitizer suites, the full host suite, exports and timing profiles were not rerun for this candidate; it is not installed."
-  ]
+    "Exports and desktop/1080p/4K timing profiles were not rerun for this candidate; it is not installed."
+  ],
+  "host": {
+    "binary_sha256": "8ce46c8432a34b616edef56edcdc19679c5a8b6bf11f82924dbda8d65fa0f74b",
+    "passed": true,
+    "entries": 49,
+    "checks": 35546,
+    "runner": "hosts/godot/run_host_suite.py",
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite2/receipt.json",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 522
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1199
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 7330
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      },
+      {
+        "name": "popover_beforetoggle_tests",
+        "passed": true,
+        "checks": 1389
+      },
+      {
+        "name": "unknown_at_rule_tests",
+        "passed": true,
+        "checks": 12
+      },
+      {
+        "name": "css_diagnostic_tests",
+        "passed": true,
+        "checks": 26
+      },
+      {
+        "name": "conditional_keyframe_tests",
+        "passed": true,
+        "checks": 204
+      },
+      {
+        "name": "font_warmup_tests",
+        "passed": true,
+        "checks": 4
+      },
+      {
+        "name": "hidden_transition_tests",
+        "passed": true,
+        "checks": 6
+      },
+      {
+        "name": "long_effect_list_tests",
+        "passed": true,
+        "checks": 16
+      },
+      {
+        "name": "delayed_transition_tests",
+        "passed": true,
+        "checks": 6
+      },
+      {
+        "name": "transition_cancellation_tests",
+        "passed": true,
+        "checks": 18
+      },
+      {
+        "name": "transition_reversal_tests",
+        "passed": true,
+        "checks": 32
+      }
+    ]
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "total_suites": 16,
+    "seconds": 434.6,
+    "log": ".utmp/safe-engine71/shaping-native/san-ctest.log",
+    "tree": "WSL ~/weva/build-clang, -fsanitize=address,undefined"
+  },
+  "sample": {
+    "headless": "95 checks, 0 failures",
+    "mobile": "95 checks, 0 failures",
+    "logs": [
+      ".utmp/safe-engine71/shaping-checks/frontier-check-headless.log",
+      ".utmp/safe-engine71/shaping-checks/frontier-check-mobile.log"
+    ]
+  }
 }

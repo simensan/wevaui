@@ -313,6 +313,9 @@ exact digest and logs):
 - The text autoscroll fixture passes its 81 checks in every combination,
   including stress mode with the previous library, so it does not discriminate
   this defect.
+- The full host suite (49 entries, 35,546 checks), the sample checks, all 14
+  core suites and all 16 sanitizer suites pass on the candidate. Exports and
+  timing profiles were not rerun; it is not installed.
 
 Text that reaches TextServer through other paths (native Godot controls, the
 theme font in native overlays) is not shaped by the adapter and still needs

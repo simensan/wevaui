@@ -32,10 +32,11 @@ official stock Windows 4.7.1 editor the standalone reproduction still fails
 five of six cases, while the adapter suite passes all 19,692 checks including
 five new past-limit cases, and the Frontier Camp lifecycle harness with 60-unit
 mixed-script names completes where the previous library aborted with a fatal
-out-of-bounds index. The patched editor passes the same suite; all 14 core
-suites pass. Sanitizers, the full host suite, exports and timing were not rerun
-for this candidate, it is not installed, and text in native Godot controls
-still needs the engine patch. [Shaping evidence](verification/stock-engine-shaping.json).
+out-of-bounds index. The patched editor passes the same suite, all 49 host
+entries (35,546 checks), the sample checks, all 14 core suites and all 16
+sanitizer suites. Exports and timing profiles were not rerun, the candidate
+is not installed, and text in native Godot controls still needs the engine
+patch. [Shaping evidence](verification/stock-engine-shaping.json).
 
 A three-round ownership isolation on candidate217 classifies the retained
 objects as bounded, not accumulating. Five short Vulkan 1080p 3D editor arms
