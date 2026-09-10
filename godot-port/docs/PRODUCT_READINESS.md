@@ -2,16 +2,20 @@
 
 This is a development preview. The game-UI goal is not complete.
 
-**Where things stand (2026-09-10).** Both local addons hold build220 (ABI
+**Where things stand (2026-09-10).** Both local addons hold build221 (ABI
 minor25). For a game developer it adds, on top of build211: document text with
 many emoji or brackets no longer corrupts or crashes on the stock engine;
 `@font-face` loads a game's own fonts, with real bold and italic files;
 a controller drives HTML menus without scripting (directional focus, accept,
-cancel, held repeat, opt-in wake); and `WevaView` reloads an edited HTML or
-CSS file while the game runs. Every profile passed on this machine for that
-build: core and sanitizer suites, 52 host entries, the sample on the patched
-and the official stock 4.7.1 editor, native exports, desktop, 1080p and 4K
-timing, and the ten-minute lifecycle soak; details and receipts follow. Still
+cancel, held repeat, opt-in wake) and types into text fields through an
+on-screen keyboard; and `WevaView` reloads an edited HTML or CSS file while
+the game runs. Build221 passed the host suite (53 entries), the sample on the
+patched editor, native exports and desktop timing
+([qualification221.json](verification/qualification221.json)); build220,
+which differs only by the keyboard, passed every profile on this machine:
+core and sanitizer suites, the sample on the official stock 4.7.1 editor,
+1080p and 4K timing, and the ten-minute lifecycle soak; details and receipts
+follow. Still
 open: lower-end hardware, a physical controller, physical IME and touch,
 stock-template exports, and the residual layout differences listed under
 browser layout behavior. The paragraphs below are in reverse order of

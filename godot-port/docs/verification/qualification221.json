@@ -1,0 +1,93 @@
+{
+  "candidate": "preview221 (ABI minor 25): build220 plus the on-screen keyboard and text_entry_requested",
+  "library_sha256": "7904770fc41c8145359a01622a36398410a501dedfe5460c9dd1c3b4e6a70dad",
+  "addon_zip": ".utmp/safe-engine71/weva-keyboard-preview221.zip",
+  "zip_sha256": "f46de5ecefcc3440f8a3984c1af9561f3910c584c07de369b4187548318249c7",
+  "view_script_sha256": "cd4eab188225d226266d04d0ed06022dc285b7e98dd4ee872c1a035a10f96dce",
+  "steps_exit": {
+    "host": "0",
+    "mobile": "0",
+    "package": "0",
+    "frontier": "0",
+    "exports": "0",
+    "desktop": "0"
+  },
+  "core_note": "Core source unchanged since the gamepad receipt (14/14 core, 16/16 sanitizer suites); this build changes host C++ and addon GDScript only.",
+  "host": {
+    "passed": true,
+    "entries": 53,
+    "checks": 35635,
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite11/receipt.json"
+  },
+  "sample_rendered": [
+    "frontier integration: 104 checks, 0 failures"
+  ],
+  "fresh_consumer_and_native_export": [
+    "import: passed",
+    "headless: frontier integration: 104 checks, 0 failures",
+    "gl_compatibility: frontier integration: 114 checks, 0 failures",
+    "mobile: frontier integration: 114 checks, 0 failures",
+    "export: passed",
+    "export-headless: frontier integration: 104 checks, 0 failures",
+    "export-render: frontier integration: 114 checks, 0 failures"
+  ],
+  "packaged_example_and_export_smokes": [
+    "godot export smoke (project): 8 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (pack): 10 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-debug): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-release): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-release): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures"
+  ],
+  "desktop_timing": {
+    "passed": true,
+    "timing_passed": true,
+    "changed_api_cpu_p95_ms": {
+      "gl_compatibility/1/inventory_sort": 1.024,
+      "gl_compatibility/1/settings_typing": 0.462,
+      "gl_compatibility/1/settings_toggle": 1.508,
+      "mobile/1/inventory_sort": 0.97,
+      "mobile/1/settings_typing": 0.353,
+      "mobile/1/settings_toggle": 1.284,
+      "mobile/2/settings_toggle": 1.473,
+      "mobile/2/settings_typing": 0.45,
+      "mobile/2/inventory_sort": 0.845,
+      "gl_compatibility/2/settings_toggle": 1.346,
+      "gl_compatibility/2/settings_typing": 0.377,
+      "gl_compatibility/2/inventory_sort": 0.884,
+      "gl_compatibility/3/inventory_sort": 0.942,
+      "gl_compatibility/3/settings_typing": 0.389,
+      "gl_compatibility/3/settings_toggle": 1.466,
+      "mobile/3/inventory_sort": 1.084,
+      "mobile/3/settings_typing": 0.622,
+      "mobile/3/settings_toggle": 1.737
+    },
+    "summary": ".utmp/safe-engine71/qual221-desktop/summary.json"
+  },
+  "not_run": [
+    "automatic 1080p/4K profiles and the lifecycle soak (build220 ran them; this build changes no per-frame path)",
+    "lower-end hardware",
+    "physical controller"
+  ],
+  "installed": {
+    "frontier": "0.1.0-preview.221",
+    "host": "0.1.0-preview.221"
+  },
+  "post_install": {
+    "frontier_headless": [
+      "frontier integration: 104 checks, 0 failures"
+    ],
+    "frontier_mobile": [
+      "frontier integration: 104 checks, 0 failures"
+    ],
+    "host_suite": {
+      "passed": true,
+      "entries": 53,
+      "checks": 35635
+    }
+  }
+}

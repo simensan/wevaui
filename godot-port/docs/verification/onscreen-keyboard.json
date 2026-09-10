@@ -1,0 +1,37 @@
+{
+  "scope": "On-screen keyboard for controller text entry: text_entry_requested from the host, WevaView keyboard document typing through send_text/send_key with retained HTML focus.",
+  "library_sha256": "7904770fc41c8145359a01622a36398410a501dedfe5460c9dd1c3b4e6a70dad",
+  "view_script_sha256": "cd4eab188225d226266d04d0ed06022dc285b7e98dd4ee872c1a035a10f96dce",
+  "windows_patched_4_7_2": {
+    "onscreen_keyboard_tests": {
+      "checks": 24,
+      "failures": 0
+    },
+    "gamepad_navigation_tests": {
+      "checks": 35,
+      "failures": 0
+    }
+  },
+  "linux_stock_4_7_2": {
+    "onscreen_keyboard_tests": {
+      "checks": 24,
+      "failures": 0
+    },
+    "gamepad_navigation_tests": {
+      "checks": 35,
+      "failures": 0
+    }
+  },
+  "sample_rendered_with_keyboard": [
+    "frontier integration: 114 checks, 0 failures"
+  ],
+  "capture": ".utmp/safe-engine71/frontier-keyboard-capture/frontier-pad-keyboard.png",
+  "findings": [
+    "Accept on a text field opens the keyboard with the field keeping focus and caret; keys, Shift, symbols, Space, Back type through the ordinary text path; Done and cancel close; Enter acts as the key and closes.",
+    "The sample types into the bound traveler name through the keyboard; the capture shows the keyboard under the open settings dialog with the focus ring on q."
+  ],
+  "limitations": [
+    "Synthetic pad events only; no physical controller.",
+    "No layout for other scripts or a numeric-only mode; games can restyle via on_screen_keyboard_css."
+  ]
+}
