@@ -23,6 +23,21 @@ Recreation teardown returns to 491 nodes/1,934 objects; final soak teardown is
 491 nodes/1,937 objects. This finite result does not establish leak freedom or
 clear the prior timing failures. [Lifecycle evidence](verification/lifecycle217.json).
 
+The preview219 candidate (all of the changes below: shaping pieces, `@font-face`
+with real variants, gamepad navigation) was qualified as far as this session's
+machine allowed: 14 core and 16 sanitizer suites, 51 host entries (35,599
+checks), the sample headless and rendered (101 checks each), the fresh-consumer
+project with native export and relocation, and the packaged example's export
+smokes all pass. The desktop timing profile fails: in the third run of each
+renderer settings typing reaches 1.021/1.122 ms changed-API p95 against 1.0 ms.
+A paired old/new/new/old comparison in the same session shows the preview217
+export itself 30-40% slower than its own recorded profile, with new against old
+mixed and inside that spread, while the machine sat at 65% CPU load with a game
+and other applications running. The gate stands failed, the candidate is not
+installed, and the profile must be rerun on a quiet machine; 1080p/4K, the
+lifecycle soak and lower-end hardware were not run.
+[Qualification receipt](verification/qualification219.json).
+
 A controller now drives the document without scripting. Joypad button and
 axis events reaching the focused node answer as the keyboard their `ui_*`
 actions stand in for: the pad and stick move focus by geometry (a slider,
