@@ -77,8 +77,8 @@ and externally interleaved rows keep the reconstruction path.
 
 `ui.load_files("res://ui/hud.html")` supports programmatic loading. It returns
 a Godot Error and fills `last_load_error` if a file cannot be opened, preserving
-the current UI. Files load at scene startup or on explicit calls; there is no
-file watcher in this helper.
+the current UI. Files load at scene startup or on explicit calls, and are
+reloaded when they change on disk while the game runs (see below).
 
 For gameplay behind a HUD, set `pointer-events: none` on `html`, `body` and the
 HUD root, then `pointer-events: auto` on panels/controls. Put game actions in
