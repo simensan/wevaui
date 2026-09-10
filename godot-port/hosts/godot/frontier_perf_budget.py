@@ -1,8 +1,24 @@
-"""Evaluate measured Frontier UI timings against an explicit environment profile."""
+"""Evaluate measured Frontier UI timings against an explicit environment profile.
+
+Whole-frame checks carry attribution: the same run's UI-disabled whole-frame
+p95 (the scene and presentation alone) and the UI's delta over it. A
+whole-frame failure whose baseline already sits near the limit is annotated
+as presentation/scene cost; it still fails. Budgets may also limit
+`ui_whole_frame_delta` / `changed_ui_whole_frame_delta`, the whole-frame p95
+minus that baseline, which needs a `ui_disabled` workload in every run.
+"""
 import argparse
 import json
 import math
 from pathlib import Path
+
+METRICS = ('api_cpu', 'changed_api_cpu', 'core_cpu', 'changed_core_cpu', 'whole_frame', 'changed_whole_frame',
+           'ui_whole_frame_delta', 'changed_ui_whole_frame_delta')
+BASELINE_FRACTION = 0.85
+
+
+def _finite(value):
+    return not isinstance(value, bool) and isinstance(value, (float, int)) and math.isfinite(value) and value >= 0
 
 
 def evaluate(report, budget):
@@ -19,7 +35,7 @@ def evaluate(report, budget):
         if not metrics:
             raise ValueError('Empty workload budget: ' + case)
         for metric, limit in metrics.items():
-            if metric not in ('api_cpu', 'changed_api_cpu', 'core_cpu', 'changed_core_cpu', 'whole_frame', 'changed_whole_frame') or isinstance(limit, bool) or not isinstance(limit, (float, int)) or not math.isfinite(limit) or limit <= 0:
+            if metric not in METRICS or isinstance(limit, bool) or not isinstance(limit, (float, int)) or not math.isfinite(limit) or limit <= 0:
                 raise ValueError('Invalid p95 time limit: ' + case + '/' + metric)
     for key in ('minimum_runs', 'minimum_frames', 'minimum_warmups'):
         if type(budget.get(key)) is not int or budget[key] < 1:
@@ -66,6 +82,8 @@ def evaluate(report, budget):
             if len(names) != len(set(names)):
                 errors.append('Duplicate workloads: ' + label)
             by_name = {case.get('workload'): case for case in cases}
+            baseline = by_name.get('ui_disabled', {}).get('whole_frame', {}).get('p95_ms')
+            baseline = baseline if _finite(baseline) else None
             for case, metrics in limits.items():
                 data = by_name.get(case, {})
                 for key, minimum in [('frames', 'minimum_frames'), ('warmups', 'minimum_warmups')]:
@@ -74,21 +92,41 @@ def evaluate(report, budget):
                     elif data[key] != report.get(key):
                         errors.append('Workload/report length mismatch: ' + label + '/' + case + '/' + key)
                 for metric, limit in metrics.items():
-                    samples = data.get(metric, {})
-                    value = samples.get('p95_ms')
-                    valid = (not isinstance(value, bool) and isinstance(value, (float, int)) and math.isfinite(value) and value >= 0)
+                    delta_metric = metric.endswith('ui_whole_frame_delta')
+                    source = metric.replace('ui_whole_frame_delta', 'whole_frame') if delta_metric else metric
+                    samples = data.get(source, {})
+                    measured = samples.get('p95_ms')
+                    valid = _finite(measured)
                     # A missing/empty changed-frame population is not zero cost.
                     minimum_samples = max(10, budget['minimum_frames'] // 60) if metric.startswith('changed_') else budget['minimum_frames']
                     valid = valid and type(samples.get('samples')) is int and samples['samples'] >= minimum_samples
+                    whole = source in ('whole_frame', 'changed_whole_frame')
+                    if delta_metric:
+                        # The UI's own share of the frame; without a baseline it cannot be known.
+                        valid = valid and baseline is not None
+                        value = measured - baseline if valid else None
+                    else:
+                        value = measured if valid else None
                     passed = valid and value <= limit
                     count = samples.get('samples')
                     count = count if type(count) is int and count >= 0 else None
-                    checks.append({'run': label, 'workload': case, 'metric': metric,
-                                   'samples': count, 'minimum_samples': minimum_samples,
-                                   'p95_rank': math.ceil(count * .95) if count else None,
-                                   'p95_ms': value if valid else None, 'limit_ms': limit, 'passed': passed})
+                    check = {'run': label, 'workload': case, 'metric': metric,
+                             'samples': count, 'minimum_samples': minimum_samples,
+                             'p95_rank': math.ceil(count * .95) if count else None,
+                             'p95_ms': value, 'limit_ms': limit, 'passed': passed}
+                    if whole:
+                        check['ui_disabled_whole_frame_p95_ms'] = baseline
+                        check['ui_delta_ms'] = (round(measured - baseline, 3) if valid and baseline is not None else None)
                     if not passed:
-                        errors.append(('Missing/invalid timing: ' if not valid else 'Budget exceeded: ') + label + '/' + case + '/' + metric)
+                        message = ('Missing/invalid timing: ' if not valid else 'Budget exceeded: ') + label + '/' + case + '/' + metric
+                        if valid and whole and not delta_metric and baseline is not None and baseline > limit * BASELINE_FRACTION:
+                            # The scene and presentation alone already reach the limit:
+                            # the overrun is not the UI's, though the gate still fails.
+                            check['attribution'] = 'presentation/scene'
+                            message += ' (UI-disabled baseline %.3f ms of the %.3f ms limit; UI delta %+.3f ms: presentation/scene, not UI)' % (
+                                baseline, limit, measured - baseline)
+                        errors.append(message)
+                    checks.append(check)
     return {'profile': budget.get('name', 'unnamed'), 'passed': not errors, 'errors': errors,
             'checks': checks, 'policy': 'Every measured run must meet every p95 time limit; no averaging away failures.'}
 

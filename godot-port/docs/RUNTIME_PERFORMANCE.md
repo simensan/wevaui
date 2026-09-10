@@ -146,6 +146,18 @@ window exposes that background cost. Subtracting two unrelated whole-frame
 averages does not establish GPU cost or speedup. GPU time is not measured here.
 Draw-profile logs measure CPU packing/submission, not GPU completion.
 
+The budget evaluator (`hosts/godot/frontier_perf_budget.py`) therefore
+attributes every whole-frame check: each carries the same run's `ui_disabled`
+whole-frame p95 (`ui_disabled_whole_frame_p95_ms`, the scene and presentation
+alone) and the UI's `ui_delta_ms` over it. A whole-frame limit that is
+exceeded while that baseline already reaches 85% of the limit is reported with
+`attribution: presentation/scene` and the delta in its message; it still fails.
+Re-evaluating the preview217 1080p profile this way annotates five of its
+eight failures (baselines 15.8-16.0 ms of 16.667 ms, UI deltas under 1 ms).
+Budgets may add `ui_whole_frame_delta` / `changed_ui_whole_frame_delta`
+limits, the whole-frame p95 minus that baseline, which require a `ui_disabled`
+workload in every run; the 3D budgets do not use them yet.
+
 These are repeatable standalone workloads, with no game simulation or 3D
 scene. They support decisions about normal UI update costs on the tested
 hardware. They do not establish a full game's budget, lower-end device results,

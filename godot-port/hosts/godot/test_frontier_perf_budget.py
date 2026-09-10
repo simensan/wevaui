@@ -131,6 +131,58 @@ class BudgetTests(unittest.TestCase):
                 del self.report['runs'][0]['result']['results'][0][metric]
                 self.assertFalse(self.result()['passed'])
 
+    def _with_baseline(self, baseline_ms, whole_ms=10.0, metric='whole_frame'):
+        for run in self.report['runs']:
+            results = run['result']['results']
+            results[0][metric] = {'samples': 600, 'p95_ms': whole_ms}
+            results.append({'workload': 'ui_disabled', 'frames': 600, 'warmups': 120,
+                            'whole_frame': {'samples': 600, 'p95_ms': baseline_ms}})
+
+    def test_whole_frame_checks_carry_attribution(self):
+        self.budget['limits_ms'] = {'settings_toggle': {'whole_frame': 16.0}}
+        self._with_baseline(9.0, 10.5)
+        result = self.result()
+        self.assertTrue(result['passed'])
+        check = result['checks'][0]
+        self.assertEqual(check['ui_disabled_whole_frame_p95_ms'], 9.0)
+        self.assertEqual(check['ui_delta_ms'], 1.5)
+        self.assertNotIn('attribution', check)
+
+    def test_whole_frame_failure_near_baseline_is_annotated_but_still_fails(self):
+        self.budget['limits_ms'] = {'settings_toggle': {'whole_frame': 16.0}}
+        self._with_baseline(15.5, 16.4)
+        result = self.result()
+        self.assertFalse(result['passed'])
+        self.assertEqual(result['checks'][0]['attribution'], 'presentation/scene')
+        self.assertIn('presentation/scene, not UI', result['errors'][0])
+        self.assertIn('15.500 ms', result['errors'][0])
+        # A UI-caused overrun carries no such note.
+        self.setUp()
+        self.budget['limits_ms'] = {'settings_toggle': {'whole_frame': 16.0}}
+        self._with_baseline(4.0, 16.4)
+        result = self.result()
+        self.assertFalse(result['passed'])
+        self.assertNotIn('attribution', result['checks'][0])
+        self.assertNotIn('presentation', result['errors'][0])
+
+    def test_ui_delta_limit(self):
+        for metric, source in (('ui_whole_frame_delta', 'whole_frame'), ('changed_ui_whole_frame_delta', 'changed_whole_frame')):
+            with self.subTest(metric=metric):
+                self.setUp()
+                self.budget['limits_ms'] = {'settings_toggle': {metric: 2.0}}
+                self._with_baseline(15.0, 16.5, source)
+                result = self.result()
+                self.assertTrue(result['passed'])
+                self.assertEqual(result['checks'][0]['p95_ms'], 1.5)
+                self.report['runs'][0]['result']['results'][0][source]['p95_ms'] = 17.5
+                self.assertFalse(self.result()['passed'])
+                # No baseline workload: the UI share is unknown, and unknown is not zero.
+                for run in self.report['runs']:
+                    run['result']['results'] = run['result']['results'][:1]
+                result = self.result()
+                self.assertFalse(result['passed'])
+                self.assertTrue(result['errors'][0].startswith('Missing/invalid timing'))
+
     def test_unknown_metric_rejected(self):
         self.budget['limits_ms'] = {'settings_toggle': {'unknown': 3.0}}
         with self.assertRaises(ValueError):

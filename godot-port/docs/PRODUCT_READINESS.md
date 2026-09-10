@@ -391,10 +391,11 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 
 ## Next work
 
-1. Consider giving the whole-frame gate a UI-attributable delta limit next
-   to the absolute one, so an external presentation wait (see
-   [frame-attribution217.json](verification/frame-attribution217.json) and the
-   build220 numbers above) is reported as such rather than as a UI failure.
+1. The budget evaluator now annotates a whole-frame failure whose UI-disabled
+   baseline already reaches 85% of the limit as presentation/scene cost and
+   supports `ui_whole_frame_delta` limits (see RUNTIME_PERFORMANCE.md);
+   decide whether the 3D budgets should carry such a limit next to the
+   absolute one.
 2. Diagnose the intermittent whole-frame stalls and verify the eventual release
    candidate at target resolutions and on lower-end hardware.
 3. Resolve remaining game-relevant CSS/text/form behavior: animation timing and
