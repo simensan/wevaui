@@ -1,0 +1,116 @@
+{
+  "candidate": "preview220 (ABI minor 25): stock-engine shaping pieces, @font-face with real variants, gamepad navigation with opt-in wake and held repeat, WevaView live reload",
+  "library_sha256": "590a7536fff3fd9e81ade07bbbb19224e184a56c3970bfee3214ff325800fd69",
+  "addon_zip": ".utmp/safe-engine71/weva-live-preview220.zip",
+  "zip_sha256": "ecc5fd4365deac7fb121b3d46c7edbf2d371acb1efcb50fda4113a461b3304d2",
+  "view_script_sha256": "613adb0e48efb20cacfa561dd46b2d8df778a2b814c3ae58303d07ea5730fd9b",
+  "steps_exit": {
+    "host": "0",
+    "mobile": "0",
+    "package": "0",
+    "frontier": "0",
+    "exports": "0",
+    "desktop": "0"
+  },
+  "core": {
+    "passed_suites": 14,
+    "total_suites": 14,
+    "log": ".utmp/safe-engine71/shaping-native/gp-core-ctest.log"
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "total_suites": 16,
+    "log": ".utmp/safe-engine71/shaping-native/gp-san-ctest.log"
+  },
+  "core_note": "Core source unchanged since those runs; later changes are host C++ and addon GDScript only.",
+  "host": {
+    "passed": true,
+    "entries": 52,
+    "checks": 35610,
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite10/receipt.json"
+  },
+  "sample_rendered": [
+    "frontier integration: 101 checks, 0 failures"
+  ],
+  "fresh_consumer_and_native_export": [
+    "import: passed",
+    "headless: frontier integration: 101 checks, 0 failures",
+    "gl_compatibility: frontier integration: 109 checks, 0 failures",
+    "mobile: frontier integration: 109 checks, 0 failures",
+    "export: passed",
+    "export-headless: frontier integration: 101 checks, 0 failures",
+    "export-render: frontier integration: 109 checks, 0 failures"
+  ],
+  "packaged_example_and_export_smokes": [
+    "godot export smoke (project): 8 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (pack): 10 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-debug): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-release): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-release): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures"
+  ],
+  "desktop_timing": {
+    "passed": true,
+    "timing_passed": true,
+    "functional_passed": true,
+    "changed_api_cpu_p95_ms": {
+      "gl_compatibility/1/inventory_sort": 0.99,
+      "gl_compatibility/1/settings_typing": 0.386,
+      "gl_compatibility/1/settings_toggle": 1.435,
+      "mobile/1/inventory_sort": 1.031,
+      "mobile/1/settings_typing": 0.564,
+      "mobile/1/settings_toggle": 1.582,
+      "mobile/2/settings_toggle": 1.263,
+      "mobile/2/settings_typing": 0.496,
+      "mobile/2/inventory_sort": 1.013,
+      "gl_compatibility/2/settings_toggle": 1.342,
+      "gl_compatibility/2/settings_typing": 0.492,
+      "gl_compatibility/2/inventory_sort": 0.912,
+      "gl_compatibility/3/inventory_sort": 0.963,
+      "gl_compatibility/3/settings_typing": 0.441,
+      "gl_compatibility/3/settings_toggle": 1.435,
+      "mobile/3/inventory_sort": 1.097,
+      "mobile/3/settings_typing": 0.508,
+      "mobile/3/settings_toggle": 1.563
+    },
+    "summary": ".utmp/safe-engine71/qual220-desktop/summary.json",
+    "executable_sha256": "88efc77f764d787ad6657f4881013351f36c4ce23fe2745074eb0f5e294c9f4e",
+    "machine": "Windows RTX 5080 with the game closed; background applications at roughly 20-25% load"
+  },
+  "installed": {
+    "frontier": {
+      "version": "0.1.0-preview.220",
+      "library_sha256": "590a7536fff3fd9e81ade07bbbb19224e184a56c3970bfee3214ff325800fd69",
+      "view_script_sha256": "613adb0e48efb20cacfa561dd46b2d8df778a2b814c3ae58303d07ea5730fd9b"
+    },
+    "host": {
+      "version": "0.1.0-preview.220",
+      "library_sha256": "590a7536fff3fd9e81ade07bbbb19224e184a56c3970bfee3214ff325800fd69",
+      "view_script_sha256": "613adb0e48efb20cacfa561dd46b2d8df778a2b814c3ae58303d07ea5730fd9b"
+    }
+  },
+  "post_install": {
+    "frontier-installed-headless": [
+      "frontier integration: 101 checks, 0 failures"
+    ],
+    "frontier-installed-mobile": [
+      "frontier integration: 101 checks, 0 failures"
+    ],
+    "host_suite_installed": {
+      "passed": true,
+      "entries": 52,
+      "checks": 35610,
+      "binary_sha256": "590a7536fff3fd9e81ade07bbbb19224e184a56c3970bfee3214ff325800fd69"
+    }
+  },
+  "not_run": [
+    "automatic 1080p 3D and 4K profiles (see frame-attribution217.json)",
+    "lifecycle soak",
+    "lower-end hardware",
+    "physical controller"
+  ]
+}

@@ -1,6 +1,14 @@
 # Frontier Camp performance verification
 
-Both local addons currently contain build211 (ABI minor24), including incremental
+Both local addons now contain build220 (ABI minor25): the stock-engine shaping
+workaround, `@font-face` with real bold/italic files, gamepad navigation and
+`WevaView` live reload on top of build211. Its qualification (core, sanitizers,
+52 host entries, sample, fresh-consumer native export, export smokes and the
+desktop timing profile, all passing) is in
+[qualification220.json](../../docs/verification/qualification220.json); 1080p/4K
+and lifecycle were not rerun for it. The build211 record follows.
+
+Build211 (ABI minor24) previously contained incremental
 font warmup in the sample loading screen, animation
 composition, hidden-panel cancellation/restart, redundant redraw suppression,
 and binding attribute allocation fixes. The current Windows RTX 5080 runs pass

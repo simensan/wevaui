@@ -23,8 +23,18 @@ Recreation teardown returns to 491 nodes/1,934 objects; final soak teardown is
 491 nodes/1,937 objects. This finite result does not establish leak freedom or
 clear the prior timing failures. [Lifecycle evidence](verification/lifecycle217.json).
 
-The preview219 candidate (all of the changes below: shaping pieces, `@font-face`
-with real variants, gamepad navigation) was qualified as far as this session's
+Both local addons now use build220 (ABI minor25): the preview219 changes plus
+`WevaView` live reload. On the same machine with the game closed, the desktop
+timing profile passes 72/72 (settings typing 0.39-0.56 ms changed-API p95),
+and the 52-entry host suite (35,610 checks), the rendered sample, the
+fresh-consumer native export and the packaged export smokes pass on the
+packaged library; the installed copies then pass the sample headless and
+rendered and the host suite in place. 1080p/4K, the lifecycle soak, lower-end
+hardware and a physical controller remain unrun for this build.
+[Build220 qualification](verification/qualification220.json).
+
+The earlier preview219 candidate (shaping pieces, `@font-face`
+with real variants, gamepad navigation) was qualified as far as that session's
 machine allowed: 14 core and 16 sanitizer suites, 51 host entries (35,599
 checks), the sample headless and rendered (101 checks each), the fresh-consumer
 project with native export and relocation, and the packaged example's export
@@ -363,13 +373,10 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 
 ## Next work
 
-1. On a quiet machine, rerun the desktop timing profile for preview219
-   (`.utmp/safe-engine71/weva-fonts-preview219.zip`; every other gate in
-   [qualification219.json](verification/qualification219.json) passes) and,
-   if it passes, install it into both local addons so the sample runs with
-   `@font-face`, controller navigation and the stock-engine text fix. Then
-   decide the 1080p whole-frame gate with
-   [frame-attribution217.json](verification/frame-attribution217.json) in hand.
+1. Decide the 1080p whole-frame gate for build220 with
+   [frame-attribution217.json](verification/frame-attribution217.json) in hand
+   (a UI-attributable limit or a lighter test scene), then run the 1080p/4K
+   profiles and the lifecycle soak on it.
 2. Diagnose the intermittent whole-frame stalls and verify the eventual release
    candidate at target resolutions and on lower-end hardware.
 3. Resolve remaining game-relevant CSS/text/form behavior: animation timing and

@@ -1,8 +1,8 @@
 # Frontier Camp — standalone Godot integration
 
-Installed Windows addon: **preview211 (ABI minor24)**; `addons/weva/build.json` records the
-installed version. Sample, exports and desktop
-performance checks pass; [qualification and remaining scope](../../docs/PRODUCT_READINESS.md).
+Installed Windows addon: **preview220 (ABI minor25)**; `addons/weva/build.json` records the
+installed version. Sample, exports and desktop performance checks pass;
+[qualification and remaining scope](../../docs/PRODUCT_READINESS.md).
 
 
 Open `project.godot` in the verified patched **Godot 4.7.2** editor described in
@@ -38,12 +38,12 @@ runtime. The addon must contain `weva_view.gd` and your platform's library.
   defaults** uses HTML form reset. **Escape** returns to camp.
 - Click open ground between the panels and HUD to forage through gameplay
   input. UI clicks and typing do not also trigger game actions.
-- A controller works too with preview219 or later (`game.gd` opts into
-  `gamepad_wake`): the first press wakes the UI on **Settings**, A opens it,
-  the pad moves between rows and adjusts the slider, B closes it.
+- A controller works too (`game.gd` opts into `gamepad_wake`): the first
+  press wakes the UI on **Settings**, A opens it, the pad moves between rows
+  and adjusts the slider, B closes it.
 - A native Timer advances the clock and restores stamina once camp is built.
-- With preview219 or later, edit `ui/camp.css` or `ui/camp.html` while the
-  game runs: the view reloads the file and keeps the game state.
+- Edit `ui/camp.css` or `ui/camp.html` while the game runs: the view reloads
+  the file and keeps the game state.
 
 This UI sample uses a static landscape and a small resource/crafting simulation.
 Window sizes start at 1024 × 720. No settings are saved; restarting restores
