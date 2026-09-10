@@ -1423,6 +1423,29 @@
         "note": "The local Chrome captures (untracked, 2026-09-03) embedded the port UA sheet as it was then; the sheet changed with the form-control work in 28bb9fe8 (checkbox margins, select width). Re-capturing with the current sheet moves every form-control page to \"Chrome sides with the port\". The remaining differences are sub-pixel text widths (0.1-0.3 px) and 1-4 px vertical offsets of inline code/kbd boxes where Chrome agrees with neither engine and the port is usually the closer of the two."
       }
     },
-    "text_safety_probes": "expected: the standalone reproduction and exported-Unicode probes document the stock Linux engine defect (GODOT_TEXT_SHAPING.md); the adapter workaround is verified separately."
+    "text_safety_probes": "expected: the standalone reproduction and exported-Unicode probes document the stock Linux engine defect (GODOT_TEXT_SHAPING.md); the adapter workaround is verified separately.",
+    "layout_oracle_hand_and_harvest_refreshed": {
+      "hand": {
+        "summary": "43/52 agree, 1 differ, 8 reference bugs, 0 errored",
+        "fail_pages": [
+          "42-cv-hidden"
+        ],
+        "log": ".utmp/safe-engine71/qual220/oracle-hand-recaptured.log",
+        "captures_backup": ".utmp/safe-engine71/qual220/captures-backup-hand",
+        "note": "42-cv-hidden: the reference lays out content-visibility:hidden children as boxes; the port emits none, as Chrome does. Element-count differences are not Chrome-arbitrated."
+      },
+      "harvest": {
+        "summary": "178/210 agree, 4 differ, 28 reference bugs, 0 errored",
+        "fail_pages": [
+          "SpatialNavigatorTests-01",
+          "SpatialNavigatorTests-02",
+          "SpatialNavigatorTests-05",
+          "SpatialNavigatorTests-06"
+        ],
+        "log": ".utmp/safe-engine71/qual220/oracle-harvest-recaptured.log",
+        "captures_backup": ".utmp/safe-engine71/qual220/captures-backup-harvest",
+        "note": "SpatialNavigatorTests-01/02/05/06: empty inline-block buttons sit 0.6 px lower than Chrome (10.6 vs 10) because Blink rounds the run ascent to an integer; the reference is 1.6 px off and also 2 px short on the button height, where the port matches Chrome. check.sh allows three harvest differences in development mode, so this is one over."
+      }
+    }
   }
 }
