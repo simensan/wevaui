@@ -146,9 +146,11 @@ moves between rows vertically and adjusts a row horizontally. `ui_accept`
 is Space on a control and Enter in a field; `ui_cancel` is Escape and is
 consumed only when it closed something, so your own back action still fires.
 Actions with no joypad binding fall back to A, B, the D-pad and the
-shoulders; map them in the InputMap to change that. Consumed presses are
-handled, releases pass through. `gamepad_navigation = false` leaves every
-joypad event to the game; `focus_move(direction)` remains for custom schemes.
+shoulders; map them in the InputMap to change that. A held direction
+repeats after 400 ms at ten steps a second, like a held arrow key. Consumed
+presses are handled, releases pass through. `gamepad_navigation = false`
+leaves every joypad event to the game; `focus_move(direction)` remains for
+custom schemes.
 
 Held edit keys, Unicode key events, Ctrl/Cmd+A/C/X/V/Z and redo are routed.
 Buttons activate on Enter down or Space release. Checkbox/radio Space,

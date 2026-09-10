@@ -418,7 +418,15 @@ private:
     bool interactive_ = true;
     bool gamepad_navigation_ = true;
     bool navigation_action(const godot::Ref<godot::InputEvent>& event);
+    bool navigate_direction(int index, const godot::String& tag, const godot::String& type);
+    void repeat_navigation(uint64_t now_usec);
     godot::String focused_tag(godot::String* type) const;
+    // A direction the pad is still holding repeats like a held key: the
+    // index into the direction table, how to poll it, and when it fires next.
+    int held_direction_ = -1;
+    bool held_by_action_ = false;
+    int held_device_ = 0;
+    uint64_t repeat_at_usec_ = 0;
     bool paused_ = false;
     // The last position handed to the document, so a move that does not change
     // the element still costs nothing: the document already skips an update

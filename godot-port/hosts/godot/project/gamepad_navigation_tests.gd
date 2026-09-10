@@ -126,6 +126,23 @@ func _ready() -> void:
 	check(doc.get_focused_id() == "b4", "and the stick's other axis moves down")
 	stick(JOY_AXIS_LEFT_Y, 0.0)
 
+	# Holding a direction repeats like a held arrow key: nothing before the
+	# delay, then a step every interval until release.
+	doc.set_focus("#b1")
+	button(JOY_BUTTON_DPAD_DOWN)
+	Input.action_press("ui_down")
+	check(doc.get_focused_id() == "b3", "the press itself moves once")
+	await get_tree().create_timer(0.2).timeout
+	check(doc.get_focused_id() == "b3", "no repeat before the delay")
+	await get_tree().create_timer(0.5).timeout
+	check(doc.get_focused_id() != "b3", "holding the pad repeats after the delay")
+	Input.action_release("ui_down")
+	button(JOY_BUTTON_DPAD_DOWN, false)
+	await get_tree().process_frame
+	var settled := doc.get_focused_id()
+	await get_tree().create_timer(0.3).timeout
+	check(doc.get_focused_id() == settled, "release stops the repeat")
+
 	doc.gamepad_navigation = false
 	doc.set_focus("#b1")
 	tap(JOY_BUTTON_DPAD_RIGHT)

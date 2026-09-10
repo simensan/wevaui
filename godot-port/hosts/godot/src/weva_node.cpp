@@ -1324,6 +1324,7 @@ void WevaDocument::_notification(int what) {
         queue_redraw();
         pump_events();
     }
+    if (what == NOTIFICATION_FOCUS_EXIT) held_direction_ = -1;
     if (what == NOTIFICATION_FOCUS_EXIT && doc_) set_focus(String());
     if (what == NOTIFICATION_VISIBILITY_CHANGED && is_inside_tree() && !is_visible_in_tree()) clear_pointer();
     if (what == NOTIFICATION_EXIT_TREE && doc_) {
@@ -1436,6 +1437,36 @@ Vector2 WevaDocument::get_element_scroll_max(const String& selector) {
 // A game with its own input map can hand events over one at a time through
 // these explicit document-coordinate operations.
 
+namespace {
+struct Direction {
+    const char* action;
+    JoyButton fallback;
+    int key;
+    double dx, dy;
+};
+const Direction kDirections[4] = {
+    {"ui_left", JOY_BUTTON_DPAD_LEFT, WEVA_KEY_LEFT, -1, 0}, {"ui_right", JOY_BUTTON_DPAD_RIGHT, WEVA_KEY_RIGHT, 1, 0},
+    {"ui_up", JOY_BUTTON_DPAD_UP, WEVA_KEY_UP, 0, -1}, {"ui_down", JOY_BUTTON_DPAD_DOWN, WEVA_KEY_DOWN, 0, 1}};
+// A held direction repeats after the delay, then at the interval: the
+// keyboard's own timing for the delay, a menu's pace for the rate.
+constexpr uint64_t kRepeatDelayUsec = 400000;
+constexpr uint64_t kRepeatIntervalUsec = 100000;
+
+// Whether the project bound any joypad event to the action; otherwise the
+// conventional button stands in for it.
+bool mapped_to_joypad(const char* action) {
+    InputMap* map = InputMap::get_singleton();
+    if (!map || !map->has_action(action)) return false;
+    const TypedArray<InputEvent> events = map->action_get_events(action);
+    for (int64_t i = 0; i < events.size(); ++i) {
+        const Ref<InputEvent> bound = events[i];
+        if (bound.is_valid() && (bound->is_class("InputEventJoypadButton") || bound->is_class("InputEventJoypadMotion")))
+            return true;
+    }
+    return false;
+}
+} // namespace
+
 String WevaDocument::focused_tag(String* type) const {
     if (type) *type = String();
     if (!doc_) return String();
@@ -1469,13 +1500,7 @@ bool WevaDocument::navigation_action(const Ref<InputEvent>& event) {
     const Ref<InputEventJoypadButton> joypad_button = event;
     const auto pressed = [&](const char* action, JoyButton fallback) {
         if (!map->has_action(action)) return false;
-        bool mapped = false;
-        const TypedArray<InputEvent> events = map->action_get_events(action);
-        for (int64_t i = 0; i < events.size() && !mapped; ++i) {
-            const Ref<InputEvent> bound = events[i];
-            mapped = bound.is_valid() && (bound->is_class("InputEventJoypadButton") || bound->is_class("InputEventJoypadMotion"));
-        }
-        if (mapped) return event->is_action_pressed(action);
+        if (mapped_to_joypad(action)) return event->is_action_pressed(action);
         return joypad_button.is_valid() && joypad_button->is_pressed() && joypad_button->get_button_index() == fallback;
     };
     const auto tap = [&](int code) {
@@ -1502,25 +1527,56 @@ bool WevaDocument::navigation_action(const Ref<InputEvent>& event) {
         weva_document_focus_next(doc_, 1);
         return true;
     }
-    struct Direction {
-        const char* action;
-        JoyButton fallback;
-        int key;
-        double dx, dy;
-    };
-    static const Direction directions[] = {
-        {"ui_left", JOY_BUTTON_DPAD_LEFT, WEVA_KEY_LEFT, -1, 0}, {"ui_right", JOY_BUTTON_DPAD_RIGHT, WEVA_KEY_RIGHT, 1, 0},
-        {"ui_up", JOY_BUTTON_DPAD_UP, WEVA_KEY_UP, 0, -1}, {"ui_down", JOY_BUTTON_DPAD_DOWN, WEVA_KEY_DOWN, 0, 1}};
-    for (const Direction& d : directions) {
+    for (int i = 0; i < 4; ++i) {
+        const Direction& d = kDirections[i];
         if (!pressed(d.action, d.fallback)) continue;
-        const bool vertical = d.dy != 0;
-        const bool element_first = !vertical || tag == "select" || tag == "textarea" ||
-                                   (tag == "input" && type == "number");
-        if (element_first && tap(d.key)) return true;
-        weva_document_focus_move(doc_, d.dx, d.dy);
+        navigate_direction(i, tag, type);
+        // Holding the direction repeats after a keyboard-like delay.
+        held_direction_ = i;
+        held_by_action_ = mapped_to_joypad(d.action);
+        held_device_ = event->get_device();
+        repeat_at_usec_ = Time::get_singleton()->get_ticks_usec() + kRepeatDelayUsec;
         return true;
     }
     return false;
+}
+
+bool WevaDocument::navigate_direction(int index, const String& tag, const String& type) {
+    const Direction& d = kDirections[index];
+    const bool vertical = d.dy != 0;
+    const bool element_first = !vertical || tag == "select" || tag == "textarea" ||
+                               (tag == "input" && type == "number");
+    if (element_first) {
+        const bool down = weva_document_key(doc_, d.key, 0, 1) != 0;
+        const bool up = weva_document_key(doc_, d.key, 0, 0) != 0;
+        if (down || up) return true;
+    }
+    weva_document_focus_move(doc_, d.dx, d.dy);
+    return true;
+}
+
+// Polled each frame: a pad direction still held keeps stepping, the way a
+// held arrow key keeps stepping through its OS repeat, so a long list does
+// not need a press per row. Release, focus loss or turning navigation off
+// ends it.
+void WevaDocument::repeat_navigation(uint64_t now_usec) {
+    if (held_direction_ < 0) return;
+    Input* input = Input::get_singleton();
+    const Direction& d = kDirections[held_direction_];
+    const bool still_held = gamepad_navigation_ && input && has_focus() && is_visible_in_tree() &&
+        (held_by_action_ ? input->is_action_pressed(d.action) : input->is_joy_button_pressed(held_device_, d.fallback));
+    if (!still_held) {
+        held_direction_ = -1;
+        return;
+    }
+    if (now_usec < repeat_at_usec_) return;
+    repeat_at_usec_ = now_usec + kRepeatIntervalUsec;
+    String type;
+    const String tag = focused_tag(&type);
+    navigate_direction(held_direction_, tag, type);
+    dirty_ = true;
+    queue_redraw();
+    pump_events();
 }
 
 bool WevaDocument::send_key(int keycode, bool pressed, bool shift, bool ctrl) {
@@ -2624,6 +2680,7 @@ void WevaDocument::_process(double delta) {
     const double input_dt = last_input_tick_usec_ ? (now - last_input_tick_usec_) / 1000000.0 : 0;
     last_input_tick_usec_ = now;
     if (!doc_) return;
+    repeat_navigation(now);
     if (paused_) {
         // Input time advances held gestures while CSS time stays fixed.
         if (dirty_ || paint_pending_ || weva_document_needs_input_tick(doc_)) ensure_updated(0,input_dt);
