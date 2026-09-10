@@ -58,6 +58,10 @@ public:
     // lifetime. Arbitrary resource fallback chains must leave this false.
     uint64_t adopt(const godot::TypedArray<godot::RID>& fonts,
                    const godot::PackedByteArray& primary_data, bool immutable_fallbacks = false);
+    // A real bold or italic face for `face`, adopted separately: `variant`
+    // answers with it, or the nearest one, before synthesizing. weight is the
+    // CSS number (600-799 bold, 800+ black); a zero variant_face removes it.
+    void set_real_variant(uint64_t face, int32_t weight, bool italic, uint64_t variant_face);
 
 private:
     // Every entry point is static so its address fits a C function pointer;
@@ -107,6 +111,8 @@ private:
     // Synthesized faces by (base face, emboldening strength, italic): independent
     // primary fonts so synthesis cannot mutate the regular glyph cache.
     std::map<std::tuple<uint64_t, int, bool>, uint64_t> variants_;
+    // Real files the host adopted for a weight/italic, by the same key.
+    std::map<std::tuple<uint64_t, int, bool>, uint64_t> real_variants_;
     std::vector<std::shared_ptr<SharedFontVariant>> shared_variants_;
     // Only the host's private system-font fallback list can opt into sharing.
     // User-provided fallback resources remain mutable and never enter here.

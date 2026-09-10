@@ -64,6 +64,37 @@ func _ready() -> void:
 	var faces := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 700; } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: normal; } #a { font-family: "Camp Mono"; }')
 	_check(width(faces, "#a") == mono_width, "with several faces the normal-weight one is registered")
 
+	# A bold or italic rule is a real file for that weight or slant, used
+	# instead of synthesis (synthesis keeps the regular advances, so a
+	# different file is visible in the width). The nearest file serves what
+	# no rule covers, and one axis synthesizes on top of the other's file.
+	var weighted := SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 700; } #a { font-family: "Camp Mono"; font-weight: 700; }'
+	var bold := make_doc(weighted)
+	_check(width(bold, "#a") == sans_width, "a bold @font-face file draws bold text instead of synthesis")
+	bold.css = weighted.replace("font-weight: 700; }", "font-weight: 400; }")
+	bold.update_document()
+	_check(width(bold, "#a") == mono_width, "regular text keeps the regular file")
+	bold.css = weighted.replace("#a { font-family: \"Camp Mono\"; font-weight: 700; }", "#a { font-family: \"Camp Mono\"; font-weight: 900; }")
+	bold.update_document()
+	_check(width(bold, "#a") == sans_width, "the nearest heavier file serves a weight no rule covers")
+	bold.css = weighted.replace("#a { font-family: \"Camp Mono\"; font-weight: 700; }", "#a { font-family: \"Camp Mono\"; font-weight: 700; font-style: italic; }")
+	bold.update_document()
+	_check(width(bold, "#a") == sans_width, "bold italic slants the bold file when no bold-italic file exists")
+	bold.css = weighted.replace("font-weight: 700; } #a", "font-style: italic; } #a").replace("#a { font-family: \"Camp Mono\"; font-weight: 700; }", "#a { font-family: \"Camp Mono\"; font-style: italic; }")
+	bold.update_document()
+	_check(width(bold, "#a") == sans_width, "an italic @font-face file draws italic text")
+	bold.css = SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); } #a { font-family: "Camp Mono"; font-weight: 700; }'
+	bold.update_document()
+	_check(width(bold, "#a") == mono_width, "dropping the bold rule returns bold text to synthesis")
+
+	var native_bold := make_doc(SIZES + ' #a { font-family: "Camp Mono"; font-weight: 700; }', "", mono)
+	native_bold.register_font_face("Camp Mono", sans, 700, false)
+	native_bold.update_document()
+	_check(width(native_bold, "#a") == sans_width, "register_font_face supplies a bold file to a native family")
+	native_bold.register_font_face("Camp Mono", null, 700, false)
+	native_bold.update_document()
+	_check(width(native_bold, "#a") == mono_width, "and a null font removes it")
+
 	# Replacing the stylesheet without the rule releases the family.
 	doc.css = SIZES + ' #a { font-family: "Camp Mono"; }'
 	doc.update_document()

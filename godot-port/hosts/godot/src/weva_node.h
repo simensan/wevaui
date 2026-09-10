@@ -260,6 +260,11 @@ public:
     // holding the font fixed is the only way a pixel difference between this
     // host and the reference rasteriser means anything.
     bool register_font_family(const godot::String& family, const godot::Ref<godot::Font>& font);
+    // A real bold or italic file for a registered family: weight is the CSS
+    // number (600-799 bold, 800 and above black), italic the slant. Text at
+    // that weight or slant draws the file instead of a synthesized variant;
+    // the nearest file serves what is not exact. A null font removes it.
+    bool register_font_face(const godot::String& family, const godot::Ref<godot::Font>& font, int weight, bool italic);
     void set_use_engine_font(bool use);
     bool get_use_engine_font() const { return use_engine_font_; }
 
@@ -531,12 +536,16 @@ private:
     godot::Callable theme_font_changed_;
     std::map<godot::String, godot::Ref<godot::Font>> family_fonts_;
     std::vector<godot::Ref<godot::Font>> retired_family_fonts_;
+    // Real weight/italic files per family key, by (strength 1|2, italic).
+    std::map<godot::String, std::map<std::pair<int, bool>, godot::Ref<godot::Font>>> family_variants_;
     // Families registered from the stylesheet's `@font-face` rules, keyed like
     // family_fonts_, with the resolved source each was loaded from. A family
     // the game registered itself is never replaced by CSS.
     struct CssFontFace {
         godot::String path;
         godot::Ref<godot::Font> font;
+        // Extra weight/italic files the stylesheet declared for the family.
+        std::map<std::pair<int, bool>, std::pair<godot::String, godot::Ref<godot::Font>>> variants;
     };
     std::map<godot::String, CssFontFace> css_font_faces_;
     void sync_css_font_faces();

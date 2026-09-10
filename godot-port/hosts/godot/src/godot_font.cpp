@@ -289,6 +289,7 @@ void GodotFontBackend::clear() {
     faces_.clear();
     metric_fonts_.clear();
     variants_.clear();
+    real_variants_.clear();
     face_data_.clear();
     glyph_sources_.clear();
     glyph_ids_.clear();
@@ -734,6 +735,13 @@ size_t GodotFontBackend::shape(void* self, uint64_t face, const char* utf8, size
     return run.size();
 }
 
+void GodotFontBackend::set_real_variant(uint64_t face, int32_t weight, bool italic, uint64_t variant_face) {
+    const int strength = weight >= 800 ? 2 : weight >= 600 ? 1 : 0;
+    const auto key = std::make_tuple(face, strength, italic);
+    if (variant_face) real_variants_[key] = variant_face;
+    else real_variants_.erase(key);
+}
+
 uint64_t GodotFontBackend::variant(void* self, uint64_t face, int32_t weight, int32_t italic) {
     GodotFontBackend* me = static_cast<GodotFontBackend*>(self);
     TextServer* ts = server();
@@ -742,6 +750,25 @@ uint64_t GodotFontBackend::variant(void* self, uint64_t face, int32_t weight, in
     const bool bold = strength != 0;
     const bool oblique = italic != 0;
     if (!bold && !oblique) return face;
+    // A real file first: the exact weight and slant, else the other bold
+    // strength with the same slant, else a real face for one axis with the
+    // other synthesized on top of it (an italic shear over the bold file, or
+    // emboldening over the italic file), the way a browser matches faces.
+    const auto real = [&](int s, bool o) -> uint64_t {
+        const auto it = me->real_variants_.find(std::make_tuple(face, s, o));
+        return it == me->real_variants_.end() ? 0 : it->second;
+    };
+    if (bold) {
+        if (const uint64_t exact = real(strength, oblique)) return exact;
+        if (const uint64_t other = real(strength == 2 ? 1 : 2, oblique)) return other;
+        if (oblique) {
+            if (const uint64_t real_bold = real(strength, false)) return variant(self, real_bold, 400, 1);
+            if (const uint64_t other_bold = real(strength == 2 ? 1 : 2, false)) return variant(self, other_bold, 400, 1);
+            if (const uint64_t real_italic = real(0, true)) return variant(self, real_italic, weight, 0);
+        }
+    } else if (const uint64_t real_italic = real(0, true)) {
+        return real_italic;
+    }
     const auto key = std::make_tuple(face, strength, oblique);
     const auto hit = me->variants_.find(key);
     if (hit != me->variants_.end()) return hit->second;

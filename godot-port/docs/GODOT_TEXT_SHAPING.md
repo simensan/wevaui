@@ -28,11 +28,15 @@ Since ABI minor 25 the core also lists the stylesheet's `@font-face` rules
 (`weva_document_font_faces`: family, first `url()` source resolved against the
 base path, `font-weight` and `font-style` descriptor texts), and the Godot host
 loads each source and registers the family on every CSS or base-path change.
-The host keeps one face per family, preferring the normal weight/style rule;
-other weights and styles are synthesized, and `unicode-range`, `font-display`
-and `local()` are not honoured. A game's own `register_font_family` takes
+The normal weight/style rule is the regular face; bold (600-799), black (800+)
+and italic rules are adopted as real faces and the backend's `variant` hook
+answers with them before synthesizing: the exact face, else the other bold
+strength, else the bold file with a synthesized slant or the italic file with
+synthesized emboldening. `unicode-range`, `font-display` and `local()` are not
+honoured. A game's own `register_font_family` and `register_font_face` take
 precedence. `hosts/godot/project/font_face_tests.tscn` covers loading, base-path
-resolution, a missing source, precedence, face choice and rule removal.
+resolution, a missing source, precedence, face choice, real bold/italic files,
+nearest-weight matching, native `register_font_face` and rule removal.
 
 The host retains the selected Font resource and observes its `changed` signal.
 Changes refresh shaping, measurement, glyph bitmaps and layout even when CSS

@@ -41,6 +41,31 @@
   },
   "limitations": [
     "Synthetic InputEventJoypadButton/Motion through a SubViewport; no physical controller.",
-    "Exports and timing profiles not rerun; not installed."
-  ]
+    "Timing profiles not rerun; not installed."
+  ],
+  "exports": {
+    "addon_zip": ".utmp/safe-engine71/weva-gamepad-preview218.zip",
+    "fresh_consumer_and_native_export": [
+      "import: passed",
+      "headless: frontier integration: 101 checks, 0 failures",
+      "gl_compatibility: frontier integration: 107 checks, 0 failures",
+      "mobile: frontier integration: 107 checks, 0 failures",
+      "export: passed",
+      "export-headless: frontier integration: 101 checks, 0 failures",
+      "export-render: frontier integration: 107 checks, 0 failures"
+    ],
+    "packaged_example_and_export_smokes": [
+      "godot export smoke (project): 8 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (pack): 10 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-debug): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-release): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-release): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures"
+    ],
+    "passed": true
+  }
 }

@@ -103,11 +103,16 @@ h1 { font-family: "Camp Display", sans-serif; }
 
 The `src` url resolves like an image url, against `base_path` (the markup's
 directory when loaded through `WevaView`), through the importer when the font
-is an imported resource and from the raw file otherwise. One face is registered
-per family: the rule with normal weight and style when several are declared,
-with bold and italic synthesized; `local()` sources are skipped. A family the
-game registered itself keeps its font. A source that cannot load warns and the
-family falls back. See `GODOT_TEXT_SHAPING.md` for details.
+is an imported resource and from the raw file otherwise. The rule with normal
+weight and style is the family's regular face; a rule with `font-weight: 700`
+(or 800 and above) or `font-style: italic` is a real file for that weight or
+slant, and text at that weight or slant draws it. The nearest file serves a
+weight no rule covers, and one axis is synthesized over the other's file when
+only that file exists; with no such rules bold and italic are synthesized.
+`local()` sources are skipped. The same files can be supplied from a script
+with `ui.register_font_face("Camp", bold_font, 700, false)`. A family or face
+the game registered itself keeps its font. A source that cannot load warns and
+the family falls back. See `GODOT_TEXT_SHAPING.md` for details.
 
 ## Export
 

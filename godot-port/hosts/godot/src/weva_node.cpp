@@ -165,6 +165,9 @@ Ref<Font> load_css_font(String path) {
     return file;
 }
 
+// The CSS weight a stored strength stands for (see register_font_face).
+int css_weight(int strength) { return strength == 2 ? 800 : strength == 1 ? 700 : 400; }
+
 bool normal_face(const String& weight, const String& style) {
     const String w = weight.strip_edges().to_lower();
     const String s = style.strip_edges().to_lower();
@@ -173,10 +176,11 @@ bool normal_face(const String& weight, const String& style) {
 } // namespace
 
 // The core lists `@font-face` rules; this loads their sources and registers
-// the families so `font-family: "Camp Display"` selects them. One face per
-// family: the normal-weight, normal-style rule when there is one, else the
-// first, with the backend synthesizing bold and italic. Families the game
-// registered through register_font_family keep their font.
+// the families so `font-family: "Camp Display"` selects them. The rule with
+// normal weight and style (else the first) is the family's regular face; a
+// rule for a bold weight or italic style becomes a real variant file, and
+// what no file covers is synthesized. Families the game registered through
+// register_font_family keep their font; the game's own faces likewise.
 void WevaDocument::sync_css_font_faces() {
     if (!doc_) return;
     const size_t bytes = weva_document_font_faces(doc_, nullptr, 0);
@@ -185,6 +189,7 @@ void WevaDocument::sync_css_font_faces() {
     struct Wanted {
         String family, path;
         bool normal = false;
+        std::map<std::pair<int, bool>, String> variants;
     };
     std::map<String, Wanted> wanted;
     for (const String& line : String::utf8(text.data()).split("\n", false)) {
@@ -192,10 +197,22 @@ void WevaDocument::sync_css_font_faces() {
         if (fields.size() < 2 || fields[0].is_empty() || fields[1].is_empty()) continue;
         const String key = fields[0].strip_edges().to_lower();
         if (key.is_empty() || key.contains(",") || key.contains("\"") || key.contains("'")) continue;
-        const bool normal = normal_face(fields.size() > 2 ? fields[2] : String(), fields.size() > 3 ? fields[3] : String());
+        const String weight = fields.size() > 2 ? fields[2].strip_edges().to_lower() : String();
+        const String style = fields.size() > 3 ? fields[3].strip_edges().to_lower() : String();
+        const bool normal = normal_face(weight, style);
         auto it = wanted.find(key);
-        if (it == wanted.end()) wanted[key] = {fields[0].strip_edges(), fields[1], normal};
-        else if (normal && !it->second.normal) it->second = {fields[0].strip_edges(), fields[1], normal};
+        if (it == wanted.end()) it = wanted.emplace(key, Wanted{fields[0].strip_edges(), fields[1], normal, {}}).first;
+        else if (normal && !it->second.normal) {
+            it->second.path = fields[1];
+            it->second.normal = true;
+        }
+        if (!normal) {
+            // "bold"/"bolder" and numbers; a range keeps its first number.
+            const int number = weight == "bold" || weight == "bolder" ? 700 : weight.is_empty() || weight == "normal" ? 400 : weight.to_int();
+            const int strength = number >= 800 ? 2 : number >= 600 ? 1 : 0;
+            const bool italic = style.begins_with("italic") || style.begins_with("oblique");
+            if (strength || italic) it->second.variants.emplace(std::make_pair(strength, italic), fields[1]);
+        }
     }
     // Drop CSS registrations the stylesheet no longer declares, or that the
     // game has since replaced with its own font.
@@ -205,23 +222,52 @@ void WevaDocument::sync_css_font_faces() {
         const auto want = wanted.find(it->first);
         if (!ours) {
             it = css_font_faces_.erase(it);
-        } else if (want == wanted.end()) {
-            register_font_family(it->first, Ref<Font>());
-            it = css_font_faces_.erase(it);
-        } else {
-            ++it;
-        }
-    }
-    for (const auto& entry : wanted) {
-        const auto existing = css_font_faces_.find(entry.first);
-        if (existing != css_font_faces_.end() && existing->second.path == entry.second.path) continue;
-        if (existing == css_font_faces_.end() && family_fonts_.count(entry.first)) continue; // the game's own registration wins
-        const Ref<Font> font = load_css_font(entry.second.path);
-        if (font.is_null()) {
-            UtilityFunctions::push_warning("Weva CSS: @font-face ", entry.second.family, " could not load ", entry.second.path);
             continue;
         }
-        if (register_font_family(entry.first, font)) css_font_faces_[entry.first] = {entry.second.path, font};
+        if (want == wanted.end()) {
+            for (const auto& variant : it->second.variants)
+                register_font_face(it->first, Ref<Font>(), css_weight(variant.first.first), variant.first.second);
+            register_font_family(it->first, Ref<Font>());
+            it = css_font_faces_.erase(it);
+            continue;
+        }
+        for (auto variant = it->second.variants.begin(); variant != it->second.variants.end();) {
+            const auto still = want->second.variants.find(variant->first);
+            if (still != want->second.variants.end() && still->second == variant->second.first) {
+                ++variant;
+                continue;
+            }
+            register_font_face(it->first, Ref<Font>(), css_weight(variant->first.first), variant->first.second);
+            variant = it->second.variants.erase(variant);
+        }
+        ++it;
+    }
+    for (const auto& entry : wanted) {
+        auto existing = css_font_faces_.find(entry.first);
+        if (existing == css_font_faces_.end() && family_fonts_.count(entry.first)) continue; // the game's own registration wins
+        if (existing == css_font_faces_.end() || existing->second.path != entry.second.path) {
+            const Ref<Font> font = load_css_font(entry.second.path);
+            if (font.is_null()) {
+                UtilityFunctions::push_warning("Weva CSS: @font-face ", entry.second.family, " could not load ", entry.second.path);
+                continue;
+            }
+            if (!register_font_family(entry.first, font)) continue;
+            if (existing == css_font_faces_.end()) existing = css_font_faces_.emplace(entry.first, CssFontFace{}).first;
+            existing->second.path = entry.second.path;
+            existing->second.font = font;
+        }
+        for (const auto& variant : entry.second.variants) {
+            if (existing->second.variants.count(variant.first)) continue;
+            const auto owned = family_variants_.find(entry.first);
+            if (owned != family_variants_.end() && owned->second.count(variant.first)) continue; // the game's own face wins
+            const Ref<Font> font = load_css_font(variant.second);
+            if (font.is_null()) {
+                UtilityFunctions::push_warning("Weva CSS: @font-face ", entry.second.family, " could not load ", variant.second);
+                continue;
+            }
+            if (register_font_face(entry.first, font, css_weight(variant.first.first), variant.first.second))
+                existing->second.variants[variant.first] = {variant.second, font};
+        }
     }
 }
 
@@ -420,6 +466,43 @@ void WevaDocument::disconnect_family_fonts() {
     for (const auto& entry : family_fonts_)
         if (entry.second->is_connected("changed", family_font_changed_))
             entry.second->disconnect("changed", family_font_changed_);
+    for (const auto& family : family_variants_)
+        for (const auto& variant : family.second)
+            if (variant.second->is_connected("changed", family_font_changed_))
+                variant.second->disconnect("changed", family_font_changed_);
+}
+
+bool WevaDocument::register_font_face(const String& family, const Ref<Font>& font, int weight, bool italic) {
+    const String key = family.strip_edges().to_lower();
+    if (key.is_empty() || key.contains(",") || key.contains("\"") || key.contains("'")) return false;
+    const int strength = weight >= 800 ? 2 : weight >= 600 ? 1 : 0;
+    if (strength == 0 && !italic) return false; // that is the family's regular face
+    auto& variants = family_variants_[key];
+    const auto slot = std::make_pair(strength, italic);
+    const auto it = variants.find(slot);
+    if (it == variants.end() && font.is_null()) {
+        if (variants.empty()) family_variants_.erase(key);
+        return true;
+    }
+    if (it != variants.end() && it->second == font) return true;
+    disconnect_family_fonts();
+    if (it != variants.end()) {
+        if (font_face_) retired_family_fonts_.push_back(it->second);
+        variants.erase(it);
+    }
+    if (font.is_valid()) variants[slot] = font;
+    if (variants.empty()) family_variants_.erase(key);
+    if (family_font_changed_.is_null())
+        family_font_changed_ = callable_mp(this, &WevaDocument::family_font_resource_changed);
+    for (const auto& entry : family_fonts_)
+        if (!entry.second->is_connected("changed", family_font_changed_))
+            entry.second->connect("changed", family_font_changed_);
+    for (const auto& entry : family_variants_)
+        for (const auto& variant : entry.second)
+            if (!variant.second->is_connected("changed", family_font_changed_))
+                variant.second->connect("changed", family_font_changed_);
+    font_resource_changed();
+    return true;
 }
 
 void WevaDocument::set_use_engine_font(bool use) {
@@ -532,6 +615,20 @@ void WevaDocument::ensure_font_backend() {
             continue;
         }
         weva_document_register_font_family(doc_, entry.first.utf8().get_data(), face);
+        const auto variants = family_variants_.find(entry.first);
+        if (variants == family_variants_.end()) continue;
+        for (const auto& variant : variants->second) {
+            const TypedArray<RID> variant_rids = variant.second->get_rids().duplicate();
+            PackedByteArray variant_data;
+            const Ref<FontFile> variant_file = variant.second;
+            if (variant_file.is_valid()) variant_data = variant_file->get_data();
+            const auto variant_face = font_backend_.adopt(variant_rids, variant_data, variant_rids.size() == 1);
+            if (!variant_face) {
+                UtilityFunctions::push_warning("Weva could not adopt a font face for family: ", entry.first);
+                continue;
+            }
+            font_backend_.set_real_variant(face, css_weight(variant.first.first), variant.first.second, variant_face);
+        }
     }
     profile_lap("families");
     dirty_ = true;
@@ -614,6 +711,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("remove_element_attribute", "selector", "name"),
                          &WevaDocument::remove_element_attribute);
     ClassDB::bind_method(D_METHOD("register_font_family", "family", "font"), &WevaDocument::register_font_family);
+    ClassDB::bind_method(D_METHOD("register_font_face", "family", "font", "weight", "italic"), &WevaDocument::register_font_face);
     ClassDB::bind_method(D_METHOD("set_use_engine_font", "use"),
                          &WevaDocument::set_use_engine_font);
     ClassDB::bind_method(D_METHOD("get_use_engine_font"), &WevaDocument::get_use_engine_font);
