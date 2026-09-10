@@ -333,4 +333,7 @@ exact digest and logs):
 
 Text that reaches TextServer through other paths (native Godot controls, the
 theme font in native overlays) is not shaped by the adapter and still needs
-the engine patch. Other platforms and engine versions are unverified.
+the engine patch. Pieces take the direction of the run's first strong
+character, so a run that starts left-to-right and turns right-to-left after
+a split keeps left-to-right piece order; only runs past the limits are
+affected. Other engine versions are unverified.
