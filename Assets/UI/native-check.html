@@ -1,0 +1,60 @@
+<!-- A page for looking at this week's core work in Unity: the same file is
+     what the offscreen parity render draws and what a WevaNativeDocument in a
+     scene draws through UIRenderPass. Each block says what should be seen. -->
+<body>
+  <template id="badge">
+    <style>
+      .pill { display: inline-block; padding: 4px 10px; border-radius: 12px; background: #2b6cb0; color: #fff; font-size: 14px; }
+      :host { display: inline-block; margin-right: 8px; }
+    </style>
+    <span class="pill"><slot></slot></span>
+  </template>
+
+  <div id="safe" class="block">
+    <h2>1. Safe area</h2>
+    <p class="note">This box pads by <code>env(safe-area-inset-top/left)</code>. With <b>FollowScreenSafeArea</b> on a notched device, or after <code>SetSafeAreaInsets(44, 0, 0, 8)</code>, the tinted padding appears above and left of the text. On a desktop there is no padding.</p>
+    <div id="safe-box">safe-area padded box</div>
+  </div>
+
+  <div id="bidi" class="block">
+    <h2>2. Direction and bidi</h2>
+    <p class="note">Left-to-right paragraph: Hebrew word between the Latin ones.</p>
+    <p class="ltr">abc אבג def</p>
+    <p class="note">Right-to-left paragraph, right-aligned: the Latin <b>abc</b> sits at the right end, the Hebrew words read right to left.</p>
+    <p class="rtl">abc אבג דהו</p>
+    <p class="note">bidi-override span: its words come out as <b>def abc</b>, then ghi. (Glyphs inside a Hebrew word are TextCore's: they stay in logical order on Unity.)</p>
+    <p><span class="override">abc def</span> ghi</p>
+  </div>
+
+  <div id="fonts" class="block">
+    <h2>3. local() font source</h2>
+    <p class="note">The line below asks for <code>local("Arial")</code> first. On Windows it draws in Arial; the line after it, in the bundled UI face, should look different.</p>
+    <p class="arial">Quick brown fox in Arial (local)</p>
+    <p>Quick brown fox in the UI face</p>
+  </div>
+
+  <div id="transforms" class="block">
+    <h2>4. Individual transform properties</h2>
+    <p class="note">Three squares from one row: the first shifted right by half its width (<code>translate</code>), the second turned (<code>rotate: 45deg</code>), the third doubled (<code>scale: 2 1</code>).</p>
+    <div class="row"><div class="sq t"></div><div class="sq r"></div><div class="sq s"></div></div>
+  </div>
+
+  <div id="sizing" class="block">
+    <h2>5. Intrinsic sizing keywords</h2>
+    <p class="note">The first bar hugs its text (<code>max-width: max-content</code> on an auto-width block, centred by auto margins); the second is as wide as its longest word (<code>width: min-content</code>).</p>
+    <div class="bar fit">fits its text</div>
+    <div class="bar narrow">narrowest word</div>
+  </div>
+
+  <div id="components" class="block">
+    <h2>6. Component-scoped styles</h2>
+    <p class="note">Two blue pills from a template whose <code>&lt;style&gt;</code> is scoped: the pill rule must NOT reach the plain span after them.</p>
+    <badge>one</badge><badge>two</badge> <span class="pill">not a pill</span>
+  </div>
+
+  <div id="scroll" class="block">
+    <h2>7. Smooth scroll</h2>
+    <p class="note">The list has <code>scroll-behavior: smooth</code>. A script calling <code>SetScroll</code> or <code>ScrollIntoView</code> on it eases over a quarter second instead of jumping; the wheel still moves it at once.</p>
+    <div id="list"><div>row 1</div><div>row 2</div><div>row 3</div><div>row 4</div><div>row 5</div><div>row 6</div><div>row 7</div><div>row 8</div></div>
+  </div>
+</body>
