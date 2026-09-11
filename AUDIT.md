@@ -223,7 +223,41 @@ directory is now larger than the C++ core's source. Worth a pass that keeps the
 conclusions and drops the embedded raw payloads — but that is editing evidence,
 so it needs your agreement on the rule before anything is rewritten.
 
+### 2.5 Orphaned scripts — 22 removed
+
+Swept all 94 tracked `.py` / `.mjs` / `.sh` outside `Packages/` and `Assets/`,
+looking for ones whose name appears nowhere else. Two heuristics were needed:
+matching the filename misses Python modules imported by stem, which is why
+`imgio.py` looked orphaned on the first pass and is not.
+
+Three families of false positive, all confirmed live:
+
+- `test_release_gates.py`, `test_exports.py` — found by `unittest discover` in
+  CI, by pattern rather than by name.
+- `test_frontier_perf_*.py` (3 files) — same, from `check.sh:87`.
+- `imgio.py` — imported as a module.
+
+**Removed (22 files, `Tools/Layout/`):** nine `diff-<sample>.mjs`, ten
+`extract-<sample>.mjs`, and three scratch scripts (`__probe-lineheight.mjs`,
+`__shot-portrait.mjs`, `screenshot-glass.mjs`).
+
+These are one-shots from before the generic tooling existed, and they say so
+themselves. `extract-hud.mjs`'s header: *"One-shot extractor for
+Assets/UI/hud.html that uses the locally-installed system Chrome (puppeteer's
+bundled Chromium download was failing under git-bash on Windows). Mirrors
+capture-all-chrome-layouts.mjs's element dump shape."* The generic replacements
+take the sample as an argument and are both referenced:
+`capture-all-chrome-layouts.mjs` (15 references) and `extract-chrome-layout.mjs`
+(2). Nothing referenced any of the 22, and nothing references them now.
+`Tools/Layout/` goes from 30 entries to 8, all of them referenced.
+
+**Kept, with a note:** `godot-port/tools/oracle/check_item_context_chrome.py`
+and `survey_all.sh` are also unreferenced, but they are not scratch — both carry
+proper usage docstrings, `survey_all.sh` wraps `chrome_survey.py`, and they sit
+in a directory of 57 sibling `check_*_chrome.*` tools that are run on demand
+rather than from a gate. The gap is documentation, not deadness: nothing tells a
+reader these exist. Area 8 picks that up.
+
 ### Still to sweep in this area
 
-Orphaned scripts under `godot-port/tools` and `Tools/`, unreferenced source
-files, and stale doc claims. Next iteration.
+Unreferenced C++/C# source files, and stale doc claims. Next iteration.
