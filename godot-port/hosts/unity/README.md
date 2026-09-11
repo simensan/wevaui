@@ -164,6 +164,13 @@ pass's texture-cache hits and misses, and the cascade's running totals (diff
 them between frames). `ElementAtForDevTools(x, y)` is the hit test an Elements
 panel wants: `pointer-events: none` and `visibility: hidden` hide nothing from it.
 
+## HTML parse diagnostics (ABI minor 34)
+
+`NativeDocument.HtmlDiagnostics` lists what the last load or reload recovered
+from -- a mismatched or stray end tag, an end tag on a void element, an element
+still open at the end -- one `line:column: message` per line. Clean markup gives
+an empty string; the document is loaded either way.
+
 ## mix-blend-mode (ABI minor 33)
 
 Every draw carries `blend_mode`. `NativeDocumentRenderer` splits batches on it

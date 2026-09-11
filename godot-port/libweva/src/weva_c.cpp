@@ -2126,6 +2126,8 @@ struct weva_document {
     weva_stats stats{};
     // `@import`s that could not be read, for the CSS diagnostics.
     std::vector<std::string> missing_imports;
+    // The recoveries the last HTML parse made, for weva_document_html_diagnostics.
+    std::vector<HtmlParseError> html_diagnostics;
     // How many `position: sticky` boxes the last sticky pass found; -1 until
     // the first pass after a layout. A page without any skips the walk.
     int sticky_count = -1;
@@ -3617,6 +3619,8 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     HtmlParseError err;
     ParseOptions opts;
     opts.strict = false;
+    doc->html_diagnostics.clear();
+    opts.diagnostics = &doc->html_diagnostics;
     doc->doc = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
     if (!doc->doc) return WEVA_ERR_PARSE;
     doc->doc->set_popover_attribute_close_handler([doc](Element& element) {
@@ -7792,6 +7796,8 @@ weva_status weva_document_reload_html(weva_document_t doc, const char* html, siz
     HtmlParseError err;
     ParseOptions opts;
     opts.strict = false;
+    doc->html_diagnostics.clear();
+    opts.diagnostics = &doc->html_diagnostics;
     Ref<Document> fresh = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
     if (!fresh) return WEVA_ERR_PARSE;
     std::vector<Ref<Node>> adopted;
@@ -8125,6 +8131,22 @@ weva_status weva_document_set_base_path(weva_document_t doc, const char* path) {
     doc->images.set_base_path(path ? path : "");
     if (before != doc->images.content_version()) doc->pending = Invalidation::Boxes;
     return WEVA_OK;
+}
+
+size_t weva_document_html_diagnostics(weva_document_t doc, char* buffer, size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    std::string text;
+    for (const HtmlParseError& e : doc->html_diagnostics) {
+        if (!text.empty()) text += '\n';
+        text += std::to_string(e.line) + ":" + std::to_string(e.column) + ": " + e.message;
+    }
+    if (buffer && capacity) {
+        const size_t n = std::min(text.size(), capacity - 1);
+        if (n) std::memcpy(buffer, text.data(), n);
+        buffer[n] = '\0';
+    }
+    return text.size();
 }
 
 size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t capacity) {

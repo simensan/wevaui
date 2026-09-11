@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 33
+#define WEVA_ABI_VERSION_MINOR 34
 
 uint32_t weva_abi_version(void);
 
@@ -1241,6 +1241,14 @@ size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t ca
  * always terminated; truncation does not change the required size. No update,
  * layout or events are triggered. This is not a complete CSS support audit. */
 size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t capacity);
+
+/* The HTML parse errors the last load_html / reload_html recovered from --
+ * a stray or mismatched end tag, an end tag on a void element, an element
+ * still open at the end of input -- one per line as "line:column: message",
+ * positions 1-based in the markup as given. The document is still loaded;
+ * these say where it may not be what the author meant. Same buffer
+ * convention as css_diagnostics. Available since ABI minor 34. */
+size_t weva_document_html_diagnostics(weva_document_t doc, char* buffer, size_t capacity);
 
 /* `@font-face` rules from compiled stylesheet branches, one per line as
  * "family<TAB>source<TAB>font-weight<TAB>font-style" in source order; the last

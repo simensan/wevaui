@@ -354,6 +354,11 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
         if (error) *error = HtmlParseError{msg, t.line, t.column};
         return Ref<Document>();
     };
+    // A recovery strict mode would have failed on, kept for a host's
+    // diagnostics when it asked for them.
+    auto note = [&](const std::string& msg, const HtmlToken& t) {
+        if (options.diagnostics) options.diagnostics->push_back(HtmlParseError{msg, t.line, t.column});
+    };
 
     for (const auto& t : tokens) {
         std::string_view name = symbols->text(t.name);
@@ -405,6 +410,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                         return fail("Unexpected end tag for void element '" +
                                     std::string(name) + "'", t);
                     }
+                    note("End tag for void element '" + std::string(name) + "' ignored", t);
                     break;
                 }
                 // AAA-lite: an end tag matching an AFL entry that is no longer
@@ -425,6 +431,9 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                     if (options.strict && !html_elements::is_optional_close(name)) {
                         return fail("Mismatched end tag '" + std::string(name) +
                                     "' (expected close of '<root>')", t);
+                    }
+                    if (!html_elements::is_optional_close(name)) {
+                        note("Stray end tag '" + std::string(name) + "' with nothing open", t);
                     }
                     break;
                 }
@@ -463,6 +472,11 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                         return fail("Mismatched end tag '" + std::string(name) +
                                     "' (expected close of '" + top + "')", t);
                     }
+                    if (!optional_target) {
+                        const std::string top = stack.back()->is_element()
+                            ? static_cast<Element*>(stack.back())->tag_name() : "<root>";
+                        note("Stray end tag '" + std::string(name) + "' ignored; '" + top + "' is open", t);
+                    }
                     break;
                 }
 
@@ -471,9 +485,13 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                         auto* inter = static_cast<Element*>(stack.back());
                         std::string_view iname = inter->tag_name();
                         if (!html_elements::is_optional_close(iname) &&
-                            !formatting_elements().count(iname) && options.strict) {
-                            return fail("Mismatched end tag '" + std::string(name) +
-                                        "' (expected close of '" + std::string(iname) + "')", t);
+                            !formatting_elements().count(iname)) {
+                            if (options.strict) {
+                                return fail("Mismatched end tag '" + std::string(name) +
+                                            "' (expected close of '" + std::string(iname) + "')", t);
+                            }
+                            note("End tag '" + std::string(name) + "' closes '" + std::string(iname) +
+                                 "', which was left open", t);
                         }
                     }
                     // Intermediate formatting elements leave the stack but stay
@@ -497,6 +515,17 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                         ? static_cast<Element*>(stack.back())->tag_name()
                         : "";
                     return fail("Unclosed element '" + top + "'", t);
+                }
+                if (stack.size() > 1 && options.diagnostics) {
+                    // Every element still open, but for the ones a browser
+                    // closes for free (html, body, the optional-close set).
+                    for (auto it = stack.rbegin(); it != stack.rend(); ++it) {
+                        if (!(*it)->is_element()) continue;
+                        const std::string_view open = static_cast<Element*>(*it)->tag_name();
+                        if (open == "html" || open == "body" || open == "head" ||
+                            html_elements::is_optional_close(open)) continue;
+                        note("Unclosed element '" + std::string(open) + "' at end of input", t);
+                    }
                 }
                 break;
         }

@@ -894,3 +894,9 @@ the modes a blend state can express -- Godot maps multiply to MUL and the
 brightening modes to ADD on a child canvas item with a CanvasItemMaterial; the
 Unity mesh shader takes multiply, screen, darken and lighten as blend states --
 and draw the rest normally.
+
+ABI minor 34 adds `weva_document_html_diagnostics(doc, buffer, capacity)`: the parse
+errors the last load recovered from (stray and mismatched end tags, end tags on
+void elements, elements open at the end of input), one `line:column: message`
+per line, from a diagnostics sink on `ParseOptions` (Godot
+`get_html_diagnostics()`, Unity `NativeDocument.HtmlDiagnostics`).

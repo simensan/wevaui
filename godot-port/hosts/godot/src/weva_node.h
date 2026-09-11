@@ -151,6 +151,9 @@ public:
     // stage timings of the last update, element/box/draw/texture counts, the
     // last paint pass's texture-cache hits and misses, the cascade's totals.
     godot::Dictionary get_stats() const;
+    // The HTML parse errors the last html load recovered from, one
+    // "line:column: message" per entry.
+    godot::PackedStringArray get_html_diagnostics() const;
 
     // The box tree as an Array of Dictionaries (parent index, kind, element
     // selector-less handle, border box and edges, scroll offset, text) for a

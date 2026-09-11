@@ -1153,6 +1153,32 @@ void test_abi_mix_blend_mode() {
     CHECK(screened >= 1);
 }
 
+// Minor 34: the parse errors a lenient load recovered from, with positions.
+void test_abi_html_diagnostics() {
+    Doc doc("html, body { margin: 0 }", "<div id=a>ok</div>");
+    const auto diagnostics = [&]() {
+        std::string out(weva_document_html_diagnostics(doc.d, nullptr, 0) + 1, '\0');
+        weva_document_html_diagnostics(doc.d, out.data(), out.size());
+        return std::string(out.c_str());
+    };
+    CHECK(diagnostics().empty());   // clean markup says nothing
+    const char* messy = "<div><span>x</div>\n<br></br>\n</b>\n<section>open";
+    CHECK(weva_document_load_html(doc.d, messy, std::strlen(messy)) == WEVA_OK);
+    const std::string d = diagnostics();
+    CHECK(d.find("1:") == 0 && d.find("closes 'span'") != std::string::npos);
+    CHECK(d.find("2:") != std::string::npos && d.find("void element 'br'") != std::string::npos);
+    CHECK(d.find("3:") != std::string::npos && d.find("Stray end tag 'b'") != std::string::npos);
+    CHECK(d.find("Unclosed element 'section'") != std::string::npos);
+    CHECK(d.find("Unclosed element 'body'") == std::string::npos);
+    // The document still loaded, recovered the way a browser would.
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_query(doc.d, "section") != WEVA_ELEMENT_NONE);
+    // A reload replaces the list.
+    const char* clean = "<div id=a>fine</div>";
+    CHECK(weva_document_reload_html(doc.d, clean, std::strlen(clean)) == WEVA_OK);
+    CHECK(diagnostics().empty());
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

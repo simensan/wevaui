@@ -85,6 +85,11 @@ func _ready() -> void:
 	blended.update_document()
 	await get_tree().process_frame
 	_check(blended.get_stats()["draws"] >= 1, "a mix-blend-mode box still draws")
+	_check(blended.get_html_diagnostics().is_empty(), "clean markup has no parse diagnostics")
+	blended.html = "<div><span>x</div>"
+	var diag: PackedStringArray = blended.get_html_diagnostics()
+	_check(diag.size() == 1 and diag[0].begins_with("1:") and diag[0].contains("span"),
+			"a mismatched end tag is reported with its position")
 	stage.remove_child(blended)
 	blended.free()
 

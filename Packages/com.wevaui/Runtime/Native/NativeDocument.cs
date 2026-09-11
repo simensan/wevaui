@@ -292,6 +292,16 @@ namespace Weva.Native
             return result;
         }
 
+        /// <summary>
+        /// The HTML parse errors the last <see cref="LoadHtml"/> / <see cref="ReloadHtml"/>
+        /// recovered from, one "line:column: message" per line (positions 1-based in the
+        /// markup as given); empty for clean markup.
+        /// </summary>
+        public string HtmlDiagnostics
+        {
+            get { return ReadString((buffer, capacity) => WevaNative.weva_document_html_diagnostics(Handle, buffer, capacity)); }
+        }
+
         /// <summary>A text box's run as a string.</summary>
         public static string TextOf(in weva_box box)
         {

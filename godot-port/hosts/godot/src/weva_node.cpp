@@ -344,6 +344,15 @@ PackedStringArray WevaDocument::get_missing_assets() {
     return out;
 }
 
+PackedStringArray WevaDocument::get_html_diagnostics() const {
+    if (!doc_) return {};
+    const size_t bytes = weva_document_html_diagnostics(doc_, nullptr, 0);
+    if (!bytes) return {};
+    std::vector<char> text(bytes + 1);
+    weva_document_html_diagnostics(doc_, text.data(), text.size());
+    return String::utf8(text.data()).split("\n", false);
+}
+
 PackedStringArray WevaDocument::get_css_diagnostics() const {
     if (!doc_) return {};
     const size_t bytes = weva_document_css_diagnostics(doc_, nullptr, 0);
@@ -823,6 +832,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_base_path"), &WevaDocument::get_base_path);
     ClassDB::bind_method(D_METHOD("get_missing_assets"), &WevaDocument::get_missing_assets);
     ClassDB::bind_method(D_METHOD("get_css_diagnostics"), &WevaDocument::get_css_diagnostics);
+    ClassDB::bind_method(D_METHOD("get_html_diagnostics"), &WevaDocument::get_html_diagnostics);
     ClassDB::bind_method(D_METHOD("set_element_style", "selector", "property", "value"),
                          &WevaDocument::set_element_style);
     ClassDB::bind_method(D_METHOD("get_element_style", "selector", "property"),

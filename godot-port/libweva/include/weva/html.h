@@ -120,6 +120,10 @@ struct ParseOptions {
     // a malformed construct fails the parse and fills HtmlParseError; when
     // clear, the parser absorbs it the way a browser would.
     bool strict = true;
+    // Lenient mode's parse errors, with their positions, for a host's
+    // diagnostics: what strict mode would have failed on and a browser
+    // recovers from. Null keeps the recoveries silent.
+    std::vector<HtmlParseError>* diagnostics = nullptr;
 };
 
 class Document;

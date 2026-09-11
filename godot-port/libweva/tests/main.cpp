@@ -417,6 +417,7 @@ void test_abi_stats_and_devtools_hit();
 void test_abi_box_tree();
 void test_abi_reload_html();
 void test_abi_mix_blend_mode();
+void test_abi_html_diagnostics();
 void test_abi_textarea_edits_its_content();
 void test_abi_textarea_newlines();
 void test_abi_textarea_line_keys();
@@ -983,6 +984,7 @@ int main() {
     test_abi_box_tree();
     test_abi_reload_html();
     test_abi_mix_blend_mode();
+    test_abi_html_diagnostics();
     test_abi_textarea_edits_its_content();
     test_abi_textarea_newlines();
     test_abi_textarea_line_keys();

@@ -966,6 +966,13 @@ the `elements`, `boxes`, `draws` and `textures` counts, the paint pass's
 (`cascade_elements`, `cascade_pseudos`; diff them between frames) -- what a
 debug overlay shows beside the frame time.
 
+**HTML parse diagnostics**
+
+`doc.get_html_diagnostics()` is a PackedStringArray of what the last `html`
+assignment or `reload_html()` recovered from (`"1:12: End tag 'div' closes
+'span', which was left open"`), beside `get_css_diagnostics()`. The page still
+loads; the lines say where it may not be what was meant.
+
 **mix-blend-mode**
 
 A blended element's draws go on a child canvas item with a `CanvasItemMaterial`:

@@ -3582,8 +3582,9 @@ unless noted):
 13. Overlay paint injection — a native host draws after `weva_document_draws`;
     drop.
 14. Referenced-asset list, a font-resolution miss log, HTML parse diagnostics
-    with positions — three small tools; `missing_assets`, `font_faces` and
-    `css_diagnostics` cover adjacent slices.
+    with positions — `missing_assets`, `font_faces` and `css_diagnostics` cover
+    the first two slices; HTML parse diagnostics DONE 2026-09-11 (ABI minor 34
+    `weva_document_html_diagnostics`).
 15. Viewport readback and a `prefers-color-scheme` knob in `weva_config`.
 
 The C# goldens through the core (`hosts/unity/goldens_from_unity.py`):
