@@ -226,6 +226,35 @@ void test_cascade_light_dark() {
     }
 }
 
+// CSS Cascade 6 §2.5 @scope: a rule inside applies under the root, not at or
+// under a limit; `:scope` is the root; the root list, nesting and @media.
+void test_cascade_scope() {
+    Fixture f;
+    CHECK(f.html("<div class=card id=card><p id=a>x</p><div class=content id=content><p id=c>y</p></div>"
+                 "<div class=card id=inner><p id=d>z</p></div></div><p id=b>w</p>"
+                 "<section id=sec><div class=item id=item>i</div></section>"));
+    CHECK(f.css("p { color: green } div { border-color: green }"
+                "@scope (.card) to (.content) { p { color: red } :scope { border-color: red } }"
+                "@scope (section) { .item { color: blue } }"
+                "@scope (.card) { @scope (.card) { #d { color: purple } } }"
+                "@media all { @scope (#sec) { .item { border-color: blue } } }"
+                "@scope { #b { border-color: black } }"));
+    CHECK(f.value("a", "color") == "red");        // under .card
+    CHECK(f.value("b", "color") == "green");      // outside any card
+    CHECK(f.value("c", "color") == "green");      // under the .content limit
+    CHECK(f.value("card", "border-top-color") == "red");     // :scope is the root itself
+    CHECK(f.value("content", "border-top-color") == "green");
+    CHECK(f.value("item", "color") == "blue");
+    CHECK(f.value("item", "border-top-color") == "blue");    // through @media
+    CHECK(f.value("d", "color") == "purple");     // nested scopes both hold (the inner card is a card)
+    CHECK(f.value("a", "border-top-color") != "red");    // :scope is the root alone
+    CHECK(f.value("b", "border-top-color") == "black");      // a bare @scope roots at the document
+    // @scope is no longer an unsupported rule.
+    bool listed = false;
+    for (const auto& n : f.engine.unsupported_at_rules()) if (n == "scope") listed = true;
+    CHECK(!listed);
+}
+
 void test_cascade_compute() {
     {
         Fixture f;

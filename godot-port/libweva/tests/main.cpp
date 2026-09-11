@@ -65,6 +65,7 @@ void test_computed_style();
 void test_lazy_inheritance();
 void test_cascade_order();
 void test_cascade_light_dark();
+void test_cascade_scope();
 void test_cascade_compute();
 void test_cascade_layers();
 void test_component_expansion();
@@ -627,6 +628,7 @@ int main() {
     test_lazy_inheritance();
     test_cascade_order();
     test_cascade_light_dark();
+    test_cascade_scope();
     test_cascade_compute();
     test_cascade_layers();
     test_component_expansion();

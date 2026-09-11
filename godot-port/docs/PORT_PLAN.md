@@ -3622,8 +3622,9 @@ an ABI surface), keep host-side (C#), drop.
 3. `@import` DONE 2026-09-11 (`at_import.cpp`: fetched through the asset
    reader relative to the base path, spliced under its media / supports /
    layer conditions, nested with a cycle guard; an unreadable sheet is
-   listed by `weva_document_css_diagnostics`). `@scope` still lands in the
-   unsupported-at-rule list (`cascade.cpp:828`).
+   listed by `weva_document_css_diagnostics`). `@scope` DONE 2026-09-11 (core
+   ahead, the C# parses it but its cascade ignores it): root and limit selector
+   lists, `:scope` as the root, nesting, inside @media; `test_cascade_scope`.
 4. `::placeholder` and `::selection`. DONE 2026-09-11: both are computed for
    text fields (`input`, `textarea`) in the style cache and read at paint;
    `::placeholder` honours `color` and `opacity`, `::selection` its

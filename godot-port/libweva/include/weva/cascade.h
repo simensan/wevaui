@@ -217,8 +217,20 @@ public:
                                        std::string* text);
 
 private:
+    // CSS Cascade 6 §2.5 `@scope (<root>) to (<limit>)`: a rule inside it
+    // matches only elements under an element the root selectors match and
+    // not at or under one the limit selectors match; `:scope` in the rule is
+    // that root. No root selectors means the document element.
+    struct ScopeSpec {
+        std::vector<CompiledSelector> roots;
+        std::vector<CompiledSelector> limits;
+    };
+
     struct CompiledRule {
         CompiledSelector selector;
+        // The @scope blocks the rule sits in, outermost first; every one has
+        // to hold, and the innermost root is the rule's `:scope`.
+        std::vector<std::shared_ptr<const ScopeSpec>> scopes;
         const StyleRule* rule = nullptr;
         DeclarationOrigin origin = DeclarationOrigin::Author;
         int source_index = 0;
@@ -268,8 +280,13 @@ private:
     std::vector<CompiledContainerQuery> container_queries_;
     uint64_t container_generation_ = 1;
     std::vector<size_t> compiling_containers_;
+    std::vector<std::shared_ptr<const ScopeSpec>> compiling_scopes_;
     const ContainerQueryProvider* container_provider_ = nullptr;
     bool container_matches(const CompiledRule& rule, const Element& element) const;
+    // Whether every @scope the rule sits in holds for `e`; the innermost root
+    // comes back as the `:scope` to match the selector against.
+    bool scopes_hold(const CompiledRule& rule, const Element& e, const ElementStateProvider& state,
+                     const Element** scope_root) const;
     mutable std::map<uint64_t, std::vector<MatchedDeclaration>> shape_cache_;
     // Where an UNCACHEABLE element's matches live: an element with an inline
     // style, or any element at all when the sheets use sibling combinators or

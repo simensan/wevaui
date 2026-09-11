@@ -698,6 +698,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 cr.source_index = (*source_index)++;
                 cr.layer_ordinal = layer_ordinal;
                 cr.container_conditions = compiling_containers_;
+                cr.scopes = compiling_scopes_;
                 cr.declarations = expand_declarations(sr->declarations);
                 if (!pseudo_name.empty()) {
                     pseudo_rules_[pseudo_name].push_back(std::move(cr));
@@ -713,6 +714,37 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
             // silently apply.
             if (ar->name == "media") {
                 if (!evaluate_media_query(ar->prelude, media_)) continue;
+            } else if (ar->name == "scope") {
+                // `(<root list>)? [to (<limit list>)]?`: both lists optional.
+                auto spec = std::make_shared<ScopeSpec>();
+                const std::string& pre = ar->prelude;
+                const auto inner = [&](size_t open, size_t* after) -> std::string {
+                    int depth = 0;
+                    for (size_t i = open; i < pre.size(); ++i) {
+                        if (pre[i] == '(') ++depth;
+                        else if (pre[i] == ')' && --depth == 0) { *after = i + 1; return pre.substr(open + 1, i - open - 1); }
+                    }
+                    *after = pre.size();
+                    return std::string();
+                };
+                size_t at = pre.find_first_not_of(" \t\n");
+                if (at != std::string::npos && pre[at] == '(') {
+                    SelectorParseError err;
+                    parse_selector_list(inner(at, &at), &spec->roots, &err);
+                }
+                const size_t to = pre.find("to", at == std::string::npos ? 0 : at);
+                if (to != std::string::npos) {
+                    const size_t open = pre.find('(', to);
+                    if (open != std::string::npos) {
+                        size_t after = 0;
+                        SelectorParseError err;
+                        parse_selector_list(inner(open, &after), &spec->limits, &err);
+                    }
+                }
+                compiling_scopes_.push_back(std::move(spec));
+                compile_rules(ar->nested_rules, origin, source_index, layer_ordinal);
+                compiling_scopes_.pop_back();
+                continue;
             } else if (ar->name == "supports") {
                 if (!evaluate_supports(ar->prelude)) continue;
             } else if (ar->name == "font-face") {
@@ -860,6 +892,41 @@ bool CascadeEngine::container_matches(const CompiledRule& rule, const Element& e
     return true;
 }
 
+bool CascadeEngine::scopes_hold(const CompiledRule& rule, const Element& e, const ElementStateProvider& state,
+                                const Element** scope_root) const {
+    *scope_root = nullptr;
+    for (const auto& spec : rule.scopes) {
+        // The nearest ancestor-or-self a root selector matches is the
+        // scoping root; with no root selectors it is the document element.
+        const Element* found = nullptr;
+        for (const Node* n = &e; n; n = n->parent()) {
+            if (n->node_type() != NodeType::Element) continue;
+            const Element& candidate = static_cast<const Element&>(*n);
+            if (spec->roots.empty()) {
+                if (!candidate.parent() || candidate.parent()->node_type() != NodeType::Element) { found = &candidate; break; }
+                continue;
+            }
+            bool hit = false;
+            for (const CompiledSelector& r : spec->roots) {
+                if (selector_matches(r, candidate, state, *scope_root)) { hit = true; break; }
+            }
+            if (hit) { found = &candidate; break; }
+        }
+        if (!found) return false;
+        // The subject must not be a scoping limit or under one, between the
+        // root (exclusive) and itself (inclusive).
+        for (const Node* n = &e; n && n != found; n = n->parent()) {
+            if (n->node_type() != NodeType::Element) continue;
+            const Element& between = static_cast<const Element&>(*n);
+            for (const CompiledSelector& l : spec->limits) {
+                if (selector_matches(l, between, state, found)) return false;
+            }
+        }
+        *scope_root = found;
+    }
+    return true;
+}
+
 const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
     const Element& e, const ElementStateProvider& state) const {
     const uint64_t key = try_compute_shape_key(e, state);
@@ -880,7 +947,9 @@ const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
     out.clear();
     for (const CompiledRule& cr : rules_) {
         if (!container_matches(cr,e)) continue;
-        if (!selector_matches(cr.selector, e, state)) continue;
+        const Element* scope_root = nullptr;
+        if (!cr.scopes.empty() && !scopes_hold(cr, e, state, &scope_root)) continue;
+        if (!selector_matches(cr.selector, e, state, scope_root)) continue;
         const Specificity spec = cr.selector.specificity();
         int in_rule = 0;
         for (const Declaration& d : cr.declarations) {
@@ -1300,7 +1369,9 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
     std::vector<MatchedDeclaration> matches;
     for (const CompiledRule& cr : it->second) {
         if (!container_matches(cr,host)) continue;
-        if (!selector_matches_sequence_ignoring_pseudo(cr.selector.sequence, host, state)) {
+        const Element* scope_root = nullptr;
+        if (!cr.scopes.empty() && !scopes_hold(cr, host, state, &scope_root)) continue;
+        if (!selector_matches_sequence_ignoring_pseudo(cr.selector.sequence, host, state, scope_root)) {
             continue;
         }
         const Specificity spec = cr.selector.specificity();
