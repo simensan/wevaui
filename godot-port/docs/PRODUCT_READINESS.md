@@ -468,6 +468,17 @@ reload). Gates after the last of them: core 505,716 / 0, Unity Native EditMode
 89 pass / 2 inconclusive, Godot hover/host/range scenes green on both
 platforms, the full 31-scene Linux run green on the installed library.
 
+And after that: HTML parse diagnostics with positions (ABI minor 34), change
+notification per element with a structure version (minor 35), and
+`background-attachment` (fixed against the viewport, local with scrolled
+content). The step-1 port list now holds only subgrid, rtl, View Transitions,
+component-scoped stylesheets and the text-stroke / font-variation pair (no
+consumer in the C# either); the tooling list only source positions. Gates:
+core 505,746 / 0 (gcc and ASan), Unity Native EditMode 91 pass / 2
+inconclusive, Godot hover (26) / host (247) / range (66) / bindings (186) on
+Windows, the check.sh scene list on the installed Linux library, the sample
+oracle byte-for-byte the pre-session baseline's summary.
+
 ## Next work
 
 1. The budget evaluator now annotates a whole-frame failure whose UI-disabled
