@@ -3653,8 +3653,11 @@ an ABI surface), keep host-side (C#), drop.
     `grid-template-columns: subgrid` (the spec form); pick the core's and fix
     the C# samples.
 13. `position: sticky` scroll tracking (parsed and stacking-aware, not moved).
-14. `min-content` / `max-content` / `fit-content()` as `width`/`height` and
-    `flex-basis` values (both engines treat them as `auto`).
+14. `min-content` / `max-content` / `fit-content` / `fit-content()` as `width`
+    DONE 2026-09-11 on blocks, floats and inline-blocks (block layout routes
+    the keyword through the shrink-to-fit probes; min/max-width clamp as
+    usual). Still open: the keywords as `height`, `min-width`, `max-width`
+    and `flex-basis`.
 15. `direction: rtl` reordering / `unicode-bidi` (shared gap; the caret work is
     open on both sides).
 16. View Transitions (`Runtime/ViewTransitions`): entirely absent; it needs

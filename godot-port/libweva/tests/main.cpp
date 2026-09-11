@@ -123,6 +123,7 @@ void test_aspect_ratio_and_direction();
 void test_box_model_edges();
 void test_box_model_width();
 void test_box_model_min_max();
+void test_intrinsic_width_keywords();
 void test_box_model_height_and_position();
 void test_auto_margin_centering();
 void test_shorthand_expansion_gap();
@@ -675,6 +676,7 @@ int main() {
     test_box_model_edges();
     test_box_model_width();
     test_box_model_min_max();
+    test_intrinsic_width_keywords();
     test_box_model_height_and_position();
     test_auto_margin_centering();
     test_shorthand_expansion_gap();

@@ -319,8 +319,10 @@ namespace {
 bool resolve_length_keyword(std::string_view raw, ResolvedLength* out) {
     if (raw.empty() || raw == "auto") { *out = ResolvedLength::automatic(); return true; }
     if (raw == "none") { *out = ResolvedLength::none(); return true; }
-    // CSS Sizing L3 §5 intrinsic keywords. Nothing outside shrink-to-fit
-    // computes intrinsic sizes yet, so they degrade to auto.
+    // CSS Sizing L3 §5 intrinsic keywords resolve as `auto` here; block
+    // layout reads the keyword itself and routes the box through the
+    // shrink-to-fit probes (BlockLayout::has_intrinsic_width_keyword), and
+    // everywhere else `auto` is the right degrade.
     if (raw == "min-content" || raw == "max-content" || raw == "fit-content") {
         *out = ResolvedLength::automatic();
         return true;

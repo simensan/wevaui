@@ -208,6 +208,10 @@ public:
     // are not stretched, all of which hug their content rather than filling
     // their containing block. Returns the box's font size.
     double shrink_to_fit(BoxId id, double available_width, const ComputedStyle* parent_style);
+    // CSS Sizing L3 §5: a `width` of min-content, max-content, fit-content or
+    // fit-content(<length>), which shrink_to_fit reads off the style and
+    // sizes by the same two probes a float uses. False for any other width.
+    bool has_intrinsic_width_keyword(BoxId id) const;
 
 private:
     void layout_content(BoxId id, double font_size, double containing_block_width,

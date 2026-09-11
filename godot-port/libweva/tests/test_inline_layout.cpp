@@ -430,6 +430,44 @@ void test_line_metrics_and_align() {
     }
 }
 
+// CSS Sizing L3 §5: width: min-content | max-content | fit-content |
+// fit-content(<length>) on blocks, floats and inline-blocks. The fixture's
+// font is 8px per character at 16px: "ab cd ef" is 64 wide, its widest word 16.
+void test_intrinsic_width_keywords() {
+    Fixture f;
+    CHECK(f.css("body { margin: 0; width: 1000px; font-size: 16px }"
+                "#a { width: max-content } #b { width: min-content } #c { width: fit-content }"
+                "#n { width: 50px } #n > div { width: fit-content }"
+                "#d { width: fit-content(40px); padding: 5px } #e { width: max-content; padding: 5px }"
+                "#bb { width: fit-content(40px); padding: 5px; box-sizing: border-box }"
+                "#fl { float: left; width: max-content } #ib { display: inline-block; width: min-content }"
+                "#h { width: max-content; max-width: 40px } #m { width: min-content; min-width: 30px }"));
+    CHECK(f.layout("<body><div id=a>ab cd ef</div><div id=b>ab cd ef</div><div id=c>ab cd ef</div>"
+                   "<div id=n><div id=nn>ab cd ef</div></div>"
+                   "<div id=d>ab cd ef</div><div id=e>ab cd ef</div><div id=bb>ab cd ef</div>"
+                   "<div id=w><div id=fl>ab cd ef</div></div><div id=x><span id=ib>ab cd ef</span></div>"
+                   "<div id=h>ab cd ef</div><div id=m>ab cd ef</div></body>"));
+    CHECK(near(f.tree[f.find("a")].width, 64));
+    CHECK(near(f.tree[f.find("b")].width, 16));
+    CHECK(near(f.tree[f.find("c")].width, 64));       // fits in 1000: max-content
+    CHECK(near(f.tree[f.find("nn")].width, 50));      // clamped to the 50px available
+    CHECK(near(f.tree[f.find("d")].width, 50));       // content 40 + 5px padding a side
+    CHECK(near(f.tree[f.find("e")].width, 74));
+    CHECK(near(f.tree[f.find("bb")].width, 40));      // border-box: the 40 is the whole box
+    CHECK(near(f.tree[f.find("fl")].width, 64));
+    CHECK(near(f.tree[f.find("h")].width, 40));
+    CHECK(near(f.tree[f.find("m")].width, 30));
+    // The inline-block: two lines of one word each, 16 wide.
+    bool ib = false;
+    for (BoxId c : f.tree.children(f.find("x"))) {
+        for (BoxId r : f.tree.children(c)) {
+            const Box& box = f.tree[r];
+            if (box.element && box.element->get_attribute("id") == "ib" && near(box.width, 16)) ib = true;
+        }
+    }
+    CHECK(ib);
+}
+
 // CSS Text L3 §7.3-7.4: text-align: justify, text-align-last, text-justify.
 // The fixture's font is 8px per character at 16px, so a two-letter word is
 // 16 wide and a space 8.

@@ -1126,13 +1126,40 @@ const DecodedImage* replaced_image(const Box& box, const LayoutContext& ctx) {
     return ctx.images->get(src);
 }
 
+namespace {
+// How shrink_to_fit picks between the two probes (CSS Sizing L3 §5.2).
+enum class IntrinsicPick {
+    Fit,      // min(max-content, max(min-content, available)): auto on a float, `fit-content`
+    Min,      // `min-content`
+    Max,      // `max-content`
+    FitArg,   // fit-content(<length>): the available width replaced by the argument
+};
+
+IntrinsicPick intrinsic_pick_of(std::string_view raw) {
+    if (iequals(raw, "min-content")) return IntrinsicPick::Min;
+    if (iequals(raw, "max-content")) return IntrinsicPick::Max;
+    return IntrinsicPick::Fit;
+}
+} // namespace
+
+bool BlockLayout::has_intrinsic_width_keyword(BoxId id) const {
+    const std::string_view raw = get((*tree_)[id].style, kId_width);
+    if (iequals(raw, "min-content") || iequals(raw, "max-content") || iequals(raw, "fit-content")) return true;
+    return raw.size() > 12 && iequals(raw.substr(0, 12), "fit-content(");
+}
+
 double BlockLayout::shrink_to_fit(BoxId id, double available_width,
                                   const ComputedStyle* parent_style) {
     const double fs = apply_box_model(tree_, id, available_width, parent_style, ctx_);
     const ComputedStyle* style = (*tree_)[id].style;
     const ResolvedLength w =
         resolve_length(style, kId_width, ctx_, fs, available_width);
-    if (w.kind != LengthKind::Auto) {
+    IntrinsicPick pick = intrinsic_pick_of(get(style, kId_width));
+    double fit_arg = 0;
+    if (w.kind == LengthKind::FitContent) {
+        pick = IntrinsicPick::FitArg;
+        fit_arg = w.pixels;
+    } else if (w.kind != LengthKind::Auto) {
         // A replaced element with a stated width and an auto height takes its
         // height from the intrinsic ratio -- the case every `img { width: 100% }`
         // in every stylesheet relies on.
@@ -1195,12 +1222,24 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     if (max_content < frame) max_content = frame;
     if (min_content < frame) min_content = frame;
 
-    double fitted = std::min(max_content, std::max(min_content, avail));
+    const bool border_box = is_border_box(style);
+    double fitted;
+    switch (pick) {
+        case IntrinsicPick::Min: fitted = min_content; break;
+        case IntrinsicPick::Max: fitted = max_content; break;
+        case IntrinsicPick::FitArg:
+            // The argument is a size in width's own box-sizing basis.
+            fitted = std::min(max_content, std::max(min_content, border_box ? fit_arg : fit_arg + frame));
+            break;
+        case IntrinsicPick::Fit:
+        default:
+            fitted = std::min(max_content, std::max(min_content, avail));
+            break;
+    }
     if (fitted < 0) fitted = 0;
 
     // §10.3.5: the shrink-to-fit result is still clamped by min- and max-width,
     // which share width's box-sizing basis.
-    const bool border_box = is_border_box(style);
     const ResolvedLength min_r =
         resolve_length(style, kId_min_width, ctx_, fs, available_width);
     const ResolvedLength max_r =
@@ -1311,6 +1350,12 @@ void BlockLayout::layout_block(BoxId id, double available_width,
         !select_is_listbox(*b.element) && get(b.style, kId_width) == "auto") {
         // Closed controls keep their natural width when displayed as blocks.
         // Flex/grid may subsequently impose their resolved item width.
+        shrink_to_fit(id, available_width, parent_style);
+        return;
+    }
+    // CSS Sizing L3 §5: `width: max-content` and friends on a block-level
+    // box are the float's probes with a different pick at the end.
+    if (b.style && has_intrinsic_width_keyword(id)) {
         shrink_to_fit(id, available_width, parent_style);
         return;
     }
