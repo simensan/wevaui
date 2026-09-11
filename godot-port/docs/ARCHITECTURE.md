@@ -931,6 +931,14 @@ table moved from a process singleton into the cascade engine). Godot
 `set_safe_area_insets()` / `follow_display_safe_area`, Unity
 `NativeDocument.SetSafeAreaInsets` / `WevaNativeDocument.FollowScreenSafeArea`.
 
+Bidirectional text (no ABI change): `bidi.cpp` runs ICU's ubidi over a
+paragraph's inline items -- `direction` as the paragraph level, `unicode-bidi`
+on inline boxes as the matching control characters -- splits text runs where
+the embedding level changes and places each line's fragments in visual order
+(UAX #9 L2) after justification, before alignment. A left-to-right paragraph
+with no right-to-left text is untouched. Each run the host shapes is one
+direction; TextServer shapes a right-to-left run on its own, TextCore does not.
+
 ABI minor 37 extends `weva_document_font_faces` with a fifth field: the whole
 `src` list in the author's order, `url:<resolved path>` and `local:<name>`
 entries separated by `|`, and lists a rule with only `local()` sources (its

@@ -1,4 +1,5 @@
 #include "weva/inline_layout.h"
+#include "weva/bidi.h"
 
 #include "weva/text_classes.h"
 #include "weva/grapheme.h"
@@ -450,6 +451,10 @@ std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId containe
                                       ? tree[tree[cb.parent].parent].style
                                       : nullptr),
                       metrics, &out);
+    // CSS Writing Modes 3 §2: the paragraph's bidi levels, with text runs
+    // split where the level changes. A plain left-to-right paragraph returns
+    // at once with every level zero.
+    resolve_bidi_levels(&out, cb.style ? cb.style : container_parent);
     // Numeric tab sizes use the block's space advance, even inside differently
     // styled inline spans. Resolve lazily: ordinary HUD strings need no work.
     std::optional<double> block_space;
@@ -805,6 +810,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     const std::string_view align = resolve_text_align(align_style);
     const std::string_view align_last = resolve_text_align_last(align_style, align);
     const std::string_view text_justify = resolve_text_justify(align_style);
+    // Whether any item sits at a non-zero embedding level: only then does a
+    // line's visual order differ from its logical order.
+    bool bidi_reorder = false;
+    for (const InlineItem& it : items) if (it.bidi_level != 0) { bidi_reorder = true; break; }
     // Copied out, not read through `cbox`: BoxTree::create appends to a vector,
     // so every box reference is invalidated by the next create — and flush_line
     // creates one line box plus one run per fragment. `cbox` stays valid only
@@ -1159,6 +1168,23 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             justify_fragments(line, line_width - alignment_pen, iequals(text_justify, "inter-character"));
         }
         if (dx < 0) dx = 0;
+
+        // UAX #9 L2: the line's fragments in visual order, laid end to end
+        // from where the logical first one started. After justification, so
+        // the widened widths are what get placed.
+        if (bidi_reorder && line.size() > 1) {
+            std::vector<uint8_t> levels;
+            levels.reserve(line.size());
+            for (const Fragment& f : line) levels.push_back(f.item->bidi_level);
+            std::vector<int32_t> order;
+            bidi_visual_order(levels.data(), levels.size(), &order);
+            double x = line.front().x;
+            for (int32_t logical : order) {
+                Fragment& f = line[static_cast<size_t>(logical)];
+                f.x = x;
+                x += f.width;
+            }
+        }
 
         const BoxId lb = tree->create(BoxKind::Line, nullptr, container_style);
         (*tree)[lb].y = y;

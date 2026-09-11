@@ -3737,6 +3737,17 @@ an ABI surface), keep host-side (C#), drop.
     told the run's direction; (c) the Unity side has no RTL shaping in
     TextCore at all; (d) caret and selection in mixed runs. It needs a
     visual pass on real RTL text, so it is not a session-alone item.
+    Reordering DONE 2026-09-11 (`bidi.cpp`: ICU ubidi over the paragraph's
+    items, `direction` as the paragraph level, `unicode-bidi` embed /
+    bidi-override / isolate / isolate-override / plaintext as the matching
+    controls, text runs split at level changes, each line's fragments placed
+    in visual order after justification; a left-to-right paragraph with no
+    right-to-left text costs one scan and no ICU call). No ABI change: a run
+    is one direction, and TextServer shapes a Hebrew or Arabic run right-
+    to-left by itself. Tests: test_bidi_reordering, bidi_tests.gd (through
+    TextServer), NativeBidiTests. Still open: (c) TextCore shaping, (d)
+    caret/selection order in mixed runs, bracket mirroring, and the visual
+    pass on real Arabic text.
 16. View Transitions (`Runtime/ViewTransitions`): entirely absent; it needs
     two layout passes and a paint snapshot, all core-side. Port if the API is
     to survive, otherwise drop (it is a documented v1 stub in C#).

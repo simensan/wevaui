@@ -71,6 +71,9 @@ struct InlineItem {
     // CSS Text L3 §5.3: which kinsoku prohibitions hold between two CJK
     // characters. Only `loose` and `anywhere` differ from the default.
     LineBreakLevel line_break = LineBreakLevel::Normal;
+    // UAX #9 embedding level (bidi.h): odd is right-to-left. Text items are
+    // split so one item is one level; a line orders its fragments by these.
+    uint8_t bidi_level = 0;
 
     // An inline-level block (inline-block, inline-flex, ...) embedded in the
     // line. An atom is placed whole: never split, broken, or tokenised. The

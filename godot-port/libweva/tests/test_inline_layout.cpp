@@ -6,6 +6,7 @@
 #include "weva/font_metrics.h"
 #include "weva/html.h"
 #include "weva/inline_layout.h"
+#include "weva/bidi.h"
 #include "weva/user_agent_stylesheet.h"
 #include <cmath>
 #include <cstdlib>
@@ -434,6 +435,80 @@ void test_line_metrics_and_align() {
 // CSS Sizing L3 §5: width: min-content | max-content | fit-content |
 // fit-content(<length>) on blocks, floats and inline-blocks. The fixture's
 // font is 8px per character at 16px: "ab cd ef" is 64 wide, its widest word 16.
+// UAX #9 through CSS Writing Modes 3 §2: a line's runs are placed in visual
+// order. The glyphs inside one run are the host shaper's business.
+void test_bidi_reordering() {
+    // Hebrew alef-bet-gimel and dalet-he-vav.
+    const std::string abg = "\xD7\x90\xD7\x91\xD7\x92";
+    const std::string dhv = "\xD7\x93\xD7\x94\xD7\x95";
+    Fixture f;
+    CHECK(f.css("body { margin: 0; width: 400px; font-size: 16px }"
+                "#r, #r2 { direction: rtl } #o { unicode-bidi: bidi-override; direction: rtl }"
+                "#iso { unicode-bidi: isolate; direction: rtl }"));
+    CHECK(f.layout("<body><div id=l>abc " + abg + " def</div>"
+                   "<div id=r>abc " + abg + "</div>"
+                   "<div id=r2>" + abg + " " + dhv + "</div>"
+                   "<div id=p><span id=o>abc def</span> ghi</div>"
+                   "<div id=q>one <span id=iso>" + abg + " " + dhv + "</span> two</div>"
+                   "<div id=plain>just latin words</div></body>"));
+    // The x of the run holding `text` on the first line of #id, or -1.
+    const auto run_x = [&](const char* id, std::string_view text) {
+        for (BoxId line : f.lines(id)) {
+            for (BoxId c : f.tree.children(line)) {
+                if (f.tree[c].kind == BoxKind::Text && f.tree[c].text == text) return f.tree[c].x;
+            }
+        }
+        return -1.0;
+    };
+    const auto run_w = [&](const char* id, std::string_view text) {
+        for (BoxId line : f.lines(id)) {
+            for (BoxId c : f.tree.children(line)) {
+                if (f.tree[c].kind == BoxKind::Text && f.tree[c].text == text) return f.tree[c].width;
+            }
+        }
+        return -1.0;
+    };
+    // A left-to-right paragraph with a Hebrew word keeps its logical order;
+    // the Hebrew is one run of its own.
+    CHECK(run_x("l", "abc") >= 0 && run_x("l", abg) > run_x("l", "abc") && run_x("l", "def") > run_x("l", abg));
+    // A right-to-left paragraph: the Latin word, logically first, is drawn at
+    // the right end and the line hugs the right edge.
+    CHECK(run_x("r", abg) >= 0 && run_x("r", "abc") > run_x("r", abg));
+    CHECK(near(run_x("r", "abc") + run_w("r", "abc"), 400));
+    // Two Hebrew words: the logically first one is the rightmost.
+    CHECK(run_x("r2", dhv) >= 0 && run_x("r2", abg) > run_x("r2", dhv));
+    // bidi-override on a right-to-left span reverses its Latin words; the
+    // text after the span stays in the paragraph's order.
+    CHECK(run_x("p", "def") >= 0 && run_x("p", "abc") > run_x("p", "def") && run_x("p", "ghi") > run_x("p", "abc"));
+    // An isolate keeps its surroundings in place: "one" before, "two" after,
+    // the Hebrew inside reversed.
+    CHECK(run_x("q", "one") < run_x("q", dhv) && run_x("q", dhv) < run_x("q", abg) && run_x("q", abg) < run_x("q", "two"));
+    // Plain Latin is left exactly as before: words in order from the left.
+    CHECK(near(run_x("plain", "just"), 0) && run_x("plain", "latin") > 0 && run_x("plain", "words") > run_x("plain", "latin"));
+    // The levels themselves, at the item level (the laid-out tree has no
+    // source runs left, so the resolver is fed directly): a plain paragraph
+    // resolves nothing and keeps its one item; a mixed one splits the run at
+    // the direction change, leaving the spaces with the Latin.
+    const std::string mixed_text = "abc " + abg + " def";
+    std::vector<InlineItem> plain(1);
+    plain[0].text = "just latin words";
+    CHECK(!resolve_bidi_levels(&plain, nullptr));
+    CHECK(plain.size() == 1 && plain[0].bidi_level == 0);
+    std::vector<InlineItem> mixed(1);
+    mixed[0].text = mixed_text;
+    CHECK(resolve_bidi_levels(&mixed, nullptr));
+    CHECK(mixed.size() == 3);
+    CHECK(mixed.size() == 3 && mixed[0].text == "abc " && mixed[0].bidi_level == 0);
+    CHECK(mixed.size() == 3 && mixed[1].text == abg && mixed[1].bidi_level == 1);
+    CHECK(mixed.size() == 3 && mixed[2].text == " def" && mixed[2].bidi_level == 0);
+    // And the visual order of three fragments at levels 0, 1, 1: the two
+    // right-to-left ones swap.
+    const uint8_t levels[3] = {0, 1, 1};
+    std::vector<int32_t> order;
+    bidi_visual_order(levels, 3, &order);
+    CHECK((order == std::vector<int32_t>{0, 2, 1}));
+}
+
 void test_intrinsic_width_keywords() {
     Fixture f;
     CHECK(f.css("body { margin: 0; width: 1000px; font-size: 16px }"
