@@ -1293,6 +1293,32 @@ void test_abi_scroll_behavior_smooth() {
     CHECK(weva_document_is_animating(doc.d) == 0);
 }
 
+// Minor 36: the host's safe-area insets reach env().
+void test_abi_safe_area_insets() {
+    Doc doc("html, body { margin: 0 } #p { padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left, 3px);"
+            " height: 10px; width: 100px } #q { margin-top: calc(env(safe-area-inset-bottom) + 2px); height: 10px }",
+            "<div id=p></div><div id=q></div>");
+    const auto bounds = [&](const char* sel, double* x, double* y, double* h) {
+        weva_document_update(doc.d, 0);
+        double w = 0;
+        return weva_element_bounds(doc.d, weva_document_query(doc.d, sel), x, y, &w, h) == WEVA_OK;
+    };
+    double x = 0, y = 0, h = 0;
+    CHECK(bounds("#p", &x, &y, &h) && h == 10 && x == 0);       // zero insets: env() is 0px, not the fallback
+    CHECK(bounds("#q", &x, &y, &h) && y == 12);
+    weva_document_set_safe_area_insets(doc.d, 44, 0, 20, 8);
+    CHECK(bounds("#p", &x, &y, &h) && h == 54);                // 44 of padding on top
+    CHECK(bounds("#q", &x, &y, &h) && y == 54 + 22);           // 20 + 2 of margin below it
+    // The insets are the document's: a second document keeps zeros.
+    Doc other("html, body { margin: 0 } #p { padding-top: env(safe-area-inset-top); height: 10px }", "<div id=p></div>");
+    weva_document_update(other.d, 0);
+    double w = 0;
+    CHECK(weva_element_bounds(other.d, weva_document_query(other.d, "#p"), &x, &y, &w, &h) == WEVA_OK && h == 10);
+    // Negative insets clamp to zero; setting the same values again is a no-op.
+    weva_document_set_safe_area_insets(doc.d, -5, 0, 0, 0);
+    CHECK(bounds("#p", &x, &y, &h) && h == 10);
+}
+
 // Minor 35: what the last update restyled, and a counter for the element set.
 void test_abi_changed_elements() {
     Doc doc("html, body { margin: 0 } div { width: 100px; height: 20px }",

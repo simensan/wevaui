@@ -217,6 +217,14 @@ project supplies; map the keywords you have textures for.
 `@media (prefers-color-scheme)` follow; the core defaults to light and never
 reads the OS. An element's own `color-scheme` declaration wins over it.
 
+## Safe-area insets (ABI minor 36)
+
+`NativeDocument.SetSafeAreaInsets(top, right, bottom, left)` is what
+`env(safe-area-inset-*)` reads, zero until set. `WevaNativeDocument.
+FollowScreenSafeArea` feeds `Screen.safeArea` there each frame it changes,
+scaled to the document's viewport, so a page pads around a notch or a
+system bar as it would in a browser.
+
 ## The inspector surface (ABI minor 27)
 
 `NativeDocument.Parent` / `Children`, `TryGetBoxModel` (margin, border and

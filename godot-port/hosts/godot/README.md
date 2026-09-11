@@ -1048,6 +1048,15 @@ An element that declares `color-scheme: dark` (or `light`, or `only ...`)
 settles its own `light-dark()` regardless; `light dark` and `normal` leave
 the choice to the switch. The default is light.
 
+`env(safe-area-inset-top)` and its three siblings read the insets the node
+holds -- zero until set -- so a page pads around a notch or a system bar
+the way it would in a browser:
+
+    doc.set_safe_area_insets(44, 0, 20, 0)   # top, right, bottom, left, in document pixels
+    doc.follow_display_safe_area = true      # or take them from DisplayServer.get_display_safe_area()
+
+`get_safe_area_insets()` reports them back as a Vector4 in that order.
+
 **Labels**
 
 `<label>` works the control it names, so the word beside a checkbox is

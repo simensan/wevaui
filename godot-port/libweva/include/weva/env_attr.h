@@ -14,19 +14,23 @@ class Element;
 // properties. Pre-seeded with safe-area-inset-{top,right,bottom,left} at 0px.
 class EnvironmentVariables {
 public:
+    // A fresh table holds the defaults; each cascade engine owns one, so a
+    // host's safe-area insets are the document's, not the process's.
+    EnvironmentVariables();
     static EnvironmentVariables& instance();
     void set(std::string_view name, std::string_view value);
     bool get(std::string_view name, std::string* out) const;
     void reset_to_defaults();
 
 private:
-    EnvironmentVariables();
     std::map<std::string, std::string> vars_;
 };
 
-// Resolves env() references. Returns false when a reference cannot resolve and
-// has no usable fallback — like var(), that taints the whole declaration and
-// the cascade must drop it.
+// Resolves env() references against a table. Returns false when a reference
+// cannot resolve and has no usable fallback — like var(), that taints the
+// whole declaration and the cascade must drop it.
+bool resolve_env(std::string_view value, const EnvironmentVariables& env, std::string* resolved);
+// The same against the process-wide table.
 bool resolve_env(std::string_view value, std::string* resolved);
 
 // Resolves attr() references against `element`.

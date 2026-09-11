@@ -232,6 +232,16 @@ namespace Weva.Native
         }
 
         /// <summary>
+        /// The display's safe-area insets in the document's pixels, which
+        /// <c>env(safe-area-inset-top)</c> and its siblings read (zero until set).
+        /// <see cref="WevaNativeDocument.FollowScreenSafeArea"/> feeds <c>Screen.safeArea</c> here.
+        /// </summary>
+        public void SetSafeAreaInsets(double top, double right, double bottom, double left)
+        {
+            WevaNative.weva_document_set_safe_area_insets(Handle, top, right, bottom, left);
+        }
+
+        /// <summary>
         /// The CSS <c>cursor</c> under the pointer last set, as the keyword the core
         /// settled it to (<c>auto</c> resolved: <c>text</c> over text and fields,
         /// <c>pointer</c> over a link, <c>default</c> elsewhere; a <c>url()</c> list

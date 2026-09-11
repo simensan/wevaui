@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 35
+#define WEVA_ABI_VERSION_MINOR 36
 
 uint32_t weva_abi_version(void);
 
@@ -328,6 +328,15 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height);
  * conditional rules and restyles on the next update, as set_viewport does.
  * Available since ABI minor 28. */
 void weva_document_set_color_scheme(weva_document_t doc, int dark);
+
+/* The display's safe-area insets in CSS pixels, which `env(safe-area-inset-
+ * top)` and its three siblings read (zero until set). A notch, a rounded
+ * corner, a system bar: the host measures them (Godot's
+ * DisplayServer.get_display_safe_area, Unity's Screen.safeArea) and the page
+ * pads with `env()` as it would in a browser. A change recompiles and
+ * restyles on the next update. Available since ABI minor 36. */
+void weva_document_set_safe_area_insets(weva_document_t doc, double top, double right,
+                                        double bottom, double left);
 
 /* How far the laid-out document reaches, which is not the viewport: half of the
  * sample corpus is taller than the box it is laid out in. A host that wants to

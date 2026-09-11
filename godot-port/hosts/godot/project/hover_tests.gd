@@ -162,6 +162,24 @@ func _ready() -> void:
 	_move_to(doc, Vector2(210, 90))
 	_check(_hovering(doc), "and a transform on an ANCESTOR node")
 
+	# ABI minor 36: the safe-area insets a page pads with through env().
+	var notched := WevaDocument.new()
+	notched.document_size = Vector2(300, 200)
+	notched.css = "html, body { margin: 0 } #pad { padding-top: env(safe-area-inset-top); height: 10px }"
+	notched.html = "<div id=pad></div>"
+	notched.position = Vector2(2000, 2000)
+	add_child(notched)
+	notched.update_document()
+	_check(notched.query_bounds("#pad").size.y == 10, "no insets until the host sets them")
+	notched.set_safe_area_insets(44, 0, 0, 0)
+	notched.update_document()
+	_check(notched.query_bounds("#pad").size.y == 54, "and env(safe-area-inset-top) pads by what it set")
+	_check(notched.get_safe_area_insets() == Vector4(44, 0, 0, 0), "which the node reports back")
+	notched.follow_display_safe_area = true
+	notched.update_document()
+	_check(notched.follow_display_safe_area, "following the display is a property that reads back")
+	notched.queue_free()
+
 	doc.queue_free()
 	print("godot hover: %d checks, %d failures" % [checks, failures])
 	get_tree().quit(1 if failures > 0 else 0)

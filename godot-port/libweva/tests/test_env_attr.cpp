@@ -31,6 +31,18 @@ void test_env() {
     CHECK(!resolve_env("env(nope)", &out));
     CHECK(!resolve_env("1px solid env(nope)", &out));
 
+    // ---- a table of its own: an engine's insets do not leak into another's
+    {
+        EnvironmentVariables own;
+        own.set("safe-area-inset-top", "20px");
+        CHECK(resolve_env("env(safe-area-inset-top)", own, &out) && out == "20px");
+        CHECK(resolve_env("env(safe-area-inset-top)", &out) && out == "44px");   // the process table
+        CascadeEngine engine;
+        engine.set_env("safe-area-inset-left", "9px");
+        CHECK(resolve_env("env(safe-area-inset-left)", engine.env(), &out) && out == "9px");
+        CHECK(resolve_env("env(safe-area-inset-top)", engine.env(), &out) && out == "0px");
+    }
+
     // ---- an index list after the name is tolerated; the name is token one
     env.set("viewport-segment-width", "5px");
     CHECK(resolve_env("env(viewport-segment-width 0 0)", &out) && out == "5px");
@@ -101,7 +113,13 @@ void test_env_attr_in_cascade() {
     eng.add_stylesheet(&sheet, DeclarationOrigin::Author);
     NullStateProvider st;
 
+    // The engine resolves env() against its OWN table (the host's insets are
+    // per document); the process-wide one above is not consulted.
     ComputedStyle a;
+    eng.compute(*doc->get_element_by_id("a"), st, nullptr, &a);
+    CHECK(a.get("padding-top") == "0px");
+    eng.set_env("safe-area-inset-top", "20px");
+    eng.invalidate_cache();
     eng.compute(*doc->get_element_by_id("a"), st, nullptr, &a);
     CHECK(a.get("padding-top") == "20px");
     CHECK(a.get("width") == "120px");

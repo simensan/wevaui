@@ -924,3 +924,9 @@ layout, boxes -- the cascade's own invalidation, mapped to handles), and
 `weva_document_structure_version` moves whenever elements come or go (Godot
 `get_changed_elements()` / `get_structure_version()`, Unity
 `NativeDocument.ChangedElements()` / `StructureVersion`).
+
+ABI minor 36 adds `weva_document_set_safe_area_insets(doc, top, right, bottom,
+left)`: the values `env(safe-area-inset-*)` resolve to, per document (the env()
+table moved from a process singleton into the cascade engine). Godot
+`set_safe_area_insets()` / `follow_display_safe_area`, Unity
+`NativeDocument.SetSafeAreaInsets` / `WevaNativeDocument.FollowScreenSafeArea`.

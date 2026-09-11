@@ -3738,7 +3738,10 @@ an ABI surface), keep host-side (C#), drop.
 **Expose through the ABI (already in the core):** the extended selector set
 (`:lang`, `:dir`, `:target`, `:valid`/`:invalid`, `:in-range`, `:default`,
 `:autofill`, ...; `:link`/`:visited` need host state), `env()` values
-(safe-area insets), logical sizing properties, multicol, `@property`,
+(safe-area insets) DONE 2026-09-11 (ABI minor 36
+`weva_document_set_safe_area_insets`, per document; Godot
+`set_safe_area_insets` / `follow_display_safe_area`, Unity
+`SetSafeAreaInsets` / `FollowScreenSafeArea`), logical sizing properties, multicol, `@property`,
 `content-visibility` / `contain`, `scrollbar-width` / `scrollbar-color`,
 `quotes`, counters, `list-style-position: outside`, line clamping, vertical
 writing modes; `cursor` DONE 2026-09-11 (ABI minor 29 `weva_document_cursor`,

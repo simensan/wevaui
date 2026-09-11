@@ -94,6 +94,9 @@ WevaDocument::WevaDocument() {
     doc_ = weva_document_create(&cfg);
     weva_document_set_popover_request_events(doc_, 1);
     if (dark_color_scheme_) weva_document_set_color_scheme(doc_, 1);
+    if (safe_area_[0] || safe_area_[1] || safe_area_[2] || safe_area_[3]) {
+        weva_document_set_safe_area_insets(doc_, safe_area_[0], safe_area_[1], safe_area_[2], safe_area_[3]);
+    }
     // Godot resolves imported textures and PCK paths; the core consumes PNG
     // bytes through its existing decoder and document-scoped image cache.
     weva_document_set_asset_reader(doc_, &WevaDocument::read_asset, this);
@@ -785,6 +788,15 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_dark_color_scheme"), &WevaDocument::get_dark_color_scheme);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dark_color_scheme"), "set_dark_color_scheme",
                  "get_dark_color_scheme");
+    ClassDB::bind_method(D_METHOD("set_safe_area_insets", "top", "right", "bottom", "left"),
+                         &WevaDocument::set_safe_area_insets);
+    ClassDB::bind_method(D_METHOD("get_safe_area_insets"), &WevaDocument::get_safe_area_insets);
+    ClassDB::bind_method(D_METHOD("set_follow_display_safe_area", "follow"),
+                         &WevaDocument::set_follow_display_safe_area);
+    ClassDB::bind_method(D_METHOD("get_follow_display_safe_area"),
+                         &WevaDocument::get_follow_display_safe_area);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "follow_display_safe_area"), "set_follow_display_safe_area",
+                 "get_follow_display_safe_area");
     ClassDB::bind_method(D_METHOD("get_cursor"), &WevaDocument::get_cursor);
     ClassDB::bind_method(D_METHOD("get_stats"), &WevaDocument::get_stats);
     ClassDB::bind_method(D_METHOD("get_box_tree"), &WevaDocument::get_box_tree);
@@ -1521,6 +1533,9 @@ void WevaDocument::_notification(int what) {
     }
     if (what == NOTIFICATION_WM_WINDOW_FOCUS_IN) sync_ime();
     if (what == NOTIFICATION_RESIZED) sync_control_size();
+    if ((what == NOTIFICATION_WM_SIZE_CHANGED || what == NOTIFICATION_ENTER_TREE) && follow_display_safe_area_) {
+        apply_display_safe_area();
+    }
     if (what == NOTIFICATION_MOUSE_EXIT && buttons_ == 0) clear_pointer();
     if (what == NOTIFICATION_FOCUS_ENTER && doc_ && interactive_) {
         ensure_updated();
@@ -2084,6 +2099,41 @@ void WevaDocument::set_dark_color_scheme(bool dark) {
 }
 
 bool WevaDocument::get_dark_color_scheme() const { return dark_color_scheme_; }
+
+void WevaDocument::set_safe_area_insets(double top, double right, double bottom, double left) {
+    safe_area_[0] = std::max(0.0, top);
+    safe_area_[1] = std::max(0.0, right);
+    safe_area_[2] = std::max(0.0, bottom);
+    safe_area_[3] = std::max(0.0, left);
+    if (!doc_) return;
+    weva_document_set_safe_area_insets(doc_, safe_area_[0], safe_area_[1], safe_area_[2], safe_area_[3]);
+    dirty_ = true;
+    queue_redraw();
+}
+
+Vector4 WevaDocument::get_safe_area_insets() const {
+    return Vector4(safe_area_[0], safe_area_[1], safe_area_[2], safe_area_[3]);
+}
+
+void WevaDocument::set_follow_display_safe_area(bool follow) {
+    follow_display_safe_area_ = follow;
+    if (follow && is_inside_tree()) apply_display_safe_area();
+}
+
+bool WevaDocument::get_follow_display_safe_area() const { return follow_display_safe_area_; }
+
+// The screen's safe area against the screen: the distance from each edge to
+// the rectangle the display keeps clear of notches and system bars. On a
+// desktop that is all zeros.
+void WevaDocument::apply_display_safe_area() {
+    DisplayServer* ds = DisplayServer::get_singleton();
+    if (!ds) return;
+    const Rect2i safe = ds->get_display_safe_area();
+    const Vector2i screen = ds->screen_get_size();
+    if (screen.x <= 0 || screen.y <= 0 || safe.size.x <= 0 || safe.size.y <= 0) return;
+    set_safe_area_insets(safe.position.y, screen.x - (safe.position.x + safe.size.x),
+                         screen.y - (safe.position.y + safe.size.y), safe.position.x);
+}
 
 String WevaDocument::get_cursor() const {
     if (!doc_) return "default";

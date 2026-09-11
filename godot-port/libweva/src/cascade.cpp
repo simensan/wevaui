@@ -1190,7 +1190,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
             }
             if (raw.find("env(") != std::string::npos || raw.find("ENV(") != std::string::npos) {
                 std::string resolved;
-                if (!resolve_env(raw, &resolved)) { env_drops.push_back(id); continue; }
+                if (!resolve_env(raw, env_, &resolved)) { env_drops.push_back(id); continue; }
                 raw = std::move(resolved);
                 changed = true;
             }

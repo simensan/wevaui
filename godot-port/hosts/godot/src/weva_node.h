@@ -14,6 +14,7 @@
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/system_font.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
+#include <godot_cpp/variant/vector4.hpp>
 #include <godot_cpp/variant/packed_color_array.hpp>
 #include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/packed_string_array.hpp>
@@ -138,6 +139,14 @@ public:
     // `@media (prefers-color-scheme)` follow; the game decides, not the OS.
     void set_dark_color_scheme(bool dark);
     bool get_dark_color_scheme() const;
+
+    // The display's safe-area insets (top, right, bottom, left, in the
+    // document's pixels) that `env(safe-area-inset-*)` reads. Set them, or
+    // let the node follow DisplayServer.get_display_safe_area().
+    void set_safe_area_insets(double top, double right, double bottom, double left);
+    godot::Vector4 get_safe_area_insets() const;
+    void set_follow_display_safe_area(bool follow);
+    bool get_follow_display_safe_area() const;
 
     // The CSS `cursor` under the pointer, as the keyword the core settled it
     // to; with `follow_css_cursor` on (the default) the node answers Godot's
@@ -475,6 +484,9 @@ private:
 
     double tooltip_delay_ = 0.6;
     bool dark_color_scheme_ = false;
+    double safe_area_[4] = {0, 0, 0, 0};   // top, right, bottom, left
+    bool follow_display_safe_area_ = false;
+    void apply_display_safe_area();
     bool follow_css_cursor_ = true;
     godot::Callable data_source_;
     godot::ObjectID controller_;

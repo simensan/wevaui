@@ -339,7 +339,7 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 35;
+        public const int WEVA_ABI_VERSION_MINOR = 36;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
@@ -371,6 +371,8 @@ namespace Weva.Native
         public static extern void weva_document_set_viewport(System.IntPtr doc, int width, int height);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern void weva_document_set_color_scheme(System.IntPtr doc, int dark);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void weva_document_set_safe_area_insets(System.IntPtr doc, double top, double right, double bottom, double left);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_content_size(System.IntPtr doc, double* out_width, double* out_height);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

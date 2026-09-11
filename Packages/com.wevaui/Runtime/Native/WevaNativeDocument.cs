@@ -149,11 +149,36 @@ namespace Weva.Native
         private NativeInputFeed _input;
 #endif
 
+        /// <summary>
+        /// Feed <c>Screen.safeArea</c> to the document each frame it changes, scaled to
+        /// the document's viewport, so <c>env(safe-area-inset-*)</c> pads around a notch
+        /// or a system bar. Off by default: a desktop has no insets.
+        /// </summary>
+        public bool FollowScreenSafeArea;
+        private Rect _lastSafeArea = new Rect(-1, -1, -1, -1);
+
+        private void SyncSafeArea()
+        {
+            if (!FollowScreenSafeArea) return;
+            Rect safe = Screen.safeArea;
+            if (safe == _lastSafeArea) return;
+            _lastSafeArea = safe;
+            float sw = Math.Max(1, Screen.width), sh = Math.Max(1, Screen.height);
+            float sx = _width / sw, sy = _height / sh;
+            // Unity's safeArea origin is the bottom-left corner of the screen.
+            _doc.SetSafeAreaInsets(
+                Math.Max(0, sh - (safe.y + safe.height)) * sy,
+                Math.Max(0, sw - (safe.x + safe.width)) * sx,
+                Math.Max(0, safe.y) * sy,
+                Math.Max(0, safe.x) * sx);
+        }
+
         private void Update()
         {
             if (_doc == null) return;
             try
             {
+                SyncSafeArea();
 #if WEVA_INPUTSYSTEM
                 if (AutoInput && Application.isPlaying)
                 {

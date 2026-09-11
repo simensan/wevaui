@@ -3997,6 +3997,32 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     doc->pending = worst(doc->pending, Invalidation::Boxes);
 }
 
+void weva_document_set_safe_area_insets(weva_document_t doc, double top, double right,
+                                        double bottom, double left) {
+    if (!doc) return;
+    const auto px = [](double v) {
+        char buf[48];
+        std::snprintf(buf, sizeof(buf), "%.3fpx", std::max(0.0, v));
+        return std::string(buf);
+    };
+    const std::string t = px(top), r = px(right), b = px(bottom), l = px(left);
+    std::string current;
+    const EnvironmentVariables& env = doc->styles.engine.env();
+    if (env.get("safe-area-inset-top", &current) && current == t &&
+        env.get("safe-area-inset-right", &current) && current == r &&
+        env.get("safe-area-inset-bottom", &current) && current == b &&
+        env.get("safe-area-inset-left", &current) && current == l) return;
+    doc->styles.engine.set_env("safe-area-inset-top", t);
+    doc->styles.engine.set_env("safe-area-inset-right", r);
+    doc->styles.engine.set_env("safe-area-inset-bottom", b);
+    doc->styles.engine.set_env("safe-area-inset-left", l);
+    // env() is substituted when a declaration is computed, so every style
+    // goes through the cascade again, as on a colour-scheme change.
+    collect_inline_sheets(doc);
+    rebuild_engine_sheets(doc);
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+}
+
 void weva_document_set_color_scheme(weva_document_t doc, int dark) {
     if (!doc) return;
     auto media = doc->styles.engine.media_context();

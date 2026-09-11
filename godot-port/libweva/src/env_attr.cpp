@@ -90,9 +90,11 @@ bool has_ci(std::string_view s, std::string_view needle) {
 
 // --- env ---------------------------------------------------------------------
 
-bool resolve_env_internal(std::string_view value, int depth, std::string* out);
+bool resolve_env_internal(std::string_view value, const EnvironmentVariables& env, int depth,
+                          std::string* out);
 
-bool resolve_env_call(std::string_view inside, int depth, std::string* out) {
+bool resolve_env_call(std::string_view inside, const EnvironmentVariables& env, int depth,
+                      std::string* out) {
     std::string head, fallback;
     bool has_fallback = false;
     split_first_comma(inside, &head, &fallback, &has_fallback);
@@ -106,21 +108,22 @@ bool resolve_env_call(std::string_view inside, int depth, std::string* out) {
     if (name.empty()) return false;
 
     std::string v;
-    if (EnvironmentVariables::instance().get(name, &v)) {
+    if (env.get(name, &v)) {
         // env() values are UA-supplied literals; an env() inside one resolves
         // transitively, but a var() inside one does NOT — they are not part of
         // the author's custom-property namespace.
-        return resolve_env_internal(v, depth + 1, out);
+        return resolve_env_internal(v, env, depth + 1, out);
     }
     if (!has_fallback) return false;
-    if (!resolve_env_internal(fallback, depth + 1, out)) return false;
+    if (!resolve_env_internal(fallback, env, depth + 1, out)) return false;
     // The text after the comma keeps the separator's whitespace, so
     // `env(a, env(b))` would otherwise yield " 44px". The C# trims here too.
     *out = trim(*out);
     return true;
 }
 
-bool resolve_env_internal(std::string_view value, int depth, std::string* out) {
+bool resolve_env_internal(std::string_view value, const EnvironmentVariables& env, int depth,
+                          std::string* out) {
     if (depth > kMaxDepth) return false;
     if (!has_ci(value, "env(")) { out->assign(trim(value)); return true; }
 
@@ -132,7 +135,7 @@ bool resolve_env_internal(std::string_view value, int depth, std::string* out) {
             std::size_t end = find_matching_paren(value, paren);
             if (end == std::string_view::npos) { sb.append(value.substr(i)); break; }
             std::string rep;
-            if (!resolve_env_call(value.substr(paren + 1, end - paren - 1), depth, &rep)) {
+            if (!resolve_env_call(value.substr(paren + 1, end - paren - 1), env, depth, &rep)) {
                 return false;   // taints the whole declaration, like var()
             }
             sb += rep;
@@ -323,8 +326,12 @@ bool EnvironmentVariables::get(std::string_view name, std::string* out) const {
     return true;
 }
 
+bool resolve_env(std::string_view value, const EnvironmentVariables& env, std::string* resolved) {
+    return resolve_env_internal(value, env, 0, resolved);
+}
+
 bool resolve_env(std::string_view value, std::string* resolved) {
-    return resolve_env_internal(value, 0, resolved);
+    return resolve_env(value, EnvironmentVariables::instance(), resolved);
 }
 
 std::string resolve_attr(std::string_view value, const Element& element) {
