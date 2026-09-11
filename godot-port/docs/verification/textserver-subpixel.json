@@ -207,7 +207,9 @@
         "note": "Failed mobile/3 hover and typing while two mobile runs were elevated across every workload including hover; a stray Godot editor process was found alive afterwards and killed before the rerun."
       }
     },
-    "zip": ".utmp/safe-engine71/weva-subpixel-preview222.zip"
+    "zip": ".utmp/safe-engine71/weva-subpixel-preview222.zip",
+    "zip_sha256": "08f049969b99cbe7897ce407edfbda831310fc44e2f9a0ca2ec341305bda778b",
+    "zip_note": "repackaged as 0.1.0-preview.222 with both platform libraries after the chain had stamped 220; same Windows library"
   },
   "gate": "Phase 1 gate: fewer text-width differences (22 to 0 on the headings), no page worse, desktop timing 72/72 -> see qualification222.desktop_timing",
   "limitations": [
@@ -215,8 +217,8 @@
     "Vertical line metrics of headings still differ from Chrome by 1-2 px; tracked separately."
   ],
   "installed": {
-    "frontier": "0.1.0-preview.220",
-    "host": "0.1.0-preview.220"
+    "frontier": "0.1.0-preview.222",
+    "host": "0.1.0-preview.222"
   },
   "post_install": {
     "frontier_headless": [
