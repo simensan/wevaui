@@ -7633,6 +7633,172 @@ weva_element_t adopt(weva_document* doc, const std::vector<Ref<Node>>& added) {
 
 }   // namespace
 
+namespace {
+
+// HotReload/DomDiffer.cs: reconcile the live tree onto a freshly parsed one,
+// keeping every live node the fresh order can be matched to.
+std::string key_of(const Element& e) {
+    const std::string_view id = e.get_attribute("id");
+    if (!id.empty()) return "#" + std::string(id);
+    const std::string_view key = e.get_attribute("data-key");
+    if (!key.empty()) return "k:" + std::string(key);
+    return std::string();
+}
+
+bool same_kind(const Node& live, const Node& fresh) {
+    if (live.node_type() == NodeType::Element && fresh.node_type() == NodeType::Element) {
+        const auto& le = static_cast<const Element&>(live);
+        const auto& fe = static_cast<const Element&>(fresh);
+        if (le.tag_name() != fe.tag_name()) return false;
+        const std::string lk = key_of(le), fk = key_of(fe);
+        return (lk.empty() && fk.empty()) || lk == fk;
+    }
+    return live.node_type() == NodeType::Text && fresh.node_type() == NodeType::Text;
+}
+
+bool diff_children(weva_document* doc, Node* live_parent, Node* fresh_parent, std::vector<Ref<Node>>* adopted);
+
+bool diff_element(weva_document* doc, Element* live, Element* fresh, std::vector<Ref<Node>>* adopted) {
+    bool mutated = false;
+    const AttributeMap& fa = fresh->attributes();
+    std::vector<std::string> fresh_names;
+    for (size_t i = 0; i < fa.size(); ++i) {
+        const std::string_view name = fa.name_at(i);
+        fresh_names.emplace_back(name);
+        if (!live->has_attribute(name) || live->get_attribute(name) != fa.value_at(i)) {
+            live->set_attribute(name, fa.value_at(i));
+            mutated = true;
+        }
+    }
+    std::vector<std::string> stale;
+    for (size_t i = 0; i < live->attributes().size(); ++i) {
+        const std::string_view name = live->attributes().name_at(i);
+        if (std::find(fresh_names.begin(), fresh_names.end(), name) == fresh_names.end()) stale.emplace_back(name);
+    }
+    for (const std::string& name : stale) {
+        live->remove_attribute(name);
+        mutated = true;
+    }
+    if (diff_children(doc, live, fresh, adopted)) mutated = true;
+    return mutated;
+}
+
+bool diff_children(weva_document* doc, Node* live_parent, Node* fresh_parent, std::vector<Ref<Node>>* adopted) {
+    bool mutated = false;
+    const std::vector<Ref<Node>> live_children(live_parent->children().begin(), live_parent->children().end());
+    const std::vector<Ref<Node>> fresh_children(fresh_parent->children().begin(), fresh_parent->children().end());
+
+    // Keyed live elements can be matched anywhere in the fresh order.
+    std::unordered_map<std::string, Element*> keyed;
+    for (const Ref<Node>& c : live_children) {
+        if (c->node_type() != NodeType::Element) continue;
+        Element& e = static_cast<Element&>(const_cast<Node&>(*c));
+        const std::string k = key_of(e);
+        if (!k.empty()) keyed[k] = &e;
+    }
+
+    std::vector<Ref<Node>> order;
+    order.reserve(fresh_children.size());
+    // Unkeyed nodes match the next unclaimed live node of the same kind, in
+    // order -- so a sibling inserted or removed ahead of a paragraph does not
+    // cost the paragraph its identity, which strict index matching (the C#'s
+    // positional fallback) would.
+    std::vector<bool> claimed(live_children.size(), false);
+    size_t cursor = 0;
+    for (size_t i = 0; i < fresh_children.size(); ++i) {
+        Node* fc = const_cast<Node*>(fresh_children[i].get());
+        Node* target = nullptr;
+        if (fc->node_type() == NodeType::Element) {
+            Element& fe = static_cast<Element&>(*fc);
+            const std::string k = key_of(fe);
+            if (!k.empty()) {
+                const auto found = keyed.find(k);
+                if (found != keyed.end() && found->second->tag_name() == fe.tag_name()) {
+                    target = found->second;
+                    keyed.erase(found);
+                    for (size_t j = 0; j < live_children.size(); ++j) if (live_children[j].get() == target) claimed[j] = true;
+                }
+            }
+        }
+        if (!target) {
+            for (size_t j = cursor; j < live_children.size(); ++j) {
+                if (claimed[j]) continue;
+                const Node& lc = *live_children[j];
+                // A keyed live element waits for its own key; it is never a
+                // positional match.
+                if (lc.node_type() == NodeType::Element && !key_of(static_cast<const Element&>(lc)).empty()) continue;
+                if (!same_kind(lc, *fc)) continue;
+                target = const_cast<Node*>(&lc);
+                claimed[j] = true;
+                cursor = j + 1;
+                break;
+            }
+        }
+        if (!target) {
+            // New: it moves over from the fresh tree.
+            order.push_back(Ref<Node>::retain(fc));
+            mutated = true;
+            continue;
+        }
+        if (target->node_type() == NodeType::Element) {
+            if (diff_element(doc, static_cast<Element*>(target), static_cast<Element*>(fc), adopted)) mutated = true;
+        } else {
+            auto* lt = static_cast<TextNode*>(target);
+            const auto* ft = static_cast<const TextNode*>(fc);
+            if (lt->data() != ft->data()) {
+                lt->set_data(ft->data());
+                mutated = true;
+            }
+        }
+        order.push_back(Ref<Node>::retain(target));
+    }
+
+    // Live children nothing claimed go, with everything the document knew
+    // about them.
+    for (const Ref<Node>& c : live_children) {
+        bool kept = false;
+        for (const Ref<Node>& o : order) if (o.get() == c.get()) { kept = true; break; }
+        if (kept) continue;
+        if (c->node_type() == NodeType::Element) forget_subtree(doc, static_cast<const Element&>(*c));
+        live_parent->remove_child(const_cast<Node*>(c.get()));
+        mutated = true;
+    }
+
+    // The fresh order, appending what is out of place (append_child moves a
+    // node already attached, here or in the fresh tree).
+    for (size_t i = 0; i < order.size(); ++i) {
+        Node* want = const_cast<Node*>(order[i].get());
+        const Node* current = i < live_parent->children().size() ? live_parent->children()[i].get() : nullptr;
+        if (current == want) continue;
+        const bool from_fresh = want->parent() != live_parent;
+        live_parent->append_child(want);
+        if (from_fresh) adopted->push_back(Ref<Node>::retain(want));
+        mutated = true;
+    }
+    return mutated;
+}
+
+} // namespace
+
+weva_status weva_document_reload_html(weva_document_t doc, const char* html, size_t length) {
+    if (!doc || (!html && length > 0)) return WEVA_ERR_INVALID_ARGUMENT;
+    if (!doc->doc) return weva_document_load_html(doc, html, length);
+    HtmlParseError err;
+    ParseOptions opts;
+    opts.strict = false;
+    Ref<Document> fresh = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
+    if (!fresh) return WEVA_ERR_PARSE;
+    std::vector<Ref<Node>> adopted;
+    diff_children(doc, doc->doc.get(), fresh.get(), &adopted);
+    // Elements that came over from the fresh tree need handles, styles and
+    // boxes; adopt indexes their subtrees and asks for the rebuild.
+    adopt(doc, adopted);
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+    doc->touched.clear();
+    doc->dom_touched = false;
+    return WEVA_OK;
+}
+
 weva_status weva_element_set_html(weva_document_t doc, weva_element_t element, const char* html,
                                   size_t length) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;

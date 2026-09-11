@@ -1068,6 +1068,65 @@ void test_abi_box_tree() {
     CHECK(weva_document_boxes(nullptr, nullptr, 0) == 0);
 }
 
+// Minor 32: a hot reload keeps the live elements it can match -- handles,
+// form values, focus and scroll -- and updates the rest in place.
+void test_abi_reload_html() {
+    Doc doc("html, body { margin: 0 } #s { overflow: auto; height: 50px } .row { height: 40px }"
+            " input { display: block; width: 100px; height: 20px }",
+            "<div id=a><input id=i type=text value=x><p id=p>one</p></div>"
+            "<div id=b>two</div><p>plain</p>"
+            "<div id=s><div class=row></div><div class=row></div><div class=row></div></div>");
+    const weva_element_t a = weva_document_query(doc.d, "#a"), i = weva_document_query(doc.d, "#i");
+    const weva_element_t p = weva_document_query(doc.d, "#p"), s = weva_document_query(doc.d, "#s");
+    const weva_element_t plain = weva_document_query(doc.d, "p:not([id])");
+    weva_document_set_focus(doc.d, i);
+    place_caret_at_end(doc.d, i);
+    weva_document_text_input(doc.d, "y");
+    weva_element_set_scroll(doc.d, s, 0, 30);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.value("#i") == "xy");
+
+    const char* next = "<div id=a class=new><input id=i type=text value=x><p id=p>uno</p><p id=q>new</p></div>"
+                       "<p>plain too</p>"
+                       "<div id=s><div class=row></div><div class=row></div><div class=row></div></div>";
+    CHECK(weva_document_reload_html(doc.d, next, std::strlen(next)) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    // The same handles answer for the elements the diff matched.
+    CHECK(weva_document_query(doc.d, "#a") == a);
+    CHECK(weva_document_query(doc.d, "#i") == i);
+    CHECK(weva_document_query(doc.d, "#p") == p);
+    CHECK(weva_document_query(doc.d, "#s") == s);
+    CHECK(weva_document_query(doc.d, "p:not([id])") == plain);   // positional, no key
+    // What the user did survives: the typed value, the focus, the scroll.
+    CHECK(doc.value("#i") == "xy");
+    CHECK(weva_document_focus(doc.d) == i);
+    double sx = 0, sy = 0, mx = 0, my = 0;
+    weva_element_scroll(doc.d, s, &sx, &sy, &mx, &my);
+    CHECK(sy == 30);
+    // What the markup changed took: an attribute, a text, a new element, one gone.
+    char cls[16] = {0};
+    weva_element_attribute(doc.d, a, "class", cls, sizeof cls);
+    CHECK(std::string(cls) == "new");
+    char text[32] = {0};
+    weva_element_text(doc.d, p, text, sizeof text);
+    CHECK(std::string(text) == "uno");
+    weva_element_text(doc.d, plain, text, sizeof text);
+    CHECK(std::string(text) == "plain too");
+    CHECK(weva_document_query(doc.d, "#q") != WEVA_ELEMENT_NONE);
+    CHECK(weva_document_query(doc.d, "#b") == WEVA_ELEMENT_NONE);
+    // A reordered keyed element keeps its handle in its new place.
+    const char* swapped = "<div id=s><div class=row></div><div class=row></div><div class=row></div></div>"
+                          "<div id=a class=new><input id=i type=text value=x><p id=p>uno</p><p id=q>new</p></div>";
+    CHECK(weva_document_reload_html(doc.d, swapped, std::strlen(swapped)) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_query(doc.d, "#a") == a && weva_document_query(doc.d, "#s") == s);
+    double ax = 0, ay = 0, aw = 0, ah = 0, ssx = 0, ssy = 0, sw = 0, sh = 0;
+    weva_element_bounds(doc.d, a, &ax, &ay, &aw, &ah);
+    weva_element_bounds(doc.d, s, &ssx, &ssy, &sw, &sh);
+    CHECK(ssy < ay);
+    CHECK(doc.value("#i") == "xy");
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

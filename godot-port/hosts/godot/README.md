@@ -966,6 +966,14 @@ the `elements`, `boxes`, `draws` and `textures` counts, the paint pass's
 (`cascade_elements`, `cascade_pseudos`; diff them between frames) -- what a
 debug overlay shows beside the frame time.
 
+**Hot reload**
+
+`doc.reload_html(html)` diffs new markup onto the live document instead of
+replacing it: an element the diff can match -- the same tag at the same place,
+or the same `id` / `data-key` among its siblings -- keeps its identity, so
+focus, scroll positions, typed values and running transitions survive an edit
+to the file; `html = ...` still replaces everything.
+
 **The box tree**
 
 `doc.get_box_tree()` lists every layout box in tree order as a Dictionary

@@ -156,6 +156,11 @@ public:
     // debug overlay; the layout tree's numbers, scroll not applied.
     godot::Array get_box_tree() const;
 
+    // A hot reload: the markup is diffed onto the live document, so matched
+    // elements keep their identity (focus, scroll, form values, transitions)
+    // and only what changed is touched. `html` is updated to it as well.
+    void reload_html(const godot::String& html);
+
     // ---- Data binding ---------------------------------------------------
     //
     // What a script needs to drive a document: change what it says, change how

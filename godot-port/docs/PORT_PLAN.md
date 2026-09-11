@@ -3576,8 +3576,9 @@ unless noted):
     is the substitute) — keep host-side.
 11. Per-stylesheet replacement with origin and ordering (hot reload) —
     `set_css` wholesale is a viable substitute; keep host-side.
-12. Identity-preserving HTML reload (the C# `DomDiffer`) — best done inside
-    `weva_document_load_html`, as `set_css` already promises for styles.
+12. Identity-preserving HTML reload — DONE 2026-09-11, ABI minor 32
+    `weva_document_reload_html` (DomDiffer ported; Godot `reload_html()`, Unity
+    `NativeDocument.ReloadHtml`); `load_html` keeps replacing.
 13. Overlay paint injection — a native host draws after `weva_document_draws`;
     drop.
 14. Referenced-asset list, a font-resolution miss log, HTML parse diagnostics

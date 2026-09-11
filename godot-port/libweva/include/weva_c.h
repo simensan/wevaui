@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 31
+#define WEVA_ABI_VERSION_MINOR 32
 
 uint32_t weva_abi_version(void);
 
@@ -272,6 +272,17 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
  * focus, bindings and animation clocks remain. An empty string removes author
  * CSS. Both this and add_css schedule a restyle on the next update. */
 weva_status weva_document_set_css(weva_document_t doc, const char* css, size_t length);
+
+/* Loads new markup INTO the live document instead of replacing it: the new
+ * tree is parsed and diffed onto the live one. An element the diff can match
+ * -- the same tag at the same position among its siblings, or the same `id`
+ * or `data-key` anywhere among them -- keeps its identity, so its handle,
+ * focus, scroll position, form value and running transitions survive;
+ * attributes and text are updated in place, elements only the new markup has
+ * are inserted where it puts them, elements only the old one had are removed.
+ * What a hot reload wants; ports HotReload/DomDiffer.cs. With no document
+ * loaded yet this is load_html. Available since ABI minor 32. */
+weva_status weva_document_reload_html(weva_document_t doc, const char* html, size_t length);
 
 void weva_document_set_viewport(weva_document_t doc, int width, int height);
 

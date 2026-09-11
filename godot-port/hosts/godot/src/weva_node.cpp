@@ -739,6 +739,7 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_cursor"), &WevaDocument::get_cursor);
     ClassDB::bind_method(D_METHOD("get_stats"), &WevaDocument::get_stats);
     ClassDB::bind_method(D_METHOD("get_box_tree"), &WevaDocument::get_box_tree);
+    ClassDB::bind_method(D_METHOD("reload_html", "html"), &WevaDocument::reload_html);
     ClassDB::bind_method(D_METHOD("set_follow_css_cursor", "follow"),
                          &WevaDocument::set_follow_css_cursor);
     ClassDB::bind_method(D_METHOD("get_follow_css_cursor"), &WevaDocument::get_follow_css_cursor);
@@ -947,6 +948,16 @@ void WevaDocument::set_html(const String& html) {
     weva_document_load_html(doc_, utf8.get_data(), static_cast<size_t>(utf8.length()));
     // Reload creates new controls and repeat rows. Existing data must fill
     // their models just as it does when data is assigned after the markup.
+    if (bindings_active_) refresh_bindings();
+    dirty_ = true;
+    queue_redraw();
+}
+
+void WevaDocument::reload_html(const String& html) {
+    html_ = html;
+    if (!doc_) return;
+    const CharString utf8 = html.utf8();
+    weva_document_reload_html(doc_, utf8.get_data(), static_cast<size_t>(utf8.length()));
     if (bindings_active_) refresh_bindings();
     dirty_ = true;
     queue_redraw();

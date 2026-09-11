@@ -106,6 +106,22 @@ namespace Weva.Native
         }
 
         /// <summary>
+        /// A hot reload: the new markup is diffed onto the live document, so an
+        /// element the diff can match (same tag at the same position, or the same
+        /// <c>id</c> / <c>data-key</c> among its siblings) keeps its handle, focus,
+        /// scroll, form value and running transitions; attributes and text update
+        /// in place, the rest is inserted or removed.
+        /// </summary>
+        public void ReloadHtml(string html)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(html ?? string.Empty);
+            fixed (byte* p = bytes)
+            {
+                Check(WevaNative.weva_document_reload_html(Handle, p, (nuint)bytes.Length), "weva_document_reload_html");
+            }
+        }
+
+        /// <summary>
         /// Runs before every update. A font backend sets this to forget which
         /// face FontEngine has loaded, since other text users share it.
         /// </summary>

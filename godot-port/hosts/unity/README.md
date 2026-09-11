@@ -164,6 +164,14 @@ pass's texture-cache hits and misses, and the cascade's running totals (diff
 them between frames). `ElementAtForDevTools(x, y)` is the hit test an Elements
 panel wants: `pointer-events: none` and `visibility: hidden` hide nothing from it.
 
+## Hot reload (ABI minor 32)
+
+`NativeDocument.ReloadHtml(html)` diffs new markup onto the live document:
+elements it can match (same tag at the same position, or the same `id` /
+`data-key` among their siblings) keep their handle, focus, scroll, form value
+and running transitions; attributes and text update in place; the rest is
+inserted or removed. `LoadHtml` still replaces everything.
+
 ## The box tree (ABI minor 31)
 
 `NativeDocument.Boxes()` returns every box of the layout tree in tree order,

@@ -879,3 +879,10 @@ border box in document coordinates (scroll not applied), margin/border/padding
 edges, own scroll offset and a text box's run
 -- what a devtools outline overlay draws from (Godot `get_box_tree()`, Unity
 `NativeDocument.Boxes()`).
+
+ABI minor 32 adds `weva_document_reload_html(doc, html, length)`: the markup is
+diffed onto the live document (HotReload/DomDiffer.cs ported: keyed by `id` /
+`data-key`, else positional by tag), so matched elements keep their handles,
+focus, scroll, form values and transitions while attributes, text and the
+unmatched subtrees change. The hot-reload path in either host should use it
+(Godot `reload_html()`, Unity `NativeDocument.ReloadHtml`).
