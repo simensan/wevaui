@@ -957,6 +957,15 @@ handler is found by walking towards the root as every handler is.
 There is no context-menu widget, and that is deliberate: a menu is markup, and
 the popover machinery above already opens, positions and light-dismisses one.
 
+**Engine counters**
+
+`doc.get_stats()` is a Dictionary of the last update's stage timings
+(`cascade_ms`, `animate_ms`, `boxes_ms`, `layout_ms`, `paint_ms`, `update_ms`),
+the `elements`, `boxes`, `draws` and `textures` counts, the paint pass's
+`texture_cache_hits` / `texture_cache_misses`, and the cascade's running totals
+(`cascade_elements`, `cascade_pseudos`; diff them between frames) -- what a
+debug overlay shows beside the frame time.
+
 **The mouse cursor**
 
 The node shows the `cursor` the page asks for under the pointer: the hand for

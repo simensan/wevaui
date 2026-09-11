@@ -84,6 +84,7 @@ bool rounded_box_contains(const BoxTree& tree, BoxId id, const LayoutContext& ct
 struct Search {
     const BoxTree& tree;
     const LayoutContext& ctx;
+    HitTestOptions options;
 
     struct Overflow {
         BoxId owner;
@@ -151,7 +152,7 @@ struct Search {
             if (!unapply(local, &x, &y)) return kNoBox;
             x += bx; y += by;
         }
-        const bool ignore = b.style ? ignores_pointer(b.style) : blocked;
+        const bool ignore = options.ignore_pointer_events ? false : (b.style ? ignores_pointer(b.style) : blocked);
         const bool clipped_self = overflow && overflow->any_outside;
         if (clipped_self && !subtree_has_overflow_escape(tree, id, ctx)) return kNoBox;
         bool visit_children = !own_only;
@@ -228,7 +229,7 @@ struct Search {
             default: break;
         }
         if (deferred_self || ignore || clipped_self) return kNoBox;
-        if (b.style && is_invisible(b.style)) return kNoBox;
+        if (!options.include_hidden && b.style && is_invisible(b.style)) return kNoBox;
         if (b.width <= 0 || b.height <= 0) return kNoBox;
         if (x < bx || x >= bx + b.width || y < by || y >= by + b.height) return kNoBox;
         if (!rounded_box_contains(tree, id, ctx, bx, by, x, y, false)) return kNoBox;
@@ -257,11 +258,23 @@ struct Search {
 
 }   // namespace
 
-BoxId box_at_point(const BoxTree& tree, BoxId root, double x, double y, const LayoutContext* context) {
+BoxId box_at_point(const BoxTree& tree, BoxId root, double x, double y, const LayoutContext* context,
+                   HitTestOptions options) {
     if (root == kNoBox || root >= tree.size()) return kNoBox;
     const LayoutContext fallback;
-    const Search search{tree, context ? *context : fallback};
+    const Search search{tree, context ? *context : fallback, options};
     return search.visit(root, 0, 0, false, x, y);
+}
+
+BoxId box_at_point(const BoxTree& tree, BoxId root, double x, double y, const LayoutContext* context) {
+    return box_at_point(tree, root, x, y, context, HitTestOptions{});
+}
+
+const Element* element_at_point(const BoxTree& tree, BoxId root, double x, double y, const LayoutContext* context,
+                                HitTestOptions options) {
+    BoxId hit = box_at_point(tree, root, x, y, context, options);
+    while (hit != kNoBox && !tree[hit].element) hit = tree[hit].parent;
+    return hit == kNoBox ? nullptr : tree[hit].element;
 }
 
 const Element* element_at_point(const BoxTree& tree, BoxId root, double x, double y, const LayoutContext* context) {

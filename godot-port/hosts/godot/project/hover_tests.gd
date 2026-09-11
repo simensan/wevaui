@@ -65,6 +65,10 @@ func _ready() -> void:
 
 	# 1:1, no transform. If this fails, hover is broken outright.
 	_check(not _hovering(doc), "nothing is hovered to start with")
+	var stats: Dictionary = doc.get_stats()
+	_check(stats["boxes"] > 0 and stats["elements"] > 0 and stats["updates"] >= 1,
+			"the engine counters describe the document")
+	_check(stats["update_ms"] >= 0.0 and stats["draws"] >= 1, "and its last update")
 
 	# Isolate the two halves before asserting on them together: does the
 	# ENGINE hover, and does an event delivered by the window reach it?

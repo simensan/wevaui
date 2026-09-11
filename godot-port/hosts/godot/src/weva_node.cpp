@@ -737,6 +737,7 @@ void WevaDocument::_bind_methods() {
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dark_color_scheme"), "set_dark_color_scheme",
                  "get_dark_color_scheme");
     ClassDB::bind_method(D_METHOD("get_cursor"), &WevaDocument::get_cursor);
+    ClassDB::bind_method(D_METHOD("get_stats"), &WevaDocument::get_stats);
     ClassDB::bind_method(D_METHOD("set_follow_css_cursor", "follow"),
                          &WevaDocument::set_follow_css_cursor);
     ClassDB::bind_method(D_METHOD("get_follow_css_cursor"), &WevaDocument::get_follow_css_cursor);
@@ -2031,6 +2032,28 @@ String WevaDocument::get_cursor() const {
 void WevaDocument::set_follow_css_cursor(bool follow) { follow_css_cursor_ = follow; }
 
 bool WevaDocument::get_follow_css_cursor() const { return follow_css_cursor_; }
+
+Dictionary WevaDocument::get_stats() const {
+    Dictionary out;
+    weva_stats s{};
+    if (doc_) weva_document_stats(doc_, &s);
+    out["update_ms"] = s.update_ms;
+    out["cascade_ms"] = s.cascade_ms;
+    out["animate_ms"] = s.animate_ms;
+    out["boxes_ms"] = s.boxes_ms;
+    out["layout_ms"] = s.layout_ms;
+    out["paint_ms"] = s.paint_ms;
+    out["updates"] = static_cast<int64_t>(s.updates);
+    out["elements"] = static_cast<int64_t>(s.elements);
+    out["boxes"] = static_cast<int64_t>(s.boxes);
+    out["draws"] = static_cast<int64_t>(s.draws);
+    out["textures"] = static_cast<int64_t>(s.textures);
+    out["texture_cache_hits"] = static_cast<int64_t>(s.texture_cache_hits);
+    out["texture_cache_misses"] = static_cast<int64_t>(s.texture_cache_misses);
+    out["cascade_elements"] = static_cast<int64_t>(s.cascade_elements);
+    out["cascade_pseudos"] = static_cast<int64_t>(s.cascade_pseudos);
+    return out;
+}
 
 // Godot asks the hovered Control for its cursor shape on every mouse motion;
 // answering the query is the whole integration. Setting the Control's

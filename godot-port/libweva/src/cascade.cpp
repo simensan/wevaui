@@ -85,10 +85,12 @@ struct CascadePhaseProfile {
     size_t final_bucket;
     CascadePhaseProfile(CascadeEngine::WorkProfile& p, size_t final)
         : profile(nullptr), final_bucket(final) {
+        // The counts are kept always: they are the engine counters a host's
+        // stats window reads. Only the timings wait for WEVA_CASCADE_LOG.
+        if (final == 7) ++p.pseudos; else ++p.elements;
         static const bool enabled = std::getenv("WEVA_CASCADE_LOG") != nullptr;
         if (!enabled) return;
         profile = &p;
-        if (final == 7) ++p.pseudos; else ++p.elements;
         last = Clock::now();
     }
     void lap(size_t bucket) {

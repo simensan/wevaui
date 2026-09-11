@@ -235,6 +235,26 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct weva_stats
+    {
+        public double update_ms;
+        public double cascade_ms;
+        public double animate_ms;
+        public double boxes_ms;
+        public double layout_ms;
+        public double paint_ms;
+        public ulong updates;
+        public uint elements;
+        public uint boxes;
+        public uint draws;
+        public uint textures;
+        public uint texture_cache_hits;
+        public uint texture_cache_misses;
+        public ulong cascade_elements;
+        public ulong cascade_pseudos;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct weva_binding_source
     {
         public void* user;
@@ -246,7 +266,7 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 29;
+        public const int WEVA_ABI_VERSION_MINOR = 30;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -313,6 +333,10 @@ namespace Weva.Native
         public static extern nuint weva_document_cursor(System.IntPtr doc, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_document_cursor_at(System.IntPtr doc, double x, double y, byte* buffer, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint weva_document_element_at_devtools(System.IntPtr doc, double x, double y);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void weva_document_stats(System.IntPtr doc, weva_stats* @out);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_accepts_pointer(System.IntPtr doc, double x, double y);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

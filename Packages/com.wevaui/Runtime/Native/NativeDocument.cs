@@ -234,6 +234,28 @@ namespace Weva.Native
             return ReadString((buffer, capacity) => WevaNative.weva_document_cursor_at(Handle, x, y, buffer, capacity));
         }
 
+        /// <summary>
+        /// Engine counters for a profiler or stats window: the last update's stage
+        /// timings in milliseconds, element/box/draw/texture counts, the last paint
+        /// pass's texture-cache hits and misses, and the cascade's running totals
+        /// (read the difference between frames).
+        /// </summary>
+        public weva_stats Stats()
+        {
+            weva_stats stats;
+            WevaNative.weva_document_stats(Handle, &stats);
+            return stats;
+        }
+
+        /// <summary>
+        /// The element drawn at a point, for an inspector: unlike <see cref="ElementAt"/>,
+        /// <c>pointer-events: none</c> and <c>visibility: hidden</c> hide nothing from it.
+        /// </summary>
+        public uint ElementAtForDevTools(double x, double y)
+        {
+            return WevaNative.weva_document_element_at_devtools(Handle, x, y);
+        }
+
         /// <summary>The directory relative url() and @font-face sources resolve against.</summary>
         public void SetBasePath(string path)
         {

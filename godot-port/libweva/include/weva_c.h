@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 29
+#define WEVA_ABI_VERSION_MINOR 30
 
 uint32_t weva_abi_version(void);
 
@@ -531,6 +531,31 @@ weva_element_t weva_document_element_at(weva_document_t doc, double x, double y)
 size_t weva_document_cursor(weva_document_t doc, char* buffer, size_t capacity);
 size_t weva_document_cursor_at(weva_document_t doc, double x, double y, char* buffer,
                                size_t capacity);
+
+/* A hit test for tooling: like element_at, but `pointer-events: none` and
+ * `visibility: hidden` do not hide anything from it, so an inspector can
+ * pick what is drawn under the pointer rather than what would receive a
+ * click. Modal inertness is not applied either. Available since ABI minor
+ * 30. */
+weva_element_t weva_document_element_at_devtools(weva_document_t doc, double x, double y);
+
+/* Engine counters for a host's profiler or stats window. Timings are the
+ * last update's, in milliseconds, by stage (a stage that did not run is 0);
+ * the cache figures are the last paint pass's; the cascade counts run since
+ * the document was created, so a host reads the difference between frames.
+ * Available since ABI minor 30. */
+typedef struct weva_stats {
+    double update_ms;
+    double cascade_ms, animate_ms, boxes_ms, layout_ms, paint_ms;
+    uint64_t updates;                 /* updates so far */
+    uint32_t elements;                /* elements in the document */
+    uint32_t boxes;                   /* boxes in the layout tree, anonymous, line and text boxes included */
+    uint32_t draws;                   /* draw commands published */
+    uint32_t textures;                /* textures the host holds for this document */
+    uint32_t texture_cache_hits, texture_cache_misses;
+    uint64_t cascade_elements, cascade_pseudos;   /* styles computed since creation */
+} weva_stats;
+void weva_document_stats(weva_document_t doc, weva_stats* out);
 
 /* Whether document content or an open dropdown accepts this point. Unlike
  * element_at, this includes dropdown rows outside the DOM box tree. Honors

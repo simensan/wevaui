@@ -2116,6 +2116,9 @@ struct weva_document {
     // Geometry-only passes already propagate paint input versions. Keep the
     // publication request separate from structural/layout invalidation.
     bool paint_pending = false;
+    // The counters weva_document_stats hands out; the timings are stamped
+    // by the update itself.
+    weva_stats stats{};
     // `@import`s that could not be read, for the CSS diagnostics.
     std::vector<std::string> missing_imports;
     // How many `position: sticky` boxes the last sticky pass found; -1 until
@@ -3995,13 +3998,31 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     const auto now = [] { return std::chrono::steady_clock::now(); };
     auto t0 = now();
     BufferedUpdateSample sample(buffered_update_trace(), t0);
+    // The stage timings a host's stats window reads (weva_document_stats):
+    // the last update's, zeroed here and stamped by each lap. Five clock
+    // reads per update, which is nothing next to what they measure.
+    struct StatsScope {
+        weva_document* d;
+        std::chrono::steady_clock::time_point start;
+        explicit StatsScope(weva_document* doc_) : d(doc_), start(std::chrono::steady_clock::now()) {
+            d->stats.cascade_ms = d->stats.animate_ms = d->stats.boxes_ms = d->stats.layout_ms = d->stats.paint_ms = 0;
+        }
+        ~StatsScope() {
+            d->stats.update_ms =
+                std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+            ++d->stats.updates;
+        }
+    } stats_scope(doc);
     const auto lap = [&](const char* what) {
-        if (!stage_log && !sample.trace) return;
         const auto t = now();
         const double elapsed = std::chrono::duration<double, std::milli>(t - t0).count();
-        if (sample.trace) {
-            const char* names[] = {"cascade", "animate", "boxes", "layout", "paint"};
-            for (size_t i = 0; i < 5; ++i) if (std::strcmp(what, names[i]) == 0) sample.entry.stages[i] += elapsed;
+        const char* names[] = {"cascade", "animate", "boxes", "layout", "paint"};
+        double* slots[] = {&doc->stats.cascade_ms, &doc->stats.animate_ms, &doc->stats.boxes_ms,
+                           &doc->stats.layout_ms, &doc->stats.paint_ms};
+        for (size_t i = 0; i < 5; ++i) {
+            if (std::strcmp(what, names[i]) != 0) continue;
+            *slots[i] += elapsed;
+            if (sample.trace) sample.entry.stages[i] += elapsed;
         }
         if (stage_log) {
             std::fprintf(stderr, "  %-12s %7.3f ms\n", what, elapsed);
@@ -4826,6 +4847,37 @@ size_t weva_document_cursor(weva_document_t doc, char* buffer, size_t capacity) 
     // No pointer over the document: the host's own arrow.
     if (doc->styles.state.hover_chain.empty()) return copy_out("default", buffer, capacity);
     return copy_out(cursor_keyword_at(doc, doc->pointer_x, doc->pointer_y), buffer, capacity);
+}
+
+weva_element_t weva_document_element_at_devtools(weva_document_t doc, double x, double y) {
+    if (!doc) return WEVA_ELEMENT_NONE;
+    HitTestOptions options;
+    options.ignore_pointer_events = true;
+    options.include_hidden = true;
+    const Element* hit = element_at_point(doc->tree, doc->root, x, y, &doc->ctx, options);
+    if (!hit) return WEVA_ELEMENT_NONE;
+    for (size_t i = 0; i < doc->elements.size(); ++i) {
+        if (doc->elements[i] == hit) return static_cast<weva_element_t>(i);
+    }
+    return WEVA_ELEMENT_NONE;
+}
+
+void weva_document_stats(weva_document_t doc, weva_stats* out) {
+    if (!out) return;
+    *out = weva_stats{};
+    if (!doc) return;
+    *out = doc->stats;
+    uint32_t elements = 0;
+    for (const Element* e : doc->elements) if (e) ++elements;
+    out->elements = elements;
+    out->boxes = static_cast<uint32_t>(doc->tree.size());
+    out->draws = static_cast<uint32_t>(doc->draw_views.size());
+    out->textures = static_cast<uint32_t>(doc->textures.size());
+    out->texture_cache_hits = static_cast<uint32_t>(doc->textures.hits());
+    out->texture_cache_misses = static_cast<uint32_t>(doc->textures.misses());
+    const auto& work = doc->styles.engine.work_profile();
+    out->cascade_elements = work.elements;
+    out->cascade_pseudos = work.pseudos;
 }
 
 weva_element_t weva_document_element_at(weva_document_t doc, double x, double y) {

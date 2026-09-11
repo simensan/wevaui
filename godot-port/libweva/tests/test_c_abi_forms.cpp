@@ -983,6 +983,48 @@ void test_abi_range_click_at_edge() {
     }
 }
 
+// Minor 30: engine counters for a stats window, and the hit test an
+// inspector wants -- one that pointer-events: none and visibility: hidden do
+// not hide anything from.
+void test_abi_stats_and_devtools_hit() {
+    Doc doc("html, body { margin: 0 } div { width: 100px; height: 40px; background: #123 }"
+            " #n { pointer-events: none } #h { visibility: hidden }",
+            "<div id=a></div><div id=n></div><div id=h></div>");
+    weva_stats st{};
+    weva_document_stats(doc.d, &st);
+    CHECK(st.updates == 1);
+    CHECK(st.elements >= 5);       // html, head?, body, three divs
+    CHECK(st.boxes >= 4);
+    CHECK(st.draws >= 1);          // #a's fill at least; #h draws nothing
+    CHECK(st.update_ms >= 0 && st.cascade_ms >= 0 && st.layout_ms >= 0 && st.paint_ms >= 0);
+    CHECK(st.cascade_elements >= 5);
+    // A settled update still counts, and touches no stage.
+    weva_document_update(doc.d, 0);
+    weva_document_stats(doc.d, &st);
+    CHECK(st.updates == 2);
+    // The stages of an update that restyled: a class flip recascades and repaints.
+    weva_document_add_css(doc.d, "#a { background: #456 }", 23);
+    weva_document_update(doc.d, 0);
+    weva_stats after{};
+    weva_document_stats(doc.d, &after);
+    CHECK(after.updates == 3);
+    CHECK(after.cascade_elements > st.cascade_elements);
+
+    const weva_element_t body = weva_document_query(doc.d, "body");
+    const weva_element_t n = weva_document_query(doc.d, "#n");
+    const weva_element_t h = weva_document_query(doc.d, "#h");
+    // A click over #n lands on the body; over #h the same, since hidden
+    // boxes take no hits. The inspector gets the element that is there.
+    CHECK(weva_document_element_at(doc.d, 50, 60) == body);
+    CHECK(weva_document_element_at_devtools(doc.d, 50, 60) == n);
+    CHECK(weva_document_element_at(doc.d, 50, 100) == body);
+    CHECK(weva_document_element_at_devtools(doc.d, 50, 100) == h);
+    CHECK(weva_document_element_at_devtools(doc.d, 50, 20) == weva_document_query(doc.d, "#a"));
+    CHECK(weva_document_element_at_devtools(nullptr, 50, 20) == WEVA_ELEMENT_NONE);
+    weva_document_stats(nullptr, &st);
+    CHECK(st.updates == 0 && st.boxes == 0);
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

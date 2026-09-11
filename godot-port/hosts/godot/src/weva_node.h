@@ -146,6 +146,11 @@ public:
     bool get_follow_css_cursor() const;
     int32_t _get_cursor_shape(const godot::Vector2& at_position) const override;
 
+    // Engine counters (weva_document_stats) as a Dictionary: update_ms and the
+    // stage timings of the last update, element/box/draw/texture counts, the
+    // last paint pass's texture-cache hits and misses, the cascade's totals.
+    godot::Dictionary get_stats() const;
+
     // ---- Data binding ---------------------------------------------------
     //
     // What a script needs to drive a document: change what it says, change how

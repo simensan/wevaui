@@ -150,6 +150,7 @@ public:
         size_t elements = 0, pseudos = 0;
     };
     void report_work_profile() const;
+    const WorkProfile& work_profile() const { return work_profile_; }
     void invalidate_cache() { shape_cache_.clear(); }
 
     // Whether any compiled selector can match on something other than the

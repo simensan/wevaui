@@ -155,6 +155,15 @@ An `@import` in a stylesheet is fetched through the same `AssetReader` and
 the way its images do. A sheet the reader cannot return is dropped and named
 in `CssDiagnostics`.
 
+## Counters and the inspector's hit test (ABI minor 30)
+
+`NativeDocument.Stats()` returns the engine counters for a profiler or stats
+window: the last update's stage timings (cascade, animate, boxes, layout,
+paint) and total in milliseconds, element/box/draw/texture counts, the paint
+pass's texture-cache hits and misses, and the cascade's running totals (diff
+them between frames). `ElementAtForDevTools(x, y)` is the hit test an Elements
+panel wants: `pointer-events: none` and `visibility: hidden` hide nothing from it.
+
 ## The mouse cursor (ABI minor 29)
 
 `NativeDocument.Cursor` is the CSS `cursor` under the pointer as the keyword the

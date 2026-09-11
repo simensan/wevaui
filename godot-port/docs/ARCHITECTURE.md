@@ -863,3 +863,11 @@ the keyword it settles to (`auto` resolved to `text`, `pointer` or `default`; a
 The Godot node answers Godot's cursor-shape query with it (`follow_css_cursor`,
 on by default); the Unity wrapper exposes `NativeDocument.Cursor` for the host
 to map.
+
+ABI minor 30 adds `weva_document_stats(doc, &stats)` -- the last update's stage
+timings, element/box/draw/texture counts, the paint pass's texture-cache hits
+and misses and the cascade's running totals, for a host's stats window (Godot
+`get_stats()`, Unity `NativeDocument.Stats()`) -- and
+`weva_document_element_at_devtools(doc, x, y)`, the hit test an inspector wants:
+`pointer-events: none`, `visibility: hidden` and modal inertness hide nothing
+from it (`HitTestOptions` on `element_at_point`).

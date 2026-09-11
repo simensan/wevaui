@@ -3564,11 +3564,13 @@ unless noted):
    versions exist, none per element.
 6. **Box-tree enumeration** including anonymous, line and text boxes; the
    layout dump is the only path and it is a JSON string.
-7. **Engine counters** — cascade and paint cache hits, per-stage timings,
-   box and element counts (the DevTools stats window is a no-op without them).
+7. **Engine counters** — DONE 2026-09-11, ABI minor 30 `weva_document_stats`
+   (stage timings, element/box/draw/texture counts, texture-cache hits and
+   misses, cascade totals; Godot `get_stats()`, Unity `NativeDocument.Stats()`).
 8. **Source positions** — neither engine has them; if jump-to-source is
    wanted the core must add it (nothing to match).
-9. **A devtools hit test** that ignores `pointer-events` and `visibility`.
+9. **A devtools hit test** — DONE 2026-09-11, ABI minor 30
+   `weva_document_element_at_devtools` (Unity `ElementAtForDevTools`).
 10. Capture-phase event interception (one tool; `element_at` on the pointer
     is the substitute) — keep host-side.
 11. Per-stylesheet replacement with origin and ordering (hot reload) —

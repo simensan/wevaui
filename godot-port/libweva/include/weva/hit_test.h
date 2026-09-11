@@ -27,11 +27,22 @@ struct LayoutContext;
 const Element* element_at_point(const BoxTree& tree, BoxId root, double x, double y,
                                 const LayoutContext* context = nullptr);
 
+// What a tool wants that a click does not: boxes under `pointer-events: none`
+// and `visibility: hidden` are hit like any other.
+struct HitTestOptions {
+    bool ignore_pointer_events = false;
+    bool include_hidden = false;
+};
+const Element* element_at_point(const BoxTree& tree, BoxId root, double x, double y,
+                                const LayoutContext* context, HitTestOptions options);
+
 // The same search, stopping at the box rather than the element that owns it.
 // A wheel needs this: what it scrolls is the nearest scroll container ABOVE
 // the point, which is a walk up the box tree from here.
 BoxId box_at_point(const BoxTree& tree, BoxId root, double x, double y,
                    const LayoutContext* context = nullptr);
+BoxId box_at_point(const BoxTree& tree, BoxId root, double x, double y,
+                   const LayoutContext* context, HitTestOptions options);
 
 // Undo the box's and its ancestors' CSS transforms, preserving the document
 // layout coordinate system (including scroll). False for a singular transform.
