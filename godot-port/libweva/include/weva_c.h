@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 36
+#define WEVA_ABI_VERSION_MINOR 37
 
 uint32_t weva_abi_version(void);
 
@@ -1303,13 +1303,18 @@ size_t weva_document_changed_elements(weva_document_t doc, weva_element_change* 
 uint64_t weva_document_structure_version(weva_document_t doc);
 
 /* `@font-face` rules from compiled stylesheet branches, one per line as
- * "family<TAB>source<TAB>font-weight<TAB>font-style" in source order; the last
- * two fields are the descriptor texts and may be empty. The source is the
- * first url() entry resolved against the document base path exactly like an
- * image URL, so a host loads it through the same asset convention, then calls
- * weva_document_register_font_family with the face it made. The core never
- * loads fonts itself. Same buffer convention as css_diagnostics; replaced on
- * set_css and viewport recompilation. Available since ABI minor 25. */
+ * "family<TAB>source<TAB>font-weight<TAB>font-style<TAB>sources" in source
+ * order; the weight and style fields are the descriptor texts and may be
+ * empty. The source is the first url() entry resolved against the document
+ * base path exactly like an image URL, so a host loads it through the same
+ * asset convention, then calls weva_document_register_font_family with the
+ * face it made; it is empty for a rule with only local() entries. The fifth
+ * field (since ABI minor 37) is every src entry in the author's order,
+ * separated by '|': "url:<resolved path>" or "local:<font name>" -- a host
+ * tries them first to last and takes the first it can load, a local() name
+ * being an installed font (CSS Fonts 4 §4.3). The core never loads fonts
+ * itself. Same buffer convention as css_diagnostics; replaced on set_css and
+ * viewport recompilation. Available since ABI minor 25. */
 size_t weva_document_font_faces(weva_document_t doc, char* buffer, size_t capacity);
 
 /* The layout dump the differential oracle compares (docs/ORACLE.md): the

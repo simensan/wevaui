@@ -1216,8 +1216,12 @@ then re-enabling engine fonts preserve the registrations. Families sharing a
 resource share one change-signal connection. Registered families use their own
 fallback chains; registration does not modify the resource's RID array.
 
-This API supplies native resources to CSS family selection. CSS `@font-face`
-loading remains unsupported.
+This API supplies native resources to CSS family selection. A stylesheet's
+`@font-face` rules load on their own (ABI minor 25; see "font face" in the
+test scenes): each `src` entry is tried in the author's order, a `url()`
+through the asset path and a `local("Name")` as an installed font found the
+way Godot's `SystemFont` finds one (ABI minor 37); the game's own
+`register_font_family` wins over a rule for the same family.
 
 
 ### Cancelable dialog close requests (current source)

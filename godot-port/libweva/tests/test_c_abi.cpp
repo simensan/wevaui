@@ -344,7 +344,13 @@ void test_abi_stylesheet_replacement() {
                           "@font-face{font-family:Rel;src:url(../shared/rel.ttf)}";
         CHECK(weva_document_set_css(document, css, std::strlen(css)) == WEVA_OK);
         CHECK(weva_document_css_diagnostics(document, nullptr, 0) == 0);
-        const std::string expected = "Camp Display\tui/fonts/camp.ttf\t700\titalic\nMono\tui/mono.ttf\t\t\nRel\tui/../shared/rel.ttf\t\t";
+        // The fifth field is the whole src list in order; a local()-only rule
+        // is listed with an empty source, for the host to try the name.
+        const std::string expected =
+            "Camp Display\tui/fonts/camp.ttf\t700\titalic\tlocal:Camp|url:ui/fonts/camp.ttf|url:ui/camp.woff2\n"
+            "Mono\tui/mono.ttf\t\t\turl:ui/mono.ttf\n"
+            "NoSource\t\t\t\tlocal:Nope\n"
+            "Rel\tui/../shared/rel.ttf\t\t\turl:ui/../shared/rel.ttf";
         CHECK(weva_document_font_faces(document, nullptr, 0) == expected.size());
         std::vector<char> text(expected.size() + 1);
         CHECK(weva_document_font_faces(document, text.data(), text.size()) == expected.size());
@@ -358,7 +364,12 @@ void test_abi_stylesheet_replacement() {
         const size_t expanded = weva_document_font_faces(document, nullptr, 0);
         text.resize(expanded + 1);
         weva_document_font_faces(document, text.data(), text.size());
-        CHECK(std::string(text.data()) == "Camp Display\tui/fonts/camp.ttf\t700\titalic\nMono\tui/mono.ttf\t\t\nWide\t/abs/wide.ttf\t\t\nRel\tui/../shared/rel.ttf\t\t");
+        CHECK(std::string(text.data()) ==
+              "Camp Display\tui/fonts/camp.ttf\t700\titalic\tlocal:Camp|url:ui/fonts/camp.ttf|url:ui/camp.woff2\n"
+              "Mono\tui/mono.ttf\t\t\turl:ui/mono.ttf\n"
+              "NoSource\t\t\t\tlocal:Nope\n"
+              "Wide\t/abs/wide.ttf\t\t\turl:/abs/wide.ttf\n"
+              "Rel\tui/../shared/rel.ttf\t\t\turl:ui/../shared/rel.ttf");
         CHECK(weva_document_set_css(document, nullptr, 0) == WEVA_OK);
         CHECK(weva_document_font_faces(document, small, sizeof(small)) == 0);
         weva_document_destroy(document);

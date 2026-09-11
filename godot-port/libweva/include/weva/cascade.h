@@ -133,13 +133,16 @@ public:
     // `@font-face` rules in compiled stylesheet branches, in source order. The
     // core does not load fonts: a host reads these, loads each source through
     // its own font machinery and registers the family. `src` is the first
-    // url() entry as written (unresolved, unquoted); local() entries are
-    // skipped. `weight` and `style` are the descriptor texts, empty when absent.
+    // url() entry as written (unresolved, unquoted); `sources` is every entry
+    // in the author's order, "local:<name>" for local() and "url:<path>" for
+    // url(), which a host tries first to last (CSS Fonts 4 §4.3). `weight`
+    // and `style` are the descriptor texts, empty when absent.
     struct FontFace {
         std::string family;
         std::string src;
         std::string weight;
         std::string style;
+        std::vector<std::string> sources;
     };
     const std::vector<FontFace>& font_faces() const { return font_faces_; }
 

@@ -930,3 +930,10 @@ left)`: the values `env(safe-area-inset-*)` resolve to, per document (the env()
 table moved from a process singleton into the cascade engine). Godot
 `set_safe_area_insets()` / `follow_display_safe_area`, Unity
 `NativeDocument.SetSafeAreaInsets` / `WevaNativeDocument.FollowScreenSafeArea`.
+
+ABI minor 37 extends `weva_document_font_faces` with a fifth field: the whole
+`src` list in the author's order, `url:<resolved path>` and `local:<name>`
+entries separated by `|`, and lists a rule with only `local()` sources (its
+source field empty). Both hosts try the entries first to last, a `local()`
+name being an installed font (Godot `OS.get_system_font_path`, Unity
+`Font.GetOSInstalledFontNames` + `CreateDynamicFontFromOSFont`).

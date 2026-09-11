@@ -8417,7 +8417,17 @@ size_t weva_document_font_faces(weva_document_t doc, char* buffer, size_t capaci
     std::string text;
     for (const auto& face : doc->styles.engine.font_faces()) {
         if (!text.empty()) text += '\n';
-        text += face.family + '\t' + doc->images.resolve(face.src) + '\t' + face.weight + '\t' + face.style;
+        text += face.family + '\t' + (face.src.empty() ? std::string() : doc->images.resolve(face.src)) + '\t' +
+                face.weight + '\t' + face.style + '\t';
+        // The ordered source list: a url() resolved like the first one, a
+        // local() by the name the author wrote.
+        bool first = true;
+        for (const std::string& s : face.sources) {
+            if (!first) text += '|';
+            first = false;
+            if (s.compare(0, 4, "url:") == 0) text += "url:" + doc->images.resolve(s.substr(4));
+            else text += s;
+        }
     }
     if (buffer && capacity) {
         const size_t n = std::min(text.size(), capacity - 1);

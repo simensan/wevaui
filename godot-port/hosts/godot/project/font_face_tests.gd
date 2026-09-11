@@ -103,5 +103,28 @@ func _ready() -> void:
 	doc.update_document()
 	_check(width(doc, "#a") == mono_width, "and restoring it registers the family again")
 
+	# CSS Fonts 4 §4.3: `local()` names an installed font, tried in the
+	# author's order with the url() entries; a name nobody has falls through.
+	var through := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: local("Weva No Such Font 9f3"), url(fonts/WevaMonoMonospace.ttf); } #a { font-family: "Camp Mono"; }')
+	_check(width(through, "#a") == mono_width, "a local() nobody has falls through to the url() after it")
+	var only_missing := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: local("Weva No Such Font 9f3"); } #a { font-family: "Camp Mono"; }')
+	_check(width(only_missing, "#a") == theme_width, "a local()-only rule nobody has warns and falls back")
+	var installed := OS.get_system_fonts()
+	var local_name := ""
+	var local_path := ""
+	for candidate in installed:
+		local_path = OS.get_system_font_path(candidate)
+		if not local_path.is_empty():
+			local_name = candidate
+			break
+	if local_name.is_empty():
+		print("  (no installed font resolvable through OS.get_system_font_path; local() load not measured here)")
+	else:
+		var system := FontFile.new()
+		_check(system.load_dynamic_font(local_path) == OK, "the installed font loads natively: " + local_name)
+		var reference := make_doc(SIZES + ' #a { font-family: "Camp Mono"; }', "", system)
+		var local_doc := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: local("' + local_name + '"); } #a { font-family: "Camp Mono"; }')
+		_check(width(local_doc, "#a") == width(reference, "#a"), "local() loads the installed font by name: " + local_name)
+
 	print("godot font face: %d checks, %d failures" % [checks, failures])
 	get_tree().quit(1 if failures > 0 else 0)

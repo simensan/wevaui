@@ -169,6 +169,26 @@ Ref<Font> load_css_font(String path) {
     return file;
 }
 
+// The ordered source list of a @font-face line ("url:<path>|local:<name>"):
+// the first entry that loads wins. A local() name is an installed font,
+// found the way Godot's own SystemFont finds one.
+Ref<Font> load_css_sources(const String& sources) {
+    for (const String& entry : sources.split("|", false)) {
+        if (entry.begins_with("url:")) {
+            const Ref<Font> font = load_css_font(entry.substr(4));
+            if (font.is_valid()) return font;
+        } else if (entry.begins_with("local:")) {
+            OS* os = OS::get_singleton();
+            if (!os) continue;
+            const String path = os->get_system_font_path(entry.substr(6));
+            if (path.is_empty()) continue;
+            const Ref<Font> font = load_css_font(path);
+            if (font.is_valid()) return font;
+        }
+    }
+    return Ref<Font>();
+}
+
 // The CSS weight a stored strength stands for (see register_font_face).
 int css_weight(int strength) { return strength == 2 ? 800 : strength == 1 ? 700 : 400; }
 
@@ -198,16 +218,21 @@ void WevaDocument::sync_css_font_faces() {
     std::map<String, Wanted> wanted;
     for (const String& line : String::utf8(text.data()).split("\n", false)) {
         const PackedStringArray fields = line.split("\t");
-        if (fields.size() < 2 || fields[0].is_empty() || fields[1].is_empty()) continue;
+        if (fields.size() < 2 || fields[0].is_empty()) continue;
+        // The ordered source list (ABI minor 37); an older core lists the
+        // first url() only.
+        const String sources = fields.size() > 4 && !fields[4].is_empty() ? fields[4]
+                               : fields[1].is_empty() ? String() : "url:" + fields[1];
+        if (sources.is_empty()) continue;
         const String key = fields[0].strip_edges().to_lower();
         if (key.is_empty() || key.contains(",") || key.contains("\"") || key.contains("'")) continue;
         const String weight = fields.size() > 2 ? fields[2].strip_edges().to_lower() : String();
         const String style = fields.size() > 3 ? fields[3].strip_edges().to_lower() : String();
         const bool normal = normal_face(weight, style);
         auto it = wanted.find(key);
-        if (it == wanted.end()) it = wanted.emplace(key, Wanted{fields[0].strip_edges(), fields[1], normal, {}}).first;
+        if (it == wanted.end()) it = wanted.emplace(key, Wanted{fields[0].strip_edges(), sources, normal, {}}).first;
         else if (normal && !it->second.normal) {
-            it->second.path = fields[1];
+            it->second.path = sources;
             it->second.normal = true;
         }
         if (!normal) {
@@ -215,7 +240,7 @@ void WevaDocument::sync_css_font_faces() {
             const int number = weight == "bold" || weight == "bolder" ? 700 : weight.is_empty() || weight == "normal" ? 400 : weight.to_int();
             const int strength = number >= 800 ? 2 : number >= 600 ? 1 : 0;
             const bool italic = style.begins_with("italic") || style.begins_with("oblique");
-            if (strength || italic) it->second.variants.emplace(std::make_pair(strength, italic), fields[1]);
+            if (strength || italic) it->second.variants.emplace(std::make_pair(strength, italic), sources);
         }
     }
     // Drop CSS registrations the stylesheet no longer declares, or that the
@@ -250,7 +275,7 @@ void WevaDocument::sync_css_font_faces() {
         auto existing = css_font_faces_.find(entry.first);
         if (existing == css_font_faces_.end() && family_fonts_.count(entry.first)) continue; // the game's own registration wins
         if (existing == css_font_faces_.end() || existing->second.path != entry.second.path) {
-            const Ref<Font> font = load_css_font(entry.second.path);
+            const Ref<Font> font = load_css_sources(entry.second.path);
             if (font.is_null()) {
                 UtilityFunctions::push_warning("Weva CSS: @font-face ", entry.second.family, " could not load ", entry.second.path);
                 continue;
@@ -264,7 +289,7 @@ void WevaDocument::sync_css_font_faces() {
             if (existing->second.variants.count(variant.first)) continue;
             const auto owned = family_variants_.find(entry.first);
             if (owned != family_variants_.end() && owned->second.count(variant.first)) continue; // the game's own face wins
-            const Ref<Font> font = load_css_font(variant.second);
+            const Ref<Font> font = load_css_sources(variant.second);
             if (font.is_null()) {
                 UtilityFunctions::push_warning("Weva CSS: @font-face ", entry.second.family, " could not load ", variant.second);
                 continue;

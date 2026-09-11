@@ -58,6 +58,28 @@ std::vector<std::string_view> split_src_entries(std::string_view value) {
     return entries;
 }
 
+// Every src entry in order: "url:<path>" or "local:<name>", unquoted.
+std::vector<std::string> font_sources(std::string_view value) {
+    std::vector<std::string> out;
+    for (std::string_view entry : split_src_entries(value)) {
+        entry = descriptor_trim(entry);
+        std::string head(entry.substr(0, std::min<size_t>(6, entry.size())));
+        for (char& c : head) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        const bool url = head.compare(0, 4, "url(") == 0;
+        const bool local = head.compare(0, 6, "local(") == 0;
+        if (!url && !local) continue;
+        const size_t open = url ? 3 : 5;
+        const size_t close = entry.find(')', open);
+        if (close == std::string_view::npos) continue;
+        std::string_view inner = descriptor_trim(entry.substr(open + 1, close - open - 1));
+        if (inner.size() >= 2 && (inner.front() == '"' || inner.front() == '\'') && inner.back() == inner.front())
+            inner = descriptor_trim(inner.substr(1, inner.size() - 2));
+        if (inner.empty()) continue;
+        out.push_back((url ? "url:" : "local:") + std::string(inner));
+    }
+    return out;
+}
+
 std::string first_font_url(std::string_view value) {
     for (std::string_view entry : split_src_entries(value)) {
         entry = descriptor_trim(entry);
@@ -757,16 +779,20 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                             if (face.family.empty()) face.family = std::string(unquote_family(value));
                         } else if (d.property == "src") {
                             if (face.src.empty()) face.src = first_font_url(value);
+                            if (face.sources.empty()) face.sources = font_sources(value);
                         } else if (d.property == "font-weight") {
                             if (face.weight.empty()) face.weight = std::string(value);
                         } else if (d.property == "font-style") {
                             if (face.style.empty()) face.style = std::string(value);
                         }
                     }
-                    if (!face.family.empty() && !face.src.empty()) {
+                    // A rule with only local() sources is still a rule: the host
+                    // may have that font installed.
+                    if (!face.family.empty() && !face.sources.empty()) {
                         const bool seen = std::any_of(font_faces_.begin(), font_faces_.end(), [&](const FontFace& f) {
                             return f.family == face.family && f.src == face.src &&
-                                   f.weight == face.weight && f.style == face.style;
+                                   f.weight == face.weight && f.style == face.style &&
+                                   f.sources == face.sources;
                         });
                         if (!seen) font_faces_.push_back(std::move(face));
                     }

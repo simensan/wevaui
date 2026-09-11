@@ -508,6 +508,11 @@ node can follow the display's safe area and the Unity component the screen's.
 Gates: core 505,861 / 0, Unity Native 95 cases, Godot scenes green on both
 platforms on the rebuilt libraries.
 
+And `local()` font sources (ABI minor 37): a `@font-face` `src` list is tried
+in the author's order on both hosts, a `local("Name")` being an installed
+font. Gates: core 505,861 / 0, 97 cases: 95 pass, Godot font-face and host
+scenes green on both platforms.
+
 ## Next work
 
 1. The budget evaluator now annotates a whole-frame failure whose UI-disabled
@@ -518,9 +523,11 @@ platforms on the rebuilt libraries.
 2. Diagnose the intermittent whole-frame stalls and verify the eventual release
    candidate at target resolutions and on lower-end hardware.
 3. Resolve remaining game-relevant CSS/text/form behavior: animation timing and
-   composition edge cases, `unicode-range`/`local()` font sources, multicolumn
-   paragraph fragmentation, vertical writing, bidi caret behavior and
-   dialog/input lifecycle.
+   composition edge cases, `unicode-range` font sources (`local()` landed
+   2026-09-11, ABI minor 37: a `src` list is tried in order on both hosts and
+   a `local("Name")` is an installed font), multicolumn paragraph
+   fragmentation, vertical writing, bidi caret behavior and dialog/input
+   lifecycle.
 4. Verify physical IME, touch/gamepad and accessibility, platform exports and
    longer memory/lifecycle behavior. Stock-engine Unicode safety is covered for
    document text on Windows and Linux; stock exports and native-control text

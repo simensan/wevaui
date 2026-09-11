@@ -70,7 +70,11 @@ how `@font-face` data arrives through the document's asset reader); fallback
 faces answer per code point for glyphs the primary lacks, and a glyph id
 carries which face it came from. Real bold and italic faces are registered as
 variants. `SyncCssFontFaces` reads the stylesheet's `@font-face` rules from
-the core and registers them, as the Godot host's `sync_css_font_faces` does.
+the core and registers them, as the Godot host's `sync_css_font_faces` does:
+each `src` entry in the author's order, a `url()` through the asset reader
+and a `local("Name")` as an installed font (`Font.GetOSInstalledFontNames`,
+`CreateDynamicFontFromOSFont`), the first that loads serving the face (ABI
+minor 37).
 
 What FontEngine gives and does not give:
 

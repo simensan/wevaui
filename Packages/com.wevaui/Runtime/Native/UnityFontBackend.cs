@@ -203,7 +203,7 @@ namespace Weva.Native
         {
             if (doc == null) throw new ArgumentNullException(nameof(doc));
             var wanted = new Dictionary<string, (string Family, string Normal, Dictionary<int, string> Variants)>();
-            foreach ((string family, string source, string weight, string style) in doc.FontFaces())
+            foreach ((string family, string firstUrl, string weight, string style, string source) in doc.FontFaces())
             {
                 string key = family.ToLowerInvariant();
                 if (key.Length == 0 || key.Contains(",") || key.Contains("\"") || key.Contains("'")) continue;
@@ -232,10 +232,12 @@ namespace Weva.Native
                     // Only variant faces declared: the first serves as the family's face.
                     foreach (string v in kv.Value.Variants.Values) { normalSource = v; break; }
                 }
+                string inner = LastError;
                 ulong face = AdoptCssSource(doc, normalSource);
                 if (face == 0)
                 {
-                    LastError = "@font-face " + kv.Value.Family + " could not load " + normalSource;
+                    LastError = "@font-face " + kv.Value.Family + " could not load " + normalSource +
+                        (LastError != null && LastError != inner ? " (" + LastError + ")" : "");
                     continue;
                 }
                 if (!_cssFamilies.TryGetValue(kv.Key, out ulong current) || current != face)
@@ -254,7 +256,113 @@ namespace Weva.Native
             return served;
         }
 
-        private ulong AdoptCssSource(NativeDocument doc, string source)
+        /// <summary>
+        /// The ordered src list of a rule ("url:&lt;path&gt;|local:&lt;name&gt;"): the
+        /// first entry that loads wins. A local() name is an installed font,
+        /// loaded the way the C# text path loads system fonts.
+        /// </summary>
+        private ulong AdoptCssSource(NativeDocument doc, string sources)
+        {
+            if (string.IsNullOrEmpty(sources)) return 0;
+            foreach (string entry in sources.Split('|'))
+            {
+                ulong face = 0;
+                if (entry.StartsWith("url:")) face = AdoptCssUrl(doc, entry.Substring(4));
+                else if (entry.StartsWith("local:")) face = AdoptLocalFont(entry.Substring(6));
+                else face = AdoptCssUrl(doc, entry);
+                if (face != 0) return face;
+            }
+            return 0;
+        }
+
+        private ulong AdoptLocalFont(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return 0;
+            string key = "local:" + name;
+            if (_cssFaces.TryGetValue(key, out ulong cached)) return cached;
+            string[] installed;
+            try { installed = Font.GetOSInstalledFontNames(); }
+            catch (Exception ex) { LastError = ex.Message; return 0; }
+            bool present = false;
+            foreach (string candidate in installed)
+            {
+                if (string.Equals(candidate, name, StringComparison.OrdinalIgnoreCase)) { present = true; break; }
+            }
+            if (!present) return 0;
+            // TextCore knows where the OS keeps the file (what TMP's
+            // CreateFontAsset(familyName, styleName) uses); its bytes go through
+            // the same path a url() source takes. The dynamic-font route is the
+            // fallback for a reference the engine cannot give.
+            ulong face = 0;
+            if (TrySystemFontFile(name, "Regular", out string filePath, out int faceIndex) ||
+                TrySystemFontFile(name, null, out filePath, out faceIndex))
+            {
+                try
+                {
+                    byte[] bytes = System.IO.File.ReadAllBytes(filePath);
+                    if (bytes.Length > 0) face = Adopt(bytes, faceIndex, name);
+                }
+                catch (Exception ex)
+                {
+                    LastError = ex.Message;
+                }
+            }
+            if (face == 0)
+            {
+                Font font = Font.CreateDynamicFontFromOSFont(name, 16);
+                if (font == null) return 0;
+                face = Adopt(font);
+            }
+            if (!Activate(_faces[face].Sources[0]))
+            {
+                _faces.Remove(face);
+                return 0;
+            }
+            _cssFaces[key] = face;
+            return face;
+        }
+
+        // FontEngine.TryGetSystemFontReference and its FontReference struct are
+        // internal in this Unity (TextMeshPro reaches them through
+        // InternalsVisibleTo), so they are found by reflection once; when
+        // absent the dynamic-font route above still serves.
+        private static bool _systemFontProbed;
+        private static MethodInfo _systemFontReference;
+        private static FieldInfo _systemFontPath, _systemFontIndex;
+
+        private static bool TrySystemFontFile(string name, string style, out string path, out int index)
+        {
+            path = null;
+            index = 0;
+            if (!_systemFontProbed)
+            {
+                _systemFontProbed = true;
+                Type reference = typeof(FontEngine).Assembly.GetType("UnityEngine.TextCore.LowLevel.FontReference");
+                if (reference != null)
+                {
+                    const BindingFlags any = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+                    _systemFontReference = typeof(FontEngine).GetMethod("TryGetSystemFontReference", any, null,
+                        new[] { typeof(string), typeof(string), reference.MakeByRefType() }, null);
+                    _systemFontPath = reference.GetField("filePath", any);
+                    _systemFontIndex = reference.GetField("faceIndex", any);
+                }
+            }
+            if (_systemFontReference == null || _systemFontPath == null) return false;
+            object[] args = { name, style, null };
+            try
+            {
+                if (!(bool)_systemFontReference.Invoke(null, args) || args[2] == null) return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            path = _systemFontPath.GetValue(args[2]) as string;
+            index = _systemFontIndex != null ? Convert.ToInt32(_systemFontIndex.GetValue(args[2])) : 0;
+            return !string.IsNullOrEmpty(path);
+        }
+
+        private ulong AdoptCssUrl(NativeDocument doc, string source)
         {
             if (string.IsNullOrEmpty(source)) return 0;
             if (_cssFaces.TryGetValue(source, out ulong face)) return face;

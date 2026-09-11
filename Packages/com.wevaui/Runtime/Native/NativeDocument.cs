@@ -422,12 +422,15 @@ namespace Weva.Native
 
         /// <summary>
         /// The stylesheet's @font-face rules, one per entry: family, source
-        /// (resolved like an image url), font-weight and font-style descriptor
-        /// texts. The host loads and registers them; the core never loads fonts.
+        /// (the first url(), resolved like an image url; empty for a local()-only
+        /// rule), font-weight and font-style descriptor texts, and the whole src
+        /// list in the author's order ("url:&lt;path&gt;" or "local:&lt;name&gt;"
+        /// entries separated by '|'). The host loads and registers them; the core
+        /// never loads fonts.
         /// </summary>
-        public List<(string Family, string Source, string Weight, string Style)> FontFaces()
+        public List<(string Family, string Source, string Weight, string Style, string Sources)> FontFaces()
         {
-            var result = new List<(string, string, string, string)>();
+            var result = new List<(string, string, string, string, string)>();
             nuint needed = WevaNative.weva_document_font_faces(Handle, null, 0);
             if (needed == 0) return result;
             byte[] buffer = new byte[(int)needed + 1];
@@ -440,8 +443,10 @@ namespace Weva.Native
             {
                 if (line.Length == 0) continue;
                 string[] fields = line.Split('\t');
-                if (fields.Length < 2 || fields[0].Length == 0 || fields[1].Length == 0) continue;
-                result.Add((fields[0].Trim(), fields[1], fields.Length > 2 ? fields[2].Trim() : "", fields.Length > 3 ? fields[3].Trim() : ""));
+                if (fields.Length < 2 || fields[0].Length == 0) continue;
+                string sources = fields.Length > 4 && fields[4].Length > 0 ? fields[4] : fields[1].Length > 0 ? "url:" + fields[1] : "";
+                if (sources.Length == 0) continue;
+                result.Add((fields[0].Trim(), fields[1], fields.Length > 2 ? fields[2].Trim() : "", fields.Length > 3 ? fields[3].Trim() : "", sources));
             }
             return result;
         }
