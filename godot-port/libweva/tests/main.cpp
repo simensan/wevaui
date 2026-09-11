@@ -405,6 +405,7 @@ void test_abi_scrollbar_appears();
 void test_abi_scrollbar_drag();
 void test_abi_scrollbar_track_click();
 void test_abi_scrollbar_drag_does_not_click();
+void test_abi_scrollbar_drag_snaps_on_release();
 void test_abi_hidden_is_not_a_scroller();
 void test_abi_scroll_keys();
 void test_abi_scroll_keys_yield();
@@ -980,6 +981,7 @@ int main() {
     test_abi_scrollbar_drag();
     test_abi_scrollbar_track_click();
     test_abi_scrollbar_drag_does_not_click();
+    test_abi_scrollbar_drag_snaps_on_release();
     test_abi_hidden_is_not_a_scroller();
     test_abi_scroll_keys();
     test_abi_scroll_keys_yield();

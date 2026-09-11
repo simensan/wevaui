@@ -5534,6 +5534,23 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
     // neither :hover nor a click.
     if (doc->scroll_drag.element) {
         if (buttons == 0 || input_blocked(doc, doc->scroll_drag.element)) {
+            // CSS Scroll Snap: letting go of the thumb is a scroll-end, so a
+            // snapping container settles onto a position the way it does
+            // after a wheel -- from wherever the thumb left it, animated.
+            const auto& drag = doc->scroll_drag;
+            const BoxId i = buttons == 0 ? box_of(doc, drag.element) : kNoBox;
+            if (i != kNoBox && scroll_snaps(doc->tree[i].style)) {
+                const auto at = doc->scroll.find(drag.element);
+                const double cx = at != doc->scroll.end() ? at->second.first : doc->tree[i].scroll_x;
+                const double cy = at != doc->scroll.end() ? at->second.second : doc->tree[i].scroll_y;
+                double tx = cx, ty = cy;
+                const bool sy = snap_target(doc->tree, i, doc->ctx, true, drag.vertical ? drag.from : cy, cy, &ty);
+                const bool sx = snap_target(doc->tree, i, doc->ctx, false, drag.vertical ? cx : drag.from, cx, &tx);
+                if ((sx || sy) && (tx != cx || ty != cy)) {
+                    doc->snap_animation = {drag.element, cx, cy, tx, ty, 0, true};
+                    doc->pending = worst(doc->pending, Invalidation::Paint);
+                }
+            }
             doc->scroll_drag = weva_document::ScrollDrag{};
         } else {
             double local_x = x, local_y = y;

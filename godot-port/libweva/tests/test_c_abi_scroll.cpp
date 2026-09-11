@@ -434,6 +434,36 @@ void test_abi_scrollbar_drag() {
     CHECK(doc.top("#list") == 100);   // a click on the content scrolls nothing
 }
 
+// Letting go of a dragged thumb settles a snapping container onto a snap
+// position, animated, the way a wheel scroll does when it goes quiet.
+void test_abi_scrollbar_drag_snaps_on_release() {
+    Doc doc("html, body { margin: 0 }"
+            ".list { width: 200px; height: 100px; overflow: auto; scroll-snap-type: y mandatory }"
+            ".row { height: 40px; scroll-snap-align: start }",
+            kListHtml);
+    // The thumb (half the 100px track, two units of scroll per pixel) taken
+    // hold of at y = 25 and dragged 15px: the content is at 30, between the
+    // 0 and 40 snap positions, and stays there while the button is down.
+    weva_document_set_pointer(doc.d, 195, 25, 1);
+    weva_document_update(doc.d, 0);
+    weva_document_set_pointer(doc.d, 195, 40, 1);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 30);
+    weva_document_update(doc.d, 0.3);
+    CHECK(doc.top("#list") == 30);
+    // Let go: the container eases to the nearest position and the document
+    // animates on the way.
+    weva_document_set_pointer(doc.d, 195, 40, 0);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.top("#list") == 30);
+    CHECK(weva_document_is_animating(doc.d) == 1);
+    weva_document_update(doc.d, 0.1);
+    CHECK(doc.top("#list") > 30 && doc.top("#list") < 40);
+    weva_document_update(doc.d, 0.3);
+    CHECK(doc.top("#list") == 40);
+    CHECK(weva_document_is_animating(doc.d) == 0);
+}
+
 // Clicking the track beside the thumb pages along it.
 void test_abi_scrollbar_track_click() {
     Doc doc(kListCss, kListHtml);

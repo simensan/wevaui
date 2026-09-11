@@ -3672,8 +3672,10 @@ an ABI surface), keep host-side (C#), drop.
    (registered; `weva_element_set_scroll` and `scroll_into_view` ease over
    the snap animation's quarter second, the document reports itself
    animating, a wheel/thumb/track/key scroll of that container ends the
-   animation where it is; test_abi_scroll_behavior_smooth). Still open:
-   snapping after a scrollbar-thumb drag.
+   animation where it is; test_abi_scroll_behavior_smooth). Snapping after
+   a scrollbar-thumb drag DONE 2026-09-11 (letting go is a scroll-end: the
+   container eases to the position nearest where the thumb left it;
+   test_abi_scrollbar_drag_snaps_on_release). Item complete.
 9. Small drops: `caret-color` DONE 2026-09-11 (`paint.cpp` caret_color_of), `list-style-image`
    DONE 2026-09-11 (an image marker is an atom sized by the image, outside or
    inside, core ahead: the C# only expands the shorthand), `image-rendering`
