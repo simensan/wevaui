@@ -334,15 +334,29 @@ namespace Weva.Tests.Css.Cascade {
         }
 
         [Test]
-        public void Media_rule_inner_rules_currently_always_apply() {
-            // TODO: once media-query evaluation lands, switch this assertion to depend
-            // on the surface dimensions / capabilities the engine reports.
+        public void Media_rules_evaluate_against_the_default_10000px_surface() {
+            // The one-argument CascadeEngine constructor supplies
+            // MediaContext.Default(10000, 10000) — deliberately larger than any
+            // sensible threshold, so tests written before the evaluator existed
+            // still pass (CascadeEngine.cs says so at the constructor).
+            //
+            // That makes this test easy to misread: the rule below applies
+            // because 10000 >= 9999, NOT because @media is ignored. The second
+            // half proves the difference — a threshold above the default surface
+            // does not apply, which it could not do if the evaluator were absent.
             var doc = Html("<div id=\"x\"></div>");
-            var engine = new CascadeEngine(new[] {
+
+            var applies = new CascadeEngine(new[] {
                 Author("@media (min-width: 9999px) { #x { color: red; } }")
             });
-            var cs = engine.Compute(doc.GetElementById("x"));
-            Assert.That(cs.Get("color"), Is.EqualTo("red"));
+            Assert.That(applies.Compute(doc.GetElementById("x")).Get("color"),
+                        Is.EqualTo("red"), "9999px is under the 10000px default surface");
+
+            var doesNot = new CascadeEngine(new[] {
+                Author("@media (min-width: 10001px) { #x { color: red; } }")
+            });
+            Assert.That(doesNot.Compute(doc.GetElementById("x")).Get("color"),
+                        Is.Not.EqualTo("red"), "10001px is over it, so the rule must not apply");
         }
 
         [Test]

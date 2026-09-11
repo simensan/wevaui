@@ -28,7 +28,14 @@
                ..\..\Packages\com.wevaui\Runtime\Rendering\**\*.cs;
                ..\..\Packages\com.wevaui\Runtime\Text\**\*.cs;
                ..\..\Packages\com.wevaui\Runtime\Forms\Bridge\**\*.cs;
+               ..\..\Packages\com.wevaui\Runtime\Native\**\*.cs;
                ..\..\Packages\com.wevaui\Runtime\DevTools\DevToolsOverlay.cs" />
+    <!-- Native\** is the Unity host over the C++ core: a MonoBehaviour, Font,
+         Rect, MonoPInvokeCallback — Unity APIs well beyond UnityEngineStub.cs.
+         It arrived with the shared-core merge and broke this runner's BUILD
+         until it was excluded here, which meant the whole headless C# suite
+         reported nothing rather than a count. Its own tests live in
+         Tests\Editor\Native\ and run in the Unity editor, not here. -->
     <!-- Rendering\** is excluded above (URP/Unity graphics), but the paint
          source interface is Unity-clean and SelectionHighlightSource (tested
          headlessly) implements it. -->

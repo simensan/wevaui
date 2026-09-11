@@ -13,7 +13,7 @@ touched.
 |---|------|--------|
 | 1 | Repo layout | **proposed — awaiting review**, nothing moved |
 | 2 | Dead and stale material | **swept** — 3 fixes landed, 3 findings need a decision |
-| 3 | TODO / FIXME / HACK inventory | not started |
+| 3 | TODO / FIXME / HACK inventory | **done** — 10 found, 2 stale ones fixed, and a broken gate repaired |
 | 4 | Test hygiene | not started |
 | 5 | Build hygiene | not started |
 | 6 | Host duplication | not started |
@@ -299,3 +299,103 @@ this one sits in the file a new contributor reads first.
 
 Nothing. Area 2 is done apart from the three findings above that need your
 decision (2.1 GPU goldens, 2.3 the duplicated texture, 2.4 receipt bloat).
+
+---
+
+## 3. TODO / FIXME / HACK inventory
+
+**Status: done.** Ten markers in the whole repository. Two were stale and are
+fixed. Chasing one of them uncovered a broken gate, repaired below.
+
+### The count
+
+| Tree | `TODO`/`FIXME`/`HACK`/`XXX` |
+|---|---|
+| `libweva/` (C++ core) | 0 |
+| `hosts/` (both) | 0 |
+| `godot-port/tools/`, `Tools/` | 0 |
+| `Packages/com.wevaui/Runtime` | 7 |
+| `Packages/com.wevaui/Tests` | 3 |
+
+Zero across ~30k lines of C++ and both hosts is worth stating plainly: the
+convention there is to write the reason in prose next to the code instead of
+leaving a marker, and it holds without exception.
+
+### 3.1 A stale TODO hid a test that passed for the wrong reason — fixed
+
+`CascadeEngineTests.Media_rule_inner_rules_currently_always_apply` carried
+*"TODO: once media-query evaluation lands…"*. Evaluation landed a long time
+ago — `Runtime/Css/Media/` holds `MediaQueryEvaluator.cs` and eleven more
+files, and `CascadeEngine` takes a `MediaContext`.
+
+What the test actually pinned was an accident. `CascadeEngine`'s one-argument
+constructor supplies `MediaContext.Default(10000, 10000)`, and the production
+code says why:
+
+> *"Default surface is intentionally larger than any reasonable @media threshold
+> so historical CascadeEngineTests authored before the evaluator existed (which
+> assume '@media always applies') continue to pass."*
+
+So `@media (min-width: 9999px)` applied because 10000 ≥ 9999, not because
+`@media` was ignored — while the test's name asserted the opposite. Renamed it
+to `Media_rules_evaluate_against_the_default_10000px_surface`, explained the
+default, and added the negative case (`min-width: 10001px` must not apply),
+which is the half that proves the evaluator is running at all.
+
+### 3.2 A second stale TODO — fixed
+
+`SelectorParserTests.Nth_child_of_selector_parses_and_drops_filter` carried
+*"TODO: the `of <selector>` filter is currently dropped silently"*. It is not:
+`SelectorParser.cs:533` parses it into `NthOfFilter` and
+`SelectorMatcher.cs:275` honours it through `FilteredChildIndex`.
+`SelectorStateDependencies` reasons about it too. Renamed to
+`Nth_child_of_selector_keeps_its_filter` and added assertions that the filter
+survives parsing.
+
+### 3.3 The headless C# suite did not build — repaired
+
+Found while trying to verify 3.1. `dotnet run --project Tools/TestVerifyAll`
+failed to compile:
+
+```
+Runtime/Native/WevaNativeDocument.cs: error CS0246: 'Font' could not be found
+Runtime/Native/UnityFontBackend.cs:   error CS0246: 'MonoPInvokeCallback' …
+```
+
+The runner globs `Runtime/**/*.cs` and excludes the directories that need real
+Unity APIs (`Rendering/**`, `Text/**`, `Forms/Bridge/**`). `Runtime/Native/**`
+arrived with the shared-core merge, needs `Font`, `Rect`, `TextAreaAttribute`
+and `MonoPInvokeCallback`, and nobody added it to the exclude list. So the
+headless C# gate has produced **no result at all** since the merge — not a
+failure, a build error, which is easy to skim past.
+
+That also means the `9,905 pass / 2 fail` figure carried in project memory was
+unreproducible. Added the one exclusion, with a comment saying why, and the gate
+came back:
+
+| | Passed | Failed | Skipped |
+|---|---|---|---|
+| Before | *build error* | — | — |
+| After | **9,929** | **2** | 57 |
+
+The two failures are exactly the known pair, `SnapshotLayoutTests` and
+`FillInheritedBitsetTests`, both `ArgumentOutOfRangeException`, both predating
+this work. The pass count is 24 higher than memory's figure because tests were
+added since it was written. Memory should be updated to 9,929 / 2.
+
+The Native host's own tests are unaffected: they live in `Tests/Editor/Native/`
+and run in the Unity editor, which the headless runner never touches.
+
+### 3.4 The remaining eight markers — all real, all kept
+
+| Marker | Verdict |
+|---|---|
+| `TextEditModel.cs:33` wiring point | real, out of headless scope by design |
+| `GridContainerProperties.cs:64` GetParsed migration | real, a perf migration |
+| `BackgroundResolver.cs:508` CssValue typing | real, a future migration |
+| `URPRenderBackend.cs:144` image brushes | real gap in that backend |
+| `SoftwareRasterizer.cs:14,862` magenta image brushes, filter list | real, documented scope of the software rasterizer |
+| `UnityFontEngineBackend.cs:87` validate against Unity 6 surface | real |
+| `PaintAllocationTests.cs:282` drive allocations to 0 | real, a perf goal with a number attached |
+
+None is stale and none claims something already done. Left alone.
