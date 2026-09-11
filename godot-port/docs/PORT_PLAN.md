@@ -3675,9 +3675,12 @@ an ABI surface), keep host-side (C#), drop.
     C# `Components/Scoping` has no counterpart).
 11. `@supports selector(...)`, the one missing arm of `media.cpp:260-320`. DONE
     2026-09-11 (`media.cpp`, test in `test_cascade.cpp`).
-12. Subgrid: C# gates on `display: subgrid`, the core on
-    `grid-template-columns: subgrid` (the spec form); pick the core's and fix
-    the C# samples.
+12. Subgrid DONE 2026-09-11 as a finding, not a port: both engines already
+    take the spec form (`grid-template-columns/rows: subgrid` on a grid
+    item; the C# `SubgridTrackResolver`, the core `grid.cpp`); only
+    CSS_FEATURES.md claimed `display: subgrid`, now corrected. No sample
+    uses the wrong form. Harvest oracle on the 17 Subgrid cases: 12 agree,
+    0 differ, 5 reference bugs where Chrome sides with the core.
 13. `position: sticky` DONE 2026-09-11: `sticky.cpp` pins each sticky box
     against its scroll container's scrollport from the current scroll
     positions (top/bottom/left/right, held inside the containing block);

@@ -1335,8 +1335,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
                    &Placement::row_span);
     }
 
-    // Implicit columns: a placement past the explicit grid adds `auto` tracks,
-    // since grid-auto-columns is not ported.
+    // Implicit columns: a placement past the explicit grid adds tracks sized
+    // by grid-auto-columns, cycling through its list.
     int max_column = 0;
     for (const Placement& p : items) max_column = std::max(max_column, p.column + p.column_span);
     for (int i = 0; static_cast<int>(columns.size()) < max_column; ++i) {
