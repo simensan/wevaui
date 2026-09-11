@@ -17,7 +17,7 @@ touched.
 | 4 | Test hygiene | **done** — nothing suppressed; all 6 stale headers fixed |
 | 5 | Build hygiene | **MSVC done** — 3 warnings fixed; gcc/clang blocked by the worktree |
 | 6 | Host duplication | **done** — three behavioural divergences found in one function |
-| 7 | ABI surface | not started |
+| 7 | ABI surface | **done** — 4 dead entry points, 2 doc gaps, asymmetry explained |
 | 8 | Docs accuracy | not started |
 
 ---
@@ -709,3 +709,86 @@ again.
 Input mapping and event pumping were not compared this iteration. The font-face
 finding took the time, and it is the richer seam anyway — input goes through
 the ABI's event queue on both sides, which leaves much less room to disagree.
+
+---
+
+## 7. ABI surface
+
+**Status: done.** 135 entry points cross-referenced against what each host
+actually calls. Nothing fixed — every finding is either a deletion (needs your
+call) or a documentation gap best written with the history to hand.
+
+### Method, and a trap worth recording
+
+The obvious cross-reference is wrong. Searching `hosts/unity/` for each symbol
+reports **every** entry point as used, because `gen_bindings.py` generates
+`WevaNative.g.cs` naming all 135. The generated file and the generator have to
+be excluded, leaving only hand-written call sites, or the Unity column is
+meaningless. The first run of this check said "0 unused"; the corrected run
+says 4.
+
+### The surface, split by caller
+
+| | Count |
+|---|---|
+| Called by both hosts | 80 |
+| Called by Godot only | 41 |
+| Called by Unity only | 10 |
+| **Called by neither** | **4** |
+
+### 7.1 Four entry points no host calls
+
+| Entry point | Tests | Tools |
+|---|---|---|
+| `weva_document_set_render_backend` | 2 | 0 |
+| `weva_element_show_popover` | 5 | 1 |
+| `weva_element_hide_popover` | 3 | 0 |
+| `weva_element_toggle_popover` | 1 | 0 |
+
+All four are covered by core tests, so none is untested — they are simply not
+reachable from a game. The three popover calls are the *imperative* half of the
+HTML popover API; both hosts drive popovers declaratively instead, through
+`weva_document_set_popover_request_events` and the attribute handler. That is a
+reasonable state (a host may want them later) but it should be a decision, not
+an accident: either a host adopts them, or they are marked as deliberately
+host-optional in the header so the next reader does not assume they are load-
+bearing.
+
+### 7.2 The 41/10 asymmetry is real, and mostly expected
+
+**Godot-only (41)** is the Phase 2/3 state showing through: forms, validation,
+IME composition, select controls, popover request events, transient dismissal,
+CSS diagnostics, missing-asset reporting. The Godot host has had years; the
+Unity host is months old. Nothing to fix, but it is the concrete measure of how
+far behind the Unity host is — 41 entry points it has never called.
+
+**Unity-only (10)** is the inspector surface plus the oracle:
+`element_box_model`, `element_matched_rules`, `element_computed_style_all`,
+`element_parent`, `element_children`, `element_contains`,
+`element_at_devtools`, `layout_dump`, `set_font_leading_rounding`,
+`is_animating`. Deliberate: the Unity host has the Elements panel and the
+oracle-from-Unity path, and Godot has neither.
+
+One of those ten deserves a note rather than a shrug. `weva_document_is_animating`
+tells a host whether a frame is still needed — CSS animations, caret blink, snap
+settling, a smooth scroll in flight. Unity asks it through `NeedsRepaint`. The
+Godot host never calls it, because `_process` ticks every frame regardless and
+leans on `weva_document_needs_input_tick` plus its own `dirty_` /
+`paint_pending_` flags. Two defensible strategies — Unity skips work, Godot
+keeps it simple — but the difference is undocumented, and a reader comparing the
+hosts would reasonably assume one of them has a bug.
+
+### 7.3 Ten ABI minors are documented nowhere
+
+`ARCHITECTURE.md` documents minors 11-14 and 25-37. Minors **15 through 24** are
+absent from it entirely; 15 and 16 get one line each in the Godot host's README,
+and 17-24 appear in neither file.
+
+The header is patchier still: only 13 of the 37 minors carry an
+`Available since ABI minor N` note, so for most entry points there is no way to
+tell when they appeared without reading history.
+
+Neither gap breaks anything today. Both bite the moment someone has to support
+an older host binary against a newer core, which is exactly what a minor version
+is for. Worth one pass reconstructing 15-24 from the log while the history is
+still recent.
