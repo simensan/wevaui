@@ -3668,7 +3668,11 @@ an ABI surface), keep host-side (C#), drop.
    appended to the registry): a programmatic scroll snaps at once, a wheel
    scroll settles after 150 ms of quiet with a 250 ms ease-out, `always`
    stops, `proximity` within half the scrollport, padding/margin, start/
-   end/center, both axes. Still open: `scroll-behavior: smooth` and
+   end/center, both axes. `scroll-behavior: smooth` DONE 2026-09-11
+   (registered; `weva_element_set_scroll` and `scroll_into_view` ease over
+   the snap animation's quarter second, the document reports itself
+   animating, a wheel/thumb/track/key scroll of that container ends the
+   animation where it is; test_abi_scroll_behavior_smooth). Still open:
    snapping after a scrollbar-thumb drag.
 9. Small drops: `caret-color` DONE 2026-09-11 (`paint.cpp` caret_color_of), `list-style-image`
    DONE 2026-09-11 (an image marker is an atom sized by the image, outside or

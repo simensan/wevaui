@@ -423,6 +423,7 @@ void test_abi_reload_html();
 void test_abi_mix_blend_mode();
 void test_abi_html_diagnostics();
 void test_abi_changed_elements();
+void test_abi_scroll_behavior_smooth();
 void test_abi_individual_transform_hit_test();
 void test_abi_style_elements_and_component_styles();
 void test_abi_textarea_edits_its_content();
@@ -997,6 +998,7 @@ int main() {
     test_abi_mix_blend_mode();
     test_abi_html_diagnostics();
     test_abi_changed_elements();
+    test_abi_scroll_behavior_smooth();
     test_abi_individual_transform_hit_test();
     test_abi_style_elements_and_component_styles();
     test_abi_textarea_edits_its_content();

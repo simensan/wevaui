@@ -1244,6 +1244,55 @@ void test_abi_individual_transform_hit_test() {
     CHECK(weva_document_element_at(doc.d, 5, 155) != z);
 }
 
+// CSS Overflow L3 `scroll-behavior: smooth`: programmatic scrolls ease.
+void test_abi_scroll_behavior_smooth() {
+    Doc doc("html, body { margin: 0 }"
+            " #s { overflow: auto; height: 100px; width: 100px; scroll-behavior: smooth }"
+            " #p { overflow: auto; height: 100px; width: 100px }"
+            " .tall { height: 1000px } #target { position: absolute; top: 600px; height: 10px }",
+            "<div id=s><div class=tall style='position: relative'><div id=target></div></div></div>"
+            "<div id=p><div class=tall></div></div>");
+    const weva_element_t s = weva_document_query(doc.d, "#s"), p = weva_document_query(doc.d, "#p");
+    const auto scroll_y = [&](weva_element_t e) {
+        double x = 0, y = 0, mx = 0, my = 0;
+        weva_element_scroll(doc.d, e, &x, &y, &mx, &my);
+        return y;
+    };
+    // A plain container lands at once.
+    weva_element_set_scroll(doc.d, p, 0, 300);
+    weva_document_update(doc.d, 0);
+    CHECK(scroll_y(p) == 300);
+    CHECK(weva_document_is_animating(doc.d) == 0);
+    // The smooth one eases: nowhere yet at t = 0, between at 0.1 s, there
+    // after the quarter second, and the document animates meanwhile.
+    weva_element_set_scroll(doc.d, s, 0, 300);
+    weva_document_update(doc.d, 0);
+    CHECK(scroll_y(s) == 0);
+    CHECK(weva_document_is_animating(doc.d) == 1);
+    weva_document_update(doc.d, 0.1);
+    CHECK(scroll_y(s) > 0 && scroll_y(s) < 300);
+    weva_document_update(doc.d, 0.2);
+    CHECK(scroll_y(s) == 300);
+    CHECK(weva_document_is_animating(doc.d) == 0);
+    // The target is clamped up front: past the end eases to the end.
+    weva_element_set_scroll(doc.d, s, 0, 5000);
+    weva_document_update(doc.d, 0.3);
+    CHECK(scroll_y(s) == 900);
+    // scroll_into_view eases as well, and a wheel step ends the animation
+    // where it is.
+    weva_element_set_scroll(doc.d, s, 0, 0);
+    weva_document_update(doc.d, 0.3);
+    CHECK(scroll_y(s) == 0);
+    CHECK(weva_element_scroll_into_view(doc.d, weva_document_query(doc.d, "#target")) == WEVA_OK);
+    weva_document_update(doc.d, 0.1);
+    const double part = scroll_y(s);
+    CHECK(part > 0 && part < 510);
+    CHECK(weva_document_scroll(doc.d, 50, 50, 0, 10) == 1);
+    weva_document_update(doc.d, 0.3);
+    CHECK(scroll_y(s) == part + 10);
+    CHECK(weva_document_is_animating(doc.d) == 0);
+}
+
 // Minor 35: what the last update restyled, and a counter for the element set.
 void test_abi_changed_elements() {
     Doc doc("html, body { margin: 0 } div { width: 100px; height: 20px }",

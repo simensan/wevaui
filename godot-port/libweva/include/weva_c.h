@@ -988,7 +988,10 @@ size_t weva_document_query_all(weva_document_t doc, const char* selector, weva_e
  * the answer a host needs to decide whether to handle the wheel itself. */
 int weva_document_scroll(weva_document_t doc, double x, double y, double dx, double dy);
 
-/* One element's scroll offset. Clamped on the next update. */
+/* One element's scroll offset. Clamped on the next update. A container with
+ * `scroll-behavior: smooth` eases there over a quarter second instead (the
+ * document reports itself animating meanwhile); a wheel, thumb, track or key
+ * scroll of that container ends the animation where it is. */
 weva_status weva_element_set_scroll(weva_document_t doc, weva_element_t element, double x,
                                     double y);
 
@@ -1004,6 +1007,8 @@ weva_status weva_element_scroll(weva_document_t doc, weva_element_t element, dou
  * element does this by itself, so a tab that lands off screen brings its
  * target with it. */
 weva_status weva_element_scroll_into_view(weva_document_t doc, weva_element_t element);
+/* Each container with `scroll-behavior: smooth` on the way eases to its
+ * offset, as weva_element_set_scroll does. */
 
 /* Sets an attribute, which restyles on the next update. A null value removes
  * it. */

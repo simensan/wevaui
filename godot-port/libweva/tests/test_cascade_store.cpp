@@ -10,7 +10,7 @@ void test_property_registry() {
     auto& reg = CssPropertyRegistry::instance();
 
     // ---- the table came across whole
-    CHECK(reg.count() == 334 + 13);   // the generated table plus the scroll-snap appendix
+    CHECK(reg.count() == 334 + 14);   // the generated table plus the scroll-snap appendix and scroll-behavior
 
     // ---- ids are assigned in REGISTRATION order, and hot paths cache them
     CHECK(reg.id_of("display") == 0);

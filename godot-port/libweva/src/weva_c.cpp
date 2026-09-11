@@ -1994,6 +1994,11 @@ struct weva_document {
         double from_x = 0, from_y = 0, to_x = 0, to_y = 0, t = 0;
         bool active = false;
     } snap_animation;
+    // `scroll-behavior: smooth`: the programmatic scrolls in flight, one per
+    // container, eased over the snap animation's quarter second. A user
+    // scroll of the same container (wheel, thumb, track, keys) ends its
+    // animation where it is.
+    std::vector<SnapAnimation> smooth_scrolls;
     // What a field held before each edit, so Ctrl+Z can put it back. Snapshots
     // rather than a log of operations: a text field is small, and a snapshot
     // cannot disagree with the field the way a replayed operation can.
@@ -2543,6 +2548,27 @@ void resolve_caret_run(weva_document* doc, CaretState* caret) {
 
 // Scrolls every container above `target` by the least that brings its box into
 // view. Shared by the entry point and by focus, which does it by itself.
+bool scroll_behavior_smooth(const ComputedStyle* style) {
+    return style && style->get("scroll-behavior") == "smooth";
+}
+
+void cancel_smooth_scroll(weva_document* doc, const Element* e) {
+    auto& list = doc->smooth_scrolls;
+    list.erase(std::remove_if(list.begin(), list.end(),
+                              [e](const weva_document::SnapAnimation& a) { return a.element == e; }),
+               list.end());
+}
+
+// Starts (or redirects) the smooth scroll of `container` towards a clamped
+// target; a target already reached ends any animation instead.
+void start_smooth_scroll(weva_document* doc, BoxId container, double to_x, double to_y) {
+    const Box& b = doc->tree[container];
+    cancel_smooth_scroll(doc, b.element);
+    if (to_x == b.scroll_x && to_y == b.scroll_y) return;
+    doc->smooth_scrolls.push_back({b.element, b.scroll_x, b.scroll_y, to_x, to_y, 0, true});
+    doc->pending = worst(doc->pending, Invalidation::Paint);
+}
+
 void bring_box_into_view(weva_document* doc, BoxId target) {
     const BoxTree& tree = doc->tree;
     if (!tree.valid(target)) return;
@@ -2580,6 +2606,10 @@ void bring_box_into_view(weva_document* doc, BoxId target) {
         sx = std::clamp(sx, 0.0, mx);
         sy = std::clamp(sy, 0.0, my);
         if (sx == c.scroll_x && sy == c.scroll_y) continue;
+        if (scroll_behavior_smooth(c.style)) {
+            start_smooth_scroll(doc, p, sx, sy);
+            continue;
+        }
         doc->scroll[c.element] = {sx, sy};
         doc->pending = worst(doc->pending, Invalidation::Paint);
     }
@@ -3775,6 +3805,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->typeahead_target = nullptr;
     clear_text_drag(doc);
     doc->scroll.clear();   // keyed on elements of the document just replaced
+    doc->smooth_scrolls.clear();
     doc->set_open_select(nullptr);
     doc->highlighted_option = -1;
     doc->binding_templates.clear();
@@ -3998,8 +4029,9 @@ int weva_document_is_animating(weva_document_t doc) {
     const InteractionState& st = doc->styles.state;
     if (st.focused && is_text_field(*st.focused)) return 1;
     if (weva_document_needs_input_tick(doc)) return 1;
-    // A wheel scroll waiting to settle onto a snap position, or settling.
-    if (doc->snap_settle.armed || doc->snap_animation.active) return 1;
+    // A wheel scroll waiting to settle onto a snap position, or settling; a
+    // smooth programmatic scroll on its way.
+    if (doc->snap_settle.armed || doc->snap_animation.active || !doc->smooth_scrolls.empty()) return 1;
     return doc->styles.animating() ? 1 : 0;
 }
 int weva_document_needs_input_tick(weva_document_t doc) {
@@ -4073,6 +4105,20 @@ void snap_advance(weva_document* doc, double dt) {
         snap_apply(doc, anim.element, anim.from_x + (anim.to_x - anim.from_x) * e,
                    anim.from_y + (anim.to_y - anim.from_y) * e);
         if (p >= 1) anim.active = false;
+    }
+    if (dt > 0) {
+        for (auto& s : doc->smooth_scrolls) {
+            s.t += dt;
+            const double p = std::min(1.0, s.t / kSnapDuration);
+            const double e = 1 - (1 - p) * (1 - p);
+            snap_apply(doc, s.element, s.from_x + (s.to_x - s.from_x) * e,
+                       s.from_y + (s.to_y - s.from_y) * e);
+            if (p >= 1) s.active = false;
+        }
+        auto& list = doc->smooth_scrolls;
+        list.erase(std::remove_if(list.begin(), list.end(),
+                                  [](const weva_document::SnapAnimation& a) { return !a.active; }),
+                   list.end());
     }
 }
 
@@ -5497,6 +5543,7 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
             }
             const double along = doc->scroll_drag.vertical ? local_y : local_x;
             const double moved = (along - doc->scroll_drag.grab) * doc->scroll_drag.per_pixel;
+            cancel_smooth_scroll(doc, doc->scroll_drag.element);
             auto& at = doc->scroll[doc->scroll_drag.element];
             const double to = std::max(0.0, doc->scroll_drag.from + moved);
             if (doc->scroll_drag.vertical) at.second = to;
@@ -5530,6 +5577,7 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
                 const double point = vertical ? local_y : local_x;
                 const double thumb_start = vertical ? bar.thumb.y : bar.thumb.x;
                 const double to = std::max(0.0, at + (point < thumb_start ? -page : page));
+                cancel_smooth_scroll(doc, b.element);
                 auto& offset = doc->scroll[b.element];
                 offset = {vertical ? b.scroll_x : to, vertical ? to : b.scroll_y};
             }
@@ -6434,6 +6482,7 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
                 default: break;
             }
             to = std::clamp(to, 0.0, vertical ? my : mx);
+            cancel_smooth_scroll(doc, b.element);
             auto& at = doc->scroll[b.element];
             at = {vertical ? b.scroll_x : to, vertical ? to : b.scroll_y};
             doc->pending = worst(doc->pending, Invalidation::Paint);
@@ -7537,6 +7586,7 @@ int weva_document_scroll(weva_document_t doc, double x, double y, double dx, dou
             settle.idle = 0;
             doc->snap_animation.active = false;
         }
+        cancel_smooth_scroll(doc, b.element);
         doc->scroll[b.element] = {nx, ny};
         doc->queue_event(WEVA_EVENT_SCROLL, b.element, nx, ny, 0);
         doc->pending = worst(doc->pending, Invalidation::Paint);
@@ -7555,11 +7605,21 @@ weva_status weva_element_set_scroll(weva_document_t doc, weva_element_t element,
     // does in a browser; it also ends any settling a wheel left behind.
     doc->snap_settle.armed = false;
     doc->snap_animation.active = false;
-    if (const BoxId i = box_of(doc, e); i != kNoBox && scroll_snaps(doc->tree[i].style)) {
+    const BoxId i = box_of(doc, e);
+    if (i != kNoBox && scroll_snaps(doc->tree[i].style)) {
         double t = 0;
         if (snap_target(doc->tree, i, doc->ctx, true, sy, sy, &t)) sy = t;
         if (snap_target(doc->tree, i, doc->ctx, false, sx, sx, &t)) sx = t;
     }
+    // `scroll-behavior: smooth` on a laid-out container animates there
+    // instead; the target is clamped now, since the animation needs it.
+    if (i != kNoBox && scroll_behavior_smooth(doc->tree[i].style)) {
+        double mx = 0, my = 0;
+        max_scroll(doc->tree, i, &mx, &my);
+        start_smooth_scroll(doc, i, std::min(sx, mx), std::min(sy, my));
+        return WEVA_OK;
+    }
+    cancel_smooth_scroll(doc, e);
     // Clamped by the update, which is the only thing that knows how far there
     // is to go -- and it may not have laid this element out yet.
     doc->scroll[e] = {sx, sy};
@@ -7632,6 +7692,7 @@ void forget_element(weva_document* doc, const Element* e) {
     if (doc->list_follow == e) doc->list_follow = nullptr;
     doc->styles.forget(e);
     doc->scroll.erase(e);
+    cancel_smooth_scroll(doc, e);
     if (doc->press_target == e) doc->press_target = nullptr;
     if (doc->popover_press_target == e) { doc->popover_press_target = nullptr; doc->popover_press_active = false; }
     if (doc->space_press_target == e) doc->space_press_target = nullptr;

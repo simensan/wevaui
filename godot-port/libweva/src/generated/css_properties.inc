@@ -354,4 +354,7 @@ static const PropertyDef kProperties[] = {
     {"scroll-margin-right", false, "0"},
     {"scroll-margin-bottom", false, "0"},
     {"scroll-margin-left", false, "0"},
+    // CSS Overflow L3 / CSSOM View: `scroll-behavior: smooth` animates the
+    // programmatic scrolls (the ABI's set_scroll and scroll_into_view).
+    {"scroll-behavior", false, "auto"},
 };
