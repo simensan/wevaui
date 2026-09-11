@@ -16,7 +16,7 @@ touched.
 | 3 | TODO / FIXME / HACK inventory | **done** — 10 found, 2 stale ones fixed, and a broken gate repaired |
 | 4 | Test hygiene | **done** — nothing suppressed; all 6 stale headers fixed |
 | 5 | Build hygiene | **MSVC done** — 3 warnings fixed; gcc/clang blocked by the worktree |
-| 6 | Host duplication | not started |
+| 6 | Host duplication | **done** — three behavioural divergences found in one function |
 | 7 | ABI surface | not started |
 | 8 | Docs accuracy | not started |
 
@@ -607,3 +607,105 @@ using `thread_local` for per-thread scratch. Nothing to race.
 ### Still to do in this area
 
 The gcc and clang-ASan warning counts, from the main checkout where WSL works.
+
+---
+
+## 6. Duplication between the two hosts
+
+**Status: done.** The `@font-face` sync is implemented twice and the two copies
+have drifted apart in three ways, one of which is user-visible. Nothing fixed —
+each divergence is a behaviour change on one host, and which host is wrong is
+worth your call on at least one of them.
+
+### The shape of the duplication
+
+`sync_css_font_faces` (`weva_node.cpp`, ~100 lines of C++) and
+`SyncCssFontFaces` (`UnityFontBackend.cs`, ~60 lines of C#) do the same job
+from the same ABI data: read `weva_document_font_faces`, group the rules by
+family, decide which face is the family's regular one and which are variants,
+load each source, and register the results.
+
+They were written independently against the same prose, which is exactly the
+setup where two copies agree on the easy cases and disagree on the edges.
+
+### 6.1 A `font-weight: 500` face works on Unity and vanishes on Godot
+
+The rule for "is this the family's regular face" is different:
+
+| Host | Rule |
+|---|---|
+| Godot | weight is empty, `normal`, or exactly `400`, **and** style is empty or `normal` |
+| Unity | `number < 600 && !italic` |
+
+Follow a single `@font-face` at `font-weight: 500` through both:
+
+- **Unity** — `500 < 600` and not italic, so it becomes the family's regular
+  face. The family works.
+- **Godot** — `normal_face("500", "")` is false, because the weight is not
+  `400`. It then falls to the variant branch, where
+  `strength = 500 >= 800 ? 2 : 500 >= 600 ? 1 : 0` is `0` and `italic` is
+  false, so the guard `if (strength || italic)` rejects it. The face is
+  **dropped entirely** — neither regular nor variant. The family is never
+  registered and the text falls back to the theme font.
+
+The same hole swallows every weight from 100 to 300, which is exactly where
+light and thin faces live. A page shipping only a `@font-face` at 300 renders
+in its intended font on Unity and in the fallback on Godot.
+
+**Which is right:** Unity. CSS Fonts 4 font matching picks the closest
+available face for the requested weight; with only a 500 face registered,
+that face is what `font-weight: 400` should resolve to. Dropping it is wrong.
+The Godot side needs the `if (strength || italic)` guard replaced by a rule
+that keeps a face at any weight, using it as the regular face when nothing
+closer exists.
+
+### 6.2 Unity never releases a family the stylesheet stopped declaring
+
+Godot walks its `css_font_faces_` map and drops registrations the new
+stylesheet no longer declares, re-registering a null font to release the
+family. `font_face_tests.gd` pins it: *"removing @font-face on CSS replacement
+releases the family"*.
+
+Unity's `_cssFamilies` is only ever read and written — there is no `Remove`, no
+unregister, no cleanup pass. Replace a stylesheet to drop an `@font-face` and
+the family stays registered in Unity for the life of the document.
+
+No Unity test covers this, which is why it went unnoticed: the Godot behaviour
+is pinned and the Unity behaviour is not.
+
+### 6.3 Unity has no "the game's own registration wins" rule
+
+Godot guards explicitly:
+
+```cpp
+if (existing == css_font_faces_.end() && family_fonts_.count(entry.first))
+    continue; // the game's own registration wins over @font-face
+```
+
+so a font the game registered through `register_font_family` is not overwritten
+by a stylesheet rule for the same family name. `font_face_tests.gd` pins this
+too. Unity has no equivalent, so a page's `@font-face` silently takes over a
+family the host registered itself.
+
+### What to do
+
+These are three independent decisions, and only 6.1 needs a judgement call:
+
+1. **6.1** — fix Godot to match Unity, which is the spec-correct side.
+2. **6.2** — add the release pass to Unity, mirroring Godot's.
+3. **6.3** — add the precedence guard to Unity, mirroring Godot's.
+
+Beyond the fixes, the structural point: this function is the third place the
+same rules are written down, after the prose in both READMEs. The weight
+classification (`bold`/`bolder` → 700, strength thresholds at 600 and 800,
+`italic`/`oblique` prefix matching) is pure data manipulation on strings the
+ABI already hands over. It belongs in the core behind one more ABI call
+returning already-classified faces, at which point both hosts shrink to "load
+this source, register it under this family and variant slot" and cannot drift
+again.
+
+### Not examined
+
+Input mapping and event pumping were not compared this iteration. The font-face
+finding took the time, and it is the richer seam anyway — input goes through
+the ABI's event queue on both sides, which leaves much less room to disagree.
