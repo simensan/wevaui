@@ -332,6 +332,16 @@ namespace Weva.Native
             _renderer.Draw(cmd, viewportWidth > 0 ? viewportWidth : _width, viewportHeight > 0 ? viewportHeight : _height);
             _drawnSerial = _doc.DrawSerial;
         }
+
+        public void EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight)
+        {
+            if (_doc == null || _renderer == null || cmd == null) return;
+            _renderer.Sync(_doc);
+            // A camera pass into the camera's colour buffer: the shader takes
+            // the flip from _ProjectionParams.x and blends in linear space.
+            _renderer.Draw(cmd, viewportWidth > 0 ? viewportWidth : _width, viewportHeight > 0 ? viewportHeight : _height, 0, false);
+            _drawnSerial = _doc.DrawSerial;
+        }
 #endif
     }
 }

@@ -522,6 +522,16 @@ runs, TextCore's glyph order inside a run, and a visual pass on real Arabic.
 Gates: core 505,878 / 0, Unity Native 100 cases, the check.sh scenes green on
 both platforms, the three oracles identical to the pre-session baseline.
 
+Looking at the core in Unity, not just testing it: `Assets/UI/native-check.html`
+exercises the week's work one block each, and `NativeGameViewCaptureTests`
+draws it through the project's URP renderer in headless Play mode. That found
+the Phase 2 caveat was a real gap: the active `UIBatchedRendererFeature` never
+drew native documents (only the inactive legacy feature did), so a
+`WevaNativeDocument` in a scene rendered nothing. Fixed; the in-pass capture now
+matches the offscreen render, safe-area insets pad live, and a smooth scroll
+settles on its target. Hebrew glyphs are absent on Unity until a covering
+fallback face is given (the bundled faces have none); the run order is right.
+
 ## Next work
 
 1. The budget evaluator now annotates a whole-frame failure whose UI-disabled

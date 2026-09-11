@@ -11,7 +11,14 @@ namespace Weva.Native
     /// </summary>
     public interface IUINativePaintSource : IUIPaintSource
     {
+        /// <summary>The legacy UIRendererFeature's pass: its own command buffer wrapper.</summary>
         void EmitNative(IUICommandBuffer cmd, int viewportWidth, int viewportHeight);
+        /// <summary>
+        /// The batched UIRenderGraphPass, the renderer feature a project actually
+        /// runs: a Unity command buffer bound to the camera target, before the
+        /// C# batches are drained so a native document composes beneath them.
+        /// </summary>
+        void EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight);
     }
 }
 #endif

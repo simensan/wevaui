@@ -251,5 +251,12 @@
         "cursor_abi_29": "weva_document_cursor / cursor_at; the Godot node answers _get_cursor_shape (setting default_cursor_shape re-dispatched a synthetic motion that cancelled a range drag headless -- range_direction_tests caught it, the ABI-level repro test_abi_range_click_at_edge pins the host sequence); NativeCursorTests 2 pass, Native suite 84 pass / 2 inconclusive"
       }
     }
+  },
+  "phase_2_live_scene_path": {
+    "date": "2026-09-11",
+    "finding": "UIBatchedRendererFeature (the project's active feature) drew no IUINativePaintSource; only the inactive legacy UIRendererFeature's UIRenderPass did, so a WevaNativeDocument in a scene rendered nothing through the real pipeline",
+    "fix": "UIRenderGraphPass.ExecuteBatched draws native sources (EmitNative(CommandBuffer)) onto the camera target before draining the C# batches; IUINativePaintSource gained the CommandBuffer overload",
+    "evidence": "NativeGameViewCaptureTests (PlayMode, [Explicit]): .utmp/native-gameview/native-check.png matches the offscreen parity render of the same page; native-check-insets.png shows SetSafeAreaInsets(44,0,0,8) live; the C# engine's capture of the same page is the control; the smooth-scroll assertion settles on its target",
+    "limits": "camera.Render() captures, not the Game view itself; Hebrew glyphs need a covering fallback face on Unity"
   }
 }
