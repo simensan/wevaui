@@ -1218,6 +1218,55 @@ void test_paint_clip_path_and_rounded_overflow() {
     CHECK(red && blue && green);
 }
 
+// CSS Transforms 2 functions land on the plane instead of being dropped:
+// translate3d moves, rotateX foreshortens, rotate3d about z is rotate,
+// matrix3d keeps its affine part, and perspective()/translateZ do nothing.
+void test_paint_transform_3d_projects_to_the_plane() {
+    Fixture f;
+    CHECK(f.css("div { width: 100px; height: 50px }"
+                "#a { background: #f00; transform: translate3d(50%, 0, 10px) }"
+                "#b { background: #0f0; transform: rotateX(60deg) }"
+                "#c { background: #00f; transform: rotate3d(0, 0, 1, 90deg) }"
+                "#d { background: #ff0; transform: matrix3d(1,0,0,0, 0,1,0,0, 0,0,1,0, 30,0,0,1) }"
+                "#e { background: #0ff; transform: perspective(500px) translateZ(100px) scaleZ(3) }"
+                "#g { background: #f0f; transform: rotateY(60deg) }"));
+    CHECK(f.layout("<body><div id=a></div><div id=b></div><div id=c></div><div id=d></div>"
+                   "<div id=e></div><div id=g></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    bool a = false, b = false, c = false, d = false, e = false, g = false;
+    for (const RecordingBackend::Draw& dr : backend.draws) {
+        if (dr.geometry.vertices.empty()) continue;
+        const Rect r = bounds_of(dr.geometry);
+        const LinearColor col = dr.geometry.vertices[0].color;
+        const bool red = near(col.r, 1) && near(col.g, 0) && near(col.b, 0);
+        const bool green = near(col.g, 1) && near(col.r, 0) && near(col.b, 0);
+        const bool blue = near(col.b, 1) && near(col.r, 0) && near(col.g, 0);
+        const bool yellow = near(col.r, 1) && near(col.g, 1) && near(col.b, 0);
+        const bool cyan = near(col.g, 1) && near(col.b, 1) && near(col.r, 0);
+        const bool magenta = near(col.r, 1) && near(col.b, 1) && near(col.g, 0);
+        if (red && near(r.x, 50, 1e-3) && near(r.y, 0, 1e-3) && near(r.width, 100, 1e-3)) a = true;
+        // cos 60deg = 0.5 about the centre: 25 tall, 12.5 down from the top.
+        if (green && near(r.x, 0, 1e-3) && near(r.y, 50 + 12.5, 1e-3) && near(r.width, 100, 1e-3) &&
+            near(r.height, 25, 1e-3)) b = true;
+        if (blue && near(r.x, 25, 1e-3) && near(r.y, 100 - 25, 1e-3) && near(r.width, 50, 1e-3) &&
+            near(r.height, 100, 1e-3)) c = true;
+        if (yellow && near(r.x, 30, 1e-3) && near(r.y, 150, 1e-3) && near(r.width, 100, 1e-3)) d = true;
+        if (cyan && near(r.x, 0, 1e-3) && near(r.y, 200, 1e-3) && near(r.width, 100, 1e-3) &&
+            near(r.height, 50, 1e-3)) e = true;
+        if (magenta && near(r.x, 25, 1e-3) && near(r.y, 250, 1e-3) && near(r.width, 50, 1e-3) &&
+            near(r.height, 50, 1e-3)) g = true;
+    }
+    CHECK(a);
+    CHECK(b);
+    CHECK(c);
+    CHECK(d);
+    CHECK(e);
+    CHECK(g);
+}
+
 // A transformed descendant is clipped where it lands on screen, not where
 // it was laid out (level-select's rotated roads inside a round map).
 void test_paint_clip_follows_descendant_transform() {

@@ -292,6 +292,7 @@ void test_paint_color_filters();
 void test_box_shadow_blur_falloff();
 void test_blur_and_padded_rasterize();
 void test_paint_transform_rotates_geometry();
+void test_paint_transform_3d_projects_to_the_plane();
 void test_font_weight_resolution();
 void test_anonymous_block_inherits_text_align();
 void test_inline_fragments();
@@ -840,6 +841,7 @@ int main() {
     test_box_shadow_blur_falloff();
     test_blur_and_padded_rasterize();
     test_paint_transform_rotates_geometry();
+    test_paint_transform_3d_projects_to_the_plane();
     test_font_weight_resolution();
     test_anonymous_block_inherits_text_align();
     test_inline_fragments();

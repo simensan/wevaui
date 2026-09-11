@@ -3623,8 +3623,12 @@ an ABI surface), keep host-side (C#), drop.
    would need them), `-webkit-text-stroke`.
 6. `filter: hue-rotate()` (the one missing filter function, one matrix). DONE
    2026-09-11 (`paint.cpp`, test in `test_backdrop_filter.cpp`).
-7. 3D transform functions are dropped, not projected (`paint.cpp:595`); C#
-   projects them, so a `translate3d` card must degrade rather than vanish.
+7. 3D transform functions. DONE 2026-09-11, core ahead: the C# treats them
+   as identity too (its TransformFunctionTests pin that), which was the
+   real state, not a projection. The core now projects orthographically:
+   translate3d/scale3d keep x and y, rotateX/rotateY foreshorten by the
+   cosine, rotate3d keeps the top-left 2x2 of the rotation, matrix3d its
+   affine part; translateZ/scaleZ/perspective() are identity.
    Also the individual `translate` / `rotate` / `scale` properties (registered,
    unread).
 8. `scroll-snap-type` / `scroll-snap-align` / `scroll-behavior` are not even

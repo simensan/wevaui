@@ -592,8 +592,50 @@ bool parse_transform(const ComputedStyle* style, const LayoutContext& ctx, doubl
             t = Transform2D(static_cast<float>(number(f.args[0], 1)), static_cast<float>(number(f.args[1], 0)),
                             static_cast<float>(number(f.args[2], 0)), static_cast<float>(number(f.args[3], 1)),
                             static_cast<float>(number(f.args[4], 0)), static_cast<float>(number(f.args[5], 0)));
+        } else if ((n == "translate3d" && argc >= 2) || n == "translatez" || (n == "scale3d" && argc >= 2) ||
+                   n == "scalez" || n == "rotatex" || n == "rotatey" || n == "rotatez" ||
+                   (n == "rotate3d" && argc >= 4) || (n == "matrix3d" && argc >= 16) || n == "perspective") {
+            // CSS Transforms 2 functions, projected onto the plane the way
+            // Chrome shows them with no perspective: the z component and
+            // depth are dropped, and a rotation about an in-plane axis
+            // foreshortens by its cosine. perspective() itself is not affine
+            // and stays a no-op, so a `translate3d(x, y, 0)` card still lands
+            // where the author put it instead of not moving at all.
+            const double kPi = 3.14159265358979323846;
+            if (n == "translate3d") {
+                t = Transform2D::translate(static_cast<float>(length(f.args[0], width)),
+                                           static_cast<float>(length(f.args[1], height)));
+            } else if (n == "scale3d") {
+                t = Transform2D::scale(static_cast<float>(number(f.args[0], 1)),
+                                       static_cast<float>(number(f.args[1], 1)));
+            } else if (n == "rotatez" && argc >= 1) {
+                t = Transform2D::rotate(angle(f.args[0]));
+            } else if (n == "rotatex" && argc >= 1) {
+                t = Transform2D::scale(1, static_cast<float>(std::cos(angle(f.args[0]) * kPi / 180)));
+            } else if (n == "rotatey" && argc >= 1) {
+                t = Transform2D::scale(static_cast<float>(std::cos(angle(f.args[0]) * kPi / 180)), 1);
+            } else if (n == "rotate3d") {
+                // Rodrigues' rotation about the unit axis, top-left 2x2 kept.
+                double kx = number(f.args[0], 0), ky = number(f.args[1], 0), kz = number(f.args[2], 0);
+                const double len = std::sqrt(kx * kx + ky * ky + kz * kz);
+                if (len > 0) {
+                    kx /= len; ky /= len; kz /= len;
+                    const double rad = angle(f.args[3]) * kPi / 180;
+                    const double c = std::cos(rad), sn = std::sin(rad), v = 1 - c;
+                    t = Transform2D(static_cast<float>(c + kx * kx * v), static_cast<float>(ky * kx * v + kz * sn),
+                                    static_cast<float>(kx * ky * v - kz * sn), static_cast<float>(c + ky * ky * v),
+                                    0, 0);
+                }
+            } else if (n == "matrix3d") {
+                // Column-major m11..m44; the affine 2D part is m11 m12 m21 m22
+                // and the translation m41 m42.
+                t = Transform2D(static_cast<float>(number(f.args[0], 1)), static_cast<float>(number(f.args[1], 0)),
+                                static_cast<float>(number(f.args[4], 0)), static_cast<float>(number(f.args[5], 1)),
+                                static_cast<float>(number(f.args[12], 0)), static_cast<float>(number(f.args[13], 0)));
+            }
+            // translateZ, scaleZ and perspective: identity.
         } else {
-            continue;   // a 3D or unknown function: no effect
+            continue;   // an unknown function: no effect
         }
         m = m.multiply(t);
     }
