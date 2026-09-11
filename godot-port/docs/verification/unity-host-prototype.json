@@ -221,14 +221,18 @@
         "position: sticky pinned against the scroll container (new sticky.cpp, offsets applied by paint, hit testing and visual_position); test_abi_position_sticky",
         "@import through the asset reader (new at_import.cpp: media/supports/layer wrappers, nesting, cycle guard, missing sheets in css_diagnostics); test_abi_at_import",
         "CSS scroll snap (new scroll_snap.cpp; 13 properties appended to the generated registry, reg.count() 334+13; programmatic scrolls snap at once, wheel scrolls settle after 150 ms with a 250 ms ease-out); test_abi_scroll_snap",
-        "soft hyphens invisible everywhere and hyphens: manual breaks (inline_layout.cpp place_soft_hyphen_word); test_soft_hyphens"
+        "soft hyphens invisible everywhere and hyphens: manual breaks (inline_layout.cpp place_soft_hyphen_word); test_soft_hyphens",
+        "@scope with root and limit selector lists, :scope as the root, nesting, inside @media (cascade.cpp; test_cascade_scope) -- core ahead, the C# parses it but its cascade ignores it",
+        "mix-blend-mode as a per-draw attribute (ABI minor 33 weva_draw.blend_mode, the sixteen modes; Godot MUL/ADD/MIX on child canvas items, Unity blend states for multiply/screen/darken/lighten; test_abi_mix_blend_mode, NativeBlendTests, hover_tests.gd)",
+        "background-blend-mode (the twelve separable modes per layer) and mask-image layers (image or gradient, mask-position/size/repeat/mode, layers adding) in the background rasterizer (background.cpp; test_background_blend_and_mask); borders, text and descendants are not masked",
+        "list-style-image as an image-sized atom marker, outside or inside (box_builder/block_layout/paint; test_list_style_image)"
       ],
-      "left_on_the_list": "mask / mix-blend-mode (render interface work), @scope (parsed by neither cascade), list-style-image and background-attachment (no consumer in either engine), subgrid, direction: rtl, View Transitions, component-scoped stylesheets (the C# reaches them only through ComponentRegistry.Register, not markup), font-variation-settings / -webkit-text-stroke (no paint consumer in the C# either), image-rendering (the core samples nearest by design)",
+      "left_on_the_list": "background-attachment (no consumer in either engine), image-rendering (nearest by design), subgrid, direction: rtl, View Transitions, component-scoped stylesheets (the C# reaches them only through ComponentRegistry.Register), font-variation-settings / -webkit-text-stroke (no paint consumer in the C# either); from the tooling list: change notification per element, parse diagnostics with positions",
       "gates_after": {
-        "core_suite_linux_gcc": "505,596 checks, 0 failures (clang ASan/UBSan tree agrees)",
-        "unity_native_editmode": "84 cases: 82 pass, 2 inconclusive by design (WEVA_NATIVE_PARITY / WEVA_NATIVE_DUMP_MANIFEST unset), on the rebuilt Windows weva_core.dll (121 exports)",
+        "core_suite_linux_gcc": "505,716 checks, 0 failures after list-style-image (clang ASan/UBSan tree 505,700 before it, 0 failures)",
+        "unity_native_editmode": "91 cases: 89 pass, 2 inconclusive by design, on the Windows weva_core.dll carrying every change through the mask/blend rasterizer work",
         "godot_host_linux": "31 test scenes from check.sh's host gate, all 0 failures, on the rebuilt AND installed libweva_godot.so (the WSL build writes .utmp/release59/linux/bin; it has to be copied into hosts/godot/project/addons/weva/bin, which an earlier pass in this session had not done -- that pass ran on a stale library and is superseded by this one)",
-        "godot_host_windows": "weva_godot.dll rebuilt with MSVC and six scenes run headless on Windows (range_direction, hover, test_scene, input_integration, select_control, text_editing), all 0 failures",
+        "godot_host_windows": "weva_godot.dll rebuilt with MSVC after each host change; hover_tests (22), test_scene (247) and range_direction (66) headless on Windows, 0 failures",
         "oracle_samples": "one differing value, 9slice-demo [24] inline code y (candidate 562.965, Chrome 561.83, reference 564.965; Chrome sides with neither): PRE-SESSION -- identical on a worktree build of the parent of the first session commit (c9d53bbe)",
         "oracle_hand": "43/52 agree, 2 differ (25-backdrop-modal-dialog dialog centring, 42-cv-hidden content-visibility; both known), 7 reference bugs Chrome sides with the core on",
         "plugins_installed": "Windows Unity plugin (Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll), Linux Unity plugin (~/weva/build-unity), Linux and Windows Godot hosts rebuilt",

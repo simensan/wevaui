@@ -456,8 +456,17 @@ EditMode 82 pass (2 inconclusive by design), all 31 Godot host scenes green on t
 rebuilt Linux host, the samples oracle unchanged from a pre-session build (its one
 differing value predates the work) and hand at its known 43/52. Not changed by
 this: the readiness requirements above, the whole-frame timing gates, and the
-items the port list still holds (mask / mix-blend-mode, `@scope`, subgrid, rtl,
-View Transitions, component-scoped stylesheets).
+items the port list still holds (subgrid, rtl, View Transitions,
+component-scoped stylesheets, `background-attachment`).
+
+Later the same day: `@scope`, `mix-blend-mode` (ABI minor 33, per-draw, both
+hosts render what a blend state can), `background-blend-mode` and `mask-image`
+in the rasterizer, `list-style-image`; and the tooling surface grew by ABI
+minors 29-32 (the CSS cursor under the pointer, engine counters, the
+inspector's hit test, the box tree as a list, an identity-preserving hot
+reload). Gates after the last of them: core 505,716 / 0, Unity Native EditMode
+89 pass / 2 inconclusive, Godot hover/host/range scenes green on both
+platforms, the full 31-scene Linux run green on the installed library.
 
 ## Next work
 
