@@ -251,6 +251,9 @@ struct Box {
     bool preserved_tab = false;
     // Inter-character justification, added on top of the CSS letter-spacing.
     double justify_letter_spacing = 0;
+    // Width `text-align: justify` added to this run; not part of its natural
+    // advance, so intrinsic sizing takes it back off.
+    double justify_extra_width = 0;
 
     // A flex line stretched this box's cross size, so the auto-height rule must
     // not collapse it back to its content when its layout is re-run. Without

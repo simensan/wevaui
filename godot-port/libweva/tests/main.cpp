@@ -163,6 +163,7 @@ void test_line_breaking();
 void test_whitespace_collapsing();
 void test_line_metrics_and_align();
 void test_shrink_to_fit();
+void test_text_align_justify();
 void test_inline_layout_reuse();
 void test_forced_breaks();
 void test_form_control_baselines();
@@ -713,6 +714,7 @@ int main() {
     test_whitespace_collapsing();
     test_line_metrics_and_align();
     test_shrink_to_fit();
+    test_text_align_justify();
     test_inline_layout_reuse();
     test_forced_breaks();
     test_form_control_baselines();

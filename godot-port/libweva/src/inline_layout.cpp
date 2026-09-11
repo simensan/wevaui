@@ -62,6 +62,8 @@ const int kId_overflow_wrap = CssPropertyRegistry::instance().id_of("overflow-wr
 const int kId_position = CssPropertyRegistry::instance().id_of("position");
 const int kId_tab_size = CssPropertyRegistry::instance().id_of("tab-size");
 const int kId_text_align = CssPropertyRegistry::instance().id_of("text-align");
+const int kId_text_align_last = CssPropertyRegistry::instance().id_of("text-align-last");
+const int kId_text_justify = CssPropertyRegistry::instance().id_of("text-justify");
 const int kId_text_indent = CssPropertyRegistry::instance().id_of("text-indent");
 const int kId_text_overflow = CssPropertyRegistry::instance().id_of("text-overflow");
 const int kId_white_space = CssPropertyRegistry::instance().id_of("white-space");
@@ -408,6 +410,27 @@ std::string_view resolve_text_align(const ComputedStyle* style) {
     return t;
 }
 
+// CSS Text L3 §7.4 text-align-last: `auto` is the paragraph's own alignment,
+// except that a justified paragraph's last line is `start`.
+std::string_view resolve_text_align_last(const ComputedStyle* style, std::string_view align) {
+    std::string_view t = get(style, kId_text_align_last);
+    const bool rtl = is_rtl(style);
+    if (t.empty() || iequals(t, "auto")) {
+        return iequals(align, "justify") ? (rtl ? "right" : "left") : align;
+    }
+    if (iequals(t, "start")) return rtl ? "right" : "left";
+    if (iequals(t, "end")) return rtl ? "left" : "right";
+    return t;
+}
+
+// CSS Text L3 §7.3 text-justify: `auto` and `inter-word` spread the spaces,
+// `inter-character` every character boundary, `none` nothing.
+std::string_view resolve_text_justify(const ComputedStyle* style) {
+    const std::string_view t = get(style, kId_text_justify);
+    if (iequals(t, "inter-character") || iequals(t, "none") || iequals(t, "inter-word")) return t;
+    return "auto";
+}
+
 std::vector<InlineItem> collect_inline_items(const BoxTree& tree, BoxId container,
                                              const LayoutContext& ctx,
                                              const FontMetrics* metrics) {
@@ -569,7 +592,97 @@ struct Fragment {
     double x;
     double width;
     bool is_tab = false;
+    // What `text-align: justify` added: the per-glyph increment for paint
+    // (inter-character) and the width this fragment grew by (either mode).
+    double justify_spacing = 0;
+    double justify_extra = 0;
 };
+
+// CSS Text L3 §7.3: spread `extra` over the line's justification
+// opportunities. Inter-word: every space that has content after it on the
+// line -- trailing (hanging) spaces and an outside marker's own space are
+// not opportunities. Inter-character: every character boundary between
+// adjacent text fragments, atoms opaque, the spec's rule that every
+// adjacent-character boundary is an opportunity. Both widen fragments in
+// place and shift what follows, so attach sees final positions.
+void justify_fragments(std::vector<Fragment>& line, double extra, bool inter_character) {
+    const auto is_edge = [](const Fragment& f) {
+        return f.item->is_inline_start() || f.item->is_inline_end();
+    };
+    const auto is_text = [&](const Fragment& f) {
+        return !is_edge(f) && !f.item->is_break() && !f.item->is_atom() &&
+               !f.item->is_list_marker_outside && !f.text.empty();
+    };
+    // Content ends at the last fragment that is a word or an atom.
+    size_t last_content = line.size();
+    for (size_t k = line.size(); k-- > 0;) {
+        const Fragment& f = line[k];
+        if (is_edge(f) || f.item->is_break() || f.item->is_list_marker_outside) continue;
+        if (f.is_space) continue;
+        if (f.item->is_atom() || !f.text.empty()) { last_content = k; break; }
+    }
+    if (last_content == line.size()) return;
+
+    if (!inter_character) {
+        const auto is_gap = [&](size_t k) {
+            const Fragment& f = line[k];
+            return k < last_content && f.is_space && f.width > 0 && !f.item->is_list_marker_outside;
+        };
+        int gaps = 0;
+        for (size_t k = 0; k < last_content; ++k) if (is_gap(k)) ++gaps;
+        if (gaps == 0) return;
+        const double inc = extra / gaps;
+        double cumulative = 0;
+        for (size_t k = 0; k < line.size(); ++k) {
+            Fragment& f = line[k];
+            f.x += cumulative;
+            if (is_gap(k)) {
+                f.width += inc;
+                f.justify_extra += inc;
+                cumulative += inc;
+            }
+        }
+        return;
+    }
+
+    // Characters, not bytes: a two-byte letter is one gap's worth.
+    const auto chars = [](std::string_view t) {
+        size_t n = 0;
+        for (unsigned char c : t) if ((c & 0xC0) != 0x80) ++n;
+        return n;
+    };
+    size_t gaps = 0;
+    bool prev_text = false;
+    for (size_t k = 0; k <= last_content; ++k) {
+        const Fragment& f = line[k];
+        if (is_edge(f)) continue;   // an inline box's edge is not a character
+        if (is_text(f)) {
+            if (prev_text) ++gaps;
+            gaps += chars(f.text) - 1;
+            prev_text = true;
+        } else {
+            prev_text = false;
+        }
+    }
+    if (gaps == 0) return;
+    const double inc = extra / static_cast<double>(gaps);
+    double cumulative = 0;
+    bool first_text = true;
+    for (size_t k = 0; k < line.size(); ++k) {
+        Fragment& f = line[k];
+        if (k > last_content || is_edge(f)) { f.x += cumulative; continue; }
+        if (!is_text(f)) { f.x += cumulative; first_text = true; continue; }
+        // One boundary gap before this fragment, except for the first.
+        if (!first_text) cumulative += inc;
+        first_text = false;
+        f.x += cumulative;
+        f.justify_spacing = inc;
+        const double intra = inc * static_cast<double>(chars(f.text) - 1);
+        f.width += intra;
+        f.justify_extra += intra;
+        cumulative += intra;
+    }
+}
 
 // One inline box's extent on the line being flushed.
 struct Span {
@@ -661,8 +774,11 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     // off the null style it resolved to `start`, and an inline-flex pill that
     // shared its right-aligned parent with a block sibling (so it sat in an
     // anonymous block) was flushed left.
-    const std::string_view align = resolve_text_align(
-        cbox.style ? cbox.style : (cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr));
+    const ComputedStyle* const align_style =
+        cbox.style ? cbox.style : (cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr);
+    const std::string_view align = resolve_text_align(align_style);
+    const std::string_view align_last = resolve_text_align_last(align_style, align);
+    const std::string_view text_justify = resolve_text_justify(align_style);
     // Copied out, not read through `cbox`: BoxTree::create appends to a vector,
     // so every box reference is invalidated by the next create — and flush_line
     // creates one line box plus one run per fragment. `cbox` stays valid only
@@ -1006,9 +1122,16 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         if (is_final || forced_break)
             hanging_space = std::min(hanging_space, std::max(0.0, pen - line_width));
         const double alignment_pen = pen - hanging_space;
+        // The last line of a paragraph -- the final one, or one a forced
+        // break ends -- takes text-align-last.
+        const std::string_view line_align = (is_final || forced_break) ? align_last : align;
         double dx = 0;
-        if (iequals(align, "right")) dx += line_width - alignment_pen;
-        else if (iequals(align, "center")) dx += (line_width - alignment_pen) * 0.5;
+        if (iequals(line_align, "right")) dx += line_width - alignment_pen;
+        else if (iequals(line_align, "center")) dx += (line_width - alignment_pen) * 0.5;
+        else if (iequals(line_align, "justify") && !iequals(text_justify, "none") &&
+                 line_width - alignment_pen > 0) {
+            justify_fragments(line, line_width - alignment_pen, iequals(text_justify, "inter-character"));
+        }
         if (dx < 0) dx = 0;
 
         const BoxId lb = tree->create(BoxKind::Line, nullptr, container_style);
@@ -1183,6 +1306,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             const FontMetrics& fm = f.item->metrics ? *f.item->metrics : metrics;
             r.y = baseline - fm.ascent(f.item->font_size);
             r.width = f.width;
+            r.justify_letter_spacing = f.justify_spacing;
+            r.justify_extra_width = f.justify_extra;
             r.height = fm.ascent(f.item->font_size) + fm.descent(f.item->font_size);
             tree->append_child(lb, run);
         }
@@ -1772,9 +1897,12 @@ IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutCont
                 //
                 // It only showed on an INLINE image, because a `display: block`
                 // one is a block child and already took this path.
+                // A justified run is wider than its text; the natural
+                // advance is what the paragraph would take unjustified.
                 const IntrinsicWidths w = run.kind == BoxKind::Block
                     ? block_child_contribution<Minimum, Maximum>(tree, r, ctx)
-                    : IntrinsicWidths{run.width, run.width};
+                    : IntrinsicWidths{run.width - run.justify_extra_width,
+                                      run.width - run.justify_extra_width};
                 if constexpr (Minimum) {
                     line_sum.minimum += w.minimum;
                     const double contribution = w.minimum + (first_run ? indent : 0);

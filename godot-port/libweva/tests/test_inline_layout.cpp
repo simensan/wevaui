@@ -430,6 +430,105 @@ void test_line_metrics_and_align() {
     }
 }
 
+// CSS Text L3 §7.3-7.4: text-align: justify, text-align-last, text-justify.
+// The fixture's font is 8px per character at 16px, so a two-letter word is
+// 16 wide and a space 8.
+void test_text_align_justify() {
+    const auto run = [](const Fixture& f, BoxId line, std::string_view text, int nth = 0) {
+        int seen = 0;
+        for (BoxId c : f.tree.children(line)) {
+            if (f.tree[c].kind == BoxKind::Text && f.tree[c].text == text && seen++ == nth) return c;
+        }
+        return kNoBox;
+    };
+    {
+        // The three gaps of a wrapped line share the 12px of slack; the last
+        // line is `start`, and no whole-line delta is recorded.
+        Fixture f;
+        CHECK(f.css("#j { display: block; width: 100px; font-size: 16px; text-align: justify }"));
+        CHECK(f.layout("<body><div id=j>ab cd ef gh ij</div></body>"));
+        const auto lines = f.lines("j");
+        CHECK(lines.size() == 2);
+        const BoxId ab = run(f, lines[0], "ab"), sp = run(f, lines[0], " "), cd = run(f, lines[0], "cd"),
+                    gh = run(f, lines[0], "gh"), ij = run(f, lines[1], "ij");
+        CHECK(ab != kNoBox && sp != kNoBox && cd != kNoBox && gh != kNoBox && ij != kNoBox);
+        CHECK(near(f.tree[ab].x, 0));
+        CHECK(near(f.tree[sp].width, 12));
+        CHECK(near(f.tree[sp].justify_extra_width, 4));
+        CHECK(near(f.tree[cd].x, 28));
+        CHECK(near(f.tree[gh].x, 84));
+        CHECK(near(f.tree[gh].x + f.tree[gh].width, 100));
+        CHECK(near(f.tree[ij].x, 0));
+        CHECK(near(f.tree[lines[0]].applied_text_align_delta, 0));
+    }
+    {
+        // text-align-last: justify spreads the final line too; center centres
+        // it the ordinary way.
+        Fixture f;
+        CHECK(f.css("#j, #c { display: block; width: 100px; font-size: 16px; text-align: justify }"
+                    "#j { text-align-last: justify } #c { text-align-last: center }"));
+        CHECK(f.layout("<body><div id=j>ab cd ef gh ij kl</div><div id=c>ab cd ef gh ij</div></body>"));
+        const auto lines = f.lines("j");
+        CHECK(lines.size() == 2);
+        CHECK(near(f.tree[run(f, lines[1], "kl")].x, 84));
+        CHECK(near(f.tree[run(f, lines[1], " ")].width, 68));
+        const auto cl = f.lines("c");
+        CHECK(cl.size() == 2);
+        CHECK(near(f.tree[run(f, cl[1], "ij")].x, 42));
+        CHECK(near(f.tree[cl[1]].applied_text_align_delta, 42));
+    }
+    {
+        // A line a forced break ends is a last line: not spread.
+        Fixture f;
+        CHECK(f.css("#j { display: block; width: 100px; font-size: 16px; text-align: justify }"));
+        CHECK(f.layout("<body><div id=j>ab cd<br>ef</div></body>"));
+        const auto lines = f.lines("j");
+        CHECK(lines.size() == 2);
+        CHECK(near(f.tree[run(f, lines[0], "cd")].x, 24));
+    }
+    {
+        // text-justify: inter-character spreads the ten character boundaries
+        // of "ab cd ef gh" (1.2 each): runs widen by their internal gaps and
+        // carry the increment for paint; `none` leaves the line ragged.
+        Fixture f;
+        CHECK(f.css("#j, #n { display: block; width: 100px; font-size: 16px; text-align: justify }"
+                    "#j { text-justify: inter-character } #n { text-justify: none }"));
+        CHECK(f.layout("<body><div id=j>ab cd ef gh ij</div><div id=n>ab cd ef gh ij</div></body>"));
+        const auto lines = f.lines("j");
+        CHECK(lines.size() == 2);
+        const BoxId ab = run(f, lines[0], "ab"), cd = run(f, lines[0], "cd"), gh = run(f, lines[0], "gh");
+        CHECK(near(f.tree[ab].width, 17.2));
+        CHECK(near(f.tree[ab].justify_letter_spacing, 1.2));
+        CHECK(near(f.tree[ab].justify_extra_width, 1.2));
+        CHECK(near(f.tree[cd].x, 27.6));
+        CHECK(near(f.tree[gh].x, 82.8));
+        CHECK(near(f.tree[gh].x + f.tree[gh].width, 100));
+        const auto nl = f.lines("n");
+        CHECK(nl.size() == 2);
+        CHECK(near(f.tree[run(f, nl[0], "gh")].x, 72));
+    }
+    {
+        // An inline box's edges ride along with the spread, and an atom on the
+        // line moves with the words around it.
+        Fixture f;
+        CHECK(f.css("#j { display: block; width: 100px; font-size: 16px; text-align: justify }"
+                    "i { display: inline-block; width: 16px; height: 10px }"));
+        CHECK(f.layout("<body><div id=j>ab <b>cd</b> <i></i> gh ij</div></body>"));
+        const auto lines = f.lines("j");
+        CHECK(lines.size() == 2);
+        // "ab cd [atom] gh" is 16+8+16+8+16+8+16 = 88 -> 12 of slack over 3 gaps.
+        CHECK(near(f.tree[run(f, lines[0], "cd")].x, 28));
+        CHECK(near(f.tree[run(f, lines[0], "gh")].x, 84));
+        const BoxId atom = f.find_kind("", BoxKind::Block, lines[0]);
+        (void)atom;
+        bool atom_moved = false;
+        for (BoxId c : f.tree.children(lines[0])) {
+            if (f.tree[c].kind == BoxKind::Block && near(f.tree[c].x, 56)) atom_moved = true;
+        }
+        CHECK(atom_moved);
+    }
+}
+
 void test_shrink_to_fit() {
     {
         // CSS 2.1 §10.3.5: min(max-content, max(min-content, available)).

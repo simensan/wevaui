@@ -3619,8 +3619,11 @@ an ABI surface), keep host-side (C#), drop.
    `::placeholder` honours `color` and `opacity`, `::selection` its
    `background-color` for the band. Not done, as in the C#: a
    `::placeholder` font and the `::selection` glyph colour.
-5. Text: `text-align: justify` (only right/center branches,
-   `inline_layout.cpp:1010`), `text-align-last`, `hyphens: manual`,
+5. Text: `text-align: justify`, `text-align-last` and `text-justify` DONE
+   2026-09-11 (`justify_fragments` in `inline_layout.cpp`: inter-word and
+   inter-character, the last line and a forced-break line take
+   text-align-last, intrinsic widths take the spread back off). Still open:
+   `hyphens: manual`,
    `font-variation-settings` / `font-optical-sizing` / `font-feature-settings`
    (no font-backend path for axes or features; the `weva_font_backend` table
    would need them), `-webkit-text-stroke`.
