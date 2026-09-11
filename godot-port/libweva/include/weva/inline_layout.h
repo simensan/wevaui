@@ -65,6 +65,9 @@ struct InlineItem {
     // is kept whole and moved to the next line as usual, and broken only when
     // it is alone on a line and still does not fit.
     bool break_word = false;
+    // CSS Text L3 §5.3 `hyphens`: anything but `none` lets a soft hyphen
+    // (U+00AD) break the word, with a hyphen drawn at the break.
+    bool hyphenate = true;
     // CSS Text L3 §5.3: which kinsoku prohibitions hold between two CJK
     // characters. Only `loose` and `anywhere` differ from the default.
     LineBreakLevel line_break = LineBreakLevel::Normal;

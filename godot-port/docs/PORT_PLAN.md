@@ -3628,8 +3628,10 @@ an ABI surface), keep host-side (C#), drop.
 5. Text: `text-align: justify`, `text-align-last` and `text-justify` DONE
    2026-09-11 (`justify_fragments` in `inline_layout.cpp`: inter-word and
    inter-character, the last line and a forced-break line take
-   text-align-last, intrinsic widths take the spread back off). Still open:
-   `hyphens: manual`,
+   text-align-last, intrinsic widths take the spread back off). `hyphens:
+   manual` DONE 2026-09-11 (soft hyphens invisible, a break there draws a
+   hyphen; `auto` behaves as `manual`, no dictionary in either engine).
+   Still open:
    `font-variation-settings` / `font-optical-sizing` / `font-feature-settings`
    (no font-backend path for axes or features; the `weva_font_backend` table
    would need them), `-webkit-text-stroke`.

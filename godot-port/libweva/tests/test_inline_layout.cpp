@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <map>
+#include <cstdio>
 #include <memory>
 #include <string>
 #include <sstream>
@@ -466,6 +467,45 @@ void test_intrinsic_width_keywords() {
         }
     }
     CHECK(ib);
+}
+
+// CSS Text L3 §5.3: a soft hyphen is invisible, and under `hyphens: manual`
+// (the initial value) a word breaks there with a hyphen drawn; `none` keeps
+// the word whole. 8px per character at 16px.
+void test_soft_hyphens() {
+    Fixture f;
+    CHECK(f.css("div { font-size: 16px } #a { width: 100px } #b { width: 60px }"
+                "#c { width: 60px; hyphens: none } #d { width: 60px; white-space: pre }"
+                "#e { width: 60px; hyphens: auto }"));
+    CHECK(f.layout("<body><div id=a>abcdef\xC2\xADghij klm</div><div id=b>abcdef\xC2\xADghij klm</div>"
+                   "<div id=c>abcdef\xC2\xADghij klm</div><div id=d>abcdef\xC2\xADghij</div>"
+                   "<div id=e>ab\xC2\xAD" "cdef\xC2\xAD" "ghij\xC2\xAD" "klmn</div></body>"));
+    const auto texts = [&](std::string_view id) {
+        std::vector<std::string> out;
+        for (BoxId l : f.lines(id)) out.push_back(f.line_text(l));
+        return out;
+    };
+    // Fits whole: the soft hyphen leaves no glyph behind.
+    CHECK((texts("a") == std::vector<std::string>{"abcdefghij", "klm"}));
+    // Breaks at the soft hyphen, hyphen drawn, and the two halves measure as
+    // themselves: "abcdef-" is 56 wide.
+    CHECK((texts("b") == std::vector<std::string>{"abcdef-", "ghij", "klm"}));
+    {
+        const auto lines = f.lines("b");
+        CHECK(lines.size() == 3);
+        double w = 0;
+        for (BoxId c : f.tree.children(lines[0])) w += f.tree[c].width;
+        CHECK(near(w, 56));
+    }
+    // `none`: the word stays whole and overflows.
+    CHECK((texts("c") == std::vector<std::string>{"abcdefghij", "klm"}));
+    // Preserved text never wraps, and the soft hyphen is still invisible.
+    if (texts("d") != std::vector<std::string>{"abcdefghij"}) {
+        for (const std::string& t : texts("d")) std::printf("pre line: [%s] (%zu bytes)\n", t.c_str(), t.size());
+    }
+    CHECK((texts("d") == std::vector<std::string>{"abcdefghij"}));
+    // Several opportunities: the last one that fits is taken each time.
+    CHECK((texts("e") == std::vector<std::string>{"abcdef-", "ghij-", "klmn"}));
 }
 
 // CSS Text L3 §7.3-7.4: text-align: justify, text-align-last, text-justify.

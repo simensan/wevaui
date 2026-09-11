@@ -58,6 +58,7 @@ const int kId_line_break = CssPropertyRegistry::instance().id_of("line-break");
 const int kId_line_height = CssPropertyRegistry::instance().id_of("line-height");
 const int kId_margin_left = CssPropertyRegistry::instance().id_of("margin-left");
 const int kId_margin_right = CssPropertyRegistry::instance().id_of("margin-right");
+const int kId_hyphens = CssPropertyRegistry::instance().id_of("hyphens");
 const int kId_overflow_wrap = CssPropertyRegistry::instance().id_of("overflow-wrap");
 const int kId_position = CssPropertyRegistry::instance().id_of("position");
 const int kId_tab_size = CssPropertyRegistry::instance().id_of("tab-size");
@@ -310,6 +311,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             item.break_word = item.allow_wrap && !item.break_anywhere &&
                               (iequals(ow, "break-word") || iequals(wb, "break-word") ||
                                iequals(get(item.style, kId_word_wrap), "break-word"));
+            item.hyphenate = item.allow_wrap && !iequals(get(item.style, kId_hyphens), "none");
             // `line-break` decides which kinsoku prohibitions apply between
             // CJK characters -- whether a small kana may start a line.
             item.line_break = line_break_level(get(item.style, kId_line_break));
@@ -585,6 +587,29 @@ double layout_inline(BoxTree* tree, BoxId container, double available_width,
 namespace {
 
 // One fragment of text placed on the line being built.
+// U+00AD, the soft hyphen, as UTF-8.
+bool is_soft_hyphen_at(std::string_view s, size_t i) {
+    return i + 1 < s.size() && static_cast<unsigned char>(s[i]) == 0xC2 &&
+           static_cast<unsigned char>(s[i + 1]) == 0xAD;
+}
+
+bool has_soft_hyphen(std::string_view s) {
+    for (size_t i = 0; i + 1 < s.size(); ++i) if (is_soft_hyphen_at(s, i)) return true;
+    return false;
+}
+
+// The text with its soft hyphens removed: they are invisible except at the
+// break they allow (CSS Text L3 §5.3), and a font may well draw them.
+std::string strip_soft_hyphens(std::string_view s) {
+    std::string out;
+    out.reserve(s.size());
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (is_soft_hyphen_at(s, i)) { ++i; continue; }
+        out.push_back(s[i]);
+    }
+    return out;
+}
+
 struct Fragment {
     const InlineItem* item;
     std::string_view text;
@@ -1501,6 +1526,75 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             }
         };
 
+        // CSS Text L3 §5.3 `hyphens: manual` (and `auto`, without a
+        // dictionary): a word holding soft hyphens is placed whole when it
+        // fits, and otherwise broken at the last soft hyphen that leaves room
+        // for a hyphen on the line, as many times as it takes. Mirrors
+        // LineBreaker.EmitSoftHyphenWord.
+        const auto place_soft_hyphen_word = [&](std::string_view word) {
+            const std::string_view cleaned = tree->own_text(strip_soft_hyphens(word));
+            const double full = measure_spaced(metrics, cleaned, it, first_piece);
+            if (line_has_content() && pen + full > line_width + kFitEpsilon) flush_line(false);
+            if (pen + full <= line_width + kFitEpsilon) {
+                first_piece = false;
+                grow_line_metrics(it);
+                line.push_back({&it, cleaned, false, pen, full});
+                pen += full;
+                return;
+            }
+            size_t cursor = 0;
+            while (cursor < word.size()) {
+                const std::string_view rest = tree->own_text(strip_soft_hyphens(word.substr(cursor)));
+                const double rest_w = measure_spaced(metrics, rest, it, first_piece);
+                if (pen + rest_w <= line_width + kFitEpsilon) {
+                    first_piece = false;
+                    grow_line_metrics(it);
+                    line.push_back({&it, rest, false, pen, rest_w});
+                    pen += rest_w;
+                    return;
+                }
+                // The longest prefix ending at a soft hyphen that fits with
+                // its hyphen drawn.
+                std::string best;
+                double best_w = 0;
+                size_t next = cursor;
+                for (size_t k = cursor; k + 1 < word.size(); ++k) {
+                    if (k == cursor || !is_soft_hyphen_at(word, k)) continue;
+                    std::string candidate = strip_soft_hyphens(word.substr(cursor, k - cursor));
+                    candidate += '-';
+                    const double w = measure_spaced(metrics, candidate, it, first_piece);
+                    if (pen + w <= line_width + kFitEpsilon) {
+                        best = std::move(candidate);
+                        best_w = w;
+                        next = k + 2;
+                    }
+                }
+                if (next > cursor) {
+                    const std::string_view text = tree->own_text(std::move(best));
+                    first_piece = false;
+                    grow_line_metrics(it);
+                    line.push_back({&it, text, false, pen, best_w});
+                    pen += best_w;
+                    flush_line(false);
+                    cursor = next;
+                    continue;
+                }
+                if (line_has_content()) {
+                    flush_line(false);
+                    continue;
+                }
+                if (it.break_word) {
+                    place_sliced_word(rest);
+                } else {
+                    first_piece = false;
+                    grow_line_metrics(it);
+                    line.push_back({&it, rest, false, pen, rest_w});
+                    pen += rest_w;
+                }
+                return;
+            }
+        };
+
         size_t seg_begin = 0;
         while (true) {
             const size_t nl =
@@ -1527,7 +1621,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     }
                     const size_t tab = seg.find('\t', at);
                     const size_t end = tab == std::string_view::npos ? seg.size() : tab;
-                    const auto text = seg.substr(at, end - at);
+                    std::string_view text = seg.substr(at, end - at);
+                    // A soft hyphen is invisible in `pre` text too; there is
+                    // no break for it to show at.
+                    if (has_soft_hyphen(text)) text = tree->own_text(strip_soft_hyphens(text));
                     if (!text.empty() || line.empty()) {
                         const double w = measure_spaced(metrics, text, it, first_piece);
                         grow_line_metrics(it);
@@ -1564,7 +1661,8 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                            ((seg[end] == ' ') == spaces)) {
                         ++end;
                     }
-                    const std::string_view piece = seg.substr(at, end - at);
+                    std::string_view piece = seg.substr(at, end - at);
+                    if (!spaces && has_soft_hyphen(piece)) piece = tree->own_text(strip_soft_hyphens(piece));
                     // A preserved run of spaces is charged word-spacing per
                     // space, the same as a collapsed one is charged for the
                     // single space it becomes.
@@ -1604,6 +1702,14 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     pen += w;
                     continue;
                 }
+                std::string_view word = t.word;
+                if (has_soft_hyphen(word)) {
+                    if (it.hyphenate && !it.break_anywhere) {
+                        place_soft_hyphen_word(word);
+                        continue;
+                    }
+                    word = tree->own_text(strip_soft_hyphens(word));   // invisible
+                }
                 // `overflow-wrap: break-word` is the value authors actually
                 // write to stop a long name blowing out a panel, and the port
                 // read neither spelling of it. It is NOT `break-all`: a word
@@ -1614,7 +1720,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 // this only records that the option is open.
                 bool slice_word = it.break_anywhere;
                 if (!slice_word && it.break_word && it.allow_wrap) {
-                    const double whole = measure_spaced(metrics, t.word, it, first_piece);
+                    const double whole = measure_spaced(metrics, word, it, first_piece);
                     if (line_has_content() && pen + whole > line_width + kFitEpsilon) {
                         flush_line(false);
                     }
@@ -1627,7 +1733,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     // is placed a slice at a time: fill the rest of this line, wrap,
                     // repeat. A slice is a view into the same source buffer, so no
                     // string is built.
-                    place_sliced_word(t.word);
+                    place_sliced_word(word);
                     continue;
                 }
                 // Japanese and Chinese have no spaces, so the tokeniser hands
@@ -1636,11 +1742,11 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 // CJK line at all. Break it at the opportunities kinsoku
                 // allows: between any two CJK characters except before a
                 // closing mark or after an opening one.
-                if (it.allow_wrap && !it.break_anywhere && has_cjk(t.word)) {
+                if (it.allow_wrap && !it.break_anywhere && has_cjk(word)) {
                     size_t idx = 0;
-                    while (idx < t.word.size()) {
-                        const size_t stop = cjk_piece_end(t.word, idx, it.line_break);
-                        const std::string_view piece = t.word.substr(idx, stop - idx);
+                    while (idx < word.size()) {
+                        const size_t stop = cjk_piece_end(word, idx, it.line_break);
+                        const std::string_view piece = word.substr(idx, stop - idx);
                         const double pw = measure_spaced(metrics, piece, it, first_piece);
                         first_piece = false;
                         if (line_has_content() && pen + pw > line_width + kFitEpsilon) {
@@ -1653,7 +1759,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     }
                     continue;
                 }
-                const double w = measure_spaced(metrics, t.word, it, first_piece);
+                const double w = measure_spaced(metrics, word, it, first_piece);
                 first_piece = false;
                 // A word that does not fit starts a new line — unless the line is
                 // already empty, in which case it overflows rather than looping.
@@ -1661,7 +1767,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                     flush_line(false);
                 }
                 grow_line_metrics(it);
-                line.push_back({&it, t.word, false, pen, w});
+                line.push_back({&it, word, false, pen, w});
                 pen += w;
             }
             }
