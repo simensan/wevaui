@@ -68,6 +68,7 @@ namespace Weva.Tests.EditorTests.Native
         {
             FaceInfo info = EngineDesignInfo(_regular);
             Assert.That(info.pointSize, Is.GreaterThan(0), "design units are reported before a size is set");
+            TestContext.WriteLine("FontEngine design units: pointSize=" + info.pointSize + " ascentLine=" + info.ascentLine + " descentLine=" + info.descentLine + " lineHeight=" + info.lineHeight + " capLine=" + info.capLine + " meanLine=" + info.meanLine + " baseline=" + info.baseline + " family=" + info.familyName);
             double scale = 16.0 / info.pointSize;
             Assert.That(_backend.TryFaceMetrics(_face, 16, out double ascent, out double descent, out double lineGap));
             Assert.That(ascent, Is.EqualTo(info.ascentLine * scale).Within(1e-9));

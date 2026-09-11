@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
+using UnityEngine;
 using Weva.Native;
 
 namespace Weva.Tests.EditorTests.Native
@@ -62,6 +63,10 @@ namespace Weva.Tests.EditorTests.Native
         {
             string manifest = System.Environment.GetEnvironmentVariable("WEVA_NATIVE_DUMP_MANIFEST");
             Assume.That(!string.IsNullOrEmpty(manifest) && File.Exists(manifest), "WEVA_NATIVE_DUMP_MANIFEST names the cases to dump (value: '" + manifest + "', exists: " + (manifest != null && File.Exists(manifest)) + ")");
+            // Columns: html, css, width, height, out-json [, font (synthetic | inter) [, out-png]].
+            // "inter" is the package's UI face through FontEngine (the face the
+            // C# goldens and the Chrome captures use); a png column also renders
+            // the page (needs a graphics device) and writes it beside a .ppm.
             int dumped = 0;
             foreach (string line in File.ReadAllLines(manifest))
             {
@@ -71,17 +76,54 @@ namespace Weva.Tests.EditorTests.Native
                 string html = f[0], css = f[1];
                 int width = int.Parse(f[2]), height = int.Parse(f[3]);
                 string outPath = f[4];
+                string fontMode = f.Length > 5 ? f[5].Trim().ToLowerInvariant() : "synthetic";
+                string pngPath = f.Length > 6 ? f[6].Trim() : "";
                 using (var doc = new NativeDocument(width, height))
-                using (var fonts = new SyntheticFontBackend())
+                using (var synthetic = new SyntheticFontBackend())
+                using (var engine = new UnityFontBackend())
                 {
-                    fonts.Install(doc);
+                    if (fontMode == "inter")
+                    {
+                        UnityEngine.Font regular = UnityEngine.Resources.Load<UnityEngine.Font>("Fonts/Weva-Default");
+                        Assert.That(regular, Is.Not.Null, "the package's UI face");
+                        ulong face = engine.Adopt(regular);
+                        UnityEngine.Font bold = UnityEngine.Resources.Load<UnityEngine.Font>("Fonts/Weva-Default-Bold");
+                        UnityEngine.Font italic = UnityEngine.Resources.Load<UnityEngine.Font>("Fonts/Weva-Default-Italic");
+                        UnityEngine.Font symbols = UnityEngine.Resources.Load<UnityEngine.Font>("Fonts/NotoSansSymbols2-Regular");
+                        if (bold != null) engine.SetRealVariant(face, 700, false, engine.Adopt(bold));
+                        if (italic != null) engine.SetRealVariant(face, 400, true, engine.Adopt(italic));
+                        if (symbols != null) engine.SetFallbacks(face, engine.Adopt(symbols));
+                        engine.Install(doc, face);
+                    }
+                    else
+                    {
+                        synthetic.Install(doc);
+                    }
                     doc.SetBasePath(Path.GetDirectoryName(Path.GetFullPath(html)));
                     doc.LoadHtml(File.ReadAllText(html));
                     if (css.Length > 0 && File.Exists(css)) doc.SetCss(File.ReadAllText(css));
+                    if (fontMode == "inter") engine.SyncCssFontFaces(doc);
                     doc.Update(0);
                     string json = NativeLayoutDump.Dump(doc, Path.GetFileName(html), width, height);
                     Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath)));
                     File.WriteAllText(outPath, json, new System.Text.UTF8Encoding(false));
+                    if (pngPath.Length > 0)
+                    {
+                        using (var renderer = new NativeDocumentRenderer())
+                        {
+                            UnityEngine.Texture2D image = renderer.RenderToTexture(doc, width, height, UnityEngine.Color.white);
+                            try
+                            {
+                                Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(pngPath)));
+                                File.WriteAllBytes(pngPath, image.EncodeToPNG());
+                                NativeDocumentRenderTests.WritePpm(image, Path.ChangeExtension(pngPath, ".ppm"));
+                            }
+                            finally
+                            {
+                                UnityEngine.Object.DestroyImmediate(image);
+                            }
+                        }
+                    }
                     dumped++;
                 }
             }
