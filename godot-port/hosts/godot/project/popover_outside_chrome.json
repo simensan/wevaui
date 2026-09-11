@@ -1,0 +1,511 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "nested": false,
+      "manual": false,
+      "action": "outside",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        20
+      ],
+      "open": []
+    },
+    {
+      "nested": false,
+      "manual": false,
+      "action": "parent",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        220,
+        120
+      ],
+      "up": [
+        220,
+        120
+      ],
+      "open": [
+        "a"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": false,
+      "action": "keyboard",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        20
+      ],
+      "open": [
+        "a"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": false,
+      "action": "blank",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        350
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": []
+    },
+    {
+      "nested": false,
+      "manual": false,
+      "action": "outside-drag",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": []
+    },
+    {
+      "nested": false,
+      "manual": false,
+      "action": "leave-menu",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        220,
+        120
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": [
+        "a"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": false,
+      "action": "enter-menu",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        220,
+        120
+      ],
+      "open": [
+        "a"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": true,
+      "action": "outside",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        20
+      ],
+      "open": [
+        "m"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": true,
+      "action": "parent",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        220,
+        120
+      ],
+      "up": [
+        220,
+        120
+      ],
+      "open": [
+        "a",
+        "m"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": true,
+      "action": "keyboard",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        20
+      ],
+      "open": [
+        "a",
+        "m"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": true,
+      "action": "blank",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        350
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": [
+        "m"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": true,
+      "action": "outside-drag",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": [
+        "m"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": true,
+      "action": "leave-menu",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        220,
+        120
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": [
+        "a",
+        "m"
+      ]
+    },
+    {
+      "nested": false,
+      "manual": true,
+      "action": "enter-menu",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu</div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        220,
+        120
+      ],
+      "open": [
+        "a",
+        "m"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": false,
+      "action": "outside",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        20
+      ],
+      "open": []
+    },
+    {
+      "nested": true,
+      "manual": false,
+      "action": "parent",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        220,
+        120
+      ],
+      "up": [
+        220,
+        120
+      ],
+      "open": [
+        "a"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": false,
+      "action": "keyboard",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        20
+      ],
+      "open": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": false,
+      "action": "blank",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        350
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": []
+    },
+    {
+      "nested": true,
+      "manual": false,
+      "action": "outside-drag",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": []
+    },
+    {
+      "nested": true,
+      "manual": false,
+      "action": "leave-menu",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        220,
+        120
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": false,
+      "action": "enter-menu",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        220,
+        120
+      ],
+      "open": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": true,
+      "action": "outside",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        20
+      ],
+      "open": [
+        "m"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": true,
+      "action": "parent",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        220,
+        120
+      ],
+      "up": [
+        220,
+        120
+      ],
+      "open": [
+        "a",
+        "m"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": true,
+      "action": "keyboard",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        20
+      ],
+      "open": [
+        "a",
+        "b",
+        "m"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": true,
+      "action": "blank",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        350
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": [
+        "m"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": true,
+      "action": "outside-drag",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": [
+        "m"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": true,
+      "action": "leave-menu",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        220,
+        120
+      ],
+      "up": [
+        30,
+        350
+      ],
+      "open": [
+        "a",
+        "b",
+        "m"
+      ]
+    },
+    {
+      "nested": true,
+      "manual": true,
+      "action": "enter-menu",
+      "html": "<button id=outside>Outside</button><div id=a popover>Menu<div id=b popover>Child</div></div><div id=m popover=manual>Pinned</div>",
+      "css": "body{margin:0}#outside{position:absolute;left:10px;top:10px;width:100px;height:30px}[popover]{margin:0;position:fixed;width:100px;height:60px;padding:0;border:0;inset:auto}#a{left:200px;top:100px}#b{left:350px;top:100px}#m{left:500px;top:100px}",
+      "down": [
+        30,
+        20
+      ],
+      "up": [
+        220,
+        120
+      ],
+      "open": [
+        "a",
+        "b",
+        "m"
+      ]
+    }
+  ]
+}

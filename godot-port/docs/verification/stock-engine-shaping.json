@@ -1,0 +1,375 @@
+{
+  "scope": "Adapter workaround for the stock Godot 4.7 script-iterator stack defect: document text with more than 32 emoji sub-runs or 128 open brackets is shaped in pieces. Windows only; the engine defect itself is unchanged.",
+  "library_sha256": "8ce46c8432a34b616edef56edcdc19679c5a8b6bf11f82924dbda8d65fa0f74b",
+  "test_library_sha256": "24ba0312f310cf13c2b00705934eb674767118bfc80c1530eabaddfb89181d5f",
+  "source": {
+    "godot_font.cpp": "5c44418ffc9799052570f5ee4ea5a82a11ca3a31d26224a4000ad8bb618ecef3",
+    "font_backend_tests.cpp": "5cda0a75c910d2d339ac4f2b0fba7338b00a92f5830ccfc2333266761517c2c9",
+    "filter_data.py": "8656443f220c3755482c4c845acca723f971594810ceeef9f67d2d01aec4dc58"
+  },
+  "icu_data": {
+    "added_resource": "uemoji.icu",
+    "added_bytes": 14400,
+    "total_bytes": 1293232,
+    "resources": 14,
+    "reason": "ICU 70+ serves UCHAR_EMOJI*/UCHAR_EXTENDED_PICTOGRAPHIC from uemoji data; without it every emoji lookup is false and no split happens."
+  },
+  "engines": {
+    "stock": "C:/Users/simen/Downloads/Godot_v4.7.1-stable_mono_win64 (official 4.7.1.stable.mono)",
+    "patched": ".utmp/safe-engine71/weva-godot-4.7.2-scriptfix71-windows-x86_64/editor"
+  },
+  "standalone_probe_on_stock": {
+    "summary": "6 cases, 5 failures",
+    "result": ".utmp/safe-engine71/shaping-checks/stock-probe/result.json"
+  },
+  "adapter_checks": {
+    "patched_editor": {
+      "engine": "4.7.2.stable.custom_build",
+      "checks": 19692,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/patched-new/check.log"
+    },
+    "stock_editor": {
+      "engine": "4.7.1.stable.mono.official.a13da4feb",
+      "checks": 19692,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/stock-new/check.log"
+    }
+  },
+  "frontier_lifecycle_on_stock": {
+    "previous_library_02664d4b": {
+      "completed": false,
+      "fatal": [
+        "ERROR: FATAL: Index p_index = 242 is out of bounds (size() = 241)."
+      ],
+      "log": ".utmp/safe-engine71/shaping-checks/frontier-stock-old/run.log"
+    },
+    "new_library": {
+      "completed": true,
+      "fatal": [],
+      "log": ".utmp/safe-engine71/shaping-checks/frontier-stock-new/run.log"
+    },
+    "settings": "5 cycles, 2 s soak, 1080p 3D, mixed-script 60-unit names"
+  },
+  "text_autoscroll": {
+    "stock-old-stress": {
+      "checks": 81,
+      "failures": 0
+    },
+    "stock-new-stress": {
+      "checks": 81,
+      "failures": 0
+    },
+    "stock-new-regular": {
+      "checks": 81,
+      "failures": 0
+    },
+    "patched-new-stress": {
+      "checks": 81,
+      "failures": 0
+    },
+    "patched-new-regular": {
+      "checks": 81,
+      "failures": 0
+    }
+  },
+  "core": {
+    "passed_suites": 14,
+    "total_suites": 14,
+    "log": ".utmp/safe-engine71/shaping-native/core-ctest.log"
+  },
+  "findings": [
+    "The stock 4.7.1 editor still fails five of six standalone reproduction cases; the workaround is in the adapter, not the engine.",
+    "All 19,692 adapter checks pass on both editors, including the five new past-limit cases compared glyph-by-glyph against tiled three-unit references.",
+    "The Frontier Camp lifecycle harness on the stock editor aborts with a fatal out-of-bounds index using the previous library and completes with the new one.",
+    "The autoscroll stress fixture passes with every library and editor, so it does not detect this defect."
+  ],
+  "limitations": [
+    "Text in native Godot controls bypasses the adapter and still needs the engine patch.",
+    "Exports and desktop/1080p/4K timing profiles were not rerun for this candidate; it is not installed.",
+    "macOS and other engine versions unverified; Linux evidence is headless."
+  ],
+  "host": {
+    "binary_sha256": "8ce46c8432a34b616edef56edcdc19679c5a8b6bf11f82924dbda8d65fa0f74b",
+    "passed": true,
+    "entries": 49,
+    "checks": 35546,
+    "runner": "hosts/godot/run_host_suite.py",
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite2/receipt.json",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 522
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1199
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 7330
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      },
+      {
+        "name": "popover_beforetoggle_tests",
+        "passed": true,
+        "checks": 1389
+      },
+      {
+        "name": "unknown_at_rule_tests",
+        "passed": true,
+        "checks": 12
+      },
+      {
+        "name": "css_diagnostic_tests",
+        "passed": true,
+        "checks": 26
+      },
+      {
+        "name": "conditional_keyframe_tests",
+        "passed": true,
+        "checks": 204
+      },
+      {
+        "name": "font_warmup_tests",
+        "passed": true,
+        "checks": 4
+      },
+      {
+        "name": "hidden_transition_tests",
+        "passed": true,
+        "checks": 6
+      },
+      {
+        "name": "long_effect_list_tests",
+        "passed": true,
+        "checks": 16
+      },
+      {
+        "name": "delayed_transition_tests",
+        "passed": true,
+        "checks": 6
+      },
+      {
+        "name": "transition_cancellation_tests",
+        "passed": true,
+        "checks": 18
+      },
+      {
+        "name": "transition_reversal_tests",
+        "passed": true,
+        "checks": 32
+      }
+    ]
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "total_suites": 16,
+    "seconds": 434.6,
+    "log": ".utmp/safe-engine71/shaping-native/san-ctest.log",
+    "tree": "WSL ~/weva/build-clang, -fsanitize=address,undefined"
+  },
+  "sample": {
+    "headless": "95 checks, 0 failures",
+    "mobile": "95 checks, 0 failures",
+    "logs": [
+      ".utmp/safe-engine71/shaping-checks/frontier-check-headless.log",
+      ".utmp/safe-engine71/shaping-checks/frontier-check-mobile.log"
+    ]
+  },
+  "linux_stock": {
+    "engine": "stock Linux Godot 4.7.2.stable.official.ed1daf0bf (WSL Ubuntu), headless",
+    "library_sha256": "c366c8a8e4a63fdba4abecbc2579db17de1e3918d23daef5b34740f07dc2595b",
+    "test_library_sha256": "65ca0e05f81d285d4ca5dba452cd8f647029888cc62890836e5ee385e24d1ec3",
+    "built_from": "the same source as the Windows candidate (gcc, ~/weva/build-godot)",
+    "adapter_checks": "godot font backend: 19826 checks, 0 failures",
+    "text_autoscroll": {
+      "checks": 81,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/linux/text_autoscroll_tests.log"
+    },
+    "note": "The standalone reproduction is documented failing on this stock Linux engine (GODOT_TEXT_SHAPING.md); the adapter suite including the past-limit cases passes with the piece-wise shaper."
+  }
+}

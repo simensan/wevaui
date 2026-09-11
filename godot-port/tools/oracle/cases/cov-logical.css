@@ -1,0 +1,42 @@
+/* The logical box properties and the writing modes that give them meaning.
+   In horizontal-tb, inline-size IS width -- so the vertical sections are what
+   makes these tests rather than aliases. */
+
+body { margin: 0; font-family: sans-serif; font-size: 14px; }
+
+.page { width: 820px; padding: 16px; }
+
+section { border: 1px solid #444; padding: 8px; margin-bottom: 12px; }
+
+.row { display: flex; gap: 10px; }
+
+.lbox {
+  inline-size: 160px;
+  block-size: 44px;
+  border: 2px solid #777;
+}
+.lbox.min { inline-size: auto; min-inline-size: 220px; }
+.lbox.max { inline-size: 400px; max-inline-size: 120px; }
+
+.vbox {
+  inline-size: 140px;
+  block-size: 30px;
+  border: 2px solid #777;
+}
+.vbox.minb { block-size: auto; min-block-size: 70px; }
+.vbox.maxb { block-size: 200px; max-block-size: 40px; }
+
+.rtl { direction: rtl; unicode-bidi: isolate; }
+
+.bar { display: flex; gap: 6px; }
+.chip { border: 1px solid #888; padding: 2px 6px; }
+
+/* Here the logical properties stop being aliases: inline-size is a HEIGHT. */
+.vertical {
+  writing-mode: vertical-rl;
+  block-size: 260px;
+  text-orientation: mixed;
+}
+.vertical.lr { writing-mode: vertical-lr; }
+
+.vstack { display: flex; gap: 6px; }

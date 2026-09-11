@@ -1,0 +1,135 @@
+{
+  "verification": {
+    "passed": true,
+    "prepared_pixels_match_cold": true,
+    "font_cache_log_requested": false,
+    "font_cache_log_observed": false,
+    "executable_sha256": "40d0b829cbdfc6884cccba27875bb144bdc0cedd292bdc2e914e4935fe18a689",
+    "library_sha256": "268b13335427a832c6b069d9e86231d79e1c2a86c7f93d2c349737c75e5714a9",
+    "source_sha256": {
+      "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+      "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+      "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+      "game.gd": "306b0d30baf52505537460b3fa79e58756f8e62cc9fe768a13ae5b94b3945e3b",
+      "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+      "tests\\integration.gd": "6f2e861a078d5260a23f35267ae30293536f6da0728b1e54d66134be1137badb",
+      "tests\\lifecycle.gd": "6ed8a542ea3ec25dc48d19aaa174255e607c9e8e2db47a8694353c47b3c408fd",
+      "tests\\load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+      "tests\\performance.gd": "b60f135921d15557f826baf8d1fc165a9fa16c9c3dc8e8682baca1fe5771c692",
+      "ui\\camp.css": "e9d1c82e7dbeb565e2bba565ec0d472d367c6ba14bcf3810980f0eb92d1b1436",
+      "ui\\camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+      "addons\\weva\\weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c",
+      "addons\\weva\\example\\example.gd": "9d5963e2f8b0b81aca813a79fd134516e65355f6ea0d66993766915f8fd29eed",
+      "addons\\weva\\example\\example.tscn": "f164c04bc0bb1710a068a9ed234e719a122501b774df0ba95666df1677ae56c9",
+      "addons\\weva\\example\\ui.css": "998d4af10e12099fae89c3a0ae35c986674efcc7f97b25ed8002cf23bff39eb6",
+      "addons\\weva\\example\\ui.html": "1bed57345424f80dc13dc94e82f9ab7f5b9d5bd51448b8931f01de35bd7ba33f"
+    },
+    "process_memory_available": true,
+    "result": {
+      "cycles": 200,
+      "debug_build": false,
+      "engine": {
+        "build": "custom_build",
+        "hash": "unknown",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (custom_build)",
+        "timestamp": 0
+      },
+      "first_hidden": false,
+      "name_updates": 35214,
+      "passed": true,
+      "renderer": "mobile",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "results": {
+        "first_document_cpu_ms": 82.5,
+        "first_document_through_draw_ms": 85.147,
+        "first_show_cpu_ms": 0.005,
+        "first_show_through_draw_ms": 2.641,
+        "hidden_prepare_cpu_ms": 26.267,
+        "prepared_first_show_cpu_ms": 0.015,
+        "prepared_first_show_through_draw_ms": 0.957,
+        "recreate_cpu": {
+          "max_ms": 37.034,
+          "mean_ms": 31.13209,
+          "median_ms": 30.88,
+          "p95_ms": 35.388,
+          "samples": 200
+        },
+        "reuse_through_draw": {
+          "max_ms": 4.14,
+          "mean_ms": 1.468485,
+          "median_ms": 1.089,
+          "p95_ms": 3.496,
+          "samples": 200
+        },
+        "reuse_with_hidden_data_update_cpu": {
+          "max_ms": 0.558,
+          "mean_ms": 0.290855,
+          "median_ms": 0.28,
+          "p95_ms": 0.383,
+          "samples": 200
+        },
+        "scene_resource_load_ms": 34.043,
+        "soak_frames": {
+          "max_ms": 15.998,
+          "mean_ms": 1.43587233155356,
+          "median_ms": 0.74,
+          "p95_ms": 4.08,
+          "quantile_limit_ms": 100.0,
+          "quantile_overflow_samples": 0,
+          "quantile_resolution_ms": 0.01,
+          "samples": 208642
+        },
+        "soak_seconds": 300.000576
+      },
+      "soak_frame_target": 0,
+      "soak_without_ui": false,
+      "unicode_names": true,
+      "world": "3d"
+    }
+  },
+  "raw_directory": ".utmp\\safe-engine71\\lifecycle193-long",
+  "memory_windows": [
+    {
+      "minute": 1,
+      "samples": 267,
+      "median_private_MB": 863.695,
+      "maximum_private_MB": 863.846
+    },
+    {
+      "minute": 2,
+      "samples": 267,
+      "median_private_MB": 863.74,
+      "maximum_private_MB": 863.871
+    },
+    {
+      "minute": 3,
+      "samples": 272,
+      "median_private_MB": 863.773,
+      "maximum_private_MB": 863.838
+    },
+    {
+      "minute": 4,
+      "samples": 278,
+      "median_private_MB": 863.773,
+      "maximum_private_MB": 863.773
+    },
+    {
+      "minute": 5,
+      "samples": 274,
+      "median_private_MB": 863.773,
+      "maximum_private_MB": 863.908
+    }
+  ],
+  "soak_marker_count": 348,
+  "soak_nodes": 496,
+  "soak_objects": 1949,
+  "scope": "Five-minute lifecycle observation on the patched Windows release runtime; not a timing-budget pass, UI-only memory measurement, causal speedup or hours-long leak proof."
+}

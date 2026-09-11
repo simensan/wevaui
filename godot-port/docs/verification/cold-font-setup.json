@@ -1,0 +1,30 @@
+{
+  "status": "diagnostic profiling; installed binary unchanged",
+  "library_sha256": "0d6eb936c8e352c0fe636a2e06cd4a24e04fc16a8e04aeeac73701231338cdc1",
+  "log": ".utmp\\safe-engine71\\cold-font-detail-stages\\stages.log",
+  "first_font_setup_ms": {
+    "theme": 2.767,
+    "compatibility-faces": 44.894,
+    "backend": 0.1151,
+    "families": 0.004
+  },
+  "first_system_font_setup_ms": {
+    "enumeration": 0.1865,
+    "Segoe UI Symbol": 0.9642,
+    "Segoe UI Emoji": 11.6099,
+    "Yu Gothic UI": 3.8853,
+    "Yu Gothic": 4.0713,
+    "MS Gothic": 2.11,
+    "Microsoft YaHei": 4.2729,
+    "Microsoft JhengHei": 4.7575,
+    "Malgun Gothic": 2.9707
+  },
+  "diagnostic_lifecycle_passed": true,
+  "first_document_cpu_ms": 75.785,
+  "finding": "Cold compatibility fallback setup dominates unaccounted startup time. Enumeration itself is cheap; loading configured symbol/emoji/CJK faces is costly.",
+  "limitations": [
+    "Instrumented diagnostic run; not a replacement for installed timing qualification.",
+    "Font setup segments include Godot font API calls; they do not isolate file I/O, parsing and shaping-cache creation.",
+    "No cold-open optimization implemented yet. No fallback faces removed."
+  ]
+}

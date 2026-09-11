@@ -1,0 +1,262 @@
+{
+  "scope": "Phase 2 of the shared-core plan: the Unity host over libweva. This receipt grows with the phase; each step records its gate as it lands.",
+  "date": "2026-09-11",
+  "commit": "86d2aad0",
+  "step_1_plugin_build": {
+    "target": "godot-port/hosts/unity (weva_core shared library; static CRT and ICU; only weva_* exported from weva_c.h and weva_unity.h)",
+    "windows": {
+      "toolchain": "MSVC 19.44.35222.0, Release, VS 2022 generator",
+      "library": "weva_core.dll, 4,721,664 bytes",
+      "library_sha256": "f06116368435b9c2360707db68e5dc71b999fea13cbdb105177e5c91f6b7c309",
+      "load_test": "weva_core_load_test: abi 0.25, button at 10.0,10.0 size 29.3x22.0, 4 draws, layout probe sizes match, ok",
+      "build_json": "weva_core.dll.build.json stamped (library and source digests, git state, compiler, ABI 0.25)"
+    },
+    "linux": {
+      "toolchain": "GNU 13.3.0 (WSL Ubuntu 24.04), Release, Ninja",
+      "library": "weva_core.so, 6,320,120 bytes",
+      "library_sha256": "1d39f7d3fb5b27f66bf2858847d98a12aaf682fb2521338cdb7ca8885f38ed8f",
+      "exports": "113 dynamic symbols, all weva_* (version script, local: *); a first build exported none because hidden visibility was applied to the core objects before the version script could pick them, fixed by scoping the preset to the plugin sources",
+      "load_test": "weva_core_load_test: abi 0.25, button at 10.0,10.0 size 29.3x22.0, 4 draws, ok (identical geometry to Windows)"
+    },
+    "ci": "godot-ci.yml job unity-plugin (ubuntu-24.04, windows-2022): build, load test, gen_bindings --check; check.sh gate \"unity plugin\"",
+    "gate": "met: the DLL loads in Unity 6000.4.1f1 EditMode and weva_abi_version() reports 0.25 (Plugin_ReportsHeaderAbiVersion)"
+  },
+  "step_2_bindings": {
+    "generator": "godot-port/hosts/unity/gen_bindings.py -> Packages/com.wevaui/Runtime/Native/WevaNative.g.cs (113 functions, 12 structs, 7 enums)",
+    "shape": "blittable: unsafe pointers, nuint for size_t, fixed buffers for arrays, delegate* unmanaged[Cdecl] callback fields, Cdecl DllImport externs; nothing marshalled, so Mono and IL2CPP share the file",
+    "wrapper": "Packages/com.wevaui/Runtime/Native/NativeDocument.cs (UTF-8, status checks, ownership, draw span)",
+    "editmode": {
+      "unity": "6000.4.1f1, -batchmode -nographics -runTests -testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native",
+      "total": 18,
+      "passed": 18,
+      "failed": 0,
+      "results": ".utmp/unity-test/native-editmode.xml",
+      "cases": [
+        "Plugin_ReportsHeaderAbiVersion",
+        "GeneratedStruct_MatchesNativeSize x12 (weva_config, weva_vertex, weva_rounded_rect, weva_backdrop_effect, weva_draw, weva_texture, weva_render_backend, weva_glyph_bitmap, weva_font_backend, weva_shaped_glyph, weva_event, weva_binding_source)",
+        "LayoutProbe_RejectsUnknownNames",
+        "Document_RoundTrips (create, HTML, CSS, update, focus_next, tag name, bounds 10,10, draws with triangles, destroy)",
+        "Bounds_OfNoElement_Fail",
+        "Update_AfterDispose_Throws",
+        "ManyDocuments_CreateAndDestroy (50)"
+      ],
+      "note": "rerun against the rebuilt DLL (same 18/18)"
+    },
+    "gate": "met: the document round trip passes from C# in EditMode and agrees with the C++ load test"
+  },
+  "steps_open": [
+    "live-scene (Game view) verification of WevaNativeDocument through UIRenderPass",
+    "colour glyph rasterization and a real shaper for the font adapter",
+    "an ABI switch to freeze animations for dumps if the oracle should cover animated pages"
+  ],
+  "limitations": [
+    "The Unity editor is not on the CI runners; the EditMode run and the host comparison are recorded here and must be rerun by hand after header, generator or adapter changes.",
+    "Windows x64 only in the package (Plugins/x86_64); the Linux .so builds and passes the load test but is not installed in the package.",
+    "The plugin binary is gitignored; build it with hosts/unity (README) before the Native EditMode tests can run.",
+    "The URP in-pass path composites in linear space (URP's colour buffer), so blended edges differ slightly from the gamma-composited offscreen render used for the comparison."
+  ],
+  "step_3_font_adapter": {
+    "adapter": "Packages/com.wevaui/Runtime/Native/UnityFontBackend.cs: weva_font_backend over FontEngine (TextCore) plus the positioned shaper; faces from Font assets, files or bytes; per-code-point fallback faces encoded in the glyph id; real bold/italic variants; @font-face rules read from the core and registered (SyncCssFontFaces) through the document asset reader",
+    "contract_ported_from_godot": [
+      "face metrics scale the engine design units (FaceMetrics_ScaleTheEngineDesignUnits, BytesFace_MatchesTheAssetFace)",
+      "glyph index and unhinted glyph metrics are the engine's own at the rounded pixel size (GlyphIndex_IsTheEngineIndex, GlyphMetrics_AreTheEngineUnhintedMetrics, GlyphMetrics_RoundThePixelSizeLikeTheGodotAdapter)",
+      "coverage bitmaps: ink, top-down rows, metrics describe the bitmap, no bitmap for a space (Rasterize_*)",
+      "shaping: UTF-8 byte clusters, sizing protocol, control characters, per-code-point fallback, pair adjustment, positioned form agrees with the legacy callback, 300-glyph fallback run (Shape_*, PositionedShaper_*)",
+      "variants (Variant_AnswersWithRealFacesOrTheRegularOne), FontEngine state invalidation (Invalidate_ReloadsTheFaceOnTheNextCall)",
+      "the core lays out with the adapter: a span is as wide as the adapter's advances, a registered family switches the face (Document_LaysOutWithTheAdapter)"
+    ],
+    "findings": [
+      "FontEngine.GetPairAdjustmentRecord(first, second) returns an uninitialised record for a pair the face does not kern and segfaulted inside TextCore::FontEngine::GetPairAdjustmentRecord on an ordinary Inter pair (crash log in .utmp/unity-test); the adapter uses GetPairAdjustmentRecords(List<uint>) per adjacent pair instead. The C# engine's UnityFontEngineBackend.TryGetKernAdvance binds GetGlyphPairAdjustmentRecord, which answers zero for every pair on 6000.4 (its kerning is silently off); not changed in this phase.",
+      "GetPairAdjustmentRecords values are design units and list a pair once per covering subtable in the font's order (Inter L-: -104 pair subtable, then -174 class subtable); the first record is what OpenType applies (-1.625px at 32px, matching fontTools). A long glyph list answered the same pair class-first, so the query is per pair.",
+      "UnmanagedCallersOnlyAttribute is not in Unity 6000.4's class library (netstandard 2.1 / mono profiles checked); callbacks use MonoPInvokeCallback delegates cast to the generated function-pointer fields.",
+      "LoadFontFace overloads with an int take a point size, not a face index; font collections are not supported by the adapter."
+    ],
+    "limitations": [
+      "no ligatures or mark positioning (one glyph per code point plus pair kerning)",
+      "colour glyphs are not rasterized (COLOR render mode not wired)",
+      "FontEngine is process-global: the adapter reloads its face after any other user (before every update)"
+    ],
+    "gate": "met: 19 UnityFontBackend EditMode checks pass (part of the 42/42 Native run below)"
+  },
+  "step_4_render_adapter": {
+    "adapter": "Packages/com.wevaui/Runtime/Native/NativeDocumentRenderer.cs + Resources/Weva-NativeMesh.shader + WevaNativeDocument (MonoBehaviour, IUINativePaintSource drawn by UIRenderPass); textures mirrored by id, consecutive same-texture draws merged into one mesh, backdrop-filter draws skipped, colour composited in gamma space like the Godot host (core colours are linear, texels sRGB)",
+    "editmode": {
+      "unity": "6000.4.1f1 -batchmode (graphics device present)",
+      "total": 42,
+      "passed": 42,
+      "failed": 0,
+      "results": ".utmp/unity-test/native-editmode.xml",
+      "render_cases": [
+        "Shader_IsAvailable",
+        "Sync_BuildsBatchesOnlyWhenTheDrawListChanges",
+        "Render_PutsABoxWhereTheCoreLaidItOut (pixel positions and orientation)",
+        "Render_DrawsTextThroughTheAtlas",
+        "FontFace_LoadsThroughTheAssetReaderAndRegistersTheFamily",
+        "Parity_RendersPagesForComparison"
+      ]
+    },
+    "comparison_with_godot": {
+      "method": "godot-port/hosts/unity/compare_hosts.py (compare_render.py metric) on 1280x720 renders of the same html/css with the same font bytes (@font-face Inter); Godot via capture.tscn (opengl3, 4.7.1 + build222 extension), Unity via the Parity EditMode test; images and diff maps in .utmp/parity/<page>/",
+      "frontier_camp": {
+        "mean_channel_delta": 2.39,
+        "worst_channel_delta": 200,
+        "over_tolerance_8_pct": 2.49,
+        "structural_over_64_pct": 1.08,
+        "batches": 21,
+        "triangles": 2064,
+        "textures": 1
+      },
+      "randhtml": {
+        "mean_channel_delta": 1.94,
+        "worst_channel_delta": 226,
+        "over_tolerance_8_pct": 2.21,
+        "structural_over_64_pct": 1.01,
+        "batches": 100,
+        "triangles": 13806,
+        "textures": 11
+      },
+      "gate_default": "compare_render.py gates at 1.0% structural; both pages sit just above it (1.08%, 1.01%) and are NOT claimed to pass that number",
+      "differences_explained": [
+        "text: every glyph edge differs (the diff maps are the page's text) because the two hosts rasterize with different engines (FontEngine SMOOTH vs TextServer) and position differently (TextServer quarter-pixel advances vs FontEngine fractional advances); layout geometry is identical (same core, same font bytes)",
+        "colour emoji icons in randhtml are blank on Unity (colour glyphs not rasterized yet), the largest single structural cluster there",
+        "1px lines and rounded-rect edges (button borders, bar underlines) differ by one row where the two rasterizers round differently",
+        "the first render had a colour-space bug (vertex colours converted to linear twice, blending in linear space): mean delta 28/255, 72% over tolerance; fixed by following the Godot host (encode the core's linear colours to sRGB, blend in gamma space into a raw target)"
+      ]
+    },
+    "gate": "met with explained differences: the Frontier Camp page and the randhtml demo render through the core in Unity and agree with the Godot host everywhere but on text rasterization and colour glyphs"
+  },
+  "step_5_input_events": {
+    "adapter": "NativeDocument interaction calls (pointer with buttons/modifiers, key edges, text input, paste, wheel scroll, focus stepping, IME composition, caret bounds, select-all/undo/redo) and PollEvents into NativeEvent; NativeInputFeed reads the Input System with the Godot host rules (a Space the button took is not also text; Ctrl shortcuts route to selection/clipboard/history; the feed reports whether the document consumed the input); WevaNativeDocument exposes the Godot addon signals as C# events",
+    "ported_from_godot": "the document-level checks of keyboard_integration_tests.gd and input_integration_tests.gd (Enter activates on key-down and repeats, Space on release and not as text, focus loss cancels a held button, checkbox/radio/slider/details/popover keyboard behaviour, implicit submission and a disabled default button, Unicode typing, Backspace and paste, pointer down/up/click/enter/leave, release elsewhere is no click, secondary button is a context menu, pointer-events:none passes hit testing, wheel scroll at a point with clamping, IME composition and caret, tab order with and without wrap); the checks about Godot Control routing (overlays, CanvasLayer, native focus chain) are not portable",
+    "editmode": "NativeInputTests 16/16 (in the Native run below)",
+    "gate": "met"
+  },
+  "step_6_bindings_controllers": {
+    "adapter": "NativeBindings: weva_binding_source over a C# dictionary/list graph or a resolver ({{ path }}, data-class, data-each keyed rows, data-model both ways with the model's types kept, DataChanged); WevaNativeDocument.Bind(model, controller) dispatches on-<event> handler names to controller methods by reflection and refreshes on the next pump when the model moved (RequestRefresh, or a data-model write-back)",
+    "frontier_camp": "camp_state.gd ported to FrontierCampState/FrontierCampController (Tests/Editor/Native); the example's own camp.html + camp.css drive it through the core: bindings fill the screen (4 keyed rows, derived counts, :disabled from bound attributes), forage -> craft -> place the campfire from its row (TryGetRow key), a disabled button does not reach the controller, the settings dialog writes Player.Name (string), Settings.Volume (int) and Settings.Music (bool) back and the HUD follows, the clock ticks into the masthead",
+    "editmode": "NativeBindingTests 6/6, FrontierCampNativeTests 5/5 (in the Native run below)",
+    "gate": "met"
+  },
+  "step_7_oracle_from_unity": {
+    "core_change": "ABI minor 26: weva_document_layout_dump serves weva_dump's JSON from the document's box tree (the tool's walk moved into libweva/src/layout_dump.cpp and shared; weva_dump output verified byte-identical on 3 pages after the move) and weva_document_set_font_leading_rounding lets a synthetic face keep fractional half-leading (C ABI test test_abi_layout_dump_and_leading; core suite 505,247 checks, 0 failures; Godot extension builds unchanged)",
+    "unity_side": "SyntheticFontBackend (the oracle's face: 0.45em/0.6em advances, 0.85/0.293/1.143em lines, emoji allowlist as MonoFontMetrics, leading rounding off), NativeLayoutDump, the manifest-driven EditMode dump, hosts/unity/oracle_from_unity.py comparing with run_oracle.py's compare()",
+    "samples_corpus": {
+      "cases": 47,
+      "agree": 42,
+      "differ": 5,
+      "differing": [
+        "audit-validation (.fill, .graft-anim)",
+        "layout-stress (.live counters, 708 boxes)",
+        "match3-endgame (.end-card entrance)",
+        "neon (.meter-sheen)",
+        "particles (.mote, 195 boxes)"
+      ]
+    },
+    "first_attempt": "an element-level dump through the C ABI agreed on 20/47: box-tree depth (line and anonymous boxes count a level), box order within a line, transform translation and the ABI font path's leading rounding were all adapter differences, which is why the dump moved into the core",
+    "differences_explained": "all five remaining pages are CSS animations: weva_dump lays out with no animation clock (base styles), the hosted document applies keyframes at time 0 (an entrance animation's from-state, a mote's start position); docs/ORACLE.md already lists animated values as what the oracle cannot arbitrate. Not an adapter difference: every static page agrees exactly at four decimals.",
+    "gate": "met for every non-animated page (42/42); the 5 animated pages differ by the animation clock, not the host"
+  },
+  "native_editmode_run": "Unity 6000.4.1f1 EditMode, filter Weva.Tests.EditorTests.Native: 72 cases, 70 passed, 0 failed, 2 inconclusive by design (the parity render and the manifest dump run only with their environment variables set; both ran with them for the numbers above)",
+  "phase_gate": {
+    "sample_runs_in_unity": "Frontier Camp renders and is driven through the core in EditMode (offscreen render compared with the Godot host, the ported game logic drives camp.html); a WevaNativeDocument in a live scene through UIRenderPass is implemented but NOT pixel-verified in the Game view",
+    "ported_nunit_subsets": "pass (input 16, bindings 6, Frontier Camp 5, font adapter 19, render 6, dump 3, plugin 18)",
+    "oracle_from_unity": "42/47 samples identical to weva_dump; the 5 animated pages explained above",
+    "status": "met with the two caveats above"
+  },
+  "phase_3": {
+    "date": "2026-09-11",
+    "step_1_feature_inventory": {
+      "where": "docs/PORT_PLAN.md, section \"Phase 3 - feature inventory\": every CSS_FEATURES.md item checked against the core by consuming call site (the property registry is generated from the C# list and proves nothing), plus the non-CSS subsystems",
+      "decisions": "16 port items ranked (mask/mix-blend-mode, modern colour functions and light-dark, @scope/@import, ::placeholder/::selection, justify/hyphens/font axes, hue-rotate, 3D transform projection, scroll-snap, small property drops, component-scoped styles, @supports selector(), subgrid syntax, sticky scroll tracking, intrinsic sizing keywords, bidi, View Transitions), an expose-through-ABI list (cursor, prefers-color-scheme, dirty marking, timings, the wider event set), a keep-host-side list and a drop list; where the core is ahead is recorded so it is not re-ported",
+      "gate": "met (the list with a decision per item is in PORT_PLAN.md)"
+    },
+    "step_2_goldens_through_the_core": {
+      "tool": "hosts/unity/goldens_from_unity.py over the 47 golden snippets at their own viewports, Inter through FontEngine",
+      "layout_vs_chrome": {
+        "pass": 43,
+        "fail": 4,
+        "rule": "LayoutDiffTests: |dx|,|dy| <= 2px, |dw|,|dh| <= max(2px, 5%), sidecar tolerances honoured",
+        "failures": [
+          "24-text-overflow-ellipsis: card 83.36 vs 73px; the run registers no monospace face (the C# harness does) and the ellipsis line height",
+          "25-backdrop-modal-dialog: dialog[open] with author top:80px/left:80px laid out centred (y 297) as if modal; core bug",
+          "26-text-shadow: line-height normal 24.2 (1.21em, the face's own) vs Blink's rounded 23; known class",
+          "42-cv-hidden: content-visibility:hidden children sized 30 vs Chrome's forced-layout 100, two not dumped; core semantics"
+        ]
+      },
+      "paint_vs_csharp_baselines": {
+        "pass": 25,
+        "fail": 13,
+        "cause": "the C# baseline renderer draws text as word bars, so every text-bearing page differs by construction (12 pages, 1.0-5.7% structural); 25's ::backdrop is not painted by the core (page colour #7f7f7f vs #ffffff)"
+      },
+      "gate": "met as specified: every golden passes on the core or is recorded with a cause (above); the ~9,900 unit tests inspect the C# Box tree and cannot be shimmed onto the core, the goldens and the Chrome layout diff are the portable subset"
+    },
+    "step_3_tooling_on_the_abi": {
+      "where": "docs/PORT_PLAN.md, section \"Phase 3 - the Unity host on the core: what the tooling still needs\": tool-by-tool map of Editor/**, DevTools, HotReload, Designer, InPlace against weva_c.h",
+      "summary": "the Designer IR, InlineStyleEdit, watchers and setup utilities need no engine; documents, queries, bounds, computed style by name, mutation, hit testing and events are covered; missing, by demand: tree navigation (parent/children), matched rules per element, the four-rect box model, computed-style enumeration, change notification, box-tree enumeration, engine counters, a devtools hit test",
+      "gate": "met for the Elements panel: it opens a document through the core with tree, styles, computed and box model. The Designer window, the DevTools overlay/stats, hot reload and the preview window still run on the C# engine; the remaining ABI needs (change notification, box-tree enumeration, engine counters, devtools hit test ignoring pointer-events) are listed in PORT_PLAN.md Since then minors 29-31 covered the cursor, the counters, the devtools hit test and box-tree enumeration; the DevTools overlay and stats window can be fed from the core now.",
+      "abi_minor_27": "weva_element_parent, weva_element_children, weva_element_box_model, weva_element_matched_rules (sheet rules and the style attribute in cascade order, winner per property marked, shorthands expanded), weva_element_computed_style_all; C ABI test test_abi_tooling_surface (Linux suite 505,286 checks, 0 failures); plugins rebuilt on Windows, Linux",
+      "unity": "NativeDocument wrappers (Parent, Children, TryGetBoxModel, MatchedRules, ComputedStyle), NativeInspectorModel (tree, search, rule blocks winners-first, computed style, box model) and Window/Weva/Native Elements, an Elements panel over a WevaNativeDocument; EditMode: NativeInspectorTests 4, NativeInspectorModelTests 4, NativeElementsWindowTests 1 (the window opens a core-hosted document and lists its tree), Native suite 79/81 (2 inconclusive by design)",
+      "abi_minor_29_30_31": "minor 29 weva_document_cursor / cursor_at (the CSS cursor keyword under the pointer; Godot answers _get_cursor_shape, Unity NativeDocument.Cursor); minor 30 weva_document_stats (stage timings, element/box/draw/texture counts, texture-cache hits/misses, cascade totals) and weva_document_element_at_devtools (pointer-events, visibility and modal inertness hide nothing); minor 31 weva_document_boxes (the box tree in tree order with kinds, edges, scroll and text runs; Godot get_box_tree(), Unity NativeDocument.Boxes()). Tests: C ABI (test_abi_cursor, test_abi_stats_and_devtools_hit, test_abi_box_tree), hover_tests.gd (21 checks), Unity NativeCursorTests/NativeStatsTests/NativeBoxTreeTests (Native suite 87 pass / 2 inconclusive by design). minor 32 weva_document_reload_html (DomDiffer ported; keyed by id/data-key, unkeyed nodes matched to the next unclaimed live node of the same kind; Godot reload_html(), Unity ReloadHtml; test_abi_reload_html, NativeReloadTests, live_reload_tests.gd still 11/11; Native suite 88 pass / 2 inconclusive). Remaining from the ranked list: change notification per element, parse diagnostics with positions.",
+      "abi_minor_34_35": "minor 34 weva_document_html_diagnostics (the HTML parser's recovery notes -- unclosed and stray end tags, misnested inline elements, attributes without values -- with line/column, cleared on every set/reload; Godot get_html_diagnostics(), Unity NativeDocument.HtmlDiagnostics; test_abi_html_diagnostics, NativeHtmlDiagnosticsTests). minor 35 weva_document_changed_elements + weva_document_structure_version (the elements whose style, geometry or text changed in the last update, kept across settled updates until the next change; the structure version bumps on reload/set; Godot get_changed_elements()/get_structure_version(), Unity ChangedElements/StructureVersion; test_abi_changed_elements, NativeChangeTests, hover_tests.gd 26 checks). The ranked tooling list is complete except source positions, which neither engine has.",
+      "abi_minor_36": "minor 36 weva_document_set_safe_area_insets(doc, top, right, bottom, left): what env(safe-area-inset-*) resolves to, per document -- the env() table moved from a process singleton into the cascade engine (CascadeEngine::set_env / env(), resolve_env takes a table). Godot set_safe_area_insets() / get_safe_area_insets() / follow_display_safe_area (DisplayServer.get_display_safe_area against the screen, re-read on WM_SIZE_CHANGED); Unity NativeDocument.SetSafeAreaInsets and WevaNativeDocument.FollowScreenSafeArea (Screen.safeArea scaled to the document's viewport, bottom-left origin turned into insets). Tests: test_env (a table of its own), test_abi_safe_area_insets, hover_tests.gd (29 checks), NativeSafeAreaTests (2). From the 'expose through the ABI' list; :link/:visited host state is the next such item.",
+      "abi_minor_37": "minor 37: weva_document_font_faces lists the whole @font-face src list in the author's order as a fifth field (url:<resolved path> | local:<name>) and lists local()-only rules (empty source field). Both hosts try the entries first to last: Godot load_css_sources (OS.get_system_font_path for a local() name, FontFile from its path, quarter-pixel copy like any adopted face), Unity AdoptCssSource/AdoptLocalFont (Font.GetOSInstalledFontNames + CreateDynamicFontFromOSFont, the C# text path's own recipe). Tests: test_c_abi font-face listing, font_face_tests.gd (fall-through, local()-only miss, an installed font by name measured against the same file loaded natively), NativeFontFaceLocalTests (2). From PRODUCT_READINESS 'Next work' item 3."
+    },
+    "step_4_platforms": {
+      "core_change": "libweva/include/weva/charconv_compat.h: floating-point from_chars/to_chars stand-ins for libc++ < 20 (Android NDK 27, older Apple toolchains declare the double overloads deleted); every floating-point charconv site in the core routes through it (Linux suite 505,247 checks, 0 failures; Windows and Linux plugins rebuilt and load)",
+      "android_arm64": "built locally with Unity's NDK 27.2 (android-24, arm64-v8a): weva_core.so, 115 exported weva_* symbols, build.json stamped; not run on a device",
+      "cmake": "WEVA_UNITY_STATIC (iOS static archives), the load test only where it can run",
+      "ci": "godot-ci.yml job unity-plugin-platforms: macOS (universal dylib + load test), Android arm64 (NDK on the runner), iOS arm64 static; not yet run on GitHub (nothing pushed)",
+      "gate": "NOT met: the plugin builds for Android locally and the CI matrix is written; macOS and iOS builds are unverified until the workflow runs, and IL2CPP player builds of the sample on each platform are the user's to run (no Unity licence in CI)"
+    },
+    "phase_gate": "open: the package can host the core (WevaNativeDocument beside WevaDocument) but the default is still the C# engine and the oracle runs from Unity by hand, not in CI (no editor on the runners)",
+    "step_1_port_list_progress": {
+      "date": "2026-09-11",
+      "ported": [
+        "filter: hue-rotate() (paint.cpp; test_backdrop_filter)",
+        "@supports selector() (media.cpp; test_cascade)",
+        "caret-color (paint.cpp caret_color_of; test_abi_caret_color)",
+        "light-dark() with the element's inherited color-scheme, plus ABI minor 28 weva_document_set_color_scheme (Godot dark_color_scheme, Unity NativeDocument.SetColorScheme); tests test_cascade_light_dark, test_abi_color_scheme, NativeColorSchemeTests (3)",
+        "3D transform functions projected onto the plane (translate3d/scale3d keep x,y; rotateX/rotateY foreshorten; rotate3d top-left 2x2; matrix3d affine part; translateZ/scaleZ/perspective identity) -- core ahead, the C# treats them as identity; test_paint_transform_3d_projects_to_the_plane",
+        "::placeholder (color, opacity) and ::selection (background-color) on text fields; test_abi_placeholder_and_selection_pseudos",
+        "text-align: justify (inter-word, inter-character), text-align-last, text-justify; test_text_align_justify",
+        "lab()/lch()/oklab()/oklch()/color() over every predefined space and XYZ, modern space-separated colour syntax with / alpha and none, color-mix() in every space with the four hue methods (new color_space.cpp) -- core ahead; test_modern_colours, test_color_mix recalibrated (oklab grey 99)",
+        "width: min-content | max-content | fit-content | fit-content() on blocks, floats, inline-blocks; test_intrinsic_width_keywords",
+        "position: sticky pinned against the scroll container (new sticky.cpp, offsets applied by paint, hit testing and visual_position); test_abi_position_sticky",
+        "@import through the asset reader (new at_import.cpp: media/supports/layer wrappers, nesting, cycle guard, missing sheets in css_diagnostics); test_abi_at_import",
+        "CSS scroll snap (new scroll_snap.cpp; 13 properties appended to the generated registry, reg.count() 334+13; programmatic scrolls snap at once, wheel scrolls settle after 150 ms with a 250 ms ease-out); test_abi_scroll_snap",
+        "soft hyphens invisible everywhere and hyphens: manual breaks (inline_layout.cpp place_soft_hyphen_word); test_soft_hyphens",
+        "@scope with root and limit selector lists, :scope as the root, nesting, inside @media (cascade.cpp; test_cascade_scope) -- core ahead, the C# parses it but its cascade ignores it",
+        "mix-blend-mode as a per-draw attribute (ABI minor 33 weva_draw.blend_mode, the sixteen modes; Godot MUL/ADD/MIX on child canvas items, Unity blend states for multiply/screen/darken/lighten; test_abi_mix_blend_mode, NativeBlendTests, hover_tests.gd)",
+        "background-blend-mode (the twelve separable modes per layer) and mask-image layers (image or gradient, mask-position/size/repeat/mode, layers adding) in the background rasterizer (background.cpp; test_background_blend_and_mask); borders, text and descendants are not masked",
+        "list-style-image as an image-sized atom marker, outside or inside (box_builder/block_layout/paint; test_list_style_image)",
+        "background-attachment: fixed (viewport-sized, still under scrolling, each box shows the part under it) and local (moves with a scroll container's content); paint resolves the area and shift (apply_background_attachment), the texture key carries them (background.cpp/paint.cpp; test_background_attachment)",
+        "subgrid: a finding, not a port -- both engines take the spec form (grid-template-columns/rows: subgrid); CSS_FEATURES.md corrected; harvest oracle on the 17 Subgrid cases 12 agree / 0 differ / 5 reference bugs Chrome sides with the core on",
+        "component-scoped stylesheets from the markup: a <style> inside <template id> is the component's sheet (component_scoping.cpp rewrites selectors byte-for-byte as the C# SelectorScoper; clones stamped data-uui-scope before slot projection, hosts data-uui-host; sheet not cloned into instances) -- core ahead, the C# only scopes from code and feeds a template's <style> to the page unscoped; test_component_scoped_styles, test_abi_style_elements_and_component_styles",
+        "<style> blocks in the markup as author sheets after the host's (media attribute honoured, re-read on resize / scheme change / reload) -- the core read none before; found while scoping. Also fixed: reload_html diffed the expanded live tree against an unexpanded fresh one and un-rendered every component",
+        "the individual translate / rotate / scale properties composed after the transform list about the same origin (paint.cpp parse_transform; a containing block and a hit target like `transform`; the layout dump follows `translate`); test_paint_individual_transform_properties, test_abi_individual_transform_hit_test",
+        "min-content / max-content / fit-content / fit-content() as min-width and max-width on blocks, floats and inline-blocks (through shrink_to_fit's probes; a stated width is what they clamp, `margin: 0 auto` centres the fitted width) and as flex-basis / min-width / max-width on row flex items -- core ahead, the C# maps them to auto; test_intrinsic_width_keywords, test_flex_intrinsic_keywords",
+        "scroll-behavior: smooth (registered, reg.count() 334+14) easing weva_element_set_scroll and scroll_into_view over the snap animation's quarter second, one animation per container, ended by a wheel/thumb/track/key scroll of it; test_abi_scroll_behavior_smooth",
+        "snapping after a scrollbar-thumb drag: letting go is a scroll-end and the container eases to the nearest snap position; test_abi_scrollbar_drag_snaps_on_release",
+        "bidi reordering (bidi.cpp: ICU ubidi over a paragraph's inline items; direction as the paragraph level; unicode-bidi embed / bidi-override / isolate / isolate-override / plaintext as control characters; text runs split at level changes; each line's fragments placed in visual order after justification; a left-to-right paragraph with no right-to-left text is untouched; no ABI change since a run is one direction and TextServer shapes it). Tests: test_bidi_reordering (17 checks), bidi_tests.gd through TextServer (8), NativeBidiTests (3). Left of item 15: TextCore glyph order inside a run, caret/selection in mixed runs, bracket mirroring, a visual pass on real Arabic."
+      ],
+      "left_on_the_list": "image-rendering (nearest by design), View Transitions (port or drop is a product call), unicode-range (assessed, low value), font-variation-settings / -webkit-text-stroke (font backend), the bidi remainder above; from the tooling list only source positions",
+      "gates_after": {
+        "core_suite_linux_gcc": "505,878 checks, 0 failures after bidi reordering (gcc and clang ASan/UBSan trees alike)",
+        "unity_native_editmode": "100 cases: 98 pass, 2 inconclusive by design, on the Windows weva_core.dll rebuilt after the bidi edge fix (log .utmp/native-bidi2.log; NativeBidiTests 3 pass)",
+        "godot_host_linux": "the 46 scenes named in check.sh (bidi_tests.tscn added: 8 checks through TextServer), each 0 failures, headless Linux Godot 4.7.1 on the rebuilt AND installed libweva_godot.so, after the bidi edge fix",
+        "godot_host_windows": "weva_godot.dll rebuilt with MSVC after the bidi edge fix; bidi_tests (8), hover_tests (30), test_scene (247), range_direction (66), binding_tests (186), text_editing (302) and font_face (23) headless on Windows, 0 failures",
+        "oracle_samples": "identical summaries from the pre-session baseline dump (~/weva/build-pre) and the current build with --reuse-reference: samples 10/47 agree / 14 differ / 23 reference bugs, hand 43/52 / 1 / 8, harvest 178/210 / 4 / 28 (the four SpatialNavigator cases differ on the baseline too)",
+        "oracle_hand": "43/52 agree, 2 differ (25-backdrop-modal-dialog dialog centring, 42-cv-hidden content-visibility; both known), 7 reference bugs Chrome sides with the core on",
+        "plugins_installed": "Windows Unity plugin (Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll), Linux Unity plugin (~/weva/build-unity), Linux and Windows Godot hosts rebuilt",
+        "cursor_abi_29": "weva_document_cursor / cursor_at; the Godot node answers _get_cursor_shape (setting default_cursor_shape re-dispatched a synthetic motion that cancelled a range drag headless -- range_direction_tests caught it, the ABI-level repro test_abi_range_click_at_edge pins the host sequence); NativeCursorTests 2 pass, Native suite 84 pass / 2 inconclusive"
+      }
+    }
+  },
+  "phase_2_live_scene_path": {
+    "date": "2026-09-11",
+    "finding": "UIBatchedRendererFeature (the project's active feature) drew no IUINativePaintSource; only the inactive legacy UIRendererFeature's UIRenderPass did, so a WevaNativeDocument in a scene rendered nothing through the real pipeline",
+    "fix": "UIRenderGraphPass.ExecuteBatched draws native sources (EmitNative(CommandBuffer)) onto the camera target before draining the C# batches; IUINativePaintSource gained the CommandBuffer overload",
+    "evidence": "NativeGameViewCaptureTests (PlayMode, [Explicit]): .utmp/native-gameview/native-check.png matches the offscreen parity render of the same page; native-check-insets.png shows SetSafeAreaInsets(44,0,0,8) live; the C# engine's capture of the same page is the control; the smooth-scroll assertion settles on its target",
+    "limits": "camera.Render() captures, not the Game view itself; Hebrew glyphs need a covering fallback face on Unity"
+  }
+}

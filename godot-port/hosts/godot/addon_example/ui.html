@@ -1,0 +1,14 @@
+<main>
+  <header><img src="gem.svg" width="36" height="36"><span>WEVA / GODOT</span></header>
+  <h1 id="greeting">Hello, {{ Player.Name }}</h1>
+  <p>Ordinary HTML and CSS, connected to your game.</p>
+  <form id="player" on-reset="reset_score">
+  <label for="name">Player name</label>
+  <input id="name" value="Ada" data-model="Player.Name" maxlength="40">
+  <section class="score"><span>Score</span><strong id="score">{{ Player.Score }}</strong></section>
+  <div class="actions">
+    <button id="award" type="button" on-click="award_point">Add a point</button>
+    <button id="restore" type="reset" class="secondary">Reset</button>
+  </div>
+  </form>
+</main>

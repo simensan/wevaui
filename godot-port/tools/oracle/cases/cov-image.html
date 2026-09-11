@@ -1,0 +1,34 @@
+<!-- Bitmaps. Nothing in the sample corpus draws one -- every <img> in it has
+     an empty src -- so the whole image path, from decoding to sizing to
+     object-fit, had no case at all until images existed to put in one. -->
+<div class="page">
+  <div class="row">
+    <div class="bg fill"></div>
+    <div class="bg cover"></div>
+    <div class="bg contain"></div>
+    <div class="bg tiled"></div>
+    <div class="bg placed"></div>
+  </div>
+
+  <div class="row">
+    <img src="cov-image-corners.png">
+    <img class="w" src="cov-image-corners.png">
+    <img class="wide" src="cov-image-stripes.png">
+    <img class="tall" src="cov-image-stripes.png">
+  </div>
+
+  <div class="row">
+    <img class="box fit-fill" src="cov-image-stripes.png">
+    <img class="box fit-contain" src="cov-image-stripes.png">
+    <img class="box fit-cover" src="cov-image-stripes.png">
+    <img class="box fit-none" src="cov-image-stripes.png">
+  </div>
+
+  <!-- A missing src and an absent one are covered by the unit tests instead:
+       a browser reserves a box for its broken-image placeholder and this
+       engine draws nothing, which is a difference about Chrome's furniture
+       rather than about layout. -->
+  <div class="row">
+    <div class="pad"><img class="w" src="cov-image-corners.png"></div>
+  </div>
+</div>

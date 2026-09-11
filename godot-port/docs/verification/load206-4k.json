@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "source": ".utmp/safe-engine71/timing-list206-4k/summary.json",
+  "library_sha256": "ce1b5f17edf2c228e1ed1fefa59d67d025c0f52cdca6c8f72f0ba7742e52e6ff",
+  "checks": 276,
+  "all_samples_focused": true,
+  "scope": "Six full 4K automatic 3D runs on Windows RTX5080. Does not establish a causal fix for historical intermittent frame stalls or acceptance on other hardware."
+}

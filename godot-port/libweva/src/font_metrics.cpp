@@ -1,0 +1,132 @@
+#include "weva/font_metrics.h"
+
+#include <string>
+#include <cmath>
+
+#include <cstdint>
+
+namespace weva {
+
+namespace {
+
+// Minimal UTF-8 decode: returns the code point and advances `i`. Malformed
+// input is consumed one byte at a time so measurement always terminates.
+uint32_t next_code_point(std::string_view s, size_t* i) {
+    const unsigned char c = static_cast<unsigned char>(s[*i]);
+    size_t len = 1;
+    uint32_t cp = c;
+    if ((c & 0xE0) == 0xC0) { len = 2; cp = c & 0x1Fu; }
+    else if ((c & 0xF0) == 0xE0) { len = 3; cp = c & 0x0Fu; }
+    else if ((c & 0xF8) == 0xF0) { len = 4; cp = c & 0x07u; }
+    if (*i + len > s.size()) { ++*i; return c; }
+    for (size_t k = 1; k < len; ++k) {
+        const unsigned char cc = static_cast<unsigned char>(s[*i + k]);
+        if ((cc & 0xC0) != 0x80) { ++*i; return c; }   // malformed
+        cp = (cp << 6) | (cc & 0x3Fu);
+    }
+    *i += len;
+    return cp;
+}
+
+// Chrome renders these from an emoji face at roughly 1.3em; the Dingbats block
+// lands nearer 1.0em. The BMP allowlist is deliberate — neighbouring ranges
+// (Miscellaneous Technical, most of Miscellaneous Symbols, Math) are
+// text-presented and must keep the Latin advance.
+bool is_wide_emoji(uint32_t cp) {
+    return (cp >= 0x1F000 && cp <= 0x1FAFF) || cp == 0x26A1 || cp == 0x26D4 ||
+           cp == 0x2600 || cp == 0x2614 || cp == 0x2615 || cp == 0x2618 ||
+           cp == 0x2620 || cp == 0x2705;
+}
+
+bool is_medium_emoji(uint32_t cp) {
+    return (cp >= 0x2700 && cp <= 0x27BF) || cp == 0x2699 || cp == 0x2298;
+}
+
+} // namespace
+
+double MonoFontMetrics::measure(std::string_view text, double fs) const {
+    double total = 0;
+    size_t i = 0;
+    while (i < text.size()) {
+        const uint32_t cp = next_code_point(text, &i);
+        const double em = is_wide_emoji(cp) ? 1.3 : (is_medium_emoji(cp) ? 1.0 : char_width_em_);
+        total += em * fs;
+    }
+    return total;
+}
+
+double FontInterfaceMetrics::line_height(double fs) const {
+    FaceMetrics fm;
+    if (!font_ || !font_->face_metrics(face_, fs, &fm)) return fs * 1.2;
+    return fm.ascent + fm.descent + fm.line_gap;
+}
+
+double FontInterfaceMetrics::ascent(double fs) const {
+    FaceMetrics fm;
+    if (!font_ || !font_->face_metrics(face_, fs, &fm)) return fs * 0.8;
+    return fm.ascent;
+}
+
+double FontInterfaceMetrics::descent(double fs) const {
+    FaceMetrics fm;
+    if (!font_ || !font_->face_metrics(face_, fs, &fm)) return fs * 0.4;
+    return fm.descent;
+}
+
+// Blink's CalculateLeadingSpace puts the fractional pixel below the line.
+// Keep exact arithmetic for synthetic unit-test metrics, but use the browser
+// convention for actual font backends.
+double FontInterfaceMetrics::leading_above(double height, double fs) const {
+    const double half = (height - ascent(fs) - descent(fs)) * .5;
+    return font_ && font_->rounds_line_leading() ? std::floor(half) : half;
+}
+
+double FontInterfaceMetrics::measure(std::string_view text, double fs) const {
+    if (!font_ || text.empty()) return 0;
+
+    // Memoised, because layout asks the same question over and over.
+    //
+    // Building `stats.html` through the Godot host made 5,384 measure() calls
+    // for 107 distinct (text, size) pairs -- 98 per cent repeats. Every one of
+    // them was a full shaping call across the host boundary, and layout was
+    // 241ms of a 284ms build because of it. Nothing in between changes the
+    // answer: this object's face is fixed, and a shaper is a pure function of
+    // (face, text, size).
+    //
+    // Keyed on a hash so a LOOKUP allocates nothing; the stored text is
+    // compared on a hit, so a collision costs a re-shape and never a wrong
+    // width.
+    uint64_t h = 1469598103934665603ULL;
+    for (const char c : text) {
+        h = (h ^ static_cast<unsigned char>(c)) * 1099511628211ULL;
+    }
+    // The size is part of the key: the same word at 11px and 14px are
+    // different widths, and rounding them together would be a subtle,
+    // size-dependent wrongness rather than an obvious one.
+    const int64_t size_key = static_cast<int64_t>(std::llround(fs * 1024.0));
+    h = (h ^ static_cast<uint64_t>(size_key)) * 1099511628211ULL;
+
+    const auto hit = measured_.find(h);
+    if (hit != measured_.end() && hit->second.size_key == size_key &&
+        hit->second.text == text) {
+        return hit->second.width;
+    }
+
+    // Measured by SHAPING, not by summing per-glyph advances: a shaper may
+    // substitute a ligature or apply kerning, and the width layout uses has to
+    // be the width the same call will draw.
+    std::vector<ShapedGlyph> glyphs;
+    font_->shape(face_, text, fs, &glyphs);
+    double total = 0;
+    for (const ShapedGlyph& g : glyphs) total += g.x_advance;
+
+    // Bounded. A page of unique text would otherwise grow this without limit,
+    // and the whole point is to stay cheap. Cleared rather than evicted one at
+    // a time because the access pattern is a layout pass, not a working set:
+    // the next pass asks the same questions again and refills it immediately.
+    if (measured_.size() >= kMeasureCacheMax) measured_.clear();
+    measured_[h] = Measured{std::string(text), size_key, total};
+    return total;
+}
+
+} // namespace weva

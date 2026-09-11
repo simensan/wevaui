@@ -1,0 +1,18 @@
+{
+  "scope": "Native candidate cancellation integration; installed105 unchanged",
+  "abi_minor": 15,
+  "binary_sha256": "8e18f7e5ad5799556e598e4b62a1084843b6a1eed2d2fae6104a68162dcefd29",
+  "host": {
+    "passed": true,
+    "entries": 28,
+    "checks": 9379
+  },
+  "dialog_cancel_checks": 188,
+  "remaining": [
+    "Escape routing and closedby behavior",
+    "returnValue",
+    "mixed-event queue overflow policy",
+    "native package/export/performance qualification",
+    "full browser event ordering"
+  ]
+}

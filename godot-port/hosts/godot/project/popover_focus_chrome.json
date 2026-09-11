@@ -1,0 +1,1711 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "kind": "auto",
+      "tag": "div",
+      "autofocus": false,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef ></div>",
+      "shown": "outside",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "auto",
+      "tag": "div",
+      "autofocus": false,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef ></div>",
+      "shown": "outside",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "auto",
+      "tag": "div",
+      "autofocus": true,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef autofocus></div>",
+      "shown": "field",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "auto",
+      "tag": "div",
+      "autofocus": true,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef autofocus></div>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "auto",
+      "tag": "dialog",
+      "autofocus": false,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef ></dialog>",
+      "shown": "field",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "auto",
+      "tag": "dialog",
+      "autofocus": false,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef ></dialog>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "auto",
+      "tag": "dialog",
+      "autofocus": true,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef autofocus></dialog>",
+      "shown": "field",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "auto",
+      "tag": "dialog",
+      "autofocus": true,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef autofocus></dialog>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "hint",
+      "tag": "div",
+      "autofocus": false,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef ></div>",
+      "shown": "outside",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "hint",
+      "tag": "div",
+      "autofocus": false,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef ></div>",
+      "shown": "outside",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "hint",
+      "tag": "div",
+      "autofocus": true,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef autofocus></div>",
+      "shown": "field",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "hint",
+      "tag": "div",
+      "autofocus": true,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef autofocus></div>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "hint",
+      "tag": "dialog",
+      "autofocus": false,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef ></dialog>",
+      "shown": "field",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "hint",
+      "tag": "dialog",
+      "autofocus": false,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef ></dialog>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "hint",
+      "tag": "dialog",
+      "autofocus": true,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef autofocus></dialog>",
+      "shown": "field",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "hint",
+      "tag": "dialog",
+      "autofocus": true,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef autofocus></dialog>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "manual",
+      "tag": "div",
+      "autofocus": false,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef ></div>",
+      "shown": "outside",
+      "hidden": "outside",
+      "hiddenAfterLayout": "outside",
+      "hiddenAfterFrame": "outside"
+    },
+    {
+      "kind": "manual",
+      "tag": "div",
+      "autofocus": false,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef ></div>",
+      "shown": "outside",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "manual",
+      "tag": "div",
+      "autofocus": true,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef autofocus></div>",
+      "shown": "field",
+      "hidden": "field",
+      "hiddenAfterLayout": "field",
+      "hiddenAfterFrame": ""
+    },
+    {
+      "kind": "manual",
+      "tag": "div",
+      "autofocus": true,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef autofocus></div>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "manual",
+      "tag": "dialog",
+      "autofocus": false,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef ></dialog>",
+      "shown": "field",
+      "hidden": "field",
+      "hiddenAfterLayout": "field",
+      "hiddenAfterFrame": ""
+    },
+    {
+      "kind": "manual",
+      "tag": "dialog",
+      "autofocus": false,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef ></dialog>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    },
+    {
+      "kind": "manual",
+      "tag": "dialog",
+      "autofocus": true,
+      "moveOutside": false,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef autofocus></dialog>",
+      "shown": "field",
+      "hidden": "field",
+      "hiddenAfterLayout": "field",
+      "hiddenAfterFrame": ""
+    },
+    {
+      "kind": "manual",
+      "tag": "dialog",
+      "autofocus": true,
+      "moveOutside": true,
+      "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef autofocus></dialog>",
+      "shown": "field",
+      "hidden": "other",
+      "hiddenAfterLayout": "other",
+      "hiddenAfterFrame": "other"
+    }
+  ],
+  "transitions": [
+    {
+      "name": "sibling-auto-auto-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus></div><div id=b popover=auto><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-auto-auto-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus></div><div id=b popover=auto><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-auto-hint-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus></div><div id=b popover=hint><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "sibling-auto-hint-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus></div><div id=b popover=hint><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-auto-manual-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus></div><div id=b popover=manual><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "sibling-auto-manual-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus></div><div id=b popover=manual><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-hint-auto-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus></div><div id=b popover=auto><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-hint-auto-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus></div><div id=b popover=auto><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-hint-hint-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus></div><div id=b popover=hint><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-hint-hint-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus></div><div id=b popover=hint><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-hint-manual-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus></div><div id=b popover=manual><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "sibling-hint-manual-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus></div><div id=b popover=manual><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-manual-auto-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus></div><div id=b popover=auto><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-manual-auto-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus></div><div id=b popover=auto><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-manual-hint-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus></div><div id=b popover=hint><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-manual-hint-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus></div><div id=b popover=hint><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-manual-manual-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus></div><div id=b popover=manual><input id=second ></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "sibling-manual-manual-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus></div><div id=b popover=manual><input id=second autofocus></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-auto-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus><div id=b popover=auto><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-auto-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus><div id=b popover=auto><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-hint-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus><div id=b popover=hint><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-hint-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus><div id=b popover=hint><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-manual-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus><div id=b popover=manual><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-manual-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=auto><input id=first autofocus><div id=b popover=manual><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-auto-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus><div id=b popover=auto><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-auto-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus><div id=b popover=auto><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-hint-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus><div id=b popover=hint><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-hint-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus><div id=b popover=hint><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-manual-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus><div id=b popover=manual><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "outside",
+          "settled": "outside"
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-manual-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=hint><input id=first autofocus><div id=b popover=manual><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-auto-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus><div id=b popover=auto><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-auto-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus><div id=b popover=auto><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-hint-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus><div id=b popover=hint><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-hint-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus><div id=b popover=hint><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-manual-false",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus><div id=b popover=manual><input id=second ></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "first",
+          "settled": ""
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-manual-true",
+      "html": "<button id=outside>Outside</button><div id=a popover=manual><input id=first autofocus><div id=b popover=manual><input id=second autofocus></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "immediate": "first",
+          "settled": "first"
+        },
+        {
+          "immediate": "second",
+          "settled": "second"
+        },
+        {
+          "immediate": "second",
+          "settled": ""
+        },
+        {
+          "immediate": "",
+          "settled": ""
+        }
+      ]
+    }
+  ]
+}

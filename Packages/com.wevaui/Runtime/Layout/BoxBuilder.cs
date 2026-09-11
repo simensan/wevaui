@@ -57,10 +57,10 @@ namespace Weva.Layout {
         // font-size 16px = 8px), so headless tests using MonoFontMetrics with
         // default font-size obtain numerically exact results without a live
         // FontEngine. V2 follow-on: plumb real font metrics from LayoutEngine.
-        internal const double StubCharWidthPx = 8.0;
+        internal const double StubCharWidthPx = BoxBuildRules.StubCharWidthPx;
         // UA extra space reserved for the text cursor / caret. CSS UI L4 §13
         // does not mandate an exact amount; browsers typically use 1–4px.
-        internal const double FieldSizingCaretPaddingPx = 4.0;
+        internal const double FieldSizingCaretPaddingPx = BoxBuildRules.FieldSizingCaretPaddingPx;
 
         // PA6 fix — precomputed `<li>` ordinals indexed by the `<li>` Element.
         // Populated in BuildChildren when the parent is `<ul>`/`<ol>` (one pass
@@ -160,34 +160,7 @@ namespace Weva.Layout {
             return bb;
         }
 
-        // CSS Multi-column Layout L1 §2: a block container becomes a multicol
-        // container when column-count or column-width is set to a non-auto value.
-        // flex / grid / table containers are NOT multicol containers (spec §2 says
-        // "block formatting context" is required — non-block containers ignore
-        // column properties).
-        static bool IsMulticolContainer(ComputedStyle style) {
-            if (style == null) return false;
-            string cc = style.Get(CssProperties.ColumnCountId);
-            if (!string.IsNullOrEmpty(cc) && cc != "auto") return true;
-            string cw = style.Get(CssProperties.ColumnWidthId);
-            if (!string.IsNullOrEmpty(cw) && cw != "auto") return true;
-            return false;
-        }
 
-        // Table-related displays count as block-level outer boxes for the
-        // purpose of BoxBuilder's child-classification logic. Per CSS 2.1
-        // §17.4: the table wrapper box is block-level; row-group, row, cell,
-        // and caption boxes are block-level when they appear as the root of
-        // an anonymous-wrapped subtree, but in well-formed HTML they live
-        // inside a table and are positioned by TableLayout. Treating them as
-        // block-level here ensures BoxFinalize doesn't sweep them into an
-        // anonymous-block wrapper next to inline siblings.
-        static bool IsTableDisplay(string disp) {
-            return disp == "table" || disp == "inline-table"
-                || disp == "table-row-group" || disp == "table-header-group" || disp == "table-footer-group"
-                || disp == "table-row" || disp == "table-cell" || disp == "table-caption"
-                || disp == "table-column" || disp == "table-column-group";
-        }
 
         // Injects a `::backdrop` sibling box before `host`'s own box if the
         // host element is in the top layer (open modal dialog, open popover).
@@ -284,11 +257,11 @@ namespace Weva.Layout {
                 // Per-style parsed cache: keyword-typed properties resolve via
                 // direct pattern-match on the cached CssValue without
                 // touching the raw string.
-                string pos = KeywordName(pseudoStyle.GetParsed(CssProperties.PositionId));
+                string pos = BoxBuildRules.KeywordName(pseudoStyle.GetParsed(CssProperties.PositionId));
                 if (pos == "absolute" || pos == "fixed") {
                     disp = "block";
                 } else {
-                    string flt = KeywordName(pseudoStyle.GetParsed(CssProperties.FloatId));
+                    string flt = BoxBuildRules.KeywordName(pseudoStyle.GetParsed(CssProperties.FloatId));
                     if (!string.IsNullOrEmpty(flt) && flt != "none") disp = "block";
                 }
             }
@@ -299,7 +272,7 @@ namespace Weva.Layout {
             // won't surface it (matching CSS — a pseudo isn't an Element).
             if (disp == "block" || disp == "flex" || disp == "grid"
                 || disp == "inline-block" || disp == "inline-flex" || disp == "inline-grid"
-                || disp == "inline-table" || IsTableDisplay(disp)) {
+                || disp == "inline-table" || BoxBuildRules.IsTableDisplay(disp)) {
                 var bb = NewBlockBoxFor(disp);
                 bb.Element = null;
                 bb.Style = pseudoStyle;
@@ -338,146 +311,11 @@ namespace Weva.Layout {
             parent.AddChild(ib);
         }
 
-        // CSS Basic User Interface L4 §13 — `field-sizing: content` layout impact.
-        //
-        // When an `<input type="text">` (or any textual input) has
-        // `field-sizing: content` in its computed style, the UA replaces its
-        // default fixed inline-size (the UA `width` from FormControlStylesheet,
-        // e.g. 218px border-box) with the intrinsic inline-size of the current
-        // `value` attribute text.  Placeholder text is used when the value is
-        // empty and a `placeholder` attribute is present, so the caret has a
-        // meaningful minimum width.
-        //
-        // Measurement: uses FieldSizingMetrics when available (wired from
-        // LayoutEngine), otherwise falls back to the StubCharWidthPx constant
-        // (8px/char at 16px — exact match for MonoFontMetrics default so tests
-        // run deterministically in the headless harness).
-        //
-        // v1 scope: `<input>` only (type=text / password / search / email / tel /
-        // url / number). Textarea + select are future follow-on work.
-        // Checkbox / radio inputs are excluded — those are replaced elements
-        // whose size is set by the widget, not the value text.
-        //
-        // The method writes the computed intrinsic width directly into the
-        // element's ComputedStyle as a `px`-valued `width` string, matching the
-        // pattern used by `MaybeApplyImgIntrinsicSize` for `<img>`. The
-        // downstream ApplyBoxModel in BlockLayout then reads the overridden
-        // width value and applies min/max clamping as normal — so
-        // `min-width`/`max-width` still constrain the result correctly.
-        void MaybeApplyFieldSizingWidth(Element e, ComputedStyle style) {
-            if (e == null || style == null) return;
-            // Only <input> is supported in v1.
-            if (e.TagName != "input") return;
-            // Checkbox and radio use replaced-element widget sizing, not text width.
-            string inputType = e.GetAttribute("type");
-            if (!string.IsNullOrEmpty(inputType)) {
-                string t = CssStringUtil.ToLowerInvariantOrSame(inputType);
-                if (t == "checkbox" || t == "radio" || t == "range"
-                    || t == "submit" || t == "button" || t == "reset"
-                    || t == "image" || t == "file" || t == "color") {
-                    return;
-                }
-            }
-            // Read field-sizing from cascade. Must be "content" to activate.
-            string fieldSizing = style.Get("field-sizing");
-            if (string.IsNullOrEmpty(fieldSizing) || fieldSizing != "content") return;
 
-            // Resolve the text to measure: prefer `value`, fall back to
-            // `placeholder` when value is empty (gives the caret some width).
-            string value = e.GetAttribute("value") ?? "";
-            if (value.Length == 0) {
-                string ph = e.GetAttribute("placeholder");
-                if (!string.IsNullOrEmpty(ph)) value = ph;
-            }
 
-            // Measure the text. Use live font metrics when available; otherwise
-            // use the stub constant. The stub (8px/char) is exact for
-            // MonoFontMetrics at 16px font-size, so headless tests are precise.
-            double textWidth;
-            if (FieldSizingMetrics != null && value.Length > 0) {
-                // Read font-size from the cascade. We don't have a LayoutContext
-                // here so we use a simple fallback: if font-size is set as a px
-                // string we parse it; otherwise default to 16px (UA medium).
-                double fontSize = 16.0;
-                string fsRaw = style.Get(CssProperties.FontSizeId);
-                if (!string.IsNullOrEmpty(fsRaw) && fsRaw.EndsWith("px")) {
-                    if (double.TryParse(fsRaw.AsSpan(0, fsRaw.Length - 2),
-                        System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out double fsVal) && fsVal > 0) {
-                        fontSize = fsVal;
-                    }
-                }
-                textWidth = FieldSizingMetrics.Measure(value, fontSize);
-            } else {
-                textWidth = value.Length * StubCharWidthPx;
-            }
 
-            // Intrinsic border-box width = text-width + caret pad + padding + border.
-            // FormControlStylesheet uses box-sizing: border-box for inputs, so the
-            // `width` we write must be the OUTER (border-box) size. We read the
-            // existing padding/border from the UA style if they're set as px strings.
-            double padL = ReadSimplePx(style.Get(CssProperties.PaddingLeftId), 8.0);
-            double padR = ReadSimplePx(style.Get(CssProperties.PaddingRightId), 8.0);
-            double bordL = ReadSimplePx(style.Get(CssProperties.BorderLeftWidthId), 1.0);
-            double bordR = ReadSimplePx(style.Get(CssProperties.BorderRightWidthId), 1.0);
 
-            // Check box-sizing: when border-box, the `width` value covers
-            // padding + border so we include them in the computed intrinsic
-            // width. Under content-box the engine adds frame separately.
-            bool isBorderBox = IsFieldSizingBorderBox(style);
-            double intrinsicWidth;
-            if (isBorderBox) {
-                intrinsicWidth = textWidth + FieldSizingCaretPaddingPx + padL + padR + bordL + bordR;
-            } else {
-                intrinsicWidth = textWidth + FieldSizingCaretPaddingPx;
-            }
-            if (intrinsicWidth < 0) intrinsicWidth = 0;
 
-            // Override the CSS width. ApplyBoxModel in BlockLayout will then
-            // read this value and apply min-width / max-width clamping normally.
-            style.Set("width", intrinsicWidth.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + "px");
-        }
-
-        // Local border-box check for field-sizing calculation. Mirrors
-        // BlockLayout.IsBorderBox but accessible from BoxBuilder without
-        // introducing a cross-class dependency.
-        static bool IsFieldSizingBorderBox(ComputedStyle style) {
-            if (style == null) return false;
-            var v = style.GetParsed(CssProperties.BoxSizingId);
-            if (v is CssKeyword k) return k.Identifier == "border-box";
-            if (v is CssIdentifier id) return id.Name == "border-box";
-            return style.Get(CssProperties.BoxSizingId) == "border-box";
-        }
-
-        // Parses a simple "<number>px" CSS length string. Returns `fallback`
-        // when the string is null/empty, non-px, or unparseable. Used only by
-        // MaybeApplyFieldSizingWidth to read padding/border values from the
-        // ComputedStyle without allocating a full CssValue parse.
-        static double ReadSimplePx(string raw, double fallback) {
-            if (string.IsNullOrEmpty(raw)) return fallback;
-            if (!raw.EndsWith("px")) return fallback;
-            if (double.TryParse(raw.AsSpan(0, raw.Length - 2),
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out double v)) return v;
-            return fallback;
-        }
-
-        // Resolves `<img>` natural sizing per HTML / CSS Sizing L4. Order:
-        //   1. CSS `width`/`height` (from cascade)  — if set, leave alone.
-        //   2. HTML `width`/`height` attributes — applied as if they were
-        //      author CSS lengths in `px`.
-        //   3. Image registry intrinsic size — `IImageSource.Width/Height`
-        //      from the resolved handle.
-        // HTML attributes are written into the ComputedStyle (they act as
-        // author CSS). Registry intrinsic dimensions are stored as pending
-        // values and applied to the Box after creation so they participate
-        // in replaced-element sizing without poisoning HasExplicitDim in
-        // the positioning pass.
-        //
-        // Only applies to `<img>`. Other replaced elements (audio/video)
-        // aren't supported in v1.
         void MaybeApplyImgIntrinsicSize(Element e, ComputedStyle style) {
             pendingIntrinsicWidth = 0;
             pendingIntrinsicHeight = 0;
@@ -486,8 +324,8 @@ namespace Weva.Layout {
 
             var widthParsed = style.GetParsed(CssProperties.WidthId);
             var heightParsed = style.GetParsed(CssProperties.HeightId);
-            bool widthAuto = IsAutoOrMissing(widthParsed);
-            bool heightAuto = IsAutoOrMissing(heightParsed);
+            bool widthAuto = BoxBuildRules.IsAutoOrMissing(widthParsed);
+            bool heightAuto = BoxBuildRules.IsAutoOrMissing(heightParsed);
             if (!widthAuto && !heightAuto) return;
 
             // HTML width/height attrs: per the HTML Living Standard, these
@@ -571,7 +409,7 @@ namespace Weva.Layout {
 
             BlockBox rootBox;
             if ((display == "block" || display == "flow-root" || display == "list-item")
-                && IsMulticolContainer(rootStyle)) {
+                && BoxBuildRules.IsMulticolContainer(rootStyle)) {
                 rootBox = pool.AllocateMulticolBox();
             } else {
                 rootBox = NewBlockBoxFor(display);
@@ -685,19 +523,19 @@ namespace Weva.Layout {
                 // (the float property is ignored on flex/grid items per
                 // CSS Flexbox §3 / Grid §6.4); we honour that by NOT
                 // re-promoting inline content when the parent is flex/grid.
-                if (!blockifyInlines && (disp == "inline" || string.IsNullOrEmpty(disp))) {
-                    string pos = KeywordName(style?.GetParsed(CssProperties.PositionId));
-                    if (pos == "absolute" || pos == "fixed") {
-                        disp = "block";
-                    } else {
-                        string flt = KeywordName(style?.GetParsed(CssProperties.FloatId));
-                        if (!string.IsNullOrEmpty(flt) && flt != "none") {
-                            disp = "block";
-                        }
-                    }
-                }
+                //
+                // EVERY inline-level display blockifies, not just `inline`
+                // (CSS Display 3 §2.7 gives the value table). An
+                // `position: absolute` element that is inline-block by the UA
+                // sheet — an <img>, <button>, <input>, or any author
+                // `display: inline-block` badge — stayed an inline atom, was
+                // placed on a line box, and shrink-to-fit sized it to its
+                // content: zero for a replaced element with no loaded source.
+                // An absolutely positioned avatar with `width: calc(100% - 8px)`
+                // came out 0 wide (advanced-dashboard).
+                disp = BoxBuildRules.BlockifyForOutOfFlow(disp, style, blockifyInlines);
                 MaybeApplyImgIntrinsicSize(e, style);
-                MaybeApplyFieldSizingWidth(e, style);
+                BoxBuildRules.ApplyFieldSizingWidth(e, style, FieldSizingMetrics);
                 MaybeInjectBackdrop(e, parent);
                 if (disp == "block" || disp == "flex" || disp == "grid" || disp == "flow-root" || disp == "list-item") {
                     // Multicol: a plain block container whose column-count or column-width
@@ -705,7 +543,7 @@ namespace Weva.Layout {
                     // column properties per CSS Multicol §2.
                     BlockBox bb;
                     if ((disp == "block" || disp == "flow-root" || disp == "list-item")
-                        && IsMulticolContainer(style)) {
+                        && BoxBuildRules.IsMulticolContainer(style)) {
                         bb = pool.AllocateMulticolBox();
                     } else {
                         bb = NewBlockBoxFor(disp);
@@ -744,7 +582,7 @@ namespace Weva.Layout {
                     parent.AddChild(bb);
                     return;
                 }
-                if (IsTableDisplay(disp)) {
+                if (BoxBuildRules.IsTableDisplay(disp)) {
                     var bb = NewBlockBoxFor(disp);
                     bb.Element = e; bb.Style = style;
                     ApplyPendingIntrinsicSize(bb);
@@ -830,13 +668,13 @@ namespace Weva.Layout {
             int step = 1;
             bool isOl = listParent.TagName == "ol";
             if (isOl) {
-                if (TryParseIntAttr(listParent.GetAttribute("start"), out int start)) counter = start;
+                if (BoxBuildRules.TryParseIntAttr(listParent.GetAttribute("start"), out int start)) counter = start;
                 bool reversed = listParent.GetAttribute("reversed") != null;
                 if (reversed) {
                     step = -1;
                     // If no explicit `start`, HTML says the initial counter
                     // for a reversed list is the count of `<li>` children.
-                    if (!HasAttr(listParent, "start")) {
+                    if (!BoxBuildRules.HasAttr(listParent, "start")) {
                         int liCount = 0;
                         foreach (var c in listParent.Children) {
                             if (c is Element ce && ce.TagName == "li") liCount++;
@@ -847,7 +685,7 @@ namespace Weva.Layout {
             }
             foreach (var c in listParent.Children) {
                 if (c is Element ce && ce.TagName == "li") {
-                    if (isOl && TryParseIntAttr(ce.GetAttribute("value"), out int v)) {
+                    if (isOl && BoxBuildRules.TryParseIntAttr(ce.GetAttribute("value"), out int v)) {
                         counter = v;
                     }
                     liOrdinals[ce] = counter;
@@ -856,16 +694,7 @@ namespace Weva.Layout {
             }
         }
 
-        static bool HasAttr(Element e, string name) {
-            return e.Attributes != null && e.Attributes.Contains(name);
-        }
 
-        static bool TryParseIntAttr(string s, out int value) {
-            value = 0;
-            if (string.IsNullOrEmpty(s)) return false;
-            return int.TryParse(s, System.Globalization.NumberStyles.Integer,
-                System.Globalization.CultureInfo.InvariantCulture, out value);
-        }
 
         // CSS Lists 3 §3 list-item marker injection. Triggered for any element
         // whose computed `display` is `list-item` (CSS Lists L3 §2 — the
@@ -985,27 +814,16 @@ namespace Weva.Layout {
                     foreach (var c in e.Children) AppendInlineChild(c, style, parent);
                     return;
                 }
-                // CSS 2.1 §9.7: a floated element with an inline outer
-                // display is "blockified". See AppendNodeAsBlockChild
-                // for the rationale; here we also promote inline floats
-                // nested inside an InlineBox to block so they participate
-                // in float layout instead of being collapsed into the
-                // inline-flow stream.
-                if (disp == "inline" || string.IsNullOrEmpty(disp)) {
-                    string pos = KeywordName(style?.GetParsed(CssProperties.PositionId));
-                    if (pos == "absolute" || pos == "fixed") {
-                        disp = "block";
-                    } else {
-                        string flt = KeywordName(style?.GetParsed(CssProperties.FloatId));
-                        if (!string.IsNullOrEmpty(flt) && flt != "none") {
-                            disp = "block";
-                        }
-                    }
-                }
+                // CSS 2.1 §9.7 again, for content nested inside an InlineBox:
+                // a float or out-of-flow box here must reach float/positioned
+                // layout rather than being folded into the inline stream.
+                // `blockifyInlines` is false — an InlineBox is never a flex or
+                // grid container's direct child list.
+                disp = BoxBuildRules.BlockifyForOutOfFlow(disp, style, false);
                 MaybeApplyImgIntrinsicSize(e, style);
-                MaybeApplyFieldSizingWidth(e, style);
+                BoxBuildRules.ApplyFieldSizingWidth(e, style, FieldSizingMetrics);
                 MaybeInjectBackdrop(e, parent);
-                if (disp == "inline-block" || disp == "block" || disp == "flex" || disp == "grid" || disp == "inline-flex" || disp == "inline-grid" || disp == "inline-table" || disp == "list-item" || IsTableDisplay(disp)) {
+                if (disp == "inline-block" || disp == "block" || disp == "flex" || disp == "grid" || disp == "inline-flex" || disp == "inline-grid" || disp == "inline-table" || disp == "list-item" || BoxBuildRules.IsTableDisplay(disp)) {
                     var bb = NewBlockBoxFor(disp);
                     bb.Element = e; bb.Style = style;
                     ApplyPendingIntrinsicSize(bb);
@@ -1035,25 +853,6 @@ namespace Weva.Layout {
             BoxFinalize.FinalizeBlockChildren(parent, pool, scratch);
         }
 
-        // Decodes the keyword name of a parsed CssValue for keyword-typed
-        // properties (display, position, float, ...). CssKeyword surfaces the
-        // canonical lowercase identifier; CssIdentifier surfaces a raw name.
-        // Returns null when the slot is unset or the parse tree is not a
-        // keyword/identifier — callers treat that as "initial value".
-        static string KeywordName(CssValue parsed) {
-            if (parsed is CssKeyword k) return k.Identifier;
-            if (parsed is CssIdentifier id) return id.Name;
-            return null;
-        }
 
-        // Matches "auto" (typed CssKeyword/CssIdentifier or absent slot) the
-        // way `MaybeApplyImgIntrinsicSize` needs it: both an unset width and a
-        // literal `auto` keyword mean "fall through to intrinsic-size pickup".
-        static bool IsAutoOrMissing(CssValue parsed) {
-            if (parsed == null) return true;
-            if (parsed is CssKeyword k) return k.Identifier == "auto";
-            if (parsed is CssIdentifier id) return id.Name == "auto";
-            return false;
-        }
     }
 }

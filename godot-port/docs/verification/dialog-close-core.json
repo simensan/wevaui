@@ -1,0 +1,27 @@
+{
+  "scope": "Source-only dialog close notification; installed105 unchanged",
+  "abi_minor": 15,
+  "source_sha256": {
+    "godot-port/libweva/include/weva_c.h": "11d6933097022f48b59ca0f83abbf054082bc6af6a612ea0b6f55b8416019590",
+    "godot-port/libweva/src/weva_c.cpp": "5351d2e0127a7f50722cc26bec04cd8aa7a341b71b4d9841433fe4f3404ce3c4",
+    "godot-port/libweva/tests/test_c_abi_forms.cpp": "63f73aacd09a1227c4304ea21afbb485c1bbfa43035fb056f1ba4c0f992bfb5f",
+    "godot-port/libweva/tests/main.cpp": "12713ce6c2519301499ca3bed5fe38d181266bd590a847340666d58dda525412",
+    "godot-port/hosts/godot/src/weva_node.cpp": "7daab4928146b045027f3ba5880a0a908dca812bcc7ee5633fc5919349898cae"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 19.55
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 111.96
+  },
+  "remaining": [
+    "Godot build and signal tests",
+    "cancellable requestClose and Escape",
+    "returnValue",
+    "beforetoggle and task coalescing"
+  ]
+}

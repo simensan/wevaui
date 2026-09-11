@@ -83,6 +83,13 @@ input, textarea, select { padding: 1px 2px; border: 1px solid #767676; }
    consumed newlines), so painted runs align back to model text indices
    deterministically (Forms.TextAreaCaretMap). */
 textarea { white-space: pre-wrap; }
+/* Chrome UA: a textarea SCROLLS its content. Beyond the visual effect this
+   settles its baseline — CSS 2.1 10.8.1 puts an inline-block's baseline at the
+   bottom MARGIN edge once overflow is not `visible`, instead of at its last
+   line box. Without it the baseline moved with the wrapped content, so a
+   textarea holding text that wrapped past its rows dragged the inputs beside
+   it off by a line, and the two engines disagreed about which line. */
+textarea { overflow: auto; }
 
 table { display: table; border-collapse: separate; border-spacing: 2px; }
 thead { display: table-header-group; }

@@ -1,0 +1,37 @@
+{
+  "scope": "Native C ABI family registration source; not installed in Godot",
+  "abi_minor": 14,
+  "installed_preview": 104,
+  "source_sha256": {
+    "godot-port/libweva/include/weva_c.h": "53fd33295d51d99a5bc669e10c9d8eaef054e0b80e2c23c2702893cff7e54112",
+    "godot-port/libweva/src/weva_c.cpp": "c69dd5b7871663b2243c7dcd41fc99e44eef098f04d7f63ca1c8c5f44909a47a",
+    "godot-port/libweva/tests/test_c_abi.cpp": "b930ca9fa1355158b13ba49d997f2fbbf0caab94071ea504de10d029d3726431",
+    "godot-port/libweva/tests/main.cpp": "1cd6e19762c2f6cf2b7042b24aed8aadcb038beed82e60f1a246ceb257a1493f"
+  },
+  "verification": {
+    "windows_release": {
+      "passed": 10,
+      "total": 10,
+      "seconds": 18.75
+    },
+    "linux_sanitizers": {
+      "passed": 12,
+      "total": 12,
+      "seconds": 116.28
+    }
+  },
+  "covered": [
+    "registration and case-insensitive no-op",
+    "replacement and removal",
+    "family-specific bold metrics",
+    "shaper replacement and restoration",
+    "HTML reload retention",
+    "backend replacement removes stale face IDs",
+    "null backend restoration"
+  ],
+  "remaining": [
+    "Godot resource registration and lifecycle",
+    "native package and runtime verification",
+    "CSS @font-face"
+  ]
+}

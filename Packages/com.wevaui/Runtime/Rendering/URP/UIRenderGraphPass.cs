@@ -569,6 +569,16 @@ namespace Weva.Rendering.URP {
             drawViewport = currentViewport;
             cmd.SetGlobalVector(IdViewport, currentViewport);
             cmd.SetGlobalVector(IdViewportOrigin, Vector4.zero);
+            // Documents hosted by the native core (Weva.Native) publish meshes,
+            // not paint. They draw here, onto the camera target before the C#
+            // batches, so a native document composes beneath C# documents --
+            // the same order the legacy UIRenderPass gives them. Until now only
+            // that pass drew them, and it is the inactive feature.
+            for (int i = 0; i < scratchSources.Count; i++) {
+                if (scratchSources[i] is Weva.Native.IUINativePaintSource native) {
+                    native.EmitNative(cmd, width, height);
+                }
+            }
 
             // A-SRGB-COMPOSITE Stage 1: redirect the whole frame's UI into an
             // always-on intermediate RT, then composite that RT back onto the

@@ -1,0 +1,35 @@
+{
+  "scope": "Current core against 309 frozen Chrome fixtures; synthetic font metrics and UA overlay, not native pixel parity",
+  "dump_sha256": "cc95b037e1f44fe5fb74978a412b47062160f853bc600f35eac36dd64ccc710f",
+  "frozen_browser": "Chrome/152.0.7977.77",
+  "counts": {
+    "samples": {
+      "ok": 27,
+      "DIFF": 20,
+      "CRASH": 0
+    },
+    "hand": {
+      "ok": 52,
+      "DIFF": 0,
+      "CRASH": 0
+    },
+    "harvest": {
+      "ok": 206,
+      "DIFF": 4,
+      "CRASH": 0
+    }
+  },
+  "frozen_agree": 285,
+  "frozen_differ": 24,
+  "frozen_crashes": 0,
+  "frozen_report": ".utmp/safe-engine71/layout-audit200/comparison.json",
+  "fresh_select_checks": {
+    "captures": ".utmp/safe-engine71/layout-audit200/fresh-selects/captures.json",
+    "engine_directory": ".utmp/safe-engine71/layout-audit200/fresh-select-engine",
+    "form-metrics": "agrees",
+    "forms-live": "agrees",
+    "settings": "select widths agree; seven remaining text differences, maximum 0.2px",
+    "explanation": "Frozen captures include the former minimum-width default. Fresh captures use the same current UA stylesheet as the engine. Original frozen results are preserved, not regraded."
+  },
+  "remaining": "Broader multicolumn fragmentation and other differing layout fixtures remain unresolved; no full browser-parity claim."
+}

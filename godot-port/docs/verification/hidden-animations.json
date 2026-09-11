@@ -1,0 +1,243 @@
+{
+  "status": "uninstalled candidate; correctness and exports pass; desktop timing profile fails",
+  "library_sha256": "1b1a79880281b3c321b1d6af9291d5d180b7eb6fc29a92653cc64e0ea4efcc6a",
+  "fix": "Cancel CSS animation clocks and restore underlying values when the element or an ancestor has underlying display:none. Reopening starts fresh. visibility:hidden continues animating.",
+  "spec": "https://www.w3.org/TR/css-animations-1/#animations",
+  "baseline": {
+    "log": ".utmp/safe-engine71/hidden-animation-baseline.log",
+    "regression_failures": 8
+  },
+  "core": {
+    "log": ".utmp/safe-engine71/hidden-animation-final-tests.log",
+    "passed_suites": 14,
+    "seconds": 21.75,
+    "coverage": [
+      "self hiding",
+      "ancestor hiding",
+      "cancelled ticking",
+      "unchanged hidden draw serial",
+      "fresh restart",
+      "initially hidden animation",
+      "visibility:hidden continues"
+    ]
+  },
+  "native": {
+    "directory": ".utmp/safe-engine71/hidden-animation-host",
+    "headless_checks": 204,
+    "opengl_checks": 207,
+    "vulkan_checks": 207,
+    "passed": true
+  },
+  "limitations": [
+    "Desktop timing profile failed; 1080p/4K profiles not run because orchestrator stopped on that failure.",
+    "No lifecycle run for this binary yet.",
+    "Installed addons remain preview207.",
+    "The prior composition candidate failed whole-frame profile remains failed."
+  ],
+  "sanitizers": {
+    "log": ".utmp/safe-engine71/hidden-animation-sanitizers.log",
+    "passed_suites": 16,
+    "seconds": 174.46
+  },
+  "full_host": {
+    "receipt": ".utmp/safe-engine71/hidden-animation-full-host/verification.json",
+    "entries": 43,
+    "checks": 35464,
+    "passed": true
+  },
+  "exports": {
+    "sample_log": ".utmp/safe-engine71/hidden-animation209-sample.log",
+    "export_log": ".utmp/safe-engine71/hidden-animation209-exports.log",
+    "passed": true
+  },
+  "focused_comparison": {
+    "results": [
+      {
+        "name": "old-a",
+        "library_sha256": "bd3f0f8c9334f57c70370e5e8fe98ba96ee33baf6bcc8e7c3fd2c418f6e24cbe",
+        "rows": [
+          {
+            "api_p50_ms": 0.344,
+            "api_p95_ms": 0.438,
+            "automatic_updates_120_frames": 120,
+            "core_mean_ms": 0.358452233333332,
+            "hidden": false
+          },
+          {
+            "api_p50_ms": 0.073,
+            "api_p95_ms": 0.085,
+            "automatic_updates_120_frames": 120,
+            "core_mean_ms": 0.0743739000000001,
+            "hidden": true
+          }
+        ]
+      },
+      {
+        "name": "new-a",
+        "library_sha256": "1b1a79880281b3c321b1d6af9291d5d180b7eb6fc29a92653cc64e0ea4efcc6a",
+        "rows": [
+          {
+            "api_p50_ms": 0.353,
+            "api_p95_ms": 0.455,
+            "automatic_updates_120_frames": 120,
+            "core_mean_ms": 0.368769266666668,
+            "hidden": false
+          },
+          {
+            "api_p50_ms": 0.0,
+            "api_p95_ms": 0.001,
+            "automatic_updates_120_frames": 120,
+            "core_mean_ms": 4.75666666666614e-05,
+            "hidden": true
+          }
+        ]
+      },
+      {
+        "name": "new-b",
+        "library_sha256": "1b1a79880281b3c321b1d6af9291d5d180b7eb6fc29a92653cc64e0ea4efcc6a",
+        "rows": [
+          {
+            "api_p50_ms": 0.353,
+            "api_p95_ms": 0.456,
+            "automatic_updates_120_frames": 120,
+            "core_mean_ms": 0.369831916666667,
+            "hidden": false
+          },
+          {
+            "api_p50_ms": 0.0,
+            "api_p95_ms": 0.001,
+            "automatic_updates_120_frames": 120,
+            "core_mean_ms": 5.29999999999942e-05,
+            "hidden": true
+          }
+        ]
+      },
+      {
+        "name": "old-b",
+        "library_sha256": "bd3f0f8c9334f57c70370e5e8fe98ba96ee33baf6bcc8e7c3fd2c418f6e24cbe",
+        "rows": [
+          {
+            "api_p50_ms": 0.346,
+            "api_p95_ms": 0.476,
+            "automatic_updates_120_frames": 120,
+            "core_mean_ms": 0.366378233333333,
+            "hidden": false
+          },
+          {
+            "api_p50_ms": 0.072,
+            "api_p95_ms": 0.082,
+            "automatic_updates_120_frames": 120,
+            "core_mean_ms": 0.0733559666666672,
+            "hidden": true
+          }
+        ]
+      }
+    ],
+    "scope": "Headless Godot CPU only; 64 animated elements under four panel ancestors; 6000 explicit updates per case; old/new/new/old ordering. Separate automatic processing probe counts host calls, not substantive animation work.",
+    "finding": "Hidden API p95 decreases from 0.082-0.085 ms to 0.001 ms. Visible p95 old 0.438/0.476 ms, new 0.455/0.456 ms; mean core cost old 0.358/0.366 ms, new 0.369/0.370 ms. Both versions make 120 host-to-core calls over 120 automatic frames.",
+    "limitations": "Two runs per binary; microsecond timer quantization; not rendered whole-frame timing or lower-end hardware qualification."
+  },
+  "desktop_timing": {
+    "summary": ".utmp\\safe-engine71\\hidden-animation209-desktop\\summary.json",
+    "passed": false,
+    "passed_checks": 70,
+    "total_checks": 72,
+    "failures": [
+      "Budget exceeded: gl_compatibility/1/clock_1hz/changed_api_cpu",
+      "Budget exceeded: gl_compatibility/1/redundant_signal/changed_api_cpu"
+    ]
+  },
+  "signals_comparison": {
+    "rows": [
+      {
+        "run": "old-a",
+        "library_sha256": "bd3f0f8c9334f57c70370e5e8fe98ba96ee33baf6bcc8e7c3fd2c418f6e24cbe",
+        "metrics": {
+          "clock_1hz": {
+            "max_ms": 2.569,
+            "mean_ms": 0.56648,
+            "median_ms": 0.479,
+            "p95_ms": 0.799,
+            "p99_ms": 2.398,
+            "samples": 100
+          },
+          "redundant_signal": {
+            "max_ms": 0.602,
+            "mean_ms": 0.104172333333332,
+            "median_ms": 0.086,
+            "p95_ms": 0.174,
+            "p99_ms": 0.371,
+            "samples": 6000
+          }
+        }
+      },
+      {
+        "run": "new-a",
+        "library_sha256": "1b1a79880281b3c321b1d6af9291d5d180b7eb6fc29a92653cc64e0ea4efcc6a",
+        "metrics": {
+          "clock_1hz": {
+            "max_ms": 1.631,
+            "mean_ms": 0.53848,
+            "median_ms": 0.454,
+            "p95_ms": 0.908,
+            "p99_ms": 1.493,
+            "samples": 100
+          },
+          "redundant_signal": {
+            "max_ms": 0.56,
+            "mean_ms": 0.106052166666667,
+            "median_ms": 0.088,
+            "p95_ms": 0.161,
+            "p99_ms": 0.368,
+            "samples": 6000
+          }
+        }
+      },
+      {
+        "run": "new-b",
+        "library_sha256": "1b1a79880281b3c321b1d6af9291d5d180b7eb6fc29a92653cc64e0ea4efcc6a",
+        "metrics": {
+          "clock_1hz": {
+            "max_ms": 1.845,
+            "mean_ms": 0.58934,
+            "median_ms": 0.551,
+            "p95_ms": 0.915,
+            "p99_ms": 1.585,
+            "samples": 100
+          },
+          "redundant_signal": {
+            "max_ms": 0.632,
+            "mean_ms": 0.107727166666667,
+            "median_ms": 0.09,
+            "p95_ms": 0.151,
+            "p99_ms": 0.364,
+            "samples": 6000
+          }
+        }
+      },
+      {
+        "run": "old-b",
+        "library_sha256": "bd3f0f8c9334f57c70370e5e8fe98ba96ee33baf6bcc8e7c3fd2c418f6e24cbe",
+        "metrics": {
+          "clock_1hz": {
+            "max_ms": 1.921,
+            "mean_ms": 0.56403,
+            "median_ms": 0.47,
+            "p95_ms": 0.964,
+            "p99_ms": 1.649,
+            "samples": 100
+          },
+          "redundant_signal": {
+            "max_ms": 0.671,
+            "mean_ms": 0.105516666666666,
+            "median_ms": 0.087,
+            "p95_ms": 0.178,
+            "p99_ms": 0.372,
+            "samples": 6000
+          }
+        }
+      }
+    ],
+    "scope": "OpenGL 1280x720 manual, 6000 frames/workload, old/new/new/old; diagnostic with no acceptance profile; does not replace failed full profile."
+  }
+}

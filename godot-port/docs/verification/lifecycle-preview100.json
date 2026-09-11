@@ -1,0 +1,148 @@
+{
+  "candidate": "Windows preview100",
+  "scope": "Single Vulkan 1920x1080 release-export lifecycle run, animated 3D scene, mixed-script names, patched Windows engine and embedded ICU.",
+  "raw_evidence": ".utmp/safe-engine71/lifecycle100-unicode600",
+  "evidence_sha256": {
+    "verification.json": "06cdcc4013f2e84c23c2754ad361069d7c6179c4dfd1b59322315a48337c2768",
+    "process-memory.json": "5252fa9f5637f9fc5eb6473e8e8e030696b9f982b06b12378b91c730763c2e35",
+    "run.log": "57846707abcb58d206162c3ffee2e1a83269de4cae798bd79b186f5a9584c54f",
+    "cold.png": "3d6842758870c7de89c78533ed55c572d8179ca7ab05ad9fe8dd57a0af107942",
+    "prepared.png": "3d6842758870c7de89c78533ed55c572d8179ca7ab05ad9fe8dd57a0af107942"
+  },
+  "memory_observations": {
+    "soak_marker_count": 596,
+    "private_bytes_first": 854724608,
+    "private_bytes_last": 874639360,
+    "private_bytes_min": 854724608,
+    "private_bytes_max": 874639360,
+    "private_bytes_quartile_positions": [
+      854724608,
+      868581376,
+      865267712,
+      872521728,
+      874639360
+    ],
+    "declining_intervals": 32,
+    "soak_nodes": [
+      496.0
+    ],
+    "soak_objects": [
+      1949.0,
+      1950.0,
+      1951.0,
+      1952.0,
+      1957.0,
+      1958.0
+    ],
+    "final_teardown": {
+      "index": 0,
+      "nodes": 491.0,
+      "objects": 1939.0,
+      "phase": "final_teardown",
+      "static_bytes": 0,
+      "texture_bytes": 70795264,
+      "time_usec": 609146545,
+      "process_memory": {
+        "resident_bytes": 626716672,
+        "private_bytes": 859234304
+      }
+    }
+  },
+  "limitations": [
+    "Functional pass does not certify cold-opening or frame-time budgets.",
+    "Process-private memory rose about 19 MiB; matching UI-disabled lifecycle evidence is needed before attributing retention to the UI. No indefinite bound established.",
+    "Timing histogram has fixed storage; soak updates are frame-driven and uncapped, not real-time 10 Hz.",
+    "No concurrent builds or other benchmark jobs were launched by this task; desktop scheduling and external machine activity remain uncontrolled.",
+    "A 130.09 ms maximum whole-frame interval occurred; this run does not establish hitch-free behavior."
+  ],
+  "passed": true,
+  "prepared_pixels_match_cold": true,
+  "executable_sha256": "808b2ea000da2b3b361eb80a247fb442d1f39308e91bf604729f7d571465b7dd",
+  "library_sha256": "88b9fdfb2407b1b1c8b0b6c7b0a2cd00d1db5e869e38d3a9f52678af46c6080a",
+  "source_sha256": {
+    "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+    "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+    "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+    "game.gd": "d3a70197907c52358ca4b30eeb098a14159b4dd39fe71900aa461be4f363e96b",
+    "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+    "tests\\integration.gd": "d5e0b6a28a882f5f42acacae5768cc04674bfa9d9de902f3e99a1f6475ad1ca2",
+    "tests\\lifecycle.gd": "80d18eadbf28a2faef1c1a92becbc60b4ab799ab3d1ee73366574454a881d911",
+    "tests\\load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+    "tests\\performance.gd": "3bcedfee076af2420a2adfac6028128d19e4de1e29490462fec8b051d93d1ae6",
+    "ui\\camp.css": "240119a4baa0a2db651dc644f83c054ab87f7853446ac2ae2719f0a136f8a517",
+    "ui\\camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+    "addons\\weva\\weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c",
+    "addons\\weva\\example\\example.gd": "9d5963e2f8b0b81aca813a79fd134516e65355f6ea0d66993766915f8fd29eed",
+    "addons\\weva\\example\\example.tscn": "f164c04bc0bb1710a068a9ed234e719a122501b774df0ba95666df1677ae56c9",
+    "addons\\weva\\example\\ui.css": "998d4af10e12099fae89c3a0ae35c986674efcc7f97b25ed8002cf23bff39eb6",
+    "addons\\weva\\example\\ui.html": "1bed57345424f80dc13dc94e82f9ab7f5b9d5bd51448b8931f01de35bd7ba33f"
+  },
+  "process_memory_available": true,
+  "result": {
+    "cycles": 200,
+    "debug_build": false,
+    "engine": {
+      "build": "custom_build",
+      "hash": "unknown",
+      "hex": 263938,
+      "major": 4,
+      "minor": 7,
+      "patch": 2,
+      "status": "stable",
+      "string": "4.7.2-stable (custom_build)",
+      "timestamp": 0
+    },
+    "first_hidden": false,
+    "name_updates": 59916,
+    "passed": true,
+    "renderer": "mobile",
+    "resolution": [
+      1920,
+      1080
+    ],
+    "results": {
+      "first_document_cpu_ms": 91.338,
+      "first_document_through_draw_ms": 93.366,
+      "first_show_cpu_ms": 0.005,
+      "first_show_through_draw_ms": 2.022,
+      "hidden_prepare_cpu_ms": 24.81,
+      "prepared_first_show_cpu_ms": 0.016,
+      "prepared_first_show_through_draw_ms": 1.292,
+      "recreate_cpu": {
+        "max_ms": 34.379,
+        "mean_ms": 27.88445,
+        "median_ms": 27.805,
+        "p95_ms": 32.233,
+        "samples": 200
+      },
+      "reuse_through_draw": {
+        "max_ms": 2.343,
+        "mean_ms": 1.338075,
+        "median_ms": 1.28,
+        "p95_ms": 1.971,
+        "samples": 200
+      },
+      "reuse_with_hidden_data_update_cpu": {
+        "max_ms": 1.2,
+        "mean_ms": 0.387505,
+        "median_ms": 0.365,
+        "p95_ms": 0.567,
+        "samples": 200
+      },
+      "scene_resource_load_ms": 40.066,
+      "soak_frames": {
+        "max_ms": 130.09,
+        "mean_ms": 1.67945356211103,
+        "median_ms": 0.68,
+        "p95_ms": 6.98,
+        "quantile_limit_ms": 100.0,
+        "quantile_overflow_samples": 1,
+        "quantile_resolution_ms": 0.01,
+        "samples": 356853
+      },
+      "soak_seconds": 600.023981
+    },
+    "unicode_names": true,
+    "world": "3d"
+  }
+}

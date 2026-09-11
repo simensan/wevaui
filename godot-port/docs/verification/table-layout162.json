@@ -1,0 +1,62 @@
+{
+  "change": "Collapsed border candidates now drive cell half-widths and table outer sizing",
+  "installed": false,
+  "chrome_geometry": [
+    {
+      "name": "separate-bottom-1",
+      "differences": []
+    },
+    {
+      "name": "separate-all-1",
+      "differences": []
+    },
+    {
+      "name": "separate-conflict-1",
+      "differences": []
+    },
+    {
+      "name": "separate-bottom-4",
+      "differences": []
+    },
+    {
+      "name": "separate-all-4",
+      "differences": []
+    },
+    {
+      "name": "separate-conflict-4",
+      "differences": []
+    },
+    {
+      "name": "collapse-bottom-1",
+      "differences": []
+    },
+    {
+      "name": "collapse-all-1",
+      "differences": []
+    },
+    {
+      "name": "collapse-conflict-1",
+      "differences": []
+    },
+    {
+      "name": "collapse-bottom-4",
+      "differences": []
+    },
+    {
+      "name": "collapse-all-4",
+      "differences": []
+    },
+    {
+      "name": "collapse-conflict-4",
+      "differences": []
+    }
+  ],
+  "main_core": "485656 checks, 0 failures",
+  "focused_sanitizers": "231 table checks, zero failures under ASAN/UBSAN",
+  "remaining": [
+    "Retain resolved segments safely across subtree replacement and use them for shared-border painting",
+    "Broader spans, captions, table width constraints, RTL and visibility-collapse browser coverage",
+    "Incremental live mutation and native regression checks",
+    "Performance qualification after layout/paint integration"
+  ]
+}

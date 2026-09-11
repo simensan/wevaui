@@ -73,10 +73,31 @@ namespace Weva.BaselineGen {
 
         static List<ElementRect> BuildUnityBoxes(string html, string css, int width, int height) {
             var doc = HtmlParser.Parse(html ?? string.Empty, new ParseOptions { ThrowOnError = false });
-            var sheets = new List<OriginatedStylesheet> { UserAgentStylesheet.Parse() };
+            // Component registration + expansion, in UIDocumentBuilder's order:
+            // BEFORE the cascade, so expanded subtrees are present when
+            // selectors run. Skipping it left a `<card>` sitting un-expanded
+            // with its slot content as ordinary inline children, which is not
+            // what this engine renders — and the oracle was then comparing the
+            // port against a page the reference never actually produces.
+            var components = new Weva.Components.ComponentRegistry();
+            components.RegisterAllFromDocument(doc);
+            new Weva.Components.ComponentExpander(components).Expand(doc);
+
+            // Same UA origin as UIDocumentBuilder: base sheet, then the form
+            // control sheet (input/select/textarea sizes, option display:none).
+            var sheets = new List<OriginatedStylesheet> {
+                UserAgentStylesheet.Parse(),
+                Weva.Forms.FormControlStylesheet.Parse(),
+            };
             if (!string.IsNullOrEmpty(css)) {
                 var authorSheet = CssParser.Parse(css, new ParseOptions { ThrowOnError = false });
                 sheets.Add(OriginatedStylesheet.Author(authorSheet));
+            }
+            // Component-scoped author sheets join after author sheets, so
+            // specificity ties resolve in registration order.
+            foreach (var os in Weva.Components.Scoping.ComponentStyleIntegration
+                         .RewrittenStylesheets(components)) {
+                sheets.Add(os);
             }
 
             var media = MediaContext.Default(width, height);
@@ -92,6 +113,19 @@ namespace Weva.BaselineGen {
 
             var layout = new LayoutEngine(fontMetrics);
             layout.BackdropStyleOf = e => cascade.ComputeBackdrop(e);
+            // ::before/::after boxes, as the runtime generates them. Without
+            // these the reference silently omitted every badge and overlay.
+            layout.BeforeStyleOf = e => cascade.ComputeBefore(e);
+            layout.AfterStyleOf = e => cascade.ComputeAfter(e);
+            // ::marker likewise. Without it BoxBuilder falls back to the <li>'s
+            // OWN style for the marker atom, so the marker picks up the li's
+            // padding, border and margin — and vertical padding on a list item
+            // then inflated the li's line box. audit-validation's `.zebra li`
+            // (padding: 5px 10px) measured 26.9 where Chrome and the port both
+            // say 26, and the 0.9 per row accumulated into a 4.5px offset that
+            // pushed the rest of the page out of Chrome's reach for
+            // arbitration.
+            layout.MarkerStyleOf = e => cascade.ComputeMarker(e);
             var root = layout.Layout(doc, e => styles.TryGetValue(e, out var s) ? s : null, ctx);
 
             var order = new List<ElementRect>();
@@ -246,9 +280,16 @@ namespace Weva.BaselineGen {
             File.WriteAllText(outPath, sb.ToString());
         }
 
-        static double Round2(double value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+        // FOUR decimals. The C++ port is a separate implementation, so it
+        // accumulates the same arithmetic in a slightly different order and
+        // lands fractions of a ulp away. At 2dp such a pair straddles a
+        // rounding boundary often enough to print as a phantom 0.01 difference,
+        // which the oracle compares exactly and which then cascades to every
+        // box below. Kept in step with weva_dump's format_num, including the
+        // away-from-zero midpoint rule.
+        static double Round2(double value) => Math.Round(value, 4, MidpointRounding.AwayFromZero);
 
-        static string Format(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+        static string Format(double value) => value.ToString("0.####", CultureInfo.InvariantCulture);
 
         static string JsonEscape(string value) {
             if (string.IsNullOrEmpty(value)) return string.Empty;

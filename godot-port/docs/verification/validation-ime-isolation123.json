@@ -1,0 +1,1842 @@
+{
+  "status": "Diagnostic isolation only; installed preview121 unchanged. Native IME stage logging is opt-in in the experimental library.",
+  "normal": {
+    "metadata": {
+      "schema": 1,
+      "library_sha256": "afd8d58ffc435ebf9c4740322e4f387be8e70d74a16c30acdb2a122acfd8e675",
+      "source": {
+        "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+        "dirty": true,
+        "sha256": "28912076e927ae37c4c26b960186caf84b616ad56f3fc7e1ba1e998720b3eb59"
+      },
+      "godot_cpp": {
+        "revision": null,
+        "dirty": null,
+        "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "godot_api": "4.7",
+      "precision": "single",
+      "custom_api": null,
+      "sanitizers": false
+    },
+    "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+    "fixture_sha256": "d7305f7f4a707499c30efbd2d8c93d0d9dd86383efdb7b42e2627cce955d9202",
+    "passed": true,
+    "timing_gate": false,
+    "runs": [
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "result": {
+          "failures": [],
+          "native_input": true,
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.288,
+                "mean": 0.0129791666666666,
+                "p50": 0.009,
+                "p95": 0.018
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000416666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.421,
+                "mean": 0.0210291666666666,
+                "p50": 0.018,
+                "p95": 0.034
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.0003875,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.359,
+                "mean": 0.0447416666666667,
+                "p50": 0.032,
+                "p95": 0.067
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.0004625,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.106,
+                "mean": 0.492233333333333,
+                "p50": 0.466,
+                "p95": 0.747
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.018,
+                "mean": 0.0080083333333333,
+                "p50": 0.009,
+                "p95": 0.01
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.369,
+                "mean": 0.0431833333333334,
+                "p50": 0.032,
+                "p95": 0.067
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000391666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.012,
+                "mean": 0.00496666666666667,
+                "p50": 0.004,
+                "p95": 0.008
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.262,
+                "mean": 0.00154166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.114,
+                "mean": 0.012675,
+                "p50": 0.011,
+                "p95": 0.022
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000466666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.337,
+                "mean": 0.0583416666666667,
+                "p50": 0.048,
+                "p95": 0.096
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000404166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.688,
+                "mean": 0.1143125,
+                "p50": 0.092,
+                "p95": 0.181
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.0005375,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.608,
+                "mean": 0.952645833333334,
+                "p50": 0.927,
+                "p95": 1.256
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.039,
+                "mean": 0.00822499999999998,
+                "p50": 0.009,
+                "p95": 0.01
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.337,
+                "mean": 0.112466666666667,
+                "p50": 0.092,
+                "p95": 0.186
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000475,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.279,
+                "mean": 0.011625,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.019,
+                "mean": 0.0005,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            }
+          ],
+          "samples": 240,
+          "scope": "Paused document, validation call including invalid handlers, followed by explicit host update; excludes setup, frame drawing and GPU.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "result": {
+          "failures": [],
+          "native_input": true,
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.164,
+                "mean": 0.0089875,
+                "p50": 0.007,
+                "p95": 0.019
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.005,
+                "mean": 0.000458333333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.051,
+                "mean": 0.0160625,
+                "p50": 0.014,
+                "p95": 0.023
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000379166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.12,
+                "mean": 0.0292041666666666,
+                "p50": 0.026,
+                "p95": 0.047
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.000404166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.232,
+                "mean": 0.494258333333333,
+                "p50": 0.444,
+                "p95": 0.836
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.184,
+                "mean": 0.00875416666666664,
+                "p50": 0.009,
+                "p95": 0.011
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.093,
+                "mean": 0.042125,
+                "p50": 0.043,
+                "p95": 0.06
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.00055,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.009,
+                "mean": 0.00461666666666667,
+                "p50": 0.005,
+                "p95": 0.006
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000491666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.025,
+                "mean": 0.0110333333333333,
+                "p50": 0.01,
+                "p95": 0.018
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.000591666666666667,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.136,
+                "mean": 0.0661083333333333,
+                "p50": 0.069,
+                "p95": 0.093
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.0006125,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.275,
+                "mean": 0.126929166666667,
+                "p50": 0.127,
+                "p95": 0.185
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.000516666666666667,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.865,
+                "mean": 0.968754166666667,
+                "p50": 0.913,
+                "p95": 1.329
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.021,
+                "mean": 0.00751666666666664,
+                "p50": 0.009,
+                "p95": 0.01
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.3,
+                "mean": 0.123841666666667,
+                "p50": 0.126,
+                "p95": 0.183
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.0005125,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.04,
+                "mean": 0.011525,
+                "p50": 0.012,
+                "p95": 0.017
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000525,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            }
+          ],
+          "samples": 240,
+          "scope": "Paused document, validation call including invalid handlers, followed by explicit host update; excludes setup, frame drawing and GPU.",
+          "warmups": 60
+        }
+      }
+    ]
+  },
+  "native_input_disabled": {
+    "metadata": {
+      "schema": 1,
+      "library_sha256": "afd8d58ffc435ebf9c4740322e4f387be8e70d74a16c30acdb2a122acfd8e675",
+      "source": {
+        "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+        "dirty": true,
+        "sha256": "28912076e927ae37c4c26b960186caf84b616ad56f3fc7e1ba1e998720b3eb59"
+      },
+      "godot_cpp": {
+        "revision": null,
+        "dirty": null,
+        "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "godot_api": "4.7",
+      "precision": "single",
+      "custom_api": null,
+      "sanitizers": false
+    },
+    "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+    "fixture_sha256": "d7305f7f4a707499c30efbd2d8c93d0d9dd86383efdb7b42e2627cce955d9202",
+    "passed": true,
+    "timing_gate": false,
+    "runs": [
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "result": {
+          "failures": [],
+          "native_input": false,
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.025,
+                "mean": 0.0126083333333333,
+                "p50": 0.013,
+                "p95": 0.016
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.036,
+                "mean": 0.000629166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.656,
+                "mean": 0.03255,
+                "p50": 0.017,
+                "p95": 0.037
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.022,
+                "mean": 0.0004375,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.359,
+                "mean": 0.0380416666666667,
+                "p50": 0.031,
+                "p95": 0.063
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.00035,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.115,
+                "mean": 0.0409124999999999,
+                "p50": 0.034,
+                "p95": 0.07
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.31,
+                "mean": 0.150383333333333,
+                "p50": 0.129,
+                "p95": 0.265
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.326,
+                "mean": 0.0424916666666667,
+                "p50": 0.031,
+                "p95": 0.066
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.025,
+                "mean": 0.000475,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.011,
+                "mean": 0.00520416666666667,
+                "p50": 0.005,
+                "p95": 0.006
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000433333333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.024,
+                "mean": 0.0112583333333333,
+                "p50": 0.011,
+                "p95": 0.013
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000445833333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.371,
+                "mean": 0.0654041666666667,
+                "p50": 0.049,
+                "p95": 0.095
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000416666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.551,
+                "mean": 0.114233333333333,
+                "p50": 0.092,
+                "p95": 0.182
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.022,
+                "mean": 0.000525,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.189,
+                "mean": 0.10455,
+                "p50": 0.098,
+                "p95": 0.147
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.846,
+                "mean": 0.542558333333334,
+                "p50": 0.527,
+                "p95": 0.611
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.517,
+                "mean": 0.115070833333333,
+                "p50": 0.092,
+                "p95": 0.183
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000383333333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.373,
+                "mean": 0.0118291666666666,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000366666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            }
+          ],
+          "samples": 240,
+          "scope": "Paused document, validation call including invalid handlers, followed by explicit host update; excludes setup, frame drawing and GPU.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "result": {
+          "failures": [],
+          "native_input": false,
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.049,
+                "mean": 0.00755833333333333,
+                "p50": 0.006,
+                "p95": 0.014
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000370833333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.27,
+                "mean": 0.0177625,
+                "p50": 0.014,
+                "p95": 0.036
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.005,
+                "mean": 0.000370833333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.283,
+                "mean": 0.0305249999999999,
+                "p50": 0.026,
+                "p95": 0.055
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000341666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.446,
+                "mean": 0.0396791666666666,
+                "p50": 0.035,
+                "p95": 0.065
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.732,
+                "mean": 0.1539125,
+                "p50": 0.129,
+                "p95": 0.256
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.121,
+                "mean": 0.0422041666666667,
+                "p50": 0.042,
+                "p95": 0.056
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.000558333333333334,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.01,
+                "mean": 0.0043625,
+                "p50": 0.004,
+                "p95": 0.006
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000416666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.034,
+                "mean": 0.0139375,
+                "p50": 0.012,
+                "p95": 0.023
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000516666666666667,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.153,
+                "mean": 0.0692374999999999,
+                "p50": 0.071,
+                "p95": 0.096
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.000545833333333334,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.287,
+                "mean": 0.126208333333333,
+                "p50": 0.128,
+                "p95": 0.187
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.0004875,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.191,
+                "mean": 0.102145833333334,
+                "p50": 0.098,
+                "p95": 0.135
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.734,
+                "mean": 0.530025000000001,
+                "p50": 0.521,
+                "p95": 0.574
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.255,
+                "mean": 0.1261125,
+                "p50": 0.13,
+                "p95": 0.18
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000579166666666667,
+                "p50": 0.001,
+                "p95": 0.002
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.028,
+                "mean": 0.01105,
+                "p50": 0.011,
+                "p95": 0.016
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.007,
+                "mean": 0.0004375,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            }
+          ],
+          "samples": 240,
+          "scope": "Paused document, validation call including invalid handlers, followed by explicit host update; excludes setup, frame drawing and GPU.",
+          "warmups": 60
+        }
+      }
+    ]
+  },
+  "instrumented": {
+    "metadata": {
+      "schema": 1,
+      "library_sha256": "9ec64fe8bc2d597131caa98a11b952726bcb3578e0c4ef40189aa925afdf2cc4",
+      "source": {
+        "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+        "dirty": true,
+        "sha256": "f9a733ce9135c6a6b7b862b4457eb8f9564b355efa69bf118a6ad79a6b8da386"
+      },
+      "godot_cpp": {
+        "revision": null,
+        "dirty": null,
+        "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "godot_api": "4.7",
+      "precision": "single",
+      "custom_api": null,
+      "sanitizers": false
+    },
+    "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+    "fixture_sha256": "d7305f7f4a707499c30efbd2d8c93d0d9dd86383efdb7b42e2627cce955d9202",
+    "passed": true,
+    "timing_gate": false,
+    "runs": [
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "result": {
+          "failures": [],
+          "native_input": true,
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.337,
+                "mean": 0.0179416666666666,
+                "p50": 0.009,
+                "p95": 0.018
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.004,
+                "mean": 0.000454166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.364,
+                "mean": 0.0252291666666666,
+                "p50": 0.018,
+                "p95": 0.037
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.0003875,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.561,
+                "mean": 0.0432416666666667,
+                "p50": 0.033,
+                "p95": 0.068
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000433333333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.321,
+                "mean": 0.547808333333333,
+                "p50": 0.498,
+                "p95": 0.832
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.076,
+                "mean": 0.010875,
+                "p50": 0.011,
+                "p95": 0.013
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.212,
+                "mean": 0.0387166666666666,
+                "p50": 0.033,
+                "p95": 0.066
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.000454166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.261,
+                "mean": 0.005875,
+                "p50": 0.004,
+                "p95": 0.009
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.005,
+                "mean": 0.0004375,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.041,
+                "mean": 0.0110666666666667,
+                "p50": 0.01,
+                "p95": 0.019
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000483333333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.108,
+                "mean": 0.0588208333333334,
+                "p50": 0.05,
+                "p95": 0.098
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000483333333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.512,
+                "mean": 0.117741666666667,
+                "p50": 0.094,
+                "p95": 0.189
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000479166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.602,
+                "mean": 0.964345833333334,
+                "p50": 0.941,
+                "p95": 1.183
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.054,
+                "mean": 0.0109916666666667,
+                "p50": 0.011,
+                "p95": 0.012
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.344,
+                "mean": 0.113466666666667,
+                "p50": 0.092,
+                "p95": 0.185
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000516666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.276,
+                "mean": 0.0122708333333333,
+                "p50": 0.009,
+                "p95": 0.018
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.272,
+                "mean": 0.00165416666666667,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            }
+          ],
+          "samples": 240,
+          "scope": "Paused document, validation call including invalid handlers, followed by explicit host update; excludes setup, frame drawing and GPU.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "result": {
+          "failures": [],
+          "native_input": true,
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.026,
+                "mean": 0.00773749999999999,
+                "p50": 0.007,
+                "p95": 0.012
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000375,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.038,
+                "mean": 0.0153916666666666,
+                "p50": 0.014,
+                "p95": 0.02
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000329166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.331,
+                "mean": 0.0367833333333334,
+                "p50": 0.028,
+                "p95": 0.068
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.035,
+                "mean": 0.000579166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.759,
+                "mean": 0.496341666666667,
+                "p50": 0.454,
+                "p95": 0.775
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.046,
+                "mean": 0.00857499999999999,
+                "p50": 0.009,
+                "p95": 0.012
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.092,
+                "mean": 0.0412708333333333,
+                "p50": 0.043,
+                "p95": 0.052
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000608333333333334,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.011,
+                "mean": 0.0047625,
+                "p50": 0.005,
+                "p95": 0.006
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000466666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.024,
+                "mean": 0.0102458333333333,
+                "p50": 0.01,
+                "p95": 0.016
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000541666666666667,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.414,
+                "mean": 0.0652916666666667,
+                "p50": 0.067,
+                "p95": 0.094
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000570833333333334,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.267,
+                "mean": 0.1223625,
+                "p50": 0.125,
+                "p95": 0.183
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000525,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.657,
+                "mean": 0.961454166666667,
+                "p50": 0.917,
+                "p95": 1.363
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.077,
+                "mean": 0.0102,
+                "p50": 0.011,
+                "p95": 0.012
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.263,
+                "mean": 0.121445833333333,
+                "p50": 0.124,
+                "p95": 0.178
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000470833333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.023,
+                "mean": 0.0113291666666666,
+                "p50": 0.011,
+                "p95": 0.017
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000520833333333334,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            }
+          ],
+          "samples": 240,
+          "scope": "Paused document, validation call including invalid handlers, followed by explicit host update; excludes setup, frame drawing and GPU.",
+          "warmups": 60
+        }
+      }
+    ]
+  },
+  "stages": [
+    {
+      "renderer": "gl_compatibility",
+      "samples": 600,
+      "stages_ms": {
+        "update": {
+          "median": 0.51595,
+          "p95": 0.6218,
+          "max": 0.9219
+        },
+        "close": {
+          "median": 0.0001,
+          "p95": 0.0002,
+          "max": 0.0006
+        },
+        "caret": {
+          "median": 0.0037,
+          "p95": 0.005,
+          "max": 0.0253
+        },
+        "active": {
+          "median": 0.18705,
+          "p95": 0.4267,
+          "max": 0.8795
+        },
+        "position": {
+          "median": 0.0283,
+          "p95": 0.0765,
+          "max": 0.4267
+        }
+      }
+    },
+    {
+      "renderer": "mobile",
+      "samples": 600,
+      "stages_ms": {
+        "update": {
+          "median": 0.5228999999999999,
+          "p95": 0.6644,
+          "max": 1.0517
+        },
+        "close": {
+          "median": 0.0001,
+          "p95": 0.0002,
+          "max": 0.0004
+        },
+        "caret": {
+          "median": 0.0036,
+          "p95": 0.0049,
+          "max": 0.3239
+        },
+        "active": {
+          "median": 0.1642,
+          "p95": 0.3929,
+          "max": 1.4389
+        },
+        "position": {
+          "median": 0.0228,
+          "p95": 0.0516,
+          "max": 0.5428
+        }
+      }
+    }
+  ],
+  "conclusions": [
+    "Native input integration accounts for much of the difference in reporting API time, but disabling it moves UI update work into the follow-up phase. It is not a production optimization.",
+    "For600 IME openings per renderer, update median is about0.52ms; activation median0.16-0.19ms; caret median0.004ms; position median0.023-0.028ms.",
+    "The update stage includes host ensure_updated and target lookup; finer core/host stage isolation remains necessary before attributing it to layout.",
+    "The old6.64ms p95 was not reproduced in this fresh normal run; no assumption that the intermittent cost is resolved."
+  ],
+  "limits": [
+    "One ordinary and one disabled run per renderer; mode order is not randomized. Diagnostic input disabling also changes native GUI focus behavior.",
+    "Stage logging includes warmups and perturbs whole-call timings. Stage percentiles must not be summed.",
+    "No native input behavior has been disabled in the installed addon; no physical IME qualification or runtime performance fix is claimed."
+  ]
+}

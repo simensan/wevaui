@@ -1,0 +1,156 @@
+{
+  "version": "0.1.0-preview.136",
+  "installed": false,
+  "abi_minor": 20,
+  "library_sha256": "1484abde3f5b403eb12dd6fdfaab44d09766f3eab5e0cf9c11cef0e918f26d20",
+  "source_sha256": "ddde1d5abcfac0c5fa628b639e20f4d8b39bb3296196805d7ebf17d922dfe357",
+  "changes": [
+    "Immutable 256-entry byte sRGB conversion table; exact former arithmetic including float exponent and endpoint handling",
+    "Includes candidate135 block margin alignment fixes"
+  ],
+  "color_proof": {
+    "channel_values": 256,
+    "new_exact_checks": 1280,
+    "passed": true,
+    "table_payload_bytes": 1024,
+    "alpha_passthrough": true,
+    "floating_color_filter_conversion_unchanged": true
+  },
+  "microbenchmark": {
+    "configuration": "MSVC Release; five warmed runs, four million RGB conversions per run; standalone compiler targets with before source frozen",
+    "before": {
+      "elapsed_ms": [
+        153.4582,
+        154.6379,
+        155.0943,
+        152.7126,
+        153.8601
+      ],
+      "checksums": [
+        3742346.75,
+        3742346.75,
+        3742346.75,
+        3742346.75,
+        3742346.75
+      ]
+    },
+    "after": {
+      "elapsed_ms": [
+        7.1886,
+        7.3163,
+        7.1918,
+        7.1695,
+        7.1375
+      ],
+      "checksums": [
+        3742346.75,
+        3742346.75,
+        3742346.75,
+        3742346.75,
+        3742346.75
+      ]
+    },
+    "median_ratio": 21.403346966029545,
+    "scope": "Isolated conversion throughput, not whole UI latency",
+    "before_source_sha256": "ac6943d5f682b8abcb0c8c40b91f70a33e2bdbfdef4ec4995c50e8ceb8763426"
+  },
+  "core": {
+    "suites": 12,
+    "main_checks": 482021,
+    "incremental_full_comparisons": 271,
+    "passed": true
+  },
+  "sanitizers": {
+    "gates": 14,
+    "passed": true,
+    "symbolization": false
+  },
+  "host": {
+    "entries": 36,
+    "checks": 27811,
+    "passed": true
+  },
+  "sample_and_native_exports_passed": true,
+  "prior_failed_qualification": "block-margins135.json",
+  "remaining": [
+    "Hover spike root cause remains unproven",
+    "Broader layout, lifecycle, device and release matrix remains open"
+  ],
+  "performance": {
+    "runs": 6,
+    "gates": 72,
+    "passed_gates": 70,
+    "passed": false,
+    "functional_passed": true,
+    "failures": [
+      {
+        "run": "mobile/3",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 3.298,
+        "limit_ms": 3.0,
+        "passed": false
+      },
+      {
+        "run": "mobile/3",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 3.426,
+        "limit_ms": 3.0,
+        "passed": false
+      }
+    ],
+    "hover_checks": [
+      {
+        "run": "gl_compatibility/1",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.307,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.256,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.262,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.262,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.251,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.219,
+        "limit_ms": 0.5,
+        "passed": true
+      }
+    ],
+    "scope": "Manual/static1280x720, API CPU, RTX5080 / Ryzen7 9800X3D development desktop",
+    "interpretation": "Failed qualification retained. Isolated color speedup does not establish a UI latency speedup or resolve timing variability."
+  }
+}

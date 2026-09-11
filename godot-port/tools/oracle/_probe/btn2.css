@@ -1,0 +1,7 @@
+:root { --s-2: 8px; --s-4: 16px; --accent: #b388ff; --r-md: 10px; }
+body { color: #ddd; background: #111; }
+.foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; width: 700px; background: #223; margin-bottom: 10px }
+.a { padding: var(--s-2) var(--s-4); background: rgba(179,136,255,0.15); border: 1px solid var(--accent); border-radius: var(--r-md); color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.b { padding: 8px 16px; background: rgba(179,136,255,0.15); border: 1px solid #b388ff; border-radius: 10px; color: #b388ff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; }
+.c { padding: 8px 16px; background: rgba(179,136,255,0.15); border: 1px solid #b388ff; border-radius: 10px; color: #b388ff; font-size: 12px; font-weight: 700; }
+.d { padding: 8px 16px; background: rgba(179,136,255,0.15); border: 1px solid #b388ff; border-radius: 10px; color: #b388ff; font-size: 12px; font-weight: 400; letter-spacing: 0.08em; }

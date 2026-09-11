@@ -1,0 +1,140 @@
+{
+  "version": "0.1.0-preview.132",
+  "installed": true,
+  "abi_minor": 20,
+  "library_sha256": "91ff8b896daeb942bbfb50346f2f5626cab451f50549f7d731b12c859cb9f677",
+  "source_sha256": "3ed4963bccec45de677e288a13910c596afbde71011e42a4aff747579461faf3",
+  "installed_targets": [
+    "godot-port/hosts/godot/project",
+    "godot-port/examples/frontier_camp"
+  ],
+  "previous_preview": 130,
+  "changes": [
+    "Skip unchanged class-toggle allocations without skipping resolver calls",
+    "Stack-buffer short control value and attribute reads, complete long-value fallback",
+    "Count normalized model changes using actual form-state versions, preserving validity and composition publication",
+    "Include preview131 validity selectors and fieldset changes"
+  ],
+  "allocations": {
+    "fixture": "1000 warmed unchanged data-class-on refreshes, long static class preserved",
+    "before": 2000,
+    "after": 0,
+    "positive_control": true,
+    "whole_ui_guarantee": false
+  },
+  "core": {
+    "suites": 12,
+    "main_checks": 478353,
+    "passed": true,
+    "incremental_full_draw_comparisons": 225
+  },
+  "sanitizers": {
+    "gates": 14,
+    "passed": true,
+    "symbolization": false
+  },
+  "host": {
+    "entries": 34,
+    "checks": 24513,
+    "passed": true
+  },
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 554,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 506,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 176,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 16,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "validity_selector_tests",
+      "checks": 658,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 92,
+      "passed": true
+    }
+  ],
+  "sample_and_native_exports_passed": true,
+  "performance": {
+    "runs": 6,
+    "gates": 72,
+    "passed": true,
+    "metrics": {
+      "vitals_10hz": {
+        "min_p95_ms": 0.244,
+        "max_p95_ms": 0.749
+      },
+      "inventory_sort": {
+        "min_p95_ms": 0.701,
+        "max_p95_ms": 1.141
+      },
+      "settings_typing": {
+        "min_p95_ms": 0.362,
+        "max_p95_ms": 0.716
+      },
+      "settings_toggle": {
+        "min_p95_ms": 1.62,
+        "max_p95_ms": 2.27
+      },
+      "redundant_signal": {
+        "min_p95_ms": 0.091,
+        "max_p95_ms": 0.28
+      },
+      "idle": {
+        "min_p95_ms": 0.006,
+        "max_p95_ms": 0.006
+      }
+    },
+    "budget_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+    "scope": "Patched engine71, Windows RTX5080 development desktop, manual/static 1280x720 API CPU; excludes total GPU cost"
+  },
+  "previous_failed_qualification": {
+    "artifact": "validity-selectors131.json",
+    "passed_gates": 71,
+    "total_gates": 72,
+    "redundant_signal_mobile_run3_p95_ms": 0.301,
+    "unchanged_limit_ms": 0.3,
+    "preserved": true
+  },
+  "remaining": [
+    "Unicode-v pattern validation",
+    "User-validity interaction semantics",
+    "Broader hardware, 3D load, lifecycle, layout and release qualification"
+  ]
+}

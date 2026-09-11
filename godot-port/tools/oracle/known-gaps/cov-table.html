@@ -1,0 +1,38 @@
+<!-- Tables. A game UI rarely writes one, so the sample corpus has none at
+     all, and the table properties were entirely unexercised: caption-side,
+     empty-cells, border-collapse, border-spacing, table-layout, and colspan
+     and rowspan spanning. -->
+<div class="page">
+  <table class="t collapse">
+    <caption class="top">Collapsed borders, caption on top</caption>
+    <thead><tr><th>name</th><th>qty</th><th>value</th></tr></thead>
+    <tbody>
+      <tr><td>lantern</td><td>2</td><td>140</td></tr>
+      <tr><td>rope</td><td>11</td><td>33</td></tr>
+      <tr><td>a much longer cell that forces the column wider</td><td>1</td><td>9</td></tr>
+    </tbody>
+    <tfoot><tr><td>total</td><td>14</td><td>182</td></tr></tfoot>
+  </table>
+
+  <table class="t separate">
+    <caption class="bottom">Separated borders, caption underneath</caption>
+    <tr><td>a</td><td>b</td></tr>
+    <tr><td></td><td>d</td></tr>
+  </table>
+
+  <table class="t separate hide-empty">
+    <tr><td>a</td><td>b</td></tr>
+    <tr><td></td><td>d</td></tr>
+  </table>
+
+  <table class="t fixed">
+    <tr><td>fixed layout ignores this very long content when sizing</td><td>x</td></tr>
+    <tr><td>b</td><td>y</td></tr>
+  </table>
+
+  <table class="t spans">
+    <tr><td colspan="2">spans two columns</td><td>c</td></tr>
+    <tr><td rowspan="2">spans two rows</td><td>b</td><td>c</td></tr>
+    <tr><td>b</td><td>c</td></tr>
+  </table>
+</div>

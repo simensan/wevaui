@@ -222,16 +222,25 @@ namespace Weva.Tests.Layout {
         }
 
         [Test]
-        public void Empty_paragraph_produces_line_box_with_default_line_height() {
-            // A <p> containing only a whitespace text node still has an inline formatting
-            // context; the resulting line is empty after collapse, but a line box is emitted
-            // at the default line-height so the paragraph reserves vertical space.
+        public void Whitespace_only_paragraph_has_no_line_box_and_no_height() {
+            // CSS 2.1 §9.4.2 / Text §4.1.1: content that is entirely COLLAPSIBLE
+            // whitespace collapses to nothing, so there is no line box and the
+            // block is zero-height.
+            //
+            // This test used to assert the opposite — a line box at the default
+            // line-height, "so the paragraph reserves vertical space". Captured
+            // Chrome directly on a div holding one space, and on one holding a
+            // single newline: both are 0.
+            // The newlines that formatted HTML puts between block siblings make
+            // this common, and it was three harvested cases where Chrome sided
+            // with the C++ port against this engine.
             var (root, _, _) = Build("<p> </p>", null, 800);
             var p = FindFirstBlock(root, "p");
-            LineBox line = null;
-            foreach (var c in p.Children) if (c is LineBox lb) { line = lb; break; }
-            Assert.That(line, Is.Not.Null);
-            Assert.That(line.Height, Is.EqualTo(19.2).Within(0.001));
+            foreach (var c in p.Children) {
+                Assert.That(c, Is.Not.InstanceOf<LineBox>(),
+                    "collapsible whitespace alone must not produce a line box");
+            }
+            Assert.That(p.Height, Is.EqualTo(0).Within(1e-9));
         }
 
         [Test]
@@ -627,5 +636,47 @@ namespace Weva.Tests.Layout {
             // Mono: ascent 0.8em + descent 0.4em = 1.2em = 19.2 = LineHeight.
             Assert.That(r.Lines[0].Height, Is.EqualTo(19.2).Within(0.001));
         }
+
+        [Test]
+        public void A_newline_only_block_has_no_height() {
+            // The shape formatted HTML produces between block siblings. Chrome
+            // gives it 0.
+            var (root, _, _) = Build("<div id=w>\n</div>", "#w { display: block }", 800);
+            var w = FindFirstBlock(root, "div");
+            Assert.That(w.Height, Is.EqualTo(0).Within(1e-9));
+        }
+
+        [Test]
+        public void An_inline_holding_only_whitespace_collapses_with_its_block() {
+            // A div whose only content is a span holding one space is 0 in
+            // Chrome: the span contributes nothing and draws no edge.
+            var (root, _, _) = Build(
+                "<div id=w><span> </span></div>", "#w { display: block }", 800);
+            var w = FindFirstBlock(root, "div");
+            Assert.That(w.Height, Is.EqualTo(0).Within(1e-9));
+        }
+
+        [Test]
+        public void An_inline_with_padding_still_makes_a_line_even_holding_whitespace() {
+            // CSS 2.1 §9.4.2 only zero-heights a line when no inline on it has
+            // margins, padding or borders — that edge is painted whatever the
+            // content does, so this line survives.
+            var (root, _, _) = Build(
+                "<div id=w><span id=s> </span></div>",
+                "#w { display: block } #s { padding-left: 4px }", 800);
+            var w = FindFirstBlock(root, "div");
+            Assert.That(w.Height, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void Preserved_whitespace_is_content_and_keeps_its_line() {
+            // `white-space: pre` does not collapse, so the space is real
+            // content and the block keeps a full line.
+            var (root, _, _) = Build(
+                "<div id=w> </div>", "#w { display: block; white-space: pre }", 800);
+            var w = FindFirstBlock(root, "div");
+            Assert.That(w.Height, Is.GreaterThan(0));
+        }
+
     }
 }

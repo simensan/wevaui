@@ -1,0 +1,36 @@
+<!-- Floats and the things that interact with them. Nothing in the game-UI
+     corpus floats anything, so neither engine had ever been asked to agree
+     about one. -->
+<div class="page">
+  <section class="prose">
+    <div class="fig left">A</div>
+    <p>Wrapping text beside a left float, long enough to run past the bottom of
+    the floated box and rejoin the full measure underneath it.</p>
+    <div class="fig right">B</div>
+    <p>A second paragraph, this one beside a right float, with enough words in
+    it to wrap several times and settle.</p>
+    <p class="clear-both">Cleared, so this starts below both.</p>
+  </section>
+
+  <section class="prose narrow">
+    <div class="fig left tall">C</div>
+    <p class="clear-left">Cleared left only.</p>
+    <div class="fig right">D</div>
+    <p class="clear-right">Cleared right only.</p>
+    <p>Trailing text.</p>
+  </section>
+
+  <section class="prose">
+    <div class="fig left">E</div>
+    <div class="fig left">F</div>
+    <div class="fig left">G</div>
+    <p>Three floats in a row, which must stack along the line and then wrap
+    onto the next one when they run out of room.</p>
+  </section>
+
+  <section class="prose">
+    <div class="fig left">H</div>
+    <div class="bfc">A block that establishes its own formatting context, so
+    it does not flow under the float but sits beside it and shrinks.</div>
+  </section>
+</div>

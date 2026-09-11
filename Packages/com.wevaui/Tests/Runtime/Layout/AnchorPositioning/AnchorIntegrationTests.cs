@@ -210,5 +210,56 @@ namespace Weva.Tests.Layout.AnchorPositioning {
             for (var p = b.Parent; p != null; p = p.Parent) y += p.Y;
             return y;
         }
+
+        // Every anchor case here used an EMPTY anchor, which is why this
+        // survived: a TextRun carries its element's ComputedStyle, so an
+        // anchor with TEXT in it registered its run as the anchor too — and
+        // the run comes later in pre-order, so it won. anchor() then resolved
+        // against the run's box: its x inside its line rather than the
+        // element's, and its line height rather than the element's height.
+        [Test]
+        public void Anchor_with_text_registers_the_element_not_its_text_run() {
+            const string css = @"
+                .anchor { width: 100px; height: 30px; anchor-name: --tip; }
+            ";
+            var (root, _, ctx) = Build(@"<div class=""anchor"">Label</div>", css);
+            Assert.That(ctx.Anchors.TryResolve("--tip", out var entry), Is.True);
+            Assert.That(entry.Anchor, Is.Not.Null);
+            Assert.That(entry.Anchor, Is.Not.InstanceOf<TextRun>(),
+                "the anchor must be the element's principal box, not its text run");
+            Assert.That(entry.Anchor.Height, Is.EqualTo(30).Within(1e-9),
+                "the anchor's height is the element's, not one line of its text");
+            Assert.That(entry.Anchor.Width, Is.EqualTo(100).Within(1e-9));
+        }
+
+        [Test]
+        public void Tooltip_anchors_to_an_inline_block_with_text() {
+            // menu.html's shape: the anchor is an inline-block on a line, so
+            // its text run sits at a non-zero x INSIDE that line. Resolving
+            // against the run put the tooltip 48px right and 11px high.
+            const string css = @"
+                body { margin: 0; padding: 0; }
+                .card { position: relative; padding: 20px; width: 320px; }
+                .btn { display: inline-block; width: 140px; height: 40px;
+                       anchor-name: --tip; }
+                .tip { position: absolute; position-anchor: --tip;
+                       top: anchor(bottom); left: anchor(left); }
+            ";
+            var (root, _, _) = Build(
+                @"<div class=""card""><span class=""btn"">Anchor</span>" +
+                @"<div class=""tip"">Tip</div></div>", css);
+            var btn = FindByClass(root, "btn");
+            var tip = FindByClass(root, "tip");
+            Assert.That(btn, Is.Not.Null);
+            Assert.That(tip, Is.Not.Null);
+            // The tooltip's top edge is the anchor's bottom edge, and its left
+            // edge the anchor's left edge — both verified against Chrome on
+            // this markup.
+            var (btnX, btnY) = Weva.Layout.Positioning.ContainingBlockResolver.AbsolutePosition(btn);
+            var (tipX, tipY) = Weva.Layout.Positioning.ContainingBlockResolver.AbsolutePosition(tip);
+            Assert.That(tipY, Is.EqualTo(btnY + btn.Height).Within(1e-6));
+            Assert.That(tipX, Is.EqualTo(btnX).Within(1e-6));
+        }
+
     }
 }

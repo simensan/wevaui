@@ -1,0 +1,34 @@
+{
+  "scope": "Core source family-face routing; not packaged or installed in Godot",
+  "installed_preview": 104,
+  "source_sha256": {
+    "godot-port/libweva/include/weva/font_metrics.h": "b3f060ab1db77ca81cf2452a16e9750381f7944a37239618057f98fdcbb4175f",
+    "godot-port/libweva/src/paint.cpp": "6b557012ae4f4fdfd9a814a23fff198a041a9d3f6ff8b08d9ffa47bf28874e55",
+    "godot-port/libweva/tests/test_paint.cpp": "6732e27f70277a15b03af0e8a47cb841f714e0229df0d7428b01dd74d2c78570",
+    "godot-port/libweva/tests/main.cpp": "f7c6a751a7c1d683e792b5f11a6f91c561576f804ba62a1a3e21a812c6fd1d9e"
+  },
+  "checks": {
+    "windows_release": {
+      "passed": 10,
+      "total": 10,
+      "seconds": 21.45
+    },
+    "linux_asan_ubsan": {
+      "passed": 12,
+      "total": 12,
+      "seconds": 113.23
+    }
+  },
+  "covered": [
+    "family stack fallback and inherited family",
+    "layout width matches family advances",
+    "ordinary text, bold, input, selected option and open popup paint faces",
+    "metrics-only and foreign-backend fallback"
+  ],
+  "remaining": [
+    "C ABI native family registration and variant measurement",
+    "Godot resource registration and lifecycle",
+    "native packaging and runtime validation",
+    "CSS @font-face"
+  ]
+}

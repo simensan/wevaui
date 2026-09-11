@@ -1,0 +1,40 @@
+/* border-image, across the four repeat modes and the slice/width variations.
+
+   The sprite is 24x24 with a distinct colour in each corner and a notched
+   pattern along the edges, so stretch, repeat and round are visibly different
+   from one another rather than all "a frame". */
+
+body { margin: 0; font-family: sans-serif; font-size: 12px; background: #f0f0f2; }
+.page { width: 860px; padding: 14px; }
+.row { display: flex; gap: 16px; margin-bottom: 16px; }
+
+.f {
+  width: 120px;
+  height: 90px;
+  border: 8px solid transparent;
+  border-image-source: url(cov-border-image-frame.png);
+  border-image-slice: 8;
+  color: #333;
+}
+
+.wide { width: 300px; }
+.tall { height: 150px; }
+
+.stretch { border-image-repeat: stretch; }
+.repeat  { border-image-repeat: repeat; }
+.round   { border-image-repeat: round; }
+.space   { border-image-repeat: space; }
+
+/* `fill` paints the middle of the source over the padding box; without it a
+   frame sits over whatever the box already has. */
+.filled { border-image-slice: 8 fill; }
+
+/* A slice smaller than the sprite's own border, so the corners scale up. */
+.slice4 { border-image-slice: 4; }
+
+/* A bare number is a MULTIPLE of the border width, so the image spills past
+   the 8px the border reserved. */
+.thick { border-image-width: 3; }
+
+/* Different slices per side, which is where a transposed axis shows. */
+.sliced-sides { border-image-slice: 4 12; }

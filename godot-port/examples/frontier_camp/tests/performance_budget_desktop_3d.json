@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "name": "Frontier development desktop automatic 3D targets",
+  "description": "Provisional engineering targets chosen before measurement: 60 FPS whole-scene p95 at1080p, with existing UI API limits and corresponding cumulative core limits. Automatic updates include deferred core work. Whole-frame measurements include the scene and scheduling; these limits do not isolate UI cost or certify other hardware.",
+  "scope": {
+    "resolution": [
+      1920,
+      1080
+    ],
+    "world": "3d",
+    "automatic": true,
+    "adapter": "NVIDIA GeForce RTX 5080"
+  },
+  "renderers": [
+    "gl_compatibility",
+    "mobile"
+  ],
+  "minimum_runs": 3,
+  "minimum_frames": 600,
+  "minimum_warmups": 120,
+  "limits_ms": {
+    "ui_disabled": {
+      "api_cpu": 0.05,
+      "core_cpu": 0.05,
+      "whole_frame": 16.666666666666668
+    },
+    "idle": {
+      "api_cpu": 0.05,
+      "core_cpu": 0.05,
+      "whole_frame": 16.666666666666668
+    },
+    "clock_1hz": {
+      "changed_api_cpu": 3.0,
+      "changed_core_cpu": 3.0,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "vitals_10hz": {
+      "changed_api_cpu": 1.0,
+      "changed_core_cpu": 1.0,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "clock_update": {
+      "changed_api_cpu": 1.0,
+      "changed_core_cpu": 1.0,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "vitals_update": {
+      "changed_api_cpu": 1.0,
+      "changed_core_cpu": 1.0,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "redundant_signal": {
+      "changed_api_cpu": 0.3,
+      "changed_core_cpu": 0.3,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "hover": {
+      "changed_api_cpu": 0.5,
+      "changed_core_cpu": 0.5,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "inventory_sort": {
+      "changed_api_cpu": 2.0,
+      "changed_core_cpu": 2.0,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "settings_typing": {
+      "changed_api_cpu": 1.0,
+      "changed_core_cpu": 1.0,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "settings_slider": {
+      "changed_api_cpu": 1.0,
+      "changed_core_cpu": 1.0,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    },
+    "settings_toggle": {
+      "changed_api_cpu": 3.0,
+      "changed_core_cpu": 3.0,
+      "whole_frame": 16.666666666666668,
+      "changed_whole_frame": 16.666666666666668
+    }
+  }
+}

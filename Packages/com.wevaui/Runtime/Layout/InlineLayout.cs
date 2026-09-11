@@ -124,6 +124,18 @@ namespace Weva.Layout {
                                   Weva.Layout.Floats.FloatContext floatCtx,
                                   double bfcContentLeft, double bfcContentTop) {
             using (PerfMarkerScope.Auto(UIProfilerMarkers.LayoutInline)) {
+                // CSS 2.1 §9.4.2 / Text §4.1.1: content that is entirely
+                // COLLAPSIBLE whitespace collapses to nothing, so there is no
+                // line box and the container is zero-height. `<div> </div>` and
+                // `<div>\n</div>` measured a full line-height here where Chrome
+                // and the C++ port both say 0 — the newlines in formatted HTML
+                // made that three harvested cases.
+                if (ContentIsAllCollapsibleWhitespace(container)) {
+                    // No line boxes: the caller sizes the container from its
+                    // children, so an empty child list is a zero-height block.
+                    container.ClearChildren();
+                    return;
+                }
                 if (TryLayoutSingleRunFast(container, availableWidth, floatCtx)) return;
 
                 // Stack discipline: an inline-block atom inside this container will
@@ -340,6 +352,92 @@ namespace Weva.Layout {
         // clone that shares Element / Style. This makes background-color,
         // border, and text-decoration paint correctly on every line of a
         // wrapped `<a>` / `<span>` per CSS painting order.
+        // True when every descendant of `container` can only contribute
+        // collapsible whitespace: text runs that are all spaces/tabs/newlines
+        // under a white-space value that collapses them, and inline boxes
+        // holding nothing else. An EMPTY container is excluded — it has no
+        // content to collapse and is already zero-height by another path — as
+        // is anything preserving whitespace.
+        static bool ContentIsAllCollapsibleWhitespace(BlockBox container) {
+            var kids = container.ChildList;
+            if (kids.Count == 0) return false;
+            for (int i = 0; i < kids.Count; i++) {
+                if (!BoxIsCollapsibleWhitespace(kids[i])) return false;
+            }
+            return true;
+        }
+
+        static bool BoxIsCollapsibleWhitespace(Box b) {
+            if (b is TextRun tr) {
+                string t = tr.Text;
+                if (string.IsNullOrEmpty(t)) return true;
+                for (int i = 0; i < t.Length; i++) {
+                    char c = t[i];
+                    if (c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\f') return false;
+                }
+                string ws = tr.Style?.Get(CssProperties.WhiteSpaceId);
+                return ws != "pre" && ws != "pre-wrap" && ws != "pre-line" && ws != "break-spaces";
+            }
+            if (b is InlineBox ib) {
+                // CSS 2.1 §9.4.2: a line box holding no text, no preserved
+                // whitespace and no inline element with non-zero margins,
+                // padding or borders is treated as ZERO-HEIGHT. An EMPTY
+                // `<span></span>` qualifies as squarely as one holding a
+                // space — Chrome gives a div wrapping either of them, or a
+                // nested empty pair, a height of 0.
+                //
+                // The edge test is §9.4.2's own qualifier: margins, padding and
+                // borders are painted whatever the content does, so an inline
+                // that draws one keeps its line.
+                if (!InlineEdgeIsZero(ib)) return false;
+                for (int i = 0; i < ib.Children.Count; i++) {
+                    if (!BoxIsCollapsibleWhitespace(ib.Children[i])) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // True when the inline box declares no margin, border or padding — the
+        // §9.4.2 qualifier. Read off the STYLE rather than the box, because
+        // these are resolved during layout and this runs before it.
+        static bool InlineEdgeIsZero(InlineBox ib) {
+            var st = ib.Style;
+            if (st == null) return true;
+            for (int i = 0; i < InlineEdgeProps.Length; i++) {
+                if (!IsZeroLength(st.Get(InlineEdgeProps[i]))) return false;
+            }
+            // A border only takes space when it has a STYLE. `border-width`
+            // computes to the keyword `medium` by default, which is not zero as
+            // a string but paints nothing while `border-style` is `none` — a
+            // UA sheet that spells the widths out as 0 hid this, and one that
+            // leaves them at their initial did not.
+            for (int i = 0; i < BorderSides.Length; i++) {
+                string style = st.Get(BorderSides[i].styleId);
+                if (string.IsNullOrEmpty(style) || style == "none" || style == "hidden") continue;
+                if (!IsZeroLength(st.Get(BorderSides[i].widthId))) return false;
+            }
+            return true;
+        }
+
+        static bool IsZeroLength(string v) {
+            if (string.IsNullOrEmpty(v)) return true;
+            return v == "0" || v == "0px" || v == "0%" || v == "none" || v == "auto";
+        }
+
+        static readonly int[] InlineEdgeProps = {
+            CssProperties.MarginLeftId, CssProperties.MarginRightId,
+            CssProperties.PaddingLeftId, CssProperties.PaddingRightId,
+            CssProperties.PaddingTopId, CssProperties.PaddingBottomId,
+        };
+
+        static readonly (int styleId, int widthId)[] BorderSides = {
+            (CssProperties.BorderLeftStyleId, CssProperties.BorderLeftWidthId),
+            (CssProperties.BorderRightStyleId, CssProperties.BorderRightWidthId),
+            (CssProperties.BorderTopStyleId, CssProperties.BorderTopWidthId),
+            (CssProperties.BorderBottomStyleId, CssProperties.BorderBottomWidthId),
+        };
+
         bool TryLayoutSingleRunFast(BlockBox container, double availableWidth, Weva.Layout.Floats.FloatContext floatCtx) {
             if (container == null || container.ChildList.Count != 1) return false;
             if (floatCtx != null && floatCtx.Count != 0) return false;
@@ -372,6 +470,24 @@ namespace Weva.Layout {
             if (ws != "normal" && ws != "nowrap") return false;
             string text = source.Text ?? "";
             if (!IsSimpleCollapsibleText(text)) return false;
+            // CSS Text L3 §4.1.1: a collapsible space at the START of a line is
+            // REMOVED, and so is one at the end. This path lays the container's
+            // only child out as a single line, so both edges qualify.
+            //
+            // Without this the raw string was measured and emitted verbatim, so
+            // `<div class="brand"><span class="logo"></span> Weva</div>` kept
+            // the space before "Weva" — the box measured 45px instead of 36 and
+            // the text rendered indented by one space. It only showed up on
+            // shrink-to-fit boxes, where the width is the content's: weva-landing's
+            // nav brand came out 82 where Chrome and the C++ port both say 73.
+            // The slow path already drops it (AppendCollapsing skips a space
+            // token while nothing is on the line yet).
+            //
+            // A run that is nothing BUT spaces collapses to nothing; leave that
+            // to the slow path, which has the empty-line handling.
+            string trimmed = text.Trim(' ');
+            if (trimmed.Length == 0 && text.Length != 0) return false;
+            text = trimmed;
             // W5 UAX #9 bidi fast-path guard: bail to the slow path when the
             // container is RTL or the text contains any R-class codepoint. The
             // slow path will produce the same single-run result PLUS apply
@@ -1103,6 +1219,16 @@ namespace Weva.Layout {
                     item.CloneSpanStartPbm = outerCloneStartPbm;
                     item.CloneSpanEndPbm   = outerCloneEndPbm;
                     items.Add(item);
+                    // A run left behind by a <br> on an earlier pass carries the
+                    // originating box; re-register it so it lands back in the
+                    // tree with a rect, as it did on the first pass.
+                    if (tr.ForcedBreakBox != null) {
+                        pendingInlineBoxes.Add(tr.ForcedBreakBox);
+                        var prevForBreak = items.Count >= 2
+                            ? items[items.Count - 2].SourceRun?.SourceNode
+                            : null;
+                        pendingInlineNextNode.Add(prevForBreak);
+                    }
                     continue;
                 }
                 if (child is InlineBox ib) {
@@ -1127,6 +1253,8 @@ namespace Weva.Layout {
                         brItem.FontStyle = Paint.Conversion.TextRunResolver.ResolveFontStyle(brStyle);
                         brItem.Color = brStyle?.Get(CssProperties.ColorId);
                         brItem.WhiteSpace = "pre";
+                        brItem.IsForcedBreak = true;
+                        brItem.ForcedBreakBox = ib;
                         brItem.Metrics = ctx.GetMetrics(brItem.FontFamily);
                         brItem.SourceRun = null;
                         brItem.OwnerElement = spanOwner;
@@ -1329,6 +1457,42 @@ namespace Weva.Layout {
         // size, then packages it as a LineBreaker atom item. When the inline-
         // block has no explicit width, we shrink-to-fit using BlockLayout's
         // intrinsic-content-width helper.
+        // Saved (inline box -> its children) pairs for the shrink-to-fit atom
+        // round trip. A list of pairs rather than a dictionary: an atom holds a
+        // handful of inlines and this runs per atom per layout.
+        readonly List<(InlineBox Box, List<Box> Kids)> inlineKidsSnapshot = new(4);
+
+        // Records every descendant InlineBox's child list, depth first.
+        static void CaptureInlineChildren(Box parent, List<(InlineBox, List<Box>)> into) {
+            var kids = parent.ChildList;
+            for (int i = 0; i < kids.Count; i++) {
+                if (kids[i] is InlineBox ib) {
+                    var saved = new List<Box>(ib.ChildList.Count);
+                    saved.AddRange(ib.ChildList);
+                    into.Add((ib, saved));
+                    CaptureInlineChildren(ib, into);
+                }
+            }
+        }
+
+        static void RestoreInlineChildren(List<(InlineBox Box, List<Box> Kids)> saved) {
+            // Outermost first: re-parenting a child detaches it from wherever
+            // pass 1 left it, so restoring a span before its own parent span is
+            // fine either way, but this order keeps the tree consistent while
+            // it is being rebuilt.
+            for (int i = 0; i < saved.Count; i++) {
+                var (box, kids) = saved[i];
+                box.ClearChildren();
+                for (int k = 0; k < kids.Count; k++) box.AddChild(kids[k]);
+            }
+        }
+
+        // An author height wins over any derived one.
+        static bool HasExplicitHeight(BlockBox b) {
+            string h = b.Style?.Get(CssProperties.HeightId);
+            return !string.IsNullOrEmpty(h) && h != "auto";
+        }
+
         LineBreaker.Item MakeAtomItem(BlockBox atom, double availableWidth, ComputedStyle inheritedStyle) {
             if (BlockLayout == null) return null;
 
@@ -1393,6 +1557,16 @@ namespace Weva.Layout {
                 if (atomContainedInlines) {
                     var rawKids = atom.ChildList;
                     for (int i = 0; i < rawKids.Count; i++) snapshotBuf.Add(rawKids[i]);
+                    // ...and each inline box's OWN children. Restoring only the
+                    // atom's top-level list is not enough: pass 1's
+                    // AttachInlineFragmentsToLines calls ClearChildren() on
+                    // every span it places, so by pass 2 the restored span is
+                    // an empty shell. The collect then finds no items, takes
+                    // the empty-container branch, and the span ends up with no
+                    // fragments to measure — a zero-width rect, so its
+                    // background, border and hit-testing area all vanish.
+                    inlineKidsSnapshot.Clear();
+                    CaptureInlineChildren(atom, inlineKidsSnapshot);
                 }
 
                 BlockLayout.LayoutBlock(atom, availableWidth, atom.Parent?.Style ?? inheritedStyle);
@@ -1435,11 +1609,26 @@ namespace Weva.Layout {
                         if (line is LineBox lb && lb.Width > maxContent) maxContent = lb.Width;
                     }
                 } else {
+                    // Block children. Their laid-out Width is whatever
+                    // LayoutBlock just gave them — the atom's FULL available
+                    // width — so reading it back makes max-content equal the
+                    // container and the atom never shrinks: `<div style=
+                    // "display:inline-block"><p>hello</p></div>` came out
+                    // 1280 wide instead of 36. Ask for the child's real
+                    // max-content instead (non-destructive: it walks the line
+                    // boxes LayoutBlock already produced).
                     var atomChildren = atom.ChildList;
                     for (int i = 0; i < atomChildren.Count; i++) {
                         var c = atomChildren[i];
                         if (c is BlockBox cb) {
-                            double childOuter = cb.Width + cb.MarginLeft + cb.MarginRight;
+                            // MaxContentWidth returns the border box for
+                            // flex/grid containers and content-only for a
+                            // plain block, where the caller adds the frame.
+                            double childMax = Weva.Layout.Positioning.PositioningPass.MaxContentWidth(cb, ctx, itemFsFor(cb, inheritedStyle));
+                            if (!(cb is Weva.Layout.Flex.FlexBox || cb is Weva.Layout.Grid.GridBox)) {
+                                childMax += cb.PaddingLeft + cb.PaddingRight + cb.BorderLeft + cb.BorderRight;
+                            }
+                            double childOuter = childMax + cb.MarginLeft + cb.MarginRight;
                             if (childOuter > maxContent) maxContent = childOuter;
                         }
                     }
@@ -1493,6 +1682,10 @@ namespace Weva.Layout {
                     }
                     atom.ContainsInlines = true;
                     snapshotBuf.RemoveRange(snapshotStart, snapshotBuf.Count - snapshotStart);
+                    // Put each inline box's own children back, so pass 2 sees
+                    // real content instead of the gutted shells pass 1 left.
+                    RestoreInlineChildren(inlineKidsSnapshot);
+                    inlineKidsSnapshot.Clear();
                 }
 
                 BlockLayout.RelayoutContentAt(atom, fitted);
@@ -1507,6 +1700,27 @@ namespace Weva.Layout {
                     Weva.Layout.Containment.ContainmentResolver.HasInlineSize(atom.Style)) {
                     atom.Width = fitted;
                 }
+            }
+
+            // Flex and grid run as SEPARATE passes over the whole tree
+            // AFTER BlockLayout (LayoutEngine.RunFlexPasses). An inline-level
+            // flex container is measured HERE though, while its line is being
+            // built, so BlockLayout has only block-STACKED its items and the
+            // height is wrong — `<span style="display:inline-flex"><span
+            // class=dot></span>Text</span>` reported the 8px dot stacked ABOVE
+            // the text (36.86) instead of beside it (28.86). The line is sized
+            // from that and keeps it; the later flex pass fixes the container
+            // but never revisits the line, so everything below shifts down.
+            //
+            // Take the cross extent from the same non-destructive helper the
+            // flex code uses for intrinsic sizing rather than re-entering
+            // FlexLayout here: it shares LayoutScratch with this pass, and
+            // calling it re-entrantly corrupts the line currently being built.
+            if (atom is Weva.Layout.Flex.FlexBox atomFlex && !HasExplicitHeight(atom)) {
+                double vFrame = atom.PaddingTop + atom.PaddingBottom
+                              + atom.BorderTop + atom.BorderBottom;
+                double cross = Weva.Layout.Positioning.PositioningPass.FlexIntrinsicCross(atomFlex);
+                if (cross > 0) atom.Height = cross + vFrame;
             }
 
             double itemFs = atom.Style != null ? StyleResolver.FontSizePx(atom.Style, atom.Parent?.Style, ctx) : ctx.RootFontSizePx;
@@ -1800,6 +2014,17 @@ namespace Weva.Layout {
             it.WordSpacingPx = wordSpacingPx;
             it.Metrics = fm;
             it.SourceRun = source;
+            // RentItem hands back pooled Items without clearing them, so this
+            // must be stamped on every path. A run carrying the marker is the
+            // leftover of a <br> from an earlier layout pass over the same
+            // container (see TextRun.IsForcedBreak) — re-collecting it has to
+            // reproduce the forced break, not a blank run.
+            it.IsForcedBreak = source != null && source.IsForcedBreak;
+            it.ForcedBreakBox = source?.ForcedBreakBox;
+            if (it.IsForcedBreak) {
+                it.Text = "\n";
+                it.WhiteSpace = "pre";
+            }
             return it;
         }
 

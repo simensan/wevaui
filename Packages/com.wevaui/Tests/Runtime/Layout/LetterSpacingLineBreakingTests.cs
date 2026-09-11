@@ -339,5 +339,104 @@ namespace Weva.Tests.Layout {
             Assert.That(first, Is.Not.Null);
             Assert.That(first.Width, Is.EqualTo(38).Within(0.001));
         }
+        // CSS Sizing 3 §5.1: max-content is a property of the CONTENT, so a
+        // shrink-to-fit box must come out the same width whichever intrinsic
+        // path measured it — a flex item's base size and an inline-block's
+        // shrink-to-fit are two different code paths over the same line.
+        //
+        // They disagreed when letter-spacing was in play and an inline atom
+        // split the line into several fragments: both paths summed the
+        // fragments' widths, which drops the advance that sits BETWEEN two
+        // fragments (a fragment's width spaces its N glyphs N-1 times; the
+        // rest lives in the next fragment's X). The item was then measured
+        // narrower than the text it holds and wrapped inside itself — a
+        // two-line footer where the author wrote one. Found by the godot-port
+        // oracle on quests.html; fixed by measuring the fragments' extent in
+        // PositioningPass.WalkContent and FlexLayout.TryCurrentUnwrappedMaxContent.
+        [Test]
+        public void Max_content_of_spaced_text_with_an_atom_agrees_across_intrinsic_paths() {
+            const string css =
+                ".f { display: flex; }"
+                + ".ib { display: inline-block; }"
+                + "kbd { display: inline-block; }"
+                + "body { letter-spacing: 4px; }";
+            const string content = "ab <kbd>X</kbd> cd";
+            var (root, _, _) = Build(
+                "<div class=\"f\"><span class=\"item\">" + content + "</span></div>"
+                + "<div><span class=\"ib\">" + content + "</span></div>", css, 800);
+
+            BlockBox flexItem = null, inlineBlock = null;
+            foreach (var b in AllBoxes(root)) {
+                if (!(b is BlockBox bb) || b is AnonymousBlockBox) continue;
+                if (bb.Element?.ClassName == "item") flexItem = bb;
+                else if (bb.Element?.ClassName == "ib") inlineBlock = bb;
+            }
+            Assert.That(flexItem, Is.Not.Null, "flex item box");
+            Assert.That(inlineBlock, Is.Not.Null, "inline-block box");
+            Assert.That(flexItem.Width, Is.EqualTo(inlineBlock.Width).Within(0.001),
+                "the same content must measure the same through both intrinsic paths");
+            Assert.That(LinesOf(flexItem).Count, Is.EqualTo(1),
+                "a flex item measured at its own max-content must not wrap inside itself");
+        }
+
+        // The same shape with no letter-spacing: there is no inter-fragment
+        // advance to lose, so the two paths agreed before the fix too. Keeps
+        // the case above honest about what it is testing.
+        [Test]
+        public void Max_content_without_letter_spacing_agrees_across_intrinsic_paths() {
+            const string content = "ab <kbd>X</kbd> cd";
+            var (root, _, _) = Build(
+                "<div class=\"f\"><span class=\"item\">" + content + "</span></div>"
+                + "<div><span class=\"ib\">" + content + "</span></div>",
+                ".f { display: flex; } .ib { display: inline-block; } kbd { display: inline-block; }",
+                800);
+            BlockBox flexItem = null, inlineBlock = null;
+            foreach (var b in AllBoxes(root)) {
+                if (!(b is BlockBox bb) || b is AnonymousBlockBox) continue;
+                if (bb.Element?.ClassName == "item") flexItem = bb;
+                else if (bb.Element?.ClassName == "ib") inlineBlock = bb;
+            }
+            Assert.That(flexItem, Is.Not.Null);
+            Assert.That(inlineBlock, Is.Not.Null);
+            Assert.That(flexItem.Width, Is.EqualTo(inlineBlock.Width).Within(0.001));
+            Assert.That(LinesOf(flexItem).Count, Is.EqualTo(1));
+        }
+
+        // CSS Text L3 §4.1.1: a collapsible space at the START of a line is
+        // removed, and so is one at the end. The single-run fast path
+        // (InlineLayout.TryLayoutSingleRunFast, taken when a container has
+        // exactly one text child) measured and emitted the raw string instead,
+        // so the space survived — the box measured one space too wide AND the
+        // text rendered indented by it. Only visible on shrink-to-fit boxes,
+        // where width comes from the content: weva-landing's nav brand came
+        // out 82 where Chrome and the C++ port both say 73.
+        [Test]
+        public void Leading_space_is_dropped_by_the_single_run_fast_path() {
+            var (root, _, _) = Build(
+                "<div class=\"a\"> Weva</div><div class=\"b\">Weva</div>",
+                ".a, .b { display: inline-block; }", viewportWidth: 800);
+
+            BlockBox Find(string cls) {
+                foreach (var box in AllBoxes(root)) {
+                    if (box is BlockBox bb && bb.Element != null
+                        && (bb.Element.GetAttribute("class") ?? "") == cls) return bb;
+                }
+                return null;
+            }
+            var withSpace = Find("a");
+            var without = Find("b");
+            Assert.That(withSpace, Is.Not.Null);
+            Assert.That(without, Is.Not.Null);
+            Assert.That(withSpace.Width, Is.EqualTo(without.Width).Within(0.001),
+                "a leading collapsible space must not widen a shrink-to-fit box");
+
+            // ...and the text must not be rendered indented by it either.
+            foreach (var tr in RunsUnder(withSpace)) {
+                Assert.That(tr.Text, Is.EqualTo("Weva"),
+                    "the emitted run must not carry the collapsed space");
+                Assert.That(tr.X, Is.EqualTo(0).Within(0.001));
+            }
+        }
+
     }
 }

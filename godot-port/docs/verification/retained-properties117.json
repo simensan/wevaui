@@ -1,0 +1,200 @@
+{
+  "library_sha256": "d85cf0603380d2043cc445087cdf894737abe948f14c04c89fe53c423b69455d",
+  "source_sha256": "f6fabca7d7460e86d3399217d24b0de14170e2170fd6fe0a8d5c92ee22f82fa7",
+  "comparisons": [
+    {
+      "renderer": "gl_compatibility",
+      "phase": "initial",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "self-modulate",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "redraw",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "parent-modulate",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "transform",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "clip",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "hide",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "show",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "empty",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "reload",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "light-included",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "light-excluded",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "visibility-excluded",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "sdf-on",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "sdf-off",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "backdrop",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "plain",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "reparent",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "initial",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "self-modulate",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "redraw",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "parent-modulate",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "transform",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "clip",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "hide",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "show",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "empty",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "reload",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "light-included",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "light-excluded",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "visibility-excluded",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "sdf-on",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "sdf-off",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "backdrop",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "plain",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "reparent",
+      "identical": true
+    }
+  ],
+  "passed": true,
+  "status": "Experimental, disabled by default, not installed; installed115 unchanged.",
+  "changes": [
+    "Mirror root self_modulate and light_mask to internal retained items before rendering, including frames without redraw.",
+    "Initialize mirrored state on new items.",
+    "Reuse one stored Callable for connection identity; guard auto-disconnected destruction.",
+    "Disconnect and release retained items on fallback/empty/destruction."
+  ],
+  "remaining": [
+    "Custom material and texture-filter qualification",
+    "Longer lifetime/resource testing",
+    "Fresh sample and performance qualification of117d",
+    "Decision on default enablement only after broad verification"
+  ]
+}

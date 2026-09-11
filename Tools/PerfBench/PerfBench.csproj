@@ -14,7 +14,7 @@
   <ItemGroup>
     <Compile Include="..\..\Packages\com.wevaui\Runtime\**\*.cs"
              Exclude="
-               ..\..\Packages\com.wevaui\Runtime\UIDocument.cs;
+               ..\..\Packages\com.wevaui\Runtime\WevaDocument.cs;
                ..\..\Packages\com.wevaui\Runtime\Document\UnityClock.cs;
                ..\..\Packages\com.wevaui\Runtime\Rendering\**\*.cs;
                ..\..\Packages\com.wevaui\Runtime\Text\**\*.cs;

@@ -1,0 +1,40 @@
+{
+  "scope": "Temporal range/step constraint core source after candidate110; installed109 unchanged",
+  "source_sha256": {
+    "libweva/src/form_state.cpp": "48cd672ca0e887e404735bdf35a282a078df1c5585ba84d535c2ea9f4ad33531",
+    "libweva/src/weva_c.cpp": "7639554b453f3cf61085ba9d08d3685e8673f686fd31e0c6341954c88aa52304",
+    "libweva/include/weva/form_state.h": "bbcdc8ec21481ba632d0da4806bb17e4d39c69e6e2671bffe7c33af91bbc1efe",
+    "libweva/tests/test_form_state.cpp": "632601cac917d9e74fe050b95d75634f54a0bf40d8fb03289ee7e52a31167d8e",
+    "libweva/tests/test_c_abi_forms.cpp": "e95e974bfd35e122464ff840f72350910eae028492ff219e7979d9c76f611408",
+    "libweva/tests/main.cpp": "6c81dc3581962f33f340f9259a76f29a0dbe65a74af319904221f46c970ac46a"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 21.17
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 146.64
+  },
+  "browser_validity_cases": 275,
+  "browser_submission_cases": 550,
+  "c_api_submission_cases": 550,
+  "browser_evidence": [
+    "temporal-constraints-browser.json",
+    "temporal-step-extra-browser.json",
+    "temporal-submissions-browser.json"
+  ],
+  "behavior": [
+    "min/max and periodic overnight time ranges",
+    "Type-specific default step and scaling/rounding",
+    "Minimum, initial-value and default step bases",
+    "Exact integer temporal remainder using existing decimal calculation",
+    "Invalid-event reporting and novalidate bypass"
+  ],
+  "limits": [
+    "Native build, exports, performance and installation pending",
+    "Public numeric date APIs, native calendar editing and bad-input state remain unfinished"
+  ]
+}

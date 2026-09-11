@@ -1,0 +1,63 @@
+{
+  "source": "reset.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.77",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "parent",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 27.7,
+      "display": "block",
+      "position": "static",
+      "fontSize": "12px",
+      "lineHeight": "13.716px",
+      "path": "div:1",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "button",
+      "id": "",
+      "cls": "default",
+      "x": 5,
+      "y": 0,
+      "w": 126.81,
+      "h": 27.7,
+      "display": "inline-block",
+      "position": "static",
+      "fontSize": "12px",
+      "lineHeight": "13.716px",
+      "path": "div:1/button:1",
+      "text": "Travel to camp"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "button",
+      "id": "",
+      "cls": "inherit",
+      "x": 131.81,
+      "y": 0,
+      "w": 181.81,
+      "h": 27.7,
+      "display": "inline-block",
+      "position": "static",
+      "fontSize": "12px",
+      "lineHeight": "13.716px",
+      "path": "div:1/button:2",
+      "text": "Travel to camp"
+    }
+  ]
+}

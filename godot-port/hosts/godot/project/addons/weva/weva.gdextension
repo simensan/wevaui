@@ -1,0 +1,21 @@
+[configuration]
+
+entry_symbol = "weva_library_init"
+compatibility_minimum = "4.7"
+; Lets the EDITOR drop the library when it loses focus, so the DLL can be
+; rebuilt without closing Godot first. Windows will not let anything overwrite a
+; mapped DLL, and before this every rebuild meant quitting the editor. (Linux
+; never had the problem: replacing a mapped .so is legal there.)
+;
+; It does not help a RUNNING game: that process has the library mapped until it
+; exits, and no flag changes that.
+reloadable = true
+
+[libraries]
+
+linux.debug.x86_64 = "res://addons/weva/bin/libweva_godot.so"
+linux.release.x86_64 = "res://addons/weva/bin/libweva_godot.so"
+macos.debug = "res://addons/weva/bin/libweva_godot.dylib"
+macos.release = "res://addons/weva/bin/libweva_godot.dylib"
+windows.debug.x86_64 = "res://addons/weva/bin/weva_godot.dll"
+windows.release.x86_64 = "res://addons/weva/bin/weva_godot.dll"

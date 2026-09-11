@@ -1,0 +1,413 @@
+{
+  "library_sha256": "d06990e8c335984e6b37a5b10a534431c8f1fb9fa81e9a7e5954da06dd7acd13",
+  "version": "0.1.0-preview.210",
+  "release_qualified": false,
+  "qualification_scope": "Development installation of animation composition, hidden-panel animation cancellation, redundant host redraw suppression and binding attribute allocation removal. Core, sanitizer, exact-library host/rendered, sample/export and desktop timing checks pass. Broader browser parity and readiness requirements remain open.",
+  "timing_profiles": "Current candidate desktop and automatic 1080p 3D timing pass. Previous build207 hover, build208 whole-frame and build209 desktop failures remain historical evidence with unproven causes. Current 4K timing passes. The ten-minute lifecycle check subsequently passed; lower-end hardware and longer-duration memory qualification remain open. Development install only.",
+  "targets": {
+    "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
+    "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+  },
+  "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed210-backup",
+  "updated_files": [
+    "ADA.md",
+    "ADA_LICENSE_APACHE.txt",
+    "ADA_LICENSE_MIT.txt",
+    "CSS_DIAGNOSTICS.md",
+    "DECIMAL.md",
+    "DECIMAL_LICENSE.txt",
+    "FORM_STATE.md",
+    "GODOT_CPP_LICENSE.md",
+    "GODOT_TEXT_SHAPING.md",
+    "ICU_DATA.md",
+    "ICU_LICENSE.txt",
+    "IME.md",
+    "LICENSE.md",
+    "README.md",
+    "TEXT_EDITING.md",
+    "UNICODE_DATA.md",
+    "UNICODE_LICENSE.txt",
+    "bin/weva_godot.dll",
+    "bin/weva_godot.dll.build.json",
+    "build.json"
+  ],
+  "core": {
+    "suites": 14,
+    "log": ".utmp\\safe-engine71\\binding-names-final-tests.log",
+    "allocation_mutation_log": ".utmp\\safe-engine71\\binding-names-mutation-tests.log"
+  },
+  "sanitizers": {
+    "suites": 16,
+    "seconds": 165.63,
+    "log": ".utmp\\safe-engine71\\binding-names-sanitizers.log"
+  },
+  "host": {
+    "binary_sha256": "d06990e8c335984e6b37a5b10a534431c8f1fb9fa81e9a7e5954da06dd7acd13",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 522
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1199
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 7330
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      },
+      {
+        "name": "popover_beforetoggle_tests",
+        "passed": true,
+        "checks": 1389
+      },
+      {
+        "name": "unknown_at_rule_tests",
+        "passed": true,
+        "checks": 12
+      },
+      {
+        "name": "css_diagnostic_tests",
+        "passed": true,
+        "checks": 26
+      },
+      {
+        "name": "conditional_keyframe_tests",
+        "passed": true,
+        "checks": 204
+      }
+    ],
+    "passed": true,
+    "checks": 35464
+  },
+  "rendered": [
+    {
+      "renderer": "gl_compatibility",
+      "passed": true,
+      "returncode": 0
+    },
+    {
+      "renderer": "mobile",
+      "passed": true,
+      "returncode": 0
+    }
+  ],
+  "performance": {
+    "desktop": {
+      "summary": ".utmp\\safe-engine71\\binding-names210-desktop\\summary.json",
+      "library_sha256": "d06990e8c335984e6b37a5b10a534431c8f1fb9fa81e9a7e5954da06dd7acd13",
+      "passed": true,
+      "checks": 72,
+      "frames_per_workload": 600,
+      "runs": 6
+    },
+    "3d": {
+      "summary": ".utmp\\safe-engine71\\binding-names210-3d\\summary.json",
+      "library_sha256": "d06990e8c335984e6b37a5b10a534431c8f1fb9fa81e9a7e5954da06dd7acd13",
+      "passed": true,
+      "checks": 276,
+      "frames_per_workload": 600,
+      "runs": 6
+    },
+    "4k": {
+      "summary": ".utmp\\safe-engine71\\binding-names210-4k\\summary.json",
+      "library_sha256": "d06990e8c335984e6b37a5b10a534431c8f1fb9fa81e9a7e5954da06dd7acd13",
+      "passed": true,
+      "checks": 276,
+      "frames_per_workload": 600,
+      "runs": 6
+    }
+  },
+  "exports": {
+    "sample": ".utmp\\safe-engine71\\binding-names210-sample.log",
+    "export": ".utmp\\safe-engine71\\binding-names210-exports.log"
+  },
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 1199,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 522,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 186,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 21,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "validity_selector_tests",
+      "checks": 658,
+      "passed": true
+    },
+    {
+      "name": "multicol_sizing_tests",
+      "checks": 7330,
+      "passed": true
+    },
+    {
+      "name": "block_margin_tests",
+      "checks": 1009,
+      "passed": true
+    },
+    {
+      "name": "input_geometry_tests",
+      "checks": 5,
+      "passed": true
+    },
+    {
+      "name": "range_direction_tests",
+      "checks": 66,
+      "passed": true
+    },
+    {
+      "name": "number_step_tests",
+      "checks": 234,
+      "passed": true
+    },
+    {
+      "name": "popover_beforetoggle_tests",
+      "checks": 1389,
+      "passed": true
+    },
+    {
+      "name": "unknown_at_rule_tests",
+      "checks": 12,
+      "passed": true
+    },
+    {
+      "name": "css_diagnostic_tests",
+      "checks": 26,
+      "passed": true
+    },
+    {
+      "name": "conditional_keyframe_tests",
+      "checks": 204,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 95,
+      "passed": true
+    }
+  ],
+  "lifecycle": {
+    "receipt": "lifecycle210.json",
+    "passed": true,
+    "cycles": 200,
+    "seconds": 600.000648,
+    "soak_frames": 287158,
+    "limitations": "Finite memory observation; minute medians rise 1.473 MiB. Cold construction remains expensive; lower-end and broader platform qualification remain open."
+  }
+}

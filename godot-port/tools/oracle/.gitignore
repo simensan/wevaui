@@ -1,0 +1,6 @@
+# Generated, not versioned — regenerate with harvest.py / BaselineGen.
+# ~3,900 entries harvested from the C# tests would bloat the repo and go stale
+# the moment a test changes.
+corpus/
+reference/
+candidate/

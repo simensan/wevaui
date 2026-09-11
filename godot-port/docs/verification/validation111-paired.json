@@ -1,0 +1,122 @@
+{
+  "scope": "Three alternating frozen109/111 comparisons per graphics backend; diagnostic subset, not full budget acceptance",
+  "frames": 600,
+  "warmups": 120,
+  "resolution": [
+    1280,
+    720
+  ],
+  "world": "static",
+  "automatic": false,
+  "source_files_identical": [
+    "game.gd",
+    "tests/performance.gd",
+    "ui/camp.html",
+    "ui/camp.css"
+  ],
+  "observations": [
+    {
+      "renderer": "gl_compatibility",
+      "workload": "clock_1hz",
+      "api_p95_ms": {
+        "109": [
+          1.954,
+          1.546,
+          2.313
+        ],
+        "111": [
+          2.0,
+          1.532,
+          2.092
+        ]
+      },
+      "median_ratio_111_over_109": 1.0235414534288638
+    },
+    {
+      "renderer": "gl_compatibility",
+      "workload": "settings_toggle",
+      "api_p95_ms": {
+        "109": [
+          2.001,
+          1.921,
+          2.026
+        ],
+        "111": [
+          3.657,
+          1.998,
+          1.924
+        ]
+      },
+      "median_ratio_111_over_109": 0.9985007496251874
+    },
+    {
+      "renderer": "gl_compatibility",
+      "workload": "vitals_update",
+      "api_p95_ms": {
+        "109": [
+          0.471,
+          0.458,
+          0.469
+        ],
+        "111": [
+          0.77,
+          0.472,
+          0.484
+        ]
+      },
+      "median_ratio_111_over_109": 1.0319829424307037
+    },
+    {
+      "renderer": "mobile",
+      "workload": "clock_1hz",
+      "api_p95_ms": {
+        "109": [
+          2.126,
+          1.769,
+          1.968
+        ],
+        "111": [
+          2.144,
+          1.769,
+          2.227
+        ]
+      },
+      "median_ratio_111_over_109": 1.0894308943089432
+    },
+    {
+      "renderer": "mobile",
+      "workload": "settings_toggle",
+      "api_p95_ms": {
+        "109": [
+          1.889,
+          2.502,
+          2.208
+        ],
+        "111": [
+          1.886,
+          1.806,
+          1.929
+        ]
+      },
+      "median_ratio_111_over_109": 0.8541666666666665
+    },
+    {
+      "renderer": "mobile",
+      "workload": "vitals_update",
+      "api_p95_ms": {
+        "109": [
+          0.474,
+          0.481,
+          0.481
+        ],
+        "111": [
+          0.473,
+          0.47,
+          0.519
+        ]
+      },
+      "median_ratio_111_over_109": 0.9833679833679834
+    }
+  ],
+  "interpretation": "No consistent median slowdown across workloads; substantial run variation includes a 3.657 ms candidate111 OpenGL toggle outlier. Does not waive the initial failed clock gate. Full unchanged-budget repeat required."
+}

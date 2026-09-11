@@ -1,0 +1,256 @@
+{
+  "scope": "Browser observations: 20 shown-dialog cases and 8 attribute/markup cases",
+  "reports": {
+    "dialog-escape-chrome": {
+      "browser": "Chrome/152.0.7977.77",
+      "rows": [
+        {
+          "modal": false,
+          "closedby": "",
+          "lower": false,
+          "a": false,
+          "b": true,
+          "events": []
+        },
+        {
+          "modal": false,
+          "closedby": "",
+          "lower": true,
+          "a": true,
+          "b": true,
+          "events": []
+        },
+        {
+          "modal": false,
+          "closedby": "none",
+          "lower": false,
+          "a": false,
+          "b": true,
+          "events": []
+        },
+        {
+          "modal": false,
+          "closedby": "none",
+          "lower": true,
+          "a": true,
+          "b": true,
+          "events": []
+        },
+        {
+          "modal": false,
+          "closedby": "closerequest",
+          "lower": false,
+          "a": false,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": false,
+          "closedby": "closerequest",
+          "lower": true,
+          "a": true,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": false,
+          "closedby": "any",
+          "lower": false,
+          "a": false,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": false,
+          "closedby": "any",
+          "lower": true,
+          "a": true,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": false,
+          "closedby": "invalid",
+          "lower": false,
+          "a": false,
+          "b": true,
+          "events": []
+        },
+        {
+          "modal": false,
+          "closedby": "invalid",
+          "lower": true,
+          "a": true,
+          "b": true,
+          "events": []
+        },
+        {
+          "modal": true,
+          "closedby": "",
+          "lower": false,
+          "a": false,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": true,
+          "closedby": "",
+          "lower": true,
+          "a": true,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": true,
+          "closedby": "none",
+          "lower": false,
+          "a": false,
+          "b": true,
+          "events": []
+        },
+        {
+          "modal": true,
+          "closedby": "none",
+          "lower": true,
+          "a": true,
+          "b": true,
+          "events": []
+        },
+        {
+          "modal": true,
+          "closedby": "closerequest",
+          "lower": false,
+          "a": false,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": true,
+          "closedby": "closerequest",
+          "lower": true,
+          "a": true,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": true,
+          "closedby": "any",
+          "lower": false,
+          "a": false,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": true,
+          "closedby": "any",
+          "lower": true,
+          "a": true,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": true,
+          "closedby": "invalid",
+          "lower": false,
+          "a": false,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        },
+        {
+          "modal": true,
+          "closedby": "invalid",
+          "lower": true,
+          "a": true,
+          "b": false,
+          "events": [
+            "b"
+          ]
+        }
+      ]
+    },
+    "dialog-escape-attribute-chrome": {
+      "browser": "Chrome/152.0.7977.77",
+      "rows": [
+        {
+          "source": "markup",
+          "policy": "none",
+          "open": true,
+          "events": []
+        },
+        {
+          "source": "markup",
+          "policy": "any",
+          "open": false,
+          "events": [
+            "cancel"
+          ]
+        },
+        {
+          "source": "markup",
+          "policy": "closerequest",
+          "open": false,
+          "events": [
+            "cancel"
+          ]
+        },
+        {
+          "source": "markup",
+          "policy": "invalid",
+          "open": true,
+          "events": []
+        },
+        {
+          "source": "attribute",
+          "policy": "none",
+          "open": true,
+          "events": []
+        },
+        {
+          "source": "attribute",
+          "policy": "any",
+          "open": false,
+          "events": [
+            "cancel"
+          ]
+        },
+        {
+          "source": "attribute",
+          "policy": "closerequest",
+          "open": false,
+          "events": [
+            "cancel"
+          ]
+        },
+        {
+          "source": "attribute",
+          "policy": "invalid",
+          "open": true,
+          "events": []
+        }
+      ]
+    }
+  },
+  "limits": "Not a complete CloseWatcher or event-order conformance suite."
+}

@@ -1,0 +1,132 @@
+{
+  "before": {
+    "samples": {
+      "ok": 29,
+      "DIFF": 18,
+      "CRASH": 0
+    },
+    "hand": {
+      "ok": 52,
+      "DIFF": 0,
+      "CRASH": 0
+    },
+    "harvest": {
+      "ok": 206,
+      "DIFF": 4,
+      "CRASH": 0
+    }
+  },
+  "after": {
+    "samples": {
+      "ok": 29,
+      "DIFF": 18,
+      "CRASH": 0
+    },
+    "hand": {
+      "ok": 52,
+      "DIFF": 0,
+      "CRASH": 0
+    },
+    "harvest": {
+      "ok": 206,
+      "DIFF": 4,
+      "CRASH": 0
+    }
+  },
+  "browser": "Chrome/152.0.7977.77",
+  "metrics": "mono; Weva UA overlay; normalized line-height",
+  "viewport": [
+    1280,
+    720
+  ],
+  "new_differing_fixtures": [],
+  "changed_reports": [
+    {
+      "fixture": "samples/cov-multicol",
+      "before": [
+        "cov-multicol",
+        "DIFF",
+        [
+          "h3.span-all .w: ours 219.3333, chrome 682  (462.7px)",
+          "p .w: ours 326, chrome 682  (356.0px)",
+          "p .w: ours 214, chrome 448  (234.0px)",
+          "p .w: ours 214, chrome 448  (234.0px)",
+          "p .x: ours 259, chrome 493  (234.0px)",
+          "p .w: ours 218, chrome 450  (232.0px)",
+          "p .x: ours 257, chrome 489  (232.0px)",
+          "p .x: ours 487.6667, chrome 256.33  (231.3px)",
+          "p .x: ours 256.3333, chrome 25  (231.3px)",
+          "section.col spanned .y: ours 366.028, chrome 275.34  (90.7px)",
+          "h3.span-all .y: ours 375.028, chrome 284.34  (90.7px)",
+          "div.page .h: ours 571.4767, chrome 486.05  (85.4px)",
+          "div.card .y: ours 492.4747, chrome 415.05  (77.4px)",
+          "section.col unbroken .y: ours 445.4727, chrome 368.05  (77.4px)",
+          "div.card .y: ours 454.4727, chrome 377.05  (77.4px)",
+          "div.card .y: ours 454.4727, chrome 377.05  (77.4px)",
+          "section.col ruled .y: ours 276.022, chrome 201.34  (74.7px)",
+          "p .y: ours 285.022, chrome 210.34  (74.7px)",
+          "p .y: ours 375.028, chrome 311.05  (64.0px)",
+          "p .y: ours 375.028, chrome 311.05  (64.0px)",
+          "p .y: ours 285.022, chrome 234.34  (50.7px)",
+          "section.col count .h: ours 138.014, chrome 98  (40.0px)",
+          "section.col width .y: ours 170.014, chrome 130  (40.0px)",
+          "p .y: ours 179.014, chrome 139  (40.0px)",
+          "p .y: ours 179.014, chrome 139  (40.0px)",
+          "section.col width .h: ours 90.008, chrome 55.34  (34.7px)",
+          "p .h: ours 112.014, chrome 80  (32.0px)",
+          "p .y: ours 97.008, chrome 65  (32.0px)",
+          "p .h: ours 64.008, chrome 37.34  (26.7px)",
+          "h3.span-all .h: ours 37.4447, chrome 18.7  (18.7px)",
+          "section.col ruled .h: ours 74.006, chrome 58  (16.0px)",
+          "p .h: ours 64.008, chrome 80  (16.0px)",
+          "section.col spanned .h: ours 63.4447, chrome 76.7  (13.3px)",
+          "p .h: ours 48.006, chrome 40  (8.0px)",
+          "section.col unbroken .h: ours 94.004, chrome 86  (8.0px)"
+        ],
+        0
+      ],
+      "after": [
+        "cov-multicol",
+        "DIFF",
+        [
+          "h3.span-all .w: ours 219.3281, chrome 682  (462.7px)",
+          "p .w: ours 326, chrome 682  (356.0px)",
+          "p .w: ours 214, chrome 448  (234.0px)",
+          "p .w: ours 214, chrome 448  (234.0px)",
+          "p .x: ours 259, chrome 493  (234.0px)",
+          "p .w: ours 218, chrome 450  (232.0px)",
+          "p .x: ours 257, chrome 489  (232.0px)",
+          "p .x: ours 487.6719, chrome 256.33  (231.3px)",
+          "p .x: ours 256.3281, chrome 25  (231.3px)",
+          "section.col spanned .y: ours 366.028, chrome 275.34  (90.7px)",
+          "h3.span-all .y: ours 375.028, chrome 284.34  (90.7px)",
+          "div.page .h: ours 571.4767, chrome 486.05  (85.4px)",
+          "div.card .y: ours 492.4747, chrome 415.05  (77.4px)",
+          "section.col unbroken .y: ours 445.4727, chrome 368.05  (77.4px)",
+          "div.card .y: ours 454.4727, chrome 377.05  (77.4px)",
+          "div.card .y: ours 454.4727, chrome 377.05  (77.4px)",
+          "section.col ruled .y: ours 276.022, chrome 201.34  (74.7px)",
+          "p .y: ours 285.022, chrome 210.34  (74.7px)",
+          "p .y: ours 375.028, chrome 311.05  (64.0px)",
+          "p .y: ours 375.028, chrome 311.05  (64.0px)",
+          "p .y: ours 285.022, chrome 234.34  (50.7px)",
+          "section.col count .h: ours 138.014, chrome 98  (40.0px)",
+          "section.col width .y: ours 170.014, chrome 130  (40.0px)",
+          "p .y: ours 179.014, chrome 139  (40.0px)",
+          "p .y: ours 179.014, chrome 139  (40.0px)",
+          "section.col width .h: ours 90.008, chrome 55.34  (34.7px)",
+          "p .h: ours 112.014, chrome 80  (32.0px)",
+          "p .y: ours 97.008, chrome 65  (32.0px)",
+          "p .h: ours 64.008, chrome 37.34  (26.7px)",
+          "h3.span-all .h: ours 37.4447, chrome 18.7  (18.7px)",
+          "section.col ruled .h: ours 74.006, chrome 58  (16.0px)",
+          "p .h: ours 64.008, chrome 80  (16.0px)",
+          "section.col spanned .h: ours 63.4447, chrome 76.7  (13.3px)",
+          "p .h: ours 48.006, chrome 40  (8.0px)",
+          "section.col unbroken .h: ours 94.004, chrome 86  (8.0px)"
+        ],
+        0
+      ]
+    }
+  ]
+}

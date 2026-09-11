@@ -1,0 +1,333 @@
+{
+  "scope": "Diagnostic draw logging includes warmups and initialization; no acceptance budget or isolated GPU inference. Same binary with opt-in retained batches on/off, alternating mode order.",
+  "rows": [
+    {
+      "repeat": 0,
+      "renderer": "gl_compatibility",
+      "case": "vitals_update",
+      "retained": false,
+      "draws": 722,
+      "median_draw_ms": 0.318,
+      "median_submit_ms": 0.158,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 0,
+      "renderer": "gl_compatibility",
+      "case": "vitals_update",
+      "retained": true,
+      "draws": 722,
+      "median_draw_ms": 0.204,
+      "median_submit_ms": 0.027,
+      "median_submissions": 5.0
+    },
+    {
+      "repeat": 0,
+      "renderer": "gl_compatibility",
+      "case": "settings_toggle",
+      "retained": false,
+      "draws": 122,
+      "median_draw_ms": 0.261,
+      "median_submit_ms": 0.225,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 0,
+      "renderer": "gl_compatibility",
+      "case": "settings_toggle",
+      "retained": true,
+      "draws": 122,
+      "median_draw_ms": 0.1415,
+      "median_submit_ms": 0.082,
+      "median_submissions": 15.0
+    },
+    {
+      "repeat": 0,
+      "renderer": "mobile",
+      "case": "vitals_update",
+      "retained": false,
+      "draws": 722,
+      "median_draw_ms": 0.332,
+      "median_submit_ms": 0.178,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 0,
+      "renderer": "mobile",
+      "case": "vitals_update",
+      "retained": true,
+      "draws": 722,
+      "median_draw_ms": 0.1765,
+      "median_submit_ms": 0.028,
+      "median_submissions": 5.0
+    },
+    {
+      "repeat": 0,
+      "renderer": "mobile",
+      "case": "settings_toggle",
+      "retained": false,
+      "draws": 122,
+      "median_draw_ms": 0.275,
+      "median_submit_ms": 0.2365,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 0,
+      "renderer": "mobile",
+      "case": "settings_toggle",
+      "retained": true,
+      "draws": 122,
+      "median_draw_ms": 0.1365,
+      "median_submit_ms": 0.088,
+      "median_submissions": 15.0
+    },
+    {
+      "repeat": 1,
+      "renderer": "gl_compatibility",
+      "case": "vitals_update",
+      "retained": true,
+      "draws": 722,
+      "median_draw_ms": 0.193,
+      "median_submit_ms": 0.026,
+      "median_submissions": 5.0
+    },
+    {
+      "repeat": 1,
+      "renderer": "gl_compatibility",
+      "case": "vitals_update",
+      "retained": false,
+      "draws": 722,
+      "median_draw_ms": 0.316,
+      "median_submit_ms": 0.157,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 1,
+      "renderer": "gl_compatibility",
+      "case": "settings_toggle",
+      "retained": true,
+      "draws": 122,
+      "median_draw_ms": 0.138,
+      "median_submit_ms": 0.0815,
+      "median_submissions": 15.0
+    },
+    {
+      "repeat": 1,
+      "renderer": "gl_compatibility",
+      "case": "settings_toggle",
+      "retained": false,
+      "draws": 122,
+      "median_draw_ms": 0.263,
+      "median_submit_ms": 0.2245,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 1,
+      "renderer": "mobile",
+      "case": "vitals_update",
+      "retained": true,
+      "draws": 722,
+      "median_draw_ms": 0.174,
+      "median_submit_ms": 0.028,
+      "median_submissions": 5.0
+    },
+    {
+      "repeat": 1,
+      "renderer": "mobile",
+      "case": "vitals_update",
+      "retained": false,
+      "draws": 722,
+      "median_draw_ms": 0.326,
+      "median_submit_ms": 0.177,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 1,
+      "renderer": "mobile",
+      "case": "settings_toggle",
+      "retained": true,
+      "draws": 122,
+      "median_draw_ms": 0.134,
+      "median_submit_ms": 0.086,
+      "median_submissions": 15.0
+    },
+    {
+      "repeat": 1,
+      "renderer": "mobile",
+      "case": "settings_toggle",
+      "retained": false,
+      "draws": 122,
+      "median_draw_ms": 0.277,
+      "median_submit_ms": 0.2405,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 2,
+      "renderer": "gl_compatibility",
+      "case": "vitals_update",
+      "retained": false,
+      "draws": 722,
+      "median_draw_ms": 0.316,
+      "median_submit_ms": 0.157,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 2,
+      "renderer": "gl_compatibility",
+      "case": "vitals_update",
+      "retained": true,
+      "draws": 722,
+      "median_draw_ms": 0.189,
+      "median_submit_ms": 0.025,
+      "median_submissions": 5.0
+    },
+    {
+      "repeat": 2,
+      "renderer": "gl_compatibility",
+      "case": "settings_toggle",
+      "retained": false,
+      "draws": 122,
+      "median_draw_ms": 0.2535,
+      "median_submit_ms": 0.2175,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 2,
+      "renderer": "gl_compatibility",
+      "case": "settings_toggle",
+      "retained": true,
+      "draws": 122,
+      "median_draw_ms": 0.133,
+      "median_submit_ms": 0.08,
+      "median_submissions": 15.0
+    },
+    {
+      "repeat": 2,
+      "renderer": "mobile",
+      "case": "vitals_update",
+      "retained": false,
+      "draws": 722,
+      "median_draw_ms": 0.323,
+      "median_submit_ms": 0.1735,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 2,
+      "renderer": "mobile",
+      "case": "vitals_update",
+      "retained": true,
+      "draws": 722,
+      "median_draw_ms": 0.179,
+      "median_submit_ms": 0.029,
+      "median_submissions": 5.0
+    },
+    {
+      "repeat": 2,
+      "renderer": "mobile",
+      "case": "settings_toggle",
+      "retained": false,
+      "draws": 122,
+      "median_draw_ms": 0.2705,
+      "median_submit_ms": 0.2345,
+      "median_submissions": 42.0
+    },
+    {
+      "repeat": 2,
+      "renderer": "mobile",
+      "case": "settings_toggle",
+      "retained": true,
+      "draws": 122,
+      "median_draw_ms": 0.133,
+      "median_submit_ms": 0.086,
+      "median_submissions": 15.0
+    }
+  ],
+  "binary_sha256": "815dc8e739854e411796e21898f525798de9c63b350358d359db8426ab41d6c4",
+  "source_sha256": "58cf63cd5028e4d0f81f60c03d42e8771e4a490491d693d7aa599272dbfe1f7c",
+  "sample_pixels": {
+    "checks": [
+      {
+        "label": "gl_compatibility-baseline",
+        "passed": true
+      },
+      {
+        "label": "gl_compatibility-retained",
+        "passed": true
+      },
+      {
+        "label": "mobile-baseline",
+        "passed": true
+      },
+      {
+        "label": "mobile-retained",
+        "passed": true
+      }
+    ],
+    "pixels": [
+      {
+        "renderer": "gl_compatibility",
+        "scene": "camp",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "scene": "crafted",
+        "identical": true
+      },
+      {
+        "renderer": "gl_compatibility",
+        "scene": "settings",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "scene": "camp",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "scene": "crafted",
+        "identical": true
+      },
+      {
+        "renderer": "mobile",
+        "scene": "settings",
+        "identical": true
+      }
+    ],
+    "library_sha256": "815dc8e739854e411796e21898f525798de9c63b350358d359db8426ab41d6c4"
+  },
+  "known_property_failures": [
+    {
+      "renderer": "gl_compatibility",
+      "phase": "initial",
+      "identical": true
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "self-modulate",
+      "identical": false
+    },
+    {
+      "renderer": "gl_compatibility",
+      "phase": "redraw",
+      "identical": false
+    },
+    {
+      "renderer": "mobile",
+      "phase": "initial",
+      "identical": true
+    },
+    {
+      "renderer": "mobile",
+      "phase": "self-modulate",
+      "identical": false
+    },
+    {
+      "renderer": "mobile",
+      "phase": "redraw",
+      "identical": false
+    }
+  ],
+  "status": "Experimental, not installed; disabled unless WEVA_GODOT_RETAIN_BATCHES is set. Root self_modulate mismatch blocks enabling."
+}

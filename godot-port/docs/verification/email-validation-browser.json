@@ -1,0 +1,1239 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "raw": "",
+      "multiple": false,
+      "value": "",
+      "mismatch": false
+    },
+    {
+      "raw": "a",
+      "multiple": false,
+      "value": "a",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b",
+      "multiple": false,
+      "value": "a@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a@b.c",
+      "multiple": false,
+      "value": "a@b.c",
+      "mismatch": false
+    },
+    {
+      "raw": "a@-b",
+      "multiple": false,
+      "value": "a@-b",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b-",
+      "multiple": false,
+      "value": "a@b-",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b_c",
+      "multiple": false,
+      "value": "a@b_c",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b..c",
+      "multiple": false,
+      "value": "a@b..c",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b.",
+      "multiple": false,
+      "value": "a@b.",
+      "mismatch": true
+    },
+    {
+      "raw": ".a@b",
+      "multiple": false,
+      "value": ".a@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a..b@c",
+      "multiple": false,
+      "value": "a..b@c",
+      "mismatch": false
+    },
+    {
+      "raw": "a.@b",
+      "multiple": false,
+      "value": "a.@b",
+      "mismatch": false
+    },
+    {
+      "raw": "!#$%&'*+-/=?^_`{|}~@b",
+      "multiple": false,
+      "value": "!#$%&'*+-/=?^_`{|}~@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a b@c",
+      "multiple": false,
+      "value": "a b@c",
+      "mismatch": true
+    },
+    {
+      "raw": "a@@b",
+      "multiple": false,
+      "value": "a@@b",
+      "mismatch": true
+    },
+    {
+      "raw": "a@bücher.de",
+      "multiple": false,
+      "value": "a@bücher.de",
+      "mismatch": true
+    },
+    {
+      "raw": "a@xn--bcher-kva.de",
+      "multiple": false,
+      "value": "a@xn--bcher-kva.de",
+      "mismatch": false
+    },
+    {
+      "raw": "é@b",
+      "multiple": false,
+      "value": "é@b",
+      "mismatch": true
+    },
+    {
+      "raw": "a@[127.0.0.1]",
+      "multiple": false,
+      "value": "a@[127.0.0.1]",
+      "mismatch": true
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": false,
+      "value": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "mismatch": false
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": false,
+      "value": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "mismatch": true
+    },
+    {
+      "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b",
+      "multiple": false,
+      "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a@b,c@d",
+      "multiple": false,
+      "value": "a@b,c@d",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b,",
+      "multiple": false,
+      "value": "a@b,",
+      "mismatch": true
+    },
+    {
+      "raw": " , ",
+      "multiple": false,
+      "value": ",",
+      "mismatch": true
+    },
+    {
+      "raw": " a@b \n",
+      "multiple": false,
+      "value": "a@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a@b, c@d",
+      "multiple": false,
+      "value": "a@b, c@d",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b,,c@d",
+      "multiple": false,
+      "value": "a@b,,c@d",
+      "mismatch": true
+    },
+    {
+      "raw": "",
+      "multiple": true,
+      "value": "",
+      "mismatch": false
+    },
+    {
+      "raw": "a",
+      "multiple": true,
+      "value": "a",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b",
+      "multiple": true,
+      "value": "a@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a@b.c",
+      "multiple": true,
+      "value": "a@b.c",
+      "mismatch": false
+    },
+    {
+      "raw": "a@-b",
+      "multiple": true,
+      "value": "a@-b",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b-",
+      "multiple": true,
+      "value": "a@b-",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b_c",
+      "multiple": true,
+      "value": "a@b_c",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b..c",
+      "multiple": true,
+      "value": "a@b..c",
+      "mismatch": true
+    },
+    {
+      "raw": "a@b.",
+      "multiple": true,
+      "value": "a@b.",
+      "mismatch": true
+    },
+    {
+      "raw": ".a@b",
+      "multiple": true,
+      "value": ".a@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a..b@c",
+      "multiple": true,
+      "value": "a..b@c",
+      "mismatch": false
+    },
+    {
+      "raw": "a.@b",
+      "multiple": true,
+      "value": "a.@b",
+      "mismatch": false
+    },
+    {
+      "raw": "!#$%&'*+-/=?^_`{|}~@b",
+      "multiple": true,
+      "value": "!#$%&'*+-/=?^_`{|}~@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a b@c",
+      "multiple": true,
+      "value": "a b@c",
+      "mismatch": true
+    },
+    {
+      "raw": "a@@b",
+      "multiple": true,
+      "value": "a@@b",
+      "mismatch": true
+    },
+    {
+      "raw": "a@bücher.de",
+      "multiple": true,
+      "value": "a@bücher.de",
+      "mismatch": true
+    },
+    {
+      "raw": "a@xn--bcher-kva.de",
+      "multiple": true,
+      "value": "a@xn--bcher-kva.de",
+      "mismatch": false
+    },
+    {
+      "raw": "é@b",
+      "multiple": true,
+      "value": "é@b",
+      "mismatch": true
+    },
+    {
+      "raw": "a@[127.0.0.1]",
+      "multiple": true,
+      "value": "a@[127.0.0.1]",
+      "mismatch": true
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": true,
+      "value": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "mismatch": false
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": true,
+      "value": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "mismatch": true
+    },
+    {
+      "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b",
+      "multiple": true,
+      "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a@b,c@d",
+      "multiple": true,
+      "value": "a@b,c@d",
+      "mismatch": false
+    },
+    {
+      "raw": "a@b,",
+      "multiple": true,
+      "value": "a@b,",
+      "mismatch": true
+    },
+    {
+      "raw": " , ",
+      "multiple": true,
+      "value": ",",
+      "mismatch": true
+    },
+    {
+      "raw": " a@b \n",
+      "multiple": true,
+      "value": "a@b",
+      "mismatch": false
+    },
+    {
+      "raw": "a@b, c@d",
+      "multiple": true,
+      "value": "a@b,c@d",
+      "mismatch": false
+    },
+    {
+      "raw": "a@b,,c@d",
+      "multiple": true,
+      "value": "a@b,,c@d",
+      "mismatch": true
+    }
+  ],
+  "submissions": [
+    {
+      "raw": "",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b.c",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b.c",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@-b",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@-b",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b-",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b-",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b_c",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b_c",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b..c",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b..c",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b.",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b.",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": ".a@b",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": ".a@b",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a..b@c",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a..b@c",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a.@b",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a.@b",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "!#$%&'*+-/=?^_`{|}~@b",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "!#$%&'*+-/=?^_`{|}~@b",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a b@c",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a b@c",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@@b",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@@b",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@bücher.de",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@bücher.de",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@xn--bcher-kva.de",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@xn--bcher-kva.de",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "é@b",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "é@b",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@[127.0.0.1]",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@[127.0.0.1]",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b,c@d",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b,c@d",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b,",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b,",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": " , ",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": " , ",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": " a@b \n",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": " a@b \n",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b, c@d",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b, c@d",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b,,c@d",
+      "multiple": false,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b,,c@d",
+      "multiple": false,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b.c",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b.c",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@-b",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@-b",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b-",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b-",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b_c",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b_c",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b..c",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b..c",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b.",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b.",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": ".a@b",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": ".a@b",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a..b@c",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a..b@c",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a.@b",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a.@b",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "!#$%&'*+-/=?^_`{|}~@b",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "!#$%&'*+-/=?^_`{|}~@b",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a b@c",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a b@c",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@@b",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@@b",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@bücher.de",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@bücher.de",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@xn--bcher-kva.de",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@xn--bcher-kva.de",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "é@b",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "é@b",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@[127.0.0.1]",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@[127.0.0.1]",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@b",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b,c@d",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b,c@d",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b,",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b,",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": " , ",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": " , ",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": " a@b \n",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": " a@b \n",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b, c@d",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b, c@d",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    },
+    {
+      "raw": "a@b,,c@d",
+      "multiple": true,
+      "bypass": false,
+      "invalid": 1,
+      "submit": 0,
+      "open": true
+    },
+    {
+      "raw": "a@b,,c@d",
+      "multiple": true,
+      "bypass": true,
+      "invalid": 0,
+      "submit": 1,
+      "open": false
+    }
+  ]
+}

@@ -1,0 +1,277 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "cases": [
+    {
+      "name": "text",
+      "html": "<input id=c required>"
+    },
+    {
+      "name": "filled",
+      "html": "<input id=c required value=ok>"
+    },
+    {
+      "name": "space",
+      "html": "<input id=c required value=\" \">"
+    },
+    {
+      "name": "readonly",
+      "html": "<input id=c readonly required>"
+    },
+    {
+      "name": "disabled",
+      "html": "<input id=c disabled required>"
+    },
+    {
+      "name": "fieldset",
+      "html": "<fieldset disabled><input id=c required></fieldset>"
+    },
+    {
+      "name": "legend",
+      "html": "<fieldset disabled><legend><input id=c required></legend></fieldset>"
+    },
+    {
+      "name": "datalist",
+      "html": "<datalist><input id=c required></datalist>"
+    },
+    {
+      "name": "hidden",
+      "html": "<input id=c type=hidden required>"
+    },
+    {
+      "name": "checkbox",
+      "html": "<input id=c type=checkbox required>"
+    },
+    {
+      "name": "checkbox-readonly",
+      "html": "<input id=c type=checkbox readonly required>"
+    },
+    {
+      "name": "checkbox-checked",
+      "html": "<input id=c type=checkbox checked required>"
+    },
+    {
+      "name": "checkbox-disabled",
+      "html": "<input id=c type=checkbox disabled required>"
+    },
+    {
+      "name": "radio-disabled",
+      "html": "<input id=c type=radio disabled required>"
+    },
+    {
+      "name": "radio-alone",
+      "html": "<input id=c type=radio required>"
+    },
+    {
+      "name": "select-disabled",
+      "html": "<select id=c disabled required><option value=\"\">Choose</option></select>"
+    },
+    {
+      "name": "radio",
+      "html": "<input id=c type=radio name=g><input type=radio name=g required>"
+    },
+    {
+      "name": "radio-checked",
+      "html": "<input id=c type=radio name=g><input type=radio name=g required checked>"
+    },
+    {
+      "name": "radio-disabled-required",
+      "html": "<input id=c type=radio name=g><input type=radio name=g disabled required>"
+    },
+    {
+      "name": "radio-disabled-checked",
+      "html": "<input id=c type=radio name=g required><input type=radio name=g disabled checked>"
+    },
+    {
+      "name": "radio-unnamed",
+      "html": "<input id=c type=radio required><input type=radio checked>"
+    },
+    {
+      "name": "textarea",
+      "html": "<textarea id=c required></textarea>"
+    },
+    {
+      "name": "textarea-readonly",
+      "html": "<textarea id=c readonly required></textarea>"
+    },
+    {
+      "name": "select-placeholder",
+      "html": "<select id=c required><option value=\"\">Choose</option><option>Yes</option></select>"
+    },
+    {
+      "name": "select-empty-second",
+      "html": "<select id=c required><option>Yes</option><option value=\"\" selected>Empty</option></select>"
+    },
+    {
+      "name": "select-group",
+      "html": "<select id=c required><optgroup label=Group><option value=\"\">Empty</option></optgroup></select>"
+    },
+    {
+      "name": "select-multiple",
+      "html": "<select id=c required multiple><option value=\"\" selected>Empty</option></select>"
+    },
+    {
+      "name": "select-listbox",
+      "html": "<select id=c required size=2><option value=\"\" selected>Empty</option></select>"
+    },
+    {
+      "name": "select-none",
+      "html": "<select id=c required multiple><option>Yes</option></select>"
+    },
+    {
+      "name": "select-disabled-option",
+      "html": "<select id=c required><option value=yes selected disabled>Yes</option></select>"
+    }
+  ],
+  "rows": [
+    {
+      "name": "text",
+      "willValidate": true,
+      "valueMissing": true
+    },
+    {
+      "name": "filled",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "space",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "readonly",
+      "willValidate": false,
+      "valueMissing": false
+    },
+    {
+      "name": "disabled",
+      "willValidate": false,
+      "valueMissing": false
+    },
+    {
+      "name": "fieldset",
+      "willValidate": false,
+      "valueMissing": false
+    },
+    {
+      "name": "legend",
+      "willValidate": true,
+      "valueMissing": true
+    },
+    {
+      "name": "datalist",
+      "willValidate": false,
+      "valueMissing": true
+    },
+    {
+      "name": "hidden",
+      "willValidate": false,
+      "valueMissing": false
+    },
+    {
+      "name": "checkbox",
+      "willValidate": true,
+      "valueMissing": true
+    },
+    {
+      "name": "checkbox-readonly",
+      "willValidate": false,
+      "valueMissing": true
+    },
+    {
+      "name": "checkbox-checked",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "checkbox-disabled",
+      "willValidate": false,
+      "valueMissing": true
+    },
+    {
+      "name": "radio-disabled",
+      "willValidate": false,
+      "valueMissing": false
+    },
+    {
+      "name": "radio-alone",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "select-disabled",
+      "willValidate": false,
+      "valueMissing": true
+    },
+    {
+      "name": "radio",
+      "willValidate": true,
+      "valueMissing": true
+    },
+    {
+      "name": "radio-checked",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "radio-disabled-required",
+      "willValidate": true,
+      "valueMissing": true
+    },
+    {
+      "name": "radio-disabled-checked",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "radio-unnamed",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "textarea",
+      "willValidate": true,
+      "valueMissing": true
+    },
+    {
+      "name": "textarea-readonly",
+      "willValidate": false,
+      "valueMissing": false
+    },
+    {
+      "name": "select-placeholder",
+      "willValidate": true,
+      "valueMissing": true
+    },
+    {
+      "name": "select-empty-second",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "select-group",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "select-multiple",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "select-listbox",
+      "willValidate": true,
+      "valueMissing": false
+    },
+    {
+      "name": "select-none",
+      "willValidate": true,
+      "valueMissing": true
+    },
+    {
+      "name": "select-disabled-option",
+      "willValidate": true,
+      "valueMissing": false
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+.grid{display:grid;grid-auto-flow:row dense;grid-template-columns:40px 40px;grid-auto-columns:30px;grid-auto-rows:20px}.first{grid-row:1;grid-column:2}.auto{grid-row:1;grid-column:span 2}.last{grid-row:1}

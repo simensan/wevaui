@@ -1,0 +1,139 @@
+{
+  "verification": {
+    "passed": true,
+    "prepared_pixels_match_cold": true,
+    "font_cache_log_requested": false,
+    "font_cache_log_observed": false,
+    "executable_sha256": "3d51e956d803df1f157398a006d3cff076e14d370214035a104e5faf4466b564",
+    "library_sha256": "925ec448c51337b8e88fb695c546e2537878b4264548bcd0598f3c4da52b92cd",
+    "source_sha256": {
+      "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+      "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+      "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+      "game.gd": "306b0d30baf52505537460b3fa79e58756f8e62cc9fe768a13ae5b94b3945e3b",
+      "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+      "tests\\integration.gd": "6f2e861a078d5260a23f35267ae30293536f6da0728b1e54d66134be1137badb",
+      "tests\\lifecycle.gd": "6ed8a542ea3ec25dc48d19aaa174255e607c9e8e2db47a8694353c47b3c408fd",
+      "tests\\load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+      "tests\\performance.gd": "57dd2f80a63f55815ea61111ddf5c6f401b96cfd65f77b52a26400dce92d278f",
+      "ui\\camp.css": "e9d1c82e7dbeb565e2bba565ec0d472d367c6ba14bcf3810980f0eb92d1b1436",
+      "ui\\camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+      "addons\\weva\\weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c",
+      "addons\\weva\\example\\example.gd": "9d5963e2f8b0b81aca813a79fd134516e65355f6ea0d66993766915f8fd29eed",
+      "addons\\weva\\example\\example.tscn": "f164c04bc0bb1710a068a9ed234e719a122501b774df0ba95666df1677ae56c9",
+      "addons\\weva\\example\\ui.css": "998d4af10e12099fae89c3a0ae35c986674efcc7f97b25ed8002cf23bff39eb6",
+      "addons\\weva\\example\\ui.html": "1bed57345424f80dc13dc94e82f9ab7f5b9d5bd51448b8931f01de35bd7ba33f"
+    },
+    "process_memory_available": true,
+    "result": {
+      "cycles": 200,
+      "debug_build": false,
+      "engine": {
+        "build": "custom_build",
+        "hash": "unknown",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (custom_build)",
+        "timestamp": 0
+      },
+      "first_hidden": false,
+      "name_updates": 21072,
+      "passed": true,
+      "renderer": "mobile",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "results": {
+        "first_document_cpu_ms": 80.612,
+        "first_document_through_draw_ms": 82.508,
+        "first_show_cpu_ms": 0.005,
+        "first_show_through_draw_ms": 1.891,
+        "hidden_prepare_cpu_ms": 28.051,
+        "prepared_first_show_cpu_ms": 0.018,
+        "prepared_first_show_through_draw_ms": 5.706,
+        "recreate_cpu": {
+          "max_ms": 54.891,
+          "mean_ms": 39.37102,
+          "median_ms": 40.416,
+          "p95_ms": 48.25,
+          "samples": 200
+        },
+        "reuse_through_draw": {
+          "max_ms": 13.753,
+          "mean_ms": 2.415315,
+          "median_ms": 1.022,
+          "p95_ms": 10.748,
+          "samples": 200
+        },
+        "reuse_with_hidden_data_update_cpu": {
+          "max_ms": 0.763,
+          "mean_ms": 0.293595,
+          "median_ms": 0.26,
+          "p95_ms": 0.522,
+          "samples": 200
+        },
+        "scene_resource_load_ms": 31.254,
+        "soak_frames": {
+          "max_ms": 162.807,
+          "mean_ms": 2.42153276086306,
+          "median_ms": 0.84,
+          "p95_ms": 10.04,
+          "quantile_limit_ms": 100.0,
+          "quantile_overflow_samples": 1,
+          "quantile_resolution_ms": 0.01,
+          "samples": 123791
+        },
+        "soak_seconds": 300.006956
+      },
+      "soak_frame_target": 0,
+      "soak_without_ui": false,
+      "unicode_names": true,
+      "world": "3d"
+    }
+  },
+  "raw_directory": ".utmp\\safe-engine71\\lifecycle198-long",
+  "memory_windows": [
+    {
+      "minute": 1,
+      "samples": 246,
+      "median_private_MB": 862.29,
+      "maximum_private_MB": 862.732
+    },
+    {
+      "minute": 2,
+      "samples": 250,
+      "median_private_MB": 862.798,
+      "maximum_private_MB": 862.798
+    },
+    {
+      "minute": 3,
+      "samples": 254,
+      "median_private_MB": 862.831,
+      "maximum_private_MB": 862.831
+    },
+    {
+      "minute": 4,
+      "samples": 244,
+      "median_private_MB": 862.831,
+      "maximum_private_MB": 862.831
+    },
+    {
+      "minute": 5,
+      "samples": 249,
+      "median_private_MB": 862.831,
+      "maximum_private_MB": 862.962
+    }
+  ],
+  "soak_marker_count": 207,
+  "soak_node_counts": [
+    496.0
+  ],
+  "soak_object_counts": [
+    1949.0
+  ],
+  "scope": "Five-minute Unicode lifecycle observation on the patched Windows release runtime. Whole-process memory; not a timing-budget pass or hours-long leak proof."
+}

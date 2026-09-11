@@ -55,7 +55,7 @@ namespace Weva.Layout {
 
         // CSS UI L4 §13 field-sizing: content — font metrics for value-text width
         // measurement. Settable by LayoutEngine after creating the pooled builder.
-        // When null, falls back to BoxBuilder.StubCharWidthPx stub measurement.
+        // When null, falls back to BoxBuildRules.StubCharWidthPx stub measurement.
         public IFontMetrics FieldSizingMetrics { get; set; }
 
         // PA6 fix — precomputed `<li>` ordinals indexed by the `<li>` Element.
@@ -116,23 +116,7 @@ namespace Weva.Layout {
             return bb;
         }
 
-        static bool IsTableDisplay(string disp) {
-            return disp == "table" || disp == "inline-table"
-                || disp == "table-row-group" || disp == "table-header-group" || disp == "table-footer-group"
-                || disp == "table-row" || disp == "table-cell" || disp == "table-caption"
-                || disp == "table-column" || disp == "table-column-group";
-        }
 
-        // Mirrors BoxBuilder.IsMulticolContainer: a block container is a multicol
-        // container when column-count or column-width is set to a non-auto value.
-        static bool IsMulticolContainer(ComputedStyle style) {
-            if (style == null) return false;
-            string cc = style.Get(CssProperties.ColumnCountId);
-            if (!string.IsNullOrEmpty(cc) && cc != "auto") return true;
-            string cw = style.Get(CssProperties.ColumnWidthId);
-            if (!string.IsNullOrEmpty(cw) && cw != "auto") return true;
-            return false;
-        }
 
         // Mirrors BoxBuilder.MaybeInjectBackdrop: synthesize a `::backdrop`
         // sibling box before a top-layer host (open modal dialog or open
@@ -176,24 +160,16 @@ namespace Weva.Layout {
             BuildPseudoBox(host, parent, pseudoStyle, disp, text);
         }
 
+
+
         void BuildPseudoBox(Element host, Box parent, ComputedStyle pseudoStyle, string disp, string text) {
             // CSS 2.1 §9.7 blockification — see BoxBuilder.BuildPseudoBox for
             // the rationale. Mirrored here so the snapshot path stays in
             // step with the live build path.
-            if (string.IsNullOrEmpty(disp) || disp == "inline") {
-                // Per-style parsed cache: keyword-typed properties read via
-                // direct pattern match on the cached CssValue.
-                string pos = KeywordName(pseudoStyle.GetParsed(CssProperties.PositionId));
-                if (pos == "absolute" || pos == "fixed") {
-                    disp = "block";
-                } else {
-                    string flt = KeywordName(pseudoStyle.GetParsed(CssProperties.FloatId));
-                    if (!string.IsNullOrEmpty(flt) && flt != "none") disp = "block";
-                }
-            }
+            disp = BoxBuildRules.BlockifyForOutOfFlow(disp, pseudoStyle, false);
             if (disp == "block" || disp == "flex" || disp == "grid"
                 || disp == "inline-block" || disp == "inline-flex" || disp == "inline-grid"
-                || disp == "inline-table" || IsTableDisplay(disp)) {
+                || disp == "inline-table" || BoxBuildRules.IsTableDisplay(disp)) {
                 var bb = NewBlockBoxFor(disp);
                 bb.Element = null;
                 bb.Style = pseudoStyle;
@@ -322,23 +298,23 @@ namespace Weva.Layout {
                 // items, hits the empty-container branch (one empty LineBox),
                 // and never re-attaches the pending inline. The box is lost
                 // entirely and PositioningPass has no Box to reposition.
-                if (!blockifyInlines && (disp == "inline" || string.IsNullOrEmpty(disp))) {
-                    string pos = KeywordName(style?.GetParsed(CssProperties.PositionId));
-                    if (pos == "absolute" || pos == "fixed") {
-                        disp = "block";
-                    } else {
-                        string flt = KeywordName(style?.GetParsed(CssProperties.FloatId));
-                        if (!string.IsNullOrEmpty(flt) && flt != "none") {
-                            disp = "block";
-                        }
-                    }
-                }
-                MaybeApplyFieldSizingWidth(managed, style);
+                //
+                // EVERY inline-level display blockifies, not just `inline`
+                // (CSS Display 3 §2.7 gives the value table). An
+                // absolutely positioned element that is inline-block by the UA
+                // sheet — <img>, <button>, <input> — or by an author rule
+                // stayed an inline atom and was shrink-to-fit sized to its
+                // content, which is ZERO for a replaced element with no loaded
+                // source: an avatar pinned with `inset: 4px; width: calc(100%
+                // - 8px)` came out 0 wide while its height was right
+                // (advanced-dashboard).
+                disp = BoxBuildRules.BlockifyForOutOfFlow(disp, style, blockifyInlines);
+                BoxBuildRules.ApplyFieldSizingWidth(managed, style, FieldSizingMetrics);
                 MaybeInjectBackdrop(managed, parent);
                 if (disp == "block" || disp == "flex" || disp == "grid" || disp == "flow-root"
                     || disp == "list-item"
                     || disp == "inline-block" || disp == "inline-flex" || disp == "inline-grid"
-                    || disp == "inline-table" || IsTableDisplay(disp)) {
+                    || disp == "inline-table" || BoxBuildRules.IsTableDisplay(disp)) {
                     // CSS Flexbox §4 / Grid §6 outer-display blockification:
                     // an in-flow inline-* child of a flex/grid container has
                     // its outer display forced to block, so it participates
@@ -357,7 +333,7 @@ namespace Weva.Layout {
                     // column properties per CSS Multicol §2.
                     BlockBox bb;
                     if ((boxDisp == "block" || boxDisp == "flow-root" || boxDisp == "list-item")
-                        && IsMulticolContainer(style)) {
+                        && BoxBuildRules.IsMulticolContainer(style)) {
                         bb = pool.AllocateMulticolBox();
                     } else {
                         bb = NewBlockBoxFor(boxDisp);
@@ -435,11 +411,11 @@ namespace Weva.Layout {
             int step = 1;
             bool isOl = listParent.TagName == "ol";
             if (isOl) {
-                if (TryParseIntAttr(listParent.GetAttribute("start"), out int start)) counter = start;
+                if (BoxBuildRules.TryParseIntAttr(listParent.GetAttribute("start"), out int start)) counter = start;
                 bool reversed = listParent.GetAttribute("reversed") != null;
                 if (reversed) {
                     step = -1;
-                    if (!HasAttr(listParent, "start")) {
+                    if (!BoxBuildRules.HasAttr(listParent, "start")) {
                         int liCount = 0;
                         foreach (var c in listParent.Children) {
                             if (c is Element ce && ce.TagName == "li") liCount++;
@@ -450,7 +426,7 @@ namespace Weva.Layout {
             }
             foreach (var c in listParent.Children) {
                 if (c is Element ce && ce.TagName == "li") {
-                    if (isOl && TryParseIntAttr(ce.GetAttribute("value"), out int v)) {
+                    if (isOl && BoxBuildRules.TryParseIntAttr(ce.GetAttribute("value"), out int v)) {
                         counter = v;
                     }
                     liOrdinals[ce] = counter;
@@ -459,16 +435,7 @@ namespace Weva.Layout {
             }
         }
 
-        static bool HasAttr(Element e, string name) {
-            return e.Attributes != null && e.Attributes.Contains(name);
-        }
 
-        static bool TryParseIntAttr(string s, out int value) {
-            value = 0;
-            if (string.IsNullOrEmpty(s)) return false;
-            return int.TryParse(s, System.Globalization.NumberStyles.Integer,
-                System.Globalization.CultureInfo.InvariantCulture, out value);
-        }
 
         // CSS Lists 3 §3 / CSS Display L3 §2 marker injection — see
         // BoxBuilder.MaybeInjectListMarker for the spec / v2 type-table
@@ -575,19 +542,19 @@ namespace Weva.Layout {
                 }
                 // CSS 2.1 §9.7 float / abs-position blockification — mirrors BoxBuilder.
                 if (disp == "inline" || string.IsNullOrEmpty(disp)) {
-                    string pos = KeywordName(style?.GetParsed(CssProperties.PositionId));
+                    string pos = BoxBuildRules.KeywordName(style?.GetParsed(CssProperties.PositionId));
                     if (pos == "absolute" || pos == "fixed") {
                         disp = "block";
                     } else {
-                        string flt = KeywordName(style?.GetParsed(CssProperties.FloatId));
+                        string flt = BoxBuildRules.KeywordName(style?.GetParsed(CssProperties.FloatId));
                         if (!string.IsNullOrEmpty(flt) && flt != "none") {
                             disp = "block";
                         }
                     }
                 }
-                MaybeApplyFieldSizingWidth(managed, style);
+                BoxBuildRules.ApplyFieldSizingWidth(managed, style, FieldSizingMetrics);
                 MaybeInjectBackdrop(managed, parent);
-                if (disp == "inline-block" || disp == "block" || disp == "flex" || disp == "grid" || disp == "inline-flex" || disp == "inline-grid" || disp == "inline-table" || IsTableDisplay(disp)) {
+                if (disp == "inline-block" || disp == "block" || disp == "flex" || disp == "grid" || disp == "inline-flex" || disp == "inline-grid" || disp == "inline-table" || BoxBuildRules.IsTableDisplay(disp)) {
                     var bb = NewBlockBoxFor(disp);
                     bb.Element = managed; bb.Style = style;
                     BuildChildren(snap, nodeId, style, bb);
@@ -611,90 +578,8 @@ namespace Weva.Layout {
             }
         }
 
-        // CSS UI L4 §13 field-sizing: content — mirrors BoxBuilder.MaybeApplyFieldSizingWidth.
-        // When field-sizing: content is cascaded onto a textual <input>, writes an
-        // intrinsic border-box width (text-width + caret + padding + border) directly
-        // into the ComputedStyle so ApplyBoxModel reads the computed-content size
-        // instead of the UA's fixed 218px default.
-        void MaybeApplyFieldSizingWidth(Element e, ComputedStyle style) {
-            if (e == null || style == null) return;
-            if (e.TagName != "input") return;
-            string inputType = e.GetAttribute("type");
-            if (!string.IsNullOrEmpty(inputType)) {
-                string t = CssStringUtil.ToLowerInvariantOrSame(inputType);
-                if (t == "checkbox" || t == "radio" || t == "range"
-                    || t == "submit" || t == "button" || t == "reset"
-                    || t == "image" || t == "file" || t == "color") {
-                    return;
-                }
-            }
-            string fieldSizing = style.Get("field-sizing");
-            if (string.IsNullOrEmpty(fieldSizing) || fieldSizing != "content") return;
 
-            string value = e.GetAttribute("value") ?? "";
-            if (value.Length == 0) {
-                string ph = e.GetAttribute("placeholder");
-                if (!string.IsNullOrEmpty(ph)) value = ph;
-            }
 
-            double textWidth;
-            if (FieldSizingMetrics != null && value.Length > 0) {
-                double fontSize = 16.0;
-                string fsRaw = style.Get(CssProperties.FontSizeId);
-                if (!string.IsNullOrEmpty(fsRaw) && fsRaw.EndsWith("px")) {
-                    if (double.TryParse(fsRaw.AsSpan(0, fsRaw.Length - 2),
-                        System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out double fsVal) && fsVal > 0) {
-                        fontSize = fsVal;
-                    }
-                }
-                textWidth = FieldSizingMetrics.Measure(value, fontSize);
-            } else {
-                textWidth = value.Length * BoxBuilder.StubCharWidthPx;
-            }
 
-            double padL = ReadSimplePx(style.Get(CssProperties.PaddingLeftId), 8.0);
-            double padR = ReadSimplePx(style.Get(CssProperties.PaddingRightId), 8.0);
-            double bordL = ReadSimplePx(style.Get(CssProperties.BorderLeftWidthId), 1.0);
-            double bordR = ReadSimplePx(style.Get(CssProperties.BorderRightWidthId), 1.0);
-            bool isBorderBox = IsSnapshotBorderBox(style);
-            double intrinsicWidth;
-            if (isBorderBox) {
-                intrinsicWidth = textWidth + BoxBuilder.FieldSizingCaretPaddingPx + padL + padR + bordL + bordR;
-            } else {
-                intrinsicWidth = textWidth + BoxBuilder.FieldSizingCaretPaddingPx;
-            }
-            if (intrinsicWidth < 0) intrinsicWidth = 0;
-            style.Set("width", intrinsicWidth.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + "px");
-        }
-
-        static bool IsSnapshotBorderBox(ComputedStyle style) {
-            if (style == null) return false;
-            var v = style.GetParsed(CssProperties.BoxSizingId);
-            if (v is CssKeyword k) return k.Identifier == "border-box";
-            if (v is CssIdentifier id) return id.Name == "border-box";
-            return style.Get(CssProperties.BoxSizingId) == "border-box";
-        }
-
-        static double ReadSimplePx(string raw, double fallback) {
-            if (string.IsNullOrEmpty(raw)) return fallback;
-            if (!raw.EndsWith("px")) return fallback;
-            if (double.TryParse(raw.AsSpan(0, raw.Length - 2),
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out double v)) return v;
-            return fallback;
-        }
-
-        // Decodes the keyword name of a parsed CssValue for keyword-typed
-        // properties. Mirrors BoxBuilder.KeywordName so the snapshot builder
-        // matches the same blockification rules without re-routing through
-        // the raw-string Get path.
-        static string KeywordName(CssValue parsed) {
-            if (parsed is CssKeyword k) return k.Identifier;
-            if (parsed is CssIdentifier id) return id.Name;
-            return null;
-        }
     }
 }

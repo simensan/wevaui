@@ -1,0 +1,1 @@
+.panel{container-type:inline-size;width:300px;padding:20px;border:5px solid}.item{width:30px;height:10px}@container (width:300px){.item{width:80px;height:25px}}

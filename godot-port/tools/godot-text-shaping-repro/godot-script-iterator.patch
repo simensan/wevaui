@@ -1,0 +1,43 @@
+--- a/modules/text_server_adv/script_iterator.cpp
++++ b/modules/text_server_adv/script_iterator.cpp
+@@ -101,6 +101,7 @@
+ 						emoji_size += EMOJI_STACK_DEPTH;
+ 						if (emoji_stack == starter_emoji_stack) {
+ 							emoji_stack = static_cast<EmojiSubrunEntry *>(memalloc(emoji_size * sizeof(EmojiSubrunEntry)));
++							memcpy(emoji_stack, starter_emoji_stack, sizeof(starter_emoji_stack));
+ 						} else {
+ 							emoji_stack = static_cast<EmojiSubrunEntry *>(memrealloc(emoji_stack, emoji_size * sizeof(EmojiSubrunEntry)));
+ 						}
+@@ -117,6 +118,9 @@
+ 			if (U_FAILURE(err)) {
+ 				if (paren_stack != starter_paren_stack) {
+ 					memfree(paren_stack);
++				}
++				if (emoji_stack != starter_emoji_stack) {
++					memfree(emoji_stack);
+ 				}
+ 				ERR_FAIL_MSG(u_errorName(err));
+ 			}
+@@ -130,6 +134,7 @@
+ 						paren_size += PAREN_STACK_DEPTH;
+ 						if (paren_stack == starter_paren_stack) {
+ 							paren_stack = static_cast<ParenStackEntry *>(memalloc(paren_size * sizeof(ParenStackEntry)));
++							memcpy(paren_stack, starter_paren_stack, sizeof(starter_paren_stack));
+ 						} else {
+ 							paren_stack = static_cast<ParenStackEntry *>(memrealloc(paren_stack, paren_size * sizeof(ParenStackEntry)));
+ 						}
+@@ -198,10 +203,11 @@
+ 			script_ranges.push_back(rng);
+ 		}
+ 
+-		if (emoji_stack != starter_emoji_stack) {
+-			memfree(emoji_stack);
+-		}
+ 	} while (script_end < p_length);
++
++	if (emoji_stack != starter_emoji_stack) {
++		memfree(emoji_stack);
++	}
+ 
+ 	if (paren_stack != starter_paren_stack) {
+ 		memfree(paren_stack);

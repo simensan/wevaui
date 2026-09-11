@@ -1,0 +1,306 @@
+{
+  "runs": [
+    {
+      "name": "offscreen-a",
+      "source": ".utmp/safe-engine71/popover202-presentation-offscreen-a/summary.json",
+      "library_sha256": "0d6e694264e814eb6f12ca7bacf9c8af8083d366d26e10960ddd29fb44c53495",
+      "requested_window_position": [
+        -10000,
+        -10000
+      ],
+      "results": [
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 17.314,
+            "mean_ms": 3.91291333333333,
+            "median_ms": 1.648,
+            "p95_ms": 15.499,
+            "p99_ms": 16.655,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "samples": 0
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "window_focused_samples": 600
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 31.247,
+            "mean_ms": 4.15188,
+            "median_ms": 1.781,
+            "p95_ms": 15.644,
+            "p99_ms": 16.862,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "samples": 0
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "window_focused_samples": 600
+        },
+        {
+          "workload": "settings_slider",
+          "whole_frame": {
+            "max_ms": 30.573,
+            "mean_ms": 4.34032,
+            "median_ms": 1.874,
+            "p95_ms": 15.663,
+            "p99_ms": 17.993,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "max_ms": 19.658,
+            "mean_ms": 4.7524,
+            "median_ms": 2.531,
+            "p95_ms": 14.822,
+            "p99_ms": 16.872,
+            "samples": 100
+          },
+          "changed_api_cpu": {
+            "max_ms": 0.316,
+            "mean_ms": 0.15834,
+            "median_ms": 0.132,
+            "p95_ms": 0.246,
+            "p99_ms": 0.282,
+            "samples": 100
+          },
+          "window_focused_samples": 600
+        }
+      ]
+    },
+    {
+      "name": "onscreen-a",
+      "source": ".utmp/safe-engine71/popover202-presentation-onscreen-a/summary.json",
+      "library_sha256": "0d6e694264e814eb6f12ca7bacf9c8af8083d366d26e10960ddd29fb44c53495",
+      "requested_window_position": [
+        0,
+        0
+      ],
+      "results": [
+        {
+          "workload": "settings_slider",
+          "whole_frame": {
+            "max_ms": 20.909,
+            "mean_ms": 4.46039,
+            "median_ms": 1.947,
+            "p95_ms": 15.855,
+            "p99_ms": 17.25,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "max_ms": 17.349,
+            "mean_ms": 5.01229,
+            "median_ms": 2.676,
+            "p95_ms": 15.821,
+            "p99_ms": 17.118,
+            "samples": 100
+          },
+          "changed_api_cpu": {
+            "max_ms": 0.408,
+            "mean_ms": 0.15533,
+            "median_ms": 0.13,
+            "p95_ms": 0.262,
+            "p99_ms": 0.404,
+            "samples": 100
+          },
+          "window_focused_samples": 600
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 30.714,
+            "mean_ms": 4.17663666666667,
+            "median_ms": 1.791,
+            "p95_ms": 15.933,
+            "p99_ms": 17.29,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "samples": 0
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "window_focused_samples": 600
+        },
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 31.184,
+            "mean_ms": 3.93243166666667,
+            "median_ms": 1.647,
+            "p95_ms": 15.394,
+            "p99_ms": 17.484,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "samples": 0
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "window_focused_samples": 600
+        }
+      ]
+    },
+    {
+      "name": "onscreen-b",
+      "source": ".utmp/safe-engine71/popover202-presentation-onscreen-b/summary.json",
+      "library_sha256": "0d6e694264e814eb6f12ca7bacf9c8af8083d366d26e10960ddd29fb44c53495",
+      "requested_window_position": [
+        0,
+        0
+      ],
+      "results": [
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 21.006,
+            "mean_ms": 3.92321833333334,
+            "median_ms": 1.641,
+            "p95_ms": 15.44,
+            "p99_ms": 16.901,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "samples": 0
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "window_focused_samples": 600
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 30.784,
+            "mean_ms": 4.22483666666667,
+            "median_ms": 1.815,
+            "p95_ms": 15.922,
+            "p99_ms": 16.977,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "samples": 0
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "window_focused_samples": 600
+        },
+        {
+          "workload": "settings_slider",
+          "whole_frame": {
+            "max_ms": 30.917,
+            "mean_ms": 4.37723166666667,
+            "median_ms": 1.945,
+            "p95_ms": 15.698,
+            "p99_ms": 16.932,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "max_ms": 17.633,
+            "mean_ms": 5.34746,
+            "median_ms": 2.694,
+            "p95_ms": 15.05,
+            "p99_ms": 16.513,
+            "samples": 100
+          },
+          "changed_api_cpu": {
+            "max_ms": 0.46,
+            "mean_ms": 0.15747,
+            "median_ms": 0.134,
+            "p95_ms": 0.257,
+            "p99_ms": 0.302,
+            "samples": 100
+          },
+          "window_focused_samples": 600
+        }
+      ]
+    },
+    {
+      "name": "offscreen-b",
+      "source": ".utmp/safe-engine71/popover202-presentation-offscreen-b/summary.json",
+      "library_sha256": "0d6e694264e814eb6f12ca7bacf9c8af8083d366d26e10960ddd29fb44c53495",
+      "requested_window_position": [
+        -10000,
+        -10000
+      ],
+      "results": [
+        {
+          "workload": "settings_slider",
+          "whole_frame": {
+            "max_ms": 29.604,
+            "mean_ms": 4.38760333333334,
+            "median_ms": 1.96,
+            "p95_ms": 15.374,
+            "p99_ms": 16.929,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "max_ms": 19.315,
+            "mean_ms": 5.76195,
+            "median_ms": 2.672,
+            "p95_ms": 15.952,
+            "p99_ms": 18.507,
+            "samples": 100
+          },
+          "changed_api_cpu": {
+            "max_ms": 0.475,
+            "mean_ms": 0.1472,
+            "median_ms": 0.127,
+            "p95_ms": 0.242,
+            "p99_ms": 0.35,
+            "samples": 100
+          },
+          "window_focused_samples": 600
+        },
+        {
+          "workload": "idle",
+          "whole_frame": {
+            "max_ms": 31.162,
+            "mean_ms": 4.14039666666667,
+            "median_ms": 1.748,
+            "p95_ms": 15.688,
+            "p99_ms": 17.062,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "samples": 0
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "window_focused_samples": 600
+        },
+        {
+          "workload": "ui_disabled",
+          "whole_frame": {
+            "max_ms": 30.737,
+            "mean_ms": 4.03001333333334,
+            "median_ms": 1.681,
+            "p95_ms": 15.689,
+            "p99_ms": 17.196,
+            "samples": 600
+          },
+          "changed_whole_frame": {
+            "samples": 0
+          },
+          "changed_api_cpu": {
+            "samples": 0
+          },
+          "window_focused_samples": 600
+        }
+      ]
+    }
+  ],
+  "scope": "Four sequential same-export 1080p OpenGL busy-scene diagnostic runs, 600 frames and 120 warmups per workload. No timing budget grading. Requested window position does not prove unobscured presentation.",
+  "conclusion": "Slider changed-frame p95 ranged 14.822\u201315.952 ms. Onscreen and offscreen values overlap; no position-dependent cause established. Original 17.187 ms qualification failure remains unresolved and unchanged."
+}

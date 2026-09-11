@@ -1,0 +1,28 @@
+{
+  "status": "source fix; core correctness and allocation regression verified; not installed",
+  "change": "Use transparent saved-template lookup and borrowed attribute names. Allocate names only for template storage or actual mutations. Only check absent saved boolean attributes for restoration.",
+  "baseline": {
+    "log": ".utmp/safe-engine71/binding-names-baseline.log",
+    "unchanged_refreshes": 1000,
+    "allocations": 3000,
+    "resolver_reads": 3000
+  },
+  "fixed": {
+    "log": ".utmp/safe-engine71/binding-names-mutation-tests.log",
+    "unchanged_refreshes": 1000,
+    "allocations": 0,
+    "resolver_reads": 3000,
+    "subsequent_data_mutation_updates_text_and_long_attribute": true
+  },
+  "core_suites": {
+    "log": ".utmp/safe-engine71/binding-names-final-tests.log",
+    "passed": 14,
+    "seconds": 24.64
+  },
+  "limitations": [
+    "The full-suite run preceded the additional mutation assertion; the final allocation executable including that assertion passed separately.",
+    "No Godot build, export or timing qualification for this source change yet.",
+    "This allocation fixture does not establish a Frontier sample frame-time improvement or explain the previous intermittent timing failures.",
+    "Installed sample remains preview207."
+  ]
+}

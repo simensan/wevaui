@@ -1,0 +1,813 @@
+{
+  "version": "0.1.0-preview.142",
+  "installed": true,
+  "abi_minor": 22,
+  "library_sha256": "425c80207ac6caf25d30f4e5fe04153e6216f523836337117ba4be8434decb12",
+  "source_sha256": "749bc3cb2935feadfb75e7880fe495b52e9e539bdf3fb7a57b28938b9aa3ff51",
+  "changes": [
+    "Add geometry-only C ABI update; clocks and published draw buffers remain unchanged",
+    "Propagate pending paint input versions through the existing cache before deferring publication",
+    "Use geometry-only updates for native pointer routing and GUI input; normal drawing/queries still publish paint"
+  ],
+  "core": {
+    "suites": 14,
+    "main_checks": 483681,
+    "new_checks": 1561,
+    "new_style_rebuild_comparisons": 10,
+    "modal_steps_with_deferred_paint_and_full_comparison": 360,
+    "published_frame_lifetime_checked": true,
+    "passed": true
+  },
+  "baseline_probe": {
+    "implementation": "Geometry API temporarily calls ordinary full update",
+    "checks": 482241,
+    "failures": 60,
+    "meaning": "Confirms new publication-lifetime assertions reject immediate painting"
+  },
+  "host": {
+    "entries": 37,
+    "checks": 27825,
+    "passed": true,
+    "new_scene": "input_geometry_tests"
+  },
+  "rendered_input_scenes": [
+    "input_geometry_tests",
+    "timing_tests",
+    "text_editing_tests",
+    "dialog_cancel_tests",
+    "form_state_tests"
+  ],
+  "rendered_input_passed": true,
+  "sample_and_native_exports_passed": true,
+  "runtime_qualification": "passed",
+  "sanitizers": {
+    "gates": 16,
+    "passed": true,
+    "symbolization": false
+  },
+  "diagnostic": {
+    "instrumented": true,
+    "frames": 600,
+    "displayed_toggle_frames": 100,
+    "before_paint_passes": 250,
+    "after_paint_passes": 150,
+    "before_core_updates": 850,
+    "after_core_updates": 1050,
+    "scope": "Separate single-workload logs; not acceptance timing",
+    "interpretation": "Paint passes reduced40%, but geometry-only host dirtiness causes extra no-op geometry calls; scheduling flag separation remains an optimization target"
+  },
+  "timing_budget": {
+    "profile": "Frontier development desktop CPU targets",
+    "passed": true,
+    "errors": [],
+    "checks": [
+      {
+        "run": "gl_compatibility/1",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.006,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.021,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 2.741,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.738,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.617,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.494,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.222,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.324,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.443,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.791,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.739,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 2.588,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.008,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.021,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.625,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.685,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.542,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.538,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.246,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.434,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.579,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.873,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.807,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 2.552,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.009,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.024,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.799,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.92,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.62,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.6,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.232,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.377,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.657,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.986,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.826,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 2.94,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.008,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.023,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 2.109,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.71,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.691,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.687,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.254,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.357,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.465,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.679,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.818,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.808,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.006,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.02,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.455,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.698,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.396,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.494,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.229,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.416,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.382,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.979,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.736,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 2.68,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.009,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.023,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.772,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.707,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.51,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.677,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.269,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.368,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.563,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.773,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.701,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 2.444,
+        "limit_ms": 3.0,
+        "passed": true
+      }
+    ],
+    "policy": "Every measured run must meet every CPU p95 limit; no averaging away failures.",
+    "profile_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+    "definition": {
+      "schema": 1,
+      "name": "Frontier development desktop CPU targets",
+      "description": "Provisional engineering targets for this measured RTX 5080 development machine, manual updates, static scene, 1280x720. Adapter matching does not identify the CPU or certify other hardware. CPU API timings exclude total GPU/UI cost.",
+      "scope": {
+        "resolution": [
+          1280,
+          720
+        ],
+        "world": "static",
+        "automatic": false,
+        "adapter": "NVIDIA GeForce RTX 5080"
+      },
+      "renderers": [
+        "gl_compatibility",
+        "mobile"
+      ],
+      "minimum_runs": 3,
+      "minimum_frames": 600,
+      "minimum_warmups": 120,
+      "limits_ms": {
+        "ui_disabled": {
+          "api_cpu": 0.05
+        },
+        "idle": {
+          "api_cpu": 0.05
+        },
+        "clock_1hz": {
+          "changed_api_cpu": 3.0
+        },
+        "vitals_10hz": {
+          "changed_api_cpu": 1.0
+        },
+        "clock_update": {
+          "changed_api_cpu": 1.0
+        },
+        "vitals_update": {
+          "changed_api_cpu": 1.0
+        },
+        "redundant_signal": {
+          "changed_api_cpu": 0.3
+        },
+        "hover": {
+          "changed_api_cpu": 0.5
+        },
+        "inventory_sort": {
+          "changed_api_cpu": 2.0
+        },
+        "settings_typing": {
+          "changed_api_cpu": 1.0
+        },
+        "settings_slider": {
+          "changed_api_cpu": 1.0
+        },
+        "settings_toggle": {
+          "changed_api_cpu": 3.0
+        }
+      }
+    }
+  },
+  "runtime_api_p95_ranges_ms": {
+    "idle": {
+      "metric": "api_cpu",
+      "min": 0.02,
+      "max": 0.024
+    },
+    "vitals_update": {
+      "metric": "changed_api_cpu",
+      "min": 0.494,
+      "max": 0.687
+    },
+    "inventory_sort": {
+      "metric": "changed_api_cpu",
+      "min": 1.382,
+      "max": 1.657
+    },
+    "settings_typing": {
+      "metric": "changed_api_cpu",
+      "min": 0.679,
+      "max": 0.986
+    },
+    "settings_toggle": {
+      "metric": "changed_api_cpu",
+      "min": 1.808,
+      "max": 2.94
+    },
+    "redundant_signal": {
+      "metric": "changed_api_cpu",
+      "min": 0.222,
+      "max": 0.269
+    },
+    "hover": {
+      "metric": "changed_api_cpu",
+      "min": 0.324,
+      "max": 0.434
+    }
+  },
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 554,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 506,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 182,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 21,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "validity_selector_tests",
+      "checks": 658,
+      "passed": true
+    },
+    {
+      "name": "multicol_sizing_tests",
+      "checks": 2289,
+      "passed": true
+    },
+    {
+      "name": "block_margin_tests",
+      "checks": 1009,
+      "passed": true
+    },
+    {
+      "name": "input_geometry_tests",
+      "checks": 3,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 92,
+      "passed": true
+    }
+  ],
+  "runtime_scope": "Six manual/static1280x720 runs,600frames120warmups,Ryzen7 9800X3D/RTX5080; elapsed synchronous API timing, not a demonstrated causal whole-UI speedup",
+  "remaining": [
+    "Separate host pending-paint scheduling from dirty geometry to remove duplicate geometry-only calls",
+    "Initial geometry-only update before first paint deserves explicit regression coverage",
+    "Broad layout/lifecycle/cold/reuse/busy3D/retained renderer/physical input/accessibility/device qualification"
+  ]
+}

@@ -1,0 +1,1 @@
+.grid{display:grid;width:400px;grid-template-columns:repeat(2,1fr);align-content:start}.slot{display:flex;aspect-ratio:1;border:1px solid}.wide{border-left-width:3px}

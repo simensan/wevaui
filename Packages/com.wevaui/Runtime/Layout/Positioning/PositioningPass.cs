@@ -301,7 +301,16 @@ namespace Weva.Layout.Positioning {
         }
 
         static void CollectAnchors(Box box, AnchorRegistry registry) {
-            if (box?.Style != null) {
+            // Only an element's PRINCIPAL box can be an anchor. A TextRun and a
+            // LineBox both carry the element's ComputedStyle, so an unfiltered
+            // walk matched `anchor-name` on them too — and because they come
+            // later in pre-order they OVERWROTE the real registration. Every
+            // anchor() then resolved against the text run: `left: anchor(left)`
+            // gave the run's x inside its line (68.4 rather than the button's
+            // 20) and `anchor(bottom)` used the run's 18.29 height instead of
+            // the button's 40. menu.html's tooltip landed 11px high and 48px
+            // right; Chrome and the C++ port agree with each other against us.
+            if (box?.Style != null && !(box is Boxes.TextRun) && !(box is Boxes.LineBox)) {
                 string name = box.Style.Get("anchor-name");
                 if (!string.IsNullOrEmpty(name) && name.Trim() != "none") {
                     foreach (var n in SplitNames(name)) {
@@ -641,7 +650,17 @@ namespace Weva.Layout.Positioning {
                         }
                     }
                     double fitted = System.Math.Min(maxContent, System.Math.Max(minContent, effectiveAvail));
-                    if (fitted > avail) fitted = avail;
+                    // CSS 2.1 §10.3.7's formula already bounds the result by the
+                    // available space, through the `max(minContent, avail)` above
+                    // — and deliberately lets it EXCEED avail when min-content
+                    // does, because a box may not be squeezed below the width its
+                    // content needs. Clamping again unconditionally undid that
+                    // `max`: combat-hud's `.buff-time` holding "12s" sits in a
+                    // 36px circle at `left: 50%`, so avail is 18, and it came out
+                    // 18 wide where Chrome and the C++ port both measure 20.16.
+                    // The clamp still applies whenever it does not violate the
+                    // minimum.
+                    if (fitted > avail && avail >= minContent) fitted = avail;
                     // CSS Sizing L3: clamp shrink-to-fit by min-width / max-width.
                     // Without this, `.hud-top { min-width: 280px }` ended up at
                     // ~218 px (its max-content) in map.html. Honor only definite
@@ -1230,15 +1249,41 @@ namespace Weva.Layout.Positioning {
                 if (c is BlockBox fc && fc.IsFloat) continue;
                 if (c is Weva.Layout.Boxes.LineBox lb) {
                     // line.Width is post-text-align (OffsetLine adds the
-                    // alignment dx onto it). Sum the raw fragment widths
-                    // instead so max-content reflects the natural text
-                    // advance only.
+                    // alignment dx onto it), so the line's own width can't be
+                    // used. Take the EXTENT the fragments occupy instead —
+                    // rightmost edge minus leftmost — which is the natural
+                    // advance and, unlike a sum of fragment widths, keeps the
+                    // spacing that sits BETWEEN fragments.
+                    //
+                    // Summing widths dropped one letter-spacing at every
+                    // boundary between inline pieces, because a fragment's own
+                    // width spaces its N glyphs N-1 times and the gap to the
+                    // next fragment lives in that fragment's X. A
+                    // `<span>Press <kbd>J</kbd> to track quest</span>` flex
+                    // item was then measured NARROWER than the text it holds,
+                    // so the item was sized short and its own text wrapped
+                    // inside it — visible as a two-line footer that should be
+                    // one line, on any page that sets letter-spacing.
+                    // Fragment X is line-relative, so this is independent of
+                    // text-align. (quests.html, godot-port oracle.)
+                    // The sum is the lower bound; the extent additionally
+                    // catches the advance between fragments. Preferring the sum
+                    // when they agree keeps the arithmetic bit-identical to the
+                    // pre-fix result for the overwhelmingly common abutting
+                    // case — `hi - lo` and a running sum differ in the last ulp,
+                    // which the 2-decimal dump turned into a 0.01px diff on
+                    // level-select.
                     double sum = 0;
+                    double lo = double.MaxValue, hi = double.MinValue;
                     for (int j = 0; j < lb.Children.Count; j++) {
                         var r = lb.Children[j];
                         if (r is Weva.Layout.Boxes.InlineBox) continue;
                         sum += r.Width;
+                        if (r.X < lo) lo = r.X;
+                        if (r.X + r.Width > hi) hi = r.X + r.Width;
                     }
+                    double extent = hi > lo ? hi - lo : 0;
+                    if (extent > sum + 1e-6) sum = extent;
                     if (sum > max) max = sum;
                     continue;
                 }
@@ -1342,10 +1387,18 @@ namespace Weva.Layout.Positioning {
             if (container.Style != null) {
                 string dir = container.Style.Get("flex-direction");
                 if (dir == "column" || dir == "column-reverse") isRow = false;
-                string g = isRow ? container.Style.Get("column-gap") : container.Style.Get("row-gap");
-                if (string.IsNullOrEmpty(g) || g == "normal") g = container.Style.Get("gap");
-                if (!string.IsNullOrEmpty(g)) {
-                    if (TryReadFirstCssNumber(g, out double parsedGap)) gap = parsedGap;
+                // Prefer the gap FlexLayout already resolved with a real
+                // LengthContext; the scan below cannot evaluate a computed
+                // value and reads `clamp(4px, 0.6vmin, 7px)` as 4.
+                double stamped = isRow ? container.ResolvedColumnGap : container.ResolvedRowGap;
+                if (!double.IsNaN(stamped)) {
+                    gap = stamped;
+                } else {
+                    string g = isRow ? container.Style.Get("column-gap") : container.Style.Get("row-gap");
+                    if (string.IsNullOrEmpty(g) || g == "normal") g = container.Style.Get("gap");
+                    if (!string.IsNullOrEmpty(g)) {
+                        if (TryReadFirstCssNumber(g, out double parsedGap)) gap = parsedGap;
+                    }
                 }
             }
             double sum = 0, maxItem = 0; int n = 0;
@@ -1445,10 +1498,18 @@ namespace Weva.Layout.Positioning {
             if (container.Style != null) {
                 string dir = container.Style.Get("flex-direction");
                 if (dir == "column" || dir == "column-reverse") isRow = false;
-                string g = isRow ? container.Style.Get("row-gap") : container.Style.Get("column-gap");
-                if (string.IsNullOrEmpty(g) || g == "normal") g = container.Style.Get("gap");
-                if (!string.IsNullOrEmpty(g)) {
-                    if (TryReadFirstCssNumber(g, out double parsedGap)) gap = parsedGap;
+                // Same as FlexIntrinsicInline: the resolved stamp first, the
+                // first-number scan only as a fallback for a box flex layout
+                // has not reached yet.
+                double stamped = isRow ? container.ResolvedRowGap : container.ResolvedColumnGap;
+                if (!double.IsNaN(stamped)) {
+                    gap = stamped;
+                } else {
+                    string g = isRow ? container.Style.Get("row-gap") : container.Style.Get("column-gap");
+                    if (string.IsNullOrEmpty(g) || g == "normal") g = container.Style.Get("gap");
+                    if (!string.IsNullOrEmpty(g)) {
+                        if (TryReadFirstCssNumber(g, out double parsedGap)) gap = parsedGap;
+                    }
                 }
             }
             double sum = 0, maxItem = 0; int n = 0;

@@ -1,0 +1,38 @@
+{
+  "scope": "Temporal value sanitization core source after candidate110; installed109 unchanged",
+  "source_sha256": {
+    "libweva/include/weva/temporal_value.h": "3cb725e77229f4035deb99e922b03ec56d0eda7663ea66b4d9d5a6239a452bcc",
+    "libweva/src/temporal_value.cpp": "8c6ae190a9bfef428f9e6dc004dbcc39af52be4003ee602d5d5d1048e5073bfb",
+    "libweva/src/form_state.cpp": "651dcf5d9254b2a0caa4671d0294efa5d3a3e770fae2fb6c213ba5db30b13d15",
+    "libweva/CMakeLists.txt": "fc68cb19572c4e054d7291a82b06cbbd1e2c45e87290e996db3e26c82917dd1b",
+    "libweva/tests/test_form_state.cpp": "184143f23f8708545eaba4449342c5f8c7c128c31d113b81f2503220eb4ec0c7",
+    "libweva/tests/main.cpp": "1b6c2b624efa8102a936434cf5c35e599d283f347add0fa1d42eb33f710d5456"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 23.01
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 136.11
+  },
+  "browser_value_cases": 71,
+  "browser_value_evidence": "temporal-values-browser.json",
+  "coverage": [
+    "Allocation-free numeric parser",
+    "Date/month/week/time/datetime-local sanitization",
+    "Markup defaults, script values, reset, type change and C API value readback"
+  ],
+  "pending_constraints_observations": {
+    "cases": 80,
+    "evidence": "temporal-constraints-browser.json",
+    "implemented": false
+  },
+  "limits": [
+    "No temporal min/max/step enforcement yet",
+    "No new public valueAsNumber/valueAsDate APIs or calendar picker",
+    "Native rebuild, exports, performance and installation pending for this source"
+  ]
+}

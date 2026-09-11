@@ -1,0 +1,837 @@
+{
+  "candidate": "Uninstalled preview102: incremental shaping cache eviction",
+  "passed": true,
+  "verification": {
+    "passed": true,
+    "prepared_pixels_match_cold": true,
+    "font_cache_log_requested": true,
+    "font_cache_log_observed": true,
+    "executable_sha256": "fd441fff86eb3a2f762c3bb974476a8503733ad8a2a8c0fbecb0884da03a1514",
+    "library_sha256": "4fa6027ccb16b822347b66eba1ca17a2e319b72e3bcf11b4027b419020e775db",
+    "source_sha256": {
+      "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+      "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+      "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+      "game.gd": "d3a70197907c52358ca4b30eeb098a14159b4dd39fe71900aa461be4f363e96b",
+      "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+      "tests\\integration.gd": "d5e0b6a28a882f5f42acacae5768cc04674bfa9d9de902f3e99a1f6475ad1ca2",
+      "tests\\lifecycle.gd": "6ed8a542ea3ec25dc48d19aaa174255e607c9e8e2db47a8694353c47b3c408fd",
+      "tests\\load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+      "tests\\performance.gd": "3bcedfee076af2420a2adfac6028128d19e4de1e29490462fec8b051d93d1ae6",
+      "ui\\camp.css": "240119a4baa0a2db651dc644f83c054ab87f7853446ac2ae2719f0a136f8a517",
+      "ui\\camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+      "addons\\weva\\weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c",
+      "addons\\weva\\example\\example.gd": "9d5963e2f8b0b81aca813a79fd134516e65355f6ea0d66993766915f8fd29eed",
+      "addons\\weva\\example\\example.tscn": "f164c04bc0bb1710a068a9ed234e719a122501b774df0ba95666df1677ae56c9",
+      "addons\\weva\\example\\ui.css": "998d4af10e12099fae89c3a0ae35c986674efcc7f97b25ed8002cf23bff39eb6",
+      "addons\\weva\\example\\ui.html": "1bed57345424f80dc13dc94e82f9ab7f5b9d5bd51448b8931f01de35bd7ba33f"
+    },
+    "process_memory_available": true,
+    "result": {
+      "cycles": 20,
+      "debug_build": false,
+      "engine": {
+        "build": "custom_build",
+        "hash": "unknown",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (custom_build)",
+        "timestamp": 0
+      },
+      "first_hidden": false,
+      "name_updates": 6080,
+      "passed": true,
+      "renderer": "mobile",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "results": {
+        "first_document_cpu_ms": 76.028,
+        "first_document_through_draw_ms": 78.047,
+        "first_show_cpu_ms": 0.005,
+        "first_show_through_draw_ms": 2.015,
+        "hidden_prepare_cpu_ms": 32.414,
+        "prepared_first_show_cpu_ms": 0.013,
+        "prepared_first_show_through_draw_ms": 1.199,
+        "recreate_cpu": {
+          "max_ms": 42.94,
+          "mean_ms": 31.5523,
+          "median_ms": 32.13,
+          "p95_ms": 38.443,
+          "samples": 20
+        },
+        "reuse_through_draw": {
+          "max_ms": 13.023,
+          "mean_ms": 2.8779,
+          "median_ms": 1.409,
+          "p95_ms": 12.398,
+          "samples": 20
+        },
+        "reuse_with_hidden_data_update_cpu": {
+          "max_ms": 0.706,
+          "mean_ms": 0.39175,
+          "median_ms": 0.326,
+          "p95_ms": 0.693,
+          "samples": 20
+        },
+        "scene_resource_load_ms": 30.969,
+        "soak_frames": {
+          "max_ms": 22.234,
+          "mean_ms": 2.26873088888888,
+          "median_ms": 0.69,
+          "p95_ms": 10.41,
+          "quantile_limit_ms": 100.0,
+          "quantile_overflow_samples": 0,
+          "quantile_resolution_ms": 0.01,
+          "samples": 36000
+        },
+        "soak_seconds": 81.744053
+      },
+      "soak_frame_target": 36000,
+      "soak_without_ui": false,
+      "unicode_names": true,
+      "world": "3d"
+    }
+  },
+  "native_build_metadata": {
+    "schema": 1,
+    "library_sha256": "4fa6027ccb16b822347b66eba1ca17a2e319b72e3bcf11b4027b419020e775db",
+    "source": {
+      "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+      "dirty": true,
+      "sha256": "f3f5340ceec8846814d6d142b69ba432abb8d7e0411c791e1eed69aba105816b"
+    },
+    "godot_cpp": {
+      "revision": null,
+      "dirty": null,
+      "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+    },
+    "configuration": "Release",
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35222.0"
+    },
+    "cmake_version": "4.3.2",
+    "godot_api": "4.7",
+    "precision": "single",
+    "custom_api": null,
+    "sanitizers": false
+  },
+  "evidence_sha256": {
+    "verification.json": "fba5ec4d5e92978e02b545264055e2d6a184e2249b54423c7e27d354b3b1633e",
+    "process-memory.json": "e59e978981c7795d975a6d512ad8bfdbdcd4dcdeb06d48843ca5912eaa083902",
+    "run.log": "8fdb1fb5e04e7e7f7cd02103ea51074aa4014468407689450b1b686f73dda961"
+  },
+  "sampled_eviction_pairs": 20,
+  "peak_reported_payload_bytes": 14601424,
+  "final_destroy_payload_bytes": 14572144,
+  "private_bytes_first": 865964032,
+  "private_bytes_last": 874831872,
+  "private_bytes_min": 859549696,
+  "private_bytes_max": 874983424,
+  "cache_events": [
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 256,
+      "text_capacity_bytes": 14992,
+      "glyph_capacity_bytes": 246480,
+      "entry_storage_bytes": 24576,
+      "bucket_count": 512
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 512,
+      "text_capacity_bytes": 60256,
+      "glyph_capacity_bytes": 1051344,
+      "entry_storage_bytes": 49152,
+      "bucket_count": 512
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 768,
+      "text_capacity_bytes": 107504,
+      "glyph_capacity_bytes": 1894176,
+      "entry_storage_bytes": 73728,
+      "bucket_count": 1024
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 1024,
+      "text_capacity_bytes": 156240,
+      "glyph_capacity_bytes": 2764800,
+      "entry_storage_bytes": 98304,
+      "bucket_count": 1024
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 1280,
+      "text_capacity_bytes": 204976,
+      "glyph_capacity_bytes": 3635424,
+      "entry_storage_bytes": 122880,
+      "bucket_count": 2048
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 1536,
+      "text_capacity_bytes": 253712,
+      "glyph_capacity_bytes": 4506048,
+      "entry_storage_bytes": 147456,
+      "bucket_count": 2048
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 1792,
+      "text_capacity_bytes": 299472,
+      "glyph_capacity_bytes": 5329488,
+      "entry_storage_bytes": 172032,
+      "bucket_count": 2048
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 2048,
+      "text_capacity_bytes": 346720,
+      "glyph_capacity_bytes": 6184608,
+      "entry_storage_bytes": 196608,
+      "bucket_count": 2048
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 2304,
+      "text_capacity_bytes": 395456,
+      "glyph_capacity_bytes": 7067520,
+      "entry_storage_bytes": 221184,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 2560,
+      "text_capacity_bytes": 444192,
+      "glyph_capacity_bytes": 7950432,
+      "entry_storage_bytes": 245760,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 2816,
+      "text_capacity_bytes": 492928,
+      "glyph_capacity_bytes": 8833344,
+      "entry_storage_bytes": 270336,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 3072,
+      "text_capacity_bytes": 538688,
+      "glyph_capacity_bytes": 9660672,
+      "entry_storage_bytes": 294912,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 3328,
+      "text_capacity_bytes": 585440,
+      "glyph_capacity_bytes": 10506528,
+      "entry_storage_bytes": 319488,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 3584,
+      "text_capacity_bytes": 634176,
+      "glyph_capacity_bytes": 11389440,
+      "entry_storage_bytes": 344064,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 3840,
+      "text_capacity_bytes": 682912,
+      "glyph_capacity_bytes": 12272352,
+      "entry_storage_bytes": 368640,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 731648,
+      "glyph_capacity_bytes": 13155264,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13376544,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 743040,
+      "glyph_capacity_bytes": 13376400,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13376592,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743552,
+      "glyph_capacity_bytes": 13398096,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 743536,
+      "glyph_capacity_bytes": 13397952,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13407408,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13419648,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13419504,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13428960,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13431936,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13431792,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13441248,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13444224,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13444080,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13453536,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 743040,
+      "glyph_capacity_bytes": 13435680,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743552,
+      "glyph_capacity_bytes": 13445136,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 743536,
+      "glyph_capacity_bytes": 13444944,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743552,
+      "glyph_capacity_bytes": 13445136,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 743040,
+      "glyph_capacity_bytes": 13435680,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 743040,
+      "glyph_capacity_bytes": 13435680,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743552,
+      "glyph_capacity_bytes": 13445136,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 743040,
+      "glyph_capacity_bytes": 13435680,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 743040,
+      "glyph_capacity_bytes": 13435680,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "before_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744544,
+      "glyph_capacity_bytes": 13463664,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "after_lru_eviction",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4095,
+      "text_capacity_bytes": 744032,
+      "glyph_capacity_bytes": 13454208,
+      "entry_storage_bytes": 393120,
+      "bucket_count": 4096
+    },
+    {
+      "event": "checkpoint",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 744048,
+      "glyph_capacity_bytes": 13454400,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    },
+    {
+      "event": "destroy",
+      "backend": "000002D0E64FB5A0",
+      "entries": 4096,
+      "text_capacity_bytes": 743056,
+      "glyph_capacity_bytes": 13435872,
+      "entry_storage_bytes": 393216,
+      "bucket_count": 4096
+    }
+  ],
+  "limitations": [
+    "Entry limit unchanged; no byte budget.",
+    "More live payload is retained between updates than with wholesale clears.",
+    "Payload capacities are not total heap/process memory.",
+    "Timing budget has an unresolved failure; this diagnostic run is not a timing pass."
+  ]
+}

@@ -118,7 +118,7 @@ All eight flex properties implemented:
 
 ## 7. Grid (`display: grid`)
 
-All sixteen grid properties implemented. Subgrid is supported via `display: subgrid`.
+All sixteen grid properties implemented. Subgrid is supported in the spec form, `grid-template-columns: subgrid` / `grid-template-rows: subgrid` on a grid item that is itself `display: grid` (CSS Grid L2); `grid-auto-rows/columns: subgrid` is an extension.
 
 - `grid-template-columns` / `grid-template-rows` with length, %, `fr`, `min-content`, `max-content`, `fit-content()`, `repeat()` including `auto-fit` and `auto-fill`.
 - `grid-template-areas` with ASCII art.

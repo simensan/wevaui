@@ -97,5 +97,49 @@ namespace Weva.Tests.Layout.Flex {
             Assert.That(a.X, Is.EqualTo(0).Within(0.01));
             Assert.That(b.X, Is.EqualTo(140).Within(0.01));
         }
+
+        // PositioningPass's intrinsic helpers are static and take only the box,
+        // so they had no LengthContext and read the gap by scanning its
+        // declaration for the first number. That is right for `12px` and wrong
+        // for anything computed: `clamp(4px, 0.6vmin, 7px)` was read as 4 where
+        // the resolved value is 4.32, so a column flex measured AS AN ITEM of
+        // an outer flex came out short of the children it then placed —
+        // randhtml's `.party` reported 107.706 while its own children spanned
+        // 108.026, a container not containing its own contents.
+        [Test]
+        public void A_computed_gap_survives_being_measured_as_a_flex_item() {
+            // 0.6vmin at 1280x720 is 4.32, inside the clamp's 4..7 range.
+            const string css = @"
+                body { margin: 0 }
+                .outer { display: flex; flex-direction: column; width: 300px }
+                .inner { display: flex; flex-direction: column;
+                         gap: clamp(4px, 0.6vmin, 7px) }
+                .k { height: 20px }
+            ";
+            var (root, _, _) = Build(
+                @"<div class=""outer""><div class=""inner"">" +
+                @"<div class=""k""></div><div class=""k""></div></div></div>",
+                css, viewportWidth: 1280, viewportHeight: 720);
+
+            Weva.Layout.Boxes.BlockBox inner = null;
+            var kids = new System.Collections.Generic.List<Weva.Layout.Boxes.BlockBox>();
+            foreach (var b in AllBoxes(root)) {
+                if (b is Weva.Layout.Boxes.BlockBox bb && bb.Element?.ClassName == "inner") inner = bb;
+                if (b is Weva.Layout.Boxes.BlockBox kb && kb.Element?.ClassName == "k") kids.Add(kb);
+            }
+            Assert.That(inner, Is.Not.Null);
+            Assert.That(kids.Count, Is.EqualTo(2));
+
+            // Whatever the gap resolves to, the container must contain the
+            // children it placed — that is the invariant the first-number scan
+            // broke, and it holds without hard-coding 4.32.
+            double span = (kids[1].Y + kids[1].Height) - kids[0].Y;
+            Assert.That(inner.Height, Is.EqualTo(span).Within(1e-9),
+                "a flex container must be as tall as the children it placed");
+            // And the gap really is the computed one, not the clamp's floor.
+            Assert.That(kids[1].Y - (kids[0].Y + kids[0].Height),
+                        Is.EqualTo(4.32).Within(1e-9));
+        }
+
     }
 }

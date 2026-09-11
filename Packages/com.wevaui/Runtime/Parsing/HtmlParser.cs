@@ -168,6 +168,14 @@ namespace Weva.Parsing {
             }
             void EnsureBody() {
                 if (emittedBody) return;
+                // Browsers always produce `<html><head></head><body>`, even when
+                // the fragment has no head content at all. Without this call the
+                // synthetic <head> was only emitted when a head-content element
+                // appeared, so `<main>hi</main>` produced `<html><body>` and
+                // <body> became :nth-child(1) instead of :nth-child(2) —
+                // diverging from Chrome for `body:nth-child(2)`,
+                // `html > *:first-child` and top-level sibling combinators.
+                EnsureHead();
                 CloseHead();
                 if (!bodyOpenedExplicitly) result.Add(StartTag("body"));
                 emittedBody = true;

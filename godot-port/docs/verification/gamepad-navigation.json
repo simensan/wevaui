@@ -1,0 +1,82 @@
+{
+  "scope": "Gamepad navigation on the Godot host: joypad events drive HTML focus, activation and dismissal through ui_* actions with conventional fallbacks. Windows, synthetic joypad events; no physical controller. Candidate not installed.",
+  "library_sha256": "9d713963fb1c59f2e388ea8752aaaa9a9ae00546e87c50b58f2c25efef68052a",
+  "abi_minor": 25,
+  "source": {
+    "hosts/godot/src/weva_node.cpp": "778132f1f56c3836bfe305aef8c434885a7643a305bdebdc94baaa3176b96978",
+    "libweva/src/weva_c.cpp": "b6a354ca6b0b801394e75dabcb1d3cf584f6c16f4bfe94a4407179d24050abef",
+    "hosts/godot/project/gamepad_navigation_tests.gd": "d1052dd2f95534a26d9902ec467acf062812f41eebd693bbedc939fe8ab03077"
+  },
+  "default_input_map_observation": "On this engine ui_left/right/up/down carry D-pad and left-stick bindings; ui_accept, ui_cancel and ui_focus_next/prev carry keyboard bindings only, hence the A/B/shoulder fallbacks.",
+  "core": {
+    "passed_suites": 14,
+    "total_suites": 14,
+    "log": ".utmp/safe-engine71/shaping-native/gp-core-ctest.log"
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "total_suites": 16,
+    "log": ".utmp/safe-engine71/shaping-native/gp-san-ctest.log"
+  },
+  "host": {
+    "passed": true,
+    "entries": 51,
+    "checks": 35590,
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite7/receipt.json",
+    "gamepad_navigation_tests": {
+      "passed": true,
+      "checks": 33,
+      "failures": 0
+    }
+  },
+  "gamepad_on_stock_4_7_1": {
+    "checks": 33,
+    "failures": 0,
+    "log": ".utmp/safe-engine71/shaping-checks/gamepad-stock.log"
+  },
+  "sample": {
+    "headless": "frontier integration: 101 checks, 0 failures",
+    "mobile": "frontier integration: 101 checks, 0 failures",
+    "note": "includes the controller case: wake, accept opens settings, pad moves rows and adjusts the volume slider, cancel closes"
+  },
+  "limitations": [
+    "Synthetic InputEventJoypadButton/Motion through a SubViewport; no physical controller.",
+    "Timing profiles not rerun; not installed."
+  ],
+  "exports": {
+    "addon_zip": ".utmp/safe-engine71/weva-gamepad-preview218.zip",
+    "fresh_consumer_and_native_export": [
+      "import: passed",
+      "headless: frontier integration: 101 checks, 0 failures",
+      "gl_compatibility: frontier integration: 107 checks, 0 failures",
+      "mobile: frontier integration: 107 checks, 0 failures",
+      "export: passed",
+      "export-headless: frontier integration: 101 checks, 0 failures",
+      "export-render: frontier integration: 107 checks, 0 failures"
+    ],
+    "packaged_example_and_export_smokes": [
+      "godot export smoke (project): 8 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (pack): 10 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-debug): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-release): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-release): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures"
+    ],
+    "passed": true
+  },
+  "linux_stock": {
+    "engine": "stock Linux Godot 4.7.2.stable.official.ed1daf0bf (WSL Ubuntu), headless",
+    "library_sha256": "c366c8a8e4a63fdba4abecbc2579db17de1e3918d23daef5b34740f07dc2595b",
+    "test_library_sha256": "65ca0e05f81d285d4ca5dba452cd8f647029888cc62890836e5ee385e24d1ec3",
+    "built_from": "the same source as the Windows candidate (gcc, ~/weva/build-godot)",
+    "gamepad_navigation_tests": {
+      "checks": 34,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/linux/gamepad_navigation_tests.log"
+    }
+  }
+}

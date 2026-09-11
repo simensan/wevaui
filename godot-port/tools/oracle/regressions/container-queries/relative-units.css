@@ -1,0 +1,1 @@
+html{font-size:20px}.panel{container-type:inline-size;font-size:25px;width:300px}.item{height:10px}@container (width:12em) and (width:15rem) and (width:37.5vw){.item{height:30px}}

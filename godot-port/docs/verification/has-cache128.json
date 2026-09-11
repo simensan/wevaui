@@ -1,0 +1,3971 @@
+{
+  "schema": 1,
+  "version": "0.1.0-preview.128",
+  "metadata": {
+    "schema": 1,
+    "library_sha256": "991a088fddc09a1037868e4638d5cc603de9d3ac4552a30955f4bf4f8243afb1",
+    "source": {
+      "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+      "dirty": true,
+      "sha256": "45cff305c816d90c2e6a6a08055949781102a874d70b001f91c7e1abd9f3efc4"
+    },
+    "godot_cpp": {
+      "revision": null,
+      "dirty": null,
+      "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+    },
+    "configuration": "Release",
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35222.0"
+    },
+    "cmake_version": "4.3.2",
+    "godot_api": "4.7",
+    "precision": "single",
+    "custom_api": null,
+    "sanitizers": false
+  },
+  "change": "Preserve input-keyed match caching for elements excluded by mandatory keys on every :has-dependent rightmost subject. Possible/unkeyed/nested subjects remain conservative; full cascade traversal unchanged.",
+  "regression": {
+    "before_failures": 6,
+    "after_passed": true,
+    "cases": [
+      "tag/class/id subjects",
+      "ancestor :has affecting descendant subjects",
+      "descendant mutation/restoration",
+      "nested/unkeyed/negative subjects"
+    ]
+  },
+  "qualification": {
+    "windows_core_suites": 10,
+    "linux_sanitizer_gates": 12,
+    "passed": true,
+    "host": {
+      "binary_sha256": "991a088fddc09a1037868e4638d5cc603de9d3ac4552a30955f4bf4f8243afb1",
+      "tests": [
+        {
+          "name": "import",
+          "passed": true,
+          "checks": 0
+        },
+        {
+          "name": "form_baseline_tests",
+          "passed": true,
+          "checks": 2022
+        },
+        {
+          "name": "border_tests",
+          "passed": true,
+          "checks": 1086
+        },
+        {
+          "name": "item_context_tests",
+          "passed": true,
+          "checks": 1176
+        },
+        {
+          "name": "line_height_tests",
+          "passed": true,
+          "checks": 2000
+        },
+        {
+          "name": "font_inheritance_tests",
+          "passed": true,
+          "checks": 560
+        },
+        {
+          "name": "theme_font_tests",
+          "passed": true,
+          "checks": 114
+        },
+        {
+          "name": "font_size_tests",
+          "passed": true,
+          "checks": 208
+        },
+        {
+          "name": "input_integration_tests",
+          "passed": true,
+          "checks": 40
+        },
+        {
+          "name": "keyboard_integration_tests",
+          "passed": true,
+          "checks": 35
+        },
+        {
+          "name": "ime_integration_tests",
+          "passed": true,
+          "checks": 28
+        },
+        {
+          "name": "text_editing_tests",
+          "passed": true,
+          "checks": 302
+        },
+        {
+          "name": "text_autoscroll_tests",
+          "passed": true,
+          "checks": 81
+        },
+        {
+          "name": "maxlength_tests",
+          "passed": true,
+          "checks": 44
+        },
+        {
+          "name": "form_state_tests",
+          "passed": true,
+          "checks": 506
+        },
+        {
+          "name": "select_control_tests",
+          "passed": true,
+          "checks": 66
+        },
+        {
+          "name": "select_autoscroll_tests",
+          "passed": true,
+          "checks": 33
+        },
+        {
+          "name": "typeahead_tests",
+          "passed": true,
+          "checks": 48
+        },
+        {
+          "name": "test_scene",
+          "passed": true,
+          "checks": 247
+        },
+        {
+          "name": "binding_tests",
+          "passed": true,
+          "checks": 165
+        },
+        {
+          "name": "hover_tests",
+          "passed": true,
+          "checks": 10
+        },
+        {
+          "name": "gallery_hover_test",
+          "passed": true,
+          "checks": 5
+        },
+        {
+          "name": "gallery_clock_tests",
+          "passed": true,
+          "checks": 1
+        },
+        {
+          "name": "demo_smoke",
+          "passed": true,
+          "checks": 11
+        },
+        {
+          "name": "inventory_demo",
+          "passed": true,
+          "checks": 11
+        },
+        {
+          "name": "intrinsic_size_tests",
+          "passed": true,
+          "checks": 336
+        },
+        {
+          "name": "survival_smoke",
+          "passed": true,
+          "checks": 56
+        },
+        {
+          "name": "dialog_cancel_tests",
+          "passed": true,
+          "checks": 554
+        },
+        {
+          "name": "form_validation_tests",
+          "passed": true,
+          "checks": 12907
+        },
+        {
+          "name": "timing_tests",
+          "passed": true,
+          "checks": 16
+        },
+        {
+          "name": "validity_snapshot_tests",
+          "passed": true,
+          "checks": 676
+        },
+        {
+          "name": "explicit_validity_tests",
+          "passed": true,
+          "checks": 104
+        },
+        {
+          "name": "range_selector_tests",
+          "passed": true,
+          "checks": 396
+        }
+      ],
+      "passed": true,
+      "checks": 23844
+    },
+    "sample": {
+      "passed": true,
+      "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+      "addon_sha256": "dc5eeaa7a9c37c4f6c80aa30d41c47f306f308767a2026743d89f4d3d0af8f12",
+      "templates": {
+        "debug": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+          "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
+        },
+        "release": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+          "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
+        }
+      },
+      "library_sha256": "991a088fddc09a1037868e4638d5cc603de9d3ac4552a30955f4bf4f8243afb1",
+      "runs": [
+        {
+          "name": "import",
+          "checks": null,
+          "passed": true
+        },
+        {
+          "name": "headless",
+          "checks": 92,
+          "passed": true
+        },
+        {
+          "name": "gl_compatibility",
+          "checks": 98,
+          "passed": true
+        },
+        {
+          "name": "mobile",
+          "checks": 98,
+          "passed": true
+        },
+        {
+          "name": "export",
+          "checks": null,
+          "passed": true
+        },
+        {
+          "name": "export-headless",
+          "checks": 92,
+          "passed": true
+        },
+        {
+          "name": "export-render",
+          "checks": 98,
+          "passed": true
+        }
+      ],
+      "export_pixels_match_project": true
+    },
+    "exports": [
+      "debug",
+      "release",
+      "release-embedded"
+    ],
+    "export_relocation_pixels": true
+  },
+  "stages": [
+    {
+      "case": "field_paint 6",
+      "visited": 0,
+      "hits": 0,
+      "misses": 0,
+      "uncached": 0,
+      "scoped": false,
+      "trace": "  cascade        0.001 ms\n  cascade visited 0; matches 0 hits 0 misses 0 uncached; scoped 0\n  animate        0.002 ms\n  boxes          0.000 ms\n  layout         0.000 ms\n  paint reused: 0 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.281 ms\n    font part: paint face          0.001 ms; 8 calls, 8 cache hits\n    font part: paint glyph-metrics 0.002 ms; 1 calls, 0 cache hits\n    font part: paint raster        0.021 ms; 1 calls, 0 cache hits\n    font part: paint shape         0.051 ms; 5 calls, 4 cache hits\n"
+    },
+    {
+      "case": "field_paint 11",
+      "visited": 1,
+      "hits": 0,
+      "misses": 1,
+      "uncached": 0,
+      "scoped": true,
+      "trace": "  cascade        0.047 ms\n    cascade work: 1 elements, 3 pseudo queries\n    cascade part: match          0.017 ms\n    cascade part: match copy     0.001 ms\n    cascade part: declarations   0.008 ms\n    cascade part: logical/custom 0.001 ms\n    cascade part: attr/env       0.001 ms\n    cascade part: variables      0.001 ms\n    cascade part: keywords       0.003 ms\n    cascade part: pseudos        0.001 ms\n    style allocation: 0.002 ms; 1 metadata grows, 3 value pages\n  cascade visited 1; matches 0 hits 1 misses 0 uncached; scoped 1\n    style storage: 100 styles, 1803 own values, 334 registered properties\n  animate        0.013 ms\n  boxes          0.000 ms\n  layout         0.000 ms\n  paint reused: 0 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.283 ms\n    font part: paint face          0.000 ms; 8 calls, 8 cache hits\n    font part: paint glyph-metrics 0.002 ms; 1 calls, 0 cache hits\n    font part: paint raster        0.011 ms; 1 calls, 0 cache hits\n    font part: paint shape         0.034 ms; 5 calls, 4 cache hits\n"
+    },
+    {
+      "case": "field_paint 5",
+      "visited": 1,
+      "hits": 1,
+      "misses": 0,
+      "uncached": 0,
+      "scoped": true,
+      "trace": "  cascade        0.020 ms\n    cascade work: 1 elements, 3 pseudo queries\n    cascade part: match          0.003 ms\n    cascade part: match copy     0.001 ms\n    cascade part: declarations   0.005 ms\n    cascade part: logical/custom 0.000 ms\n    cascade part: attr/env       0.001 ms\n    cascade part: variables      0.001 ms\n    cascade part: keywords       0.002 ms\n    cascade part: pseudos        0.001 ms\n    style allocation: 0.001 ms; 1 metadata grows, 0 value pages\n  cascade visited 1; matches 1 hits 0 misses 0 uncached; scoped 1\n    style storage: 100 styles, 1802 own values, 334 registered properties\n  animate        0.019 ms\n  boxes          0.000 ms\n  layout         0.000 ms\n  paint reused: 48 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.038 ms\n    font part: paint face          0.000 ms; 4 calls, 4 cache hits\n    font part: paint shape         0.000 ms; 2 calls, 2 cache hits\n"
+    },
+    {
+      "case": "parent_paint 6",
+      "visited": 0,
+      "hits": 0,
+      "misses": 0,
+      "uncached": 0,
+      "scoped": false,
+      "trace": "  cascade        0.001 ms\n  cascade visited 0; matches 0 hits 0 misses 0 uncached; scoped 0\n  animate        0.002 ms\n  boxes          0.000 ms\n  layout         0.000 ms\n  paint reused: 0 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.199 ms\n    font part: paint face          0.000 ms; 8 calls, 8 cache hits\n    font part: paint glyph-metrics 0.001 ms; 1 calls, 0 cache hits\n    font part: paint raster        0.005 ms; 1 calls, 0 cache hits\n    font part: paint shape         0.016 ms; 5 calls, 4 cache hits\n"
+    },
+    {
+      "case": "parent_paint 11",
+      "visited": 100,
+      "hits": 98,
+      "misses": 1,
+      "uncached": 1,
+      "scoped": false,
+      "trace": "  cascade        0.451 ms\n    cascade work: 100 elements, 300 pseudo queries\n    cascade part: match          0.084 ms\n    cascade part: match copy     0.019 ms\n    cascade part: declarations   0.125 ms\n    cascade part: logical/custom 0.003 ms\n    cascade part: attr/env       0.034 ms\n    cascade part: variables      0.016 ms\n    cascade part: keywords       0.053 ms\n    cascade part: pseudos        0.011 ms\n    style allocation: 0.008 ms; 100 metadata grows, 3 value pages\n  cascade visited 100; matches 98 hits 1 misses 1 uncached; scoped 0\n    style storage: 100 styles, 1803 own values, 334 registered properties\n  animate        0.018 ms\n  boxes          0.000 ms\n  layout         0.000 ms\n  paint reused: 0 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.300 ms\n    font part: paint face          0.000 ms; 8 calls, 8 cache hits\n    font part: paint glyph-metrics 0.002 ms; 1 calls, 0 cache hits\n    font part: paint raster        0.006 ms; 1 calls, 0 cache hits\n    font part: paint shape         0.040 ms; 100 calls, 99 cache hits\n"
+    },
+    {
+      "case": "parent_paint 5",
+      "visited": 100,
+      "hits": 99,
+      "misses": 0,
+      "uncached": 1,
+      "scoped": false,
+      "trace": "  cascade        0.444 ms\n    cascade work: 100 elements, 300 pseudo queries\n    cascade part: match          0.101 ms\n    cascade part: match copy     0.018 ms\n    cascade part: declarations   0.121 ms\n    cascade part: logical/custom 0.003 ms\n    cascade part: attr/env       0.033 ms\n    cascade part: variables      0.017 ms\n    cascade part: keywords       0.052 ms\n    cascade part: pseudos        0.010 ms\n    style allocation: 0.008 ms; 100 metadata grows, 2 value pages\n  cascade visited 100; matches 99 hits 0 misses 1 uncached; scoped 0\n    style storage: 100 styles, 1802 own values, 334 registered properties\n  animate        0.018 ms\n  boxes          0.000 ms\n  layout         0.000 ms\n  paint reused: 0 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.080 ms\n    font part: paint face          0.000 ms; 8 calls, 8 cache hits\n    font part: paint shape         0.006 ms; 100 calls, 100 cache hits\n"
+    },
+    {
+      "case": "parent_layout 6",
+      "visited": 0,
+      "hits": 0,
+      "misses": 0,
+      "uncached": 0,
+      "scoped": false,
+      "trace": "  cascade        0.001 ms\n  cascade visited 0; matches 0 hits 0 misses 0 uncached; scoped 0\n  animate        0.002 ms\n  boxes          0.000 ms\n  layout         0.000 ms\n  paint reused: 0 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.197 ms\n    font part: paint face          0.000 ms; 8 calls, 8 cache hits\n    font part: paint glyph-metrics 0.001 ms; 1 calls, 0 cache hits\n    font part: paint raster        0.004 ms; 1 calls, 0 cache hits\n    font part: paint shape         0.015 ms; 5 calls, 4 cache hits\n"
+    },
+    {
+      "case": "parent_layout 11",
+      "visited": 100,
+      "hits": 98,
+      "misses": 1,
+      "uncached": 1,
+      "scoped": false,
+      "trace": "  cascade        0.425 ms\n    cascade work: 100 elements, 300 pseudo queries\n    cascade part: match          0.084 ms\n    cascade part: match copy     0.014 ms\n    cascade part: declarations   0.120 ms\n    cascade part: logical/custom 0.004 ms\n    cascade part: attr/env       0.033 ms\n    cascade part: variables      0.017 ms\n    cascade part: keywords       0.052 ms\n    cascade part: pseudos        0.010 ms\n    style allocation: 0.008 ms; 100 metadata grows, 3 value pages\n  cascade visited 100; matches 98 hits 1 misses 1 uncached; scoped 0\n    style storage: 100 styles, 1802 own values, 334 registered properties\n  animate        0.016 ms\n  boxes          0.033 ms\n    layout part: flow         0.231 ms\n    layout part: positioning  0.018 ms\n    layout part: overflow     0.012 ms\n    layout part: index        0.028 ms\n  layout         0.301 ms\n    font part: layout face          0.028 ms; 1200 calls, 1200 cache hits\n  paint reused: 0 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.223 ms\n    font part: paint face          0.000 ms; 8 calls, 8 cache hits\n    font part: paint glyph-metrics 0.001 ms; 1 calls, 0 cache hits\n    font part: paint raster        0.004 ms; 1 calls, 0 cache hits\n    font part: paint shape         0.029 ms; 100 calls, 99 cache hits\n"
+    },
+    {
+      "case": "parent_layout 5",
+      "visited": 100,
+      "hits": 99,
+      "misses": 0,
+      "uncached": 1,
+      "scoped": false,
+      "trace": "  cascade        0.452 ms\n    cascade work: 100 elements, 300 pseudo queries\n    cascade part: match          0.104 ms\n    cascade part: match copy     0.015 ms\n    cascade part: declarations   0.119 ms\n    cascade part: logical/custom 0.003 ms\n    cascade part: attr/env       0.032 ms\n    cascade part: variables      0.017 ms\n    cascade part: keywords       0.051 ms\n    cascade part: pseudos        0.011 ms\n    style allocation: 0.008 ms; 100 metadata grows, 2 value pages\n  cascade visited 100; matches 99 hits 0 misses 1 uncached; scoped 0\n    style storage: 100 styles, 1802 own values, 334 registered properties\n  animate        0.014 ms\n  boxes          0.024 ms\n    layout part: flow         0.226 ms\n    layout part: positioning  0.019 ms\n    layout part: overflow     0.018 ms\n    layout part: index        0.036 ms\n  layout         0.315 ms\n    font part: layout face          0.032 ms; 1200 calls, 1200 cache hits\n  paint reused: 0 subtrees\n  textures     0 hits 0 misses, 0 held\n  paint          0.059 ms\n    font part: paint face          0.000 ms; 8 calls, 8 cache hits\n    font part: paint shape         0.005 ms; 100 calls, 100 cache hits\n"
+    }
+  ],
+  "profile": {
+    "metadata": {
+      "schema": 1,
+      "library_sha256": "991a088fddc09a1037868e4638d5cc603de9d3ac4552a30955f4bf4f8243afb1",
+      "source": {
+        "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+        "dirty": true,
+        "sha256": "45cff305c816d90c2e6a6a08055949781102a874d70b001f91c7e1abd9f3efc4"
+      },
+      "godot_cpp": {
+        "revision": null,
+        "dirty": null,
+        "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "godot_api": "4.7",
+      "precision": "single",
+      "custom_api": null,
+      "sanitizers": false
+    },
+    "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+    "fixture_sha256": "60d32bb5dd046838a99e5179bb30f3971555dd12c955a5ddeb17d966711a9235",
+    "passed": true,
+    "timing_gate": false,
+    "runs": [
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "result": {
+          "failures": [],
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.399,
+                "mean": 0.0464416666666667,
+                "p50": 0.04,
+                "p95": 0.075
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.039,
+                "mean": 0.01025,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.282,
+                "mean": 0.0478291666666667,
+                "p50": 0.041,
+                "p95": 0.078
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0102208333333333,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.297,
+                "mean": 0.0481666666666666,
+                "p50": 0.043,
+                "p95": 0.081
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.236,
+                "mean": 0.0128416666666666,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.523,
+                "mean": 0.288791666666667,
+                "p50": 0.258,
+                "p95": 0.492
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.047,
+                "mean": 0.0120333333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.101,
+                "mean": 0.0464958333333334,
+                "p50": 0.04,
+                "p95": 0.075
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.049,
+                "mean": 0.0122916666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.718,
+                "mean": 0.388716666666667,
+                "p50": 0.346,
+                "p95": 0.645
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.046,
+                "mean": 0.0120416666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.092,
+                "mean": 0.0522166666666667,
+                "p50": 0.046,
+                "p95": 0.087
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.042,
+                "mean": 0.01245,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.173,
+                "mean": 0.0795541666666666,
+                "p50": 0.071,
+                "p95": 0.134
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.087,
+                "mean": 0.0126666666666666,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.279,
+                "mean": 0.0472749999999999,
+                "p50": 0.042,
+                "p95": 0.077
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.025,
+                "mean": 0.0120583333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.58,
+                "mean": 0.2963125,
+                "p50": 0.26,
+                "p95": 0.5
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.026,
+                "mean": 0.0121791666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.181,
+                "mean": 0.0495625000000001,
+                "p50": 0.045,
+                "p95": 0.082
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.02,
+                "mean": 0.00976666666666663,
+                "p50": 0.009,
+                "p95": 0.016
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.289,
+                "mean": 0.0525583333333334,
+                "p50": 0.046,
+                "p95": 0.086
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.035,
+                "mean": 0.00992916666666663,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.202,
+                "mean": 0.0527374999999999,
+                "p50": 0.047,
+                "p95": 0.087
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0117666666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.259,
+                "mean": 0.7580125,
+                "p50": 0.717,
+                "p95": 0.987
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0117083333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.1,
+                "mean": 0.0526333333333332,
+                "p50": 0.047,
+                "p95": 0.087
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.024,
+                "mean": 0.0119666666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 2.357,
+                "mean": 1.14431666666667,
+                "p50": 1.099,
+                "p95": 1.373
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0115125,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.125,
+                "mean": 0.0542958333333334,
+                "p50": 0.049,
+                "p95": 0.092
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.024,
+                "mean": 0.0117208333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.173,
+                "mean": 0.082175,
+                "p50": 0.074,
+                "p95": 0.137
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.025,
+                "mean": 0.0117625,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.11,
+                "mean": 0.0525208333333333,
+                "p50": 0.047,
+                "p95": 0.088
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.024,
+                "mean": 0.0117958333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.674,
+                "mean": 0.871070833333333,
+                "p50": 0.831,
+                "p95": 1.133
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.026,
+                "mean": 0.01185,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            }
+          ],
+          "samples": 240,
+          "scope": "One numeric value mutation and explicit update per frame; paused document, native input disabled, 1280x720. Setup, assertions, draw submission and GPU excluded.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "result": {
+          "failures": [],
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.364,
+                "mean": 0.0477583333333334,
+                "p50": 0.041,
+                "p95": 0.081
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.202,
+                "mean": 0.0112583333333333,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.318,
+                "mean": 0.0472583333333333,
+                "p50": 0.041,
+                "p95": 0.078
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.058,
+                "mean": 0.010325,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.099,
+                "mean": 0.0442249999999999,
+                "p50": 0.042,
+                "p95": 0.075
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.038,
+                "mean": 0.0110125,
+                "p50": 0.011,
+                "p95": 0.016
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.661,
+                "mean": 0.2900625,
+                "p50": 0.262,
+                "p95": 0.467
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.035,
+                "mean": 0.0113708333333333,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.084,
+                "mean": 0.0440041666666666,
+                "p50": 0.042,
+                "p95": 0.072
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.04,
+                "mean": 0.01115,
+                "p50": 0.011,
+                "p95": 0.016
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.725,
+                "mean": 0.403933333333334,
+                "p50": 0.363,
+                "p95": 0.642
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.108,
+                "mean": 0.0128,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.105,
+                "mean": 0.05125,
+                "p50": 0.046,
+                "p95": 0.087
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.053,
+                "mean": 0.012225,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.451,
+                "mean": 0.0719416666666667,
+                "p50": 0.066,
+                "p95": 0.12
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.061,
+                "mean": 0.0108166666666666,
+                "p50": 0.011,
+                "p95": 0.018
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.133,
+                "mean": 0.0469666666666666,
+                "p50": 0.043,
+                "p95": 0.081
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.038,
+                "mean": 0.0114875,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.638,
+                "mean": 0.287241666666667,
+                "p50": 0.265,
+                "p95": 0.424
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.056,
+                "mean": 0.0117041666666666,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.096,
+                "mean": 0.0496,
+                "p50": 0.046,
+                "p95": 0.085
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.041,
+                "mean": 0.0102375,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.151,
+                "mean": 0.0515083333333332,
+                "p50": 0.047,
+                "p95": 0.086
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.089,
+                "mean": 0.010475,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.167,
+                "mean": 0.0510666666666666,
+                "p50": 0.047,
+                "p95": 0.09
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.061,
+                "mean": 0.0112666666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.284,
+                "mean": 0.757545833333333,
+                "p50": 0.713,
+                "p95": 1.077
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.046,
+                "mean": 0.0104291666666666,
+                "p50": 0.01,
+                "p95": 0.016
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.1,
+                "mean": 0.0503333333333333,
+                "p50": 0.048,
+                "p95": 0.088
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.038,
+                "mean": 0.0113291666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.652,
+                "mean": 1.1456875,
+                "p50": 1.103,
+                "p95": 1.431
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.022,
+                "mean": 0.0115583333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.099,
+                "mean": 0.0529791666666666,
+                "p50": 0.05,
+                "p95": 0.077
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0112625,
+                "p50": 0.011,
+                "p95": 0.016
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.162,
+                "mean": 0.0771583333333333,
+                "p50": 0.074,
+                "p95": 0.113
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.023,
+                "mean": 0.0108875,
+                "p50": 0.011,
+                "p95": 0.016
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.121,
+                "mean": 0.0504166666666667,
+                "p50": 0.049,
+                "p95": 0.075
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.025,
+                "mean": 0.0111583333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.435,
+                "mean": 0.87345,
+                "p50": 0.831,
+                "p95": 1.098
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0109666666666666,
+                "p50": 0.011,
+                "p95": 0.016
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            }
+          ],
+          "samples": 240,
+          "scope": "One numeric value mutation and explicit update per frame; paused document, native input disabled, 1280x720. Setup, assertions, draw submission and GPU excluded.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 1,
+        "renderer": "mobile",
+        "result": {
+          "failures": [],
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.106,
+                "mean": 0.0460583333333334,
+                "p50": 0.041,
+                "p95": 0.077
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.074,
+                "mean": 0.0106833333333333,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.27,
+                "mean": 0.0475833333333333,
+                "p50": 0.042,
+                "p95": 0.079
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.047,
+                "mean": 0.00987916666666665,
+                "p50": 0.009,
+                "p95": 0.018
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.804,
+                "mean": 0.0493833333333333,
+                "p50": 0.042,
+                "p95": 0.08
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.77,
+                "mean": 0.0158458333333333,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.59,
+                "mean": 0.2962,
+                "p50": 0.266,
+                "p95": 0.511
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.072,
+                "mean": 0.0115791666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.365,
+                "mean": 0.0495666666666666,
+                "p50": 0.043,
+                "p95": 0.08
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.102,
+                "mean": 0.012375,
+                "p50": 0.011,
+                "p95": 0.017
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.84,
+                "mean": 0.420070833333333,
+                "p50": 0.367,
+                "p95": 0.692
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.067,
+                "mean": 0.0135666666666666,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.183,
+                "mean": 0.0480375,
+                "p50": 0.044,
+                "p95": 0.084
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.038,
+                "mean": 0.01145,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.328,
+                "mean": 0.0723791666666668,
+                "p50": 0.067,
+                "p95": 0.129
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.267,
+                "mean": 0.0124833333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.093,
+                "mean": 0.0434041666666666,
+                "p50": 0.042,
+                "p95": 0.079
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.039,
+                "mean": 0.0108333333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.58,
+                "mean": 0.2758125,
+                "p50": 0.257,
+                "p95": 0.432
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.025,
+                "mean": 0.0104208333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.094,
+                "mean": 0.0426375,
+                "p50": 0.044,
+                "p95": 0.058
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.026,
+                "mean": 0.00814166666666664,
+                "p50": 0.009,
+                "p95": 0.012
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.114,
+                "mean": 0.0453958333333334,
+                "p50": 0.044,
+                "p95": 0.084
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.04,
+                "mean": 0.00854583333333331,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.092,
+                "mean": 0.0455958333333333,
+                "p50": 0.046,
+                "p95": 0.084
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.033,
+                "mean": 0.00986249999999997,
+                "p50": 0.01,
+                "p95": 0.016
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.323,
+                "mean": 0.751841666666666,
+                "p50": 0.707,
+                "p95": 1.095
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.043,
+                "mean": 0.0101416666666666,
+                "p50": 0.009,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.115,
+                "mean": 0.047075,
+                "p50": 0.046,
+                "p95": 0.088
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.024,
+                "mean": 0.0102791666666666,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.741,
+                "mean": 1.1078875,
+                "p50": 1.077,
+                "p95": 1.299
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.00936249999999998,
+                "p50": 0.009,
+                "p95": 0.013
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.124,
+                "mean": 0.0473541666666668,
+                "p50": 0.048,
+                "p95": 0.066
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.025,
+                "mean": 0.00965416666666665,
+                "p50": 0.01,
+                "p95": 0.013
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.161,
+                "mean": 0.0702416666666666,
+                "p50": 0.07,
+                "p95": 0.09
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.00987083333333331,
+                "p50": 0.01,
+                "p95": 0.013
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.092,
+                "mean": 0.0463625,
+                "p50": 0.046,
+                "p95": 0.073
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.025,
+                "mean": 0.00997916666666664,
+                "p50": 0.01,
+                "p95": 0.016
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.431,
+                "mean": 0.876174999999999,
+                "p50": 0.831,
+                "p95": 1.161
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.010475,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            }
+          ],
+          "samples": 240,
+          "scope": "One numeric value mutation and explicit update per frame; paused document, native input disabled, 1280x720. Setup, assertions, draw submission and GPU excluded.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 1,
+        "renderer": "gl_compatibility",
+        "result": {
+          "failures": [],
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.194,
+                "mean": 0.0464833333333334,
+                "p50": 0.041,
+                "p95": 0.078
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.035,
+                "mean": 0.010325,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.086,
+                "mean": 0.0460583333333333,
+                "p50": 0.042,
+                "p95": 0.077
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.04,
+                "mean": 0.010325,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.082,
+                "mean": 0.0451833333333333,
+                "p50": 0.042,
+                "p95": 0.073
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0113666666666666,
+                "p50": 0.011,
+                "p95": 0.018
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.56,
+                "mean": 0.293158333333334,
+                "p50": 0.257,
+                "p95": 0.49
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.023,
+                "mean": 0.0120416666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.108,
+                "mean": 0.0471083333333334,
+                "p50": 0.041,
+                "p95": 0.077
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0120541666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.718,
+                "mean": 0.396270833333333,
+                "p50": 0.356,
+                "p95": 0.638
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0119958333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.106,
+                "mean": 0.0524666666666666,
+                "p50": 0.046,
+                "p95": 0.087
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.057,
+                "mean": 0.0123916666666666,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.308,
+                "mean": 0.0755666666666666,
+                "p50": 0.069,
+                "p95": 0.128
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.223,
+                "mean": 0.0125958333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.231,
+                "mean": 0.0485041666666666,
+                "p50": 0.043,
+                "p95": 0.08
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.039,
+                "mean": 0.0123666666666666,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.582,
+                "mean": 0.2916375,
+                "p50": 0.264,
+                "p95": 0.453
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.039,
+                "mean": 0.0120166666666666,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.102,
+                "mean": 0.049575,
+                "p50": 0.045,
+                "p95": 0.083
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.02,
+                "mean": 0.00987083333333329,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.252,
+                "mean": 0.0515875,
+                "p50": 0.045,
+                "p95": 0.084
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.115,
+                "mean": 0.01055,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.279,
+                "mean": 0.0529791666666666,
+                "p50": 0.047,
+                "p95": 0.087
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.074,
+                "mean": 0.0120875,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.253,
+                "mean": 0.760083333333333,
+                "p50": 0.712,
+                "p95": 1.034
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.023,
+                "mean": 0.0117541666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.094,
+                "mean": 0.051525,
+                "p50": 0.046,
+                "p95": 0.085
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0118333333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.689,
+                "mean": 1.13280833333333,
+                "p50": 1.096,
+                "p95": 1.37
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0115166666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.1,
+                "mean": 0.0561833333333333,
+                "p50": 0.052,
+                "p95": 0.096
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.022,
+                "mean": 0.0118708333333333,
+                "p50": 0.011,
+                "p95": 0.021
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.188,
+                "mean": 0.0820708333333333,
+                "p50": 0.075,
+                "p95": 0.14
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.024,
+                "mean": 0.011725,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.093,
+                "mean": 0.0515416666666666,
+                "p50": 0.046,
+                "p95": 0.087
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.01175,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.405,
+                "mean": 0.891824999999999,
+                "p50": 0.831,
+                "p95": 1.279
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0117541666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            }
+          ],
+          "samples": 240,
+          "scope": "One numeric value mutation and explicit update per frame; paused document, native input disabled, 1280x720. Setup, assertions, draw submission and GPU excluded.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 2,
+        "renderer": "gl_compatibility",
+        "result": {
+          "failures": [],
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.2,
+                "mean": 0.0456500000000001,
+                "p50": 0.04,
+                "p95": 0.076
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.168,
+                "mean": 0.0104,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.094,
+                "mean": 0.0458333333333334,
+                "p50": 0.04,
+                "p95": 0.076
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.024,
+                "mean": 0.0100166666666666,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.085,
+                "mean": 0.0465958333333333,
+                "p50": 0.042,
+                "p95": 0.078
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0116833333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.551,
+                "mean": 0.290779166666667,
+                "p50": 0.254,
+                "p95": 0.49
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0117833333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.104,
+                "mean": 0.0459375000000001,
+                "p50": 0.04,
+                "p95": 0.078
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.073,
+                "mean": 0.0122541666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.807,
+                "mean": 0.376720833333333,
+                "p50": 0.345,
+                "p95": 0.644
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.02,
+                "mean": 0.0112125,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.283,
+                "mean": 0.0512541666666667,
+                "p50": 0.044,
+                "p95": 0.083
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.237,
+                "mean": 0.0127833333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.14,
+                "mean": 0.0761416666666668,
+                "p50": 0.065,
+                "p95": 0.126
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.069,
+                "mean": 0.0122791666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.091,
+                "mean": 0.0451208333333333,
+                "p50": 0.041,
+                "p95": 0.077
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.036,
+                "mean": 0.011575,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.673,
+                "mean": 0.292033333333334,
+                "p50": 0.256,
+                "p95": 0.492
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.024,
+                "mean": 0.0118291666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.109,
+                "mean": 0.0481583333333333,
+                "p50": 0.044,
+                "p95": 0.083
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.017,
+                "mean": 0.00963749999999996,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.275,
+                "mean": 0.0511166666666667,
+                "p50": 0.045,
+                "p95": 0.085
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.046,
+                "mean": 0.01015,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.108,
+                "mean": 0.0501125000000001,
+                "p50": 0.046,
+                "p95": 0.085
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0114,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.254,
+                "mean": 0.761666666666666,
+                "p50": 0.711,
+                "p95": 1.102
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0118,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.319,
+                "mean": 0.0526416666666666,
+                "p50": 0.047,
+                "p95": 0.088
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.271,
+                "mean": 0.0128875,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.756,
+                "mean": 1.146925,
+                "p50": 1.099,
+                "p95": 1.44
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.023,
+                "mean": 0.0117583333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.097,
+                "mean": 0.0533458333333334,
+                "p50": 0.048,
+                "p95": 0.091
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0116083333333333,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.151,
+                "mean": 0.0813041666666666,
+                "p50": 0.072,
+                "p95": 0.139
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.022,
+                "mean": 0.01195,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.215,
+                "mean": 0.0531833333333333,
+                "p50": 0.047,
+                "p95": 0.091
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.177,
+                "mean": 0.0126416666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.371,
+                "mean": 0.858799999999999,
+                "p50": 0.827,
+                "p95": 1.141
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0111916666666666,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            }
+          ],
+          "samples": 240,
+          "scope": "One numeric value mutation and explicit update per frame; paused document, native input disabled, 1280x720. Setup, assertions, draw submission and GPU excluded.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 2,
+        "renderer": "mobile",
+        "result": {
+          "failures": [],
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.404,
+                "mean": 0.0463458333333334,
+                "p50": 0.039,
+                "p95": 0.076
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.218,
+                "mean": 0.0107791666666666,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.598,
+                "mean": 0.0477583333333334,
+                "p50": 0.04,
+                "p95": 0.078
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.112,
+                "mean": 0.0104708333333333,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.083,
+                "mean": 0.0389291666666667,
+                "p50": 0.04,
+                "p95": 0.053
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.00975833333333329,
+                "p50": 0.01,
+                "p95": 0.013
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.689,
+                "mean": 0.276941666666667,
+                "p50": 0.25,
+                "p95": 0.5
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.047,
+                "mean": 0.0104791666666666,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.095,
+                "mean": 0.0403166666666667,
+                "p50": 0.04,
+                "p95": 0.076
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.039,
+                "mean": 0.0102958333333333,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.861,
+                "mean": 0.3644625,
+                "p50": 0.339,
+                "p95": 0.613
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.237,
+                "mean": 0.0107708333333333,
+                "p50": 0.01,
+                "p95": 0.019
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.344,
+                "mean": 0.0464208333333333,
+                "p50": 0.044,
+                "p95": 0.083
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.235,
+                "mean": 0.0114,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.306,
+                "mean": 0.070275,
+                "p50": 0.066,
+                "p95": 0.125
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.00996666666666664,
+                "p50": 0.01,
+                "p95": 0.019
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.09,
+                "mean": 0.0398333333333334,
+                "p50": 0.04,
+                "p95": 0.076
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.00979999999999998,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.625,
+                "mean": 0.279158333333333,
+                "p50": 0.251,
+                "p95": 0.497
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "mutation_ms": {
+                "max": 0.119,
+                "mean": 0.0111041666666666,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.087,
+                "mean": 0.0428458333333333,
+                "p50": 0.043,
+                "p95": 0.075
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.044,
+                "mean": 0.00829999999999997,
+                "p50": 0.009,
+                "p95": 0.012
+              },
+              "style": "none",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.088,
+                "mean": 0.043375,
+                "p50": 0.044,
+                "p95": 0.082
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.017,
+                "mean": 0.0081333333333333,
+                "p50": 0.009,
+                "p95": 0.016
+              },
+              "style": "none",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.292,
+                "mean": 0.0489583333333333,
+                "p50": 0.045,
+                "p95": 0.086
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.228,
+                "mean": 0.0109791666666666,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "field",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.399,
+                "mean": 0.793445833333334,
+                "p50": 0.733,
+                "p95": 1.106
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.073,
+                "mean": 0.0125291666666666,
+                "p50": 0.01,
+                "p95": 0.035
+              },
+              "style": "field",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.098,
+                "mean": 0.0492124999999999,
+                "p50": 0.047,
+                "p95": 0.088
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.038,
+                "mean": 0.0109875,
+                "p50": 0.011,
+                "p95": 0.02
+              },
+              "style": "parent",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.75,
+                "mean": 1.12379166666667,
+                "p50": 1.092,
+                "p95": 1.27
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.0102125,
+                "p50": 0.01,
+                "p95": 0.013
+              },
+              "style": "parent",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.124,
+                "mean": 0.0492250000000001,
+                "p50": 0.049,
+                "p95": 0.09
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.027,
+                "mean": 0.0101166666666666,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.146,
+                "mean": 0.0726833333333333,
+                "p50": 0.072,
+                "p95": 0.132
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.00993333333333331,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "field_paint",
+              "transition": "cross_range"
+            },
+            {
+              "api_ms": {
+                "max": 0.122,
+                "mean": 0.0464375,
+                "p50": 0.046,
+                "p95": 0.088
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.029,
+                "mean": 0.0100208333333333,
+                "p50": 0.01,
+                "p95": 0.02
+              },
+              "style": "parent_paint",
+              "transition": "same_range"
+            },
+            {
+              "api_ms": {
+                "max": 1.402,
+                "mean": 0.849837499999999,
+                "p50": 0.828,
+                "p95": 0.955
+              },
+              "core_updates": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "mutation_ms": {
+                "max": 0.021,
+                "mean": 0.00971666666666663,
+                "p50": 0.01,
+                "p95": 0.014
+              },
+              "style": "parent_paint",
+              "transition": "cross_range"
+            }
+          ],
+          "samples": 240,
+          "scope": "One numeric value mutation and explicit update per frame; paused document, native input disabled, 1280x720. Setup, assertions, draw submission and GPU excluded.",
+          "warmups": 60
+        }
+      }
+    ]
+  },
+  "baseline_evidence": "range-paint127.json",
+  "ordinary_performance": {
+    "passed": true,
+    "functional_passed": true,
+    "timing_passed": true,
+    "library_sha256": "991a088fddc09a1037868e4638d5cc603de9d3ac4552a30955f4bf4f8243afb1",
+    "frames": 600,
+    "warmups": 120,
+    "automatic": false,
+    "resolution": [
+      1280,
+      720
+    ],
+    "world": "static",
+    "timing_budget": {
+      "profile": "Frontier development desktop CPU targets",
+      "passed": true,
+      "errors": [],
+      "checks": [
+        {
+          "run": "gl_compatibility/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.004,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.01,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.611,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.527,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.429,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.46,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.187,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.311,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.164,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.585,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.568,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 2.053,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.318,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.258,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.243,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.272,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.103,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.188,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.144,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.566,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.511,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.858,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.101,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.291,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.235,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.256,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.101,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.184,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.772,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.418,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.341,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.677,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.004,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.01,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 2.774,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.517,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.403,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.393,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.186,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.284,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.041,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.609,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.596,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 2.035,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.004,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.008,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.564,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.495,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.389,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.403,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.171,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.325,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.047,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.61,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.585,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 2.107,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.25,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.688,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.496,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.515,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.125,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.421,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.244,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.693,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.774,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 2.047,
+          "limit_ms": 3.0,
+          "passed": true
+        }
+      ],
+      "policy": "Every measured run must meet every CPU p95 limit; no averaging away failures.",
+      "profile_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+      "definition": {
+        "schema": 1,
+        "name": "Frontier development desktop CPU targets",
+        "description": "Provisional engineering targets for this measured RTX 5080 development machine, manual updates, static scene, 1280x720. Adapter matching does not identify the CPU or certify other hardware. CPU API timings exclude total GPU/UI cost.",
+        "scope": {
+          "resolution": [
+            1280,
+            720
+          ],
+          "world": "static",
+          "automatic": false,
+          "adapter": "NVIDIA GeForce RTX 5080"
+        },
+        "renderers": [
+          "gl_compatibility",
+          "mobile"
+        ],
+        "minimum_runs": 3,
+        "minimum_frames": 600,
+        "minimum_warmups": 120,
+        "limits_ms": {
+          "ui_disabled": {
+            "api_cpu": 0.05
+          },
+          "idle": {
+            "api_cpu": 0.05
+          },
+          "clock_1hz": {
+            "changed_api_cpu": 3.0
+          },
+          "vitals_10hz": {
+            "changed_api_cpu": 1.0
+          },
+          "clock_update": {
+            "changed_api_cpu": 1.0
+          },
+          "vitals_update": {
+            "changed_api_cpu": 1.0
+          },
+          "redundant_signal": {
+            "changed_api_cpu": 0.3
+          },
+          "hover": {
+            "changed_api_cpu": 0.5
+          },
+          "inventory_sort": {
+            "changed_api_cpu": 2.0
+          },
+          "settings_typing": {
+            "changed_api_cpu": 1.0
+          },
+          "settings_slider": {
+            "changed_api_cpu": 1.0
+          },
+          "settings_toggle": {
+            "changed_api_cpu": 3.0
+          }
+        }
+      }
+    }
+  },
+  "installed": {
+    "library_sha256": "991a088fddc09a1037868e4638d5cc603de9d3ac4552a30955f4bf4f8243afb1",
+    "version": "0.1.0-preview.128",
+    "targets": {
+      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+    },
+    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed128-backup",
+    "updated_files": [
+      "ADA.md",
+      "ADA_LICENSE_APACHE.txt",
+      "ADA_LICENSE_MIT.txt",
+      "DECIMAL.md",
+      "DECIMAL_LICENSE.txt",
+      "FORM_STATE.md",
+      "GODOT_CPP_LICENSE.md",
+      "GODOT_TEXT_SHAPING.md",
+      "ICU_DATA.md",
+      "ICU_LICENSE.txt",
+      "IME.md",
+      "LICENSE.md",
+      "README.md",
+      "TEXT_EDITING.md",
+      "UNICODE_DATA.md",
+      "UNICODE_LICENSE.txt",
+      "bin/weva_godot.dll",
+      "bin/weva_godot.dll.build.json",
+      "build.json"
+    ]
+  },
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 554,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 506,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 165,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 16,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 92,
+      "passed": true
+    }
+  ],
+  "limits": [
+    "Parent case still visits100elements. Only match-cache scope changed.",
+    "48-field parent paint p95 .955\u20131.279ms vs previous1.175\u20131.743ms; unpaired ranges overlap, do not imply a universal percentage improvement.",
+    "Range diagnostic excludes native input, setup, assertions, drawing/GPU; ordinary budget covers static/manual720p RTX5080 only.",
+    "Full release, broad browser parity and device/lifecycle acceptance remain open."
+  ]
+}

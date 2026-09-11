@@ -1,0 +1,8 @@
+body { margin: 0; background: #202830 }
+div { width: 300px; height: 90px; margin: 10px; background: #c0785a }
+/* one side only: should be a full-width band, NOT tapered */
+.a { border-bottom: 20px solid #113355 }
+/* one side only, with a radius */
+.b { border-bottom: 20px solid #113355; border-radius: 11px }
+/* two adjacent sides: the mitre here is CORRECT */
+.c { border-bottom: 20px solid #113355; border-left: 20px solid #55aa33 }

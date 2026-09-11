@@ -1,0 +1,56 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "action": "remove-a",
+      "invalid": [
+        "a",
+        "b"
+      ],
+      "focus": "b",
+      "open": true
+    },
+    {
+      "action": "remove-b",
+      "invalid": [
+        "a"
+      ],
+      "focus": "a",
+      "open": true
+    },
+    {
+      "action": "remove-form",
+      "invalid": [
+        "a",
+        "b"
+      ],
+      "focus": "",
+      "open": true
+    },
+    {
+      "action": "reload",
+      "invalid": [
+        "a",
+        "b"
+      ],
+      "focus": "",
+      "open": true
+    },
+    {
+      "action": "disable-b",
+      "invalid": [
+        "a"
+      ],
+      "focus": "a",
+      "open": true
+    },
+    {
+      "action": "fill-b",
+      "invalid": [
+        "a"
+      ],
+      "focus": "a",
+      "open": true
+    }
+  ]
+}

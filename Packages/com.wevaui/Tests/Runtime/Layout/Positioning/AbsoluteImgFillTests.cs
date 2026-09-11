@@ -308,5 +308,66 @@ namespace Weva.Tests.Layout.Positioning {
             var root = le.Layout(doc, e => styles.TryGetValue(e, out var cs) ? cs : null, ctx);
             return (root, styles, ctx, doc);
         }
+        // CSS Display 3 §2.7: an out-of-flow box's OUTER display blockifies.
+        // The engine only converted plain `inline`, so anything that is
+        // `inline-block` — <img>, <button>, <input> by the UA sheet, or an
+        // author's badge — stayed an inline atom on a line box and was
+        // shrink-to-fit sized. For a replaced element with no loaded source
+        // that is ZERO width, so an avatar pinned with `inset: 4px;
+        // width: calc(100% - 8px)` rendered 0 wide with a correct height
+        // (advanced-dashboard, found by the godot-port oracle).
+        [Test]
+        public void Absolutely_positioned_inline_block_takes_its_explicit_width() {
+            const string css = @"
+                .cb { position: relative; width: 64px; height: 64px; }
+                .pin { position: absolute; inset: 4px;
+                       width: calc(100% - 8px); height: calc(100% - 8px); }
+                .badge { display: inline-block; position: absolute;
+                         left: 0; top: 0; width: 30px; height: 30px; }
+            ";
+            var (root, _, _) = Build(
+                "<div class=\"cb\"><img class=\"pin\" src=\"\" alt=\"\"/></div>"
+                + "<div class=\"cb\"><div class=\"badge\"></div></div>"
+                + "<div class=\"cb\"><input class=\"badge\"/></div>",
+                css, viewportWidth: 800);
+
+            var boxes = AllBoxes(root);
+            foreach (var cls in new[] { "pin", "badge" }) {
+                foreach (var b in boxes) {
+                    if (b.Element == null) continue;
+                    if ((b.Element.GetAttribute("class") ?? "") != cls) continue;
+                    Assert.That(b.Width, Is.GreaterThan(0),
+                        cls + " must not shrink-to-fit to zero once blockified");
+                }
+            }
+
+            BlockBox Find(string cls) {
+                foreach (var b in boxes) {
+                    if (b is BlockBox bb && bb.Element != null
+                        && (bb.Element.GetAttribute("class") ?? "") == cls) return bb;
+                }
+                return null;
+            }
+            var pin = Find("pin");
+            Assert.That(pin, Is.Not.Null);
+            Assert.That(pin.Width, Is.EqualTo(56).Within(0.001));
+            Assert.That(pin.Height, Is.EqualTo(56).Within(0.001));
+            // Blockified means block-LEVEL: it must no longer be marked as an
+            // inline-block atom, which is what put it on a line box.
+            Assert.That(pin.IsInlineBlock, Is.False,
+                "an out-of-flow box is block-level, never an inline atom");
+
+            var badges = new List<BlockBox>();
+            foreach (var b in boxes) {
+                if (b is BlockBox bb && bb.Element != null
+                    && (bb.Element.GetAttribute("class") ?? "") == "badge") badges.Add(bb);
+            }
+            Assert.That(badges.Count, Is.EqualTo(2), "the div and the input");
+            foreach (var b in badges) {
+                Assert.That(b.Width, Is.EqualTo(30).Within(0.001));
+                Assert.That(b.IsInlineBlock, Is.False);
+            }
+        }
+
     }
 }

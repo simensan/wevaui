@@ -1,0 +1,617 @@
+{
+  "scope": "Attribution of candidate217 automatic 1080p 3D whole-frame timing to UI versus scene, computed from the existing profile summary. No new measurements; the failed 268/276 gate stands.",
+  "source_summary": ".utmp/safe-engine71/interpolation217-3d/summary.json",
+  "library_sha256": "02664d4b022e1c9d1826aea403a17a6dd05ef8ec93a01275e2a8a2c37d49208a",
+  "frames_per_workload": 600,
+  "limit_ms": 16.666666666666668,
+  "failed_checks": [
+    {
+      "run": "gl_compatibility/1",
+      "workload": "vitals_10hz",
+      "metric": "changed_whole_frame",
+      "p95_ms": 16.945,
+      "over_limit_ms": 0.278
+    },
+    {
+      "run": "gl_compatibility/1",
+      "workload": "settings_slider",
+      "metric": "whole_frame",
+      "p95_ms": 16.703,
+      "over_limit_ms": 0.036
+    },
+    {
+      "run": "gl_compatibility/1",
+      "workload": "settings_slider",
+      "metric": "changed_whole_frame",
+      "p95_ms": 16.966,
+      "over_limit_ms": 0.299
+    },
+    {
+      "run": "gl_compatibility/2",
+      "workload": "redundant_signal",
+      "metric": "whole_frame",
+      "p95_ms": 16.756,
+      "over_limit_ms": 0.089
+    },
+    {
+      "run": "gl_compatibility/2",
+      "workload": "redundant_signal",
+      "metric": "changed_whole_frame",
+      "p95_ms": 16.756,
+      "over_limit_ms": 0.089
+    },
+    {
+      "run": "gl_compatibility/2",
+      "workload": "settings_slider",
+      "metric": "whole_frame",
+      "p95_ms": 17.023,
+      "over_limit_ms": 0.356
+    },
+    {
+      "run": "gl_compatibility/2",
+      "workload": "settings_slider",
+      "metric": "changed_whole_frame",
+      "p95_ms": 17.072,
+      "over_limit_ms": 0.405
+    },
+    {
+      "run": "gl_compatibility/2",
+      "workload": "settings_toggle",
+      "metric": "changed_whole_frame",
+      "p95_ms": 16.781,
+      "over_limit_ms": 0.114
+    }
+  ],
+  "by_renderer": {
+    "gl_compatibility": {
+      "ui_disabled_whole_frame_p95_ms": [
+        7.893,
+        15.99,
+        15.795
+      ],
+      "ui_delta_min_ms": -1.107,
+      "ui_delta_median_ms": -0.218,
+      "ui_delta_max_ms": 8.81,
+      "api_cpu_p95_max_ms": 1.376
+    },
+    "mobile": {
+      "ui_disabled_whole_frame_p95_ms": [
+        14.324,
+        14.176,
+        15.037
+      ],
+      "ui_delta_min_ms": -3.572,
+      "ui_delta_median_ms": -0.725,
+      "ui_delta_max_ms": 1.209,
+      "api_cpu_p95_max_ms": 1.604
+    }
+  },
+  "runs": [
+    {
+      "run": "gl_compatibility/1",
+      "ui_disabled_whole_frame_p95_ms": 7.893,
+      "ui_disabled_max_ms": 11.173,
+      "scene_draw_calls": 1126,
+      "scene_primitives": 115490,
+      "workloads": {
+        "idle": {
+          "whole_frame_p95_ms": 16.456,
+          "delta_vs_ui_disabled_ms": 8.563,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.0011,
+          "canvas_draw_calls": 42
+        },
+        "clock_1hz": {
+          "whole_frame_p95_ms": 16.619,
+          "delta_vs_ui_disabled_ms": 8.726,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.0011,
+          "canvas_draw_calls": 42
+        },
+        "vitals_10hz": {
+          "whole_frame_p95_ms": 16.556,
+          "delta_vs_ui_disabled_ms": 8.663,
+          "api_cpu_p95_ms": 0.023,
+          "core_cpu_p95_ms": 0.1951,
+          "canvas_draw_calls": 42
+        },
+        "clock_update": {
+          "whole_frame_p95_ms": 15.826,
+          "delta_vs_ui_disabled_ms": 7.933,
+          "api_cpu_p95_ms": 0.04,
+          "core_cpu_p95_ms": 0.2445,
+          "canvas_draw_calls": 42
+        },
+        "vitals_update": {
+          "whole_frame_p95_ms": 15.307,
+          "delta_vs_ui_disabled_ms": 7.414,
+          "api_cpu_p95_ms": 0.035,
+          "core_cpu_p95_ms": 0.2713,
+          "canvas_draw_calls": 42
+        },
+        "redundant_signal": {
+          "whole_frame_p95_ms": 15.678,
+          "delta_vs_ui_disabled_ms": 7.785,
+          "api_cpu_p95_ms": 0.011,
+          "core_cpu_p95_ms": 0.0009,
+          "canvas_draw_calls": 42
+        },
+        "hover": {
+          "whole_frame_p95_ms": 15.011,
+          "delta_vs_ui_disabled_ms": 7.118,
+          "api_cpu_p95_ms": 0.173,
+          "core_cpu_p95_ms": 0.1771,
+          "canvas_draw_calls": 42
+        },
+        "inventory_sort": {
+          "whole_frame_p95_ms": 15.494,
+          "delta_vs_ui_disabled_ms": 7.601,
+          "api_cpu_p95_ms": 0.256,
+          "core_cpu_p95_ms": 0.4309,
+          "canvas_draw_calls": 44
+        },
+        "settings_typing": {
+          "whole_frame_p95_ms": 16.165,
+          "delta_vs_ui_disabled_ms": 8.272,
+          "api_cpu_p95_ms": 0.403,
+          "core_cpu_p95_ms": 0.1439,
+          "canvas_draw_calls": 54
+        },
+        "settings_slider": {
+          "whole_frame_p95_ms": 16.703,
+          "delta_vs_ui_disabled_ms": 8.81,
+          "api_cpu_p95_ms": 0.2,
+          "core_cpu_p95_ms": 0.1757,
+          "canvas_draw_calls": 52
+        },
+        "settings_toggle": {
+          "whole_frame_p95_ms": 16.251,
+          "delta_vs_ui_disabled_ms": 8.358,
+          "api_cpu_p95_ms": 1.376,
+          "core_cpu_p95_ms": 0.6904,
+          "canvas_draw_calls": 42
+        }
+      }
+    },
+    {
+      "run": "mobile/1",
+      "ui_disabled_whole_frame_p95_ms": 14.324,
+      "ui_disabled_max_ms": 19.867,
+      "scene_draw_calls": 402,
+      "scene_primitives": 115490,
+      "workloads": {
+        "idle": {
+          "whole_frame_p95_ms": 14.865,
+          "delta_vs_ui_disabled_ms": 0.541,
+          "api_cpu_p95_ms": 0.003,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        },
+        "clock_1hz": {
+          "whole_frame_p95_ms": 15.066,
+          "delta_vs_ui_disabled_ms": 0.742,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        },
+        "vitals_10hz": {
+          "whole_frame_p95_ms": 13.973,
+          "delta_vs_ui_disabled_ms": -0.351,
+          "api_cpu_p95_ms": 0.023,
+          "core_cpu_p95_ms": 0.1844,
+          "canvas_draw_calls": 42
+        },
+        "clock_update": {
+          "whole_frame_p95_ms": 12.07,
+          "delta_vs_ui_disabled_ms": -2.254,
+          "api_cpu_p95_ms": 0.037,
+          "core_cpu_p95_ms": 0.2255,
+          "canvas_draw_calls": 42
+        },
+        "vitals_update": {
+          "whole_frame_p95_ms": 12.115,
+          "delta_vs_ui_disabled_ms": -2.209,
+          "api_cpu_p95_ms": 0.034,
+          "core_cpu_p95_ms": 0.2578,
+          "canvas_draw_calls": 42
+        },
+        "redundant_signal": {
+          "whole_frame_p95_ms": 14.204,
+          "delta_vs_ui_disabled_ms": -0.12,
+          "api_cpu_p95_ms": 0.011,
+          "core_cpu_p95_ms": 0.0008,
+          "canvas_draw_calls": 42
+        },
+        "hover": {
+          "whole_frame_p95_ms": 12.667,
+          "delta_vs_ui_disabled_ms": -1.657,
+          "api_cpu_p95_ms": 0.138,
+          "core_cpu_p95_ms": 0.162,
+          "canvas_draw_calls": 42
+        },
+        "inventory_sort": {
+          "whole_frame_p95_ms": 13.891,
+          "delta_vs_ui_disabled_ms": -0.433,
+          "api_cpu_p95_ms": 0.283,
+          "core_cpu_p95_ms": 0.416,
+          "canvas_draw_calls": 44
+        },
+        "settings_typing": {
+          "whole_frame_p95_ms": 14.69,
+          "delta_vs_ui_disabled_ms": 0.366,
+          "api_cpu_p95_ms": 0.322,
+          "core_cpu_p95_ms": 0.1163,
+          "canvas_draw_calls": 54
+        },
+        "settings_slider": {
+          "whole_frame_p95_ms": 14.307,
+          "delta_vs_ui_disabled_ms": -0.017,
+          "api_cpu_p95_ms": 0.156,
+          "core_cpu_p95_ms": 0.1111,
+          "canvas_draw_calls": 52
+        },
+        "settings_toggle": {
+          "whole_frame_p95_ms": 13.616,
+          "delta_vs_ui_disabled_ms": -0.708,
+          "api_cpu_p95_ms": 1.186,
+          "core_cpu_p95_ms": 0.6018,
+          "canvas_draw_calls": 42
+        }
+      }
+    },
+    {
+      "run": "mobile/2",
+      "ui_disabled_whole_frame_p95_ms": 14.176,
+      "ui_disabled_max_ms": 16.319,
+      "scene_draw_calls": 402,
+      "scene_primitives": 115490,
+      "workloads": {
+        "settings_toggle": {
+          "whole_frame_p95_ms": 13.066,
+          "delta_vs_ui_disabled_ms": -1.11,
+          "api_cpu_p95_ms": 1.604,
+          "core_cpu_p95_ms": 0.8144,
+          "canvas_draw_calls": 42
+        },
+        "settings_slider": {
+          "whole_frame_p95_ms": 14.091,
+          "delta_vs_ui_disabled_ms": -0.085,
+          "api_cpu_p95_ms": 0.163,
+          "core_cpu_p95_ms": 0.1176,
+          "canvas_draw_calls": 52
+        },
+        "settings_typing": {
+          "whole_frame_p95_ms": 14.335,
+          "delta_vs_ui_disabled_ms": 0.159,
+          "api_cpu_p95_ms": 0.362,
+          "core_cpu_p95_ms": 0.1277,
+          "canvas_draw_calls": 54
+        },
+        "inventory_sort": {
+          "whole_frame_p95_ms": 12.915,
+          "delta_vs_ui_disabled_ms": -1.261,
+          "api_cpu_p95_ms": 0.278,
+          "core_cpu_p95_ms": 0.4099,
+          "canvas_draw_calls": 44
+        },
+        "hover": {
+          "whole_frame_p95_ms": 13.451,
+          "delta_vs_ui_disabled_ms": -0.725,
+          "api_cpu_p95_ms": 0.134,
+          "core_cpu_p95_ms": 0.159,
+          "canvas_draw_calls": 42
+        },
+        "redundant_signal": {
+          "whole_frame_p95_ms": 15.385,
+          "delta_vs_ui_disabled_ms": 1.209,
+          "api_cpu_p95_ms": 0.011,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        },
+        "vitals_update": {
+          "whole_frame_p95_ms": 12.828,
+          "delta_vs_ui_disabled_ms": -1.348,
+          "api_cpu_p95_ms": 0.027,
+          "core_cpu_p95_ms": 0.2186,
+          "canvas_draw_calls": 42
+        },
+        "clock_update": {
+          "whole_frame_p95_ms": 12.807,
+          "delta_vs_ui_disabled_ms": -1.369,
+          "api_cpu_p95_ms": 0.038,
+          "core_cpu_p95_ms": 0.1999,
+          "canvas_draw_calls": 42
+        },
+        "vitals_10hz": {
+          "whole_frame_p95_ms": 13.769,
+          "delta_vs_ui_disabled_ms": -0.407,
+          "api_cpu_p95_ms": 0.025,
+          "core_cpu_p95_ms": 0.1625,
+          "canvas_draw_calls": 42
+        },
+        "clock_1hz": {
+          "whole_frame_p95_ms": 14.858,
+          "delta_vs_ui_disabled_ms": 0.682,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        },
+        "idle": {
+          "whole_frame_p95_ms": 14.529,
+          "delta_vs_ui_disabled_ms": 0.353,
+          "api_cpu_p95_ms": 0.003,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        }
+      }
+    },
+    {
+      "run": "gl_compatibility/2",
+      "ui_disabled_whole_frame_p95_ms": 15.99,
+      "ui_disabled_max_ms": 31.828,
+      "scene_draw_calls": 1126,
+      "scene_primitives": 115490,
+      "workloads": {
+        "settings_toggle": {
+          "whole_frame_p95_ms": 15.944,
+          "delta_vs_ui_disabled_ms": -0.046,
+          "api_cpu_p95_ms": 1.258,
+          "core_cpu_p95_ms": 0.6539,
+          "canvas_draw_calls": 42
+        },
+        "settings_slider": {
+          "whole_frame_p95_ms": 17.023,
+          "delta_vs_ui_disabled_ms": 1.033,
+          "api_cpu_p95_ms": 0.163,
+          "core_cpu_p95_ms": 0.1349,
+          "canvas_draw_calls": 52
+        },
+        "settings_typing": {
+          "whole_frame_p95_ms": 16.052,
+          "delta_vs_ui_disabled_ms": 0.062,
+          "api_cpu_p95_ms": 0.365,
+          "core_cpu_p95_ms": 0.1389,
+          "canvas_draw_calls": 54
+        },
+        "inventory_sort": {
+          "whole_frame_p95_ms": 15.28,
+          "delta_vs_ui_disabled_ms": -0.71,
+          "api_cpu_p95_ms": 0.352,
+          "core_cpu_p95_ms": 0.4529,
+          "canvas_draw_calls": 44
+        },
+        "hover": {
+          "whole_frame_p95_ms": 15.648,
+          "delta_vs_ui_disabled_ms": -0.342,
+          "api_cpu_p95_ms": 0.174,
+          "core_cpu_p95_ms": 0.1786,
+          "canvas_draw_calls": 42
+        },
+        "redundant_signal": {
+          "whole_frame_p95_ms": 16.756,
+          "delta_vs_ui_disabled_ms": 0.766,
+          "api_cpu_p95_ms": 0.011,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        },
+        "vitals_update": {
+          "whole_frame_p95_ms": 15.263,
+          "delta_vs_ui_disabled_ms": -0.727,
+          "api_cpu_p95_ms": 0.036,
+          "core_cpu_p95_ms": 0.2681,
+          "canvas_draw_calls": 42
+        },
+        "clock_update": {
+          "whole_frame_p95_ms": 14.936,
+          "delta_vs_ui_disabled_ms": -1.054,
+          "api_cpu_p95_ms": 0.039,
+          "core_cpu_p95_ms": 0.2356,
+          "canvas_draw_calls": 42
+        },
+        "vitals_10hz": {
+          "whole_frame_p95_ms": 14.969,
+          "delta_vs_ui_disabled_ms": -1.021,
+          "api_cpu_p95_ms": 0.023,
+          "core_cpu_p95_ms": 0.1873,
+          "canvas_draw_calls": 42
+        },
+        "clock_1hz": {
+          "whole_frame_p95_ms": 15.68,
+          "delta_vs_ui_disabled_ms": -0.31,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.0011,
+          "canvas_draw_calls": 42
+        },
+        "idle": {
+          "whole_frame_p95_ms": 15.436,
+          "delta_vs_ui_disabled_ms": -0.554,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.0011,
+          "canvas_draw_calls": 42
+        }
+      }
+    },
+    {
+      "run": "gl_compatibility/3",
+      "ui_disabled_whole_frame_p95_ms": 15.795,
+      "ui_disabled_max_ms": 17.846,
+      "scene_draw_calls": 1126,
+      "scene_primitives": 115490,
+      "workloads": {
+        "idle": {
+          "whole_frame_p95_ms": 15.792,
+          "delta_vs_ui_disabled_ms": -0.003,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        },
+        "clock_1hz": {
+          "whole_frame_p95_ms": 15.563,
+          "delta_vs_ui_disabled_ms": -0.232,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        },
+        "vitals_10hz": {
+          "whole_frame_p95_ms": 15.577,
+          "delta_vs_ui_disabled_ms": -0.218,
+          "api_cpu_p95_ms": 0.023,
+          "core_cpu_p95_ms": 0.1902,
+          "canvas_draw_calls": 42
+        },
+        "clock_update": {
+          "whole_frame_p95_ms": 14.903,
+          "delta_vs_ui_disabled_ms": -0.892,
+          "api_cpu_p95_ms": 0.039,
+          "core_cpu_p95_ms": 0.2366,
+          "canvas_draw_calls": 42
+        },
+        "vitals_update": {
+          "whole_frame_p95_ms": 14.688,
+          "delta_vs_ui_disabled_ms": -1.107,
+          "api_cpu_p95_ms": 0.035,
+          "core_cpu_p95_ms": 0.2611,
+          "canvas_draw_calls": 42
+        },
+        "redundant_signal": {
+          "whole_frame_p95_ms": 15.199,
+          "delta_vs_ui_disabled_ms": -0.596,
+          "api_cpu_p95_ms": 0.011,
+          "core_cpu_p95_ms": 0.0009,
+          "canvas_draw_calls": 42
+        },
+        "hover": {
+          "whole_frame_p95_ms": 15.203,
+          "delta_vs_ui_disabled_ms": -0.592,
+          "api_cpu_p95_ms": 0.171,
+          "core_cpu_p95_ms": 0.1675,
+          "canvas_draw_calls": 42
+        },
+        "inventory_sort": {
+          "whole_frame_p95_ms": 15.301,
+          "delta_vs_ui_disabled_ms": -0.494,
+          "api_cpu_p95_ms": 0.267,
+          "core_cpu_p95_ms": 0.4277,
+          "canvas_draw_calls": 44
+        },
+        "settings_typing": {
+          "whole_frame_p95_ms": 15.497,
+          "delta_vs_ui_disabled_ms": -0.298,
+          "api_cpu_p95_ms": 0.595,
+          "core_cpu_p95_ms": 0.225,
+          "canvas_draw_calls": 54
+        },
+        "settings_slider": {
+          "whole_frame_p95_ms": 15.576,
+          "delta_vs_ui_disabled_ms": -0.219,
+          "api_cpu_p95_ms": 0.164,
+          "core_cpu_p95_ms": 0.121,
+          "canvas_draw_calls": 52
+        },
+        "settings_toggle": {
+          "whole_frame_p95_ms": 15.38,
+          "delta_vs_ui_disabled_ms": -0.415,
+          "api_cpu_p95_ms": 1.281,
+          "core_cpu_p95_ms": 0.653,
+          "canvas_draw_calls": 42
+        }
+      }
+    },
+    {
+      "run": "mobile/3",
+      "ui_disabled_whole_frame_p95_ms": 15.037,
+      "ui_disabled_max_ms": 20.725,
+      "scene_draw_calls": 402,
+      "scene_primitives": 115490,
+      "workloads": {
+        "idle": {
+          "whole_frame_p95_ms": 14.684,
+          "delta_vs_ui_disabled_ms": -0.353,
+          "api_cpu_p95_ms": 0.003,
+          "core_cpu_p95_ms": 0.001,
+          "canvas_draw_calls": 42
+        },
+        "clock_1hz": {
+          "whole_frame_p95_ms": 14.849,
+          "delta_vs_ui_disabled_ms": -0.188,
+          "api_cpu_p95_ms": 0.004,
+          "core_cpu_p95_ms": 0.0011,
+          "canvas_draw_calls": 42
+        },
+        "vitals_10hz": {
+          "whole_frame_p95_ms": 14.152,
+          "delta_vs_ui_disabled_ms": -0.885,
+          "api_cpu_p95_ms": 0.024,
+          "core_cpu_p95_ms": 0.1607,
+          "canvas_draw_calls": 42
+        },
+        "clock_update": {
+          "whole_frame_p95_ms": 12.291,
+          "delta_vs_ui_disabled_ms": -2.746,
+          "api_cpu_p95_ms": 0.037,
+          "core_cpu_p95_ms": 0.1809,
+          "canvas_draw_calls": 42
+        },
+        "vitals_update": {
+          "whole_frame_p95_ms": 11.465,
+          "delta_vs_ui_disabled_ms": -3.572,
+          "api_cpu_p95_ms": 0.033,
+          "core_cpu_p95_ms": 0.2545,
+          "canvas_draw_calls": 42
+        },
+        "redundant_signal": {
+          "whole_frame_p95_ms": 14.118,
+          "delta_vs_ui_disabled_ms": -0.919,
+          "api_cpu_p95_ms": 0.008,
+          "core_cpu_p95_ms": 0.0007,
+          "canvas_draw_calls": 42
+        },
+        "hover": {
+          "whole_frame_p95_ms": 11.765,
+          "delta_vs_ui_disabled_ms": -3.272,
+          "api_cpu_p95_ms": 0.137,
+          "core_cpu_p95_ms": 0.137,
+          "canvas_draw_calls": 42
+        },
+        "inventory_sort": {
+          "whole_frame_p95_ms": 13.312,
+          "delta_vs_ui_disabled_ms": -1.725,
+          "api_cpu_p95_ms": 0.28,
+          "core_cpu_p95_ms": 0.4108,
+          "canvas_draw_calls": 44
+        },
+        "settings_typing": {
+          "whole_frame_p95_ms": 13.981,
+          "delta_vs_ui_disabled_ms": -1.056,
+          "api_cpu_p95_ms": 0.334,
+          "core_cpu_p95_ms": 0.1277,
+          "canvas_draw_calls": 54
+        },
+        "settings_slider": {
+          "whole_frame_p95_ms": 14.018,
+          "delta_vs_ui_disabled_ms": -1.019,
+          "api_cpu_p95_ms": 0.158,
+          "core_cpu_p95_ms": 0.1106,
+          "canvas_draw_calls": 52
+        },
+        "settings_toggle": {
+          "whole_frame_p95_ms": 14.151,
+          "delta_vs_ui_disabled_ms": -0.886,
+          "api_cpu_p95_ms": 1.193,
+          "core_cpu_p95_ms": 0.6143,
+          "canvas_draw_calls": 42
+        }
+      }
+    }
+  ],
+  "findings": [
+    "The UI-disabled baseline (same busy scene, no UI node) reaches 14.2\u201316.0 ms p95 in five of six runs; one OpenGL run measured 7.9 ms for that first workload only.",
+    "Workloads with the UI active sit within about \u00b11.5 ms of each run's own UI-disabled baseline (the +8.8 ms outlier is the OpenGL run whose baseline measured 7.9 ms); UI API CPU p95 never exceeds 1.61 ms and core CPU never exceeds 0.82 ms.",
+    "All eight failing checks are OpenGL and exceed the limit by 0.04\u20130.41 ms, less than the run-to-run spread of the UI-disabled baseline itself.",
+    "The 16.667 ms whole-frame limit therefore leaves under 1 ms for the UI in this scene; the failures measure scene plus presentation cost, with no UI-attributable regression visible in the data."
+  ],
+  "limitations": [
+    "A derived attribution, not a controlled experiment; the gate remains failed as documented.",
+    "Windows RTX 5080 only."
+  ]
+}

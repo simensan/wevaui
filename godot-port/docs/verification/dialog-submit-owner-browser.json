@@ -1,0 +1,53 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "action": "owner-get",
+      "open": false,
+      "result": "yes",
+      "submits": 1
+    },
+    {
+      "action": "owner-dialog",
+      "open": false,
+      "result": "yes",
+      "submits": 1
+    },
+    {
+      "action": "owner-missing",
+      "open": false,
+      "result": "yes",
+      "submits": 1
+    },
+    {
+      "action": "remove-button",
+      "open": false,
+      "result": "yes",
+      "submits": 1
+    },
+    {
+      "action": "type-button",
+      "open": false,
+      "result": "yes",
+      "submits": 1
+    },
+    {
+      "action": "form-get",
+      "open": true,
+      "result": "initial",
+      "submits": 1
+    },
+    {
+      "action": "override-get",
+      "open": true,
+      "result": "initial",
+      "submits": 1
+    },
+    {
+      "action": "override-dialog",
+      "open": false,
+      "result": "yes",
+      "submits": 1
+    }
+  ]
+}

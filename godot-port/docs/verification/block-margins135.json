@@ -1,0 +1,172 @@
+{
+  "version": "0.1.0-preview.135",
+  "installed": false,
+  "abi_minor": 20,
+  "library_sha256": "37e56d150ed2171828844483ba9f0c1faa43596861d93986143f52f90145cb0e",
+  "source_sha256": "24fe3fdc2e69b9f0ed4c8eac887fbd5f49250c495300ccb55129b4fee9f2cbf7",
+  "changes": [
+    "Single auto inline margin absorbs positive available space in normal block flow and columns",
+    "Containing-block direction selects the overflow/overconstrained edge",
+    "Oracle Godot scenes now explicitly match captured viewport"
+  ],
+  "focused_chrome": {
+    "browser": "Chrome/152.0.7977.83",
+    "viewport": [
+      1280,
+      720
+    ],
+    "initial_cases": 96,
+    "live_steps": 30,
+    "native_checks": 1009,
+    "baseline_failures": 44,
+    "passed": true,
+    "profile": "Unbreakable empty cards; block, flow-root and columns; both directions; fixed/min/max widths",
+    "fragmentation_probe_preserved": true,
+    "tolerance_changed": false
+  },
+  "core": {
+    "suites": 12,
+    "main_checks": 480741,
+    "incremental_full_comparisons": 271,
+    "passed": true
+  },
+  "sanitizers": {
+    "gates": 14,
+    "passed": true,
+    "symbolization": false
+  },
+  "host": {
+    "entries": 36,
+    "checks": 27811,
+    "passed": true,
+    "multicol_sizing_checks": 2289
+  },
+  "broad_layout": {
+    "fixtures": 309,
+    "agree": 287,
+    "different": 22,
+    "changed_reports": [],
+    "profile": "Frozen Chrome152 synthetic font / Weva UA overlay; not native appearance"
+  },
+  "sample_and_native_exports_passed": true,
+  "limits": [
+    "Fragmentation/vertical writing remain incomplete",
+    "Float avoidance and other formatting contexts need their own broader RTL coverage",
+    "Device, busy3D, lifecycle and release qualification remain open"
+  ],
+  "performance": {
+    "runs": 6,
+    "passed": false,
+    "functional_passed": true,
+    "gates": 72,
+    "passed_gates": 71,
+    "failures": [
+      {
+        "run": "mobile/3",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.521,
+        "limit_ms": 0.5,
+        "passed": false
+      }
+    ],
+    "budget_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+    "scope": "Manual/static1280x720 RTX5080 development desktop API CPU"
+  },
+  "hover_diagnostics": {
+    "uninstrumented_paired": [
+      {
+        "run": "0-134",
+        "api_p95_ms": 0.504,
+        "core_p95_ms": 0.3125,
+        "api_median_ms": 0.17
+      },
+      {
+        "run": "1-135",
+        "api_p95_ms": 0.42,
+        "core_p95_ms": 0.288800000000002,
+        "api_median_ms": 0.138
+      },
+      {
+        "run": "2-135",
+        "api_p95_ms": 0.259,
+        "core_p95_ms": 0.123000000000005,
+        "api_median_ms": 0.13
+      },
+      {
+        "run": "3-134",
+        "api_p95_ms": 0.486,
+        "core_p95_ms": 0.316000000000003,
+        "api_median_ms": 0.13
+      }
+    ],
+    "instrumented_stages": {
+      "134": {
+        "cascade": {
+          "samples": 600,
+          "median_ms": 0.026,
+          "p95_ms": 0.07,
+          "max_ms": 0.448
+        },
+        "animate": {
+          "samples": 600,
+          "median_ms": 0.005,
+          "p95_ms": 0.007,
+          "max_ms": 0.346
+        },
+        "boxes": {
+          "samples": 600,
+          "median_ms": 0.0,
+          "p95_ms": 0.0,
+          "max_ms": 0.0
+        },
+        "layout": {
+          "samples": 600,
+          "median_ms": 0.0,
+          "p95_ms": 0.0,
+          "max_ms": 0.0
+        },
+        "paint": {
+          "samples": 600,
+          "median_ms": 0.047,
+          "p95_ms": 0.346,
+          "max_ms": 0.522
+        }
+      },
+      "135": {
+        "cascade": {
+          "samples": 600,
+          "median_ms": 0.028,
+          "p95_ms": 0.071,
+          "max_ms": 0.522
+        },
+        "animate": {
+          "samples": 600,
+          "median_ms": 0.005,
+          "p95_ms": 0.008,
+          "max_ms": 0.282
+        },
+        "boxes": {
+          "samples": 600,
+          "median_ms": 0.0,
+          "p95_ms": 0.0,
+          "max_ms": 0.0
+        },
+        "layout": {
+          "samples": 600,
+          "median_ms": 0.0,
+          "p95_ms": 0.0,
+          "max_ms": 0.0
+        },
+        "paint": {
+          "samples": 600,
+          "median_ms": 0.051,
+          "p95_ms": 0.352,
+          "max_ms": 0.457
+        }
+      }
+    },
+    "interpretation": "Hover skips layout. Both binaries show variable hover cost; this does not waive the failed candidate profile. Fine paint attribution is mostly rest and varies across scopes; root cause remains unproven.",
+    "instrumentation_affects_timing": true
+  }
+}

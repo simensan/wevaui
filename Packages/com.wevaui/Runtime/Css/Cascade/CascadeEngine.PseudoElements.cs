@@ -55,8 +55,21 @@ namespace Weva.Css.Cascade {
         // the returned style for the anonymous marker box and marker TextRun,
         // while still deriving marker text/image from the host list item's
         // list-style-* properties.
+        //
+        // Always returns a style. A list item HAS a marker whether or not the
+        // author styled one, and the alternative is worse than an allocation:
+        // BoxBuilder's fallback for a null marker style is the <li>'s OWN
+        // style, which hands the anonymous marker box the li's padding,
+        // border, margin and background. `li { padding: 5px 10px }` then grew
+        // the li's line box by 0.9px — audit-validation's `.zebra li` measured
+        // 26.9 where Chrome says 26.
+        //
+        // What comes back with no authored rule is exactly what a ::marker
+        // should be: FillInherited gives it the host's inherited properties
+        // (font, colour, line-height) and every non-inherited property its
+        // initial value.
         public ComputedStyle ComputeMarker(Element host, IElementStateProvider stateProvider = null) {
-            return ComputePseudoElement(host, "marker", markerRules, stateProvider);
+            return ComputePseudoElement(host, "marker", markerRules, stateProvider, alwaysProduce: true);
         }
 
         // ::-webkit-scrollbar / ::-webkit-scrollbar-thumb / ::-webkit-scrollbar-track
@@ -103,9 +116,10 @@ namespace Weva.Css.Cascade {
                 || ComputeWebkitScrollbarTrack(host, stateProvider) != null;
         }
 
-        ComputedStyle ComputePseudoElement(Element host, string pseudoName, List<CompiledRule> rules, IElementStateProvider stateProvider) {
+        ComputedStyle ComputePseudoElement(Element host, string pseudoName, List<CompiledRule> rules,
+                                           IElementStateProvider stateProvider, bool alwaysProduce = false) {
             if (host == null) return null;
-            if (rules == null || rules.Count == 0) return null;
+            if ((rules == null || rules.Count == 0) && !alwaysProduce) return null;
             var state = stateProvider ?? NullStateProvider.Instance;
 
             // Resolve the host's own computed style FIRST. ComputePseudoElement
@@ -124,7 +138,12 @@ namespace Weva.Css.Cascade {
             // ::before/::after rule that targets `host`. Skip without paying
             // for an empty ComputedStyle allocation; the caller treats null
             // as "no pseudo box".
-            if (matches.Count == 0) return null;
+            //
+            // `alwaysProduce` is for a pseudo that EXISTS whether or not it is
+            // styled. ::before/::after need `content` to generate a box, but a
+            // list item always has a ::marker, and its caller needs a real
+            // style for it rather than a null it has to substitute for.
+            if (matches.Count == 0 && !alwaysProduce) return null;
 
             ExpandShorthandMatchesInto(matches, scratch.ExpandedMatches, scratch);
             var expanded = scratch.ExpandedMatches;
@@ -235,6 +254,10 @@ namespace Weva.Css.Cascade {
         }
 
         void CollectPseudoMatches(Element host, IElementStateProvider state, string pseudoName, List<CompiledRule> rules, List<MatchedDeclaration> matches) {
+            // A caller with `alwaysProduce` reaches here with no rule list at
+            // all, which is the ordinary case for ::marker on a page that never
+            // styles one.
+            if (rules == null) return;
             for (int ri = 0; ri < rules.Count; ri++) {
                 var rule = rules[ri];
                 if (rule.Media != null && !rule.Media.Evaluate(mediaContext)) continue;

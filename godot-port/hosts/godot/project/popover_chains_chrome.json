@@ -1,0 +1,4574 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "name": "nested-auto-auto-auto",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": []
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-auto-hint",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": []
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-auto-manual",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-hint-auto",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": []
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-hint-hint",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": []
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-hint-manual",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-manual-auto",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-manual-hint",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-auto-manual-manual",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-auto-auto",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": []
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-auto-hint",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": []
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-auto-manual",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-hint-auto",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": []
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-hint-hint",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": []
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-hint-manual",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-manual-auto",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-manual-hint",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-hint-manual-manual",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-auto-auto",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-auto-hint",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-auto-manual",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=auto><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-hint-auto",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-hint-hint",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-hint-manual",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=hint><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-manual-auto",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=auto>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-manual-hint",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=hint>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nested-manual-manual-manual",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button><div id=b popover=manual><button id=bc popovertarget=c>Child</button><div id=c popover=manual>Child</div></div></div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-auto-auto",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-auto-hint",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-auto-manual",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-hint-auto",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-hint-hint",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-hint-manual",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-manual-auto",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-manual-hint",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-auto-manual-manual",
+      "html": "<div id=a popover=auto><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-auto-auto",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-auto-hint",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-auto-manual",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-hint-auto",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-hint-hint",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-hint-manual",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-manual-auto",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-manual-hint",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-hint-manual-manual",
+      "html": "<div id=a popover=hint><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-auto-auto",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-auto-hint",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-auto-manual",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=auto><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-hint-auto",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-hint-hint",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-hint-manual",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=hint><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-manual-auto",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=auto>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-manual-hint",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=hint>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "linked-manual-manual-manual",
+      "html": "<div id=a popover=manual><button id=ab popovertarget=b>Middle</button></div><div id=b popover=manual><button id=bc popovertarget=c>Child</button></div><div id=c popover=manual>Child</div>",
+      "actions": [
+        [
+          "show",
+          "a"
+        ],
+        [
+          "click",
+          "ab"
+        ],
+        [
+          "click",
+          "bc"
+        ],
+        [
+          "hide",
+          "b"
+        ],
+        [
+          "show",
+          "b"
+        ],
+        [
+          "show",
+          "c"
+        ],
+        [
+          "hide",
+          "a"
+        ]
+      ],
+      "states": [
+        {
+          "error": "",
+          "open": [
+            "a"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "error": "",
+          "open": [
+            "b",
+            "c"
+          ]
+        }
+      ]
+    }
+  ]
+}

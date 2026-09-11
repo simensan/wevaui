@@ -1,0 +1,77 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "veto": 0,
+      "reenter": false,
+      "invalid": 2,
+      "submits": 0,
+      "during": [
+        "s",
+        "s"
+      ],
+      "focus": "a",
+      "open": true
+    },
+    {
+      "veto": 0,
+      "reenter": true,
+      "invalid": 2,
+      "submits": 0,
+      "during": [
+        "s",
+        "s"
+      ],
+      "focus": "a",
+      "open": true
+    },
+    {
+      "veto": 1,
+      "reenter": false,
+      "invalid": 2,
+      "submits": 0,
+      "during": [
+        "s",
+        "s"
+      ],
+      "focus": "b",
+      "open": true
+    },
+    {
+      "veto": 1,
+      "reenter": true,
+      "invalid": 2,
+      "submits": 0,
+      "during": [
+        "s",
+        "s"
+      ],
+      "focus": "b",
+      "open": true
+    },
+    {
+      "veto": 2,
+      "reenter": false,
+      "invalid": 2,
+      "submits": 0,
+      "during": [
+        "s",
+        "s"
+      ],
+      "focus": "s",
+      "open": true
+    },
+    {
+      "veto": 2,
+      "reenter": true,
+      "invalid": 2,
+      "submits": 0,
+      "during": [
+        "s",
+        "s"
+      ],
+      "focus": "s",
+      "open": true
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "status": "Historical source-only checkpoint; subsequent combined native qualification is recorded in long-effect-lists.json",
+  "problem": "transition_for ignored property entries after index 31, losing later matches and last-match precedence.",
+  "fix": "One allocation-free linear pass through the complete transition-property list; timing list repetition remains unchanged.",
+  "spec": "https://www.w3.org/TR/css-transitions-1/#transition-property-property",
+  "baseline": {"log": ".utmp/safe-engine71/transition-list-baseline.log", "failing_assertions": 7},
+  "core": {"log": ".utmp/safe-engine71/transition-list-fixed.log", "passed_suites": 14, "seconds": 24.69},
+  "chrome": {
+    "log": ".utmp/safe-engine71/long-transitions-chrome.json",
+    "browser": "Chrome/152.0.7977.83",
+    "passed_cases": 6,
+    "coverage": "33, 34 and 65 property entries, with and without an earlier width match, and alternating 1s/2s durations; widths sampled at 500ms."
+  },
+  "limitations": [
+    "Installed preview211 and frozen candidate212 binaries are unchanged and do not include this fix.",
+    "Native host, sanitizer, export and runtime performance qualification have not run for this source change.",
+    "Animation-name lists still have a separate eight-entry limit."
+  ]
+}

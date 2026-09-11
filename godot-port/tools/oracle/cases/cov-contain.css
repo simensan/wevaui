@@ -1,0 +1,27 @@
+/* contain, content-visibility and the contain-intrinsic-* placeholders.
+   `contain: size` is the interesting one: the box must size as though empty,
+   so its height collapses to whatever the intrinsic size says. */
+
+body { margin: 0; font-family: sans-serif; font-size: 14px; }
+
+.page { width: 560px; padding: 16px; }
+
+section { border: 1px solid #444; margin-bottom: 10px; }
+
+.panel {
+  width: 220px;
+  border: 2px solid #888;
+  padding: 6px;
+  line-height: 20px;
+}
+
+.contain-size   { contain: size; }
+.contain-layout { contain: layout; }
+
+.intrinsic    { contain-intrinsic-size: 90px; }
+.intrinsic-wh { contain-intrinsic-width: 150px; contain-intrinsic-height: 70px; }
+
+.cv-hidden {
+  content-visibility: hidden;
+  contain-intrinsic-size: 40px 55px;
+}

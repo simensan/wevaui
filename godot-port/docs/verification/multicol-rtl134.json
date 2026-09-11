@@ -1,0 +1,141 @@
+{
+  "version": "0.1.0-preview.134",
+  "installed": true,
+  "abi_minor": 20,
+  "library_sha256": "1b8a174f5c4446862c77de52c530836bc89c7638d58cd942b3db0ffa44e976f8",
+  "source_sha256": "4e5f29134ad03d53def799cbba59740c9719b013145c585c8a46ed0f88c8185f",
+  "changes": [
+    "Horizontal columns follow inherited direction",
+    "RTL columns preserve fractional allocation when mirrored",
+    "Fixed-width RTL cards align from column right edge using resolved right margin"
+  ],
+  "focused_chrome": {
+    "browser": "Chrome/152.0.7977.83",
+    "initial_cases": 28,
+    "live_steps": 16,
+    "native_checks": 2289,
+    "passed": true,
+    "initial_new_case_failures": 52,
+    "expanded_fixed_card_failures": 24,
+    "tolerance_changed": false
+  },
+  "core": {
+    "suites": 12,
+    "main_checks": 479967,
+    "incremental_full_comparisons": 241,
+    "passed": true
+  },
+  "sanitizers": {
+    "gates": 14,
+    "passed": true,
+    "symbolization": false
+  },
+  "host": {
+    "entries": 35,
+    "checks": 26802,
+    "passed": true
+  },
+  "broad_layout": {
+    "fixtures": 309,
+    "agree": 287,
+    "different": 22,
+    "changed_reports": [],
+    "profile": "Frozen Chrome152 synthetic font / Weva UA overlay; not native appearance"
+  },
+  "sample_and_native_exports_passed": true,
+  "limits": [
+    "Paragraph fragmentation, spanning, rules, fill and vertical writing remain incomplete",
+    "Single-sided auto margins need broader block-layout investigation",
+    "Runtime certification remains scoped to development desktop"
+  ],
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 554,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 506,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 176,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 16,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "validity_selector_tests",
+      "checks": 658,
+      "passed": true
+    },
+    {
+      "name": "multicol_sizing_tests",
+      "checks": 2289,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 92,
+      "passed": true
+    }
+  ],
+  "performance": {
+    "runs": 6,
+    "gates": 72,
+    "passed": true,
+    "metrics": {
+      "vitals_10hz": {
+        "min_p95_ms": 0.275,
+        "max_p95_ms": 0.432
+      },
+      "inventory_sort": {
+        "min_p95_ms": 0.765,
+        "max_p95_ms": 0.905
+      },
+      "settings_typing": {
+        "min_p95_ms": 0.332,
+        "max_p95_ms": 0.608
+      },
+      "settings_toggle": {
+        "min_p95_ms": 1.625,
+        "max_p95_ms": 2.034
+      },
+      "redundant_signal": {
+        "min_p95_ms": 0.188,
+        "max_p95_ms": 0.229
+      },
+      "idle": {
+        "min_p95_ms": 0.01,
+        "max_p95_ms": 0.016
+      }
+    },
+    "budget_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+    "scope": "Windows RTX5080 development desktop, patched engine71, manual/static1280x720 API CPU only"
+  }
+}

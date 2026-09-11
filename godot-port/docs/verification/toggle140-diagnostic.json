@@ -1,0 +1,137 @@
+{
+  "instrumented": true,
+  "scope": "Last100 draw frames; nonzero core stages; diagnostic only, not timing qualification",
+  "stages": {
+    "138": {
+      "cascade": {
+        "samples": 595,
+        "median_ms": 0.012,
+        "p95_ms": 0.149,
+        "max_ms": 0.351
+      },
+      "boxes": {
+        "samples": 100,
+        "median_ms": 0.3245,
+        "p95_ms": 0.459,
+        "max_ms": 0.946
+      },
+      "layout": {
+        "samples": 100,
+        "median_ms": 0.002,
+        "p95_ms": 0.003,
+        "max_ms": 0.024
+      },
+      "paint": {
+        "samples": 250,
+        "median_ms": 0.0835,
+        "p95_ms": 0.226,
+        "max_ms": 0.661
+      },
+      "glyphs": {
+        "samples": 250,
+        "median_ms": 0.01,
+        "p95_ms": 0.04,
+        "max_ms": 0.19
+      },
+      "rest": {
+        "samples": 250,
+        "median_ms": 0.05,
+        "p95_ms": 0.12,
+        "max_ms": 0.27
+      },
+      "draw": {
+        "samples": 100,
+        "median_ms": 0.2965,
+        "p95_ms": 0.4,
+        "max_ms": 0.572
+      },
+      "packing": {
+        "samples": 100,
+        "median_ms": 0.024,
+        "p95_ms": 0.042,
+        "max_ms": 0.059
+      },
+      "submit": {
+        "samples": 100,
+        "median_ms": 0.2605,
+        "p95_ms": 0.359,
+        "max_ms": 0.55
+      }
+    },
+    "139": {
+      "cascade": {
+        "samples": 598,
+        "median_ms": 0.011,
+        "p95_ms": 0.148,
+        "max_ms": 0.199
+      },
+      "boxes": {
+        "samples": 102,
+        "median_ms": 0.3325,
+        "p95_ms": 0.469,
+        "max_ms": 0.706
+      },
+      "layout": {
+        "samples": 100,
+        "median_ms": 0.002,
+        "p95_ms": 0.003,
+        "max_ms": 0.006
+      },
+      "paint": {
+        "samples": 250,
+        "median_ms": 0.0885,
+        "p95_ms": 0.28,
+        "max_ms": 0.471
+      },
+      "glyphs": {
+        "samples": 250,
+        "median_ms": 0.01,
+        "p95_ms": 0.05,
+        "max_ms": 0.15
+      },
+      "rest": {
+        "samples": 250,
+        "median_ms": 0.05,
+        "p95_ms": 0.16,
+        "max_ms": 0.42
+      },
+      "draw": {
+        "samples": 100,
+        "median_ms": 0.2945,
+        "p95_ms": 0.421,
+        "max_ms": 0.648
+      },
+      "packing": {
+        "samples": 100,
+        "median_ms": 0.0325,
+        "p95_ms": 0.045,
+        "max_ms": 0.08
+      },
+      "submit": {
+        "samples": 100,
+        "median_ms": 0.26,
+        "p95_ms": 0.369,
+        "max_ms": 0.563
+      }
+    }
+  },
+  "caveats": [
+    "Instrumented diagnostic, not acceptance timing and not comparable as a whole-UI speedup",
+    "The boxes stage includes IncrementalLayout::update_modal and its layout/positioning work",
+    "Nonzero cascade samples include idle calls rounded above zero; not a count of structural cascades",
+    "Last100 native draw entries selected; each corresponds to one changed toggle frame in this fixture"
+  ],
+  "findings": [
+    "250 paint passes for100 displayed toggle frames in both138 and139",
+    "100 modal layout stages in the boxes interval; candidate139 p95.469ms",
+    "Native draw p95.421ms, mostly submit(.369ms), outside manual API timing",
+    "Input dispatch begins with ensure_updated for each mouse event; hover/active changes can cause intermediate paint before final toggle frame"
+  ],
+  "next_verification": "Separate per-event dispatch and manual update timing before changing scheduling; any geometry-only/deferred-paint optimization must preserve hover/active layout, immediate hit testing, focus/IME and incremental/full render parity.",
+  "installed_preview": 138,
+  "candidate139_qualification_remains_failed": true,
+  "binary_hashes": {
+    "138": "854e08350b714e58f9b48c0fcb2706124e6cf027f9ae6e893515477e902ee1c1",
+    "139": "58b736a2c9a6698091f2a04a04df8dc6b0aa5033a81e2caf58877e0499996bf8"
+  }
+}

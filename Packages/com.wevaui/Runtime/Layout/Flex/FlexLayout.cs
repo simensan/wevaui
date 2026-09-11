@@ -107,15 +107,11 @@ namespace Weva.Layout.Flex {
             if (!string.IsNullOrEmpty(heightRaw) && heightRaw != "auto") return;
             if (!StyleResolver.TryResolveAspectRatio(box.Style, out double ratio) || ratio <= 0) return;
             if (box.Width <= 0) return;
-            double derived = box.Width / ratio;
-            // The box's height includes its own padding/border frame (border-box
-            // is the rendered geometry). v1 simplification mirrors BlockLayout's
-            // FinalizeBlockSize aspect-ratio branch: ratio applies to content
-            // area; add the vertical frame so the rendered box is the
-            // content-box-derived size + frame.
-            bool borderBox = IsBorderBox(box.Style);
-            double frame = box.PaddingTop + box.PaddingBottom + box.BorderTop + box.BorderBottom;
-            box.Height = borderBox ? derived : derived + frame;
+            // CSS Sizing L4 §5, box-sizing aware — see AspectRatioMath.
+            box.Height = Weva.Layout.AspectRatioMath.HeightFromWidth(
+                box.Width, ratio, IsBorderBox(box.Style),
+                box.PaddingLeft + box.PaddingRight + box.BorderLeft + box.BorderRight,
+                box.PaddingTop + box.PaddingBottom + box.BorderTop + box.BorderBottom);
         }
 
         // Mirror of BlockLayout.IsBorderBox — kept local to avoid widening
@@ -137,10 +133,11 @@ namespace Weva.Layout.Flex {
             if (!string.IsNullOrEmpty(widthRaw) && widthRaw != "auto") return;
             if (!StyleResolver.TryResolveAspectRatio(box.Style, out double ratio) || ratio <= 0) return;
             if (box.Height <= 0) return;
-            double derived = box.Height * ratio;
-            bool borderBox = IsBorderBox(box.Style);
-            double frame = box.PaddingLeft + box.PaddingRight + box.BorderLeft + box.BorderRight;
-            box.Width = borderBox ? derived : derived + frame;
+            // CSS Sizing L4 §5, box-sizing aware — see AspectRatioMath.
+            box.Width = Weva.Layout.AspectRatioMath.WidthFromHeight(
+                box.Height, ratio, IsBorderBox(box.Style),
+                box.PaddingTop + box.PaddingBottom + box.BorderTop + box.BorderBottom,
+                box.PaddingLeft + box.PaddingRight + box.BorderLeft + box.BorderRight);
         }
 
         void ReflowIfShrunk(BlockBox box, double newW, double preW) {
@@ -242,6 +239,7 @@ namespace Weva.Layout.Flex {
             // cross-start. Treat the min-floored cross as definite, mirroring
             // the aspect-ratio derivation below. CSS Box Sizing L3 §5.
             bool crossFlooredByMin = false;
+            double crossMinFloor = 0;
             if (string.IsNullOrEmpty(crossRaw) || crossRaw == "auto") {
                 double derived = TryDeriveCrossFromAspectRatio(container, isRow);
                 if (derived > containerCrossSize) containerCrossSize = derived;
@@ -256,6 +254,7 @@ namespace Weva.Layout.Flex {
                 if (minFloor > 0) {
                     if (minFloor > containerCrossSize) containerCrossSize = minFloor;
                     crossFlooredByMin = true;
+                    crossMinFloor = minFloor;
                 }
             }
 
@@ -276,6 +275,10 @@ namespace Weva.Layout.Flex {
             double? inlineBasis = container.ContentWidth > 0 ? container.ContentWidth : (double?)null;
             double? blockBasis = container.ContentHeight > 0 ? container.ContentHeight : (double?)null;
             var props = FlexProperties.From(container.Style, lengthCtx, inlineBasis, blockBasis);
+            // Publish the resolved gaps for PositioningPass's intrinsic
+            // helpers, which have no LengthContext of their own.
+            container.ResolvedRowGap = props.RowGap;
+            container.ResolvedColumnGap = props.ColumnGap;
 
             // Native <button> (and button-like <input>) renders its content
             // CENTERED on the main axis as well as the cross axis (Chrome's UA
@@ -465,10 +468,32 @@ namespace Weva.Layout.Flex {
             // A row container whose height was grown by a column parent's
             // flex-grow (FlexParentAssignedCross) has a definite cross.
             bool rowFlexGrownCross = isRow && container is BlockBox bbRowFa && bbRowFa.FlexParentAssignedCross;
-            double clampCrossSize = (HasDefiniteCross(container, isRow) || gridImposedCross || positionPinnedCross || columnWithAssignedWidth || crossFlooredByMin || rowFlexGrownCross)
-                ? containerCrossSize : 0;
+            // `crossFlooredByMin` is deliberately NOT in this list. The clamp
+            // CAPS each item's cross contribution at the container's cross
+            // size, which is only sound when that size is genuinely definite.
+            // On an auto cross floored by `min-height`, containerCrossSize is
+            // max(min-floor, container.ContentHeight) — and that ContentHeight
+            // came from the pre-flex BlockLayout pass, which stacks a
+            // column-flex child's children WITHOUT their row gaps. Capping
+            // against it shrank the child back to the gap-less sum: a
+            // `min-height:100vh` page holding a `display:flex;
+            // flex-direction:column; gap:22px` card lost 22px per gap from the
+            // card's height (form-demo: 14 gaps, 308px) while its children
+            // stayed correctly spaced, so the card's own background stopped
+            // short of its content.
+            bool trulyDefiniteCross = HasDefiniteCross(container, isRow) || gridImposedCross
+                || positionPinnedCross || columnWithAssignedWidth || rowFlexGrownCross;
+            double clampCrossSize = trulyDefiniteCross ? containerCrossSize : 0;
             foreach (var line in lines) {
                 ComputeLineCrossSize(line, items, props, isRow, clampCrossSize);
+                // A min-floored auto cross is a FLOOR on the line, never a cap:
+                // the line must fill it so align-items has space to distribute
+                // (the reason the flag exists), but it must never shrink a line
+                // whose items are taller.
+                if (!trulyDefiniteCross && crossFlooredByMin && lines.Count == 1
+                    && line.CrossSize < crossMinFloor) {
+                    line.CrossSize = crossMinFloor;
+                }
             }
 
             double linesCrossTotal = 0;
@@ -754,7 +779,15 @@ namespace Weva.Layout.Flex {
             if (contentMain <= 0) return 0;
             // aspect-ratio means width : height = ratio : 1 → height = width / ratio.
             double contentCross = isRow ? (contentMain / ratio) : (contentMain * ratio);
-            return contentCross > 0 ? (contentCross + frameCross) : 0;
+            // The CONTENT cross size, because the only caller assigns this into
+            // `containerCrossSize`, which is otherwise `container.ContentHeight`
+            // / `ContentWidth`. Returning the border-box size there handed the
+            // line an extra frame of free space, and `align-items: center` then
+            // pushed the item down by half of it on top of the content-top
+            // offset it already had — a bordered `aspect-ratio: 2/1` box centred
+            // its glyph at 35.998 where Chrome says 35, and at 155.998 against
+            // 151 with a 5px border, the error tracking the border exactly.
+            return contentCross > 0 ? contentCross : 0;
         }
 
         // CSS Sizing L4 §5: derive a flex item's main-axis size from its
@@ -1205,8 +1238,29 @@ namespace Weva.Layout.Flex {
                 if (c is LineBox lb) {
                     directLines++;
                     if (directLines > 1) return false;
+                    // The EXTENT the fragments occupy, not the sum of their
+                    // widths: a fragment's width spaces its N glyphs N-1
+                    // times, so the letter-spacing that sits BETWEEN two
+                    // fragments lives in the second fragment's X and a plain
+                    // sum drops it. Measuring short here sizes the flex item
+                    // narrower than its own text, which then wraps inside it
+                    // (see PositioningPass.WalkContent for the same fix and
+                    // the quests.html footer that exposed both).
+                    // Sum as the lower bound, extent only when it is
+                    // genuinely wider — see PositioningPass.WalkContent for why
+                    // the sum is kept when the two agree.
                     double sum = 0;
-                    for (int j = 0; j < lb.Children.Count; j++) sum += CurrentInlineFragmentWidth(lb.Children[j]);
+                    double lo = double.MaxValue, hi = double.MinValue;
+                    for (int j = 0; j < lb.Children.Count; j++) {
+                        var frag = lb.Children[j];
+                        if (frag is InlineBox) continue;
+                        double w = CurrentInlineFragmentWidth(frag);
+                        sum += w;
+                        if (frag.X < lo) lo = frag.X;
+                        if (frag.X + w > hi) hi = frag.X + w;
+                    }
+                    double extent = hi > lo ? hi - lo : 0;
+                    if (extent > sum + 1e-6) sum = extent;
                     if (sum > max) max = sum;
                     continue;
                 }
@@ -1648,23 +1702,48 @@ namespace Weva.Layout.Flex {
                 // always start from their HypotheticalMainSize (the grow factor
                 // fraction is on top of the base, not cumulative over iterations).
                 bool[] frozen = new bool[n];
+                // §9.7 step 2 "size inflexible items": an item with a zero flex
+                // factor, and (in the grow branch) an item whose flex base size
+                // already exceeds its hypothetical main size — i.e. one whose
+                // base was clamped DOWN by max-width — is frozen at its
+                // hypothetical size and takes no share.
+                for (int k = 0; k < n; k++) {
+                    var it0 = items[line.ItemIndices[k]];
+                    if (it0.Props.Grow <= 0
+                        || it0.FlexBaseSize > it0.HypotheticalMainSize + LayoutEpsilons.SubPixelEqual) {
+                        frozen[k] = true;
+                    }
+                }
                 const int maxIter = 8;
                 for (int iter = 0; iter < maxIter; iter++) {
                     // Recompute remaining free space: availableSpace minus frozen
-                    // items' committed sizes minus unfrozen items' hypothetical sizes.
+                    // items' committed sizes minus unfrozen items' FLEX BASE sizes.
+                    //
+                    // Base, not hypothetical. The hypothetical main size is the
+                    // base already clamped by min/max, and for the commonest
+                    // flex idiom of all — `flex: 1`, i.e. base 0 — the automatic
+                    // minimum (§4.5, min-width:auto = min-content) clamps it up
+                    // to the item's min-content width. Growing from THERE hands
+                    // every item its own content width plus an equal share, so
+                    // two `flex: 1` buttons came out unequal by exactly the
+                    // difference in their labels ("Strike" 648.6 vs "Block"
+                    // 623.4 where both should be 636). §9.7 step 4c is explicit
+                    // that the target is `flex base size + ratio x free space`;
+                    // the min floor re-enters as a clamp below, not as the
+                    // starting point.
                     double frozenSum = 0;
-                    double unfrozenHypo = 0;
+                    double unfrozenBase = 0;
                     double totalGrow = 0;
                     for (int k = 0; k < n; k++) {
                         var it = items[line.ItemIndices[k]];
                         if (frozen[k]) {
                             frozenSum += it.TargetMainSize + it.OuterMainMarginSum;
                         } else {
-                            unfrozenHypo += it.HypotheticalMainSize + it.OuterMainMarginSum;
+                            unfrozenBase += it.FlexBaseSize + it.OuterMainMarginSum;
                             totalGrow += it.Props.Grow;
                         }
                     }
-                    double freeSpace = availableSpace - frozenSum - unfrozenHypo;
+                    double freeSpace = availableSpace - frozenSum - unfrozenBase;
                     if (totalGrow <= 0 || freeSpace <= LayoutEpsilons.SubPixelEqual) break;
                     // Distribute remaining free space proportionally among unfrozen items.
                     bool anyFrozenThisIter = false;
@@ -1672,11 +1751,14 @@ namespace Weva.Layout.Flex {
                         if (frozen[k]) continue;
                         var it = items[line.ItemIndices[k]];
                         double share = it.Props.Grow > 0 ? freeSpace * (it.Props.Grow / totalGrow) : 0;
-                        double grown = it.HypotheticalMainSize + share;
+                        double grown = it.FlexBaseSize + share;
                         double clamped = ClampMainSizeByMinMax(it, container, containerMainSize, isRow, grown);
                         it.TargetMainSize = clamped;
-                        // Freeze items that hit a max constraint.
-                        if (clamped < grown - LayoutEpsilons.SubPixelEqual) {
+                        // §9.7 step 4e: freeze on either violation — a max
+                        // constraint that pulled the item back, or the
+                        // automatic/authored minimum that pushed it out. Both
+                        // change how much space is left for everyone else.
+                        if (System.Math.Abs(clamped - grown) > LayoutEpsilons.SubPixelEqual) {
                             frozen[k] = true;
                             anyFrozenThisIter = true;
                         }

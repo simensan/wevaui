@@ -1,0 +1,54 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "h": 8,
+      "v": 4,
+      "html": "<table id=t><tr><td id=a><div></div></td><td id=b><div></div></td></tr><tr id=r2><td><div></div></td><td><div></div></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:4px solid blue;border-top:8px solid red;border-bottom:8px solid red}td>div{height:20px}",
+      "center": {
+        "x": 100,
+        "y": 32
+      },
+      "image": ".utmp/safe-engine71/table166-portable-8-4.png",
+      "chrome_mask_differences": 0,
+      "capture_sha256": "56264f950801e9ee8bf9b285e30388d25719952f293a7d40e6731b0b85b17cd0"
+    },
+    {
+      "h": 4,
+      "v": 8,
+      "html": "<table id=t><tr><td id=a><div></div></td><td id=b><div></div></td></tr><tr id=r2><td><div></div></td><td><div></div></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:8px solid blue;border-top:4px solid red;border-bottom:4px solid red}td>div{height:20px}",
+      "center": {
+        "x": 100,
+        "y": 26
+      },
+      "image": ".utmp/safe-engine71/table166-portable-4-8.png",
+      "chrome_mask_differences": 0,
+      "capture_sha256": "64c0aa1245d73efd6decff8fb5ca33c06f4523049c771355efeb893f5ae5f474"
+    },
+    {
+      "h": 4,
+      "v": 4,
+      "html": "<table id=t><tr><td id=a><div></div></td><td id=b><div></div></td></tr><tr id=r2><td><div></div></td><td><div></div></td></tr></table>",
+      "css": "html,body{margin:0;padding:0}table{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:4px solid blue;border-top:4px solid red;border-bottom:4px solid red}td>div{height:20px}",
+      "center": {
+        "x": 100,
+        "y": 26
+      },
+      "image": ".utmp/safe-engine71/table166-portable-4-4.png",
+      "chrome_mask_differences": 0,
+      "capture_sha256": "0201a9d30266fbe5b347012eda80015eda8baa52aca44eccae3c974ca5632eff"
+    }
+  ],
+  "change": "Use perpendicular widths for exposed segment caps and order junction painting by border strength and tested side precedence",
+  "installed": false,
+  "compared_pixels": 59400,
+  "core_result": "499095 checks, 0 failures",
+  "sanitizers": "13468 focused table checks pass under ASAN/UBSAN",
+  "remaining": [
+    "Patterns and mixed per-cell colors need further browser capture",
+    "Blur, visibility overrides, positioned content, captions and broader width constraints",
+    "Native and performance qualification before installing"
+  ]
+}

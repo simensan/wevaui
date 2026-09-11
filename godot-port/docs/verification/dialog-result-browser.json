@@ -1,0 +1,174 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "action": "close",
+      "argument": "omit",
+      "handler": "allow",
+      "open": false,
+      "value": "initial"
+    },
+    {
+      "action": "close",
+      "argument": "omit",
+      "handler": "set",
+      "open": false,
+      "value": "initial"
+    },
+    {
+      "action": "close",
+      "argument": "omit",
+      "handler": "prevent",
+      "open": false,
+      "value": "initial"
+    },
+    {
+      "action": "close",
+      "argument": "omit",
+      "handler": "close",
+      "open": false,
+      "value": "initial"
+    },
+    {
+      "action": "close",
+      "argument": "empty",
+      "handler": "allow",
+      "open": false,
+      "value": ""
+    },
+    {
+      "action": "close",
+      "argument": "empty",
+      "handler": "set",
+      "open": false,
+      "value": ""
+    },
+    {
+      "action": "close",
+      "argument": "empty",
+      "handler": "prevent",
+      "open": false,
+      "value": ""
+    },
+    {
+      "action": "close",
+      "argument": "empty",
+      "handler": "close",
+      "open": false,
+      "value": ""
+    },
+    {
+      "action": "close",
+      "argument": "value",
+      "handler": "allow",
+      "open": false,
+      "value": "accepted"
+    },
+    {
+      "action": "close",
+      "argument": "value",
+      "handler": "set",
+      "open": false,
+      "value": "accepted"
+    },
+    {
+      "action": "close",
+      "argument": "value",
+      "handler": "prevent",
+      "open": false,
+      "value": "accepted"
+    },
+    {
+      "action": "close",
+      "argument": "value",
+      "handler": "close",
+      "open": false,
+      "value": "accepted"
+    },
+    {
+      "action": "request",
+      "argument": "omit",
+      "handler": "allow",
+      "open": false,
+      "value": "initial"
+    },
+    {
+      "action": "request",
+      "argument": "omit",
+      "handler": "set",
+      "open": false,
+      "value": "handler"
+    },
+    {
+      "action": "request",
+      "argument": "omit",
+      "handler": "prevent",
+      "open": true,
+      "value": "initial"
+    },
+    {
+      "action": "request",
+      "argument": "omit",
+      "handler": "close",
+      "open": false,
+      "value": "handler-close"
+    },
+    {
+      "action": "request",
+      "argument": "empty",
+      "handler": "allow",
+      "open": false,
+      "value": ""
+    },
+    {
+      "action": "request",
+      "argument": "empty",
+      "handler": "set",
+      "open": false,
+      "value": ""
+    },
+    {
+      "action": "request",
+      "argument": "empty",
+      "handler": "prevent",
+      "open": true,
+      "value": "initial"
+    },
+    {
+      "action": "request",
+      "argument": "empty",
+      "handler": "close",
+      "open": false,
+      "value": "handler-close"
+    },
+    {
+      "action": "request",
+      "argument": "value",
+      "handler": "allow",
+      "open": false,
+      "value": "accepted"
+    },
+    {
+      "action": "request",
+      "argument": "value",
+      "handler": "set",
+      "open": false,
+      "value": "accepted"
+    },
+    {
+      "action": "request",
+      "argument": "value",
+      "handler": "prevent",
+      "open": true,
+      "value": "initial"
+    },
+    {
+      "action": "request",
+      "argument": "value",
+      "handler": "close",
+      "open": false,
+      "value": "handler-close"
+    }
+  ],
+  "scope": "24 close/requestClose return-value cases, with omitted, empty and explicit results and cancel-handler actions."
+}

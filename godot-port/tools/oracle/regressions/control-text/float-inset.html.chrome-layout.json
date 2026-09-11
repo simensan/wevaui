@@ -1,0 +1,63 @@
+{
+  "source": "float-inset.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.77",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "parent",
+      "x": 0,
+      "y": 0,
+      "w": 250,
+      "h": 13.7,
+      "display": "block",
+      "position": "static",
+      "fontSize": "12px",
+      "lineHeight": "13.716px",
+      "path": "div:1",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "float",
+      "x": 0,
+      "y": 0,
+      "w": 30,
+      "h": 30,
+      "display": "block",
+      "position": "static",
+      "fontSize": "12px",
+      "lineHeight": "13.716px",
+      "path": "div:1/div:1",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "span",
+      "id": "",
+      "cls": "label",
+      "x": 30,
+      "y": -1,
+      "w": 100.81,
+      "h": 14,
+      "display": "inline",
+      "position": "static",
+      "fontSize": "12px",
+      "lineHeight": "13.716px",
+      "path": "div:1/span:2",
+      "text": "Travel to camp"
+    }
+  ]
+}

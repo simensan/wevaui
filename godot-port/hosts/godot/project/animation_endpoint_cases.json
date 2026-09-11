@@ -1,0 +1,789 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "direction": "normal",
+      "duration": 0,
+      "count": "0",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 0 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        100
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 0,
+      "count": "0.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 0.25 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 0,
+      "count": "1",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 1 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 0,
+      "count": "1.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 1.25 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 0,
+      "count": "2",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 2 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 0,
+      "count": "2.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 2.25 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 0,
+      "count": "infinite",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s infinite normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 1,
+      "count": "0",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 0 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        100
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 1,
+      "count": "0.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 0.25 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 1,
+      "count": "1",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 1 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 1,
+      "count": "1.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 1.25 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 1,
+      "count": "2",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 2 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 1,
+      "count": "2.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 2.25 normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "normal",
+      "duration": 1,
+      "count": "infinite",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s infinite normal both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        100
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 0,
+      "count": "0",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 0 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        200
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 0,
+      "count": "0.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 0.25 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 0,
+      "count": "1",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 1 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 0,
+      "count": "1.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 1.25 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 0,
+      "count": "2",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 2 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 0,
+      "count": "2.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 2.25 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 0,
+      "count": "infinite",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s infinite reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 1,
+      "count": "0",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 0 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        200
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 1,
+      "count": "0.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 0.25 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 1,
+      "count": "1",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 1 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 1,
+      "count": "1.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 1.25 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 1,
+      "count": "2",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 2 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 1,
+      "count": "2.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 2.25 reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "reverse",
+      "duration": 1,
+      "count": "infinite",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s infinite reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        200
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 0,
+      "count": "0",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 0 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        100
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 0,
+      "count": "0.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 0.25 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 0,
+      "count": "1",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 1 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 0,
+      "count": "1.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 1.25 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        175
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 0,
+      "count": "2",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 2 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        100
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 0,
+      "count": "2.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 2.25 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 0,
+      "count": "infinite",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s infinite alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 1,
+      "count": "0",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 0 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        100
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 1,
+      "count": "0.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 0.25 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 1,
+      "count": "1",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 1 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 1,
+      "count": "1.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 1.25 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        175
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 1,
+      "count": "2",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 2 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        100
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 1,
+      "count": "2.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 2.25 alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        125
+      ]
+    },
+    {
+      "direction": "alternate",
+      "duration": 1,
+      "count": "infinite",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s infinite alternate both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        100,
+        200
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 0,
+      "count": "0",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 0 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        200
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 0,
+      "count": "0.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 0.25 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 0,
+      "count": "1",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 1 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 0,
+      "count": "1.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 1.25 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        125
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 0,
+      "count": "2",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 2 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        200
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 0,
+      "count": "2.25",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s 2.25 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 0,
+      "count": "infinite",
+      "css": "#a{width:20px;animation:pulse 0s linear 1s infinite alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 1,
+      "count": "0",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 0 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        200
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 1,
+      "count": "0.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 0.25 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 1,
+      "count": "1",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 1 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 1,
+      "count": "1.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 1.25 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        125
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 1,
+      "count": "2",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 2 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        200
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 1,
+      "count": "2.25",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s 2.25 alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        175
+      ]
+    },
+    {
+      "direction": "alternate-reverse",
+      "duration": 1,
+      "count": "infinite",
+      "css": "#a{width:20px;animation:pulse 1s linear 1s infinite alternate-reverse both paused}@keyframes pulse{from{width:100px}to{width:200px}}",
+      "times": [
+        0,
+        10
+      ],
+      "widths": [
+        200,
+        100
+      ]
+    }
+  ]
+}

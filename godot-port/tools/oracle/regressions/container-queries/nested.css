@@ -1,0 +1,1 @@
+.outer{container-type:inline-size;width:400px}.inner{container-type:inline-size;width:100px}.item{width:10px;height:10px}@container (width>=400px){.inner{width:300px}}@container (width>=300px){.item{width:90px;height:35px}}

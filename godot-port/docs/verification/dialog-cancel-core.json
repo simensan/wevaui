@@ -1,0 +1,38 @@
+{
+  "scope": "Source-only queued cancellation protocol; installed105 unchanged",
+  "abi_minor": 15,
+  "source_sha256": {
+    "godot-port/libweva/include/weva_c.h": "60b792651fd3aae7a3034caf3535f4afe42087a0a8eb90dd3863c1895a52b622",
+    "godot-port/libweva/src/weva_c.cpp": "459c2ba48a5576265ac56bc90b224fe9e21fc1352d1a3d35995ca630961f00fb",
+    "godot-port/libweva/tests/test_c_abi_forms.cpp": "1e903067cbb66d07e92c2db76516fc0609715e74625700b482ba4a0f0b7c75d7",
+    "godot-port/libweva/tests/main.cpp": "a44a9839b5f3f1fe968a31085e058d913616a781f59ca49fcee404e4d215d943"
+  },
+  "core_release": {
+    "passed": 10,
+    "total": 10,
+    "seconds": 16.89
+  },
+  "core_sanitizers": {
+    "passed": 12,
+    "total": 12,
+    "seconds": 112.54
+  },
+  "covered": [
+    "allow/veto",
+    "handler close",
+    "close/reopen",
+    "removal",
+    "reload",
+    "open attribute remove/re-add",
+    "closed no-op",
+    "non-bubbling handler selection",
+    "300 queued requests overflow/lifetime"
+  ],
+  "remaining": [
+    "Godot request-close/prevent-default integration and pump reentrancy",
+    "Escape routing",
+    "returnValue",
+    "beforetoggle/task semantics",
+    "mixed-event queue overflow policy"
+  ]
+}

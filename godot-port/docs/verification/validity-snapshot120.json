@@ -1,0 +1,482 @@
+{
+  "status": "Candidate120 ABI minor17 built and tested, not installed; installed preview119 remains authoritative.",
+  "metadata": {
+    "schema": 1,
+    "library_sha256": "1ecd86262001b8cd172483abf6a2f4518c37b43ad8387fc6b4cab8ea19a60fc2",
+    "source": {
+      "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+      "dirty": true,
+      "sha256": "75be888c9983c7a3c2131359fb0d5365d4cccbe65c3c188bc3134658b4a9d9e3"
+    },
+    "godot_cpp": {
+      "revision": null,
+      "dirty": null,
+      "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+    },
+    "configuration": "Release",
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35222.0"
+    },
+    "cmake_version": "4.3.2",
+    "godot_api": "4.7",
+    "precision": "single",
+    "custom_api": null,
+    "sanitizers": false
+  },
+  "chrome": {
+    "browser": "Chrome/152.0.7977.77",
+    "rows": [
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"text\"  ></input>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"text\" disabled ></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"text\"  readonly></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"text\"  ></input>",
+        "custom": true,
+        "flags": 513,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"number\"  ></input>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"number\" disabled ></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"number\"  readonly></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"number\"  ></input>",
+        "custom": true,
+        "flags": 513,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"email\"  ></input>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"email\" disabled ></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"email\"  readonly></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"email\"  ></input>",
+        "custom": true,
+        "flags": 513,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"url\"  ></input>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"url\" disabled ></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"url\"  readonly></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"url\"  ></input>",
+        "custom": true,
+        "flags": 513,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"checkbox\"  ></input>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"checkbox\" disabled ></input>",
+        "custom": false,
+        "flags": 1,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"checkbox\"  readonly></input>",
+        "custom": false,
+        "flags": 1,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"checkbox\"  ></input>",
+        "custom": true,
+        "flags": 513,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"radio\"  ></input>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"radio\" disabled ></input>",
+        "custom": false,
+        "flags": 1,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"radio\"  readonly></input>",
+        "custom": false,
+        "flags": 1,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"radio\"  ></input>",
+        "custom": true,
+        "flags": 513,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"hidden\"  ></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"hidden\" disabled ></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"hidden\"  readonly></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"hidden\"  ></input>",
+        "custom": true,
+        "flags": 512,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"submit\"  ></input>",
+        "custom": false,
+        "flags": 0,
+        "will": true
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"submit\" disabled ></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"submit\"  readonly></input>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<input id=\"c\" name=\"n\" required type=\"submit\"  ></input>",
+        "custom": true,
+        "flags": 512,
+        "will": true
+      },
+      {
+        "html": "<textarea id=\"c\" name=\"n\" required   ></textarea>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<textarea id=\"c\" name=\"n\" required  disabled ></textarea>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<textarea id=\"c\" name=\"n\" required   readonly></textarea>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<textarea id=\"c\" name=\"n\" required   ></textarea>",
+        "custom": true,
+        "flags": 513,
+        "will": true
+      },
+      {
+        "html": "<select id=\"c\" name=\"n\" required   ></select>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<select id=\"c\" name=\"n\" required  disabled ></select>",
+        "custom": false,
+        "flags": 1,
+        "will": false
+      },
+      {
+        "html": "<select id=\"c\" name=\"n\" required   readonly></select>",
+        "custom": false,
+        "flags": 1,
+        "will": true
+      },
+      {
+        "html": "<select id=\"c\" name=\"n\" required   ></select>",
+        "custom": true,
+        "flags": 513,
+        "will": true
+      },
+      {
+        "html": "<button id=\"c\" name=\"n\" required   ></button>",
+        "custom": false,
+        "flags": 0,
+        "will": true
+      },
+      {
+        "html": "<button id=\"c\" name=\"n\" required  disabled ></button>",
+        "custom": false,
+        "flags": 0,
+        "will": false
+      },
+      {
+        "html": "<button id=\"c\" name=\"n\" required   readonly></button>",
+        "custom": false,
+        "flags": 0,
+        "will": true
+      },
+      {
+        "html": "<button id=\"c\" name=\"n\" required   ></button>",
+        "custom": true,
+        "flags": 512,
+        "will": true
+      }
+    ]
+  },
+  "windows_core": {
+    "suites": 10,
+    "passed": true
+  },
+  "linux_sanitizers": {
+    "gates": 12,
+    "passed": true
+  },
+  "host": {
+    "binary_sha256": "1ecd86262001b8cd172483abf6a2f4518c37b43ad8387fc6b4cab8ea19a60fc2",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 506
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 165
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 554
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 16
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      }
+    ],
+    "passed": true,
+    "checks": 23344
+  },
+  "coverage": [
+    "44 Chrome control/state combinations: input types, textarea, select, button; plain/disabled/readonly/custom error.",
+    "Core checks simultaneous numeric errors, immediate value changes, bad editing input, email/URL mismatch, user-edited text length flags, invalid arguments and unsupported pattern.",
+    "676 Godot snapshot checks: individual fields, absent controls, pending edit visibility and no additional core update.",
+    "C ABI snapshot emits no invalid events. Existing submission short-circuit path unchanged."
+  ],
+  "limits": [
+    "Snapshots are copies, not live objects.",
+    "Form-wide checkValidity/reportValidity, localized validationMessage and validity selectors remain unimplemented.",
+    "Pattern-dependent nonempty values return UNSUPPORTED; Godot returns empty with a warning.",
+    "Only input/textarea/select/button are exposed by this snapshot API.",
+    "No new package/export/performance/installed-copy qualification for candidate120 yet."
+  ],
+  "references": [
+    "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#the-constraint-validation-api"
+  ]
+}

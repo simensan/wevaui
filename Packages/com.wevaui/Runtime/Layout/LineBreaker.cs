@@ -27,6 +27,14 @@ namespace Weva.Layout {
             // the SourceRun has no Element of its own — so pseudo-content runs
             // count toward the span's bounding box in AttachInlineFragmentsToLines.
             public Weva.Dom.Element OwnerElement;
+            // Set on the synthetic newline item InlineLayout emits for a
+            // `<br>`, and copied onto the emitted run so a second layout pass
+            // over the same container recognises the break again.
+            // RentItem does not clear pooled items, so every producer sets it.
+            public bool IsForcedBreak;
+            // The originating <br> box, carried so the emitted run can hand it
+            // back to a second collection pass (TextRun.ForcedBreakBox).
+            public Boxes.InlineBox ForcedBreakBox;
 
             // CSS Text Module Level 3 word-break / overflow-wrap.
             //   word-break: normal     - break only at word boundaries (default).
@@ -1339,15 +1347,29 @@ namespace Weva.Layout {
             // AtomBaseline for the legacy baseline-alignment path. The
             // effective ascent contribution = above-baseline extent; the
             // effective descent contribution = height - above.
-            double height = item.AtomBox.Height;
+            // The extent an atomic inline contributes is its MARGIN box, not its
+            // border box (CSS 2.1 §10.8.1: "For replaced elements, inline-block
+            // elements and inline-table elements, this is the height of their
+            // margin box"). Reading Height alone dropped an inline-block's
+            // vertical margins from the line: audit-validation's
+            // `input { margin-bottom: 6px }` sat in a line box exactly 28 tall,
+            // where Chrome and the C++ port both make it 34.
+            //
+            // `a` is measured from the atom's BORDER-box top, and the atom is
+            // still placed at `baseline - a`, so the margins ride outside it:
+            // the top margin extends the ascent, the bottom margin the descent.
+            double marginTop = item.AtomBox.MarginTop;
+            double marginBottom = item.AtomBox.MarginBottom;
+            double height = item.AtomBox.Height + marginTop + marginBottom;
             double a = double.IsNaN(item.AtomAboveBaseline) ? item.AtomBaseline : item.AtomAboveBaseline;
-            double d = height - a;
-            if (a > state.MaxAscent) state.MaxAscent = a;
+            double ascent = a + marginTop;
+            double d = height - ascent;
+            if (ascent > state.MaxAscent) state.MaxAscent = ascent;
             if (d > state.MaxDescent) state.MaxDescent = d;
             if (height > state.MaxLineHeight) state.MaxLineHeight = height;
             // Atom has no font-level LineGap to distribute — its half-leading
             // contributions equal its raw above/below-baseline values.
-            if (a > state.MaxAscentWithLeading) state.MaxAscentWithLeading = a;
+            if (ascent > state.MaxAscentWithLeading) state.MaxAscentWithLeading = ascent;
             if (d > state.MaxDescentWithLeading) state.MaxDescentWithLeading = d;
         }
 
@@ -1487,6 +1509,8 @@ namespace Weva.Layout {
                         // AttachInlineFragmentsToLines. CSS 2.1 §12: generated
                         // content is logically part of the host element.
                         run.Element = f.Source.SourceRun?.Element ?? f.Source.OwnerElement;
+                        run.IsForcedBreak = f.Source.IsForcedBreak;
+                        run.ForcedBreakBox = f.Source.ForcedBreakBox;
                         run.SourceNode = f.Source.SourceRun?.SourceNode;
                         run.FontFamily = f.Source.FontFamily;
                         run.FontSize = f.Source.FontSize;

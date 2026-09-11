@@ -1,0 +1,222 @@
+{
+  "candidate": "preview219 (ABI minor 25): stock-engine shaping pieces, @font-face with real variants, gamepad navigation with opt-in wake and held repeat",
+  "library_sha256": "590a7536fff3fd9e81ade07bbbb19224e184a56c3970bfee3214ff325800fd69",
+  "addon_zip": ".utmp/safe-engine71/weva-fonts-preview219.zip",
+  "zip_sha256": "c68ddd5911e707a7ba55b1006b4e71c8df2309dfc1e8c608a240d3a3b60c5aa3",
+  "steps_exit": {
+    "host": "0",
+    "mobile": "0",
+    "package": "0",
+    "frontier": "0",
+    "exports": "0",
+    "desktop": "1"
+  },
+  "core": {
+    "passed_suites": 14,
+    "total_suites": 14,
+    "log": ".utmp/safe-engine71/shaping-native/gp-core-ctest.log"
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "total_suites": 16,
+    "log": ".utmp/safe-engine71/shaping-native/gp-san-ctest.log"
+  },
+  "core_note": "Core source unchanged since those runs (host-only changes followed).",
+  "host": {
+    "passed": true,
+    "entries": 51,
+    "checks": 35599,
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite9/receipt.json"
+  },
+  "sample": {
+    "headless": [
+      "frontier integration: 101 checks, 0 failures"
+    ],
+    "mobile": [
+      "frontier integration: 101 checks, 0 failures"
+    ]
+  },
+  "fresh_consumer_and_native_export": [
+    "import: passed",
+    "headless: frontier integration: 101 checks, 0 failures",
+    "gl_compatibility: frontier integration: 107 checks, 0 failures",
+    "mobile: frontier integration: 107 checks, 0 failures",
+    "export: passed",
+    "export-headless: frontier integration: 101 checks, 0 failures",
+    "export-render: frontier integration: 107 checks, 0 failures"
+  ],
+  "packaged_example_and_export_smokes": [
+    "godot export smoke (project): 8 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (pack): 10 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-debug): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-release): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures",
+    "godot export smoke (native-release): 13 checks, 0 failures",
+    "weva addon example: 17 checks, 0 failures"
+  ],
+  "desktop_timing": {
+    "passed": false,
+    "timing_passed": false,
+    "functional_passed": true,
+    "passed_checks": null,
+    "total_checks": null,
+    "failures": [
+      "Budget exceeded: gl_compatibility/3/settings_typing/changed_api_cpu",
+      "Budget exceeded: mobile/3/settings_typing/changed_api_cpu"
+    ],
+    "summary": ".utmp/safe-engine71/qual219-desktop/summary.json",
+    "executable_sha256": "aa3de6575566d41a47c8c130f1aef76d971f3eb7528e37bd2091aca46ca49efd",
+    "status": "FAILED: settings_typing changed_api_cpu p95 1.021 (gl) / 1.122 (mobile) ms in run 3 against 1.0 ms; the gate stands failed"
+  },
+  "paired_comparison": {
+    "order": "A1=preview217 export, B1=preview219, B2=preview219, A2=preview217; 1 run, 600 frames, settings_typing/inventory_sort/settings_toggle/hover",
+    "runs": {
+      "A1": {
+        "gl_compatibility/settings_typing": {
+          "api_p95_ms": 0.699,
+          "core_p95_ms": 0.251400000000004
+        },
+        "gl_compatibility/inventory_sort": {
+          "api_p95_ms": 1.485,
+          "core_p95_ms": 0.8172
+        },
+        "gl_compatibility/settings_toggle": {
+          "api_p95_ms": 3.034,
+          "core_p95_ms": 1.60150000000004
+        },
+        "gl_compatibility/hover": {
+          "api_p95_ms": 0.271,
+          "core_p95_ms": 0.134700000000009
+        },
+        "mobile/settings_typing": {
+          "api_p95_ms": 0.841,
+          "core_p95_ms": 0.260899999999999
+        },
+        "mobile/inventory_sort": {
+          "api_p95_ms": 1.603,
+          "core_p95_ms": 0.849199999999996
+        },
+        "mobile/settings_toggle": {
+          "api_p95_ms": 2.153,
+          "core_p95_ms": 1.01599999999999
+        },
+        "mobile/hover": {
+          "api_p95_ms": 0.305,
+          "core_p95_ms": 0.145500000000027
+        }
+      },
+      "B1": {
+        "gl_compatibility/settings_typing": {
+          "api_p95_ms": 0.896,
+          "core_p95_ms": 0.281400000000005
+        },
+        "gl_compatibility/inventory_sort": {
+          "api_p95_ms": 1.549,
+          "core_p95_ms": 0.849199999999996
+        },
+        "gl_compatibility/settings_toggle": {
+          "api_p95_ms": 2.917,
+          "core_p95_ms": 1.22240000000002
+        },
+        "gl_compatibility/hover": {
+          "api_p95_ms": 0.265,
+          "core_p95_ms": 0.134500000000003
+        },
+        "mobile/settings_typing": {
+          "api_p95_ms": 0.944,
+          "core_p95_ms": 0.283500000000004
+        },
+        "mobile/inventory_sort": {
+          "api_p95_ms": 1.497,
+          "core_p95_ms": 0.8827
+        },
+        "mobile/settings_toggle": {
+          "api_p95_ms": 2.467,
+          "core_p95_ms": 1.30909999999997
+        },
+        "mobile/hover": {
+          "api_p95_ms": 0.26,
+          "core_p95_ms": 0.129700000000014
+        }
+      },
+      "B2": {
+        "gl_compatibility/settings_typing": {
+          "api_p95_ms": 0.591,
+          "core_p95_ms": 0.2134
+        },
+        "gl_compatibility/inventory_sort": {
+          "api_p95_ms": 1.236,
+          "core_p95_ms": 0.684700000000007
+        },
+        "gl_compatibility/settings_toggle": {
+          "api_p95_ms": 2.917,
+          "core_p95_ms": 1.13030000000001
+        },
+        "gl_compatibility/hover": {
+          "api_p95_ms": 0.258,
+          "core_p95_ms": 0.128500000000003
+        },
+        "mobile/settings_typing": {
+          "api_p95_ms": 0.753,
+          "core_p95_ms": 0.231500000000004
+        },
+        "mobile/inventory_sort": {
+          "api_p95_ms": 1.236,
+          "core_p95_ms": 0.606100000000012
+        },
+        "mobile/settings_toggle": {
+          "api_p95_ms": 2.458,
+          "core_p95_ms": 1.0915
+        },
+        "mobile/hover": {
+          "api_p95_ms": 0.27,
+          "core_p95_ms": 0.132000000000005
+        }
+      },
+      "A2": {
+        "gl_compatibility/settings_typing": {
+          "api_p95_ms": 0.681,
+          "core_p95_ms": 0.228999999999999
+        },
+        "gl_compatibility/inventory_sort": {
+          "api_p95_ms": 1.352,
+          "core_p95_ms": 0.748199999999997
+        },
+        "gl_compatibility/settings_toggle": {
+          "api_p95_ms": 2.596,
+          "core_p95_ms": 1.11639999999997
+        },
+        "gl_compatibility/hover": {
+          "api_p95_ms": 0.269,
+          "core_p95_ms": 0.132900000000006
+        },
+        "mobile/settings_typing": {
+          "api_p95_ms": 0.7,
+          "core_p95_ms": 0.241999999999997
+        },
+        "mobile/inventory_sort": {
+          "api_p95_ms": 1.355,
+          "core_p95_ms": 0.715099999999993
+        },
+        "mobile/settings_toggle": {
+          "api_p95_ms": 2.21,
+          "core_p95_ms": 1.06120000000001
+        },
+        "mobile/hover": {
+          "api_p95_ms": 0.265,
+          "core_p95_ms": 0.135499999999979
+        }
+      }
+    },
+    "reading": "The preview217 export now measures 30-40% slower than its own recorded profile (typing 0.68-0.84 ms vs 0.51-0.57 ms p95); new versus old in the same session is mixed and within that spread (B2 faster than A2). No library regression is visible; the machine, not the candidate, changed.",
+    "machine_state": "Measured with the machine at 65% CPU load: a game (dota2, 4.9 GB working set) and several other applications were running. Timing gates cannot be judged in this state."
+  },
+  "not_run": [
+    "automatic 1080p 3D and 4K profiles (see frame-attribution217.json for why the whole-frame gate measures the scene)",
+    "lifecycle soak",
+    "lower-end hardware"
+  ]
+}

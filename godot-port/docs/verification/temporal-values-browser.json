@@ -1,0 +1,431 @@
+{
+  "browser": "Chrome/152.0.7977.77",
+  "rows": [
+    {
+      "type": "date",
+      "raw": "",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "2024-02-29",
+      "value": "2024-02-29",
+      "number": 1709164800000
+    },
+    {
+      "type": "date",
+      "raw": "2023-02-29",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "1900-02-29",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "2000-02-29",
+      "value": "2000-02-29",
+      "number": 951782400000
+    },
+    {
+      "type": "date",
+      "raw": "2024-04-31",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "0000-01-01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "0001-01-01",
+      "value": "0001-01-01",
+      "number": -62135596800000
+    },
+    {
+      "type": "date",
+      "raw": "001-01-01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "00001-01-01",
+      "value": "00001-01-01",
+      "number": -62135596800000
+    },
+    {
+      "type": "date",
+      "raw": "2024-1-01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "2024-01-1",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": " 2024-01-01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "2024-01-01Z",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "275760-09-13",
+      "value": "275760-09-13",
+      "number": 8640000000000000
+    },
+    {
+      "type": "date",
+      "raw": "275760-09-14",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "date",
+      "raw": "999999-01-01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "month",
+      "raw": "",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "month",
+      "raw": "2024-01",
+      "value": "2024-01",
+      "number": 648
+    },
+    {
+      "type": "month",
+      "raw": "2024-00",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "month",
+      "raw": "2024-13",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "month",
+      "raw": "2024-1",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "month",
+      "raw": "0000-01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "month",
+      "raw": "0001-01",
+      "value": "0001-01",
+      "number": -23628
+    },
+    {
+      "type": "month",
+      "raw": "00001-01",
+      "value": "00001-01",
+      "number": -23628
+    },
+    {
+      "type": "month",
+      "raw": "275760-09",
+      "value": "275760-09",
+      "number": 3285488
+    },
+    {
+      "type": "month",
+      "raw": "275760-10",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "month",
+      "raw": "999999-01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "week",
+      "raw": "",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "week",
+      "raw": "2020-W53",
+      "value": "2020-W53",
+      "number": 1609113600000
+    },
+    {
+      "type": "week",
+      "raw": "2021-W53",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "week",
+      "raw": "2024-W01",
+      "value": "2024-W01",
+      "number": 1704067200000
+    },
+    {
+      "type": "week",
+      "raw": "2024-W00",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "week",
+      "raw": "2024-W54",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "week",
+      "raw": "2024-w01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "week",
+      "raw": "2024-W1",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "week",
+      "raw": "0001-W01",
+      "value": "0001-W01",
+      "number": -62135596800000
+    },
+    {
+      "type": "week",
+      "raw": "0000-W01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "week",
+      "raw": "00001-W01",
+      "value": "00001-W01",
+      "number": -62135596800000
+    },
+    {
+      "type": "week",
+      "raw": "275760-W37",
+      "value": "275760-W37",
+      "number": 8639999568000000
+    },
+    {
+      "type": "week",
+      "raw": "275760-W38",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "00:00",
+      "value": "00:00",
+      "number": 0
+    },
+    {
+      "type": "time",
+      "raw": "23:59",
+      "value": "23:59",
+      "number": 86340000
+    },
+    {
+      "type": "time",
+      "raw": "24:00",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "12:60",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "12:34:56",
+      "value": "12:34:56",
+      "number": 45296000
+    },
+    {
+      "type": "time",
+      "raw": "12:34:60",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "12:34:00",
+      "value": "12:34:00",
+      "number": 45240000
+    },
+    {
+      "type": "time",
+      "raw": "12:34:00.000",
+      "value": "12:34:00.000",
+      "number": 45240000
+    },
+    {
+      "type": "time",
+      "raw": "12:34:00.1",
+      "value": "12:34:00.1",
+      "number": 45240100
+    },
+    {
+      "type": "time",
+      "raw": "12:34:00.12",
+      "value": "12:34:00.12",
+      "number": 45240120
+    },
+    {
+      "type": "time",
+      "raw": "12:34:00.123",
+      "value": "12:34:00.123",
+      "number": 45240123
+    },
+    {
+      "type": "time",
+      "raw": "12:34:00.1234",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "12:34.5",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "1:02",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "01:2",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "time",
+      "raw": "12:34Z",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "datetime-local",
+      "raw": "",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2024-02-29T12:34",
+      "value": "2024-02-29T12:34",
+      "number": 1709210040000
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2024-02-29 12:34",
+      "value": "2024-02-29T12:34",
+      "number": 1709210040000
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2024-02-29T12:34:00",
+      "value": "2024-02-29T12:34",
+      "number": 1709210040000
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2024-02-29T12:34:00.000",
+      "value": "2024-02-29T12:34",
+      "number": 1709210040000
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2024-02-29T12:34:00.120",
+      "value": "2024-02-29T12:34:00.12",
+      "number": 1709210040120
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2024-02-29T12:34:01.100",
+      "value": "2024-02-29T12:34:01.1",
+      "number": 1709210041100
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2023-02-29T12:34",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "datetime-local",
+      "raw": "00001-01-01T00:00",
+      "value": "0001-01-01T00:00",
+      "number": -62135596800000
+    },
+    {
+      "type": "datetime-local",
+      "raw": "275760-09-13T00:00",
+      "value": "275760-09-13T00:00",
+      "number": 8640000000000000
+    },
+    {
+      "type": "datetime-local",
+      "raw": "275760-09-13T00:01",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2024-01-01t00:00",
+      "value": "",
+      "number": null
+    },
+    {
+      "type": "datetime-local",
+      "raw": "2024-01-01T00:00Z",
+      "value": "",
+      "number": null
+    }
+  ]
+}

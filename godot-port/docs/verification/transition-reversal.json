@@ -1,0 +1,19 @@
+{
+  "status": "Source fix verified headlessly and against Chrome; native qualification pending",
+  "fix": "Track reversing-adjusted start value and shortening factor. Partial reversals shorten duration and negative delay; positive delay is unchanged. Repeated reversals reuse the factor, while redirection to a third value resets it.",
+  "spec": "https://www.w3.org/TR/css-transitions-1/#reversing",
+  "baseline": {"log": ".utmp/safe-engine71/transition-reversal-baseline.log", "failing_assertions": 8},
+  "core": {"log": ".utmp/safe-engine71/transition-reversal-final.log", "passed_suites": 14, "seconds": 21.88},
+  "chrome": {
+    "log": ".utmp/safe-engine71/transition-reversal-final-chrome.json",
+    "browser": "Chrome/152.0.7977.83",
+    "passed_cases": 4,
+    "coverage": "Linear halfway reversal followed by reversal again or redirection to a third value; positive and negative delays on reversal."
+  },
+  "performance_scope": "New string and scalar state is stored per active transition. No new work is added to unchanged idle frames; runtime allocation and timing qualification remain pending.",
+  "limitations": [
+    "Nonlinear and overshooting easing reversal still needs dedicated browser comparison.",
+    "Native host, sanitizer, export and runtime performance qualification remain pending for this source revision.",
+    "Installed preview211 and frozen candidate215 are unchanged; whole-frame stalls remain unresolved."
+  ]
+}

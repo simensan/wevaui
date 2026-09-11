@@ -1,0 +1,23 @@
+{
+  "change": "Retain table-relative border segments with DOM source identity; draw shared borders after table contents and suppress separate cell borders",
+  "installed": false,
+  "main_core_checks": 485676,
+  "main_core_failures": 0,
+  "focused_sanitizers": {
+    "table_checks": 251,
+    "failures": 0,
+    "log": ".utmp/safe-engine71/table163-sanitizer.log"
+  },
+  "verified": [
+    "Solid border pixels and left-cell color precedence",
+    "Segment data survives scratch subtree import and source BoxTree reset",
+    "Tree reset removes border data without adding a field to every Box"
+  ],
+  "remaining": [
+    "Chrome pixel comparison including transparent crossings and junction precedence",
+    "Live border color/style/width mutations and retained paint replay",
+    "Correct painting order with positioned cell content, blur and visibility overrides",
+    "Caption, empty-table, RTL, spans and border-width sizing constraints",
+    "Native/performance qualification before installing"
+  ]
+}

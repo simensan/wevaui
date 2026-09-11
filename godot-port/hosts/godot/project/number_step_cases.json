@@ -1,0 +1,976 @@
+{
+  "browser": "Chrome/152.0.7977.83",
+  "rows": [
+    {
+      "attrs": {},
+      "key": "ArrowUp",
+      "before": "",
+      "value": "1",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {},
+      "key": "ArrowDown",
+      "before": "",
+      "value": "-1",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5"
+      },
+      "key": "ArrowUp",
+      "before": "5",
+      "value": "6",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5"
+      },
+      "key": "ArrowDown",
+      "before": "5",
+      "value": "4",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0",
+        "min": "0",
+        "max": "10"
+      },
+      "key": "ArrowUp",
+      "before": "0",
+      "value": "1",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0",
+        "min": "0",
+        "max": "10"
+      },
+      "key": "ArrowDown",
+      "before": "0",
+      "value": "0",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "10",
+        "min": "0",
+        "max": "10"
+      },
+      "key": "ArrowUp",
+      "before": "10",
+      "value": "10",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "10",
+        "min": "0",
+        "max": "10"
+      },
+      "key": "ArrowDown",
+      "before": "10",
+      "value": "9",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "3",
+        "min": "0",
+        "max": "10",
+        "step": "2"
+      },
+      "key": "ArrowUp",
+      "before": "3",
+      "value": "4",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "3",
+        "min": "0",
+        "max": "10",
+        "step": "2"
+      },
+      "key": "ArrowDown",
+      "before": "3",
+      "value": "2",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "-5",
+        "min": "0",
+        "max": "10"
+      },
+      "key": "ArrowUp",
+      "before": "-5",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "-5",
+        "min": "0",
+        "max": "10"
+      },
+      "key": "ArrowDown",
+      "before": "-5",
+      "value": "-5",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "20",
+        "min": "0",
+        "max": "10"
+      },
+      "key": "ArrowUp",
+      "before": "20",
+      "value": "20",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "20",
+        "min": "0",
+        "max": "10"
+      },
+      "key": "ArrowDown",
+      "before": "20",
+      "value": "10",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "min": "5",
+        "max": "10"
+      },
+      "key": "ArrowUp",
+      "before": "",
+      "value": "5",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "min": "5",
+        "max": "10"
+      },
+      "key": "ArrowDown",
+      "before": "",
+      "value": "5",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "min": "-10",
+        "max": "-5"
+      },
+      "key": "ArrowUp",
+      "before": "",
+      "value": "-5",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "min": "-10",
+        "max": "-5"
+      },
+      "key": "ArrowDown",
+      "before": "",
+      "value": "-5",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "3",
+        "min": "10",
+        "max": "0"
+      },
+      "key": "ArrowUp",
+      "before": "3",
+      "value": "10",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "3",
+        "min": "10",
+        "max": "0"
+      },
+      "key": "ArrowDown",
+      "before": "3",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.3",
+        "step": "0.1"
+      },
+      "key": "ArrowUp",
+      "before": "0.3",
+      "value": "0.4",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.3",
+        "step": "0.1"
+      },
+      "key": "ArrowDown",
+      "before": "0.3",
+      "value": "0.2",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "-0.3",
+        "step": "0.1"
+      },
+      "key": "ArrowUp",
+      "before": "-0.3",
+      "value": "-0.2",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "-0.3",
+        "step": "0.1"
+      },
+      "key": "ArrowDown",
+      "before": "-0.3",
+      "value": "-0.4",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "1.2",
+        "step": "any"
+      },
+      "key": "ArrowUp",
+      "before": "1.2",
+      "value": "2.2",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "1.2",
+        "step": "any"
+      },
+      "key": "ArrowDown",
+      "before": "1.2",
+      "value": "0.2",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "step": "0"
+      },
+      "key": "ArrowUp",
+      "before": "5",
+      "value": "6",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "step": "0"
+      },
+      "key": "ArrowDown",
+      "before": "5",
+      "value": "4",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "step": "-2"
+      },
+      "key": "ArrowUp",
+      "before": "5",
+      "value": "6",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "step": "-2"
+      },
+      "key": "ArrowDown",
+      "before": "5",
+      "value": "4",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "step": "garbage"
+      },
+      "key": "ArrowUp",
+      "before": "5",
+      "value": "6",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "step": "garbage"
+      },
+      "key": "ArrowDown",
+      "before": "5",
+      "value": "4",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.5",
+        "current": "1",
+        "step": "1"
+      },
+      "key": "ArrowUp",
+      "before": "1",
+      "value": "1.5",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.5",
+        "current": "1",
+        "step": "1"
+      },
+      "key": "ArrowDown",
+      "before": "1",
+      "value": "0.5",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "4",
+        "min": "1",
+        "step": "2"
+      },
+      "key": "ArrowUp",
+      "before": "4",
+      "value": "5",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "4",
+        "min": "1",
+        "step": "2"
+      },
+      "key": "ArrowDown",
+      "before": "4",
+      "value": "3",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "readonly": ""
+      },
+      "key": "ArrowUp",
+      "before": "5",
+      "value": "5",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "readonly": ""
+      },
+      "key": "ArrowDown",
+      "before": "5",
+      "value": "5",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "disabled": ""
+      },
+      "key": "ArrowUp",
+      "before": "5",
+      "value": "5",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "5",
+        "disabled": ""
+      },
+      "key": "ArrowDown",
+      "before": "5",
+      "value": "5",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "1e2",
+        "step": "1e1"
+      },
+      "key": "ArrowUp",
+      "before": "1e2",
+      "value": "1.1e+2",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "1e2",
+        "step": "1e1"
+      },
+      "key": "ArrowDown",
+      "before": "1e2",
+      "value": "9e+1",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "",
+        "max": "0.5"
+      },
+      "key": "ArrowUp",
+      "before": "",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "",
+        "max": "0.5"
+      },
+      "key": "ArrowDown",
+      "before": "",
+      "value": "-1",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "min": "10",
+        "max": "0"
+      },
+      "key": "ArrowUp",
+      "before": "",
+      "value": "10",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "min": "10",
+        "max": "0"
+      },
+      "key": "ArrowDown",
+      "before": "",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.3",
+        "min": "0",
+        "step": "0.1"
+      },
+      "key": "ArrowUp",
+      "before": "0.3",
+      "value": "0.4",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.3",
+        "min": "0",
+        "step": "0.1"
+      },
+      "key": "ArrowDown",
+      "before": "0.3",
+      "value": "0.2",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.3",
+        "min": "0",
+        "step": "any"
+      },
+      "key": "ArrowUp",
+      "before": "0.3",
+      "value": "1.3",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.3",
+        "min": "0",
+        "step": "any"
+      },
+      "key": "ArrowDown",
+      "before": "0.3",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.5",
+        "min": "0.5",
+        "max": "0.6",
+        "step": "1"
+      },
+      "key": "ArrowUp",
+      "before": "0.5",
+      "value": "0.5",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "0.5",
+        "min": "0.5",
+        "max": "0.6",
+        "step": "1"
+      },
+      "key": "ArrowDown",
+      "before": "0.5",
+      "value": "0.5",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "9",
+        "min": "0",
+        "max": "9",
+        "step": "2"
+      },
+      "key": "ArrowUp",
+      "before": "9",
+      "value": "9",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "9",
+        "min": "0",
+        "max": "9",
+        "step": "2"
+      },
+      "key": "ArrowDown",
+      "before": "9",
+      "value": "8",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "20",
+        "min": "1",
+        "max": "10",
+        "step": "2"
+      },
+      "key": "ArrowUp",
+      "before": "20",
+      "value": "20",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "20",
+        "min": "1",
+        "max": "10",
+        "step": "2"
+      },
+      "key": "ArrowDown",
+      "before": "20",
+      "value": "10",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "min": "1",
+        "max": "10",
+        "step": "2"
+      },
+      "key": "ArrowUp",
+      "before": "",
+      "value": "1",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "min": "1",
+        "max": "10",
+        "step": "2"
+      },
+      "key": "ArrowDown",
+      "before": "",
+      "value": "1",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "-0.1",
+        "step": "0.1"
+      },
+      "key": "ArrowUp",
+      "before": "-0.1",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "-0.1",
+        "step": "0.1"
+      },
+      "key": "ArrowDown",
+      "before": "-0.1",
+      "value": "-0.2",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "1e-7",
+        "step": "1e-7"
+      },
+      "key": "ArrowUp",
+      "before": "1e-7",
+      "value": "2e-7",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "1e-7",
+        "step": "1e-7"
+      },
+      "key": "ArrowDown",
+      "before": "1e-7",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.123456789012345",
+        "step": "0.000000000000001"
+      },
+      "key": "ArrowUp",
+      "before": "0.123456789012345",
+      "value": "0.123456789012346",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.123456789012345",
+        "step": "0.000000000000001"
+      },
+      "key": "ArrowDown",
+      "before": "0.123456789012345",
+      "value": "0.123456789012344",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "9007199254740992"
+      },
+      "key": "ArrowUp",
+      "before": "9007199254740992",
+      "value": "9007199254740993",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "9007199254740992"
+      },
+      "key": "ArrowDown",
+      "before": "9007199254740992",
+      "value": "9007199254740991",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "1e308",
+        "step": "1e308"
+      },
+      "key": "ArrowUp",
+      "before": "1e308",
+      "value": "1e+308",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "1e308",
+        "step": "1e308"
+      },
+      "key": "ArrowDown",
+      "before": "1e308",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0",
+        "min": "0",
+        "step": "1e-20"
+      },
+      "key": "ArrowUp",
+      "before": "0",
+      "value": "1e-20",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0",
+        "min": "0",
+        "step": "1e-20"
+      },
+      "key": "ArrowDown",
+      "before": "0",
+      "value": "0",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "0.0",
+        "min": "0"
+      },
+      "key": "ArrowUp",
+      "before": "0.0",
+      "value": "1",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "0.0",
+        "min": "0"
+      },
+      "key": "ArrowDown",
+      "before": "0.0",
+      "value": "0.0",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "10.0",
+        "max": "10"
+      },
+      "key": "ArrowUp",
+      "before": "10.0",
+      "value": "10.0",
+      "events": []
+    },
+    {
+      "attrs": {
+        "value": "10.0",
+        "max": "10"
+      },
+      "key": "ArrowDown",
+      "before": "10.0",
+      "value": "9",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "-1e308",
+        "step": "1e308"
+      },
+      "key": "ArrowUp",
+      "before": "-1e308",
+      "value": "0",
+      "events": [
+        "input",
+        "change"
+      ]
+    },
+    {
+      "attrs": {
+        "value": "-1e308",
+        "step": "1e308"
+      },
+      "key": "ArrowDown",
+      "before": "-1e308",
+      "value": "-1e+308",
+      "events": [
+        "input",
+        "change"
+      ]
+    }
+  ]
+}

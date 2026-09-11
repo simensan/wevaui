@@ -1,0 +1,58 @@
+// ABI minor 37: a @font-face src list is tried in the author's order, and a
+// local("Name") entry is an installed font.
+using System;
+using NUnit.Framework;
+using System.IO;
+using UnityEngine;
+using Weva.Native;
+
+namespace Weva.Tests.EditorTests.Native
+{
+    public class NativeFontFaceLocalTests
+    {
+        [Test]
+        public void Local_FallsThroughToTheUrlAfterIt()
+        {
+            Font font = Resources.Load<Font>("Fonts/Weva-Default");
+            Assume.That(font, Is.Not.Null);
+            using (var doc = new NativeDocument(400, 100))
+            using (var fonts = new UnityFontBackend())
+            {
+                fonts.Install(doc, fonts.Adopt(font));
+                doc.SetBasePath(Path.GetFullPath("Packages/com.wevaui/Runtime/Resources/Fonts"));
+                doc.LoadHtml("<body><span id=t>Heavy words</span></body>");
+                doc.SetCss("@font-face{font-family:Heavy;src:local(\"Weva No Such Font 9f3\"), url(Weva-Default-Bold.ttf)}body{margin:0}");
+                var faces = doc.FontFaces();
+                Assert.That(faces.Count, Is.EqualTo(1));
+                Assert.That(faces[0].Sources, Does.StartWith("local:Weva No Such Font 9f3|url:"));
+                Assert.That(fonts.SyncCssFontFaces(doc), Is.EqualTo(1), "the url() after the unknown local() serves the family");
+
+                doc.SetCss("@font-face{font-family:Nowhere;src:local(\"Weva No Such Font 9f3\")}body{margin:0}");
+                Assert.That(doc.FontFaces().Count, Is.EqualTo(1), "a local()-only rule is listed");
+                Assert.That(doc.FontFaces()[0].Source, Is.Empty);
+                Assert.That(fonts.SyncCssFontFaces(doc), Is.EqualTo(0), "and nobody has that font");
+                Assert.That(fonts.LastError, Does.Contain("Nowhere"));
+            }
+        }
+
+        [Test]
+        public void Local_LoadsAnInstalledFontByName()
+        {
+            string[] installed;
+            try { installed = Font.GetOSInstalledFontNames(); }
+            catch (Exception) { Assert.Inconclusive("no OS font enumeration here"); return; }
+            Assume.That(installed, Is.Not.Null.And.Not.Empty);
+            string name = Array.IndexOf(installed, "Arial") >= 0 ? "Arial" : installed[0];
+            Font font = Resources.Load<Font>("Fonts/Weva-Default");
+            Assume.That(font, Is.Not.Null);
+            using (var doc = new NativeDocument(400, 100))
+            using (var fonts = new UnityFontBackend())
+            {
+                fonts.Install(doc, fonts.Adopt(font));
+                doc.LoadHtml("<body><span id=t>Heavy words</span></body>");
+                doc.SetCss("@font-face{font-family:Sys;src:local(\"" + name + "\")}body{margin:0}#t{font-family:Sys}");
+                Assert.That(fonts.SyncCssFontFaces(doc), Is.EqualTo(1), "an installed font by name: " + name + " (" + fonts.LastError + ")");
+            }
+        }
+    }
+}

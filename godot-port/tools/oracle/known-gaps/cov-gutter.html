@@ -1,0 +1,27 @@
+<!-- scrollbar-gutter. The gutter does not change the PANE's box, it changes
+     the content box inside it, so each pane holds a block child that takes
+     the content width — without one the case measures nothing, which is what
+     the first version of it did. -->
+<div class="page">
+  <section class="row">
+    <div class="pane auto"><div class="fill">auto</div></div>
+    <div class="pane stable"><div class="fill">stable</div></div>
+    <div class="pane stable-both"><div class="fill">both edges</div></div>
+  </section>
+
+  <section class="row">
+    <div class="pane overflowing auto">
+      <div class="fill">no gutter, and really scrolling</div>
+      <div class="fill tall">more</div>
+    </div>
+    <div class="pane overflowing stable">
+      <div class="fill">stable gutter, and really scrolling</div>
+      <div class="fill tall">more</div>
+    </div>
+  </section>
+
+  <section class="row">
+    <div class="pane hidden-overflow"><div class="fill">overflow hidden</div></div>
+    <div class="pane scrolling"><div class="fill">overflow scroll</div></div>
+  </section>
+</div>
