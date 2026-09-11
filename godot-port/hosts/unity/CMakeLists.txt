@@ -18,11 +18,15 @@ project(weva_unity CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 set(WEVA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../.. ${CMAKE_CURRENT_BINARY_DIR}/weva-core)
+
+# Hidden visibility only for the plugin's own sources, set after the core is
+# added: a hidden symbol cannot be exported by a version script, and the
+# core's C API must be. The version script (local: *) hides the rest.
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter)
 set(WEVA_C_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/../../libweva/include/weva_c.h")

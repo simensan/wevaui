@@ -27,7 +27,9 @@ SCALARS = {
 
 def strip_comments(text):
     text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
-    return re.sub(r'//[^\n]*', '', text)
+    text = re.sub(r'//[^\n]*', '', text)
+    # Export decoration on the plugin's own declarations is not part of a type.
+    return re.sub(r'\bWEVA_UNITY_API\b', '', text)
 
 
 def map_type(ctype, enums, structs, callbacks):

@@ -19,6 +19,9 @@
 #   interactive gate    the same, in the states that only exist while a user is
 #                       doing something: a cursor, a selection, a scrolled
 #                       list, an open dropdown
+#   unity plugin        the same core as the Unity host's shared library: it
+#                       builds, loads through the dynamic loader, and the
+#                       generated P/Invoke layer matches the headers
 #   host tests          the GDScript surface, driven from Godot
 #   engine text safety  isolated long-Unicode shaping checks; stock Godot
 #                       4.7.2 is known to fail and must not pass a release gate
@@ -38,6 +41,7 @@ REPO="$(cd "$ROOT/.." && pwd)"
 GCC=${WEVA_BUILD_GCC:-$HOME/weva/build-gcc}
 CLANG=${WEVA_BUILD_CLANG:-$HOME/weva/build-clang}
 GODOT_BUILD=${WEVA_BUILD_GODOT:-$HOME/weva/build-godot}
+UNITY_BUILD=${WEVA_BUILD_UNITY:-$HOME/weva/build-unity}
 GODOT=${GODOT_BIN:-$HOME/godot/godot}
 SAMPLES="$ROOT/tools/oracle/corpus/samples"
 
@@ -234,6 +238,34 @@ fi
 # against a Godot still loading the PREVIOUS run's .so, and reported the
 # version skew as a rasteriser difference. It failed on the first run and
 # passed on the second, which is the most misleading way for a gate to behave.
+step "unity plugin"
+# The same core as the Unity host's shared library: built, opened through the
+# dynamic loader by the host-free load test, and the generated P/Invoke layer
+# compared against the headers. The Unity editor itself is not part of this
+# script; its EditMode round trip is recorded in
+# docs/verification/unity-host-prototype.json.
+if [ ! -f "$UNITY_BUILD/build.ninja" ]; then
+    if ! cmake -S "$ROOT/hosts/unity" -B "$UNITY_BUILD" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DWEVA_UNITY_BIN="$UNITY_BUILD/bin" > /tmp/weva-unity-configure.log 2>&1; then
+        fail "unity plugin configure"
+        tail -20 /tmp/weva-unity-configure.log
+    fi
+fi
+if [ -f "$UNITY_BUILD/build.ninja" ]; then
+    if ! ( cd "$UNITY_BUILD" && ninja ) > /tmp/weva-unity-build.log 2>&1; then
+        fail "unity plugin build"
+        grep -E "error:|FAILED" /tmp/weva-unity-build.log | head -5
+    elif ! "$UNITY_BUILD/weva_core_load_test" "$UNITY_BUILD/bin/weva_core.so"; then
+        fail "unity plugin load test"
+    elif ! python3 "$ROOT/hosts/unity/gen_bindings.py" --header "$ROOT/libweva/include/weva_c.h" \
+            --header "$ROOT/hosts/unity/src/weva_unity.h" \
+            --out "$REPO/Packages/com.wevaui/Runtime/Native/WevaNative.g.cs" --check; then
+        fail "unity bindings drift"
+    else
+        echo "unity plugin ok"
+    fi
+fi
+
 step "godot extension"
 if [ -x "$GODOT" ] && [ -f "$GODOT_BUILD/build.ninja" ]; then
     # The extension links straight into project/addons/weva/bin, so there is

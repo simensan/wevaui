@@ -1,0 +1,60 @@
+{
+  "scope": "Phase 2 of the shared-core plan: the Unity host over libweva. This receipt grows with the phase; each step records its gate as it lands.",
+  "date": "2026-09-11",
+  "commit": "86d2aad0",
+  "step_1_plugin_build": {
+    "target": "godot-port/hosts/unity (weva_core shared library; static CRT and ICU; only weva_* exported from weva_c.h and weva_unity.h)",
+    "windows": {
+      "toolchain": "MSVC 19.44.35222.0, Release, VS 2022 generator",
+      "library": "weva_core.dll, 4,721,664 bytes",
+      "library_sha256": "f06116368435b9c2360707db68e5dc71b999fea13cbdb105177e5c91f6b7c309",
+      "load_test": "weva_core_load_test: abi 0.25, button at 10.0,10.0 size 29.3x22.0, 4 draws, layout probe sizes match, ok",
+      "build_json": "weva_core.dll.build.json stamped (library and source digests, git state, compiler, ABI 0.25)"
+    },
+    "linux": {
+      "toolchain": "GNU 13.3.0 (WSL Ubuntu 24.04), Release, Ninja",
+      "library": "weva_core.so, 6,320,120 bytes",
+      "library_sha256": "1d39f7d3fb5b27f66bf2858847d98a12aaf682fb2521338cdb7ca8885f38ed8f",
+      "exports": "113 dynamic symbols, all weva_* (version script, local: *); a first build exported none because hidden visibility was applied to the core objects before the version script could pick them, fixed by scoping the preset to the plugin sources",
+      "load_test": "weva_core_load_test: abi 0.25, button at 10.0,10.0 size 29.3x22.0, 4 draws, ok (identical geometry to Windows)"
+    },
+    "ci": "godot-ci.yml job unity-plugin (ubuntu-24.04, windows-2022): build, load test, gen_bindings --check; check.sh gate \"unity plugin\"",
+    "gate": "met: the DLL loads in Unity 6000.4.1f1 EditMode and weva_abi_version() reports 0.25 (Plugin_ReportsHeaderAbiVersion)"
+  },
+  "step_2_bindings": {
+    "generator": "godot-port/hosts/unity/gen_bindings.py -> Packages/com.wevaui/Runtime/Native/WevaNative.g.cs (113 functions, 12 structs, 7 enums)",
+    "shape": "blittable: unsafe pointers, nuint for size_t, fixed buffers for arrays, delegate* unmanaged[Cdecl] callback fields, Cdecl DllImport externs; nothing marshalled, so Mono and IL2CPP share the file",
+    "wrapper": "Packages/com.wevaui/Runtime/Native/NativeDocument.cs (UTF-8, status checks, ownership, draw span)",
+    "editmode": {
+      "unity": "6000.4.1f1, -batchmode -nographics -runTests -testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native",
+      "total": 18,
+      "passed": 18,
+      "failed": 0,
+      "results": ".utmp/unity-test/native-editmode.xml",
+      "cases": [
+        "Plugin_ReportsHeaderAbiVersion",
+        "GeneratedStruct_MatchesNativeSize x12 (weva_config, weva_vertex, weva_rounded_rect, weva_backdrop_effect, weva_draw, weva_texture, weva_render_backend, weva_glyph_bitmap, weva_font_backend, weva_shaped_glyph, weva_event, weva_binding_source)",
+        "LayoutProbe_RejectsUnknownNames",
+        "Document_RoundTrips (create, HTML, CSS, update, focus_next, tag name, bounds 10,10, draws with triangles, destroy)",
+        "Bounds_OfNoElement_Fail",
+        "Update_AfterDispose_Throws",
+        "ManyDocuments_CreateAndDestroy (50)"
+      ],
+      "note": "rerun against the rebuilt DLL (same 18/18)"
+    },
+    "gate": "met: the document round trip passes from C# in EditMode and agrees with the C++ load test"
+  },
+  "steps_open": [
+    "3 font adapter over TextCore/TMP (weva_font_backend + positioned shaper; port font_backend_tests.cpp checks to NUnit)",
+    "4 render adapter (weva_document_draws into the URP path; compare_render.py against the Godot render)",
+    "5 input and events",
+    "6 bindings and controllers (Frontier Camp logic in a Unity script)",
+    "7 layout-dump from Unity for the three-way oracle"
+  ],
+  "limitations": [
+    "The Unity editor is not on the CI runners; the EditMode run is recorded here and must be rerun by hand after header or generator changes.",
+    "Windows x64 only in the package (Plugins/x86_64); the Linux .so builds and passes the load test but is not installed in the package.",
+    "The plugin binary is gitignored; build it with hosts/unity (README) before the Native EditMode tests can run.",
+    "No font or render backend is wired yet, so the round trip's text metrics come from the core's built-in fallback face."
+  ]
+}
