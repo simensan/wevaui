@@ -229,6 +229,26 @@ void test_flex_main_axis() {
     }
 }
 
+// CSS Sizing L3 §5 keywords on flex items: as the basis and as bounds.
+void test_flex_intrinsic_keywords() {
+    Fixture f;
+    CHECK(f.css("body { margin: 0; font-size: 16px }"
+                "#r { display: flex; width: 300px }"
+                ".m { flex-basis: max-content; height: 10px } .n { flex-basis: min-content; height: 10px }"
+                "#k { flex: 1; max-width: max-content; height: 10px }"
+                "#r2 { display: flex; width: 300px } #g { flex: 1; height: 10px } #h { width: 10px; min-width: max-content; height: 10px }"
+                "#r3 { display: flex; width: 100px } #j { flex-basis: fit-content; height: 10px; padding: 0 5px }"));
+    CHECK(f.layout("<body><div id=r><div id=a class=m>ab cd ef</div><div id=b class=n>ab cd ef</div><div id=k>ab cd ef</div></div>"
+                   "<div id=r2><div id=g></div><div id=h>ab cd ef</div></div>"
+                   "<div id=r3><div id=j>ab cd ef</div></div></body>"));
+    CHECK(near(f.box("a").width, 64));   // max-content: one line of eight glyphs
+    CHECK(near(f.box("b").width, 16));   // min-content: the widest word
+    CHECK(near(f.box("k").width, 64));   // grows, but not past max-content
+    CHECK(near(f.box("h").width, 64));   // min-width raises the 10px item
+    CHECK(near(f.box("g").width, 300 - 64));
+    CHECK(near(f.box("j").width, 74));   // fit-content in 100: max-content 64 + padding, fits
+}
+
 void test_flex_min_height_is_not_a_definite_height() {
     // `min-height` constrains the height; it does not GIVE one. Treating "the
     // height property is not auto" as "a used height exists" handed a column

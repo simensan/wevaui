@@ -442,12 +442,28 @@ void test_intrinsic_width_keywords() {
                 "#d { width: fit-content(40px); padding: 5px } #e { width: max-content; padding: 5px }"
                 "#bb { width: fit-content(40px); padding: 5px; box-sizing: border-box }"
                 "#fl { float: left; width: max-content } #ib { display: inline-block; width: min-content }"
-                "#h { width: max-content; max-width: 40px } #m { width: min-content; min-width: 30px }"));
+                "#h { width: max-content; max-width: 40px } #m { width: min-content; min-width: 30px }"
+                "#p { max-width: max-content } #q { width: 20px; min-width: max-content }"
+                "#r2 { max-width: fit-content(30px) } #s { width: 5px; min-width: min-content }"
+                "#u { width: 200px; min-width: 100px; max-width: min-content }"
+                "#v { float: left; max-width: min-content } #w2 { width: 100px; margin: 0 auto; max-width: max-content }"));
     CHECK(f.layout("<body><div id=a>ab cd ef</div><div id=b>ab cd ef</div><div id=c>ab cd ef</div>"
                    "<div id=n><div id=nn>ab cd ef</div></div>"
                    "<div id=d>ab cd ef</div><div id=e>ab cd ef</div><div id=bb>ab cd ef</div>"
                    "<div id=w><div id=fl>ab cd ef</div></div><div id=x><span id=ib>ab cd ef</span></div>"
-                   "<div id=h>ab cd ef</div><div id=m>ab cd ef</div></body>"));
+                   "<div id=h>ab cd ef</div><div id=m>ab cd ef</div>"
+                   "<div id=p>ab cd ef</div><div id=q>ab cd ef</div><div id=r2>ab cd ef</div>"
+                   "<div id=s>ab cd ef</div><div id=u>ab cd ef</div><div id=vv><div id=v>ab cd ef</div></div>"
+                   "<div id=w2>ab cd ef</div></body>"));
+    // CSS Sizing L3 §5.2: the keywords as min-width / max-width bounds.
+    CHECK(near(f.tree[f.find("p")].width, 64));      // fills 1000, capped at max-content
+    CHECK(near(f.tree[f.find("q")].width, 64));      // 20 raised to max-content
+    CHECK(near(f.tree[f.find("r2")].width, 30));     // min(64, max(16, 30))
+    CHECK(near(f.tree[f.find("s")].width, 16));      // 5 raised to min-content
+    CHECK(near(f.tree[f.find("u")].width, 100));     // min wins over a smaller max (16)
+    CHECK(near(f.tree[f.find("v")].width, 16));      // a float's shrink-to-fit, capped
+    CHECK(near(f.tree[f.find("w2")].width, 64));     // and the capped box still centres
+    CHECK(near(f.tree[f.find("w2")].x, (1000 - 64) / 2.0));
     CHECK(near(f.tree[f.find("a")].width, 64));
     CHECK(near(f.tree[f.find("b")].width, 16));
     CHECK(near(f.tree[f.find("c")].width, 64));       // fits in 1000: max-content

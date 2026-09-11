@@ -396,6 +396,8 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     else if (min_r.kind == LengthKind::Percent) {
         clamp_min(containing_block_width * min_r.percent * 0.01);
     }
+    // An intrinsic keyword as min-width / max-width is applied by
+    // shrink_to_fit, which has the probes; layout_block routes there.
     box.width = resolved_width;
 
     // Stamp a definite height early so descendants resolving a percentage
@@ -1145,10 +1147,19 @@ IntrinsicPick intrinsic_pick_of(std::string_view raw) {
 }
 } // namespace
 
-bool BlockLayout::has_intrinsic_width_keyword(BoxId id) const {
-    const std::string_view raw = get((*tree_)[id].style, kId_width);
+namespace {
+bool is_intrinsic_keyword(std::string_view raw) {
     if (iequals(raw, "min-content") || iequals(raw, "max-content") || iequals(raw, "fit-content")) return true;
     return raw.size() > 12 && iequals(raw.substr(0, 12), "fit-content(");
+}
+} // namespace
+
+bool BlockLayout::has_intrinsic_width_keyword(BoxId id) const {
+    const ComputedStyle* style = (*tree_)[id].style;
+    // CSS Sizing L3 §5.2: the keywords as min-width / max-width need the same
+    // probes as a keyword width, whatever the width itself says.
+    return is_intrinsic_keyword(get(style, kId_width)) || is_intrinsic_keyword(get(style, kId_min_width)) ||
+           is_intrinsic_keyword(get(style, kId_max_width));
 }
 
 double BlockLayout::shrink_to_fit(BoxId id, double available_width,
@@ -1159,10 +1170,16 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
         resolve_length(style, kId_width, ctx_, fs, available_width);
     IntrinsicPick pick = intrinsic_pick_of(get(style, kId_width));
     double fit_arg = 0;
+    const bool bound_keyword =
+        is_intrinsic_keyword(get(style, kId_min_width)) || is_intrinsic_keyword(get(style, kId_max_width));
+    // A stated width with a keyword bound: the probes still run, and the
+    // stated width (as apply_box_model resolved it) is what they clamp.
+    const bool explicit_width = w.kind != LengthKind::Auto && w.kind != LengthKind::FitContent && bound_keyword;
+    const double stated_width = (*tree_)[id].width;   // before the probes overwrite it
     if (w.kind == LengthKind::FitContent) {
         pick = IntrinsicPick::FitArg;
         fit_arg = w.pixels;
-    } else if (w.kind != LengthKind::Auto) {
+    } else if (w.kind != LengthKind::Auto && !bound_keyword) {
         // A replaced element with a stated width and an auto height takes its
         // height from the intrinsic ratio -- the case every `img { width: 100% }`
         // in every stylesheet relies on.
@@ -1239,10 +1256,25 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
             fitted = std::min(max_content, std::max(min_content, avail));
             break;
     }
+    if (explicit_width) fitted = stated_width;
     if (fitted < 0) fitted = 0;
 
     // §10.3.5: the shrink-to-fit result is still clamped by min- and max-width,
-    // which share width's box-sizing basis.
+    // which share width's box-sizing basis. A keyword bound is the probe's
+    // own number; `fit-content` measures against the available width.
+    const auto keyword_bound = [&](int prop) -> double {
+        const std::string_view raw = get(style, prop);
+        if (iequals(raw, "min-content")) return min_content;
+        if (iequals(raw, "max-content")) return max_content;
+        if (iequals(raw, "fit-content")) return std::min(max_content, std::max(min_content, avail));
+        if (raw.size() > 12 && iequals(raw.substr(0, 12), "fit-content(")) {
+            const ResolvedLength r = resolve_length(style, prop, ctx_, fs, available_width);
+            if (r.kind == LengthKind::FitContent) {
+                return std::min(max_content, std::max(min_content, border_box ? r.pixels : r.pixels + frame));
+            }
+        }
+        return -1;
+    };
     const ResolvedLength min_r =
         resolve_length(style, kId_min_width, ctx_, fs, available_width);
     const ResolvedLength max_r =
@@ -1256,12 +1288,31 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     if (max_r.kind == LengthKind::Length || max_r.kind == LengthKind::Percent) {
         const double px = to_border_box(max_r);
         if (fitted > px) fitted = px;
+    } else {
+        const double max_i = keyword_bound(kId_max_width);
+        if (max_i >= 0 && fitted > max_i) fitted = max_i;
     }
     if (min_r.kind == LengthKind::Length || min_r.kind == LengthKind::Percent) {
         const double px = to_border_box(min_r);
         if (fitted < px) fitted = px;
+    } else {
+        const double min_i = keyword_bound(kId_min_width);
+        if (min_i >= 0 && fitted < min_i) fitted = min_i;
     }
 
+    // CSS 2.1 §10.3.3: `margin: 0 auto` centres the FITTED width. The box
+    // model computed the margins for the width it knew; a keyword changes it.
+    {
+        Box& fb = (*tree_)[id];
+        const bool out_of_flow =
+            fb.position == PositionType::Absolute || fb.position == PositionType::Fixed;
+        if (get(style, kId_margin_left) == "auto" && get(style, kId_margin_right) == "auto" &&
+            !fb.is_inline_block && !fb.is_float() && !out_of_flow) {
+            const double extra = std::max(0.0, available_width - fitted);
+            fb.margin_left = extra * 0.5;
+            fb.margin_right = extra * 0.5;
+        }
+    }
     relayout_content_at(id, fitted, fs, parent_style);
     return fs;
 }

@@ -310,7 +310,25 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         const std::string_view basis_raw = get(is, kId_flex_basis);
         const std::string_view size_raw = get(is, column ? kId_height : kId_width);
         double base = column ? b.height : b.width;
-        if (!basis_raw.empty() && !iequals(basis_raw, "auto") &&
+        // CSS Sizing L3 §5: the intrinsic keywords on a row item, as a
+        // border-box main size from the probe the item already carries. In a
+        // column the laid-out height is the content size either way.
+        const double row_frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
+        const auto row_intrinsic = [&](std::string_view raw) -> double {
+            if (column) return -1;
+            const double max_c = b.parent_layout_input.max_content + row_frame;
+            const double min_c = b.parent_layout_input.min_content + row_frame;
+            if (iequals(raw, "min-content")) return min_c;
+            if (iequals(raw, "max-content")) return max_c;
+            if (iequals(raw, "fit-content")) {
+                return std::min(max_c, std::max(min_c, definite_main ? available_main : max_c));
+            }
+            return -1;
+        };
+        const double basis_i = row_intrinsic(basis_raw);
+        if (basis_i >= 0) {
+            base = basis_i;
+        } else if (!basis_raw.empty() && !iequals(basis_raw, "auto") &&
             !iequals(basis_raw, "content")) {
             // A percentage against an INDEFINITE main size behaves as
             // `content` (§7.2.3). The basis is passed as absent, not as -1: a
@@ -353,7 +371,10 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                    : b.padding_left + b.padding_right + b.border_left + b.border_right;
         it.main_frame = main_frame;
         const double minmax_frame = is_border_box(is) ? 0 : main_frame;
-        if (min_r.kind == LengthKind::Length) {
+        const double min_i = row_intrinsic(get(is, kId_min_width));
+        if (min_i >= 0) {
+            it.min_main = std::max(it.min_main, min_i);
+        } else if (min_r.kind == LengthKind::Length) {
             it.min_main = std::max(0.0, min_r.pixels) + minmax_frame;
         } else if (column && (min_r.kind == LengthKind::Auto || get(is, kId_min_height).empty())) {
             // §4.5, the automatic minimum size: `min-height: auto` on a column
@@ -404,7 +425,10 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         const ResolvedLength max_r =
             resolve_length(is, column ? kId_max_height : kId_max_width, ctx,
                            b.font_size > 0 ? b.font_size : font_size, main_basis);
-        if (max_r.kind == LengthKind::Length) {
+        const double max_i = row_intrinsic(get(is, kId_max_width));
+        if (max_i >= 0) {
+            it.max_main = max_i;
+        } else if (max_r.kind == LengthKind::Length) {
             it.max_main = std::max(0.0, max_r.pixels) + minmax_frame;
         }
 

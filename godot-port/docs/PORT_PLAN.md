@@ -3708,8 +3708,11 @@ an ABI surface), keep host-side (C#), drop.
 14. `min-content` / `max-content` / `fit-content` / `fit-content()` as `width`
     DONE 2026-09-11 on blocks, floats and inline-blocks (block layout routes
     the keyword through the shrink-to-fit probes; min/max-width clamp as
-    usual). Still open: the keywords as `height`, `min-width`, `max-width`
-    and `flex-basis`.
+    usual). The keywords as `min-width` / `max-width` (blocks, floats,
+    inline-blocks; `fit-content()` too) and as `flex-basis` / `min-width` /
+    `max-width` on row flex items DONE 2026-09-11 (core ahead: the C# maps
+    them to `auto`). As `height` they mean the content height, which an auto
+    height already is.
 15. `direction: rtl` reordering / `unicode-bidi` (shared gap; the caret work is
     open on both sides).
 16. View Transitions (`Runtime/ViewTransitions`): entirely absent; it needs

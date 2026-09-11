@@ -183,6 +183,7 @@ void test_anonymous_box_inherits_line_height();
 void test_multicol();
 void test_inline_fragment_edges();
 void test_flex_min_height_is_not_a_definite_height();
+void test_flex_intrinsic_keywords();
 void test_flex_min_max_carry_the_frame();
 void test_flex_auto_margins_on_main_axis();
 void test_flex_column_item_height_is_definite_for_its_content();
@@ -756,6 +757,7 @@ int main() {
     test_multicol();
     test_inline_fragment_edges();
     test_flex_min_height_is_not_a_definite_height();
+    test_flex_intrinsic_keywords();
     test_flex_min_max_carry_the_frame();
     test_flex_auto_margins_on_main_axis();
     test_flex_column_item_height_is_definite_for_its_content();
