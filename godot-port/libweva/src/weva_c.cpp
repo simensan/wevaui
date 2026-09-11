@@ -4768,6 +4768,66 @@ void note_state_change(weva_document* doc, const std::vector<const Element*>& be
 
 }   // namespace
 
+namespace {
+
+// CSS Basic UI L4 §8.2 `cursor`, settled for a point: the hovered element's
+// keyword; `auto` the way a browser settles it -- text over text and text
+// fields, pointer over a link, default elsewhere -- and a url() list reduced
+// to the keyword after its last comma, since the core hands over no images.
+std::string cursor_keyword_at(weva_document* doc, double x, double y) {
+    const Element* e = input_element_at(doc, x, y);
+    if (!e || form_is_inert(*e)) return "default";
+    const ComputedStyle* style = doc->styles.style_of(*e);
+    std::string raw(style ? style->get("cursor") : std::string_view());
+    if (raw.find("url(") != std::string::npos || raw.find("URL(") != std::string::npos) {
+        const size_t comma = raw.rfind(',');
+        raw = comma == std::string::npos ? std::string() : raw.substr(comma + 1);
+    }
+    const auto trim = [](std::string& t) {
+        while (!t.empty() && (t.back() == ' ' || t.back() == '\t' || t.back() == '\n')) t.pop_back();
+        size_t i = 0;
+        while (i < t.size() && (t[i] == ' ' || t[i] == '\t' || t[i] == '\n')) ++i;
+        t.erase(0, i);
+    };
+    trim(raw);
+    for (char& c : raw) c = static_cast<char>(c >= 'A' && c <= 'Z' ? c - 'A' + 'a' : c);
+    if (!raw.empty() && raw != "auto") return raw;
+    if (is_text_field(*e)) return "text";
+    for (const Node* n = e; n; n = n->parent()) {
+        if (n->node_type() != NodeType::Element) continue;
+        const Element& a = static_cast<const Element&>(*n);
+        if (a.tag_name() == "a" && a.has_attribute("href")) return "pointer";
+    }
+    const BoxId b = box_at_point(doc->tree, doc->root, x, y, &doc->ctx);
+    if (b != kNoBox && doc->tree[b].kind == BoxKind::Text) return "text";
+    return "default";
+}
+
+size_t copy_out(const std::string& text, char* buffer, size_t capacity) {
+    if (buffer && capacity) {
+        const size_t n = std::min(text.size(), capacity - 1);
+        if (n) std::memcpy(buffer, text.data(), n);
+        buffer[n] = '\0';
+    }
+    return text.size();
+}
+
+} // namespace
+
+size_t weva_document_cursor_at(weva_document_t doc, double x, double y, char* buffer, size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    return copy_out(cursor_keyword_at(doc, x, y), buffer, capacity);
+}
+
+size_t weva_document_cursor(weva_document_t doc, char* buffer, size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    // No pointer over the document: the host's own arrow.
+    if (doc->styles.state.hover_chain.empty()) return copy_out("default", buffer, capacity);
+    return copy_out(cursor_keyword_at(doc, doc->pointer_x, doc->pointer_y), buffer, capacity);
+}
+
 weva_element_t weva_document_element_at(weva_document_t doc, double x, double y) {
     if (!doc) return WEVA_ELEMENT_NONE;
     const Element* hit = input_element_at(doc, x, y);

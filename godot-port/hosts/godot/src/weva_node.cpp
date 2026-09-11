@@ -736,6 +736,12 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_dark_color_scheme"), &WevaDocument::get_dark_color_scheme);
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dark_color_scheme"), "set_dark_color_scheme",
                  "get_dark_color_scheme");
+    ClassDB::bind_method(D_METHOD("get_cursor"), &WevaDocument::get_cursor);
+    ClassDB::bind_method(D_METHOD("set_follow_css_cursor", "follow"),
+                         &WevaDocument::set_follow_css_cursor);
+    ClassDB::bind_method(D_METHOD("get_follow_css_cursor"), &WevaDocument::get_follow_css_cursor);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "follow_css_cursor"), "set_follow_css_cursor",
+                 "get_follow_css_cursor");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interactive"), "set_interactive", "get_interactive");
     ClassDB::bind_method(D_METHOD("set_gamepad_navigation", "on"), &WevaDocument::set_gamepad_navigation);
     ClassDB::bind_method(D_METHOD("get_gamepad_navigation"), &WevaDocument::get_gamepad_navigation);
@@ -2013,6 +2019,49 @@ void WevaDocument::set_dark_color_scheme(bool dark) {
 }
 
 bool WevaDocument::get_dark_color_scheme() const { return dark_color_scheme_; }
+
+String WevaDocument::get_cursor() const {
+    if (!doc_) return "default";
+    const size_t n = weva_document_cursor(doc_, nullptr, 0);
+    std::string text(n + 1, '\0');
+    weva_document_cursor(doc_, text.data(), text.size());
+    return String(text.c_str());
+}
+
+void WevaDocument::set_follow_css_cursor(bool follow) { follow_css_cursor_ = follow; }
+
+bool WevaDocument::get_follow_css_cursor() const { return follow_css_cursor_; }
+
+// Godot asks the hovered Control for its cursor shape on every mouse motion;
+// answering the query is the whole integration. Setting the Control's
+// default_cursor_shape instead would make Godot re-dispatch a synthetic
+// mouse motion at the display's idea of the mouse position, which in a
+// headless run sat outside the node, fired a mouse-exit, and cancelled the
+// range drag range_direction_tests was in the middle of.
+//
+// The CSS keyword to the shape Godot can show; anything without a shape
+// here is the arrow, as a browser falls back to its default.
+int32_t WevaDocument::_get_cursor_shape(const Vector2& at_position) const {
+    if (!doc_ || !follow_css_cursor_) return CURSOR_ARROW;
+    const size_t n = weva_document_cursor_at(doc_, at_position.x, at_position.y, nullptr, 0);
+    std::string text(n + 1, '\0');
+    weva_document_cursor_at(doc_, at_position.x, at_position.y, text.data(), text.size());
+    const String k(text.c_str());
+    if (k == "pointer") return CURSOR_POINTING_HAND;
+    if (k == "text" || k == "vertical-text") return CURSOR_IBEAM;
+    if (k == "wait") return CURSOR_WAIT;
+    if (k == "progress") return CURSOR_BUSY;
+    if (k == "crosshair") return CURSOR_CROSS;
+    if (k == "move" || k == "all-scroll") return CURSOR_MOVE;
+    if (k == "grab" || k == "grabbing") return CURSOR_DRAG;
+    if (k == "not-allowed" || k == "no-drop") return CURSOR_FORBIDDEN;
+    if (k == "help") return CURSOR_HELP;
+    if (k == "e-resize" || k == "w-resize" || k == "ew-resize" || k == "col-resize") return CURSOR_HSIZE;
+    if (k == "n-resize" || k == "s-resize" || k == "ns-resize" || k == "row-resize") return CURSOR_VSIZE;
+    if (k == "ne-resize" || k == "sw-resize" || k == "nesw-resize") return CURSOR_BDIAGSIZE;
+    if (k == "nw-resize" || k == "se-resize" || k == "nwse-resize") return CURSOR_FDIAGSIZE;
+    return CURSOR_ARROW;
+}
 
 Dictionary WevaDocument::get_focused_row() {
     Dictionary out;

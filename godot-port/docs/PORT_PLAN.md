@@ -3682,9 +3682,9 @@ an ABI surface), keep host-side (C#), drop.
 (safe-area insets), logical sizing properties, multicol, `@property`,
 `content-visibility` / `contain`, `scrollbar-width` / `scrollbar-color`,
 `quotes`, counters, `list-style-position: outside`, line clamping, vertical
-writing modes; `cursor` (registered, no consumer, and no ABI surface: the host
-cannot learn which cursor to show); `prefers-color-scheme` / a media-context
-setter; explicit dirty-marking (`MarkStyleDirty` / `MarkLayoutDirty`); a phase
+writing modes; `cursor` DONE 2026-09-11 (ABI minor 29 `weva_document_cursor`,
+Godot shows the shape itself, Unity exposes the keyword); `prefers-color-scheme`
+DONE 2026-09-11 (ABI minor 28 `weva_document_set_color_scheme`); explicit dirty-marking (`MarkStyleDirty` / `MarkLayoutDirty`); a phase
 timing readout for host profilers; the ABI event set is wider than the C#
 `EventKind` (toggle, submit, reset, close, cancel, invalid, context menu,
 composition, value-changed, scroll) and C# should adopt it.

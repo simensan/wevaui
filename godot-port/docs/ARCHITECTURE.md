@@ -855,3 +855,11 @@ colour-scheme preference, which `@media (prefers-color-scheme)` and
 `light-dark()` follow (an element's own inherited `color-scheme` wins over
 it). A change recompiles the conditional rules and restyles, like a resize.
 The Godot source exposes `register_font_family(name, Font)` and watches resource changes. Installed Windows preview105 includes minor 14; its package and native exports pass the recorded verification.
+
+ABI minor 29 adds `weva_document_cursor(doc, buffer, capacity)` and
+`weva_document_cursor_at(doc, x, y, ...)`: the CSS `cursor` under the pointer as
+the keyword it settles to (`auto` resolved to `text`, `pointer` or `default`; a
+`url()` list reduced to its fallback), so a host can show the matching shape.
+The Godot node answers Godot's cursor-shape query with it (`follow_css_cursor`,
+on by default); the Unity wrapper exposes `NativeDocument.Cursor` for the host
+to map.

@@ -155,6 +155,14 @@ An `@import` in a stylesheet is fetched through the same `AssetReader` and
 the way its images do. A sheet the reader cannot return is dropped and named
 in `CssDiagnostics`.
 
+## The mouse cursor (ABI minor 29)
+
+`NativeDocument.Cursor` is the CSS `cursor` under the pointer as the keyword the
+core settled it to (`pointer`, `text`, `not-allowed`, `grab`, ... or `default`);
+`CursorAt(x, y)` asks about any point. `WevaNativeDocument` does not set the
+Unity cursor itself, because `Cursor.SetCursor` wants a texture per shape the
+project supplies; map the keywords you have textures for.
+
 ## Colour scheme (ABI minor 28)
 
 `NativeDocument.SetColorScheme(dark)` is the switch `light-dark()` and

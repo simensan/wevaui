@@ -957,6 +957,19 @@ handler is found by walking towards the root as every handler is.
 There is no context-menu widget, and that is deliberate: a menu is markup, and
 the popover machinery above already opens, positions and light-dismisses one.
 
+**The mouse cursor**
+
+The node shows the `cursor` the page asks for under the pointer: the hand for
+`cursor: pointer` (and over a link), the I-beam over text and text fields, the
+forbidden sign the UA sheet gives `:disabled` controls, resize and drag shapes
+for their keywords, the arrow for anything Godot has no shape for. It answers
+Godot's cursor-shape query (`get_cursor_shape(position)`) rather than setting
+`default_cursor_shape`, which would make Godot re-dispatch a mouse motion; a
+game that manages its own cursor turns it off:
+
+    doc.follow_css_cursor = false
+    print(doc.get_cursor())     # the keyword, e.g. "pointer", to map yourself
+
 **Tooltips**
 
 `title="..."` draws after the pointer has rested on the element for 0.6s, as a

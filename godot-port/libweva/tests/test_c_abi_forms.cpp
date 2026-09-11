@@ -917,6 +917,72 @@ void test_abi_scroll_snap() {
     }
 }
 
+// Minor 29: the cursor the page asks for under the pointer -- the element's
+// keyword, `auto` settled, a url() list's fallback -- so a host can show it.
+void test_abi_cursor() {
+    Doc doc("html, body { margin: 0 } div, input, button, a { display: block; width: 200px; height: 20px }"
+            " #p { cursor: pointer } #g { cursor: url(hand.png) 2 2, grab } #m { cursor: MOVE }",
+            "<div id=p>x</div><div id=g>y</div><div id=m>z</div><input id=i type=text>"
+            "<button id=b disabled>b</button><a id=a href=\"#\">link</a><div id=d>plain</div>");
+    weva_document_update(doc.d, 0);
+    const auto cursor_over = [&](const char* selector, double dx) {
+        double x = 0, y = 0, w = 0, h = 0;
+        weva_element_bounds(doc.d, weva_document_query(doc.d, selector), &x, &y, &w, &h);
+        weva_document_set_pointer(doc.d, x + dx, y + h / 2, 0);
+        weva_document_update(doc.d, 0);
+        std::string out(weva_document_cursor(doc.d, nullptr, 0) + 1, '\0');
+        weva_document_cursor(doc.d, out.data(), out.size());
+        out.resize(out.size() - 1);
+        return out;
+    };
+    CHECK(cursor_over("#p", 100) == "pointer");
+    CHECK(cursor_over("#g", 100) == "grab");        // the url() has no image here: its fallback
+    CHECK(cursor_over("#m", 100) == "move");        // keywords come back lower-case
+    CHECK(cursor_over("#i", 100) == "text");        // auto over a text field
+    CHECK(cursor_over("#b", 100) == "not-allowed"); // the UA sheet's :disabled rule
+    CHECK(cursor_over("#a", 2) == "pointer");       // auto over a link
+    CHECK(cursor_over("#d", 2) == "text");          // auto over the word
+    CHECK(cursor_over("#d", 150) == "default");     // auto over the block's empty run
+    // Off the document: the host's arrow. cursor_at asks about any point.
+    weva_document_clear_pointer(doc.d);
+    weva_document_update(doc.d, 0);
+    std::string out(weva_document_cursor(doc.d, nullptr, 0) + 1, '\0');
+    weva_document_cursor(doc.d, out.data(), out.size());
+    CHECK(std::string(out.c_str()) == "default");
+    std::string at(weva_document_cursor_at(doc.d, 100, 10, nullptr, 0) + 1, '\0');
+    weva_document_cursor_at(doc.d, 100, 10, at.data(), at.size());
+    CHECK(std::string(at.c_str()) == "pointer");
+}
+
+// The Godot host's range_direction_tests sequence at the C ABI: a press one
+// pixel inside the track's start sets the minimum (ltr) or the maximum
+// (rtl), delivered as the host delivers it -- a motion, then the button down
+// and up as pointer states, with an update after each.
+void test_abi_range_click_at_edge() {
+    for (const char* dir : {"ltr", "rtl"}) {
+        const std::string css = std::string("#r{position:absolute;left:40px;top:40px;width:200px;height:30px;"
+                                            "writing-mode:horizontal-tb;direction:") + dir + "}";
+        Doc doc(css.c_str(), "<input id=\"r\" type=\"range\" min=\"0\" max=\"100\" value=\"50\">");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#r"));
+        weva_document_update(doc.d, 0);
+        double x = 0, y = 0, w = 0, h = 0;
+        weva_element_bounds(doc.d, weva_document_query(doc.d, "#r"), &x, &y, &w, &h);
+        const double px = x + 1, py = y + h / 2;
+        weva_document_set_pointer_modifiers(doc.d, px, py, 0, 0);
+        weva_document_update(doc.d, 0);
+        weva_document_set_pointer_modifiers(doc.d, px, py, WEVA_BUTTON_PRIMARY, 0);
+        weva_document_update(doc.d, 0);
+        weva_document_set_pointer_modifiers(doc.d, px, py, 0, 0);
+        weva_document_update(doc.d, 0);
+        const std::string value = doc.value("#r");
+        if (value != (std::string(dir) == "ltr" ? "0" : "100")) {
+            std::printf("range edge click (%s): value %s at %.1f,%.1f bounds %.1f,%.1f %.1fx%.1f\n",
+                        dir, value.c_str(), px, py, x, y, w, h);
+        }
+        CHECK(value == (std::string(dir) == "ltr" ? "0" : "100"));
+    }
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

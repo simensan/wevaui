@@ -246,7 +246,7 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 28;
+        public const int WEVA_ABI_VERSION_MINOR = 29;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -309,6 +309,10 @@ namespace Weva.Native
         public static extern int weva_element_contains(System.IntPtr doc, uint ancestor, uint descendant);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint weva_document_element_at(System.IntPtr doc, double x, double y);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_document_cursor(System.IntPtr doc, byte* buffer, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_document_cursor_at(System.IntPtr doc, double x, double y, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_accepts_pointer(System.IntPtr doc, double x, double y);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

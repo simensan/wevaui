@@ -138,6 +138,14 @@ public:
     void set_dark_color_scheme(bool dark);
     bool get_dark_color_scheme() const;
 
+    // The CSS `cursor` under the pointer, as the keyword the core settled it
+    // to; with `follow_css_cursor` on (the default) the node answers Godot's
+    // cursor-shape query with the matching Control shape.
+    godot::String get_cursor() const;
+    void set_follow_css_cursor(bool follow);
+    bool get_follow_css_cursor() const;
+    int32_t _get_cursor_shape(const godot::Vector2& at_position) const override;
+
     // ---- Data binding ---------------------------------------------------
     //
     // What a script needs to drive a document: change what it says, change how
@@ -443,6 +451,7 @@ private:
 
     double tooltip_delay_ = 0.6;
     bool dark_color_scheme_ = false;
+    bool follow_css_cursor_ = true;
     godot::Callable data_source_;
     godot::ObjectID controller_;
     bool interactive_ = true;

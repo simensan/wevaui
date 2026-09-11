@@ -19,7 +19,7 @@ func _check(condition: bool, description: String) -> void:
 		printerr("FAIL  ", description)
 
 const CSS := """
-.card { width: 200px; height: 80px; background: rgb(10, 10, 10); color: rgb(1, 2, 3); }
+.card { width: 200px; height: 80px; background: rgb(10, 10, 10); color: rgb(1, 2, 3); cursor: pointer; }
 .card:hover { background: rgb(200, 30, 40); }
 .card:hover .title { color: rgb(9, 9, 9); }
 .card:hover + .next { color: rgb(7, 7, 7); }
@@ -76,6 +76,9 @@ func _ready() -> void:
 
 	_move_to(doc, Vector2(100, 40))
 	_check(_hovering(doc), "hover lands at 1:1")
+	_check(doc.get_cursor() == "pointer", "the CSS cursor is the card's pointer under it")
+	_check(doc.get_cursor_shape(Vector2(100, 40)) == Control.CURSOR_POINTING_HAND,
+			"and the node answers Godot's shape query with the pointing hand")
 	_check(doc.get_computed_style("#title", "color").contains("9"),
 			"and a descendant rule follows it")
 	_check(doc.get_computed_style("#next", "color").contains("7"),
@@ -83,6 +86,15 @@ func _ready() -> void:
 
 	_move_to(doc, Vector2(100, 300))
 	_check(not _hovering(doc), "and leaves when the pointer does")
+	_check(doc.get_cursor() == "default", "off the content it is the arrow")
+	_check(doc.get_cursor_shape(Vector2(100, 300)) == Control.CURSOR_ARROW, "and the shape is the arrow")
+	_move_to(doc, Vector2(20, 106))
+	_check(doc.get_cursor() == "text", "over the plain text it is the I-beam")
+	_check(doc.get_cursor_shape(Vector2(20, 106)) == Control.CURSOR_IBEAM, "and the shape is the I-beam")
+	_move_to(doc, Vector2(100, 300))
+	doc.follow_css_cursor = false
+	_check(doc.get_cursor_shape(Vector2(100, 40)) == Control.CURSOR_ARROW, "off: the arrow everywhere")
+	doc.follow_css_cursor = true
 
 	# Now the way the gallery actually shows it: scaled to fit, and panned.
 	doc.scale = Vector2(0.5, 0.5)

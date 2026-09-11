@@ -215,6 +215,25 @@ namespace Weva.Native
             WevaNative.weva_document_set_color_scheme(Handle, dark ? 1 : 0);
         }
 
+        /// <summary>
+        /// The CSS <c>cursor</c> under the pointer last set, as the keyword the core
+        /// settled it to (<c>auto</c> resolved: <c>text</c> over text and fields,
+        /// <c>pointer</c> over a link, <c>default</c> elsewhere; a <c>url()</c> list
+        /// reduced to its fallback). <c>default</c> with no pointer over the page. A
+        /// host maps the keywords it has shapes for (<c>Cursor.SetCursor</c> needs its
+        /// own textures) and shows the arrow for the rest. Valid after an update.
+        /// </summary>
+        public string Cursor
+        {
+            get { return ReadString((buffer, capacity) => WevaNative.weva_document_cursor(Handle, buffer, capacity)); }
+        }
+
+        /// <summary>The cursor the page asks for at a point in document pixels.</summary>
+        public string CursorAt(double x, double y)
+        {
+            return ReadString((buffer, capacity) => WevaNative.weva_document_cursor_at(Handle, x, y, buffer, capacity));
+        }
+
         /// <summary>The directory relative url() and @font-face sources resolve against.</summary>
         public void SetBasePath(string path)
         {

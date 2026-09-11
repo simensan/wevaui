@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 28
+#define WEVA_ABI_VERSION_MINOR 29
 
 uint32_t weva_abi_version(void);
 
@@ -519,6 +519,18 @@ int weva_element_contains(weva_document_t doc, weva_element_t ancestor,
  * WEVA_ELEMENT_NONE. Valid after an update. Useful on its own, for a host
  * routing its own clicks. */
 weva_element_t weva_document_element_at(weva_document_t doc, double x, double y);
+
+/* The cursor the page asks for under the pointer the host last set
+ * (weva_document_cursor) or at a point (weva_document_cursor_at): the hovered
+ * element's `cursor` as the CSS keyword it computes to, `auto` settled the way
+ * a browser settles it (`text` over text and text fields, `pointer` over a
+ * link, `default` elsewhere) and a url() list reduced to its fallback keyword,
+ * so a host maps the keywords it has shapes for and shows its arrow for the
+ * rest. `default` with no pointer over the document. The usual two-call
+ * buffer convention; valid after an update. Available since ABI minor 29. */
+size_t weva_document_cursor(weva_document_t doc, char* buffer, size_t capacity);
+size_t weva_document_cursor_at(weva_document_t doc, double x, double y, char* buffer,
+                               size_t capacity);
 
 /* Whether document content or an open dropdown accepts this point. Unlike
  * element_at, this includes dropdown rows outside the DOM box tree. Honors
