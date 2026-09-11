@@ -51,22 +51,33 @@ add_custom_command(OUTPUT "${WEVA_EXPORT_FILE}"
 # pull the C API out of the static core. On Windows a .def does that; on GNU
 # linkers the whole core archive is linked so the version script has every
 # symbol to choose from.
-add_library(weva_core SHARED src/plugin.cpp "${WEVA_EXPORT_FILE}")
-target_include_directories(weva_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../libweva/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
-if(WIN32)
-    target_link_options(weva_core PRIVATE "/DEF:${WEVA_EXPORT_FILE}")
-    target_link_libraries(weva_core PRIVATE weva)
-elseif(APPLE)
-    target_link_libraries(weva_core PRIVATE -Wl,-force_load,$<TARGET_FILE:weva> weva)
+# iOS takes plugins as static archives that Xcode links into the player:
+# WEVA_UNITY_STATIC builds weva_core as one, and the core and ICU archives
+# beside it are what the Unity project lists as plugins.
+option(WEVA_UNITY_STATIC "Build weva_core as a static archive (iOS)" OFF)
+if(WEVA_UNITY_STATIC)
+    add_library(weva_core STATIC src/plugin.cpp)
+    target_link_libraries(weva_core PUBLIC weva)
 else()
-    target_link_options(weva_core PRIVATE "-Wl,--version-script=${WEVA_EXPORT_FILE}")
-    target_link_libraries(weva_core PRIVATE -Wl,--whole-archive weva -Wl,--no-whole-archive)
+    add_library(weva_core SHARED src/plugin.cpp "${WEVA_EXPORT_FILE}")
+    if(WIN32)
+        target_link_options(weva_core PRIVATE "/DEF:${WEVA_EXPORT_FILE}")
+        target_link_libraries(weva_core PRIVATE weva)
+    elseif(APPLE)
+        target_link_libraries(weva_core PRIVATE -Wl,-force_load,$<TARGET_FILE:weva> weva)
+    else()
+        target_link_options(weva_core PRIVATE "-Wl,--version-script=${WEVA_EXPORT_FILE}")
+        target_link_libraries(weva_core PRIVATE -Wl,--whole-archive weva -Wl,--no-whole-archive)
+    endif()
 endif()
+target_include_directories(weva_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../libweva/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_target_properties(weva_core PROPERTIES PREFIX "" OUTPUT_NAME "weva_core")
 if(DEFINED WEVA_UNITY_BIN)
     set_target_properties(weva_core PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${WEVA_UNITY_BIN}" RUNTIME_OUTPUT_DIRECTORY "${WEVA_UNITY_BIN}"
-        LIBRARY_OUTPUT_DIRECTORY_RELEASE "${WEVA_UNITY_BIN}" RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WEVA_UNITY_BIN}")
+        ARCHIVE_OUTPUT_DIRECTORY "${WEVA_UNITY_BIN}"
+        LIBRARY_OUTPUT_DIRECTORY_RELEASE "${WEVA_UNITY_BIN}" RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WEVA_UNITY_BIN}"
+        ARCHIVE_OUTPUT_DIRECTORY_RELEASE "${WEVA_UNITY_BIN}")
 endif()
 
 # The same fingerprint the Godot packager verifies: library digest, source
@@ -83,10 +94,13 @@ add_custom_command(TARGET weva_core POST_BUILD
     VERBATIM)
 
 # A host-free check that the plugin loads, reports its ABI and can run a
-# document end to end through the exported entry points alone.
-add_executable(weva_core_load_test tests/load_test.cpp)
-target_include_directories(weva_core_load_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../libweva/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
-if(NOT WIN32)
-    target_link_libraries(weva_core_load_test PRIVATE ${CMAKE_DL_LIBS})
+# document end to end through the exported entry points alone. Only where it
+# can run: a cross-compiled plugin (Android, iOS) is verified on the device.
+if(NOT CMAKE_CROSSCOMPILING AND NOT WEVA_UNITY_STATIC)
+    add_executable(weva_core_load_test tests/load_test.cpp)
+    target_include_directories(weva_core_load_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../libweva/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
+    if(NOT WIN32)
+        target_link_libraries(weva_core_load_test PRIVATE ${CMAKE_DL_LIBS})
+    endif()
+    add_dependencies(weva_core_load_test weva_core)
 endif()
-add_dependencies(weva_core_load_test weva_core)

@@ -162,5 +162,46 @@
     "ported_nunit_subsets": "pass (input 16, bindings 6, Frontier Camp 5, font adapter 19, render 6, dump 3, plugin 18)",
     "oracle_from_unity": "42/47 samples identical to weva_dump; the 5 animated pages explained above",
     "status": "met with the two caveats above"
+  },
+  "phase_3": {
+    "date": "2026-09-11",
+    "step_1_feature_inventory": {
+      "where": "docs/PORT_PLAN.md, section \"Phase 3 - feature inventory\": every CSS_FEATURES.md item checked against the core by consuming call site (the property registry is generated from the C# list and proves nothing), plus the non-CSS subsystems",
+      "decisions": "16 port items ranked (mask/mix-blend-mode, modern colour functions and light-dark, @scope/@import, ::placeholder/::selection, justify/hyphens/font axes, hue-rotate, 3D transform projection, scroll-snap, small property drops, component-scoped styles, @supports selector(), subgrid syntax, sticky scroll tracking, intrinsic sizing keywords, bidi, View Transitions), an expose-through-ABI list (cursor, prefers-color-scheme, dirty marking, timings, the wider event set), a keep-host-side list and a drop list; where the core is ahead is recorded so it is not re-ported",
+      "gate": "met (the list with a decision per item is in PORT_PLAN.md)"
+    },
+    "step_2_goldens_through_the_core": {
+      "tool": "hosts/unity/goldens_from_unity.py over the 47 golden snippets at their own viewports, Inter through FontEngine",
+      "layout_vs_chrome": {
+        "pass": 43,
+        "fail": 4,
+        "rule": "LayoutDiffTests: |dx|,|dy| <= 2px, |dw|,|dh| <= max(2px, 5%), sidecar tolerances honoured",
+        "failures": [
+          "24-text-overflow-ellipsis: card 83.36 vs 73px; the run registers no monospace face (the C# harness does) and the ellipsis line height",
+          "25-backdrop-modal-dialog: dialog[open] with author top:80px/left:80px laid out centred (y 297) as if modal; core bug",
+          "26-text-shadow: line-height normal 24.2 (1.21em, the face's own) vs Blink's rounded 23; known class",
+          "42-cv-hidden: content-visibility:hidden children sized 30 vs Chrome's forced-layout 100, two not dumped; core semantics"
+        ]
+      },
+      "paint_vs_csharp_baselines": {
+        "pass": 25,
+        "fail": 13,
+        "cause": "the C# baseline renderer draws text as word bars, so every text-bearing page differs by construction (12 pages, 1.0-5.7% structural); 25's ::backdrop is not painted by the core (page colour #7f7f7f vs #ffffff)"
+      },
+      "gate": "met as specified: every golden passes on the core or is recorded with a cause (above); the ~9,900 unit tests inspect the C# Box tree and cannot be shimmed onto the core, the goldens and the Chrome layout diff are the portable subset"
+    },
+    "step_3_tooling_on_the_abi": {
+      "where": "docs/PORT_PLAN.md, section \"Phase 3 - the Unity host on the core: what the tooling still needs\": tool-by-tool map of Editor/**, DevTools, HotReload, Designer, InPlace against weva_c.h",
+      "summary": "the Designer IR, InlineStyleEdit, watchers and setup utilities need no engine; documents, queries, bounds, computed style by name, mutation, hit testing and events are covered; missing, by demand: tree navigation (parent/children), matched rules per element, the four-rect box model, computed-style enumeration, change notification, box-tree enumeration, engine counters, a devtools hit test",
+      "gate": "NOT met: the editor panels do not yet open a document through the core; the ABI additions above come first (tree navigation and matched rules are the blockers)"
+    },
+    "step_4_platforms": {
+      "core_change": "libweva/include/weva/charconv_compat.h: floating-point from_chars/to_chars stand-ins for libc++ < 20 (Android NDK 27, older Apple toolchains declare the double overloads deleted); every floating-point charconv site in the core routes through it (Linux suite 505,247 checks, 0 failures; Windows and Linux plugins rebuilt and load)",
+      "android_arm64": "built locally with Unity's NDK 27.2 (android-24, arm64-v8a): weva_core.so, 115 exported weva_* symbols, build.json stamped; not run on a device",
+      "cmake": "WEVA_UNITY_STATIC (iOS static archives), the load test only where it can run",
+      "ci": "godot-ci.yml job unity-plugin-platforms: macOS (universal dylib + load test), Android arm64 (NDK on the runner), iOS arm64 static; not yet run on GitHub (nothing pushed)",
+      "gate": "NOT met: the plugin builds for Android locally and the CI matrix is written; macOS and iOS builds are unverified until the workflow runs, and IL2CPP player builds of the sample on each platform are the user's to run (no Unity licence in CI)"
+    },
+    "phase_gate": "open: the package can host the core (WevaNativeDocument beside WevaDocument) but the default is still the C# engine and the oracle runs from Unity by hand, not in CI (no editor on the runners)"
   }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "weva/charconv_compat.h"
 #include "weva/dom.h"
 
 #include <algorithm>
@@ -11,8 +12,7 @@ namespace weva {
 
 inline std::string form_number_text(double value) {
     char text[64];
-    const auto written = std::to_chars(text, text + sizeof(text), value == 0 ? 0 : value,
-                                      std::chars_format::general, 15);
+    const auto written = to_chars_double(text, text + sizeof(text), value == 0 ? 0 : value, 15);
     return written.ec == std::errc{} ? std::string(text, written.ptr) : std::string();
 }
 
@@ -20,7 +20,7 @@ inline double form_number(const Element& e, const char* name, double fallback) {
     const auto raw = e.get_attribute(name);
     if (raw.empty()) return fallback;
     double value = 0;
-    const auto parsed = std::from_chars(raw.data(), raw.data() + raw.size(), value);
+    const auto parsed = from_chars_double(raw.data(), raw.data() + raw.size(), value);
     return parsed.ec == std::errc{} && parsed.ptr == raw.data() + raw.size() && std::isfinite(value)
         ? value : fallback;
 }
@@ -55,7 +55,7 @@ struct RangeValue {
         double supplied = min / 2 + max / 2;
         double parsed_value = 0;
         if (!raw.empty()) {
-            const auto parsed = std::from_chars(raw.data(), raw.data() + raw.size(), parsed_value);
+            const auto parsed = from_chars_double(raw.data(), raw.data() + raw.size(), parsed_value);
             if (parsed.ec == std::errc{} && parsed.ptr == raw.data() + raw.size() && std::isfinite(parsed_value)) supplied = parsed_value;
         }
         value = normalize(supplied);

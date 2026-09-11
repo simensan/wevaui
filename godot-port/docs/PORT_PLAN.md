@@ -3525,3 +3525,158 @@ size:
   "expected", the safety net is gone and the remaining phases are unguarded.
 * **The differentiator stops mattering.** If RmlUi ships grid or container
   queries, re-run the §8 decision honestly rather than finishing out of momentum.
+
+## Phase 3 — the Unity host on the core: what the tooling still needs from the C ABI
+
+Written 2026-09-11 after Phase 2 of the shared-core plan (the Unity package
+hosts the core through `Packages/com.wevaui/Runtime/Native`; receipt in
+`docs/verification/unity-host-prototype.json`). The editor tooling
+(`Packages/com.wevaui/Editor/**`, `Runtime/DevTools`, `Runtime/HotReload`,
+`Runtime/Designer`, `Runtime/InPlace`) was mapped tool by tool against
+`weva_c.h`. What needs no engine at all: the whole Designer IR (20 files that
+emit HTML/CSS strings), `InlineStyleEdit` (source-text splicing that
+`weva_element_set_style` already mirrors for the live document), the file
+watchers, the preview toolbar/viewport types, the setup and importer utilities.
+What is covered today: a document from HTML/CSS with viewport, update, draws
+and input; element lookup by selector, tag, attributes, text, border-box bounds,
+computed style by name, inline style, mutation (`set_html`, `append_html`,
+`remove`, `set_attribute`, `set_text`), hit testing, events with handler
+names, `@font-face` listing, the layout dump.
+
+Missing, ranked by how many tools need it (decision: expose through the ABI
+unless noted):
+
+1. **Tree navigation** — `weva_element_parent`, `weva_element_children` /
+   `child_count` / `child_at`, node kind (element vs text). Seven tools; the
+   Designer's ancestor walk to `data-nid` (five call sites) has no substitute
+   short of `query_all` + `weva_element_contains` per pointer move.
+2. **Matched rules per element** — selector text, specificity, origin, layer,
+   source order, `!important`, inline flag, and the losing declarations. The
+   defining feature of the Elements panel's Styles pane; nothing in the ABI
+   today. A structured blob with the `font_faces` buffer convention would do.
+3. **Full box model** — margin/border/padding/content edges, not only the
+   border box (`weva_element_box_model`). Six tools; approximable by a dozen
+   computed-style string reads per element.
+4. **Computed-style enumeration** — every property an element resolved,
+   custom properties included; `weva_element_computed_style` is name-keyed.
+5. **Change notification** — a mutation signal and the per-element
+   invalidation set (Layout/Style/Paint). Draw, interaction, transient and form
+   versions exist, none per element.
+6. **Box-tree enumeration** including anonymous, line and text boxes; the
+   layout dump is the only path and it is a JSON string.
+7. **Engine counters** — cascade and paint cache hits, per-stage timings,
+   box and element counts (the DevTools stats window is a no-op without them).
+8. **Source positions** — neither engine has them; if jump-to-source is
+   wanted the core must add it (nothing to match).
+9. **A devtools hit test** that ignores `pointer-events` and `visibility`.
+10. Capture-phase event interception (one tool; `element_at` on the pointer
+    is the substitute) — keep host-side.
+11. Per-stylesheet replacement with origin and ordering (hot reload) —
+    `set_css` wholesale is a viable substitute; keep host-side.
+12. Identity-preserving HTML reload (the C# `DomDiffer`) — best done inside
+    `weva_document_load_html`, as `set_css` already promises for styles.
+13. Overlay paint injection — a native host draws after `weva_document_draws`;
+    drop.
+14. Referenced-asset list, a font-resolution miss log, HTML parse diagnostics
+    with positions — three small tools; `missing_assets`, `font_faces` and
+    `css_diagnostics` cover adjacent slices.
+15. Viewport readback and a `prefers-color-scheme` knob in `weva_config`.
+
+The C# goldens through the core (`hosts/unity/goldens_from_unity.py`):
+layout against Chrome 43/47 (24: monospace not registered in the run and the
+ellipsis line's height; 25: `dialog[open]` with author `top`/`left` laid out
+centred as if modal; 26: `line-height: normal` 24.2 vs Blink's rounded 23;
+42: `content-visibility: hidden` children sized 30 vs Chrome's 100 with two not
+dumped). Paint against the C# baselines 25/38: the baseline renderer draws text
+as word bars, so text-bearing pages differ by construction, and 25's
+`::backdrop` is not painted by the core.
+
+## Phase 3 — feature inventory: the C# engine against the core (2026-09-11)
+
+Method: every section of `Packages/com.wevaui/CSS_FEATURES.md` was checked
+against the core's sources by consuming call site, not by the property
+registry (`src/generated/css_properties.inc` is generated from the C#
+`CssProperties.cs`, so every C# property is registered whether or not anything
+reads it). Decisions: port (into the core), expose (already in the core, needs
+an ABI surface), keep host-side (C#), drop.
+
+**Port to the core, in the order the samples and tests lean on them:**
+
+1. `mask` / `mask-image` family and `mix-blend-mode`: nine `mask-*` properties
+   and both blend properties are registered with no consumer; `BlendMode` and
+   `composite_layers` exist in `render_interface.h` with no caller.
+2. Colour: `lab()`, `lch()`, `oklab()`, `oklch()`, `color()` absent
+   (`css_color.cpp` parses rgb/hsl/hwb only); `light-dark()` absent
+   (`color-scheme` registered, unused); `color-mix()` mixes every space as sRGB
+   (`css_value.cpp:266-309`).
+3. `@scope` and `@import` land in the unsupported-at-rule list
+   (`cascade.cpp:828`); `@import` needs only the asset reader that exists.
+4. `::placeholder` (placeholder paints, no pseudo style) and `::selection`
+   (hard-coded band, `paint.cpp:2517`).
+5. Text: `text-align: justify` (only right/center branches,
+   `inline_layout.cpp:1010`), `text-align-last`, `hyphens: manual`,
+   `font-variation-settings` / `font-optical-sizing` / `font-feature-settings`
+   (no font-backend path for axes or features; the `weva_font_backend` table
+   would need them), `-webkit-text-stroke`.
+6. `filter: hue-rotate()` (the one missing filter function, one matrix).
+7. 3D transform functions are dropped, not projected (`paint.cpp:595`); C#
+   projects them, so a `translate3d` card must degrade rather than vanish.
+   Also the individual `translate` / `rotate` / `scale` properties (registered,
+   unread).
+8. `scroll-snap-type` / `scroll-snap-align` / `scroll-behavior` are not even
+   registered (only `overscroll-behavior` expands, unenforced).
+9. Small drops: `caret-color` (caret uses `color`), `list-style-image`
+   (`Box::list_marker_image` declared, never assigned), `image-rendering`
+   (nearest only, `background.cpp:948`), `background-attachment`.
+10. Component-scoped stylesheets (`components.h:7-12` defers the scope stamp;
+    C# `Components/Scoping` has no counterpart).
+11. `@supports selector(...)`, the one missing arm of `media.cpp:260-320`.
+12. Subgrid: C# gates on `display: subgrid`, the core on
+    `grid-template-columns: subgrid` (the spec form); pick the core's and fix
+    the C# samples.
+13. `position: sticky` scroll tracking (parsed and stacking-aware, not moved).
+14. `min-content` / `max-content` / `fit-content()` as `width`/`height` and
+    `flex-basis` values (both engines treat them as `auto`).
+15. `direction: rtl` reordering / `unicode-bidi` (shared gap; the caret work is
+    open on both sides).
+16. View Transitions (`Runtime/ViewTransitions`): entirely absent; it needs
+    two layout passes and a paint snapshot, all core-side. Port if the API is
+    to survive, otherwise drop (it is a documented v1 stub in C#).
+
+**Expose through the ABI (already in the core):** the extended selector set
+(`:lang`, `:dir`, `:target`, `:valid`/`:invalid`, `:in-range`, `:default`,
+`:autofill`, ...; `:link`/`:visited` need host state), `env()` values
+(safe-area insets), logical sizing properties, multicol, `@property`,
+`content-visibility` / `contain`, `scrollbar-width` / `scrollbar-color`,
+`quotes`, counters, `list-style-position: outside`, line clamping, vertical
+writing modes; `cursor` (registered, no consumer, and no ABI surface: the host
+cannot learn which cursor to show); `prefers-color-scheme` / a media-context
+setter; explicit dirty-marking (`MarkStyleDirty` / `MarkLayoutDirty`); a phase
+timing readout for host profilers; the ABI event set is wider than the C#
+`EventKind` (toggle, submit, reset, close, cancel, invalid, context menu,
+composition, value-changed, scroll) and C# should adopt it.
+
+**Keep host-side:** the Designer IR, in-place source splicing, hot-reload file
+watching (the Godot host's live reload is the model; the core offers
+`set_css` / `load_html` / `refresh_bindings`), the `[UIBind]` source generator
+and reflection binding layer (the core takes a callback), DevTools windows
+(over the ABI), the Unity input/clipboard/IME device bridges, the
+`MonoBehaviour` shell of `WevaDocument`.
+
+**Drop:** `::first-line` / `::first-letter`, `shape-outside`,
+`position-try-fallbacks`, `display: ruby`, `empty-cells`, `@page`,
+`@container` style/scroll-state queries and `cq*` units, the extra media
+features (`prefers-contrast`, `color-gamut`, ...), `clip-path: path()` /
+SVG sources, `font-variant: small-caps`, `text-justify`, `orphans` /
+`widows`, `text-emphasis-*`, `font-synthesis-*`, `user-select`,
+`scrollbar-gutter`, `overflow-clip-margin`, `resize`, `field-sizing`,
+`box-decoration-break`, `backface-visibility`, `perspective-origin`,
+`break-*`, the C# `Compiled` selector index (the core's shape-keyed match
+cache does the same job; do not port two caches).
+
+**Where the core is ahead (do not re-port):** `@layer` dotted hierarchies,
+`@property`, `contain: size`, `content-visibility`, multicol, scrollbar
+styling, `quotes`, counters, table cell `vertical-align`, outside list
+markers, line clamping, logical properties, vertical writing modes, the
+extended selectors, `env()`, `revert` / `revert-layer`, the animation
+composition and cancellation rules verified against Chrome.

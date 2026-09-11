@@ -1,4 +1,5 @@
 #include "weva/env_attr.h"
+#include "weva/charconv_compat.h"
 
 #include "weva/css_value.h"
 #include "weva/dom.h"
@@ -158,7 +159,7 @@ bool parse_number(std::string_view s, double* out) {
     if (s.empty()) return false;
     if (s.front() == '+') s.remove_prefix(1);
     if (s.empty()) return false;
-    auto res = std::from_chars(s.data(), s.data() + s.size(), *out);
+    auto res = from_chars_double(s.data(), s.data() + s.size(), *out);
     return res.ec == std::errc() && res.ptr == s.data() + s.size();
 }
 
@@ -171,7 +172,7 @@ std::string format_number(double v) {
     // round-trip representation and only uses an exponent when that is
     // genuinely shorter.
     char buf[64];
-    auto res = std::to_chars(buf, buf + sizeof(buf), v);
+    auto res = to_chars_double(buf, buf + sizeof(buf), v);
     if (res.ec == std::errc()) return std::string(buf, res.ptr);
     std::snprintf(buf, sizeof(buf), "%.17g", v);
     return buf;

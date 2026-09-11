@@ -1,4 +1,5 @@
 #include "weva/css_token.h"
+#include "weva/charconv_compat.h"
 #include "weva/html.h"   // append_utf8
 
 #include <charconv>
@@ -66,7 +67,7 @@ bool css_parse_double(std::string_view text, double* out) {
     double v = 0;
     auto* first = text.data();
     auto* last = text.data() + text.size();
-    auto res = std::from_chars(first, last, v);
+    auto res = from_chars_double(first, last, v);
     if (res.ec != std::errc()) return false;   // e.g. a lone "." or "-"
     // C#'s double.TryParse requires the WHOLE string to be the number, while
     // std::from_chars is happy to stop at the first character it cannot use.
