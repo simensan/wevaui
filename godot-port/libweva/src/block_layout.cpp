@@ -1119,7 +1119,10 @@ bool size_replaced_box(Box& b, const DecodedImage& image, const LayoutContext& c
 }
 
 const DecodedImage* replaced_image(const Box& box, const LayoutContext& ctx) {
-    if (!ctx.images || !box.element) return nullptr;
+    if (!ctx.images) return nullptr;
+    // A list-style-image marker is an image with no element of its own.
+    if (!box.list_marker_image.empty()) return ctx.images->get(box.list_marker_image);
+    if (!box.element) return nullptr;
     if (box.element->tag_name() != "img") return nullptr;
     const std::string_view src = box.element->get_attribute("src");
     if (src.empty()) return nullptr;

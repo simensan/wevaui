@@ -3665,7 +3665,8 @@ an ABI surface), keep host-side (C#), drop.
    end/center, both axes. Still open: `scroll-behavior: smooth` and
    snapping after a scrollbar-thumb drag.
 9. Small drops: `caret-color` DONE 2026-09-11 (`paint.cpp` caret_color_of), `list-style-image`
-   (`Box::list_marker_image` declared, never assigned), `image-rendering`
+   DONE 2026-09-11 (an image marker is an atom sized by the image, outside or
+   inside, core ahead: the C# only expands the shorthand), `image-rendering`
    (nearest only, `background.cpp:948`), `background-attachment`.
 10. Component-scoped stylesheets (`components.h:7-12` defers the scope stamp;
     C# `Components/Scoping` has no counterpart).

@@ -534,9 +534,6 @@ void BoxBuilder::maybe_inject_list_marker(const Element& e, const ComputedStyle*
     // reference's inline-block marker could, and there is a test saying so.
     const ComputedStyle* marker_style = styles_->pseudo_style_of(e, "marker");
     if (!marker_style) marker_style = style;
-    const BoxId marker = tree_->create(BoxKind::Text, nullptr, marker_style);
-    (*tree_)[marker].text = tree_->own_text(marker_text(type, ordinal) + " ");
-    (*tree_)[marker].pseudo_host = &e;
     // CSS Lists L3 §3.2. `outside` is the initial value and puts the marker
     // before the content edge, taking no inline space; `inside` makes it the
     // first thing in the item's content, which is what this box already is.
@@ -545,7 +542,47 @@ void BoxBuilder::maybe_inject_list_marker(const Element& e, const ComputedStyle*
     std::string_view position = get(style, kId_list_style_position);
     if (shorthand.find("inside") != std::string_view::npos) position = "inside";
     else if (shorthand.find("outside") != std::string_view::npos) position = "outside";
-    (*tree_)[marker].is_list_marker_outside = position != "inside";
+    const bool outside = position != "inside";
+
+    // CSS Lists L3 §3.3 list-style-image: the longhand, or a url() in the
+    // shorthand, and `none` in the longhand wins over the shorthand. An image
+    // marker is an atom sized by the image (block layout reads it like an
+    // <img>) followed by the same gap a text marker carries.
+    std::string_view image;
+    const std::string_view image_prop = get(style, "list-style-image");
+    const auto url_of = [](std::string_view v) -> std::string_view {
+        const size_t at = v.find("url(");
+        if (at == std::string_view::npos) return {};
+        const size_t close = v.find(')', at);
+        if (close == std::string_view::npos) return {};
+        std::string_view inner = v.substr(at + 4, close - at - 4);
+        while (!inner.empty() && inner.front() == ' ') inner.remove_prefix(1);
+        while (!inner.empty() && inner.back() == ' ') inner.remove_suffix(1);
+        if (inner.size() >= 2 && (inner.front() == '"' || inner.front() == '\'')) inner = inner.substr(1, inner.size() - 2);
+        return inner;
+    };
+    if (!image_prop.empty() && image_prop != "none") image = url_of(image_prop);
+    else if (image_prop.empty()) image = url_of(shorthand);
+    if (!image.empty()) {
+        const BoxId marker = tree_->create(BoxKind::Block, nullptr, marker_style);
+        Box& m = (*tree_)[marker];
+        m.is_inline_block = true;
+        m.list_marker_image = tree_->own_text(std::string(image));
+        m.pseudo_host = &e;
+        m.is_list_marker_outside = outside;
+        tree_->append_child(parent, marker);
+        const BoxId gap = tree_->create(BoxKind::Text, nullptr, marker_style);
+        (*tree_)[gap].text = tree_->own_text(" ");
+        (*tree_)[gap].pseudo_host = &e;
+        (*tree_)[gap].is_list_marker_outside = outside;
+        tree_->append_child(parent, gap);
+        return;
+    }
+
+    const BoxId marker = tree_->create(BoxKind::Text, nullptr, marker_style);
+    (*tree_)[marker].text = tree_->own_text(marker_text(type, ordinal) + " ");
+    (*tree_)[marker].pseudo_host = &e;
+    (*tree_)[marker].is_list_marker_outside = outside;
     tree_->append_child(parent, marker);
 }
 

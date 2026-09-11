@@ -381,6 +381,7 @@ void collect_recursive(const BoxTree& tree, BoxId node, BoxId inline_parent,
             InlineItem item;
             item.atom_box = c;
             item.inline_parent = inline_parent;
+            item.is_list_marker_outside = b.is_list_marker_outside;   // an image marker
             item.style = b.style ? b.style : inherited;
             item.font_size = font_size_px(item.style, inherited, ctx);
             item.metrics = metrics_for_style(ctx, item.style);

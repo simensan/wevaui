@@ -263,6 +263,7 @@ void test_background_image();
 void test_replaced_image_cache();
 void test_background_size_independence();
 void test_background_blend_and_mask();
+void test_list_style_image();
 void test_blur_flat_matches_full();
 void test_blur_matches_scalar();
 void test_replaced_img();
@@ -828,6 +829,7 @@ int main() {
     test_replaced_image_cache();
     test_background_size_independence();
     test_background_blend_and_mask();
+    test_list_style_image();
     test_blur_flat_matches_full();
     test_blur_matches_scalar();
     test_replaced_img();

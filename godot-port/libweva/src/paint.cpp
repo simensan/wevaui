@@ -2433,9 +2433,12 @@ bool paint_border_image(const Box& b, const Rect& border_box, const LayoutContex
 // already rasterizes, tiles, clips and caches is exactly what an image needs.
 // The two differences are spelled out below rather than papered over.
 std::vector<BackgroundLayer> replaced_layer(const Box& b, const PaintContext& paint) {
-    if (!paint.images || !b.element || !b.style) return {};
-    if (b.element->tag_name() != "img") return {};
-    const std::string_view src = b.element->get_attribute("src");
+    if (!paint.images || !b.style) return {};
+    std::string_view src = b.list_marker_image;   // an image list marker has no element
+    if (src.empty()) {
+        if (!b.element || b.element->tag_name() != "img") return {};
+        src = b.element->get_attribute("src");
+    }
     if (src.empty()) return {};
     const DecodedImage* image = paint.images->get(src);
     if (!image) return {};

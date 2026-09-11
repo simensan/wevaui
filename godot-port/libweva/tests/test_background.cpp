@@ -1069,6 +1069,82 @@ void test_background_blend_and_mask() {
     CHECK(layers.size() == 4 && layers[2].size_x == "50%" && !layers[2].repeat_x && layers[3].url == "m.png");
 }
 
+// CSS Lists L3 §3.3 list-style-image: the marker is the image at its own
+// size -- outside the content edge by default, in the flow for `inside` --
+// followed by the marker gap; `none` and a missing image keep the bullet.
+void test_list_style_image() {
+    ImageStore store;
+    store.set_reader([](const std::string& path, std::vector<uint8_t>* out) {
+        if (path.find("missing") != std::string::npos) return false;
+        out->assign(k_quad_png, k_quad_png + sizeof(k_quad_png));
+        return true;
+    });
+    const DecodedImage* quad = store.get("quad.png");
+    CHECK(quad && quad->width > 0 && quad->height > 0);
+    Fixture f;
+    f.ctx.images = &store;
+    CHECK(f.css("html, body { margin: 0 } ul { margin: 0; padding-left: 40px; list-style-image: url(quad.png) }"
+                "#n { list-style-image: none } #s { list-style: url(\"quad.png\") inside }"
+                "#m { list-style-image: url(missing.png) }"));
+    CHECK(f.layout("<body><ul><li id=a>item</li><li id=n>plain</li></ul>"
+                   "<ul id=s><li id=b>in</li></ul><ul><li id=m>gone</li></ul></body>"));
+    // The first line's boxes of a list item, in order.
+    const auto line_boxes = [&](std::string_view id) {
+        std::vector<BoxId> out;
+        for (BoxId c : f.tree.children(f.find(id))) {
+            if (f.tree[c].kind != BoxKind::Line) continue;
+            for (BoxId r : f.tree.children(c)) out.push_back(r);
+            break;
+        }
+        return out;
+    };
+    {
+        const auto boxes = line_boxes("a");
+        CHECK(boxes.size() >= 3);
+        const Box& marker = f.tree[boxes[0]];
+        CHECK(marker.kind == BoxKind::Block && !marker.list_marker_image.empty());
+        CHECK(marker.width == quad->width && marker.height == quad->height);
+        CHECK(marker.x < 0);   // outside: before the content edge
+        CHECK(f.tree[boxes[1]].kind == BoxKind::Text && f.tree[boxes[1]].text == " ");
+        CHECK(f.tree[boxes[2]].text == "item" && f.tree[boxes[2]].x == 0);
+    }
+    {
+        const auto boxes = line_boxes("n");   // the longhand's `none` restores the bullet
+        CHECK(!boxes.empty() && f.tree[boxes[0]].kind == BoxKind::Text && f.tree[boxes[0]].list_marker_image.empty());
+    }
+    {
+        const auto boxes = line_boxes("b");   // inside: in the flow, the text after it
+        CHECK(boxes.size() >= 3);
+        const Box& marker = f.tree[boxes[0]];
+        CHECK(marker.kind == BoxKind::Block && marker.x == 0);
+        CHECK(f.tree[boxes[2]].x >= quad->width);
+    }
+    {
+        const auto boxes = line_boxes("m");   // an image that fails to load: a bulletless 0-size atom is
+        CHECK(!boxes.empty());                // still a marker box; the item's text stays at the edge
+        CHECK(f.tree[boxes.back()].text == "gone" && f.tree[boxes.back()].x == 0);
+    }
+    // Painted: a textured draw the size of the marker, where the marker is.
+    RecordingBackend backend;
+    TextureCache cache;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint.images = &store;
+    paint.texture_cache = &cache;
+    cache.begin_pass();
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    cache.end_pass(&backend);
+    double ax = 0, ay = 0;
+    absolute_position(f.tree, line_boxes("a")[0], &ax, &ay);
+    bool drawn = false;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.texture == 0 || d.geometry.vertices.empty()) continue;
+        const Rect r = bounds_of(d.geometry);
+        if (near(r.x, ax, 0.01) && near(r.y, ay, 0.01) && near(r.width, quad->width, 0.01) && near(r.height, quad->height, 0.01)) drawn = true;
+    }
+    CHECK(drawn);
+}
+
 void test_paint_gradient_backgrounds_and_canvas() {
     // The body's gradient goes onto the canvas as one textured draw covering
     // the viewport (§14.2) and is not painted again on the body; a plain
