@@ -479,6 +479,15 @@ inconclusive, Godot hover (26) / host (247) / range (66) / bindings (186) on
 Windows, the check.sh scene list on the installed Linux library, the sample
 oracle byte-for-byte the pre-session baseline's summary.
 
+Then: component-scoped stylesheets from the markup (a `<style>` inside
+`<template id>` styles that component's rendering and `:host`, never the
+slotted light-dom; the selector rewrite is byte-identical to the C#'s) and,
+found on the way, `<style>` blocks themselves -- the core had read none, every
+host passed CSS through the ABI. Subgrid turned out to be a documentation
+error, not a divergence. Gates after: core 505,796 / 0, Unity Native 91 pass /
+2 inconclusive, the 45 check.sh scenes on Linux and five scenes on Windows all
+0 failures, sample oracle unchanged.
+
 ## Next work
 
 1. The budget evaluator now annotates a whole-frame failure whose UI-disabled
