@@ -164,6 +164,13 @@ pass's texture-cache hits and misses, and the cascade's running totals (diff
 them between frames). `ElementAtForDevTools(x, y)` is the hit test an Elements
 panel wants: `pointer-events: none` and `visibility: hidden` hide nothing from it.
 
+## Change notification (ABI minor 35)
+
+`NativeDocument.ChangedElements()` lists the elements the last `Update` restyled,
+each with how far the change reached (`WEVA_CHANGE_PAINT`, `_LAYOUT`, `_BOXES`),
+and `StructureVersion` moves whenever elements come or go -- what an inspector
+uses to highlight a change and to know when its handles need a re-walk.
+
 ## HTML parse diagnostics (ABI minor 34)
 
 `NativeDocument.HtmlDiagnostics` lists what the last load or reload recovered

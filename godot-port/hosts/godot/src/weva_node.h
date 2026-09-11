@@ -154,6 +154,11 @@ public:
     // The HTML parse errors the last html load recovered from, one
     // "line:column: message" per entry.
     godot::PackedStringArray get_html_diagnostics() const;
+    // The elements the last update restyled as {element, kind} Dictionaries
+    // (kind "paint" | "layout" | "boxes"), and the counter that moves when
+    // elements come or go.
+    godot::Array get_changed_elements() const;
+    int64_t get_structure_version() const;
 
     // The box tree as an Array of Dictionaries (parent index, kind, element
     // selector-less handle, border box and edges, scroll offset, text) for a

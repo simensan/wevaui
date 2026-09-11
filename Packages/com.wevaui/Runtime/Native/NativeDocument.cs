@@ -302,6 +302,27 @@ namespace Weva.Native
             get { return ReadString((buffer, capacity) => WevaNative.weva_document_html_diagnostics(Handle, buffer, capacity)); }
         }
 
+        /// <summary>
+        /// The elements the last update restyled, each with how far the change
+        /// reached (paint, layout, boxes); empty after a settled update. What an
+        /// inspector highlights after a keystroke.
+        /// </summary>
+        public weva_element_change[] ChangedElements()
+        {
+            nuint count = WevaNative.weva_document_changed_elements(Handle, null, 0);
+            if (count == 0) return Array.Empty<weva_element_change>();
+            var result = new weva_element_change[(int)count];
+            fixed (weva_element_change* p = result)
+            {
+                nuint written = WevaNative.weva_document_changed_elements(Handle, p, count);
+                if (written < count) Array.Resize(ref result, (int)written);
+            }
+            return result;
+        }
+
+        /// <summary>Moves whenever elements come or go (a load, a reload, a mutation); surviving handles keep their values.</summary>
+        public ulong StructureVersion => WevaNative.weva_document_structure_version(Handle);
+
         /// <summary>A text box's run as a string.</summary>
         public static string TextOf(in weva_box box)
         {

@@ -2128,6 +2128,9 @@ struct weva_document {
     std::vector<std::string> missing_imports;
     // The recoveries the last HTML parse made, for weva_document_html_diagnostics.
     std::vector<HtmlParseError> html_diagnostics;
+    // The elements the last update restyled, with how far each change
+    // reached, for weva_document_changed_elements.
+    std::vector<weva_element_change> last_changes;
     // How many `position: sticky` boxes the last sticky pass found; -1 until
     // the first pass after a layout. A page without any skips the walk.
     int sticky_count = -1;
@@ -4133,6 +4136,11 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         lap("paint");
         return WEVA_OK;
     }
+    // Past the settled early-out: this update does work, so the change list
+    // it hands out is its own. An update with nothing to do leaves the
+    // previous list standing, so a host that ran an update of its own
+    // between the change and the tool's read does not lose it.
+    doc->last_changes.clear();
     // Captured before the flag is cleared: whether anything other than the
     // clock moved. Time on its own cannot change what the cascade would
     // produce, so an animating document does not restyle to be told so.
@@ -4486,6 +4494,26 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         const auto it = boxes.find(change.first);
         if (it != boxes.end() && it->second != kNoBox) {
             BoxId changed = it->second;
+            {
+                // The element the changed style belongs to -- a pseudo's host
+                // for a ::before/::after -- with the reach the cascade noted.
+                const Box& cb = doc->tree[changed];
+                const Element* owner = cb.element ? cb.element : cb.pseudo_host;
+                const weva_element_t handle = owner ? doc->handle_of(owner) : WEVA_ELEMENT_NONE;
+                if (handle != WEVA_ELEMENT_NONE) {
+                    const int32_t kind = change.second >= Invalidation::Boxes ? WEVA_CHANGE_BOXES
+                                         : change.second >= Invalidation::Layout ? WEVA_CHANGE_LAYOUT
+                                                                                 : WEVA_CHANGE_PAINT;
+                    bool seen = false;
+                    for (weva_element_change& c : doc->last_changes) {
+                        if (c.element != handle) continue;
+                        if (kind > c.kind) c.kind = kind;
+                        seen = true;
+                        break;
+                    }
+                    if (!seen) doc->last_changes.push_back({handle, kind});
+                }
+            }
             // Inline styles can own fragments on several sibling lines. Their
             // containing block is the smallest retained boundary covering all
             // fragments; invalidating only the first leaves later lines stale.
@@ -8131,6 +8159,19 @@ weva_status weva_document_set_base_path(weva_document_t doc, const char* path) {
     doc->images.set_base_path(path ? path : "");
     if (before != doc->images.content_version()) doc->pending = Invalidation::Boxes;
     return WEVA_OK;
+}
+
+size_t weva_document_changed_elements(weva_document_t doc, weva_element_change* out, size_t capacity) {
+    if (!doc) return 0;
+    const size_t n = doc->last_changes.size();
+    if (out) {
+        for (size_t i = 0; i < n && i < capacity; ++i) out[i] = doc->last_changes[i];
+    }
+    return n;
+}
+
+uint64_t weva_document_structure_version(weva_document_t doc) {
+    return doc ? doc->structure_version : 0;
 }
 
 size_t weva_document_html_diagnostics(weva_document_t doc, char* buffer, size_t capacity) {

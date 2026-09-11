@@ -1179,6 +1179,56 @@ void test_abi_html_diagnostics() {
     CHECK(diagnostics().empty());
 }
 
+// Minor 35: what the last update restyled, and a counter for the element set.
+void test_abi_changed_elements() {
+    Doc doc("html, body { margin: 0 } div { width: 100px; height: 20px }",
+            "<div id=a></div><div id=b></div>");
+    const weva_element_t a = weva_document_query(doc.d, "#a"), b = weva_document_query(doc.d, "#b");
+    const uint64_t structure = weva_document_structure_version(doc.d);
+    const auto changes = [&]() {
+        std::vector<weva_element_change> out(weva_document_changed_elements(doc.d, nullptr, 0));
+        weva_document_changed_elements(doc.d, out.data(), out.size());
+        return out;
+    };
+    // The first cascade computes styles fresh rather than changing them, so
+    // the list starts empty; a load is what structure_version is for.
+    weva_document_update(doc.d, 0);
+    // A colour restyles #a for paint only; a width reaches its layout.
+    weva_document_add_css(doc.d, "#a { background: red } #b { width: 50px }", 40);
+    weva_document_update(doc.d, 0);
+    auto c = changes();
+    int a_kind = 0, b_kind = 0;
+    for (const weva_element_change& e : c) {
+        if (e.element == a) a_kind = e.kind;
+        if (e.element == b) b_kind = e.kind;
+    }
+    CHECK(a_kind == WEVA_CHANGE_PAINT);
+    CHECK(b_kind >= WEVA_CHANGE_LAYOUT);
+    CHECK(weva_document_structure_version(doc.d) == structure);   // no element came or went
+    // The next update, with nothing to do, leaves the list standing.
+    weva_document_update(doc.d, 0);
+    CHECK(changes().size() == c.size());
+    // Adding an element moves the structure version; a class flip does not.
+    const char* more = "<div id=c></div>";
+    weva_element_append_html(doc.d, weva_document_query(doc.d, "body"), more, std::strlen(more));
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_structure_version(doc.d) > structure);
+    const uint64_t after = weva_document_structure_version(doc.d);
+    weva_element_set_attribute(doc.d, a, "class", "x");
+    weva_document_update(doc.d, 0);
+    CHECK(weva_document_structure_version(doc.d) == after);
+    // Replacing the whole stylesheet still names what actually changed.
+    const char* replaced = "html, body { margin: 0 } div { width: 100px; height: 20px } #a { background: blue }";
+    weva_document_set_css(doc.d, replaced, std::strlen(replaced));
+    weva_document_update(doc.d, 0);
+    c = changes();
+    bool a_again = false, b_again = false;
+    for (const weva_element_change& e : c) { if (e.element == a) a_again = true; if (e.element == b) b_again = true; }
+    CHECK(a_again);      // blue where it was red
+    CHECK(b_again);      // back to 100px from 50px
+    CHECK(weva_document_changed_elements(nullptr, nullptr, 0) == 0);
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

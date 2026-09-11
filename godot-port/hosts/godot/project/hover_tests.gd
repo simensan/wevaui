@@ -90,6 +90,15 @@ func _ready() -> void:
 	var diag: PackedStringArray = blended.get_html_diagnostics()
 	_check(diag.size() == 1 and diag[0].begins_with("1:") and diag[0].contains("span"),
 			"a mismatched end tag is reported with its position")
+	# Back to the blended box (the diagnostics check replaced the markup), then
+	# restyle it: the change list names it, the structure version stands.
+	blended.html = "<div id=m></div>"
+	blended.update_document()
+	var version: int = blended.get_structure_version()
+	blended.css = "#m { width: 50px; height: 20px; background: rgb(0, 0, 255) }"
+	blended.update_document()
+	_check(blended.get_changed_elements().size() >= 1, "a restyle names the elements it touched")
+	_check(blended.get_structure_version() == version, "without moving the structure version")
 	stage.remove_child(blended)
 	blended.free()
 

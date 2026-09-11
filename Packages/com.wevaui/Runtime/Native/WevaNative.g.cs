@@ -131,6 +131,13 @@ namespace Weva.Native
         WEVA_VALIDITY_CUSTOM_ERROR = 1 << 9,
     }
 
+    public enum weva_change_kind : int
+    {
+        WEVA_CHANGE_PAINT = 1,
+        WEVA_CHANGE_LAYOUT = 2,
+        WEVA_CHANGE_BOXES = 3,
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct weva_config
     {
@@ -321,11 +328,18 @@ namespace Weva.Native
         public delegate* unmanaged[Cdecl]<void*, byte*, int> count;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct weva_element_change
+    {
+        public uint element;
+        public int kind;
+    }
+
     public static unsafe partial class WevaNative
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 34;
+        public const int WEVA_ABI_VERSION_MINOR = 35;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
@@ -557,6 +571,10 @@ namespace Weva.Native
         public static extern nuint weva_document_css_diagnostics(System.IntPtr doc, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_document_html_diagnostics(System.IntPtr doc, byte* buffer, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_document_changed_elements(System.IntPtr doc, weva_element_change* @out, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong weva_document_structure_version(System.IntPtr doc);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_document_font_faces(System.IntPtr doc, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

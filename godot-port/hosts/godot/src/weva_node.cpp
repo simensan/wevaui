@@ -344,6 +344,24 @@ PackedStringArray WevaDocument::get_missing_assets() {
     return out;
 }
 
+Array WevaDocument::get_changed_elements() const {
+    Array out;
+    if (!doc_) return out;
+    std::vector<weva_element_change> changes(weva_document_changed_elements(doc_, nullptr, 0));
+    const size_t n = weva_document_changed_elements(doc_, changes.data(), changes.size());
+    for (size_t i = 0; i < n; ++i) {
+        Dictionary d;
+        d["element"] = static_cast<int64_t>(changes[i].element);
+        d["kind"] = changes[i].kind == WEVA_CHANGE_BOXES ? "boxes" : changes[i].kind == WEVA_CHANGE_LAYOUT ? "layout" : "paint";
+        out.push_back(d);
+    }
+    return out;
+}
+
+int64_t WevaDocument::get_structure_version() const {
+    return doc_ ? static_cast<int64_t>(weva_document_structure_version(doc_)) : 0;
+}
+
 PackedStringArray WevaDocument::get_html_diagnostics() const {
     if (!doc_) return {};
     const size_t bytes = weva_document_html_diagnostics(doc_, nullptr, 0);
@@ -833,6 +851,8 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_missing_assets"), &WevaDocument::get_missing_assets);
     ClassDB::bind_method(D_METHOD("get_css_diagnostics"), &WevaDocument::get_css_diagnostics);
     ClassDB::bind_method(D_METHOD("get_html_diagnostics"), &WevaDocument::get_html_diagnostics);
+    ClassDB::bind_method(D_METHOD("get_changed_elements"), &WevaDocument::get_changed_elements);
+    ClassDB::bind_method(D_METHOD("get_structure_version"), &WevaDocument::get_structure_version);
     ClassDB::bind_method(D_METHOD("set_element_style", "selector", "property", "value"),
                          &WevaDocument::set_element_style);
     ClassDB::bind_method(D_METHOD("get_element_style", "selector", "property"),

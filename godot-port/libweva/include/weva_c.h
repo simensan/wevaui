@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 34
+#define WEVA_ABI_VERSION_MINOR 35
 
 uint32_t weva_abi_version(void);
 
@@ -1249,6 +1249,36 @@ size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t c
  * these say where it may not be what the author meant. Same buffer
  * convention as css_diagnostics. Available since ABI minor 34. */
 size_t weva_document_html_diagnostics(weva_document_t doc, char* buffer, size_t capacity);
+
+/* ---- Change notification (minor 35) ------------------------------------
+ *
+ * What the last update changed, per element: every element whose computed
+ * style came out different from the update before, with how far the change
+ * reached -- its paint only, its layout, or which boxes exist. A tool that
+ * highlights what a keystroke moved reads this after each update. An update
+ * with nothing to do leaves the list of the last one that did work standing
+ * (a host's own extra update between the change and the read loses
+ * nothing); the tool tells the two apart by weva_document_draw_serial or by
+ * remembering what it handled. Written into `out` up to `capacity`; returns
+ * how many there are. */
+typedef enum weva_change_kind {
+    WEVA_CHANGE_PAINT = 1,
+    WEVA_CHANGE_LAYOUT = 2,
+    WEVA_CHANGE_BOXES = 3
+} weva_change_kind;
+
+typedef struct weva_element_change {
+    weva_element_t element;
+    int32_t kind;   /* weva_change_kind */
+} weva_element_change;
+
+size_t weva_document_changed_elements(weva_document_t doc, weva_element_change* out, size_t capacity);
+
+/* A counter that moves whenever the element set changes -- a load or
+ * reload, a mutation that adds or removes elements, a component expansion --
+ * so a tool holding handles knows when to re-walk the tree. Handles that
+ * survive a change keep their values. */
+uint64_t weva_document_structure_version(weva_document_t doc);
 
 /* `@font-face` rules from compiled stylesheet branches, one per line as
  * "family<TAB>source<TAB>font-weight<TAB>font-style" in source order; the last

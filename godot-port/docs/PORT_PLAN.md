@@ -3559,9 +3559,9 @@ unless noted):
    computed-style string reads per element.
 4. **Computed-style enumeration** — every property an element resolved,
    custom properties included; `weva_element_computed_style` is name-keyed.
-5. **Change notification** — a mutation signal and the per-element
-   invalidation set (Layout/Style/Paint). Draw, interaction, transient and form
-   versions exist, none per element.
+5. **Change notification** — DONE 2026-09-11, ABI minor 35
+   `weva_document_changed_elements` (per element, with the reach) and
+   `weva_document_structure_version` (elements came or went).
 6. **Box-tree enumeration** — DONE 2026-09-11, ABI minor 31
    `weva_document_boxes` (tree order, kinds, edges, text; Godot `get_box_tree()`,
    Unity `NativeDocument.Boxes()`).

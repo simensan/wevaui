@@ -966,6 +966,14 @@ the `elements`, `boxes`, `draws` and `textures` counts, the paint pass's
 (`cascade_elements`, `cascade_pseudos`; diff them between frames) -- what a
 debug overlay shows beside the frame time.
 
+**Change notification**
+
+`doc.get_changed_elements()` is an Array of `{element, kind}` for the elements
+the last update restyled (`kind` is `"paint"`, `"layout"` or `"boxes"`), empty
+after a settled update; `doc.get_structure_version()` moves whenever elements
+come or go. A debug overlay flashes the first; a tool caching handles watches
+the second.
+
 **HTML parse diagnostics**
 
 `doc.get_html_diagnostics()` is a PackedStringArray of what the last `html`

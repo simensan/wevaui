@@ -900,3 +900,10 @@ errors the last load recovered from (stray and mismatched end tags, end tags on
 void elements, elements open at the end of input), one `line:column: message`
 per line, from a diagnostics sink on `ParseOptions` (Godot
 `get_html_diagnostics()`, Unity `NativeDocument.HtmlDiagnostics`).
+
+ABI minor 35 adds change notification: `weva_document_changed_elements` lists the
+elements the last update restyled with how far each change reached (paint,
+layout, boxes -- the cascade's own invalidation, mapped to handles), and
+`weva_document_structure_version` moves whenever elements come or go (Godot
+`get_changed_elements()` / `get_structure_version()`, Unity
+`NativeDocument.ChangedElements()` / `StructureVersion`).
