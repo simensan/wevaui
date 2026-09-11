@@ -3720,7 +3720,17 @@ an ABI surface), keep host-side (C#), drop.
     them to `auto`). As `height` they mean the content height, which an auto
     height already is.
 15. `direction: rtl` reordering / `unicode-bidi` (shared gap; the caret work is
-    open on both sides).
+    open on both sides). Assessed 2026-09-11, not started: what the core has
+    is the direction-aware parts that need no bidi (start/end alignment,
+    block auto margins, flex row reversal, the logical properties). A real
+    port is (a) ICU's ubidi, which IS in the core's ICU build (ubidi_setPara,
+    getLogicalRun, reorderVisual link today), splitting text runs at level
+    changes and reordering each line's items visually; (b) a direction flag
+    on the shaping request (an ABI minor), since the host shapers -- which
+    already shape Arabic joining forms and reorder inside a run -- must be
+    told the run's direction; (c) the Unity side has no RTL shaping in
+    TextCore at all; (d) caret and selection in mixed runs. It needs a
+    visual pass on real RTL text, so it is not a session-alone item.
 16. View Transitions (`Runtime/ViewTransitions`): entirely absent; it needs
     two layout passes and a paint snapshot, all core-side. Port if the API is
     to survive, otherwise drop (it is a documented v1 stub in C#).

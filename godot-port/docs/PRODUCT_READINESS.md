@@ -488,6 +488,16 @@ error, not a divergence. Gates after: core 505,796 / 0, Unity Native 91 pass /
 2 inconclusive, the 45 check.sh scenes on Linux and five scenes on Windows all
 0 failures, sample oracle unchanged.
 
+After that, four more from the list: the individual `translate` / `rotate` /
+`scale` properties, the intrinsic sizing keywords as `min-width` /
+`max-width` / `flex-basis` (core ahead of the C#, which maps them to auto),
+`scroll-behavior: smooth` for programmatic scrolls, and snapping after a
+thumb drag. Gates after each: core 505,850 / 0 at the last, Unity Native 91
+pass / 2 inconclusive, the 45 check.sh scenes on Linux and six on Windows all
+0 failures, both oracles unchanged. What the list still holds is the large
+or host-bound remainder: bidi reordering, View Transitions, font variation
+axes and text stroke.
+
 ## Next work
 
 1. The budget evaluator now annotates a whole-frame failure whose UI-disabled
