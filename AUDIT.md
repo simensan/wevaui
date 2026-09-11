@@ -12,7 +12,7 @@ touched.
 | # | Area | Status |
 |---|------|--------|
 | 1 | Repo layout | **proposed — awaiting review**, nothing moved |
-| 2 | Dead and stale material | not started |
+| 2 | Dead and stale material | **in progress** — one fix landed, three findings need a decision |
 | 3 | TODO / FIXME / HACK inventory | not started |
 | 4 | Test hygiene | not started |
 | 5 | Build hygiene | not started |
@@ -126,3 +126,104 @@ engine" rather than a standalone churn commit.
   against. Neither is dead, but nothing enforces that they stay equal, so the
   dev project can silently test a stale script. Area 2 picks this up: a check in
   `check.sh` comparing the two is cheaper than a rule nobody remembers.
+
+---
+
+## 2. Dead and stale material
+
+**Status: in progress.** One fix landed. Three findings need your decision
+because each one changes either a test outcome or tracked content.
+
+### 2.1 The GPU goldens have never verified anything — landed nothing yet
+
+This is the biggest thing in the area, and it is not the gitignore gap it
+looked like.
+
+`GpuGoldenAssert.Match` (`Runtime/Testing/Goldens/GpuGoldenAssert.cs:53`) does
+this when no baseline file exists:
+
+```csharp
+if (!File.Exists(baselinePath)) {
+    WriteBaseline(baselinePath, actualPng);
+    return;                     // ← reports success
+}
+```
+
+Seeding returns as a **pass**. And no GPU baseline has ever been committed:
+
+| Directory | Baselines tracked |
+|---|---|
+| `Goldens/Baselines/` (software) | 76 |
+| `Goldens/Baselines.GPU/` | 0, only `.gitkeep` |
+
+So on every clean checkout, all ten `Gpu_Golden_29…38` tests render a snippet,
+write the result to disk, and report green without comparing it to anything.
+They have never once verified a pixel. The PlayMode run in this session counted
+them among its 302 passes.
+
+Two aggravating details:
+
+- In batch mode the render happens before the glyph atlases bake, so a seeded
+  baseline has no text in it. I looked at two of the ones seeded this session:
+  `31-centered-modal` is a white card with no text, `38-hero-picker-scroll-clip`
+  is three tiles with no labels. Committing those would freeze a wrong truth.
+- The software `GoldenAssert.cs:31` has the same seed-and-return. It bites less
+  because 76 baselines are committed, but a newly authored snippet gets a free
+  pass there too.
+
+**Recommended fix:** seeding must not report success. Keep writing the file, then
+throw with a message saying the baseline was seeded and must be inspected and
+committed before the test means anything. Refuse to seed at all under
+`Application.isBatchMode`, where the render is known to be text-less.
+
+**Why it is not done yet:** it turns ten vacuous passes into ten honest
+failures, which makes the suite redder than the instruction for this audit
+allows me to leave it. The failures would be truthful and each message would say
+exactly what to do, but the decision is yours. Either:
+
+- **(a)** take the fix and seed the ten baselines from the editor's Test Runner,
+  inspect them, and commit them — after which the suite is green *and* the tests
+  actually test something; or
+- **(b)** take the fix and let the ten stay red until someone gets to (a),
+  recorded as a known-failing set; or
+- **(c)** leave it, and the ten tests keep passing without testing anything.
+
+I recommend (a).
+
+### 2.2 `Out.GPU/` was not ignored — fixed
+
+`GpuGoldenAssert` writes `.actual.png` and `.diff.png` into
+`Goldens/Out.GPU/` on failure. The root `.gitignore` covered the software
+rasterizer's `Goldens/Out/` but not the GPU one, so a failing GPU golden left
+untracked PNGs in `git status`. Added the missing rule, and checked that
+`Baselines.GPU/` stays trackable — the baselines are supposed to be committed,
+only the failure artifacts are not.
+
+### 2.3 A 2.3 MB texture is committed twice
+
+`frontier.png` is byte-identical at both:
+
+- `godot-port/examples/frontier_camp/ui/assets/frontier.png`
+- `godot-port/hosts/godot/project/samples/western_survival/assets/frontier.png`
+
+4.6 MB of the repository is one image. They belong to two separate Godot
+projects that each need the file at a path they control, so this is not a
+deletion — it needs either a build step that copies it or a shared assets
+directory both projects reference. Flagged, not touched.
+
+### 2.4 The verification receipts are 16 MB
+
+229 files under `godot-port/docs/verification`, totalling 16 MB. The tail is
+heavy: `binding-commit.json` is 2.1 MB, `range152.json` 1.1 MB,
+`modal-index.json` 860 KB, and three more over 650 KB.
+
+Receipts are evidence and should stay. But a 2 MB JSON receipt is a raw dump
+that was pasted in rather than a summary of what was measured, and the whole
+directory is now larger than the C++ core's source. Worth a pass that keeps the
+conclusions and drops the embedded raw payloads — but that is editing evidence,
+so it needs your agreement on the rule before anything is rewritten.
+
+### Still to sweep in this area
+
+Orphaned scripts under `godot-port/tools` and `Tools/`, unreferenced source
+files, and stale doc claims. Next iteration.

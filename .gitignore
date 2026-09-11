@@ -30,8 +30,12 @@ desktop.ini
 # Claude Code workspace (runtime lock files etc.)
 .claude/
 
-# Golden image diff outputs (regenerated each test run)
+# Golden image diff outputs (regenerated each test run). Out/ is the software
+# rasterizer's; Out.GPU/ is GpuGoldenAssert's, written next to Baselines.GPU/
+# when a GPU golden fails. Both hold .actual.png / .diff.png for eyeballing a
+# failure, never anything to commit.
 Packages/com.wevaui/Tests/Runtime/Goldens/Out/
+Packages/com.wevaui/Tests/Runtime/Goldens/Out.GPU/
 
 # Headless tool project build artifacts (BaselineGen, Weva.Generators, etc.)
 Tools/*/bin/
