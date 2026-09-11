@@ -55,6 +55,19 @@ MatchedDeclaration make(const Declaration* d, DeclarationOrigin o, Specificity s
 } // namespace
 
 void test_cascade_order() {
+    // @supports selector(): a selector the engine parses is supported, one it
+    // does not is not, and a `:` inside it is not a declaration's colon.
+    for (const auto& [rule, expected] : std::vector<std::pair<const char*, const char*>>{
+             {"@supports selector(#a:hover) { #a { color: red } }", "red"},
+             {"@supports selector(:is(#a, .b) > span) { #a { color: red } }", "red"},
+             {"@supports not selector(#a:hover) { #a { color: red } }", "green"},
+             {"@supports selector(#a:::bogus) { #a { color: red } }", "green"},
+             {"@supports (color: red) and selector(#a) { #a { color: red } }", "red"}}) {
+        Fixture f;
+        CHECK(f.html("<from id=a>x</from>"));
+        CHECK(f.css(std::string("from { color: green }") + rule));
+        CHECK(f.value("a", "color") == expected);
+    }
     // Unknown blocks must not promote their contents to ordinary rules.
     // The same applies to non-grouping rules such as animation keyframes.
     for (const char* rule : {

@@ -3618,7 +3618,8 @@ an ABI surface), keep host-side (C#), drop.
    `font-variation-settings` / `font-optical-sizing` / `font-feature-settings`
    (no font-backend path for axes or features; the `weva_font_backend` table
    would need them), `-webkit-text-stroke`.
-6. `filter: hue-rotate()` (the one missing filter function, one matrix).
+6. `filter: hue-rotate()` (the one missing filter function, one matrix). DONE
+   2026-09-11 (`paint.cpp`, test in `test_backdrop_filter.cpp`).
 7. 3D transform functions are dropped, not projected (`paint.cpp:595`); C#
    projects them, so a `translate3d` card must degrade rather than vanish.
    Also the individual `translate` / `rotate` / `scale` properties (registered,
@@ -3630,7 +3631,8 @@ an ABI surface), keep host-side (C#), drop.
    (nearest only, `background.cpp:948`), `background-attachment`.
 10. Component-scoped stylesheets (`components.h:7-12` defers the scope stamp;
     C# `Components/Scoping` has no counterpart).
-11. `@supports selector(...)`, the one missing arm of `media.cpp:260-320`.
+11. `@supports selector(...)`, the one missing arm of `media.cpp:260-320`. DONE
+    2026-09-11 (`media.cpp`, test in `test_cascade.cpp`).
 12. Subgrid: C# gates on `display: subgrid`, the core on
     `grid-template-columns: subgrid` (the spec form); pick the core's and fix
     the C# samples.

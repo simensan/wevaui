@@ -1,4 +1,5 @@
 #include "weva/media.h"
+#include "weva/selector.h"
 
 #include "weva/css_properties.h"
 #include "weva/css_value.h"
@@ -257,9 +258,30 @@ bool evaluate_condition(std::string_view raw, const MediaContext& ctx) {
     return evaluate_media_type_or_condition(s, ctx);
 }
 
+// CSS Conditional 4 §6.1: `selector(<complex-selector>)` is supported when the
+// selector parses. The whole argument is the selector, so a `:` inside it (a
+// pseudo-class) must not be read as a declaration's colon.
+bool is_supports_selector(std::string_view s) {
+    const std::string lowered = ascii_lower(trim(s));
+    return lowered.rfind("selector(", 0) == 0 && lowered.back() == ')';
+}
+
+bool evaluate_supports_selector(std::string_view s) {
+    const std::string body = trim(s);
+    const std::size_t open = body.find('(');
+    const std::size_t close = body.rfind(')');
+    if (open == std::string::npos || close == std::string::npos || close <= open) return false;
+    const std::string selector = trim(std::string_view(body).substr(open + 1, close - open - 1));
+    if (selector.empty()) return false;
+    CompiledSelector compiled;
+    SelectorParseError error;
+    return parse_selector(selector, &compiled, &error);
+}
+
 bool evaluate_supports_condition(std::string_view raw) {
     std::string s = trim(raw);
     if (s.empty()) return false;
+    if (is_supports_selector(s)) return evaluate_supports_selector(s);
 
     std::vector<std::string> parts;
     if (split_on_keyword(s, "or", &parts)) {
@@ -285,6 +307,7 @@ bool evaluate_supports_condition(std::string_view raw) {
             ascii_lower(inner).rfind("not ", 0) == 0) {
             return evaluate_supports_condition(inner);
         }
+        if (is_supports_selector(inner)) return evaluate_supports_selector(inner);
         auto colon = inner.find(':');
         if (colon == std::string::npos) return false;
         std::string prop = ascii_lower(trim(std::string_view(inner).substr(0, colon)));

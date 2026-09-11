@@ -1234,6 +1234,33 @@ bool parse_color_filter(const ComputedStyle* style, const LayoutContext& ctx, do
             for (int r = 0; r < 3; ++r) { f.m[r][r] = 1 - 2 * a; f.add[r] = a; }
         } else if (name == "opacity") {
             f.alpha = static_cast<float>(std::min(1.0, number(1)));
+        } else if (name == "hue-rotate") {
+            // Filter Effects 1 §8.1 hue-rotate: the angle in deg, grad, rad or
+            // turn (a bare number reads as degrees); the matrix is the spec's,
+            // built on the same luminance weights as saturate.
+            const auto strip = [](std::string_view t) {
+                while (!t.empty() && (t.front() == ' ' || t.front() == '\t' || t.front() == '\n')) t.remove_prefix(1);
+                while (!t.empty() && (t.back() == ' ' || t.back() == '\t' || t.back() == '\n')) t.remove_suffix(1);
+                return t;
+            };
+            std::string a(strip(arg));
+            double degrees = 0;
+            if (!a.empty()) {
+                char* end = nullptr;
+                const double v = std::strtod(a.c_str(), &end);
+                if (end != a.c_str()) {
+                    const std::string_view unit = strip(std::string_view(a).substr(static_cast<size_t>(end - a.c_str())));
+                    degrees = ci_equal(unit, "rad") ? v * 180.0 / 3.14159265358979323846
+                            : ci_equal(unit, "grad") ? v * 0.9
+                            : ci_equal(unit, "turn") ? v * 360.0
+                            : v;
+                }
+            }
+            const double t = degrees * 3.14159265358979323846 / 180.0;
+            const float c = static_cast<float>(std::cos(t)), sn = static_cast<float>(std::sin(t));
+            f.m[0][0] = 0.213f + c * 0.787f - sn * 0.213f; f.m[0][1] = 0.715f - c * 0.715f - sn * 0.715f; f.m[0][2] = 0.072f - c * 0.072f + sn * 0.928f;
+            f.m[1][0] = 0.213f - c * 0.213f + sn * 0.143f; f.m[1][1] = 0.715f + c * 0.285f + sn * 0.140f; f.m[1][2] = 0.072f - c * 0.072f - sn * 0.283f;
+            f.m[2][0] = 0.213f - c * 0.213f - sn * 0.787f; f.m[2][1] = 0.715f - c * 0.715f + sn * 0.715f; f.m[2][2] = 0.072f + c * 0.928f + sn * 0.072f;
         } else if (name == "drop-shadow") {
             colour = false;
             // <offset-x> <offset-y> [<blur>]? <color>? — parsed like a box-shadow

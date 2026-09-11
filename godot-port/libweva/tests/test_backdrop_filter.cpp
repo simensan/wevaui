@@ -190,6 +190,30 @@ void test_backdrop_filter_colour() {
         CHECK(std::abs(in[0] - out[0]) <= 1);
     }
     {
+        // hue-rotate(180deg) on pure red (Filter Effects 1 s8.1 matrix, cos -1,
+        // sin 0): red 0.213 - 0.787 -> 0, green 0.213 + 0.213 = 0.426 -> 109,
+        // blue 0.213 + 0.213 = 0.426 -> 109, the spec's dark cyan. Half a turn
+        // written as `turn` reads the same as in degrees.
+        Rendered p(std::string(kPage) +
+                       "body { background: rgb(255, 0, 0) }"
+                       "#g { position: absolute; left: 40px; top: 20px; width: 80px; height: 60px;"
+                       "     backdrop-filter: hue-rotate(180deg) }"
+                       "#h { position: absolute; left: 130px; top: 20px; width: 60px; height: 60px;"
+                       "     backdrop-filter: hue-rotate(0.5turn) }",
+                   "<body><div id=g></div><div id=h></div></body>");
+        int in[3], out[3], turn[3];
+        p.at(80, 50, in);
+        p.at(10, 50, out);
+        p.at(160, 50, turn);
+        CHECK(out[0] == 255 && out[1] == 0 && out[2] == 0);
+        CHECK(in[0] <= 1);
+        CHECK(std::abs(in[1] - 109) <= 1);
+        CHECK(std::abs(in[2] - 109) <= 1);
+        if (!(turn[0] == in[0] && turn[1] == in[1] && turn[2] == in[2]))
+            std::fprintf(stderr, "hue-rotate: deg=(%d,%d,%d) turn=(%d,%d,%d)\n", in[0], in[1], in[2], turn[0], turn[1], turn[2]);
+        CHECK(turn[0] == in[0] && turn[1] == in[1] && turn[2] == in[2]);
+    }
+    {
         // A coloured page: saturate(2) pushes it away from its own luminance.
         // L = 0.2126*192 + 0.7152*64 + 0.0722*128 = 95.9, and each channel
         // moves to L + 2*(c - L): red 288.2 clamps to 255, green 32.2, blue
