@@ -485,6 +485,17 @@ if [ -x "$GODOT" ]; then
         tail -25 /tmp/weva-font-face.log
     fi
 
+    step "bidi integration"
+    if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
+            "$GODOT" --headless --path . bidi_tests.tscn ) > /tmp/weva-bidi.log 2>&1 &&
+       grep -q 'godot bidi:.* 0 failures' /tmp/weva-bidi.log &&
+       ! grep -qE 'SCRIPT ERROR:|FAIL  ' /tmp/weva-bidi.log; then
+        grep 'godot bidi:' /tmp/weva-bidi.log
+    else
+        fail "bidi integration"
+        tail -25 /tmp/weva-bidi.log
+    fi
+
     step "gamepad navigation integration"
     if ( cd "$ROOT/hosts/godot/project" && GODOT_SILENCE_ROOT_WARNING=1 timeout 300 \
             "$GODOT" --headless --path . gamepad_navigation_tests.tscn ) > /tmp/weva-gamepad.log 2>&1 &&

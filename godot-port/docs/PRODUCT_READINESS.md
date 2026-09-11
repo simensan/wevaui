@@ -513,6 +513,15 @@ in the author's order on both hosts, a `local("Name")` being an installed
 font. Gates: core 505,861 / 0, 97 cases: 95 pass, Godot font-face and host
 scenes green on both platforms.
 
+Bidirectional text, the last large item on the port list that the core can own:
+`direction: rtl` and `unicode-bidi` now place a line's runs in visual order (UAX
+#9 through ICU, which the core's ICU build already carried), each run one
+direction for the host to shape. Verified through TextServer with Hebrew spans
+on both platforms and through the C# wrapper; what remains is the caret in mixed
+runs, TextCore's glyph order inside a run, and a visual pass on real Arabic.
+Gates: core 505,878 / 0, Unity Native 100 cases, the check.sh scenes green on
+both platforms, the three oracles identical to the pre-session baseline.
+
 ## Next work
 
 1. The budget evaluator now annotates a whole-frame failure whose UI-disabled
@@ -526,8 +535,10 @@ scenes green on both platforms.
    composition edge cases, `unicode-range` font sources (`local()` landed
    2026-09-11, ABI minor 37: a `src` list is tried in order on both hosts and
    a `local("Name")` is an installed font), multicolumn paragraph
-   fragmentation, vertical writing, bidi caret behavior and dialog/input
-   lifecycle.
+   fragmentation, vertical writing, bidi caret behavior (run reordering landed
+   2026-09-11: `direction` and `unicode-bidi` place a line's runs in visual
+   order on both hosts; the caret in mixed runs and TextCore's glyph order
+   inside a run remain) and dialog/input lifecycle.
 4. Verify physical IME, touch/gamepad and accessibility, platform exports and
    longer memory/lifecycle behavior. Stock-engine Unicode safety is covered for
    document text on Windows and Linux; stock exports and native-control text
