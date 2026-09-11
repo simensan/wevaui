@@ -206,6 +206,15 @@ namespace Weva.Native
             WevaNative.weva_document_set_viewport(Handle, width, height);
         }
 
+        /// <summary>
+        /// The colour scheme <c>light-dark()</c> and <c>@media (prefers-color-scheme)</c>
+        /// follow. The game decides; the core defaults to light.
+        /// </summary>
+        public void SetColorScheme(bool dark)
+        {
+            WevaNative.weva_document_set_color_scheme(Handle, dark ? 1 : 0);
+        }
+
         /// <summary>The directory relative url() and @font-face sources resolve against.</summary>
         public void SetBasePath(string path)
         {

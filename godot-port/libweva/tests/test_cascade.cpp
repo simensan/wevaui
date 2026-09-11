@@ -1,10 +1,12 @@
 #include "check.h"
 #include "weva/cascade.h"
+#include "weva/variable_resolver.h"
 #include "weva/dom.h"
 #include "weva/html.h"
 #include "weva/user_agent_stylesheet.h"
 #include <memory>
 #include <string>
+#include <tuple>
 
 using namespace weva;
 
@@ -147,6 +149,80 @@ void test_cascade_order() {
         auto inline_imp = make(&important, DeclarationOrigin::Author, {0, 0, 0}, 0, true);
         auto layered_imp = make(&important, DeclarationOrigin::Author, {0, 0, 0}, 0, false, 3);
         CHECK(compare_for_cascade(inline_imp, layered_imp) < 0);
+    }
+}
+
+// CSS Color Adjustment 1 §3.2 light-dark(): the host's scheme picks the
+// branch unless the element's own `color-scheme` settles it.
+void test_cascade_light_dark() {
+    {
+        Fixture f;
+        CHECK(f.html("<div id=a>x</div>"));
+        CHECK(f.css("#a { color: light-dark(red, blue); background-color: LIGHT-DARK( #111 , #eee ) }"));
+        CHECK(f.value("a", "color") == "red");
+        CHECK(f.value("a", "background-color") == "#111");
+        MediaContext m = f.engine.media_context();
+        m.color_scheme = ColorScheme::Dark;
+        f.engine.set_media_context(m);
+        CHECK(f.value("a", "color") == "blue");
+        CHECK(f.value("a", "background-color") == "#eee");
+    }
+    // The element's color-scheme wins over the host's preference when it
+    // names one scheme; `light dark` leaves the choice to the host; `only`
+    // forces it.
+    for (const auto& [scheme, host_dark, expected] :
+         std::vector<std::tuple<const char*, bool, const char*>>{
+             {"dark", false, "blue"},
+             {"light", true, "red"},
+             {"only light", true, "red"},
+             {"light dark", true, "blue"},
+             {"light dark", false, "red"},
+             {"normal", true, "blue"}}) {
+        Fixture f;
+        CHECK(f.html("<div id=a>x</div>"));
+        CHECK(f.css(std::string("#a { color-scheme: ") + scheme + "; color: light-dark(red, blue) }"));
+        MediaContext m = f.engine.media_context();
+        m.color_scheme = host_dark ? ColorScheme::Dark : ColorScheme::Light;
+        f.engine.set_media_context(m);
+        CHECK(f.value("a", "color") == expected);
+    }
+    // color-scheme is inherited: a child of a dark parent picks the dark branch.
+    {
+        Fixture f;
+        CHECK(f.html("<div id=p><div id=a>x</div></div>"));
+        CHECK(f.css("#p { color-scheme: dark } #a { color: light-dark(red, blue) }"));
+        ComputedStyle parent;
+        f.engine.compute(*f.id("p"), f.state, nullptr, &parent);
+        ComputedStyle child;
+        f.engine.compute(*f.id("a"), f.state, &parent, &child);
+        CHECK(child.get("color") == "blue");
+    }
+    // Through a custom property, nested, and inside another function; and a
+    // call with the wrong arity is left for the value parser to reject.
+    {
+        Fixture f;
+        CHECK(f.html("<div id=a>x</div>"));
+        CHECK(f.css("#a { --c: light-dark(red, blue); color: var(--c);"
+                    "     border-color: light-dark(light-dark(#1, #2), #3);"
+                    "     background-color: color-mix(in srgb, light-dark(red, blue) 50%, white);"
+                    "     outline-color: light-dark(red) }"));
+        CHECK(f.value("a", "color") == "red");
+        CHECK(f.value("a", "border-top-color") == "#1");
+        CHECK(f.value("a", "background-color") == "color-mix(in srgb, red 50%, white)");
+        CHECK(f.value("a", "outline-color") == "light-dark(red)");
+        MediaContext m = f.engine.media_context();
+        m.color_scheme = ColorScheme::Dark;
+        f.engine.set_media_context(m);
+        CHECK(f.value("a", "color") == "blue");
+        CHECK(f.value("a", "border-top-color") == "#3");
+    }
+    // The resolver on its own: identifiers that merely end in the name are
+    // not calls.
+    {
+        std::string out;
+        CHECK(!resolve_light_dark("xlight-dark(a, b)", true, &out));
+        CHECK(resolve_light_dark("light-dark(a, b) light-dark(c, d)", true, &out));
+        CHECK(out == "b d");
     }
 }
 

@@ -148,6 +148,12 @@ handler names to the controller's methods. The Frontier Camp logic lives in
 the tests (`FrontierCampState`, `FrontierCampController`) and drives the
 example's own `camp.html`.
 
+## Colour scheme (ABI minor 28)
+
+`NativeDocument.SetColorScheme(dark)` is the switch `light-dark()` and
+`@media (prefers-color-scheme)` follow; the core defaults to light and never
+reads the OS. An element's own `color-scheme` declaration wins over it.
+
 ## The inspector surface (ABI minor 27)
 
 `NativeDocument.Parent` / `Children`, `TryGetBoxModel` (margin, border and

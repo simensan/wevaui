@@ -907,6 +907,50 @@ const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
     return shape_cache_.emplace(key, std::move(out)).first->second;
 }
 
+namespace {
+// CSS Color Adjustment 1 §3 -- the scheme light-dark() picks by on this
+// element: its own (inherited) `color-scheme` when that names one scheme or
+// says `only`, otherwise the host's preference from the media context.
+bool light_dark_is_dark(const ComputedStyle& style, const MediaContext& media) {
+    static const int id = CssPropertyRegistry::instance().id_of("color-scheme");
+    const std::string_view raw = style.get(id);
+    const bool host_dark = media.color_scheme == ColorScheme::Dark;
+    if (raw.empty()) return host_dark;
+    std::string lower;
+    lower.reserve(raw.size());
+    for (char c : raw) lower.push_back((c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c);
+    if (lower == "normal") return host_dark;
+    const bool only = lower.find("only") != std::string::npos;
+    const bool dark = lower.find("dark") != std::string::npos;
+    const bool light = lower.find("light") != std::string::npos;
+    if (only || (dark != light)) return dark;
+    return host_dark;
+}
+
+// Rewrites every declaration holding a light-dark() call to the branch the
+// effective scheme picks. Runs AFTER var() substitution so a call that
+// arrived through a custom property is seen, and before the CSS-wide keyword
+// pass so an `inherit` reads the picked branch.
+void substitute_light_dark(ComputedStyle* out, std::vector<int>* ids, const MediaContext& media) {
+    out->copy_set_ids(*ids);
+    bool decided = false, dark = false;
+    std::vector<std::pair<int, std::string>> rewrites;
+    for (int id : *ids) {
+        const std::string_view raw = out->get(id);
+        if (raw.find("light-dark(") == std::string_view::npos &&
+            raw.find("LIGHT-DARK(") == std::string_view::npos &&
+            raw.find("Light-Dark(") == std::string_view::npos) {
+            continue;
+        }
+        if (!decided) { dark = light_dark_is_dark(*out, media); decided = true; }
+        std::string resolved;
+        if (resolve_light_dark(raw, dark, &resolved)) rewrites.emplace_back(id, std::move(resolved));
+    }
+    for (auto& r : rewrites) out->set(r.first, r.second);
+    expand_substituted_shorthands(rewrites, out);
+}
+} // namespace
+
 void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                             const ComputedStyle* parent, ComputedStyle* out) const {
     CascadePhaseProfile profile(work_profile_, 6);
@@ -1114,6 +1158,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         for (int id : drops) out->set_important(id, false);
         dropped_ = drops;
     }
+    substitute_light_dark(out, &property_ids_, media_);
 
     // 4. Inheritance and initial values are resolved LAZILY on read — see
     // ComputedStyle::set_inherit_parent. Materialising all 334 registered
@@ -1316,6 +1361,7 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
         for (int id : drops) out->set(id, "");
         dropped_ = drops;
     }
+    substitute_light_dark(out, &property_ids_, media_);
 
     // Inheritance source is the ORIGINATING element, not the host's parent.
     const bool has_drops = !dropped_.empty();

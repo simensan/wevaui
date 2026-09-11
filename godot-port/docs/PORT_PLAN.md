@@ -3606,9 +3606,12 @@ an ABI surface), keep host-side (C#), drop.
    and both blend properties are registered with no consumer; `BlendMode` and
    `composite_layers` exist in `render_interface.h` with no caller.
 2. Colour: `lab()`, `lch()`, `oklab()`, `oklch()`, `color()` absent
-   (`css_color.cpp` parses rgb/hsl/hwb only); `light-dark()` absent
-   (`color-scheme` registered, unused); `color-mix()` mixes every space as sRGB
-   (`css_value.cpp:266-309`).
+   (`css_color.cpp` parses rgb/hsl/hwb only); `color-mix()` mixes every space
+   as sRGB (`css_value.cpp:266-309`). `light-dark()` DONE 2026-09-11: the
+   cascade rewrites it after var() substitution, the element's inherited
+   `color-scheme` wins over the host's preference, and ABI minor 28 adds
+   `weva_document_set_color_scheme` (Godot `dark_color_scheme`, Unity
+   `NativeDocument.SetColorScheme`).
 3. `@scope` and `@import` land in the unsupported-at-rule list
    (`cascade.cpp:828`); `@import` needs only the asset reader that exists.
 4. `::placeholder` (placeholder paints, no pseudo style) and `::selection`
@@ -3626,7 +3629,7 @@ an ABI surface), keep host-side (C#), drop.
    unread).
 8. `scroll-snap-type` / `scroll-snap-align` / `scroll-behavior` are not even
    registered (only `overscroll-behavior` expands, unenforced).
-9. Small drops: `caret-color` (caret uses `color`), `list-style-image`
+9. Small drops: `caret-color` DONE 2026-09-11 (`paint.cpp` caret_color_of), `list-style-image`
    (`Box::list_marker_image` declared, never assigned), `image-rendering`
    (nearest only, `background.cpp:948`), `background-attachment`.
 10. Component-scoped stylesheets (`components.h:7-12` defers the scope stamp;

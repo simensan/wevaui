@@ -20,4 +20,11 @@ namespace weva {
 bool resolve_variables(std::string_view value, const ComputedStyle& style,
                        std::string* resolved);
 
+// CSS Color Adjustment 1 §3.2 light-dark(): replaces every light-dark(a, b)
+// in `value` with `a` under a light scheme and `b` under a dark one, nested
+// calls included. Returns true when the text changed. A call with anything
+// but two top-level arguments is left as written, so the value fails to
+// parse later instead of picking a branch at random.
+bool resolve_light_dark(std::string_view value, bool dark, std::string* resolved);
+
 } // namespace weva

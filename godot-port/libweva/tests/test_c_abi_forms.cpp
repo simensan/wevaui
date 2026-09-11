@@ -11,7 +11,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <utility>
+#include <algorithm>
 #include <cstring>
+#include <tuple>
 #include <string>
 #include <vector>
 
@@ -480,6 +482,119 @@ void test_abi_caret_is_drawn() {
     weva_document_update(doc.d, 0);
     weva_document_draws(doc.d, &lit);
     CHECK(lit == focused);
+}
+
+// CSS UI 4 §5.4 caret-color: the bar takes the author's colour, `auto` is
+// the text colour, and `transparent` hides it without removing focus.
+void test_abi_caret_color() {
+    // The caret is the one untextured draw a pixel wide.
+    const auto caret_of = [](weva_document_t d, float* r, float* g, float* b, float* a) {
+        weva_document_update(d, 0);
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        int found = 0;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].texture_id != 0 || draws[i].vertex_count < 3) continue;
+            float lo = 1e9f, hi = -1e9f;
+            for (size_t v = 0; v < draws[i].vertex_count; ++v) {
+                lo = std::min(lo, draws[i].vertices[v].x);
+                hi = std::max(hi, draws[i].vertices[v].x);
+            }
+            if (hi - lo > 1.5f) continue;
+            *r = draws[i].vertices[0].r;
+            *g = draws[i].vertices[0].g;
+            *b = draws[i].vertices[0].b;
+            *a = draws[i].vertices[0].a;
+            ++found;
+        }
+        return found;
+    };
+    float r = 0, g = 0, b = 0, a = 0;
+    {
+        Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 30px;"
+                " color: rgb(255, 0, 0); caret-color: rgb(0, 255, 0) }",
+                "<input id=t type=text value=abc>");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+        CHECK(caret_of(doc.d, &r, &g, &b, &a) == 1);
+        CHECK(r == 0 && g == 1 && b == 0 && a == 1);
+    }
+    {
+        // `auto` and no declaration: the text colour. Inherited: set on the
+        // body, seen by the field.
+        Doc doc("html, body { margin: 0 } body { caret-color: auto }"
+                " input { display: block; width: 200px; height: 30px; color: rgb(255, 0, 0) }",
+                "<input id=t type=text value=abc>");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+        CHECK(caret_of(doc.d, &r, &g, &b, &a) == 1);
+        CHECK(r == 1 && g == 0 && b == 0 && a == 1);
+    }
+    {
+        Doc doc("html, body { margin: 0 } body { caret-color: rgb(0, 0, 255) }"
+                " input { display: block; width: 200px; height: 30px; color: rgb(255, 0, 0) }",
+                "<input id=t type=text value=abc>");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+        CHECK(caret_of(doc.d, &r, &g, &b, &a) == 1);
+        CHECK(r == 0 && g == 0 && b == 1 && a == 1);
+    }
+    {
+        // A <textarea> caret goes through the text-run path; same property.
+        Doc doc("html, body { margin: 0 } textarea { display: block; width: 200px; height: 80px;"
+                " color: rgb(255, 0, 0); caret-color: rgb(0, 255, 0) }",
+                "<textarea id=t>abc</textarea>");
+        const weva_element_t t = weva_document_query(doc.d, "#t");
+        weva_document_set_focus(doc.d, t);
+        place_caret_at_end(doc.d, t);
+        CHECK(caret_of(doc.d, &r, &g, &b, &a) == 1);
+        CHECK(r == 0 && g == 1 && b == 0 && a == 1);
+    }
+    {
+        Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 30px;"
+                " color: rgb(255, 0, 0); caret-color: transparent }",
+                "<input id=t type=text value=abc>");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+        const int n = caret_of(doc.d, &r, &g, &b, &a);
+        CHECK(n == 0 || a == 0);
+    }
+}
+
+// Minor 28: the host's colour-scheme preference reaches both the media
+// query and light-dark(), and flipping it restyles the live document.
+void test_abi_color_scheme() {
+    Doc doc("html, body { margin: 0 }"
+            " #a { display: block; width: 100px; height: 20px; background-color: light-dark(rgb(255, 0, 0), rgb(0, 0, 255)) }"
+            " #b { display: block; width: 100px; height: 20px; background-color: rgb(0, 255, 0) }"
+            " @media (prefers-color-scheme: dark) { #b { display: none } }",
+            "<div id=a></div><div id=b></div>");
+    const auto fill_of = [](weva_document_t d, double y) {
+        weva_document_update(d, 0);
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        float r = -1, g = -1, b = -1;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].texture_id != 0 || draws[i].vertex_count < 3) continue;
+            float lo = 1e9f, hi = -1e9f;
+            for (size_t v = 0; v < draws[i].vertex_count; ++v) {
+                lo = std::min(lo, draws[i].vertices[v].y);
+                hi = std::max(hi, draws[i].vertices[v].y);
+            }
+            if (lo > y || hi < y) continue;
+            r = draws[i].vertices[0].r; g = draws[i].vertices[0].g; b = draws[i].vertices[0].b;
+        }
+        return std::make_tuple(r, g, b);
+    };
+    CHECK(fill_of(doc.d, 10) == std::make_tuple(1.f, 0.f, 0.f));
+    CHECK(fill_of(doc.d, 30) == std::make_tuple(0.f, 1.f, 0.f));
+
+    weva_document_set_color_scheme(doc.d, 1);
+    CHECK(fill_of(doc.d, 10) == std::make_tuple(0.f, 0.f, 1.f));
+    // #b is display:none under the dark scheme, so nothing is drawn there.
+    CHECK(fill_of(doc.d, 30) == std::make_tuple(-1.f, -1.f, -1.f));
+
+    // Setting the same scheme again is free; switching back restores the page.
+    weva_document_set_color_scheme(doc.d, 1);
+    weva_document_set_color_scheme(doc.d, 0);
+    CHECK(fill_of(doc.d, 10) == std::make_tuple(1.f, 0.f, 0.f));
+    CHECK(fill_of(doc.d, 30) == std::make_tuple(0.f, 1.f, 0.f));
 }
 
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`

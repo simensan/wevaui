@@ -3817,6 +3817,28 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     doc->pending = worst(doc->pending, Invalidation::Boxes);
 }
 
+void weva_document_set_color_scheme(weva_document_t doc, int dark) {
+    if (!doc) return;
+    auto media = doc->styles.engine.media_context();
+    const ColorScheme scheme = dark ? ColorScheme::Dark : ColorScheme::Light;
+    if (media.color_scheme == scheme) return;
+    media.color_scheme = scheme;
+    doc->styles.engine.set_media_context(media);
+    // `@media (prefers-color-scheme)` branches are compiled against the
+    // context, so the sheets go through the compiler again, as on a resize.
+    doc->styles.engine.clear();
+    if (doc->ua_sheet)
+        doc->styles.engine.add_stylesheet(doc->ua_sheet.get(), DeclarationOrigin::UserAgent);
+    for (const auto& sheet : doc->sheets)
+        doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
+    doc->styles.keyframes = doc->styles.engine.keyframes();
+    // A scheme change is a restyle: light-dark() values move without any rule
+    // changing, and a cached gradient texture keyed by style text would not
+    // see a colour that changed underneath it.
+    doc->textures.release_all(doc->render_backend());
+    doc->pending = worst(doc->pending, Invalidation::Boxes);
+}
+
 weva_status weva_document_content_size(weva_document_t doc, double* out_width,
                                        double* out_height) {
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;

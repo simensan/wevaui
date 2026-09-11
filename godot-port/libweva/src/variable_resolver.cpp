@@ -194,4 +194,73 @@ bool resolve_variables(std::string_view value, const ComputedStyle& style,
     return r.resolve(value, 0, resolved);
 }
 
+namespace {
+// Case-insensitive search for `light-dark(` starting at `from`; npos if none.
+size_t find_light_dark(std::string_view s, size_t from) {
+    static constexpr std::string_view kName = "light-dark(";
+    for (size_t i = from; i + kName.size() <= s.size(); ++i) {
+        bool hit = true;
+        for (size_t k = 0; k < kName.size(); ++k) {
+            char c = s[i + k];
+            if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+            if (c != kName[k]) { hit = false; break; }
+        }
+        if (!hit) continue;
+        // `xlight-dark(` is some other identifier.
+        if (i > 0) {
+            const char b = s[i - 1];
+            if ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '-' || b == '_') continue;
+        }
+        return i;
+    }
+    return std::string_view::npos;
+}
+} // namespace
+
+bool resolve_light_dark(std::string_view value, bool dark, std::string* resolved) {
+    std::string text(value);
+    bool changed = false;
+    size_t from = 0;
+    // Bounded: every rewrite removes one call, and a branch can only carry
+    // calls that were already inside the text.
+    for (int guard = 0; guard < 64; ++guard) {
+        const size_t start = find_light_dark(text, from);
+        if (start == std::string::npos) break;
+        const size_t open = start + 10;   // index of '('
+        int depth = 0;
+        size_t comma = std::string::npos, close = std::string::npos;
+        int top_level_commas = 0;
+        for (size_t i = open; i < text.size(); ++i) {
+            const char c = text[i];
+            if (c == '(') {
+                ++depth;
+            } else if (c == ')') {
+                if (--depth == 0) { close = i; break; }
+            } else if (c == ',' && depth == 1) {
+                if (top_level_commas++ == 0) comma = i;
+            }
+        }
+        if (close == std::string::npos || top_level_commas != 1) {
+            // Malformed: skip past it and leave it for the value parser to
+            // reject.
+            from = open;
+            continue;
+        }
+        const auto trim = [](std::string_view t) {
+            while (!t.empty() && (t.front() == ' ' || t.front() == '\t' || t.front() == '\n' || t.front() == '\r')) t.remove_prefix(1);
+            while (!t.empty() && (t.back() == ' ' || t.back() == '\t' || t.back() == '\n' || t.back() == '\r')) t.remove_suffix(1);
+            return t;
+        };
+        const std::string_view light_arg = trim(std::string_view(text).substr(open + 1, comma - open - 1));
+        const std::string_view dark_arg = trim(std::string_view(text).substr(comma + 1, close - comma - 1));
+        if (light_arg.empty() || dark_arg.empty()) { from = open; continue; }
+        const std::string pick(dark ? dark_arg : light_arg);
+        text.replace(start, close - start + 1, pick);
+        changed = true;
+        from = start;   // the branch itself may hold a nested call
+    }
+    if (changed) *resolved = std::move(text);
+    return changed;
+}
+
 } // namespace weva

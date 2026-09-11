@@ -849,4 +849,9 @@ shorthands expanded as the cascade applies them) and
 `weva_element_computed_style_all` (every registered property resolved, then the
 custom properties in scope). Tab-separated lines, the `css_diagnostics` buffer
 convention.
+
+ABI minor 28 adds `weva_document_set_color_scheme(doc, dark)`: the host's
+colour-scheme preference, which `@media (prefers-color-scheme)` and
+`light-dark()` follow (an element's own inherited `color-scheme` wins over
+it). A change recompiles the conditional rules and restyles, like a resize.
 The Godot source exposes `register_font_family(name, Font)` and watches resource changes. Installed Windows preview105 includes minor 14; its package and native exports pass the recorded verification.

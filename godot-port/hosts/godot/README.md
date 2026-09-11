@@ -969,6 +969,18 @@ that has stopped moving sends nothing more and the tooltip still has to appear
 -- so this needs `update_document(dt)` to be called with real time, as an
 animating document does.
 
+**Colour scheme**
+
+`light-dark(a, b)` and `@media (prefers-color-scheme: dark)` follow the
+document's own switch rather than the OS, so a game's theme toggle drives
+them:
+
+    doc.dark_color_scheme = true    # every light-dark() picks its second colour
+
+An element that declares `color-scheme: dark` (or `light`, or `only ...`)
+settles its own `light-dark()` regardless; `light dark` and `normal` leave
+the choice to the switch. The default is light.
+
 **Labels**
 
 `<label>` works the control it names, so the word beside a checkbox is

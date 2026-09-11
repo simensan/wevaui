@@ -1822,6 +1822,17 @@ LinearColor accent_color_of(const ComputedStyle* style) {
     return c.a > 0 ? c : kCheck;
 }
 
+// CSS UI 4 §5.4 caret-color; `auto` is currentcolor, as Chrome draws it (the
+// contrast adjustment the spec permits is not done). `transparent` is a
+// legitimate value -- a page that draws its own cursor hides the UA's.
+LinearColor caret_color_of(const ComputedStyle* style) {
+    const std::string_view raw = get(style, "caret-color");
+    if (raw.empty() || ci_equal(raw, "auto") || ci_equal(raw, "currentcolor")) {
+        return resolve_color(style, "color");
+    }
+    return resolve_color(style, "caret-color");
+}
+
 void fill_rounded(const Rect& r, double radius, const LinearColor& color, RenderInterface* backend,
                   double opacity, const Transform2D* xf, const ClipNode* clip = nullptr,
                   const ColorFilter* filter = nullptr) {
@@ -2008,7 +2019,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             // An empty prefix measures nothing, which is the left edge.
             const double caret_x = text_left + advance;
             Mesh bar;
-            tessellate_rect(Rect(caret_x, text_top, 1.0, line_h), resolve_color(b.style, "color"), &bar, false);
+            tessellate_rect(Rect(caret_x, text_top, 1.0, line_h), caret_color_of(b.style), &bar, false);
             draw_mesh(std::move(bar), paint.backend, {}, state.opacity, xf, text_clip,
                       state.filter.get());
         }
@@ -3347,7 +3358,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // no run at all.
     if (b.kind == BoxKind::Text && id == paint.caret.run && paint.caret.visible && !hidden &&
         paint.font && paint.atlas) {
-        const LinearColor caret_color = resolve_color(b.style, "color");
+        const LinearColor caret_color = caret_color_of(b.style);
         const FaceHandle caret_face = face_for_run(b, ctx, paint);
         const double caret_spacing =
             letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;

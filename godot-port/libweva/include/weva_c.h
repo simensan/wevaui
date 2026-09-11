@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 27
+#define WEVA_ABI_VERSION_MINOR 28
 
 uint32_t weva_abi_version(void);
 
@@ -274,6 +274,13 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
 weva_status weva_document_set_css(weva_document_t doc, const char* css, size_t length);
 
 void weva_document_set_viewport(weva_document_t doc, int width, int height);
+
+/* The host's colour-scheme preference: 1 for dark, 0 for light (the default).
+ * Drives `@media (prefers-color-scheme)` and the branch `light-dark()` picks
+ * where no `color-scheme` on the element settles it. A change recompiles the
+ * conditional rules and restyles on the next update, as set_viewport does.
+ * Available since ABI minor 28. */
+void weva_document_set_color_scheme(weva_document_t doc, int dark);
 
 /* How far the laid-out document reaches, which is not the viewport: half of the
  * sample corpus is taller than the box it is laid out in. A host that wants to

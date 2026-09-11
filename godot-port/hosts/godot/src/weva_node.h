@@ -133,6 +133,11 @@ public:
     void set_tooltip_delay(double seconds);
     double get_tooltip_delay() const;
 
+    // The colour scheme the page's `light-dark()` and
+    // `@media (prefers-color-scheme)` follow; the game decides, not the OS.
+    void set_dark_color_scheme(bool dark);
+    bool get_dark_color_scheme() const;
+
     // ---- Data binding ---------------------------------------------------
     //
     // What a script needs to drive a document: change what it says, change how
@@ -437,6 +442,7 @@ private:
                      weva_status (*fn)(weva_document_t, weva_element_t));
 
     double tooltip_delay_ = 0.6;
+    bool dark_color_scheme_ = false;
     godot::Callable data_source_;
     godot::ObjectID controller_;
     bool interactive_ = true;

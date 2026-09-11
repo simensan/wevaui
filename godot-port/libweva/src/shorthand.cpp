@@ -112,7 +112,8 @@ bool is_hex_color(std::string_view s) {
 
 bool is_color_function(std::string_view s) {
     static const char* kFns[] = {"rgb(",   "rgba(", "hsl(", "hsla(",  "hwb(",
-                                 "oklab(", "oklch(", "lab(", "lch(", "color(", "color-mix("};
+                                 "oklab(", "oklch(", "lab(", "lch(", "color(", "color-mix(",
+                                 "light-dark("};
     for (const char* f : kFns) {
         if (istarts_with(s, f)) return true;
     }

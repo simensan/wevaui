@@ -93,6 +93,7 @@ WevaDocument::WevaDocument() {
     cfg.use_user_agent_stylesheet = 1;
     doc_ = weva_document_create(&cfg);
     weva_document_set_popover_request_events(doc_, 1);
+    if (dark_color_scheme_) weva_document_set_color_scheme(doc_, 1);
     // Godot resolves imported textures and PCK paths; the core consumes PNG
     // bytes through its existing decoder and document-scoped image cache.
     weva_document_set_asset_reader(doc_, &WevaDocument::read_asset, this);
@@ -730,6 +731,11 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_tooltip_delay"), &WevaDocument::get_tooltip_delay);
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "tooltip_delay"), "set_tooltip_delay",
                  "get_tooltip_delay");
+    ClassDB::bind_method(D_METHOD("set_dark_color_scheme", "dark"),
+                         &WevaDocument::set_dark_color_scheme);
+    ClassDB::bind_method(D_METHOD("get_dark_color_scheme"), &WevaDocument::get_dark_color_scheme);
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "dark_color_scheme"), "set_dark_color_scheme",
+                 "get_dark_color_scheme");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "interactive"), "set_interactive", "get_interactive");
     ClassDB::bind_method(D_METHOD("set_gamepad_navigation", "on"), &WevaDocument::set_gamepad_navigation);
     ClassDB::bind_method(D_METHOD("get_gamepad_navigation"), &WevaDocument::get_gamepad_navigation);
@@ -1997,6 +2003,16 @@ void WevaDocument::set_tooltip_delay(double seconds) {
 }
 
 double WevaDocument::get_tooltip_delay() const { return tooltip_delay_; }
+
+void WevaDocument::set_dark_color_scheme(bool dark) {
+    dark_color_scheme_ = dark;
+    if (!doc_) return;
+    weva_document_set_color_scheme(doc_, dark ? 1 : 0);
+    dirty_ = true;
+    queue_redraw();
+}
+
+bool WevaDocument::get_dark_color_scheme() const { return dark_color_scheme_; }
 
 Dictionary WevaDocument::get_focused_row() {
     Dictionary out;
