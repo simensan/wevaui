@@ -103,3 +103,9 @@ Assets/UI/Fonts/Source/SegoeUI.ttf.meta
 /compare_coords.js
 /dump_coords.js
 /headless_layout.sh
+
+# The Unity host's native plugin is built from godot-port/hosts/unity (see its
+# README); the .meta beside it is tracked so the import settings are.
+Packages/com.wevaui/Runtime/Native/Plugins/**/weva_core.dll
+Packages/com.wevaui/Runtime/Native/Plugins/**/weva_core.dll.build.json
+Packages/com.wevaui/Runtime/Native/Plugins/**/libweva_core.so

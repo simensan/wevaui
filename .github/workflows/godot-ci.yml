@@ -92,3 +92,43 @@ jobs:
           path: |
             build-host/bin/*.build.json
             build-host/weva-*.zip
+
+  # The Unity host's native plugin: the same core as a shared library with
+  # only the C ABI exported, loaded through the dynamic loader by a host-free
+  # test, and the generated P/Invoke layer checked for drift against the
+  # header. The Unity editor itself is not on this runner; the EditMode
+  # round-trip test runs where an editor is (see hosts/unity/README.md).
+  unity-plugin:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Windows compiler
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Configure plugin
+        run: cmake -S godot-port/hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_UNITY_BIN=${{ github.workspace }}/build-unity/bin
+      - name: Build plugin and load test
+        run: cmake --build build-unity --parallel 4
+      - name: Load the plugin through the dynamic loader (Windows)
+        if: runner.os == 'Windows'
+        run: build-unity/weva_core_load_test.exe build-unity/bin/weva_core.dll
+      - name: Load the plugin through the dynamic loader (Linux)
+        if: runner.os == 'Linux'
+        run: build-unity/weva_core_load_test build-unity/bin/weva_core.so
+      - name: Generated P/Invoke layer matches the headers
+        run: python godot-port/hosts/unity/gen_bindings.py --header godot-port/libweva/include/weva_c.h --header godot-port/hosts/unity/src/weva_unity.h --out Packages/com.wevaui/Runtime/Native/WevaNative.g.cs --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unity-plugin-${{ matrix.os }}
+          path: |
+            build-unity/bin/
