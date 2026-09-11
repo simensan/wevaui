@@ -1,11 +1,11 @@
 # Frontier Camp — standalone Godot integration
 
-Installed Windows addon: **preview221 (ABI minor25)**; `addons/weva/build.json` records the
+Installed Windows addon: **preview222 (ABI minor25)**; `addons/weva/build.json` records the
 installed version. Sample, exports and desktop performance checks pass;
 [qualification and remaining scope](../../docs/PRODUCT_READINESS.md).
 
 
-Open `project.godot` in Godot 4.7 and press **F5**. With build221 the sample's
+Open `project.godot` in Godot 4.7 and press **F5**. With build222 the sample's
 own checks pass on the official stock 4.7.1 editor, headless and rendered,
 including the long-Unicode name churn, and the official 4.7.1 export templates
 produce a passing export; the verified patched **Godot 4.7.2** editor described

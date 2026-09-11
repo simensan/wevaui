@@ -1,11 +1,14 @@
 # Frontier Camp performance verification
 
-Both local addons now contain build221 (ABI minor25): build220's stock-engine
-shaping workaround, `@font-face` with real bold/italic files, gamepad
-navigation and `WevaView` live reload, plus the on-screen keyboard for
-controller text entry; its own qualification (host suite, sample, exports,
-desktop timing) is in [qualification221.json](../../docs/verification/qualification221.json).
-Build220's record follows. Its qualification (core, sanitizers,
+Both local addons now contain build222 (ABI minor25): build221 plus
+quarter-pixel text positioning on every adapter-owned font; its host suite,
+sample, exports and desktop timing are in
+[textserver-subpixel.json](../../docs/verification/textserver-subpixel.json).
+Build221 added the on-screen keyboard for controller text entry
+([qualification221.json](../../docs/verification/qualification221.json)) on
+top of build220's stock-engine shaping workaround, `@font-face` with real
+bold/italic files, gamepad navigation and `WevaView` live reload. Build220's
+record follows. Its qualification (core, sanitizers,
 52 host entries, sample, fresh-consumer native export, export smokes and the
 desktop timing profile, all passing) is in
 [qualification220.json](../../docs/verification/qualification220.json). The

@@ -213,5 +213,22 @@
   "limitations": [
     "Quarter-pixel positions add up to four rasterized variants per glyph in TextServer atlases.",
     "Vertical line metrics of headings still differ from Chrome by 1-2 px; tracked separately."
-  ]
+  ],
+  "installed": {
+    "frontier": "0.1.0-preview.220",
+    "host": "0.1.0-preview.220"
+  },
+  "post_install": {
+    "frontier_headless": [
+      "frontier integration: 104 checks, 0 failures"
+    ],
+    "frontier_mobile": [
+      "frontier integration: 104 checks, 0 failures"
+    ],
+    "host_suite": {
+      "passed": true,
+      "entries": 53,
+      "checks": 35635
+    }
+  }
 }

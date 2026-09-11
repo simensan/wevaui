@@ -2,8 +2,8 @@
 
 This is a development preview. The game-UI goal is not complete.
 
-**Where things stand (2026-09-10).** Both local addons hold build221 (ABI
-minor25). For a game developer it adds, on top of build211: document text with
+**Where things stand (2026-09-11).** Both local addons hold build222 (ABI
+minor25), build221 plus quarter-pixel text positioning. For a game developer it adds, on top of build211: document text with
 many emoji or brackets no longer corrupts or crashes on the stock engine;
 `@font-face` loads a game's own fonts, with real bold and italic files;
 a controller drives HTML menus without scripting (directional focus, accept,
