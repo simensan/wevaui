@@ -3605,9 +3605,12 @@ an ABI surface), keep host-side (C#), drop.
 1. `mask` / `mask-image` family and `mix-blend-mode`: nine `mask-*` properties
    and both blend properties are registered with no consumer; `BlendMode` and
    `composite_layers` exist in `render_interface.h` with no caller.
-2. Colour: `lab()`, `lch()`, `oklab()`, `oklch()`, `color()` absent
-   (`css_color.cpp` parses rgb/hsl/hwb only); `color-mix()` mixes every space
-   as sRGB (`css_value.cpp:266-309`). `light-dark()` DONE 2026-09-11: the
+2. Colour. DONE 2026-09-11, core ahead (the C# parses rgb/hsl/hwb only):
+   `lab()`, `lch()`, `oklab()`, `oklch()`, `color()` over the predefined
+   spaces and XYZ, the modern space-separated syntax with `/ alpha` and
+   `none` on every colour function, and `color-mix()` in each of those
+   spaces with the four hue methods (`color_space.cpp`). Out-of-gamut
+   colours clip rather than gamut-map. `light-dark()` DONE 2026-09-11: the
    cascade rewrites it after var() substitution, the element's inherited
    `color-scheme` wins over the host's preference, and ABI minor 28 adds
    `weva_document_set_color_scheme` (Godot `dark_color_scheme`, Unity

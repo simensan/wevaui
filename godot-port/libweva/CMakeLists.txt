@@ -26,6 +26,7 @@ add_library(weva STATIC
     src/css_parser.cpp
     src/css_value.cpp
     src/css_color.cpp
+    src/color_space.cpp
     src/css_calc.cpp
     src/selector_parser.cpp
     src/selector_matcher.cpp

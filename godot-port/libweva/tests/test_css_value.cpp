@@ -2,6 +2,7 @@
 #include "weva/css_value.h"
 #include "weva/style_resolver.h"
 #include <cmath>
+#include <cstdio>
 #include <string>
 
 using namespace weva;
@@ -36,11 +37,86 @@ void test_color_mix() {
     // A single 30% mixes 30/70; a sum under 100% scales the alpha.
     mix("color-mix(in srgb, #ff0000 30%, #0000ff)", 77, 0, 179, 1);
     mix("color-mix(in srgb, red 20%, transparent)", 255, 0, 0, 0.2f);
-    mix("color-mix(in oklab, white 50%, black 50%)", 128, 128, 128, 1);
+    // Mixed in the named space: OKLab's mid grey is darker than sRGB's, Lab's
+    // lighter; a linear-light mix of red and blue is brighter than 128.
+    mix("color-mix(in oklab, white 50%, black 50%)", 99, 99, 99, 1);
+    mix("color-mix(in lch, white, black)", 119, 119, 119, 1);
+    mix("color-mix(in srgb-linear, red, blue)", 188, 0, 188, 1);
+    mix("color-mix(in xyz, red, blue)", 188, 0, 188, 1);
+    // Hue goes the shorter way round unless told otherwise; a transparent or
+    // grey colour has no hue and takes the other's.
+    mix("color-mix(in hsl, red, blue)", 255, 0, 255, 1);
+    mix("color-mix(in hsl longer hue, red, blue)", 0, 255, 0, 1);
+    mix("color-mix(in hsl increasing hue, red, blue)", 0, 255, 0, 1);
+    mix("color-mix(in hsl decreasing hue, red, blue)", 255, 0, 255, 1);
+    mix("color-mix(in oklch, red 100%, blue)", 255, 0, 0, 1);
+    mix("color-mix(in hwb, red, transparent)", 255, 0, 0, 0.5f);
+    mix("color-mix(in oklch, white, black)", 99, 99, 99, 1);
+    mix("color-mix(in lab, lab(42 0 0), black)", 50, 50, 50, 1);
     // Unresolvable components stay a function call rather than a wrong colour.
     CssParseError err;
     CssValuePtr v = parse_css_value("color-mix(in srgb, currentcolor, red)", &err);
     CHECK(!v || v->kind() != CssValueKind::Color);
+}
+
+// CSS Color 4: the modern space-separated syntax, `none`, and the lab, lch,
+// oklab, oklch and color() functions, which land where Chrome puts them to
+// the 8-bit rounding (a tolerance of 2 where the reference values are quoted
+// to two decimals).
+void test_modern_colours() {
+    const auto col = [](std::string_view src, int r, int g, int b, float a, int tol = 1) {
+        CssParseError err;
+        CssValuePtr v = parse_css_value(src, &err);
+        if (!v || v->kind() != CssValueKind::Color) { CHECK(false); return; }
+        const auto& c = static_cast<const CssColor&>(*v);
+        const bool ok = std::abs(int(c.r) - r) <= tol && std::abs(int(c.g) - g) <= tol &&
+                        std::abs(int(c.b) - b) <= tol && std::fabs(c.a - a) < 0.01f;
+        if (!ok) std::printf("colour %s -> %d %d %d %.3f\n", std::string(src).c_str(), c.r, c.g, c.b, c.a);
+        CHECK(ok);
+    };
+    // Modern syntax on the legacy functions.
+    col("rgb(255 0 0 / 50%)", 255, 0, 0, 0.5f);
+    col("rgb(255 0 0 / .25)", 255, 0, 0, 0.25f);
+    col("rgba(100% 0% 0%)", 255, 0, 0, 1);
+    col("hsl(120 100% 50% / 0.5)", 0, 255, 0, 0.5f);
+    col("hsl(120 100 50)", 0, 255, 0, 1);
+    col("hsl(120deg 100% 50%)", 0, 255, 0, 1);
+    col("hwb(0 0% 0%)", 255, 0, 0, 1);
+    col("rgb(none 255 0)", 0, 255, 0, 1);
+    col("rgb(255 0 0 / none)", 255, 0, 0, 0);
+    // The Lab family: sRGB red and the greys.
+    col("lab(54.29 80.81 69.89)", 255, 0, 0, 1, 2);
+    col("lch(54.29 106.84 40.85)", 255, 0, 0, 1, 2);
+    col("oklab(0.628 0.2249 0.1258)", 255, 0, 0, 1, 2);
+    col("oklch(62.8% 0.2577 29.23)", 255, 0, 0, 1, 2);
+    col("oklch(0.628 0.2577 29.23deg / 50%)", 255, 0, 0, 0.5f, 2);
+    col("lab(100 0 0)", 255, 255, 255, 1);
+    col("lab(0 0 0)", 0, 0, 0, 1);
+    col("lab(50% 0 0)", 119, 119, 119, 1);
+    col("oklab(1 0 0)", 255, 255, 255, 1);
+    col("oklch(50% 0 0)", 99, 99, 99, 1);
+    col("oklch(50% none none)", 99, 99, 99, 1);
+    // color(): the predefined spaces; white is white in every one of them,
+    // and a colour outside sRGB clips to its edge.
+    col("color(srgb 1 0 0)", 255, 0, 0, 1);
+    col("color(srgb 100% 0% 0% / 0.5)", 255, 0, 0, 0.5f);
+    col("color(srgb-linear 0.214 0 0)", 128, 0, 0, 1);
+    col("color(display-p3 0 1 0)", 0, 255, 0, 1);
+    col("color(display-p3 1 1 1)", 255, 255, 255, 1);
+    col("color(a98-rgb 1 1 1)", 255, 255, 255, 1);
+    col("color(prophoto-rgb 1 1 1)", 255, 255, 255, 1);
+    col("color(rec2020 1 1 1)", 255, 255, 255, 1);
+    col("color(xyz-d65 0.9505 1 1.089)", 255, 255, 255, 1);
+    col("color(xyz 0.9505 1 1.089)", 255, 255, 255, 1);
+    col("color(xyz-d50 0.9643 1 0.8251)", 255, 255, 255, 1);
+    col("color(display-p3 0.5 0.5 0.5)", 128, 128, 128, 1);
+    // Malformed calls stay function calls rather than becoming a wrong colour.
+    for (const char* bad : {"color(bogus 1 0 0)", "lab(1 2)", "oklch(0.5 0.1 200 / 1 / 2)",
+                            "color(lab 50 0 0)", "rgb(1 2 3 4 5)"}) {
+        CssParseError err;
+        CssValuePtr v = parse_css_value(bad, &err);
+        CHECK(!v || v->kind() != CssValueKind::Color);
+    }
 }
 
 void test_css_value() {

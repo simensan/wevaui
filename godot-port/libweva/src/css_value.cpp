@@ -1,5 +1,6 @@
 #include "weva/css_calc.h"
 #include "weva/css_value.h"
+#include "weva/color_space.h"
 
 #include <algorithm>
 #include <cmath>
@@ -265,12 +266,34 @@ bool colour_mix_component(const CssValue& v, const CssColor** color, double* per
     return false;
 }
 
-// CSS Color 5 §3: color-mix(in <space>, <c1> [p1], <c2> [p2]). Every space is
-// mixed as sRGB here — premultiplied, as the spec interpolates — which is
-// exact for `in srgb` and close for the others at the opacities sheets use
-// it for (a tint of a token, a fade to transparent).
+// CSS Color 5 §3: color-mix(in <space> [<hue-method> hue]?, <c1> [p1], <c2> [p2]).
+// Both colours go to the named space, mix premultiplied (the hue plain,
+// along the arc the method names, a powerless hue taking the other's), and
+// come back to sRGB.
 CssValuePtr eval_colour_mix(const CssFunctionCall& call) {
-    if (call.arguments.size() != 3 || !call.arguments[1] || !call.arguments[2]) return nullptr;
+    if (call.arguments.size() != 3 || !call.arguments[0] || !call.arguments[1] || !call.arguments[2]) return nullptr;
+    ColorSpace space = ColorSpace::Srgb;
+    enum class Hue { Shorter, Longer, Increasing, Decreasing } hue = Hue::Shorter;
+    {
+        std::vector<std::string> words;
+        const auto word = [&](const CssValue& v) {
+            if (v.kind() == CssValueKind::Identifier) words.push_back(ascii_lower(static_cast<const CssIdentifier&>(v).name));
+            else if (v.kind() == CssValueKind::Keyword) words.push_back(ascii_lower(static_cast<const CssKeyword&>(v).name));
+        };
+        const CssValue& first = *call.arguments[0];
+        if (first.kind() == CssValueKind::List) {
+            for (const CssValuePtr& i : static_cast<const CssValueList&>(first).items) if (i) word(*i);
+        } else {
+            word(first);
+        }
+        if (words.size() < 2 || words[0] != "in" || !color_space_from_name(words[1], &space)) return nullptr;
+        for (size_t k = 2; k < words.size(); ++k) {
+            if (words[k] == "longer") hue = Hue::Longer;
+            else if (words[k] == "increasing") hue = Hue::Increasing;
+            else if (words[k] == "decreasing") hue = Hue::Decreasing;
+            else if (words[k] == "shorter") hue = Hue::Shorter;
+        }
+    }
     const CssColor* c1 = nullptr;
     const CssColor* c2 = nullptr;
     std::unique_ptr<CssColor> s1, s2;
@@ -292,63 +315,235 @@ CssValuePtr eval_colour_mix(const CssFunctionCall& call) {
         p2 = p2 * 100.0 / sum;
     }
     const double w1 = p1 / 100.0, w2 = p2 / 100.0;
+
+    double v1[3], v2[3];
+    {
+        const double rgb1[3] = {c1->r / 255.0, c1->g / 255.0, c1->b / 255.0};
+        const double rgb2[3] = {c2->r / 255.0, c2->g / 255.0, c2->b / 255.0};
+        color_space_from_srgb(space, rgb1, v1);
+        color_space_from_srgb(space, rgb2, v2);
+    }
+    const int hi = color_space_hue_index(space);
+    if (hi >= 0) {
+        // §4.4: a grey has no hue of its own and takes the other colour's;
+        // a transparent colour is a grey here too.
+        const bool p1less = color_space_hue_powerless(space, v1) || c1->a <= 0;
+        const bool p2less = color_space_hue_powerless(space, v2) || c2->a <= 0;
+        if (p1less && !p2less) v1[hi] = v2[hi];
+        else if (p2less && !p1less) v2[hi] = v1[hi];
+        double a1 = v1[hi], a2 = v2[hi];
+        const double d = a2 - a1;
+        switch (hue) {
+            case Hue::Shorter:
+                if (d > 180) a1 += 360; else if (d < -180) a2 += 360;
+                break;
+            case Hue::Longer:
+                if (0 < d && d < 180) a1 += 360; else if (-180 < d && d <= 0) a2 += 360;
+                break;
+            case Hue::Increasing:
+                if (a2 < a1) a2 += 360;
+                break;
+            case Hue::Decreasing:
+                if (a1 < a2) a1 += 360;
+                break;
+        }
+        v1[hi] = a1;
+        v2[hi] = a2;
+    }
     const double a1 = c1->a, a2 = c2->a;
     const double a = a1 * w1 + a2 * w2;
+    double mixed[3] = {0, 0, 0};
+    for (int i = 0; i < 3; ++i) {
+        if (i == hi) {
+            double h = v1[i] * w1 + v2[i] * w2;
+            h = std::fmod(h, 360.0);
+            mixed[i] = h < 0 ? h + 360.0 : h;
+        } else if (a > 0) {
+            mixed[i] = (v1[i] * a1 * w1 + v2[i] * a2 * w2) / a;
+        }
+    }
+    double rgb[3];
+    color_space_to_srgb(space, mixed, rgb);
     auto out = std::make_unique<CssColor>();
     if (a > 0) {
-        const double r = (c1->r * a1 * w1 + c2->r * a2 * w2) / a;
-        const double g = (c1->g * a1 * w1 + c2->g * a2 * w2) / a;
-        const double b = (c1->b * a1 * w1 + c2->b * a2 * w2) / a;
-        out->r = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, r))));
-        out->g = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, g))));
-        out->b = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, b))));
+        out->r = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, rgb[0] * 255.0))));
+        out->g = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, rgb[1] * 255.0))));
+        out->b = static_cast<uint8_t>(std::lround(std::min(255.0, std::max(0.0, rgb[2] * 255.0))));
     }
     out->a = static_cast<float>(std::min(1.0, a * alpha_mult));
     out->raw = call.raw;
     return out;
 }
 
-// rgb()/rgba()/hsl()/hsla()/hwb() collapse to a CssColor. Anything else — and
-// any of these whose arguments don't evaluate (a var() or calc() inside) —
-// stays a CssFunctionCall for a later pass to resolve.
+// A colour function's channel: a number, a percentage (reported so each
+// function applies its own reference range), an angle in degrees, or `none`
+// (CSS Color 4 §4.4: a missing channel, which reads as 0 here).
+struct ColourArg {
+    double v = 0;
+    bool pct = false;
+    bool none = false;
+};
+
+bool colour_arg(const CssValue& v, ColourArg* out) {
+    *out = ColourArg{};
+    switch (v.kind()) {
+        case CssValueKind::Number:
+            out->v = static_cast<const CssNumber&>(v).value;
+            return true;
+        case CssValueKind::Percentage:
+            out->v = static_cast<const CssPercentage&>(v).value;
+            out->pct = true;
+            return true;
+        case CssValueKind::Angle:
+            out->v = static_cast<const CssAngle&>(v).to_degrees();
+            return true;
+        case CssValueKind::Identifier:
+        case CssValueKind::Keyword: {
+            const std::string& name = v.kind() == CssValueKind::Identifier
+                                          ? static_cast<const CssIdentifier&>(v).name
+                                          : static_cast<const CssKeyword&>(v).name;
+            if (ascii_lower(name) != "none") return false;
+            out->none = true;
+            return true;
+        }
+        default:
+            return false;
+    }
+}
+
+// Flattens a colour function's arguments into three channels and an alpha:
+// the legacy comma form `rgb(1, 2, 3, 0.5)` and the modern space form
+// `rgb(1 2 3 / 50%)`, whose `/` splits the alpha off. color() names its
+// space first; that comes back in `leading`.
+bool colour_channels(const CssFunctionCall& call, bool leading_ident, std::string* leading,
+                     ColourArg ch[3], ColourArg* alpha, bool* has_alpha) {
+    std::vector<const CssValue*> flat;
+    for (const CssValuePtr& a : call.arguments) {
+        if (!a) return false;
+        if (a->kind() == CssValueKind::List) {
+            for (const CssValuePtr& i : static_cast<const CssValueList&>(*a).items) {
+                if (!i) return false;
+                flat.push_back(i.get());
+            }
+        } else {
+            flat.push_back(a.get());
+        }
+    }
+    const auto ident = [](const CssValue& v, std::string* name) {
+        if (v.kind() == CssValueKind::Identifier) { *name = static_cast<const CssIdentifier&>(v).name; return true; }
+        if (v.kind() == CssValueKind::Keyword) { *name = static_cast<const CssKeyword&>(v).name; return true; }
+        return false;
+    };
+    size_t i = 0;
+    if (leading_ident) {
+        if (flat.empty() || !ident(*flat[0], leading)) return false;
+        i = 1;
+    }
+    int n = 0;
+    *has_alpha = false;
+    bool after_slash = false;
+    for (; i < flat.size(); ++i) {
+        std::string name;
+        if (ident(*flat[i], &name) && name == "/") {
+            if (after_slash || n != 3) return false;
+            after_slash = true;
+            continue;
+        }
+        ColourArg a;
+        if (!colour_arg(*flat[i], &a)) return false;
+        if (after_slash || n == 3) {
+            if (*has_alpha) return false;
+            *alpha = a;
+            *has_alpha = true;
+        } else {
+            ch[n++] = a;
+        }
+    }
+    return n == 3;
+}
+
+// rgb()/rgba()/hsl()/hsla()/hwb()/lab()/lch()/oklab()/oklch()/color() collapse
+// to a CssColor. Anything else — and any of these whose arguments don't
+// evaluate (a var() or calc() inside) — stays a CssFunctionCall for a later
+// pass to resolve.
 CssValuePtr eval_colour_function(const CssFunctionCall& call) {
     const std::string& n = call.name;
     if (n == "color-mix") return eval_colour_mix(call);
-    bool is_rgb = (n == "rgb" || n == "rgba");
-    bool is_hsl = (n == "hsl" || n == "hsla");
-    bool is_hwb = (n == "hwb");
-    if (!is_rgb && !is_hsl && !is_hwb) return nullptr;
-    if (call.arguments.size() < 3 || call.arguments.size() > 4) return nullptr;
+    const bool is_rgb = (n == "rgb" || n == "rgba");
+    const bool is_hsl = (n == "hsl" || n == "hsla");
+    const bool is_hwb = (n == "hwb");
+    const bool is_lab = (n == "lab"), is_lch = (n == "lch");
+    const bool is_oklab = (n == "oklab"), is_oklch = (n == "oklch");
+    const bool is_color = (n == "color");
+    if (!is_rgb && !is_hsl && !is_hwb && !is_lab && !is_lch && !is_oklab && !is_oklch && !is_color) return nullptr;
 
-    double c[3];
-    bool pct[3];
-    for (int i = 0; i < 3; ++i) {
-        if (!arg_number(*call.arguments[static_cast<std::size_t>(i)], &c[i], &pct[i])) {
-            return nullptr;
-        }
-    }
+    ColourArg ch[3], al;
+    bool has_alpha = false;
+    std::string space_name;
+    if (!colour_channels(call, is_color, &space_name, ch, &al, &has_alpha)) return nullptr;
     double alpha = 1.0;
-    if (call.arguments.size() == 4) {
-        bool apct = false;
-        if (!arg_number(*call.arguments[3], &alpha, &apct)) return nullptr;
+    if (has_alpha) {
         // CSS Color 4: an alpha percentage is 0-100, a number is 0-1.
-        if (apct) alpha /= 100.0;
+        alpha = al.none ? 0.0 : (al.pct ? al.v / 100.0 : al.v);
     }
+    // A channel's value with its percentage reference (`100%` = ref).
+    const auto val = [](const ColourArg& a, double ref) {
+        return a.none ? 0.0 : (a.pct ? a.v * ref / 100.0 : a.v);
+    };
 
     auto out = std::make_unique<CssColor>();
     if (is_rgb) {
         // C#'s FromRgb takes ONE rgbPercent flag for all three channels, so a
         // mixed `rgb(255, 50%, 0)` follows the first channel. Reproduced.
-        css_color_from_rgb(c[0], c[1], c[2], alpha, pct[0], out.get());
+        css_color_from_rgb(ch[0].none ? 0 : ch[0].v, ch[1].none ? 0 : ch[1].v, ch[2].none ? 0 : ch[2].v,
+                           alpha, ch[0].pct, out.get());
     } else if (is_hsl) {
-        css_color_from_hsl(c[0], c[1], c[2], alpha, out.get());
+        // The modern form takes plain numbers for saturation and lightness,
+        // which mean the same as percentages.
+        css_color_from_hsl(val(ch[0], 100), ch[1].none ? 0 : ch[1].v, ch[2].none ? 0 : ch[2].v, alpha, out.get());
+    } else if (is_hwb) {
+        css_color_from_hwb(val(ch[0], 100), ch[1].none ? 0 : ch[1].v, ch[2].none ? 0 : ch[2].v, alpha, out.get());
     } else {
-        css_color_from_hwb(c[0], c[1], c[2], alpha, out.get());
+        ColorSpace space = ColorSpace::Srgb;
+        double c[3];
+        if (is_lab) {
+            space = ColorSpace::Lab;
+            c[0] = std::min(100.0, std::max(0.0, val(ch[0], 100)));
+            c[1] = val(ch[1], 125);
+            c[2] = val(ch[2], 125);
+        } else if (is_lch) {
+            space = ColorSpace::Lch;
+            c[0] = std::min(100.0, std::max(0.0, val(ch[0], 100)));
+            c[1] = std::max(0.0, val(ch[1], 150));
+            c[2] = val(ch[2], 100);
+        } else if (is_oklab) {
+            space = ColorSpace::Oklab;
+            c[0] = std::min(1.0, std::max(0.0, val(ch[0], 1)));
+            c[1] = val(ch[1], 0.4);
+            c[2] = val(ch[2], 0.4);
+        } else if (is_oklch) {
+            space = ColorSpace::Oklch;
+            c[0] = std::min(1.0, std::max(0.0, val(ch[0], 1)));
+            c[1] = std::max(0.0, val(ch[1], 0.4));
+            c[2] = val(ch[2], 1);
+        } else {
+            // color(): the predefined RGB spaces and XYZ, channels 0..1.
+            if (!color_space_from_name(space_name, &space)) return nullptr;
+            if (color_space_hue_index(space) >= 0 || space == ColorSpace::Lab || space == ColorSpace::Oklab) return nullptr;
+            for (int i = 0; i < 3; ++i) c[i] = val(ch[i], 1);
+        }
+        // Out-of-gamut colours clip to sRGB. Chrome maps them by reducing
+        // chroma instead (CSS Color 4 §13.2), which differs by a few levels
+        // at the edge; the clip keeps hue and is exact inside the gamut.
+        double rgb[3];
+        color_space_to_srgb(space, c, rgb);
+        css_color_from_rgb(std::min(1.0, std::max(0.0, rgb[0])) * 255.0,
+                           std::min(1.0, std::max(0.0, rgb[1])) * 255.0,
+                           std::min(1.0, std::max(0.0, rgb[2])) * 255.0, alpha, false, out.get());
     }
     out->raw = call.raw;
     return out;
 }
-
 
 // --- calc() -------------------------------------------------------------------
 

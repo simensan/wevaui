@@ -281,6 +281,7 @@ void test_pseudo_counters_and_quotes();
 void test_pseudo_content_from_inline_custom_property();
 void test_inline_custom_property_feeds_var();
 void test_color_mix();
+void test_modern_colours();
 void test_gradient_calc_stop_position();
 void test_paint_form_control_marks();
 void test_clip_triangles_polygon();
@@ -832,6 +833,7 @@ int main() {
     test_pseudo_content_from_inline_custom_property();
     test_inline_custom_property_feeds_var();
     test_color_mix();
+    test_modern_colours();
     test_gradient_calc_stop_position();
     test_paint_form_control_marks();
     test_clip_triangles_polygon();
