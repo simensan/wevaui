@@ -1181,10 +1181,22 @@ std::string background_key(const ComputedStyle* style, const LinearColor& color,
     // parsed form would mean serialising every gradient stop by hand and
     // getting it wrong the first time a property grew a field.
     for (const char* prop : {"background-image", "background-position", "background-size",
-                             "background-repeat", "background-blend-mode", "mask-image",
-                             "mask-position", "mask-size", "mask-repeat", "mask-mode", "color"}) {
+                             "background-repeat", "background-blend-mode", "background-attachment",
+                             "mask-image", "mask-position", "mask-size", "mask-repeat", "mask-mode",
+                             "color"}) {
         k += get(style, prop);
         k += '|';
+    }
+    // A fixed or local layer's picture depends on where the box is and how
+    // far it has scrolled, which the style text cannot say.
+    if (layers) {
+        for (const BackgroundLayer& l : *layers) {
+            if (!l.attachment_fixed && !l.attachment_local) continue;
+            num(l.area_w);
+            num(l.area_h);
+            num(l.shift_x);
+            num(l.shift_y);
+        }
     }
     // A colour filter rewrites the texels, so two boxes alike but for their
     // filter are not the same texture.
@@ -3104,7 +3116,8 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     bool blurred = false;
     if (blur > 0 && !hidden && border_box.width > 0 && border_box.height > 0 && paint.backend && id != canvas_owner) {
         ProfileScope prof(&g_paint_profile.filters);
-        const std::vector<BackgroundLayer> layers = layers_of(b, paint);
+        std::vector<BackgroundLayer> layers = layers_of(b, paint);
+        apply_background_attachment(&layers, b, ctx, border_box.x, border_box.y);
         const LinearColor bg = resolve_color(b.style, "background-color");
         if (bg.a > 0 || has_paintable_layer(layers)) {
             const double pad_px = 3 * blur;
@@ -3229,7 +3242,8 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     const bool clip_text = decorated && b.style && clips_background_to_text(b.style);
     bool background_done = id == canvas_owner || !decorated || hidden || blurred || clip_text;
     if (!background_done && b.style && b.width > 0 && b.height > 0) {
-        const std::vector<BackgroundLayer> layers = layers_of(b, paint);
+        std::vector<BackgroundLayer> layers = layers_of(b, paint);
+        apply_background_attachment(&layers, b, ctx, border_box.x, border_box.y);
         if (has_paintable_layer(layers)) {
             background_done = paint_layered_background(
                 layers, resolve_color(b.style, "background-color"), border_box, radii, ctx, fs, paint,

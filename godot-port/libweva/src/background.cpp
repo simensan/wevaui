@@ -1,4 +1,5 @@
 #include "weva/background.h"
+#include "weva/box.h"
 #include "weva/style_resolver.h"
 
 #include "weva/css_value.h"
@@ -800,6 +801,8 @@ void read_image_layers(const ComputedStyle* style, const char* image_prop, const
         as_mask ? std::vector<std::string_view>() : split_top_level(style->get("background-blend-mode"), ',');
     const std::vector<std::string_view> modes =
         as_mask ? split_top_level(style->get("mask-mode"), ',') : std::vector<std::string_view>();
+    const std::vector<std::string_view> attachments =
+        as_mask ? std::vector<std::string_view>() : split_top_level(style->get("background-attachment"), ',');
     for (size_t i = 0; i < image_list.size(); ++i) {
         const std::string_view img = trim(image_list[i]);
         if (img.empty() || iequals(img, "none")) continue;
@@ -845,6 +848,11 @@ void read_image_layers(const ComputedStyle* style, const char* image_prop, const
             }
         }
         if (!blends.empty()) layer.blend = blend_mode_from_keyword(blends[i % blends.size()]);
+        if (!attachments.empty()) {
+            const std::string_view att = trim(attachments[i % attachments.size()]);
+            layer.attachment_fixed = iequals(att, "fixed");
+            layer.attachment_local = iequals(att, "local");
+        }
         // mask-mode: `luminance` reads the image's brightness; `alpha` and
         // `match-source` (an alpha mask for anything the engine draws) its alpha.
         if (!modes.empty()) layer.mask_luminance = iequals(trim(modes[i % modes.size()]), "luminance");
@@ -853,6 +861,24 @@ void read_image_layers(const ComputedStyle* style, const char* image_prop, const
 }
 
 } // namespace
+
+void apply_background_attachment(std::vector<BackgroundLayer>* layers, const Box& box,
+                                 const LayoutContext& ctx, double x, double y) {
+    for (BackgroundLayer& l : *layers) {
+        if (l.attachment_fixed) {
+            // The viewport is the positioning area; the box sees the part of
+            // it that lies under its own origin.
+            l.area_w = ctx.viewport_width_px;
+            l.area_h = ctx.viewport_height_px;
+            l.shift_x = -x;
+            l.shift_y = -y;
+        } else if (l.attachment_local && (box.scroll_x != 0 || box.scroll_y != 0)) {
+            // The layer moves with the content this box scrolls.
+            l.shift_x = -box.scroll_x;
+            l.shift_y = -box.scroll_y;
+        }
+    }
+}
 
 std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* style,
                                                        const LinearColor& current_color) {
@@ -937,6 +963,7 @@ int background_texture_detail(const std::vector<BackgroundLayer>& layers) {
 
 bool background_size_independent(const std::vector<BackgroundLayer>& layers) {
     for (const BackgroundLayer& l : layers) {
+        if (l.attachment_fixed || l.attachment_local) return false;
         // A decoded image has intrinsic pixel dimensions, so how much of the
         // box it covers is a matter of absolute size.
         if (!l.is_gradient || l.image || !l.url.empty()) return false;
@@ -1065,6 +1092,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     };
     std::vector<Tile> tiles;
     bool any_mask = false;
+    const double outer_width = width, outer_height = height;
     for (const BackgroundLayer& l : layers) {
         if (!l.is_gradient && !l.image) continue;
         Tile t;
@@ -1073,6 +1101,9 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         t.is_mask = l.is_mask;
         t.luminance = l.mask_luminance;
         if (l.is_mask) any_mask = true;
+        // A fixed layer measures against the viewport rather than the box.
+        const double width = l.area_w > 0 ? l.area_w : outer_width;
+        const double height = l.area_h > 0 ? l.area_h : outer_height;
         t.tw = width;
         t.th = height;
         const bool cover = iequals(l.size_x, "cover");
@@ -1109,14 +1140,15 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         if (!auto_x) t.tw = std::max(1e-6, resolve_size_component(l.size_x, width, ctx, font_size));
         if (!auto_y) t.th = std::max(1e-6, resolve_size_component(l.size_y, height, ctx, font_size));
         }
-        t.ox = resolve_position(l.pos_x, width, t.tw, true, ctx, font_size);
-        t.oy = resolve_position(l.pos_y, height, t.th, false, ctx, font_size);
+        t.ox = resolve_position(l.pos_x, width, t.tw, true, ctx, font_size) + l.shift_x;
+        t.oy = resolve_position(l.pos_y, height, t.th, false, ctx, font_size) + l.shift_y;
         t.repeat_x = l.repeat_x;
         t.repeat_y = l.repeat_y;
         // Covered on an axis means every sample lands in the first tile, so
         // wrapping is the identity and the bounds test below always passes.
-        t.wrap_x = l.repeat_x && !(t.ox <= 0 && t.ox + t.tw >= width);
-        t.wrap_y = l.repeat_y && !(t.oy <= 0 && t.oy + t.th >= height);
+        // (Against the box's own area: that is what the samples span.)
+        t.wrap_x = l.repeat_x && !(t.ox <= 0 && t.ox + t.tw >= outer_width);
+        t.wrap_y = l.repeat_y && !(t.oy <= 0 && t.oy + t.th >= outer_height);
         if (t.image && std::getenv("WEVA_IMAGE_LOG")) {
             std::fprintf(stderr,
                          "  [img] area %.1fx%.1f  intrinsic %dx%d  tile %.1fx%.1f  at %.1f,%.1f"

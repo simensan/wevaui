@@ -83,6 +83,8 @@ struct Gradient {
 // stops. False when the text is not a gradient this port reads.
 bool parse_gradient(std::string_view raw, const LinearColor& current_color, Gradient* out);
 
+struct Box;
+
 struct BackgroundLayer {
     bool is_gradient = false;
     Gradient gradient;
@@ -103,7 +105,21 @@ struct BackgroundLayer {
     // layers produced. Several mask layers add (mask-composite: add).
     bool is_mask = false;
     bool mask_luminance = false;
+    // CSS Backgrounds L3 §3.5 background-attachment. `fixed` positions and
+    // sizes the layer against the viewport and keeps it still under
+    // scrolling; `local` scrolls it with a scroll container's content. Paint
+    // fills in the positioning area and the shift from the box's own origin
+    // (apply_background_attachment); the rasterizer just uses them.
+    bool attachment_fixed = false;
+    bool attachment_local = false;
+    double area_w = 0, area_h = 0;      // 0: the box's own painting area
+    double shift_x = 0, shift_y = 0;    // added to the tile origin
 };
+
+// Resolves the fixed / local layers' positioning areas for a box painted
+// with its border box at (`x`, `y`) in visual document coordinates.
+void apply_background_attachment(std::vector<BackgroundLayer>* layers, const Box& box,
+                                 const LayoutContext& ctx, double x, double y);
 
 // CSS Compositing 1 §11 <blend-mode> keywords, in the specification's order;
 // anything else is normal.

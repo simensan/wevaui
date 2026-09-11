@@ -3668,7 +3668,9 @@ an ABI surface), keep host-side (C#), drop.
 9. Small drops: `caret-color` DONE 2026-09-11 (`paint.cpp` caret_color_of), `list-style-image`
    DONE 2026-09-11 (an image marker is an atom sized by the image, outside or
    inside, core ahead: the C# only expands the shorthand), `image-rendering`
-   (nearest only, `background.cpp:948`), `background-attachment`.
+   (nearest only, `background.cpp:948`), `background-attachment` DONE
+   2026-09-11 (`fixed` against the viewport, `local` with a scroll container's
+   content; both re-rasterize as the box moves, like a browser repaints them).
 10. Component-scoped stylesheets (`components.h:7-12` defers the scope stamp;
     C# `Components/Scoping` has no counterpart).
 11. `@supports selector(...)`, the one missing arm of `media.cpp:260-320`. DONE

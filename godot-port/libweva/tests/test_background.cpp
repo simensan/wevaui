@@ -1145,6 +1145,68 @@ void test_list_style_image() {
     CHECK(drawn);
 }
 
+// CSS Backgrounds L3 §3.5 background-attachment: a fixed layer measures
+// against the viewport and shows the box the part under it; a local layer
+// moves with a scroll container's content.
+void test_background_attachment() {
+    const LinearColor black = LinearColor::black();
+    LayoutContext ctx;
+    BackgroundLayer ramp;
+    CHECK(parse_gradient("linear-gradient(to right, rgb(0, 0, 0), rgb(255, 255, 255))", black, &ramp.gradient));
+    ramp.is_gradient = true;
+    ramp.repeat_x = ramp.repeat_y = false;
+    std::vector<uint8_t> plain, shifted;
+    // Over the box's own 100px: the first texel is dark, the last light.
+    rasterize_background({ramp}, black, 100, 10, 4, 1, ctx, 16, &plain);
+    CHECK(plain[0] < 60 && plain[12] > 190);
+    // The same layer over a 400px viewport, the box 200px into it: the box
+    // sees the middle of the ramp, brighter at its left than its own ramp's.
+    ramp.attachment_fixed = true;
+    ramp.area_w = 400;
+    ramp.area_h = 10;
+    ramp.shift_x = -200;
+    rasterize_background({ramp}, black, 100, 10, 4, 1, ctx, 16, &shifted);
+    CHECK(shifted[0] > 110 && shifted[0] < 150);   // x = 212.5 of 400
+    CHECK(shifted[12] > shifted[0] && shifted[12] < 200);
+    // The properties reach the layer, and the paint pass fills the area in:
+    // a fixed layer on a box at x = 200 in a 400px viewport.
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 } #f { position: absolute; left: 200px; top: 0; width: 100px; height: 10px;"
+                " background-image: linear-gradient(to right, rgb(0, 0, 0), rgb(255, 255, 255)); background-attachment: fixed }"
+                "#s { position: absolute; left: 0; top: 0; width: 100px; height: 10px;"
+                " background-image: linear-gradient(to right, rgb(0, 0, 0), rgb(255, 255, 255)); background-attachment: scroll, local }"));
+    CHECK(f.layout("<body><div id=f></div><div id=s></div></body>", 400, 300));
+    std::vector<BackgroundLayer> layers = resolve_background_layers(f.tree[f.find("f")].style, black);
+    CHECK(layers.size() == 1 && layers[0].attachment_fixed && !layers[0].attachment_local);
+    const std::vector<BackgroundLayer> two = resolve_background_layers(f.tree[f.find("s")].style, black);
+    CHECK(two.size() == 1 && !two[0].attachment_fixed && !two[0].attachment_local);
+    double fx = 0, fy = 0;
+    absolute_position(f.tree, f.find("f"), &fx, &fy);
+    apply_background_attachment(&layers, f.tree[f.find("f")], f.ctx, fx, fy);
+    CHECK(layers[0].area_w == 400 && layers[0].area_h == 300 && layers[0].shift_x == -200 && layers[0].shift_y == 0);
+    CHECK(!background_size_independent(layers));
+    // Painted through the box path: the texture the fixed box draws with is
+    // the ramp's middle, not its start.
+    RecordingBackend backend;
+    TextureCache cache;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint.texture_cache = &cache;
+    cache.begin_pass();
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    cache.end_pass(&backend);
+    bool fixed_seen = false;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.texture == 0 || d.geometry.vertices.empty()) continue;
+        const Rect r = bounds_of(d.geometry);
+        if (!near(r.x, 200, 0.01)) continue;
+        const auto it = backend.texture_bytes.find(d.texture);
+        if (it == backend.texture_bytes.end() || it->second.empty()) continue;
+        fixed_seen = it->second[0] > 90;   // a box-local ramp would start near black
+    }
+    CHECK(fixed_seen);
+}
+
 void test_paint_gradient_backgrounds_and_canvas() {
     // The body's gradient goes onto the canvas as one textured draw covering
     // the viewport (§14.2) and is not painted again on the body; a plain
