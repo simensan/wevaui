@@ -12,7 +12,7 @@ touched.
 | # | Area | Status |
 |---|------|--------|
 | 1 | Repo layout | **proposed — awaiting review**, nothing moved |
-| 2 | Dead and stale material | **in progress** — one fix landed, three findings need a decision |
+| 2 | Dead and stale material | **swept** — 3 fixes landed, 3 findings need a decision |
 | 3 | TODO / FIXME / HACK inventory | not started |
 | 4 | Test hygiene | not started |
 | 5 | Build hygiene | not started |
@@ -131,7 +131,7 @@ engine" rather than a standalone churn commit.
 
 ## 2. Dead and stale material
 
-**Status: in progress.** One fix landed. Three findings need your decision
+**Status: swept.** Three fixes landed. Three findings need your decision
 because each one changes either a test outcome or tracked content.
 
 ### 2.1 The GPU goldens have never verified anything — landed nothing yet
@@ -258,6 +258,44 @@ in a directory of 57 sibling `check_*_chrome.*` tools that are run on demand
 rather than from a gate. The gap is documentation, not deadness: nothing tells a
 reader these exist. Area 8 picks that up.
 
+### 2.6 Unreferenced sources — nothing found, C++ side is clean
+
+- All 72 `.cpp` under `libweva/src/` are named in `libweva/CMakeLists.txt`.
+- All 72 headers under `include/weva/` have at least one includer.
+
+Nothing actionable. Recorded because "we checked and it was clean" is worth as
+much to the next reader as a finding.
+
+The C# side was not swept for dead classes. `Runtime/` is slated for deletion in
+Phase 4, so dead-code analysis there buys little; if Phase 4 slips, it is worth
+revisiting.
+
+### 2.7 A stale architectural claim — fixed
+
+`ARCHITECTURE.md` carried a section headed *"Data binding is not ported"*,
+ending: *"`hosts/godot/` owns this; `libweva` has no binding layer at all."*
+
+That is no longer true, and the ABI contradicts it in the same repository:
+
+| Evidence | Where |
+|---|---|
+| `binding.cpp`, ~500 lines | `libweva/src/` |
+| `weva_binding_source`, `weva_document_set_binding_source`, `weva_document_refresh_bindings` | `weva_c.h` |
+| `binding_tests.gd`, 186 checks | Godot host |
+| `NativeBindings.cs`, `NativeBindingTests` | Unity host |
+
+Rewrote the section to record what actually happened, because the split is the
+interesting part: the *reflection* was not ported, as planned, and stays
+host-side; the *template layer* above it was — `{{ path }}`, `data-each` /
+`data-key`, `data-model`, handler dispatch — because that is markup semantics
+rather than language reflection, and leaving it per-host meant writing it twice
+and watching it drift. The seam is a callback table the host fills; the core
+never learns what an object is.
+
+A doc that states the opposite of the shipped design is worse than no doc, and
+this one sits in the file a new contributor reads first.
+
 ### Still to sweep in this area
 
-Unreferenced C++/C# source files, and stale doc claims. Next iteration.
+Nothing. Area 2 is done apart from the three findings above that need your
+decision (2.1 GPU goldens, 2.3 the duplicated texture, 2.4 receipt bloat).
