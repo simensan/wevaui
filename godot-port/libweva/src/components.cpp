@@ -1,4 +1,5 @@
 #include "weva/components.h"
+#include "weva/component_scoping.h"
 
 #include <algorithm>
 #include <string>
@@ -13,6 +14,8 @@ namespace {
 // table, so a re-expansion pass over the same document is a no-op. Kept
 // byte-identical to ScopeMarkers.ExpandedAttribute's value.
 constexpr const char* kExpandedAttribute = "data-uui-expanded";
+constexpr const char* kScopeAttribute = kComponentScopeAttribute;
+constexpr const char* kHostAttribute = kComponentHostAttribute;
 
 std::string lower_ascii(std::string_view s) {
     std::string out(s);
@@ -50,14 +53,43 @@ Ref<Node> clone_node(const Node* src) {
 struct Registry {
     // Tag name (lowercased) -> the `<template>` element that renders it.
     std::unordered_map<std::string, const Element*> templates;
+    // Tag name -> scope id, for the templates that carry a `<style>`.
+    std::unordered_map<std::string, std::string> scope_ids;
 };
+
+// The text of every `<style>` under `node`, nested templates excluded.
+void collect_style_text(const Node* node, std::string* out) {
+    for (const Ref<Node>& c : node->children()) {
+        if (c->node_type() == NodeType::Text) continue;
+        if (c->node_type() != NodeType::Element) { collect_style_text(c.get(), out); continue; }
+        const auto* e = static_cast<const Element*>(c.get());
+        const std::string tag = lower_ascii(e->tag_name());
+        if (tag == "template") continue;
+        if (tag == "style") {
+            for (const Ref<Node>& t : e->children()) {
+                if (t->node_type() == NodeType::Text) *out += static_cast<const TextNode*>(t.get())->data();
+            }
+            *out += '\n';
+            continue;
+        }
+        collect_style_text(e, out);
+    }
+}
+
+void stamp_scope(Node* node, const std::string& scope_id) {
+    if (node->node_type() == NodeType::Element) {
+        static_cast<Element*>(node)->set_attribute(kScopeAttribute, scope_id);
+    }
+    for (const Ref<Node>& c : node->children()) stamp_scope(c.get(), scope_id);
+}
 
 // Registers every `<template id=...>` that is not itself inside a template, and
 // collects them so they can be moved to the end of their parent's child list.
 // That move is what the reference does so a depth-first search finds an
 // expanded clone before the literal template body it was cloned from.
 void walk_and_register(Node* node, bool in_template, Registry* reg,
-                       std::vector<Element*>* top_level_templates) {
+                       std::vector<Element*>* top_level_templates,
+                       std::vector<ComponentStylesheet>* sheets) {
     // Snapshot: registration does not mutate, but expansion later will.
     std::vector<Ref<Node>> kids(node->children());
     for (const Ref<Node>& child : kids) {
@@ -66,12 +98,23 @@ void walk_and_register(Node* node, bool in_template, Registry* reg,
             const bool is_template = lower_ascii(e->tag_name()) == "template";
             if (is_template && !in_template) {
                 const std::string_view id = e->get_attribute("id");
-                if (!id.empty()) reg->templates[lower_ascii(id)] = e;
+                if (!id.empty()) {
+                    const std::string tag = lower_ascii(id);
+                    reg->templates[tag] = e;
+                    std::string css;
+                    collect_style_text(e, &css);
+                    if (!css.empty()) {
+                        reg->scope_ids[tag] = tag;
+                        if (sheets) sheets->push_back({tag, tag, std::move(css)});
+                    } else {
+                        reg->scope_ids.erase(tag);
+                    }
+                }
                 top_level_templates->push_back(e);
             }
-            walk_and_register(e, in_template || is_template, reg, top_level_templates);
+            walk_and_register(e, in_template || is_template, reg, top_level_templates, sheets);
         } else {
-            walk_and_register(child.get(), in_template, reg, top_level_templates);
+            walk_and_register(child.get(), in_template, reg, top_level_templates, sheets);
         }
     }
 }
@@ -199,6 +242,9 @@ void expand_host(Element* host, const Element* tmpl, const Registry& reg, int de
 
     std::vector<Ref<Node>> cloned_roots;
     for (const Ref<Node>& c : tmpl->children()) {
+        // A `<style>` at the template's top level is the component's sheet,
+        // read once at registration; an instance does not carry a copy.
+        if (is_tag(c.get(), "style")) continue;
         if (Ref<Node> cc = clone_node(c.get())) cloned_roots.push_back(cc);
     }
 
@@ -219,10 +265,18 @@ void expand_host(Element* host, const Element* tmpl, const Registry& reg, int de
         }
     }
 
+    // The scope stamp goes on the clone BEFORE projection: slotted light-dom
+    // is the page's, and the component's rules must not reach it.
+    const auto scope = reg.scope_ids.find(lower_ascii(host->tag_name()));
+    if (scope != reg.scope_ids.end()) {
+        for (const Ref<Node>& r : cloned_roots) stamp_scope(r.get(), scope->second);
+    }
+
     project_slots(cloned_roots, light_dom);
 
     for (const Ref<Node>& n : cloned_roots) host->append_child(n.get());
     host->set_attribute(kExpandedAttribute, "1");
+    if (scope != reg.scope_ids.end()) host->set_attribute(kHostAttribute, scope->second);
     for (Element* e : self_referential) {
         if (!e->has_attribute(kExpandedAttribute)) e->set_attribute(kExpandedAttribute, "1");
     }
@@ -250,10 +304,14 @@ void expand_node(Node* node, const Registry& reg, int depth, int max_depth) {
 } // namespace
 
 void expand_components(Document* doc, int max_depth) {
+    expand_components(doc, nullptr, max_depth);
+}
+
+void expand_components(Document* doc, std::vector<ComponentStylesheet>* sheets, int max_depth) {
     if (!doc || max_depth < 1) return;
     Registry reg;
     std::vector<Element*> top_level_templates;
-    walk_and_register(doc, false, &reg, &top_level_templates);
+    walk_and_register(doc, false, &reg, &top_level_templates, sheets);
     if (reg.templates.empty()) return;
 
     // Move each template to the end of its parent's children, in registration

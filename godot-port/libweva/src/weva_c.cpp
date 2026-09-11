@@ -7,6 +7,8 @@
 #include "weva/typeahead.h"
 
 #include "weva/components.h"
+#include "weva/component_scoping.h"
+#include "weva/media.h"
 #include "weva/block_layout.h"
 #include "weva/box_builder.h"
 #include "weva/sticky.h"
@@ -1920,6 +1922,13 @@ struct weva_document {
     Ref<Document> doc;
     std::unique_ptr<Stylesheet> ua_sheet;
     std::vector<std::unique_ptr<Stylesheet>> sheets; // author sheets only
+    // The document's own `<style>` blocks (outside templates, `media`
+    // attribute honoured), in document order; after the host's sheets, as the
+    // reference orders explicit sheets before inline blocks.
+    std::vector<std::unique_ptr<Stylesheet>> inline_sheets;
+    // Component stylesheets (a `<style>` inside `<template id>`), selectors
+    // scoped, one per scope id, after everything else.
+    std::vector<std::pair<std::string, std::unique_ptr<Stylesheet>>> component_sheets;
     StyleMap styles;
     ContainerQueryState container_queries;
     BoxTree tree;
@@ -3617,6 +3626,10 @@ void weva_document_destroy(weva_document_t doc) {
     delete doc;
 }
 
+void collect_inline_sheets(weva_document* doc);
+void take_component_sheets(weva_document* doc, std::vector<ComponentStylesheet>* sheets);
+void rebuild_engine_sheets(weva_document* doc);
+
 weva_status weva_document_load_html(weva_document_t doc, const char* html, size_t length) {
     if (!doc || (!html && length > 0)) return WEVA_ERR_INVALID_ARGUMENT;
     HtmlParseError err;
@@ -3705,8 +3718,14 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
 
     // Components (`<template id="card">` + `<card>` + `<slot>`) expand BEFORE
     // the cascade, as UIDocumentBuilder does, so selectors match the expanded
-    // subtree and not the un-rendered host.
-    expand_components(doc->doc.get());
+    // subtree and not the un-rendered host. Their `<style>` blocks become
+    // scoped sheets, the document's own `<style>` blocks author sheets.
+    std::vector<ComponentStylesheet> component_css;
+    expand_components(doc->doc.get(), &component_css);
+    doc->component_sheets.clear();
+    take_component_sheets(doc, &component_css);
+    collect_inline_sheets(doc);
+    rebuild_engine_sheets(doc);
 
     doc->elements.clear();
     doc->dialog_close_order.clear();
@@ -3808,6 +3827,78 @@ void expand_document_imports(weva_document* doc, Stylesheet* sheet) {
     }, &doc->missing_imports);
 }
 
+// UA sheet, the host's sheets, the document's `<style>` blocks, then the
+// component sheets: the cascade order the reference's builder produces.
+void rebuild_engine_sheets(weva_document* doc) {
+    doc->styles.engine.clear();
+    if (doc->ua_sheet)
+        doc->styles.engine.add_stylesheet(doc->ua_sheet.get(), DeclarationOrigin::UserAgent);
+    for (const auto& sheet : doc->sheets)
+        doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
+    for (const auto& sheet : doc->inline_sheets)
+        doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
+    for (const auto& entry : doc->component_sheets)
+        doc->styles.engine.add_stylesheet(entry.second.get(), DeclarationOrigin::Author);
+    doc->styles.keyframes = doc->styles.engine.keyframes();
+}
+
+// Every `<style>` outside a `<template>`, in document order, unless its
+// `media` attribute does not match. Nested templates are source, not sheets.
+std::string ascii_lower(std::string_view v) {
+    std::string out(v);
+    for (char& c : out) if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    return out;
+}
+
+void collect_inline_sheets(weva_document* doc) {
+    doc->inline_sheets.clear();
+    if (!doc->doc) return;
+    const MediaContext media = doc->styles.engine.media_context();
+    const std::function<void(const Node*)> walk = [&](const Node* node) {
+        for (const Ref<Node>& c : node->children()) {
+            if (c->node_type() != NodeType::Element) continue;
+            const auto& e = static_cast<const Element&>(*c);
+            const std::string tag = ascii_lower(e.tag_name());
+            if (tag == "template") continue;
+            if (tag != "style") { walk(&e); continue; }
+            // A `<style>` cloned into a component instance (one nested in the
+            // template body) is that component's sheet, already scoped.
+            if (e.has_attribute(kComponentScopeAttribute)) continue;
+            const std::string_view query = e.get_attribute("media");
+            if (!query.empty() && !evaluate_media_query(query, media)) continue;
+            std::string css;
+            for (const Ref<Node>& t : e.children()) {
+                if (t->node_type() == NodeType::Text) css += static_cast<const TextNode&>(*t).data();
+            }
+            if (css.find_first_not_of(" \t\r\n\f") == std::string::npos) continue;
+            auto sheet = std::make_unique<Stylesheet>();
+            CssParseError err;
+            if (!parse_stylesheet(css, false, sheet.get(), &err)) continue;
+            expand_document_imports(doc, sheet.get());
+            doc->inline_sheets.push_back(std::move(sheet));
+        }
+    };
+    walk(doc->doc.get());
+}
+
+// Parses each component's `<style>` text, scopes its selectors and installs
+// it under its scope id, replacing an earlier sheet for the same component.
+void take_component_sheets(weva_document* doc, std::vector<ComponentStylesheet>* sheets) {
+    for (ComponentStylesheet& c : *sheets) {
+        auto sheet = std::make_unique<Stylesheet>();
+        CssParseError err;
+        if (!parse_stylesheet(c.css, false, sheet.get(), &err)) continue;
+        expand_document_imports(doc, sheet.get());
+        scope_stylesheet(sheet.get(), c.scope_id);
+        bool replaced = false;
+        for (auto& entry : doc->component_sheets) {
+            if (entry.first == c.scope_id) { entry.second = std::move(sheet); replaced = true; break; }
+        }
+        if (!replaced) doc->component_sheets.emplace_back(c.scope_id, std::move(sheet));
+    }
+    sheets->clear();
+}
+
 weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t length) {
     if (!doc || (!css && length > 0)) return WEVA_ERR_INVALID_ARGUMENT;
     auto sheet = std::make_unique<Stylesheet>();
@@ -3838,16 +3929,12 @@ weva_status weva_document_set_css(weva_document_t doc, const char* css, size_t l
     // Compile from the new set so removed selectors, layers, registrations
     // and keyframes disappear. Keep live styles until the next cascade can
     // compare them, preserving interaction state and existing animation time.
-    doc->styles.engine.clear();
     doc->styles.keyframes.clear();
     doc->sheets.clear();
     doc->missing_imports.clear();
     expand_document_imports(doc, sheet.get());
-    if (doc->ua_sheet)
-        doc->styles.engine.add_stylesheet(doc->ua_sheet.get(), DeclarationOrigin::UserAgent);
-    doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
-    doc->styles.keyframes = doc->styles.engine.keyframes();
     doc->sheets.push_back(std::move(sheet));
+    rebuild_engine_sheets(doc);
     doc->pending = Invalidation::Boxes;
     return WEVA_OK;
 }
@@ -3865,12 +3952,9 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     media.viewport_width_px = width;
     media.viewport_height_px = height;
     doc->styles.engine.set_media_context(media);
-    doc->styles.engine.clear();
-    if (doc->ua_sheet)
-        doc->styles.engine.add_stylesheet(doc->ua_sheet.get(), DeclarationOrigin::UserAgent);
-    for (const auto& sheet : doc->sheets)
-        doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
-    doc->styles.keyframes = doc->styles.engine.keyframes();
+    // A `<style media>` block answers to the viewport too.
+    collect_inline_sheets(doc);
+    rebuild_engine_sheets(doc);
     // A cached texture is keyed by the box's own size and style, which does not
     // capture a viewport unit INSIDE a gradient -- a `50vw` stop on a
     // fixed-width box would survive a resize it should not. Dropping the cache
@@ -3891,12 +3975,8 @@ void weva_document_set_color_scheme(weva_document_t doc, int dark) {
     doc->styles.engine.set_media_context(media);
     // `@media (prefers-color-scheme)` branches are compiled against the
     // context, so the sheets go through the compiler again, as on a resize.
-    doc->styles.engine.clear();
-    if (doc->ua_sheet)
-        doc->styles.engine.add_stylesheet(doc->ua_sheet.get(), DeclarationOrigin::UserAgent);
-    for (const auto& sheet : doc->sheets)
-        doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
-    doc->styles.keyframes = doc->styles.engine.keyframes();
+    collect_inline_sheets(doc);
+    rebuild_engine_sheets(doc);
     // A scheme change is a restyle: light-dark() values move without any rule
     // changing, and a cached gradient texture keyed by style text would not
     // see a colour that changed underneath it.
@@ -7626,8 +7706,14 @@ std::vector<Ref<Node>> parse_fragment(weva_document* doc, const char* html, size
     if (!parsed) return out;
     // Components expand before the cascade sees them, exactly as they do on
     // load, so appended markup gets the expansion the same markup would have
-    // got in the page source.
-    expand_components(parsed.get());
+    // got in the page source. A template the fragment brings along installs
+    // (or replaces) its scoped sheet.
+    std::vector<ComponentStylesheet> component_css;
+    expand_components(parsed.get(), &component_css);
+    if (!component_css.empty()) {
+        take_component_sheets(doc, &component_css);
+        rebuild_engine_sheets(doc);
+    }
     Node* body = nullptr;
     for (const Ref<Node>& top : parsed->children()) {
         if (top->node_type() != NodeType::Element) continue;
@@ -7828,11 +7914,22 @@ weva_status weva_document_reload_html(weva_document_t doc, const char* html, siz
     opts.diagnostics = &doc->html_diagnostics;
     Ref<Document> fresh = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
     if (!fresh) return WEVA_ERR_PARSE;
+    // The live tree is expanded; the fresh one has to be too, or the diff
+    // would put every host's light-dom back in place of its rendering.
+    std::vector<ComponentStylesheet> component_css;
+    expand_components(fresh.get(), &component_css);
     std::vector<Ref<Node>> adopted;
     diff_children(doc, doc->doc.get(), fresh.get(), &adopted);
     // Elements that came over from the fresh tree need handles, styles and
     // boxes; adopt indexes their subtrees and asks for the rebuild.
     adopt(doc, adopted);
+    // The sheets the markup carries follow the markup: `<style>` blocks are
+    // read again from the live tree, component sheets replaced from the fresh.
+    doc->component_sheets.clear();
+    take_component_sheets(doc, &component_css);
+    collect_inline_sheets(doc);
+    rebuild_engine_sheets(doc);
+    doc->styles.engine.invalidate_cache();
     doc->pending = worst(doc->pending, Invalidation::Boxes);
     doc->touched.clear();
     doc->dom_touched = false;

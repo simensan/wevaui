@@ -293,7 +293,15 @@ weva_document_t weva_document_create(const weva_config* config);
 void weva_document_destroy(weva_document_t doc);
 
 /* Both take an explicit length so a host is never required to null-terminate.
- * The bytes are copied; the caller may free them on return. */
+ * The bytes are copied; the caller may free them on return.
+ *
+ * The markup's own stylesheets are read as well: every `<style>` outside a
+ * `<template>` is an author sheet after the host's (its `media` attribute is
+ * honoured against the viewport and colour scheme), and a `<style>` inside
+ * `<template id="card">` is that component's scoped sheet -- its selectors
+ * reach the component's rendering and `:host` its host element, never the
+ * page or the light-dom slotted into it. Both follow the markup through
+ * weva_document_reload_html and weva_element_append_html. */
 weva_status weva_document_load_html(weva_document_t doc, const char* html, size_t length);
 weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t length);
 /* Replaces all author stylesheets; the UA sheet and live DOM, form values,

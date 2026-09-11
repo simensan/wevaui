@@ -1179,6 +1179,55 @@ void test_abi_html_diagnostics() {
     CHECK(diagnostics().empty());
 }
 
+// `<style>` blocks in the markup are author sheets after the host's; a
+// `<style>` inside a template styles that component's rendering only.
+void test_abi_style_elements_and_component_styles() {
+    Doc doc("html, body { margin: 0 } #a { width: 50px; height: 10px } .title { height: 10px }",
+            "<style>#a { width: 123px }</style>"
+            "<style media=\"(min-width: 5000px)\">#a { width: 7px }</style>"
+            "<template id=card><style>.title { width: 40px } :host { display: block; width: 300px }"
+            " :host(.wide) { width: 500px }</style>"
+            "<div class=frame><div class=title>t</div><slot></slot></div></template>"
+            "<div id=a></div><card id=c1><div id=light class=title></div></card>"
+            "<card id=c2 class=wide></card>");
+    const auto width = [&](const char* sel) {
+        weva_document_update(doc.d, 0);
+        const weva_element_t e = weva_document_query(doc.d, sel);
+        double x = 0, y = 0, w = 0, h = 0;
+        if (e == WEVA_ELEMENT_NONE || weva_element_bounds(doc.d, e, &x, &y, &w, &h) != WEVA_OK) return -1.0;
+        return w;
+    };
+    // The inline block wins over the host sheet at equal specificity (it
+    // comes later); the media block does not apply at 1280 wide.
+    CHECK(width("#a") == 123);
+    // The component's sheet reaches its clone and its host, not the light-dom
+    // slotted into it, and not the page.
+    CHECK(width("#c1 .frame > .title") == 40);
+    CHECK(width("#light") == 300);   // a block in a 300px host: the page's .title rule only
+    CHECK(width("#c1") == 300);
+    CHECK(width("#c2") == 500);
+    // A reload that changes both keeps following the markup, and keeps the
+    // host expanded.
+    const char* again =
+        "<style>#a { width: 99px }</style>"
+        "<template id=card><style>.title { width: 45px }</style>"
+        "<div class=frame><div class=title>t</div><slot></slot></div></template>"
+        "<div id=a></div><card id=c1><div id=light class=title></div></card>";
+    CHECK(weva_document_reload_html(doc.d, again, std::strlen(again)) == WEVA_OK);
+    CHECK(width("#a") == 99);
+    CHECK(width("#c1 .frame > .title") == 45);
+    CHECK(weva_document_query(doc.d, "#c1 .frame") != WEVA_ELEMENT_NONE);
+    // A fragment that brings a template installs its sheet too.
+    const weva_element_t body = weva_document_query(doc.d, "body");
+    const char* fragment = "<template id=tag><style>.t { display: block; width: 33px; height: 5px }</style><i class=t>x</i></template><tag id=t1></tag>";
+    CHECK(weva_element_append_html(doc.d, body, fragment, std::strlen(fragment)) != WEVA_ELEMENT_NONE);
+    CHECK(width("#t1 .t") == 33);
+    // set_css replaces the host's sheets and keeps the markup's.
+    const char* css = "html, body { margin: 0 } #a { height: 10px }";
+    CHECK(weva_document_set_css(doc.d, css, std::strlen(css)) == WEVA_OK);
+    CHECK(width("#a") == 99);
+}
+
 // Minor 35: what the last update restyled, and a counter for the element set.
 void test_abi_changed_elements() {
     Doc doc("html, body { margin: 0 } div { width: 100px; height: 20px }",

@@ -776,6 +776,23 @@ translated. In a GDScript world the same feature is Godot's own introspection â€
 better fit and deletes the problem. `hosts/godot/` owns this; `libweva` has no
 binding layer at all.
 
+## Stylesheets in the markup
+
+The cascade sees, in this order: the UA sheet, the host's sheets
+(`weva_document_set_css` / `add_css`, in the order given), the document's own
+`<style>` blocks in document order (a `media` attribute is evaluated against
+the viewport and colour scheme, so they are read again on a resize or scheme
+change), then one scoped sheet per component. A component's sheet is the
+`<style>` inside its `<template id>`: `component_scoping.cpp` rewrites its
+selectors so the rightmost compound demands `[data-uui-scope="<id>"]` and
+`:host` / `:host(...)` become `[data-uui-host="<id>"]`, the expander stamps a
+clone's elements with the scope before slot projection (slotted light-dom
+keeps its own attributes) and the host with the host marker, and the sheet
+itself is not cloned into instances. A reload or an appended fragment that
+carries a template replaces that component's sheet. The attribute names and
+the rewritten selector text are byte-identical to the C# `ScopeMarkers` /
+`SelectorScoper`, so a scoped sheet reads the same on either side.
+
 ## The C ABI
 
 Narrow by construction. Sketch, not final:

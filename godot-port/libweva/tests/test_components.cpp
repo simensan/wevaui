@@ -4,6 +4,8 @@
 // UIDocumentBuilder runs before the cascade.
 #include "check.h"
 #include "weva/components.h"
+#include "weva/component_scoping.h"
+#include "weva/css_rule.h"
 #include "weva/dom.h"
 #include "weva/html.h"
 
@@ -168,5 +170,97 @@ void test_component_expansion() {
         CHECK(w != nullptr);
         CHECK(!w->has_attribute("data-uui-expanded"));
         CHECK_EQ(f.text_of(w), "y");
+    }
+}
+
+// A `<style>` inside a template is the component's own sheet: the clone is
+// stamped with the scope, the host with the host marker, slotted light-dom
+// with neither; and the selector rewrite reads exactly as the reference's.
+void test_component_scoped_styles() {
+    const std::string id = "card";
+    const auto one = [&](const char* sel) {
+        const std::vector<std::string> out = scope_selector_list(sel, id);
+        return out.size() == 1 ? out[0] : std::string("<") + std::to_string(out.size()) + ">";
+    };
+    CHECK(one(".foo") == ".foo[data-uui-scope=\"card\"]");
+    CHECK(one("div") == "div[data-uui-scope=\"card\"]");
+    CHECK(one("div.foo") == "div.foo[data-uui-scope=\"card\"]");
+    CHECK(one("a b") == "a b[data-uui-scope=\"card\"]");
+    CHECK(one("a > b") == "a > b[data-uui-scope=\"card\"]");
+    CHECK(one("a>b") == "a > b[data-uui-scope=\"card\"]");
+    CHECK(one("a + b") == "a + b[data-uui-scope=\"card\"]");
+    CHECK(one("a ~ b") == "a ~ b[data-uui-scope=\"card\"]");
+    {
+        const std::vector<std::string> two = scope_selector_list("a, b", id);
+        CHECK(two.size() == 2 && two[0] == "a[data-uui-scope=\"card\"]" && two[1] == "b[data-uui-scope=\"card\"]");
+    }
+    CHECK(one(":host") == "[data-uui-host=\"card\"]");
+    CHECK(one(":host.disabled") == "[data-uui-host=\"card\"].disabled");
+    CHECK(one(":host(.disabled)") == "[data-uui-host=\"card\"].disabled");
+    CHECK(one(":host(:hover)") == "[data-uui-host=\"card\"]:hover");
+    {
+        const std::vector<std::string> alts = scope_selector_list(":host(.a, .b)", id);
+        CHECK(alts.size() == 2 && alts[0] == "[data-uui-host=\"card\"].a" && alts[1] == "[data-uui-host=\"card\"].b");
+        const std::vector<std::string> deep = scope_selector_list(":host(.a, .b) > .item", id);
+        CHECK(deep.size() == 2 && deep[0] == "[data-uui-host=\"card\"].a > .item[data-uui-scope=\"card\"]");
+        CHECK(deep.size() == 2 && deep[1] == "[data-uui-host=\"card\"].b > .item[data-uui-scope=\"card\"]");
+    }
+    CHECK(one("a::before") == "a[data-uui-scope=\"card\"]::before");
+    CHECK(one("a:hover") == "a[data-uui-scope=\"card\"]:hover");
+    CHECK(one("a > b:hover") == "a > b[data-uui-scope=\"card\"]:hover");
+    CHECK(one(":not(.x)") == ":not(.x)[data-uui-scope=\"card\"]");
+    CHECK(one("a[title=\"x > y\"]") == "a[title=\"x > y\"][data-uui-scope=\"card\"]");
+
+    // The sheet rewrite descends into @media and leaves @keyframes alone.
+    {
+        Stylesheet sheet;
+        CssParseError err;
+        CHECK(parse_stylesheet(".t { color: red } @media (min-width: 1px) { .u:hover { color: blue } }"
+                               "@keyframes k { from { opacity: 0 } to { opacity: 1 } }", false, &sheet, &err));
+        scope_stylesheet(&sheet, id);
+        CHECK(sheet.rules.size() == 3);
+        const auto* top = static_cast<const StyleRule*>(sheet.rules[0].get());
+        CHECK(top->selectors.size() == 1 && top->selectors[0] == ".t[data-uui-scope=\"card\"]");
+        const auto* media = static_cast<const GenericAtRule*>(sheet.rules[1].get());
+        CHECK(media->nested_rules.size() == 1);
+        const auto* inner = static_cast<const StyleRule*>(media->nested_rules[0].get());
+        CHECK(inner->selectors.size() == 1 && inner->selectors[0] == ".u[data-uui-scope=\"card\"]:hover");
+        const auto* frames = static_cast<const GenericAtRule*>(sheet.rules[2].get());
+        CHECK(frames->name == "keyframes" && frames->prelude == "k");
+    }
+
+    // Expansion: the sheet is reported, clones stamped, light-dom not.
+    {
+        SymbolTable symbols;
+        HtmlParseError err;
+        ParseOptions o;
+        o.strict = false;
+        Ref<Document> doc = parse_html(
+            "<template id=card><style>.title { color: red }</style>"
+            "<div class=frame><span class=title>t</span><slot></slot></div></template>"
+            "<template id=plain><b>p</b></template>"
+            "<card><em class=title>light</em></card><plain></plain>", &symbols, o, &err);
+        CHECK(doc.get() != nullptr);
+        std::vector<ComponentStylesheet> sheets;
+        expand_components(doc.get(), &sheets);
+        CHECK(sheets.size() == 1 && sheets[0].tag == "card" && sheets[0].scope_id == "card");
+        CHECK(sheets[0].css.find(".title { color: red }") != std::string::npos);
+        Fixture f;
+        f.doc = doc;
+        const Element* host = f.find("card");
+        CHECK(host && host->get_attribute("data-uui-host") == "card");
+        const Element* frame = f.find("div", host);
+        CHECK(frame && frame->get_attribute("data-uui-scope") == "card");
+        const Element* title = f.find("span", host);
+        CHECK(title && title->get_attribute("data-uui-scope") == "card");
+        const Element* light = f.find("em", host);
+        CHECK(light && !light->has_attribute("data-uui-scope"));
+        // The sheet is not cloned into the instance.
+        CHECK(f.count("style", host) == 0);
+        // A template without a style stamps nothing.
+        const Element* plain = f.find("plain");
+        CHECK(plain && !plain->has_attribute("data-uui-host"));
+        const Element* b = f.find("b", plain);
+        CHECK(b && !b->has_attribute("data-uui-scope"));
     }
 }

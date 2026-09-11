@@ -3671,8 +3671,23 @@ an ABI surface), keep host-side (C#), drop.
    (nearest only, `background.cpp:948`), `background-attachment` DONE
    2026-09-11 (`fixed` against the viewport, `local` with a scroll container's
    content; both re-rasterize as the box moves, like a browser repaints them).
-10. Component-scoped stylesheets (`components.h:7-12` defers the scope stamp;
-    C# `Components/Scoping` has no counterpart).
+10. Component-scoped stylesheets DONE 2026-09-11, from the markup: a
+    `<style>` inside `<template id="card">` is the component's sheet
+    (`component_scoping.cpp` rewrites its selectors byte-for-byte as the C#
+    SelectorScoper does -- rightmost compound gains
+    `[data-uui-scope="card"]`, `:host`/`:host(...)` become
+    `[data-uui-host="card"]`; the expander stamps clones before projection so
+    slotted light-dom stays unstyled by it; the sheet is not cloned into
+    instances). The C# only reaches scoping from code
+    (`ComponentRegistry.Register(tag, template, sheet)`) and today feeds a
+    template's `<style>` to the page unscoped; the core is ahead. Found on the
+    way and closed with it: the core read no `<style>` block at all (hosts
+    pass CSS through the ABI); now every `<style>` outside a template is an
+    author sheet after the host's, `media` attribute honoured, re-read on
+    reload and on viewport/colour-scheme changes. Also fixed: a hot reload
+    diffed the expanded live tree against an unexpanded fresh one, which
+    un-rendered every component. Tests: test_component_scoped_styles,
+    test_abi_style_elements_and_component_styles.
 11. `@supports selector(...)`, the one missing arm of `media.cpp:260-320`. DONE
     2026-09-11 (`media.cpp`, test in `test_cascade.cpp`).
 12. Subgrid DONE 2026-09-11 as a finding, not a port: both engines already
