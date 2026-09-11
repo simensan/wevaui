@@ -41,6 +41,10 @@ double resolve_opacity(const ComputedStyle* style);
 bool resolve_transform(const ComputedStyle* style, const LayoutContext& ctx,
                        double font_size, double width, double height, Transform2D* out);
 
+// Whether `transform` or one of the individual `translate` / `rotate` /
+// `scale` properties is set to something other than none.
+bool has_transform_property(const ComputedStyle* style);
+
 // Paints `root` and its subtree. Boxes are walked in tree order, which is
 // document order — stacking contexts and z-index ordering are a later slice, so
 // a positive z-index does not yet lift a box above a later sibling.

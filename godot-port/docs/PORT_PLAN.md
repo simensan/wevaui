@@ -3657,8 +3657,13 @@ an ABI surface), keep host-side (C#), drop.
    translate3d/scale3d keep x and y, rotateX/rotateY foreshorten by the
    cosine, rotate3d keeps the top-left 2x2 of the rotation, matrix3d its
    affine part; translateZ/scaleZ/perspective() are identity.
-   Also the individual `translate` / `rotate` / `scale` properties (registered,
-   unread).
+   The individual `translate` / `rotate` / `scale` properties DONE 2026-09-11
+   (`parse_transform`: the list, then scale, rotate, translate, about the
+   same origin, as CSS Transforms 2 §8 and the C# TransformResolver; `rotate`
+   takes an axis keyword or vector and projects like the 3D functions; they
+   count as a containing block and for hit testing; the layout dump follows
+   `translate`). Tests: test_paint_individual_transform_properties,
+   test_abi_individual_transform_hit_test.
 8. Scroll snap DONE 2026-09-11 (`scroll_snap.cpp`, the 13 properties
    appended to the registry): a programmatic scroll snaps at once, a wheel
    scroll settles after 150 ms of quiet with a 250 ms ease-out, `always`

@@ -504,10 +504,18 @@ void filter_backdrop(Mesh&& cur, RenderInterface* backend, const BackdropEffect&
 bool parse_transform(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
                      double width, double height, Transform2D* out) {
     const std::string_view raw = get(style, "transform");
-    if (raw.empty() || raw == "none") return false;
+    // CSS Transforms 2 §8: the individual `translate`, `rotate` and `scale`
+    // properties compose with the list -- the list applies first, then
+    // scale, rotate, translate -- all about the same transform-origin.
+    const std::string_view translate_raw = get(style, "translate");
+    const std::string_view rotate_raw = get(style, "rotate");
+    const std::string_view scale_raw = get(style, "scale");
+    const auto set = [](std::string_view v) { return !v.empty() && v != "none"; };
+    const bool has_list = set(raw);
+    if (!has_list && !set(translate_raw) && !set(rotate_raw) && !set(scale_raw)) return false;
     struct Fn { std::string name; std::vector<std::string_view> args; };
     std::vector<Fn> fns;
-    size_t cursor = 0;
+    size_t cursor = has_list ? 0 : raw.size();
     while (cursor < raw.size()) {
         const size_t open = raw.find('(', cursor);
         if (open == std::string_view::npos) break;
@@ -532,7 +540,7 @@ bool parse_transform(const ComputedStyle* style, const LayoutContext& ctx, doubl
         fns.push_back(std::move(f));
         cursor = close + 1;
     }
-    if (fns.empty()) return false;
+    if (has_list && fns.empty() && !set(translate_raw) && !set(rotate_raw) && !set(scale_raw)) return false;
     const auto length = [&](std::string_view s, double basis) {
         const ResolvedLength r = resolve_length(s, ctx, font_size, basis);
         if (r.kind == LengthKind::Length) return r.pixels;
@@ -639,6 +647,71 @@ bool parse_transform(const ComputedStyle* style, const LayoutContext& ctx, doubl
             continue;   // an unknown function: no effect
         }
         m = m.multiply(t);
+    }
+    // The individual properties, in the specification's order after the list.
+    if (set(scale_raw)) {
+        // `scale: <number-or-percentage>{1,3}`; the third (z) is dropped.
+        const std::vector<std::string_view> toks = split_shadow_list(scale_raw, ' ');
+        const auto component = [&](std::string_view s) {
+            if (!s.empty() && s.back() == '%') return number(s.substr(0, s.size() - 1), 100) * 0.01;
+            return number(s, 1);
+        };
+        if (!toks.empty()) {
+            const double sx = component(toks[0]);
+            const double sy = toks.size() > 1 ? component(toks[1]) : sx;
+            m = m.multiply(Transform2D::scale(static_cast<float>(sx), static_cast<float>(sy)));
+        }
+    }
+    if (set(rotate_raw)) {
+        // `rotate: <angle> | [ x | y | z | <number>{3} ] && <angle>`; the
+        // angle may come first or last. Projected like the 3D functions.
+        std::vector<std::string_view> toks = split_shadow_list(rotate_raw, ' ');
+        const auto is_angle = [&](std::string_view s) {
+            const std::string t(s);
+            char* end = nullptr;
+            std::strtod(t.c_str(), &end);
+            if (end == t.c_str()) return false;
+            const std::string_view unit(end);
+            return unit == "deg" || unit == "rad" || unit == "grad" || unit == "turn" || (unit.empty() && t == "0");
+        };
+        std::string_view angle_tok;
+        std::vector<std::string_view> axis;
+        for (std::string_view t : toks) {
+            if (angle_tok.empty() && is_angle(t)) angle_tok = t;
+            else axis.push_back(t);
+        }
+        if (!angle_tok.empty()) {
+            const double deg = angle(angle_tok);
+            const double kPi = 3.14159265358979323846;
+            if (axis.empty() || (axis.size() == 1 && axis[0] == "z")) {
+                m = m.multiply(Transform2D::rotate(deg));
+            } else if (axis.size() == 1 && axis[0] == "x") {
+                m = m.multiply(Transform2D::scale(1, static_cast<float>(std::cos(deg * kPi / 180))));
+            } else if (axis.size() == 1 && axis[0] == "y") {
+                m = m.multiply(Transform2D::scale(static_cast<float>(std::cos(deg * kPi / 180)), 1));
+            } else if (axis.size() == 3) {
+                double kx = number(axis[0], 0), ky = number(axis[1], 0), kz = number(axis[2], 0);
+                const double len = std::sqrt(kx * kx + ky * ky + kz * kz);
+                if (len > 0) {
+                    kx /= len; ky /= len; kz /= len;
+                    const double rad = deg * kPi / 180;
+                    const double c = std::cos(rad), sn = std::sin(rad), v = 1 - c;
+                    m = m.multiply(Transform2D(static_cast<float>(c + kx * kx * v), static_cast<float>(ky * kx * v + kz * sn),
+                                               static_cast<float>(kx * ky * v - kz * sn), static_cast<float>(c + ky * ky * v),
+                                               0, 0));
+                }
+            }
+        }
+    }
+    if (set(translate_raw)) {
+        // `translate: <length-percentage> [<length-percentage> <length>?]?`;
+        // percentages against the box, the third (z) dropped.
+        const std::vector<std::string_view> toks = split_shadow_list(translate_raw, ' ');
+        if (!toks.empty()) {
+            const double tx = length(toks[0], width);
+            const double ty = toks.size() > 1 ? length(toks[1], height) : 0.0;
+            m = m.multiply(Transform2D::translate(static_cast<float>(tx), static_cast<float>(ty)));
+        }
     }
     // transform-origin, default 50% 50%; keywords and one-value forms.
     double ox = width * 0.5, oy = height * 0.5;
@@ -3734,6 +3807,15 @@ LinearColor resolve_color(const ComputedStyle* style, std::string_view property)
 bool resolve_transform(const ComputedStyle* style, const LayoutContext& ctx,
                        double font_size, double width, double height, Transform2D* out) {
     return parse_transform(style, ctx, font_size, width, height, out);
+}
+
+bool has_transform_property(const ComputedStyle* style) {
+    if (!style) return false;
+    for (const char* prop : {"transform", "translate", "rotate", "scale"}) {
+        const std::string_view v = get(style, prop);
+        if (!v.empty() && v != "none") return true;
+    }
+    return false;
 }
 
 BorderRadii resolve_border_radii(const ComputedStyle* style, double width, double height,

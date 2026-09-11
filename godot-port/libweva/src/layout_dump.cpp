@@ -112,6 +112,14 @@ void transform_translation(const Box& b, double* tx, double* ty) {
     *tx = 0;
     *ty = 0;
     if (!b.style) return;
+    // The individual `translate` property applies after the list.
+    const std::string_view own = trim_ws(b.style->get("translate"));
+    if (!own.empty() && own != "none") {
+        std::string_view a, c2;
+        split_first_two(own, &a, &c2);
+        *tx += length_percent_px(a, b.width);
+        if (!c2.empty()) *ty += length_percent_px(c2, b.height);
+    }
     const std::string_view raw = trim_ws(b.style->get("transform"));
     if (raw.empty() || raw == "none") return;
     std::size_t cursor = 0;

@@ -1228,6 +1228,22 @@ void test_abi_style_elements_and_component_styles() {
     CHECK(width("#a") == 99);
 }
 
+// The individual transform properties move the hit target with the box.
+void test_abi_individual_transform_hit_test() {
+    Doc doc("html, body { margin: 0 } #m { width: 100px; height: 50px; translate: 200px 100px }"
+            "#z { width: 100px; height: 100px; rotate: 45deg; margin-top: 100px }",
+            "<div id=m></div><div id=z></div>");
+    weva_document_update(doc.d, 0);
+    const weva_element_t m = weva_document_query(doc.d, "#m"), z = weva_document_query(doc.d, "#z");
+    CHECK(weva_document_element_at(doc.d, 250, 125) == m);   // where it moved to
+    CHECK(weva_document_element_at(doc.d, 50, 25) != m);     // not where it was laid out
+    // A 100px square laid out at y 150..250 and rotated 45deg about its centre
+    // (50, 200) reaches 70.7px out along the axes -- above its layout rect --
+    // and no longer covers its own corner.
+    CHECK(weva_document_element_at(doc.d, 50, 135) == z);
+    CHECK(weva_document_element_at(doc.d, 5, 155) != z);
+}
+
 // Minor 35: what the last update restyled, and a counter for the element set.
 void test_abi_changed_elements() {
     Doc doc("html, body { margin: 0 } div { width: 100px; height: 20px }",

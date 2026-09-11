@@ -34,8 +34,7 @@ bool local_transform(const BoxTree& tree, BoxId id, const LayoutContext& ctx, Tr
     if (!b.style || b.width <= 0 || b.height <= 0 || b.kind == BoxKind::Text ||
         b.kind == BoxKind::Line || b.kind == BoxKind::AnonymousBlock ||
         b.kind == BoxKind::AnonymousInline) return false;
-    const auto value = b.style->get("transform");
-    if (value.empty() || value == "none") return false;
+    if (!has_transform_property(b.style)) return false;
     const auto* parent = b.parent == kNoBox ? nullptr : tree[b.parent].style;
     return resolve_transform(b.style, ctx, font_size_px(b.style, parent, ctx), b.width, b.height, out);
 }

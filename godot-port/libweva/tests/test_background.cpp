@@ -1343,6 +1343,55 @@ void test_paint_transform_rotates_geometry() {
     CHECK(shifted);
 }
 
+// CSS Transforms 2 §8: the individual properties compose after the list --
+// the list, then scale, rotate, translate -- about transform-origin.
+void test_paint_individual_transform_properties() {
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 }"
+                "#t { width: 100px; height: 50px; background: #0f0; translate: 50% 10px }"
+                "#s { width: 100px; height: 50px; background: #00f; scale: 2 50%; transform-origin: 0 0 }"
+                "#r { width: 100px; height: 50px; background: #f00; rotate: z 90deg }"
+                "#c { width: 100px; height: 50px; background: #ff0; transform-origin: 0 0;"
+                "     transform: translate(10px, 0); scale: 2; rotate: 90deg; translate: 5px 0 }"));
+    CHECK(f.layout("<body><div id=t></div><div id=s></div><div id=r></div><div id=c></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    bool shifted = false, scaled = false, rotated = false, composed = false;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty()) continue;
+        const Rect r = bounds_of(d.geometry);
+        const LinearColor c = d.geometry.vertices[0].color;
+        // translate: 50% of the width right, 10px down.
+        if (near(c.g, 1) && near(c.r, 0) && near(c.b, 0) && near(r.x, 50, 1e-3) && near(r.y, 10, 1e-3)) shifted = true;
+        // scale: 2 50% about the top-left corner: 200 wide, 25 tall, at y = 50.
+        if (near(c.b, 1) && near(c.r, 0) && near(r.width, 200, 1e-3) && near(r.height, 25, 1e-3) &&
+            near(r.x, 0, 1e-3) && near(r.y, 50, 1e-3)) scaled = true;
+        // rotate: z 90deg about the centre (50, 125): a 50x100 mesh, y 75..175.
+        if (near(c.r, 1) && near(c.g, 0) && near(r.width, 50, 1e-3) && near(r.height, 100, 1e-3) &&
+            near(r.x, 25, 1e-3) && near(r.y, 75, 1e-3)) rotated = true;
+        // composed, origin 0 0, box at y = 150: the list moves the box to
+        // x 10..110, scale doubles it to 20..220 x 0..100 (local), rotate 90deg
+        // maps (x, y) to (-y, x): x -100..0, y 20..220; translate 5px: x -95..-5.
+        if (near(c.r, 1) && near(c.g, 1) && near(c.b, 0) && near(r.x, -95, 1e-3) && near(r.width, 100, 1e-3) &&
+            near(r.y, 170, 1e-3) && near(r.height, 200, 1e-3)) composed = true;
+    }
+    CHECK(shifted);
+    CHECK(scaled);
+    CHECK(rotated);
+    CHECK(composed);
+    // A translated box is a containing block for its absolutely positioned
+    // descendants, like a transformed one.
+    Fixture g;
+    CHECK(g.css("html, body { margin: 0 } #p { width: 200px; height: 100px; translate: 20px 0 }"
+                "#a { position: absolute; left: 0; top: 0; width: 10px; height: 10px }"));
+    CHECK(g.layout("<body><div id=p><div id=a></div></div></body>"));
+    double ax = 0, ay = 0;
+    absolute_position(g.tree, g.find("a"), &ax, &ay);
+    CHECK(near(ax, 0) && near(ay, 0));   // its containing block is #p, not the viewport
+}
+
 // Runtime/Forms/InputRenderer.cs: the UA drawings on a control's box.
 void test_paint_form_control_marks() {
     Fixture f;

@@ -92,6 +92,10 @@ bool set_and_not_none(const ComputedStyle* s, std::string_view property) {
 bool has_containing_block_property(const Box& b) {
     if (!b.style) return false;
     if (set_and_not_none(b.style, "transform")) return true;
+    // CSS Transforms 2 §8: the individual properties count the same way.
+    if (set_and_not_none(b.style, "translate")) return true;
+    if (set_and_not_none(b.style, "rotate")) return true;
+    if (set_and_not_none(b.style, "scale")) return true;
     if (set_and_not_none(b.style, "filter")) return true;
     if (set_and_not_none(b.style, "perspective")) return true;
     const std::string_view wc = get(b.style, kId_will_change);
