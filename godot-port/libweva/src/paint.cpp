@@ -1181,7 +1181,8 @@ std::string background_key(const ComputedStyle* style, const LinearColor& color,
     // parsed form would mean serialising every gradient stop by hand and
     // getting it wrong the first time a property grew a field.
     for (const char* prop : {"background-image", "background-position", "background-size",
-                             "background-repeat", "color"}) {
+                             "background-repeat", "background-blend-mode", "mask-image",
+                             "mask-position", "mask-size", "mask-repeat", "mask-mode", "color"}) {
         k += get(style, prop);
         k += '|';
     }
@@ -1915,16 +1916,26 @@ LinearColor placeholder_color(const PaintContext& paint, const Element* host,
     return c;
 }
 
-// CSS Compositing 1 §6.1 `mix-blend-mode`, in the specification's order.
-BlendMode blend_mode_of(std::string_view raw) {
+} // namespace
+
+// CSS Compositing 1 §11 <blend-mode> keywords, shared by mix-blend-mode here
+// and background-blend-mode in the rasterizer. Defined in this translation
+// unit rather than background.cpp because a test includes that file whole.
+BlendMode blend_mode_from_keyword(std::string_view raw) {
     static const char* kNames[] = {"normal", "multiply", "screen", "overlay", "darken", "lighten",
                                    "color-dodge", "color-burn", "hard-light", "soft-light",
                                    "difference", "exclusion", "hue", "saturation", "color", "luminosity"};
+    const std::string_view t = trim_view(raw);
     for (size_t i = 0; i < sizeof(kNames) / sizeof(kNames[0]); ++i) {
-        if (ci_equal(raw, kNames[i])) return static_cast<BlendMode>(i);
+        if (ci_equal(t, kNames[i])) return static_cast<BlendMode>(i);
     }
     return BlendMode::Normal;
 }
+
+namespace {
+
+// CSS Compositing 1 §6.1 `mix-blend-mode`: the shared keyword table.
+BlendMode blend_mode_of(std::string_view raw) { return blend_mode_from_keyword(raw); }
 
 // CSS UI 4 §5.4 caret-color; `auto` is currentcolor, as Chrome draws it (the
 // contrast adjustment the spec permits is not done). `transparent` is a

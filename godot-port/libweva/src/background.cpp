@@ -782,20 +782,29 @@ bool parse_gradient(std::string_view raw, const LinearColor& current_color, Grad
     return true;
 }
 
-std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* style,
-                                                       const LinearColor& current_color) {
-    std::vector<BackgroundLayer> layers;
-    if (!style) return layers;
-    const std::string_view images = trim(style->get("background-image"));
-    if (images.empty() || iequals(images, "none")) return layers;
+namespace {
+
+// One image-list property with its position/size/repeat companions, read
+// the way background-image and mask-image share a grammar (CSS Backgrounds
+// L3 §2.1: the companion lists repeat when shorter than the image list).
+void read_image_layers(const ComputedStyle* style, const char* image_prop, const char* pos_prop,
+                       const char* size_prop, const char* repeat_prop, const LinearColor& current_color,
+                       bool as_mask, std::vector<BackgroundLayer>* layers) {
+    const std::string_view images = trim(style->get(image_prop));
+    if (images.empty() || iequals(images, "none")) return;
     const std::vector<std::string_view> image_list = split_top_level(images, ',');
-    const std::vector<std::string_view> positions = split_top_level(style->get("background-position"), ',');
-    const std::vector<std::string_view> sizes = split_top_level(style->get("background-size"), ',');
-    const std::vector<std::string_view> repeats = split_top_level(style->get("background-repeat"), ',');
+    const std::vector<std::string_view> positions = split_top_level(style->get(pos_prop), ',');
+    const std::vector<std::string_view> sizes = split_top_level(style->get(size_prop), ',');
+    const std::vector<std::string_view> repeats = split_top_level(style->get(repeat_prop), ',');
+    const std::vector<std::string_view> blends =
+        as_mask ? std::vector<std::string_view>() : split_top_level(style->get("background-blend-mode"), ',');
+    const std::vector<std::string_view> modes =
+        as_mask ? split_top_level(style->get("mask-mode"), ',') : std::vector<std::string_view>();
     for (size_t i = 0; i < image_list.size(); ++i) {
         const std::string_view img = trim(image_list[i]);
         if (img.empty() || iequals(img, "none")) continue;
         BackgroundLayer layer;
+        layer.is_mask = as_mask;
         if (istarts_with(img, "url(")) {
             std::string_view inner = trim(img.substr(4, img.size() - 5));
             if (inner.size() >= 2 && (inner.front() == '"' || inner.front() == '\'')) {
@@ -807,7 +816,6 @@ std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* styl
         } else {
             continue;
         }
-        // Lists shorter than the image list repeat (§2.1).
         if (!positions.empty()) {
             const std::vector<std::string_view> toks =
                 split_top_level(positions[i % positions.size()], ' ');
@@ -836,8 +844,24 @@ std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* styl
                 }
             }
         }
-        layers.push_back(std::move(layer));
+        if (!blends.empty()) layer.blend = blend_mode_from_keyword(blends[i % blends.size()]);
+        // mask-mode: `luminance` reads the image's brightness; `alpha` and
+        // `match-source` (an alpha mask for anything the engine draws) its alpha.
+        if (!modes.empty()) layer.mask_luminance = iequals(trim(modes[i % modes.size()]), "luminance");
+        layers->push_back(std::move(layer));
     }
+}
+
+} // namespace
+
+std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* style,
+                                                       const LinearColor& current_color) {
+    std::vector<BackgroundLayer> layers;
+    if (!style) return layers;
+    read_image_layers(style, "background-image", "background-position", "background-size",
+                      "background-repeat", current_color, false, &layers);
+    read_image_layers(style, "mask-image", "mask-position", "mask-size", "mask-repeat",
+                      current_color, true, &layers);
     return layers;
 }
 
@@ -944,6 +968,48 @@ void sample_gradient(const Gradient& g, double x, double y, double width, double
     out_srgb[3] = c.a;
 }
 
+namespace {
+
+// CSS Compositing 1 §10.1 separable blend modes, one channel, sRGB values
+// 0..1 as the layers are composited. The non-separable four fall back to
+// normal here; they need the whole colour and are rare on a background.
+float blend_channel(BlendMode mode, float cb, float cs) {
+    const auto hard_light = [](float b, float s) {
+        return s <= 0.5f ? b * 2 * s : (b + (2 * s - 1) - b * (2 * s - 1));
+    };
+    switch (mode) {
+        case BlendMode::Multiply: return cb * cs;
+        case BlendMode::Screen: return cb + cs - cb * cs;
+        case BlendMode::Overlay: return hard_light(cs, cb);
+        case BlendMode::Darken: return std::min(cb, cs);
+        case BlendMode::Lighten: return std::max(cb, cs);
+        case BlendMode::ColorDodge: return cb == 0 ? 0.0f : cs >= 1 ? 1.0f : std::min(1.0f, cb / (1 - cs));
+        case BlendMode::ColorBurn: return cb >= 1 ? 1.0f : cs <= 0 ? 0.0f : 1 - std::min(1.0f, (1 - cb) / cs);
+        case BlendMode::HardLight: return hard_light(cb, cs);
+        case BlendMode::SoftLight: {
+            if (cs <= 0.5f) return cb - (1 - 2 * cs) * cb * (1 - cb);
+            const float d = cb <= 0.25f ? ((16 * cb - 12) * cb + 4) * cb : std::sqrt(cb);
+            return cb + (2 * cs - 1) * (d - cb);
+        }
+        case BlendMode::Difference: return std::fabs(cb - cs);
+        case BlendMode::Exclusion: return cb + cs - 2 * cb * cs;
+        default: return cs;
+    }
+}
+
+// CSS Masking 1 §6.4 mask-mode: the coverage a mask sample contributes --
+// its alpha, or its luminance (of the linear-light colour) times its alpha.
+float mask_coverage(const Srgb& s, bool luminance) {
+    if (!luminance) return s.a;
+    const auto lin = [](float c) {
+        return c <= 0.04045f ? c / 12.92f : std::pow((c + 0.055f) / 1.055f, 2.4f);
+    };
+    const float l = 0.2125f * lin(s.r) + 0.7154f * lin(s.g) + 0.0721f * lin(s.b);
+    return std::min(1.0f, std::max(0.0f, l)) * s.a;
+}
+
+} // namespace
+
 // One texel of a background image, nearest.
 //
 // Nearest and not bilinear, deliberately and to match the rest of the engine:
@@ -994,12 +1060,19 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         // fmods that cannot change their argument, run for every texel of
         // every layer: eight of them per texel of a two-layer background.
         bool wrap_x, wrap_y;
+        BlendMode blend = BlendMode::Normal;
+        bool is_mask = false, luminance = false;
     };
     std::vector<Tile> tiles;
+    bool any_mask = false;
     for (const BackgroundLayer& l : layers) {
         if (!l.is_gradient && !l.image) continue;
         Tile t;
         t.image = l.is_gradient ? nullptr : l.image;
+        t.blend = l.blend;
+        t.is_mask = l.is_mask;
+        t.luminance = l.mask_luminance;
+        if (l.is_mask) any_mask = true;
         t.tw = width;
         t.th = height;
         const bool cover = iequals(l.size_x, "cover");
@@ -1305,6 +1378,9 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                     // Premultiplied source-over, bottom layer (the last) first.
                     float r = base.r * base.a, g = base.g * base.a, b = base.b * base.a;
                     float a = base.a;
+                    // A mask's coverage; the layers add (1 - the product of what
+                    // each leaves uncovered).
+                    float uncovered = 1;
                     for (size_t i = tiles.size(); i-- > 0;) {
                         const Tile& t = tiles[i];
                         double lx = x - t.ox, ly = y - t.oy;
@@ -1315,10 +1391,30 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                         const Srgb s = t.image ? sample_image(*t.image, lx, ly, t.tw, t.th)
                                                : sample_prepared(t.prepared, lx, ly);
                         const float sa = s.a;
-                        r = s.r * sa + r * (1 - sa);
-                        g = s.g * sa + g * (1 - sa);
-                        b = s.b * sa + b * (1 - sa);
+                        if (t.is_mask) {
+                            uncovered *= 1 - mask_coverage(s, t.luminance);
+                            continue;
+                        }
+                        if (t.blend == BlendMode::Normal) {
+                            r = s.r * sa + r * (1 - sa);
+                            g = s.g * sa + g * (1 - sa);
+                            b = s.b * sa + b * (1 - sa);
+                        } else {
+                            // CSS Compositing 1 §5.1: the source blended with
+                            // the backdrop where there is one, then source-over.
+                            const float cb_r = a > 0 ? r / a : 0, cb_g = a > 0 ? g / a : 0, cb_b = a > 0 ? b / a : 0;
+                            const float co_r = (1 - a) * s.r + a * blend_channel(t.blend, cb_r, s.r);
+                            const float co_g = (1 - a) * s.g + a * blend_channel(t.blend, cb_g, s.g);
+                            const float co_b = (1 - a) * s.b + a * blend_channel(t.blend, cb_b, s.b);
+                            r = co_r * sa + r * (1 - sa);
+                            g = co_g * sa + g * (1 - sa);
+                            b = co_b * sa + b * (1 - sa);
+                        }
                         a = sa + a * (1 - sa);
+                    }
+                    if (any_mask) {
+                        const float m = 1 - uncovered;
+                        r *= m; g *= m; b *= m; a *= m;
                     }
                     // Accumulated PREMULTIPLIED, or a sample that is barely
                     // covered drags the colour of a fully covered neighbour

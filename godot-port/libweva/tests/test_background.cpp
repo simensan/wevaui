@@ -20,6 +20,7 @@
 #include "weva/user_agent_stylesheet.h"
 
 #include <cmath>
+#include <tuple>
 #include <cstring>
 #include <map>
 #include <memory>
@@ -985,6 +986,87 @@ void test_background_rasterize_layers() {
     layer.repeat_x = true;
     rasterize_background({layer}, LinearColor::transparent(), 100, 10, 4, 1, ctx, 16, &rgba);
     CHECK(rgba[12 + 3] == 255);
+}
+
+// CSS Compositing 1 §9 background-blend-mode and CSS Masking 1 §6 mask-image
+// in the rasterizer: a layer blends with what is under it; a mask layer's
+// coverage multiplies the result; masks add; luminance reads brightness.
+void test_background_blend_and_mask() {
+    const LinearColor black = LinearColor::black();
+    const LinearColor white = LinearColor::from_srgb(255, 255, 255, 1);
+    const LinearColor red = LinearColor::from_srgb(255, 0, 0, 1);
+    LayoutContext ctx;
+    BackgroundLayer blue;
+    CHECK(parse_gradient("linear-gradient(rgb(0, 0, 255), rgb(0, 0, 255))", black, &blue.gradient));
+    blue.is_gradient = true;
+    std::vector<uint8_t> rgba;
+    const auto texel = [&](int i) { return std::array<int, 4>{rgba[i * 4], rgba[i * 4 + 1], rgba[i * 4 + 2], rgba[i * 4 + 3]}; };
+    for (const auto& [mode, r, g, b] : std::vector<std::tuple<BlendMode, int, int, int>>{
+             {BlendMode::Normal, 0, 0, 255},     {BlendMode::Multiply, 0, 0, 255},
+             {BlendMode::Screen, 255, 255, 255}, {BlendMode::Difference, 255, 255, 0},
+             {BlendMode::Darken, 0, 0, 255},     {BlendMode::Lighten, 255, 255, 255},
+             {BlendMode::Exclusion, 255, 255, 0}}) {
+        blue.blend = mode;
+        rasterize_background({blue}, white, 10, 10, 1, 1, ctx, 16, &rgba);
+        const auto t = texel(0);
+        CHECK(t[0] == r && t[1] == g && t[2] == b && t[3] == 255);
+    }
+    // Over black, multiply is black and screen is the layer.
+    blue.blend = BlendMode::Multiply;
+    rasterize_background({blue}, black, 10, 10, 1, 1, ctx, 16, &rgba);
+    CHECK(texel(0)[2] == 0);
+    blue.blend = BlendMode::Screen;
+    rasterize_background({blue}, black, 10, 10, 1, 1, ctx, 16, &rgba);
+    CHECK(texel(0)[2] == 255 && texel(0)[0] == 0);
+
+    // An alpha mask fading left to right over a red fill: the colour stays
+    // red, the alpha follows the mask.
+    BackgroundLayer mask;
+    CHECK(parse_gradient("linear-gradient(to right, black, transparent)", black, &mask.gradient));
+    mask.is_gradient = true;
+    mask.is_mask = true;
+    rasterize_background({mask}, red, 100, 10, 4, 1, ctx, 16, &rgba);
+    CHECK(texel(0)[0] == 255 && texel(0)[1] == 0 && texel(0)[3] > 200);
+    CHECK(texel(3)[3] < 60);
+    CHECK(texel(1)[3] > texel(2)[3]);
+    // A luminance mask: white keeps, black drops.
+    BackgroundLayer lum;
+    CHECK(parse_gradient("linear-gradient(to right, white, black)", black, &lum.gradient));
+    lum.is_gradient = true;
+    lum.is_mask = true;
+    lum.mask_luminance = true;
+    rasterize_background({lum}, red, 100, 10, 4, 1, ctx, 16, &rgba);
+    CHECK(texel(0)[3] > 180 && texel(3)[3] < 40);
+    // Two masks add: a left half and a right half together cover the row.
+    BackgroundLayer left, right;
+    CHECK(parse_gradient("linear-gradient(black, black)", black, &left.gradient));
+    left.is_gradient = true; left.is_mask = true; left.size_x = "50%"; left.repeat_x = false;
+    right = left;
+    right.pos_x = "100%";
+    rasterize_background({left}, red, 100, 10, 4, 1, ctx, 16, &rgba);
+    CHECK(texel(0)[3] == 255 && texel(3)[3] == 0);
+    rasterize_background({left, right}, red, 100, 10, 4, 1, ctx, 16, &rgba);
+    CHECK(texel(0)[3] == 255 && texel(3)[3] == 255);
+    // A mask layer is not a paint layer: under it the colour is untouched.
+    rasterize_background({mask}, white, 100, 10, 4, 1, ctx, 16, &rgba);
+    CHECK(texel(0)[0] == 255 && texel(0)[1] == 255 && texel(0)[2] == 255);
+
+    // The properties reach the layers: blend per background layer, the mask
+    // layers after them with their mode.
+    Fixture f;
+    CHECK(f.css("#a { width: 10px; height: 10px; background-color: #fff;"
+                " background-image: linear-gradient(red, red), linear-gradient(blue, blue);"
+                " background-blend-mode: multiply, screen;"
+                " mask-image: linear-gradient(black, transparent), url(m.png); mask-mode: luminance, alpha;"
+                " mask-size: 50% auto; mask-repeat: no-repeat }"));
+    CHECK(f.layout("<body><div id=a></div></body>"));
+    const std::vector<BackgroundLayer> layers =
+        resolve_background_layers(f.tree[f.find("a")].style, LinearColor::black());
+    CHECK(layers.size() == 4);
+    CHECK(layers.size() == 4 && layers[0].blend == BlendMode::Multiply && layers[1].blend == BlendMode::Screen);
+    CHECK(layers.size() == 4 && !layers[0].is_mask && layers[2].is_mask && layers[3].is_mask);
+    CHECK(layers.size() == 4 && layers[2].mask_luminance && !layers[3].mask_luminance);
+    CHECK(layers.size() == 4 && layers[2].size_x == "50%" && !layers[2].repeat_x && layers[3].url == "m.png");
 }
 
 void test_paint_gradient_backgrounds_and_canvas() {

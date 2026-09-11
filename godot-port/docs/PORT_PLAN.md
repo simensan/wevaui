@@ -3609,9 +3609,14 @@ an ABI surface), keep host-side (C#), drop.
 1. `mask` / `mask-image` family and `mix-blend-mode`. `mix-blend-mode` DONE
    2026-09-11 as a per-draw attribute (ABI minor 33 `weva_draw.blend_mode`,
    all sixteen modes; Godot MUL/ADD/MIX on child items, Unity blend states for
-   multiply/screen/darken/lighten, the rest normal). Still open: `mask-image`
-   and `background-blend-mode` (the nine `mask-*` properties and the layer
-   blend are registered with no consumer; the C# masks per batch on the GPU).
+   multiply/screen/darken/lighten, the rest normal). `background-blend-mode`
+   and `mask-image` DONE 2026-09-11 in the rasterizer (`background.cpp`): the
+   twelve separable modes per layer, mask layers (image or gradient, with
+   mask-position/size/repeat/mode, layers adding) multiplying the box's own
+   rasterized background and colour. Not masked: borders, text and
+   descendants (the C# masks the element's batch on the GPU); the
+   non-separable modes fall back to normal; `mask-composite` other than add,
+   `mask-clip` / `mask-origin` are not read.
 2. Colour. DONE 2026-09-11, core ahead (the C# parses rgb/hsl/hwb only):
    `lab()`, `lch()`, `oklab()`, `oklch()`, `color()` over the predefined
    spaces and XYZ, the modern space-separated syntax with `/ alpha` and

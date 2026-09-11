@@ -1,4 +1,5 @@
 #pragma once
+#include "weva/render_interface.h"
 #include "weva/color.h"
 #include "weva/image_decode.h"
 #include "weva/computed_style.h"
@@ -94,10 +95,23 @@ struct BackgroundLayer {
     std::string pos_x = "0%", pos_y = "0%";     // background-position, raw
     std::string size_x = "auto", size_y = "auto";   // background-size, raw
     bool repeat_x = true, repeat_y = true;
+    // CSS Compositing 1 §9 background-blend-mode: how this layer blends with
+    // the layers and colour below it. Normal is plain source-over.
+    BlendMode blend = BlendMode::Normal;
+    // CSS Masking 1 §6: a `mask-image` layer. It paints nothing; its
+    // coverage (alpha, or luminance times alpha) multiplies what the paint
+    // layers produced. Several mask layers add (mask-composite: add).
+    bool is_mask = false;
+    bool mask_luminance = false;
 };
 
-// The box's `background-image` layers with their position/size/repeat, top
-// layer first as in the property. Empty when there is no image.
+// CSS Compositing 1 §11 <blend-mode> keywords, in the specification's order;
+// anything else is normal.
+BlendMode blend_mode_from_keyword(std::string_view raw);
+
+// The box's `background-image` layers with their position/size/repeat and
+// blend mode, top layer first as in the property, followed by its
+// `mask-image` layers (flagged `is_mask`). Empty when there is neither.
 std::vector<BackgroundLayer> resolve_background_layers(const ComputedStyle* style,
                                                        const LinearColor& current_color);
 
