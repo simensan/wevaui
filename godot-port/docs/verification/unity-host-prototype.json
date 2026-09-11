@@ -226,11 +226,12 @@
       "gates_after": {
         "core_suite_linux_gcc": "505,596 checks, 0 failures (clang ASan/UBSan tree agrees)",
         "unity_native_editmode": "84 cases: 82 pass, 2 inconclusive by design (WEVA_NATIVE_PARITY / WEVA_NATIVE_DUMP_MANIFEST unset), on the rebuilt Windows weva_core.dll (121 exports)",
-        "godot_host_linux": "31 test scenes from check.sh's host gate, all 0 failures, on the rebuilt libweva_godot.so (ABI minor 28 host, dark_color_scheme property)",
-        "godot_host_windows": "weva_godot.dll rebuilt with MSVC (hosts/godot/project/addons/weva/bin), not re-run headless in this session",
+        "godot_host_linux": "31 test scenes from check.sh's host gate, all 0 failures, on the rebuilt AND installed libweva_godot.so (the WSL build writes .utmp/release59/linux/bin; it has to be copied into hosts/godot/project/addons/weva/bin, which an earlier pass in this session had not done -- that pass ran on a stale library and is superseded by this one)",
+        "godot_host_windows": "weva_godot.dll rebuilt with MSVC and six scenes run headless on Windows (range_direction, hover, test_scene, input_integration, select_control, text_editing), all 0 failures",
         "oracle_samples": "one differing value, 9slice-demo [24] inline code y (candidate 562.965, Chrome 561.83, reference 564.965; Chrome sides with neither): PRE-SESSION -- identical on a worktree build of the parent of the first session commit (c9d53bbe)",
         "oracle_hand": "43/52 agree, 2 differ (25-backdrop-modal-dialog dialog centring, 42-cv-hidden content-visibility; both known), 7 reference bugs Chrome sides with the core on",
-        "plugins_installed": "Windows Unity plugin (Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll), Linux Unity plugin (~/weva/build-unity), Linux and Windows Godot hosts rebuilt"
+        "plugins_installed": "Windows Unity plugin (Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll), Linux Unity plugin (~/weva/build-unity), Linux and Windows Godot hosts rebuilt",
+        "cursor_abi_29": "weva_document_cursor / cursor_at; the Godot node answers _get_cursor_shape (setting default_cursor_shape re-dispatched a synthetic motion that cancelled a range drag headless -- range_direction_tests caught it, the ABI-level repro test_abi_range_click_at_edge pins the host sequence); NativeCursorTests 2 pass, Native suite 84 pass / 2 inconclusive"
       }
     }
   }
