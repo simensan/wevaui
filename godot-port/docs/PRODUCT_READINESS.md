@@ -502,6 +502,12 @@ pass / 2 inconclusive, the 45 check.sh scenes on Linux and six on Windows all
 or host-bound remainder: bidi reordering, View Transitions, font variation
 axes and text stroke.
 
+From the "expose through the ABI" list: safe-area insets (ABI minor 36). A
+page pads with `env(safe-area-inset-*)` as it would in a browser; the Godot
+node can follow the display's safe area and the Unity component the screen's.
+Gates: core 505,861 / 0, Unity Native 95 cases, Godot scenes green on both
+platforms on the rebuilt libraries.
+
 ## Next work
 
 1. The budget evaluator now annotates a whole-frame failure whose UI-disabled
