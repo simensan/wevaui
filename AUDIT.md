@@ -14,7 +14,7 @@ touched.
 | 1 | Repo layout | **proposed — awaiting review**, nothing moved |
 | 2 | Dead and stale material | **swept** — 3 fixes landed, 3 findings need a decision |
 | 3 | TODO / FIXME / HACK inventory | **done** — 10 found, 2 stale ones fixed, and a broken gate repaired |
-| 4 | Test hygiene | not started |
+| 4 | Test hygiene | **in progress** — inventory done, 1 of 6 stale headers fixed |
 | 5 | Build hygiene | not started |
 | 6 | Host duplication | not started |
 | 7 | ABI surface | not started |
@@ -399,3 +399,83 @@ and run in the Unity editor, which the headless runner never touches.
 | `PaintAllocationTests.cs:282` drive allocations to 0 | real, a perf goal with a number attached |
 
 None is stale and none claims something already done. Left alone.
+
+---
+
+## 4. Test hygiene
+
+**Status: in progress.** The inventory is done and the answer is better than
+expected. One misleading file header is fixed; five remain.
+
+### Nothing is suppressed
+
+| Mechanism | Count |
+|---|---|
+| `[Ignore]` attributes | **0** |
+| `[Explicit]` attributes | 2 |
+| `Assert.Inconclusive` | 11 |
+| `Assume.That` | 52 |
+
+There is not a single ignored test in the C# suites. The two `[Explicit]`
+classes are both capture tools that write PNGs for a human to look at
+(`RenderGoldenCaptureTests`, `NativeGameViewCaptureTests`), correctly kept out
+of default runs. The `Assume.That` uses are environment guards — no OS font
+enumeration, no GPU, no sample file — which is what `Assume` is for.
+
+So the honest answer to "what is switched off and can it come back on" is:
+nothing is switched off.
+
+### 4.1 ...but 104 comments still describe `[Ignore]` markers — 1 of 6 fixed
+
+Nine files mention `[Ignore]` in prose. **All nine have zero `[Ignore]`
+attributes.** Three of the mentions are accurate history ("un-ignored — now
+green", "previously `[Ignore]`'d"). Six actively mislead, in the present tense:
+
+| File | Claim | Reality |
+|---|---|---|
+| `QuotesAndQuoteContentTests` | "`quotes` is NOT registered ... GetId returns -1 ... marked `[Ignore]`" | registered, inherited, initial `auto`; nothing skipped — **fixed** |
+| `FontVariantFeatureSettingsSizeAdjustTests` | "marked with `[Ignore]`" | none |
+| `ForcedColorAdjustCascadeTests` | "the `[Ignore]` markers ... should be removed" | already removed |
+| `FloatFragmentationTests` | "test is `[Ignore]`'d" | none |
+| `MarginCollapsingTests` | "Each `[Ignore]`'d test" | none |
+| `NegativeMarginTests` | "the spec-correct test is `[Ignore]`'d" | none |
+
+`QuotesAndQuoteContentTests` was the worst and is fixed. Its 20-line header said
+`quotes` was unregistered, that `GetId` returned -1, and that the spec tests were
+skipped — while the file's own `Quotes_is_registered_inherited_initial_auto`
+asserts the property is registered, inherited, and initialises to `auto`, and
+`CssProperties.cs:1107` does `Add("quotes", true, "auto")`. A reader trusting
+the header would conclude a working feature was missing.
+
+The remaining five need the same treatment but each needs checking one at a
+time: a green test is not proof the spec behaviour landed, because the test may
+have been rewritten to assert the engine's divergence instead. That distinction
+is the whole value of the comment, so it is worth getting right rather than
+bulk-editing. Next iteration.
+
+### 4.2 Known-failing sets, so a new red is obvious
+
+Re-measured on this branch after the area 3 gate repair:
+
+| Suite | How to run | Result |
+|---|---|---|
+| Headless C# | `dotnet run --project Tools/TestVerifyAll -c Release` | **9,929 pass / 2 fail / 57 skip** |
+| Unity EditMode Native | `-testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native` | 98 pass / 2 inconclusive |
+| Unity PlayMode rendering | `-testPlatform PlayMode -testFilter Weva.Tests.Rendering` | 302 pass / 8 fail |
+| C++ core (gcc and clang-ASan) | `~/weva/build-{gcc,clang}` | 505,882 checks / 0 |
+
+The two C# failures are `SnapshotLayoutTests.Stylesheet_change_after_layout_then_relayout_parity`
+and `FillInheritedBitsetTests.Inherited_property_flows_from_parent`, both
+`ArgumentOutOfRangeException`, both long-standing. **A third is new.**
+
+The 57 skips are benchmark classes (`CascadeBench` 11, `LayoutBench` 14,
+`PaintBench` 7, `EndToEndBench` 4) plus 21 others — benchmarks are not
+assertions and skip by design in the runner.
+
+Note the pass count: project memory records `9,905 / 2`. The real figure is
+**9,929 / 2**, and it was unobtainable at all while the runner did not build
+(area 3.3). Memory is worth updating.
+
+Caveat on the PlayMode 302/8: ten of those "passes" are the GPU goldens from
+2.1, which pass without comparing anything. The honest figure is 292 verified
+passes, 10 vacuous, 8 failures.

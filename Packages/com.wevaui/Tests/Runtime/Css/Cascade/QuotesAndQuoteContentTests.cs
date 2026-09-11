@@ -8,22 +8,18 @@ namespace Weva.Tests.Css.Cascade {
     // CSS Generated Content Level 3 §3 — `quotes` property + open-quote /
     // close-quote / no-open-quote / no-close-quote content keywords.
     //
-    // REGISTRATION STATE (as of this file):
-    //   `quotes` is NOT registered in CssProperties.cs.
-    //   CssProperties.GetId("quotes") returns -1, so ComputedStyle.Get("quotes")
-    //   returns null when authored.
+    // REGISTRATION STATE: `quotes` is registered — CssProperties.cs adds it as
+    // inherited with initial `auto`, per CSS Generated Content L3 §3, and
+    // Quotes_is_registered_inherited_initial_auto pins all three of those.
     //
-    //   This is a known gap. Tests requiring a registered property are marked
-    //   [Ignore("found regression — quotes not registered in CssProperties")] so
-    //   they appear as skipped rather than failing.
-    //
-    //   Tests that ARE runnable:
-    //     - Pin GetId returns -1 (guards against accidental silent registration).
-    //     - `content: open-quote` / `close-quote` cascade round-trip — `content`
-    //       IS registered (initial "normal", non-inherited). The cascade must
-    //       carry the raw keyword token for the rendering layer to interpret.
-    //     - `content: no-open-quote` / `no-close-quote` round-trip.
-    //     - `content: normal` / `content: none` initial/explicit behaviors.
+    // Nothing in this file is skipped. Every test below runs:
+    //   - the registration and its spec-correct flags;
+    //   - `quotes` cascade and inheritance round-trips;
+    //   - `content: open-quote` / `close-quote` / `no-open-quote` /
+    //     `no-close-quote` round-trips — `content` is registered (initial
+    //     "normal", non-inherited) and the cascade carries the raw keyword
+    //     token for the rendering layer to interpret;
+    //   - `content: normal` / `content: none` initial and explicit behaviour.
     //
     // Spec references:
     //   CSS Generated Content L3 §3: `quotes` property syntax and inheritance.
@@ -146,8 +142,8 @@ namespace Weva.Tests.Css.Cascade {
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // Spec-required behaviour once `quotes` is registered.
-        // Marked [Ignore] so the test suite shows them as skipped.
+        // Spec-required behaviour now that `quotes` is registered. These ran as
+        // skipped while it was not; they run and pass now.
         // ══════════════════════════════════════════════════════════════════
 
         [Test]
