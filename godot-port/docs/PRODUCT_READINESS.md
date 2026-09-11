@@ -109,9 +109,13 @@ Chrome, the automatic mode was up to 0.95 px off per string above 20 px and
 quarter-pixel positioning is within 0.09 px at every size. The Frontier Camp
 parity harness now also measures the 25 px and 32 px headings: their 22 width
 findings disappear and nothing else moves; 33 vertical findings on the same
-headings (Blink's rounded ascent and descent, metrics-table choice) remain
-and are tracked separately. Adapter suites pass on Windows (19,695) and stock
-Linux (19,829). [Evidence](verification/textserver-subpixel.json).
+headings remained. Those turned out to be one thing, not Blink's metrics-table
+choice: a synthesized bold face measured through FreeType's ceiled pixel
+metrics (35 + 10 at 32 px) while the regular face used the design-rounded
+extents Blink uses (34 + 9). The derived face now carries the base's bytes
+and rounds the same way; the harness reports 0 geometry findings
+over 1408 checks after the fix. Adapter suites pass on Windows
+(19,699) and stock Linux. [Evidence](verification/textserver-subpixel.json).
 
 A controller can now type: a pad accept on a focused text field emits
 `text_entry_requested` and `WevaView` opens an on-screen keyboard along the

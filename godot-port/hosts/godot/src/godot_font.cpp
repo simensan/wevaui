@@ -858,6 +858,11 @@ uint64_t GodotFontBackend::variant(void* self, uint64_t face, int32_t weight, in
         "font variant: base %llu derived %llu weight %d italic %d\n",
         static_cast<unsigned long long>(face), static_cast<unsigned long long>(handle), weight, italic);
     me->faces_[handle] = std::move(derived);
+    // The same bytes as the base: face_metrics rounds a synthesized
+    // variant's design extents the way it rounds the regular face's, so a
+    // bold heading's line is 43px at 32px like Chrome's, not FreeType's
+    // ceiled 45.
+    me->face_data_[handle] = data_it->second;
     me->variants_[key] = handle;
     if (shareable) me->share_shapes(handle, primary_variant);
     return handle;

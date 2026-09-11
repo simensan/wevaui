@@ -232,5 +232,26 @@
       "entries": 53,
       "checks": 35635
     }
+  },
+  "vertical_metrics": {
+    "date": "2026-09-11",
+    "cause": "a synthesized weight (the theme font ships one file; `h1` is 600) was a derived face without the primary's bytes, so face_metrics took FreeType's pixel-sized path -- ceil(ascent) + ceil(descent) -- while the regular face took the design-rounded path Blink uses: for Open Sans SemiBold at 32px that is 35 + 10 = 45 against Blink's 34 + 9 = 43, the two-pixel h1 height finding, and the one-pixel y shifts below it",
+    "fix": "GodotFontBackend::variant records the base's bytes for the derived handle, so face_metrics rounds its design extents the same way (godot_font.cpp)",
+    "font_check": "fontTools on the harness font: upem 2048, hhea ascent 2189 / descent -600 / lineGap 0, USE_TYPO_METRICS set with the same typo values; at 32px design ascent 34.203 and descent 9.375",
+    "harness": "hosts/godot/run_frontier_chrome.py, same selectors as sample_parity.after",
+    "after": {
+      "geometry_checks": 1408,
+      "geometry_findings": 0,
+      "by_axis": {},
+      "by_selector": {},
+      "behavior_failures": 0,
+      "passed": true,
+      "library_sha256": "00611ea03d31389989af02070480a2fd0cbd510e1ef863edda842e2c056b3e04",
+      "dir": ".utmp/safe-engine71/vertical-metrics"
+    },
+    "adapter_suite": {
+      "windows": "19,699 checks, 0 failures (four new: a synthesized weight reports the regular face's rounded design metrics; the oracle now takes its vertical metrics from a face adopted with its bytes)",
+      "linux_stock": "19,833 checks, 0 failures (stock Godot 4.7.1 under WSL)"
+    }
   }
 }

@@ -277,7 +277,16 @@ class WevaFontBackendTests : public RefCounted {
         {
             weva_godot::GodotFontBackend raster, metrics;
             result = snapshot(raster, raster.adopt(painted));
-            result.advance = snapshot(metrics, metrics.adopt(regular)).advance;
+            // The advance and the vertical metrics come from a face adopted
+            // WITH its bytes: that is the quarter-pixel, design-rounded path
+            // every adapter-owned face and every synthesized variant takes.
+            TypedArray<RID> owned;
+            owned.push_back(regular);
+            const FontSnapshot reference = snapshot(metrics, metrics.adopt(owned, data, false));
+            result.advance = reference.advance;
+            result.ascent = reference.ascent;
+            result.descent = reference.descent;
+            result.gap = reference.gap;
         }
         ts->free_rid(regular);
         return result;
@@ -313,6 +322,12 @@ class WevaFontBackendTests : public RefCounted {
                 const int weight = slot ? 900 : 700;
                 faces[slot] = table.variant(table.user_data, base, weight, 0);
                 saved[slot] = snapshot(backend, faces[slot]);
+                // Blink rounds the scaled design ascent and descent to the
+                // nearest pixel for a synthesized weight exactly as for the
+                // regular face; FreeType's ceiled pixel metrics made a 32px
+                // bold heading 45px tall where Chrome's is 43.
+                check(saved[slot].ascent == regular.ascent && saved[slot].descent == regular.descent,
+                      "a synthesized weight reports the regular face's rounded design metrics");
                 const RID expected_font = ts->create_font();
                 ts->font_set_data(expected_font, data);
                 ts->font_set_subpixel_positioning(expected_font, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
