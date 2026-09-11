@@ -536,7 +536,7 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     uint64_t h = kFnvOffset;
     if (shape_key_folds_validity_) { h ^= form_validity_selector_state(e); h *= kFnvPrime; }
     if (shape_key_folds_range_) { h ^= form_range_selector_state(e); h *= kFnvPrime; }
-    if (shape_key_folds_default_) { h ^= form_is_default(e); h *= kFnvPrime; }
+    if (shape_key_folds_default_) { h ^= static_cast<uint64_t>(form_is_default(e)); h *= kFnvPrime; }
     if (!container_queries_.empty()) {
         h ^= container_provider_ ? container_provider_->version(e) : 0;
         h *= kFnvPrime;
@@ -584,7 +584,7 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     for (const Element* a = parent_el(e); a; a = parent_el(*a)) {
         if (shape_key_folds_validity_) { h ^= form_validity_selector_state(*a); h *= kFnvPrime; }
         if (shape_key_folds_range_) { h ^= form_range_selector_state(*a); h *= kFnvPrime; }
-        if (shape_key_folds_default_) { h ^= form_is_default(*a); h *= kFnvPrime; }
+        if (shape_key_folds_default_) { h ^= static_cast<uint64_t>(form_is_default(*a)); h *= kFnvPrime; }
         uint64_t anc = 0;
         anc ^= hash_str(a->tag_name());
         anc ^= hash_str(a->id()) * 257ULL;

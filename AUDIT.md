@@ -15,7 +15,7 @@ touched.
 | 2 | Dead and stale material | **swept** — 3 fixes landed, 3 findings need a decision |
 | 3 | TODO / FIXME / HACK inventory | **done** — 10 found, 2 stale ones fixed, and a broken gate repaired |
 | 4 | Test hygiene | **done** — nothing suppressed; all 6 stale headers fixed |
-| 5 | Build hygiene | not started |
+| 5 | Build hygiene | **MSVC done** — 3 warnings fixed; gcc/clang blocked by the worktree |
 | 6 | Host duplication | not started |
 | 7 | ABI surface | not started |
 | 8 | Docs accuracy | not started |
@@ -498,3 +498,112 @@ Note the pass count: project memory records `9,905 / 2`. The real figure is
 Caveat on the PlayMode 302/8: ten of those "passes" are the GPU goldens from
 2.1, which pass without comparing anything. The honest figure is 292 verified
 passes, 10 vacuous, 8 failures.
+
+---
+
+## 5. Build hygiene
+
+**Status: in progress.** MSVC audited end to end and three warnings fixed.
+gcc and clang could not be run from here — see the constraint below.
+
+### A constraint worth recording
+
+**WSL is blocked in a worktree-isolated session.** Every `wsl …` invocation is
+refused, so `~/weva/build-gcc` and `~/weva/build-clang` — the gcc and
+clang-ASan/UBSan trees this project verifies against — are unreachable from
+this branch. The gcc, clang and sanitizer halves of this area need a run from
+the main checkout.
+
+What does work from here: a fresh MSVC configure and build of the worktree's
+own sources, which produces `weva_tests.exe`. That is a real verification path,
+and every C++ claim below was checked through it.
+
+### 5.1 The flags, and an asymmetry
+
+| Toolchain | Flags | Suppressions |
+|---|---|---|
+| MSVC | `/W4 /EHs-c- /utf-8` | **9**: C4100, C4127, C4244, C4267, C4456-4459, C4702 |
+| gcc / clang | `-Wall -Wextra -Wpedantic -fno-exceptions` | none |
+
+No `-Werror` and no `/WX` anywhere, including CI. A new warning fails nothing.
+
+Two of the nine suppressions are not cosmetic:
+
+- **C4244 / C4267** — narrowing conversions and `size_t` truncation. This is the
+  one warning class that matters most here, because the root `CMakeLists.txt`
+  states the correctness property itself: *"layout computes in double and the
+  oracle compares bit-identical geometry against the C# implementation"*. A
+  silent `double`→`float` or 64-bit→`int` narrowing is exactly how that property
+  breaks.
+- And the gap is **symmetric, not an MSVC quirk**: gcc's equivalent
+  `-Wconversion` is not in `-Wall -Wextra` either. So *neither* toolchain warns
+  about narrowing. Turning it on is likely noisy, but it is worth one measured
+  look given what it guards.
+
+The shadowing suppressions (C4456-4459) are likewise symmetric — gcc's
+`-Wshadow` is not in `-Wall -Wextra`. Shadowing is live in this codebase: the
+background rasterizer deliberately shadows `width`/`height` per layer.
+
+### 5.2 MSVC warnings: 3 fixed, 8 left — all verified
+
+A clean MSVC build of this worktree produced 35 warnings. After the fixes:
+
+| Code | Count | Verdict |
+|---|---|---|
+| D9025 (`/EHs` overridden by `/EHs-`) | 38 | noise; CMake adds `/EHsc` before our `/EHs-c-`. Fixable by clearing the default rather than overriding it. |
+| C4190 (C linkage returning a UDT) | 8 | **structural, left alone — see below** |
+| C4805 (`uint64_t ^= bool`) | 2 | **fixed** |
+| C5030 (`[[gnu::cold]]` unrecognised) | 2 | expected; a gcc attribute seen by MSVC. Worth a guard. |
+| C4389 (signed/unsigned `==`) | 1 | **fixed** |
+
+**C4805, fixed.** `cascade.cpp` folds three form-state functions into the
+shape-key hash on consecutive lines; two return `int`, `form_is_default`
+returns `bool`. Folding one bit into an FNV hash is intended and correct, so
+this was not a bug — but an explicit `static_cast<uint64_t>` states the intent
+and matches its two neighbours.
+
+**C4389, fixed.** `weva_c.cpp` stored `Element::form_version()` — an `int64_t` —
+in a `uint64_t vertical_version`, so every comparison mixed signedness. It works
+today because the counter only counts up, and it would stop working quietly the
+moment anything returned a negative sentinel. Changed the field to `int64_t` to
+match the only thing ever assigned to it.
+
+**C4190, left alone and worth a decision.** Eight internal helpers —
+`ascii_lower`, `cursor_keyword_at`, `tooltip_style`, `parse_fragment`,
+`key_of`, `split_declarations`, `trim_decl`, `declaration_property` — sit
+*inside* the `extern "C" {` block that opens at `weva_c.cpp:3504`, and return
+`std::string`, `std::vector` or `std::string_view`. C linkage returning a C++
+type is formally not portable; it compiles and runs correctly here because
+caller and callee are the same translation unit.
+
+It is not a bug, but it is the ABI boundary being untidy: helpers with nothing
+to do with the C API have C linkage by accident of where they were typed. The
+fix is to move the eight above the `extern "C" {`, which is mechanical but
+touches a 9,000-line file and wants the full gcc + clang-ASan run to land
+safely. Flagged rather than done.
+
+**Verification.** MSVC build of this worktree, before and after:
+
+| | C-code warnings | Core suite |
+|---|---|---|
+| Before | 13 (8 C4190, 2 C4805, 2 C5030, 1 C4389) | 505,882 checks / 0 |
+| After | 8 (C4190 only) | **505,882 checks / 0** |
+
+### 5.3 Sanitizers: better than expected
+
+- ASan + UBSan with `-fno-sanitize-recover=all` on gcc/clang; ASan only on MSVC,
+  and the CMake says why (MSVC has no UBSan).
+- CI runs the core matrix with sanitizers both `ON` and `OFF`, on
+  ubuntu-24.04 and windows-2022.
+- `weva_asan_active` and `weva_ubsan_active` are probe *tests* that assert the
+  sanitizer actually traps — so a misconfigured build that silently drops
+  instrumentation fails instead of passing quietly. That is the failure mode
+  most sanitizer setups have, and this one guards against it.
+
+No TSan, which is correct: the core is single-threaded by design. The only
+concurrency is two `std::atomic` counters for monotonic ids, and eleven files
+using `thread_local` for per-thread scratch. Nothing to race.
+
+### Still to do in this area
+
+The gcc and clang-ASan warning counts, from the main checkout where WSL works.
