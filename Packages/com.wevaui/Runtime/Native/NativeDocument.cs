@@ -28,6 +28,21 @@ namespace Weva.Native
         public double X, Y, Width, Height;
     }
 
+    /// <summary>One queued document event, as weva_event with its full text read back.</summary>
+    public struct NativeEvent
+    {
+        public weva_event_kind Kind;
+        public uint Target;
+        public double X, Y;
+        public uint Buttons;
+        public weva_key Key;
+        public uint Modifiers;
+        /// <summary>The text a key produced, a value, or a toggle state; complete, not the struct's 8-byte prefix.</summary>
+        public string Text;
+        /// <summary>The value of the nearest `on-&lt;event&gt;` attribute, or empty.</summary>
+        public string Handler;
+    }
+
     public sealed unsafe class NativeDocument : IDisposable
     {
         private IntPtr _handle;
@@ -316,6 +331,320 @@ namespace Weva.Native
             {
                 WevaNative.weva_document_destroy(_handle);
                 _handle = IntPtr.Zero;
+            }
+        }
+
+        // ---- interaction: the same calls the Godot host's _gui_input makes ----
+
+        /// <summary>Moves the pointer in document pixels; buttons is a weva_pointer_button mask, modifiers a weva_key_modifier mask.</summary>
+        public void SetPointer(double x, double y, uint buttons = 0, uint modifiers = 0)
+        {
+            WevaNative.weva_document_set_pointer_modifiers(Handle, x, y, buttons, modifiers);
+        }
+
+        public void ClearPointer()
+        {
+            WevaNative.weva_document_clear_pointer(Handle);
+        }
+
+        /// <summary>A key edge. Returns true when the document consumed it (a host then keeps it from gameplay).</summary>
+        public bool Key(weva_key key, bool down, uint modifiers = 0)
+        {
+            return WevaNative.weva_document_key(Handle, (int)key, modifiers, down ? 1 : 0) != 0;
+        }
+
+        /// <summary>Characters a key produced. Returns true when a field or a select took them.</summary>
+        public bool TryTextInput(string text, uint modifiers = 0)
+        {
+            byte[] utf8 = NullTerminated(text);
+            fixed (byte* p = utf8)
+            {
+                return WevaNative.weva_document_try_text_input_modifiers(Handle, p, modifiers) != 0;
+            }
+        }
+
+        public bool PasteText(string text)
+        {
+            byte[] utf8 = NullTerminated(text);
+            fixed (byte* p = utf8)
+            {
+                return WevaNative.weva_document_paste_text(Handle, p) != 0;
+            }
+        }
+
+        /// <summary>A wheel or pan at a point. Returns true when something scrolled; a host passes the wheel on otherwise.</summary>
+        public bool Scroll(double x, double y, double dx, double dy)
+        {
+            return WevaNative.weva_document_scroll(Handle, x, y, dx, dy) != 0;
+        }
+
+        public bool SelectWordAt(double x, double y)
+        {
+            return WevaNative.weva_document_select_word_at(Handle, x, y) != 0;
+        }
+
+        public bool SelectAll() => WevaNative.weva_document_select_all(Handle) != 0;
+        public bool Undo() => WevaNative.weva_document_undo(Handle) != 0;
+        public bool Redo() => WevaNative.weva_document_redo(Handle) != 0;
+
+        /// <summary>The selected text in the focused field, or empty.</summary>
+        public string SelectedText()
+        {
+            return ReadString((buffer, capacity) => WevaNative.weva_document_selected_text(Handle, buffer, capacity));
+        }
+
+        /// <summary>Tab order: the next focusable element, or WEVA_ELEMENT_NONE at the edge when wrap is false.</summary>
+        public uint FocusStep(bool backwards, bool wrap)
+        {
+            return WevaNative.weva_document_focus_step(Handle, backwards ? 1 : 0, wrap ? 1 : 0);
+        }
+
+        public uint Focus => WevaNative.weva_document_focus(Handle);
+
+        public bool SetFocus(uint element)
+        {
+            return WevaNative.weva_document_set_focus(Handle, element) == (int)weva_status.WEVA_OK;
+        }
+
+        public bool SetFocus(string selector)
+        {
+            uint e = Query(selector);
+            return e != WevaNative.WEVA_ELEMENT_NONE && SetFocus(e);
+        }
+
+        /// <summary>The element under a point after hit testing (pointer-events honoured), or WEVA_ELEMENT_NONE.</summary>
+        public uint ElementAt(double x, double y) => WevaNative.weva_document_element_at(Handle, x, y);
+
+        /// <summary>Whether a press at the point belongs to this document, so a host can route it elsewhere otherwise.</summary>
+        public bool AcceptsPointer(double x, double y) => WevaNative.weva_document_accepts_pointer(Handle, x, y) != 0;
+
+        /// <summary>The focused text control an IME should be active over, or WEVA_ELEMENT_NONE.</summary>
+        public uint TextInputTarget => WevaNative.weva_document_text_input_target(Handle);
+
+        public bool SetComposition(string text, int start, int end)
+        {
+            byte[] utf8 = NullTerminated(text);
+            fixed (byte* p = utf8)
+            {
+                return WevaNative.weva_document_set_composition(Handle, p, start, end) != 0;
+            }
+        }
+
+        public bool CommitComposition(string text)
+        {
+            byte[] utf8 = NullTerminated(text);
+            fixed (byte* p = utf8)
+            {
+                return WevaNative.weva_document_commit_composition(Handle, p) != 0;
+            }
+        }
+
+        public bool TryGetCaretBounds(out NativeBounds bounds)
+        {
+            double x, y, w, h;
+            int ok = WevaNative.weva_document_caret_bounds(Handle, &x, &y, &w, &h);
+            bounds = new NativeBounds { X = x, Y = y, Width = w, Height = h };
+            return ok != 0;
+        }
+
+        /// <summary>Whether a held gesture (a pressed slider, a held key) wants input time on the next update.</summary>
+        public bool NeedsInputTick => WevaNative.weva_document_needs_input_tick(Handle) != 0;
+
+        /// <summary>Update with separate animation and input clocks (a paused game keeps its gestures alive).</summary>
+        public void Update(double animationSeconds, double inputSeconds)
+        {
+            BeforeUpdate?.Invoke();
+            Check(WevaNative.weva_document_update_with_input_time(Handle, animationSeconds, inputSeconds), "weva_document_update_with_input_time");
+        }
+
+        /// <summary>
+        /// Drains the event queue. Events are queued by the core and polled by
+        /// the host after an update, never called back mid-update.
+        /// </summary>
+        public int PollEvents(List<NativeEvent> into)
+        {
+            if (into == null) throw new ArgumentNullException(nameof(into));
+            int count = 0;
+            weva_event e;
+            while (WevaNative.weva_document_poll_event(Handle, &e) != 0)
+            {
+                var ev = new NativeEvent
+                {
+                    Kind = (weva_event_kind)e.kind,
+                    Target = e.target,
+                    X = e.x,
+                    Y = e.y,
+                    Buttons = e.buttons,
+                    Key = (weva_key)e.key,
+                    Modifiers = e.modifiers,
+                    Handler = Encoding.UTF8.GetString(e.handler, StringLength(e.handler, 48)),
+                };
+                // The struct carries a short prefix; the full text (a paste, a
+                // composition) is read back before the next poll.
+                int inline = StringLength(e.text, 8);
+                nuint needed = WevaNative.weva_document_event_text(Handle, null, 0);
+                if (needed > (nuint)inline)
+                {
+                    byte[] buffer = new byte[(int)needed + 1];
+                    fixed (byte* p = buffer)
+                    {
+                        WevaNative.weva_document_event_text(Handle, p, (nuint)buffer.Length);
+                    }
+                    ev.Text = Encoding.UTF8.GetString(buffer, 0, (int)needed);
+                }
+                else
+                {
+                    ev.Text = Encoding.UTF8.GetString(e.text, inline);
+                }
+                into.Add(ev);
+                count++;
+            }
+            return count;
+        }
+
+        private static int StringLength(byte* text, int capacity)
+        {
+            int n = 0;
+            while (n < capacity && text[n] != 0) n++;
+            return n;
+        }
+
+        // ---- elements --------------------------------------------------------
+
+        public string ElementId(uint element) => ElementAttribute(element, "id");
+
+        public bool ElementContains(uint ancestor, uint descendant) => WevaNative.weva_element_contains(Handle, ancestor, descendant) != 0;
+
+        /// <summary>A form control's current value ("on" for a checked box); empty for anything else.</summary>
+        public string ElementValue(uint element)
+        {
+            return ReadString((buffer, capacity) => WevaNative.weva_element_value(Handle, element, buffer, capacity));
+        }
+
+        /// <summary>Changes whenever a control's value, validity or edit source changes; what a host compares to know a write did something.</summary>
+        public ulong ElementFormVersion(uint element) => WevaNative.weva_element_form_version(Handle, element);
+
+        public bool SetElementValue(uint element, string value)
+        {
+            byte[] utf8 = NullTerminated(value);
+            fixed (byte* p = utf8)
+            {
+                return WevaNative.weva_element_set_value(Handle, element, p) == (int)weva_status.WEVA_OK;
+            }
+        }
+
+        public string ElementAttribute(uint element, string name)
+        {
+            byte[] n = NullTerminated(name);
+            fixed (byte* np = n)
+            {
+                byte* namePtr = np;
+                return ReadString((buffer, capacity) => WevaNative.weva_element_attribute(Handle, element, namePtr, buffer, capacity));
+            }
+        }
+
+        public bool ElementHasAttribute(uint element, string name)
+        {
+            byte[] n = NullTerminated(name);
+            fixed (byte* p = n)
+            {
+                return WevaNative.weva_element_has_attribute(Handle, element, p) != 0;
+            }
+        }
+
+        public bool SetElementAttribute(uint element, string name, string value)
+        {
+            byte[] n = NullTerminated(name);
+            byte[] v = NullTerminated(value);
+            fixed (byte* np = n)
+            fixed (byte* vp = v)
+            {
+                return WevaNative.weva_element_set_attribute(Handle, element, np, vp) == (int)weva_status.WEVA_OK;
+            }
+        }
+
+        public string ElementText(uint element)
+        {
+            return ReadString((buffer, capacity) => WevaNative.weva_element_text(Handle, element, buffer, capacity));
+        }
+
+        public bool TryGetElementScroll(uint element, out double x, out double y, out double maxX, out double maxY)
+        {
+            double sx, sy, mx, my;
+            int status = WevaNative.weva_element_scroll(Handle, element, &sx, &sy, &mx, &my);
+            x = sx; y = sy; maxX = mx; maxY = my;
+            return status == (int)weva_status.WEVA_OK;
+        }
+
+        public bool SetElementScroll(uint element, double x, double y)
+        {
+            return WevaNative.weva_element_set_scroll(Handle, element, x, y) == (int)weva_status.WEVA_OK;
+        }
+
+        /// <summary>Every element the selector matches, in document order.</summary>
+        public uint[] QueryAll(string selector)
+        {
+            byte[] sel = NullTerminated(selector);
+            fixed (byte* p = sel)
+            {
+                nuint count = WevaNative.weva_document_query_all(Handle, p, null, 0);
+                if (count == 0) return Array.Empty<uint>();
+                uint[] result = new uint[(int)count];
+                fixed (uint* r = result)
+                {
+                    nuint written = WevaNative.weva_document_query_all(Handle, p, r, count);
+                    if (written < count) Array.Resize(ref result, (int)written);
+                }
+                return result;
+            }
+        }
+
+        /// <summary>A data path with the element's data-each aliases unwound (`quest.Done` to `Quests.3.Done`).</summary>
+        public string ModelPath(uint element, string path)
+        {
+            byte[] raw = NullTerminated(path);
+            fixed (byte* rp = raw)
+            {
+                byte* rawPtr = rp;
+                return ReadString((buffer, capacity) => WevaNative.weva_element_model_path(Handle, element, rawPtr, buffer, capacity));
+            }
+        }
+
+        /// <summary>The data-each row an element sits in: its index and key. False outside a row.</summary>
+        public bool TryGetRow(uint element, out int index, out string key)
+        {
+            int i;
+            byte* buffer = stackalloc byte[128];
+            int ok = WevaNative.weva_element_row(Handle, element, &i, buffer, 128);
+            index = i;
+            key = ok != 0 ? Encoding.UTF8.GetString(buffer, StringLength(buffer, 128)) : string.Empty;
+            return ok != 0;
+        }
+
+        public bool ShowDialog(uint dialog, bool modal = true)
+        {
+            return WevaNative.weva_element_show_dialog(Handle, dialog, modal ? 1 : 0) == (int)weva_status.WEVA_OK;
+        }
+
+        public bool CloseDialog(uint dialog)
+        {
+            return WevaNative.weva_element_close_dialog(Handle, dialog) == (int)weva_status.WEVA_OK;
+        }
+
+        private delegate nuint SizedRead(byte* buffer, nuint capacity);
+
+        // The ABI's two-call convention: the size, then the bytes.
+        private string ReadString(SizedRead read)
+        {
+            byte* small = stackalloc byte[128];
+            nuint needed = read(small, 128);
+            if (needed == 0) return string.Empty;
+            if (needed < 128) return Encoding.UTF8.GetString(small, (int)needed);
+            byte[] large = new byte[(int)needed + 1];
+            fixed (byte* p = large)
+            {
+                needed = read(p, (nuint)large.Length);
+                return Encoding.UTF8.GetString(p, (int)needed);
             }
         }
 

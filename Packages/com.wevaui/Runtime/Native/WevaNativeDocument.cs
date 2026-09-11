@@ -102,11 +102,18 @@ namespace Weva.Native
             _doc.LoadHtml(Html != null ? Html.text : InlineHtml);
             _doc.SetCss(Css != null ? Css.text : InlineCss);
             _fonts.SyncCssFontFaces(_doc);
+            _bindings?.Refresh();
             _doc.Update(0);
         }
 
         private void Release()
         {
+#if WEVA_INPUTSYSTEM
+            _input?.Dispose();
+            _input = null;
+#endif
+            _bindings?.Dispose();
+            _bindings = null;
             _renderer?.Dispose();
             _renderer = null;
             _fonts?.Dispose();
@@ -115,17 +122,163 @@ namespace Weva.Native
             _doc = null;
         }
 
+        // ---- events, the way the Godot addon exposes its signals ---------------
+
+        /// <summary>Every polled event, in order.</summary>
+        public event Action<NativeEvent> Event;
+        /// <summary>A click (pointer or keyboard activation): the element's id.</summary>
+        public event Action<string> ElementClicked;
+        /// <summary>The value of the named on-&lt;event&gt; attribute and the element's id.</summary>
+        public event Action<string, string> HandlerInvoked;
+        /// <summary>A form control's value changed by the user: id and the new value.</summary>
+        public event Action<string, string> ValueChanged;
+        /// <summary>A value committed (focus left a changed field, a box toggled): id and value.</summary>
+        public event Action<string, string> Changed;
+        /// <summary>A form submitted: the form's id.</summary>
+        public event Action<string> FormSubmitted;
+        /// <summary>Focus moved: the focused element's id, or empty when dropped.</summary>
+        public event Action<string> Focused;
+
+        [Tooltip("Read the Input System's mouse and keyboard every frame and feed them to the document.")]
+        public bool AutoInput = true;
+        /// <summary>Whether the last frame's input was taken by the document (keep it from gameplay then).</summary>
+        public bool InputConsumed { get; private set; }
+
+        private readonly System.Collections.Generic.List<NativeEvent> _events = new System.Collections.Generic.List<NativeEvent>(16);
+#if WEVA_INPUTSYSTEM
+        private NativeInputFeed _input;
+#endif
+
         private void Update()
         {
             if (_doc == null) return;
             try
             {
-                _doc.Update(Application.isPlaying ? Time.deltaTime : 0);
+#if WEVA_INPUTSYSTEM
+                if (AutoInput && Application.isPlaying)
+                {
+                    _input ??= new NativeInputFeed(_doc);
+                    _input.Tick(_height);
+                    InputConsumed = _input.Consumed;
+                }
+#endif
+                float dt = Application.isPlaying ? Time.deltaTime : 0;
+                _doc.Update(dt, Application.isPlaying ? Mathf.Max(dt, 1e-6f) : 0);
+                PumpEvents();
             }
             catch (NativeException ex)
             {
                 LastError = ex.Message;
             }
+        }
+
+        /// <summary>Drains the core's event queue into the C# events. Called after every update.</summary>
+        public void PumpEvents()
+        {
+            if (_doc == null) return;
+            _events.Clear();
+            _doc.PollEvents(_events);
+            foreach (NativeEvent e in _events)
+            {
+                Event?.Invoke(e);
+                string id = e.Target == WevaNative.WEVA_ELEMENT_NONE ? string.Empty : _doc.ElementId(e.Target);
+                if (e.Handler.Length > 0)
+                {
+                    HandlerInvoked?.Invoke(e.Handler, id);
+                    Dispatch(e.Handler, id);
+                }
+                switch (e.Kind)
+                {
+                    case weva_event_kind.WEVA_EVENT_CLICK: ElementClicked?.Invoke(id); break;
+                    case weva_event_kind.WEVA_EVENT_VALUE_CHANGED:
+                        ValueChanged?.Invoke(id, _doc.ElementValue(e.Target));
+                        // A control wrote into the model: everything else bound
+                        // to that path (a HUD label) follows on this pump.
+                        if (_bindings != null && _bindings.WriteBack(e.Target)) _refreshPending = true;
+                        break;
+                    case weva_event_kind.WEVA_EVENT_CHANGE:
+                        Changed?.Invoke(id, _doc.ElementValue(e.Target));
+                        if (_bindings != null && _bindings.WriteBack(e.Target)) _refreshPending = true;
+                        break;
+                    case weva_event_kind.WEVA_EVENT_SUBMIT: FormSubmitted?.Invoke(id); break;
+                    case weva_event_kind.WEVA_EVENT_FOCUS: Focused?.Invoke(id); break;
+                    case weva_event_kind.WEVA_EVENT_BLUR: Focused?.Invoke(string.Empty); break;
+                }
+            }
+            if (_refreshPending) Refresh();
+        }
+
+        // ---- data binding and the controller ----------------------------------
+
+        private NativeBindings _bindings;
+        private object _controller;
+        private bool _refreshPending;
+
+        /// <summary>The bound data, or null before Bind.</summary>
+        public System.Collections.Generic.IDictionary<string, object> Data => _bindings?.Data;
+        /// <summary>A data-model control wrote into Data: the path and the text.</summary>
+        public event Action<string, string> DataChanged;
+
+        /// <summary>
+        /// Binds the document to a data model and a controller: `{{ path }}`,
+        /// data-class, data-each and data-model read the model; an
+        /// `on-&lt;event&gt;="Name"` attribute calls the controller's public
+        /// method `Name(string id)` (or `Name()`), the way the Godot addon's
+        /// bind_state does. Call RequestRefresh when the model changes.
+        /// </summary>
+        public void Bind(System.Collections.Generic.IDictionary<string, object> model, object controller = null)
+        {
+            _controller = controller;
+            if (_doc == null) return;
+            if (_bindings == null)
+            {
+                _bindings = new NativeBindings();
+                _bindings.DataChanged += (path, text) => DataChanged?.Invoke(path, text);
+            }
+            _bindings.Data = model ?? new System.Collections.Generic.Dictionary<string, object>();
+            _bindings.Install(_doc);
+            _refreshPending = false;
+        }
+
+        public object Controller
+        {
+            get => _controller;
+            set => _controller = value;
+        }
+
+        /// <summary>Re-reads every binding now. Returns how many nodes changed.</summary>
+        public int Refresh()
+        {
+            _refreshPending = false;
+            return _bindings?.Refresh() ?? 0;
+        }
+
+        /// <summary>Refreshes on the next update, once, however many times the model moved.</summary>
+        public void RequestRefresh()
+        {
+            _refreshPending = true;
+        }
+
+        /// <summary>The data-each row an element sits in (index and key), for a handler that needs its item.</summary>
+        public bool TryGetRow(uint element, out int index, out string key)
+        {
+            index = -1;
+            key = string.Empty;
+            return _doc != null && _doc.TryGetRow(element, out index, out key);
+        }
+
+        private void Dispatch(string handler, string id)
+        {
+            if (_controller == null) return;
+            System.Reflection.MethodInfo method = _controller.GetType().GetMethod(handler,
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, null, new[] { typeof(string) }, null);
+            if (method != null)
+            {
+                method.Invoke(_controller, new object[] { id });
+                return;
+            }
+            method = _controller.GetType().GetMethod(handler, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, null, Type.EmptyTypes, null);
+            method?.Invoke(_controller, null);
         }
 
 #if WEVA_URP
