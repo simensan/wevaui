@@ -165,8 +165,8 @@ void visual_position(const BoxTree& tree, BoxId box, double* x, double* y) {
     BoxId containing = kNoBox;
     bool skip_intermediate_scroll = false;
     for (BoxId b = box; b != kNoBox; b = tree[b].parent) {
-        ax += tree[b].x;
-        ay += tree[b].y;
+        ax += tree[b].x + tree[b].sticky_offset_x;
+        ay += tree[b].y + tree[b].sticky_offset_y;
         if (tree[b].position == PositionType::Absolute || tree[b].position == PositionType::Fixed) {
             containing = kNoBox;
             for (BoxId p = tree[b].parent; p != kNoBox; p = tree[p].parent) {
@@ -510,8 +510,9 @@ void run_recursive(BoxTree* tree, BoxId id, const LayoutContext& ctx, BlockLayou
             apply_absolute(tree, id, resolve_fixed_containing_block(*tree, id, ctx), ctx, block);
             break;
         default:
-            // Static and sticky: sticky needs a scroll position, which is a
-            // later slice, so it is left in flow.
+            // Static and sticky: sticky stays in flow here and takes its
+            // offsets from resolve_sticky_offsets, which knows the scroll
+            // positions (sticky.cpp).
             break;
     }
     for (BoxId c : tree->children(id)) run_recursive(tree, c, ctx, block);

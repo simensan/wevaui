@@ -685,6 +685,72 @@ void test_abi_placeholder_and_selection_pseudos() {
     }
 }
 
+// CSS Positioned Layout L3 §6.3 position: sticky. A header pins to the top of
+// its scroll container while its containing block is in view and scrolls
+// away with it after; a footer with `bottom: 0` rides the bottom edge.
+void test_abi_position_sticky() {
+    Doc doc("html, body { margin: 0 }"
+            " #sc { overflow: auto; height: 100px; width: 200px }"
+            " #cb { height: 200px } #pre { height: 50px }"
+            " #h { position: sticky; top: 0; height: 20px; background: #f00 }"
+            " #tail { height: 400px }"
+            " #f { position: sticky; bottom: 0; height: 20px; background: #00f }",
+            "<div id=sc><div id=cb><div id=pre></div><div id=h></div></div>"
+            "<div id=tail></div><div id=f></div></div>");
+    const weva_element_t sc = weva_document_query(doc.d, "#sc");
+    const weva_element_t h = weva_document_query(doc.d, "#h");
+    const weva_element_t f = weva_document_query(doc.d, "#f");
+    const auto top_of = [&](weva_element_t e) {
+        weva_document_update(doc.d, 0);
+        double x = 0, y = 0, w = 0, hh = 0;
+        weva_element_bounds(doc.d, e, &x, &y, &w, &hh);
+        return y;
+    };
+    // The natural positions: the header 50 down, the footer pinned up to the
+    // scrollport's bottom edge from its place after the tail.
+    CHECK(top_of(h) == 50);
+    CHECK(top_of(f) == 80);
+
+    // Scrolled 100: the header would be 50 above the scrollport, so it pins
+    // to the top; the footer still sits on the bottom edge.
+    weva_element_set_scroll(doc.d, sc, 0, 100);
+    CHECK(top_of(h) == 0);
+    CHECK(top_of(f) == 80);
+
+    // Scrolled 300: the containing block (200 tall) ends at 180 for a 20px
+    // header, so it was carried to 180 and has scrolled 120 out of view.
+    weva_element_set_scroll(doc.d, sc, 0, 300);
+    CHECK(top_of(h) == -120);
+    CHECK(top_of(f) == 80);
+
+    // At the end of the scroll the footer is 20 above its natural place, on
+    // the edge; the header is long gone.
+    weva_element_set_scroll(doc.d, sc, 0, 520);
+    CHECK(top_of(f) == 80);
+    CHECK(top_of(h) == -340);
+
+    // Back at the top everything returns to its natural place, and what is
+    // drawn agrees with the bounds: the header's red fill is at y=0 when
+    // pinned, and hit testing finds it there.
+    weva_element_set_scroll(doc.d, sc, 0, 100);
+    weva_document_update(doc.d, 0);
+    size_t count = 0;
+    const weva_draw* draws = weva_document_draws(doc.d, &count);
+    bool red_at_top = false;
+    for (size_t i = 0; i < count; ++i) {
+        if (draws[i].texture_id != 0 || draws[i].vertex_count < 3) continue;
+        const weva_vertex& v = draws[i].vertices[0];
+        if (!(v.r == 1 && v.g == 0 && v.b == 0)) continue;
+        float top = 1e9f;
+        for (size_t k = 0; k < draws[i].vertex_count; ++k) top = std::min(top, draws[i].vertices[k].y);
+        if (top == 0) red_at_top = true;
+    }
+    CHECK(red_at_top);
+    CHECK(weva_document_element_at(doc.d, 100, 10) == h);
+    weva_element_set_scroll(doc.d, sc, 0, 0);
+    CHECK(top_of(h) == 50);
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

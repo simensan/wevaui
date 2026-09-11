@@ -144,7 +144,7 @@ struct Search {
             if (!split) { table_positioned->push_back(std::move(entry)); return kNoBox; }
             deferred_self = std::move(entry);
         }
-        const double bx = ox + b.x, by = oy + b.y;
+        const double bx = ox + b.x + b.sticky_offset_x, by = oy + b.y + b.sticky_offset_y;
         Transform2D local;
         if (local_transform(tree, id, ctx, &local)) {
             x -= bx; y -= by;

@@ -404,6 +404,7 @@ void test_abi_caret_is_drawn();
 void test_abi_caret_color();
 void test_abi_color_scheme();
 void test_abi_placeholder_and_selection_pseudos();
+void test_abi_position_sticky();
 void test_abi_textarea_edits_its_content();
 void test_abi_textarea_newlines();
 void test_abi_textarea_line_keys();
@@ -957,6 +958,7 @@ int main() {
     test_abi_caret_color();
     test_abi_color_scheme();
     test_abi_placeholder_and_selection_pseudos();
+    test_abi_position_sticky();
     test_abi_textarea_edits_its_content();
     test_abi_textarea_newlines();
     test_abi_textarea_line_keys();

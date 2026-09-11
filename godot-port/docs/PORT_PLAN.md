@@ -3652,7 +3652,10 @@ an ABI surface), keep host-side (C#), drop.
 12. Subgrid: C# gates on `display: subgrid`, the core on
     `grid-template-columns: subgrid` (the spec form); pick the core's and fix
     the C# samples.
-13. `position: sticky` scroll tracking (parsed and stacking-aware, not moved).
+13. `position: sticky` DONE 2026-09-11: `sticky.cpp` pins each sticky box
+    against its scroll container's scrollport from the current scroll
+    positions (top/bottom/left/right, held inside the containing block);
+    paint, hit testing and element bounds add the offsets.
 14. `min-content` / `max-content` / `fit-content` / `fit-content()` as `width`
     DONE 2026-09-11 on blocks, floats and inline-blocks (block layout routes
     the keyword through the shrink-to-fit probes; min/max-width clamp as

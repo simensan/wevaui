@@ -2947,8 +2947,10 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         table_layer = b.z_index.value_or(0);
         table_isolation = table_positioned_isolation(b);
     }
-    const double x = origin_x + b.x;
-    const double y = origin_y + b.y;
+    // A sticky box is drawn where the sticky pass pinned it; its natural
+    // position stays in the tree.
+    const double x = origin_x + b.x + b.sticky_offset_x;
+    const double y = origin_y + b.y + b.sticky_offset_y;
     if (paint.reuse && !own_only && !descendants_only) {
         if (paint.reuse->tracks_inputs(id)) {
             const PaintReplayInputs inputs{x, y, state.opacity, state.scissor, state.transformed,

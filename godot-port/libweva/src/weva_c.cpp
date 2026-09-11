@@ -9,6 +9,7 @@
 #include "weva/components.h"
 #include "weva/block_layout.h"
 #include "weva/box_builder.h"
+#include "weva/sticky.h"
 #include "weva/animation.h"
 #include "weva/cascade.h"
 #include "weva/container_query_state.h"
@@ -2098,6 +2099,9 @@ struct weva_document {
     // Geometry-only passes already propagate paint input versions. Keep the
     // publication request separate from structural/layout invalidation.
     bool paint_pending = false;
+    // How many `position: sticky` boxes the last sticky pass found; -1 until
+    // the first pass after a layout. A page without any skips the walk.
+    int sticky_count = -1;
     // Whether an attribute was set since the last update. Only the cascade can
     // tell what an attribute did, but nothing can have changed if none was
     // touched -- and then even running the cascade is waste.
@@ -4343,6 +4347,8 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
             it = (it->second.first == 0 && it->second.second == 0) ? doc->scroll.erase(it)
                                                                   : std::next(it);
         }
+        // Scroll positions are settled: pin the sticky boxes against them.
+        doc->sticky_count = resolve_sticky_offsets(&doc->tree, doc->root, doc->ctx);
     }
 
     if (defer_input_scroll) {
@@ -4418,6 +4424,9 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         paint.active_option = list_state->second.active;
     doc->caret_painted = caret;
     doc->textures.begin_pass();
+    // A scroll since the last frame moves every sticky box; a page with none
+    // pays nothing here.
+    if (doc->sticky_count != 0) doc->sticky_count = resolve_sticky_offsets(&doc->tree, doc->root, doc->ctx);
     paint_tree(doc->tree, doc->root, doc->ctx, paint);
     if (stage_log) std::fprintf(stderr, "  paint reused: %zu subtrees\n", doc->backend.reused_boxes);
     doc->textures.end_pass(doc->render_backend());
