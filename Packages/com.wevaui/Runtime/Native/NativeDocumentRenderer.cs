@@ -34,6 +34,34 @@ namespace Weva.Native
             public Mesh Mesh;
             public ulong Texture;
             public int Triangles;
+            public int Blend;   // weva_blend_mode
+        }
+
+        private static readonly int IdBlend = Shader.PropertyToID("_WevaBlend");
+        private static readonly int IdSrcBlend = Shader.PropertyToID("_WevaSrcBlend");
+        private static readonly int IdDstBlend = Shader.PropertyToID("_WevaDstBlend");
+        private static readonly int IdBlendOp = Shader.PropertyToID("_WevaBlendOp");
+        private readonly Dictionary<(ulong, int), Material> _blendMaterials = new Dictionary<(ulong, int), Material>();
+
+        /// <summary>
+        /// The blend states a weva_blend_mode maps to: multiply, screen, darken and
+        /// lighten are plain states; the rest need the backdrop and draw normally.
+        /// </summary>
+        private static (int shaderMode, UnityEngine.Rendering.BlendMode src, UnityEngine.Rendering.BlendMode dst, UnityEngine.Rendering.BlendOp op) BlendStateFor(int blend)
+        {
+            switch ((weva_blend_mode)blend)
+            {
+                case weva_blend_mode.WEVA_BLEND_MULTIPLY:
+                    return (1, UnityEngine.Rendering.BlendMode.DstColor, UnityEngine.Rendering.BlendMode.Zero, UnityEngine.Rendering.BlendOp.Add);
+                case weva_blend_mode.WEVA_BLEND_SCREEN:
+                    return (2, UnityEngine.Rendering.BlendMode.One, UnityEngine.Rendering.BlendMode.OneMinusSrcColor, UnityEngine.Rendering.BlendOp.Add);
+                case weva_blend_mode.WEVA_BLEND_DARKEN:
+                    return (3, UnityEngine.Rendering.BlendMode.One, UnityEngine.Rendering.BlendMode.One, UnityEngine.Rendering.BlendOp.Min);
+                case weva_blend_mode.WEVA_BLEND_LIGHTEN:
+                    return (4, UnityEngine.Rendering.BlendMode.One, UnityEngine.Rendering.BlendMode.One, UnityEngine.Rendering.BlendOp.Max);
+                default:
+                    return (0, UnityEngine.Rendering.BlendMode.SrcAlpha, UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha, UnityEngine.Rendering.BlendOp.Add);
+            }
         }
 
         private Shader _shader;
@@ -129,6 +157,13 @@ namespace Weva.Native
                     Destroy(m);
                     _materials.Remove(id);
                 }
+                var stale = new List<(ulong, int)>();
+                foreach (var key in _blendMaterials.Keys) if (key.Item1 == id) stale.Add(key);
+                foreach (var key in stale)
+                {
+                    Destroy(_blendMaterials[key]);
+                    _blendMaterials.Remove(key);
+                }
             }
         }
 
@@ -165,7 +200,7 @@ namespace Weva.Native
                         j++;
                         continue;
                     }
-                    if (d.texture_id != texture) break;
+                    if (d.texture_id != texture || d.blend_mode != first.blend_mode) break;
                     int baseVertex = _positions.Count;
                     for (nuint v = 0; v < d.vertex_count; v++)
                     {
@@ -184,7 +219,7 @@ namespace Weva.Native
                 mesh.SetUVs(0, _uvs);
                 mesh.SetIndices(_indices, MeshTopology.Triangles, 0, false);
                 mesh.bounds = new Bounds(Vector3.zero, new Vector3(1e6f, 1e6f, 1f));
-                _batches.Add(new Batch { Mesh = mesh, Texture = texture, Triangles = _indices.Count / 3 });
+                _batches.Add(new Batch { Mesh = mesh, Texture = texture, Triangles = _indices.Count / 3, Blend = first.blend_mode });
                 TrianglesUploaded += _indices.Count / 3;
                 i = j;
             }
@@ -202,6 +237,27 @@ namespace Weva.Native
             var mesh = new Mesh { name = "Weva.Native.Batch", hideFlags = HideFlags.HideAndDontSave };
             mesh.MarkDynamic();
             return mesh;
+        }
+
+        private Material MaterialFor(ulong texture, int blend)
+        {
+            if (blend == (int)weva_blend_mode.WEVA_BLEND_NORMAL) return MaterialFor(texture);
+            var state = BlendStateFor(blend);
+            if (state.shaderMode == 0) return MaterialFor(texture);   // no plain blend state for it
+            EnsureShader();
+            if (_shader == null) return null;
+            if (!_blendMaterials.TryGetValue((texture, blend), out Material m))
+            {
+                Material basis = MaterialFor(texture);
+                if (basis == null) return null;
+                m = new Material(basis) { hideFlags = HideFlags.HideAndDontSave };
+                m.SetFloat(IdBlend, state.shaderMode);
+                m.SetFloat(IdSrcBlend, (float)state.src);
+                m.SetFloat(IdDstBlend, (float)state.dst);
+                m.SetFloat(IdBlendOp, (float)state.op);
+                _blendMaterials[(texture, blend)] = m;
+            }
+            return m;
         }
 
         private Material MaterialFor(ulong texture)
@@ -240,7 +296,7 @@ namespace Weva.Native
             cmd.SetGlobalInt(IdGamma, gamma ? 1 : 0);
             foreach (Batch b in _batches)
             {
-                Material m = MaterialFor(b.Texture);
+                Material m = MaterialFor(b.Texture, b.Blend);
                 if (m != null) cmd.DrawMesh(b.Mesh, Matrix4x4.identity, m);
             }
         }
@@ -257,7 +313,7 @@ namespace Weva.Native
             cmd.SetGlobalInt(IdGamma, 0);
             foreach (Batch b in _batches)
             {
-                Material m = MaterialFor(b.Texture);
+                Material m = MaterialFor(b.Texture, b.Blend);
                 if (m != null) cmd.DrawMesh(b.Mesh, Matrix4x4.identity, m);
             }
         }
@@ -313,6 +369,8 @@ namespace Weva.Native
             foreach (Texture2D t in _textures.Values) Destroy(t);
             _textures.Clear();
             foreach (Material m in _materials.Values) Destroy(m);
+            foreach (Material m in _blendMaterials.Values) Destroy(m);
+            _blendMaterials.Clear();
             _materials.Clear();
             if (_untextured != null) Destroy(_untextured);
             _untextured = null;

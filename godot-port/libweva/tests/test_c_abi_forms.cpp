@@ -1127,6 +1127,32 @@ void test_abi_reload_html() {
     CHECK(doc.value("#i") == "xy");
 }
 
+// Minor 33: `mix-blend-mode` rides on every draw of the element's subtree,
+// and a sibling painted after it is back to normal.
+void test_abi_mix_blend_mode() {
+    Doc doc("html, body { margin: 0 } div { width: 100px; height: 20px }"
+            " #m { mix-blend-mode: multiply; background: rgb(255, 0, 0) }"
+            " #m span { background: rgb(0, 255, 0) } #n { background: rgb(0, 0, 255) }"
+            " #s { mix-blend-mode: SCREEN; background: rgb(1, 1, 1) }",
+            "<div id=m><span>x</span></div><div id=n></div><div id=s></div>");
+    weva_document_update(doc.d, 0);
+    size_t count = 0;
+    const weva_draw* draws = weva_document_draws(doc.d, &count);
+    int multiplied = 0, normal = 0, screened = 0;
+    for (size_t i = 0; i < count; ++i) {
+        if (draws[i].vertex_count < 3) continue;
+        const weva_vertex& v = draws[i].vertices[0];
+        const bool red = v.r == 1 && v.g == 0 && v.b == 0, green = v.g == 1 && v.r == 0 && v.b == 0;
+        const bool blue = v.b == 1 && v.r == 0 && v.g == 0;
+        if ((red || green || draws[i].texture_id != 0) && draws[i].blend_mode == WEVA_BLEND_MULTIPLY) ++multiplied;
+        if (blue && draws[i].blend_mode == WEVA_BLEND_NORMAL) ++normal;
+        if (draws[i].blend_mode == WEVA_BLEND_SCREEN) ++screened;
+    }
+    CHECK(multiplied >= 3);   // #m's fill, the span's fill, the span's glyphs
+    CHECK(normal == 1);
+    CHECK(screened >= 1);
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

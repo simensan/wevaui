@@ -3606,9 +3606,12 @@ an ABI surface), keep host-side (C#), drop.
 
 **Port to the core, in the order the samples and tests lean on them:**
 
-1. `mask` / `mask-image` family and `mix-blend-mode`: nine `mask-*` properties
-   and both blend properties are registered with no consumer; `BlendMode` and
-   `composite_layers` exist in `render_interface.h` with no caller.
+1. `mask` / `mask-image` family and `mix-blend-mode`. `mix-blend-mode` DONE
+   2026-09-11 as a per-draw attribute (ABI minor 33 `weva_draw.blend_mode`,
+   all sixteen modes; Godot MUL/ADD/MIX on child items, Unity blend states for
+   multiply/screen/darken/lighten, the rest normal). Still open: `mask-image`
+   and `background-blend-mode` (the nine `mask-*` properties and the layer
+   blend are registered with no consumer; the C# masks per batch on the GPU).
 2. Colour. DONE 2026-09-11, core ahead (the C# parses rgb/hsl/hwb only):
    `lab()`, `lch()`, `oklab()`, `oklch()`, `color()` over the predefined
    spaces and XYZ, the modern space-separated syntax with `/ alpha` and

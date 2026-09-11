@@ -145,6 +145,7 @@ struct PaintReplayInputs {
     BoxId canvas_owner = kNoBox;
     std::shared_ptr<const OverflowClip> overflow;
     BoxId absolute_cb = kNoBox, fixed_cb = kNoBox;
+    BlendMode blend = BlendMode::Normal;
     bool operator==(const PaintReplayInputs& other) const;
 };
 

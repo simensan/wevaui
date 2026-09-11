@@ -75,6 +75,18 @@ func _ready() -> void:
 	for b in boxes:
 		if b["kind"] == "text" and b.get("text", "") == "hover": saw_text = true
 	_check(saw_text, "and the title's first word as a text run (words are runs of their own)")
+	# A blended box draws through its own item; the draw list says which.
+	var blended := WevaDocument.new()
+	blended.position = Vector2(2000, 2000)   # off to the side: it must not sit under the pointer tests below
+	blended.document_size = Vector2(200, 100)
+	blended.css = "#m { width: 50px; height: 20px; mix-blend-mode: multiply; background: rgb(255, 0, 0) }"
+	blended.html = "<div id=m></div>"
+	stage.add_child(blended)
+	blended.update_document()
+	await get_tree().process_frame
+	_check(blended.get_stats()["draws"] >= 1, "a mix-blend-mode box still draws")
+	stage.remove_child(blended)
+	blended.free()
 
 	# Isolate the two halves before asserting on them together: does the
 	# ENGINE hover, and does an event delivered by the window reach it?

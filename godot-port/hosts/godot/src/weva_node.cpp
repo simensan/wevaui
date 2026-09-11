@@ -664,6 +664,28 @@ WevaDocument::~WevaDocument() {
     if (rounded_shader_.is_valid()) rs_->free_rid(rounded_shader_);
 }
 
+RID WevaDocument::blend_item(int32_t blend_mode) {
+    CanvasItemMaterial::BlendMode godot_mode = CanvasItemMaterial::BLEND_MODE_MIX;
+    switch (blend_mode) {
+        case WEVA_BLEND_MULTIPLY: godot_mode = CanvasItemMaterial::BLEND_MODE_MUL; break;
+        case WEVA_BLEND_SCREEN: case WEVA_BLEND_LIGHTEN: case WEVA_BLEND_COLOR_DODGE:
+            godot_mode = CanvasItemMaterial::BLEND_MODE_ADD; break;
+        default: break;
+    }
+    Ref<CanvasItemMaterial>& material = blend_materials_[static_cast<int>(godot_mode)];
+    if (material.is_null()) {
+        material.instantiate();
+        material->set_blend_mode(godot_mode);
+    }
+    RenderingServer* rs = RenderingServer::get_singleton();
+    const RID item = rs->canvas_item_create();
+    rs->canvas_item_set_parent(item, get_canvas_item());
+    rs->canvas_item_set_material(item, material->get_rid());
+    rs->canvas_item_set_draw_index(item, static_cast<int32_t>(layer_items_.size()));
+    layer_items_.push_back(item);
+    return item;
+}
+
 void WevaDocument::release_layers() {
     RenderingServer* rs = RenderingServer::get_singleton();
     for (const RID& r : layer_items_) {
@@ -3168,6 +3190,7 @@ size_t triangle_run(const weva_draw* draws, size_t count, bool sdf_rects) {
     while (run < count && ordinary(draws[run]) &&
            draws[run].vertex_count && draws[run].index_count &&
            draws[run].texture_id == draws[0].texture_id &&
+           draws[run].blend_mode == draws[0].blend_mode &&
            vertices + draws[run].vertex_count <= 65536) {
         vertices += draws[run].vertex_count;
         ++run;
@@ -3542,7 +3565,11 @@ void WevaDocument::_draw() {
         if (d.vertex_count == 0 || d.index_count == 0) continue;
         if (d.kind == WEVA_DRAW_ROUNDED_RECT && draw_rounded_rect(get_canvas_item(), d)) continue;
         const size_t run = triangle_run(draws+i, count-i, use_sdf_rects_);
-        add_triangles(get_canvas_item(), draws+i, run, versions ? versions+i : nullptr, retain);
+        // A blended run gets its own item and material; the retained-batch
+        // prototype keeps to normal draws.
+        const bool blended = d.blend_mode != WEVA_BLEND_NORMAL;
+        add_triangles(blended ? blend_item(d.blend_mode) : get_canvas_item(), draws+i, run,
+                      versions ? versions+i : nullptr, retain && !blended);
         i += run-1;
     }
     release_retained_batches(packed_used_);

@@ -117,6 +117,7 @@ public:
         int32_t kind = WEVA_DRAW_GEOMETRY;
         BackdropEffect backdrop;
         RoundedRect rounded_rect;
+        int32_t blend = WEVA_BLEND_NORMAL;
     };
 
     void begin_frame() {
@@ -281,6 +282,7 @@ public:
         }
         d.texture = tex.id;
         d.scissor = scissor_;
+        d.blend = blend_;
         d.version = next_draw_version_++;
         draws.push_back(std::move(d));
     }
@@ -298,6 +300,7 @@ public:
         d.rounded_rect = shape;
         d.vertices = std::move(v);
         d.indices = std::move(i);
+        d.blend = blend_;
         if (scissor_) {
             // Only a shape that actually CROSSES the scissor needs cutting. A
             // scissor is in force for very nearly every box -- the viewport is
@@ -367,6 +370,7 @@ public:
     // repeated renderer registrations. Transfer nodes without copying pixels
     // before the old renderer releases its handles; begin_frame retires them.
     void retain_published_textures() { retired_textures_.merge(textures); }
+    void set_blend_mode(BlendMode mode) override { blend_ = static_cast<int32_t>(mode); }
     void set_scissor(const Recti* r) override {
         if (r) scissor_ = *r;
         else scissor_.reset();
@@ -426,6 +430,7 @@ private:
     uint64_t next_ = 1;
     uint64_t next_texture_ = 1;
     std::optional<Recti> scissor_;
+    int32_t blend_ = WEVA_BLEND_NORMAL;
 };
 
 // Which elements are hovered, pressed and focused.
@@ -4568,6 +4573,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
             v.scissor_height = d.scissor->height;
         }
         v.kind = d.kind;
+        v.blend_mode = d.blend;
         if (d.kind == WEVA_DRAW_ROUNDED_RECT) {
             v.rounded_rect.x = d.rounded_rect.x;
             v.rounded_rect.y = d.rounded_rect.y;

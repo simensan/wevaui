@@ -23,13 +23,21 @@ Shader "Hidden/Weva/NativeMesh" {
     Properties {
         [NoScaleOffset] _WevaTex ("Texture", 2D) = "white" {}
         _WevaTextured ("Textured", Float) = 0
+        // mix-blend-mode as a blend state: 0 normal, 1 multiply, 2 screen,
+        // 3 darken, 4 lighten (weva_blend_mode values the renderer maps; the
+        // modes that need the backdrop in the shader draw as normal).
+        _WevaBlend ("Blend", Float) = 0
+        _WevaSrcBlend ("Src", Float) = 5
+        _WevaDstBlend ("Dst", Float) = 10
+        _WevaBlendOp ("Op", Float) = 0
     }
     SubShader {
         Tags { "RenderType"="Transparent" "Queue"="Overlay" "RenderPipeline"="UniversalPipeline" }
         ZWrite Off
         ZTest Always
         Cull Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend [_WevaSrcBlend] [_WevaDstBlend]
+        BlendOp [_WevaBlendOp]
         Pass {
             HLSLPROGRAM
             #pragma vertex vert
@@ -43,6 +51,7 @@ Shader "Hidden/Weva/NativeMesh" {
             int _WevaNativeFlip;
             int _WevaNativeGamma;
             float _WevaTextured;
+            float _WevaBlend;
 
             struct Attributes {
                 float3 positionOS : POSITION;
@@ -75,6 +84,11 @@ Shader "Hidden/Weva/NativeMesh" {
                     if (_WevaNativeGamma == 0) t.rgb = SRGBToLinear(t.rgb);
                     c *= t;
                 }
+                // The blend states take straight colours: multiply and darken
+                // want the source faded towards white by its alpha, screen and
+                // lighten towards black, so alpha is folded in here.
+                if (_WevaBlend == 1 || _WevaBlend == 3) c.rgb = lerp(float3(1, 1, 1), c.rgb, c.a);
+                else if (_WevaBlend == 2 || _WevaBlend == 4) c.rgb *= c.a;
                 return c;
             }
             ENDHLSL

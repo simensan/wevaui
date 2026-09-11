@@ -45,7 +45,11 @@ struct Vertex {
     Vec2 tex_coord;
 };
 
-enum class BlendMode : uint8_t { Normal, Multiply, Screen, Overlay, Darken, Lighten };
+// CSS Compositing 1 §11: every <blend-mode>, in the specification's order.
+enum class BlendMode : uint8_t {
+    Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight,
+    SoftLight, Difference, Exclusion, Hue, Saturation, Color, Luminosity,
+};
 enum class FilterKind : uint8_t { Blur, DropShadow, Brightness, Contrast, Grayscale, Opacity };
 
 struct FilterParams {
@@ -140,6 +144,10 @@ public:
 
     // ---- Optional: a backend that ignores these still renders --------------
     virtual void set_transform(const Transform2D* transform) { (void)transform; }
+    // `mix-blend-mode`: how the draws that follow composite with what is
+    // already in the target, until the next call. A backend that cannot
+    // blend that way draws normally and loses the effect, not the page.
+    virtual void set_blend_mode(BlendMode mode) { (void)mode; }
     virtual LayerHandle push_layer() { return {}; }
     virtual void composite_layers(LayerHandle source, LayerHandle destination, BlendMode mode,
                                   const std::vector<FilterHandle>& filters) {

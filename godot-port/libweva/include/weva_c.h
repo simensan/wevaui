@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 32
+#define WEVA_ABI_VERSION_MINOR 33
 
 uint32_t weva_abi_version(void);
 
@@ -88,6 +88,30 @@ typedef enum weva_draw_kind {
     WEVA_DRAW_ROUNDED_RECT = 2
 } weva_draw_kind;
 
+/* CSS Compositing 1 <blend-mode>, in the specification's order: how a draw
+ * composites with what is already in the target (`mix-blend-mode`). A host
+ * renders the modes it can -- multiply, screen, darken and lighten are plain
+ * blend states; the rest need the backdrop in a shader -- and draws the
+ * others normally. Available since ABI minor 33. */
+typedef enum weva_blend_mode {
+    WEVA_BLEND_NORMAL = 0,
+    WEVA_BLEND_MULTIPLY = 1,
+    WEVA_BLEND_SCREEN = 2,
+    WEVA_BLEND_OVERLAY = 3,
+    WEVA_BLEND_DARKEN = 4,
+    WEVA_BLEND_LIGHTEN = 5,
+    WEVA_BLEND_COLOR_DODGE = 6,
+    WEVA_BLEND_COLOR_BURN = 7,
+    WEVA_BLEND_HARD_LIGHT = 8,
+    WEVA_BLEND_SOFT_LIGHT = 9,
+    WEVA_BLEND_DIFFERENCE = 10,
+    WEVA_BLEND_EXCLUSION = 11,
+    WEVA_BLEND_HUE = 12,
+    WEVA_BLEND_SATURATION = 13,
+    WEVA_BLEND_COLOR = 14,
+    WEVA_BLEND_LUMINOSITY = 15
+} weva_blend_mode;
+
 /* Corner radii run clockwise from top-left, x then y. */
 typedef struct weva_rounded_rect {
     double x, y, width, height;
@@ -125,6 +149,10 @@ typedef struct weva_draw {
     weva_backdrop_effect backdrop;
     /* Only meaningful when kind is WEVA_DRAW_ROUNDED_RECT. */
     weva_rounded_rect rounded_rect;
+    /* One of weva_blend_mode: the `mix-blend-mode` in effect for this draw
+     * (an element's mode applies to every draw of its subtree). Since ABI
+     * minor 33; WEVA_BLEND_NORMAL for everything before it. */
+    int32_t blend_mode;
 } weva_draw;
 
 /* A texture the host must create before issuing the draws that reference it.

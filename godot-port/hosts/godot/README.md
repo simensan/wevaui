@@ -966,6 +966,15 @@ the `elements`, `boxes`, `draws` and `textures` counts, the paint pass's
 (`cascade_elements`, `cascade_pseudos`; diff them between frames) -- what a
 debug overlay shows beside the frame time.
 
+**mix-blend-mode**
+
+A blended element's draws go on a child canvas item with a `CanvasItemMaterial`:
+`multiply` as MUL, `screen` / `lighten` / `color-dodge` as ADD (the closest
+Godot has), everything else as MIX, i.e. normal. Child items draw after the
+node's own commands, so a blended box overlaps its later siblings; the
+retained-batch prototype and the backdrop-filter layered path leave blending
+out.
+
 **Hot reload**
 
 `doc.reload_html(html)` diffs new markup onto the live document instead of

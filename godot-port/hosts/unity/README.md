@@ -164,6 +164,14 @@ pass's texture-cache hits and misses, and the cascade's running totals (diff
 them between frames). `ElementAtForDevTools(x, y)` is the hit test an Elements
 panel wants: `pointer-events: none` and `visibility: hidden` hide nothing from it.
 
+## mix-blend-mode (ABI minor 33)
+
+Every draw carries `blend_mode`. `NativeDocumentRenderer` splits batches on it
+and renders multiply, screen, darken and lighten as blend states of the mesh
+shader (`_WevaSrcBlend` / `_WevaDstBlend` / `_WevaBlendOp`); overlay, the light
+modes, difference/exclusion and the HSL modes need the backdrop in a shader and
+draw normally.
+
 ## Hot reload (ABI minor 32)
 
 `NativeDocument.ReloadHtml(html)` diffs new markup onto the live document:

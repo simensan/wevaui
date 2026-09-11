@@ -886,3 +886,11 @@ diffed onto the live document (HotReload/DomDiffer.cs ported: keyed by `id` /
 focus, scroll, form values and transitions while attributes, text and the
 unmatched subtrees change. The hot-reload path in either host should use it
 (Godot `reload_html()`, Unity `NativeDocument.ReloadHtml`).
+
+ABI minor 33 adds `blend_mode` to `weva_draw` (a `weva_blend_mode`, the sixteen CSS
+Compositing modes): `mix-blend-mode` rides on every draw of the element's
+subtree, told to the render interface through `set_blend_mode`. Hosts render
+the modes a blend state can express -- Godot maps multiply to MUL and the
+brightening modes to ADD on a child canvas item with a CanvasItemMaterial; the
+Unity mesh shader takes multiply, screen, darken and lighten as blend states --
+and draw the rest normally.

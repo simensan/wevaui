@@ -10,6 +10,7 @@
 #include <godot_cpp/classes/input_event_key.hpp>
 #include <godot_cpp/classes/input_event_mouse_motion.hpp>
 #include <godot_cpp/classes/input_event_screen_drag.hpp>
+#include <godot_cpp/classes/canvas_item_material.hpp>
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/system_font.hpp>
 #include <godot_cpp/variant/packed_int32_array.hpp>
@@ -611,6 +612,13 @@ private:
 
     // Only allocated for a document that uses backdrop-filter.
     std::vector<godot::RID> layer_items_;
+    // `mix-blend-mode` draws go on child canvas items carrying a
+    // CanvasItemMaterial with the nearest Godot blend mode (multiply -> MUL,
+    // screen / lighten and the other brightening modes -> ADD, the rest MIX).
+    // The materials live as long as the node; the items are per frame like
+    // the layer items.
+    godot::Ref<godot::CanvasItemMaterial> blend_materials_[5];
+    godot::RID blend_item(int32_t blend_mode);
     std::vector<godot::RID> layer_materials_;
     godot::RID backdrop_shader_;
     // The SDF path. Materials are pooled per frame, like the backdrop ones.

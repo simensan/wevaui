@@ -222,7 +222,8 @@ LinearColor resolve_color(const ComputedStyle* style, std::string_view property)
 bool PaintReplayInputs::operator==(const PaintReplayInputs& o) const {
     if (x != o.x || y != o.y || opacity != o.opacity || canvas_owner != o.canvas_owner ||
         transformed != o.transformed || (transformed && xform != o.xform) ||
-        scissor.has_value() != o.scissor.has_value() || absolute_cb != o.absolute_cb || fixed_cb != o.fixed_cb) return false;
+        scissor.has_value() != o.scissor.has_value() || absolute_cb != o.absolute_cb || fixed_cb != o.fixed_cb ||
+        blend != o.blend) return false;
     if (scissor && (scissor->x != o.scissor->x || scissor->y != o.scissor->y ||
                     scissor->width != o.scissor->width || scissor->height != o.scissor->height)) return false;
     const ClipNode* a = clip.get();
@@ -1207,6 +1208,11 @@ struct PaintState {
     std::shared_ptr<const ColorFilter> filter;
     std::shared_ptr<const OverflowClip> overflow;
     BoxId absolute_cb = kNoBox, fixed_cb = kNoBox;
+    // `mix-blend-mode` in effect: an element's mode applies to every draw of
+    // its subtree, which is the group-blend of CSS Compositing 1 §6 to the
+    // extent per-draw blending can express it (exact where the subtree's
+    // draws do not overlap each other).
+    BlendMode blend = BlendMode::Normal;
 };
 
 bool ci_equal(std::string_view a, std::string_view b);
@@ -1907,6 +1913,17 @@ LinearColor placeholder_color(const PaintContext& paint, const Element* host,
     }
     if (!styled) return LinearColor(host_color.r * 0.5f, host_color.g * 0.5f, host_color.b * 0.5f, host_color.a * 0.5f);
     return c;
+}
+
+// CSS Compositing 1 §6.1 `mix-blend-mode`, in the specification's order.
+BlendMode blend_mode_of(std::string_view raw) {
+    static const char* kNames[] = {"normal", "multiply", "screen", "overlay", "darken", "lighten",
+                                   "color-dodge", "color-burn", "hard-light", "soft-light",
+                                   "difference", "exclusion", "hue", "saturation", "color", "luminosity"};
+    for (size_t i = 0; i < sizeof(kNames) / sizeof(kNames[0]); ++i) {
+        if (ci_equal(raw, kNames[i])) return static_cast<BlendMode>(i);
+    }
+    return BlendMode::Normal;
 }
 
 // CSS UI 4 §5.4 caret-color; `auto` is currentcolor, as Chrome draws it (the
@@ -2955,7 +2972,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         if (paint.reuse->tracks_inputs(id)) {
             const PaintReplayInputs inputs{x, y, state.opacity, state.scissor, state.transformed,
                                             state.xform, state.clip, state.filter, canvas_owner,
-                                            state.overflow, state.absolute_cb, state.fixed_cb};
+                                            state.overflow, state.absolute_cb, state.fixed_cb, state.blend};
             if (paint.reuse->replay(id, inputs)) return;
         } else if (paint.reuse->replay(id)) return;
     }
@@ -3004,6 +3021,20 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     if (establishes_absolute_containing_block(b)) state.absolute_cb = id;
     if (establishes_fixed_containing_block(b)) state.fixed_cb = id;
     if (decorated && b.style) state.opacity *= resolve_opacity(b.style);
+    // `mix-blend-mode`: told to the backend once per box, and again when the
+    // box's subtree is done, so a sibling painted after it is back to the
+    // parent's mode.
+    const BlendMode inherited_blend = state.blend;
+    if (decorated && b.style) {
+        const BlendMode own = blend_mode_of(get(b.style, "mix-blend-mode"));
+        if (own != BlendMode::Normal) state.blend = own;
+    }
+    struct RestoreBlend {
+        RenderInterface* backend;
+        BlendMode before;
+        ~RestoreBlend() { if (backend) backend->set_blend_mode(before); }
+    } restore_blend{paint.backend, inherited_blend};
+    if (paint.backend) paint.backend->set_blend_mode(state.blend);
     // `visibility: hidden` paints nothing of the box itself; its children
     // inherit the value and paint nothing either unless they override it.
     const bool hidden = descendants_only || (b.style && get(b.style, "visibility") == "hidden");

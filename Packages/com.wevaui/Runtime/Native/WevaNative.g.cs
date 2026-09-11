@@ -24,6 +24,26 @@ namespace Weva.Native
         WEVA_DRAW_ROUNDED_RECT = 2,
     }
 
+    public enum weva_blend_mode : int
+    {
+        WEVA_BLEND_NORMAL = 0,
+        WEVA_BLEND_MULTIPLY = 1,
+        WEVA_BLEND_SCREEN = 2,
+        WEVA_BLEND_OVERLAY = 3,
+        WEVA_BLEND_DARKEN = 4,
+        WEVA_BLEND_LIGHTEN = 5,
+        WEVA_BLEND_COLOR_DODGE = 6,
+        WEVA_BLEND_COLOR_BURN = 7,
+        WEVA_BLEND_HARD_LIGHT = 8,
+        WEVA_BLEND_SOFT_LIGHT = 9,
+        WEVA_BLEND_DIFFERENCE = 10,
+        WEVA_BLEND_EXCLUSION = 11,
+        WEVA_BLEND_HUE = 12,
+        WEVA_BLEND_SATURATION = 13,
+        WEVA_BLEND_COLOR = 14,
+        WEVA_BLEND_LUMINOSITY = 15,
+    }
+
     public enum weva_event_kind : int
     {
         WEVA_EVENT_NONE = 0,
@@ -173,6 +193,7 @@ namespace Weva.Native
         public int kind;
         public weva_backdrop_effect backdrop;
         public weva_rounded_rect rounded_rect;
+        public int blend_mode;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -304,7 +325,7 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 32;
+        public const int WEVA_ABI_VERSION_MINOR = 33;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
