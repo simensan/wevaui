@@ -204,6 +204,34 @@
       "ci": "godot-ci.yml job unity-plugin-platforms: macOS (universal dylib + load test), Android arm64 (NDK on the runner), iOS arm64 static; not yet run on GitHub (nothing pushed)",
       "gate": "NOT met: the plugin builds for Android locally and the CI matrix is written; macOS and iOS builds are unverified until the workflow runs, and IL2CPP player builds of the sample on each platform are the user's to run (no Unity licence in CI)"
     },
-    "phase_gate": "open: the package can host the core (WevaNativeDocument beside WevaDocument) but the default is still the C# engine and the oracle runs from Unity by hand, not in CI (no editor on the runners)"
+    "phase_gate": "open: the package can host the core (WevaNativeDocument beside WevaDocument) but the default is still the C# engine and the oracle runs from Unity by hand, not in CI (no editor on the runners)",
+    "step_1_port_list_progress": {
+      "date": "2026-09-11",
+      "ported": [
+        "filter: hue-rotate() (paint.cpp; test_backdrop_filter)",
+        "@supports selector() (media.cpp; test_cascade)",
+        "caret-color (paint.cpp caret_color_of; test_abi_caret_color)",
+        "light-dark() with the element's inherited color-scheme, plus ABI minor 28 weva_document_set_color_scheme (Godot dark_color_scheme, Unity NativeDocument.SetColorScheme); tests test_cascade_light_dark, test_abi_color_scheme, NativeColorSchemeTests (3)",
+        "3D transform functions projected onto the plane (translate3d/scale3d keep x,y; rotateX/rotateY foreshorten; rotate3d top-left 2x2; matrix3d affine part; translateZ/scaleZ/perspective identity) -- core ahead, the C# treats them as identity; test_paint_transform_3d_projects_to_the_plane",
+        "::placeholder (color, opacity) and ::selection (background-color) on text fields; test_abi_placeholder_and_selection_pseudos",
+        "text-align: justify (inter-word, inter-character), text-align-last, text-justify; test_text_align_justify",
+        "lab()/lch()/oklab()/oklch()/color() over every predefined space and XYZ, modern space-separated colour syntax with / alpha and none, color-mix() in every space with the four hue methods (new color_space.cpp) -- core ahead; test_modern_colours, test_color_mix recalibrated (oklab grey 99)",
+        "width: min-content | max-content | fit-content | fit-content() on blocks, floats, inline-blocks; test_intrinsic_width_keywords",
+        "position: sticky pinned against the scroll container (new sticky.cpp, offsets applied by paint, hit testing and visual_position); test_abi_position_sticky",
+        "@import through the asset reader (new at_import.cpp: media/supports/layer wrappers, nesting, cycle guard, missing sheets in css_diagnostics); test_abi_at_import",
+        "CSS scroll snap (new scroll_snap.cpp; 13 properties appended to the generated registry, reg.count() 334+13; programmatic scrolls snap at once, wheel scrolls settle after 150 ms with a 250 ms ease-out); test_abi_scroll_snap",
+        "soft hyphens invisible everywhere and hyphens: manual breaks (inline_layout.cpp place_soft_hyphen_word); test_soft_hyphens"
+      ],
+      "left_on_the_list": "mask / mix-blend-mode (render interface work), @scope (parsed by neither cascade), list-style-image and background-attachment (no consumer in either engine), subgrid, direction: rtl, View Transitions, component-scoped stylesheets (the C# reaches them only through ComponentRegistry.Register, not markup), font-variation-settings / -webkit-text-stroke (no paint consumer in the C# either), image-rendering (the core samples nearest by design)",
+      "gates_after": {
+        "core_suite_linux_gcc": "505,596 checks, 0 failures (clang ASan/UBSan tree agrees)",
+        "unity_native_editmode": "84 cases: 82 pass, 2 inconclusive by design (WEVA_NATIVE_PARITY / WEVA_NATIVE_DUMP_MANIFEST unset), on the rebuilt Windows weva_core.dll (121 exports)",
+        "godot_host_linux": "31 test scenes from check.sh's host gate, all 0 failures, on the rebuilt libweva_godot.so (ABI minor 28 host, dark_color_scheme property)",
+        "godot_host_windows": "weva_godot.dll rebuilt with MSVC (hosts/godot/project/addons/weva/bin), not re-run headless in this session",
+        "oracle_samples": "one differing value, 9slice-demo [24] inline code y (candidate 562.965, Chrome 561.83, reference 564.965; Chrome sides with neither): PRE-SESSION -- identical on a worktree build of the parent of the first session commit (c9d53bbe)",
+        "oracle_hand": "43/52 agree, 2 differ (25-backdrop-modal-dialog dialog centring, 42-cv-hidden content-visibility; both known), 7 reference bugs Chrome sides with the core on",
+        "plugins_installed": "Windows Unity plugin (Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll), Linux Unity plugin (~/weva/build-unity), Linux and Windows Godot hosts rebuilt"
+      }
+    }
   }
 }

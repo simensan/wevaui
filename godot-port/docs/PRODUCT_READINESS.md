@@ -440,6 +440,25 @@ failures above. [Binding allocation evidence](verification/binding-attribute-nam
 | Remaining game form integration | CSS horizontal RTL and vertical-rl/vertical-lr range direction/orientation are now verified. Number arrow stepping is covered by 76 Chrome cases and 234 native checks. Sideways writing modes, picker values/controls and full validation remain partial or absent. Review implementations against concrete game requirements and browser probes before claiming completion. |
 | Release verification | Build, package, compatibility declarations, docs and every required gate must refer to the same candidate. Current broad layout findings and external acceptance prevent an unconditional release-ready claim. |
 
+## Shared-core port list, 2026-09-11
+
+Thirteen items of the Phase 3 port list (PORT_PLAN.md, "Phase 3 -- feature
+inventory") landed in the core with tests, each committed on its own:
+`hue-rotate()`, `@supports selector()`, `caret-color`, `light-dark()` with a
+colour-scheme switch (ABI minor 28), 3D transform projection, `::placeholder` /
+`::selection`, `text-align: justify` with `text-align-last` and `text-justify`,
+the Lab/OKLab/`color()` functions and modern colour syntax with `color-mix()`
+in every space, `width: max-content` and friends, `position: sticky`,
+`@import`, CSS scroll snap and soft hyphens. Evidence:
+`docs/verification/unity-host-prototype.json` (`phase_3.step_1_port_list_progress`).
+Gates after the last of them: core suite 505,596 checks / 0 failures, Unity Native
+EditMode 82 pass (2 inconclusive by design), all 31 Godot host scenes green on the
+rebuilt Linux host, the samples oracle unchanged from a pre-session build (its one
+differing value predates the work) and hand at its known 43/52. Not changed by
+this: the readiness requirements above, the whole-frame timing gates, and the
+items the port list still holds (mask / mix-blend-mode, `@scope`, subgrid, rtl,
+View Transitions, component-scoped stylesheets).
+
 ## Next work
 
 1. The budget evaluator now annotates a whole-frame failure whose UI-disabled
