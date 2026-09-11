@@ -103,6 +103,16 @@ namespace Weva.Rendering.URP {
             for (int i = 0; i < scratch.Count; i++) {
                 scratch[i].EmitPaint(backend);
             }
+            // Sources hosted by the native core (Weva.Native) publish meshes,
+            // not paint; they draw through the same command buffer once the
+            // paint sources have emitted. Their draws are issued before the
+            // backend flushes its own quads at EndFrame, so a native document
+            // composes beneath C# documents in the same pass.
+            for (int i = 0; i < scratch.Count; i++) {
+                if (scratch[i] is Weva.Native.IUINativePaintSource native) {
+                    native.EmitNative(backend.CommandBuffer, viewportWidth, viewportHeight);
+                }
+            }
         }
 
         static bool HasStencil(RenderTextureDescriptor desc) {

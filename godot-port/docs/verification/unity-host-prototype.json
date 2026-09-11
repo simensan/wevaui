@@ -45,16 +45,85 @@
     "gate": "met: the document round trip passes from C# in EditMode and agrees with the C++ load test"
   },
   "steps_open": [
-    "3 font adapter over TextCore/TMP (weva_font_backend + positioned shaper; port font_backend_tests.cpp checks to NUnit)",
-    "4 render adapter (weva_document_draws into the URP path; compare_render.py against the Godot render)",
     "5 input and events",
     "6 bindings and controllers (Frontier Camp logic in a Unity script)",
-    "7 layout-dump from Unity for the three-way oracle"
+    "7 layout-dump from Unity for the three-way oracle",
+    "colour glyph rasterization and a real shaper for the font adapter; the in-pass (linear target) path is drawn but not pixel-verified in a scene"
   ],
   "limitations": [
-    "The Unity editor is not on the CI runners; the EditMode run is recorded here and must be rerun by hand after header or generator changes.",
+    "The Unity editor is not on the CI runners; the EditMode run and the host comparison are recorded here and must be rerun by hand after header, generator or adapter changes.",
     "Windows x64 only in the package (Plugins/x86_64); the Linux .so builds and passes the load test but is not installed in the package.",
     "The plugin binary is gitignored; build it with hosts/unity (README) before the Native EditMode tests can run.",
-    "No font or render backend is wired yet, so the round trip's text metrics come from the core's built-in fallback face."
-  ]
+    "The URP in-pass path composites in linear space (URP's colour buffer), so blended edges differ slightly from the gamma-composited offscreen render used for the comparison."
+  ],
+  "step_3_font_adapter": {
+    "adapter": "Packages/com.wevaui/Runtime/Native/UnityFontBackend.cs: weva_font_backend over FontEngine (TextCore) plus the positioned shaper; faces from Font assets, files or bytes; per-code-point fallback faces encoded in the glyph id; real bold/italic variants; @font-face rules read from the core and registered (SyncCssFontFaces) through the document asset reader",
+    "contract_ported_from_godot": [
+      "face metrics scale the engine design units (FaceMetrics_ScaleTheEngineDesignUnits, BytesFace_MatchesTheAssetFace)",
+      "glyph index and unhinted glyph metrics are the engine's own at the rounded pixel size (GlyphIndex_IsTheEngineIndex, GlyphMetrics_AreTheEngineUnhintedMetrics, GlyphMetrics_RoundThePixelSizeLikeTheGodotAdapter)",
+      "coverage bitmaps: ink, top-down rows, metrics describe the bitmap, no bitmap for a space (Rasterize_*)",
+      "shaping: UTF-8 byte clusters, sizing protocol, control characters, per-code-point fallback, pair adjustment, positioned form agrees with the legacy callback, 300-glyph fallback run (Shape_*, PositionedShaper_*)",
+      "variants (Variant_AnswersWithRealFacesOrTheRegularOne), FontEngine state invalidation (Invalidate_ReloadsTheFaceOnTheNextCall)",
+      "the core lays out with the adapter: a span is as wide as the adapter's advances, a registered family switches the face (Document_LaysOutWithTheAdapter)"
+    ],
+    "findings": [
+      "FontEngine.GetPairAdjustmentRecord(first, second) returns an uninitialised record for a pair the face does not kern and segfaulted inside TextCore::FontEngine::GetPairAdjustmentRecord on an ordinary Inter pair (crash log in .utmp/unity-test); the adapter uses GetPairAdjustmentRecords(List<uint>) per adjacent pair instead. The C# engine's UnityFontEngineBackend.TryGetKernAdvance binds GetGlyphPairAdjustmentRecord, which answers zero for every pair on 6000.4 (its kerning is silently off); not changed in this phase.",
+      "GetPairAdjustmentRecords values are design units and list a pair once per covering subtable in the font's order (Inter L-: -104 pair subtable, then -174 class subtable); the first record is what OpenType applies (-1.625px at 32px, matching fontTools). A long glyph list answered the same pair class-first, so the query is per pair.",
+      "UnmanagedCallersOnlyAttribute is not in Unity 6000.4's class library (netstandard 2.1 / mono profiles checked); callbacks use MonoPInvokeCallback delegates cast to the generated function-pointer fields.",
+      "LoadFontFace overloads with an int take a point size, not a face index; font collections are not supported by the adapter."
+    ],
+    "limitations": [
+      "no ligatures or mark positioning (one glyph per code point plus pair kerning)",
+      "colour glyphs are not rasterized (COLOR render mode not wired)",
+      "FontEngine is process-global: the adapter reloads its face after any other user (before every update)"
+    ],
+    "gate": "met: 19 UnityFontBackend EditMode checks pass (part of the 42/42 Native run below)"
+  },
+  "step_4_render_adapter": {
+    "adapter": "Packages/com.wevaui/Runtime/Native/NativeDocumentRenderer.cs + Resources/Weva-NativeMesh.shader + WevaNativeDocument (MonoBehaviour, IUINativePaintSource drawn by UIRenderPass); textures mirrored by id, consecutive same-texture draws merged into one mesh, backdrop-filter draws skipped, colour composited in gamma space like the Godot host (core colours are linear, texels sRGB)",
+    "editmode": {
+      "unity": "6000.4.1f1 -batchmode (graphics device present)",
+      "total": 42,
+      "passed": 42,
+      "failed": 0,
+      "results": ".utmp/unity-test/native-editmode.xml",
+      "render_cases": [
+        "Shader_IsAvailable",
+        "Sync_BuildsBatchesOnlyWhenTheDrawListChanges",
+        "Render_PutsABoxWhereTheCoreLaidItOut (pixel positions and orientation)",
+        "Render_DrawsTextThroughTheAtlas",
+        "FontFace_LoadsThroughTheAssetReaderAndRegistersTheFamily",
+        "Parity_RendersPagesForComparison"
+      ]
+    },
+    "comparison_with_godot": {
+      "method": "godot-port/hosts/unity/compare_hosts.py (compare_render.py metric) on 1280x720 renders of the same html/css with the same font bytes (@font-face Inter); Godot via capture.tscn (opengl3, 4.7.1 + build222 extension), Unity via the Parity EditMode test; images and diff maps in .utmp/parity/<page>/",
+      "frontier_camp": {
+        "mean_channel_delta": 2.39,
+        "worst_channel_delta": 200,
+        "over_tolerance_8_pct": 2.49,
+        "structural_over_64_pct": 1.08,
+        "batches": 21,
+        "triangles": 2064,
+        "textures": 1
+      },
+      "randhtml": {
+        "mean_channel_delta": 1.94,
+        "worst_channel_delta": 226,
+        "over_tolerance_8_pct": 2.21,
+        "structural_over_64_pct": 1.01,
+        "batches": 100,
+        "triangles": 13806,
+        "textures": 11
+      },
+      "gate_default": "compare_render.py gates at 1.0% structural; both pages sit just above it (1.08%, 1.01%) and are NOT claimed to pass that number",
+      "differences_explained": [
+        "text: every glyph edge differs (the diff maps are the page's text) because the two hosts rasterize with different engines (FontEngine SMOOTH vs TextServer) and position differently (TextServer quarter-pixel advances vs FontEngine fractional advances); layout geometry is identical (same core, same font bytes)",
+        "colour emoji icons in randhtml are blank on Unity (colour glyphs not rasterized yet), the largest single structural cluster there",
+        "1px lines and rounded-rect edges (button borders, bar underlines) differ by one row where the two rasterizers round differently",
+        "the first render had a colour-space bug (vertex colours converted to linear twice, blending in linear space): mean delta 28/255, 72% over tolerance; fixed by following the Godot host (encode the core's linear colours to sRGB, blend in gamma space into a raw target)"
+      ]
+    },
+    "gate": "met with explained differences: the Frontier Camp page and the randhtml demo render through the core in Unity and agree with the Godot host everywhere but on text rasterization and colour glyphs"
+  }
 }

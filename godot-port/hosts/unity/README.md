@@ -54,10 +54,84 @@ for callback fields, `[DllImport]` externs with the Cdecl convention. Nothing
 is marshalled, so the same file serves Mono and IL2CPP. The generated file is
 checked in; CI regenerates it with `--check` and fails on drift.
 
-Callbacks a host implements (`weva_font_backend`, `weva_render_backend`,
-`weva_binding_source`) take `[UnmanagedCallersOnly(CallConvs = new[] {
-typeof(CallConvCdecl) })]` static methods, which IL2CPP compiles to plain C
-function pointers.
+Callbacks a host implements (`weva_font_backend`, `weva_asset_reader`,
+`weva_binding_source`) are static methods marked `[MonoPInvokeCallback]`,
+reached through Cdecl delegates kept alive for the adapter's lifetime and
+cast to the generated `delegate* unmanaged[Cdecl]` fields. That is the
+IL2CPP-safe form Unity's class library allows: `UnmanagedCallersOnlyAttribute`
+is not in it.
+
+## Fonts: `UnityFontBackend`
+
+The core's `weva_font_backend` callback table, filled over Unity's FontEngine
+(TextCore) the way the Godot host fills it over TextServer; the core never sees
+a Unity type. Faces are adopted from a `Font` asset, a file, or bytes (which is
+how `@font-face` data arrives through the document's asset reader); fallback
+faces answer per code point for glyphs the primary lacks, and a glyph id
+carries which face it came from. Real bold and italic faces are registered as
+variants. `SyncCssFontFaces` reads the stylesheet's `@font-face` rules from
+the core and registers them, as the Godot host's `sync_css_font_faces` does.
+
+What FontEngine gives and does not give:
+
+- Metrics come from the face at a whole-pixel size (the same rounding the
+  Godot adapter uses), unhinted, so advances are the engine's own.
+- There is no public shaper. Shaping is one glyph per code point plus GPOS
+  pair positioning, read once per adjacent pair through
+  `GetPairAdjustmentRecords` with a two-glyph list (the call TextMeshPro fills
+  a font asset with; values are design units, and a pair covered by more than
+  one subtable is listed once per subtable, the first being the one OpenType
+  applies; a long glyph list answered the same pair in a different order,
+  which is why the query is per pair). `GetPairAdjustmentRecord(first,
+  second)` is NOT used: on 6000.4 it returns an uninitialised record for a
+  pair the face does not kern and crashed the editor. No ligatures or mark
+  positioning until a real shaper is bound (the C# engine's ATG path is the
+  candidate).
+- Coverage bitmaps come from `TryAddGlyphToTexture` (reflection-bound, as the
+  C# engine's SDF rasterizer binds it) in SMOOTH mode; colour glyphs are not
+  rasterized yet.
+- FontEngine is one state machine for the process, so the adapter forgets its
+  active face before every document update (`NativeDocument.BeforeUpdate`).
+
+## Rendering: `NativeDocumentRenderer` and `WevaNativeDocument`
+
+The core publishes textured triangle lists in document pixels with clipping
+and opacity resolved (scissored geometry is clipped before it is published).
+The renderer mirrors the document's textures by id, merges consecutive draws
+that share a texture into one mesh, and draws them with
+`Hidden/Weva/NativeMesh`. Colour follows the Godot host: the core's vertex
+colours are linear, its texels are sRGB bytes (white plus coverage for the
+glyph atlas), and a page composites in gamma space, so the offscreen path
+encodes vertex colours to sRGB and blends into a raw target; the in-pass path
+into URP's linear colour buffer blends in linear space instead (edges differ
+slightly, the way the C# engine's pre-sRGB-composite path did).
+
+`WevaNativeDocument` is the MonoBehaviour: a document from a `TextAsset` or
+inline markup, the package's UI face with its bold, italic and symbol faces,
+registered with the URP pass as an `IUINativePaintSource` so its meshes are
+drawn in the same pass as C# documents (beneath them). Input, events and
+bindings are later steps of the plan.
+
+## Comparing with the Godot host
+
+`compare_hosts.py` applies the Godot host's render comparison
+(`compare_render.py`'s metric: structural differences gate, edge differences
+are reported) to `godot.ppm` and `unity.ppm` in a page directory. The Godot
+image comes from the host's `capture.tscn`; the Unity image from the EditMode
+test `Parity_RendersPagesForComparison`, which renders every directory named
+by `WEVA_NATIVE_PARITY` (`;`-separated, each holding `<name>.html` and
+`<name>.css`) at 1280x720:
+
+```
+godot --path godot-port/hosts/godot/project --rendering-driver opengl3 --scene res://capture.tscn \
+    -- --html <dir>/<name>.html --css <dir>/<name>.css --size 1280x720 --out <dir>/godot.ppm --png <dir>/godot.png
+WEVA_NATIVE_PARITY=<dir> Unity.exe -batchmode -projectPath <repo> -runTests -testPlatform EditMode \
+    -testFilter Weva.Tests.EditorTests.Native.NativeDocumentRenderTests
+python godot-port/hosts/unity/compare_hosts.py <dir>
+```
+
+Give both sides the same font bytes (an `@font-face` rule in the page's CSS)
+or the comparison measures two fonts, not two hosts.
 
 ## Tests
 
@@ -67,10 +141,12 @@ end through the exported symbols alone. It is the gate for the plugin build and
 runs in CI on Windows and Linux.
 
 The EditMode tests run the same round trip from C# in the Unity editor, with
-the struct-size comparison on top:
+the struct-size comparison, the font adapter (checked against FontEngine's own
+answers) and the render adapter (offscreen renders read back pixel by pixel,
+which needs a graphics device: no `-nographics`):
 
 ```
-Unity.exe -batchmode -nographics -projectPath <repo> -runTests -testPlatform EditMode \
+Unity.exe -batchmode -projectPath <repo> -runTests -testPlatform EditMode \
     -testFilter Weva.Tests.EditorTests.Native -testResults out.xml -logFile out.log
 ```
 
