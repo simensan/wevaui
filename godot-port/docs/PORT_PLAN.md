@@ -3648,7 +3648,13 @@ an ABI surface), keep host-side (C#), drop.
    Still open:
    `font-variation-settings` / `font-optical-sizing` / `font-feature-settings`
    (no font-backend path for axes or features; the `weva_font_backend` table
-   would need them), `-webkit-text-stroke`.
+   would need them), `-webkit-text-stroke`. `@font-face` `local()` DONE
+   2026-09-11 (ABI minor 37, both hosts). `unicode-range` assessed, not
+   started: the hosts' per-code-point fallback (first face with the glyph)
+   already covers the usual Latin-plus-CJK split; honouring a range where
+   both faces have the glyph needs the core to split runs by range and a
+   registration of ranged faces per family -- a moderate core change for a
+   rare case, and the C# defers it too.
 6. `filter: hue-rotate()` (the one missing filter function, one matrix). DONE
    2026-09-11 (`paint.cpp`, test in `test_backdrop_filter.cpp`).
 7. 3D transform functions. DONE 2026-09-11, core ahead: the C# treats them
