@@ -655,6 +655,98 @@ namespace Weva.Native
             return WevaNative.weva_element_close_dialog(Handle, dialog) == (int)weva_status.WEVA_OK;
         }
 
+        // ---- the inspector surface (ABI minor 27) -------------------------------
+
+        /// <summary>The parent element, or WEVA_ELEMENT_NONE for the root.</summary>
+        public uint Parent(uint element) => WevaNative.weva_element_parent(Handle, element);
+
+        /// <summary>The element children in document order (text nodes are not listed).</summary>
+        public uint[] Children(uint element)
+        {
+            nuint count = WevaNative.weva_element_children(Handle, element, null, 0);
+            if (count == 0) return Array.Empty<uint>();
+            uint[] result = new uint[(int)count];
+            fixed (uint* p = result)
+            {
+                nuint written = WevaNative.weva_element_children(Handle, element, p, count);
+                if (written < count) Array.Resize(ref result, (int)written);
+            }
+            return result;
+        }
+
+        /// <summary>The rectangles behind the border box: edges of margin, border and padding, and the content box.</summary>
+        public struct BoxModel
+        {
+            public double MarginTop, MarginRight, MarginBottom, MarginLeft;
+            public double BorderTop, BorderRight, BorderBottom, BorderLeft;
+            public double PaddingTop, PaddingRight, PaddingBottom, PaddingLeft;
+            public double ContentX, ContentY, ContentWidth, ContentHeight;
+        }
+
+        public bool TryGetBoxModel(uint element, out BoxModel model)
+        {
+            double* v = stackalloc double[16];
+            int status = WevaNative.weva_element_box_model(Handle, element, v);
+            model = new BoxModel
+            {
+                MarginTop = v[0], MarginRight = v[1], MarginBottom = v[2], MarginLeft = v[3],
+                BorderTop = v[4], BorderRight = v[5], BorderBottom = v[6], BorderLeft = v[7],
+                PaddingTop = v[8], PaddingRight = v[9], PaddingBottom = v[10], PaddingLeft = v[11],
+                ContentX = v[12], ContentY = v[13], ContentWidth = v[14], ContentHeight = v[15],
+            };
+            return status == (int)weva_status.WEVA_OK;
+        }
+
+        /// <summary>One declaration that applies to an element, as the cascade saw it.</summary>
+        public struct MatchedRule
+        {
+            public string Origin;          // ua, user, author
+            public string Layer;           // the layer ordinal, empty when unlayered
+            public string Specificity;     // "a,b,c", empty for the style attribute
+            public int Source;             // rule order within the document, -1 for the style attribute
+            public bool Inline;
+            public string Selector;
+            public string Property;
+            public string Value;
+            public bool Important;
+            public bool Applied;           // the winning declaration for its property
+        }
+
+        /// <summary>Every declaration that applies to the element, in cascade order (the last line for a property wins).</summary>
+        public List<MatchedRule> MatchedRules(uint element)
+        {
+            var rules = new List<MatchedRule>();
+            string text = ReadString((buffer, capacity) => WevaNative.weva_element_matched_rules(Handle, element, buffer, capacity));
+            foreach (string line in text.Split('\n'))
+            {
+                if (line.Length == 0) continue;
+                string[] f = line.Split('\t');
+                if (f.Length < 10) continue;
+                rules.Add(new MatchedRule
+                {
+                    Origin = f[0], Layer = f[1], Specificity = f[2],
+                    Source = int.TryParse(f[3], out int source) ? source : -1,
+                    Inline = f[4] == "1", Selector = f[5], Property = f[6], Value = f[7],
+                    Important = f[8] == "1", Applied = f[9] == "1",
+                });
+            }
+            return rules;
+        }
+
+        /// <summary>The whole computed style: every registered property resolved, then the custom properties in scope.</summary>
+        public List<KeyValuePair<string, string>> ComputedStyle(uint element)
+        {
+            var result = new List<KeyValuePair<string, string>>();
+            string text = ReadString((buffer, capacity) => WevaNative.weva_element_computed_style_all(Handle, element, buffer, capacity));
+            foreach (string line in text.Split('\n'))
+            {
+                int tab = line.IndexOf('\t');
+                if (tab <= 0) continue;
+                result.Add(new KeyValuePair<string, string>(line.Substring(0, tab), line.Substring(tab + 1)));
+            }
+            return result;
+        }
+
         private delegate nuint SizedRead(byte* buffer, nuint capacity);
 
         // The ABI's two-call convention: the size, then the bytes.

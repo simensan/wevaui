@@ -1,6 +1,7 @@
 #include "diagnostic_cycles.h"
 #include "weva/image_store.h"
 #include "weva/layout_dump.h"
+#include "weva/shorthand.h"
 #include "weva_c.h"
 #include "weva/grapheme.h"
 #include "weva/typeahead.h"
@@ -8033,6 +8034,169 @@ size_t weva_document_layout_dump(weva_document_t doc, const char* source, char* 
         buffer[n] = '\0';
     }
     return text.size();
+}
+
+namespace {
+size_t write_text_out(const std::string& text, char* buffer, size_t capacity) {
+    if (buffer && capacity) {
+        const size_t n = std::min(text.size(), capacity - 1);
+        if (n) std::memcpy(buffer, text.data(), n);
+        buffer[n] = '\0';
+    }
+    return text.size();
+}
+}  // namespace
+
+weva_element_t weva_element_parent(weva_document_t doc, weva_element_t element) {
+    if (!doc) return WEVA_ELEMENT_NONE;
+    const Element* e = doc->element_at(element);
+    if (!e) return WEVA_ELEMENT_NONE;
+    const Node* parent = e->parent();
+    if (!parent || parent->node_type() != NodeType::Element) return WEVA_ELEMENT_NONE;
+    return doc->handle_of(static_cast<const Element*>(parent));
+}
+
+size_t weva_element_children(weva_document_t doc, weva_element_t element, weva_element_t* out,
+                             size_t capacity) {
+    if (!doc) return 0;
+    const Element* e = doc->element_at(element);
+    if (!e) return 0;
+    size_t count = 0;
+    for (const Ref<Node>& child : e->children()) {
+        if (child->node_type() != NodeType::Element) continue;
+        const weva_element_t handle = doc->handle_of(static_cast<const Element*>(child.get()));
+        if (handle == WEVA_ELEMENT_NONE) continue;
+        if (out && count < capacity) out[count] = handle;
+        ++count;
+    }
+    return count;
+}
+
+weva_status weva_element_box_model(weva_document_t doc, weva_element_t element, double* out) {
+    if (!doc || !out) return WEVA_ERR_INVALID_ARGUMENT;
+    const Element* e = doc->element_at(element);
+    if (!e) return WEVA_ERR_NOT_FOUND;
+    const BoxId i = box_of(doc, e);
+    if (i == kNoBox) return WEVA_ERR_NOT_FOUND;
+    const Box& b = doc->tree[i];
+    double ax = 0, ay = 0;
+    visual_position(doc->tree, i, &ax, &ay);
+    out[0] = b.margin_top; out[1] = b.margin_right; out[2] = b.margin_bottom; out[3] = b.margin_left;
+    out[4] = b.border_top; out[5] = b.border_right; out[6] = b.border_bottom; out[7] = b.border_left;
+    out[8] = b.padding_top; out[9] = b.padding_right; out[10] = b.padding_bottom; out[11] = b.padding_left;
+    out[12] = ax + b.border_left + b.padding_left;
+    out[13] = ay + b.border_top + b.padding_top;
+    out[14] = b.width - b.border_left - b.border_right - b.padding_left - b.padding_right;
+    out[15] = b.height - b.border_top - b.border_bottom - b.padding_top - b.padding_bottom;
+    return WEVA_OK;
+}
+
+size_t weva_element_matched_rules(weva_document_t doc, weva_element_t element, char* buffer,
+                                  size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    const Element* e = doc->element_at(element);
+    if (!e) return 0;
+    struct Line {
+        std::string origin, layer, specificity, selector, property, value;
+        int source = 0;
+        bool is_inline = false, important = false;
+    };
+    std::vector<Line> lines;
+    const std::vector<MatchedDeclaration>& matches =
+        doc->styles.engine.collect_matches(*e, doc->styles.state);
+    for (const MatchedDeclaration& m : matches) {
+        if (!m.declaration) continue;
+        Line l;
+        l.origin = m.origin == DeclarationOrigin::UserAgent ? "ua" : m.origin == DeclarationOrigin::User ? "user" : "author";
+        if (m.layer_ordinal != kUnlayeredOrdinal) l.layer = std::to_string(m.layer_ordinal);
+        l.specificity = std::to_string(m.specificity.a) + "," + std::to_string(m.specificity.b) + "," +
+                        std::to_string(m.specificity.c);
+        l.selector = m.selector_text;
+        l.property = m.declaration->property;
+        l.value = m.declaration->value_text;
+        l.source = m.source_index;
+        l.is_inline = m.is_inline;
+        l.important = m.declaration->important;
+        lines.push_back(std::move(l));
+    }
+    // The style attribute is applied by the cascade after the sheets, not
+    // collected with them: normal inline declarations outrank every normal
+    // sheet declaration, important ones outrank important sheet ones.
+    // Shorthands expand the way the cascade expands them.
+    std::vector<Line> inline_lines;
+    if (e->has_attribute("style")) {
+        std::vector<Declaration> decls;
+        CssParseError perr;
+        if (parse_inline_declarations(e->get_attribute("style"), /*strict=*/false, &decls, &perr)) {
+            std::vector<ShorthandLonghand> longhands;
+            for (const Declaration& d : decls) {
+                longhands.clear();
+                if (expand_shorthand(d.property, d.value_text, &longhands)) {
+                    for (const ShorthandLonghand& lh : longhands) {
+                        inline_lines.push_back(Line{"author", "", "", "", std::string(lh.property), std::string(lh.value), -1, true, d.important});
+                    }
+                } else {
+                    inline_lines.push_back(Line{"author", "", "", "", d.property, d.value_text, -1, true, d.important});
+                }
+            }
+        }
+    }
+    // Final order, last wins: normal sheet, normal inline, important sheet, important inline.
+    std::vector<Line> ordered;
+    for (const Line& l : lines) if (!l.important) ordered.push_back(l);
+    for (const Line& l : inline_lines) if (!l.important) ordered.push_back(l);
+    for (const Line& l : lines) if (l.important) ordered.push_back(l);
+    for (const Line& l : inline_lines) if (l.important) ordered.push_back(l);
+    std::vector<bool> applied(ordered.size(), false);
+    std::set<std::string_view> seen;
+    for (size_t i = ordered.size(); i-- > 0;) {
+        if (seen.insert(ordered[i].property).second) applied[i] = true;
+    }
+    std::string text;
+    for (size_t i = 0; i < ordered.size(); ++i) {
+        const Line& l = ordered[i];
+        if (!text.empty()) text += '\n';
+        text += l.origin + '\t' + l.layer + '\t' + l.specificity + '\t' + std::to_string(l.source) + '\t';
+        text += l.is_inline ? '1' : '0';
+        text += '\t' + l.selector + '\t' + l.property + '\t' + l.value + '\t';
+        text += l.important ? '1' : '0';
+        text += '\t';
+        text += applied[i] ? '1' : '0';
+    }
+    return write_text_out(text, buffer, capacity);
+}
+
+size_t weva_element_computed_style_all(weva_document_t doc, weva_element_t element, char* buffer,
+                                       size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    const Element* e = doc->element_at(element);
+    if (!e) return 0;
+    const ComputedStyle* style = doc->styles.style_of(*e);
+    if (!style) return 0;
+    const CssPropertyRegistry& registry = CssPropertyRegistry::instance();
+    std::string text;
+    // Every registered property, resolved the way computed_style resolves one
+    // (through inheritance and the initial-value table), in registry order.
+    for (int id = 0; registry.by_id(id) != nullptr; ++id) {
+        const std::string_view name = registry.name_of(id);
+        if (name.empty()) continue;
+        if (!text.empty()) text += '\n';
+        text += std::string(name);
+        text += '\t';
+        text += std::string(style->get(id));
+    }
+    // Custom properties inherit: the nearest definition up the chain wins.
+    std::map<std::string, std::string, std::less<>> customs;
+    for (const ComputedStyle* s = style; s; s = s->inherit_parent()) {
+        for (const auto& custom : s->custom_properties()) customs.emplace(custom.first, custom.second);
+    }
+    for (const auto& custom : customs) {
+        if (!text.empty()) text += '\n';
+        text += custom.first + '\t' + custom.second;
+    }
+    return write_text_out(text, buffer, capacity);
 }
 
 } // extern "C"

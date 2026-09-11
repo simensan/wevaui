@@ -148,6 +148,19 @@ handler names to the controller's methods. The Frontier Camp logic lives in
 the tests (`FrontierCampState`, `FrontierCampController`) and drives the
 example's own `camp.html`.
 
+## The inspector surface (ABI minor 27)
+
+`NativeDocument.Parent` / `Children`, `TryGetBoxModel` (margin, border and
+padding edges plus the content box), `MatchedRules` (every declaration that
+applies, sheet rules and the style attribute, in cascade order with the winner
+per property marked) and `ComputedStyle` (every registered property resolved,
+then the custom properties in scope) wrap the tooling calls the core gained
+for editor panels. `NativeInspectorModel` turns them into what an Elements
+panel shows (tree, search, rule blocks winners-first, computed style, box
+model) and `Window/Weva/Native Elements` renders it for a `WevaNativeDocument`
+in the scene. The C# goldens through the core: `goldens_from_unity.py`
+(layout against the Chrome captures, paint against the C# baselines).
+
 ## Layout dump and the oracle
 
 `weva_document_layout_dump` (ABI minor 26) serves the dump the differential

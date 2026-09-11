@@ -246,7 +246,7 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 26;
+        public const int WEVA_ABI_VERSION_MINOR = 27;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -465,6 +465,16 @@ namespace Weva.Native
         public static extern nuint weva_document_font_faces(System.IntPtr doc, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_document_layout_dump(System.IntPtr doc, byte* source, byte* buffer, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint weva_element_parent(System.IntPtr doc, uint element);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_element_children(System.IntPtr doc, uint element, uint* @out, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int weva_element_box_model(System.IntPtr doc, uint element, double* @out);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_element_matched_rules(System.IntPtr doc, uint element, byte* buffer, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_element_computed_style_all(System.IntPtr doc, uint element, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_set_asset_reader(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, nuint> reader, void* user_data);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

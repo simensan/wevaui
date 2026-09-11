@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 26
+#define WEVA_ABI_VERSION_MINOR 27
 
 uint32_t weva_abi_version(void);
 
@@ -1141,6 +1141,50 @@ size_t weva_document_font_faces(weva_document_t doc, char* buffer, size_t capaci
  * since ABI minor 26. */
 size_t weva_document_layout_dump(weva_document_t doc, const char* source, char* buffer,
                                  size_t capacity);
+
+/* ---- Tooling (minor 27) -------------------------------------------------
+ *
+ * What an inspector needs beyond a selector query: the tree itself, the
+ * rules that matched, every property an element resolved, and the box model
+ * behind its border box. Added for the Unity host's editor panels; the Godot
+ * host's inspector reads the same.
+ */
+
+/* The parent element, WEVA_ELEMENT_NONE for the root or an unknown handle. */
+weva_element_t weva_element_parent(weva_document_t doc, weva_element_t element);
+
+/* The element children in document order, written into `out` up to
+ * `capacity`; returns how many there ARE (the two-call convention). Text
+ * nodes are not listed: weva_element_text reads an element's text. */
+size_t weva_element_children(weva_document_t doc, weva_element_t element, weva_element_t* out,
+                             size_t capacity);
+
+/* The four rectangles behind weva_element_bounds' border box, in document
+ * pixels, into `out[16]`: margin edges top,right,bottom,left; border widths
+ * top,right,bottom,left; padding top,right,bottom,left; then the content box
+ * x,y,width,height. NOT_FOUND for an element without a box. */
+weva_status weva_element_box_model(weva_document_t doc, weva_element_t element, double* out);
+
+/* Every declaration that applies to the element -- the matched sheet rules
+ * and the style attribute -- in cascade order (the LAST line for a property
+ * is the one applied), one per line:
+ *   origin<TAB>layer<TAB>specificity<TAB>source<TAB>inline<TAB>selector<TAB>property<TAB>value<TAB>important<TAB>applied
+ * origin is ua|user|author, layer the ordinal (empty when unlayered),
+ * specificity "a,b,c" (empty for the style attribute), source the rule order
+ * within the document (-1 for the style attribute), inline 1 for the style
+ * attribute, important 1 for !important, applied 1 when this is the winning
+ * declaration for its property. Shorthands are listed expanded, as the
+ * cascade applies them; selector and value are the source text. Same buffer
+ * convention as css_diagnostics. */
+size_t weva_element_matched_rules(weva_document_t doc, weva_element_t element, char* buffer,
+                                  size_t capacity);
+
+/* The element's whole computed style, one "property<TAB>value" line per
+ * registered property in registry order (resolved through inheritance and
+ * the initial-value table, as weva_element_computed_style resolves one),
+ * then every custom property in scope. Same buffer convention. */
+size_t weva_element_computed_style_all(weva_document_t doc, weva_element_t element, char* buffer,
+                                       size_t capacity);
 
 /* How the core obtains an asset's bytes. Returns the number of bytes the asset
  * HAS, writing up to `capacity` of them -- the two-call convention the rest of

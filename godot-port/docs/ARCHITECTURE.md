@@ -838,4 +838,15 @@ half-leading rounds down to whole pixels by default, as real font layout does;
 a synthetic face that exists to be compared with the oracle's arithmetic (the
 Unity host's `SyntheticFontBackend`) passes 0 to keep it exact. The built-in
 stub is unaffected.
+
+ABI minor 27 adds the inspector surface an Elements panel needs beyond a
+selector query: `weva_element_parent` and `weva_element_children` (element
+children in document order, two-call), `weva_element_box_model` (margin, border
+and padding edges plus the content box behind `weva_element_bounds`' border
+box), `weva_element_matched_rules` (every declaration that applies, sheet rules
+and the style attribute, in cascade order with the winner per property marked,
+shorthands expanded as the cascade applies them) and
+`weva_element_computed_style_all` (every registered property resolved, then the
+custom properties in scope). Tab-separated lines, the `css_diagnostics` buffer
+convention.
 The Godot source exposes `register_font_family(name, Font)` and watches resource changes. Installed Windows preview105 includes minor 14; its package and native exports pass the recorded verification.

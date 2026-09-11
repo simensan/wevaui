@@ -1591,3 +1591,76 @@ void test_abi_layout_dump_and_leading() {
     CHECK(y == 3);
     weva_document_destroy(d);
 }
+
+// Minor 27: the inspector surface -- tree navigation, the matched rules, the
+// computed style as a whole, and the box model behind the border box.
+void test_abi_tooling_surface() {
+    auto cfg = default_config(400, 300);
+    auto d = weva_document_create(&cfg);
+    const std::string html =
+        "<div id=\"a\" class=\"box\" style=\"color: red\"><p id=\"t\">text<span id=\"s\">x</span></p>"
+        "<i id=\"i\">y</i></div><div id=\"b\"></div>";
+    const std::string css =
+        "body{margin:0}#a{margin:5px 6px 7px 8px;padding:1px 2px 3px 4px;border:2px solid #000;width:100px;height:50px;--tone:warm}"
+        ".box{color:blue}p{margin:0}";
+    CHECK(weva_document_load_html(d, html.data(), html.size()) == WEVA_OK);
+    CHECK(weva_document_set_css(d, css.data(), css.size()) == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    const auto a = weva_document_query(d, "#a"), t = weva_document_query(d, "#t"),
+               s = weva_document_query(d, "#s"), i = weva_document_query(d, "#i"),
+               b = weva_document_query(d, "#b"), body = weva_document_query(d, "body");
+
+    // Tree navigation.
+    CHECK(weva_element_parent(d, s) == t);
+    CHECK(weva_element_parent(d, t) == a);
+    CHECK(weva_element_parent(d, a) == body);
+    CHECK(weva_element_parent(d, weva_document_query(d, "html")) == WEVA_ELEMENT_NONE);
+    CHECK(weva_element_parent(d, WEVA_ELEMENT_NONE) == WEVA_ELEMENT_NONE);
+    CHECK(weva_element_children(d, a, nullptr, 0) == 2);
+    weva_element_t kids[4] = {};
+    CHECK(weva_element_children(d, a, kids, 4) == 2);
+    CHECK(kids[0] == t && kids[1] == i);
+    CHECK(weva_element_children(d, a, kids, 1) == 2);   // capacity honoured, count complete
+    CHECK(weva_element_children(d, b, kids, 4) == 0);
+    CHECK(weva_element_children(d, t, kids, 4) == 1 && kids[0] == s);   // text nodes are not listed
+
+    // Box model: margins, borders, padding, then the content box.
+    double m[16] = {};
+    CHECK(weva_element_box_model(d, a, m) == WEVA_OK);
+    CHECK(m[0] == 5 && m[1] == 6 && m[2] == 7 && m[3] == 8);
+    CHECK(m[4] == 2 && m[5] == 2 && m[6] == 2 && m[7] == 2);
+    CHECK(m[8] == 1 && m[9] == 2 && m[10] == 3 && m[11] == 4);
+    double x = 0, y = 0, w = 0, h = 0;
+    CHECK(weva_element_bounds(d, a, &x, &y, &w, &h) == WEVA_OK);
+    CHECK(m[12] == x + 2 + 4 && m[13] == y + 2 + 1);
+    CHECK(m[14] == 100 && m[15] == 50);   // content-box width/height as authored
+    CHECK(weva_element_box_model(d, WEVA_ELEMENT_NONE, m) == WEVA_ERR_NOT_FOUND);
+    CHECK(weva_element_box_model(d, a, nullptr) == WEVA_ERR_INVALID_ARGUMENT);
+
+    // Matched rules, cascade order, the winner marked.
+    size_t n = weva_element_matched_rules(d, a, nullptr, 0);
+    CHECK(n > 0);
+    std::string rules(n + 1, '\0');
+    CHECK(weva_element_matched_rules(d, a, rules.data(), rules.size()) == n);
+    rules.resize(n);
+    CHECK(rules.find("author\t\t0,1,0\t") != std::string::npos);            // .box{color:blue}
+    CHECK(rules.find("\t.box\tcolor\tblue\t0\t0") != std::string::npos);      // loses to the inline style
+    CHECK(rules.find("author\t\t\t-1\t1\t\tcolor\tred\t0\t1") != std::string::npos);   // style attribute wins
+    CHECK(rules.find("\t#a\tmargin-top\t5px\t0\t1") != std::string::npos);   // shorthands listed expanded
+    CHECK(rules.find("\t#a\twidth\t100px\t0\t1") != std::string::npos);
+    CHECK(rules.find("\t#a\t--tone\twarm\t0\t1") != std::string::npos);
+    CHECK(rules.find("ua\t") != std::string::npos);                          // the UA sheet's div rules
+    CHECK(weva_element_matched_rules(d, WEVA_ELEMENT_NONE, rules.data(), rules.size()) == 0);
+
+    // The whole computed style: set and inherited properties, custom ones last.
+    n = weva_element_computed_style_all(d, s, nullptr, 0);
+    CHECK(n > 0);
+    std::string all(n + 1, '\0');
+    CHECK(weva_element_computed_style_all(d, s, all.data(), all.size()) == n);
+    all.resize(n);
+    CHECK(all.find("color\tred") != std::string::npos);        // inherited from #a's inline style
+    CHECK(all.find("\n--tone\twarm") != std::string::npos);    // custom properties inherit and come last
+    CHECK(all.find("\nwidth\tauto\n") != std::string::npos);  // every registered property, resolved
+    CHECK(weva_element_computed_style_all(d, WEVA_ELEMENT_NONE, all.data(), all.size()) == 0);
+    weva_document_destroy(d);
+}
