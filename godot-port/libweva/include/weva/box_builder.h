@@ -23,6 +23,10 @@ namespace weva {
 // Shared by style preparation and box construction: only these hosts can
 // generate a backdrop in the currently supported top-layer model.
 bool top_layer_host(const Element& e);
+// The elements whose text the engine draws itself: where a placeholder and a
+// selection band can appear, and so the only hosts whose ::placeholder /
+// ::selection styles are worth computing.
+bool text_field_host(const Element& e);
 
 // Supplies the cascaded style for an element. The C# passes a
 // `Func<Element, ComputedStyle>` so the engine can rebind it per pass without

@@ -597,6 +597,94 @@ void test_abi_color_scheme() {
     CHECK(fill_of(doc.d, 30) == std::make_tuple(0.f, 1.f, 0.f));
 }
 
+// ::placeholder colours the hint text and ::selection the band behind a
+// selection; without a rule the UA's faded text and blue band remain.
+void test_abi_placeholder_and_selection_pseudos() {
+    // The first textured draw is the field's text; the widest untextured
+    // draw inside the field is the band.
+    struct Found { int text = 0; float tr = 0, tg = 0, tb = 0, ta = 0; int band = 0; float br = 0, bg = 0, bb = 0, ba = 0; };
+    const auto scan = [](weva_document_t d) {
+        weva_document_update(d, 0);
+        Found f;
+        size_t count = 0;
+        const weva_draw* draws = weva_document_draws(d, &count);
+        float widest = 1.5f;
+        for (size_t i = 0; i < count; ++i) {
+            if (draws[i].vertex_count < 3) continue;
+            const weva_vertex& v0 = draws[i].vertices[0];
+            if (draws[i].texture_id != 0) {
+                if (f.text++ == 0) { f.tr = v0.r; f.tg = v0.g; f.tb = v0.b; f.ta = v0.a; }
+                continue;
+            }
+            float lo = 1e9f, hi = -1e9f, top = 1e9f, bottom = -1e9f;
+            for (size_t k = 0; k < draws[i].vertex_count; ++k) {
+                lo = std::min(lo, draws[i].vertices[k].x); hi = std::max(hi, draws[i].vertices[k].x);
+                top = std::min(top, draws[i].vertices[k].y); bottom = std::max(bottom, draws[i].vertices[k].y);
+            }
+            // Inside the 200x30 field and not the field's own box or ring.
+            if (lo < 0 || hi > 200 || top < 0 || bottom > 30 || hi - lo >= 199) continue;
+            if (hi - lo > widest) { widest = hi - lo; f.band = 1; f.br = v0.r; f.bg = v0.g; f.bb = v0.b; f.ba = v0.a; }
+        }
+        return f;
+    };
+    const char* kField = "html, body { margin: 0 } input { display: block; width: 200px; height: 30px;"
+                         " padding: 0; border: 0; color: rgb(255, 0, 0) }";
+    {
+        Doc doc((std::string(kField) + " input::placeholder { color: rgb(0, 255, 0) }").c_str(),
+                "<input id=t type=text placeholder=hint>");
+        const Found f = scan(doc.d);
+        CHECK(f.text >= 1);
+        CHECK(f.tr == 0 && f.tg == 1 && f.tb == 0 && f.ta == 1);
+    }
+    {
+        // No rule: the host colour at half strength, as before.
+        Doc doc(kField, "<input id=t type=text placeholder=hint>");
+        const Found f = scan(doc.d);
+        CHECK(f.text >= 1);
+        CHECK(f.tr == 0.5f && f.tg == 0 && f.tb == 0 && f.ta == 0.5f);
+    }
+    {
+        // Chrome's own UA rule shape: opacity on the pseudo.
+        Doc doc((std::string(kField) + " ::placeholder { opacity: 0.25 }").c_str(),
+                "<input id=t type=text placeholder=hint>");
+        const Found f = scan(doc.d);
+        CHECK(f.text >= 1);
+        CHECK(f.tr == 1 && f.ta == 0.25f);
+    }
+    {
+        Doc doc((std::string(kField) + " input::selection { background-color: rgb(255, 0, 255) }").c_str(),
+                "<input id=t type=text value=hello>");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_select_all(doc.d) == 1);
+        const Found f = scan(doc.d);
+        CHECK(f.band == 1);
+        CHECK(f.br == 1 && f.bg == 0 && f.bb == 1 && f.ba == 1);
+    }
+    {
+        Doc doc(kField, "<input id=t type=text value=hello>");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_select_all(doc.d) == 1);
+        const Found f = scan(doc.d);
+        CHECK(f.band == 1);
+        CHECK(f.ba > 0.44f && f.ba < 0.46f);   // the UA blue
+    }
+    {
+        // A <textarea>'s selection goes through the text-run path.
+        Doc doc("html, body { margin: 0 } textarea { display: block; width: 200px; height: 30px;"
+                " padding: 0; border: 0; color: rgb(255, 0, 0) }"
+                " textarea::selection { background-color: rgb(0, 255, 255) }",
+                "<textarea id=t>hello</textarea>");
+        weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t"));
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_select_all(doc.d) == 1);
+        const Found f = scan(doc.d);
+        CHECK(f.band == 1);
+        CHECK(f.br == 0 && f.bg == 1 && f.bb == 1 && f.ba == 1);
+    }
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

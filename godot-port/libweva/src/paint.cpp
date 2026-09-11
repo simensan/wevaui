@@ -1864,6 +1864,51 @@ LinearColor accent_color_of(const ComputedStyle* style) {
     return c.a > 0 ? c : kCheck;
 }
 
+// A paint-time pseudo-element style (::placeholder, ::selection) of a text
+// field, or null when no author rule targets it on that host.
+const ComputedStyle* pseudo_style_of(const PaintContext& paint, const Element* host,
+                                     std::string_view name) {
+    if (!paint.styles || !host) return nullptr;
+    return paint.styles->pseudo_style_of(*host, name);
+}
+
+// The ::selection band: the pseudo's own `background-color` when an author
+// gave one that is not transparent, else the UA's blue at an alpha that
+// leaves the glyphs readable (the band goes BEHIND them).
+LinearColor selection_band_color(const PaintContext& paint, const Element* host) {
+    const LinearColor ua = LinearColor::from_srgb(51, 144, 255, 0.45f);
+    const ComputedStyle* ps = pseudo_style_of(paint, host, "selection");
+    if (!ps || !ps->contains_own("background-color")) return ua;
+    const std::string_view raw = ps->get("background-color");
+    if (raw.empty() || ci_equal(raw, "transparent")) return ua;
+    const LinearColor c = resolve_color(ps, "background-color");
+    return c.a > 0 ? c : ua;
+}
+
+// The placeholder's colour: the ::placeholder rule's own `color` (with its
+// `opacity`, as Chrome's UA sheet fades it that way), else the host's text
+// colour at half strength.
+LinearColor placeholder_color(const PaintContext& paint, const Element* host,
+                              const LinearColor& host_color) {
+    const ComputedStyle* ps = pseudo_style_of(paint, host, "placeholder");
+    if (!ps) return LinearColor(host_color.r * 0.5f, host_color.g * 0.5f, host_color.b * 0.5f, host_color.a * 0.5f);
+    LinearColor c = host_color;
+    bool styled = false;
+    if (ps->contains_own("color")) {
+        const std::string_view raw = ps->get("color");
+        if (!raw.empty() && !ci_equal(raw, "currentcolor")) { c = resolve_color(ps, "color"); styled = true; }
+        else styled = true;   // currentcolor: the host's colour, at full strength
+    }
+    if (ps->contains_own("opacity")) {
+        const std::string t(ps->get("opacity"));
+        char* end = nullptr;
+        const double o = std::strtod(t.c_str(), &end);
+        if (end != t.c_str()) { c.a *= static_cast<float>(std::clamp(o, 0.0, 1.0)); styled = true; }
+    }
+    if (!styled) return LinearColor(host_color.r * 0.5f, host_color.g * 0.5f, host_color.b * 0.5f, host_color.a * 0.5f);
+    return c;
+}
+
 // CSS UI 4 §5.4 caret-color; `auto` is currentcolor, as Chrome draws it (the
 // contrast adjustment the spec permits is not done). `transparent` is a
 // legitimate value -- a page that draws its own cursor hides the UA's.
@@ -1991,7 +2036,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
         const double text_top = ct + control_text_offset(b, t.centered, ch, *m, fs);
         const double baseline = text_top + ascent;
         LinearColor color = resolve_color(b.style, "color");
-        if (t.placeholder) color = LinearColor(color.r * 0.5f, color.g * 0.5f, color.b * 0.5f, color.a * 0.5f);
+        if (t.placeholder) color = placeholder_color(paint, &e, color);
         // Clip the overlay to its content box. A transformed input needs
         // the transformed polygon, including its caret and selection.
         PaintState text_state = state;
@@ -2023,7 +2068,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
                 if (end > start) {
                     Mesh band;
                     tessellate_rect(Rect(text_left + start, text_top, end - start, line_h),
-                                    LinearColor::from_srgb(51, 144, 255, 0.45f), &band, false);
+                                    selection_band_color(paint, &e), &band, false);
                     draw_mesh(std::move(band), paint.backend, {}, state.opacity, xf, text_clip,
                               state.filter.get());
                 }
@@ -2593,10 +2638,9 @@ void paint_selection_band(const Box& b, double x, double y, size_t from, size_t 
     const double start = measured_width(b.text.substr(0, from), b, text_color, paint, face, spacing);
     const double end = measured_width(b.text.substr(0, to), b, text_color, paint, face, spacing);
     if (end <= start) return;
-    // A blue a browser would recognise, at an alpha that leaves the glyphs
-    // readable: the band goes BEHIND them, and the engine has no ::selection to
-    // ask for a colour yet.
-    const LinearColor band = LinearColor::from_srgb(51, 144, 255, 0.45f);
+    // The ::selection colour of the field the run belongs to; the caret's
+    // element is that field, since a band is only drawn in the focused one.
+    const LinearColor band = selection_band_color(paint, paint.caret.element);
     Mesh mesh;
     const double height = b.height > 0 ? b.height : b.font_size;
     tessellate_rect(Rect(x + start, underline ? y + height - 1 : y, end - start,

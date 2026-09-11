@@ -3614,8 +3614,11 @@ an ABI surface), keep host-side (C#), drop.
    `NativeDocument.SetColorScheme`).
 3. `@scope` and `@import` land in the unsupported-at-rule list
    (`cascade.cpp:828`); `@import` needs only the asset reader that exists.
-4. `::placeholder` (placeholder paints, no pseudo style) and `::selection`
-   (hard-coded band, `paint.cpp:2517`).
+4. `::placeholder` and `::selection`. DONE 2026-09-11: both are computed for
+   text fields (`input`, `textarea`) in the style cache and read at paint;
+   `::placeholder` honours `color` and `opacity`, `::selection` its
+   `background-color` for the band. Not done, as in the C#: a
+   `::placeholder` font and the `::selection` glyph colour.
 5. Text: `text-align: justify` (only right/center branches,
    `inline_layout.cpp:1010`), `text-align-last`, `hyphens: manual`,
    `font-variation-settings` / `font-optical-sizing` / `font-feature-settings`

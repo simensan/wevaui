@@ -586,6 +586,11 @@ bool top_layer_host(const Element& e) {
     return e.is_modal() || e.is_popover_open();
 }
 
+bool text_field_host(const Element& e) {
+    const std::string_view tag = e.tag_name();
+    return tag == "input" || tag == "textarea";
+}
+
 // The synthetic box behind a top-layer host. It has no element -- it is not
 // one, and hit testing and the dump must not find it.
 //

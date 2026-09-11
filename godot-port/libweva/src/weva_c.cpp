@@ -1448,23 +1448,32 @@ struct StyleMap : StyleProvider {
         // same way, cached the same way, and the box builder asks for it by
         // the same call. Without it here the UA sheet's `::backdrop` rule
         // matched nothing and a modal dialog had no dim behind it.
-        static constexpr std::string_view kPseudos[4] = {"before", "after", "backdrop", "marker"};
-        for (int i = 0; i < 4; ++i) {
+        static constexpr std::string_view kPseudos[6] = {"before", "after", "backdrop", "marker",
+                                                         "placeholder", "selection"};
+        for (int i = 0; i < 6; ++i) {
             // The universal UA ::backdrop rule otherwise materialises a full
             // style for every element, although only top-layer hosts use it.
             // Keep a previously used style dormant while closed; reopening
             // recomputes it here before the box builder can read it. The DOM
             // attribute versions already make opening/closing rebuild boxes.
             if (i == 2 && !top_layer_host(e)) continue;
+            // ::placeholder and ::selection are paint hooks on text fields:
+            // the one place the engine draws a placeholder or a selection
+            // band. An author's `::selection { ... }` is universal, so
+            // without the gate every element would carry a style for it.
+            const bool paint_pseudo = i >= 4;
+            if (paint_pseudo && !text_field_host(e)) continue;
             auto pit = pseudo_by_element.find({&e, i});
             const bool had = pit != pseudo_by_element.end();
             const bool has = engine.compute_pseudo_element(e, kPseudos[i], state, *raw, &scratch);
             if (!has) {
-                // A pseudo that stopped being generated takes its box with it.
+                // A pseudo that stopped being generated takes its box with it;
+                // a paint hook that went away only changes colours.
                 if (had) {
                     retired.insert(pit->second);
                     pseudo_by_element.erase(pit);
-                    note_structural();
+                    if (paint_pseudo) pending = worst(pending, Invalidation::Paint);
+                    else note_structural();
                 }
                 continue;
             }
@@ -1473,7 +1482,8 @@ struct StyleMap : StyleProvider {
                 std::swap(*ps, scratch);
                 pseudo_by_element[{&e, i}] = ps.get();
                 owned.push_back(std::move(ps));
-                note_structural();
+                if (paint_pseudo) pending = worst(pending, Invalidation::Paint);
+                else note_structural();
                 continue;
             }
             merge(pit->second, &scratch);
@@ -1489,11 +1499,13 @@ struct StyleMap : StyleProvider {
         return it == by_element.end() ? nullptr : it->second;
     }
     const ComputedStyle* pseudo_style_of(const Element& e, std::string_view name) override {
-        const int i = name == "before"     ? 0
-                      : name == "after"    ? 1
-                      : name == "backdrop" ? 2
-                      : name == "marker"   ? 3
-                                           : -1;
+        const int i = name == "before"        ? 0
+                      : name == "after"       ? 1
+                      : name == "backdrop"    ? 2
+                      : name == "marker"      ? 3
+                      : name == "placeholder" ? 4
+                      : name == "selection"   ? 5
+                                              : -1;
         if (i < 0) return nullptr;
         auto it = pseudo_by_element.find({&e, i});
         return it == pseudo_by_element.end() ? nullptr : it->second;
