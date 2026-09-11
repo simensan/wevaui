@@ -1319,6 +1319,39 @@ void test_abi_safe_area_insets() {
     CHECK(bounds("#p", &x, &y, &h) && h == 10);
 }
 
+// Bidi through the ABI with nested spans, as the host scenes lay it out: the
+// inline boxes' bounds follow their runs into visual order. (An inline box's
+// edge used to keep the level of the character OUTSIDE it, so a reordered
+// span stretched from its old edge to its moved text.)
+void test_abi_bidi_nested_spans() {
+    const std::string abg = "\xD7\x90\xD7\x91\xD7\x92", dhv = "\xD7\x93\xD7\x94\xD7\x95";
+    const std::string html =
+        "<div id=p><span id=o><span id=oa>abc</span> <span id=ob>def</span></span> <span id=oc>ghi</span></div>"
+        "<div id=q><span id=qa>one</span> <span id=iso><span id=qb>" + abg + "</span> <span id=qc>" + dhv + "</span></span> <span id=qd>two</span></div>"
+        "<div id=r><span id=ra>abc</span> <span id=rb>" + abg + "</span></div>";
+    Doc doc("html,body{margin:0;width:400px;font-size:16px}#o{unicode-bidi:bidi-override;direction:rtl}"
+            "#iso{unicode-bidi:isolate;direction:rtl}#r{direction:rtl}", html.c_str());
+    weva_document_update(doc.d, 0);
+    const auto x = [&](const char* sel) {
+        double bx = 0, y = 0, w = 0, h = 0;
+        weva_element_bounds(doc.d, weva_document_query(doc.d, sel), &bx, &y, &w, &h);
+        return bx;
+    };
+    const auto w = [&](const char* sel) {
+        double bx = 0, y = 0, bw = 0, h = 0;
+        weva_element_bounds(doc.d, weva_document_query(doc.d, sel), &bx, &y, &bw, &h);
+        return bw;
+    };
+    // bidi-override: the span's two words swap, each keeping its own width;
+    // what follows the span stays after it.
+    CHECK(x("#ob") < x("#oa") && x("#oa") < x("#oc"));
+    CHECK(w("#oa") == w("#ob") && w("#oa") > 0);
+    // isolate: reversed inside, the surroundings in place.
+    CHECK(x("#qa") < x("#qc") && x("#qc") < x("#qb") && x("#qb") < x("#qd"));
+    // a right-to-left paragraph hugs the right edge with the Latin word there.
+    CHECK(x("#rb") < x("#ra") && x("#ra") + w("#ra") == 400);
+}
+
 // Minor 35: what the last update restyled, and a counter for the element set.
 void test_abi_changed_elements() {
     Doc doc("html, body { margin: 0 } div { width: 100px; height: 20px }",

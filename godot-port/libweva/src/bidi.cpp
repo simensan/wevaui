@@ -121,7 +121,14 @@ bool resolve_bidi_levels(std::vector<InlineItem>* items, const ComputedStyle* co
                 text += c.open;
                 closers[item.inline_box_start] = c.close;
             }
+            // An inline box's start edge belongs with the first character
+            // inside it, so it moves with that character: placed at the
+            // level of a character outside the box, an edge of a reordered
+            // span stayed behind and the span stretched over the whole line.
+            unit_of[n] = text.size();
         } else if (item.is_inline_end()) {
+            // And the end edge with the last character inside.
+            unit_of[n] = text.empty() ? 0 : text.size() - 1;
             const auto it = closers.find(item.inline_box_end);
             if (it != closers.end()) {
                 text += it->second;
@@ -171,10 +178,12 @@ bool resolve_bidi_levels(std::vector<InlineItem>* items, const ComputedStyle* co
     for (size_t n = 0; n < items->size(); ++n) {
         const InlineItem& item = (*items)[n];
         if (pieces[n].empty()) {
-            // Edges, breaks, atoms and empty runs sit at the level of the text
-            // around them; an atom has a place of its own in the paragraph.
+            // Edges take the level of the character they sit against, an
+            // atom or a break its own place in the paragraph, an empty run
+            // the level of the text before it.
             InlineItem copy = item;
-            copy.bidi_level = item.is_atom() ? level_at(unit_of[n]) : current;
+            copy.bidi_level = (item.is_inline_start() || item.is_inline_end() || item.is_atom() || item.is_break())
+                                  ? level_at(unit_of[n]) : current;
             out.push_back(copy);
             continue;
         }
