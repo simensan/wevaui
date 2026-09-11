@@ -1,9 +1,10 @@
 // CSS Box Model L3 §3.1 / CSS 2.1 §8.3.1 — Negative margin behaviour matrix.
 // These tests cover block flow, inline-block, flex, grid, and abs-pos layout
 // modes. Where the engine already conforms, we pin the correct behaviour.
-// Where the engine diverges from spec, the spec-correct test is [Ignore]'d
-// with a note, and a companion regression-anchor test pins the current
-// (possibly wrong) behaviour so we don't silently drift further.
+// That was once a mixed picture: divergent cases were [Ignore]'d with a note
+// and shadowed by a regression-anchor test pinning the wrong behaviour. No
+// longer — all 25 tests below assert the spec directly, none is skipped, and
+// no anchor tests remain.
 //
 // Spec rules summarised:
 //   Block flow  : negative margins shift blocks; adjacent negatives collapse

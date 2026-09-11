@@ -15,11 +15,10 @@ namespace Weva.Tests.Layout {
     //   - FindById / Walk helpers are local copies (same pattern as
     //     FloatLayoutTests.cs).
     //
-    // Status annotations:
-    //   PASSES  — engine already correct, kept as regression pin.
-    //   PINNED  — engine currently diverges; test is [Ignore]'d and the
-    //             divergence is documented. A follow-up B11x sub-item
-    //             exists in CSS_OPEN_GAPS.md.
+    // Status annotations: these once split into PASSES (engine correct, kept
+    // as a regression pin) and PINNED (engine diverges, test [Ignore]'d). All
+    // 14 tests below now run and pass, and nothing is skipped, so the split no
+    // longer means anything — every test here is a regression pin.
     public class FloatFragmentationTests {
         static IEnumerable<Box> Walk(Box root) {
             yield return root;

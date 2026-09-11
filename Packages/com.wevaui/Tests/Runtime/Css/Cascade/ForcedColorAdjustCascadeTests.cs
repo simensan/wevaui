@@ -11,16 +11,17 @@ namespace Weva.Tests.Css.Cascade {
     // `forced-color-adjust` controls whether the UA may override an element's
     // colors in high-contrast / forced-colors mode. Values are `auto` and `none`.
     //
-    // v1 status: `forced-color-adjust` is NOT a registered CSS property in the
-    // engine. Declarations spill to the ComputedStyle side dictionary (customProps)
-    // and produce an "unknown property" diagnostic via UICssDiagnostics.Warn.
-    // The value is still retrievable via `ComputedStyle.Get("forced-color-adjust")`.
-    // Rendering ignores it (forced-colors OS integration is not implemented).
+    // Status: `forced-color-adjust` IS registered (CssProperties.cs, not
+    // inherited, initial `auto`). It was unregistered once — declarations
+    // spilled to the ComputedStyle side dictionary and drew an "unknown
+    // property" diagnostic — and the tests below were written against that.
+    // They still pass because `Get` works on either path.
     //
-    // These tests pin the current behavior and serve as a readiness baseline:
-    // when the property is eventually registered as a first-class property,
-    // the `[Ignore]` markers on the registration tests should be removed and
-    // the "stored-in-side-dict" tests will still pass (Get works on both paths).
+    // What remains genuinely unimplemented is the other half: rendering
+    // ignores the property, because forced-colors OS integration does not
+    // exist. Registration is not the gap; honouring it is.
+    //
+    // Nothing here is skipped.
     //
     // Spec: CSS Color Adjustment L1 §10
     //       https://www.w3.org/TR/css-color-adjust-1/#forced-color-adjust-prop

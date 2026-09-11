@@ -14,7 +14,7 @@ touched.
 | 1 | Repo layout | **proposed — awaiting review**, nothing moved |
 | 2 | Dead and stale material | **swept** — 3 fixes landed, 3 findings need a decision |
 | 3 | TODO / FIXME / HACK inventory | **done** — 10 found, 2 stale ones fixed, and a broken gate repaired |
-| 4 | Test hygiene | **in progress** — inventory done, 1 of 6 stale headers fixed |
+| 4 | Test hygiene | **done** — nothing suppressed; all 6 stale headers fixed |
 | 5 | Build hygiene | not started |
 | 6 | Host duplication | not started |
 | 7 | ABI surface | not started |
@@ -440,18 +440,37 @@ green", "previously `[Ignore]`'d"). Six actively mislead, in the present tense:
 | `MarginCollapsingTests` | "Each `[Ignore]`'d test" | none |
 | `NegativeMarginTests` | "the spec-correct test is `[Ignore]`'d" | none |
 
-`QuotesAndQuoteContentTests` was the worst and is fixed. Its 20-line header said
-`quotes` was unregistered, that `GetId` returned -1, and that the spec tests were
-skipped — while the file's own `Quotes_is_registered_inherited_initial_auto`
-asserts the property is registered, inherited, and initialises to `auto`, and
-`CssProperties.cs:1107` does `Add("quotes", true, "auto")`. A reader trusting
-the header would conclude a working feature was missing.
+All six are fixed. Each was checked against the engine before rewriting,
+because a green test is not proof the spec behaviour landed — the test could
+have been rewritten to assert the divergence instead. In every case the gap had
+genuinely closed, and the comment was the only thing left describing it:
 
-The remaining five need the same treatment but each needs checking one at a
-time: a green test is not proof the spec behaviour landed, because the test may
-have been rewritten to assert the engine's divergence instead. That distinction
-is the whole value of the comment, so it is worth getting right rather than
-bulk-editing. Next iteration.
+- **`QuotesAndQuoteContentTests`** claimed `quotes` was unregistered and its
+  lookup returned -1. `CssProperties.cs:1107` registers it inherited with
+  initial `auto`, and the file's own test asserts exactly that.
+- **`FontVariantFeatureSettingsSizeAdjustTests`** listed six `font-variant`
+  longhands as unregistered and non-inheriting. All six are registered
+  consecutively at `CssProperties.cs:773-778`, each inherited with initial
+  `normal` — which is the CSS Fonts L4 §6.1 behaviour the header said was
+  missing.
+- **`ForcedColorAdjustCascadeTests`** claimed the property was unregistered and
+  spilled to the side dictionary. It is registered at `CssProperties.cs:825`.
+  The genuinely unimplemented half — rendering ignores it, because there is no
+  forced-colors OS integration — is now stated on its own instead of being
+  buried under a registration claim that is no longer true.
+- **`NegativeMarginTests`**, **`FloatFragmentationTests`**,
+  **`MarginCollapsingTests`** each described a two-tier scheme where divergent
+  cases were `[Ignore]`'d and shadowed by anchor tests pinning the wrong
+  behaviour. No anchor tests remain in any of the three, and all 25, 14 and 34
+  tests respectively run and pass.
+
+Three files still mention `[Ignore]` and should: `TransitionBehaviorTests`,
+`ComputedValueSnapshotTests` and `DisplayListItemTests` describe the
+un-ignoring in the past tense, which is accurate history. The six rewritten
+above now do the same where the history is worth keeping.
+
+Suite after the rewrites: 9,929 passed, 2 failed — unchanged, as expected from
+comment-only edits.
 
 ### 4.2 Known-failing sets, so a new red is obvious
 
