@@ -58,6 +58,11 @@ std::string ImageStore::resolve(std::string_view url) const {
     return out;
 }
 
+bool ImageStore::read(std::string_view url, std::vector<uint8_t>* out) const {
+    const std::string path = resolve(url);
+    return reader_ ? reader_(path, out) : read_file(path, out);
+}
+
 const DecodedImage* ImageStore::get(std::string_view url) {
     if (url.empty()) return nullptr;
     const std::string path = resolve(url);

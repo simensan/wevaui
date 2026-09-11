@@ -666,6 +666,11 @@ the importer (`user://`, absolute paths, or Keep File) still need to be PNG,
 8 bits per channel and non-interlaced. `get_missing_assets()` reports paths
 that could not be loaded.
 
+An `@import` in a stylesheet goes through the same path: the sheet is read
+relative to `base_path` (or by its `res://` path), spliced in under its media,
+supports and layer conditions, and one that cannot be read is named in the
+CSS diagnostics.
+
 `<img>` sizes as a replaced element: no width or height gives the image's own
 size, one of them gives the other through the intrinsic ratio, and
 `object-fit` and `object-position` place it in the content box.

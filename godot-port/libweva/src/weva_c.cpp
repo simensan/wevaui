@@ -10,6 +10,7 @@
 #include "weva/block_layout.h"
 #include "weva/box_builder.h"
 #include "weva/sticky.h"
+#include "weva/at_import.h"
 #include "weva/animation.h"
 #include "weva/cascade.h"
 #include "weva/container_query_state.h"
@@ -2099,6 +2100,8 @@ struct weva_document {
     // Geometry-only passes already propagate paint input versions. Keep the
     // publication request separate from structural/layout invalidation.
     bool paint_pending = false;
+    // `@import`s that could not be read, for the CSS diagnostics.
+    std::vector<std::string> missing_imports;
     // How many `position: sticky` boxes the last sticky pass found; -1 until
     // the first pass after a layout. A page without any skips the walk.
     int sticky_count = -1;
@@ -3762,6 +3765,18 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     return WEVA_OK;
 }
 
+// CSS Cascade 5 §4: an `@import` is fetched through the document's asset
+// reader, relative to its base path -- the convention `url()` follows -- and
+// spliced into the sheet before the cascade sees it.
+void expand_document_imports(weva_document* doc, Stylesheet* sheet) {
+    expand_imports(sheet, [doc](std::string_view url, std::string* css) {
+        std::vector<uint8_t> bytes;
+        if (!doc->images.read(url, &bytes)) return false;
+        css->assign(bytes.begin(), bytes.end());
+        return true;
+    }, &doc->missing_imports);
+}
+
 weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t length) {
     if (!doc || (!css && length > 0)) return WEVA_ERR_INVALID_ARGUMENT;
     auto sheet = std::make_unique<Stylesheet>();
@@ -3769,6 +3784,7 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
     if (!parse_stylesheet(std::string_view(css ? css : "", length), false, sheet.get(), &err)) {
         return WEVA_ERR_PARSE;
     }
+    expand_document_imports(doc, sheet.get());
     doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
     doc->sheets.push_back(std::move(sheet));
     // The cascade caches selector matches by element shape, and the shapes did
@@ -3794,6 +3810,8 @@ weva_status weva_document_set_css(weva_document_t doc, const char* css, size_t l
     doc->styles.engine.clear();
     doc->styles.keyframes.clear();
     doc->sheets.clear();
+    doc->missing_imports.clear();
+    expand_document_imports(doc, sheet.get());
     if (doc->ua_sheet)
         doc->styles.engine.add_stylesheet(doc->ua_sheet.get(), DeclarationOrigin::UserAgent);
     doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
@@ -7698,6 +7716,10 @@ size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t c
     for (const auto& name : doc->styles.engine.unsupported_at_rules()) {
         if (!text.empty()) text += '\n';
         text += "Ignored @" + name + ": unsupported stylesheet rule.";
+    }
+    for (const auto& url : doc->missing_imports) {
+        if (!text.empty()) text += '\n';
+        text += "Could not load @import \"" + url + "\": the asset reader returned nothing.";
     }
     if (buffer && capacity) {
         const size_t n = std::min(text.size(), capacity - 1);

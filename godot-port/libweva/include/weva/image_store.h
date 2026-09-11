@@ -48,6 +48,10 @@ public:
     // tests and for a host that wants to report what it could not find.
     std::string resolve(std::string_view url) const;
 
+    // The bytes at a URL through the same base path and reader an image goes
+    // through, undecoded: what an `@import`ed stylesheet needs.
+    bool read(std::string_view url, std::vector<uint8_t>* out) const;
+
     void clear() { cache_.clear(); content_version_ = next_content_version(); }
     // Decoded inputs remain immutable until a reset. Versions are unique
     // across stores too, so a paint cache can safely receive a different one.

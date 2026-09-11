@@ -148,6 +148,13 @@ handler names to the controller's methods. The Frontier Camp logic lives in
 the tests (`FrontierCampState`, `FrontierCampController`) and drives the
 example's own `camp.html`.
 
+## `@import`
+
+An `@import` in a stylesheet is fetched through the same `AssetReader` and
+`BasePath` a `url()` image goes through, so a sheet split across files ships
+the way its images do. A sheet the reader cannot return is dropped and named
+in `CssDiagnostics`.
+
 ## Colour scheme (ABI minor 28)
 
 `NativeDocument.SetColorScheme(dark)` is the switch `light-dark()` and

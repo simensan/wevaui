@@ -3615,8 +3615,11 @@ an ABI surface), keep host-side (C#), drop.
    `color-scheme` wins over the host's preference, and ABI minor 28 adds
    `weva_document_set_color_scheme` (Godot `dark_color_scheme`, Unity
    `NativeDocument.SetColorScheme`).
-3. `@scope` and `@import` land in the unsupported-at-rule list
-   (`cascade.cpp:828`); `@import` needs only the asset reader that exists.
+3. `@import` DONE 2026-09-11 (`at_import.cpp`: fetched through the asset
+   reader relative to the base path, spliced under its media / supports /
+   layer conditions, nested with a cycle guard; an unreadable sheet is
+   listed by `weva_document_css_diagnostics`). `@scope` still lands in the
+   unsupported-at-rule list (`cascade.cpp:828`).
 4. `::placeholder` and `::selection`. DONE 2026-09-11: both are computed for
    text fields (`input`, `textarea`) in the style cache and read at paint;
    `::placeholder` honours `color` and `opacity`, `::selection` its

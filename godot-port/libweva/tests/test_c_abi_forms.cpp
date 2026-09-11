@@ -751,6 +751,79 @@ void test_abi_position_sticky() {
     CHECK(top_of(h) == 50);
 }
 
+// CSS Cascade 5 §4: @import loads through the asset reader and splices the
+// sheet in, under its media, supports and layer conditions; nested imports,
+// cycles, a sheet that cannot be read and an import after other rules.
+void test_abi_at_import() {
+    static const char* kSheets[][2] = {
+        {"a.css", "@import \"d.css\"; #a { color: rgb(1, 0, 0) }"},
+        {"b.css", "#b { color: rgb(2, 0, 0) }"},
+        {"c.css", "#c { color: rgb(3, 0, 0) }"},
+        {"d.css", "#d { color: rgb(4, 0, 0) }"},
+        {"cycle.css", "@import 'cycle.css'; #cy { color: rgb(5, 0, 0) }"},
+        {"e.css", "#e { color: rgb(6, 0, 0) }"},
+        {"f.css", "#f { color: rgb(7, 0, 0) }"},
+        {"late.css", "#late { color: rgb(8, 0, 0) }"},
+        {"g.css", "#g { color: rgb(10, 0, 0) }"},
+    };
+    const auto reader = [](void*, const char* path, uint8_t* out, size_t capacity) -> size_t {
+        // The whole file name at the end of the resolved path: "missing.css"
+        // ends in "g.css" and must not read as g.css.
+        const std::string_view full(path);
+        for (const auto& sheet : kSheets) {
+            const std::string_view name(sheet[0]);
+            if (full.size() < name.size() || full.substr(full.size() - name.size()) != name) continue;
+            if (full.size() > name.size() && full[full.size() - name.size() - 1] != '/' &&
+                full[full.size() - name.size() - 1] != '\\') continue;
+            const size_t size = std::strlen(sheet[1]);
+            if (out && capacity >= size) std::memcpy(out, sheet[1], size);
+            return size;
+        }
+        return 0;
+    };
+    weva_config c = config();
+    weva_document_t d = weva_document_create(&c);
+    weva_document_set_asset_reader(d, reader, nullptr);
+    const char* html = "<div id=a></div><div id=b></div><div id=c></div><div id=d></div><div id=cy></div>"
+                       "<div id=e></div><div id=f></div><div id=late></div><div id=g></div>";
+    weva_document_load_html(d, html, std::strlen(html));
+    const char* css = "@import url(\"a.css\"); @import 'b.css' screen; @import \"c.css\" print;"
+                      " @import \"cycle.css\"; @import \"e.css\" supports(display: grid);"
+                      " @import url(f.css) layer(base); @import \"missing.css\";"
+                      " @import \"g.css\" supports(bogus-property: 1);"
+                      " #f { color: rgb(9, 0, 0) } @import \"late.css\";";
+    CHECK(weva_document_add_css(d, css, std::strlen(css)) == WEVA_OK);
+    weva_document_update(d, 0);
+    const auto color_of = [&](const char* selector) {
+        const weva_element_t e = weva_document_query(d, selector);
+        std::string all(weva_element_computed_style_all(d, e, nullptr, 0) + 1, '\0');
+        weva_element_computed_style_all(d, e, all.data(), all.size());
+        size_t at = 0;
+        while (at < all.size()) {
+            const size_t nl = all.find('\n', at);
+            const std::string_view line(all.data() + at, (nl == std::string::npos ? all.size() : nl) - at);
+            if (line.substr(0, 6) == "color\t") return std::string(line.substr(6));
+            if (nl == std::string::npos) break;
+            at = nl + 1;
+        }
+        return std::string();
+    };
+    CHECK(color_of("#a") == "rgb(1, 0, 0)");
+    CHECK(color_of("#d") == "rgb(4, 0, 0)");    // imported by a.css
+    CHECK(color_of("#b") == "rgb(2, 0, 0)");    // `screen` matches
+    CHECK(color_of("#c") != "rgb(3, 0, 0)");    // `print` does not
+    CHECK(color_of("#cy") == "rgb(5, 0, 0)");   // the cycle loads once
+    CHECK(color_of("#e") == "rgb(6, 0, 0)");    // supports() true
+    CHECK(color_of("#g") != "rgb(10, 0, 0)");   // supports() false
+    CHECK(color_of("#f") == "rgb(9, 0, 0)");    // unlayered beats the imported layer
+    CHECK(color_of("#late") != "rgb(8, 0, 0)"); // an @import after a rule is ignored
+    // The sheet that could not be read is reported.
+    std::string diag(weva_document_css_diagnostics(d, nullptr, 0) + 1, '\0');
+    weva_document_css_diagnostics(d, diag.data(), diag.size());
+    CHECK(diag.find("missing.css") != std::string::npos);
+    weva_document_destroy(d);
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box
