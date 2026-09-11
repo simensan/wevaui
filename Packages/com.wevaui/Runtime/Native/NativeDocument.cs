@@ -581,6 +581,30 @@ namespace Weva.Native
             return WevaNative.weva_element_set_scroll(Handle, element, x, y) == (int)weva_status.WEVA_OK;
         }
 
+        /// <summary>
+        /// The layout dump the differential oracle compares, as weva_dump's JSON,
+        /// produced by the core from this document's box tree. Valid after an update.
+        /// </summary>
+        public string LayoutDump(string source)
+        {
+            byte[] name = NullTerminated(source);
+            fixed (byte* np = name)
+            {
+                byte* namePtr = np;
+                return ReadString((buffer, capacity) => WevaNative.weva_document_layout_dump(Handle, namePtr, buffer, capacity));
+            }
+        }
+
+        /// <summary>
+        /// Whether the installed font backend's half-leading rounds down to whole
+        /// pixels as real font layout does (the default). A synthetic face compared
+        /// with the oracle's arithmetic passes false. Takes effect on the next update.
+        /// </summary>
+        public void SetFontLeadingRounding(bool rounds)
+        {
+            WevaNative.weva_document_set_font_leading_rounding(Handle, rounds ? 1 : 0);
+        }
+
         /// <summary>Every element the selector matches, in document order.</summary>
         public uint[] QueryAll(string selector)
         {

@@ -537,6 +537,7 @@ void test_abi_host_render_backend();
 void test_abi_partial_backend_degrades();
 void test_abi_host_font_backend();
 void test_abi_registered_font_families();
+void test_abi_layout_dump_and_leading();
 void test_abi_font_and_renderer_replacement();
 void test_abi_positioned_font_shaping();
 void test_abi_shape_cache_retains_hot_labels();
@@ -1080,6 +1081,7 @@ int main() {
     test_abi_partial_backend_degrades();
     test_abi_host_font_backend();
     test_abi_registered_font_families();
+    test_abi_layout_dump_and_leading();
     test_abi_font_and_renderer_replacement();
     test_abi_positioned_font_shaping();
     test_abi_shape_cache_retains_hot_labels();

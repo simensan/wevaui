@@ -246,7 +246,7 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 25;
+        public const int WEVA_ABI_VERSION_MINOR = 26;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -257,6 +257,8 @@ namespace Weva.Native
         public static extern void weva_document_set_font_backend(System.IntPtr doc, weva_font_backend* backend, ulong face);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_set_font_shaper(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, ulong, byte*, nuint, double, weva_shaped_glyph*, nuint, nuint> shape);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void weva_document_set_font_leading_rounding(System.IntPtr doc, int rounds);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_register_font_family(System.IntPtr doc, byte* family, ulong face);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -461,6 +463,8 @@ namespace Weva.Native
         public static extern nuint weva_document_css_diagnostics(System.IntPtr doc, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_document_font_faces(System.IntPtr doc, byte* buffer, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_document_layout_dump(System.IntPtr doc, byte* source, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_set_asset_reader(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, nuint> reader, void* user_data);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

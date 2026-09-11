@@ -133,6 +133,38 @@ python godot-port/hosts/unity/compare_hosts.py <dir>
 Give both sides the same font bytes (an `@font-face` rule in the page's CSS)
 or the comparison measures two fonts, not two hosts.
 
+## Input, events, bindings
+
+`NativeDocument` carries the interaction calls the Godot host's `_gui_input`
+makes (pointer state, key edges, text input, paste, wheel, focus stepping,
+IME composition) and drains the core's event queue into `NativeEvent`
+records. `NativeInputFeed` reads the Input System each frame and applies the
+same rules as the Godot host (a Space the button took is not also text; Ctrl
+shortcuts go to selection, clipboard and history). `NativeBindings` serves
+`{{ path }}`, `data-class`, `data-each` and `data-model` from a C# dictionary
+graph (or a resolver) and writes control edits back keeping the model's
+types; `WevaNativeDocument.Bind(model, controller)` dispatches `on-<event>`
+handler names to the controller's methods. The Frontier Camp logic lives in
+the tests (`FrontierCampState`, `FrontierCampController`) and drives the
+example's own `camp.html`.
+
+## Layout dump and the oracle
+
+`weva_document_layout_dump` (ABI minor 26) serves the dump the differential
+oracle compares from the core's own box tree, the walk `weva_dump` shares, so
+the Unity host's dump is the tool's by construction. `SyntheticFontBackend` is
+the oracle's face (0.45em glyphs, 0.6em monospace, 0.85/0.293/1.143em lines,
+fractional leading kept through `weva_document_set_font_leading_rounding`).
+`oracle_from_unity.py` dumps a corpus through the Unity editor in one run (the
+EditMode test `Manifest_DumpsEveryCaseForTheOracle` reads
+`WEVA_NATIVE_DUMP_MANIFEST`) and compares each case with `weva_dump` using
+`run_oracle.py`'s own comparison:
+
+```
+python godot-port/hosts/unity/oracle_from_unity.py godot-port/tools/oracle/corpus/samples \
+    --weva-dump wsl:/root/weva/build-gcc/tools/weva_dump/weva_dump --out .utmp/oracle-unity
+```
+
 ## Tests
 
 The C++ load test (`tests/load_test.cpp`) opens the plugin through the dynamic

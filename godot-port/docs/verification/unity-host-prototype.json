@@ -45,10 +45,9 @@
     "gate": "met: the document round trip passes from C# in EditMode and agrees with the C++ load test"
   },
   "steps_open": [
-    "5 input and events",
-    "6 bindings and controllers (Frontier Camp logic in a Unity script)",
-    "7 layout-dump from Unity for the three-way oracle",
-    "colour glyph rasterization and a real shaper for the font adapter; the in-pass (linear target) path is drawn but not pixel-verified in a scene"
+    "live-scene (Game view) verification of WevaNativeDocument through UIRenderPass",
+    "colour glyph rasterization and a real shaper for the font adapter",
+    "an ABI switch to freeze animations for dumps if the oracle should cover animated pages"
   ],
   "limitations": [
     "The Unity editor is not on the CI runners; the EditMode run and the host comparison are recorded here and must be rerun by hand after header, generator or adapter changes.",
@@ -125,5 +124,43 @@
       ]
     },
     "gate": "met with explained differences: the Frontier Camp page and the randhtml demo render through the core in Unity and agree with the Godot host everywhere but on text rasterization and colour glyphs"
+  },
+  "step_5_input_events": {
+    "adapter": "NativeDocument interaction calls (pointer with buttons/modifiers, key edges, text input, paste, wheel scroll, focus stepping, IME composition, caret bounds, select-all/undo/redo) and PollEvents into NativeEvent; NativeInputFeed reads the Input System with the Godot host rules (a Space the button took is not also text; Ctrl shortcuts route to selection/clipboard/history; the feed reports whether the document consumed the input); WevaNativeDocument exposes the Godot addon signals as C# events",
+    "ported_from_godot": "the document-level checks of keyboard_integration_tests.gd and input_integration_tests.gd (Enter activates on key-down and repeats, Space on release and not as text, focus loss cancels a held button, checkbox/radio/slider/details/popover keyboard behaviour, implicit submission and a disabled default button, Unicode typing, Backspace and paste, pointer down/up/click/enter/leave, release elsewhere is no click, secondary button is a context menu, pointer-events:none passes hit testing, wheel scroll at a point with clamping, IME composition and caret, tab order with and without wrap); the checks about Godot Control routing (overlays, CanvasLayer, native focus chain) are not portable",
+    "editmode": "NativeInputTests 16/16 (in the Native run below)",
+    "gate": "met"
+  },
+  "step_6_bindings_controllers": {
+    "adapter": "NativeBindings: weva_binding_source over a C# dictionary/list graph or a resolver ({{ path }}, data-class, data-each keyed rows, data-model both ways with the model's types kept, DataChanged); WevaNativeDocument.Bind(model, controller) dispatches on-<event> handler names to controller methods by reflection and refreshes on the next pump when the model moved (RequestRefresh, or a data-model write-back)",
+    "frontier_camp": "camp_state.gd ported to FrontierCampState/FrontierCampController (Tests/Editor/Native); the example's own camp.html + camp.css drive it through the core: bindings fill the screen (4 keyed rows, derived counts, :disabled from bound attributes), forage -> craft -> place the campfire from its row (TryGetRow key), a disabled button does not reach the controller, the settings dialog writes Player.Name (string), Settings.Volume (int) and Settings.Music (bool) back and the HUD follows, the clock ticks into the masthead",
+    "editmode": "NativeBindingTests 6/6, FrontierCampNativeTests 5/5 (in the Native run below)",
+    "gate": "met"
+  },
+  "step_7_oracle_from_unity": {
+    "core_change": "ABI minor 26: weva_document_layout_dump serves weva_dump's JSON from the document's box tree (the tool's walk moved into libweva/src/layout_dump.cpp and shared; weva_dump output verified byte-identical on 3 pages after the move) and weva_document_set_font_leading_rounding lets a synthetic face keep fractional half-leading (C ABI test test_abi_layout_dump_and_leading; core suite 505,247 checks, 0 failures; Godot extension builds unchanged)",
+    "unity_side": "SyntheticFontBackend (the oracle's face: 0.45em/0.6em advances, 0.85/0.293/1.143em lines, emoji allowlist as MonoFontMetrics, leading rounding off), NativeLayoutDump, the manifest-driven EditMode dump, hosts/unity/oracle_from_unity.py comparing with run_oracle.py's compare()",
+    "samples_corpus": {
+      "cases": 47,
+      "agree": 42,
+      "differ": 5,
+      "differing": [
+        "audit-validation (.fill, .graft-anim)",
+        "layout-stress (.live counters, 708 boxes)",
+        "match3-endgame (.end-card entrance)",
+        "neon (.meter-sheen)",
+        "particles (.mote, 195 boxes)"
+      ]
+    },
+    "first_attempt": "an element-level dump through the C ABI agreed on 20/47: box-tree depth (line and anonymous boxes count a level), box order within a line, transform translation and the ABI font path's leading rounding were all adapter differences, which is why the dump moved into the core",
+    "differences_explained": "all five remaining pages are CSS animations: weva_dump lays out with no animation clock (base styles), the hosted document applies keyframes at time 0 (an entrance animation's from-state, a mote's start position); docs/ORACLE.md already lists animated values as what the oracle cannot arbitrate. Not an adapter difference: every static page agrees exactly at four decimals.",
+    "gate": "met for every non-animated page (42/42); the 5 animated pages differ by the animation clock, not the host"
+  },
+  "native_editmode_run": "Unity 6000.4.1f1 EditMode, filter Weva.Tests.EditorTests.Native: 72 cases, 70 passed, 0 failed, 2 inconclusive by design (the parity render and the manifest dump run only with their environment variables set; both ran with them for the numbers above)",
+  "phase_gate": {
+    "sample_runs_in_unity": "Frontier Camp renders and is driven through the core in EditMode (offscreen render compared with the Godot host, the ported game logic drives camp.html); a WevaNativeDocument in a live scene through UIRenderPass is implemented but NOT pixel-verified in the Game view",
+    "ported_nunit_subsets": "pass (input 16, bindings 6, Frontier Camp 5, font adapter 19, render 6, dump 3, plugin 18)",
+    "oracle_from_unity": "42/47 samples identical to weva_dump; the 5 animated pages explained above",
+    "status": "met with the two caveats above"
   }
 }

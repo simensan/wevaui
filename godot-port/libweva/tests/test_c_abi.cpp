@@ -1528,3 +1528,66 @@ void test_abi_registered_font_families() {
     widths(15, 15);
     weva_document_destroy(d);
 }
+
+// Minor 26: the layout dump the oracle compares, served from the document's
+// own box tree, and the host font backend's half-leading rounding switch.
+void test_abi_layout_dump_and_leading() {
+    auto cfg = default_config(300, 200);
+    auto d = weva_document_create(&cfg);
+    HostFontState state;
+    weva_font_backend fb{};
+    fb.user_data = &state;
+    fb.face_metrics = host_face_metrics;
+    fb.glyph_index = host_glyph_index;
+    fb.glyph_metrics = host_glyph_metrics;
+    fb.shape = host_shape;
+    weva_document_set_font_backend(d, &fb, 1);
+    const std::string html =
+        "<div id=\"a\" class=\"box\"><p id=\"t\" style=\"font-size:11px;line-height:20px;margin:0\">"
+        "<span id=\"in\">x</span></p></div><i id=\"s\">y</i>";
+    const std::string css = "body{margin:0}";
+    CHECK(weva_document_load_html(d, html.data(), html.size()) == WEVA_OK);
+    CHECK(weva_document_set_css(d, css.data(), css.size()) == WEVA_OK);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+
+    const size_t n = weva_document_layout_dump(d, "case.html", nullptr, 0);
+    CHECK(n > 0);
+    std::string text(n + 1, '\0');
+    CHECK(weva_document_layout_dump(d, "case.html", text.data(), text.size()) == n);
+    text.resize(n);
+    CHECK(text.find("\"source\": \"case.html\"") != std::string::npos);
+    CHECK(text.find("\"width\": 300") != std::string::npos);
+    CHECK(text.find("\"height\": 200") != std::string::npos);
+    CHECK(text.find("\"count\": 4") != std::string::npos);
+    CHECK(text.find("{\"i\":0,\"depth\":1,\"tag\":\"div\",\"id\":\"a\",\"cls\":\"box\",\"path\":\"\",\"x\":0,\"y\":0,\"w\":300,\"h\":20}") != std::string::npos);
+    CHECK(text.find("{\"i\":1,\"depth\":2,\"tag\":\"p\",\"id\":\"t\"") != std::string::npos);
+    CHECK(text.find("\"tag\":\"span\",\"id\":\"in\"") != std::string::npos);
+    CHECK(text.find("\"tag\":\"i\",\"id\":\"s\"") != std::string::npos);
+    char small[16];
+    CHECK(weva_document_layout_dump(d, "case.html", small, sizeof(small)) == n);
+    CHECK(std::strlen(small) == sizeof(small) - 1);
+    CHECK(weva_document_layout_dump(nullptr, "x", small, sizeof(small)) == 0);
+
+    // The line is 20px around an 11px face's 13.2px of ascent and descent
+    // (0.9 + 0.3 em): the half-leading is 3.4px, rounded down to 3 as real
+    // font layout does.
+    double x = 0, y = 0, w = 0, h = 0;
+    const auto in = weva_document_query(d, "#in");
+    CHECK(weva_element_bounds(d, in, &x, &y, &w, &h) == WEVA_OK);
+    std::fprintf(stderr, "leading probe: span y=%.4f h=%.4f\n", y, h);
+    CHECK(y == 3);
+    weva_document_set_font_leading_rounding(d, 0);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(weva_element_bounds(d, in, &x, &y, &w, &h) == WEVA_OK);
+    CHECK(std::abs(y - 3.4) < 1e-9);
+    // The switch survives a backend replacement and can be turned back on.
+    weva_document_set_font_backend(d, &fb, 1);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(weva_element_bounds(d, weva_document_query(d, "#in"), &x, &y, &w, &h) == WEVA_OK);
+    CHECK(std::abs(y - 3.4) < 1e-9);
+    weva_document_set_font_leading_rounding(d, 1);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(weva_element_bounds(d, weva_document_query(d, "#in"), &x, &y, &w, &h) == WEVA_OK);
+    CHECK(y == 3);
+    weva_document_destroy(d);
+}

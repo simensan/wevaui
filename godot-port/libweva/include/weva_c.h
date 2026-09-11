@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 25
+#define WEVA_ABI_VERSION_MINOR 26
 
 uint32_t weva_abi_version(void);
 
@@ -241,6 +241,15 @@ void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend
  * installed first (otherwise INVALID_ARGUMENT). Existing font tables and
  * their callers keep their original binary layout and behavior. */
 weva_status weva_document_set_font_shaper(weva_document_t doc, weva_shape_glyphs_fn shape);
+
+/* Whether a host font backend's half-leading is rounded down to whole
+ * pixels, as real font layout does (the default, 1). A synthetic face that
+ * exists to be compared with the oracle's arithmetic (the Unity host's
+ * layout dump against weva_dump) passes 0 so fractional leading stays exact.
+ * Applies to the installed backend and to ones installed later; the
+ * built-in stub is unaffected. Takes effect on the next update. Available
+ * since ABI minor 26. */
+void weva_document_set_font_leading_rounding(weva_document_t doc, int rounds);
 
 /* Register one CSS family name (not a comma-separated stack) with a face from
  * the installed font backend. Names are copied and matched case-insensitively.
@@ -1123,6 +1132,15 @@ size_t weva_document_css_diagnostics(weva_document_t doc, char* buffer, size_t c
  * loads fonts itself. Same buffer convention as css_diagnostics; replaced on
  * set_css and viewport recompilation. Available since ABI minor 25. */
 size_t weva_document_font_faces(weva_document_t doc, char* buffer, size_t capacity);
+
+/* The layout dump the differential oracle compares (docs/ORACLE.md): the
+ * same JSON the weva_dump tool writes, produced from this document's box
+ * tree, so a host's dump is the tool's dump by construction. `source` is
+ * the name recorded in the JSON. Valid after an update; the usual two-call
+ * buffer convention (returns the required bytes excluding NUL). Available
+ * since ABI minor 26. */
+size_t weva_document_layout_dump(weva_document_t doc, const char* source, char* buffer,
+                                 size_t capacity);
 
 /* How the core obtains an asset's bytes. Returns the number of bytes the asset
  * HAS, writing up to `capacity` of them -- the two-call convention the rest of

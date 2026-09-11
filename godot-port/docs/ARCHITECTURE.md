@@ -827,4 +827,15 @@ the lowercase tag of a handle with the attribute buffer convention. The Godot
 host reads it for gamepad navigation: an accept on a field is Enter, on a
 control Space, and vertical pad movement stays inside a `<select>`,
 `<textarea>` or number field.
+
+ABI minor 26 adds `weva_document_layout_dump(doc, source, buffer, capacity)`:
+the layout dump the differential oracle compares (`docs/ORACLE.md`), produced
+from the document's own box tree by the walk the `weva_dump` tool now shares
+(`weva/layout_dump.h`), so a host's dump is the tool's dump by construction
+and any remaining difference is the host's fonts or setup. With it,
+`weva_document_set_font_leading_rounding(doc, rounds)`: a host font backend's
+half-leading rounds down to whole pixels by default, as real font layout does;
+a synthetic face that exists to be compared with the oracle's arithmetic (the
+Unity host's `SyntheticFontBackend`) passes 0 to keep it exact. The built-in
+stub is unaffected.
 The Godot source exposes `register_font_family(name, Font)` and watches resource changes. Installed Windows preview105 includes minor 14; its package and native exports pass the recorded verification.

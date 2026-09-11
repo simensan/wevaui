@@ -1,5 +1,6 @@
 #include "diagnostic_cycles.h"
 #include "weva/image_store.h"
+#include "weva/layout_dump.h"
 #include "weva_c.h"
 #include "weva/grapheme.h"
 #include "weva/typeahead.h"
@@ -1575,6 +1576,11 @@ public:
     HostFontBackend(const weva_font_backend& table, FontInterface* fallback)
         : t_(table), fallback_(fallback) {}
     ~HostFontBackend() override { log_shape_cache("destroy"); }
+    // weva_document_set_font_leading_rounding: a synthetic face compared with
+    // the oracle's arithmetic keeps its fractional half-leading.
+    bool rounds_line_leading() const override { return rounds_leading_; }
+    void set_rounds_leading(bool rounds) { rounds_leading_ = rounds; }
+    bool rounds_leading_ = true;
 
     void profile_lap(const char* stage) {
         if (!profile_enabled_) return;
@@ -1915,6 +1921,7 @@ struct weva_document {
     // (face, weight, italic); handed to layout through ctx.variant_metrics.
     std::map<std::tuple<uint64_t, int, bool>, std::unique_ptr<FontInterfaceMetrics>> variant_metrics;
     FaceHandle face = StubFont::builtin();
+    bool font_leading_rounding = true;
     BoxId root = kNoBox;
     // Textures paint generated for the last published draws (gradient
     // layers). Released at the start of the next update, once the host has
@@ -3469,6 +3476,7 @@ void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend
         return;
     }
     doc->host_font = std::make_unique<HostFontBackend>(*backend, &doc->font);
+    doc->host_font->set_rounds_leading(doc->font_leading_rounding);
     // A zero face means "use whatever the backend's load_face returned", which
     // a host that has only one face can leave alone.
     doc->face = face ? FaceHandle{face} : StubFont::builtin();
@@ -7999,6 +8007,31 @@ size_t weva_element_text(weva_document_t doc, weva_element_t element, char* buff
     }
     // The length that WOULD have been written, so a host sizes with one call
     // and fills with a second.
+    return text.size();
+}
+
+void weva_document_set_font_leading_rounding(weva_document_t doc, int rounds) {
+    if (!doc) return;
+    doc->font_leading_rounding = rounds != 0;
+    if (doc->host_font) doc->host_font->set_rounds_leading(doc->font_leading_rounding);
+    // Line boxes were built with the old rule: relayout on the next update.
+    doc->pending = Invalidation::Boxes;
+}
+
+size_t weva_document_layout_dump(weva_document_t doc, const char* source, char* buffer,
+                                 size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    std::vector<ElementRect> boxes;
+    std::set<const Element*> seen;
+    if (doc->tree.valid(doc->root)) collect_layout_dump(doc->tree, doc->root, 0, 0, 0, &boxes, &seen);
+    const std::string text = layout_dump_json(source ? source : "", doc->config.viewport_width,
+                                              doc->config.viewport_height, boxes);
+    if (buffer && capacity) {
+        const size_t n = std::min(text.size(), capacity - 1);
+        if (n) std::memcpy(buffer, text.data(), n);
+        buffer[n] = '\0';
+    }
     return text.size();
 }
 
