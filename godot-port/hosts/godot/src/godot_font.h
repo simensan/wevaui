@@ -82,6 +82,8 @@ private:
     static uint64_t variant(void* self, uint64_t face, int32_t weight, int32_t italic);
 
     godot::RID resolve(uint64_t face, uint32_t slot = 0) const;
+    // Registers a face whose primary is a shared variant for shared shaping.
+    void share_shapes(uint64_t face, SharedFontVariant* primary);
     const std::vector<godot::RID>* fonts_of(uint64_t face) const;
 
     struct GlyphSource { godot::RID font; int64_t index; };

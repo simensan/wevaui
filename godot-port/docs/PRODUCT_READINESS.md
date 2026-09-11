@@ -102,6 +102,17 @@ re-applied, after the file's modified time has been stable for one poll.
 Eleven host checks edit files under `user://` and verify both paths, binding
 survival and the off switch. [Live reload evidence](verification/live-reload.json).
 
+Godot text is now positioned at quarter pixels on every font the adapter
+owns, with a private copy of the theme font and `@font-face` files so the
+game's resources keep their own mode. Measured with the sample font against
+Chrome, the automatic mode was up to 0.95 px off per string above 20 px and
+quarter-pixel positioning is within 0.09 px at every size. The Frontier Camp
+parity harness now also measures the 25 px and 32 px headings: their 22 width
+findings disappear and nothing else moves; 33 vertical findings on the same
+headings (Blink's rounded ascent and descent, metrics-table choice) remain
+and are tracked separately. Adapter suites pass on Windows (19,695) and stock
+Linux (19,829). [Evidence](verification/textserver-subpixel.json).
+
 A controller can now type: a pad accept on a focused text field emits
 `text_entry_requested` and `WevaView` opens an on-screen keyboard along the
 bottom of the view, an HTML document of its own that the pad navigates and

@@ -5,7 +5,7 @@ var ui
 var view: SubViewport
 var driver
 var snapshots: Array = []
-var selectors := [".camp", ".masthead", ".satchel", ".panel-heading", "#inventory", ".satchel-footer", ".journal", ".recipe", ".hud", ".identity", ".vital", ".world-hint", "#settings", "#settings-form", "#player-name", "#volume", "#music", "#close-settings", "#settings-button", "#item-beans", "#item-stone", "#use-beans", "#sort", "#craft", "#forage", "#health", "#health-bar", "#player-label", "#volume-label"]
+var selectors := [".camp", "h1", "h2", ".eyebrow", ".masthead", ".satchel", ".panel-heading", "#inventory", ".satchel-footer", ".journal", ".recipe", ".hud", ".identity", ".vital", ".world-hint", "#settings", "#settings-form", "#player-name", "#volume", "#music", "#close-settings", "#settings-button", "#item-beans", "#item-stone", "#use-beans", "#sort", "#craft", "#forage", "#health", "#health-bar", "#player-label", "#volume-label"]
 func _initialize() -> void:
 	call_deferred("run")
 func snap(label: String) -> void:

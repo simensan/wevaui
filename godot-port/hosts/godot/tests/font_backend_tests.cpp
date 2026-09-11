@@ -100,6 +100,7 @@ class WevaFontBackendTests : public RefCounted {
         // Neither oracle face uses the adapter's variant or shared-run paths.
         const RID regular = ts->create_font();
         ts->font_set_data(regular, data);
+        ts->font_set_subpixel_positioning(regular, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
         std::vector<PositionedSnapshot> result;
         {
             weva_godot::GodotFontBackend raster, metrics;
@@ -139,6 +140,7 @@ class WevaFontBackendTests : public RefCounted {
         for (int weight : {700, 900}) for (int italic : {0, 1}) {
             const RID native = ts->create_font();
             ts->font_set_data(native, data);
+            ts->font_set_subpixel_positioning(native, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
             ts->font_set_embolden(native, weight == 900 ? 0.9 : 0.6);
             if (italic) ts->font_set_transform(native, Transform2D(1.0, 0.0, 0.2, 1.0, 0.0, 0.0));
             {
@@ -271,6 +273,7 @@ class WevaFontBackendTests : public RefCounted {
         FontSnapshot result;
         const RID regular = ts->create_font();
         ts->font_set_data(regular, data);
+        ts->font_set_subpixel_positioning(regular, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
         {
             weva_godot::GodotFontBackend raster, metrics;
             result = snapshot(raster, raster.adopt(painted));
@@ -290,6 +293,7 @@ class WevaFontBackendTests : public RefCounted {
         if (fixture_data.is_empty()) return;
         const RID fixture_font = ts->create_font();
         ts->font_set_data(fixture_font, fixture_data);
+        ts->font_set_subpixel_positioning(fixture_font, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
         ts->font_set_embolden(fixture_font, 0.6);
         FontSnapshot fixture_expected;
         {
@@ -311,6 +315,7 @@ class WevaFontBackendTests : public RefCounted {
                 saved[slot] = snapshot(backend, faces[slot]);
                 const RID expected_font = ts->create_font();
                 ts->font_set_data(expected_font, data);
+                ts->font_set_subpixel_positioning(expected_font, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
                 ts->font_set_embolden(expected_font, slot ? 0.9 : 0.6);
                 {
                     check(saved[slot] == synthetic_font_oracle(ts, expected_font, data),
@@ -324,6 +329,7 @@ class WevaFontBackendTests : public RefCounted {
                 const auto actual = snapshot(backend, face);
                 const RID expected_font = ts->create_font();
                 ts->font_set_data(expected_font, data);
+                ts->font_set_subpixel_positioning(expected_font, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
                 ts->font_set_embolden(expected_font, weight == 900 ? 0.9 : 0.6);
                 ts->font_set_transform(expected_font, Transform2D(1.0, 0.0, 0.2, 1.0, 0.0, 0.0));
                 {
@@ -520,6 +526,59 @@ class WevaFontBackendTests : public RefCounted {
         }
     }
 
+    // A face adopted with its bytes measures through a private quarter-pixel
+    // copy: above 20 px its advances are fractional where the resource's own
+    // automatic mode snaps them, and equal to a reference font with the same
+    // setting. The resource itself keeps its mode.
+    void check_fractional_positioning(TextServer* ts, const Ref<Font>& primary) {
+        const Ref<FontFile> file = primary;
+        if (file.is_null() || file->get_data().is_empty()) return;
+        const PackedByteArray data = file->get_data();
+        const RID borrowed = primary->get_rids()[0];
+        const auto saved = ts->font_get_subpixel_positioning(borrowed);
+        ts->font_set_subpixel_positioning(borrowed, TextServer::SUBPIXEL_POSITIONING_AUTO);
+        const auto width_of = [&](const RID& font, const String& text, int px) {
+            const RID shaped = ts->create_shaped_text();
+            TypedArray<RID> list;
+            list.push_back(font);
+            ts->shaped_text_add_string(shaped, text, list, px);
+            ts->shaped_text_shape(shaped);
+            double width = 0;
+            for (const Dictionary g : ts->shaped_text_get_glyphs(shaped))
+                width += static_cast<double>(g["advance"]) * static_cast<int64_t>(g["repeat"]);
+            ts->free_rid(shaped);
+            return width;
+        };
+        const RID reference = ts->create_font();
+        ts->font_set_data(reference, data);
+        ts->font_set_subpixel_positioning(reference, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
+        weva_godot::GodotFontBackend backend;
+        TypedArray<RID> only_primary;
+        only_primary.push_back(borrowed);
+        const uint64_t face = backend.adopt(only_primary, data, true);
+        weva_font_backend table{};
+        weva_shape_glyphs_fn positioned = nullptr;
+        backend.fill(&table, &positioned);
+        const String text = "DUST & IRON Wide Words 0123";
+        const CharString utf8 = text.utf8();
+        bool fractional = false, matches = true;
+        for (int px : {32, 25, 14}) {
+            const size_t count = positioned(table.user_data, face, utf8.get_data(), utf8.length(), px, nullptr, 0);
+            std::vector<weva_shaped_glyph> glyphs(count);
+            positioned(table.user_data, face, utf8.get_data(), utf8.length(), px, glyphs.data(), count);
+            double width = 0;
+            for (const auto& g : glyphs) width += g.x_advance;
+            matches = matches && near(width, width_of(reference, text, px));
+            fractional = fractional || std::abs(width - std::round(width)) > 0.01;
+        }
+        check(matches, "an adopted face measures like a quarter-pixel reference at every size");
+        check(fractional, "large text keeps fractional advances instead of whole-pixel snapping");
+        check(ts->font_get_subpixel_positioning(borrowed) == TextServer::SUBPIXEL_POSITIONING_AUTO,
+              "the game's own font resource keeps its positioning mode");
+        ts->font_set_subpixel_positioning(borrowed, saved);
+        ts->free_rid(reference);
+    }
+
 protected:
     static void _bind_methods() {
         ClassDB::bind_method(D_METHOD("run_checks"), &WevaFontBackendTests::run_checks);
@@ -533,6 +592,9 @@ public:
         check(ts && primary.is_valid(), "engine font and TextServer are available");
         if (!ts || primary.is_null()) return 1;
         const TypedArray<RID> fonts = primary->get_rids();
+        // The adapter positions its fonts at quarter pixels; references must too.
+        for (int64_t i = 0; i < fonts.size(); ++i)
+            ts->font_set_subpixel_positioning(fonts[i], TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
         weva_godot::GodotFontBackend backend;
         const uint64_t face = backend.adopt(fonts);
         weva_font_backend table{};
@@ -637,6 +699,7 @@ public:
         check_variants(ts, primary, fonts);
         check_shared_runs(ts, primary);
         check_engine_stack_limits(table, positioned, face);
+        check_fractional_positioning(ts, primary);
         UtilityFunctions::print("godot font backend: ", checks_, " checks, ", failures_, " failures");
         return failures_ ? 1 : 0;
     }

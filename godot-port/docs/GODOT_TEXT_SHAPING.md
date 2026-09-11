@@ -293,6 +293,25 @@ runner uses a fresh private project, explicit engine logs and a JSON report
 with executable/probe hashes and process exits. This prevents ordinary host
 success from hiding the known failure; it does not change runtime shaping.
 
+### Fractional positioning (2026-09-11)
+
+TextServer's automatic subpixel mode snaps glyph advances to whole pixels
+above 20 px; Chrome positions text fractionally at every size. Measured with
+the sample's font (eight strings, eleven sizes, per-glyph advances summed,
+against Chrome with the same bytes), automatic mode is up to 0.95 px off per
+string above 20 px, quarter-pixel positioning within 0.09 px at every size,
+and hinting does not move advances. The adapter therefore requests
+quarter-pixel positioning on every font it owns: synthesized bold and italic
+faces, fonts loaded from bytes, and a private copy it now makes of any face
+adopted with its bytes (the theme font, `@font-face` files), so the game's
+own Font resource keeps its mode for native controls. On the Frontier Camp
+Chrome-parity harness, now also measuring the 25 px and 32 px headings and
+the letter-spaced eyebrow, all 22 heading width findings disappear and no
+other selector moves; the remaining 33 findings are the headings' y and
+height, a vertical-metrics difference (Blink rounds ascent and descent and
+picks metrics tables differently) tracked separately.
+[Evidence](verification/textserver-subpixel.json).
+
 ### Adapter workaround: shaping in pieces (2026-09-10)
 
 The font adapter (`hosts/godot/src/godot_font.cpp`) now counts emoji sub-runs

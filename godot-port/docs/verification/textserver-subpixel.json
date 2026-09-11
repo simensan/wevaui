@@ -1,0 +1,217 @@
+{
+  "scope": "Phase 1 of the shared-core plan: fractional (quarter-pixel) positioning on every font the Godot adapter owns, with a private copy of any face adopted with its bytes so the game's Font resource keeps its own mode.",
+  "library_sha256": "6e07162d7c9d8307d5fb8f1f8593260a3f194eab1b8f56b0d45d5127394908ea",
+  "sweep": {
+    "method": "TextServer per-glyph advances summed for 8 strings at 11 sizes with the sample font, versus Chrome getBoundingClientRect widths with the same bytes; max absolute difference per size in px",
+    "font_sha256": "55809808749613ed9ef9ad4f61424a14d2aa265d74369ad43403b9761aa6bac4",
+    "dir": ".utmp/safe-engine71/phase1-sweep",
+    "max_delta_px_by_size": {
+      "auto": {
+        "10": 0.0781,
+        "12": 0.0781,
+        "14": 0.0469,
+        "16": 0.0625,
+        "18": 0.0312,
+        "20": 0.0625,
+        "24": 0.625,
+        "25": 0.9531,
+        "28": 0.8281,
+        "32": 0.8281,
+        "40": 0.4688
+      },
+      "disabled": {
+        "10": 1.0938,
+        "12": 0.3594,
+        "14": 0.5312,
+        "16": 1.25,
+        "18": 0.9688,
+        "20": 0.8125,
+        "24": 0.625,
+        "25": 0.9531,
+        "28": 0.8281,
+        "32": 0.8281,
+        "40": 0.4688
+      },
+      "quarter": {
+        "10": 0.0781,
+        "12": 0.0781,
+        "14": 0.0469,
+        "16": 0.0625,
+        "18": 0.0312,
+        "20": 0.0625,
+        "24": 0.0469,
+        "25": 0.0469,
+        "28": 0.0938,
+        "32": 0.0,
+        "40": 0.0469
+      },
+      "quarter_nohint": {
+        "10": 0.0781,
+        "12": 0.0781,
+        "14": 0.0469,
+        "16": 0.0625,
+        "18": 0.0312,
+        "20": 0.0625,
+        "24": 0.0469,
+        "25": 0.0469,
+        "28": 0.0938,
+        "32": 0.0,
+        "40": 0.0469
+      }
+    },
+    "reading": "automatic mode snaps advances to whole pixels above 20 px (up to 0.95 px per string); quarter-pixel positioning stays within 0.09 px at every size; hinting does not change advances"
+  },
+  "sample_parity": {
+    "harness": "hosts/godot/run_frontier_chrome.py with h1, h2 and .eyebrow added to the compared selectors (25 px, 32 px with 4 px letter-spacing, 10 px with 2 px letter-spacing)",
+    "before": {
+      "geometry_checks": 1408,
+      "geometry_findings": 55,
+      "by_axis": {
+        "y": 22,
+        "width": 22,
+        "height": 11
+      },
+      "by_selector": {
+        ".eyebrow": 22,
+        "h1": 33
+      },
+      "max_width_or_x_delta_px": 0.625,
+      "library_sha256": "7904770fc41c8145359a01622a36398410a501dedfe5460c9dd1c3b4e6a70dad",
+      "dir": ".utmp/safe-engine71/phase1-old"
+    },
+    "after": {
+      "geometry_checks": 1408,
+      "geometry_findings": 33,
+      "by_axis": {
+        "y": 22,
+        "height": 11
+      },
+      "by_selector": {
+        ".eyebrow": 11,
+        "h1": 22
+      },
+      "max_width_or_x_delta_px": 0.0,
+      "library_sha256": "6e07162d7c9d8307d5fb8f1f8593260a3f194eab1b8f56b0d45d5127394908ea",
+      "dir": ".utmp/safe-engine71/phase1-new"
+    },
+    "reading": "all 22 width findings on the headings disappear and no other selector moves; the remaining 33 are y/height of h1 and .eyebrow, a vertical-metrics class (Blink rounds ascent and descent and chooses metrics tables differently) that this phase did not address"
+  },
+  "adapter_suite": {
+    "windows_patched": {
+      "checks": 19695,
+      "failures": 0
+    },
+    "linux_stock": {
+      "checks": 19829,
+      "failures": 0
+    },
+    "note": "three new checks: an adopted face measures like a quarter-pixel reference at 32/25/14 px, keeps fractional advances above 20 px, and the borrowed resource keeps its own mode"
+  },
+  "qualification222": {
+    "steps_exit": {
+      "host": "0",
+      "mobile": "0",
+      "package": "0",
+      "frontier": "0",
+      "exports": "0",
+      "desktop": "1"
+    },
+    "host": {
+      "passed": true,
+      "entries": 53,
+      "checks": 35635
+    },
+    "sample_rendered": [
+      "frontier integration: 104 checks, 0 failures"
+    ],
+    "fresh_consumer_and_native_export": [
+      "import: passed",
+      "headless: frontier integration: 104 checks, 0 failures",
+      "gl_compatibility: frontier integration: 114 checks, 0 failures",
+      "mobile: frontier integration: 114 checks, 0 failures",
+      "export: passed",
+      "export-headless: frontier integration: 104 checks, 0 failures",
+      "export-render: frontier integration: 114 checks, 0 failures"
+    ],
+    "packaged_example_and_export_smokes": [
+      "godot export smoke (project): 8 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (pack): 10 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-debug): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-release): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures",
+      "godot export smoke (native-release): 13 checks, 0 failures",
+      "weva addon example: 17 checks, 0 failures"
+    ],
+    "desktop_timing": {
+      "passed": true,
+      "timing_passed": true,
+      "changed_api_cpu_p95_ms": {
+        "gl_compatibility/1/hover": 0.254,
+        "gl_compatibility/1/inventory_sort": 1.618,
+        "gl_compatibility/1/settings_typing": 0.814,
+        "gl_compatibility/1/settings_toggle": 2.033,
+        "mobile/1/hover": 0.215,
+        "mobile/1/inventory_sort": 1.082,
+        "mobile/1/settings_typing": 0.344,
+        "mobile/1/settings_toggle": 1.51,
+        "mobile/2/settings_toggle": 1.495,
+        "mobile/2/settings_typing": 0.519,
+        "mobile/2/inventory_sort": 0.941,
+        "mobile/2/hover": 0.21,
+        "gl_compatibility/2/settings_toggle": 1.547,
+        "gl_compatibility/2/settings_typing": 0.341,
+        "gl_compatibility/2/inventory_sort": 1.076,
+        "gl_compatibility/2/hover": 0.211,
+        "gl_compatibility/3/hover": 0.234,
+        "gl_compatibility/3/inventory_sort": 0.91,
+        "gl_compatibility/3/settings_typing": 0.385,
+        "gl_compatibility/3/settings_toggle": 1.346,
+        "mobile/3/hover": 0.207,
+        "mobile/3/inventory_sort": 1.019,
+        "mobile/3/settings_typing": 0.341,
+        "mobile/3/settings_toggle": 1.539
+      },
+      "summary": ".utmp/safe-engine71/qual222-desktop-2/summary.json",
+      "first_attempt": {
+        "passed": false,
+        "changed_api_cpu_p95_ms": {
+          "gl_compatibility/1/hover": 0.251,
+          "gl_compatibility/1/inventory_sort": 0.857,
+          "gl_compatibility/1/settings_typing": 0.475,
+          "gl_compatibility/1/settings_toggle": 1.766,
+          "mobile/1/hover": 0.219,
+          "mobile/1/inventory_sort": 1.016,
+          "mobile/1/settings_typing": 0.45,
+          "mobile/1/settings_toggle": 1.688,
+          "mobile/2/settings_toggle": 1.865,
+          "mobile/2/settings_typing": 0.793,
+          "mobile/2/inventory_sort": 1.251,
+          "mobile/2/hover": 0.477,
+          "gl_compatibility/2/settings_toggle": 1.351,
+          "gl_compatibility/2/settings_typing": 0.482,
+          "gl_compatibility/2/inventory_sort": 0.934,
+          "gl_compatibility/2/hover": 0.236,
+          "gl_compatibility/3/hover": 0.255,
+          "gl_compatibility/3/inventory_sort": 1.079,
+          "gl_compatibility/3/settings_typing": 0.28,
+          "gl_compatibility/3/settings_toggle": 1.268,
+          "mobile/3/hover": 0.608,
+          "mobile/3/inventory_sort": 1.444,
+          "mobile/3/settings_typing": 1.148,
+          "mobile/3/settings_toggle": 1.736
+        },
+        "summary": ".utmp/safe-engine71/qual222-desktop/summary.json",
+        "note": "Failed mobile/3 hover and typing while two mobile runs were elevated across every workload including hover; a stray Godot editor process was found alive afterwards and killed before the rerun."
+      }
+    },
+    "zip": ".utmp/safe-engine71/weva-subpixel-preview222.zip"
+  },
+  "gate": "Phase 1 gate: fewer text-width differences (22 to 0 on the headings), no page worse, desktop timing 72/72 -> see qualification222.desktop_timing",
+  "limitations": [
+    "Quarter-pixel positions add up to four rasterized variants per glyph in TextServer atlases.",
+    "Vertical line metrics of headings still differ from Chrome by 1-2 px; tracked separately."
+  ]
+}

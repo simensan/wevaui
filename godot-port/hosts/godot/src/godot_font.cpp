@@ -227,6 +227,17 @@ struct SharedFontVariant {
 };
 
 namespace {
+// TextServer's automatic subpixel mode snaps advances to whole pixels above
+// 20 px; Chrome positions fractionally at every size. Measured with the
+// sample's font against Chrome (docs/verification/textserver-subpixel.json):
+// automatic is up to 0.95 px off per string above 20 px, quarter-pixel
+// positioning within 0.09 px at every size, and hinting does not move
+// advances. Every font the adapter owns is positioned this way; a game's own
+// Font resource is never modified, a private copy of its bytes is made instead.
+void position_fractionally(TextServer* ts, const RID& font) {
+    ts->font_set_subpixel_positioning(font, TextServer::SUBPIXEL_POSITIONING_ONE_QUARTER);
+}
+
 std::vector<std::shared_ptr<SharedFontVariant>>& variant_font_cache() {
     static std::vector<std::shared_ptr<SharedFontVariant>> cache;
     return cache;
@@ -257,6 +268,7 @@ std::shared_ptr<SharedFontVariant> synthetic_font(TextServer* ts, const PackedBy
     result->strength = strength;
     result->oblique = oblique;
     ts->font_set_data(font, data);
+    position_fractionally(ts, font);
     if (strength) result->metrics = synthetic_font(ts, data, 0, false);
     if (strength) ts->font_set_embolden(font, strength == 2 ? 0.9 : 0.6);
     if (oblique) ts->font_set_transform(font, Transform2D(1.0, 0.0, 0.2, 1.0, 0.0, 0.0));
@@ -322,10 +334,42 @@ uint64_t GodotFontBackend::adopt(const TypedArray<RID>& fonts) {
 
 uint64_t GodotFontBackend::adopt(const TypedArray<RID>& fonts, const PackedByteArray& primary_data,
                                bool immutable_fallbacks) {
-    const uint64_t handle = adopt(fonts);
-    if (handle && !primary_data.is_empty()) face_data_[handle] = primary_data;
-    if (handle && immutable_fallbacks) immutable_fallback_faces_.push_back(handle);
+    // With the primary's bytes in hand, the face renders and measures through
+    // a private, fractionally positioned copy rather than the borrowed
+    // resource, which keeps its own settings for the game's native controls.
+    // The fallbacks stay borrowed.
+    std::shared_ptr<SharedFontVariant> regular;
+    TextServer* ts = server();
+    TypedArray<RID> owned = fonts;
+    if (ts && !primary_data.is_empty() && fonts.size() > 0) {
+        regular = synthetic_font(ts, primary_data, 0, false);
+        if (regular) {
+            owned = fonts.duplicate();
+            owned[0] = regular->font;
+        }
+    }
+    const uint64_t handle = adopt(owned);
+    if (!handle) return 0;
+    if (!primary_data.is_empty()) face_data_[handle] = primary_data;
+    if (immutable_fallbacks) immutable_fallback_faces_.push_back(handle);
+    if (regular) {
+        shared_variants_.push_back(regular);
+        if (fonts.size() == 1 || immutable_fallbacks) share_shapes(handle, regular.get());
+    }
     return handle;
+}
+
+void GodotFontBackend::share_shapes(uint64_t face, SharedFontVariant* primary) {
+    const std::vector<RID>* fonts = fonts_of(face);
+    if (!primary || !fonts || fonts->size() > 64) return;
+    SharedShapeFace input;
+    input.primary = primary;
+    for (const RID& font : *fonts) {
+        const uint64_t id = font.get_id();
+        input.font_ids.push_back(id);
+        input.key = (input.key ^ id) * 1099511628211ULL;
+    }
+    shared_shape_faces_.emplace(face, std::move(input));
 }
 
 RID GodotFontBackend::resolve(uint64_t face, uint32_t slot) const {
@@ -370,6 +414,7 @@ uint64_t GodotFontBackend::load_face(void* self, const uint8_t* data, size_t len
     const RID font = ts->create_font();
     if (!font.is_valid()) return 0;
     ts->font_set_data(font, bytes);
+    position_fractionally(ts, font);
     me->owned_.push_back(font);
     return me->adopt(font);
 }
@@ -806,23 +851,15 @@ uint64_t GodotFontBackend::variant(void* self, uint64_t face, int32_t weight, in
     }
     if (derived.empty()) return face;
     const uint64_t handle = me->next_face_++;
-    if (primary_variant && derived.size() <= 64 && (fonts->size() == 1 ||
+    const bool shareable = primary_variant && (fonts->size() == 1 ||
         std::find(me->immutable_fallback_faces_.begin(), me->immutable_fallback_faces_.end(), face) !=
-        me->immutable_fallback_faces_.end())) {
-        SharedShapeFace input;
-        input.primary = primary_variant;
-        for (const RID& font : derived) {
-            const uint64_t id = font.get_id();
-            input.font_ids.push_back(id);
-            input.key = (input.key ^ id) * 1099511628211ULL;
-        }
-        me->shared_shape_faces_.emplace(handle, std::move(input));
-    }
+        me->immutable_fallback_faces_.end());
     if (std::getenv("WEVA_FONT_LOG")) std::fprintf(stderr,
         "font variant: base %llu derived %llu weight %d italic %d\n",
         static_cast<unsigned long long>(face), static_cast<unsigned long long>(handle), weight, italic);
     me->faces_[handle] = std::move(derived);
     me->variants_[key] = handle;
+    if (shareable) me->share_shapes(handle, primary_variant);
     return handle;
 }
 
