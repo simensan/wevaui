@@ -80,6 +80,16 @@ namespace Weva.Native
         WEVA_KEY_PAGE_DOWN = 14,
     }
 
+    public enum weva_box_kind : int
+    {
+        WEVA_BOX_BLOCK = 0,
+        WEVA_BOX_ANONYMOUS_BLOCK = 1,
+        WEVA_BOX_INLINE = 2,
+        WEVA_BOX_ANONYMOUS_INLINE = 3,
+        WEVA_BOX_LINE = 4,
+        WEVA_BOX_TEXT = 5,
+    }
+
     [Flags] public enum weva_pointer_button : uint
     {
         WEVA_BUTTON_PRIMARY = 1 << 0,
@@ -255,6 +265,34 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct weva_box
+    {
+        public uint parent;
+        public uint kind;
+        public uint element;
+        public double x;
+        public double y;
+        public double width;
+        public double height;
+        public double margin_top;
+        public double margin_right;
+        public double margin_bottom;
+        public double margin_left;
+        public double border_top;
+        public double border_right;
+        public double border_bottom;
+        public double border_left;
+        public double padding_top;
+        public double padding_right;
+        public double padding_bottom;
+        public double padding_left;
+        public double scroll_x;
+        public double scroll_y;
+        public byte* text;
+        public nuint text_length;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct weva_binding_source
     {
         public void* user;
@@ -266,8 +304,9 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 30;
+        public const int WEVA_ABI_VERSION_MINOR = 31;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
+        public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint weva_abi_version();
@@ -337,6 +376,8 @@ namespace Weva.Native
         public static extern uint weva_document_element_at_devtools(System.IntPtr doc, double x, double y);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern void weva_document_stats(System.IntPtr doc, weva_stats* @out);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_document_boxes(System.IntPtr doc, weva_box* @out, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_accepts_pointer(System.IntPtr doc, double x, double y);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

@@ -4862,6 +4862,51 @@ weva_element_t weva_document_element_at_devtools(weva_document_t doc, double x, 
     return WEVA_ELEMENT_NONE;
 }
 
+size_t weva_document_boxes(weva_document_t doc, weva_box* out, size_t capacity) {
+    if (!doc || !doc->tree.valid(doc->root)) return 0;
+    // Element pointers to handles, once, rather than a scan per box.
+    std::unordered_map<const Element*, weva_element_t> handles;
+    handles.reserve(doc->elements.size());
+    for (size_t i = 0; i < doc->elements.size(); ++i) {
+        if (doc->elements[i]) handles.emplace(doc->elements[i], static_cast<weva_element_t>(i));
+    }
+    size_t count = 0;
+    struct Frame { BoxId id; uint32_t parent; double ax, ay; };
+    std::vector<Frame> stack;
+    stack.push_back({doc->root, WEVA_BOX_NONE, 0, 0});
+    while (!stack.empty()) {
+        const Frame f = stack.back();
+        stack.pop_back();
+        const Box& b = doc->tree[f.id];
+        const double ax = f.ax + b.x, ay = f.ay + b.y;
+        const uint32_t index = static_cast<uint32_t>(count);
+        if (out && count < capacity) {
+            weva_box& o = out[count];
+            o = weva_box{};
+            o.parent = f.parent;
+            o.kind = static_cast<uint32_t>(b.kind);
+            const auto h = b.element ? handles.find(b.element) : handles.end();
+            o.element = h == handles.end() ? WEVA_ELEMENT_NONE : h->second;
+            o.x = ax; o.y = ay; o.width = b.width; o.height = b.height;
+            o.margin_top = b.margin_top; o.margin_right = b.margin_right;
+            o.margin_bottom = b.margin_bottom; o.margin_left = b.margin_left;
+            o.border_top = b.border_top; o.border_right = b.border_right;
+            o.border_bottom = b.border_bottom; o.border_left = b.border_left;
+            o.padding_top = b.padding_top; o.padding_right = b.padding_right;
+            o.padding_bottom = b.padding_bottom; o.padding_left = b.padding_left;
+            o.scroll_x = b.scroll_x; o.scroll_y = b.scroll_y;
+            o.text = b.kind == BoxKind::Text ? b.text.data() : nullptr;
+            o.text_length = b.kind == BoxKind::Text ? b.text.size() : 0;
+        }
+        ++count;
+        // Children pushed in reverse so they pop in document order.
+        std::vector<BoxId> kids;
+        for (BoxId c = b.first_child; c != kNoBox; c = doc->tree[c].next_sibling) kids.push_back(c);
+        for (size_t k = kids.size(); k-- > 0;) stack.push_back({kids[k], index, ax, ay});
+    }
+    return count;
+}
+
 void weva_document_stats(weva_document_t doc, weva_stats* out) {
     if (!out) return;
     *out = weva_stats{};

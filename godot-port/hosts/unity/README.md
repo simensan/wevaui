@@ -164,6 +164,15 @@ pass's texture-cache hits and misses, and the cascade's running totals (diff
 them between frames). `ElementAtForDevTools(x, y)` is the hit test an Elements
 panel wants: `pointer-events: none` and `visibility: hidden` hide nothing from it.
 
+## The box tree (ABI minor 31)
+
+`NativeDocument.Boxes()` returns every box of the layout tree in tree order,
+anonymous, line and text boxes included: parent index, kind, owning element,
+the border box in document coordinates (scroll not applied), the margin,
+border and padding edges, the box's own scroll offset and a text box's run
+(`NativeDocument.TextOf`). It is what a Chrome-style outline overlay draws
+from; `BoxOutlineRenderer` can be fed from it instead of the C# Box tree.
+
 ## The mouse cursor (ABI minor 29)
 
 `NativeDocument.Cursor` is the CSS `cursor` under the pointer as the keyword the

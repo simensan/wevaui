@@ -3562,8 +3562,9 @@ unless noted):
 5. **Change notification** — a mutation signal and the per-element
    invalidation set (Layout/Style/Paint). Draw, interaction, transient and form
    versions exist, none per element.
-6. **Box-tree enumeration** including anonymous, line and text boxes; the
-   layout dump is the only path and it is a JSON string.
+6. **Box-tree enumeration** — DONE 2026-09-11, ABI minor 31
+   `weva_document_boxes` (tree order, kinds, edges, text; Godot `get_box_tree()`,
+   Unity `NativeDocument.Boxes()`).
 7. **Engine counters** — DONE 2026-09-11, ABI minor 30 `weva_document_stats`
    (stage timings, element/box/draw/texture counts, texture-cache hits and
    misses, cascade totals; Godot `get_stats()`, Unity `NativeDocument.Stats()`).

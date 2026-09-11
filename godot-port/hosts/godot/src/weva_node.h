@@ -151,6 +151,11 @@ public:
     // last paint pass's texture-cache hits and misses, the cascade's totals.
     godot::Dictionary get_stats() const;
 
+    // The box tree as an Array of Dictionaries (parent index, kind, element
+    // selector-less handle, border box and edges, scroll offset, text) for a
+    // debug overlay; the layout tree's numbers, scroll not applied.
+    godot::Array get_box_tree() const;
+
     // ---- Data binding ---------------------------------------------------
     //
     // What a script needs to drive a document: change what it says, change how

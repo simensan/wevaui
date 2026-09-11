@@ -871,3 +871,11 @@ and misses and the cascade's running totals, for a host's stats window (Godot
 `weva_document_element_at_devtools(doc, x, y)`, the hit test an inspector wants:
 `pointer-events: none`, `visibility: hidden` and modal inertness hide nothing
 from it (`HitTestOptions` on `element_at_point`).
+
+ABI minor 31 adds `weva_document_boxes(doc, out, capacity)`: the whole box tree
+in tree order, anonymous, line and text boxes included, each with its parent
+index, kind, owning element (a text run names the element whose text it is),
+border box in document coordinates (scroll not applied), margin/border/padding
+edges, own scroll offset and a text box's run
+-- what a devtools outline overlay draws from (Godot `get_box_tree()`, Unity
+`NativeDocument.Boxes()`).

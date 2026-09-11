@@ -30,7 +30,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 30
+#define WEVA_ABI_VERSION_MINOR 31
 
 uint32_t weva_abi_version(void);
 
@@ -556,6 +556,42 @@ typedef struct weva_stats {
     uint64_t cascade_elements, cascade_pseudos;   /* styles computed since creation */
 } weva_stats;
 void weva_document_stats(weva_document_t doc, weva_stats* out);
+
+/* ---- The box tree (minor 31) ---------------------------------------------
+ *
+ * Every box of the layout tree in tree order (a parent before its children),
+ * anonymous, line and text boxes included: what a devtools overlay draws its
+ * outlines from and a box-tree view lists. Geometry is the border box in
+ * document coordinates with scroll offsets NOT applied (the layout dump's
+ * numbers); a box's own scroll offset comes along so a tool can apply it.
+ * `text` is a text box's run, not NUL-terminated, valid until the next
+ * update. Text runs and the inline boxes that cover them are siblings under
+ * their line box, as the layout tree keeps them. Written into `out` up to
+ * `capacity`; returns how many there ARE. Valid after an update. */
+typedef enum weva_box_kind {
+    WEVA_BOX_BLOCK = 0,
+    WEVA_BOX_ANONYMOUS_BLOCK = 1,
+    WEVA_BOX_INLINE = 2,
+    WEVA_BOX_ANONYMOUS_INLINE = 3,
+    WEVA_BOX_LINE = 4,
+    WEVA_BOX_TEXT = 5,
+} weva_box_kind;
+
+#define WEVA_BOX_NONE ((uint32_t)0xFFFFFFFFu)
+
+typedef struct weva_box {
+    uint32_t parent;                 /* index into the same list; WEVA_BOX_NONE for the root */
+    uint32_t kind;                   /* weva_box_kind */
+    weva_element_t element;          /* the owner; a text box names the element whose text it is; WEVA_ELEMENT_NONE for anonymous and line boxes */
+    double x, y, width, height;
+    double margin_top, margin_right, margin_bottom, margin_left;
+    double border_top, border_right, border_bottom, border_left;
+    double padding_top, padding_right, padding_bottom, padding_left;
+    double scroll_x, scroll_y;
+    const char* text;
+    size_t text_length;
+} weva_box;
+size_t weva_document_boxes(weva_document_t doc, weva_box* out, size_t capacity);
 
 /* Whether document content or an open dropdown accepts this point. Unlike
  * element_at, this includes dropdown rows outside the DOM box tree. Honors

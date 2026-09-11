@@ -966,6 +966,14 @@ the `elements`, `boxes`, `draws` and `textures` counts, the paint pass's
 (`cascade_elements`, `cascade_pseudos`; diff them between frames) -- what a
 debug overlay shows beside the frame time.
 
+**The box tree**
+
+`doc.get_box_tree()` lists every layout box in tree order as a Dictionary
+(`parent` index or -1, `kind`, `element` handle or -1, `rect` in document
+coordinates with scroll not applied, `margin` / `border` / `padding` as
+left-top-right-bottom Rect2s, `scroll`, and a text box's `text`) -- enough to
+draw the four devtools outlines per box on a debug overlay.
+
 **The mouse cursor**
 
 The node shows the `cursor` the page asks for under the pointer: the hand for

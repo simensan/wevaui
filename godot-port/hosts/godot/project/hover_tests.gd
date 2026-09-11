@@ -69,6 +69,12 @@ func _ready() -> void:
 	_check(stats["boxes"] > 0 and stats["elements"] > 0 and stats["updates"] >= 1,
 			"the engine counters describe the document")
 	_check(stats["update_ms"] >= 0.0 and stats["draws"] >= 1, "and its last update")
+	var boxes: Array = doc.get_box_tree()
+	_check(boxes.size() >= 6 and boxes[0]["parent"] == -1, "the box tree lists the root first")
+	var saw_text := false
+	for b in boxes:
+		if b["kind"] == "text" and b.get("text", "") == "hover": saw_text = true
+	_check(saw_text, "and the title's first word as a text run (words are runs of their own)")
 
 	# Isolate the two halves before asserting on them together: does the
 	# ENGINE hover, and does an event delivered by the window reach it?

@@ -202,7 +202,7 @@ def generate(headers):
     for name, value in defines.items():
         if 'VERSION' in name:
             out.append(f'        public const int {name} = {value};')
-        elif name == 'WEVA_ELEMENT_NONE':
+        elif name in ('WEVA_ELEMENT_NONE', 'WEVA_BOX_NONE'):
             out.append(f'        public const uint {name} = 0xFFFFFFFFu;')
     out.append('')
     for ret, name, params in functions:

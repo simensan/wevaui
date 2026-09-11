@@ -256,6 +256,33 @@ namespace Weva.Native
             return WevaNative.weva_document_element_at_devtools(Handle, x, y);
         }
 
+        /// <summary>
+        /// The whole box tree in tree order (a parent before its children), anonymous,
+        /// line and text boxes included: border boxes in document coordinates with
+        /// scroll not applied, the margin/border/padding edges, each box's own scroll
+        /// offset, and a text box's run. What an outline overlay draws from. Valid
+        /// until the next update.
+        /// </summary>
+        public weva_box[] Boxes()
+        {
+            nuint count = WevaNative.weva_document_boxes(Handle, null, 0);
+            if (count == 0) return Array.Empty<weva_box>();
+            var result = new weva_box[(int)count];
+            fixed (weva_box* p = result)
+            {
+                nuint written = WevaNative.weva_document_boxes(Handle, p, count);
+                if (written < count) Array.Resize(ref result, (int)written);
+            }
+            return result;
+        }
+
+        /// <summary>A text box's run as a string.</summary>
+        public static string TextOf(in weva_box box)
+        {
+            if (box.text == null || box.text_length == 0) return string.Empty;
+            return System.Text.Encoding.UTF8.GetString(box.text, (int)box.text_length);
+        }
+
         /// <summary>The directory relative url() and @font-face sources resolve against.</summary>
         public void SetBasePath(string path)
         {

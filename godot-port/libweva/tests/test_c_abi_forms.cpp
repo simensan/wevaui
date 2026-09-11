@@ -15,6 +15,7 @@
 #include <cstring>
 #include <tuple>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace {
@@ -1023,6 +1024,48 @@ void test_abi_stats_and_devtools_hit() {
     CHECK(weva_document_element_at_devtools(nullptr, 50, 20) == WEVA_ELEMENT_NONE);
     weva_document_stats(nullptr, &st);
     CHECK(st.updates == 0 && st.boxes == 0);
+}
+
+// Minor 31: the box tree as a list -- what a devtools overlay draws from.
+void test_abi_box_tree() {
+    Doc doc("html, body { margin: 0 } #a { padding: 5px; border: 2px solid #000; margin: 3px; width: 100px }",
+            "<div id=a><span id=s>hi</span></div>");
+    weva_document_update(doc.d, 0);
+    const size_t n = weva_document_boxes(doc.d, nullptr, 0);
+    CHECK(n >= 5);   // html, body, #a, a line, #s, the text
+    std::vector<weva_box> boxes(n);
+    CHECK(weva_document_boxes(doc.d, boxes.data(), boxes.size()) == n);
+    // Tree order: the root first, every parent before its child.
+    CHECK(boxes[0].parent == WEVA_BOX_NONE);
+    bool ordered = true;
+    for (size_t i = 1; i < n; ++i) if (boxes[i].parent == WEVA_BOX_NONE || boxes[i].parent >= i) ordered = false;
+    CHECK(ordered);
+    const weva_element_t a = weva_document_query(doc.d, "#a"), s = weva_document_query(doc.d, "#s");
+    size_t a_at = n, s_at = n, text_at = n, line_at = n;
+    for (size_t i = 0; i < n; ++i) {
+        if (boxes[i].element == a && boxes[i].kind == WEVA_BOX_BLOCK) a_at = i;
+        if (boxes[i].element == s && boxes[i].kind == WEVA_BOX_INLINE) s_at = i;
+        if (boxes[i].kind == WEVA_BOX_TEXT && boxes[i].text_length == 2 &&
+            std::string_view(boxes[i].text, boxes[i].text_length) == "hi") text_at = i;
+        if (boxes[i].kind == WEVA_BOX_LINE) line_at = i;
+    }
+    CHECK(a_at < n && s_at < n && text_at < n && line_at < n);
+    // The geometry is the layout's: #a where bounds put it, with its edges.
+    double x = 0, y = 0, w = 0, h = 0;
+    weva_element_bounds(doc.d, a, &x, &y, &w, &h);
+    CHECK(a_at < n && boxes[a_at].x == x && boxes[a_at].y == y && boxes[a_at].width == w && boxes[a_at].height == h);
+    CHECK(a_at < n && boxes[a_at].padding_left == 5 && boxes[a_at].border_top == 2 && boxes[a_at].margin_left == 3);
+    // The text run and the span's inline box are siblings under the line,
+    // as the layout tree keeps them; the line is under #a; the run names the
+    // span as its element, the line names none.
+    CHECK(boxes[text_at].parent == line_at && boxes[s_at].parent == line_at);
+    CHECK(boxes[line_at].parent == a_at);
+    CHECK(boxes[text_at].element == s && boxes[line_at].element == WEVA_ELEMENT_NONE);
+    // A short buffer takes what fits and still reports the whole count.
+    std::vector<weva_box> two(2);
+    CHECK(weva_document_boxes(doc.d, two.data(), 2) == n);
+    CHECK(two[0].parent == WEVA_BOX_NONE);
+    CHECK(weva_document_boxes(nullptr, nullptr, 0) == 0);
 }
 
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`

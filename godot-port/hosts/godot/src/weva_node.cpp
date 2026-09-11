@@ -738,6 +738,7 @@ void WevaDocument::_bind_methods() {
                  "get_dark_color_scheme");
     ClassDB::bind_method(D_METHOD("get_cursor"), &WevaDocument::get_cursor);
     ClassDB::bind_method(D_METHOD("get_stats"), &WevaDocument::get_stats);
+    ClassDB::bind_method(D_METHOD("get_box_tree"), &WevaDocument::get_box_tree);
     ClassDB::bind_method(D_METHOD("set_follow_css_cursor", "follow"),
                          &WevaDocument::set_follow_css_cursor);
     ClassDB::bind_method(D_METHOD("get_follow_css_cursor"), &WevaDocument::get_follow_css_cursor);
@@ -2032,6 +2033,33 @@ String WevaDocument::get_cursor() const {
 void WevaDocument::set_follow_css_cursor(bool follow) { follow_css_cursor_ = follow; }
 
 bool WevaDocument::get_follow_css_cursor() const { return follow_css_cursor_; }
+
+Array WevaDocument::get_box_tree() const {
+    Array out;
+    if (!doc_) return out;
+    const size_t n = weva_document_boxes(doc_, nullptr, 0);
+    std::vector<weva_box> boxes(n);
+    const size_t written = weva_document_boxes(doc_, boxes.data(), boxes.size());
+    static const char* kinds[] = {"block", "anonymous-block", "inline", "anonymous-inline", "line", "text"};
+    for (size_t i = 0; i < written; ++i) {
+        const weva_box& b = boxes[i];
+        Dictionary d;
+        d["parent"] = b.parent == WEVA_BOX_NONE ? -1 : static_cast<int64_t>(b.parent);
+        d["kind"] = b.kind < 6 ? kinds[b.kind] : "unknown";
+        d["element"] = b.element == WEVA_ELEMENT_NONE ? -1 : static_cast<int64_t>(b.element);
+        d["rect"] = Rect2(static_cast<float>(b.x), static_cast<float>(b.y), static_cast<float>(b.width), static_cast<float>(b.height));
+        d["margin"] = Rect2(static_cast<float>(b.margin_left), static_cast<float>(b.margin_top),
+                            static_cast<float>(b.margin_right), static_cast<float>(b.margin_bottom));
+        d["border"] = Rect2(static_cast<float>(b.border_left), static_cast<float>(b.border_top),
+                            static_cast<float>(b.border_right), static_cast<float>(b.border_bottom));
+        d["padding"] = Rect2(static_cast<float>(b.padding_left), static_cast<float>(b.padding_top),
+                             static_cast<float>(b.padding_right), static_cast<float>(b.padding_bottom));
+        d["scroll"] = Vector2(static_cast<float>(b.scroll_x), static_cast<float>(b.scroll_y));
+        if (b.text) d["text"] = String::utf8(b.text, static_cast<int>(b.text_length));
+        out.push_back(d);
+    }
+    return out;
+}
 
 Dictionary WevaDocument::get_stats() const {
     Dictionary out;
