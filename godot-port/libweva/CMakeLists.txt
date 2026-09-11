@@ -29,6 +29,7 @@ add_library(weva STATIC
     src/color_space.cpp
     src/sticky.cpp
     src/at_import.cpp
+    src/scroll_snap.cpp
     src/css_calc.cpp
     src/selector_parser.cpp
     src/selector_matcher.cpp

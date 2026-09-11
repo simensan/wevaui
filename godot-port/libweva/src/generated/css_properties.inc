@@ -1,5 +1,5 @@
 // Generated from Runtime/Css/Cascade/CssProperties.cs BuildRegistry() — do
-// not hand-edit. 334 properties in REGISTRATION ORDER, which is
+// not hand-edit (the scroll-snap block at the end is the one appendix). 334 + 13 properties in REGISTRATION ORDER, which is
 // load-bearing: ids are assigned sequentially and hot paths cache them, so
 // reordering this table silently repoints every cached id.
 static const PropertyDef kProperties[] = {
@@ -337,4 +337,21 @@ static const PropertyDef kProperties[] = {
     {"column-rule", false, "medium none currentcolor"},
     {"column-fill", false, "balance"},
     {"column-span", false, "none"},
+    // CSS Scroll Snap L1. The C# registers these lazily
+    // (ScrollSnapProperties.EnsureRegistered), outside BuildRegistry(), so
+    // the generator never sees them; they are appended here, which keeps
+    // every generated id above unchanged.
+    {"scroll-snap-type", false, "none"},
+    {"scroll-snap-align", false, "none"},
+    {"scroll-snap-stop", false, "normal"},
+    {"scroll-padding", false, "auto"},
+    {"scroll-padding-top", false, "auto"},
+    {"scroll-padding-right", false, "auto"},
+    {"scroll-padding-bottom", false, "auto"},
+    {"scroll-padding-left", false, "auto"},
+    {"scroll-margin", false, "0"},
+    {"scroll-margin-top", false, "0"},
+    {"scroll-margin-right", false, "0"},
+    {"scroll-margin-bottom", false, "0"},
+    {"scroll-margin-left", false, "0"},
 };

@@ -824,6 +824,99 @@ void test_abi_at_import() {
     weva_document_destroy(d);
 }
 
+// CSS Scroll Snap L1: a programmatic scroll lands on a snap position at
+// once; a wheel scroll moves freely, then settles onto one once the wheel is
+// quiet, animated; `scroll-snap-stop: always` is not skipped; `proximity`
+// only snaps within half the scrollport; padding, margin, end and center.
+void test_abi_scroll_snap() {
+    {
+        Doc doc("html, body { margin: 0 }"
+                " #s { overflow: auto; height: 200px; width: 200px; scroll-snap-type: y mandatory }"
+                " .slide { height: 150px; scroll-snap-align: start } #b { scroll-snap-stop: always }",
+                "<div id=s><div class=slide id=a></div><div class=slide id=b></div>"
+                "<div class=slide id=c></div><div class=slide id=d></div></div>");
+        const weva_element_t s = weva_document_query(doc.d, "#s");
+        const auto scroll_y = [&]() {
+            double x = 0, y = 0, mx = 0, my = 0;
+            weva_element_scroll(doc.d, s, &x, &y, &mx, &my);
+            return y;
+        };
+        // Snap positions 0, 150, 300 and 400 (450 clamped to the 400 maximum).
+        weva_element_set_scroll(doc.d, s, 0, 100);
+        weva_document_update(doc.d, 0);
+        CHECK(scroll_y() == 150);
+        weva_element_set_scroll(doc.d, s, 0, 60);
+        weva_document_update(doc.d, 0);
+        CHECK(scroll_y() == 0);
+
+        // The wheel moves freely and keeps the document animating until the
+        // settle; the settle animates to the nearest position.
+        CHECK(weva_document_scroll(doc.d, 100, 100, 0, 100) == 1);
+        weva_document_update(doc.d, 0.05);
+        CHECK(scroll_y() == 100);
+        CHECK(weva_document_is_animating(doc.d) == 1);
+        weva_document_update(doc.d, 0.2);
+        CHECK(scroll_y() > 100 && scroll_y() < 150);
+        weva_document_update(doc.d, 1.0);
+        CHECK(scroll_y() == 150);
+        CHECK(weva_document_is_animating(doc.d) == 0);
+
+        // A wheel sequence that passes over #b, which must not be skipped,
+        // stops there instead of at the nearest position to where it ended.
+        weva_element_set_scroll(doc.d, s, 0, 0);
+        weva_document_update(doc.d, 0);
+        CHECK(weva_document_scroll(doc.d, 100, 100, 0, 400) == 1);
+        weva_document_update(doc.d, 0.2);
+        weva_document_update(doc.d, 1.0);
+        CHECK(scroll_y() == 150);
+    }
+    {
+        Doc doc("html, body { margin: 0 }"
+                " #s { overflow: auto; height: 200px; width: 200px; scroll-snap-type: y proximity;"
+                "      scroll-padding-top: 10px }"
+                " .tall { height: 600px }"
+                " #p { height: 100px; scroll-snap-align: start; scroll-margin-top: 5px }"
+                " #e { height: 100px; scroll-snap-align: end }"
+                " #c { height: 50px; scroll-snap-align: center }",
+                "<div id=s><div id=p></div><div class=tall></div><div id=e></div><div id=c></div>"
+                "<div class=tall></div></div>");
+        const weva_element_t s = weva_document_query(doc.d, "#s");
+        const auto scroll_y = [&]() {
+            double x = 0, y = 0, mx = 0, my = 0;
+            weva_element_scroll(doc.d, s, &x, &y, &mx, &my);
+            return y;
+        };
+        // Positions: #p start -> 0 - 5 - 10, clamped to 0; #e end -> 800 - 200 = 600;
+        // #c center -> 825 - 100 = 725.
+        weva_element_set_scroll(doc.d, s, 0, 40);
+        weva_document_update(doc.d, 0);
+        CHECK(scroll_y() == 0);
+        weva_element_set_scroll(doc.d, s, 0, 300);   // nothing within 100
+        weva_document_update(doc.d, 0);
+        CHECK(scroll_y() == 300);
+        weva_element_set_scroll(doc.d, s, 0, 640);
+        weva_document_update(doc.d, 0);
+        CHECK(scroll_y() == 600);
+        weva_element_set_scroll(doc.d, s, 0, 700);
+        weva_document_update(doc.d, 0);
+        CHECK(scroll_y() == 725);
+    }
+    {
+        // The inline axis: `x mandatory` over a row of inline-blocks, and a
+        // container that snaps only on y leaves x alone.
+        Doc doc("html, body { margin: 0 }"
+                " #s { overflow: auto; height: 100px; width: 200px; white-space: nowrap; scroll-snap-type: x mandatory }"
+                " .card { display: inline-block; width: 150px; height: 50px; scroll-snap-align: start }",
+                "<div id=s><div class=card></div><div class=card></div><div class=card></div><div class=card></div></div>");
+        const weva_element_t s = weva_document_query(doc.d, "#s");
+        double x = 0, y = 0, mx = 0, my = 0;
+        weva_element_set_scroll(doc.d, s, 100, 0);
+        weva_document_update(doc.d, 0);
+        weva_element_scroll(doc.d, s, &x, &y, &mx, &my);
+        CHECK(x == 150);
+    }
+}
+
 // A <textarea> keeps what it holds as its CONTENT, not in a `value`
 // attribute -- the markup between the tags is the value, as it is in a
 // browser. Typing used to write an attribute nothing displayed, so the box

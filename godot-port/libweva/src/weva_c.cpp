@@ -11,6 +11,7 @@
 #include "weva/box_builder.h"
 #include "weva/sticky.h"
 #include "weva/at_import.h"
+#include "weva/scroll_snap.h"
 #include "weva/animation.h"
 #include "weva/cascade.h"
 #include "weva/container_query_state.h"
@@ -1964,6 +1965,21 @@ struct weva_document {
     // box: the box tree is thrown away and rebuilt whenever anything moves, so
     // an offset kept on a box would be lost by every class change.
     std::unordered_map<const Element*, std::pair<double, double>> scroll;
+    // CSS Scroll Snap. A wheel scroll moves freely and settles onto a snap
+    // position once the wheel has been quiet for a moment (a browser's
+    // scroll-end), and the settling is animated; a programmatic scroll snaps
+    // at once.
+    struct SnapSettle {
+        const Element* element = nullptr;
+        double start_x = 0, start_y = 0;   // where the wheel sequence began
+        double idle = 0;                   // seconds since the last wheel step
+        bool armed = false;
+    } snap_settle;
+    struct SnapAnimation {
+        const Element* element = nullptr;
+        double from_x = 0, from_y = 0, to_x = 0, to_y = 0, t = 0;
+        bool active = false;
+    } snap_animation;
     // What a field held before each edit, so Ctrl+Z can put it back. Snapshots
     // rather than a log of operations: a text field is small, and a snapshot
     // cannot disagree with the field the way a replayed operation can.
@@ -3887,6 +3903,8 @@ int weva_document_is_animating(weva_document_t doc) {
     const InteractionState& st = doc->styles.state;
     if (st.focused && is_text_field(*st.focused)) return 1;
     if (weva_document_needs_input_tick(doc)) return 1;
+    // A wheel scroll waiting to settle onto a snap position, or settling.
+    if (doc->snap_settle.armed || doc->snap_animation.active) return 1;
     return doc->styles.animating() ? 1 : 0;
 }
 int weva_document_needs_input_tick(weva_document_t doc) {
@@ -3915,6 +3933,55 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
 weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_seconds, double input_seconds) {
     return update_document(doc, dt_seconds, input_seconds, true);
 }
+
+namespace {
+
+// How long the wheel has to be quiet before a snap container settles, and
+// how long the settling takes.
+constexpr double kSnapSettleDelay = 0.15;
+constexpr double kSnapDuration = 0.25;
+
+void snap_apply(weva_document* doc, const Element* e, double x, double y) {
+    doc->scroll[e] = {x, y};
+    if (const BoxId i = box_of(doc, e); i != kNoBox) {
+        doc->tree[i].scroll_x = x;
+        doc->tree[i].scroll_y = y;
+    }
+    doc->queue_event(WEVA_EVENT_SCROLL, e, x, y, 0);
+    doc->pending = worst(doc->pending, Invalidation::Paint);
+}
+
+void snap_advance(weva_document* doc, double dt) {
+    auto& settle = doc->snap_settle;
+    if (settle.armed) {
+        settle.idle += dt;
+        if (settle.idle >= kSnapSettleDelay) {
+            settle.armed = false;
+            const BoxId i = box_of(doc, settle.element);
+            const auto at = doc->scroll.find(settle.element);
+            if (i != kNoBox && at != doc->scroll.end()) {
+                const double cx = at->second.first, cy = at->second.second;
+                double tx = cx, ty = cy;
+                const bool sy = snap_target(doc->tree, i, doc->ctx, true, settle.start_y, cy, &ty);
+                const bool sx = snap_target(doc->tree, i, doc->ctx, false, settle.start_x, cx, &tx);
+                if ((sx || sy) && (tx != cx || ty != cy)) {
+                    doc->snap_animation = {settle.element, cx, cy, tx, ty, 0, true};
+                }
+            }
+        }
+    }
+    auto& anim = doc->snap_animation;
+    if (anim.active && dt > 0) {
+        anim.t += dt;
+        const double p = std::min(1.0, anim.t / kSnapDuration);
+        const double e = 1 - (1 - p) * (1 - p);   // ease-out
+        snap_apply(doc, anim.element, anim.from_x + (anim.to_x - anim.from_x) * e,
+                   anim.from_y + (anim.to_y - anim.from_y) * e);
+        if (p >= 1) anim.active = false;
+    }
+}
+
+} // namespace
 
 static weva_status update_document(weva_document_t doc, double dt_seconds,
                                    double input_seconds, bool publish_paint) {
@@ -3951,6 +4018,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     // can see, so it is settled here -- against what was last painted -- and
     // asks for its own repaint before anything decides the pass is a no-op.
     if (dt_seconds > 0) doc->styles.state.caret_age += dt_seconds;
+    if (dt_seconds > 0) snap_advance(doc, dt_seconds);
     // The tooltip's wait runs on the clock alone, like the caret's blink: a
     // pointer that has stopped moving sends no more events, and the tooltip
     // still has to appear. Before the settled-document early-out, or a still
@@ -7183,6 +7251,17 @@ int weva_document_scroll(weva_document_t doc, double x, double y, double dx, dou
         const double cx = b.scroll_x, cy = b.scroll_y;
         const double nx = std::clamp(cx + dx, 0.0, mx), ny = std::clamp(cy + dy, 0.0, my);
         if (nx == cx && ny == cy) continue;   // no room this way: the next one up
+        if (scroll_snaps(b.style)) {
+            auto& settle = doc->snap_settle;
+            if (!settle.armed || settle.element != b.element) {
+                settle.element = b.element;
+                settle.start_x = cx;
+                settle.start_y = cy;
+            }
+            settle.armed = true;
+            settle.idle = 0;
+            doc->snap_animation.active = false;
+        }
         doc->scroll[b.element] = {nx, ny};
         doc->queue_event(WEVA_EVENT_SCROLL, b.element, nx, ny, 0);
         doc->pending = worst(doc->pending, Invalidation::Paint);
@@ -7196,10 +7275,20 @@ weva_status weva_element_set_scroll(weva_document_t doc, weva_element_t element,
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     const Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
+    double sx = std::max(0.0, x), sy = std::max(0.0, y);
+    // A programmatic scroll lands on a snap position at once, as scrollTo
+    // does in a browser; it also ends any settling a wheel left behind.
+    doc->snap_settle.armed = false;
+    doc->snap_animation.active = false;
+    if (const BoxId i = box_of(doc, e); i != kNoBox && scroll_snaps(doc->tree[i].style)) {
+        double t = 0;
+        if (snap_target(doc->tree, i, doc->ctx, true, sy, sy, &t)) sy = t;
+        if (snap_target(doc->tree, i, doc->ctx, false, sx, sx, &t)) sx = t;
+    }
     // Clamped by the update, which is the only thing that knows how far there
     // is to go -- and it may not have laid this element out yet.
-    doc->scroll[e] = {std::max(0.0, x), std::max(0.0, y)};
-    doc->queue_event(WEVA_EVENT_SCROLL, e, std::max(0.0, x), std::max(0.0, y), 0);
+    doc->scroll[e] = {sx, sy};
+    doc->queue_event(WEVA_EVENT_SCROLL, e, sx, sy, 0);
     doc->pending = worst(doc->pending, Invalidation::Paint);
     return WEVA_OK;
 }

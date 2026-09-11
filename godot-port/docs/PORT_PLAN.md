@@ -3643,8 +3643,12 @@ an ABI surface), keep host-side (C#), drop.
    affine part; translateZ/scaleZ/perspective() are identity.
    Also the individual `translate` / `rotate` / `scale` properties (registered,
    unread).
-8. `scroll-snap-type` / `scroll-snap-align` / `scroll-behavior` are not even
-   registered (only `overscroll-behavior` expands, unenforced).
+8. Scroll snap DONE 2026-09-11 (`scroll_snap.cpp`, the 13 properties
+   appended to the registry): a programmatic scroll snaps at once, a wheel
+   scroll settles after 150 ms of quiet with a 250 ms ease-out, `always`
+   stops, `proximity` within half the scrollport, padding/margin, start/
+   end/center, both axes. Still open: `scroll-behavior: smooth` and
+   snapping after a scrollbar-thumb drag.
 9. Small drops: `caret-color` DONE 2026-09-11 (`paint.cpp` caret_color_of), `list-style-image`
    (`Box::list_marker_image` declared, never assigned), `image-rendering`
    (nearest only, `background.cpp:948`), `background-attachment`.

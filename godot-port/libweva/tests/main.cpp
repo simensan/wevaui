@@ -406,6 +406,7 @@ void test_abi_color_scheme();
 void test_abi_placeholder_and_selection_pseudos();
 void test_abi_position_sticky();
 void test_abi_at_import();
+void test_abi_scroll_snap();
 void test_abi_textarea_edits_its_content();
 void test_abi_textarea_newlines();
 void test_abi_textarea_line_keys();
@@ -961,6 +962,7 @@ int main() {
     test_abi_placeholder_and_selection_pseudos();
     test_abi_position_sticky();
     test_abi_at_import();
+    test_abi_scroll_snap();
     test_abi_textarea_edits_its_content();
     test_abi_textarea_newlines();
     test_abi_textarea_line_keys();
