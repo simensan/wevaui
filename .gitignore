@@ -97,6 +97,7 @@ Assets/UI/Fonts/Source/SegoeUI.ttf.meta
 # stays tracked — CONFORMANCE.md and PLAN.md cite it as the authoritative
 # capability matrix.
 /TECH_AUDIT_*.md
+/AUDIT.md
 /CODE_AUDIT_FINDINGS.md
 /CSS_COMPLIANCE_ISSUES.md
 /CSS_OPEN_GAPS.md
