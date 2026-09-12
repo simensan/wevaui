@@ -20,20 +20,14 @@ namespace Weva.Tests.Css.Cascade {
     //   font-synthesis-small-caps  registered, inherited=true, initial="auto"
     //   font-synthesis-position    registered, inherited=true, initial="auto"
     //
-    //   font-variant-ligatures  NOT registered — spills to customProps;
-    //                           does NOT inherit (bitmask path skips it).
-    //                           Spec: CSS Fonts L4 §6.1, inherited=yes.
-    //                           Tracked as CSS_OPEN_GAPS.md §A (see below).
-    //   font-variant-position   NOT registered — same caveat.
-    //   font-variant-caps       NOT registered — same caveat.
-    //   font-variant-alternates NOT registered — same caveat.
-    //   font-variant-east-asian NOT registered — same caveat.
-    //   font-variant-emoji      NOT registered — same caveat.
+    //   The six font-variant longhands — ligatures, position, caps,
+    //   alternates, east-asian, emoji — are all registered (CssProperties.cs,
+    //   consecutively), each inherited with initial `normal`, which is what
+    //   CSS Fonts L4 §6.1 asks for. They were unregistered once, spilling to
+    //   the customProps side dictionary and skipping inheritance; that gap is
+    //   closed and the tests below assert the spec behaviour directly.
     //
-    // Tests for unregistered longhands are marked with [Ignore] where spec-
-    // correct behaviour diverges from current engine behaviour (inheritance
-    // gap). Current-behaviour round-trip tests are NOT ignored so the
-    // harness still exercises the parser/customProps path.
+    // Nothing here is skipped.
     public class FontVariantFeatureSettingsSizeAdjustTests {
         static Document Html(string s) => HtmlParser.Parse(s);
         static Stylesheet ParseCss(string s) => CssParser.Parse(s);
@@ -489,10 +483,10 @@ namespace Weva.Tests.Css.Cascade {
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // font-variant-ligatures (NOT REGISTERED — round-trip via customProps)
-        // CSS Fonts L4 §6.1 — inherited=yes (spec), but the engine does NOT
-        // propagate customProps values through the inheritance bitmask path.
-        // Spec-correct inheritance test is [Ignore]d — see CSS_OPEN_GAPS.md §A.
+        // font-variant-ligatures — registered, inherited, initial `normal`.
+        // The test name below still says "via customProps" because that was the
+        // path when it was written; the value now comes through the registered
+        // property, and the assertion holds either way.
         // ══════════════════════════════════════════════════════════════════
 
         [Test]

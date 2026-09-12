@@ -240,9 +240,10 @@ namespace Weva.Tests.Layout {
         }
 
         // ----------------------------------------------------------------------
-        // Gap-pinning: rules covered by CSS 2.1 §8.3.1 that the current
-        // implementation does NOT honor. Each [Ignore]'d test documents the
-        // shortcoming and should pass once the gap is closed.
+        // These were the gap-pinning cases: rules from CSS 2.1 §8.3.1 the
+        // engine did not honour, each [Ignore]'d until it did. They are all
+        // honoured now — the tests below run and pass like the rest of the
+        // file, and nothing here is skipped.
         // ----------------------------------------------------------------------
 
         [Test]

@@ -597,7 +597,10 @@ struct InteractionState : ElementStateProvider {
     double text_scroll_x = 0;
     bool caret_downstream = false;
     const Element* vertical_owner = nullptr;
-    uint64_t vertical_version = 0;
+    // Matches Element::form_version()'s int64_t: it is the only thing ever
+    // stored here, and the unsigned copy made every comparison a signed/
+    // unsigned mix (MSVC C4389).
+    int64_t vertical_version = 0;
     int vertical_index = -1;
     double vertical_x = 0;
     // The other end of the selection, or -1 when there is none. A selection is

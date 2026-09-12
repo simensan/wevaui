@@ -767,14 +767,35 @@ Two implementations to choose between (decide in Phase 5, not now):
 
 The interface above is deliberately compatible with either.
 
-### 3. Data binding is not ported
+### 3. Data binding: the reflection does not port, the template layer did
 
-All reflection in the C# core lives in `Runtime/Binding/` (5 files) and exists
-to read C# object graphs. It does not translate, and it should not be
-translated. In a GDScript world the same feature is Godot's own introspection —
-`Object::get`/`set` over `Variant`, `Object::connect` for events — which is a
-better fit and deletes the problem. `hosts/godot/` owns this; `libweva` has no
-binding layer at all.
+The original decision here was that binding would not be ported at all: the C#
+reflection in `Runtime/Binding/` reads C# object graphs, does not translate, and
+a GDScript world would use Godot's own introspection instead.
+
+Half of that held and half was reversed, and the split is the useful part.
+
+**Not ported, as planned:** the reflection. Reading a C# object graph, or a
+GDScript one, stays on the host side. Neither the core nor the ABI knows what an
+object is.
+
+**Ported after all:** the template layer above it — `{{ path }}` interpolation,
+`data-each` / `data-key` row repetition, `data-model`, and handler dispatch. That
+is markup semantics, not language reflection, and leaving it to each host meant
+writing it twice and having it drift. It lives in `libweva/src/binding.cpp`
+(~500 lines).
+
+The seam is `weva_binding_source` (ABI, `weva_c.h`): a callback table the host
+fills with "read this path", "count this collection". The core walks the
+document, asks for the paths it finds, and writes the results into the DOM;
+`weva_document_refresh_bindings` returns how many nodes changed. The host keeps
+the reflection and answers path lookups against whatever it has — Godot's
+`Object::get` over `Variant` in `weva_view.gd`, a C# dictionary graph in
+`Runtime/Native/NativeBindings.cs`.
+
+So `libweva` does have a binding layer; what it does not have is any idea where
+the values come from. Verified by `binding_tests.gd` (186 checks) and
+`NativeBindingTests`.
 
 ## Stylesheets in the markup
 

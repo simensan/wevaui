@@ -16,6 +16,16 @@ unchanged here." A subtly-different behavior is worse than missing — see
 
 ```
 weva/
+├── godot-port/                          The engine, despite the name
+│   ├── libweva/                         C++ core: layout, cascade, paint,
+│   │                                    C ABI in include/weva_c.h. Text is
+│   │                                    host-owned — the core never shapes.
+│   ├── hosts/godot/                     Godot addon over the C ABI
+│   ├── hosts/unity/                     Unity native plugin (weva_core)
+│   ├── tools/oracle/                    Three-way differential oracle
+│   └── docs/                            ARCHITECTURE.md, PORT_PLAN.md,
+│                                        verification receipts
+│
 ├── Assets/                              Demo + samples wired into a scene
 │   ├── UI/                              randhtml.html / .css — the demo doc
 │   ├── Scripts/UitestController.cs      Demo controller (font registration,

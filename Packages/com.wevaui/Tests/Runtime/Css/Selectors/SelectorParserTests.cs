@@ -266,17 +266,19 @@ namespace Weva.Tests.Css.Selectors {
             Assert.That(p.Kind, Is.EqualTo(PseudoClassKind.NthLastOfType));
         }
 
-        // Selectors L4 §6.6.5 — `:nth-child(An+B of <selector-list>)` must
-        // parse successfully so the rest of the stylesheet survives.
-        // TODO: the `of <selector>` filter is currently dropped silently; the
-        // selector matches as plain `:nth-child(An+B)` until the matcher
-        // honors the filter.
+        // Selectors L4 §6.6.5 — `:nth-child(An+B of <selector-list>)`. The
+        // filter used to be parsed and thrown away; it is now kept on the
+        // selector (SelectorParser) and honoured when matching
+        // (SelectorMatcher's FilteredChildIndex), so this pins that it
+        // survives parsing rather than that it is discarded.
         [Test]
-        public void Nth_child_of_selector_parses_and_drops_filter() {
+        public void Nth_child_of_selector_keeps_its_filter() {
             var p = (PseudoClassSelector)P(":nth-child(2 of .item)").Sequence.Compounds[0].Parts[0];
             Assert.That(p.Kind, Is.EqualTo(PseudoClassKind.NthChild));
             Assert.That(p.Nth.A, Is.EqualTo(0));
             Assert.That(p.Nth.B, Is.EqualTo(2));
+            Assert.That(p.NthOfFilter, Is.Not.Null, "the of-filter is retained, not dropped");
+            Assert.That(p.NthOfFilter.Count, Is.EqualTo(1));
 
             // Regression guards: existing An+B / keyword forms unaffected.
             var anb = (PseudoClassSelector)P(":nth-child(2n+1)").Sequence.Compounds[0].Parts[0];
