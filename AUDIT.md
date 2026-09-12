@@ -18,7 +18,7 @@ touched.
 | 5 | Build hygiene | **MSVC done** — 3 warnings fixed; gcc/clang blocked by the worktree |
 | 6 | Host duplication | **done** — three behavioural divergences found in one function |
 | 7 | ABI surface | **done** — 4 dead entry points, 2 doc gaps, asymmetry explained |
-| 8 | Docs accuracy | not started |
+| 8 | Docs accuracy | **done** — the front door never mentioned the engine; 3 files fixed |
 
 ---
 
@@ -792,3 +792,66 @@ Neither gap breaks anything today. Both bite the moment someone has to support
 an older host binary against a newer core, which is exactly what a minor version
 is for. Worth one pass reconstructing 15-24 from the log while the history is
 still recent.
+
+---
+
+## 8. Docs accuracy
+
+**Status: done.** One finding dominates, and one of the dangling references was
+created by this audit's own cleanup.
+
+### 8.1 None of the seven top-level docs knew the engine exists
+
+| File | Lines | Mentions of `libweva` | Mentions of Godot |
+|---|---|---|---|
+| README.md | 84 | 0 | 0 |
+| PLAN.md | 597 | 0 | 0 |
+| ROADMAP.md | 81 | 0 | 0 |
+| CONFORMANCE.md | 858 | 0 | 0 |
+| CSS_FEATURE_AUDIT.md | 233 | 0 | 0 |
+| AI_REFERENCE.md | 356 | 0 | 0 |
+| AGENTS.md | 295 | 0 | 0 |
+
+Zero, across 2,504 lines. The repository had just merged 430 commits delivering
+a C++ core and two hosts over a C ABI, and every document at the front door
+still described a Unity-only C# project.
+
+The README was explicit about it. Its orientation paragraph enumerated the
+repository's contents — package, demo project, tooling, spec docs — and omitted
+`godot-port/` entirely: over 1,100 tracked files, the core, both hosts, the
+oracle and 16 MB of receipts. The single largest thing in the repository after
+the Unity package, invisible to anyone reading the front page.
+
+**Fixed in the three files where it costs a reader most:**
+
+- **README.md** — the orientation paragraph now names `godot-port/`, says
+  plainly that despite the name it is the engine, and states which engine you
+  actually get by default (the C# one) and that it remains the oracle's
+  reference.
+- **AGENTS.md** — `godot-port/` added to the repository tree, with the core,
+  both hosts, the oracle and the docs broken out. An agent reading this file to
+  orient itself previously could not learn the core existed.
+- **AI_REFERENCE.md** — a pointer to the three-way oracle in the tooling
+  section, which is the tool to reach for now.
+
+**Not touched:** PLAN.md, ROADMAP.md, CONFORMANCE.md and CSS_FEATURE_AUDIT.md.
+These are product and spec documents whose scope is a decision, not a fact —
+whether CONFORMANCE.md should describe one engine or two, and whether ROADMAP
+should carry the shared-core phases, is yours to make. Flagged, not guessed at.
+
+### 8.2 A dangling reference this audit created
+
+`AI_REFERENCE.md` documented `extract-*.mjs` and `diff-*.mjs` as the
+Chrome-versus-Unity workflow. Area 2.5 deleted those 22 scripts as superseded
+one-shots, which was right, but the doc still pointed at them — a reference
+broken by this audit, three areas earlier.
+
+Rewritten to name the two generic scripts that replaced them, with a note that
+the per-sample pairs were removed. Worth recording as a process point: deleting
+files is not finished until the prose that named them is checked, and a sweep
+for orphaned *scripts* does not catch orphaned *references to* them.
+
+### 8.3 Checked and clean
+
+No remaining references anywhere in the Markdown to any of the 22 deleted
+scripts.

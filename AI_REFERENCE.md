@@ -287,12 +287,19 @@ into a StructuredBuffer of instances, chunking at `MaxInstancesPerDraw` (1024).
 
 ## 6. Tooling & verification
 
-- **Chrome-vs-Unity layout diff** (`Tools/Layout/*.mjs`): `extract-*.mjs` load a
+- **Chrome-vs-Unity layout diff** (`Tools/Layout/*.mjs`):
+  `capture-all-chrome-layouts.mjs` and `extract-chrome-layout.mjs` load a
   fixture in headless Chrome and dump `getBoundingClientRect` coords to
-  `<name>.chrome-layout.json`; `diff-*.mjs` / `diff-assets.mjs` compare against the
-  Unity dump. **Each fixture has its own viewport** baked into its chrome JSON —
-  regenerate the Unity dump at the matching viewport before diffing or you get
-  false deltas.
+  `<name>.chrome-layout.json`; `diff-assets.mjs` compares against the Unity
+  dump. Both extractors take the fixture as an argument — the old one-shot
+  `extract-<sample>.mjs` / `diff-<sample>.mjs` pairs were removed once these
+  superseded them. **Each fixture has its own viewport** baked into its chrome
+  JSON — regenerate the Unity dump at the matching viewport before diffing or
+  you get false deltas.
+- **The three-way oracle** (`godot-port/tools/oracle/run_oracle.py`) is the
+  bigger hammer and the one to reach for now: it compares the C# engine, the
+  C++ core and a Chrome capture per case, and says which two agree. See
+  `godot-port/docs/ORACLE.md`.
 - **Headless Unity layout dump**: `RandhtmlLayoutDumpTest` (EditMode,
   `Tests/Editor/RandhtmlLayoutDumpTest.cs`) — `DumpCoords(fixture)` writes
   `Assets/UI/<fixture>.unity-layout.json` deterministically (stable fonts, single
