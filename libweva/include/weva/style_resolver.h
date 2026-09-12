@@ -122,7 +122,7 @@ ResolvedLength resolve_length(std::string_view raw, const LayoutContext& ctx, do
                               std::optional<double> basis_px, double line_height = 0);
 
 // The same, over a value the caller already has parsed. resolve_length's string
-// form parses on every call, which tools/weva_bench measured as 97% of a layout
+// form parses on every call, which Tools/weva_bench measured as 97% of a layout
 // pass's heap allocations.
 ResolvedLength resolve_length_value(const CssValue* value, const LayoutContext& ctx,
                                     double font_size,

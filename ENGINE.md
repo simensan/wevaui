@@ -75,7 +75,7 @@ libweva/            Host-agnostic C++ core. No Godot types, no Unity types.
 hosts/
   godot/            GDExtension host (first host)
   unity/            P/Invoke shim over the C ABI (later; placeholder)
-tools/
+Tools/
   oracle/           Differential test harness against the C# implementation
 docs/
   PORT_PLAN.md      Phases, sequencing, exit criteria
@@ -96,4 +96,4 @@ host-agnostic so a second host doesn't require a second engine.
    [Release verification](docs/RELEASE.md) covers pinned builds, versioned packaging and acceptance commands.
 3. [Architecture](docs/ARCHITECTURE.md), [conventions](docs/CONVENTIONS.md), and
    [oracle](docs/ORACLE.md) — read before changing the engine.
-4. [Core benchmark](tools/weva_bench/README.md) — Windows build, workloads and allocation profiles.
+4. [Core benchmark](Tools/weva_bench/README.md) — Windows build, workloads and allocation profiles.

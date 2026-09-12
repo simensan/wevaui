@@ -666,7 +666,7 @@ Receipts, process samples and cold/prepared/soak PNGs:
 
 The older approximately 68 ms figure was the core fixed-font HUD benchmark,
 a different UI and timing scope from Frontier Camp. Remeasuring the same
-`tools/oracle/corpus/samples/hud.html` and `hud.css` with the current Windows
+`Tools/oracle/corpus/samples/hud.html` and `hud.css` with the current Windows
 Release core gives **62.863 ms median of five run means**, each with 50 fresh
 documents. Run means are 61.949, 78.751, 94.600, 62.863 and 60.552 ms. The
 large variation and absence of a matched old-binary control preclude claiming

@@ -334,7 +334,7 @@ bool resolve_length_keyword(std::string_view raw, ResolvedLength* out) {
 
 // The resolve half, over an ALREADY-PARSED value. Split out so a caller with a
 // cached parse never re-parses: re-parsing here was 97% of a layout pass's heap
-// allocations (see tools/weva_bench).
+// allocations (see Tools/weva_bench).
 ResolvedLength resolve_length_value(const CssValue* value, const LayoutContext& ctx,
                                     double font_size, std::optional<double> basis_px,
                                     double line_height) {

@@ -57,7 +57,7 @@ func create_doc(kind: String, engine_font := true) -> void:
 	# runs; the adapter shapes such runs in pieces (font_backend_tests.cpp
 	# covers the limits). Ordinary coverage stays below the threshold, and the
 	# stress mode passes with or without the workaround, so it is a regression
-	# check only; tools/godot-text-shaping-repro retains the engine failure.
+	# check only; Tools/godot-text-shaping-repro retains the engine failure.
 	source = ("á😀b"+"áb".repeat(12)).repeat(8)
 	if OS.get_environment("WEVA_TEXT_SHAPING_STRESS") == "1":
 		source = "á😀b".repeat(60)

@@ -912,7 +912,7 @@ now has zero direct geometry findings; the 18 named-line fixtures, area-edge
 
 fixture and five stretch fixtures pass against fresh Chrome captures.
 
-Versioned regression cases 48–56 live in `tools/oracle/regressions/grid/`.
+Versioned regression cases 48–56 live in `Tools/oracle/regressions/grid/`.
 
 The additional cases cover implicit-grid extent and dense packing with fixed
 
@@ -1032,7 +1032,7 @@ A separate containment correction makes `contain: content` preserve content
 
 sizing instead of treating it as `strict`. Both versioned browser fixtures in
 
-`tools/oracle/regressions/containment/` match fresh Chrome captures. The original
+`Tools/oracle/regressions/containment/` match fresh Chrome captures. The original
 
 304-case comparison is unchanged (`.utmp/parity68/direct-container-summary.json`).
 

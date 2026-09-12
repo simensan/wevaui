@@ -6,7 +6,7 @@ Godot frame timing is measured separately by the host's
 
 ## Windows build
 
-From `godot-port/`, with CMake, Python and Visual Studio C++ tools installed:
+From the repository root, with CMake, Python and Visual Studio C++ tools installed:
 
 ```powershell
 cmake -S . -B build-core -G "Visual Studio 17 2022" -A x64 -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
@@ -25,8 +25,8 @@ when the document needs only the user-agent stylesheet. For example:
 
 ```powershell
 $bench = '.\build-core\tools\weva_bench\Release\weva_bench.exe'
-$html = 'tools/oracle/corpus/samples/layout-stress.html'
-$css = 'tools/oracle/corpus/samples/layout-stress.css'
+$html = 'Tools/oracle/corpus/samples/layout-stress.html'
+$css = 'Tools/oracle/corpus/samples/layout-stress.css'
 & $bench $html $css 100 --cold
 & $bench $html $css 500 --full --dt=0.016666666666666666
 & $bench $html $css 500 --full --mutate=layout --target=last

@@ -25,7 +25,7 @@
 // registered id. Both are kept here for the same reason.
 //
 // The per-slot parsed-CssValue cache IS ported, after the measurement this
-// comment used to wait for. `tools/weva_bench` put 97% of a layout pass's
+// comment used to wait for. `Tools/weva_bench` put 97% of a layout pass's
 // heap allocations — 10.9 MB of 11.1 on a 1691-box document — in
 // parse_css_value, because resolve_length re-parsed the raw declaration text
 // on every read, several times per box wherever shrink-to-fit lays a box out

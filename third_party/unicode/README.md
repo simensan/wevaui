@@ -6,10 +6,10 @@ Unicode grapheme segmentation conformance fixture. Both are distributed under
 the [Unicode License V3](LICENSE.txt). The packaged addon includes this notice
 and license because its native libraries embed the generated tables.
 
-The generator, `tools/generate_graphemes.py`, verifies SHA-256 hashes before
+The generator, `Tools/generate_graphemes.py`, verifies SHA-256 hashes before
 using its inputs. Download these files from `https://www.unicode.org/Public/17.0.0/ucd/`
-into one directory, then run `python tools/generate_graphemes.py /path/to/data`
-from `godot-port`:
+into one directory, then run `python Tools/generate_graphemes.py /path/to/data`
+from the repository root:
 
 | File under the UCD directory | SHA-256 |
 |---|---|

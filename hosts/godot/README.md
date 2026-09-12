@@ -42,12 +42,12 @@ The `font_inheritance_tests.tscn` scene checks computed font-size inheritance,
 both font backends. Run it headlessly for geometry or with a renderer for
 incremental-versus-fresh pixel comparisons. Its headless checks are included
 in `check.sh`; the corresponding browser fixture is
-`tools/oracle/check_font_inheritance_chrome.py`.
+`Tools/oracle/check_font_inheritance_chrome.py`.
 
 The `intrinsic_size_tests.tscn` scene checks shrink-to-fit and flex/grid widths
 through both font backends, including preserved newlines and live whitespace
 changes. Run `godot --headless --path hosts/godot/project intrinsic_size_tests.tscn`
-from `godot-port/`; omit `--headless` to also compare incremental and fresh
+from the repository root; omit `--headless` to also compare incremental and fresh
 pixels. `check.sh` includes its headless checks in the host integration gate.
 
 ## Western survival sample
@@ -72,7 +72,7 @@ at all, and vendoring would quietly end that.
 The host builds `godot-cpp` from an external source checkout in the same CMake
 build. Its target supplies the generated headers and ABI-related compiler
 definitions; a separately built archive is no longer selected by filename.
-The current desktop builds target Godot API 4.7. From `godot-port/`:
+The current desktop builds target Godot API 4.7. From the repository root:
 
 ```sh
 git clone https://github.com/godotengine/godot-cpp
@@ -464,7 +464,7 @@ script headless, and writes `receipt.json` with per-entry checks and the
 library digest: the "host entries" figure in the readiness documents. To test
 an uninstalled library, copy the project to `<dir>/hosts/godot/project`, put
 the library in its `addons/weva/bin`, and give `<dir>/tools` a junction or
-symlink to `godot-port/tools` so the gallery scenes find the sample corpus.
+symlink to `Tools/` so the gallery scenes find the sample corpus.
 
 Input events and the animation clock run through the node. Drawing consumes
 the core's collected draw list through Godot's rendering server.
@@ -478,7 +478,7 @@ From a Developer-agnostic shell (CMake finds MSBuild itself):
 
 ```powershell
 git clone --depth 1 https://github.com/godotengine/godot-cpp C:\Users\<you>\godot-cpp
-cmake -S godot-port\hosts\godot -B C:\Users\<you>\weva-build\godot-msvc `
+cmake -S hosts\godot -B C:\Users\<you>\weva-build\godot-msvc `
       -G "Visual Studio 17 2022" -A x64 `
       -DGODOT_CPP_DIR=C:/Users/<you>/godot-cpp -DGODOTCPP_API_VERSION=4.7
 cmake --build C:\Users\<you>\weva-build\godot-msvc --config Release -j 8

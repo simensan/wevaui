@@ -16,7 +16,7 @@ extends Control
 #   build, stub font       49 ms
 #   settled update          0 ms      the core's early-out, working
 #
-# The layout benchmarks in tools/layoutbench.sh put this page at about 0.9 ms.
+# The layout benchmarks in Tools/layoutbench.sh put this page at about 0.9 ms.
 # They measure the STUB face. With the face the host actually uses, measuring
 # text is the overwhelming majority of layout -- so those benchmarks are
 # measuring a small fraction of what a real page costs, and the window shows

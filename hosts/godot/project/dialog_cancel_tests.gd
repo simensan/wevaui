@@ -131,7 +131,7 @@ func check_popover_chains() -> void:
 		panel.free()
 
 func check_popover_siblings() -> void:
-	# Chrome oracle: tools/oracle/check_dialog_popover_chrome.cjs.
+	# Chrome oracle: Tools/oracle/check_dialog_popover_chrome.cjs.
 	for first in ["auto", "manual", "hint"]:
 		for second in ["auto", "manual", "hint"]:
 			var panel := WevaDocument.new()
@@ -145,7 +145,7 @@ func check_popover_siblings() -> void:
 			panel.free()
 
 func check_initial_focus() -> void:
-	# Chrome oracle: tools/oracle/check_dialog_focus_chrome.cjs.
+	# Chrome oracle: Tools/oracle/check_dialog_focus_chrome.cjs.
 	for use_modal in [false, true]:
 		for attributes in ['tabindex=-1', 'tabindex=-1 autofocus', 'tabindex=0', 'tabindex=5', 'disabled autofocus', 'style="display:none" autofocus']:
 			var panel := WevaDocument.new()

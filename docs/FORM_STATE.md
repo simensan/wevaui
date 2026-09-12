@@ -1377,7 +1377,7 @@ entry point. Pointer events include these modifiers.
 
 
 
-`tools/oracle/check_select_chrome.cjs` runs 69 Chrome checks corresponding to
+`Tools/oracle/check_select_chrome.cjs` runs 69 Chrome checks corresponding to
 
 the core selection, event and display-mode regressions. Godot's
 
@@ -1455,7 +1455,7 @@ modifiers. Existing text-field input behavior is preserved.
 
 
 
-`tools/oracle/check_form_state_chrome.cjs` records Chrome behavior;
+`Tools/oracle/check_form_state_chrome.cjs` records Chrome behavior;
 
 `test_form_state.cpp` covers the DOM/C ABI and reset edit sessions.
 

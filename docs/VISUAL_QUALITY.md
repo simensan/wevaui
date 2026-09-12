@@ -3,9 +3,9 @@
 How close the render is to a browser, and — more useful — how to tell a real
 difference from an artefact of the comparison. Every number here came from
 
-    python3 tools/oracle/visual_rank_soft.py <weva_render>
+    python3 Tools/oracle/visual_rank_soft.py <weva_render>
 
-against the 35 Chrome screenshots in `tools/oracle/corpus/samples`. Re-run it
+against the 35 Chrome screenshots in `Tools/oracle/corpus/samples`. Re-run it
 rather than trusting the table; it is a snapshot.
 
 ## What this is not
@@ -86,7 +86,7 @@ the same conclusion as the paragraph before it, arrived at from the other end.
 
 ## FIXED: a border radius plus unequal border widths drew a trapezoid
 
-Reproductions: `tools/oracle/corpus/visual/border-radius-uneven.{html,css}` and
+Reproductions: `Tools/oracle/corpus/visual/border-radius-uneven.{html,css}` and
 `inset-shadow-blur.{html,css}`. Render either with `weva_render` and look.
 
 `border-bottom: 20px solid` on a square box draws the full-width band it
@@ -153,7 +153,7 @@ worst non-animated page in the corpus and is now the best.
 
 ## FIXED: an inline replaced element with a percentage width blew out its grid track
 
-Reproduction: `tools/oracle/corpus/visual/inline-percent-in-grid.{html,css}`.
+Reproduction: `Tools/oracle/corpus/visual/inline-percent-in-grid.{html,css}`.
 
 Three cells in `grid-template-columns: repeat(3, 1fr)`, each holding an `<img>`
 that cannot load. The two whose image is `display: block` get even thirds. The

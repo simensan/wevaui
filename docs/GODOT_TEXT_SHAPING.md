@@ -91,7 +91,7 @@ Explicit pixel sizes retain a fast path keyed by their own style version.
 checks and 336 checks with rendering, using both the stub and native fonts.
 It compares resized documents with fresh controls and checks their painted
 rectangle footprint. The matching Chrome oracle is
-`tools/oracle/check_font_size_context_chrome.cjs`. Nested relative-font
+`Tools/oracle/check_font_size_context_chrome.cjs`. Nested relative-font
 inheritance still has the C# chain-limit behavior documented in the core;
 browser font-size conformance is not complete.
 
@@ -239,7 +239,7 @@ Use its editor and both custom templates together, with ICU data enabled.
 Stock Godot 4.7.2 remains affected; this Windows evidence does not clear other
 platforms or the addon's remaining product-readiness requirements.
 
-The reusable `tools/godot-text-shaping-repro/check_exports.py` now repeats this
+The reusable `Tools/godot-text-shaping-repro/check_exports.py` now repeats this
 verification for both actual templates. It passes all 12 cases with the portable
 patched bundle. A negative control using that editor with stock templates fails
 five of six cases in each build mode, proving editor success cannot mask unsafe

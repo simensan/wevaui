@@ -1,7 +1,7 @@
 # Sanitizer verification
 
 Configure a separate build with `-DWEVA_SANITIZERS=ON`. The switch instruments
-the core, its tools/tests and embedded ICU. It defaults to OFF and does not
+the core, its Tools/tests and embedded ICU. It defaults to OFF and does not
 change the installed addon or the normal shipping build.
 
 GCC and Clang use AddressSanitizer plus UndefinedBehaviorSanitizer, with
@@ -20,7 +20,7 @@ and [compatibility notes](https://learn.microsoft.com/en-us/cpp/sanitizers/asan?
 From the repository root:
 
 ```powershell
-cmake -S godot-port -B build-sanitize-msvc -G "Visual Studio 17 2022" -A x64 -DWEVA_SANITIZERS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+cmake -S . -B build-sanitize-msvc -G "Visual Studio 17 2022" -A x64 -DWEVA_SANITIZERS=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
 cmake --build build-sanitize-msvc --config Release --parallel 8
 $env:WEVA_INCREMENTAL_CORPUS = (Resolve-Path Tools/oracle/corpus/samples).Path
 $env:ASAN_OPTIONS = "alloc_dealloc_mismatch=1:halt_on_error=1"
@@ -34,7 +34,7 @@ The first build needs the pinned ICU source archive. Offline builds can add
 ## GCC / Clang
 
 ```sh
-cmake -S godot-port -B build-sanitize -G Ninja \
+cmake -S . -B build-sanitize -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER=clang++ \
   -DWEVA_SANITIZERS=ON
 cmake --build build-sanitize --parallel 8

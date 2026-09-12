@@ -654,7 +654,7 @@ void test_table_visibility_collapse_and_column_hints() {
     CHECK(near(h.box("b").width, 150));
 }
 
-// Chrome/152.0.7977.83: tools/oracle/check_table_stacking_chrome.cjs.
+// Chrome/152.0.7977.83: Tools/oracle/check_table_stacking_chrome.cjs.
 // An auto-z cell does not isolate descendant stacking; an explicit zero does.
 void test_table_nested_stacking_order() {
     for (const std::string parent_z : {"auto", "0", "2", "-1"}) {

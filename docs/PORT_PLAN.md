@@ -17,7 +17,7 @@ They are *scope indicators*, not schedule estimates — see "Effort" at the end.
   loading in Godot and printing its ABI version.
 * Lock CONVENTIONS.md: `-fno-exceptions`, no fast-math, arena allocator,
   interning table, `Status` enum.
-* Build `tools/oracle/` — corpus harvester, diff runner, CI wiring.
+* Build `Tools/oracle/` — corpus harvester, diff runner, CI wiring.
 
 **Exit:** an empty C++ engine produces an empty dump, the diff runner reports
 "412 elements expected, 0 produced" against a real corpus entry, and CI runs it.
@@ -1580,7 +1580,7 @@ only hiding.
 
 ### Two backends, one draw list: the §1 exit test, half of it now met
 
-`tools/weva_render` rasterises a document through the software backend and
+`Tools/weva_render` rasterises a document through the software backend and
 `hosts/godot/compare_render.py` renders the same document through Godot and
 compares the images. Both consume the **identical** `weva_draw` list from the
 same build, so any difference is a difference between the backends with cascade,
@@ -1686,7 +1686,7 @@ BaselineGen uses — the C ABI default-constructs a *different* face, and matchi
 the ABI instead of the oracle would have diverged every text measurement for a
 reason unrelated to the engine.
 
-`tools/oracle/run_oracle.py` runs both sides over a corpus and diffs. Tolerance
+`Tools/oracle/run_oracle.py` runs both sides over a corpus and diffs. Tolerance
 is zero, per ORACLE.md.
 
 **First run: 15 of 47 agreed.** Not the "parity" every prior phase claimed.
@@ -1999,7 +1999,7 @@ starts with it.
 
 ### The allocation target was never measured, and it is being missed by a mile
 
-`tools/weva_bench` times a layout pass and counts the heap allocations it makes,
+`Tools/weva_bench` times a layout pass and counts the heap allocations it makes,
 by replacing global `operator new`. Both numbers are things this plan asserts
 and nothing was checking.
 
@@ -2325,7 +2325,7 @@ does not distinguish the alternatives, not that the implementation is right.
 
 ### Widening the corpus, because a clean corpus proved nothing
 
-`tools/oracle/harvest_corpus.py` extracts HTML+CSS fixtures from the C# test
+`Tools/oracle/harvest_corpus.py` extracts HTML+CSS fixtures from the C# test
 suite's verbatim strings — ORACLE.md's first listed corpus source, and worth
 doing precisely because the hand-built 47 cases had gone green. Multicol had
 already shown what that is worth: a wrong balancing algorithm passed the corpus
@@ -2460,7 +2460,7 @@ binary was available where this ran.
 
 The goal past parity-by-corpus is the actual product: every page under
 `Assets/UI` and `Packages/com.wevaui/Samples~` laid out by the port and drawn
-by the Godot host. `tools/oracle/collect_samples.py` gathers the 35 into a
+by the Godot host. `Tools/oracle/collect_samples.py` gathers the 35 into a
 corpus (a page whose stylesheet is inline in `<style>` gets it extracted —
 neither dumper reads `<style>`, and a page laid out unstyled on both sides
 would agree for a worthless reason). Run at 1280×720 with Chrome captures
@@ -3295,7 +3295,7 @@ sheet, and the diff is the font mismatch instead. There is no setting that
 matches both metrics and glyph shapes, so a pixel comparison against the
 browser is not the render gate.
 
-**The right mirror is the port's own software backend.** `tools/weva_render`
+**The right mirror is the port's own software backend.** `Tools/weva_render`
 and the Godot host consume the IDENTICAL draw list from the same build, so a
 difference is a difference between the backends with cascade, layout and
 tessellation held fixed — which is what ARCHITECTURE.md §1 asks for.

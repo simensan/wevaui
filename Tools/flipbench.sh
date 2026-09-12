@@ -9,8 +9,8 @@
 # dirty subtree it would scale with the CHANGE, and that is the difference this
 # is built to see.
 #
-#     tools/flipbench.sh [sweeps] [flips-per-sample]
-#     tools/flipbench.sh --ab <bench-a> <bench-b> [sweeps] [flips]
+#     Tools/flipbench.sh [sweeps] [flips-per-sample]
+#     Tools/flipbench.sh --ab <bench-a> <bench-b> [sweeps] [flips]
 #
 # Two flips per sample, alternating, so the engine cannot cache the answer:
 #

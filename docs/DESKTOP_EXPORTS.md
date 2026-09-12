@@ -79,7 +79,7 @@ checked against its published SHA-512 sums. See Godot's
 [export instructions](https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html)
 for template installation and export filters.
 
-From `godot-port/`, on each platform being shipped:
+From the repository root, on each platform being shipped:
 
 ```sh
 python3 hosts/godot/check_export.py --godot /path/to/godot \

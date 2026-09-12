@@ -239,7 +239,7 @@ uses each descendant's font size. Numeric calc/min/clamp expressions now
 follow that multiplier rule, and negative math results clamp to zero.
 This follows [CSS 2.2 §10.8.1](https://www.w3.org/TR/CSS22/visudet.html#propdef-line-height).
 
-`tools/oracle/check_line_height_chrome.py` passes **508 Chrome 152 checks**:
+`Tools/oracle/check_line_height_chrome.py` passes **508 Chrome 152 checks**:
 percentage/em/rem/pixel/math values, explicit inheritance and rollback,
 invalid-variable fallback, `display:contents`, pseudo-elements, font shorthand,
 normal/initial and repeated ancestor-font/class changes. These are computed
@@ -269,7 +269,7 @@ one or two length/percentage components; the axes resolve against the current
 border-box width and height, as defined in
 [CSS Backgrounds §4.1](https://www.w3.org/TR/css-backgrounds-3/#border-radius).
 
-`tools/oracle/check_corner_radius_chrome.py` passes **52 checks in Chrome 152**
+`Tools/oracle/check_corner_radius_chrome.py` passes **52 checks in Chrome 152**
 for all four longhands, whitespace/comment separators, changing font-relative
 values, percentage pairs, replacement and removal. These are computed-value
 checks, not screenshot comparisons of percentage radii. The core's separate
@@ -292,7 +292,7 @@ content inherits from its originating element, including through
 This intentionally departs from the C# chain limit. It follows the
 [CSS Fonts computed-size definition](https://www.w3.org/TR/css-fonts-4/#font-size-prop)
 and [CSS Cascade inheritance](https://www.w3.org/TR/css-cascade-5/#inheriting).
-`tools/oracle/check_font_inheritance_chrome.py` records **134 passing Chrome
+`Tools/oracle/check_font_inheritance_chrome.py` records **134 passing Chrome
 152 checks** for nested em/percentage/calc, inherited and CSS-wide values,
 layer rollback, generated content, and repeated ancestor/class changes.
 It uses an isolated profile and writes its fixture and results to the selected
@@ -340,12 +340,12 @@ corpus/*.html + *.css
         │
         └─── C++ weva_dump ───────► candidate/*.json
                                           │
-                                    tools/oracle/diff ──► pass / per-element deltas
+                                    Tools/oracle/diff ──► pass / per-element deltas
 ```
 
 Three pieces to build:
 
-1. **`tools/oracle/corpus/`** — HTML+CSS snippets with a viewport size.
+1. **`Tools/oracle/corpus/`** — HTML+CSS snippets with a viewport size.
    Sources, in priority order:
    * Harvest every inline HTML/CSS string from the C# test suite. 291 test files
      across Layout and Css contain them; extraction is a scripted pass, not
@@ -358,7 +358,7 @@ Three pieces to build:
    Build it in Phase 1 with a stub layout that emits nothing; it grows with the
    engine.
 
-3. **`tools/oracle/diff`** — compares two dumps, reports per-element deltas,
+3. **`Tools/oracle/diff`** — compares two dumps, reports per-element deltas,
    exits non-zero on any mismatch. Tolerance is **zero** (see CONVENTIONS.md on
    floating point). A tolerance knob is a way to hide bugs.
 
@@ -460,7 +460,7 @@ whether Chrome agrees. No reference, so it cannot tell a port bug from a place
 where the reference and Chrome differ by design. Its output is a list of
 **leads**, not a verdict.
 
-    python3 tools/oracle/chrome_sweep.py tools/oracle/corpus/harvest         --weva-dump <build>/tools/weva_dump/weva_dump --width 800 --height 600
+    python3 Tools/oracle/chrome_sweep.py Tools/oracle/corpus/harvest         --weva-dump <build>/tools/weva_dump/weva_dump --width 800 --height 600
 
 The width matters: the harvest captures were taken at 800x600 and the samples
 at 1280x720. Running harvest at 1280 reports 138 of 210 differing, all of them

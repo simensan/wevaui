@@ -898,7 +898,7 @@ CssValuePtr parse_single(Reader& r) {
 
 CssValuePtr parse_css_value(std::string_view text, CssParseError* error) {
     // The token buffer is reused across calls rather than grown from empty each
-    // time. Profiling a layout pass (tools/weva_bench --profile) put its
+    // time. Profiling a layout pass (Tools/weva_bench --profile) put its
     // reallocation at the top of every allocation site: a fresh vector doubles
     // 1-2-4-8 on every parse, and a document's declarations are short enough
     // that the growth IS the cost.

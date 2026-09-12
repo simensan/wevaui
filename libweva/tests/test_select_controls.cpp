@@ -70,7 +70,7 @@ struct SelectDoc {
 
 void test_select_keyboard_ranges() {
     // The exact sequence is also checked against native Chrome listboxes by
-    // tools/oracle/check_select_chrome.cjs, including optgroup page distances.
+    // Tools/oracle/check_select_chrome.cjs, including optgroup page distances.
     for (bool multiple : {false, true}) {
         SelectDoc d(multiple);
         d.key(WEVA_KEY_DOWN); d.changed("a");

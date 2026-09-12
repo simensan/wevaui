@@ -1,4 +1,4 @@
-// See weva/layout_dump.h. Moved here from tools/weva_dump/main.cpp so the C
+// See weva/layout_dump.h. Moved here from Tools/weva_dump/main.cpp so the C
 // ABI can serve the same dump; the comments are the tool's.
 #include "weva/layout_dump.h"
 

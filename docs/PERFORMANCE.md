@@ -2728,7 +2728,7 @@ excluding the caller's mutation. On layout-stress:
 
 This reduces allocations; it does not reach zero. Glyph preparation still
 walks the tree, and replaying/publishing the complete draw list costs work
-proportional to visible output. `tools/flipbench.sh` now defaults to a leaf;
+proportional to visible output. `Tools/flipbench.sh` now defaults to a leaf;
 `WEVA_FLIP_TARGET='*'` measures a root change. The real-font host probe is
 `hosts/godot/project/incremental_probe.gd`, run headlessly with
 `--script incremental_probe.gd`; `WEVA_PROBE_FRAMES=1 WEVA_PAINT_LOG=1` gives
@@ -2743,16 +2743,16 @@ to use Chrome as the conformance target.
 ## Earlier measurements
 
 Measured numbers, and the reasoning behind which ones matter. Re-measure with
-the two tools in `tools/` rather than trusting this file — it is a snapshot,
+the two tools in `Tools/` rather than trusting this file — it is a snapshot,
 and the point of writing it down is that a later measurement can disagree with
 it visibly.
 
-    tools/weva_bench      one layout pass, boxes and allocations
-    tools/framebench      idle, hover and animating FRAMES on a real page
-    tools/scrollbench     what a scrolled list costs per frame
+    Tools/weva_bench      one layout pass, boxes and allocations
+    Tools/framebench      idle, hover and animating FRAMES on a real page
+    Tools/scrollbench     what a scrolled list costs per frame
 
 All figures below: release build, 1280x720, the corpus in
-`tools/oracle/corpus/samples`.
+`Tools/oracle/corpus/samples`.
 
 ## What a frame costs
 
@@ -2936,8 +2936,8 @@ registry's full size at once now.
 
 ## Measuring it
 
-    tools/layoutbench.sh              # median of 3 sweeps, worst page first
-    tools/layoutbench.sh --ab A B     # two binaries, interleaved
+    Tools/layoutbench.sh              # median of 3 sweeps, worst page first
+    Tools/layoutbench.sh --ab A B     # two binaries, interleaved
 
 Use `--ab` for anything under about ten per cent, and do not compare two
 separate runs. The same binary measured twenty minutes apart read 3.052 ms and
@@ -3227,7 +3227,7 @@ engine is already good at it. A running UI does the WARM case instead: the page
 is laid out, one thing changes, and the engine catches up. Nothing measured
 that, which is why the next section's numbers had never been seen.
 
-`tools/flipbench.sh` flips one property on one element, alternating between two
+`Tools/flipbench.sh` flips one property on one element, alternating between two
 values so nothing can be cached, and reports two runs per sample:
 
     layout   padding-left flipped   -> Invalidation::Layout
@@ -3310,7 +3310,7 @@ The remaining 28 ms of grid-playground's warm change is one texture being
 regenerated because the cache key opens with the box's width and height, and a
 `padding-left` flip moves the width by a pixel.
 
-`tools/gradsize` measures whether the texels actually depend on that. Two
+`Tools/gradsize` measures whether the texels actually depend on that. Two
 rasterisations of the same gradient, box 1280 wide against 1269, both capped to
 a 1024x1024 texture:
 
@@ -3471,7 +3471,7 @@ never touches this path -- which is exactly the point of the section below.
 
 ## The layout benchmarks measure a stub font
 
-Everything above was measured with `tools/layoutbench.sh`, which drives
+Everything above was measured with `Tools/layoutbench.sh`, which drives
 `weva_bench`, which registers `MonoFontMetrics` -- a stub face whose advance is
 a constant. The Godot host registers the real engine font. Measured through the
 host, on `stats.html` at 1280x720, with a Release extension

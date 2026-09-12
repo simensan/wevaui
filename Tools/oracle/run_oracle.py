@@ -354,7 +354,7 @@ def main():
     ap.add_argument("--height", type=int, default=600)
     ap.add_argument("--dotnet", default="dotnet")
     ap.add_argument("--baselinegen", default="Tools/BaselineGen")
-    ap.add_argument("--weva-dump", default="godot-port/build/tools/weva_dump/weva_dump")
+    ap.add_argument("--weva-dump", default="build/Tools/weva_dump/weva_dump")
     ap.add_argument("--out-dir", default="/tmp/oracle-run")
     ap.add_argument("--only", help="run just the cases whose name contains this")
     ap.add_argument("--quiet", action="store_true", help="only list failures")

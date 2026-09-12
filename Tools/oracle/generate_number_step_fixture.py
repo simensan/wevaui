@@ -4,7 +4,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[2]
 rows = json.loads((root / "hosts/godot/project/number_step_cases.json").read_text(encoding="utf-8"))["rows"]
-lines = ["// Frozen Chrome number-key expectations; regenerate with tools/oracle/generate_number_step_fixture.py."]
+lines = ["// Frozen Chrome number-key expectations; regenerate with Tools/oracle/generate_number_step_fixture.py."]
 for row in rows:
     attrs = row["attrs"]
     html = '<input id=c type=number ' + ' '.join(

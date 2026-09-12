@@ -8,8 +8,8 @@
 # next three. Five consecutive runs of ONE page had shown +-0.5%, which is what
 # made the single sweep look trustworthy. It was not.
 #
-#     tools/layoutbench.sh [sweeps] [passes-per-sample]
-#     tools/layoutbench.sh --ab <bench-a> <bench-b> [sweeps] [passes]
+#     Tools/layoutbench.sh [sweeps] [passes-per-sample]
+#     Tools/layoutbench.sh --ab <bench-a> <bench-b> [sweeps] [passes]
 #
 # Use --ab for anything under about ten per cent. Running the tool before a
 # change and again after does NOT work at that scale: the same binary measured

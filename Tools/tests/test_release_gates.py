@@ -18,7 +18,7 @@ import build_metadata
 import package_addon
 import check_export
 
-spec = importlib.util.spec_from_file_location('oracle_summary', ROOT / 'tools/check_oracle_summary.py')
+spec = importlib.util.spec_from_file_location('oracle_summary', ROOT / 'Tools/check_oracle_summary.py')
 oracle = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(oracle)
 
