@@ -11,7 +11,7 @@ touched.
 
 | # | Area | Status |
 |---|------|--------|
-| 1 | Repo layout | **proposed — awaiting review**, nothing moved |
+| 1 | Repo layout | **done** — collapsed into the root (c77edffe) |
 | 2 | Dead and stale material | **swept** — 3 fixes landed, 3 findings need a decision |
 | 3 | TODO / FIXME / HACK inventory | **done** — 10 found, 2 stale ones fixed, and a broken gate repaired |
 | 4 | Test hygiene | **done** — nothing suppressed; all 6 stale headers fixed |
@@ -149,7 +149,28 @@ silently stops running rather than failing.
 Defer Option B to Phase 4, where it is a natural part of "delete the C# layout
 engine" rather than a standalone churn commit.
 
-**Awaiting your decision. Nothing will be moved without it.**
+**Resolved: you chose the flatten, and it was cheaper than I costed it.**
+
+Done in `c77edffe`. My Option B analysis above was wrong in one important way,
+and the error is worth keeping visible: I assumed a flatten meant *restructuring*
+— core and hosts rising to the root while tools and docs stayed put — which
+would indeed have changed the meaning of all 27 Python depth walks.
+
+What actually happened was a **uniform lift**: every directory rose exactly one
+level together. That preserves every internal relative path, because each script
+is still the same distance from the thing it reaches for. The 27 `parents[N]`
+walks, the 7 CMake `../..` references and libweva's `../third_party` all
+survived untouched.
+
+Only two of my predicted breakages were real:
+
+- `check.sh`'s `REPO="$ROOT/.."` did point outside the repository. Fixed.
+- `tools/` and `Tools/` would have collided on a case-insensitive filesystem.
+  Resolved by merging the engine's tools into `Tools/` — which also closes the
+  "two directories one capital apart" note below.
+
+The lesson for the next estimate: cost a move by what changes *relative* to each
+reference, not by counting references.
 
 ### Smaller layout notes found on the way
 
