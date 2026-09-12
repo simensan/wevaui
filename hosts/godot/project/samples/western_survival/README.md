@@ -141,6 +141,15 @@ should not be combined into a single speedup claim.
 were authored as editable code for this sample; their larger intrinsic raster
 sizes preserve detail when Godot imports them for the item inspection view.
 
+The same file also sits at `examples/frontier_camp/ui/assets/frontier.png`,
+byte for byte. That is deliberate: they are two independent Godot projects and
+each needs the texture under its own `res://`. It is not costing what it looks
+like — git addresses blobs by content, so both paths resolve to the single
+object `13327234`, 2.2 MB packed once, and the second path costs one tree
+entry. Deduplicating it would mean a generated copy, a gitignore rule, and a
+sample project that is broken until someone runs a script, to save nothing in
+the repository and 2.2 MB on disk. Left alone on purpose.
+
 Final landscape prompt:
 
 > Use case: stylized-concept. Asset type: static environment backdrop for a playable sample of a western frontier survival-game HUD, not a picture of UI. A polished realistic in-engine view across a dry creek valley in the American frontier at late golden hour: weathered timber abandoned campsite and small supply crate on the near right, tawny grasses and scrub in foreground, tall distant pine trees, layered rocky mesas and blue-grey mountain ridges, pale warm hazy sky. Eye-level first-person camera, wide landscape 16:9 composition. A winding dusty footpath leads from bottom center into open central valley. Grounded believable environment, cinematic art direction, restrained contrast and muted desaturated olive-brown and amber palette, cool shadowed foreground, atmospheric depth, beautiful natural textures. Keep central sightline open; avoid large focal objects along bottom 20 percent and top 12 percent because the real UI will overlay those areas. Far-off camp is optional visual only, no characters, no hands, no held weapon, no typography, no letters, no logo, no HUD, no borders. Produce one complete high-quality 1920x1080 landscape background.
