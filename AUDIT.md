@@ -19,6 +19,7 @@ touched.
 | 6 | Host duplication | **done** — three behavioural divergences found in one function |
 | 7 | ABI surface | **done** — 4 dead entry points, 2 doc gaps, asymmetry explained |
 | 8 | Docs accuracy | **done** — the front door never mentioned the engine; 3 files fixed |
+| 9 | Final pass before the push | **done** — a CI breaker and four silently-dropped tests |
 
 ## Where this landed
 
@@ -52,7 +53,7 @@ points). None blocks the others.
 **Two things could not be done from here.** WSL is blocked in a
 worktree-isolated session, so the gcc and clang-ASan warning counts (area 5)
 need a run from the main checkout. And project memory's `9,905 / 2` figure for
-the C# suite should be updated to `9,929 / 2`.
+the C# suite should be updated to `9,929 / 2`. Both are closed in area 9.
 
 ---
 
@@ -912,3 +913,119 @@ for orphaned *scripts* does not catch orphaned *references to* them.
 
 No remaining references anywhere in the Markdown to any of the 22 deleted
 scripts.
+
+---
+
+## 9. Final pass before the push
+
+**Status: done.** Run from the main checkout on `main`, after the flatten, with
+WSL and Unity both available — the two things the worktree could not reach.
+
+### 9.1 The flatten left 48 stale path references — fixed (1bdeed05)
+
+The earlier sweep matched `godot-port/` with a trailing slash and missed prose
+that wrote it any other way, and it never looked at case at all. Two of the
+strays were functional:
+
+* **`Tools/tests/test_release_gates.py` would have failed CI on the first
+  push.** It loads `ROOT / 'tools/check_oracle_summary.py'` by path, and
+  `godot-ci.yml` runs that suite on `ubuntu-24.04` as well as `windows-2022`.
+  It passes locally only because NTFS is case-insensitive; on the Linux runner
+  the file is `Tools/`, and `spec.loader.exec_module` would have raised at
+  import time, before a single test ran.
+* `run_oracle.py`'s `--weva-dump` default still pointed at
+  `godot-port/build/tools/weva_dump/weva_dump`.
+
+The other 46 are documentation, script usage lines and source comments across
+21 files. All now say `Tools/` and "from the repository root".
+
+**Deliberately left alone.** The 229 receipts under `docs/verification/` keep
+their `godot-port` paths, absolute Windows ones included: they record where
+each piece of evidence was produced, and rewriting them would falsify the
+record. `.gitignore:117` and `check.sh:39` keep theirs too — both are comments
+explaining the move.
+
+### 9.2 Unity has been dropping four tests since the first commit — fixed (1dc2620b)
+
+The Unity editor log carried this, and had been carrying it unnoticed:
+
+```
+The .meta file Packages/com.wevaui/Tests/Runtime/Paint/Conversion/Incremental/
+CountWalkSubtreeMemoTests.cs.meta does not have a valid GUID and its
+corresponding Asset file will be ignored.
+```
+
+The GUID is 33 hex characters; Unity requires 32. An ignored `.cs` is not
+compiled into its assembly, so the four tests in that file did not exist as far
+as the editor was concerned — since `d781f28c`, the initial public commit.
+
+Nothing caught it because the two things that could have, both look elsewhere:
+the headless `TestVerifyAll` runner globs the filesystem and never reads a
+`.meta`, so those four tests were always in the 9,929; and the PlayMode count
+is quoted as a total, so four missing from 302 is invisible.
+
+Trimming the trailing digit yields a GUID nothing else claims. A sweep of every
+tracked `.meta` in the repository found no other malformed one.
+
+### 9.3 What the push actually contains
+
+Sixteen commits ahead of `origin/main`, 1,186 files changed for 1,245
+insertions and 1,338 deletions — the count is almost entirely renames from the
+flatten, which git tracks as such. **Exactly one genuinely new file:
+`AUDIT.md`.** Twenty-three deletions, all of them the superseded one-shot
+scripts from area 2.5 plus the merged `godot-port/.gitignore`.
+
+Worth saying plainly: the 16 MB of receipts under `docs/verification/` (2.4)
+and the absolute `C:\Users\simen\...` paths inside them are **already on
+`origin/main`**. This push does not add them, and does not make anything public
+that was not public before. It remains a decision worth taking separately.
+
+`AUDIT.md` is the one new file, and this repository is public. It is a candid
+technical audit of its own code, which is defensible to publish, but internal
+working documents have been kept out of this repository before — that is the
+call to make before the push, not after.
+
+### 9.4 Every gate, from the main checkout
+
+| Gate | Result |
+|---|---|
+| C++ core, gcc | 505,882 checks / 0 failures |
+| C++ core, clang ASan + UBSan | 505,882 checks / 0 failures |
+| `ctest` (allocation guards, sanitizer controls) | 14 / 14 |
+| Headless C# (`TestVerifyAll`) | 9,929 pass / 2 fail / 57 skip |
+| Unity plugin, dynamic-loader test | ok, 4 draws |
+| Unity EditMode `…EditorTests.Native` | 100 total, 98 pass, **0 fail**, 2 inconclusive |
+| Godot `dialog_cancel_tests` | 1,199 checks / 0 failures |
+| Godot `text_autoscroll_tests` | 81 checks / 0 failures |
+| `gen_bindings.py --check` | current — 131 functions, 15 structs, 10 enums |
+| CI Python: `Tools/tests` | 19 pass, 3 skipped |
+| CI Python: `Tools/godot-text-shaping-repro` | 9 pass |
+
+The two C# failures are the known pre-existing pair (`SnapshotLayout`,
+`FillInheritedBitset`), unchanged. The two Unity inconclusives are opt-in
+harnesses gated on `WEVA_NATIVE_PARITY` and `WEVA_NATIVE_DUMP_MANIFEST`, both
+absent by design.
+
+### 9.5 Two notes on running these gates
+
+Recorded because both cost a cycle here and will cost another one later.
+
+* **`-quit` silently defeats `-runTests`.** Unity exits before the test runner
+  starts, writes no results file, and returns 0. A green exit code from a batch
+  test run means nothing on its own — check that the results XML exists.
+* **Unity rejects an output path containing a dot-prefixed directory.**
+  `-testResults .utmp/x.xml` fails with "`.utmp` is not a valid directory
+  name", again returning 0.
+
+Run under `-nographics`, three of these tests report "a graphics device is
+required" as inconclusive and `NativeElementsWindowTests` fails outright on an
+unexpected error log. That is the harness, not the code: with a graphics device
+the same suite is 98 / 0.
+
+### 9.6 Area 5's open item, closed
+
+The gcc warning count the worktree could not produce: **22** on a clean build,
+9 on the incremental rebuild after this pass's comment edits. clang with ASan
+and UBSan builds and runs the full suite clean. Categorising the 22 by flag is
+still open — the build log was lost to a WSL recycle, and reproducing it needs
+a from-scratch build.
