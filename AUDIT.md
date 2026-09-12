@@ -20,6 +20,42 @@ touched.
 | 7 | ABI surface | **done** — 4 dead entry points, 2 doc gaps, asymmetry explained |
 | 8 | Docs accuracy | **done** — the front door never mentioned the engine; 3 files fixed |
 
+## Where this landed
+
+All eight areas are swept. Eleven commits on `worktree-tech-audit`, nothing
+pushed, every gate green at the end:
+
+| Gate | Result |
+|---|---|
+| Headless C# (`TestVerifyAll`) | 9,929 pass / 2 fail / 57 skip |
+| C++ core (MSVC build of this tree) | 505,882 checks / 0 failures |
+| MSVC warnings in our own code | 13 → 8 |
+
+**Fixed:** a headless C# gate that had not built since the merge; two real MSVC
+warnings; a `.gitignore` gap; 22 superseded one-shot scripts deleted; eight
+documentation claims that stated the opposite of the shipped code.
+
+**The pattern worth naming.** Almost everything found was a *comment or
+document asserting the opposite of the code beside it* — data binding described
+as un-ported when the core has a 500-line implementation; `quotes` described as
+unregistered on the line above the test asserting it is registered; six
+`font-variant` longhands listed as non-inheriting when all six inherit; the
+front page omitting the largest directory in the repository. The code is in
+good shape. Its description of itself had drifted, and drifted in one
+direction: everything is further along than it says.
+
+**Six decisions are waiting on you** — see 1 (rename option), 2.1 (GPU goldens
+pass without comparing anything), 2.3 (duplicated 2.3 MB texture), 2.4 (16 MB
+of receipts), 6.1-6.3 (three host divergences), 7.1 (four dead ABI entry
+points). None blocks the others.
+
+**Two things could not be done from here.** WSL is blocked in a
+worktree-isolated session, so the gcc and clang-ASan warning counts (area 5)
+need a run from the main checkout. And project memory's `9,905 / 2` figure for
+the C# suite should be updated to `9,929 / 2`.
+
+---
+
 ---
 
 ## 1. Repo layout
