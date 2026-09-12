@@ -18,9 +18,15 @@ namespace Weva.Tests.Rendering.URP {
     //   2. Open the Test Runner (Window > General > Test Runner).
     //   3. Switch to Play Mode tests.
     //   4. Run all tests under GameUIGpuGoldenTests.
-    //   5. On first run each test auto-seeds Baselines.GPU/<name>.png — inspect
-    //      each PNG visually, then commit it.
+    //   5. On first run each test auto-seeds Baselines.GPU/<name>.png and reports
+    //      INCONCLUSIVE — it compared the render against nothing. Inspect each
+    //      PNG visually, then commit it.
     //   6. Future runs diff against the committed baselines over the real GPU path.
+    //
+    // No GPU baseline is committed yet, so all ten are inconclusive until someone
+    // does steps 1-5. They must be seeded from the editor: run headless, the
+    // render happens before TextCore bakes a glyph atlas and the image has no text
+    // in it, so GpuGoldenAssert refuses to write one there.
     //
     // To regenerate: set env var WEVA_REGENERATE_GOLDENS=1 before launching Unity.
     //
@@ -47,97 +53,82 @@ namespace Weva.Tests.Rendering.URP {
         static string BaselinePath(string name) =>
             Path.Combine(GoldensDir(), "Baselines.GPU", name);
 
+        // One place to turn "no baseline, so nothing was compared" into an
+        // inconclusive result. It is not a pass — these ten reported green on
+        // every clean checkout for as long as they have existed, while
+        // comparing each render against nothing at all — and it is not a
+        // failure either, because the renderer is not what is missing.
+        static void Golden(string name, int width, int height, double tolerance = 0.02) {
+            try {
+                GpuGoldenAssert.Match(
+                    SnippetPath(name + ".html"), BaselinePath(name + ".png"),
+                    width: width, height: height, tolerance: tolerance);
+            } catch (GoldenNotVerifiedException e) {
+                Assert.Inconclusive(e.Message);
+            }
+        }
+
         // ── Game-UI GPU goldens (mirrors GoldenSuiteTests Golden_29 … Golden_38) ──
 
         // 29: 3x2 card grid — repeat(3,1fr) + aspect-ratio:1 + gap + rounded borders.
         [Test]
         public void Gpu_Golden_29_card_grid_3x2() {
-            GpuGoldenAssert.Match(
-                SnippetPath("29-card-grid-3x2.html"),
-                BaselinePath("29-card-grid-3x2.png"),
-                width: 800, height: 600, tolerance: 0.02);
+            Golden("29-card-grid-3x2", width: 800, height: 600, tolerance: 0.02);
         }
 
         // 30: Flex column shell with 60px dark top bar + flex:1 content body.
         [Test]
         public void Gpu_Golden_30_top_bar_and_body() {
-            GpuGoldenAssert.Match(
-                SnippetPath("30-top-bar-and-body.html"),
-                BaselinePath("30-top-bar-and-body.png"),
-                width: 800, height: 600, tolerance: 0.02);
+            Golden("30-top-bar-and-body", width: 800, height: 600, tolerance: 0.02);
         }
 
         // 31: Full-viewport fixed overlay + centered 400x300 modal with rounded corners.
         [Test]
         public void Gpu_Golden_31_centered_modal() {
-            GpuGoldenAssert.Match(
-                SnippetPath("31-centered-modal.html"),
-                BaselinePath("31-centered-modal.png"),
-                width: 800, height: 600, tolerance: 0.02);
+            Golden("31-centered-modal", width: 800, height: 600, tolerance: 0.02);
         }
 
         // 32: 2-column grid — 260px dark sidebar (icon stack) + light content area.
         [Test]
         public void Gpu_Golden_32_sidebar_content() {
-            GpuGoldenAssert.Match(
-                SnippetPath("32-sidebar-content.html"),
-                BaselinePath("32-sidebar-content.png"),
-                width: 800, height: 600, tolerance: 0.02);
+            Golden("32-sidebar-content", width: 800, height: 600, tolerance: 0.02);
         }
 
         // 33: HUD grid-template-areas with topbar spanning all 3 columns.
         [Test]
         public void Gpu_Golden_33_hud_grid_areas() {
-            GpuGoldenAssert.Match(
-                SnippetPath("33-hud-grid-areas.html"),
-                BaselinePath("33-hud-grid-areas.png"),
-                width: 1200, height: 900, tolerance: 0.02);
+            Golden("33-hud-grid-areas", width: 1200, height: 900, tolerance: 0.02);
         }
 
         // 34: Settings panel — flex column with 64px header, flex:1 body, 44px footer.
         [Test]
         public void Gpu_Golden_34_settings_panel() {
-            GpuGoldenAssert.Match(
-                SnippetPath("34-settings-panel.html"),
-                BaselinePath("34-settings-panel.png"),
-                width: 800, height: 600, tolerance: 0.02);
+            Golden("34-settings-panel", width: 800, height: 600, tolerance: 0.02);
         }
 
         // 35: Stat tile row — 5 fixed-width 90px tiles with numeric value + label.
         [Test]
         public void Gpu_Golden_35_stat_tile_row() {
-            GpuGoldenAssert.Match(
-                SnippetPath("35-stat-tile-row.html"),
-                BaselinePath("35-stat-tile-row.png"),
-                width: 800, height: 200, tolerance: 0.02);
+            Golden("35-stat-tile-row", width: 800, height: 200, tolerance: 0.02);
         }
 
         // 36: 2x2 ability card grid inside a 360px-wide container.
         [Test]
         public void Gpu_Golden_36_ability_bar_2x2() {
-            GpuGoldenAssert.Match(
-                SnippetPath("36-ability-bar-2x2.html"),
-                BaselinePath("36-ability-bar-2x2.png"),
-                width: 400, height: 300, tolerance: 0.02);
+            Golden("36-ability-bar-2x2", width: 400, height: 300, tolerance: 0.02);
         }
 
         // 37: Scroll container (400x500 overflow:auto) with 5 list items + 8px gap.
         [Test]
         public void Gpu_Golden_37_list_with_gap() {
-            GpuGoldenAssert.Match(
-                SnippetPath("37-list-with-gap.html"),
-                BaselinePath("37-list-with-gap.png"),
-                width: 400, height: 500, tolerance: 0.02);
+            Golden("37-list-with-gap", width: 400, height: 500, tolerance: 0.02);
         }
 
         // 38: Hero-picker scroll-clip — grid-template-rows:auto 552px auto; middle
         //     row overflow:hidden with scrollable detail column (must clip to 552px).
         [Test]
         public void Gpu_Golden_38_hero_picker_scroll_clip() {
-            GpuGoldenAssert.Match(
-                SnippetPath("38-hero-picker-scroll-clip.html"),
-                BaselinePath("38-hero-picker-scroll-clip.png"),
-                width: 800, height: 700, tolerance: 0.02);
+            Golden("38-hero-picker-scroll-clip", width: 800, height: 700, tolerance: 0.02);
         }
     }
 }

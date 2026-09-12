@@ -1,6 +1,7 @@
 #if WEVA_URP
 using System;
 using System.IO;
+using UnityEngine;
 
 namespace Weva.Testing.Goldens {
     // GPU-side golden assert. Same contract as GoldenAssert but renders through
@@ -9,8 +10,10 @@ namespace Weva.Testing.Goldens {
     // GPU baselines do not collide.
     //
     // Workflow:
-    //   1. First run: no baseline exists → the actual render is written as the baseline.
-    //      Inspect the seeded PNG visually before committing it.
+    //   1. First run: no baseline exists → the actual render is written as the
+    //      baseline and the test reports INCONCLUSIVE, never a pass. Inspect the
+    //      seeded PNG visually, then commit it. Headless, nothing is written at
+    //      all: the render has no text in it (see below), so it would be a lie.
     //   2. Subsequent runs: actual render is compared against the saved baseline.
     //      If WEVA_REGENERATE_GOLDENS=1 the baseline is overwritten unconditionally.
     //   3. On failure: <name>.actual.png and <name>.diff.png are written to Out.GPU/
@@ -51,10 +54,26 @@ namespace Weva.Testing.Goldens {
             }
 
             if (!File.Exists(baselinePath)) {
-                // First-run: seed the baseline so the author can visually inspect it
-                // and then commit it.  Subsequent runs verify.
+                // Seeding is not a pass. Every one of these tests reported green
+                // on every clean checkout while comparing against nothing.
+                //
+                // Headless, GpuGoldenRunner renders before TextCore has a glyph
+                // atlas, so the image has no text in it (see its header). Writing
+                // that would freeze a wrong truth into a committed baseline, so
+                // refuse to write at all and say where a real one comes from.
+                if (Application.isBatchMode) {
+                    throw new GoldenNotVerifiedException(
+                        $"No GPU baseline for '{Path.GetFileName(snippetPath)}', and none can be seeded here.\n" +
+                        $"  baseline: {baselinePath}\n" +
+                        $"  Batch mode renders before the glyph atlas bakes, so the image would have no text.\n" +
+                        $"  Seed it from the editor: Window > General > Test Runner > Play Mode, run\n" +
+                        $"  GameUIGpuGoldenTests, inspect each seeded PNG, then commit it.");
+                }
                 WriteBaseline(baselinePath, actualPng);
-                return;
+                throw new GoldenNotVerifiedException(
+                    $"GPU baseline seeded, not verified, for '{Path.GetFileName(snippetPath)}'.\n" +
+                    $"  baseline: {baselinePath}\n" +
+                    $"  Inspect that PNG and commit it. The next run compares against it.");
             }
 
             byte[] expectedPng = File.ReadAllBytes(baselinePath);

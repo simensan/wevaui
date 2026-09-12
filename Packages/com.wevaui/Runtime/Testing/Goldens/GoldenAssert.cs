@@ -29,12 +29,16 @@ namespace Weva.Testing.Goldens {
             }
 
             if (!File.Exists(baselinePath)) {
-                // First-time baseline write so the very first test run after authoring a
-                // snippet produces the committable artifact. Subsequent runs verify against
-                // it; setting WEVA_REGENERATE_GOLDENS=1 forces overwrite.
+                // Seed the committable artifact, but do NOT report success: a
+                // comparison against nothing has verified nothing, and a test
+                // that goes green on its first run gives a newly authored
+                // snippet a free pass forever after.
                 Directory.CreateDirectory(Path.GetDirectoryName(baselinePath));
                 File.WriteAllBytes(baselinePath, actualPng);
-                return;
+                throw new GoldenNotVerifiedException(
+                    $"Golden baseline seeded, not verified, for '{Path.GetFileName(snippetPath)}'.\n" +
+                    $"  baseline: {baselinePath}\n" +
+                    $"  Inspect that PNG and commit it. The next run compares against it.");
             }
 
             byte[] expectedPng = File.ReadAllBytes(baselinePath);
@@ -63,5 +67,14 @@ namespace Weva.Testing.Goldens {
 
     public sealed class GoldenMismatchException : Exception {
         public GoldenMismatchException(string message) : base(message) { }
+    }
+
+    /// <summary>
+    /// No baseline existed, so the render was compared against nothing. This
+    /// is not a mismatch and not a pass — the test reached no verdict. Callers
+    /// in a test assembly should turn it into an inconclusive result.
+    /// </summary>
+    public sealed class GoldenNotVerifiedException : Exception {
+        public GoldenNotVerifiedException(string message) : base(message) { }
     }
 }
