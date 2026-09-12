@@ -64,6 +64,24 @@ func _ready() -> void:
 	var faces := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 700; } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: normal; } #a { font-family: "Camp Mono"; }')
 	_check(width(faces, "#a") == mono_width, "with several faces the normal-weight one is registered")
 
+	# The same rules the Unity host is held to in NativeFontFaceWeightTests, so
+	# the two cannot drift. A weight nothing is closer to still serves the
+	# family: dropping it would leave the page in the theme font, and CSS
+	# Fonts 4 matching resolves font-weight:400 to the only face there is.
+	var lone_500 := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: 500; } #a { font-family: "Camp Mono"; }')
+	_check(width(lone_500, "#a") == mono_width, "a lone font-weight:500 face serves the family")
+
+	var lone_300 := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: 300; } #a { font-family: "Camp Mono"; }')
+	_check(width(lone_300, "#a") == mono_width, "a lone font-weight:300 face serves the family")
+
+	# An exact 400 wins wherever the author wrote it. Picking "the first face
+	# under 600" instead makes the regular face depend on declaration order.
+	var four_first := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: 400; } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 500; } #a { font-family: "Camp Mono"; }')
+	_check(width(four_first, "#a") == mono_width, "400 declared before 500 serves the family")
+
+	var five_first := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 500; } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: 400; } #a { font-family: "Camp Mono"; }')
+	_check(width(five_first, "#a") == mono_width, "400 declared after 500 still serves the family")
+
 	# A bold or italic rule is a real file for that weight or slant, used
 	# instead of synthesis (synthesis keeps the regular advances, so a
 	# different file is visible in the width). The nearest file serves what
