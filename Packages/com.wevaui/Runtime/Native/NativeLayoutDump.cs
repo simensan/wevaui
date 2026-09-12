@@ -1,5 +1,5 @@
 // A layout dump from the Unity host, in the JSON weva_dump writes (see
-// godot-port/tools/weva_dump/main.cpp and docs/ORACLE.md), so the three-way
+// Tools/weva_dump/main.cpp and docs/ORACLE.md), so the three-way
 // oracle (C# reference, core, Chrome) can run with the core hosted by Unity.
 // It is the same core, so any difference from weva_dump is this adapter's:
 // the walk here is over the elements the C ABI exposes, not the box tree.

@@ -1,7 +1,7 @@
 // The layout dump from the Unity host: its JSON matches weva_dump's format
 // and rules on a fixture, and, given a manifest (WEVA_NATIVE_DUMP_MANIFEST,
 // one "html<TAB>css<TAB>width<TAB>height<TAB>out" line per case), it dumps a
-// whole corpus in one editor run for godot-port/hosts/unity/oracle_from_unity.py
+// whole corpus in one editor run for hosts/unity/oracle_from_unity.py
 // to compare against weva_dump.
 using System.Collections.Generic;
 using System.IO;

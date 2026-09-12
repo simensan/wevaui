@@ -64,7 +64,7 @@ namespace Weva.Tests.Layout.Flex {
         // children WITHOUT their row gaps, so the child was capped back to the
         // gap-less sum: its children stayed correctly spaced but its own box
         // (and background) stopped short by one gap per child. Found by the
-        // godot-port oracle on form-demo, where a 14-gap card lost 308px.
+        // the differential oracle on form-demo, where a 14-gap card lost 308px.
         [Test]
         public void Min_height_row_container_does_not_cap_a_gapped_column_child() {
             var (root, _, _) = Build(

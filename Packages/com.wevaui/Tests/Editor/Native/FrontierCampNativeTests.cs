@@ -12,7 +12,7 @@ namespace Weva.Tests.EditorTests.Native
 {
     public class FrontierCampNativeTests
     {
-        private const string UiDir = "godot-port/examples/frontier_camp/ui";
+        private const string UiDir = "examples/frontier_camp/ui";
         private GameObject _go;
         private WevaNativeDocument _ui;
         private FrontierCampState _state;

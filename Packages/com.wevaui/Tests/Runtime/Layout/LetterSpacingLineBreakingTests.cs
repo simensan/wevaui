@@ -350,7 +350,7 @@ namespace Weva.Tests.Layout {
         // fragments (a fragment's width spaces its N glyphs N-1 times; the
         // rest lives in the next fragment's X). The item was then measured
         // narrower than the text it holds and wrapped inside itself — a
-        // two-line footer where the author wrote one. Found by the godot-port
+        // two-line footer where the author wrote one. Found by the differential
         // oracle on quests.html; fixed by measuring the fragments' extent in
         // PositioningPass.WalkContent and FlexLayout.TryCurrentUnwrappedMaxContent.
         [Test]

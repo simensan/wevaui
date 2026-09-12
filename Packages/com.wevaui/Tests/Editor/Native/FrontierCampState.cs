@@ -1,4 +1,4 @@
-// The Frontier Camp game logic (godot-port/examples/frontier_camp/camp_state.gd)
+// The Frontier Camp game logic (examples/frontier_camp/camp_state.gd)
 // as a Unity script: the same model shape, the same rules, so the same
 // camp.html drives it through the core in Unity. Kept plain C# on
 // dictionaries and lists so the binding source reads it directly.

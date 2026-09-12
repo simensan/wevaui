@@ -296,10 +296,10 @@ into a StructuredBuffer of instances, chunking at `MaxInstancesPerDraw` (1024).
   superseded them. **Each fixture has its own viewport** baked into its chrome
   JSON — regenerate the Unity dump at the matching viewport before diffing or
   you get false deltas.
-- **The three-way oracle** (`godot-port/tools/oracle/run_oracle.py`) is the
+- **The three-way oracle** (`Tools/oracle/run_oracle.py`) is the
   bigger hammer and the one to reach for now: it compares the C# engine, the
   C++ core and a Chrome capture per case, and says which two agree. See
-  `godot-port/docs/ORACLE.md`.
+  `docs/ORACLE.md`.
 - **Headless Unity layout dump**: `RandhtmlLayoutDumpTest` (EditMode,
   `Tests/Editor/RandhtmlLayoutDumpTest.cs`) — `DumpCoords(fixture)` writes
   `Assets/UI/<fixture>.unity-layout.json` deterministically (stable fonts, single

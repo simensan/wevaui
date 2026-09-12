@@ -40,7 +40,7 @@ function bundledFontFaceCss() {
 }
 
 // Under --metrics=mono Chrome also gets the port's user-agent sheet from
-// godot-port/libweva/src/user_agent_stylesheet.cpp: `html, body { margin: 0; height: 100% }`,
+// libweva/src/user_agent_stylesheet.cpp: `html, body { margin: 0; height: 100% }`,
 // the form-control and heading defaults, the table defaults. Injected inside
 // `@layer weva-ua`, so it beats Chrome's own UA sheet (author origin) but
 // loses to every unlayered author rule whatever its specificity. This is an
@@ -49,7 +49,7 @@ function bundledFontFaceCss() {
 // Without it every page that relies on a UA default
 // (a body without `margin: 0`, an unstyled <h2>) is off Chrome by that
 // default and nothing on it can be arbitrated.
-const UA_SHEET_CPP = path.join(REPO, 'godot-port', 'libweva', 'src', 'user_agent_stylesheet.cpp');
+const UA_SHEET_CPP = path.join(REPO, 'libweva', 'src', 'user_agent_stylesheet.cpp');
 function wevaUaCss() {
     if (!fs.existsSync(UA_SHEET_CPP)) return '';
     const src = fs.readFileSync(UA_SHEET_CPP, 'utf8');
@@ -106,13 +106,13 @@ const NO_LAYOUT = (() => {
     process.argv.splice(i, 1);
     return true;
 })();
-const MONO_FONTS_DIR = path.join(REPO, 'godot-port', 'tools', 'oracle', 'fonts');
+const MONO_FONTS_DIR = path.join(REPO, 'Tools', 'oracle', 'fonts');
 function monoFontFaceCss() {
     const u = p => pathToFileURL(p).href;
     const sans = path.join(MONO_FONTS_DIR, 'WevaMonoSans.ttf');
     const mono = path.join(MONO_FONTS_DIR, 'WevaMonoMonospace.ttf');
     if (!fs.existsSync(sans) || !fs.existsSync(mono)) {
-        throw new Error('--metrics=mono needs the synthetic fonts: run godot-port/tools/oracle/make_mono_font.py');
+        throw new Error('--metrics=mono needs the synthetic fonts: run Tools/oracle/make_mono_font.py');
     }
     return `@font-face{font-family:'WevaMonoSans';src:url('${u(sans)}')}` +
            `@font-face{font-family:'WevaMonoMonospace';src:url('${u(mono)}')}`;

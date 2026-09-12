@@ -315,7 +315,7 @@ namespace Weva.Tests.Layout.Positioning {
         // shrink-to-fit sized. For a replaced element with no loaded source
         // that is ZERO width, so an avatar pinned with `inset: 4px;
         // width: calc(100% - 8px)` rendered 0 wide with a correct height
-        // (advanced-dashboard, found by the godot-port oracle).
+        // (advanced-dashboard, found by the the differential oracle).
         [Test]
         public void Absolutely_positioned_inline_block_takes_its_explicit_width() {
             const string css = @"

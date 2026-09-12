@@ -1265,7 +1265,7 @@ namespace Weva.Layout.Positioning {
                     // inside it — visible as a two-line footer that should be
                     // one line, on any page that sets letter-spacing.
                     // Fragment X is line-relative, so this is independent of
-                    // text-align. (quests.html, godot-port oracle.)
+                    // text-align. (quests.html, the differential oracle.)
                     // The sum is the lower bound; the extent additionally
                     // catches the advance between fragments. Preferring the sum
                     // when they agree keeps the arithmetic bit-identical to the

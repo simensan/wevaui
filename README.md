@@ -5,17 +5,18 @@ from HTML and CSS that LLMs have already learned from the web — no UXML
 dialect, no `-unity-` prefixes.
 
 The actual package lives in [`Packages/com.wevaui/`](./Packages/com.wevaui/).
-This repo also contains the demo project (`Assets/`), the headless tooling
-(`Tools/`), the design / spec docs at the root, and
-[`godot-port/`](./godot-port/) — which despite its name is now the engine
-itself.
+This repo also contains the demo project (`Assets/`), the tooling (`Tools/`),
+the design / spec docs at the root, and the engine itself.
 
-`godot-port/` holds a C++ core (`libweva`) implementing the same layout,
-cascade and paint, with text left to the host, plus two hosts over its C ABI:
-a Godot addon and a native Unity plugin that the package can use instead of
-the C# engine. The C# engine in `Packages/com.wevaui/Runtime/` is still the
-one you get by default, and remains the reference the differential oracle
-compares against.
+The engine is [`libweva/`](./libweva/): a C++ core implementing the same
+layout, cascade and paint, with text left to the host. Two hosts sit over its
+C ABI in [`hosts/`](./hosts/) — a Godot addon and a native Unity plugin the
+package can use instead of the C# engine. `CMakeLists.txt` and `check.sh` at
+the root build and gate it; [`docs/`](./docs/) holds its architecture notes
+and verification receipts.
+
+The C# engine in `Packages/com.wevaui/Runtime/` is still what you get by
+default, and remains the reference the differential oracle compares against.
 
 ## Install
 

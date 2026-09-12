@@ -11,7 +11,7 @@ const outputRoot = path.resolve(args[1] || os.tmpdir());
 fs.mkdirSync(outputRoot, {recursive:true});
 const work = fs.mkdtempSync(path.join(outputRoot, 'form-baseline-'));
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const font = pathToFileURL(path.join(repo, 'godot-port/tools/oracle/fonts/WevaMonoSans.ttf')).href;
+const font = pathToFileURL(path.join(repo, 'Tools/oracle/fonts/WevaMonoSans.ttf')).href;
 const html = path.join(work, 'fixture.html');
 fs.writeFileSync(html, `<!doctype html><style>
     @font-face{font-family:Fixture;src:url('${font}')}
