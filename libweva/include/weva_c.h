@@ -259,6 +259,11 @@ typedef size_t (*weva_shape_glyphs_fn)(void* user_data, uint64_t face, const cha
  * takes effect on the NEXT update. Installing a font table refreshes cached
  * glyphs even when the table and face ID are unchanged. Changing renderers
  * releases the atlas through its old owner and reuploads its CPU pixels. */
+/* HOST-OPTIONAL: neither shipped host installs a render backend. Both collect
+ * the draw list themselves (weva_document_draws) and turn it into their own
+ * engine's geometry, which is the path a game host wants. This hook is for a
+ * host that would rather the core drive its rasteriser directly; Tools/
+ * weva_render uses it for the software backend. Core tests cover it. */
 void weva_document_set_render_backend(weva_document_t doc, const weva_render_backend* backend);
 void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend* backend,
                                     uint64_t face);
@@ -1215,6 +1220,16 @@ weva_status weva_element_request_show_popover(weva_document_t doc, weva_element_
 weva_status weva_element_request_hide_popover(weva_document_t doc, weva_element_t element);
 /* Selects the opening or closing request from the current state. */
 weva_status weva_element_request_toggle_popover(weva_document_t doc, weva_element_t element);
+/* The imperative half of the HTML popover API: open, close or flip a popover
+ * now, without the request/BEFORE_TOGGLE round trip above.
+ *
+ * HOST-OPTIONAL, and deliberately so. Neither shipped host calls these --
+ * both drive popovers declaratively through
+ * weva_document_set_popover_request_events plus the popovertarget attribute
+ * handler, which is what a page's own markup expects. They are here for a
+ * host that wants to open a popover from game code (a tutorial step, a
+ * controller shortcut) rather than from a click. Core tests cover all three.
+ * Not calling them is a choice, not an omission. */
 weva_status weva_element_show_popover(weva_document_t doc, weva_element_t element);
 weva_status weva_element_hide_popover(weva_document_t doc, weva_element_t element);
 weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t element);
