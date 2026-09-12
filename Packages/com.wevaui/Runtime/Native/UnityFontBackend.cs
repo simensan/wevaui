@@ -191,18 +191,51 @@ namespace Weva.Native
         }
 
         private readonly Dictionary<string, ulong> _cssFaces = new Dictionary<string, ulong>();
-        private readonly Dictionary<string, ulong> _cssFamilies = new Dictionary<string, ulong>();
+        private readonly Dictionary<string, (string Family, ulong Face)> _cssFamilies =
+            new Dictionary<string, (string Family, ulong Face)>();
+        private readonly HashSet<string> _hostFamilies = new HashSet<string>();
+
+        /// <summary>
+        /// Registers a family the game owns. A family registered this way is
+        /// never overwritten or released by <see cref="SyncCssFontFaces"/>, so
+        /// a page's @font-face cannot take over a family the host has claimed.
+        /// This mirrors the Godot host, where register_font_family records the
+        /// same ownership.
+        /// <para>
+        /// Calling <see cref="NativeDocument.RegisterFontFamily"/> directly
+        /// still works but is invisible to that rule — the backend cannot see
+        /// registrations that do not go through it.
+        /// </para>
+        /// </summary>
+        public void RegisterFontFamily(NativeDocument doc, string family, ulong face)
+        {
+            if (doc == null) throw new ArgumentNullException(nameof(doc));
+            if (family == null) throw new ArgumentNullException(nameof(family));
+            doc.RegisterFontFamily(family, face);
+            string key = family.ToLowerInvariant();
+            if (face != 0) _hostFamilies.Add(key);
+            else _hostFamilies.Remove(key);
+        }
 
         /// <summary>
         /// Registers the stylesheet's @font-face rules with the document: each
         /// source is read through the document's asset reader and adopted once,
         /// the normal face serves the family and bold or italic faces become
         /// its real variants. Call after SetCss. Returns the families served.
+        /// <para>
+        /// The regular face is the family's exact 400/normal rule wherever it
+        /// was declared; failing that, any other upright face under 600; failing
+        /// that, the first variant, so a family that declares only a bold or
+        /// only an italic still works. Families this method registered and the
+        /// new stylesheet no longer declares are released. Families the game
+        /// claimed through <see cref="RegisterFontFamily"/> are never taken
+        /// over or released.
+        /// </para>
         /// </summary>
         public int SyncCssFontFaces(NativeDocument doc)
         {
             if (doc == null) throw new ArgumentNullException(nameof(doc));
-            var wanted = new Dictionary<string, (string Family, string Normal, Dictionary<int, string> Variants)>();
+            var wanted = new Dictionary<string, (string Family, string Normal, string NearNormal, Dictionary<int, string> Variants)>();
             foreach ((string family, string firstUrl, string weight, string style, string source) in doc.FontFaces())
             {
                 string key = family.ToLowerInvariant();
@@ -210,23 +243,51 @@ namespace Weva.Native
                 string w = weight.ToLowerInvariant(), st = style.ToLowerInvariant();
                 int number = w == "bold" || w == "bolder" ? 700 : w.Length == 0 || w == "normal" ? 400 : ParseLeadingInt(w, 400);
                 bool italic = st.StartsWith("italic") || st.StartsWith("oblique");
-                bool normal = number < 600 && !italic;
+                // Two tiers, so declaration order cannot decide the regular
+                // face. An exact 400/normal rule is the family's regular face
+                // wherever the author wrote it; any other upright face under
+                // 600 (100-300, 500) only stands in when no 400 was declared.
+                bool upright = number < 600 && !italic;
+                bool exact = number == 400 && !italic;
                 if (!wanted.TryGetValue(key, out var entry))
                 {
-                    entry = (family, normal ? source : null, new Dictionary<int, string>());
+                    entry = (family, exact ? source : null, upright && !exact ? source : null, new Dictionary<int, string>());
                     wanted[key] = entry;
                 }
-                else if (normal && entry.Normal == null)
+                else if (exact && entry.Normal == null)
                 {
                     entry.Normal = source;
                     wanted[key] = entry;
                 }
-                if (!normal) entry.Variants[VariantKey(number, italic)] = source;
+                else if (upright && !exact && entry.NearNormal == null)
+                {
+                    entry.NearNormal = source;
+                    wanted[key] = entry;
+                }
+                if (!upright) entry.Variants[VariantKey(number, italic)] = source;
             }
-            int served = 0;
-            foreach (KeyValuePair<string, (string Family, string Normal, Dictionary<int, string> Variants)> kv in wanted)
+            // Release families this stylesheet no longer declares, mirroring the
+            // Godot host: re-registering a null face hands the family back to
+            // the fallback instead of leaving a stale registration behind for
+            // the life of the document. A family the game owns is left alone.
+            if (_cssFamilies.Count > 0)
             {
-                string normalSource = kv.Value.Normal;
+                var stale = new List<string>();
+                foreach (KeyValuePair<string, (string Family, ulong Face)> kv in _cssFamilies)
+                    if (!wanted.ContainsKey(kv.Key)) stale.Add(kv.Key);
+                foreach (string key in stale)
+                {
+                    if (!_hostFamilies.Contains(key)) doc.RegisterFontFamily(_cssFamilies[key].Family, 0);
+                    _cssFamilies.Remove(key);
+                }
+            }
+
+            int served = 0;
+            foreach (KeyValuePair<string, (string Family, string Normal, string NearNormal, Dictionary<int, string> Variants)> kv in wanted)
+            {
+                // The game's own registration wins over @font-face, as on Godot.
+                if (_hostFamilies.Contains(kv.Key) && !_cssFamilies.ContainsKey(kv.Key)) continue;
+                string normalSource = kv.Value.Normal ?? kv.Value.NearNormal;
                 if (normalSource == null)
                 {
                     // Only variant faces declared: the first serves as the family's face.
@@ -240,11 +301,11 @@ namespace Weva.Native
                         (LastError != null && LastError != inner ? " (" + LastError + ")" : "");
                     continue;
                 }
-                if (!_cssFamilies.TryGetValue(kv.Key, out ulong current) || current != face)
+                if (!_cssFamilies.TryGetValue(kv.Key, out var current) || current.Face != face)
                 {
                     doc.RegisterFontFamily(kv.Value.Family, face);
-                    _cssFamilies[kv.Key] = face;
                 }
+                _cssFamilies[kv.Key] = (kv.Value.Family, face);
                 foreach (KeyValuePair<int, string> variant in kv.Value.Variants)
                 {
                     ulong variantFace = AdoptCssSource(doc, variant.Value);
