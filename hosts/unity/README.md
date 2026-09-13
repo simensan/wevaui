@@ -146,6 +146,9 @@ or the comparison measures two fonts, not two hosts.
 
 ## Input, events, bindings
 
+Every input decision the two hosts share, and the test that pins it on each,
+is tabled in [`docs/INPUT_PARITY.md`](../../docs/INPUT_PARITY.md).
+
 `NativeDocument` carries the interaction calls the Godot host's `_gui_input`
 makes (pointer state, key edges, text input, paste, wheel, focus stepping,
 IME composition) and drains the core's event queue into `NativeEvent`

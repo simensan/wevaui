@@ -1,5 +1,8 @@
 # Keyboard input in the Godot host
 
+(The Unity host applies the same rules; [INPUT_PARITY.md](INPUT_PARITY.md)
+tables every shared input decision with the test that pins it on each host.)
+
 Godot routes GUI events to the focused `WevaDocument` Control. Native HTML
 actions run in the core and produce the same click, input, change and submit
 events as pointer actions. Keyboard clicks have zero coordinates and do not
