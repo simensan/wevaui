@@ -183,6 +183,25 @@ else
     fail "chrome oracle: needs python3 and $GCC/Tools/weva_dump/weva_dump (a gate that cannot run is red, not skipped)"
 fi
 
+step "chrome behaviour checks"
+# What a capture cannot pin -- focus order, popover chains, number stepping,
+# table border junctions, selection, animation clocks -- 57 scripts drive a
+# real Chrome through puppeteer and compare. Their answers are already frozen
+# into the core suite; running them says whether Chrome still gives them.
+# Needs node, puppeteer (repo-root node_modules) and a launchable Chrome.
+# WEVA_NO_CHROME=1 opts out explicitly; a missing tool is otherwise a failure,
+# because a gate that silently cannot run is how the layout oracle skipped
+# for a week without anyone noticing.
+if [ -n "${WEVA_NO_CHROME:-}" ]; then
+    skip "chrome behaviour checks (WEVA_NO_CHROME set)"
+elif command -v node > /dev/null && command -v python3 > /dev/null; then
+    if ! python3 "$ROOT/Tools/oracle/run_chrome_checks.py" --out /tmp/weva-chrome-checks             > /tmp/weva-chrome-checks.log 2>&1; then
+        fail "chrome behaviour checks; see /tmp/weva-chrome-checks.log"
+    fi
+else
+    fail "chrome behaviour checks: needs node and python3 (set WEVA_NO_CHROME=1 to opt out)"
+fi
+
 # ---- cached property ids name real properties ----------------------------
 #
 # Reading a style by id is a quarter faster than by name, but an id is only

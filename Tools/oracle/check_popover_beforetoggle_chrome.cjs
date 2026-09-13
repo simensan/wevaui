@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {createRequire} = require('node:module');
-const puppeteer = createRequire(path.resolve(__dirname, '../../../Tools/Layout/package.json'))('puppeteer');
+const puppeteer = createRequire(path.resolve(__dirname, '../../Tools/Layout/package.json'))('puppeteer');
 
 (async () => {
   if (!process.argv[2]) throw new Error('Expected a new output JSON path');

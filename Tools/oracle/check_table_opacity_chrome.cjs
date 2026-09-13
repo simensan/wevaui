@@ -1,6 +1,6 @@
 const fs = require('node:fs'), path = require('node:path');
 const { createRequire } = require('node:module');
-const puppeteer = createRequire(path.resolve(__dirname, '../../../Tools/Layout/package.json'))('puppeteer');
+const puppeteer = createRequire(path.resolve(__dirname, '../../Tools/Layout/package.json'))('puppeteer');
 (async () => {
   const browser = await puppeteer.launch({headless:true, executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
   try {
