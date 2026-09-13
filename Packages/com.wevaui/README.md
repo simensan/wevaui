@@ -64,9 +64,9 @@ and fails in surprising ways.
        public void OnStart() => SceneManager.LoadScene("Game");
    }
    ```
-   `[UIBind]` properties show through `{{ CoinCount }}` placeholders;
-   `on-click="OnStart"` resolves against the controller via the
-   source-generator-friendly `BindingScanner`.
+   `[UIBind]` fields and properties show through `{{ CoinCount }}`
+   placeholders; `on-click="OnStart"` calls the controller's `OnStart()` (or
+   `OnStart(string id)`).
 
 4. **Press play.** Hot reload picks up `.html` / `.css` edits without a
    domain reload. Press `F12` for the in-game DevTools overlay (box outlines,
@@ -167,36 +167,31 @@ These are the known v1 simplifications:
 
 ## Architecture
 
+One engine, the C++ core `libweva` (in this repository's `libweva/`), behind
+a C ABI (`weva_c.h`); this package is the Unity host over it.
+
 ```
 +--------------------------------------------------------------+
-|  Authoring        .html + .css TextAssets, hot-reload watcher|
+|  Host (C#)        WevaDocument: assets, [UIBind] controller, |
+|                   on-<event> dispatch, Input System feed,    |
+|                   FontEngine faces, URP draw-list renderer   |
 +--------------------------------------------------------------+
-|  Parser           Hand-rolled HTML + CSS parsers             |
+|  C ABI            weva_c.h -- document, input, events,       |
+|                   bindings, fonts, inspector (WevaNative.g.cs)|
 +--------------------------------------------------------------+
-|  Document model   Node, Element, TextNode, Document          |
-+--------------------------------------------------------------+
-|  Style engine     Selector matcher, cascade, var(), calc(),  |
-|                   media queries, container queries, @scope,  |
-|                   cascade layers, nested rules, :has()       |
-+--------------------------------------------------------------+
-|  Layout engine    Block, inline, flex (own impl), grid,      |
-|                   positioned, sticky, scroll containers      |
-+--------------------------------------------------------------+
-|  Paint            Box → PaintCommand list, per-box paint     |
-|                   cache (box-local coords)                   |
-+--------------------------------------------------------------+
-|  Render backend   IMGUI (debug) or URP (production) — same   |
-|                   IRenderBackend interface                   |
-+--------------------------------------------------------------+
-|  Reactivity       InvalidationTracker drives incremental     |
-|                   cascade / layout / paint per frame         |
+|  Core (C++)       HTML + CSS parsers, cascade (var(), calc(),|
+|                   media/container queries, layers, :has()),  |
+|                   block / inline / flex / grid / positioned  |
+|                   layout, forms and text editing, animation, |
+|                   paint to textured triangle lists           |
 +--------------------------------------------------------------+
 ```
 
-Five invalidation kinds — `Structure`, `Style`, `Layout`, `Paint`,
-`Composite` — propagate per the engine's invalidation rules. Each pipeline stage
-caches outputs keyed on input versions; clean subtrees re-use their cached
-boxes / paint commands.
+The core lays out and paints; the host answers its font callbacks with
+`FontEngine`, uploads its draw list to the URP pass, feeds it the Input System
+and turns its event queue into C# events. The same core drives the Godot host
+in `hosts/godot`, and its layout is checked against headless Chrome, not
+against another implementation.
 
 ## Performance
 
@@ -230,54 +225,39 @@ is on the v0.8+ roadmap.
 
 ## API surface
 
-The pieces a game dev typically touches:
+The pieces a game dev touches (the supported set, see
+[`Documentation~/api-stability.md`](Documentation~/api-stability.md)):
 
 - **`WevaDocument`** (MonoBehaviour). Holds your HTML + stylesheet
-  `TextAsset`s and runs the pipeline. Properties: `DocumentAsset`,
-  `StylesheetAssets`, `RendererBackend` (Auto / IMGUI / URP),
-  `EnableHotReload`, `ViewportOverride`. Methods: `Rebuild()`,
-  `SetController(...)`, `GetElementById(...)`, `GetElementsByClassName(...)`,
-  `MarkStyleDirty(...)`, `MarkLayoutDirty(...)`.
-- **`[UIBind]`** attribute. Marks a controller field/property for
-  `{{ data binding }}`. Two-way for `<input>`-bound fields.
-- **`[UIElement("id")]`** attribute. Captures an `Element` reference into a
-  field at build time.
-- **`BindingScanner`** + **`BindingSet`**. Reflection-driven binding
-  resolution today; source-generator-friendly so IL2CPP players are
-  supported.
+  `TextAsset`s and hosts the core. Properties: `DocumentAsset`,
+  `StylesheetAssets`, `SortingOrder`, `PrefersDarkColorScheme`, `Font` /
+  `Bold` / `Italic` / `Fallbacks`, `BasePath`, `AutoInput`,
+  `FollowScreenSafeArea`. Methods: `Reload()`, `SetController(...)`,
+  `GetController<T>()`, `Bind(model, controller)`, `RequestRefresh()`.
+  Events: `ElementClicked`, `HandlerInvoked`, `ValueChanged`, `Changed`,
+  `FormSubmitted`, `Focused`, `DataChanged`, and `Event` for every core event.
+- **`[UIBind]`** attribute. Marks a controller field or property as a
+  binding root for `{{ path }}`, `data-class-*`, `data-each` and
+  `data-model`. Two-way through `data-model`.
+- **`IBindingVersion`**. Opt-in: a controller that bumps `BindingVersion`
+  is re-read only then, instead of once a frame.
 - **Repeat and class bindings.** `<template data-each="Items as item"
   data-key="Id">` clones keyed list rows; `data-class-selected="item.Active"`
   toggles one class without replacing static classes.
-- **`IMGUIDocumentRenderer`** (MonoBehaviour). Debug-grade IMGUI backend.
-  Auto-attached when not on URP; suppress by setting
-  `RendererBackend = URP`.
-- **`UIRendererFeature`** (`ScriptableRendererFeature`). The URP path —
-  injects after `RenderPassEvent.AfterRendering` and renders
-  through seven dedicated shaders (incl. `Weva_StencilWrite` for clipping).
-- **`DevToolsOverlay`** (MonoBehaviour). F12 toggle, three composable modes
-  (Outlines / DirtyTracking / Performance); hover inspection is always on
-  when the overlay is enabled. Lives outside the main paint pipeline so it
-  can't accidentally break it.
-- **`IRenderBackend`**. Implement to plug in a custom renderer. The
-  shipped `RecordingBackend` and `NullBackend` are useful for tests.
+- **`UIBatchedRendererFeature`** (`ScriptableRendererFeature`). The URP
+  pass that draws every document's draw list into the camera colour target.
+- **`WevaDocument.Document`** (`Weva.Native.NativeDocument`). The core
+  document itself -- `Query`, element attributes and values, focus, scroll,
+  dialogs, the inspector surface. Public, but not part of the supported set:
+  it follows the C ABI.
 
 ## DevTools
 
-Press `F12` in play mode (configurable via `DevToolsOverlay.ToggleKey`). The
-overlay renders via IMGUI, never via the main paint pipeline:
-
-- **Outlines.** Margin (orange) / border (yellow) / padding (green) /
-  content (blue), Chrome DevTools palette.
-- **Dirty highlighter.** Red flash when a box re-laid this frame, yellow
-  when style changed, gray when paint-only. Decays over 3 frames.
-- **Hover inspector.** `<button.btn-primary#start>` style header,
-  computed dimensions (W×H px @ X,Y), 10 most relevant computed style
-  properties.
-- **Performance corner.** FPS, frame ms, cascade / layout / paint ms
-  breakdown, GC bytes/frame, paint cache hit ratio.
-
-There's also a Window → Weva → DevTools editor window for inspection
-without entering Play Mode.
+**Window → Weva → Elements** opens the core's Elements panel for a document
+in the scene: the tree, the selected element's matched rules (winners first,
+losing declarations struck through), computed style and box model -- the
+data Chrome's DevTools shows, read through the ABI's inspector surface. The
+`WevaDocument` inspector shows the core's HTML diagnostics and last error.
 
 ## Examples
 
@@ -287,22 +267,23 @@ without entering Play Mode.
 
 ## Testing
 
-~700 NUnit tests for the Unity host run headlessly via `Tools/TestVerifyAll/` (or the Unity Test
-Runner once the package is added to a project). Coverage spans HTML parsing,
-CSS rule and selector parsing, cascade, layout (block / inline / flex /
-grid / positioning), paint conversion, animation, components, bindings,
-events, reactivity propagation, and golden-image rasterization.
+The core's own suite (`libweva/tests`, ~500,000 checks) and the Chrome
+oracle (`Tools/oracle`, every sample page's layout against a headless Chrome
+capture) gate the engine. The Unity host has EditMode tests in
+`Tests/Editor/Native` -- the document, bindings and controllers, input
+through the Input System's test fixture, fonts, the Elements window -- and
+PlayMode rendering tests; run them with the Unity Test Runner.
 
 ## Status
 
-0.1.1 (preview). The C# engine in `Runtime/` (parser → cascade → layout →
-paint) is what this version ships and is **frozen as of 2026-09-13**: the C++
-core in the repository's `libweva/` is now the single source of truth, checked
-against Chrome, and 1.0 replaces the C# engine with the native plugin
-(`Runtime/Native/`, Windows x64 first). 1.0 is an API break — `WevaDocument`,
-`[UIBind]` and the event surface are redesigned around the core. Until then the
-URP renderer feature, IMGUI fallback, TextCore bootstrap, hot reload watcher and
-DevTools overlay continue to work on the C# engine as before.
+0.1.1 (preview) is the last release of the C# engine, **frozen as of
+2026-09-13**. On `main` the package is the Unity host for the C++ core:
+`WevaDocument` is the core-backed component, the frozen engine's component is
+`WevaLegacyDocument` until it is deleted, and 1.0 ships one engine. 1.0 is an
+API break from 0.1.1 -- the controller model (`[UIBind]`, `on-<event>`,
+`SetController`) carries over unchanged, the C# DOM (`Weva.Dom`,
+`GetElementById`, `Rebuild`) does not. Native plugin: Windows x64 now,
+other platforms as their CI jobs go green.
 
 ## License
 

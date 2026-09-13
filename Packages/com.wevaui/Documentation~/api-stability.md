@@ -1,77 +1,57 @@
 # API stability
 
-This package has **803 public types in `Runtime/`**. Its README describes
-twelve. That gap is not an accident of documentation — it is what happens when
-an engine is built in one assembly and nothing forces a decision about which
-parts are a contract.
-
-This page makes the decision explicit, so a refactor of the engine's internals
-is not a breaking change to a package people depend on.
+This package is the Unity host for the shared C++ core. Most of what compiles
+into `Weva.Runtime` is either the frozen C# engine awaiting deletion or the
+generated binding to the core's C ABI. This page says which types are a
+contract, so a refactor of the engine's internals is not a breaking change to
+a package people depend on.
 
 ## Supported surface
 
 These are covered by semantic versioning. A breaking change to any of them
 requires a major bump and a changelog entry.
 
-| Type | Namespace |
-|---|---|
-| `WevaDocument` | `Weva` |
-| `WevaFonts` | `Weva` |
-| `UIElementAttribute` | `Weva` |
-| `UIBindAttribute` | `Weva.Binding` |
-| `BindingScanner`, `BindingSet` | `Weva.Binding` |
-| `IBindingVersion` | `Weva.Binding` |
-| `IRenderBackend`, `RecordingBackend`, `NullBackend` | `Weva.Rendering` |
-| `UIRendererFeature` | `Weva.Rendering.URP` |
-| `IMGUIDocumentRenderer` | `Weva.Rendering` |
-| `DevToolsOverlay` | `Weva.DevTools` |
+| Type | Namespace | What of it |
+|---|---|---|
+| `WevaDocument` | `Weva` | The component: `DocumentAsset`, `StylesheetAssets`, `InlineHtml`, `InlineCss`, `SortingOrder`, `PrefersDarkColorScheme`, `Font`, `Bold`, `Italic`, `Fallbacks`, `BasePath`, `UseUserAgentStylesheet`, `AutoInput`, `InputConsumed`, `FollowScreenSafeArea`, `LastError`; `Reload()`, `SetController(object)`, `GetController<T>()`, `Controller`, `Bind(model, controller)`, `Data`, `Refresh()`, `RequestRefresh()`, `LinkedStylesheetHrefs`, `BakeLinkedStylesheets(read)`; the events `ElementClicked`, `HandlerInvoked`, `ValueChanged`, `Changed`, `FormSubmitted`, `Focused`, `DataChanged`. |
+| `UIBindAttribute` | `Weva.Binding` | Marks a binding root on a controller. |
+| `IBindingVersion` | `Weva.Binding` | Opt-in change signal: bump instead of being polled. |
+| `UIBatchedRendererFeature` | `Weva.Rendering.URP` | The URP renderer feature that draws documents. |
+| `UrpFeatureSetup.ApplyNonInteractive()` | `Weva.EditorTools.Setup` | The scripted setup entry point. |
 
-The DOM and event types a handler receives — `Element`, `Node`, `Document`,
-`TextNode`, `EventDispatcher` and the `*Event` classes — are supported in the
-shapes the authoring guide uses, because you cannot write a handler without
-them.
+The markup contract — `{{ path }}`, `data-class-<name>`, `data-each` /
+`data-key` / `$index`, `data-model`, `on-<event>="Name"` with `Name()` or
+`Name(string id)` — is part of the supported surface too: it is what a page
+and a controller are written against.
 
-## Unsupported surface
+## Public, but not supported
 
-Everything else is engine internals that happen to be `public` because the
-whole engine compiles into one assembly. **These may change in any release,
-including a patch**, and doing so will not be treated as a breaking change:
+`WevaDocument.Document` hands you the core document itself
+(`Weva.Native.NativeDocument`: `Query`, element attributes and values, focus,
+scroll, dialogs, the inspector surface) and `WevaDocument.Event` hands you
+every core event as a `NativeEvent`. They are public because a game sometimes
+needs them, and unsupported because they follow the C ABI: `Weva.Native` is
+generated from `weva_c.h` (`WevaNative.g.cs`) or written to talk to it, and it
+moves with the ABI minor. Reaching into it is fine; expecting it not to change
+in a minor release is not. If something there is the only way to do a thing
+you need, that is worth an issue — the answer is usually a supported entry
+point on `WevaDocument`.
 
-`Weva.Css.*` · `Weva.Layout.*` · `Weva.Paint.*` · `Weva.Rendering.URP.*`
-(beyond `UIRendererFeature`) · `Weva.Text.*` · `Weva.Forms.*` internals ·
-`Weva.Designer.*` · `Weva.Testing.*` · `Weva.Native.*`
+## Unsupported and going away
 
-If you are reaching into one of these and it is the only way to do something
-you need, that is worth an issue — the answer is usually to add a supported
-entry point rather than to freeze an internal one.
+Everything else. The frozen C# engine — `Weva.Css.*`, `Weva.Layout.*`,
+`Weva.Paint.*`, `Weva.Text.*`, `Weva.Dom.*`, `Weva.Events.*`, `Weva.Forms.*`,
+`Weva.Designer.*`, `Weva.Testing.*`, `BindingScanner` / `BindingSet`,
+`IRenderBackend`, `IMGUIDocumentRenderer`, `DevToolsOverlay`, `WevaFonts`,
+`UIRendererFeature` (the pre-batching URP feature) — and its component
+`WevaLegacyDocument` (the `WevaDocument` of 0.1.1, renamed 2026-09-13) compile
+into the package until Phase 4.3 deletes them. **Nothing in this list is worth
+building on now.** They may change or vanish in any release.
 
-## `Weva.Native` in particular
+## Direction (decided 2026-09-13)
 
-`Weva.Native` is the host layer for the shared C++ core: 42 public types, 488
-public members, 131 generated P/Invoke declarations in `snake_case`, and a
-plugin binary that currently ships for Windows x64 only. It did not exist at
-`v0.1.1`.
-
-It is **not** an API. It is the Unity side of an ABI that is still moving —
-`WEVA_ABI_VERSION_MINOR` has gone from 25 to 38 in recent development — and
-every type in it is either generated from `weva_c.h` or written to talk to
-something that is. Nothing in the README, the changelog or the authoring guide
-mentions it, because nothing is meant to call it.
-
-Treat it as unsupported. It may become `internal`.
-
-**Direction, decided 2026-09-13.** The C# engine is frozen and the C++ core
-is the single source of truth. 1.0 is a breaking release: the supported
-surface above is redesigned around the native document, the engine
-namespaces listed as unsupported are deleted, and Chrome — not the C# engine —
-is what conformance is measured against. Nothing in the unsupported list is
-worth building on now.
-
-## Why not simply mark it all `internal`
-
-Because the cost is not zero and the benefit of the policy is nearly all of
-it. Making ~790 types internal means re-verifying every file that compiles
-against them, and it would break any consumer already reaching into
-`Weva.Layout` or `Weva.Paint` — which nothing ever told them not to do. Writing
-the boundary down costs nothing, breaks nobody, and is the prerequisite for
-narrowing it later with a deprecation cycle rather than a surprise.
+The C++ core is the single source of truth and Chrome — not the C# engine —
+is what its conformance is measured against. 1.0 is a breaking release from
+0.1.1: the controller model (`[UIBind]`, `on-<event>`, `SetController`)
+carries over unchanged; the C# DOM does not. The frozen engine is deleted at
+4.3 and `package.json` moves to 1.0.0 with a migration note.

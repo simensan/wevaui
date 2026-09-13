@@ -9,15 +9,12 @@ checklist; the rest is grouped by symptom.
 
 Work down this list — it's ordered by how often each one is the cause:
 
-1. **No `DocumentAsset` assigned.** Select the `WevaDocument` and confirm an
-   `.html` `TextAsset` is in the **Document Asset** field. An empty document
-   paints nothing.
-2. **URP renderer feature missing.** For the production path you must add
-   `UIBatchedRendererFeature` (or `UIRendererFeature`) to your URP Renderer
-   asset's **Renderer Features** list. Without it and with
-   `RendererBackend = URP`, nothing draws. Weva detects this: the Console
-   gets a once-per-session warning and the `WevaDocument` inspector shows a
-   warning with a one-click **Add URP Renderer Feature + shader includes**
+1. **No `DocumentAsset` assigned** and no `InlineHtml`. Select the
+   `WevaDocument`; the inspector warns when the document is empty.
+2. **URP renderer feature missing.** `UIBatchedRendererFeature` must be in
+   your URP Renderer asset's **Renderer Features** list — the core's draw
+   list has no pass to land in without it. The `WevaDocument` inspector shows
+   a warning with a one-click **Add URP Renderer Feature + shader includes**
    button. Fix it any of three ways (all idempotent):
    - Menu: `Window > Weva > Setup > Add URP Renderer Feature`.
    - Inspector: click the fix button on the warning.
@@ -25,115 +22,111 @@ Work down this list — it's ordered by how often each one is the cause:
      `Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive()`, or
      headless `Unity -batchmode -quit -projectPath <project> -executeMethod
      Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive`.
-
-   To check fast, set `RendererBackend = IMGUI` (or `Auto`) — if the UI
-   appears, the missing feature was the cause.
    See [Getting Started → URP render setup](getting-started.md).
-3. **Zero-size viewport.** If `ViewportOverride` is set to something like
-   `(0,0)` *and* no camera / screen size resolves, layout runs against a
-   0×0 surface and everything collapses. Leave `ViewportOverride` at `(0,0)`
-   to track the screen, or set a real size. Confirm the resolved size in the
-   DevTools overlay (F12 → Performance shows the viewport).
+3. **The native plugin did not load.** The inspector shows the core's last
+   error; the plugin ships for Windows x64 (see the package README's status
+   for other platforms).
 4. **The GameObject or component is disabled,** or there is no enabled camera
    rendering with the URP renderer that owns the feature.
 5. **A root element collapsed to zero height.** A top-level flex/grid container
    with no explicit height and no growing content can compute to height 0.
    Give the page root a height (`html, body { height: 100%; }` or a `100vh`
-   wrapper) — open the **Elements** window (Window → Weva → Elements) and look
-   at the root box's computed height.
+   wrapper) — open **Window → Weva → Elements** and look at the root box's
+   computed height.
 6. **CSS never loaded.** See "My styles don't apply" below — an unstyled but
    *present* DOM still renders text top-left; a truly blank screen is usually
    one of 1–5.
 
 ## My styles don't apply
 
-- **`<link href>` doesn't resolve.** `href="menu.css"` is matched by **file
-  name** against imported `TextAsset`s, not a filesystem path. Keep the `.css`
-  next to the `.html` under `Assets/`, and make sure it imported as a
-  `TextAsset` (it will, for `.css`). You can also assign the sheet directly in
-  the **Stylesheet Assets** inspector list instead of using `<link>`.
-- **Player build can't find the sheet.** Linked CSS, `@import`, and
-  `<template src>` are baked from disk at build time — but a `WevaDocument` on
-  a prefab **instantiated at runtime** skips that hook. Assign
-  `StylesheetAssets` explicitly, or call `LinkedStylesheetBaker.Bake` from a
-  build step. See [Getting Started → Player builds](getting-started.md).
-- **A property silently does nothing.** It may be parse-only or partial — check
-  the [Supported CSS](supported-css.md) matrix and
-  [AuthoringGuide §17](AuthoringGuide.md) (intentionally-not-implemented list).
-  Weva fails *loud* on unknown syntax but some spec features parse and no-op by
-  design.
-- **Selector doesn't match a bound boolean.** `bool` interpolation produces the
-  literal `"True"`/`"False"` — an attribute selector must match that casing:
-  `[data-critical="True"]`, not `="true"`.
+- **`<link href>` doesn't resolve.** `href="menu.css"` is looked up **next to
+  the document asset** (the same folder, in the editor) — the Console warns
+  `linked stylesheet 'menu.css' not found` when it is not there. Keep the
+  `.css` beside the `.html`, or assign the sheet in the **Stylesheet Assets**
+  inspector list instead of using `<link>`.
+- **Player build can't find the sheet.** Linked sheets are baked into the
+  component at build time — but a `WevaDocument` on a prefab **instantiated
+  at runtime** skips that hook. Assign `StylesheetAssets` explicitly, or call
+  `doc.BakeLinkedStylesheets(...)` from a build step. See
+  [Getting Started → Player builds](getting-started.md).
+- **A property silently does nothing.** Check the
+  [Supported CSS](supported-css.md) matrix and its known divergences from
+  Chrome.
+- **Selector doesn't match a bound boolean.** `bool` interpolation produces
+  the literal `true`/`false` (lower case): `[data-critical="true"]`. Prefer
+  `data-class-critical="IsCriticalHP"` and style `.critical`.
 
 ## `{{ Bindings }}` show literally or never update
 
 - **No controller registered.** Call
   `GetComponent<WevaDocument>().SetController(this)` (typically in `Awake`).
-  Without it, `{{ Name }}` has nothing to resolve against.
-- **Field isn't `[UIBind]`.** Only `[UIBind]` fields/properties are visible to
-  templates. Plain public fields are not scanned.
+  Without it, `{{ Name }}` has nothing to resolve against and shows nothing.
+- **Field isn't `[UIBind]`.** Only `[UIBind]` fields/properties are roots.
+  Plain public fields are not scanned.
 - **Expression is too complex.** Bindings are plain identifiers or dotted paths
   (plus `$index`) — **no** `!`, operators, or method calls inside `{{ }}`.
   Expose a computed `[UIBind]` property and bind it by name instead:
   `[UIBind] bool QuitDisabled => !CanQuit;`.
-- **Value mutated but UI didn't repaint.** Bindings are dirty-checked once per
-  frame from the lifecycle `Update`; mutating the backing field is enough. If
-  you change data the binding doesn't *read* (e.g. an item deep in a list
-  without a `data-key`), see [AuthoringGuide §6](AuthoringGuide.md) for the
-  programmatic-mutation path.
+- **The controller implements `IBindingVersion` and didn't bump.** A
+  versioned controller is read only when `BindingVersion` changes; bump after
+  every mutation, or call `doc.RequestRefresh()`.
+- **Value mutated but UI didn't update.** A plain controller is read once a
+  frame; mutating the field is enough. If the value lives behind a member the
+  path does not name (a private list a public property copies), bind the
+  member the page reads.
 
 ## Clicks / input don't fire
 
-- **No input controller.** `WevaDocument.OnEnable` auto-attaches
-  `Forms.Bridge.UnityInputController` at play time. If you removed it or build
-  the document yourself, pointer/keyboard events won't reach the DOM.
+- **`AutoInput` is off,** or the Input System package is missing (the feed
+  compiles only with it).
 - **`on-click="Method"` names a missing method.** The method must be `public`
-  on the registered controller. Optionally take one event arg
-  (`void OnStart(PointerEvent e)`).
+  on the registered controller, taking nothing or one `string` (the id).
 - **An overlay eats the click.** A full-screen transparent element on top
   intercepts pointer events. `opacity:0` elements still receive events (per the
   web) — use `pointer-events: none` to let clicks pass through.
-- **EventSystem / other UI on top.** If a uGUI canvas or another `WevaDocument`
-  with a higher `SortingOrder` overlaps, it may consume the pointer first.
+- **Another document is on top.** A `WevaDocument` with a higher
+  `SortingOrder` overlapping the same pixels receives the pointer first.
+- **The keyboard is for the game.** `doc.Input.AcceptsKeyboard` gates keys;
+  `doc.InputConsumed` says whether the UI took the frame's input.
 
 ## Text looks wrong
 
 - **Everything sits a few px lower than Chrome.** That's the intentional
   default-face metric divergence (bundled Inter vs Chrome's Arial), not a bug —
-  see [Text & Fonts](text-and-fonts.md). Register your own face to match a
+  see [Text & Fonts](text-and-fonts.md). Assign your own face to match a
   target exactly.
-- **My font doesn't load.** Confirm the drop-in path / `@font-face` / OS-name
-  resolution per [Text & Fonts](text-and-fonts.md). Missing faces fall back to
-  the default face rather than failing silently-invisible.
-- **RTL / Arabic / Hebrew text isn't reordered.** Bidi text reordering is a v1
-  non-goal — layout-level `direction: rtl` logical mapping works, but glyph-level
-  bidi does not. See "Localization & RTL" in [AuthoringGuide §19](AuthoringGuide.md).
+- **My font doesn't load.** Assign it on the component (`Font` / `Bold` /
+  `Italic`), or declare `@font-face` with a `url()` relative to `BasePath` or
+  a `local("Installed Name")`. Missing faces fall back to the default face
+  rather than failing invisibly.
+- **Arabic letters don't join / a word's letters are reversed.** The core
+  reorders bidi runs; glyph shaping on Unity is one glyph per code point, so
+  contextual forms are not produced. See "Localization & RTL" in
+  [AuthoringGuide §15](AuthoringGuide.md).
 
 ## Performance / stutter
 
-- **Per-frame attribute writes.** Don't `SetAttribute` every frame from
-  `Update()`. Drive visuals from `[UIBind]` fields (dirty-checked) and let the
-  paint pass short-circuit on idle frames.
-- **Heavy painters.** `box-shadow`, `filter: blur()`, and `text-shadow` are the
-  costliest — keep them off elements that change every frame.
-- **Profile it.** F12 → Performance shows cascade / layout / paint ms, GC/frame,
-  and paint-cache hit ratio. `Tools/PerfBench/` baselines on your machine.
+- **Per-frame attribute writes.** Don't `SetElementAttribute` every frame from
+  `Update()`. Drive visuals from `[UIBind]` values; an unchanged value changes
+  no node.
+- **A big controller polled every frame.** Implement `IBindingVersion`.
+- **Heavy painters.** `box-shadow`, `filter: blur()`, `backdrop-filter` and
+  `text-shadow` are the costliest — keep them off elements that change every
+  frame.
+- **Measure.** `doc.Document.Stats()` reports the core's per-frame timings.
 
 ## Editor-specific
 
-- **Edit-mode preview is blank but Play works.** Controller-side registrations
-  (fonts, image registries) only reach the preview if the controller is also
-  `[ExecuteAlways]`. Gate gameplay work on `Application.isPlaying`; keep
-  `OnEnable` registrations edit-safe. See
-  [Getting Started → Edit-mode preview](getting-started.md).
-- **Hot reload didn't pick up my edit.** Confirm `EnableHotReload` is on, and
-  that the edited file is one of the document's linked/assigned sheets. For
-  programmatically-built UI with no source file, call `doc.Rebuild()`.
+- **Edit-mode preview differs from play.** Controller-side work only reaches
+  the edit-mode document if the controller is also `[ExecuteAlways]` and
+  registers in `OnEnable`; gate gameplay work on `Application.isPlaying`.
+- **Hot reload didn't pick up my edit.** The edited file must be the
+  document's asset, one of its `<link>`ed sheets (next to the asset), or an
+  inspector sheet. For markup built in code, call `doc.Reload()`.
 
 ## Still stuck?
 
-Open **Window → Weva → Elements** to inspect the live DOM, matched rules, and
+Open **Window → Weva → Elements** to inspect the live tree, matched rules, and
 the computed box model — the same data Chrome's DevTools shows. If a box is
 present in the tree but has zero size or the wrong style, the answer is usually
 there.

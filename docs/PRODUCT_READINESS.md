@@ -527,7 +527,7 @@ exercises the week's work one block each, and `NativeGameViewCaptureTests`
 draws it through the project's URP renderer in headless Play mode. That found
 the Phase 2 caveat was a real gap: the active `UIBatchedRendererFeature` never
 drew native documents (only the inactive legacy feature did), so a
-`WevaNativeDocument` in a scene rendered nothing. Fixed; the in-pass capture now
+`WevaNativeDocument` (now `WevaDocument`) in a scene rendered nothing. Fixed; the in-pass capture now
 matches the offscreen render, safe-area insets pad live, and a smooth scroll
 settles on its target. Hebrew glyphs are absent on Unity until a covering
 fallback face is given (the bundled faces have none); the run order is right.

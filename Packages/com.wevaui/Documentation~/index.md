@@ -1,9 +1,10 @@
 # Weva Documentation
 
 Weva is an HTML/CSS UI layer for Unity 6 / URP. You author UI in standard
-`.html` and `.css` files; Weva parses them, runs a real CSS cascade, lays the
-document out (block / inline / flex / grid / positioned), paints it, and
-renders it through a URP render pass.
+`.html` and `.css` files; the engine — a C++ core shared with the Godot host,
+checked against Chrome — parses them, runs a real CSS cascade, lays the
+document out (block / inline / flex / grid / positioned), paints it, and the
+package renders its draw list through a URP render pass.
 
 The design rule is loud and simple: **if a feature has a well-known web
 behavior, Weva's behavior matches it — or Weva doesn't ship it.** A subtly
@@ -17,7 +18,9 @@ and is documented there.
 
 ## Status
 
-Pre-1.0 (`com.wevaui` `0.1.1`).
+Pre-1.0. `0.1.1` was the last release of the C# engine, frozen 2026-09-13;
+`main` is the Unity host for the C++ core, and 1.0 ships one engine (see
+[api-stability](api-stability.md) for what carries over).
 
 ## Contents
 
@@ -41,8 +44,8 @@ Pre-1.0 (`com.wevaui` `0.1.1`).
 ## Author-facing guide vs. this reference
 
 [`AuthoringGuide.md`](AuthoringGuide.md) is the task-oriented manual for
-*building* UI — controller binding, events, forms, gestures, virtualized
-lists, DevTools. The pages above are the *reference* for what HTML and CSS the
+*building* UI — controller binding, events, forms, input, programmatic
+updates, DevTools. The pages above are the *reference* for what HTML and CSS the
 engine supports. Start with Getting Started, then reach for the Authoring Guide
 when you build something real.
 

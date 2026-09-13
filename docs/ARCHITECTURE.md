@@ -950,7 +950,7 @@ ABI minor 36 adds `weva_document_set_safe_area_insets(doc, top, right, bottom,
 left)`: the values `env(safe-area-inset-*)` resolve to, per document (the env()
 table moved from a process singleton into the cascade engine). Godot
 `set_safe_area_insets()` / `follow_display_safe_area`, Unity
-`NativeDocument.SetSafeAreaInsets` / `WevaNativeDocument.FollowScreenSafeArea`.
+`NativeDocument.SetSafeAreaInsets` / `WevaDocument.FollowScreenSafeArea`.
 
 Bidirectional text (no ABI change): `bidi.cpp` runs ICU's ubidi over a
 paragraph's inline items -- `direction` as the paragraph level, `unicode-bidi`

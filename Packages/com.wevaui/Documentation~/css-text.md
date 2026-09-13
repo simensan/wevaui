@@ -70,8 +70,10 @@ are a v1 simplification).
 
 A real inline formatting context lays out mixed-style runs
 (`<span>`/`<strong>`/`<a>`/`<code>`) within a line, with correct baselines for
-inline-block atoms. LTR only — no bidi reordering, no vertical writing-mode
-glyph flow (both are v1 non-goals).
+inline-block atoms. Mixed-direction lines are reordered with ICU's bidi
+algorithm (`direction`, `unicode-bidi`); glyph shaping is the host's, and the
+Unity host shapes one glyph per code point (see [Text & Fonts](text-and-fonts.md)).
+Vertical writing-mode glyph flow is not implemented.
 
 **Single-fragment decoration (v1 simplification):** an inline element whose text
 wraps across multiple lines paints its border/background on the **first line's

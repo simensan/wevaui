@@ -8,22 +8,24 @@ document on screen.
 ## Requirements
 
 - Unity **6000.3** or newer (the package manifest pins `unity: "6000.3"`).
-- **URP** for the production render path. The package compiles without URP —
-  the URP code is gated behind a `WEVA_URP` `versionDefines` token — but the
-  full renderer only activates when URP is present. Without it, the IMGUI
-  fallback renders (debug-grade).
-- Scripting backend: IL2CPP-compatible. No `Reflection.Emit`; data binding is
-  reflection-driven today and source-generator-friendly for IL2CPP players.
+- **URP** — the package's render pass is a URP `ScriptableRendererFeature`.
+- **Input System** — the document reads the mouse, keyboard, touch, gamepad
+  and IME through it (pulled in as a package dependency).
+- The native plugin ships for **Windows x64**; other platforms are added as
+  their CI jobs go green.
+- Scripting backend: IL2CPP-compatible. Binding is reflection over public
+  members (no `Reflection.Emit`); keep `[UIBind]` members and handler methods
+  out of managed code stripping (they are looked up by name).
 
 ## Install
 
 Add the package to `Packages/manifest.json`:
 
 ```json
-"com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.1"
+"com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui"
 ```
 
-(Pin a release with the `#v*` tag suffix, or drop it to track `main`.)
+(Pin a release with a `#v*` tag suffix, or drop it to track `main`.)
 Or import locally: clone the repo, then Package Manager → **Add package from
 disk** → pick `Packages/com.wevaui/package.json`.
 
@@ -68,30 +70,37 @@ button { padding: 8px 16px; border-radius: 8px; background: #4f46e5; color: whit
 button:hover { background: #6366f1; }
 ```
 
-You can also assign stylesheets directly in the inspector (see below) instead
-of, or in addition to, `<link>`.
+A `<link href>` resolves **next to the document asset** (the same folder);
+`<style>` elements and `@import` inside a sheet work too. You can also assign
+stylesheets directly in the inspector instead of, or in addition to, `<link>`
+— the page's own sheets apply first, the inspector's after, so a later
+declaration wins as in a browser.
 
 ## Mount the document
 
-`WevaDocument` (component menu **Weva → UI Document**) is the author-facing
-MonoBehaviour. It holds your HTML + stylesheet `TextAsset`s and runs the
-pipeline in `OnEnable`.
+`WevaDocument` (component menu **Weva → UI Document**, or **GameObject →
+Weva → New WevaDocument**) is the author-facing MonoBehaviour. It holds your
+HTML + stylesheet `TextAsset`s and hosts the engine — the shared C++ core that
+parses, cascades, lays out and paints the page.
 
 Inspector fields map to these properties:
 
 | Property | Meaning |
 |---|---|
-| `DocumentAsset` | The `.html` `TextAsset`. |
-| `StylesheetAssets` | Zero or more `.css` `TextAsset`s, applied in order. |
-| `RendererBackend` | `Auto` (URP if present, else IMGUI), `IMGUI`, or `URP`. |
-| `SortingOrder` | Paint order across multiple documents (`Order`). |
-| `ViewportOverride` | Fixed layout viewport in px; `(0,0)` = track the screen. |
-| `PrefersDarkColorScheme` | Seeds `@media (prefers-color-scheme)` / `light-dark()`. |
-| `EnableHotReload` | Watch the source files and rebuild on edit (editor-on by default). |
-| `AutoRebuildOnChange` | Rebuild when inspector fields or the viewport change. |
+| `DocumentAsset` | The `.html` `TextAsset`. `InlineHtml` is used when none is set. |
+| `StylesheetAssets` | Zero or more `.css` `TextAsset`s, applied in order after the page's `<link>`s. |
+| `SortingOrder` | Paint order across multiple documents. |
+| `PrefersDarkColorScheme` | Answers `@media (prefers-color-scheme: dark)` / `light-dark()`. |
+| `Font` / `Bold` / `Italic` / `Fallbacks` | The UI face and its real bold/italic files; faces tried for code points it lacks. The package's Inter and symbol face when empty. |
+| `BasePath` | Directory that `url()`, `@import` and `@font-face` sources resolve against. Defaults to the document asset's folder in the editor. |
+| `UseUserAgentStylesheet` | The browser defaults (`<h1>` size, `<button>` look, …). On. |
+| `AutoInput` | Read the Input System every frame and feed the document. On. |
+| `FollowScreenSafeArea` | Feed `Screen.safeArea` to `env(safe-area-inset-*)`. Off (a desktop has no insets). |
 
-`OnEnable` auto-attaches a `Forms.Bridge.UnityInputController` so pointer and
-keyboard input work without manual wiring.
+The inspector also shows the URP renderer-feature check with a one-click fix,
+the core's HTML diagnostics (what it recovered from) and its last error, and a
+**Reload** button — the document is alive in edit mode too (`[ExecuteAlways]`),
+so the Game view shows the page without entering play.
 
 ## Wire a controller
 
@@ -112,22 +121,22 @@ public sealed class MainMenu : MonoBehaviour {
 ```
 
 - `[UIBind]` fields/properties are reachable from `{{ CoinCount }}` placeholders
-  in HTML and CSS attribute values; bindings poll once per frame.
-- `[UIElement("start")]` captures an `Element` reference at build time.
-- `on-click="OnStart"` resolves against the controller. `SetController(...)`
-  re-binds without rebuilding the cascade/layout.
+  in HTML text and attribute values; a plain controller is read once per
+  frame, so mutating the field is enough.
+- `on-click="OnStart"` calls the controller's public `OnStart()` — or
+  `OnStart(string id)` to receive the element's `id`.
+- `SetController(...)` binds without reparsing; `GetController<T>()` reads it
+  back.
 
 See [`AuthoringGuide.md`](AuthoringGuide.md) for the full binding, event, and
 form story.
 
 ## URP render setup
 
-The production renderer is a `ScriptableRendererFeature`. Add
-`UIBatchedRendererFeature` (or `UIRendererFeature`) to your URP Renderer asset's
-**Renderer Features** list. It injects a render pass after
-`RenderPassEvent.AfterRendering` and draws the UI directly into
-the camera color target (zero intermediate blit). Set `RendererBackend = URP`
-on the document to force this path.
+The renderer is a `ScriptableRendererFeature`. Add `UIBatchedRendererFeature`
+to your URP Renderer asset's **Renderer Features** list. It injects a render
+pass after `RenderPassEvent.AfterRendering` and draws every document's
+triangle list directly into the camera colour target.
 
 Three equivalent ways to set it up — all idempotent, and all also add the
 Weva shaders to **Always Included Shaders** (required for player builds):
@@ -143,77 +152,47 @@ Weva shaders to **Always Included Shaders** (required for player builds):
   Unity -batchmode -quit -projectPath <project> -executeMethod Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive
   ```
 
-Without the feature, set `RendererBackend = Auto` or `IMGUI` to fall back to
-the IMGUI renderer — fine for editor testing, not for shipping. When URP is
-active but the feature is missing, Weva logs a once-per-session Console
-warning (with the fixes above inlined) from the first enabled `WevaDocument`.
+Without the feature nothing draws: the core's draw list has no pass to land
+in.
 
-> **Screen-space only (v1).** A `WevaDocument` draws as a screen-space overlay
-> into the camera color target; layering across documents is controlled by
-> `SortingOrder`. There is no built-in **world-space** mode — UI mapped onto a
-> 3D surface / quad (a diegetic in-world screen) is not a v1 feature and isn't
-> wired through `WevaDocument`. It would require rendering the pass into a
-> `RenderTexture` and sampling that on a material yourself, which is outside the
-> supported/documented surface today.
+> **Screen-space only.** A `WevaDocument` draws as a screen-space overlay into
+> the camera colour target; layering across documents is `SortingOrder`. There
+> is no built-in **world-space** mode — UI mapped onto a 3D surface (a
+> diegetic in-world screen) would mean rendering the pass into a
+> `RenderTexture` and sampling that on a material yourself, which is outside
+> the supported surface today.
 
 ## Viewport sizing
 
 Weva uses a **logical pixel** model: `1px` = 1 logical pixel, `rem`/`em` derive
 from a 16px base font size (matching CSS). The layout viewport — what `vw`/`vh`
-and `@media (width)` resolve against — is the *UI surface*, not the OS window,
-which matters for split-screen and embedded UI.
-
-`WevaDocument` resolves the current viewport in this priority order:
-
-1. `ViewportOverride` if both components are `> 0`.
-2. `ReferenceCamera.pixelWidth/Height` if a camera is assigned.
-3. The current render-target size (pushed by the URP pass via
-   `PrepareForRenderViewport`).
-4. `Screen.width/height`, then `Camera.main`, then the package default.
-
-When the Game View resizes in Play mode, `Update` detects the delta and reruns
-layout against the new viewport — a lighter pass than a full `Rebuild()`. On
-mobile, `Screen.safeArea` is piped into `env(safe-area-inset-*)` automatically.
+and `@media (width)` resolve against — is the render target the URP pass
+draws into: the document starts at `Screen.width × Screen.height` and follows
+the pass's target size (`PrepareForRenderViewport`) when the Game view resizes.
+`FollowScreenSafeArea` pipes `Screen.safeArea` into `env(safe-area-inset-*)`,
+scaled to the document's viewport.
 
 ## Hot reload
 
-With `EnableHotReload` on (editor default), editing a watched `.html` or `.css`
-file in Play mode reparses and rebuilds without a domain reload; controller
-state and `[UIBind]` values survive. For programmatically-built UI with no
-source file, call `doc.Rebuild()`.
-
-## Edit-mode preview
-
-`WevaDocument` is `[ExecuteAlways]`: with **Edit Mode Preview** enabled in the
-inspector (the default), the Game view renders the document **without entering
-Play mode**. Inspector edits, HTML/CSS hot reload, and CSS animations all stay
-live via an editor repaint pump. Disable the toggle per-document if a heavy
-page slows editor repaints.
-
-Controller-side registrations (fonts, image registries) only reach the preview
-if the controller is also `[ExecuteAlways]` — gate per-frame gameplay work on
-`Application.isPlaying` and keep `OnEnable` registrations edit-safe.
+Editing a `.html` or `.css` the document references — its asset, a linked
+sheet, or an inspector sheet — reloads it on reimport, in play mode and in
+edit mode; the controller stays attached and `[UIBind]` values survive because
+they live on your controller. From code, `doc.Reload()` does the same.
 
 ## Player builds
 
-Three document references resolve from **disk** in the editor and are baked
-into the scene automatically at build time (an `IProcessSceneWithReport` hook),
-so player builds work without any extra setup:
+A player has no files, so every `<link rel="stylesheet">` a scene-placed
+`WevaDocument` references is baked into the component at build time (an
+`IProcessSceneWithReport` hook); the editor always prefers the live file, so
+a stale bake can never shadow an edit. A `WevaDocument` on a prefab
+**instantiated at runtime** never passes through the scene hook: call
+`doc.BakeLinkedStylesheets(...)` from a custom build step, or assign
+`StylesheetAssets` explicitly.
 
-- `<link rel="stylesheet" href="...">` CSS files,
-- `@import` inside those linked sheets (pre-flattened at bake time), and
-- `<template src="...">` component templates (transitive closure).
-
-The editor always prefers the live file — a stale bake can never shadow an
-edit. Two documented limits: a `WevaDocument` on a prefab **instantiated at
-runtime** never passes through the scene hook (call
-`LinkedStylesheetBaker.Bake` from a custom build step, or assign
-`StylesheetAssets` explicitly), and a `<template src>` nested *inside* another
-template body is not resolved on either path.
-
-Assets referenced only through editor APIs (`AssetDatabase` loads in custom
-controllers) do **not** ship — use serialized inspector references for
-anything a build needs, including TMP font assets and sprites.
+`url()` images and `@font-face` files resolve through the core's asset
+reader, which reads files relative to `BasePath`. A player that does not ship
+its UI as files supplies its own reader
+(`doc.Document.AssetReader = path => bytes`) to serve Addressables or bundles.
 
 ---
 

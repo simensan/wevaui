@@ -97,7 +97,7 @@ What FontEngine gives and does not give:
 - FontEngine is one state machine for the process, so the adapter forgets its
   active face before every document update (`NativeDocument.BeforeUpdate`).
 
-## Rendering: `NativeDocumentRenderer` and `WevaNativeDocument`
+## Rendering: `NativeDocumentRenderer` and `WevaDocument`
 
 The core publishes textured triangle lists in document pixels with clipping
 and opacity resolved (scissored geometry is clipped before it is published).
@@ -110,11 +110,18 @@ encodes vertex colours to sRGB and blends into a raw target; the in-pass path
 into URP's linear colour buffer blends in linear space instead (edges differ
 slightly, the way the C# engine's pre-sRGB-composite path did).
 
-`WevaNativeDocument` is the MonoBehaviour: a document from a `TextAsset` or
-inline markup, the package's UI face with its bold, italic and symbol faces,
+`WevaDocument` (`Weva.WevaDocument`, at `Runtime/WevaDocument.cs`; it was
+`Weva.Native.WevaNativeDocument` until 2026-09-13, when it took the name of
+the frozen engine's component, now `WevaLegacyDocument`) is the MonoBehaviour:
+a document from `DocumentAsset` + `StylesheetAssets` (the page's own `<link
+rel="stylesheet">` sheets first, fetched next to the asset in the editor and
+baked into the component for a player by `WevaDocumentLinkBaker`) or inline
+markup, the package's UI face with its bold, italic and symbol faces,
 registered with the URP pass as an `IUINativePaintSource` so its meshes are
-drawn in the same pass as C# documents (beneath them). Input, events and
-bindings are later steps of the plan.
+drawn in the same pass as legacy documents (beneath them). Its serialized
+field names are the legacy component's, so a scene carries over. It feeds
+the Input System through `NativeInputFeed`, drains the core's event queue
+into C# events and dispatches `on-<event>` handler names to a controller.
 
 ## Comparing with the Godot host
 
@@ -164,8 +171,13 @@ as it closes, which is never also typed; the feed enables the IME and places
 its window at the caret only over a text control. `NativeBindings` serves
 `{{ path }}`, `data-class`, `data-each` and `data-model` from a C# dictionary
 graph (or a resolver) and writes control edits back keeping the model's
-types; `WevaNativeDocument.Bind(model, controller)` dispatches `on-<event>`
-handler names to the controller's methods. The Frontier Camp logic lives in
+types; `WevaDocument.SetController(controller)` scans the controller's
+`[UIBind]` members as binding roots (`UIBindResolver`: dotted paths walk
+public members, dictionary keys and list indices; `data-model` writes back
+keeping the member's type), polls a plain controller once a frame and an
+`IBindingVersion` one only when it bumps, and dispatches `on-<event>` handler
+names to its public methods; `Bind(model, controller)` adds a dictionary the
+resolver falls through to. The Frontier Camp logic lives in
 the tests (`FrontierCampState`, `FrontierCampController`) and drives the
 example's own `camp.html`.
 
@@ -228,7 +240,7 @@ from; `BoxOutlineRenderer` can be fed from it instead of the C# Box tree.
 
 `NativeDocument.Cursor` is the CSS `cursor` under the pointer as the keyword the
 core settled it to (`pointer`, `text`, `not-allowed`, `grab`, ... or `default`);
-`CursorAt(x, y)` asks about any point. `WevaNativeDocument` does not set the
+`CursorAt(x, y)` asks about any point. `WevaDocument` does not set the
 Unity cursor itself, because `Cursor.SetCursor` wants a texture per shape the
 project supplies; map the keywords you have textures for.
 
@@ -241,7 +253,7 @@ reads the OS. An element's own `color-scheme` declaration wins over it.
 ## Safe-area insets (ABI minor 36)
 
 `NativeDocument.SetSafeAreaInsets(top, right, bottom, left)` is what
-`env(safe-area-inset-*)` reads, zero until set. `WevaNativeDocument.
+`env(safe-area-inset-*)` reads, zero until set. `WevaDocument.
 FollowScreenSafeArea` feeds `Screen.safeArea` there each frame it changes,
 scaled to the document's viewport, so a page pads around a notch or a
 system bar as it would in a browser.
@@ -255,7 +267,7 @@ per property marked) and `ComputedStyle` (every registered property resolved,
 then the custom properties in scope) wrap the tooling calls the core gained
 for editor panels. `NativeInspectorModel` turns them into what an Elements
 panel shows (tree, search, rule blocks winners-first, computed style, box
-model) and `Window/Weva/Native Elements` renders it for a `WevaNativeDocument`
+model) and `Window/Weva/Elements` renders it for a `WevaDocument`
 in the scene. The C# goldens through the core: `goldens_from_unity.py`
 (layout against the Chrome captures, paint against the C# baselines).
 
