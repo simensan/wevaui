@@ -81,7 +81,7 @@ namespace Weva.Rendering.URP {
         }
     }
 
-    // Holds the active batched backend so WevaDocument can record paint commands into it
+    // Holds the active batched backend so WevaLegacyDocument can record paint commands into it
     // when running under the URP pipeline. Set by UIBatchedRendererFeature.Create().
     public static class BatchedRendererBackendRegistry {
         public static BatchedURPRenderBackend Active;

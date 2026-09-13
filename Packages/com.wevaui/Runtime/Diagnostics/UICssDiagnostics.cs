@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Weva.Diagnostics {
     // Severity threshold for Weva's engine diagnostics (font misses, emoji
-    // misses, unsupported properties, …). Exposed on WevaDocument as an inspector
+    // misses, unsupported properties, …). Exposed on WevaLegacyDocument as an inspector
     // setting so authors can quiet the console.
     public enum WevaLogLevel {
         // Silence all engine diagnostics.
@@ -39,7 +39,7 @@ namespace Weva.Diagnostics {
         // there.
         public static bool Enabled = true;
 
-        // Severity threshold. WevaDocument writes this from its inspector
+        // Severity threshold. WevaLegacyDocument writes this from its inspector
         // `Diagnostic Log Level` setting on enable; set to Off to silence the
         // font/emoji/unsupported-CSS warnings. Process-global (the most recently
         // enabled document wins when several set different levels).

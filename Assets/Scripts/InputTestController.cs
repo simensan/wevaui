@@ -12,9 +12,9 @@ using Weva.Events;
 //   • B / Esc → close the pause menu
 // and the menu open/close + focus-trap logic. The cyan :focus ring in the CSS
 // shows which control is focused.
-[RequireComponent(typeof(WevaDocument))]
+[RequireComponent(typeof(WevaLegacyDocument))]
 public sealed class InputTestController : MonoBehaviour {
-    WevaDocument doc;
+    WevaLegacyDocument doc;
     DirectionalNavigation nav;
     bool inited;
     bool menuOpen;
@@ -26,7 +26,7 @@ public sealed class InputTestController : MonoBehaviour {
     bool repeatActive;
     NavDirection lastDir;
 
-    void Awake() => doc = GetComponent<WevaDocument>();
+    void Awake() => doc = GetComponent<WevaLegacyDocument>();
 
     void EnsureInit() {
         if (inited) return;

@@ -80,7 +80,7 @@ namespace Weva.EditorTools.Panels {
         // Atlas warm-up window (editor time). The SDF glyph atlas is built
         // lazily: the first TryShape for a not-yet-rasterized glyph can fail
         // (the atlas repack returns zero glyphs that frame) and the text run
-        // falls to the invisible solid-rect fallback. The live WevaDocument
+        // falls to the invisible solid-rect fallback. The live WevaLegacyDocument
         // hides this because it repaints every editor frame, so the atlas warms
         // within a few frames. This on-demand panel would otherwise get stuck
         // on the cold frame showing no text — so after every document (re)build
@@ -91,7 +91,7 @@ namespace Weva.EditorTools.Panels {
         protected virtual void OnEnable() {
             surface = new BatchedSurfaceRenderer();
             wantsMouseMove = true; // hover needs MouseMove delivery
-            // Mirror WevaDocument.OnEnable: a domain reload wipes the editor TMP
+            // Mirror WevaLegacyDocument.OnEnable: a domain reload wipes the editor TMP
             // font registry, so re-register before the first paint or the glyph
             // atlas has no face and ALL text falls to the (invisible) fallback.
             Weva.Text.Sdf.SdfBootstrap.EnsureFontsRegisteredInEditor();

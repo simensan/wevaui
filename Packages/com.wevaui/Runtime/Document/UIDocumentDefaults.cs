@@ -2,7 +2,7 @@ using System;
 using Weva.Layout.Text;
 
 namespace Weva.Documents {
-    // Centralized constants shared by WevaDocument, UIDocumentBuilder, and the
+    // Centralized constants shared by WevaLegacyDocument, UIDocumentBuilder, and the
     // media-context builder. The MonoBehaviour reads these at lifecycle time so
     // unit tests can build the same pipeline headlessly without dragging in
     // UnityEngine.

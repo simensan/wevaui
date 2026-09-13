@@ -17,7 +17,7 @@ namespace Weva.HotReload {
     // Drains the CssReloadQueue once per frame, re-parses the changed
     // stylesheet files, swaps them into the cascade, and marks the entire
     // document subtree dirty so the next Tick re-cascades / re-lays-out /
-    // re-paints. Held by WevaDocument and invoked from
+    // re-paints. Held by WevaLegacyDocument and invoked from
     // UIDocumentLifecycle.Tick (or directly by tests).
     //
     // V1 strategy: hot-reload re-builds the entire CascadeEngine and
@@ -175,7 +175,7 @@ namespace Weva.HotReload {
             // instance — otherwise the old runner would double-subscribe
             // alongside the new one and keep its eight element-keyed
             // dictionaries (and their Element references) live until the
-            // next teardown. Mirrors the MS2 fix in WevaDocument.TearDownPipeline.
+            // next teardown. Mirrors the MS2 fix in WevaLegacyDocument.TearDownPipeline.
             state.Animator?.Dispose();
             // Subscribe the new runner to mutations on the live document so
             // mid-animation element removal compacts its dictionaries from

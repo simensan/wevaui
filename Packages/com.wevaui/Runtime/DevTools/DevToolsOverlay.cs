@@ -5,10 +5,10 @@ using Weva.Layout.Boxes;
 
 namespace Weva.DevTools {
     // Toggleable diagnostic overlay rendered via IMGUI on top of whatever
-    // backend the host WevaDocument paints with. Lives outside the main paint
+    // backend the host WevaLegacyDocument paints with. Lives outside the main paint
     // pipeline (per the v1 simplification in the spec) so even if the overlay
     // crashes it can never corrupt PaintList state. The overlay attaches to
-    // exactly one WevaDocument — the one on its GameObject — and queries it for
+    // exactly one WevaLegacyDocument — the one on its GameObject — and queries it for
     // the laid-out box tree, the InvalidationTracker, the hit tester, and the
     // paint cache stats every frame.
     [AddComponentMenu("Weva/DevTools Overlay")]
@@ -55,7 +55,7 @@ namespace Weva.DevTools {
             set => outlineMatchClassContains = value;
         }
 
-        WevaDocument doc;
+        WevaLegacyDocument doc;
         readonly BoxOutlineRenderer outliner = new();
         readonly DirtyHighlighter dirty = new();
         readonly HoverInspector hover = new();
@@ -97,12 +97,12 @@ namespace Weva.DevTools {
         public CacheStats Cache => cache;
         public PerfReadout Perf => perf;
 
-        public void SetDocument(WevaDocument document) {
+        public void SetDocument(WevaLegacyDocument document) {
             doc = document;
         }
 
         void Awake() {
-            doc = GetComponent<WevaDocument>();
+            doc = GetComponent<WevaLegacyDocument>();
         }
 
         void OnEnable() {
@@ -122,11 +122,11 @@ namespace Weva.DevTools {
             if (!enabledOverlay) return;
             if (doc == null) return;
 
-            // Capture the current dirty set BEFORE the WevaDocument calls
+            // Capture the current dirty set BEFORE the WevaLegacyDocument calls
             // tracker.Clear() in its own Update. Unity does not guarantee
             // Update order between two MonoBehaviours on the same GameObject,
             // so we sample defensively whenever we can — if we run after
-            // WevaDocument the set is already empty and DirtyHighlighter just
+            // WevaLegacyDocument the set is already empty and DirtyHighlighter just
             // decays existing entries one frame.
             if ((mode & OverlayMode.DirtyTracking) != 0 && doc.Invalidation != null) {
                 dirty.CaptureFrame(doc.Invalidation);

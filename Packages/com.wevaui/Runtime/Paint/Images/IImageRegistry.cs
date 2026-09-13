@@ -17,7 +17,7 @@ namespace Weva.Paint.Images {
     }
 
     // Optional invalidation contract for registries whose contents can change
-    // after a WevaDocument has already painted. Async icon/addressable loaders
+    // after a WevaLegacyDocument has already painted. Async icon/addressable loaders
     // should bump Version when a handle begins or stops resolving so retained
     // paint caches repaint without requiring a DOM mutation.
     public interface IVersionedImageRegistry : IImageRegistry {

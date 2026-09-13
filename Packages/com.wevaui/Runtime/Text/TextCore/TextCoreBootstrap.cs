@@ -7,7 +7,7 @@ using Weva.Text.Unity;
 namespace Weva.Text.TextCore {
     // Wires UIDocumentDefaults.FontMetricsFactory so the layout pipeline
     // measures text the same way IMGUI / Unity's renderer paints it. Without
-    // this hook every WevaDocument falls back to MonoFontMetrics (the headless
+    // this hook every WevaLegacyDocument falls back to MonoFontMetrics (the headless
     // stub: every char a fixed half-em wide), which IMGUI does not honor —
     // visible as gaps and overflow under the demo's proportional sans-serif.
     //
@@ -22,7 +22,7 @@ namespace Weva.Text.TextCore {
     //   3. MonoFontMetrics — last-ditch fallback so the pipeline never throws.
     //
     // We register at SubsystemRegistration so the factory is in place before
-    // any scene-driven WevaDocument.OnEnable runs (BeforeSceneLoad would also
+    // any scene-driven WevaLegacyDocument.OnEnable runs (BeforeSceneLoad would also
     // work; SubsystemRegistration is earlier and cheap because we only set a
     // delegate). We additionally hook InitializeOnLoadMethod so the editor
     // preview window has a font-metrics provider in edit mode.

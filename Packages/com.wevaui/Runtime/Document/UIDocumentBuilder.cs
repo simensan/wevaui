@@ -24,7 +24,7 @@ using Weva.Reactive;
 using Weva.ViewTransitions;
 
 namespace Weva.Documents {
-    // Builds a UIDocumentState from the inputs WevaDocument exposes — the HTML
+    // Builds a UIDocumentState from the inputs WevaLegacyDocument exposes — the HTML
     // source string, a list of CSS source strings, an optional controller, a
     // pre-built MediaContext, and an IUIClock. Pure C# — testable headlessly,
     // does not touch UnityEngine.
@@ -39,7 +39,7 @@ namespace Weva.Documents {
     //   7. allocate InvalidationTracker, attach to Doc, route into the engines
     //   8. build EventDispatcher (with a stub hit-tester) and BindingSet, wire
     //
-    // The orchestrator (WevaDocument MonoBehaviour or test) is then free to call
+    // The orchestrator (WevaLegacyDocument MonoBehaviour or test) is then free to call
     // UIDocumentLifecycle.Update each frame.
     public sealed class UIDocumentBuilder {
         public string DocumentSource { get; set; }
@@ -66,7 +66,7 @@ namespace Weva.Documents {
         // lists keyed by the href EXACTLY as authored. Player builds have no
         // disk to resolve hrefs against (DocumentPath is editor-only), so an
         // editor build hook (LinkedStylesheetBakeProcessor) captures each
-        // link's CSS text into the WevaDocument and it flows in here. Only
+        // link's CSS text into the WevaLegacyDocument and it flows in here. Only
         // consulted when DocumentPath is unavailable — with a disk path the
         // live file always wins, so a stale bake can never shadow an edit
         // in the editor.

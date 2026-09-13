@@ -1,5 +1,5 @@
 // The Native Elements window opens a document hosted by the core: the
-// window builds, attaches to a WevaNativeDocument in the scene and lists its
+// window builds, attaches to a WevaDocument in the scene and lists its
 // tree. The plan's Phase 3 step 3 gate in its smallest form.
 using NUnit.Framework;
 using UnityEditor;
@@ -19,7 +19,7 @@ namespace Weva.Tests.EditorTests.Native
             NativeElementsWindow window = null;
             try
             {
-                var host = go.AddComponent<WevaNativeDocument>();
+                var host = go.AddComponent<WevaDocument>();
                 host.AutoInput = false;
                 host.InlineHtml = "<body><div id=\"panel\" class=\"hud\"><p id=\"line\">Hosted by the core</p></div></body>";
                 host.InlineCss = "#panel{padding:8px}.hud{color:#fff}";

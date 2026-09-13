@@ -3,7 +3,7 @@ using UnityEngine;
 using Weva.Parsing;
 
 namespace Weva.EditorTools {
-    [CustomEditor(typeof(Weva.WevaDocument))]
+    [CustomEditor(typeof(Weva.WevaLegacyDocument))]
     public sealed class UIDocumentEditor : Editor {
         SerializedProperty documentAssetProp;
         SerializedProperty stylesheetAssetsProp;
@@ -42,11 +42,11 @@ namespace Weva.EditorTools {
 
         // Surfaces the missing-renderer-feature misconfiguration right where
         // authors look first, with a one-click fix. Mirrors the once-per-
-        // session Console warning WevaDocument emits (UrpFeatureStatus owns
+        // session Console warning WevaLegacyDocument emits (UrpFeatureStatus owns
         // the shared detection); this stays visible until actually fixed.
         void DrawUrpSetupStatus() {
 #if WEVA_URP
-            var doc = (Weva.WevaDocument)target;
+            var doc = (Weva.WevaLegacyDocument)target;
             if (doc.RendererBackend == Weva.RendererBackendKind.IMGUI) return;
             if (!Setup.UrpFeatureSetup.IsFeatureMissingOnActiveRenderer()) return;
             EditorGUILayout.HelpBox(
@@ -63,9 +63,9 @@ namespace Weva.EditorTools {
         }
 
         void DrawValidation() {
-            var doc = (Weva.WevaDocument)target;
+            var doc = (Weva.WevaLegacyDocument)target;
             if (doc.DocumentAsset == null) {
-                EditorGUILayout.HelpBox("No document asset assigned. WevaDocument is idle.", MessageType.Warning);
+                EditorGUILayout.HelpBox("No document asset assigned. WevaLegacyDocument is idle.", MessageType.Warning);
                 return;
             }
 
@@ -94,7 +94,7 @@ namespace Weva.EditorTools {
         }
 
         void DrawActions() {
-            var doc = (Weva.WevaDocument)target;
+            var doc = (Weva.WevaLegacyDocument)target;
             using (new EditorGUI.DisabledScope(!Application.isPlaying)) {
                 if (GUILayout.Button("Rebuild now")) {
                     doc.Rebuild();

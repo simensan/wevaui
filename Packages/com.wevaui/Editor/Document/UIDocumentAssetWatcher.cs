@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 
 namespace Weva.EditorTools.Documents {
-    // Hot-reloads WevaDocument instances when the .html / .css / .htm assets they
+    // Hot-reloads WevaLegacyDocument instances when the .html / .css / .htm assets they
     // reference are reimported.
     //
     // Notes on Unity quirks:
@@ -32,7 +32,7 @@ namespace Weva.EditorTools.Documents {
             // Both args spelled out: the (FindObjectsInactive)-only overload
             // does not exist before Unity 6000.4, and this package supports
             // 6000.3 consumers.
-            var docs = GameObject.FindObjectsByType<WevaDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var docs = GameObject.FindObjectsByType<WevaLegacyDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             if (docs == null || docs.Length == 0) return;
             for (int i = 0; i < docs.Length; i++) {
                 var doc = docs[i];
@@ -47,7 +47,7 @@ namespace Weva.EditorTools.Documents {
             }
         }
 
-        static void SafeRebuild(WevaDocument doc) {
+        static void SafeRebuild(WevaLegacyDocument doc) {
             if (doc == null) return;
             try {
                 doc.Rebuild();
@@ -73,7 +73,7 @@ namespace Weva.EditorTools.Documents {
                 || path.EndsWith(".css", StringComparison.OrdinalIgnoreCase);
         }
 
-        static bool ReferencesAny(WevaDocument doc, string[] paths) {
+        static bool ReferencesAny(WevaLegacyDocument doc, string[] paths) {
             if (paths == null || paths.Length == 0) return false;
             var docAsset = doc.DocumentAsset;
             if (docAsset != null) {

@@ -2,13 +2,13 @@ using Weva.Css.Media;
 
 namespace Weva.Documents {
     // Builds a MediaContext for the cascade, given a viewport size + color
-    // scheme hint. WevaDocument resolves the viewport from one of three sources
+    // scheme hint. WevaLegacyDocument resolves the viewport from one of three sources
     // (in priority order):
     //   1. an explicit override (Vector2 != (0, 0))
-    //   2. the camera's pixel size (Unity-side, plumbed in by WevaDocument)
+    //   2. the camera's pixel size (Unity-side, plumbed in by WevaLegacyDocument)
     //   3. UIDocumentDefaults.DefaultViewport(Width|Height)Px
     //
-    // The builder itself is pure data; WevaDocument computes the viewport floats
+    // The builder itself is pure data; WevaLegacyDocument computes the viewport floats
     // and hands them in. Keeping this separate makes it trivial to test the
     // override semantics headlessly.
     public static class UIDocumentMediaContextBuilder {

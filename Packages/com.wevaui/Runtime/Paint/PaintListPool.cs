@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Weva.Paint {
     // Pool of reusable PaintList instances. The converter rents one at the start
-    // of Convert(), writes commands into it, and the caller (WevaDocument /
+    // of Convert(), writes commands into it, and the caller (WevaLegacyDocument /
     // EmitPaint) returns it after the backend has consumed the commands.
     //
     // Lifetime contract:

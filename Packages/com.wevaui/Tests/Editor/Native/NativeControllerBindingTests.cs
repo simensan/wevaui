@@ -69,13 +69,13 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         private GameObject _go;
-        private WevaNativeDocument _host;
+        private WevaDocument _host;
 
         [SetUp]
         public void Open()
         {
             _go = new GameObject("native-controller-under-test");
-            _host = _go.AddComponent<WevaNativeDocument>();
+            _host = _go.AddComponent<WevaDocument>();
             _host.AutoInput = false;
             _host.InlineHtml = Html;
             _host.InlineCss = "body{margin:0}";

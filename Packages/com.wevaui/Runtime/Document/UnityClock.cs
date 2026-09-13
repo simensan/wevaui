@@ -2,7 +2,7 @@ using UnityEngine;
 using Weva.Events;
 
 namespace Weva.Documents {
-    // IUIClock backed by Time.unscaledTime. Used by WevaDocument so animations
+    // IUIClock backed by Time.unscaledTime. Used by WevaLegacyDocument so animations
     // tick consistently with the engine's wall clock and keep running when
     // game time is paused. Tests construct CssAnimationRunner with a
     // FakeUIClock instead.

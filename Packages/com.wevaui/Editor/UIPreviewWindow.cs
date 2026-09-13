@@ -17,8 +17,8 @@ namespace Weva.EditorTools {
     //
     // Two modes (PreviewMode):
     //  - Asset: a .html TextAsset is selected -> parse + cascade + layout + paint.
-    //  - Scene: a WevaDocument MonoBehaviour is selected. v1 reads its DocumentAsset
-    //    + StylesheetAssets fields and runs the same pipeline. Once WevaDocument owns
+    //  - Scene: a WevaLegacyDocument MonoBehaviour is selected. v1 reads its DocumentAsset
+    //    + StylesheetAssets fields and runs the same pipeline. Once WevaLegacyDocument owns
     //    a live PaintList we'll instead consume IUIPaintSource.EmitPaint directly.
     //
     // Domain-reload survival: state is plain serialized fields on the EditorWindow,
@@ -115,8 +115,8 @@ namespace Weva.EditorTools {
                 return string.IsNullOrEmpty(path) ? asset.name : path;
             }
             var doc = ResolveSelectedDocument();
-            if (doc == null) return "Select a GameObject with a WevaDocument component.";
-            return doc.gameObject.name + " (WevaDocument)";
+            if (doc == null) return "Select a GameObject with a WevaLegacyDocument component.";
+            return doc.gameObject.name + " (WevaLegacyDocument)";
         }
 
         void DrawCanvas() {
@@ -185,7 +185,7 @@ namespace Weva.EditorTools {
                 return;
             }
             // Prefer pulling already-built paint commands via IUIPaintSource if the
-            // WevaDocument exposes them. The MonoBehaviour wiring is not yet in place
+            // WevaLegacyDocument exposes them. The MonoBehaviour wiring is not yet in place
             // (see PLAN §11 "What's left of v1"), so we fall through to running the
             // pipeline against its asset references for v1.
             var paintSources = doc.GetComponents<IUIPaintSource>();
@@ -220,10 +220,10 @@ namespace Weva.EditorTools {
             return doc != null ? doc.StylesheetAssets : null;
         }
 
-        Weva.WevaDocument ResolveSelectedDocument() {
+        Weva.WevaLegacyDocument ResolveSelectedDocument() {
             var go = Selection.activeGameObject;
             if (go == null) return null;
-            return go.GetComponent<Weva.WevaDocument>();
+            return go.GetComponent<Weva.WevaLegacyDocument>();
         }
 
         static bool IsHtmlAsset(TextAsset ta) {

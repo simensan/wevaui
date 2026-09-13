@@ -15,7 +15,7 @@ namespace Weva.Forms {
     //
     // Lifetime: built by UIDocumentBuilder after Bindings.AttachLive so it
     // sees the same controller and dispatcher the bindings layer does.
-    // Disposed alongside Bindings on WevaDocument teardown — Dispose detaches
+    // Disposed alongside Bindings on WevaLegacyDocument teardown — Dispose detaches
     // the mutation listener and Unwires every controller. Idempotent: a
     // second Dispose is a no-op.
     public sealed class FormControlsRegistry : IDisposable {

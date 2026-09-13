@@ -14,7 +14,7 @@ namespace Weva.Tests.EditorTests.Native
     {
         private const string UiDir = "examples/frontier_camp/ui";
         private GameObject _go;
-        private WevaNativeDocument _ui;
+        private WevaDocument _ui;
         private FrontierCampState _state;
         private FrontierCampController _controller;
 
@@ -23,7 +23,7 @@ namespace Weva.Tests.EditorTests.Native
         {
             Assume.That(File.Exists(Path.Combine(UiDir, "camp.html")), "the Godot example's markup is in the repository");
             _go = new GameObject("frontier-camp-native");
-            _ui = _go.AddComponent<WevaNativeDocument>();
+            _ui = _go.AddComponent<WevaDocument>();
             _ui.AutoInput = false;
             _ui.BasePath = Path.GetFullPath(UiDir);
             _ui.InlineHtml = File.ReadAllText(Path.Combine(UiDir, "camp.html"));

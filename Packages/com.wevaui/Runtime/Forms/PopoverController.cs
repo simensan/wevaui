@@ -8,7 +8,7 @@ namespace Weva.Forms {
     // clicks; mutates a PopoverStack accordingly.
     //
     // Wiring contract:
-    //   * The orchestrator constructs a controller per WevaDocument (one stack
+    //   * The orchestrator constructs a controller per WevaLegacyDocument (one stack
     //     per document, since popovers are document-scoped).
     //   * The controller subscribes to the document's bubbling events:
     //       Click   — both popovertarget invocation and outside-click dismiss

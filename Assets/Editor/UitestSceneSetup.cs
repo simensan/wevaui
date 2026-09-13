@@ -59,11 +59,11 @@ namespace Weva.EditorTools.Setup {
             camGo.AddComponent<AudioListener>();
 
             var uiGo = new GameObject("DemoUI");
-            var doc = uiGo.AddComponent<WevaDocument>();
+            var doc = uiGo.AddComponent<WevaLegacyDocument>();
             uiGo.AddComponent<Weva.Rendering.IMGUIDocumentRenderer>();
             // Pointer + keyboard bridge: routes Input System events into the
             // EventDispatcher so :hover / :focus / :active / click fire from
-            // real input. WevaDocument.OnEnable also adds this lazily, but
+            // real input. WevaLegacyDocument.OnEnable also adds this lazily, but
             // adding it at scene-setup time gives the user a visible
             // component to inspect.
             uiGo.AddComponent<Weva.Forms.Bridge.UnityInputController>();

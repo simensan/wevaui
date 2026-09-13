@@ -6,7 +6,7 @@ using Weva.Dom;
 using Weva.Events;
 
 namespace GameMenu.UI.WevaMenu {
-    // Attach to the same GameObject as a Weva WevaDocument; assign main-menu.html
+    // Attach to the same GameObject as a Weva WevaLegacyDocument; assign main-menu.html
     // + main-menu.css TextAssets in the inspector. Mock data lives here so the
     // screen renders standalone; swap in the live MainMenuController feed later.
     public sealed class MainMenuWevaController : MonoBehaviour, IBindingVersion {
@@ -51,11 +51,11 @@ namespace GameMenu.UI.WevaMenu {
 
         enum Tab { Play, Mastery, Challenges, Upgrades }
         Tab currentTab = Tab.Play;
-        WevaDocument doc;
+        WevaLegacyDocument doc;
 
         void OnEnable() {
             BuildMockData();
-            doc = GetComponent<WevaDocument>();
+            doc = GetComponent<WevaLegacyDocument>();
             if (doc) doc.SetController(this);
         }
 

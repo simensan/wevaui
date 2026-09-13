@@ -16,7 +16,7 @@ namespace Weva.Rendering.URP {
     // the per-frame atlas-walk / glyph-bake cost.
     //
     // Storage: process-static dictionary, soft-capped. Identity is preserved
-    // across WevaDocument instances, so multiple painters share the cache; the
+    // across WevaLegacyDocument instances, so multiple painters share the cache; the
     // key is purely visual so there's no cross-document leakage risk.
     //
     // Thread safety (RC6): single-threaded by Unity main-thread convention.

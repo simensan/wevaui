@@ -11,19 +11,19 @@ namespace Weva.Rendering {
     //
     // Use this to verify the headless pipeline (parse → cascade → layout → paint) is producing
     // correct geometry while the URP backend is still being validated. Attach to the same
-    // GameObject as a WevaDocument.
-    [RequireComponent(typeof(WevaDocument))]
+    // GameObject as a WevaLegacyDocument.
+    [RequireComponent(typeof(WevaLegacyDocument))]
     public sealed class IMGUIDocumentRenderer : MonoBehaviour {
         [SerializeField] bool drawDebugBoxes = false;
 
         /// <summary>Draw magenta outlines + coordinate labels around every painted box.</summary>
         public bool DrawDebugBoxes { get => drawDebugBoxes; set => drawDebugBoxes = value; }
 
-        WevaDocument doc;
+        WevaLegacyDocument doc;
         IMGUIBackend backend;
 
         void Awake() {
-            doc = GetComponent<WevaDocument>();
+            doc = GetComponent<WevaLegacyDocument>();
             backend = new IMGUIBackend();
         }
 
@@ -46,7 +46,7 @@ namespace Weva.Rendering {
         }
 
         // Both delegate to UrpFeatureStatus so the fallback decision here and
-        // the missing-feature warning in WevaDocument can never disagree.
+        // the missing-feature warning in WevaLegacyDocument can never disagree.
         static bool IsUrpActive() => UrpFeatureStatus.UrpActive;
 
         static bool IsUrpBackendWired() => UrpFeatureStatus.BatchedFeatureRegistered;

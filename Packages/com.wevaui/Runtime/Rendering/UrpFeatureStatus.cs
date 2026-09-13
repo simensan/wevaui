@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Weva.Rendering {
     // Answers "is the batched URP path actually wired up?" without a hard
-    // WEVA_URP dependency, so WevaDocument and the IMGUI fallback can gate
+    // WEVA_URP dependency, so WevaLegacyDocument and the IMGUI fallback can gate
     // rendering decisions and setup warnings on it in any build
     // configuration (URP present or not, editor or player).
     public static class UrpFeatureStatus {
@@ -31,7 +31,7 @@ namespace Weva.Rendering {
             }
         }
 
-        // The misconfiguration WevaDocument warns about: URP is rendering
+        // The misconfiguration WevaLegacyDocument warns about: URP is rendering
         // the project but no renderer asset carries the Weva feature, so
         // documents fall back to the IMGUI debug renderer (or draw nothing
         // under a forced-URP backend).
@@ -46,7 +46,7 @@ namespace Weva.Rendering {
             $"Document '{documentName}' falls back to the IMGUI debug renderer (flat colors, no gradients/filters/images) — " +
             "or draws nothing if Renderer Backend is forced to URP.\n" +
             "Fix (menu): Window > Weva > Setup > Add URP Renderer Feature.\n" +
-            "Fix (inspector): select the WevaDocument and click the warning's fix button.\n" +
+            "Fix (inspector): select the WevaLegacyDocument and click the warning's fix button.\n" +
             "Fix (scriptable — AI agents / CI): call Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive() from editor code, or run:\n" +
             "  Unity -batchmode -quit -projectPath <project> -executeMethod Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive\n" +
             "All fixes also add the Weva shaders to Always Included Shaders (required for player builds). " +

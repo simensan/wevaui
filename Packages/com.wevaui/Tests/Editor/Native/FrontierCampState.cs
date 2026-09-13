@@ -171,11 +171,11 @@ namespace Weva.Tests.EditorTests.Native
     public sealed class FrontierCampController
     {
         public readonly FrontierCampState State;
-        private readonly Weva.Native.WevaNativeDocument _ui;
+        private readonly Weva.WevaDocument _ui;
         public bool SettingsOpen;
         public int SettingsApplied;
 
-        public FrontierCampController(FrontierCampState state, Weva.Native.WevaNativeDocument ui)
+        public FrontierCampController(FrontierCampState state, Weva.WevaDocument ui)
         {
             State = state;
             _ui = ui;

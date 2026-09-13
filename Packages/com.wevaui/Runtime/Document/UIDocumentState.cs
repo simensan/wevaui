@@ -20,15 +20,15 @@ using Weva.Paint.Images;
 using Weva.Reactive;
 
 namespace Weva.Documents {
-    // The bag of all layer instances produced for a single WevaDocument. Held
+    // The bag of all layer instances produced for a single WevaLegacyDocument. Held
     // alongside the MonoBehaviour at runtime; reused by tests headlessly.
     //
     // Ownership model: every instance in this object lives for one rebuild
-    // cycle. WevaDocument.OnEnable() and Rebuild() construct a fresh state
+    // cycle. WevaLegacyDocument.OnEnable() and Rebuild() construct a fresh state
     // through UIDocumentBuilder; the previous state is detached/disposed
     // before the new one wires up. The InvalidationTracker is the only
     // member that the orchestrator owns separately and re-attaches on each
-    // build (single tracker per WevaDocument lifetime).
+    // build (single tracker per WevaLegacyDocument lifetime).
     public sealed class UIDocumentState {
         public Weva.Dom.Document Doc { get; internal set; }
         public List<OriginatedStylesheet> AuthorStylesheets { get; internal set; }
@@ -106,7 +106,7 @@ namespace Weva.Documents {
         }
 
         // Cached Action<Box, BoxBatchSnapshot> wired to Painter.RegisterSubtreeSnapshot.
-        // WevaDocument.EmitPaint used to assign a fresh delegate to
+        // WevaLegacyDocument.EmitPaint used to assign a fresh delegate to
         // backend.SubtreeSnapshotSink every frame — ~80 B per call. Cached
         // once Painter is bound.
         System.Action<Weva.Layout.Boxes.Box, Weva.Paint.IBoxBatchSnapshot> subtreeSnapshotSinkDelegate;
@@ -153,7 +153,7 @@ namespace Weva.Documents {
         internal bool CaretActivityPending;
         internal double CaretActivitySeconds = double.NaN;
 
-        // Scroll positions captured across a pipeline rebuild (WevaDocument.
+        // Scroll positions captured across a pipeline rebuild (WevaLegacyDocument.
         // Rebuild). The pipeline owns scroll state (ScrollContainer keyed by
         // Box), so a rebuild would otherwise snap every scroller to the top.
         // Keyed by DOM path (child indexes from the root) because the rebuild
@@ -167,7 +167,7 @@ namespace Weva.Documents {
         }
         internal System.Collections.Generic.List<ScrollRestore> PendingScrollRestores;
 
-        // Optional, attached when WevaDocument has EnableHotReload toggled on.
+        // Optional, attached when WevaLegacyDocument has EnableHotReload toggled on.
         // Disposed alongside the rest of the state during teardown.
         public Weva.HotReload.CssWatcher CssWatcher { get; internal set; }
         public Weva.HotReload.CssReloadQueue CssReloadQueue { get; internal set; }
@@ -194,7 +194,7 @@ namespace Weva.Documents {
 
         // Set to true at the end of UIDocumentLifecycle.Update when anything
         // could have changed the paint output (tracker had dirty entries OR a
-        // layout pass actually ran). Consumed by WevaDocument.EmitPaint: if the
+        // layout pass actually ran). Consumed by WevaLegacyDocument.EmitPaint: if the
         // flag is false AND paint has emitted at least once, the render pass
         // can skip the paint conversion entirely and let the prior frame's
         // batches feed the GPU verbatim.

@@ -16,7 +16,7 @@ using Weva.Text.Tmp;
 //
 // DOM mutation contract: AppendChild / RemoveChild on the live Document
 // bump the node's Version and raise a mutation event that the
-// InvalidationTracker subscribes to. The next WevaDocument.Update tick
+// InvalidationTracker subscribes to. The next WevaLegacyDocument.Update tick
 // drains the dirty set and runs cascade / layout / paint for the
 // affected subtree — so the only thing this controller needs to do is
 // mutate the tree.
@@ -36,7 +36,7 @@ public sealed class TodoController : MonoBehaviour, IBindingVersion {
     // FontEngine rasterizer.
     [SerializeField] TMP_FontAsset tmpDefaultFont;
 
-    WevaDocument doc;
+    WevaLegacyDocument doc;
     static readonly string[] s_RandomTitles = {
         "Refactor renderer",
         "Write tests",
@@ -53,14 +53,14 @@ public sealed class TodoController : MonoBehaviour, IBindingVersion {
     // some play-mode entry paths (DisableDomainReload re-entry, or when
     // OnEnable fires before sibling MonoBehaviours have finished Awake)
     // OnEnable can fire too early or be skipped silently, leaving the
-    // WevaDocument's controller field unset and every on-click attribute
+    // WevaLegacyDocument's controller field unset and every on-click attribute
     // dangling. Calling EnsureWired() from both hooks makes it idempotent
     // and guarantees handlers are bound by the first frame.
     void OnEnable() { EnsureWired(); }
     void Start() { EnsureWired(); }
 
     void EnsureWired() {
-        if (doc == null) doc = GetComponent<WevaDocument>();
+        if (doc == null) doc = GetComponent<WevaLegacyDocument>();
         if (doc == null) return;
         if (doc.CurrentState == null) return;
         if (doc.GetElementById("todo-list") == null) return;

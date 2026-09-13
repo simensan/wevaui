@@ -266,7 +266,7 @@ namespace Weva.Native
         /// <summary>
         /// The display's safe-area insets in the document's pixels, which
         /// <c>env(safe-area-inset-top)</c> and its siblings read (zero until set).
-        /// <see cref="WevaNativeDocument.FollowScreenSafeArea"/> feeds <c>Screen.safeArea</c> here.
+        /// <see cref="WevaDocument.FollowScreenSafeArea"/> feeds <c>Screen.safeArea</c> here.
         /// </summary>
         public void SetSafeAreaInsets(double top, double right, double bottom, double left)
         {

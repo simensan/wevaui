@@ -9,7 +9,7 @@ using Weva.Native;
 using Weva.Rendering;
 
 namespace Weva.Tests.RenderGoldens {
-    // The core-hosted document through the REAL pipeline: a WevaNativeDocument
+    // The core-hosted document through the REAL pipeline: a WevaDocument
     // in front of a camera, drawn by UIRenderPass (the in-pass path the
     // offscreen parity render does not exercise), captured to a PNG for a
     // person to look at. Run on demand:
@@ -49,7 +49,7 @@ namespace Weva.Tests.RenderGoldens {
 
             // The C# engine first, through the same rig, as the control.
             var csGo = new GameObject("csharp-document");
-            var cs = csGo.AddComponent<Weva.WevaDocument>();
+            var cs = csGo.AddComponent<Weva.WevaLegacyDocument>();
             var bf = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance;
             cs.GetType().GetField("documentAsset", bf).SetValue(cs, html);
             cs.GetType().GetField("stylesheetAssets", bf).SetValue(cs, new[] { css });
@@ -70,9 +70,9 @@ namespace Weva.Tests.RenderGoldens {
 
             var docGo = new GameObject("native-document");
             docGo.SetActive(false);
-            var doc = docGo.AddComponent<WevaNativeDocument>();
-            doc.Html = html;
-            doc.Css = css;
+            var doc = docGo.AddComponent<WevaDocument>();
+            doc.DocumentAsset = html;
+            doc.StylesheetAssets = new[] { css };
             doc.BasePath = Path.Combine(RepoRoot, "Assets", "UI");
             doc.AutoInput = false;
             docGo.SetActive(true);   // OnEnable creates the core document

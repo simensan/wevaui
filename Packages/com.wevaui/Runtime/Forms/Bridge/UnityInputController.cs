@@ -2,8 +2,8 @@ using UnityEngine;
 using Weva.Events;
 
 namespace Weva.Forms.Bridge {
-    // MonoBehaviour glue. Sits next to a WevaDocument and pumps the pointer +
-    // keyboard sources into doc.Events every frame. Decoupled from WevaDocument
+    // MonoBehaviour glue. Sits next to a WevaLegacyDocument and pumps the pointer +
+    // keyboard sources into doc.Events every frame. Decoupled from WevaLegacyDocument
     // itself so non-Input-System projects (or Edit Mode tooling) can compose
     // their own driver without dragging this in.
     [AddComponentMenu("Weva/Unity Input Controller")]
@@ -24,7 +24,7 @@ namespace Weva.Forms.Bridge {
         // logs hurt performance.
         [SerializeField] bool logEventsAtStart = false;
 
-        WevaDocument doc;
+        WevaLegacyDocument doc;
         IUIPointerSource pointer;
 #if WEVA_INPUTSYSTEM
         InputSystemKeyboardSource keyboard;
@@ -41,7 +41,7 @@ namespace Weva.Forms.Bridge {
         }
 
         void Awake() {
-            doc = GetComponent<WevaDocument>();
+            doc = GetComponent<WevaLegacyDocument>();
             if (logEventsAtStart) LogEvents = true;
 #if WEVA_INPUTSYSTEM
             pointer = new UnityPointerSource();
@@ -58,7 +58,7 @@ namespace Weva.Forms.Bridge {
         void OnEnable() {
 #if WEVA_INPUTSYSTEM
             // LIVE resolver, not a captured reference (the focused=NULL bug):
-            // WevaDocument rebuilds its pipeline after OnEnable
+            // WevaLegacyDocument rebuilds its pipeline after OnEnable
             // (DelayedRebuild / hot reload / document swaps), replacing
             // doc.Events. A keyboard source holding the OnEnable-time
             // dispatcher delivered every keystroke to the DEAD dispatcher —
@@ -86,7 +86,7 @@ namespace Weva.Forms.Bridge {
 
         void Update() {
             if (doc == null) {
-                if (LogEvents && !loggedDocMissing) { Debug.LogWarning("[UnityInputController] Update: doc is null — no WevaDocument on this GameObject."); loggedDocMissing = true; }
+                if (LogEvents && !loggedDocMissing) { Debug.LogWarning("[UnityInputController] Update: doc is null — no WevaLegacyDocument on this GameObject."); loggedDocMissing = true; }
                 return;
             }
             // Skip Edit Mode entirely — the bridge only runs while the game
@@ -95,7 +95,7 @@ namespace Weva.Forms.Bridge {
             if (!Application.isPlaying) return;
             var dispatcher = doc.Events;
             if (dispatcher == null) {
-                if (LogEvents && !loggedDispatcherMissing) { Debug.LogWarning("[UnityInputController] Update: doc.Events is null — WevaDocument's pipeline not built yet."); loggedDispatcherMissing = true; }
+                if (LogEvents && !loggedDispatcherMissing) { Debug.LogWarning("[UnityInputController] Update: doc.Events is null — WevaLegacyDocument's pipeline not built yet."); loggedDispatcherMissing = true; }
                 return;
             }
             if (pointer == null) {

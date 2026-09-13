@@ -90,7 +90,7 @@ namespace Weva.Tests.Binding.Generated {
 
         [Test]
         public void Switching_controller_instance_switches_accessor_targets() {
-            // Simulates WevaDocument.SetController swapping the bound controller.
+            // Simulates WevaLegacyDocument.SetController swapping the bound controller.
             // Each instance carries its own generated accessor state, so
             // resolving against a new instance reads the new instance's data.
             var first = new GeneratedController { CoinCount = 11 };

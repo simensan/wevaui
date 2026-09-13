@@ -9,7 +9,7 @@ namespace Weva.Css.Cascade {
     /// supplied table — typically used on the web for notch/safe-area
     /// inset avoidance (e.g. <c>env(safe-area-inset-top)</c>).
     ///
-    /// <para><b>Auto-pump:</b> when a <c>WevaDocument</c> is active in the
+    /// <para><b>Auto-pump:</b> when a <c>WevaLegacyDocument</c> is active in the
     /// scene, its per-frame <c>Update()</c> polls <c>UnityEngine.Screen.safeArea</c>
     /// and re-registers <c>safe-area-inset-{top,right,bottom,left}</c>
     /// whenever the rect changes (device rotation, notch entry/exit,
@@ -37,7 +37,7 @@ namespace Weva.Css.Cascade {
     /// avoid bleeding state between cases.
     ///
     /// <para><b>Thread safety (RC8):</b> single-threaded by Unity main-
-    /// thread convention. The auto-pump from <c>WevaDocument.Update</c> runs
+    /// thread convention. The auto-pump from <c>WevaLegacyDocument.Update</c> runs
     /// on the main thread, but author code calling <see cref="Register"/>
     /// from an input callback or async continuation could plausibly arrive
     /// off-thread (the new Input System can dispatch on a background thread

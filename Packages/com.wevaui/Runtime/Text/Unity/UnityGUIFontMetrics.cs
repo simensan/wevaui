@@ -124,7 +124,7 @@ namespace Weva.Text.Unity {
         // Default factory: derive from GUI.skin.label so we inherit whatever
         // sans-serif font Unity's editor / player has installed. We copy
         // rather than mutate the shared skin's style to avoid leaking changes
-        // across WevaDocument instances. Returns null when no skin is available
+        // across WevaLegacyDocument instances. Returns null when no skin is available
         // (e.g. headless NUnit) — the public API treats null as "measure to 0".
         static GUIStyle BuildDefaultStyle(string family, double fontSize, FontStyle style) {
             GUIStyle baseStyle = null;

@@ -1,4 +1,4 @@
-// An Elements panel for a document hosted by the core (WevaNativeDocument):
+// An Elements panel for a document hosted by the core (WevaDocument):
 // the tree on the left, the selected element's rules (winners first, losing
 // declarations struck through), computed style and box model on the right,
 // all read through the C ABI's inspector surface via NativeInspectorModel.
@@ -15,7 +15,7 @@ namespace Weva.EditorTools.DevTools
 {
     public sealed class NativeElementsWindow : EditorWindow
     {
-        private WevaNativeDocument _target;
+        private WevaDocument _target;
         private NativeInspectorModel _model;
         private TreeView _tree;
         private ScrollView _rules;
@@ -35,8 +35,8 @@ namespace Weva.EditorTools.DevTools
         {
             VisualElement root = rootVisualElement;
             var toolbar = new Toolbar();
-            var picker = new ObjectField("Document") { objectType = typeof(WevaNativeDocument), allowSceneObjects = true, value = _target };
-            picker.RegisterValueChangedCallback(evt => Attach(evt.newValue as WevaNativeDocument));
+            var picker = new ObjectField("Document") { objectType = typeof(WevaDocument), allowSceneObjects = true, value = _target };
+            picker.RegisterValueChangedCallback(evt => Attach(evt.newValue as WevaDocument));
             picker.style.minWidth = 260;
             toolbar.Add(picker);
             toolbar.Add(new ToolbarButton(Rebuild) { text = "Refresh" });
@@ -82,12 +82,12 @@ namespace Weva.EditorTools.DevTools
             split.Add(right);
             root.Add(split);
 
-            if (_target == null) _target = FindFirstObjectByType<WevaNativeDocument>();
+            if (_target == null) _target = FindFirstObjectByType<WevaDocument>();
             picker.SetValueWithoutNotify(_target);
             Attach(_target);
         }
 
-        private void Attach(WevaNativeDocument target)
+        private void Attach(WevaDocument target)
         {
             _target = target;
             _model = target != null && target.Document != null ? new NativeInspectorModel(target.Document) : null;

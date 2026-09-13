@@ -58,7 +58,7 @@ namespace Weva.Paint.Images {
                 "ResourcesImageRegistry: handle '" + handle + "' not found. " +
                 "Expected asset at Assets/Resources/" + handle + ".{png,jpg,jpeg,tga} " +
                 "as a Sprite or Texture2D. Move the asset under Resources/ OR " +
-                "assign a different IImageRegistry to WevaDocument.ImageRegistry " +
+                "assign a different IImageRegistry to WevaLegacyDocument.ImageRegistry " +
                 "(e.g. AddressablesImageRegistry for Addressables-based projects).");
             return false;
         }

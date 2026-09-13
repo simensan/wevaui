@@ -23,7 +23,7 @@ namespace Weva.Text.Sdf {
     //      both TextCore and GUI paths throw.
     //
     // Hooked at SubsystemRegistration so UIDocumentDefaults.FontMetricsFactory
-    // is in place before any WevaDocument.OnEnable. Editor InitializeOnLoadMethod
+    // is in place before any WevaLegacyDocument.OnEnable. Editor InitializeOnLoadMethod
     // runs the same wiring so the preview window has fonts in Edit Mode.
     public static class SdfBootstrap {
         static FontLoader sharedLoader;
@@ -87,7 +87,7 @@ namespace Weva.Text.Sdf {
             // TMP_FontAsset via AssetDatabase and deprioritises TMP's bundled
             // LiberationSans default. Running this player-side path inside the
             // Editor would race with that, registering LiberationSans before
-            // the editor's deferred pick lands and leaving WevaDocument.OnEnable
+            // the editor's deferred pick lands and leaving WevaLegacyDocument.OnEnable
             // to load the wrong asset. Gate to player builds only.
             AutoRegisterTmpFontsAtRuntime();
 #endif
@@ -112,7 +112,7 @@ namespace Weva.Text.Sdf {
                 "Default Font Asset (it must also be referenced from a scene/prefab or " +
                 "appear in Preloaded Assets so the build doesn't strip it), OR call " +
                 "TmpFontAssetRegistry.RegisterFontAsset(\"sans-serif\", asset) before " +
-                "the first WevaDocument loads.");
+                "the first WevaLegacyDocument loads.");
             return true;
         }
 
@@ -187,7 +187,7 @@ namespace Weva.Text.Sdf {
         }
 
         // Public re-entry point for callers that observed an empty
-        // TmpFontAssetRegistry (e.g. WevaDocument.OnEnable after a test run
+        // TmpFontAssetRegistry (e.g. WevaLegacyDocument.OnEnable after a test run
         // that cleared the registry in TearDown). Idempotent — the
         // underlying registry replaces by family name. Safe to call from
         // any editor frame.
@@ -524,7 +524,7 @@ namespace Weva.Text.Sdf {
                 // must either ship a TMP_Settings.defaultFontAsset (which
                 // AutoRegisterTmpFontsAtRuntime picks up) or call
                 // TmpFontAssetRegistry.RegisterFontAsset manually before the
-                // first WevaDocument loads.
+                // first WevaLegacyDocument loads.
                 tmpRegisteredWarningEmitted = LogTmpMissingWarning(tmpRegisteredWarningEmitted);
             } catch (System.Exception ex) {
                 Debug.LogWarning("Weva: TmpFontMetrics failed; falling back to SdfFontMetrics. " + ex.Message);

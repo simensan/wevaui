@@ -29,7 +29,7 @@ namespace Weva.EditorTools.DevTools {
     // Live refresh via EditorApplication.update polling DomTreeModel.IsDirty at ~4 Hz.
     public sealed class ElementsWindow : EditorWindow {
         // --- state serialized for domain-reload survival ---
-        [SerializeField] WevaDocument targetDocument;
+        [SerializeField] WevaLegacyDocument targetDocument;
         // Int-index path from root used to restore selection after domain reload.
         [SerializeField] int[] selectionPath;
 
@@ -131,11 +131,11 @@ namespace Weva.EditorTools.DevTools {
             // Document object field
             var docField = new ObjectField();
             documentField = docField;
-            docField.objectType = typeof(WevaDocument);
+            docField.objectType = typeof(WevaLegacyDocument);
             docField.style.flexGrow = 1;
             docField.value = targetDocument;
             docField.RegisterValueChangedCallback(evt => {
-                var newDoc = evt.newValue as WevaDocument;
+                var newDoc = evt.newValue as WevaLegacyDocument;
                 if (newDoc == targetDocument) return;
                 DetachDocument();
                 targetDocument = newDoc;
@@ -250,7 +250,7 @@ namespace Weva.EditorTools.DevTools {
             computedScrollView.Add(computedContainer);
 
             // No-document placeholder
-            noDocumentLabel = new Label("Pick a WevaDocument above.");
+            noDocumentLabel = new Label("Pick a WevaLegacyDocument above.");
             noDocumentLabel.style.paddingLeft = 8;
             noDocumentLabel.style.paddingTop = 8;
             left.Add(noDocumentLabel);
@@ -298,7 +298,7 @@ namespace Weva.EditorTools.DevTools {
 
         // -- Document attachment --
 
-        void AttachDocument(WevaDocument doc) {
+        void AttachDocument(WevaLegacyDocument doc) {
             if (doc == null) return;
             var docState = doc.CurrentState;
             var domDoc = docState?.Doc;
@@ -351,7 +351,7 @@ namespace Weva.EditorTools.DevTools {
 
             // Retry the auto-pick while unattached: OnEnable runs during the
             // domain-reload boot (e.g. entering Play mode) BEFORE any
-            // WevaDocument has enabled, so a one-shot pick misses and the
+            // WevaLegacyDocument has enabled, so a one-shot pick misses and the
             // window stays empty until this poll lands one.
             if (targetDocument == null) {
                 targetDocument = FindFirstDocument();
@@ -1074,11 +1074,11 @@ namespace Weva.EditorTools.DevTools {
 
         // -- Helpers --
 
-        static WevaDocument FindFirstDocument() {
+        static WevaLegacyDocument FindFirstDocument() {
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindAnyObjectByType<WevaDocument>();
+            return UnityEngine.Object.FindAnyObjectByType<WevaLegacyDocument>();
 #else
-            return UnityEngine.Object.FindObjectOfType<WevaDocument>();
+            return UnityEngine.Object.FindObjectOfType<WevaLegacyDocument>();
 #endif
         }
     }

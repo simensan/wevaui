@@ -4,14 +4,14 @@ using Weva;
 using Weva.DevTools;
 
 namespace Weva.EditorTools.DevTools {
-    // Editor window mirroring the in-game overlay. Selects an active WevaDocument
+    // Editor window mirroring the in-game overlay. Selects an active WevaLegacyDocument
     // in the scene (or the one the user picks from the dropdown) and runs the
     // same readout pipeline the runtime overlay uses. Doesn't yet stream live
     // computed-style data while in Play Mode — it samples the document state
     // every editor repaint, which is enough for inspecting layout snapshots
     // without a connected play-mode session.
     public sealed class DevToolsWindow : EditorWindow {
-        WevaDocument target;
+        WevaLegacyDocument target;
         OverlayMode mode = OverlayMode.All;
         Vector2 scroll;
         readonly PerfReadout perf = new();
@@ -47,7 +47,7 @@ namespace Weva.EditorTools.DevTools {
             EditorGUILayout.Space();
             scroll = EditorGUILayout.BeginScrollView(scroll);
             if (target == null) {
-                EditorGUILayout.HelpBox("Pick a WevaDocument from the toolbar above. Open scenes are scanned automatically.", MessageType.Info);
+                EditorGUILayout.HelpBox("Pick a WevaLegacyDocument from the toolbar above. Open scenes are scanned automatically.", MessageType.Info);
             } else {
                 DrawDocumentReadout();
             }
@@ -56,7 +56,7 @@ namespace Weva.EditorTools.DevTools {
 
         void DrawToolbar() {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            target = (WevaDocument)EditorGUILayout.ObjectField(target, typeof(WevaDocument), allowSceneObjects: true, GUILayout.Width(220));
+            target = (WevaLegacyDocument)EditorGUILayout.ObjectField(target, typeof(WevaLegacyDocument), allowSceneObjects: true, GUILayout.Width(220));
             if (GUILayout.Button("Pick first in scene", EditorStyles.toolbarButton)) {
                 target = FindFirstUIDocument();
             }
@@ -84,15 +84,15 @@ namespace Weva.EditorTools.DevTools {
                 state.Cascade != null ? state.Cascade.CacheHits + " / " + state.Cascade.CacheMisses : "(none)");
         }
 
-        static WevaDocument FindFirstUIDocument() {
+        static WevaLegacyDocument FindFirstUIDocument() {
 #if UNITY_2023_1_OR_NEWER
             // FindAnyObjectByType is the modern, ordering-independent API.
             // FindFirstObjectByType was deprecated because its result depends
-            // on instance ID ordering; we don't care which WevaDocument we
+            // on instance ID ordering; we don't care which WevaLegacyDocument we
             // pick — only that one is found.
-            return Object.FindAnyObjectByType<WevaDocument>();
+            return Object.FindAnyObjectByType<WevaLegacyDocument>();
 #else
-            return Object.FindObjectOfType<WevaDocument>();
+            return Object.FindObjectOfType<WevaLegacyDocument>();
 #endif
         }
 

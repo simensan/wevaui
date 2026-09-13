@@ -7,7 +7,7 @@ using Weva.Paint.Images;
 using TMPro;
 using Weva.Text.Tmp;
 
-// ExecuteAlways: WevaDocument previews in the edit-mode Game view, but the
+// ExecuteAlways: WevaLegacyDocument previews in the edit-mode Game view, but the
 // fonts/sprites this controller registers only existed in play mode — every
 // image-using sample previewed with magenta missing-texture fills. OnEnable's
 // registrations are edit-safe (static registries + in-memory assets); the
@@ -77,7 +77,7 @@ public sealed class UitestController : MonoBehaviour, IBindingVersion {
     [SerializeField] Sprite buttonFrameSprite;
     [SerializeField] Sprite buttonFrameHoverSprite;
 
-    WevaDocument doc;
+    WevaLegacyDocument doc;
     DialogElement dialog;
 
     void OnEnable() {
@@ -188,7 +188,7 @@ public sealed class UitestController : MonoBehaviour, IBindingVersion {
             RegisterDisplayFace("Assets/UI/Fonts/Sniglet-ExtraBold.ttf", "Sniglet", 800);
 #endif
         }
-        doc = GetComponent<WevaDocument>();
+        doc = GetComponent<WevaLegacyDocument>();
         if (doc != null) {
             doc.SetController(this);
             RegisterDemoImages();

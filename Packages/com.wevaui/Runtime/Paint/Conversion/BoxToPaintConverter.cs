@@ -41,7 +41,7 @@ namespace Weva.Paint.Conversion {
         // When set, BackgroundResolver consults the registry for an image's
         // intrinsic size so background-size / background-position / repeat
         // produce a tiled BackgroundTile instead of stretching across the
-        // box. Set by host code (WevaDocument or test harness) at startup.
+        // box. Set by host code (WevaLegacyDocument or test harness) at startup.
         public Weva.Paint.Images.IImageRegistry ImageRegistry { get; set; }
 
         // B16 — path-coverage rasterization cache. Lazily populated when the first
@@ -232,7 +232,7 @@ namespace Weva.Paint.Conversion {
         // the first miss after a warm-up.
         readonly List<PaintCommand> scratchPre = new(16);
 
-        // Exposed so callers (WevaDocument lifecycle, tests verifying parity) can
+        // Exposed so callers (WevaLegacyDocument lifecycle, tests verifying parity) can
         // return commands they consumed back into the converter's pool. Returning
         // a list parks every command's instance for re-use on the next Convert.
         // Skipping the return is safe — the GC will collect — but defeats the
@@ -279,7 +279,7 @@ namespace Weva.Paint.Conversion {
         // size is unchanged by a resize (e.g. a fixed-px box with a vh shadow)
         // would otherwise serve a stale, wrong-sized decoration. Bumping
         // contextVersion on a real change invalidates those caches so the
-        // decoration re-resolves. WevaDocument re-pushes the same value every
+        // decoration re-resolves. WevaLegacyDocument re-pushes the same value every
         // frame, hence the equality guard — only an actual resize pays the cost.
         double viewportWidth, viewportHeight;
         public double ViewportWidth {
@@ -786,7 +786,7 @@ namespace Weva.Paint.Conversion {
         }
 
         // Used by the backend to deposit a completed BoxBatchSnapshot into
-        // the painter's per-box dictionary. Wired by WevaDocument before each
+        // the painter's per-box dictionary. Wired by WevaLegacyDocument before each
         // paint pass — the backend (BatchedURPRenderBackend) invokes the
         // sink when its Submit(EndSubtreeCaptureCommand) handler closes a
         // capture window. The painter then has the snapshot available on
@@ -3992,7 +3992,7 @@ namespace Weva.Paint.Conversion {
             // against the LIVE viewport or they stay sized for the resolution the
             // document was first built at — corners/shadows then look wrong at any
             // other resolution while layout (which reads the live LayoutContext)
-            // scales correctly. WevaDocument.EmitPaint pushes the current viewport
+            // scales correctly. WevaLegacyDocument.EmitPaint pushes the current viewport
             // into ViewportWidth/Height every frame; mirror it here. Guarded on
             //  > 0 so headless Convert() callers that never set it keep the
             // explicit LengthContext they constructed the converter with.

@@ -1,4 +1,4 @@
-// Dev tool: quickly cycle the scene's WevaDocument through every sample
+// Dev tool: quickly cycle the scene's WevaLegacyDocument through every sample
 // HTML/CSS combo under Assets/UI without hand-editing the inspector.
 //
 // Open via  Window ▸ Weva ▸ Sample Cycler  (or Ctrl/Cmd+Alt+U).
@@ -25,7 +25,7 @@ public sealed class SampleCyclerWindow : EditorWindow {
     readonly List<Sample> samples = new();
     string filter = "";
     Vector2 scroll;
-    WevaDocument target;          // the WevaDocument we drive
+    WevaLegacyDocument target;          // the WevaLegacyDocument we drive
     int currentIndex = -1;      // index into `samples` of the live document
     double lastRefreshTime;
 
@@ -67,8 +67,8 @@ public sealed class SampleCyclerWindow : EditorWindow {
 
     void ResolveTarget() {
         if (target != null) return;
-        // Prefer a WevaDocument named "DemoUI"; otherwise the first one found.
-        var docs = Object.FindObjectsByType<WevaDocument>(FindObjectsInactive.Include);
+        // Prefer a WevaLegacyDocument named "DemoUI"; otherwise the first one found.
+        var docs = Object.FindObjectsByType<WevaLegacyDocument>(FindObjectsInactive.Include);
         target = docs.FirstOrDefault(d => d.name == "DemoUI") ?? docs.FirstOrDefault();
     }
 
@@ -83,7 +83,7 @@ public sealed class SampleCyclerWindow : EditorWindow {
         DrawToolbar();
 
         if (target == null) {
-            EditorGUILayout.HelpBox("No WevaDocument found in the open scene. Open a scene that contains one (e.g. DemoUI).", MessageType.Warning);
+            EditorGUILayout.HelpBox("No WevaLegacyDocument found in the open scene. Open a scene that contains one (e.g. DemoUI).", MessageType.Warning);
             if (GUILayout.Button("Rescan scene")) { target = null; ResolveTarget(); SyncCurrentIndex(); }
             return;
         }
@@ -108,7 +108,7 @@ public sealed class SampleCyclerWindow : EditorWindow {
 
         using (new EditorGUILayout.HorizontalScope()) {
             EditorGUIUtility.labelWidth = 40;
-            target = (WevaDocument)EditorGUILayout.ObjectField("Doc", target, typeof(WevaDocument), allowSceneObjects: true);
+            target = (WevaLegacyDocument)EditorGUILayout.ObjectField("Doc", target, typeof(WevaLegacyDocument), allowSceneObjects: true);
             EditorGUIUtility.labelWidth = 0;
         }
 

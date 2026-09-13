@@ -204,7 +204,7 @@ namespace Weva.Paint.Conversion {
         // ReturnAll walks every command in the list and parks pool-able subtypes
         // in their per-type stacks. Pop singletons are skipped; they live forever
         // as static fields on PaintCommandSingletons. After this call the list is
-        // unmodified — callers (PaintListPool.Return / WevaDocument.EmitPaint) clear
+        // unmodified — callers (PaintListPool.Return / WevaLegacyDocument.EmitPaint) clear
         // the list themselves so the test ordering is deterministic.
         public void ReturnAll(PaintList list) {
             if (list == null) return;

@@ -1,7 +1,7 @@
 // Data binding through the shared core from C#: {{ path }} text and
 // attributes, data-class, data-each rows with keys, data-model controls in
 // both directions with the model's types kept, and controller dispatch by
-// handler name through WevaNativeDocument.
+// handler name through WevaDocument.
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
@@ -177,12 +177,12 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         [Test]
-        public void WevaNativeDocument_DispatchesHandlersToTheController_AndWritesDataBack()
+        public void WevaDocument_DispatchesHandlersToTheController_AndWritesDataBack()
         {
             var go = new GameObject("native-doc-under-test");
             try
             {
-                var host = go.AddComponent<WevaNativeDocument>();
+                var host = go.AddComponent<WevaDocument>();
                 host.AutoInput = false;
                 host.InlineHtml = Html;
                 host.InlineCss = "body{margin:0}";

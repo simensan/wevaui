@@ -19,7 +19,7 @@ namespace Weva.Forms.Bridge {
     // InputSystemKeyboardSource.
     public sealed class InputSystemGamepadNavSource {
         // Resolved per tick, not captured — same staleness trap as
-        // InputSystemKeyboardSource: WevaDocument rebuilds replace doc.Events,
+        // InputSystemKeyboardSource: WevaLegacyDocument rebuilds replace doc.Events,
         // and a captured reference keeps navigating a dead dispatcher.
         readonly Func<EventDispatcher> dispatcherProvider;
         EventDispatcher Dispatcher => dispatcherProvider();

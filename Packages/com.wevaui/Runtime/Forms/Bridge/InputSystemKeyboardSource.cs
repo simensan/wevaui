@@ -20,7 +20,7 @@ namespace Weva.Forms.Bridge {
     // This file is wrapped in WEVA_INPUTSYSTEM (asmdef versionDefine).
     public sealed class InputSystemKeyboardSource : IDisposable {
         // Resolved PER EVENT, not captured (in-editor find, the focused=NULL
-        // mystery): WevaDocument rebuilds its pipeline after OnEnable
+        // mystery): WevaLegacyDocument rebuilds its pipeline after OnEnable
         // (DelayedRebuild, hot reload, document swaps), which replaces
         // doc.Events with a NEW EventDispatcher. A source constructed with a
         // fixed reference kept delivering text to the DEAD dispatcher — whose
@@ -42,7 +42,7 @@ namespace Weva.Forms.Bridge {
         }
 
         // Live-dispatcher variant — hosts whose pipeline can be rebuilt
-        // (WevaDocument) pass a resolver so keystrokes always land on the
+        // (WevaLegacyDocument) pass a resolver so keystrokes always land on the
         // dispatcher the pointer/focus path is using.
         public InputSystemKeyboardSource(Func<EventDispatcher> dispatcherProvider) {
             this.dispatcherProvider = dispatcherProvider ?? throw new ArgumentNullException(nameof(dispatcherProvider));

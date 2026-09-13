@@ -6,7 +6,7 @@ using Weva.Layout.Boxes;
 using Weva.Reactive;
 
 namespace Weva.Documents {
-    // Per-frame helper. Pure C# — WevaDocument calls Update() each tick and
+    // Per-frame helper. Pure C# — WevaLegacyDocument calls Update() each tick and
     // Update() drives the cascade -> layout -> paint -> bindings pipeline,
     // consuming the InvalidationTracker the builder attached to the document.
     //
@@ -15,7 +15,7 @@ namespace Weva.Documents {
     //   - state.LayoutContext.ViewportWidthPx/Height match state.MediaContext
     //     (caller updates both before calling Update if the surface resizes).
     //   - controller is the same instance Build() saw (or its replacement set
-    //     via WevaDocument.SetController, which rebuilds bindings).
+    //     via WevaLegacyDocument.SetController, which rebuilds bindings).
     //
     // Reactivity contract: Update() returns without doing layout work when
     // nothing is dirty. Cascade/layout/paint cache stats should remain steady
@@ -396,7 +396,7 @@ namespace Weva.Documents {
                     (box != null && box.Element == null && sc != null && sc.Has(box)) ? box : null;
             }
             // Apply scroll positions captured across a pipeline rebuild
-            // (WevaDocument.Rebuild) — deferred to here because restoring
+            // (WevaLegacyDocument.Rebuild) — deferred to here because restoring
             // needs the NEW pipeline's boxes and MaxScroll extents. One-shot.
             if (state.PendingScrollRestores != null) {
                 ApplyPendingScrollRestores(state);
@@ -468,11 +468,11 @@ namespace Weva.Documents {
         //           otherwise fall back to IMGUI for editor previewing.
         //   - IMGUI: explicit override; used for non-URP projects.
         //   - URP: explicit override; assumes UIBatchedRendererFeature is configured.
-        // The hook is additive — callers (WevaDocument, the editor preview window) read
+        // The hook is additive — callers (WevaLegacyDocument, the editor preview window) read
         // this to decide whether to attach IMGUIDocumentRenderer. It does NOT drive
         // paint by itself; the URP path runs through the renderer feature.
         public static ResolvedBackend ResolveBackend(int rendererBackend, bool isPlaying, bool isUrpActive) {
-            // 0 = Auto, 1 = IMGUI, 2 = URP — mirrors WevaDocument.RendererBackendKind.
+            // 0 = Auto, 1 = IMGUI, 2 = URP — mirrors WevaLegacyDocument.RendererBackendKind.
             switch (rendererBackend) {
                 case 1:
                     return ResolvedBackend.IMGUI;

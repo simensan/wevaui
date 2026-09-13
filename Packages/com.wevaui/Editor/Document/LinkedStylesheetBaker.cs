@@ -14,7 +14,7 @@ namespace Weva.EditorTools {
     // AssetDatabase does. Player builds have neither, so without this hook
     // every linked stylesheet silently dropped in builds and pages rendered
     // UA-only (glass.html build report, 2026-06-06). This scene processor
-    // bakes each link's CSS text into the WevaDocument's serialized fields
+    // bakes each link's CSS text into the WevaLegacyDocument's serialized fields
     // at build time; the runtime consumes the bake only when DocumentPath
     // is unavailable, so the editor always reads the live file instead.
     //
@@ -25,7 +25,7 @@ namespace Weva.EditorTools {
     // so the logic is headless-testable without Unity assemblies.
     //
     // Scope (documented limitations, mirrored in CSS_OPEN_GAPS.md):
-    //  - Scene-placed WevaDocuments only. A WevaDocument on a prefab
+    //  - Scene-placed WevaDocuments only. A WevaLegacyDocument on a prefab
     //    instantiated at RUNTIME in a player never passes through
     //    OnProcessScene; those documents still warn and drop links.
     //    Call LinkedStylesheetBaker.Bake from a custom build step or
@@ -40,7 +40,7 @@ namespace Weva.EditorTools {
             // what a build will do.
             var roots = scene.GetRootGameObjects();
             for (int i = 0; i < roots.Length; i++) {
-                var docs = roots[i].GetComponentsInChildren<WevaDocument>(true);
+                var docs = roots[i].GetComponentsInChildren<WevaLegacyDocument>(true);
                 for (int j = 0; j < docs.Length; j++) {
                     LinkedStylesheetBaker.Bake(docs[j]);
                 }
@@ -56,7 +56,7 @@ namespace Weva.EditorTools {
         // self-contained. Returns the number of linked stylesheets baked.
         // Public so custom build pipelines can bake prefab-housed documents
         // the scene processor never sees.
-        public static int Bake(WevaDocument doc) {
+        public static int Bake(WevaLegacyDocument doc) {
             if (doc == null) return 0;
             var so = new SerializedObject(doc);
             var hrefsProp = so.FindProperty("bakedLinkedStylesheetHrefs");
@@ -64,7 +64,7 @@ namespace Weva.EditorTools {
             var tmplHrefsProp = so.FindProperty("bakedTemplateHrefs");
             var tmplHtmlProp = so.FindProperty("bakedTemplateHtml");
             if (hrefsProp == null || cssProp == null) {
-                Debug.LogWarning("LinkedStylesheetBaker: WevaDocument bake fields not found (rename?).", doc);
+                Debug.LogWarning("LinkedStylesheetBaker: WevaLegacyDocument bake fields not found (rename?).", doc);
                 return 0;
             }
 
