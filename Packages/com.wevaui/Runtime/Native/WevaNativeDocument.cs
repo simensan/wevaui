@@ -187,8 +187,19 @@ namespace Weva.Native
                     InputConsumed = _input.Consumed;
                 }
 #endif
+                // Two clocks, deliberately different. Animations run on scaled
+                // time so Time.timeScale pauses them with the rest of the game;
+                // timed input gestures run on unscaled time so they keep
+                // working while it is paused. Feeding Time.deltaTime to both
+                // meant that at timeScale = 0 — a menu over a paused game, the
+                // case this host exists for — the core got a microsecond of
+                // input time per frame, and scrollbar autoscroll, select
+                // typeahead, tooltip delay, held-key repeat and smooth-scroll
+                // easing all stopped. The Godot host uses monotonic time here
+                // for the same reason.
                 float dt = Application.isPlaying ? Time.deltaTime : 0;
-                _doc.Update(dt, Application.isPlaying ? Mathf.Max(dt, 1e-6f) : 0);
+                float inputDt = Application.isPlaying ? Mathf.Max(Time.unscaledDeltaTime, 1e-6f) : 0;
+                _doc.Update(dt, inputDt);
                 PumpEvents();
             }
             catch (NativeException ex)

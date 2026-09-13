@@ -657,6 +657,8 @@ namespace Weva.Text.Atg {
                     settingsObj = ResolveDefaultTextSettings();
                     if (settingsObj == null) {
                         shapeFailures++;
+                        Weva.Diagnostics.UICssDiagnostics.Warn("AtgGlyphAtlasAdapter",
+                            "no TextSettings and one could not be created — falling back to SDF");
                         return false;
                     }
                 }
@@ -716,6 +718,12 @@ namespace Weva.Text.Atg {
                 int matCount = (int)tiMaterialCountField.GetValue(ti);
                 if (charCount <= 0 || matCount <= 0) {
                     shapeFailures++;
+                    // An empty run legitimately generates nothing; only a run
+                    // that had text and produced none is worth reporting.
+                    if (!string.IsNullOrEmpty(command.Text)) {
+                        Weva.Diagnostics.UICssDiagnostics.Warn("AtgGlyphAtlasAdapter",
+                            "TextGenerator produced no characters for a non-empty run — falling back to SDF");
+                    }
                     return false;
                 }
 
@@ -727,11 +735,15 @@ namespace Weva.Text.Atg {
                 var atlasArr = (Array)fontAssetAtlasTexturesProp.GetValue(runFontAsset);
                 if (atlasArr == null || atlasArr.Length == 0) {
                     shapeFailures++;
+                    Weva.Diagnostics.UICssDiagnostics.Warn("AtgGlyphAtlasAdapter",
+                        "the FontAsset has no atlas texture — falling back to SDF");
                     return false;
                 }
                 var primaryAtlas = (Texture2D)atlasArr.GetValue(0);
                 if (primaryAtlas == null) {
                     shapeFailures++;
+                    Weva.Diagnostics.UICssDiagnostics.Warn("AtgGlyphAtlasAdapter",
+                        "the FontAsset's primary atlas texture is null — falling back to SDF");
                     return false;
                 }
                 atlasId = EnsureAtlasRegistered(primaryAtlas, IsCoverageFontAsset(runFontAsset as UnityEngine.TextCore.Text.FontAsset));
@@ -749,6 +761,8 @@ namespace Weva.Text.Atg {
                 var teiArr = (Array)tiTextElementInfoArrayField.GetValue(ti);
                 if (teiArr == null || teiArr.Length == 0) {
                     shapeFailures++;
+                    Weva.Diagnostics.UICssDiagnostics.Warn("AtgGlyphAtlasAdapter",
+                        "TextGenerator produced no text elements — falling back to SDF");
                     return false;
                 }
 
@@ -1066,6 +1080,22 @@ namespace Weva.Text.Atg {
             var found = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.TextCore.Text.TextSettings>();
             if (found != null && found.Length > 0) {
                 cachedTextSettings = found[0];
+                return cachedTextSettings;
+            }
+            // FindObjectsOfTypeAll only sees what is already loaded, and the
+            // instance we were piggybacking on is created by UI Toolkit the
+            // first time the editor renders text. Nothing loads one in a
+            // player, or in batch mode — measured: zero instances there, while
+            // the loaded TMP_Settings is not a TextSettings and cannot stand
+            // in. So every ATG shape bailed out silently and all text fell
+            // through to the fuzzy raw-SDF path with no diagnostic. Ours is
+            // only ever read for its defaults, so an owned instance does.
+            var created = UnityEngine.ScriptableObject
+                .CreateInstance<UnityEngine.TextCore.Text.TextSettings>();
+            if (created != null) {
+                created.name = "Weva ATG Text Settings";
+                created.hideFlags = HideFlags.HideAndDontSave;
+                cachedTextSettings = created;
             }
             return cachedTextSettings;
         }
