@@ -85,7 +85,8 @@ weva/
 │   ├── Runtime/                 Headless-testable core (HTML, CSS, layout, paint)
 │   │   ├── Rendering/URP/       URP renderer feature + batched über-shader
 │   │   └── Forms/               Inputs, range slider, tooltip, context menu, …
-│   ├── Tests/                   ~10,500 NUnit tests (EditMode + PlayMode)
+│   ├── Tests/                   Unity-host NUnit tests (EditMode + PlayMode); the engine's
+│   │                            conformance lives in Tools/oracle (Chrome captures)
 │   ├── Editor/                  Preview window, asset importers
 │   └── Documentation~/          Authoring guide
 └── Tools/

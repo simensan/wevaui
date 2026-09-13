@@ -29,7 +29,8 @@ divergent behavior is considered worse than a missing one.
 - CSS transitions + keyframe animations.
 - Forms, gestures, dialogs, popovers, tooltips, virtualized lists.
 - Headless-testable end to end (the parser/cascade/layout/paint stages do not
-  touch `UnityEngine`); ~6,500 NUnit tests.
+  touch `UnityEngine`); its conformance is measured against Chrome captures in
+  `Tools/oracle`, and the C# engine itself is frozen (see AGENTS.md §4).
 
 A companion package (`com.wevaui.figma`, separate repository) imports Figma
 frames into Weva HTML/CSS.

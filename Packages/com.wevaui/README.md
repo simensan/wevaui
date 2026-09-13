@@ -287,7 +287,7 @@ without entering Play Mode.
 
 ## Testing
 
-~9,800 NUnit tests run headlessly via `Tools/TestVerifyAll/` (or the Unity Test
+~700 NUnit tests for the Unity host run headlessly via `Tools/TestVerifyAll/` (or the Unity Test
 Runner once the package is added to a project). Coverage spans HTML parsing,
 CSS rule and selector parsing, cascade, layout (block / inline / flex /
 grid / positioning), paint conversion, animation, components, bindings,

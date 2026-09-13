@@ -82,7 +82,8 @@ weva/
 │   │   │   └── Unity/                   Bundled-default registration
 │   │   ├── ViewTransitions/             View Transitions API
 │   │   └── UIDocument.cs                MonoBehaviour entry point
-│   ├── Tests/                           ~3850 NUnit tests
+│   ├── Tests/                           Unity-host NUnit tests (engine conformance is
+│   │                                    Tools/oracle against Chrome, not here)
 │   ├── Editor/                          Editor preview window, importers
 │   └── README.md                        User-facing reference
 │
