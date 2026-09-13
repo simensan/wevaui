@@ -524,6 +524,13 @@ namespace Weva.Native
         /// Godot host does this before every input event; the feed does it
         /// once per tick.
         /// </summary>
+        /// <summary>
+        /// Moves focus in a direction by geometry (a pad or stick): the nearest
+        /// focusable that way, or the current element at the edge, or the first
+        /// focusable when nothing is focused. Only the signs of dx and dy count.
+        /// </summary>
+        public uint FocusMove(double dx, double dy) => WevaNative.weva_document_focus_move(Handle, dx, dy);
+
         public void UpdateGeometry()
         {
             Check(WevaNative.weva_document_update_geometry(Handle), "weva_document_update_geometry");

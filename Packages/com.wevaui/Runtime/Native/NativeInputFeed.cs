@@ -69,6 +69,33 @@ namespace Weva.Native
         private bool _pointerCleared = true;
         private bool _touchDown, _touchPanning;
         private Vector2 _touchStart, _touchLast;
+        // Gamepad: a held direction repeats after the delay, then at the interval,
+        // the way Godot's repeat_navigation steps a held pad through a list.
+        private int _heldDirection = -1;
+        private double _repeatAt;
+        // IME: the composition string the OS is showing, and the text it delivered
+        // while one was open, which becomes the commit rather than typed text.
+        private string _composition = "";
+        private readonly System.Text.StringBuilder _imeCommit = new System.Text.StringBuilder();
+        private bool _imeEnabled;
+        private uint _imeTarget = WevaNative.WEVA_ELEMENT_NONE;
+        private Vector2 _imeCursor = new Vector2(float.NaN, float.NaN);
+
+        /// <summary>The pad's repeat: first repeat after this many seconds, then every interval.</summary>
+        public const double NavigationRepeatDelay = 0.4;
+        public const double NavigationRepeatInterval = 0.1;
+        /// <summary>Stick deflection that counts as a direction.</summary>
+        public const float StickThreshold = 0.5f;
+        /// <summary>Seconds, monotonic, for the pad's repeat. Unscaled time by default; a test replaces it.</summary>
+        public Func<double> Clock = () => Time.unscaledTimeAsDouble;
+        /// <summary>
+        /// Whether the pad's accept on a focused text field asks the host for a
+        /// keyboard (<see cref="TextEntryRequested"/>) instead of pressing Enter.
+        /// The Godot host's gamepad_text_entry does the same.
+        /// </summary>
+        public bool GamepadTextEntry;
+        /// <summary>A pad pressed accept on a text field: the field's id. The host supplies the keyboard.</summary>
+        public event Action<string> TextEntryRequested;
 
         /// <summary>Pixels per wheel notch, what a browser scrolls per line.</summary>
         public float WheelLine = 40f;
@@ -114,13 +141,24 @@ namespace Weva.Native
 
         public void Dispose()
         {
-            if (_subscribed != null) _subscribed.onTextInput -= OnTextInput;
+            if (_subscribed != null)
+            {
+                _subscribed.onTextInput -= OnTextInput;
+                _subscribed.onIMECompositionChange -= OnImeComposition;
+                if (_imeEnabled) _subscribed.SetIMEEnabled(false);
+            }
             _subscribed = null;
         }
 
         private void OnTextInput(char c)
         {
-            if (c >= ' ' && c != (char)127) _typed.Add(c);
+            if (c < ' ' || c == (char)127) return;
+            // Text the OS delivers while an IME composition is open, or just as
+            // it closes, is the composition's commit, not typing: it replaces
+            // the composed text when the composition string empties. The Godot
+            // host buffers it the same way (ime_commit_text_).
+            if (_composition.Length > 0) _imeCommit.Append(c);
+            else _typed.Add(c);
         }
 
         private static uint Modifiers(Keyboard keyboard)
@@ -155,11 +193,17 @@ namespace Weva.Native
             bool focused = HasFocus == null || HasFocus();
             if (keyboard != null && !ReferenceEquals(_subscribed, keyboard))
             {
-                if (_subscribed != null) _subscribed.onTextInput -= OnTextInput;
+                if (_subscribed != null)
+                {
+                    _subscribed.onTextInput -= OnTextInput;
+                    _subscribed.onIMECompositionChange -= OnImeComposition;
+                }
                 _subscribed = keyboard;
                 keyboard.onTextInput += OnTextInput;
+                keyboard.onIMECompositionChange += OnImeComposition;
             }
             uint modifiers = keyboard != null ? Modifiers(keyboard) : 0;
+            if (keyboard != null) SyncIme(keyboard, viewportHeight);
 
             if (touch != null && FeedTouch(touch, viewportWidth, viewportHeight, modifiers))
             {
@@ -209,6 +253,9 @@ namespace Weva.Native
                     }
                 }
             }
+
+            if (focused && AcceptsKeyboard) FeedGamepad(Gamepad.current);
+            else _heldDirection = -1;
 
             if (keyboard == null || !AcceptsKeyboard || !focused)
             {
@@ -281,6 +328,158 @@ namespace Weva.Native
                     Consumed |= _doc.TryTextInput(c.ToString(), modifiers);
                 }
                 _typed.Clear();
+            }
+        }
+
+        // ---- IME ------------------------------------------------------------
+        //
+        // The Input System reports the OS composition string as it changes and
+        // delivers the committed text through onTextInput once it closes. The
+        // core wants the composition shown in the field while it is open
+        // (SetComposition) and replaced by the commit when it closes; text that
+        // arrives in between is that commit, not typing. Mirrors the Godot
+        // host's receive_ime_update / flush_ime_commit.
+        private void OnImeComposition(UnityEngine.InputSystem.LowLevel.IMECompositionString composition)
+        {
+            string text = composition.ToString();
+            if (text.Length > 0)
+            {
+                _composition = text;
+                if (!_doc.SetComposition(text, text.Length, text.Length))
+                {
+                    // Nothing composable is focused: the OS is composing into
+                    // the void. Drop it so the eventual commit types instead.
+                    _composition = "";
+                }
+                return;
+            }
+            if (_composition.Length == 0) return;
+            _composition = "";
+            _doc.CommitComposition(_imeCommit.ToString());
+            _imeCommit.Clear();
+        }
+
+        // Tells the OS whether an IME may open and where its window goes: over
+        // a focused text control, at the caret's bottom-left. Only on change.
+        private void SyncIme(Keyboard keyboard, int viewportHeight)
+        {
+            uint target = _doc.TextInputTarget;
+            bool want = target != WevaNative.WEVA_ELEMENT_NONE;
+            if (want != _imeEnabled || target != _imeTarget)
+            {
+                if (!want && _composition.Length > 0)
+                {
+                    // The field went away under an open composition: commit what
+                    // was delivered, as Godot's close_ime does.
+                    _composition = "";
+                    _doc.CommitComposition(_imeCommit.ToString());
+                    _imeCommit.Clear();
+                }
+                keyboard.SetIMEEnabled(want);
+                _imeEnabled = want;
+                _imeTarget = target;
+                _imeCursor = new Vector2(float.NaN, float.NaN);
+            }
+            if (!want) return;
+            if (_doc.TryGetCaretBounds(out NativeBounds caret))
+            {
+                var at = new Vector2((float)caret.X, (float)(viewportHeight - (caret.Y + caret.Height)));
+                if (at != _imeCursor)
+                {
+                    keyboard.SetIMECursorPosition(at);
+                    _imeCursor = at;
+                }
+            }
+        }
+
+        // ---- gamepad ---------------------------------------------------------
+        //
+        // The Godot host's navigation_action, less the InputMap: the d-pad and
+        // left stick move focus by geometry, South accepts, East cancels, the
+        // shoulders step the tab order. A direction on a control that owns the
+        // axis -- Left/Right on any focused control's caret or value, Up/Down on
+        // a select, textarea or number field -- is that control's key first
+        // and a focus move only when the control did not take it.
+        private static readonly (weva_key key, double dx, double dy)[] Directions =
+        {
+            (weva_key.WEVA_KEY_LEFT, -1, 0), (weva_key.WEVA_KEY_RIGHT, 1, 0),
+            (weva_key.WEVA_KEY_UP, 0, -1), (weva_key.WEVA_KEY_DOWN, 0, 1),
+        };
+
+        private static bool DirectionHeld(Gamepad pad, int i)
+        {
+            Vector2 stick = pad.leftStick.ReadValue();
+            switch (i)
+            {
+                case 0: return pad.dpad.left.isPressed || stick.x <= -StickThreshold;
+                case 1: return pad.dpad.right.isPressed || stick.x >= StickThreshold;
+                case 2: return pad.dpad.up.isPressed || stick.y >= StickThreshold;
+                default: return pad.dpad.down.isPressed || stick.y <= -StickThreshold;
+            }
+        }
+
+        private string FocusedTag(out string type)
+        {
+            type = "";
+            uint focused = _doc.Focus;
+            if (focused == WevaNative.WEVA_ELEMENT_NONE) return "";
+            string tag = _doc.TagName(focused) ?? "";
+            if (tag == "input") type = _doc.ElementAttribute(focused, "type") ?? "";
+            return tag;
+        }
+
+        private bool Tap(weva_key key)
+        {
+            bool down = _doc.Key(key, true, 0);
+            bool up = _doc.Key(key, false, 0);
+            return down || up;
+        }
+
+        private void NavigateDirection(int i)
+        {
+            (weva_key key, double dx, double dy) = Directions[i];
+            string tag = FocusedTag(out string type);
+            bool vertical = dy != 0;
+            bool elementFirst = !vertical || tag == "select" || tag == "textarea" || (tag == "input" && type == "number");
+            if (elementFirst && Tap(key)) { Consumed = true; return; }
+            _doc.FocusMove(dx, dy);
+            Consumed = true;
+        }
+
+        private void FeedGamepad(Gamepad pad)
+        {
+            if (pad == null) { _heldDirection = -1; return; }
+            if (pad.buttonSouth.wasPressedThisFrame)
+            {
+                string tag = FocusedTag(out string type);
+                bool textField = tag == "textarea" || (tag == "input" && (type == "" || type == "text" || type == "search" ||
+                    type == "password" || type == "email" || type == "url" || type == "tel" || type == "number"));
+                if (textField && GamepadTextEntry) TextEntryRequested?.Invoke(_doc.ElementId(_doc.Focus) ?? "");
+                else if (textField) Tap(weva_key.WEVA_KEY_ENTER);
+                else if (!Tap(weva_key.WEVA_KEY_SPACE)) Tap(weva_key.WEVA_KEY_ENTER);
+                Consumed = true;
+            }
+            if (pad.buttonEast.wasPressedThisFrame) Consumed |= Tap(weva_key.WEVA_KEY_ESCAPE);
+            if (pad.rightShoulder.wasPressedThisFrame) { _doc.FocusStep(false, true); Consumed = true; }
+            if (pad.leftShoulder.wasPressedThisFrame) { _doc.FocusStep(true, true); Consumed = true; }
+
+            double now = Clock();
+            if (_heldDirection >= 0 && !DirectionHeld(pad, _heldDirection)) _heldDirection = -1;
+            if (_heldDirection < 0)
+            {
+                for (int i = 0; i < Directions.Length; i++)
+                {
+                    if (!DirectionHeld(pad, i)) continue;
+                    NavigateDirection(i);
+                    _heldDirection = i;
+                    _repeatAt = now + NavigationRepeatDelay;
+                    break;
+                }
+            }
+            else if (now >= _repeatAt)
+            {
+                _repeatAt = now + NavigationRepeatInterval;
+                NavigateDirection(_heldDirection);
             }
         }
 

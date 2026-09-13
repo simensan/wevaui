@@ -153,8 +153,15 @@ leaves the surface or the application loses focus; keys gated by
 touch drag as a pan; geometry flushed before each frame's hit tests. What
 the Input System cannot supply because it reports edges only -- key
 auto-repeat and double-click detection -- the feed turns on in the core
-(ABI minor 39), where it is tested once for both hosts. Still absent on this
-host: gamepad navigation and OS IME composition. `NativeBindings` serves
+(ABI minor 39), where it is tested once for both hosts. A gamepad moves
+focus by geometry through the d-pad or left stick with a held-direction
+repeat, South accepts (or raises `TextEntryRequested` on a text field when
+`GamepadTextEntry` is set, since a pad cannot type), East cancels and the
+shoulders step the tab order -- the Godot host's `navigation_action` without
+the InputMap. An OS IME composes into the focused field through
+`Keyboard.onIMECompositionChange` and commits with the text the OS delivers
+as it closes, which is never also typed; the feed enables the IME and places
+its window at the caret only over a text control. `NativeBindings` serves
 `{{ path }}`, `data-class`, `data-each` and `data-model` from a C# dictionary
 graph (or a resolver) and writes control edits back keeping the model's
 types; `WevaNativeDocument.Bind(model, controller)` dispatches `on-<event>`

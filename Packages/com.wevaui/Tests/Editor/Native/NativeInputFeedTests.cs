@@ -223,6 +223,94 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(scrolled, Is.GreaterThan(0), "dragging the finger up scrolls the list down");
             Assert.That(Clicks(), Is.EqualTo(0), "a drag is not a click");
         }
+
+        private const string Column =
+            "<button id=a>A</button><button id=b>B</button><button id=c>C</button>";
+        private const string ColumnCss = "button{display:block;width:100px;height:40px;margin:0}";
+
+        [Test]
+        public void GamepadMovesFocusByGeometryAndRepeatsWhileHeld()
+        {
+            // The d-pad moves focus to the nearest control that way; held, it
+            // steps again after the delay and then at the interval, like a held
+            // arrow key. The Godot host's gamepad_navigation_tests pin the same.
+            Load(Column, ColumnCss);
+            Gamepad pad = InputSystem.AddDevice<Gamepad>();
+            double now = 0;
+            _feed.Clock = () => now;
+            _doc.SetFocus(_doc.Query("#a"));
+
+            Press(pad.dpad.down); Tick();
+            Assert.That(_doc.Focus, Is.EqualTo(_doc.Query("#b")), "down moves to the button below");
+            now = 0.2; Tick();
+            Assert.That(_doc.Focus, Is.EqualTo(_doc.Query("#b")), "inside the delay, no repeat");
+            now = 0.45; Tick();
+            Assert.That(_doc.Focus, Is.EqualTo(_doc.Query("#c")), "past the delay, it steps again");
+            now = 0.6; Tick();
+            Assert.That(_doc.Focus, Is.EqualTo(_doc.Query("#c")), "at the edge it stays, rather than wrapping under the thumb");
+            Release(pad.dpad.down); Tick();
+
+            Press(pad.dpad.up); Tick();
+            Assert.That(_doc.Focus, Is.EqualTo(_doc.Query("#b")));
+            Release(pad.dpad.up); Tick();
+        }
+
+        [Test]
+        public void GamepadSouthActivatesAndShouldersStepTheTabOrder()
+        {
+            Load("<button id=go on-click=Go>Go</button>" + Column, ColumnCss);
+            Gamepad pad = InputSystem.AddDevice<Gamepad>();
+            _doc.SetFocus(_doc.Query("#go"));
+            Clicks();
+            Press(pad.buttonSouth); Tick();
+            Release(pad.buttonSouth); Tick();
+            Assert.That(Clicks(), Is.EqualTo(1), "South activates the focused button");
+
+            Press(pad.rightShoulder); Tick(); Release(pad.rightShoulder); Tick();
+            Assert.That(_doc.Focus, Is.EqualTo(_doc.Query("#a")), "the right shoulder steps forward in tab order");
+            Press(pad.leftShoulder); Tick(); Release(pad.leftShoulder); Tick();
+            Assert.That(_doc.Focus, Is.EqualTo(_doc.Query("#go")), "the left shoulder steps back");
+        }
+
+        [Test]
+        public void GamepadAcceptOnATextFieldAsksTheHostForAKeyboard()
+        {
+            Load("<input id=name>");
+            Gamepad pad = InputSystem.AddDevice<Gamepad>();
+            _doc.SetFocus(_doc.Query("#name"));
+            string requested = null;
+            _feed.GamepadTextEntry = true;
+            _feed.TextEntryRequested += id => requested = id;
+            Press(pad.buttonSouth); Tick(); Release(pad.buttonSouth); Tick();
+            Assert.That(requested, Is.EqualTo("name"), "a pad cannot type; the host supplies the keyboard");
+        }
+
+        [Test]
+        public void ImeCompositionShowsThenCommitsWithoutTypingTwice()
+        {
+            // The OS composes, then delivers the committed text as key text
+            // while the composition string empties. That text is the commit
+            // and must not also arrive as typing.
+            Load("<input id=f>");
+            _doc.SetFocus(_doc.Query("#f"));
+            Tick();                                              // enables the IME over the field
+
+            var composing = UnityEngine.InputSystem.LowLevel.IMECompositionEvent.Create(
+                _keyboard.deviceId, "か", UnityEngine.InputSystem.LowLevel.InputState.currentTime);
+            InputSystem.QueueEvent(ref composing);
+            InputSystem.Update(); Tick();
+
+            InputSystem.QueueTextEvent(_keyboard, 'か');
+            var done = UnityEngine.InputSystem.LowLevel.IMECompositionEvent.Create(
+                _keyboard.deviceId, "", UnityEngine.InputSystem.LowLevel.InputState.currentTime);
+            InputSystem.QueueEvent(ref done);
+            InputSystem.Update(); Tick();
+            Assert.That(Value("#f"), Is.EqualTo("か"), "committed once, not composed and then typed");
+
+            InputSystem.QueueTextEvent(_keyboard, 'x');
+            InputSystem.Update(); Tick();
+            Assert.That(Value("#f"), Is.EqualTo("かx"), "ordinary typing resumes after the composition");
+        }
     }
 }
 #endif
