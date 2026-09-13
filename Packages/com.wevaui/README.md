@@ -276,14 +276,12 @@ PlayMode rendering tests; run them with the Unity Test Runner.
 
 ## Status
 
-0.1.1 (preview) is the last release of the C# engine, **frozen as of
-2026-09-13**. On `main` the package is the Unity host for the C++ core:
-`WevaDocument` is the core-backed component, the frozen engine's component is
-`WevaLegacyDocument` until it is deleted, and 1.0 ships one engine. 1.0 is an
-API break from 0.1.1 -- the controller model (`[UIBind]`, `on-<event>`,
-`SetController`) carries over unchanged, the C# DOM (`Weva.Dom`,
-`GetElementById`, `Rebuild`) does not. Native plugin: Windows x64 now,
-other platforms as their CI jobs go green.
+1.0.0. One engine: the Weva core (`libweva/` in the repository, C++ behind a C
+ABI, checked against Chrome) hosted by this package through the native plugin
+(Windows x64 now; other platforms as their CI jobs go green). The C# engine
+that 0.1.x shipped was frozen on 2026-09-13 and deleted the same day; the
+CHANGELOG has the migration notes. The controller model (`[UIBind]`,
+`on-<event>`, `SetController`) carried over unchanged; the C# DOM did not.
 
 ## License
 

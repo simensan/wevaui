@@ -4,64 +4,49 @@ HTML and CSS for Unity. AI-friendly UI layer that produces working Unity UI
 from HTML and CSS that LLMs have already learned from the web — no UXML
 dialect, no `-unity-` prefixes.
 
-The actual package lives in [`Packages/com.wevaui/`](./Packages/com.wevaui/).
-This repo also contains the demo project (`Assets/`), the tooling (`Tools/`),
-the design / spec docs at the root, and the engine itself.
+The engine is [`libweva/`](./libweva/): a C++ core that parses, cascades,
+lays out and paints, with text left to the host, checked against headless
+Chrome. Two hosts sit over its C ABI in [`hosts/`](./hosts/) — a Godot addon
+and the native Unity plugin the package in
+[`Packages/com.wevaui/`](./Packages/com.wevaui/) is built on. `CMakeLists.txt`
+and `check.sh` at the root build and gate everything; [`docs/`](./docs/)
+holds the architecture notes and verification receipts.
 
-The engine is [`libweva/`](./libweva/): a C++ core implementing the same
-layout, cascade and paint, with text left to the host. Two hosts sit over its
-C ABI in [`hosts/`](./hosts/) — a Godot addon and a native Unity plugin the
-package can use instead of the C# engine. `CMakeLists.txt` and `check.sh` at
-the root build and gate it; [`docs/`](./docs/) holds its architecture notes
-and verification receipts.
-
-The C# engine in `Packages/com.wevaui/Runtime/` is still what you get by
-default in 0.1.x, but as of 2026-09-13 it is **frozen**: the C++ core is the
-single source of truth, every cross-check is against Chrome, and 1.0 replaces
-it with the native plugin. Going forward the C# in the package is the Unity
-host layer — the counterpart of the Godot addon's GDScript layer — not an
-engine.
+The C# in the package is the Unity host layer — the counterpart of the Godot
+addon's GDScript layer: the `WevaDocument` component, `[UIBind]` controllers,
+the URP pass that draws the core's draw list, `FontEngine` as the font
+backend, the Input System feed, editor tooling. The C# engine that 0.1.x
+shipped was frozen and deleted on 2026-09-13.
 
 ## Install
 
 Add via **Package Manager ▸ + ▸ Add package from git URL…**:
 
 ```
-https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.1
+https://github.com/simensan/wevaui.git?path=Packages/com.wevaui
 ```
 
-or add it to `Packages/manifest.json` directly:
+Pin a release with a `#v*` tag suffix. Then read the package
+[`README.md`](./Packages/com.wevaui/README.md) and
+[`Documentation~/getting-started.md`](./Packages/com.wevaui/Documentation~/getting-started.md).
 
-```json
-{
-  "dependencies": {
-    "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.1"
-  }
-}
-```
+## Documents
 
-Drop the `#v0.1.1` suffix to track `main` instead of a pinned release
-(releases are tagged `v*`).
-
-## Where to start
-
-* **[Package README](./Packages/com.wevaui/README.md)** — install
-  instructions, supported HTML/CSS subset, architecture, performance numbers,
-  API surface, DevTools.
-* **[Authoring guide](./Packages/com.wevaui/Documentation~/AuthoringGuide.md)**
-  — practical cookbook for building UI: data binding with `[UIBind]`, events,
-  forms, gestures, virtualized lists, components, layout patterns, theming,
-  hot reload.
-* **[`AI_REFERENCE.md`](./AI_REFERENCE.md)** — orientation map for AI agents
-  *using* the library: capability audit (what it can/can't do, incl. GPU-render
-  limits), integration quickstart, architecture map, tooling, and a "which doc
-  for which task" index.
-* **[`AGENTS.md`](./AGENTS.md)** — guidance for AI coding tools (Claude Code,
-  Cursor, Copilot) when modifying the engine itself: pipeline overview, cache
-  invariants, conventions, things never to do.
-* **[`PLAN.md`](./PLAN.md)** — locked architectural decisions and roadmap.
-* **[`CONFORMANCE.md`](./CONFORMANCE.md)** — spec-vs-impl deltas, property by
-  property.
+* **[`Packages/com.wevaui/README.md`](./Packages/com.wevaui/README.md)** —
+  what the package is, quick start, supported subset, API surface.
+* **[`Packages/com.wevaui/Documentation~/`](./Packages/com.wevaui/Documentation~/)** —
+  getting started, the authoring guide, supported HTML/CSS, fonts,
+  troubleshooting, API stability.
+* **[`AI_REFERENCE.md`](./AI_REFERENCE.md)** — the orientation document for an
+  AI agent asked to use, integrate or reason about Weva.
+* **[`AGENTS.md`](./AGENTS.md)** — the engineering contract for an AI tool
+  changing the engine or a host.
+* **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)** — the core as built;
+  **[`docs/PRODUCT_READINESS.md`](./docs/PRODUCT_READINESS.md)** — where each
+  host stands; **[`docs/INPUT_PARITY.md`](./docs/INPUT_PARITY.md)** — the two
+  hosts' input decisions, pinned by tests.
+* **[`PLAN.md`](./PLAN.md)** — the design the core implements (history);
+  **[`CONFORMANCE.md`](./CONFORMANCE.md)** — spec deltas, property by property.
 
 ## Target environment
 
@@ -69,29 +54,33 @@ Drop the `#v0.1.1` suffix to track `main` instead of a pinned release
 * **URP** render pipeline, **Linear** color space
 * **IL2CPP** scripting backend (Mono also supported)
 * **Input System** package (`com.unity.inputsystem`)
+* Native plugin: **Windows x64** (other platforms as their CI jobs go green)
 
 ## Layout
 
 ```
 weva/
+├── libweva/                     The engine: C++ core, C ABI (include/weva_c.h), tests
+├── hosts/
+│   ├── godot/                   Godot GDExtension addon + scene tests
+│   └── unity/                   Unity plugin build, binding generator, notices
+├── Packages/com.wevaui/         The UPM package — the Unity host
+│   ├── Runtime/Native/          NativeDocument, font backend, renderer, input feed, bindings
+│   ├── Runtime/WevaDocument.cs  The component
+│   ├── Runtime/Rendering/       URP renderer feature + pass
+│   ├── Editor/                  Inspector, Elements window, setup, importers, hot reload
+│   ├── Tests/                   EditMode (Native) and PlayMode tests
+│   └── Documentation~/          Consumer docs
+├── Assets/                      Dev project: sample pages (UI/), scenes, controllers
+├── Tools/
+│   ├── oracle/                  Chrome captures, chrome_sweep gate, behaviour checks
+│   ├── Layout/                  Chrome capture tooling (puppeteer)
+│   ├── weva_dump / weva_render / weva_bench   Core CLIs
+│   └── RenderGoldens/           GPU golden harness
+├── docs/                        Architecture, readiness, receipts
+├── CMakeLists.txt, check.sh     Build and the gate
 ├── AGENTS.md                    AI-tool contract
-├── PLAN.md                      Design + roadmap
-├── CONFORMANCE.md               Spec deltas
-├── Assets/                      Demo project + sample assets
-│   ├── UI/                      randhtml.html / .css — the dev demo
-│   ├── Scripts/                 Demo controllers
-│   └── Settings/                URP renderer + pipeline assets
-├── Packages/com.wevaui/        UPM package — the engine itself
-│   ├── Runtime/                 Headless-testable core (HTML, CSS, layout, paint)
-│   │   ├── Rendering/URP/       URP renderer feature + batched über-shader
-│   │   └── Forms/               Inputs, range slider, tooltip, context menu, …
-│   ├── Tests/                   Unity-host NUnit tests (EditMode + PlayMode); the engine's
-│   │                            conformance lives in Tools/oracle (Chrome captures)
-│   ├── Editor/                  Preview window, asset importers
-│   └── Documentation~/          Authoring guide
-└── Tools/
-    ├── BaselineGen/             Headless layout dump + Chrome compare
-    └── PerfBench/               Cascade / layout / paint benchmarks
+└── AI_REFERENCE.md              AI orientation
 ```
 
 ## License

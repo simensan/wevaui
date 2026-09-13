@@ -12,8 +12,8 @@ managed side of the host lives in the package:
 | Plugin binary and its import settings | `Packages/com.wevaui/Runtime/Native/Plugins/x86_64/` |
 | EditMode round-trip tests | `Packages/com.wevaui/Tests/Editor/Native/` |
 
-The C# engine in the same package is untouched by any of this; the two coexist
-while the host over the core is built up.
+The C# engine that shared the package until 2026-09-13 is deleted (Phase 4.3);
+the package is this host.
 
 ## Build the plugin
 
@@ -89,11 +89,9 @@ What FontEngine gives and does not give:
   which is why the query is per pair). `GetPairAdjustmentRecord(first,
   second)` is NOT used: on 6000.4 it returns an uninitialised record for a
   pair the face does not kern and crashed the editor. No ligatures or mark
-  positioning until a real shaper is bound (the C# engine's ATG path is the
-  candidate).
-- Coverage bitmaps come from `TryAddGlyphToTexture` (reflection-bound, as the
-  C# engine's SDF rasterizer binds it) in SMOOTH mode; colour glyphs are not
-  rasterized yet.
+  positioning until a real shaper is bound.
+- Coverage bitmaps come from `TryAddGlyphToTexture` (reflection-bound) in
+  SMOOTH mode; colour glyphs are not rasterized yet.
 - FontEngine is one state machine for the process, so the adapter forgets its
   active face before every document update (`NativeDocument.BeforeUpdate`).
 
@@ -108,18 +106,19 @@ colours are linear, its texels are sRGB bytes (white plus coverage for the
 glyph atlas), and a page composites in gamma space, so the offscreen path
 encodes vertex colours to sRGB and blends into a raw target; the in-pass path
 into URP's linear colour buffer blends in linear space instead (edges differ
-slightly, the way the C# engine's pre-sRGB-composite path did).
+slightly from the gamma composite).
 
 `WevaDocument` (`Weva.WevaDocument`, at `Runtime/WevaDocument.cs`; it was
-`Weva.Native.WevaNativeDocument` until 2026-09-13, when it took the name of
-the frozen engine's component, now `WevaLegacyDocument`) is the MonoBehaviour:
+`Weva.Native.WevaNativeDocument` until 2026-09-13, when it took the name, the
+script GUID and the serialized field names of the C# engine's component, since
+deleted) is the MonoBehaviour:
 a document from `DocumentAsset` + `StylesheetAssets` (the page's own `<link
 rel="stylesheet">` sheets first, fetched next to the asset in the editor and
 baked into the component for a player by `WevaDocumentLinkBaker`) or inline
 markup, the package's UI face with its bold, italic and symbol faces,
-registered with the URP pass as an `IUINativePaintSource` so its meshes are
-drawn in the same pass as legacy documents (beneath them). Its serialized
-field names are the legacy component's, so a scene carries over. It feeds
+registered with the URP pass as an `IUINativePaintSource`; `UIRenderGraphPass`
+draws every registered document's meshes into the camera colour target in
+`SortingOrder`, one pass per renderer. It feeds
 the Input System through `NativeInputFeed`, drains the core's event queue
 into C# events and dispatches `on-<event>` handler names to a controller.
 
@@ -271,8 +270,8 @@ then the custom properties in scope) wrap the tooling calls the core gained
 for editor panels. `NativeInspectorModel` turns them into what an Elements
 panel shows (tree, search, rule blocks winners-first, computed style, box
 model) and `Window/Weva/Elements` renders it for a `WevaDocument`
-in the scene. The C# goldens through the core: `goldens_from_unity.py`
-(layout against the Chrome captures, paint against the C# baselines).
+in the scene. `goldens_from_unity.py` renders the sample pages through the
+core for the layout comparison against the Chrome captures.
 
 ## Layout dump and the oracle
 

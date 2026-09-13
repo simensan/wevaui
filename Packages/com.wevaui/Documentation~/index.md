@@ -18,9 +18,10 @@ and is documented there.
 
 ## Status
 
-Pre-1.0. `0.1.1` was the last release of the C# engine, frozen 2026-09-13;
-`main` is the Unity host for the C++ core, and 1.0 ships one engine (see
-[api-stability](api-stability.md) for what carries over).
+`com.wevaui` 1.0.0: one engine, the Weva core (C++, checked against Chrome),
+hosted by this package. `0.1.1` was the last release of the C# engine; the
+package CHANGELOG has the migration notes and [api-stability](api-stability.md)
+the supported surface.
 
 ## Contents
 

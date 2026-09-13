@@ -29,11 +29,6 @@
             "name": "com.unity.render-pipelines.universal",
             "expression": "17.0.0",
             "define": "WEVA_URP"
-        },
-        {
-            "name": "com.unity.ugui",
-            "expression": "2.0.0",
-            "define": "WEVA_TMP"
         }
     ],
     "noEngineReferences": false

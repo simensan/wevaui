@@ -5,6 +5,47 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-09-13
+
+One engine. The C# HTML/CSS engine that 0.1.x shipped is deleted; the
+package is the Unity host for the Weva core (`libweva`, C++, behind a C ABI,
+checked against Chrome), which the Godot addon also runs on.
+
+### Migrating from 0.1.x
+- `WevaDocument` keeps its name, its script GUID and its serialized fields
+  (`documentAsset`, `stylesheetAssets`, `sortingOrder`,
+  `prefersDarkColorScheme`): a scene binds to the new component unchanged.
+  Remove the `IMGUIDocumentRenderer`, `UnityInputController` and
+  `DevToolsOverlay` components (now missing scripts) from its GameObject.
+- `[UIBind]`, `{{ path }}`, `data-each` / `data-key` / `$index`,
+  `data-class-*`, `data-model`, `on-<event>="Name"`, `SetController` /
+  `GetController<T>()` and `IBindingVersion` carry over. A handler that took
+  an event argument takes the element's id: `void OnStart(string id)` (or
+  nothing). A `bool` interpolates as `true`/`false`, not `True`/`False`.
+- The C# DOM is gone: `Weva.Dom`, `Weva.Events`, `Weva.Forms`,
+  `GetElementById`, `Rebuild()`, `[UIElement]`, manipulators, `ContextMenu`,
+  `TooltipManager`, `WevaFonts`, `RendererBackend`, the IMGUI fallback and
+  the F12 overlay. `doc.Document` (the core document: `Query`, attributes,
+  values, focus, scroll, dialogs) is the escape hatch; `Reload()` replaces
+  `Rebuild()`; fonts are the component's `Font`/`Bold`/`Italic`/`Fallbacks`
+  and `@font-face`; DevTools is Window → Weva → Elements.
+- `UIBatchedRendererFeature` keeps its name; `UIRendererFeature` is gone.
+  Always Included Shaders needs `Hidden/Weva/NativeMesh` (the setup adds it).
+- Package dependencies: URP and the Input System only (uGUI and Burst
+  dropped).
+
+### Added
+- Input through the Input System: mouse, keyboard with held-key repeat,
+  touch, gamepad navigation, IME composition; Chrome's 100 px wheel notch.
+- `<link rel="stylesheet">` resolved next to the document asset and baked
+  for player builds; `BasePath` defaults to the asset's folder.
+- `PrefersDarkColorScheme`, `FollowScreenSafeArea`, `InputConsumed`,
+  `WevaDocument.Input`.
+
+### Platforms
+- Native plugin for Windows x64. Other platforms follow as their CI jobs go
+  green.
+
 ## [0.1.1] - 2026-07-05
 
 Packaging only: no Runtime code changed between the two tags.

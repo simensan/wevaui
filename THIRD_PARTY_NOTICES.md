@@ -64,19 +64,9 @@ godot-cpp is fetched when building the Godot addon; its license is copied into
 the addon zip. puppeteer drives the Chrome oracle in `Tools/Layout/` and is
 never shipped.
 
-## Binaries (`Assets/Plugins/Roslyn/`)
-
-| Binary | Upstream | License | Notice |
-|--------|----------|---------|--------|
-| `Microsoft.CodeAnalysis.dll`, `Microsoft.CodeAnalysis.CSharp.dll`, `System.Collections.Immutable.dll`, `System.Reflection.Metadata.dll` | [.NET Foundation](https://github.com/dotnet/roslyn) (Roslyn / .NET runtime) | MIT | `Assets/Plugins/Roslyn/LICENSE.txt` |
-
-`Packages/com.wevaui/Runtime/Generators/Weva.Generators.dll` is built from this
-repository's own source (`Tools/Weva.Generators/`) and is covered by the
-project's MIT license.
-
 ## Package dependencies (fetched via Unity Package Manager — not redistributed)
 
 The package declares Unity first-party dependencies in
-`Packages/com.wevaui/package.json` (URP, Input System, uGUI, Burst). These are
+`Packages/com.wevaui/package.json` (URP, Input System). These are
 downloaded by UPM under their own licenses (Unity Companion License / package
 manifests) and are not redistributed in this repository.

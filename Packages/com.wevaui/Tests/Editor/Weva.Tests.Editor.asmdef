@@ -24,11 +24,6 @@
     ],
     "versionDefines": [
         {
-            "name": "com.unity.ugui",
-            "expression": "2.0.0",
-            "define": "WEVA_TMP"
-        },
-        {
             "name": "com.unity.inputsystem",
             "expression": "1.7.0",
             "define": "WEVA_INPUTSYSTEM"

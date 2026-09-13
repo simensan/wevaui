@@ -1,10 +1,9 @@
 # API stability
 
-This package is the Unity host for the shared C++ core. Most of what compiles
-into `Weva.Runtime` is either the frozen C# engine awaiting deletion or the
-generated binding to the core's C ABI. This page says which types are a
-contract, so a refactor of the engine's internals is not a breaking change to
-a package people depend on.
+This package is the Unity host for the shared C++ core. Much of what compiles
+into `Weva.Runtime` is the generated binding to the core's C ABI. This page
+says which types are a contract, so a change behind them is not a breaking
+change to a package people depend on.
 
 ## Supported surface
 
@@ -37,21 +36,18 @@ in a minor release is not. If something there is the only way to do a thing
 you need, that is worth an issue — the answer is usually a supported entry
 point on `WevaDocument`.
 
-## Unsupported and going away
+## Deleted
 
-Everything else. The frozen C# engine — `Weva.Css.*`, `Weva.Layout.*`,
+The C# engine that 0.1.x shipped — `Weva.Css.*`, `Weva.Layout.*`,
 `Weva.Paint.*`, `Weva.Text.*`, `Weva.Dom.*`, `Weva.Events.*`, `Weva.Forms.*`,
 `Weva.Designer.*`, `Weva.Testing.*`, `BindingScanner` / `BindingSet`,
 `IRenderBackend`, `IMGUIDocumentRenderer`, `DevToolsOverlay`, `WevaFonts`,
-`UIRendererFeature` (the pre-batching URP feature) — and its component
-`WevaLegacyDocument` (the `WevaDocument` of 0.1.1, renamed 2026-09-13) compile
-into the package until Phase 4.3 deletes them. **Nothing in this list is worth
-building on now.** They may change or vanish in any release.
+`UIRendererFeature` — is gone as of 1.0.0. The CHANGELOG's migration notes say
+what replaced each piece.
 
 ## Direction (decided 2026-09-13)
 
-The C++ core is the single source of truth and Chrome — not the C# engine —
-is what its conformance is measured against. 1.0 is a breaking release from
-0.1.1: the controller model (`[UIBind]`, `on-<event>`, `SetController`)
-carries over unchanged; the C# DOM does not. The frozen engine is deleted at
-4.3 and `package.json` moves to 1.0.0 with a migration note.
+The C++ core is the single source of truth and Chrome — not another
+implementation — is what its conformance is measured against. 1.0 is a
+breaking release from 0.1.1: the controller model carries over unchanged, the
+C# DOM does not.

@@ -1,10 +1,12 @@
 # Weva Conformance Reference
 
-> Current status: this reference is being reconciled with the implementation.
-> Use [`CSS_FEATURE_AUDIT.md`](CSS_FEATURE_AUDIT.md) as the authoritative
-> support/partial/stub/missing matrix. The engine now uses the CSS initial
-> value `box-sizing: content-box`; older notes in this file that say
-> `border-box` are stale.
+> **Written against the C# engine, which was deleted on 2026-09-13.** The
+> engine is `libweva/` (C++); its conformance is measured against Chrome
+> captures (`Tools/oracle`, `check.sh`), and the consumer-facing support
+> matrix is `Packages/com.wevaui/Documentation~/supported-css.md`. The
+> tables below describe the feature set the core ported and are kept as the
+> spec-delta record; the `Runtime/...` file references in them no longer
+> exist.
 
 Weva is a green-field HTML/CSS UI layer for Unity. Authors write standard `.html` and `.css`; the runtime parses, cascades, lays out, and paints with browser-faithful semantics for the supported subset. The current engine follows the CSS initial value `box-sizing: content-box`. Unknown properties are dropped with a warning, visual stubs emit diagnostics when authored with non-default values, unknown selectors throw a parse error, and unknown at-rules are skipped intentionally.
 
