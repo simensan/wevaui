@@ -1,9 +1,9 @@
-// Dev tool: quickly cycle the scene's WevaLegacyDocument through every sample
+// Dev tool: quickly cycle the scene's WevaDocument through every sample
 // HTML/CSS combo under Assets/UI without hand-editing the inspector.
 //
 // Open via  Window ▸ Weva ▸ Sample Cycler  (or Ctrl/Cmd+Alt+U).
 // Works in both edit mode and play mode — setting DocumentAsset triggers
-// the document's own Rebuild (AutoRebuildOnChange), and we nudge the Game
+// the document's own Reload, and we nudge the Game
 // view to repaint so the swap is visible immediately.
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +25,7 @@ public sealed class SampleCyclerWindow : EditorWindow {
     readonly List<Sample> samples = new();
     string filter = "";
     Vector2 scroll;
-    WevaLegacyDocument target;          // the WevaLegacyDocument we drive
+    WevaDocument target;          // the WevaDocument we drive
     int currentIndex = -1;      // index into `samples` of the live document
     double lastRefreshTime;
 
@@ -67,8 +67,8 @@ public sealed class SampleCyclerWindow : EditorWindow {
 
     void ResolveTarget() {
         if (target != null) return;
-        // Prefer a WevaLegacyDocument named "DemoUI"; otherwise the first one found.
-        var docs = Object.FindObjectsByType<WevaLegacyDocument>(FindObjectsInactive.Include);
+        // Prefer a WevaDocument named "DemoUI"; otherwise the first one found.
+        var docs = Object.FindObjectsByType<WevaDocument>(FindObjectsInactive.Include);
         target = docs.FirstOrDefault(d => d.name == "DemoUI") ?? docs.FirstOrDefault();
     }
 
@@ -83,7 +83,7 @@ public sealed class SampleCyclerWindow : EditorWindow {
         DrawToolbar();
 
         if (target == null) {
-            EditorGUILayout.HelpBox("No WevaLegacyDocument found in the open scene. Open a scene that contains one (e.g. DemoUI).", MessageType.Warning);
+            EditorGUILayout.HelpBox("No WevaDocument found in the open scene. Open a scene that contains one (e.g. DemoUI).", MessageType.Warning);
             if (GUILayout.Button("Rescan scene")) { target = null; ResolveTarget(); SyncCurrentIndex(); }
             return;
         }
@@ -108,7 +108,7 @@ public sealed class SampleCyclerWindow : EditorWindow {
 
         using (new EditorGUILayout.HorizontalScope()) {
             EditorGUIUtility.labelWidth = 40;
-            target = (WevaLegacyDocument)EditorGUILayout.ObjectField("Doc", target, typeof(WevaLegacyDocument), allowSceneObjects: true);
+            target = (WevaDocument)EditorGUILayout.ObjectField("Doc", target, typeof(WevaDocument), allowSceneObjects: true);
             EditorGUIUtility.labelWidth = 0;
         }
 
@@ -160,13 +160,11 @@ public sealed class SampleCyclerWindow : EditorWindow {
         // so clearing any explicit StylesheetAssets avoids a stale sheet from
         // a previous sample overriding the new one.
         target.StylesheetAssets = new TextAsset[0];
-        target.DocumentAsset = asset; // setter triggers Rebuild when enabled
+        target.DocumentAsset = asset; // the setter reloads
         currentIndex = index;
 
         if (!Application.isPlaying) {
-            // Edit mode: the setter already rebuilt if AutoRebuildOnChange;
-            // call Rebuild defensively and force the Game view to repaint.
-            target.Rebuild();
+            // Edit mode: force the Game view to repaint.
         }
         EditorUtility.SetDirty(target);
         RepaintGameViews();

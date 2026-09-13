@@ -9,9 +9,8 @@ using Weva.Rendering.URP;
 namespace Weva.EditorTools.Setup {
     // One-shot helper that adds `UIBatchedRendererFeature` to whichever
     // URP renderer asset the project's currently-active URP pipeline
-    // points at. Without that feature, WevaLegacyDocument falls back to the
-    // IMGUI debug renderer (gradients render as flat colors, filters
-    // skipped). This window walks the user through the setup; the menu
+    // points at. Without that feature a WevaDocument has no pass to draw
+    // in. This window walks the user through the setup; the menu
     // entry runs the same logic non-interactively for scripted projects.
     public static class UrpFeatureSetup {
         // All shipped Weva menu items live under Window/Weva so end users
@@ -61,7 +60,7 @@ namespace Weva.EditorTools.Setup {
 
         // True when URP is the active pipeline and NONE of its renderer data
         // assets carry UIBatchedRendererFeature — the misconfiguration the
-        // WevaLegacyDocument inspector and the runtime warning point at. False
+        // WevaDocument inspector and the runtime warning point at. False
         // when URP isn't active (nothing to fix) or when at least one
         // renderer has the feature (mixed setups are assumed intentional).
         public static bool IsFeatureMissingOnActiveRenderer() {

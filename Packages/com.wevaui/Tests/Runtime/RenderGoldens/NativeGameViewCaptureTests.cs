@@ -10,15 +10,13 @@ using Weva.Rendering;
 
 namespace Weva.Tests.RenderGoldens {
     // The core-hosted document through the REAL pipeline: a WevaDocument
-    // in front of a camera, drawn by UIRenderPass (the in-pass path the
+    // in front of a camera, drawn by UIRenderGraphPass (the in-pass path the
     // offscreen parity render does not exercise), captured to a PNG for a
     // person to look at. Run on demand:
     //   Unity -batchmode -runTests -testPlatform PlayMode
     //         -testFilter NativeGameViewCaptureTests
     // Output: .utmp/native-gameview/<name>.png. Like RenderGoldenCaptureTests,
-    // capture is a tool: the assertions only say a frame was produced. The
-    // same rig also captures the C# engine drawing the same page, so a black
-    // frame can be told apart from a broken rig.
+    // capture is a tool: the assertions only say a frame was produced.
     //
     // Known: a camera.Render() capture can be vertically flipped relative to
     // the Game view (the backdrop path differs); colours and layout are what
@@ -46,27 +44,6 @@ namespace Weva.Tests.RenderGoldens {
 
             var rt = new RenderTexture(Width, Height, 24);
             var tex = new Texture2D(Width, Height, TextureFormat.RGB24, false);
-
-            // The C# engine first, through the same rig, as the control.
-            var csGo = new GameObject("csharp-document");
-            var cs = csGo.AddComponent<Weva.WevaLegacyDocument>();
-            var bf = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance;
-            cs.GetType().GetField("documentAsset", bf).SetValue(cs, html);
-            cs.GetType().GetField("stylesheetAssets", bf).SetValue(cs, new[] { css });
-            cs.Rebuild();
-            var regField = cs.GetType().GetField("registered", bf);
-            if (regField != null && !(bool)regField.GetValue(cs)) {
-                UIPaintSourceRegistry.Register(cs);
-                regField.SetValue(cs, true);
-            }
-            var prepare = cs.GetType().GetMethod("PrepareForRenderViewport", bf);
-            var update = cs.GetType().GetMethod("Update", bf);
-            prepare.Invoke(cs, new object[] { Width, Height });
-            for (int i = 0; i < SettleFrames; i++) { update.Invoke(cs, null); yield return null; }
-            Capture(cam, rt, tex, "csharp-native-check");
-            Debug.Log("[NativeGameView] sources registered with the C# document: " + UIPaintSourceRegistry.Snapshot().Count);
-            Object.Destroy(csGo);
-            yield return null;
 
             var docGo = new GameObject("native-document");
             docGo.SetActive(false);

@@ -6,7 +6,6 @@
         "Weva.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Unity.TextMeshPro",
         "Unity.InputSystem",
         "Unity.InputSystem.TestFramework"
     ],

@@ -5,10 +5,10 @@
 // NativeInputFeed feeds it the Input System. Attach a controller
 // (SetController) to bind [UIBind] values and on-<event> handlers.
 //
-// This replaced the C# engine's component of the same name at 1.0; that one
-// is WevaLegacyDocument until Phase 4.3 deletes it. The serialized field
-// names (documentAsset, stylesheetAssets, sortingOrder,
-// prefersDarkColorScheme) are kept so a scene carries over.
+// This replaced the C# engine's component of the same name at 1.0 and
+// carries its script GUID and serialized field names (documentAsset,
+// stylesheetAssets, sortingOrder, prefersDarkColorScheme), so a 0.1.x scene
+// binds to it unchanged.
 using System;
 using UnityEngine;
 using Weva.Native;
@@ -575,13 +575,6 @@ namespace Weva
 #if WEVA_URP
         public int Order => sortingOrder;
 
-        public bool NeedsRepaint => _doc != null && (_doc.DrawSerial != _drawnSerial || _doc.IsAnimating);
-
-        public void EmitPaint(Weva.Paint.IRenderBackend backend)
-        {
-            // Nothing: this source publishes geometry through EmitNative.
-        }
-
         public void PrepareForRenderViewport(int width, int height)
         {
             if (_doc == null || width <= 0 || height <= 0 || (width == _width && height == _height)) return;
@@ -589,14 +582,6 @@ namespace Weva
             _height = height;
             _doc.SetViewport(width, height);
             _doc.Update(0);
-        }
-
-        public void EmitNative(IUICommandBuffer cmd, int viewportWidth, int viewportHeight)
-        {
-            if (_doc == null || _renderer == null || cmd == null) return;
-            _renderer.Sync(_doc);
-            _renderer.Draw(cmd, viewportWidth > 0 ? viewportWidth : _width, viewportHeight > 0 ? viewportHeight : _height);
-            _drawnSerial = _doc.DrawSerial;
         }
 
         public void EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight)

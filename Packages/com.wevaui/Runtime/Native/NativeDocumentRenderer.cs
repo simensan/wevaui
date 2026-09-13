@@ -8,7 +8,7 @@
 // Hidden/Weva/NativeMesh. Backdrop-filter draws carry a transparent shape and
 // are skipped; rounded rectangles arrive tessellated and draw as geometry.
 //
-// Two entry points: Draw(IUICommandBuffer) for the URP pass, and
+// Two entry points: Draw(CommandBuffer) for the URP pass, and
 // RenderToTexture for tests and screenshots (a legacy CommandBuffer executed
 // immediately against an offscreen target).
 using System;
@@ -301,23 +301,6 @@ namespace Weva.Native
             }
         }
 
-#if WEVA_URP
-        /// <summary>Issues the batches into the URP pass's command buffer (legacy or RenderGraph).</summary>
-        public void Draw(IUICommandBuffer cmd, int width, int height)
-        {
-            if (cmd == null) throw new ArgumentNullException(nameof(cmd));
-            cmd.SetGlobalVector(IdViewport, Viewport(width, height));
-            // A camera pass into a linear colour buffer: the shader follows
-            // _ProjectionParams.x for the flip and blends in linear space.
-            cmd.SetGlobalInt(IdFlip, 0);
-            cmd.SetGlobalInt(IdGamma, 0);
-            foreach (Batch b in _batches)
-            {
-                Material m = MaterialFor(b.Texture, b.Blend);
-                if (m != null) cmd.DrawMesh(b.Mesh, Matrix4x4.identity, m);
-            }
-        }
-#endif
 
         private static Vector4 Viewport(int width, int height)
         {

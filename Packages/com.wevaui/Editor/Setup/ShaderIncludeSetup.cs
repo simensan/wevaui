@@ -4,15 +4,13 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Weva.EditorTools.Setup {
-    // One-shot helper that adds every Weva shader (Hidden/Weva/* plus
-    // the named Weva/* family) to Project Settings → Graphics → Always
-    // Included Shaders.
+    // One-shot helper that adds the Weva shader to Project Settings →
+    // Graphics → Always Included Shaders.
     //
     // Without this, the shaders aren't referenced by any committed Material
     // or Resources/ asset, so Unity STRIPS them from the player build. The
-    // symptom in builds is invisible text glyphs (Text-SDF shader stripped),
-    // empty image quads (Quad shader stripped), and missing gradients /
-    // shadows / filter effects. Editor Play mode hides the problem because
+    // symptom in builds is a document that draws nothing. Editor Play mode
+    // hides the problem because
     // Unity loads every shader it knows about, regardless of inclusion.
     //
     // Idempotent — re-running with all shaders already included is a no-op.
@@ -21,18 +19,11 @@ namespace Weva.EditorTools.Setup {
     public static class ShaderIncludeSetup {
         const string MenuPath = "Window/Weva/Setup/Add Shaders to Always Included";
 
-        // The full set of Weva shaders the runtime loads by Shader.Find.
-        // Keep in sync with new shader files added to Runtime/Rendering/Shaders/.
-        // Names match the `Shader "..."` declaration in each .shader file
-        // (not the file name); these are the strings Shader.Find resolves.
+        // The shaders the runtime loads by Shader.Find: the one that draws the
+        // core's draw list (Runtime/Native/Resources/Weva-NativeMesh.shader).
+        // The name is the `Shader "..."` declaration, not the file name.
         static readonly string[] RequiredShaderNames = {
-            "Hidden/Weva/Quad",
-            "Hidden/Weva/Filter",
-            "Hidden/Weva/Gradient",
-            "Hidden/Weva/Shadow",
-            "Hidden/Weva/Solid",
-            "Hidden/Weva/StencilWrite",
-            "Hidden/Weva/Text",
+            "Hidden/Weva/NativeMesh",
         };
 
         // Auto-configure on editor load so consumers don't have to discover the

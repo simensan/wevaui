@@ -3,20 +3,20 @@ using UnityEditor;
 using UnityEngine;
 
 namespace Weva.EditorTools.Documents {
-    // Hot-reloads WevaDocument (and, until Phase 4.3, WevaLegacyDocument)
-    // instances when the .html / .css / .htm assets they reference are reimported.
+    // Hot-reloads WevaDocument instances when the .html / .css / .htm assets
+    // they reference are reimported.
     //
     // Notes on Unity quirks:
     //   - AssetPostprocessor lives in editor assemblies and is rediscovered by
     //     the editor on every domain reload, so we don't need any registration
     //     bookkeeping — the static OnPostprocessAllAssets entry point is found
     //     via reflection.
-    //   - In edit mode we defer the Rebuild() to EditorApplication.delayCall:
+    //   - In edit mode we defer the Reload() to EditorApplication.delayCall:
     //     OnPostprocessAllAssets fires inside the asset import phase where
     //     touching scene objects (and triggering a re-import) is unsafe and
     //     can re-enter the postprocessor pipeline. delayCall executes on the
     //     next editor tick after the import completes.
-    //   - In Play mode the same delayCall path is fine, but we Rebuild()
+    //   - In Play mode the same delayCall path is fine, but we Reload()
     //     immediately so the running application sees the change without
     //     waiting for the next editor frame.
     //   - FindObjectsByType is O(n) over loaded scene objects. Acceptable for
@@ -30,27 +30,14 @@ namespace Weva.EditorTools.Documents {
             string[] movedFromAssetPaths) {
             if (!HasRelevantChange(importedAssets, movedAssets)) return;
             ReloadCoreDocuments(importedAssets, movedAssets);
-            // Both args spelled out: the (FindObjectsInactive)-only overload
-            // does not exist before Unity 6000.4, and this package supports
-            // 6000.3 consumers.
-            var docs = GameObject.FindObjectsByType<WevaLegacyDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            if (docs == null || docs.Length == 0) return;
-            for (int i = 0; i < docs.Length; i++) {
-                var doc = docs[i];
-                if (doc == null) continue;
-                if (!ReferencesAny(doc, importedAssets) && !ReferencesAny(doc, movedAssets)) continue;
-                if (Application.isPlaying) {
-                    SafeRebuild(doc);
-                } else {
-                    var captured = doc;
-                    EditorApplication.delayCall += () => SafeRebuild(captured);
-                }
-            }
         }
 
         // The core-backed document: Reload() parses again and keeps the
         // controller, so a saved stylesheet lands in a running scene.
         static void ReloadCoreDocuments(string[] importedAssets, string[] movedAssets) {
+            // Both args spelled out: the (FindObjectsInactive)-only overload
+            // does not exist before Unity 6000.4, and this package supports
+            // 6000.3 consumers.
             var docs = GameObject.FindObjectsByType<WevaDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             if (docs == null) return;
             for (int i = 0; i < docs.Length; i++) {
@@ -91,15 +78,6 @@ namespace Weva.EditorTools.Documents {
             }
         }
 
-        static void SafeRebuild(WevaLegacyDocument doc) {
-            if (doc == null) return;
-            try {
-                doc.Rebuild();
-            } catch (Exception ex) {
-                Debug.LogWarning("Weva: hot-reload Rebuild failed on '" + doc.name + "': " + ex.Message, doc);
-            }
-        }
-
         static bool HasRelevantChange(string[] importedAssets, string[] movedAssets) {
             for (int i = 0; i < importedAssets.Length; i++) {
                 if (IsRelevant(importedAssets[i])) return true;
@@ -115,10 +93,6 @@ namespace Weva.EditorTools.Documents {
             return path.EndsWith(".html", StringComparison.OrdinalIgnoreCase)
                 || path.EndsWith(".htm", StringComparison.OrdinalIgnoreCase)
                 || path.EndsWith(".css", StringComparison.OrdinalIgnoreCase);
-        }
-
-        static bool ReferencesAny(WevaLegacyDocument doc, string[] paths) {
-            return ReferencesAny(doc.DocumentAsset, doc.StylesheetAssets, paths);
         }
 
         static bool ReferencesAny(TextAsset docAsset, TextAsset[] sheets, string[] paths) {
