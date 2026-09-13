@@ -41,6 +41,16 @@ endif()
 set(WEVA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../.. ${CMAKE_CURRENT_BINARY_DIR}/weva-core)
 
+# Hidden by default, like the Unity plugin, and set after the core is added for
+# the same reason it is there. A GDExtension is loaded by Godot through the
+# entry point its .gdextension names, so nothing else needs to be visible --
+# and this library statically links the whole core, whose translation units
+# had been publishing their internal helpers into the addon's dynamic symbol
+# table. GDREGISTER/godot-cpp mark what they need.
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+
 add_library(weva_godot SHARED
     src/godot_font.cpp
     src/register_types.cpp

@@ -206,27 +206,6 @@ struct Reader {
 CssValuePtr parse_single(Reader& r);
 CalcNodePtr parse_calc_expression(Reader& r, int depth);
 
-// Reads a colour-function argument as a number. Percentages report themselves
-// so rgb() can switch to its 0-100 channel scale, and angles are normalised to
-// degrees for the hue slot.
-bool arg_number(const CssValue& v, double* out, bool* is_percent) {
-    *is_percent = false;
-    switch (v.kind()) {
-        case CssValueKind::Number:
-            *out = static_cast<const CssNumber&>(v).value;
-            return true;
-        case CssValueKind::Percentage:
-            *out = static_cast<const CssPercentage&>(v).value;
-            *is_percent = true;
-            return true;
-        case CssValueKind::Angle:
-            *out = static_cast<const CssAngle&>(v).to_degrees();
-            return true;
-        default:
-            return false;
-    }
-}
-
 // One color-mix() component: `<color> [<percentage>]?`, as a colour value,
 // an identifier (`transparent`) or a space list of the two. False when the
 // colour cannot be evaluated here (currentcolor, an unresolved var()).

@@ -131,14 +131,6 @@ std::optional<double> definite_content_height(const BoxTree& tree, BoxId id) {
     return h > 0 ? h : 0.0;
 }
 
-double resolve_side_px(std::string_view raw, const LayoutContext& ctx, double font_size,
-                       double basis, double line_height) {
-    const ResolvedLength r = resolve_length(raw, ctx, font_size, basis, line_height);
-    // Auto and unparseable both give 0 here: an auto margin contributes no
-    // space of its own, and the centring rule reads the raw text instead.
-    return r.kind == LengthKind::Length ? r.pixels : 0;
-}
-
 } // namespace
 
 ResolvedSides resolve_box_sides_px(const ComputedStyle* style, std::string_view shorthand,

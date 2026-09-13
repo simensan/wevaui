@@ -58,6 +58,15 @@ void hash_mesh(const weva::Mesh& mesh, Hash* h) {
     }
 }
 }
+// Replacing global operator new with a malloc-based counting allocator means
+// global operator delete must free with the matching std::free. GCC's
+// -Wmismatched-new-delete does not model that this IS the replacement: it sees
+// free() applied to a pointer that came from `new` and warns. The pairing is
+// correct, so the diagnostic is suppressed here rather than worked around.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+#endif
 void* operator new(size_t size) {
     if (counting) ++allocations;
     if (void* p = std::malloc(size ? size : 1)) return p;
@@ -68,6 +77,9 @@ void operator delete(void* p) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
 void operator delete(void* p, size_t) noexcept { std::free(p); }
 void operator delete[](void* p, size_t) noexcept { std::free(p); }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 int main() {
     using namespace weva;

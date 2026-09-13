@@ -18,14 +18,6 @@ thread_local double storage_ms = 0;
 
 int64_t next_version() { return ++g_version_counter; }
 
-// The counter as it stands, without advancing it. The inherit memo keys on
-// this rather than on the style's own version: what it caches is an ANCESTOR,
-// and an ancestor changing does not touch the descendant's version. Any write
-// to any style advances the counter, so every memo lapses together -- which is
-// blunt, and correct. Keying it on the style's own version instead served a
-// stale ancestor the moment one was written to, and the cascade store tests
-// caught it.
-int64_t current_version() { return g_version_counter; }
 const std::string kEmpty;
 
 // The caller supplies a nonzero occupancy word.

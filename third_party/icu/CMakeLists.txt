@@ -25,7 +25,9 @@ foreach(part common i18n)
     list(TRANSFORM sources PREPEND "${icu_source}/${part}/")
     add_library(weva_icu_${part} STATIC ${sources})
     target_link_libraries(weva_icu_${part} PRIVATE weva_sanitizers)
-    target_include_directories(weva_icu_${part} PUBLIC "${icu_source}/common" "${icu_source}/i18n")
+    # SYSTEM so ICU's headers do not hand their warnings to everything that
+    # includes them. Upstream code we do not patch.
+    target_include_directories(weva_icu_${part} SYSTEM PUBLIC "${icu_source}/common" "${icu_source}/i18n")
     target_compile_definitions(weva_icu_${part} PUBLIC
         U_STATIC_IMPLEMENTATION U_HAVE_LIB_SUFFIX=1 U_LIB_SUFFIX_C_NAME=_weva
         UCONFIG_NO_CONVERSION=1 UCONFIG_NO_LEGACY_CONVERSION=1
@@ -35,6 +37,11 @@ foreach(part common i18n)
     if(MSVC)
         target_compile_options(weva_icu_${part} PRIVATE /utf-8 /Zc:__cplusplus /EHsc)
         target_compile_definitions(weva_icu_${part} PRIVATE _CRT_SECURE_NO_WARNINGS NOMINMAX)
+    else()
+        # 12 of the 22 warnings in a clean gcc build came from these two
+        # targets. They are vendored upstream sources, fetched and unpatched,
+        # so the warnings are not ours to fix and they bury the ten that are.
+        target_compile_options(weva_icu_${part} PRIVATE -w)
     endif()
 endforeach()
 target_compile_definitions(weva_icu_common PRIVATE U_COMMON_IMPLEMENTATION)

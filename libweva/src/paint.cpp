@@ -1722,17 +1722,6 @@ const Element* selected_option(const Element& select) {
     return nullptr;
 }
 
-std::string trimmed_text_of(const Element& e) {
-    std::string s;
-    for (const Ref<Node>& c : e.children()) {
-        if (c->node_type() == NodeType::Text) s += static_cast<const TextNode&>(*c).data();
-    }
-    size_t a = 0, z = s.size();
-    while (a < z && std::isspace(static_cast<unsigned char>(s[a]))) ++a;
-    while (z > a && std::isspace(static_cast<unsigned char>(s[z - 1]))) --z;
-    return s.substr(a, z - a);
-}
-
 struct ControlText {
     std::string text;
     std::string_view source;
@@ -2042,16 +2031,6 @@ void fill_rounded(const Rect& r, double radius, const LinearColor& color, Render
     const CornerRadius cr(rr);
     tessellate_rounded_rect(r, BorderRadii(cr, cr, cr, cr), color, &mesh);
     draw_mesh(std::move(mesh), backend, {}, opacity, xf, clip, filter);
-}
-
-double attr_double(const Element& e, std::string_view name, double fallback) {
-    const std::string_view raw = e.get_attribute(name);
-    if (raw.empty()) return fallback;
-    char* end = nullptr;
-    const std::string s(raw);
-    const double v = std::strtod(s.c_str(), &end);
-    if (end == s.c_str() || !std::isfinite(v)) return fallback;
-    return v;
 }
 
 void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double y, double fs,

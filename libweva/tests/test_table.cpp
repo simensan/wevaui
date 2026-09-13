@@ -390,7 +390,7 @@ void test_table_translucent_border_intersections() {
     CHECK(alpha > .49f && alpha < .51f);
     // Chrome paints two perpendicular layers here (alpha .75), but adjacent
     // collinear segments must not create a third/fourth layer.
-    for (const auto point : {std::pair<int,int>{2,2}, {100,2}, {100,26}, {2,26}, {198,50}}) {
+    for (const auto& point : {std::pair<int,int>{2,2}, {100,2}, {100,26}, {2,26}, {198,50}}) {
         const float actual = renderer.pixel(point.first, point.second).a;
         std::printf("table border alpha (%d,%d): %.6f; edge %.6f\n", point.first, point.second, actual, alpha);
         CHECK(std::fabs(actual - (1 - (1 - alpha) * (1 - alpha))) < .001f);
@@ -407,7 +407,7 @@ void test_table_translucent_border_intersections() {
 }
 
 void test_table_unequal_border_intersections() {
-    for (const auto pair : {std::pair<int,int>{8,4}, {4,8}, {4,4}}) {
+    for (const auto& pair : {std::pair<int,int>{8,4}, {4,8}, {4,4}}) {
         const int h = pair.first, v = pair.second;
         Fixture f;
         CHECK(f.css("#t{width:200px;table-layout:fixed;border-collapse:collapse}td{padding:0;border:" +

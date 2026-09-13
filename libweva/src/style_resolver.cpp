@@ -33,10 +33,6 @@ bool iequals(std::string_view a, std::string_view b) {
     return true;
 }
 
-std::string_view get(const ComputedStyle* s, std::string_view property) {
-    return s ? s->get(property) : std::string_view();
-}
-
 // The same lookup by id. A property id is resolved once for the
 // program below rather than hashed from its name on every call --
 // sampling put ComputedStyle::get and CssPropertyRegistry::id_of

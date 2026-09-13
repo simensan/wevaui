@@ -136,9 +136,6 @@ int compare_important_origin(DeclarationOrigin a, DeclarationOrigin b) {
 }
 int cmp_int(int a, int b) { return a < b ? -1 : (a > b ? 1 : 0); }
 
-void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
-                       bool* has_has, bool* folds_index, bool* uses_hover, bool* uses_active);
-
 
 // ASCII-only whitespace trim and case-insensitive compare, used by the
 // @property pass. Kept local rather than shared: the value semantics here are
