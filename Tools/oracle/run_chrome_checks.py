@@ -21,8 +21,14 @@ one exit code:
 
     python Tools/oracle/run_chrome_checks.py [--only NAME] [--out DIR]
 
-Needs node with puppeteer resolvable from Tools/oracle (the repo root's
-node_modules) and a Chrome that puppeteer can launch. Exit 1 on any failure.
+A script named in known-gaps/chrome-checks.txt (`name: reason`) may fail; the
+run reports such an entry the moment it stops being needed, so the file cannot
+quietly accumulate.
+
+Needs node with puppeteer resolvable from Tools/oracle and a Chrome. One
+Chrome is used for every script so receipts do not mix browser versions:
+WEVA_CHROME, else the first installed candidate below, else puppeteer's
+bundled build. Exit 1 on any unexcused failure.
 """
 import argparse
 import glob
@@ -43,9 +49,6 @@ CHROME_CANDIDATES = [
 
 
 def find_chrome():
-    """One Chrome for every script, so the receipts do not mix browser versions.
-    WEVA_CHROME wins; otherwise the first installed candidate; otherwise None
-    and the .cjs scripts fall back to whatever puppeteer bundles."""
     env = os.environ.get("WEVA_CHROME")
     if env:
         return env
@@ -78,11 +81,25 @@ def argv_for(path, chrome, out_dir):
     return cmd
 
 
+def read_known(path):
+    known = {}
+    if path and os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and ":" in line:
+                    k, v = line.split(":", 1)
+                    known[k.strip()] = v.strip()
+    return known
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", help="run only scripts whose name contains this")
     ap.add_argument("--out", default=os.path.join(ROOT, ".utmp", "chrome-checks"),
                     help="directory for per-script output receipts")
+    ap.add_argument("--known-failing", default=os.path.join(HERE, "known-gaps", "chrome-checks.txt"),
+                    help="`script-name: reason` lines allowed to fail")
     a = ap.parse_args()
 
     scripts = sorted(glob.glob(os.path.join(HERE, "check_*_chrome.cjs"))
@@ -93,15 +110,16 @@ def main():
         print("no scripts matched", file=sys.stderr)
         return 2
     os.makedirs(a.out, exist_ok=True)
+    known = read_known(a.known_failing)
 
     chrome = find_chrome()
     print("chrome:", chrome or "(puppeteer's bundled build)")
-    failed, passed = [], 0
+    failed, excused, passed = [], [], 0
     for path in scripts:
         name = os.path.basename(path)
         cmd = argv_for(path, chrome, a.out)
         t0 = time.time()
-        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
+        r = subprocess.run(cmd, cwd=a.out, capture_output=True, text=True,
                            encoding="utf-8", errors="replace")
         dt = time.time() - t0
         with open(os.path.join(a.out, name + ".log"), "w", encoding="utf-8", newline="\n") as f:
@@ -112,13 +130,20 @@ def main():
         if r.returncode == 0:
             passed += 1
             print("ok    %-46s %5.1fs  %s" % (name, dt, last))
+        elif name in known:
+            excused.append(name)
+            print("known %-46s %5.1fs  exit %d  %s" % (name, dt, r.returncode, known[name][:70]))
         else:
             failed.append(name)
             tail = (r.stderr.strip().splitlines() or r.stdout.strip().splitlines() or [""])[-1][:100]
             print("FAIL  %-46s %5.1fs  exit %d  %s" % (name, dt, r.returncode, tail))
 
-    print("\n%d scripts: %d passed, %d failed; receipts in %s"
-          % (len(scripts), passed, len(failed), os.path.relpath(a.out, ROOT)))
+    ran = {os.path.basename(p) for p in scripts}
+    stale = [k for k in known if k in ran and k not in excused]
+    print("\n%d scripts: %d passed, %d failed, %d known-failing%s; receipts in %s"
+          % (len(scripts), passed, len(failed), len(excused),
+             ("; %d known-failing entries no longer needed: %s" % (len(stale), ", ".join(stale))) if stale else "",
+             os.path.relpath(a.out, ROOT)))
     for name in failed:
         print("FAIL", name)
     return 1 if failed else 0
