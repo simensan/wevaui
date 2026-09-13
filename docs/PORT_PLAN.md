@@ -1930,7 +1930,9 @@ heights (tolerance per ORACLE.md); surrounding box geometry stays zero-tolerance
 
 Scoped deliberately: **`flex-wrap` is not ported**, so every container lays out
 as one line, and `flex_wrap_is_ported()` returns false so a caller can refuse
-rather than be quietly wrong. Everything the corpus uses is here — direction,
+rather than be quietly wrong.
+[Superseded 2026-09-13: wrap and wrap-reverse both landed and are pinned by
+test_flex.cpp; the header and the predicate said otherwise until then.] Everything the corpus uses is here — direction,
 gaps, grow/shrink/basis, justify-content, align-items including baseline,
 `order`, and the `flex` shorthand.
 
@@ -2190,6 +2192,9 @@ ported and named in the header: `minmax()`, `fit-content()`, intrinsic tracks,
 `auto-fill`/`auto-fit`, numeric line placement, spans, `grid-auto-flow: column`
 or `dense`, subgrid, and the alignment families beyond stretch.
 `grid_is_fully_ported()` returns false. ~380 lines against the C#'s 4,848.
+[Superseded 2026-09-13: every construct listed above is implemented and, except
+`fit-content()`, pinned by test_grid.cpp; grid.cpp is 1,769 lines. The header
+and the predicate kept claiming otherwise until then.]
 
 **All six grid cases now agree.** Three bugs, each found by grading a step:
 

@@ -2,17 +2,17 @@
 #include "weva/box.h"
 #include "weva/style_resolver.h"
 
-// CSS Flexible Box Layout L1, §9 — the SINGLE-LINE subset.
+// CSS Flexible Box Layout L1, §9.
 //
-// Scope, stated up front because a partial flex implementation that pretends
-// otherwise is worse than none: `flex-wrap` is not ported, so every container
-// lays out as one line. Everything else in the corpus is here — direction,
-// gaps, flex-grow/shrink/basis, justify-content and align-items including
-// baseline.
+// Direction, gaps, flex-grow/shrink/basis, justify-content and align-items
+// including baseline, and `flex-wrap` — `wrap` and `wrap-reverse`, the latter
+// swapping cross-start and cross-end per §5.2 — with align-content over the
+// resulting lines. test_flex.cpp pins the wrapping cases.
 //
-// A wrapping container therefore lays out as a single overflowing line rather
-// than as several. That is a visible, checkable difference, not a silent
-// approximation, and `flex_wrap_is_ported()` exists so a caller can tell.
+// This comment used to say flex-wrap was not ported and that every container
+// laid out as one line, and `flex_wrap_is_ported()` returned false to match,
+// long after wrapping landed. A header a host can branch on is not the place
+// for a stale note.
 
 namespace weva {
 
@@ -25,8 +25,7 @@ class BlockLayout;
 double layout_flex(BoxTree* tree, BoxId container, double content_width, double content_height,
                    const LayoutContext& ctx, BlockLayout* block);
 
-// False while `flex-wrap` is unported, so a caller can refuse rather than
-// silently laying a multi-line container out as one line.
-constexpr bool flex_wrap_is_ported() { return false; }
+// `wrap` and `wrap-reverse` both lay out as multiple lines.
+constexpr bool flex_wrap_is_ported() { return true; }
 
 } // namespace weva

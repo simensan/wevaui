@@ -2,26 +2,30 @@
 #include "weva/box.h"
 #include "weva/style_resolver.h"
 
-// CSS Grid Layout L1 — the EXPLICIT-GRID subset.
+// CSS Grid Layout L1.
 //
 // Scope, stated plainly because a partial grid that pretends otherwise is worse
 // than none:
 //
 //   Ported     `grid-template-columns` / `-rows` over <length>, <percentage>,
-//              `auto` and `<n>fr`, with `repeat(<count>, <track>)`;
-//              `grid-template-areas` with `grid-area: <name>`; row-major
-//              auto-placement into the remaining cells; row and column gaps;
-//              stretch placement within a cell.
+//              `auto`, `<n>fr`, `min-content`, `max-content`, `minmax()` and
+//              `fit-content()`, with `repeat()` including `auto-fill` and
+//              `auto-fit`; `grid-template-areas` with `grid-area: <name>`;
+//              numeric line placement and `span`; auto-placement in both
+//              directions including `grid-auto-flow: column` and `dense`;
+//              implicit tracks; subgrid; row and column gaps; and the
+//              `justify-*` / `align-*` families.
 //
-//   NOT ported `minmax()`, `fit-content()`, `min-content`/`max-content` tracks,
-//              `auto-fill` / `auto-fit`, numeric line placement
-//              (`grid-column: 2 / 4`), spans, `grid-auto-flow: column` or
-//              `dense`, implicit tracks beyond one row, subgrid, and the
-//              `justify-*` / `align-*` families beyond the stretch default.
+//   Untested   `fit-content()` parses and resolves but no test pins it, so it
+//              is the one construct here whose behaviour is unverified.
 //
 // An unported construct is not silently approximated: a track it cannot read is
-// treated as `auto`, which is visible rather than subtly wrong, and
-// `grid_is_fully_ported()` lets a caller ask.
+// treated as `auto`, which is visible rather than subtly wrong.
+//
+// This comment used to list almost everything above as NOT ported, and
+// `grid_is_fully_ported()` returned false to match — long after the features
+// landed and were pinned by test_grid.cpp. It is a header a host could branch
+// on, so it was not a stale comment but a public API lying about capability.
 
 namespace weva {
 
@@ -33,7 +37,9 @@ class BlockLayout;
 double layout_grid(BoxTree* tree, BoxId container, double content_width, double content_height,
                    const LayoutContext& ctx, BlockLayout* block);
 
-// False while the list above is non-empty.
-constexpr bool grid_is_fully_ported() { return false; }
+// The explicit and implicit grid, placement, sizing and alignment are all
+// present and pinned; see the scope note above for the single untested
+// construct.
+constexpr bool grid_is_fully_ported() { return true; }
 
 } // namespace weva
