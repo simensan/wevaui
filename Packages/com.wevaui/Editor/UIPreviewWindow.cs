@@ -38,7 +38,7 @@ namespace Weva.EditorTools {
         bool refreshPending;
         const double DebounceSeconds = 0.25;
 
-        [MenuItem("Window/Weva/Preview")]
+        [MenuItem("Window/Weva/Legacy/Preview", priority = 302)]
         public static void Open() => GetWindow<UIPreviewWindow>("Weva Preview");
 
         // EditorWindow instances survive domain reloads by serialization, but the

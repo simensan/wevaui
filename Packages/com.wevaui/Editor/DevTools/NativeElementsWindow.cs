@@ -25,10 +25,10 @@ namespace Weva.EditorTools.DevTools
         private TextField _filter;
         private double _nextPoll;
 
-        [MenuItem("Window/Weva/Native Elements", priority = 202)]
+        [MenuItem("Window/Weva/Elements", priority = 201)]
         public static void Open()
         {
-            GetWindow<NativeElementsWindow>("Native Elements");
+            GetWindow<NativeElementsWindow>("Weva Elements");
         }
 
         private void CreateGUI()

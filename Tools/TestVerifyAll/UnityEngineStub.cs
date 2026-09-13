@@ -34,7 +34,7 @@ namespace UnityEngine {
         AfterSceneLoad
     }
 
-    // WevaDocument's inspector-facing fields use [SerializeField] /
+    // WevaLegacyDocument's inspector-facing fields use [SerializeField] /
     // [HideInInspector] / [Tooltip]; headless compilation only needs the
     // attribute types to exist.
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = false)]

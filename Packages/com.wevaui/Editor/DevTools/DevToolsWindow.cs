@@ -17,7 +17,7 @@ namespace Weva.EditorTools.DevTools {
         readonly PerfReadout perf = new();
         readonly CacheStats cache = new();
 
-        [MenuItem("Window/Weva/DevTools", priority = 200)]
+        [MenuItem("Window/Weva/Legacy/DevTools", priority = 300)]
         public static void Open() {
             var w = GetWindow<DevToolsWindow>("Weva DevTools");
             w.minSize = new Vector2(320, 240);

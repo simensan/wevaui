@@ -3,8 +3,8 @@ using UnityEditor;
 using UnityEngine;
 
 namespace Weva.EditorTools.Documents {
-    // Hot-reloads WevaLegacyDocument instances when the .html / .css / .htm assets they
-    // reference are reimported.
+    // Hot-reloads WevaDocument (and, until Phase 4.3, WevaLegacyDocument)
+    // instances when the .html / .css / .htm assets they reference are reimported.
     //
     // Notes on Unity quirks:
     //   - AssetPostprocessor lives in editor assemblies and is rediscovered by
@@ -29,6 +29,7 @@ namespace Weva.EditorTools.Documents {
             string[] movedAssets,
             string[] movedFromAssetPaths) {
             if (!HasRelevantChange(importedAssets, movedAssets)) return;
+            ReloadCoreDocuments(importedAssets, movedAssets);
             // Both args spelled out: the (FindObjectsInactive)-only overload
             // does not exist before Unity 6000.4, and this package supports
             // 6000.3 consumers.
@@ -44,6 +45,34 @@ namespace Weva.EditorTools.Documents {
                     var captured = doc;
                     EditorApplication.delayCall += () => SafeRebuild(captured);
                 }
+            }
+        }
+
+        // The core-backed document: Reload() parses again and keeps the
+        // controller, so a saved stylesheet lands in a running scene.
+        static void ReloadCoreDocuments(string[] importedAssets, string[] movedAssets) {
+            var docs = GameObject.FindObjectsByType<WevaDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            if (docs == null) return;
+            for (int i = 0; i < docs.Length; i++) {
+                var doc = docs[i];
+                if (doc == null) continue;
+                if (!ReferencesAny(doc.DocumentAsset, doc.StylesheetAssets, importedAssets)
+                    && !ReferencesAny(doc.DocumentAsset, doc.StylesheetAssets, movedAssets)) continue;
+                if (Application.isPlaying) {
+                    SafeReload(doc);
+                } else {
+                    var captured = doc;
+                    EditorApplication.delayCall += () => SafeReload(captured);
+                }
+            }
+        }
+
+        static void SafeReload(WevaDocument doc) {
+            if (doc == null) return;
+            try {
+                doc.Reload();
+            } catch (Exception ex) {
+                Debug.LogWarning("Weva: hot-reload failed on '" + doc.name + "': " + ex.Message, doc);
             }
         }
 
@@ -74,13 +103,15 @@ namespace Weva.EditorTools.Documents {
         }
 
         static bool ReferencesAny(WevaLegacyDocument doc, string[] paths) {
+            return ReferencesAny(doc.DocumentAsset, doc.StylesheetAssets, paths);
+        }
+
+        static bool ReferencesAny(TextAsset docAsset, TextAsset[] sheets, string[] paths) {
             if (paths == null || paths.Length == 0) return false;
-            var docAsset = doc.DocumentAsset;
             if (docAsset != null) {
                 var p = AssetDatabase.GetAssetPath(docAsset);
                 if (!string.IsNullOrEmpty(p) && PathArrayContains(paths, p)) return true;
             }
-            var sheets = doc.StylesheetAssets;
             if (sheets != null) {
                 for (int i = 0; i < sheets.Length; i++) {
                     var s = sheets[i];

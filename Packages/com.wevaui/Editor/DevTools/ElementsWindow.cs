@@ -67,9 +67,9 @@ namespace Weva.EditorTools.DevTools {
         Document lastKnownDoc;
         int lastTreeVersion = -1;
 
-        [MenuItem("Window/Weva/Elements", priority = 201)]
+        [MenuItem("Window/Weva/Legacy/Elements", priority = 301)]
         public static void Open() {
-            var w = GetWindow<ElementsWindow>("Weva Elements");
+            var w = GetWindow<ElementsWindow>("Weva Elements (legacy)");
             w.minSize = new Vector2(600, 400);
             w.Show();
         }

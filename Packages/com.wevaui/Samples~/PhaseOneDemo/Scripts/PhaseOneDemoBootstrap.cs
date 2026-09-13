@@ -22,7 +22,7 @@ public static class PhaseOneDemoBootstrap {
         var go = new GameObject("DemoUI");
         Undo.RegisterCreatedObjectUndo(go, "Create Phase One Demo");
 
-        var doc = go.AddComponent<WevaLegacyDocument>();
+        var doc = go.AddComponent<WevaDocument>();
         var controller = go.AddComponent<PhaseOneDemoController>();
 
         var html = LoadAssetAtRelative<TextAsset>("UI/menu.html");
