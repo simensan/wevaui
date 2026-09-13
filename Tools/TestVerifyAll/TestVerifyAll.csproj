@@ -68,10 +68,6 @@
                ..\..\Packages\com.wevaui\Tests\Runtime\Paint\Conversion\ColorResolverDiagnosticsTests.cs;
                ..\..\Packages\com.wevaui\Tests\Runtime\Paint\Conversion\BoxToPaintConverterDD5ParseOriginAxisSliceDiagnosticTests.cs;
                ..\..\Packages\com.wevaui\Tests\Runtime\Css\Selectors\SelectorMatcherTests.cs" />
-    <!-- Goldens\** is excluded above (image IO / GPU paths), but these two are
-         pure C# and were already running pre-inversion. -->
-    <Compile Include="..\..\Packages\com.wevaui\Tests\Runtime\Goldens\GoldenSuiteTests.cs" />
-    <Compile Include="..\..\Packages\com.wevaui\Tests\Runtime\Goldens\LayoutDiffTests.cs" />
     <Compile Include="..\Weva.Generators\UIBindGenerator.cs" Link="Generator\UIBindGenerator.cs" />
     <Compile Include="GeneratorSmokeTests.cs" />
     <Compile Include="CascadeWarmAllocProbe.cs" />

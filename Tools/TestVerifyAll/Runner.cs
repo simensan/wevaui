@@ -11,7 +11,7 @@ namespace TestRunner {
             if (args.Length > 0 && args[0] == "--debug-anchor") { DebugAnchor.Run(); return 0; }
             if (args.Length > 0 && args[0] == "--debug-dash") { DebugDash.Run(); return 0; }
             if (args.Length > 0 && args[0] == "--perf1-probe") { Weva.Tests.Perf.CascadeWarmAllocProbe.RunProbe(); return 0; }
-            var asm = typeof(Weva.Tests.Layout.IncrementalLayoutGateTests).Assembly;
+            var asm = typeof(Program).Assembly;
             int passed = 0, failed = 0;
             int skipped = 0;
             var failures = new System.Collections.Generic.List<string>();
