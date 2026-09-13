@@ -86,7 +86,7 @@ Work down this list — it's ordered by how often each one is the cause:
   web) — use `pointer-events: none` to let clicks pass through.
 - **Another document is on top.** A `WevaDocument` with a higher
   `SortingOrder` overlapping the same pixels receives the pointer first.
-- **The keyboard is for the game.** `doc.Input.AcceptsKeyboard` gates keys;
+- **The keyboard is for the game.** `doc.AcceptsKeyboard` gates keys;
   `doc.InputConsumed` says whether the UI took the frame's input.
 
 ## Text looks wrong
@@ -106,14 +106,13 @@ Work down this list — it's ordered by how often each one is the cause:
 
 ## Performance / stutter
 
-- **Per-frame attribute writes.** Don't `SetElementAttribute` every frame from
+- **Per-frame attribute writes.** Don't `SetAttribute` every frame from
   `Update()`. Drive visuals from `[UIBind]` values; an unchanged value changes
   no node.
 - **A big controller polled every frame.** Implement `IBindingVersion`.
 - **Heavy painters.** `box-shadow`, `filter: blur()`, `backdrop-filter` and
   `text-shadow` are the costliest — keep them off elements that change every
   frame.
-- **Measure.** `doc.Document.Stats()` reports the core's per-frame timings.
 
 ## Editor-specific
 

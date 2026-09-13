@@ -7,7 +7,7 @@ managed side of the host lives in the package:
 
 | Piece | Where |
 | --- | --- |
-| Generated P/Invoke surface | `Packages/com.wevaui/Runtime/Native/WevaNative.g.cs` |
+| Generated P/Invoke surface (internal, like all of `Weva.Native`; the editor and test assemblies see it through `InternalsVisibleTo`) | `Packages/com.wevaui/Runtime/Native/WevaNative.g.cs` |
 | Hand-written wrapper (`NativeDocument`) | `Packages/com.wevaui/Runtime/Native/NativeDocument.cs` |
 | Plugin binary and its import settings | `Packages/com.wevaui/Runtime/Native/Plugins/x86_64/` |
 | EditMode round-trip tests | `Packages/com.wevaui/Tests/Editor/Native/` |

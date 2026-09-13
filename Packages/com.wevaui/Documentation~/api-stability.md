@@ -12,7 +12,9 @@ requires a major bump and a changelog entry.
 
 | Type | Namespace | What of it |
 |---|---|---|
-| `WevaDocument` | `Weva` | The component: `DocumentAsset`, `StylesheetAssets`, `InlineHtml`, `InlineCss`, `SortingOrder`, `PrefersDarkColorScheme`, `Font`, `Bold`, `Italic`, `Fallbacks`, `BasePath`, `UseUserAgentStylesheet`, `AutoInput`, `InputConsumed`, `FollowScreenSafeArea`, `LastError`; `Reload()`, `SetController(object)`, `GetController<T>()`, `Controller`, `Bind(model, controller)`, `Data`, `Refresh()`, `RequestRefresh()`, `LinkedStylesheetHrefs`, `BakeLinkedStylesheets(read)`; the events `ElementClicked`, `HandlerInvoked`, `ValueChanged`, `Changed`, `FormSubmitted`, `Focused`, `DataChanged`. |
+| `WevaDocument` | `Weva` | The component: `DocumentAsset`, `StylesheetAssets`, `InlineHtml`, `InlineCss`, `SortingOrder`, `PrefersDarkColorScheme`, `Font`, `Bold`, `Italic`, `Fallbacks`, `BasePath`, `UseUserAgentStylesheet`, `AutoInput`, `InputConsumed`, `FollowScreenSafeArea`, `WrapTab`, `GamepadTextEntry`, `AcceptsKeyboard`, `AssetReader`, `Cursor`, `LastError`; `Reload()`, `SetController(object)`, `GetController<T>()`, `Controller`, `Bind(model, controller)`, `Data`, `Refresh()`, `RequestRefresh()`, `Query(selector)`, `QueryAll(selector)`, `FocusedElement`, `SetSafeAreaInsets(...)`, `RegisterFontFamily(name, font)`, `LinkedStylesheetHrefs`, `BakeLinkedStylesheets(read)`; the events `ElementClicked`, `HandlerInvoked`, `ValueChanged`, `Changed`, `FormSubmitted`, `Focused`, `DataChanged`, `Event`, `TabbedOut`, `TextEntryRequested`. |
+| `WevaElement` | `Weva` | An element as a value: `IsValid`, `None`, `Id`, `Tag`, `Text`, `Value`, `Attribute`, `HasAttribute`, `SetAttribute`, `HasClass`, `Focus()`, `IsFocused`, `Bounds`, `Scroll`, `MaxScroll`, `ScrollTo`, `TryGetRow`, `RowIndex`, `RowKey`, `ShowDialog`, `CloseDialog`, `Parent`, `Children`; equality. Stale after `Reload()`, never throws. |
+| `WevaEvent`, `WevaEventKind` | `Weva` | What `WevaDocument.Event` raises: kind, target, position, buttons, modifiers, text, handler. |
 | `UIBindAttribute` | `Weva.Binding` | Marks a binding root on a controller. |
 | `IBindingVersion` | `Weva.Binding` | Opt-in change signal: bump instead of being polled. |
 | `UIBatchedRendererFeature` | `Weva.Rendering.URP` | The URP renderer feature that draws documents. |
@@ -23,18 +25,13 @@ The markup contract — `{{ path }}`, `data-class-<name>`, `data-each` /
 `Name(string id)` — is part of the supported surface too: it is what a page
 and a controller are written against.
 
-## Public, but not supported
+## Internal
 
-`WevaDocument.Document` hands you the core document itself
-(`Weva.Native.NativeDocument`: `Query`, element attributes and values, focus,
-scroll, dialogs, the inspector surface) and `WevaDocument.Event` hands you
-every core event as a `NativeEvent`. They are public because a game sometimes
-needs them, and unsupported because they follow the C ABI: `Weva.Native` is
-generated from `weva_c.h` (`WevaNative.g.cs`) or written to talk to it, and it
-moves with the ABI minor. Reaching into it is fine; expecting it not to change
-in a minor release is not. If something there is the only way to do a thing
-you need, that is worth an issue — the answer is usually a supported entry
-point on `WevaDocument`.
+`Weva.Native` — the generated binding to the C ABI (`WevaNative.g.cs`), the
+`NativeDocument` wrapper, the font backend, the renderer, the input feed,
+the binding source — is `internal` as of 1.0.0. It follows the ABI minor and
+is the host's, not the game's. Everything a game needs is on `WevaDocument`
+and `WevaElement`; if something is missing there, that is worth an issue.
 
 ## Deleted
 

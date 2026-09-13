@@ -231,11 +231,14 @@ The pieces a game dev touches (the supported set, see
 - **`WevaDocument`** (MonoBehaviour). Holds your HTML + stylesheet
   `TextAsset`s and hosts the core. Properties: `DocumentAsset`,
   `StylesheetAssets`, `SortingOrder`, `PrefersDarkColorScheme`, `Font` /
-  `Bold` / `Italic` / `Fallbacks`, `BasePath`, `AutoInput`,
-  `FollowScreenSafeArea`. Methods: `Reload()`, `SetController(...)`,
-  `GetController<T>()`, `Bind(model, controller)`, `RequestRefresh()`.
-  Events: `ElementClicked`, `HandlerInvoked`, `ValueChanged`, `Changed`,
-  `FormSubmitted`, `Focused`, `DataChanged`, and `Event` for every core event.
+  `Bold` / `Italic` / `Fallbacks`, `BasePath`, `AutoInput`, `AcceptsKeyboard`,
+  `WrapTab`, `GamepadTextEntry`, `FollowScreenSafeArea`, `AssetReader`,
+  `Cursor`. Methods: `Reload()`, `SetController(...)`, `GetController<T>()`,
+  `Bind(model, controller)`, `RequestRefresh()`, `Query(selector)`,
+  `QueryAll`, `RegisterFontFamily`, `SetSafeAreaInsets`. Events:
+  `ElementClicked`, `HandlerInvoked`, `ValueChanged`, `Changed`,
+  `FormSubmitted`, `Focused`, `DataChanged`, `TabbedOut`,
+  `TextEntryRequested`, and `Event` for every core event.
 - **`[UIBind]`** attribute. Marks a controller field or property as a
   binding root for `{{ path }}`, `data-class-*`, `data-each` and
   `data-model`. Two-way through `data-model`.
@@ -246,10 +249,11 @@ The pieces a game dev touches (the supported set, see
   toggles one class without replacing static classes.
 - **`UIBatchedRendererFeature`** (`ScriptableRendererFeature`). The URP
   pass that draws every document's draw list into the camera colour target.
-- **`WevaDocument.Document`** (`Weva.Native.NativeDocument`). The core
-  document itself -- `Query`, element attributes and values, focus, scroll,
-  dialogs, the inspector surface. Public, but not part of the supported set:
-  it follows the C ABI.
+- **`WevaElement`** (struct). What `doc.Query(selector)` / `QueryAll` /
+  `FocusedElement` return: `Value`, `Attribute` / `SetAttribute`, `HasClass`,
+  `Text`, `Bounds`, `Focus()`, `Scroll` / `ScrollTo`, `RowIndex` / `RowKey`,
+  `ShowDialog` / `CloseDialog`, `Parent` / `Children`. Stale after `Reload()`
+  (`IsValid`), never throws. **`WevaEvent`** is what `doc.Event` raises.
 
 ## DevTools
 

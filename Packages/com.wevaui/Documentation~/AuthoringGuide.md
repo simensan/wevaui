@@ -134,7 +134,7 @@ stable identity so reorders refill existing rows instead of rebuilding the
 container. Inside the template, `{{ stage.Name }}` resolves against the item,
 parent controller bindings still resolve normally, and `$index` is the
 zero-based item index. A handler on a row can ask which row it sits in:
-`doc.TryGetRow(element, out int index, out string key)`.
+`doc.Query("#" + id).RowIndex` / `.RowKey` (§6).
 
 ### Class toggles
 
@@ -178,7 +178,7 @@ with the element's `id` if the method takes a `string`:
 
 ```csharp
 public void OnStart() { … }
-public void OnSearch(string id) { var text = doc.Document.ElementValue(doc.Document.Query("#" + id)); … }
+public void OnSearch(string id) { var text = doc.Query("#" + id).Value; … }
 ```
 
 The event names, as in a browser: `click`, `pointerdown`, `pointerup`,
@@ -200,7 +200,7 @@ The same events reach C# without markup, for code that wires itself:
 | `FormSubmitted(id)` | A form submitted (Enter in a field, a submit button). |
 | `Focused(id)` | Focus moved; empty when dropped. |
 | `DataChanged(path, text)` | A `data-model` control wrote into the controller or model. |
-| `Event(NativeEvent)` | Every core event, with kind, target, position, key and text. |
+| `Event(WevaEvent)` | Every core event: `Kind` (`WevaEventKind`), `Target` (a `WevaElement`), `Position`, `Buttons`, `Shift`/`Ctrl`/`Alt`/`Meta`, `Text`, `Handler`. |
 
 Standard CSS state pseudo-classes (`:hover`, `:focus`, `:focus-visible`,
 `:active`, `:disabled`, `:checked`, `:placeholder-shown`, `:focus-within`)
@@ -225,12 +225,12 @@ button.
 | `<textarea>` | Multi-line text input. |
 | `<button>` / `<button type="submit">` | Click target; submit triggers the enclosing form. |
 | `<form on-submit="…">` | Captures Enter inside text inputs and submit clicks. Read the values through `data-model` bindings. |
-| `<dialog>` | `doc.Document.ShowDialog(element, modal)` / `CloseDialog(element)` open and close it; `on-close` / `on-cancel` (Escape) fire. |
+| `<dialog>` | `doc.Query("#dlg").ShowDialog(modal: true)` / `.CloseDialog()` open and close it; `on-close` / `on-cancel` (Escape) fire. |
 | `<details>` / `<summary>` | Opens and closes; `on-toggle` fires. |
 | `title="…"` | A tooltip after the browser's hover delay. |
 
-A control's live value is `doc.Document.ElementValue(element)`;
-`SetElementValue(element, text)` sets it as if the user had.
+A control's live value is `doc.Query("#name").Value`; setting it is what
+the user typing it would do — events and bindings follow.
 
 ## 5. Input
 
@@ -238,53 +238,57 @@ With `AutoInput` on (the default), `WevaDocument` reads the Input System
 every playing frame:
 
 * **Mouse / pen** — pointer moves, buttons, wheel (one notch scrolls 100 px,
-  as in Chrome), hover and the CSS `cursor` keyword (`doc.Document.Cursor`,
-  for you to map to a texture).
+  as in Chrome), hover and the CSS `cursor` keyword (`doc.Cursor`, for you
+  to map to a texture).
 * **Keyboard** — every key with modifiers, Tab / Shift+Tab focus order
-  (wrapping inside the document by default; `doc.Input.WrapTab = false` lets
-  it leave and raises `TabbedOut(backwards)`), held-key auto-repeat, the OS's
+  (wrapping inside the document by default; `doc.WrapTab = false` lets it
+  leave and raises `doc.TabbedOut(backwards)`), held-key auto-repeat, the OS's
   copy/paste/undo chords (Cmd on macOS, Ctrl elsewhere).
 * **Touch** — a tap is a click; a drag past 8 px pans the nearest scroll
   container.
 * **Gamepad** — the d-pad and left stick move focus by geometry (Left/Right
   on a slider or a caret, Up/Down on a select or a number field are that
   control's keys first), South accepts, East cancels (Escape), the shoulders
-  step the tab order, with held repeat. Set `doc.Input.GamepadTextEntry = true`
-  to have South on a text field raise `TextEntryRequested` (open your on-screen
-  keyboard, then `doc.Document.SetElementValue`) instead of pressing Enter.
+  step the tab order, with held repeat. Set `doc.GamepadTextEntry = true` to
+  have South on a text field raise `doc.TextEntryRequested(id)` (open your
+  on-screen keyboard, then set `doc.Query("#" + id).Value`) instead of
+  pressing Enter.
 * **IME** — composition through `Keyboard.onIMECompositionChange`, enabled
   and positioned at the caret only over a text control.
 
 `doc.InputConsumed` says whether the last frame's input was taken by the
 document, so gameplay can ignore a click that landed on the UI.
-`doc.Input.AcceptsKeyboard = false` keeps the keyboard for the game while
-the pointer still works. To feed input yourself, turn `AutoInput` off and
-call `doc.Document.SetPointer`, `Key`, `TryTextInput`, `Scroll`, … directly.
+`doc.AcceptsKeyboard = false` keeps the keyboard for the game while the
+pointer still works.
 
 ## 6. Programmatic updates
 
 Text and classes change through bindings — that is what they are for. For
-the rest, `doc.Document` is the core document:
+the rest, `doc.Query(selector)` hands you a `WevaElement`:
 
 ```csharp
-var d = doc.Document;
-uint slot = d.Query("#slot-7");                       // a CSS selector; WevaNative.WEVA_ELEMENT_NONE when absent
-d.SetElementAttribute(slot, "data-state", "locked"); // attributes drive CSS ([data-state="locked"] { … })
-d.SetElementAttribute(d.Query("html"), "style", "--color-primary: #ef4444;");   // retheme
-d.SetFocus("#search");
-d.SetElementScroll(d.Query("#log"), 0, 1e6);        // scroll to the bottom
-foreach (uint li in d.QueryAll("#inventory > li")) { … }
+WevaElement slot = doc.Query("#slot-7");               // a CSS selector; WevaElement.None when nothing matches
+slot.SetAttribute("data-state", "locked");             // attributes drive CSS ([data-state="locked"] { … })
+doc.Query("html").SetAttribute("style", "--color-primary: #ef4444;");   // retheme
+doc.Query("#search").Focus();
+doc.Query("#log").ScrollTo(0, 1e6f);                   // scroll to the bottom (clamped; smooth if the CSS says so)
+foreach (WevaElement li in doc.QueryAll("#inventory > li")) { … }
+if (slot.HasClass("locked")) { … }
 ```
 
-`ElementText`, `ElementAttribute`, `ElementHasAttribute`, `TagName`, `Parent`,
-`Children`, `TryGetBounds` and `TryGetElementScroll` read; element handles
-are `uint` ids that stay valid until the next `Reload()`. Rebuilding a whole
-section is `doc.Reload()` with new markup (`InlineHtml`, or a different
-`DocumentAsset`); the controller stays attached.
+`Id`, `Tag`, `Text`, `Value` (get and set, for a control), `Attribute` /
+`HasAttribute` / `HasClass`, `Bounds` (the border box in document pixels
+after the last frame), `Scroll` / `MaxScroll`, `IsFocused`, `RowIndex` /
+`RowKey` (the `data-each` row), `ShowDialog` / `CloseDialog`, `Parent` /
+`Children` — see [api-stability](api-stability.md) for the whole list.
 
-`doc.Document` is public and not part of the supported surface — it follows
-the core's C ABI and may change in a minor release. See
-[api-stability](api-stability.md).
+A `WevaElement` is a value: it names a node of one tree. `Reload()` replaces
+the tree, so elements from before it report `IsValid == false` and every
+member answers a default (empty, zero, false) rather than throwing; query
+again after a reload. `doc.FocusedElement` is the focused element or `None`.
+Writes land on the next frame. Rebuilding a whole section is `doc.Reload()`
+with new markup (`InlineHtml`, or a different `DocumentAsset`); the
+controller stays attached.
 
 ## 7. Layout patterns
 
@@ -345,8 +349,9 @@ directly (§6). `PrefersDarkColorScheme` on the component answers
 `url()` in CSS and `<img src>` resolve relative to `BasePath` — the document
 asset's folder in the editor — through the core's asset reader, which reads
 files. A player that does not ship its UI as files hands the core its own
-reader: `doc.Document.AssetReader = path => bytes` (Addressables, bundles,
-`Resources`), returning `null` for an asset it does not have. 9-slice
+reader: `doc.AssetReader = path => bytes` (Addressables, bundles,
+`Resources`), returning `null` for an asset it does not have; set it any
+time, it survives a reload. 9-slice
 frames are CSS `border-image`.
 
 ## 10. Fonts
@@ -354,8 +359,9 @@ frames are CSS `border-image`.
 `Font`, `Bold`, `Italic` and `Fallbacks` on the component are the UI face
 (the package's Inter and a symbol face when empty). `@font-face` with
 `url()` (relative to `BasePath`) or `local("Installed Name")` adds families
-from a stylesheet, matched by weight and style the way a browser does. See
-[Text & Fonts](text-and-fonts.md).
+from a stylesheet, matched by weight and style the way a browser does;
+`doc.RegisterFontFamily("MyFont", font)` names a Unity `Font` from code.
+See [Text & Fonts](text-and-fonts.md).
 
 ## 11. Performance
 
@@ -365,8 +371,6 @@ from a stylesheet, matched by weight and style the way a browser does. See
   `[UIBind]` values so an unchanged frame changes no node.
 * `box-shadow`, `filter: blur()`, `backdrop-filter` and `text-shadow` are the
   costliest painters — keep them off elements that change every frame.
-* The core's `doc.Document.Stats()` reports its cascade / layout / paint
-  timings per frame.
 
 ## 12. DevTools
 
@@ -390,8 +394,8 @@ links, form controls, `tabindex`), wrapping inside the document by default.
 `:focus-visible` styles the keyboard/gamepad focus ring, as in a browser.
 Gamepad navigation is built in (§5): the d-pad and left stick move focus to
 the nearest control in that direction, South activates, East cancels, the
-shoulders step the tab order. `doc.Document.SetFocus("#first")` gives the
-first input an anchor; `doc.Document.Focus` is the focused element.
+shoulders step the tab order. `doc.Query("#first").Focus()` gives the
+first input an anchor; `doc.FocusedElement` is the focused element.
 
 ## 15. Localization & RTL
 

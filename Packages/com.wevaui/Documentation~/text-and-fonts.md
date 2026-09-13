@@ -36,10 +36,10 @@ and synthesises nothing). A `local()` that is not installed falls through to
 the `url()` after it. Replacing the stylesheet releases the families it no
 longer declares.
 
-**3. From code.** `doc.Fonts.Adopt(font)` registers a Unity `Font` with the
-host's font backend and `doc.Document.RegisterFontFamily("MyFont", face)`
-names it for CSS — for a settings screen or a mod loader. A family a game
-registered is not taken over by a later `@font-face` of the same name.
+**3. From code.** `doc.RegisterFontFamily("MyFont", font)` names a Unity
+`Font` for CSS — for a settings screen or a mod loader; it survives a reload
+and a disable. A family a game registered is not taken over by a later
+`@font-face` of the same name.
 
 ## Shaping and scripts
 

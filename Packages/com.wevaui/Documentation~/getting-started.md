@@ -192,7 +192,7 @@ a stale bake can never shadow an edit. A `WevaDocument` on a prefab
 `url()` images and `@font-face` files resolve through the core's asset
 reader, which reads files relative to `BasePath`. A player that does not ship
 its UI as files supplies its own reader
-(`doc.Document.AssetReader = path => bytes`) to serve Addressables or bundles.
+(`doc.AssetReader = path => bytes`) to serve Addressables or bundles.
 
 ---
 

@@ -70,15 +70,16 @@ public sealed class MainMenu : MonoBehaviour, IBindingVersion {   // IBindingVer
 - Input is automatic (`AutoInput`): mouse, keyboard with repeat, touch,
   gamepad (d-pad/stick navigate, South accepts, East cancels, shoulders tab),
   IME. `InputConsumed` says whether the UI took the frame's input;
-  `doc.Input` has the knobs.
-- Programmatic access is `doc.Document` (`Query`, `SetElementAttribute`,
-  `SetElementValue`, `SetFocus`, `SetElementScroll`, `ShowDialog`, …) — public,
-  unsupported (follows the ABI). Text changes go through bindings.
+  `AcceptsKeyboard`, `WrapTab` / `TabbedOut`, `GamepadTextEntry` /
+  `TextEntryRequested` are the knobs.
+- Programmatic access is `doc.Query(selector)` → `WevaElement` (`Value`,
+  `SetAttribute`, `HasClass`, `Focus()`, `Bounds`, `ScrollTo`, `RowIndex`,
+  `ShowDialog`, `Parent`/`Children`; stale after `Reload()`, never throws).
+  Text changes go through bindings. `Weva.Native` is internal.
 - Fonts: `Font`/`Bold`/`Italic`/`Fallbacks` on the component, `@font-face`
   with `url()` (relative to `BasePath`, the asset's folder by default) or
   `local("Installed")`. Images: `url()` relative to `BasePath` through the
-  core's asset reader; a player without files sets
-  `doc.Document.AssetReader`.
+  core's asset reader; a player without files sets `doc.AssetReader`.
 - Hot reload: saving a referenced `.html`/`.css` reloads the document, in play
   and edit mode; `Reload()` from code. DevTools: **Window → Weva → Elements**.
 

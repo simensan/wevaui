@@ -25,10 +25,12 @@ checked against Chrome), which the Godot addon also runs on.
 - The C# DOM is gone: `Weva.Dom`, `Weva.Events`, `Weva.Forms`,
   `GetElementById`, `Rebuild()`, `[UIElement]`, manipulators, `ContextMenu`,
   `TooltipManager`, `WevaFonts`, `RendererBackend`, the IMGUI fallback and
-  the F12 overlay. `doc.Document` (the core document: `Query`, attributes,
-  values, focus, scroll, dialogs) is the escape hatch; `Reload()` replaces
-  `Rebuild()`; fonts are the component's `Font`/`Bold`/`Italic`/`Fallbacks`
-  and `@font-face`; DevTools is Window → Weva → Elements.
+  the F12 overlay. `doc.Query(selector)` returns a `WevaElement` (value,
+  attributes, classes, focus, bounds, scroll, rows, dialogs, parent and
+  children; stale after a reload, never throws); `Reload()` replaces
+  `Rebuild()`; fonts are the component's `Font`/`Bold`/`Italic`/`Fallbacks`,
+  `@font-face` and `RegisterFontFamily(name, font)`; DevTools is Window →
+  Weva → Elements. `Weva.Native` is internal.
 - `UIBatchedRendererFeature` keeps its name; `UIRendererFeature` is gone.
   Always Included Shaders needs `Hidden/Weva/NativeMesh` (the setup adds it).
 - Package dependencies: URP and the Input System only (uGUI and Burst
@@ -39,8 +41,10 @@ checked against Chrome), which the Godot addon also runs on.
   touch, gamepad navigation, IME composition; Chrome's 100 px wheel notch.
 - `<link rel="stylesheet">` resolved next to the document asset and baked
   for player builds; `BasePath` defaults to the asset's folder.
-- `PrefersDarkColorScheme`, `FollowScreenSafeArea`, `InputConsumed`,
-  `WevaDocument.Input`.
+- `WevaElement` and `WevaEvent`; `PrefersDarkColorScheme`,
+  `FollowScreenSafeArea`, `SetSafeAreaInsets`, `Cursor`, `AssetReader`,
+  `InputConsumed`, `AcceptsKeyboard`, `WrapTab` / `TabbedOut`,
+  `GamepadTextEntry` / `TextEntryRequested`.
 
 ### Platforms
 - Native plugin for Windows x64. Other platforms follow as their CI jobs go
