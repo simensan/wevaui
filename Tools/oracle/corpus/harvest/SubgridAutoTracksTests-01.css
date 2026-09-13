@@ -1,0 +1,13 @@
+
+                .parent {
+                    display: grid;
+                    grid-template-columns: 50px 100px 150px;
+                    grid-template-rows: 30px;
+                    width: 400px;
+                }
+                .child {
+                    display: grid;
+                    grid-column: 1 / 2;
+                    grid-auto-columns: subgrid;
+                }
+            

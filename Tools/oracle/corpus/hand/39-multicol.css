@@ -1,0 +1,28 @@
+body { margin: 0; padding: 0; }
+/* Auto-height multicol containers: the engine balances children into
+   columns and the container height shrinks to the balanced column height.
+   Following siblings must be re-positioned using the balanced height
+   (MULTICOL-PARENT-REFLOW fix: BlockFlowAdjuster.PropagateHeightDelta
+   is now called after FinalizeContainerHeight in MulticolLayout.Layout). */
+.mc {
+  width: 760px;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+}
+/* column-count: 3, gap 20px, 6 items @ 60px each → 2 rows balanced = 120px
+   height:auto (no explicit height) — the real-world case. */
+.mc3 {
+  column-count: 3;
+  column-gap: 20px;
+}
+/* column-width: 200px, gap 20px → 3 cols in 760px → 1 row @ 60px = 60px
+   height:auto — auto-height sibling positioning regression variant. */
+.mcw {
+  column-width: 200px;
+  column-gap: 20px;
+}
+.item {
+  width: auto;
+  height: 60px;
+  background-color: #3b82f6;
+}

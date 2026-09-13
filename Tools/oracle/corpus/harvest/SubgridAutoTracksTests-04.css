@@ -1,0 +1,8 @@
+
+                .parent { display: block; width: 400px; }
+                .child {
+                    display: grid;
+                    grid-auto-rows: subgrid;
+                }
+                .item { height: 30px; }
+            

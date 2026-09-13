@@ -1,0 +1,31 @@
+<!--
+  nook-dialogue — a cozy Animal-Crossing-style shop dialogue. Soft cream blob
+  dialogue box, orange name pill, dark-brown rounded text with a green
+  highlighted player name, a yellow choice bubble (first option highlighted with
+  a pointer), and a bells counter pill. Scene is just a warm gradient.
+-->
+<link rel="stylesheet" href="nook-dialogue.css" />
+<main class="room">
+  <!-- bells counter, top-right -->
+  <div class="bells">
+    <span class="coin"></span>
+    <span class="amount">3,105</span>
+  </div>
+
+  <!-- choice bubble, right side -->
+  <aside class="choices">
+    <div class="choice selected">
+      <span class="pointer"></span>
+      <span class="label">I want to sell!</span>
+    </div>
+    <div class="choice"><span class="label">What's for sale?</span></div>
+    <div class="choice"><span class="label">See you later.</span></div>
+  </aside>
+
+  <!-- main dialogue, bottom -->
+  <section class="dialog">
+    <div class="namepill">Timmy</div>
+    <p class="say">Welcome, <span class="hl">Matt</span>!</p>
+    <p class="say">How can I help you today?</p>
+  </section>
+</main>

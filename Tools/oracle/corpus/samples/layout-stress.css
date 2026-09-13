@@ -1,0 +1,159 @@
+/* ════════════════════════════════════════════════════════════════
+   layout-stress — a deliberate stress test for the INCREMENTAL LAYOUT
+   path (LayoutEngine.TryLayoutSubtree). Unlike the other samples (whose
+   @keyframes animate transform/opacity = compositor-only, no relayout),
+   this one continuously animates LAYOUT-AFFECTING properties so the
+   relayout path runs every frame.
+
+   It is built to exercise the per-flip subtree-scoping work:
+     • A large scrollable grid (overflow-y:auto) → a real scroll container
+       AND a big box tree, so any whole-tree sweep per animated element
+       would be expensive (this is exactly what the scroll/OOF scoping
+       fix removed: it used to walk the whole tree every flip).
+     • overflow:hidden mini-bars → many extra element scroll containers.
+     • Animated elements kept to a bounded count so the subtree path is
+       taken (>16 dirty subtrees falls back to full layout by design).
+
+   Two animation flavours, on purpose:
+     • padding / font-size on box-sizing:border-box, fixed-size items →
+       INNER reflow with UNCHANGED outer geometry → the subtree path
+       (the fast, scoped case).
+     • width on the bars → OUTER geometry changes → the full-layout
+       fallback (the realistic "progress bar" case, à la combat-hud).
+   ════════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; height: 100%; }
+
+body {
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  font-size: 14px;
+  background: #0e1117;
+  color: #e6edf3;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 16px;
+  gap: 14px;
+}
+
+/* ── top bar ── */
+.topbar { display: flex; align-items: baseline; gap: 12px; }
+.title { font-size: 20px; font-weight: 800; }
+.subtitle { font-size: 12px; color: #8b949e; }
+.badge {
+  margin-left: auto;
+  font-size: 11px; font-weight: 700;
+  color: #22d3ee;
+  border: 1px solid #164e54;
+  background: #0c2a2e;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* ── LIVE METRICS: these animate layout every frame ── */
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 12px;
+}
+
+.metric { display: flex; align-items: center; gap: 12px; }
+.metric-label { width: 130px; font-size: 12px; color: #9aa4af; }
+
+/* overflow:hidden → each bar is its own scroll container */
+.bar {
+  flex: 1;
+  height: 12px;
+  background: #0d1117;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #3b82f6, #22d3ee);
+  width: 50%;
+}
+.bar-fill.hp { background: linear-gradient(90deg, #ef4444, #f59e0b); }
+.bar-fill.mp { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+
+/* width animation → OUTER geometry changes → full-layout fallback path */
+@keyframes barfill { 0% { width: 16%; } 100% { width: 94%; } }
+.bar-fill   { animation: barfill 2.3s ease-in-out infinite alternate; }
+.bar-fill.hp { animation-duration: 1.7s; }
+.bar-fill.mp { animation-duration: 3.1s; }
+
+/* font-size animation on a fixed-width slot → inner reflow, outer stable
+   → SUBTREE path */
+.counter {
+  width: 72px;
+  text-align: right;
+  font-weight: 800;
+  color: #e6edf3;
+}
+@keyframes fontgrow { 0% { font-size: 13px; } 100% { font-size: 21px; } }
+.counter { animation: fontgrow 1.9s ease-in-out infinite alternate; }
+
+/* padding animation with border-box + flex:1 → outer stays, inner reflows
+   → SUBTREE path */
+.pads { display: flex; gap: 10px; }
+.pad {
+  flex: 1;
+  height: 64px;
+  background: #1f2630;
+  border: 1px solid #2b3340;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+.pad-k { font-size: 11px; color: #8b949e; }
+.pad-v { font-size: 16px; font-weight: 800; }
+@keyframes padpulse { 0% { padding: 6px; } 100% { padding: 22px; } }
+.pad { animation: padpulse 2.4s ease-in-out infinite alternate; }
+.pad:nth-child(2) { animation-duration: 3.0s; }
+.pad:nth-child(3) { animation-duration: 1.8s; }
+.pad:nth-child(4) { animation-duration: 2.6s; }
+
+/* ── LARGE STATIC GRID inside a scroll container ── */
+.grid-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 12px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+.cell {
+  background: #1c2230;
+  border: 1px solid #262d3a;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cell-top { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; flex: none; }
+.dot.warn { background: #f59e0b; }
+.dot.bad  { background: #ef4444; }
+.cell-name { font-size: 12px; font-weight: 700; }
+.cell-sub { font-size: 11px; color: #8b949e; }
+.mini { height: 6px; background: #0d1117; border-radius: 3px; overflow: hidden; }
+.mini-fill { height: 100%; width: 62%; background: #34d399; border-radius: 3px; }

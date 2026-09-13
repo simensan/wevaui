@@ -1,0 +1,7 @@
+
+                body { margin: 0 }
+                .outer { display: flex; flex-direction: column; width: 300px }
+                .inner { display: flex; flex-direction: column;
+                         gap: clamp(4px, 0.6vmin, 7px) }
+                .k { height: 20px }
+            

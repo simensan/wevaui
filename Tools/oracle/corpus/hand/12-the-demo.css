@@ -1,0 +1,2 @@
+.menu { display: flex; flex-direction: column; gap: 16px; padding-top: 24px; padding-right: 24px; padding-bottom: 24px; padding-left: 24px; }
+button { padding-top: 8px; padding-bottom: 8px; padding-left: 16px; padding-right: 16px; border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-bottom-left-radius: 8px; background-color: #4f46e5; color: white; }

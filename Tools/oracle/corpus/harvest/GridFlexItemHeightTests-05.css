@@ -1,0 +1,5 @@
+
+                .grid { display: grid; grid-template-columns: 1fr 1fr;
+                        gap: 18px; align-content: start; }
+                .cell { min-height: 150px; display: flex;
+                        align-items: center; justify-content: center; }

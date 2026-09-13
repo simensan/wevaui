@@ -1,0 +1,13 @@
+<template id="card">
+  <article class="card">
+    <header><slot name="title">Untitled</slot></header>
+    <section class="body"><slot>No content.</slot></section>
+    <footer><slot name="footer"></slot></footer>
+  </article>
+</template>
+
+<card>
+  <span slot="title">Welcome</span>
+  <p>This is the default-slot body of the card.</p>
+  <button slot="footer" on-click="OnStart">Got it</button>
+</card>

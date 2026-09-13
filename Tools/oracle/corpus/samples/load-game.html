@@ -1,0 +1,39 @@
+<!--
+  load-game — a hand-painted save-slot select screen (Spiritfarer / Animal-
+  Crossing aesthetic). Everything is CSS: watercolour background from layered
+  radial/linear gradients, organic "torn paper" slot panels via asymmetric
+  border-radius, a tapered brush underline, gold gradient title, CSS-drawn
+  resource icons (gem / heart / film reel) and controller button glyphs.
+-->
+<link rel="stylesheet" href="load-game.css" />
+<main class="screen">
+  <h1 class="title">LOAD GAME</h1>
+  <div class="brush" aria-hidden="true"></div>
+
+  <ul class="slots">
+    <li class="slot filled">
+      <div class="meta">
+        <div class="name">OSTOWN</div>
+        <div class="time">2026.05.25-00.49.09</div>
+        <div class="stats">
+          <span class="stat"><i class="ico gem" aria-hidden="true"></i>346</span>
+          <span class="stat"><i class="ico heart" aria-hidden="true"></i>8/112</span>
+          <span class="stat"><i class="ico reel" aria-hidden="true"></i>7</span>
+        </div>
+      </div>
+      <div class="thumb" aria-hidden="true">
+        <span class="roof r1"></span><span class="roof r2"></span><span class="roof r3"></span>
+        <span class="path"></span>
+      </div>
+    </li>
+
+    <li class="slot empty"><span>EMPTY SLOT</span></li>
+    <li class="slot empty"><span>EMPTY SLOT</span></li>
+  </ul>
+
+  <nav class="hints">
+    <span class="hint"><span class="btn x">X</span>Delete</span>
+    <span class="hint"><span class="btn a">A</span>Load</span>
+    <span class="hint"><span class="btn b">B</span>Back</span>
+  </nav>
+</main>

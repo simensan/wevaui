@@ -1,0 +1,17 @@
+body { margin: 0; padding: 0; font-size: 16px; }
+#wrap { width: 400px; }
+.sibling {
+  height: 20px;
+  background-color: #e5e7eb;
+}
+/* contain: size collapses both axes to 0 when width/height are auto */
+.size-contained {
+  contain: size;
+  background-color: #dbeafe;
+}
+/* contain: size + contain-intrinsic-size gives the placeholder dimensions */
+.intrinsic-hinted {
+  contain: size;
+  contain-intrinsic-size: 120px 40px;
+  background-color: #d1fae5;
+}

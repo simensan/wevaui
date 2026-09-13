@@ -1,0 +1,195 @@
+/* ── particles — animation stress scene ─────────────────────────────────────
+   A night-sky scene that exists to push the CSS animation runner: ~265
+   particles, each a tiny absolutely-positioned element driven by infinite
+   keyframe animations (transform + opacity only, the guaranteed-smooth pair).
+
+   Three populations:
+     .ember  — rises from the ground glow, sways, fades   (1 anim each)
+     .fly    — firefly: outer drifts on a loop, inner blinks (2 anims)
+     .mote   — stardust: outer falls, inner twinkles        (2 anims)
+
+   Per-particle variation (position, size, duration, negative delay so the
+   field is mid-flight on frame one) lives in inline styles in particles.html;
+   shared motion paths live here as a/b/c keyframe variants. Travel distances
+   are fixed px (not vh) — particles fade to 0 before overshooting any
+   reasonable viewport. */
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 104%, rgba(255, 122, 40, 0.32), rgba(255, 122, 40, 0) 55%),
+    radial-gradient(circle at 74% 16%, rgba(214, 208, 255, 0.14), rgba(214, 208, 255, 0) 26%),
+    linear-gradient(180deg,
+      #04060f 0%,
+      #0a1026 38%,
+      #181432 62%,
+      #2a1828 80%,
+      #38201e 92%,
+      #1c0f0c 100%);
+  font-family: "Inter", sans-serif;
+}
+
+/* Each population gets its own full-bleed layer so paint order is
+   deterministic: motes behind, embers above the ground, fireflies on top. */
+.layer {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+}
+
+.moon {
+  position: absolute;
+  top: 9%;
+  left: 71%;
+  width: 110px;
+  height: 110px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 38% 34%, #fdfcf5, #ddd8ec 62%, #b9b2d0);
+  box-shadow: 0 0 70px 26px rgba(216, 210, 255, 0.16);
+}
+
+.ground {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 20%;
+  background: linear-gradient(180deg, rgba(8, 4, 3, 0), #0e0705 72%);
+}
+
+/* ── Embers ─────────────────────────────────────────────────────────────── */
+.ember {
+  position: absolute;
+  bottom: -12px;
+  border-radius: 999px;
+  opacity: 0;                       /* keyframes own the fade in/out */
+  animation: rise-a 8s linear infinite;
+}
+.ember.hot  { background: radial-gradient(circle at 35% 35%, #fff3c4, #ffb14a 55%, rgba(255, 96, 20, 0)  78%); }
+.ember.coal { background: radial-gradient(circle at 35% 35%, #ffd9a0, #ff7c30 55%, rgba(230, 60, 10, 0)  78%); }
+.ember.ash  { background: radial-gradient(circle at 35% 35%, #ffe6d0, #d9784e 55%, rgba(160, 70, 40, 0)  78%); }
+.ember.w1 { animation-name: rise-a; }
+.ember.w2 { animation-name: rise-b; }
+.ember.w3 { animation-name: rise-c; }
+
+@keyframes rise-a {
+  0%   { transform: translate(0, 0) scale(0.55); opacity: 0; }
+  10%  { opacity: 1; }
+  55%  { transform: translate(42px, -520px) scale(0.95); }
+  100% { transform: translate(-14px, -1040px) scale(0.6); opacity: 0; }
+}
+@keyframes rise-b {
+  0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
+  12%  { opacity: 0.95; }
+  45%  { transform: translate(-38px, -430px) scale(1.0); }
+  78%  { transform: translate(22px, -780px) scale(0.8); }
+  100% { transform: translate(-8px, -1040px) scale(0.55); opacity: 0; }
+}
+@keyframes rise-c {
+  0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  8%   { opacity: 0.85; }
+  38%  { transform: translate(26px, -340px) scale(0.9); }
+  70%  { transform: translate(64px, -730px) scale(1.05); }
+  100% { transform: translate(30px, -1040px) scale(0.65); opacity: 0; }
+}
+
+/* ── Fireflies ──────────────────────────────────────────────────────────── */
+.fly {
+  position: absolute;
+  animation: drift-a 10s ease-in-out infinite;
+}
+.fly > b {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: radial-gradient(circle at 40% 40%, #f4ffd0, #c8f470 60%, rgba(150, 220, 60, 0) 80%);
+  box-shadow: 0 0 12px 3px rgba(196, 255, 110, 0.45);
+  animation: blink 2.4s ease-in-out infinite;
+}
+.fly.cool > b {
+  background: radial-gradient(circle at 40% 40%, #e2fff4, #7ee8c4 60%, rgba(60, 200, 150, 0) 80%);
+  box-shadow: 0 0 12px 3px rgba(120, 240, 190, 0.4);
+}
+.fly.w1 { animation-name: drift-a; }
+.fly.w2 { animation-name: drift-b; }
+.fly.w3 { animation-name: drift-c; }
+
+/* Closed loops (start == end) so the infinite repeat never pops. */
+@keyframes drift-a {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(38px, -26px); }
+  50%  { transform: translate(10px, -52px); }
+  75%  { transform: translate(-30px, -20px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes drift-b {
+  0%   { transform: translate(0, 0); }
+  30%  { transform: translate(-44px, 18px); }
+  55%  { transform: translate(-12px, 46px); }
+  80%  { transform: translate(26px, 24px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes drift-c {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(20px, 30px); }
+  50%  { transform: translate(52px, -8px); }
+  72%  { transform: translate(16px, -36px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes blink {
+  0%, 100% { opacity: 0.08; transform: scale(0.7); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+
+/* ── Stardust motes ─────────────────────────────────────────────────────── */
+.mote {
+  position: absolute;
+  top: -14px;
+  animation: fall-a 12s linear infinite;
+}
+.mote > b {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: #dce8ff;
+  animation: twinkle 2s ease-in-out infinite;
+}
+.mote.warm > b { background: #ffe9c9; }
+.mote.w1 { animation-name: fall-a; }
+.mote.w2 { animation-name: fall-b; }
+
+@keyframes fall-a {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(34px, 1100px); }
+}
+@keyframes fall-b {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(-48px, 1100px); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 0.9; }
+}
+
+/* ── Caption ────────────────────────────────────────────────────────────── */
+.title {
+  position: absolute;
+  left: 48px;
+  bottom: 40px;
+  color: #efe9da;
+}
+.title h1 {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-shadow: 0 0 24px rgba(255, 150, 60, 0.35), 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+.title p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: rgba(239, 233, 218, 0.6);
+}

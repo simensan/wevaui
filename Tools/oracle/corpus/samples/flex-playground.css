@@ -1,0 +1,170 @@
+/* flex-playground — dense flexbox exercise. Dark theme. */
+
+* { box-sizing: border-box; }
+
+.app {
+  display: flex;
+  flex-direction: column;
+  /* Fixed-height viewport that scrolls when the showcase overflows it,
+     instead of clipping the lower cards. */
+  height: 100vh;
+  overflow-y: auto;
+  gap: 0;
+  font-family: "Segoe UI", Inter, sans-serif;
+  color: #e6e8ec;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, #1a2236 0%, rgba(26,34,54,0) 55%),
+    linear-gradient(180deg, #0c0f17 0%, #090b11 100%);
+}
+
+/* ── topbar: brand | nav (auto-centered) | tools ───────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.02);
+}
+.brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; color: #fff; }
+.logo { width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(135deg, #5b8cff, #9b6bff); }
+.topnav { display: flex; gap: 6px; margin: 0 auto; }   /* auto margins center the nav */
+.tn { padding: 7px 14px; border-radius: 9px; font-size: 14px; font-weight: 600; color: #aab0be; }
+.tn.active { background: rgba(91,140,255,0.16); color: #cfe0ff; }
+.tools { display: flex; align-items: center; gap: 10px; }
+.btn { padding: 8px 16px; border-radius: 9px; font-size: 14px; font-weight: 700; border: 1px solid rgba(255,255,255,0.12); background: #161c2b; color: #d8dbe2; }
+.btn.primary { background: #2962ff; border-color: #2962ff; color: #fff; }
+.btn.ghost { background: transparent; }
+.me { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: #2a3550; font-size: 13px; font-weight: 800; color: #cfe0ff; }
+
+/* ── body: sidebar + main, wraps when narrow ───────────────────────────── */
+.body { display: flex; flex: 1 1 auto; gap: 20px; padding: 20px 24px; align-items: stretch; flex-wrap: wrap; }
+
+.side {
+  flex: 0 1 240px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.side-h { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7180; font-weight: 700; }
+.side-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.si { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 10px; font-size: 14px; font-weight: 600; color: #c2c7d2; }
+.si.active { background: rgba(91,140,255,0.14); color: #fff; }
+.si .badge { margin-left: auto; font-size: 11px; font-weight: 700; color: #8b90a0; background: rgba(255,255,255,0.06); padding: 1px 8px; border-radius: 999px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.dot.a { background: #5b8cff; } .dot.b { background: #16c784; } .dot.c { background: #ffb020; }
+.dot.d { background: #ff5d8f; } .dot.e { background: #a855f7; }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }   /* pinned to bottom */
+.meter { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.meter .fill { display: block; height: 100%; background: linear-gradient(90deg, #5b8cff, #16c784); }
+.side-cap { font-size: 12px; color: #7b8090; }
+
+.main { flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+
+/* ── card grid: outer wrapping flex ────────────────────────────────────── */
+.grid { display: flex; flex-wrap: wrap; gap: 14px; align-content: flex-start; }
+.card {
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #121826;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.card.wide { flex-basis: 360px; }
+.card.huge { flex-basis: 100%; }
+.card-h { font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: #8b90a0; }
+
+/* demo strip baseline */
+.demo { display: flex; gap: 8px; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.03); min-height: 56px; }
+.demo.tall { height: 110px; }
+/* tall2 is authored on the wrap cards; size the demo inside them so the
+   item rows have vertical room to wrap into multiple lines. */
+.tall2 .demo { height: 150px; }
+.demo i {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 38px; padding: 0 10px; height: 38px;
+  border-radius: 9px; font-size: 13px; font-weight: 700; font-style: normal;
+  background: #2b3550; color: #cfe0ff;
+}
+
+/* justify variants */
+.jc-between { justify-content: space-between; }
+.jc-around  { justify-content: space-around; }
+.jc-evenly  { justify-content: space-evenly; }
+.jc-center  { justify-content: center; }
+.jc-end     { justify-content: flex-end; }
+.row-rev    { flex-direction: row-reverse; }
+
+/* align variants */
+.ai-stretch { align-items: stretch; }
+.ai-stretch i { height: auto; }
+.ai-center  { align-items: center; }
+.ai-end     { align-items: flex-end; }
+.ai-start   { align-items: flex-start; }
+.ai-baseline { align-items: baseline; }
+.demo i.s { height: 30px; } .demo i.m { height: 46px; } .demo i.l { height: 66px; }
+.self-c { align-self: center; } .self-e { align-self: flex-end; } .self-stretch { align-self: stretch; height: auto; }
+.t-sm { font-size: 13px; } .t-md { font-size: 19px; } .t-lg { font-size: 26px; } .t-xl { font-size: 34px; }
+.ai-baseline i { height: auto; padding: 4px 10px; background: #243049; }
+
+/* grow / shrink / basis */
+.grow-121 i { min-width: 0; }
+.g1 { flex: 1 1 0; } .g2 { flex: 2 1 0; background: #355089 !important; }
+.basis-mix i { min-width: 0; }
+.b200 { flex: 0 1 200px; } .b120 { flex: 0 1 120px; } .bauto { flex: 1 1 auto; background: #355089; }
+.automargin .push { margin-left: auto; }
+.order-demo .o1 { order: 1; } .order-demo .o2 { order: 2; } .order-demo .o3 { order: 3; }
+
+/* wrap + align-content */
+.wrap-ac { flex-wrap: wrap; align-content: space-between; }
+.wrap-ac i { flex: 0 0 auto; }
+.wrap-rev { flex-wrap: wrap-reverse; align-content: flex-start; }
+.wrap-rev i { flex: 0 0 auto; }
+
+/* min/max clamp */
+.clamp i { min-width: 0; }
+.cmin { flex: 1 1 0; min-width: 90px; background: #2f5a3e; }
+.cmax { flex: 1 1 0; max-width: 70px; background: #5a2f3e; }
+.cfree { flex: 3 1 0; }
+
+/* ── deeply nested flex ────────────────────────────────────────────────── */
+.nest-root { display: flex; gap: 14px; }
+.nest-rail { display: flex; flex-direction: column; gap: 10px; flex: 0 0 auto; }
+.chip { display: flex; align-items: center; justify-content: center; width: 84px; aspect-ratio: 1 / 1; border-radius: 12px; font-size: 12px; font-weight: 700; text-align: center; background: linear-gradient(135deg, #3a4b8c, #2962ff); color: #fff; }
+.chip.alt { aspect-ratio: auto; flex: 1 1 auto; background: linear-gradient(135deg, #6b3a8c, #a855f7); }
+.nest-col { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-width: 0; }
+.nest-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 11px; background: rgba(255,255,255,0.04); }
+.nb-title { font-size: 14px; font-weight: 700; color: #fff; }
+.nb-spacer { flex: 1 1 auto; }
+.pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.pill.up { color: #16c784; background: rgba(22,199,132,0.16); }
+.nest-mid { display: flex; gap: 12px; flex: 1 1 auto; align-items: stretch; }
+.np { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 11px; background: #0f1421; border: 1px solid rgba(255,255,255,0.05); }
+.np.left { flex: 0 1 200px; min-height: 180px; }
+.np.right { flex: 1 1 auto; min-width: 0; }
+.np-h { font-size: 11px; color: #6b7180; font-weight: 700; }
+.np-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #c2c7d2; }
+.np-grow { flex: 1 1 auto; }
+.mono { font-family: monospace; color: #8fb3ff; }
+.chiprow { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; background: #243049; color: #aebbd6; }
+/* Footer fills the column's remaining height; its bars stretch to that full
+   height (40px-wide green tiles + a growing yellow bar). No aspect-ratio — a
+   growing bar with aspect-ratio:1 fights itself (width grows, ratio forces
+   height=width). */
+.np-foot { display: flex; gap: 8px; flex: 1 1 auto; align-items: stretch; }
+.sq { flex: 0 0 40px; border-radius: 9px; background: linear-gradient(135deg, #3a8c5a, #16c784); }
+.sq.grow2 { flex: 1 1 auto; background: linear-gradient(135deg, #8c7a3a, #ffd24a); }
+
+/* ── footer ────────────────────────────────────────────────────────────── */
+.foot { display: flex; align-items: center; padding: 14px 4px; font-size: 13px; color: #6b7180; border-top: 1px solid rgba(255,255,255,0.06); }
+.f-sp { flex: 1 1 auto; }
+.f-r { color: #8b90a0; }

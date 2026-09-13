@@ -1,0 +1,9 @@
+
+                .list     { counter-reset: item; }
+                .li1      { counter-increment: item; }
+                .li2      { counter-increment: item; }
+                .li1::before { content: counter(item); }
+                .li2::before { content: counter(item); }
+                .boundary { contain: style; }
+                .sub-item { counter-increment: item; }
+            

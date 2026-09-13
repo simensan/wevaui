@@ -1,0 +1,1 @@
+#g{display:grid;grid-template-columns:[A]40px [B]50px;grid-auto-columns:20px 25px;gap:2px}#x{grid-column:-2 missing / -1 missing}#y{grid-column:A / B}

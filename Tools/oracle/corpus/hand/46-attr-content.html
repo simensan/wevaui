@@ -1,0 +1,20 @@
+<div id="wrap">
+  <!-- content: attr(data-label) — the classic use case. Chrome and the
+       engine both resolve the attribute value into the generated text.
+       The attribute value "Item A" affects the ::before width, so the
+       Chrome-diff verifies that attr() is resolved at layout time. -->
+  <div id="a1" class="labeled" data-label="Item A">Alpha</div>
+  <div id="a2" class="labeled" data-label="Item B">Beta</div>
+  <!-- content: attr() with a fallback — data-label absent on #a3, so
+       the fallback string "?" is used instead. Verifies the fallback
+       path in AttrResolver.ResolveAttrCall. -->
+  <div id="a3" class="labeled-fallback">Gamma</div>
+  <!-- Typed attr() in a non-content property: width: attr(data-w px).
+       CSS Values L5 typed attr() was behind a flag in Chrome until v133;
+       stable Chrome 133+ ships it enabled. If the capture shows this div
+       with a width != 0 / != auto, the engine's typed support matches.
+       If stable Chrome still treats it as invalid (width falls to auto),
+       the element will be container-width (400px) and the test still
+       passes — we just document the behaviour difference. -->
+  <div id="a4" class="typed-width" data-w="120">Width from attr</div>
+</div>

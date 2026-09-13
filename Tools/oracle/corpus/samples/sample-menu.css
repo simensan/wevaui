@@ -1,0 +1,7 @@
+.menu { display: flex; flex-direction: column; gap: 16px; padding: 24px; font-family: sans-serif; }
+button { padding: 8px 16px; border-radius: 8px; background: #4f46e5; color: white; font: bold 14px sans-serif; }
+button:hover { background: #6366f1; }
+button:active { transform: scale(0.97); }
+.card { background: #1f2937; color: white; padding: 16px; border-radius: 12px; }
+.card-typography h2 { font: bold 24px sans-serif; margin: 0 0 12px 0; }
+.card-typography p { margin: 4px 0; font-size: 16px; }

@@ -157,27 +157,30 @@ fi
 # `hand` is the small hand-written cases and `harvest` the ones lifted from the
 # reference's own test suite. Both were sitting in the repo with a Chrome
 # capture beside every case, and nothing ran them.
-step "layout oracle"
-if command -v python3 > /dev/null && [ -x "$GCC/tools/weva_dump/weva_dump" ]; then
-    oracle() {
-        local corpus="$1" width="$2" height="$3" allowed="$4" status=0
-        local log="/tmp/weva-oracle-$(basename "$corpus").log"
-        (cd "$REPO" && python3 "$ROOT/Tools/oracle/run_oracle.py" "$corpus" \
-            --width "$width" --height "$height" --weva-dump "$GCC/tools/weva_dump/weva_dump" \
-            --out-dir "/tmp/weva-oracle-$(basename "$corpus")" --quiet) > "$log" 2>&1 || status=$?
-        if ! python3 "$ROOT/Tools/check_oracle_summary.py" --log "$log" \
-                --corpus "$corpus" --exit-code "$status" --max-differences "$allowed"; then
-            fail "layout oracle ($(basename "$corpus")); see $log"
+step "chrome oracle"
+# Chrome is the only oracle (2026-09-13): each corpus case is laid out by the
+# core and compared with the Chrome capture tracked beside it. A case passes
+# when its worst value is within 1.5px of Chrome and every element pairs;
+# anything over the ceiling must be named in known-gaps/chrome-sweep.txt with
+# a cause, and the gate reports entries there that are no longer needed.
+#
+# The ceiling is measured, not chosen: the harvested tests' worst disagreement
+# is 1.0px, the samples' text-baseline rounding tops out at 1.3px, and the
+# first genuine divergence in any corpus is 3.8px. This replaced the three-way
+# run_oracle.py gate, whose C# reference leg is retired with the C# engine.
+if command -v python3 > /dev/null && [ -x "$GCC/Tools/weva_dump/weva_dump" ]; then
+    chrome_oracle() {
+        local corpus="$1" width="$2" height="$3"
+        local log="/tmp/weva-chrome-$(basename "$corpus").log"
+        if ! (cd "$REPO" && python3 "$ROOT/Tools/oracle/chrome_sweep.py" "$corpus"                 --width "$width" --height "$height" --weva-dump "$GCC/Tools/weva_dump/weva_dump"                 --out-dir "/tmp/weva-chrome-$(basename "$corpus")" --show 2                 --max-worst 1.5 --known-gaps "$ROOT/Tools/oracle/known-gaps/chrome-sweep.txt") > "$log" 2>&1; then
+            fail "chrome oracle ($(basename "$corpus")); see $log"
         fi
     }
-    oracle "$SAMPLES" 1280 720 0
-    oracle "$ROOT/Tools/oracle/corpus/hand" 800 600 0
-    # Keep the existing development allowance; a release requires zero findings.
-    allowed_harvest=3
-    [ "$release" -eq 0 ] || allowed_harvest=0
-    oracle "$ROOT/Tools/oracle/corpus/harvest" 800 600 "$allowed_harvest"
+    chrome_oracle "$SAMPLES" 1280 720
+    chrome_oracle "$ROOT/Tools/oracle/corpus/hand" 800 600
+    chrome_oracle "$ROOT/Tools/oracle/corpus/harvest" 800 600
 else
-    skip "layout oracle (needs python3 and weva_dump)"
+    fail "chrome oracle: needs python3 and $GCC/Tools/weva_dump/weva_dump (a gate that cannot run is red, not skipped)"
 fi
 
 # ---- cached property ids name real properties ----------------------------
@@ -213,12 +216,12 @@ fi
 # that live in a Unity project rather than in this corpus. A NEW name in this
 # list is a case that is not testing what it looks like it is testing.
 step "assets"
-if [ -x "$GCC/tools/weva_render/weva_render" ]; then
+if [ -x "$GCC/Tools/weva_render/weva_render" ]; then
     missed=0
     for html in "$SAMPLES"/*.html; do
         css="${html%.html}.css"
         [ -f "$css" ] || css="-"
-        names=$("$GCC/tools/weva_render/weva_render" "$html" "$css" 1280 720 /dev/null 2>&1                 >/dev/null | grep -v "did not load" || true)
+        names=$("$GCC/Tools/weva_render/weva_render" "$html" "$css" 1280 720 /dev/null 2>&1                 >/dev/null | grep -v "did not load" || true)
         if [ -n "$names" ]; then
             printf '  %-22s %s
 ' "$(basename "$html" .html)"                 "$(printf '%s' "$names" | tr '
@@ -366,8 +369,8 @@ fi
 
 # ---- the two rasterisers, on the same draw list --------------------------
 step "backend gate"
-if [ -x "$GODOT" ] && [ -x "$GCC/tools/weva_render/weva_render" ]; then
-    if ! WEVA_RENDER="$GCC/tools/weva_render/weva_render" GODOT_BIN="$GODOT" \
+if [ -x "$GODOT" ] && [ -x "$GCC/Tools/weva_render/weva_render" ]; then
+    if ! WEVA_RENDER="$GCC/Tools/weva_render/weva_render" GODOT_BIN="$GODOT" \
         bash "$ROOT/hosts/godot/compare_all.sh" "$SAMPLES" > /tmp/weva-render.txt 2>&1; then
         fail "backend comparison process"
         tail -15 /tmp/weva-render.txt
@@ -377,7 +380,7 @@ if [ -x "$GODOT" ] && [ -x "$GCC/tools/weva_render/weva_render" ]; then
     [ "$worst" = "0" ] || { fail "backend gate"; sort -t% -k1 -rn /tmp/weva-render.txt | head -3; }
 
     step "interactive gate"
-    if ! WEVA_RENDER="$GCC/tools/weva_render/weva_render" GODOT_BIN="$GODOT" \
+    if ! WEVA_RENDER="$GCC/Tools/weva_render/weva_render" GODOT_BIN="$GODOT" \
         bash "$ROOT/hosts/godot/compare_live.sh" > /tmp/weva-live.txt 2>&1; then
         fail "interactive comparison process"
     fi

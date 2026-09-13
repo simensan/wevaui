@@ -1,0 +1,4 @@
+.row { display: flex; align-items: baseline; padding-top: 32px; padding-left: 32px; column-gap: 24px; background-color: #f3f4f6; }
+.small { font-size: 16px; margin-top: 0; margin-bottom: 0; }
+.medium { font-size: 32px; margin-top: 0; margin-bottom: 0; }
+.large { font-size: 56px; margin-top: 0; margin-bottom: 0; color: #4f46e5; }

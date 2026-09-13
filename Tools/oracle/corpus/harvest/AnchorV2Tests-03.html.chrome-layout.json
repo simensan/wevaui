@@ -1,0 +1,29 @@
+{
+  "source": "AnchorV2Tests-03.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.83",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 1,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "tip",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 20,
+      "display": "block",
+      "position": "absolute",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1",
+      "text": ""
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "source": "AbsolutePseudoCounterTests-01.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.83",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "ol",
+      "id": "",
+      "cls": "stat-cards",
+      "x": 0,
+      "y": 16,
+      "w": 800,
+      "h": 84.56,
+      "display": "block",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "ol:1",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "li",
+      "id": "",
+      "cls": "stat-card",
+      "x": 40,
+      "y": 16,
+      "w": 760,
+      "h": 42.28,
+      "display": "list-item",
+      "position": "relative",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "ol:1/li:1",
+      "text": "a"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "li",
+      "id": "",
+      "cls": "stat-card",
+      "x": 40,
+      "y": 58.28,
+      "w": 760,
+      "h": 42.28,
+      "display": "list-item",
+      "position": "relative",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "ol:1/li:2",
+      "text": "b"
+    }
+  ]
+}

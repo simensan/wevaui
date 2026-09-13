@@ -1,0 +1,8 @@
+
+                .outer           { counter-reset: c; }
+                .before-boundary { counter-increment: c; }
+                .boundary        { contain: style; }
+                .inner           { counter-increment: c; }
+                .after-boundary  { counter-increment: c; }
+                .last::before    { content: counter(c); }
+            

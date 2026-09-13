@@ -1,0 +1,37 @@
+<link rel="stylesheet" href="cov-clamp.css" />
+<!-- Clamping a block to a number of lines. Real UI uses this constantly for
+     card descriptions and list subtitles, and no sample writes it, so the
+     oracle had never seen it. -->
+<div class="page">
+  <div class="box plain">One line of text that is short.</div>
+
+  <!-- Unprefixed, which the browser ignores: these must keep their full
+       natural height. -->
+  <div class="box clamp2">A description long enough to run to four or five
+  lines at this measure, which is the whole point: unprefixed, the browser
+  leaves it alone and the box stays as tall as its text.</div>
+
+  <div class="box clamp1">Another paragraph that would otherwise wrap several
+  times over, and still does.</div>
+
+  <div class="box clamp-none">A clamp of none, which changes nothing either
+  way, and runs to as many lines as the text needs at this width.</div>
+
+  <!-- Prefixed, inside a -webkit-box, which the browser does apply. -->
+  <div class="box wk wk1">Clamped to one line out of a paragraph long enough
+  to wrap four or five times at this measure.</div>
+
+  <div class="box wk wk2">Clamped to two lines out of a paragraph long enough
+  to wrap four or five times at this measure, so the cut is unambiguous.</div>
+
+  <div class="box wk wk3">Clamped to three lines out of a longer run of text,
+  so the difference between the clamp and the natural height is large enough
+  that an off-by-one line is obvious rather than a rounding argument. More
+  text after it to be sure there is something to cut.</div>
+
+  <div class="box wk wk-tall">Fewer lines than the clamp allows.</div>
+
+  <div class="box wk wk-off">A -webkit-box whose clamp is none, which must
+  run to its full height like any other block, however many lines that takes
+  at this width.</div>
+</div>

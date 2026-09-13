@@ -1,0 +1,63 @@
+{
+  "source": "19-inline-block-row.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.83",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 0,
+      "y": 20,
+      "w": 800,
+      "h": 62.86,
+      "display": "block",
+      "position": "static",
+      "fontSize": "20px",
+      "lineHeight": "22.86px",
+      "path": "p:1",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "span",
+      "id": "",
+      "cls": "atom",
+      "x": 95,
+      "y": 56,
+      "w": 60,
+      "h": 24,
+      "display": "inline-block",
+      "position": "static",
+      "fontSize": "20px",
+      "lineHeight": "22.86px",
+      "path": "p:1/span:1",
+      "text": "atom"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "span",
+      "id": "",
+      "cls": "atom2",
+      "x": 227,
+      "y": 52,
+      "w": 43,
+      "h": 30.86,
+      "display": "inline-block",
+      "position": "static",
+      "fontSize": "20px",
+      "lineHeight": "22.86px",
+      "path": "p:1/span:2",
+      "text": "btn"
+    }
+  ]
+}

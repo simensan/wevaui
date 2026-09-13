@@ -1,0 +1,7 @@
+
+.outer { display:flex; flex-direction:column; width:600px; }
+.contained { contain:size; width:400px; height:200px; }
+.inner-flex { display:flex; gap:8px; }
+.child { width:80px; height:40px; }
+.grow { flex:1; }
+.sibling { height:100px; }

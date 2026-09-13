@@ -1,0 +1,5 @@
+
+                .row  { display: grid; grid-template-columns: 200px 1fr; align-items: center; width: 800px; }
+                .ctrl { display: inline-flex; border: 1px solid; overflow: hidden; }
+                .seg  { padding: 6px 12px; font-size: 12px; }
+            

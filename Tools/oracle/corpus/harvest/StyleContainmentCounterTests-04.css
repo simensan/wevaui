@@ -1,0 +1,6 @@
+
+                .outer    { counter-reset: c 7; }
+                .boundary { contain: style; }
+                .inner    { counter-set: c 99; }
+                .sibling::before { content: counter(c); }
+            

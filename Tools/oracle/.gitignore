@@ -1,6 +1,14 @@
-# Generated, not versioned — regenerate with harvest.py / BaselineGen.
-# ~3,900 entries harvested from the C# tests would bloat the repo and go stale
-# the moment a test changes.
-corpus/
+# The corpus is TRACKED as of 2026-09-13: with the C# engine frozen and Chrome
+# the only oracle, the Chrome captures beside each case are frozen fixtures,
+# regenerated deliberately (capture-all-chrome-layouts.mjs --metrics=mono, at
+# the corpus's viewport) and stamped with the Chrome version inside each file.
+# The earlier reason for ignoring them -- harvested cases go stale when a C#
+# test changes -- ended with the tests.
+#
+# Still generated, still ignored: the three-way's reference dumps and the
+# candidate output.
 reference/
 candidate/
+
+# A junction the Godot gallery scenes use to find the sample corpus; never a fixture.
+corpus/samples/tools

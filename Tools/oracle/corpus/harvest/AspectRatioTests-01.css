@@ -1,0 +1,5 @@
+
+                body { margin: 0 }
+                .g { width: 103px; display: grid; grid-template-columns: 1fr }
+                .s { aspect-ratio: 1 / 1; border-width: 1px; border-style: solid }
+            

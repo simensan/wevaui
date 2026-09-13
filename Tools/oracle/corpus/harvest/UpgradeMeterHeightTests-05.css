@@ -1,0 +1,5 @@
+
+                .row { display: flex; align-items: center; gap: 12px; width: 600px; padding: 8px; }
+                .text { flex: 1; font-size: 13px; }
+                .buy { padding: 8px 20px; font-size: 13px; font-weight: 700; border: none; border-radius: 6px; }
+            

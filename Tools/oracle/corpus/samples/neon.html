@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Volt Runner — Synthwave HUD (portrait)</title>
+<link rel="stylesheet" href="neon.css" />
+</head>
+<body>
+
+<!-- ───── RAINY NEON STREET (blurred, stand-in for the game view) ───── -->
+<div class="scene">
+  <!-- out-of-focus neon lights -->
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="blob b4"></div>
+  <div class="blob b5"></div>
+  <div class="blob b6"></div>
+
+  <!-- small bokeh lamps -->
+  <div class="bokeh k1"></div>
+  <div class="bokeh k2"></div>
+  <div class="bokeh k3"></div>
+  <div class="bokeh k4"></div>
+  <div class="bokeh k5"></div>
+
+  <!-- wet-street light reflections -->
+  <div class="smear s1"></div>
+  <div class="smear s2"></div>
+  <div class="smear s3"></div>
+  <div class="wet"></div>
+
+  <!-- rain, slightly slanted -->
+  <div class="rain">
+    <div class="drop d1"></div>
+    <div class="drop d2"></div>
+    <div class="drop d3"></div>
+    <div class="drop d4"></div>
+    <div class="drop d5"></div>
+    <div class="drop d6"></div>
+    <div class="drop d7"></div>
+    <div class="drop d8"></div>
+    <div class="drop d9"></div>
+    <div class="drop d10"></div>
+    <div class="drop d11"></div>
+    <div class="drop d12"></div>
+  </div>
+
+  <!-- close-to-camera rain, out of focus -->
+  <div class="rain rain-blur">
+    <div class="drop db1"></div>
+    <div class="drop db2"></div>
+    <div class="drop db3"></div>
+    <div class="drop db4"></div>
+    <div class="drop db5"></div>
+    <div class="drop db6"></div>
+  </div>
+</div>
+
+<!-- ───── TOP SIGN: lives · level · score ───── -->
+<header class="hud-top">
+  <div class="lives">
+    <span class="heart">♥</span>
+    <span class="heart">♥</span>
+    <span class="heart lost">♥</span>
+  </div>
+  <div class="level-chip">LV 7</div>
+  <div class="score">248 350</div>
+</header>
+
+<!-- ───── BOTTOM SIGN: boost meter ───── -->
+<footer class="hud-bottom">
+  <div class="meter-label"><span>BOOST</span><span>72%</span></div>
+  <div class="meter-track">
+    <div class="meter-fill"><div class="meter-sheen"></div></div>
+  </div>
+</footer>
+
+<!-- CRT scanlines over everything (decor only, never hit-tested) -->
+<div class="scanlines"></div>
+
+</body>
+</html>

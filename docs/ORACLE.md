@@ -448,6 +448,47 @@ so a fourth breaks the build.
 The oracle step now takes about four minutes rather than one. That is the price
 of the two bugs above, and it is worth paying.
 
+## The gate is Chrome-only (2026-09-13)
+
+The C# engine is frozen and Chrome is the only oracle. `run_oracle.py`'s
+three-way — C# reference against the core, Chrome arbitrating where they
+disagree — is retired from `check.sh` and CI; the reference leg goes with the
+engine. What gates now is `chrome_sweep.py` in gate mode:
+
+    python3 Tools/oracle/chrome_sweep.py Tools/oracle/corpus/harvest         --weva-dump <build>/Tools/weva_dump/weva_dump --width 800 --height 600         --max-worst 1.5 --known-gaps Tools/oracle/known-gaps/chrome-sweep.txt
+
+A case passes when its worst value is within the ceiling of Chrome and every
+element pairs. Anything over must be named in `known-gaps/chrome-sweep.txt`
+with a cause, and the gate reports entries there that are no longer needed, so
+the file cannot quietly accumulate. The exit code is real.
+
+**The corpus and its captures are tracked.** With the C# tests going, the
+reason for ignoring the corpus — harvested cases going stale when a test
+changes — is gone. `hand/` (52), `harvest/` (225, a fresh harvest of the tests
+as of the freeze) and `samples/` (47, with the Chrome screenshots the render
+gate uses) carry a `.chrome-layout.json` beside every case, captured with
+`--metrics=mono` and the bundled Inter at the corpus's viewport, and stamped
+with the browser version inside the file. Regenerate deliberately, the way
+`docs/verification/` receipts are treated, never as a side effect of a run.
+
+**The ceiling is measured.** Harvest's worst disagreement is 1.0px and every
+one of its 22 differing cases is the rounding class (`18.288` vs `19` line
+height, inline `y` 0 vs −1); the samples' text-baseline rounding tops out at
+1.3px at 1280 wide; the first genuine divergence in any corpus is 3.8px. So
+1.5px separates the classes with margin on both sides.
+
+**What the two-way surfaced that the three-way hid.** Against the same
+captures, 12 samples exceed the ceiling by up to 1,280px — and they exceed it
+identically against the captures that were already on disk. The three-way
+passed them because the C# reference agreed with the core, which is the
+`known-gaps/` definition of a gap. Each is classified with its cause in
+`chrome-sweep.txt`: six are the transformed-AABB tool artefact below, three
+are Chrome's inline-fragment union, one is `weva_dump` not loading images, and
+two are real unported features (vertical writing mode, multicol). That file
+is the backlog.
+
+Baseline receipt: `docs/verification/chrome-oracle-baseline.json`.
+
 ## The harvest pool, and chrome_sweep.py
 
 `corpus/samples` is the gate: 47 cases, three-way, run by `check.sh`.

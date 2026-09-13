@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Halcyon — Inventory</title>
+<link rel="stylesheet" href="inventory.css" />
+</head>
+<body>
+
+<main class="inventory">
+  <!-- ───── HEADER ───── -->
+  <header class="inv-header">
+    <h1>Knapsack</h1>
+    <div class="weight">
+      <span class="weight-current">142</span>
+      <span class="weight-sep">/</span>
+      <span class="weight-max">300</span>
+      <span class="weight-unit">lb</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab tab-active">All</button>
+      <button class="tab">Gear</button>
+      <button class="tab">Consume</button>
+      <button class="tab">Quest</button>
+    </nav>
+  </header>
+
+  <!-- ───── GRID + DETAILS ───── -->
+  <section class="inv-body">
+    <div class="grid">
+      <div class="slot slot-rare">
+        <span class="slot-glyph">⚔</span>
+        <span class="slot-count">1</span>
+      </div>
+      <div class="slot slot-common">
+        <span class="slot-glyph">◊</span>
+        <span class="slot-count">12</span>
+      </div>
+      <div class="slot slot-epic slot-selected">
+        <span class="slot-glyph">✦</span>
+      </div>
+      <div class="slot slot-common"><span class="slot-glyph">●</span><span class="slot-count">3</span></div>
+      <div class="slot slot-rare"><span class="slot-glyph">☥</span></div>
+      <div class="slot slot-empty"></div>
+      <div class="slot slot-common"><span class="slot-glyph">▼</span><span class="slot-count">8</span></div>
+      <div class="slot slot-uncommon"><span class="slot-glyph">◯</span></div>
+      <div class="slot slot-empty"></div>
+      <div class="slot slot-common"><span class="slot-glyph">♦</span><span class="slot-count">5</span></div>
+      <div class="slot slot-rare"><span class="slot-glyph">❄</span></div>
+      <div class="slot slot-uncommon"><span class="slot-glyph">✚</span><span class="slot-count">2</span></div>
+      <div class="slot slot-common"><span class="slot-glyph">▲</span><span class="slot-count">15</span></div>
+      <div class="slot slot-legendary"><span class="slot-glyph">☠</span></div>
+      <div class="slot slot-empty"></div>
+      <div class="slot slot-empty"></div>
+      <div class="slot slot-common"><span class="slot-glyph">◈</span><span class="slot-count">24</span></div>
+      <div class="slot slot-empty"></div>
+      <div class="slot slot-empty"></div>
+      <div class="slot slot-empty"></div>
+    </div>
+
+    <aside class="details">
+      <div class="detail-frame">
+        <span class="detail-glyph">✦</span>
+      </div>
+      <h2 class="detail-name">Starcaller's Sigil</h2>
+      <span class="detail-rarity">Epic Trinket</span>
+      <p class="detail-flavor">"Forged when the constellations briefly aligned over Vorndall. The wearer hears whispers in starlight."</p>
+      <ul class="detail-stats">
+        <li><span class="stat-key">DEX</span><span class="stat-bonus">+4</span></li>
+        <li><span class="stat-key">INT</span><span class="stat-bonus">+7</span></li>
+        <li><span class="stat-key">Crit</span><span class="stat-bonus">+12%</span></li>
+        <li><span class="stat-key">Weight</span><span class="stat-bonus">0.5 lb</span></li>
+      </ul>
+      <div class="detail-actions">
+        <button class="act act-primary">Equip</button>
+        <button class="act act-secondary">Drop</button>
+      </div>
+    </aside>
+  </section>
+</main>
+
+</body>
+</html>

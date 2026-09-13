@@ -1,0 +1,21 @@
+{
+  "status": "pass",
+  "date": "2026-09-13",
+  "change": "The layout oracle is Chrome-only. run_oracle.py's three-way (C# reference vs core, Chrome arbitrating) is retired from check.sh and CI; chrome_sweep.py --max-worst 1.5 --known-gaps is the gate. The corpus and its Chrome captures are tracked.",
+  "captures": {"browser": "Chrome/152.0.7977.83", "metrics": "mono", "font": "bundled Inter via @font-face",
+               "tool": "Tools/Layout/capture-all-chrome-layouts.mjs --metrics=mono"},
+  "core": {"build": "gcc, ~/weva/build-gcc, clean", "commit_before": "22b46c84"},
+  "ceiling_px": 1.5,
+  "ceiling_rationale": "harvest worst 1.0px; samples text-baseline rounding tops at 1.3px; first genuine divergence in any corpus is 3.8px",
+  "corpora": {
+    "harvest": {"viewport": [800, 600], "cases": 225, "agree": 203, "differ": 22, "crash": 0, "over_ceiling": 0, "excused": 0,
+                "source": "Tools/oracle/harvest_corpus.py over Packages/com.wevaui/Tests (37 files); replaces the earlier 210-case snapshot",
+                "differ_class": "all 22 are rounding: 18.288 vs 19 line height, inline y 0 vs -1, img y 13.6 vs 13"},
+    "hand":    {"viewport": [800, 600], "cases": 52, "agree": 46, "differ": 6, "crash": 0, "over_ceiling": 0, "excused": 0},
+    "samples": {"viewport": [1280, 720], "cases": 47, "agree": 14, "differ": 33, "crash": 0, "over_ceiling": 0, "excused": 12,
+                "excused_by_class": {"tool/transform": 6, "tool/inline": 3, "tool/images": 1, "gap/vertical-writing": 1, "gap/multicol": 1},
+                "note": "the same 12 exceed the ceiling against the pre-existing captures with identical worst values; the three-way masked them because the C# reference agreed with the core"}
+  },
+  "also_found": "check.sh tested $GCC/tools/weva_dump (lowercase) since the flatten; the build tree is Tools/, so the layout oracle and six other steps had been skipping silently. Re-cased; a gate that cannot run now fails.",
+  "known_gaps_file": "Tools/oracle/known-gaps/chrome-sweep.txt"
+}

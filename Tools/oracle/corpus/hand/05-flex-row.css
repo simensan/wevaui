@@ -1,0 +1,2 @@
+.row { display: flex; flex-direction: row; gap: 12px; padding-top: 24px; padding-left: 24px; }
+.cell { width: 100px; height: 80px; background-color: #10b981; }

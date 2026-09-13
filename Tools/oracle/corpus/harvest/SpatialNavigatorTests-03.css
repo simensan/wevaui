@@ -1,0 +1,6 @@
+
+                .a { position: absolute; left: 0;   top: 0;  width: 80px; height: 40px; }
+                .b { position: absolute; left: 0;   top: 80px; width: 80px; height: 40px; }
+                .c { position: absolute; left: 200px; top: 50px; width: 80px; height: 40px; }
+                .wrap { position: relative; width: 400px; height: 200px; }
+            

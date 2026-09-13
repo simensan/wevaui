@@ -1,0 +1,8 @@
+.card { width: 200px; padding: 16px; background-color: #f3f4f6; margin: 24px; }
+.card .ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: monospace;
+  color: #111827;
+}

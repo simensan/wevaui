@@ -1,0 +1,30 @@
+<link rel="stylesheet" href="cov-logical.css" />
+<!-- Logical sizing and writing direction. The corpus is entirely
+     left-to-right horizontal, so every one of these is untested. -->
+<div class="page">
+  <section class="row">
+    <div class="lbox">inline-size</div>
+    <div class="lbox min">min-inline-size</div>
+    <div class="lbox max">max-inline-size</div>
+  </section>
+
+  <section class="row">
+    <div class="vbox">block-size</div>
+    <div class="vbox minb">min-block-size</div>
+    <div class="vbox maxb">max-block-size</div>
+  </section>
+
+  <section class="rtl">
+    <p>A right-to-left block, whose lines start at the right edge.</p>
+    <div class="bar"><span class="chip">one</span><span class="chip">two</span><span class="chip">three</span></div>
+  </section>
+
+  <section class="vertical">
+    <p>Vertical writing mode, where the block axis runs across.</p>
+    <div class="vstack"><span class="chip">a</span><span class="chip">b</span></div>
+  </section>
+
+  <section class="vertical lr">
+    <p>The other vertical direction.</p>
+  </section>
+</div>

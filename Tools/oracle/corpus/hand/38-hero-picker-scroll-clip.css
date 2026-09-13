@@ -1,0 +1,11 @@
+body { margin: 0; padding: 0; background-color: #0f172a; }
+#shell { display: grid; grid-template-rows: auto 552px auto; width: 800px; height: 700px; box-sizing: border-box; }
+#header { background-color: #1e293b; height: 48px; display: flex; align-items: center; padding-left: 20px; }
+#header span { color: #f1f5f9; font-size: 16px; }
+#body { display: grid; grid-template-columns: 240px 1fr; overflow: hidden; }
+#left { background-color: #1e293b; display: flex; flex-direction: column; gap: 8px; padding: 12px; overflow-y: auto; min-height: 0; }
+.hero-item { height: 80px; flex-shrink: 0; background-color: #334155; border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; }
+#detail { display: flex; flex-direction: column; overflow-y: auto; min-height: 0; background-color: #111827; }
+.filler { height: 150px; flex-shrink: 0; background-color: #1e293b; border-bottom: 1px solid #334155; }
+#footer { background-color: #1e293b; height: 60px; display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; }
+#footer span { color: #6366f1; font-size: 14px; }

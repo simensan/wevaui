@@ -1,0 +1,10 @@
+
+                .anchor { width: 100px; height: 30px; anchor-name: --tip; }
+                .tip {
+                    position: absolute;
+                    position-anchor: --tip;
+                    top: anchor(bottom + 8px);
+                    width: 80px;
+                    height: 20px;
+                }
+            

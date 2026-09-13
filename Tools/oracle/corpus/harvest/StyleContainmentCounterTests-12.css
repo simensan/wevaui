@@ -1,0 +1,7 @@
+
+                .outer    { counter-reset: a b 5; }
+                .boundary { contain: style; }
+                .inner    { counter-increment: a; }
+                .sib-a::before { content: counter(a); }
+                .sib-b::before { content: counter(b); }
+            

@@ -1,0 +1,5 @@
+body { margin: 0; padding: 0; }
+#shell { display: flex; flex-direction: column; width: 800px; height: 600px; }
+#topbar { height: 60px; flex-shrink: 0; background-color: #1f2937; display: flex; align-items: center; padding-left: 20px; }
+#topbar span { color: #ffffff; font-size: 18px; }
+#body { flex: 1; background-color: #f3f4f6; overflow-y: auto; }

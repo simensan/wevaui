@@ -1,0 +1,5 @@
+
+                .row    { display: grid; grid-template-columns: 200px 1fr; width: 800px; }
+                .scroll { overflow: auto; }
+                .tall   { height: 200px; }
+            

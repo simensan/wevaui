@@ -110,10 +110,12 @@ def main():
                     if html.count("<") < args.min_elements:
                         continue
                     base = os.path.join(args.out, f"{stem}-{index:02d}")
-                    with open(base + ".html", "w") as f:
+                    with open(base + ".html", 'w', newline='
+') as f:
                         f.write(html)
                     if css:
-                        with open(base + ".css", "w") as f:
+                        with open(base + ".css", 'w', newline='
+') as f:
                             f.write(css)
                     written += 1
 

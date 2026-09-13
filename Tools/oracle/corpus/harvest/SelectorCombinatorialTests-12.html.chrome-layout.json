@@ -1,0 +1,63 @@
+{
+  "source": "SelectorCombinatorialTests-12.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.83",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "ul",
+      "id": "",
+      "cls": "",
+      "x": 0,
+      "y": 16,
+      "w": 800,
+      "h": 34,
+      "display": "block",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "ul:1",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "li",
+      "id": "x",
+      "cls": "",
+      "x": 40,
+      "y": 16,
+      "w": 760,
+      "h": 34,
+      "display": "list-item",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "ul:1/li:1",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 2,
+      "tag": "input",
+      "id": "",
+      "cls": "checkbox",
+      "x": 40,
+      "y": 16,
+      "w": 218,
+      "h": 34,
+      "display": "inline-block",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "ul:1/li:1/input:1",
+      "text": ""
+    }
+  ]
+}

@@ -141,6 +141,15 @@ def main():
     ap.add_argument("--only")
     ap.add_argument("--show", type=int, default=3, help="differing values to print per case")
     ap.add_argument("--chrome-metrics", action="store_true", help="Use browser-rounded synthetic font extents")
+    # Gate mode. Without these the tool is a lead generator, as ORACLE.md
+    # describes; with them it is the conformance gate, and Chrome is the only
+    # side of the comparison. A case passes when its WORST value is within
+    # --max-worst of Chrome and it has no unmatched element; anything else has
+    # to be named in the known-gaps file with a cause, or the run fails.
+    ap.add_argument("--max-worst", type=float, default=None,
+                    help="per-case ceiling in px on the largest disagreement; enables the gate")
+    ap.add_argument("--known-gaps", default=None,
+                    help="text file of `case-name: reason` lines allowed to exceed the ceiling")
     a = ap.parse_args()
     os.makedirs(a.out_dir, exist_ok=True)
 
@@ -182,6 +191,39 @@ def main():
         print("CRASH %-43s %s" % (name, err[0] if err else ""))
     print("\n%d cases: %d agree with chrome, %d differ, %d crash, %d without a capture"
           % (len(cases), clean, len(diffs), len(crashes), skipped))
+
+    if a.max_worst is None:
+        return
+    known = {}
+    if a.known_gaps and os.path.exists(a.known_gaps):
+        with open(a.known_gaps) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or ":" not in line:
+                    continue
+                name, reason = line.split(":", 1)
+                known[name.strip()] = reason.strip()
+    failed = []
+    for name, bad, unpaired in diffs:
+        over = worst_of(bad) > a.max_worst or unpaired > 0
+        if over and name not in known:
+            failed.append("%s (worst %.1fpx%s)" % (name, worst_of(bad),
+                                                  ", %d unpaired" % unpaired if unpaired else ""))
+    for name, _ in crashes:
+        if name not in known:
+            failed.append("%s (crash)" % name)
+    flagged = set(d[0] for d in diffs) | set(c[0] for c in crashes)
+    excused = [n for n in known if n in flagged]
+    stale = [n for n in known if n in cases and n not in flagged]
+    print("GATE ceiling %.1fpx: %d over, %d excused by known-gaps%s"
+          % (a.max_worst, len(failed), len(excused),
+             ("; %d known-gaps entries no longer needed: %s" % (len(stale), ", ".join(stale))) if stale else ""))
+    if skipped:
+        failed.append("%d case(s) without a capture" % skipped)
+    if failed:
+        for f in failed:
+            print("FAIL", f)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

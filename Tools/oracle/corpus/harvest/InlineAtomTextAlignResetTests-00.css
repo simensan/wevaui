@@ -1,0 +1,5 @@
+
+                .row { display: flex; width: 300px; }
+                .r-px { flex: 0 0 auto; text-align: right; }
+                .r-price { }
+                .pill { display: inline-flex; padding: 1px 4px; }

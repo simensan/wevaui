@@ -1,0 +1,10 @@
+body { margin: 0; padding: 0; background-color: #0f172a; }
+#hud { display: grid; grid-template-columns: 320px 1fr 360px; grid-template-rows: 60px 1fr; grid-template-areas: "topbar topbar topbar" "character effects actions"; gap: 12px; padding: 16px; box-sizing: border-box; width: 1200px; height: 900px; }
+#topbar { grid-area: topbar; background-color: #1e293b; border: 1px solid #334155; display: flex; align-items: center; padding-left: 16px; }
+#topbar span { color: #94a3b8; font-size: 14px; }
+#character { grid-area: character; background-color: #1e293b; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; }
+#character span { color: #64748b; }
+#effects { grid-area: effects; background-color: #1e293b; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; }
+#effects span { color: #64748b; }
+#actions { grid-area: actions; background-color: #1e293b; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; }
+#actions span { color: #64748b; }

@@ -1,0 +1,8 @@
+
+                body { margin: 0; padding: 0; }
+                .card { position: relative; padding: 20px; width: 320px; }
+                .btn { display: inline-block; width: 140px; height: 40px;
+                       anchor-name: --tip; }
+                .tip { position: absolute; position-anchor: --tip;
+                       top: anchor(bottom); left: anchor(left); }
+            

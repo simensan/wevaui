@@ -1,0 +1,36 @@
+<link rel="stylesheet" href="cov-textflow.css" />
+<!-- How a line is broken and indented. Nine properties the corpus never
+     wrote, all of which move boxes. -->
+<div class="page">
+  <p class="indent">An indented first line, followed by enough text to wrap so
+  the second line's start can be compared against the first.</p>
+
+  <p class="hanging">A hanging indent, where the first line starts further left
+  than the ones under it, which is the opposite sign and worth separating.</p>
+
+  <div class="box breakall">Supercalifragilisticexpialidocious
+  antidisestablishmentarianism pneumonoultramicroscopicsilicovolcanoconiosis</div>
+
+  <div class="box breakword">Supercalifragilisticexpialidocious
+  antidisestablishmentarianism pneumonoultramicroscopicsilicovolcanoconiosis</div>
+
+  <div class="box keepall">short words that should not be broken at all here</div>
+
+  <div class="box wrapword">https://example.invalid/a/very/long/path/that/has/no/spaces/in/it/at/all</div>
+
+  <div class="box nowrap">This line must not wrap however narrow the box is.</div>
+
+  <pre class="tabs">a	b		c
+xx	y</pre>
+
+  <pre class="tabs wide">a	b		c
+xx	y</pre>
+
+  <p class="spaced">Words with extra spacing between them.</p>
+
+  <p class="justified">Justified text needs enough words in it to leave a
+  visible amount of slack on every line but the last, which is where the
+  difference between engines shows up.</p>
+
+  <div class="box balance">A short heading that balances</div>
+</div>

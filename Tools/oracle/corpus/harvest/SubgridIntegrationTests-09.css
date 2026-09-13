@@ -1,0 +1,14 @@
+
+                .p {
+                    display: grid;
+                    grid-template-columns: 75px 75px 75px;
+                    grid-template-rows: 30px;
+                    width: 300px;
+                }
+                .c {
+                    display: grid;
+                    grid-column: 1 / 4;
+                    grid-template-columns: subgrid;
+                    grid-template-rows: 100px;
+                }
+            

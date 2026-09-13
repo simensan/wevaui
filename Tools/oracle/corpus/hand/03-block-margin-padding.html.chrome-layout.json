@@ -1,0 +1,46 @@
+{
+  "source": "03-block-margin-padding.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.83",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 2,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "outer",
+      "x": 30,
+      "y": 20,
+      "w": 332,
+      "h": 232,
+      "display": "block",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "inner",
+      "x": 46,
+      "y": 36,
+      "w": 100,
+      "h": 100,
+      "display": "block",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1/div:1",
+      "text": ""
+    }
+  ]
+}

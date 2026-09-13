@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Layout Stress — incremental relayout under animation</title>
+<link rel="stylesheet" href="layout-stress.css" />
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <span class="title">System Monitor</span>
+    <span class="subtitle">live layout-property animation stress test</span>
+    <span class="badge">LIVE</span>
+  </div>
+
+  <!-- LIVE METRICS — width/padding/font-size animate every frame -->
+  <div class="live">
+    <div class="metric"><span class="metric-label">CPU</span><div class="bar"><div class="bar-fill"></div></div><span class="counter">61%</span></div>
+    <div class="metric"><span class="metric-label">Memory</span><div class="bar"><div class="bar-fill hp"></div></div><span class="counter">47%</span></div>
+    <div class="metric"><span class="metric-label">GPU</span><div class="bar"><div class="bar-fill mp"></div></div><span class="counter">82%</span></div>
+    <div class="metric"><span class="metric-label">Network</span><div class="bar"><div class="bar-fill"></div></div><span class="counter">12%</span></div>
+    <div class="pads">
+      <div class="pad"><span class="pad-k">Temp</span><span class="pad-v">64°</span></div>
+      <div class="pad"><span class="pad-k">Power</span><span class="pad-v">128W</span></div>
+      <div class="pad"><span class="pad-k">Fans</span><span class="pad-v">2400</span></div>
+      <div class="pad"><span class="pad-k">Uptime</span><span class="pad-v">9d</span></div>
+    </div>
+  </div>
+
+  <!-- LARGE STATIC GRID — big box tree + scroll container -->
+  <div class="grid-wrap">
+    <div class="grid">
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Ring-01</span></div><span class="cell-sub">ok · 130ms</span><div class="mini"><div class="mini-fill" style="width:68%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Link-02</span></div><span class="cell-sub">ok · 15ms</span><div class="mini"><div class="mini-fill" style="width:43%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Pool-03</span></div><span class="cell-sub">ok · 25ms</span><div class="mini"><div class="mini-fill" style="width:74%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Shard-04</span></div><span class="cell-sub">ok · 154ms</span><div class="mini"><div class="mini-fill" style="width:40%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Slot-05</span></div><span class="cell-sub">ok · 189ms</span><div class="mini"><div class="mini-fill" style="width:34%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Lane-06</span></div><span class="cell-sub">ok · 110ms</span><div class="mini"><div class="mini-fill" style="width:69%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Core-07</span></div><span class="cell-sub">ok · 50ms</span><div class="mini"><div class="mini-fill" style="width:31%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Port-08</span></div><span class="cell-sub">ok · 189ms</span><div class="mini"><div class="mini-fill" style="width:74%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Cache-09</span></div><span class="cell-sub">ok · 62ms</span><div class="mini"><div class="mini-fill" style="width:77%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Worker-10</span></div><span class="cell-sub">ok · 3ms</span><div class="mini"><div class="mini-fill" style="width:37%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Stack-11</span></div><span class="cell-sub">ok · 173ms</span><div class="mini"><div class="mini-fill" style="width:77%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Worker-12</span></div><span class="cell-sub">ok · 42ms</span><div class="mini"><div class="mini-fill" style="width:64%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Pool-13</span></div><span class="cell-sub">ok · 50ms</span><div class="mini"><div class="mini-fill" style="width:90%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Cache-14</span></div><span class="cell-sub">ok · 24ms</span><div class="mini"><div class="mini-fill" style="width:56%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Lane-15</span></div><span class="cell-sub">ok · 173ms</span><div class="mini"><div class="mini-fill" style="width:40%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Heap-16</span></div><span class="cell-sub">ok · 77ms</span><div class="mini"><div class="mini-fill" style="width:90%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Disk-17</span></div><span class="cell-sub">ok · 157ms</span><div class="mini"><div class="mini-fill" style="width:89%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Stack-18</span></div><span class="cell-sub">ok · 47ms</span><div class="mini"><div class="mini-fill" style="width:53%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Ring-19</span></div><span class="cell-sub">ok · 155ms</span><div class="mini"><div class="mini-fill" style="width:43%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Pool-20</span></div><span class="cell-sub">ok · 130ms</span><div class="mini"><div class="mini-fill" style="width:89%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Stack-21</span></div><span class="cell-sub">ok · 153ms</span><div class="mini"><div class="mini-fill" style="width:31%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Slot-22</span></div><span class="cell-sub">ok · 118ms</span><div class="mini"><div class="mini-fill" style="width:61%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Link-23</span></div><span class="cell-sub">ok · 105ms</span><div class="mini"><div class="mini-fill" style="width:87%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Queue-24</span></div><span class="cell-sub">ok · 41ms</span><div class="mini"><div class="mini-fill" style="width:36%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Pool-25</span></div><span class="cell-sub">ok · 87ms</span><div class="mini"><div class="mini-fill" style="width:73%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Slot-26</span></div><span class="cell-sub">ok · 56ms</span><div class="mini"><div class="mini-fill" style="width:59%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Shard-27</span></div><span class="cell-sub">ok · 194ms</span><div class="mini"><div class="mini-fill" style="width:73%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Link-28</span></div><span class="cell-sub">ok · 83ms</span><div class="mini"><div class="mini-fill" style="width:35%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Lane-29</span></div><span class="cell-sub">ok · 197ms</span><div class="mini"><div class="mini-fill" style="width:53%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Lane-30</span></div><span class="cell-sub">ok · 39ms</span><div class="mini"><div class="mini-fill" style="width:43%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Proc-31</span></div><span class="cell-sub">ok · 130ms</span><div class="mini"><div class="mini-fill" style="width:34%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Proc-32</span></div><span class="cell-sub">ok · 14ms</span><div class="mini"><div class="mini-fill" style="width:72%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Core-33</span></div><span class="cell-sub">ok · 47ms</span><div class="mini"><div class="mini-fill" style="width:79%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Proc-34</span></div><span class="cell-sub">ok · 30ms</span><div class="mini"><div class="mini-fill" style="width:69%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Heap-35</span></div><span class="cell-sub">ok · 58ms</span><div class="mini"><div class="mini-fill" style="width:89%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Heap-36</span></div><span class="cell-sub">ok · 149ms</span><div class="mini"><div class="mini-fill" style="width:73%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Pool-37</span></div><span class="cell-sub">ok · 25ms</span><div class="mini"><div class="mini-fill" style="width:31%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Proc-38</span></div><span class="cell-sub">ok · 174ms</span><div class="mini"><div class="mini-fill" style="width:77%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Stack-39</span></div><span class="cell-sub">ok · 79ms</span><div class="mini"><div class="mini-fill" style="width:72%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Cache-40</span></div><span class="cell-sub">ok · 191ms</span><div class="mini"><div class="mini-fill" style="width:89%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Proc-41</span></div><span class="cell-sub">ok · 97ms</span><div class="mini"><div class="mini-fill" style="width:73%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Shard-42</span></div><span class="cell-sub">ok · 111ms</span><div class="mini"><div class="mini-fill" style="width:39%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Link-43</span></div><span class="cell-sub">ok · 21ms</span><div class="mini"><div class="mini-fill" style="width:69%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Pool-44</span></div><span class="cell-sub">ok · 88ms</span><div class="mini"><div class="mini-fill" style="width:65%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Slot-45</span></div><span class="cell-sub">ok · 49ms</span><div class="mini"><div class="mini-fill" style="width:76%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Shard-46</span></div><span class="cell-sub">ok · 150ms</span><div class="mini"><div class="mini-fill" style="width:40%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Shard-47</span></div><span class="cell-sub">ok · 62ms</span><div class="mini"><div class="mini-fill" style="width:70%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Link-48</span></div><span class="cell-sub">ok · 34ms</span><div class="mini"><div class="mini-fill" style="width:94%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Port-49</span></div><span class="cell-sub">ok · 143ms</span><div class="mini"><div class="mini-fill" style="width:78%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Ring-50</span></div><span class="cell-sub">ok · 113ms</span><div class="mini"><div class="mini-fill" style="width:61%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Cache-51</span></div><span class="cell-sub">ok · 159ms</span><div class="mini"><div class="mini-fill" style="width:36%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Core-52</span></div><span class="cell-sub">ok · 124ms</span><div class="mini"><div class="mini-fill" style="width:60%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Port-53</span></div><span class="cell-sub">ok · 155ms</span><div class="mini"><div class="mini-fill" style="width:73%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Pool-54</span></div><span class="cell-sub">ok · 99ms</span><div class="mini"><div class="mini-fill" style="width:46%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Queue-55</span></div><span class="cell-sub">ok · 131ms</span><div class="mini"><div class="mini-fill" style="width:90%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Stack-56</span></div><span class="cell-sub">ok · 193ms</span><div class="mini"><div class="mini-fill" style="width:87%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Heap-57</span></div><span class="cell-sub">ok · 116ms</span><div class="mini"><div class="mini-fill" style="width:31%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Core-58</span></div><span class="cell-sub">ok · 108ms</span><div class="mini"><div class="mini-fill" style="width:66%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Queue-59</span></div><span class="cell-sub">ok · 37ms</span><div class="mini"><div class="mini-fill" style="width:62%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Cache-60</span></div><span class="cell-sub">ok · 155ms</span><div class="mini"><div class="mini-fill" style="width:57%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Stack-61</span></div><span class="cell-sub">ok · 113ms</span><div class="mini"><div class="mini-fill" style="width:78%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Cache-62</span></div><span class="cell-sub">ok · 133ms</span><div class="mini"><div class="mini-fill" style="width:81%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Proc-63</span></div><span class="cell-sub">ok · 113ms</span><div class="mini"><div class="mini-fill" style="width:57%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Link-64</span></div><span class="cell-sub">ok · 75ms</span><div class="mini"><div class="mini-fill" style="width:51%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Queue-65</span></div><span class="cell-sub">ok · 81ms</span><div class="mini"><div class="mini-fill" style="width:79%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Proc-66</span></div><span class="cell-sub">ok · 97ms</span><div class="mini"><div class="mini-fill" style="width:41%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Link-67</span></div><span class="cell-sub">ok · 86ms</span><div class="mini"><div class="mini-fill" style="width:37%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Worker-68</span></div><span class="cell-sub">ok · 48ms</span><div class="mini"><div class="mini-fill" style="width:68%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Cache-69</span></div><span class="cell-sub">ok · 13ms</span><div class="mini"><div class="mini-fill" style="width:56%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Worker-70</span></div><span class="cell-sub">ok · 157ms</span><div class="mini"><div class="mini-fill" style="width:47%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Ring-71</span></div><span class="cell-sub">ok · 63ms</span><div class="mini"><div class="mini-fill" style="width:94%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Shard-72</span></div><span class="cell-sub">ok · 186ms</span><div class="mini"><div class="mini-fill" style="width:50%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Slot-73</span></div><span class="cell-sub">ok · 87ms</span><div class="mini"><div class="mini-fill" style="width:36%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Stack-74</span></div><span class="cell-sub">ok · 169ms</span><div class="mini"><div class="mini-fill" style="width:93%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Stack-75</span></div><span class="cell-sub">ok · 144ms</span><div class="mini"><div class="mini-fill" style="width:66%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Heap-76</span></div><span class="cell-sub">ok · 55ms</span><div class="mini"><div class="mini-fill" style="width:73%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Link-77</span></div><span class="cell-sub">ok · 62ms</span><div class="mini"><div class="mini-fill" style="width:56%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Slot-78</span></div><span class="cell-sub">ok · 35ms</span><div class="mini"><div class="mini-fill" style="width:73%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Cache-79</span></div><span class="cell-sub">ok · 70ms</span><div class="mini"><div class="mini-fill" style="width:72%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Proc-80</span></div><span class="cell-sub">ok · 169ms</span><div class="mini"><div class="mini-fill" style="width:91%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Queue-81</span></div><span class="cell-sub">ok · 134ms</span><div class="mini"><div class="mini-fill" style="width:32%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Port-82</span></div><span class="cell-sub">ok · 134ms</span><div class="mini"><div class="mini-fill" style="width:62%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Cache-83</span></div><span class="cell-sub">ok · 82ms</span><div class="mini"><div class="mini-fill" style="width:49%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Pool-84</span></div><span class="cell-sub">ok · 157ms</span><div class="mini"><div class="mini-fill" style="width:45%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Cache-85</span></div><span class="cell-sub">ok · 84ms</span><div class="mini"><div class="mini-fill" style="width:40%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Proc-86</span></div><span class="cell-sub">ok · 16ms</span><div class="mini"><div class="mini-fill" style="width:80%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Link-87</span></div><span class="cell-sub">ok · 178ms</span><div class="mini"><div class="mini-fill" style="width:36%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot warn"></span><span class="cell-name">Shard-88</span></div><span class="cell-sub">ok · 108ms</span><div class="mini"><div class="mini-fill" style="width:69%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Shard-89</span></div><span class="cell-sub">ok · 66ms</span><div class="mini"><div class="mini-fill" style="width:77%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Ring-90</span></div><span class="cell-sub">ok · 111ms</span><div class="mini"><div class="mini-fill" style="width:72%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Port-91</span></div><span class="cell-sub">ok · 95ms</span><div class="mini"><div class="mini-fill" style="width:91%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Disk-92</span></div><span class="cell-sub">ok · 117ms</span><div class="mini"><div class="mini-fill" style="width:58%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Disk-93</span></div><span class="cell-sub">ok · 116ms</span><div class="mini"><div class="mini-fill" style="width:42%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot "></span><span class="cell-name">Link-94</span></div><span class="cell-sub">ok · 105ms</span><div class="mini"><div class="mini-fill" style="width:94%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Worker-95</span></div><span class="cell-sub">ok · 134ms</span><div class="mini"><div class="mini-fill" style="width:59%"></div></div></div>
+      <div class="cell"><div class="cell-top"><span class="dot bad"></span><span class="cell-name">Shard-96</span></div><span class="cell-sub">ok · 107ms</span><div class="mini"><div class="mini-fill" style="width:69%"></div></div></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

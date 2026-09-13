@@ -1,0 +1,18 @@
+
+                .page {
+                    display: grid;
+                    grid-template-columns: 200px 1fr 200px;
+                    grid-template-rows: 60px 1fr 40px;
+                    grid-template-areas:
+                        "header header header"
+                        "nav main aside"
+                        "footer footer footer";
+                    width: 1000px;
+                    height: 600px;
+                }
+                .header { grid-area: header; }
+                .nav { grid-area: nav; }
+                .main { grid-area: main; }
+                .aside { grid-area: aside; }
+                .footer { grid-area: footer; }
+            

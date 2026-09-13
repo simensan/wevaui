@@ -1,0 +1,14 @@
+
+                .page {
+                    position: absolute;
+                    top: 64px; left: 0; right: 0; bottom: 0;
+                    display: grid;
+                    grid-template-columns: 360px 1fr 420px;
+                    grid-template-rows: 1fr;
+                    gap: 24px;
+                    padding: 24px 28px;
+                }
+                .right { grid-column: 3; display: flex; flex-direction: column; min-height: 0; }
+                .detail { flex: 1 1 auto; display: flex; flex-direction: column; padding: 20px; min-height: 0; }
+                .head { height: 50px; }
+            

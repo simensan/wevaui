@@ -1,0 +1,472 @@
+/* Advanced dashboard CSS — exercises a wide spec surface in one
+   real-world page. Each block is annotated with its CSS module §
+   so the audit can identify divergences module-by-module. */
+
+/* ── Custom properties (CSS Properties & Values L1 §2) ──────────────
+   Color tokens used throughout. The :root scope means every selector
+   below can reference these. */
+:root {
+  --bg-deep: #0a0e16;
+  --bg-card: #131826;
+  --bg-card-2: #1d2434;
+  --line: rgba(255, 255, 255, 0.06);
+  --text: #d3dae5;
+  --text-dim: #9aa3b2;
+  --text-mute: #6b7280;
+  --accent: #5a8def;
+  --gold: #ffc25c;
+  --green: #4ade80;
+  --red: #ef4444;
+  --violet: #a78bfa;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --gap: 16px;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; background: var(--bg-deep); color: var(--text); font-family: sans-serif; }
+
+/* ── Dashboard root: vertical flex with sticky header ───────────────
+   Spec: CSS Flexbox L1 §4. Sticky positioning: CSS Positioned L3 §4.
+   Solid background-color underneath the gradient gives every
+   descendant a known opaque backdrop — needed so translucent chips/
+   tiles have a stable colour to blend against. */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #0a0e16;
+  background-image: linear-gradient(180deg, #0a0e16 0%, #11151f 100%);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────
+   Spec: CSS Flexbox L1, Sticky positioning, color-mix, conic-gradient.
+   Translucent fill + backdrop-filter blur exercises the per-bdEvent
+   colorTarget→backdropCopy refresh added to UIRenderGraphPass. */
+.hdr {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 28px;
+  background: color-mix(in oklab, var(--bg-card) 80%, transparent);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+/* Avatar: conic-gradient ring + circular img + level badge.
+   Spec: CSS Images L4 §3.3 (conic-gradient).
+         CSS Borders L4 (border-radius: 50%).
+         CSS Backgrounds L3 §3.10 (multi-layer background). */
+.hdr-avatar {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+.hdr-avatar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 90deg, var(--gold), var(--accent), var(--violet), var(--gold));
+  padding: 3px;
+  /* Inner mask trick (Chrome-supported): paint the ring as a circle
+     and let a child element cover the centre. */
+}
+.hdr-avatar-img {
+  position: absolute;
+  inset: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b475e, #1d2434);
+  object-fit: cover;
+}
+.hdr-avatar-level {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-deep);
+}
+
+.hdr-identity {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hdr-name {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  /* Spec: CSS Text Decoration L4 §3 (text-shadow) */
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+.hdr-rank {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.hdr-rank-pct {
+  color: var(--gold);
+  font-weight: 700;
+}
+/* Progress bar: width driven by a custom property + calc().
+   Spec: CSS Values L4 §10 (calc), CSS Properties & Values L1 §2. */
+.hdr-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  max-width: 320px;
+}
+.hdr-progress-fill {
+  height: 100%;
+  width: calc(var(--p, 0) * 1%);
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+  border-radius: inherit;
+}
+
+/* Currency / nav chips. Spec: CSS Flexbox L1, ::after badge, :has(). */
+.hdr-chips {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  position: relative;
+}
+.chip-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.chip-gold .chip-icon { background: var(--gold); }
+.chip-blue .chip-icon { background: var(--accent); }
+.chip-violet .chip-icon { background: var(--violet); }
+
+/* ::after badge driven by data-badge. Spec: CSS Generated Content
+   (CSS 2.1 §12), CSS Selectors L4 [attr]. */
+.chip.has-badge::after {
+  content: attr(data-badge);
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-card);
+}
+
+/* ── Main grid: 3 columns ───────────────────────────────────────────
+   Spec: CSS Grid L1 §7 (grid-template-columns).
+         L1 §11 (auto-fit + minmax).
+         L1 §7.2 (grid-template-areas — used below in stats). */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) minmax(0, 1fr) minmax(0, 320px);
+  gap: var(--gap);
+  padding: var(--gap) 28px 28px;
+  flex: 1 1 auto;
+}
+
+/* ── Section titles, sticky variant ─────────────────────────────── */
+.section-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.sticky-title {
+  position: sticky;
+  top: 96px; /* below header */
+  background: linear-gradient(180deg, var(--bg-deep), transparent);
+  padding: 8px 0;
+  z-index: 5;
+}
+
+/* ── Stats column ─────────────────────────────────────────────────── */
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Stat cards: 2-col grid auto-flow, aspect-ratio per card.
+   Spec: CSS Sizing L4 §5 (aspect-ratio).
+         CSS Counter Styles L3 §3 + CSS Generated Content (counter()). */
+.stat-cards {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  counter-reset: stat;
+}
+.stat-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  counter-increment: stat;
+}
+/* ::before with counter() prints "01", "02" … in the corner.
+   Spec: CSS Counter Styles §3 (counter functions). */
+.stat-card::before {
+  content: counter(stat, decimal-leading-zero);
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-mute);
+  letter-spacing: 1px;
+}
+.stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+  margin-top: auto;
+}
+.stat-value small {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-left: 2px;
+}
+.stat-trend {
+  font-size: 11px;
+  font-weight: 700;
+}
+.stat-up .stat-trend { color: var(--green); }
+.stat-down .stat-trend { color: var(--red); }
+.stat-neutral .stat-trend { color: var(--text-dim); }
+/* Trend arrow via ::before. Spec: ::before pseudo. */
+.stat-up .stat-trend::before { content: "▲ "; }
+.stat-down .stat-trend::before { content: "▼ "; }
+
+/* Conic-gradient ring progress. Spec: CSS Images L4 §3.3.
+   The white inner circle "cuts" the ring via positioned overlay. */
+.ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--accent) calc(var(--pct) * 1%), rgba(255, 255, 255, 0.08) 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+.ring::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: var(--bg-card);
+}
+.ring-num {
+  position: relative;
+  z-index: 1;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--gold);
+}
+
+/* ── Activity timeline ─────────────────────────────────────────────
+   Spec: CSS Selectors L4 (:nth-child, :is), CSS Generated Content
+         (::before vertical connector line), CSS 2.1 §10.6 (line box). */
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+/* Vertical connector via ::before on the list */
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--violet));
+  border-radius: 2px;
+}
+.t-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0 8px 0;
+}
+.t-marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid var(--accent);
+  flex-shrink: 0;
+  margin-left: 1px;
+  z-index: 1;
+}
+/* :is() grouped per-class marker tints */
+.t-win   .t-marker { border-color: var(--green); }
+.t-loss  .t-marker { border-color: var(--red); }
+.t-quest .t-marker { border-color: var(--gold); }
+.t-friend .t-marker { border-color: var(--violet); }
+.t-upgrade .t-marker { border-color: var(--accent); }
+
+.t-content {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  min-width: 0;
+}
+.t-content strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+.t-time {
+  font-size: 11px;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
+/* :nth-child(odd) striping. Spec: CSS Selectors L4 §4.5. */
+.t-item:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Achievements: container query layout ───────────────────────────
+   Spec: CSS Containment L3 §3 (@container queries + container-type),
+         CSS Grid L1 §11 (auto-fit / minmax),
+         CSS Backgrounds L3 (mask via linear-gradient on locked tiles). */
+.achievements {
+  container-type: inline-size;
+}
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+.ach {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 12px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ach h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+.ach p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-mute);
+}
+.ach-medal {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--c) 80%, white), var(--c));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  margin-bottom: 4px;
+}
+/* Locked tiles: grayscale via filter + opacity. Spec: CSS Filter Effects L1 §6. */
+.ach.locked {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+/* Container query: when achievements column shrinks below 220px,
+   collapse the medal to icon-only and centre everything tighter. */
+@container (max-width: 220px) {
+  .ach-grid {
+    grid-template-columns: 1fr;
+  }
+  .ach {
+    flex-direction: row;
+    text-align: left;
+    gap: 10px;
+    padding: 8px 10px;
+  }
+  .ach-medal {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 0;
+  }
+}
+
+/* ── Footer ───────────────────────────────────────────────────────── */
+.ftr {
+  padding: 16px 28px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-card);
+}
+.ftr-tagline {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-mute);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}

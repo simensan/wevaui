@@ -66,6 +66,13 @@ jobs:
         run: cmake --build build-core --parallel 4
       - name: Core, sample mutations, allocation guards and sanitizer controls
         run: ctest --test-dir build-core --output-on-failure --no-tests=error
+      - name: Chrome oracle (core vs tracked Chrome captures)
+        if: runner.os == 'Linux'
+        run: |
+          for c in "samples 1280 720" "hand 800 600" "harvest 800 600"; do
+            set -- $c
+            python Tools/oracle/chrome_sweep.py Tools/oracle/corpus/$1               --weva-dump build-core/Tools/weva_dump/weva_dump --width $2 --height $3               --out-dir chrome-sweep-$1 --show 2 --max-worst 1.5               --known-gaps Tools/oracle/known-gaps/chrome-sweep.txt
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

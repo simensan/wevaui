@@ -1,0 +1,244 @@
+<!-- Browser-friendly: open this file directly to compare against Unity. -->
+<link rel="stylesheet" href="menu.css" />
+<main class="page">
+    <header class="hero">
+        <h1>Weva <span class="version">v0.4</span></h1>
+        <p class="lead">
+            HTML / CSS UI for Unity. Click count:
+            <span class="count">{{ ClickCount }}</span>
+        </p>
+        <button id="start-button" on-click="OnStart">Click me</button>
+    </header>
+
+    <section class="grid">
+        <article class="card card-elevated">
+            <h2>Margin collapsing</h2>
+            <p>Headings collapse with the next paragraph,</p>
+            <p>and adjacent paragraphs collapse pairwise.</p>
+        </article>
+
+        <article class="card card-gradient">
+            <h2>Multi-layer background</h2>
+            <p>Linear gradient over a solid color, layered.</p>
+        </article>
+
+        <article class="card card-shadow">
+            <h2>Drop-shadow filter</h2>
+            <p>Filter renders the alpha-shadow underneath.</p>
+        </article>
+
+        <article class="card card-inset">
+            <h2>Inset shadow</h2>
+            <p>Inset shadow paints darkness inside the rim.</p>
+        </article>
+
+        <article class="card card-dashed">
+            <h2>Dashed border</h2>
+            <p>Per-edge styles: dashed, dotted, double, solid.</p>
+        </article>
+
+        <article class="card card-baseline">
+            <h2>Flex baseline</h2>
+            <div class="baseline-row">
+                <span class="big">Aa</span>
+                <span class="med">Aa</span>
+                <span class="small">Aa</span>
+            </div>
+        </article>
+
+        <article class="card card-overflow">
+            <h2>Word-break</h2>
+            <p class="hyphenated">
+                Supercalifragilisticexpialidocious overflows otherwise but
+                breaks here.
+            </p>
+        </article>
+
+        <article class="card card-inline-blocks">
+            <h2>Inline-block badges</h2>
+            <p>
+                Status: <span class="badge badge-ok">ready</span>
+                <span class="badge badge-warn">beta</span>
+                <span class="badge badge-info">v0.2</span>
+            </p>
+        </article>
+
+        <article class="card card-conic">
+            <h2>Conic gradient</h2>
+            <p>Hue wheel via conic-gradient.</p>
+        </article>
+
+        <article class="card card-oklch-mix">
+            <h2>OKLCh color-mix</h2>
+            <p>Perceptual blend of two brand colors.</p>
+        </article>
+
+        <article class="card card-ellipsis">
+            <h2>Text overflow</h2>
+            <p class="ellipsis-row">
+                This-is-a-long-string-that-overflows-its-container.
+            </p>
+        </article>
+
+        <article class="card card-scroll">
+            <h2>Scroll container</h2>
+            <div class="scroll-area">
+                <p>Item 1</p>
+                <p>Item 2</p>
+                <p>Item 3</p>
+                <p>Item 4</p>
+                <p>Item 5</p>
+                <p>Item 6</p>
+                <p>Item 7</p>
+                <p>Item 8</p>
+            </div>
+        </article>
+
+        <article class="card card-sticky">
+            <h2 class="sticky-header">Sticky header</h2>
+            <div class="long-content">
+                <p>Sticky paragraph 1</p>
+                <p>Sticky paragraph 2</p>
+                <p>Sticky paragraph 3</p>
+                <p>Sticky paragraph 4</p>
+                <p>Sticky paragraph 5</p>
+                <p>Sticky paragraph 6</p>
+                <p>Sticky paragraph 7</p>
+                <p>Sticky paragraph 8</p>
+            </div>
+        </article>
+
+        <article class="card card-form">
+            <h2>Form controls</h2>
+            <input type="text" placeholder="Type here" />
+            <p>
+                <input type="checkbox" id="cb1" checked />
+                <label for="cb1">Subscribe</label>
+            </p>
+            <p>
+                <input type="radio" name="size" id="s" />
+                <label for="s">Small</label>
+                <input type="radio" name="size" id="m" checked />
+                <label for="m">Medium</label>
+                <input type="radio" name="size" id="l" />
+                <label for="l">Large</label>
+            </p>
+        </article>
+
+        <article class="card card-subgrid">
+            <h2>Subgrid</h2>
+            <div class="grid-2x2">
+                <div class="cell">A</div>
+                <div class="cell">B</div>
+                <div class="sub">
+                    <div>X</div>
+                    <div>Y</div>
+                </div>
+            </div>
+        </article>
+
+        <article class="card card-anchor">
+            <h2>Anchor positioning</h2>
+            <button class="anchor-btn">Hover for tip</button>
+            <div class="tooltip">Tooltip below anchor</div>
+        </article>
+
+        <article class="card card-haspar">
+            <h2>:has() parent selector</h2>
+            <div class="parent-with-img"><img alt="" />Caption</div>
+            <div class="parent-no-img">No image here</div>
+        </article>
+
+        <article class="card card-layers">
+            <h2>Cascade layers</h2>
+            <button class="layered-btn">Layered button</button>
+        </article>
+
+        <article class="card card-nested">
+            <h2>CSS nesting</h2>
+            <button class="nested-btn">Hover me</button>
+        </article>
+
+        <article class="card card-hotreload">
+            <h2>Hot reload</h2>
+            <p>Edit <code>menu.css</code>; this card updates instantly.</p>
+            <p class="hotreload-marker">Edit me!</p>
+        </article>
+
+        <article class="card card-snap">
+            <h2>Scroll snap</h2>
+            <div class="snap-container">
+                <div class="snap-item">A</div>
+                <div class="snap-item">B</div>
+                <div class="snap-item">C</div>
+                <div class="snap-item">D</div>
+            </div>
+        </article>
+
+        <article class="card card-smooth">
+            <h2>Smooth scroll</h2>
+            <button id="jump-bottom" on-click="ScrollBottom">
+                Jump to bottom
+            </button>
+            <div class="smooth-area">
+                <p>Top item</p>
+                <p>...</p>
+                <p>...</p>
+                <p>...</p>
+                <p>...</p>
+                <p>...</p>
+                <p>Bottom item</p>
+            </div>
+        </article>
+
+        <article class="card card-dialog">
+            <h2>Dialog + popover</h2>
+            <button id="open-dialog" on-click="OpenDialog">Open dialog</button>
+            <button popovertarget="info-pop">Show popover</button>
+
+            <dialog id="info-dialog">
+                <p>This is a modal dialog.</p>
+                <button on-click="CloseDialog">Close</button>
+            </dialog>
+
+            <div id="info-pop" popover>
+                <p>This is a popover. Click outside to dismiss.</p>
+            </div>
+        </article>
+
+        <article class="card card-scoped">
+            <h2>@scope</h2>
+            <div class="scoped-zone">
+                <p>Inside scope (red)</p>
+            </div>
+            <p>Outside scope (default)</p>
+        </article>
+
+        <article class="card card-aspect">
+            <h2>Aspect ratio</h2>
+            <div class="ratio-box">16:9 auto-height</div>
+        </article>
+
+        <article class="card card-attr">
+            <h2>attr()</h2>
+            <div class="attr-demo" data-label="Hello" data-w="160">
+                Sized via <code>data-w</code>
+            </div>
+        </article>
+
+        <article class="card card-light-dark">
+            <h2>light-dark()</h2>
+            <p>
+                This text adapts:
+                <span class="ld">color responds to system theme</span>
+            </p>
+        </article>
+    </section>
+
+    <footer class="footer">
+        <p>
+            Hover any button. Resize the game view. Edit <code>menu.css</code> —
+            hot reload picks it up. Press <kbd>F12</kbd> for devtools.
+        </p>
+    </footer>
+</main>

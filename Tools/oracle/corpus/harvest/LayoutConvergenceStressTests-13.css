@@ -1,0 +1,5 @@
+
+.grid { display:grid; grid-template-columns:minmax(80px,1fr) minmax(80px,2fr) minmax(80px,1fr);
+        grid-auto-rows:auto; gap:8px; width:600px; }
+.item { padding:12px; }
+.tall { height:100px; }

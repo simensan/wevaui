@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Halcyon — Game UI</title>
+<link rel="stylesheet" href="hud.css" />
+</head>
+<body>
+
+<!-- Aurora background wash, behind everything -->
+<div class="bg-aurora"></div>
+
+<main class="hud">
+  <!-- ───── TOP STATUS BAR ───── -->
+  <header class="topbar">
+    <div class="level">
+      <div class="level-ring"><span class="level-num">17</span></div>
+      <div class="level-meta">
+        <span class="name">Arwen Vance</span>
+        <span class="class">Half-Elf · Rogue</span>
+      </div>
+    </div>
+
+    <div class="vitals">
+      <div class="bar bar-hp">
+        <span class="bar-label">HP</span>
+        <div class="bar-track"><div class="bar-fill" style="width: 70%"></div></div>
+        <span class="bar-value">84 / 120</span>
+      </div>
+      <div class="bar bar-mp">
+        <span class="bar-label">MP</span>
+        <div class="bar-track"><div class="bar-fill" style="width: 55%"></div></div>
+        <span class="bar-value">22 / 40</span>
+      </div>
+    </div>
+
+    <div class="counters">
+      <span class="counter counter-gold">◈ 1,247</span>
+      <span class="counter counter-clock">04:32</span>
+    </div>
+  </header>
+
+  <!-- ───── PORTRAIT + IDENT ───── -->
+  <section class="character">
+    <div class="portrait">
+      <div class="portrait-frame">
+        <div class="portrait-glyph">✦</div>
+      </div>
+      <div class="portrait-rank">Rank A</div>
+    </div>
+    <div class="ident">
+      <h1>Arwen Vance</h1>
+      <p class="tagline">"The dawn finds me already running."</p>
+      <ul class="stat-list">
+        <li><span class="stat-name">STR</span><span class="stat-value">14</span></li>
+        <li><span class="stat-name">DEX</span><span class="stat-value">19</span></li>
+        <li><span class="stat-name">INT</span><span class="stat-value">12</span></li>
+        <li><span class="stat-name">CHA</span><span class="stat-value">16</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ───── BUFFS + EQUIPPED ───── -->
+  <section class="effects">
+    <div class="effects-row">
+      <span class="effects-label">Buffs</span>
+      <div class="chip-strip">
+        <div class="chip chip-buff" title="Quickened">⚡</div>
+        <div class="chip chip-buff" title="Warded">◊</div>
+        <div class="chip chip-buff" title="Blessed">✚</div>
+      </div>
+    </div>
+    <div class="effects-row">
+      <span class="effects-label">Gear</span>
+      <div class="chip-strip">
+        <div class="chip chip-gear" title="Shadowsteel Blade">⚔</div>
+        <div class="chip chip-gear" title="Wraithcloak">▼</div>
+        <div class="chip chip-gear" title="Ring of Echoes">◯</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───── ACTION PANEL ───── -->
+  <section class="actions">
+    <div class="abilities">
+      <button class="ability" data-key="Q">
+        <span class="ability-icon">✦</span>
+        <span class="ability-name">Shadowstep</span>
+        <span class="ability-key">Q</span>
+      </button>
+      <button class="ability cooling" data-key="W" style="--cooldown: 0.35">
+        <span class="ability-icon">❄</span>
+        <span class="ability-name">Frost Lance</span>
+        <span class="ability-key">W</span>
+      </button>
+      <button class="ability" data-key="E">
+        <span class="ability-icon">☥</span>
+        <span class="ability-name">Mend</span>
+        <span class="ability-key">E</span>
+      </button>
+      <button class="ability cooling" data-key="R" style="--cooldown: 0.75">
+        <span class="ability-icon">☠</span>
+        <span class="ability-name">Eclipse</span>
+        <span class="ability-key">R</span>
+      </button>
+    </div>
+
+    <div class="primary-row">
+      <button class="primary primary-attack">
+        <span class="primary-glyph">⚔</span>
+        <span class="primary-label">Strike</span>
+      </button>
+      <button class="primary primary-block">
+        <span class="primary-glyph">◈</span>
+        <span class="primary-label">Block</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ───── MINIMAP ───── -->
+  <aside class="minimap">
+    <div class="minimap-frame">
+      <div class="minimap-dot dot-self"></div>
+      <div class="minimap-dot dot-foe" style="top: 30%; left: 70%"></div>
+      <div class="minimap-dot dot-foe" style="top: 60%; left: 25%"></div>
+      <div class="minimap-dot dot-ally" style="top: 45%; left: 55%"></div>
+      <div class="minimap-dot dot-quest" style="top: 18%; left: 18%"></div>
+    </div>
+    <span class="minimap-label">Sunken Glade</span>
+  </aside>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "source": "04-text-paragraph.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.83",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 1,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "p",
+      "id": "",
+      "cls": "",
+      "x": 0,
+      "y": 24,
+      "w": 800,
+      "h": 27.42,
+      "display": "block",
+      "position": "static",
+      "fontSize": "24px",
+      "lineHeight": "27.432px",
+      "path": "p:1",
+      "text": "Hello world"
+    }
+  ]
+}

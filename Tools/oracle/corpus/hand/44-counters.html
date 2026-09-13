@@ -1,0 +1,22 @@
+<div id="wrap">
+  <!-- Classic numbered headings via counter-reset / counter-increment.
+       Each .heading gets ::before { content: counter(sec) ". " } so the
+       generated "1. ", "2. ", "3. " prefixes contribute to the element's
+       inline width. Chrome-diff verifies counter VALUES produce the correct
+       text advances. -->
+  <div id="h1" class="heading">Alpha</div>
+  <div id="h2" class="heading">Beta</div>
+  <div id="h3" class="heading">Gamma</div>
+  <!-- Nested counters() case: .chapter resets+increments "ch"; .section
+       also resets+increments "ch", creating a new inner scope. The leaf
+       span calls counters(ch, "."), which concatenates all active "ch"
+       scope values from outermost to innermost:
+         chapter1 / section1 / leaf → "1.1"
+         chapter1 / section2 / leaf → "1.2"
+       Note: section2 uses counter-increment:ch 2 to make its value 2,
+       distinguishing the two leaves so the diff verifies different values. -->
+  <div id="ch1" class="chapter">
+    <div id="s1" class="section"><span id="l1" class="leaf">A</span></div>
+    <div id="s2" class="section2"><span id="l2" class="leaf2">B</span></div>
+  </div>
+</div>

@@ -1,0 +1,15 @@
+body { margin: 0; padding: 0; font-size: 16px; line-height: 1; }
+#wrap { width: 400px; }
+
+/* list-style-position: inside — marker box is in-flow as the first inline
+   child of the li principal box. This ensures structural agreement between
+   Chrome's element walk (which skips ::marker pseudo-elements entirely for
+   outside markers) and the engine's inline-block injection.
+   Without `inside`, Chrome's getBoundingClientRect for <li> includes the
+   outside marker's negative-margin gutter in the hit area but the element
+   walk does not surface ::marker as a separate entry — causing a structural
+   mismatch with the engine that injects it as an inline-block child. */
+.inside-list { list-style-position: inside; padding-left: 0; margin: 0; }
+
+ol.inside-list { list-style-type: decimal; }
+ul.inside-list  { list-style-type: disc; }

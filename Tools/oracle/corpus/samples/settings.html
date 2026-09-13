@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Halcyon — Settings</title>
+<link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+
+<main class="prefs">
+
+  <!-- ───── SIDEBAR ───── -->
+  <aside class="nav">
+    <h2 class="nav-title">Settings</h2>
+    <ul class="nav-list">
+      <li class="nav-item nav-active">Display</li>
+      <li class="nav-item">Audio</li>
+      <li class="nav-item">Controls</li>
+      <li class="nav-item">Gameplay</li>
+      <li class="nav-item">Network</li>
+      <li class="nav-item">Account</li>
+    </ul>
+    <div class="nav-foot">
+      <p class="nav-version">v0.42.1 · Brackwater branch</p>
+    </div>
+  </aside>
+
+  <!-- ───── PANEL ───── -->
+  <section class="panel">
+    <header class="panel-head">
+      <h1 class="panel-title">Display</h1>
+      <p class="panel-sub">Configure resolution, rendering, and visual effects.</p>
+    </header>
+
+    <div class="panel-body">
+
+      <section class="group">
+        <h3 class="group-title">Window</h3>
+        <div class="row">
+          <label class="row-label">Display mode</label>
+          <select class="control control-select">
+            <option>Fullscreen</option>
+            <option>Borderless</option>
+            <option>Windowed</option>
+          </select>
+        </div>
+        <div class="row">
+          <label class="row-label">Resolution</label>
+          <select class="control control-select">
+            <option>2560 × 1440 (16:9)</option>
+            <option>1920 × 1080 (16:9)</option>
+            <option>1680 × 1050 (16:10)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label class="row-label">V-Sync</label>
+          <span class="control control-toggle"><span class="toggle-handle"></span></span>
+        </div>
+      </section>
+
+      <section class="group">
+        <h3 class="group-title">Graphics</h3>
+        <div class="row">
+          <label class="row-label">Preset</label>
+          <select class="control control-select">
+            <option>Ultra</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <div class="row">
+          <label class="row-label">Render scale</label>
+          <span class="control control-slider">
+            <input type="range" class="range" min="50" max="100" value="75" />
+            <span class="slider-val">75%</span>
+          </span>
+        </div>
+        <div class="row">
+          <label class="row-label">Shadow quality</label>
+          <span class="control control-segmented">
+            <span class="seg">Off</span>
+            <span class="seg">Low</span>
+            <span class="seg seg-on">High</span>
+            <span class="seg">Ultra</span>
+          </span>
+        </div>
+        <div class="row row-stack">
+          <label class="row-label">Field of view</label>
+          <p class="row-hint">Recommended range: 70 – 90.</p>
+          <span class="control control-slider">
+            <input type="range" class="range" min="60" max="120" value="82" />
+            <span class="slider-val">82°</span>
+          </span>
+        </div>
+      </section>
+
+      <section class="group">
+        <h3 class="group-title">Color &amp; Effects</h3>
+        <div class="row">
+          <label class="row-label">Color blindness</label>
+          <select class="control control-select">
+            <option>None</option>
+            <option>Protanopia</option>
+            <option>Deuteranopia</option>
+            <option>Tritanopia</option>
+          </select>
+        </div>
+        <div class="row">
+          <label class="row-label">Bloom</label>
+          <span class="control control-toggle control-toggle-on"><span class="toggle-handle"></span></span>
+        </div>
+        <div class="row">
+          <label class="row-label">Motion blur</label>
+          <span class="control control-toggle"><span class="toggle-handle"></span></span>
+        </div>
+        <div class="row">
+          <label class="row-label">Reduced screen shake</label>
+          <span class="control control-toggle control-toggle-on"><span class="toggle-handle"></span></span>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="panel-foot">
+      <button class="btn btn-secondary">Reset Defaults</button>
+      <button class="btn btn-primary">Apply &amp; Save</button>
+    </footer>
+  </section>
+
+</main>
+
+</body>
+</html>

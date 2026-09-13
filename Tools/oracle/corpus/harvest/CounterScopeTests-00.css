@@ -1,0 +1,5 @@
+
+                .list { counter-reset: c; }
+                .item { counter-increment: c; }
+                .item::before { content: counter(c); }
+            
