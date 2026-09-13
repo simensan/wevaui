@@ -13,6 +13,7 @@
 // PPM rather than PNG so this stays dependency-free: no zlib, no image codec,
 // and a comparison script can read it with the standard library alone.
 
+#include <algorithm>
 #include "weva/software_renderer.h"
 #include "weva_c.h"
 
@@ -225,10 +226,11 @@ int main(int argc, char** argv) {
 
     // An asset that did not load draws nothing and looks like a page that has
     // none, so it is said out loud rather than left to be noticed in a picture.
-    if (const size_t missing = weva_document_missing_assets(doc, nullptr, 0)) {
-        std::vector<char> names(4096, 0);
+    if (const size_t bytes = weva_document_missing_assets(doc, nullptr, 0)) {
+        std::vector<char> names(bytes + 1, 0);
         weva_document_missing_assets(doc, names.data(), names.size());
-        std::fprintf(stderr, "weva_render: %zu asset(s) did not load:\n%s\n", missing,
+        const size_t count = 1 + std::count(names.data(), names.data() + bytes, '\n');
+        std::fprintf(stderr, "weva_render: %zu asset(s) did not load:\n%s\n", count,
                      names.data());
     }
 

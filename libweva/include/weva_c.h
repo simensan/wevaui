@@ -12,12 +12,25 @@
  *   - Opaque handles, never a struct a host can reach into.
  *   - Caller-allocates or explicit free. Every allocating call has a paired
  *     release; nothing is handed back with implicit lifetime.
- *   - Versioned. weva_abi_version() is checked by every host at load.
+ *   - Versioned. weva_abi_version() should be checked by every host at load.
  *   - Additive changes only, once the first host ships against it.
  *
  * A host supplies its renderer and font backend through function-pointer
  * tables that mirror the C++ interfaces. No core entry point takes or returns
  * a host type.
+ *
+ * Two guarantees the implementation has always made and this header never
+ * stated, so a host had no way to rely on them:
+ *
+ *   - A null document is safe everywhere. Every entry point taking a
+ *     weva_document_t checks it before any dereference and returns
+ *     WEVA_ERR_INVALID_ARGUMENT, WEVA_ELEMENT_NONE, or 0, whichever its
+ *     return type allows. A host does not need its own guard.
+ *   - An unknown or stale element handle is safe everywhere, and answers the
+ *     same way. Note what that costs on the functions returning a size: 0
+ *     means both "this element has no text" and "this handle is dead", and
+ *     they cannot be told apart. Where the distinction matters, ask
+ *     weva_element_tag_name for a nonzero length first.
  */
 
 #include <stddef.h>
@@ -30,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 37
+#define WEVA_ABI_VERSION_MINOR 38
 
 uint32_t weva_abi_version(void);
 
@@ -48,7 +61,13 @@ typedef enum weva_status {
 typedef struct weva_document* weva_document_t;
 /* An element handle is an index into the document, not a pointer: the DOM is
  * refcounted and may move between calls, and a stale index is detectable
- * where a stale pointer is not. */
+ * where a stale pointer is not.
+ *
+ * Detectable after a REMOVAL -- the slot is tombstoned and answers NOT_FOUND
+ * forever. NOT across weva_document_load_html, which empties the table so
+ * indices restart at 0: an old handle is then valid and names a different
+ * element, and nothing can tell. Re-query after loading. (Reload is the
+ * exception and says so -- see weva_document_reload_html.) */
 typedef uint32_t weva_element_t;
 #define WEVA_ELEMENT_NONE ((weva_element_t)0xFFFFFFFFu)
 
@@ -1268,8 +1287,17 @@ weva_status weva_document_set_base_path(weva_document_t doc, const char* path);
  * exactly like a page that has none. Three tools shipped without a base path
  * and each was found only when somebody eventually looked at a picture.
  *
- * Returns how many there are; the buffer follows the usual two-call
- * convention. Zero is the answer a working document gives. */
+ * The paths, newline-separated. Returns the UTF-8 bytes excluding the NUL,
+ * like every other sizing function here, so the two-call convention works:
+ * size with (null, 0), allocate that plus one, fill. Zero is still the
+ * answer a working document gives, so `if (weva_document_missing_assets(
+ * d, 0, 0))` reads as "anything missing?"; count them by splitting on '
+'.
+ *
+ * Until ABI minor 38 this returned the NUMBER of missing assets while
+ * writing the joined string, so sizing a buffer by the return value
+ * truncated it. Both shipped callers worked around that by guessing a
+ * size, and both guesses could truncate. */
 size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t capacity);
 
 /* Unsupported at-rules in compiled stylesheet branches, one diagnostic

@@ -362,9 +362,9 @@ PackedStringArray WevaDocument::get_missing_assets() {
     PackedStringArray out;
     if (!doc_) return out;
     ensure_updated();
-    const size_t count = weva_document_missing_assets(doc_, nullptr, 0);
-    if (count == 0) return out;
-    std::vector<char> names(count * 512 + 64, 0);
+    const size_t bytes = weva_document_missing_assets(doc_, nullptr, 0);
+    if (bytes == 0) return out;
+    std::vector<char> names(bytes + 1, 0);
     weva_document_missing_assets(doc_, names.data(), names.size());
     for (const String& line : String::utf8(names.data()).split("\n", false)) {
         if (!line.is_empty()) out.push_back(line);

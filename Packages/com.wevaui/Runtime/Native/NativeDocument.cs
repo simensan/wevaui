@@ -54,6 +54,37 @@ namespace Weva.Native
             return ((int)(version >> 16), (int)(version & 0xFFFF));
         }
 
+        private static bool _abiChecked;
+
+        /// <summary>
+        /// Checks the loaded plugin against the bindings before the first
+        /// document is created. weva_c.h says the version "should be checked by
+        /// every host at load", and this host did not check it at all — the
+        /// accessor above existed, and a devtools label was its only caller.
+        /// <para>
+        /// It matters here more than on the Godot side because weva_core.dll
+        /// ships prebuilt and separate from the generated WevaNative.g.cs. A
+        /// stale plugin beside newer bindings otherwise surfaced as an
+        /// EntryPointNotFoundException at whatever call first reached a
+        /// function added since — late, one function at a time, and only if
+        /// that path happened to run.
+        /// </para>
+        /// </summary>
+        private static void RequireCompatibleAbi()
+        {
+            if (_abiChecked) return;
+            (int major, int minor) = AbiVersion();
+            if (major != WevaNative.WEVA_ABI_VERSION_MAJOR || minor < WevaNative.WEVA_ABI_VERSION_MINOR)
+            {
+                throw new NativeException(
+                    "weva_core ABI " + major + "." + minor + " does not satisfy the bindings, which were " +
+                    "generated against " + WevaNative.WEVA_ABI_VERSION_MAJOR + "." + WevaNative.WEVA_ABI_VERSION_MINOR +
+                    ". Rebuild the plugin from hosts/unity and reinstall it under " +
+                    "Runtime/Native/Plugins.", (int)weva_status.WEVA_ERR_INVALID_ARGUMENT);
+            }
+            _abiChecked = true;
+        }
+
         /// <summary>
         /// The native size of a weva_c.h struct, or 0 for a name the plugin does
         /// not know. Tests compare the generated mirrors against it.
@@ -78,6 +109,7 @@ namespace Weva.Native
                 root_font_size = rootFontSize,
                 use_user_agent_stylesheet = useUserAgentStylesheet ? 1 : 0,
             };
+            RequireCompatibleAbi();
             _handle = WevaNative.weva_document_create(&config);
             if (_handle == IntPtr.Zero)
             {

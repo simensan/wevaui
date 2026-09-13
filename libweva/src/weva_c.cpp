@@ -8444,17 +8444,17 @@ size_t weva_document_missing_assets(weva_document_t doc, char* buffer, size_t ca
     if (buffer && capacity > 0) buffer[0] = '\0';
     if (!doc) return 0;
     const std::vector<std::string> missing = doc->images.missing();
+    std::string joined;
+    for (const std::string& m : missing) {
+        if (!joined.empty()) joined += '\n';
+        joined += m;
+    }
     if (buffer && capacity > 0) {
-        std::string joined;
-        for (const std::string& m : missing) {
-            if (!joined.empty()) joined += '\n';
-            joined += m;
-        }
         const size_t n = joined.size() < capacity - 1 ? joined.size() : capacity - 1;
         if (n > 0) std::memcpy(buffer, joined.data(), n);
         buffer[n] = '\0';
     }
-    return missing.size();
+    return joined.size();
 }
 
 weva_status weva_document_set_asset_reader(weva_document_t doc, weva_asset_reader reader,

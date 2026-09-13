@@ -397,7 +397,22 @@ void test_replaced_image_cache() {
     CHECK(weva_document_draw_serial(doc)==serial); // publication is deferred
     CHECK(weva_document_update(doc,0)==WEVA_OK);
     CHECK(weva_document_draw_serial(doc)!=serial);
-    CHECK(weva_document_missing_assets(doc,nullptr,0)==1);
+    CHECK(weva_document_missing_assets(doc,nullptr,0)>0);
+    {
+        // ABI 38: the return is the byte length, so the two-call convention
+        // works. It returned the COUNT before, which meant sizing a buffer by
+        // it truncated the paths -- both shipped callers had guessed a size
+        // instead. A buffer of exactly size+1 must come back whole.
+        const size_t bytes=weva_document_missing_assets(doc,nullptr,0);
+        std::vector<char> names(bytes+1,'x');
+        CHECK(weva_document_missing_assets(doc,names.data(),names.size())==bytes);
+        CHECK(std::strlen(names.data())==bytes);
+        CHECK(names[bytes]=='\0');
+        // ...and a short buffer truncates without overrunning.
+        std::vector<char> small(4,'x');
+        CHECK(weva_document_missing_assets(doc,small.data(),small.size())==bytes);
+        CHECK(std::strlen(small.data())==3);
+    }
     weva_document_set_base_path(doc,"present");
     CHECK(weva_document_update(doc,0)==WEVA_OK);
     CHECK(weva_document_missing_assets(doc,nullptr,0)==0);
@@ -408,7 +423,7 @@ void test_replaced_image_cache() {
     weva_document_set_asset_reader(doc,nullptr,nullptr);
     CHECK(weva_document_update(doc,0)==WEVA_OK);
     CHECK(weva_document_draw_serial(doc)!=serial);
-    CHECK(weva_document_missing_assets(doc,nullptr,0)==1);
+    CHECK(weva_document_missing_assets(doc,nullptr,0)>0);
     weva_document_destroy(doc);
 
     const auto siblings=weva_document_create(&cfg);
