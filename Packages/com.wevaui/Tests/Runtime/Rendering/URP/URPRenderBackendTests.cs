@@ -59,9 +59,14 @@ namespace Weva.Tests.Rendering.URP {
             var inst = b.Batcher.Batches[0].Instances[0];
             Assert.That(b.Batcher.Batches[0].Key.Brush, Is.EqualTo(UIQuadBrush.LinearGradient));
             Assert.That(inst.BrushParams.x, Is.EqualTo((float)UIQuadBrush.LinearGradient).Within(Eps));
-            // cos(0) = 1, sin(0) = 0
-            Assert.That(inst.BrushParams.y, Is.EqualTo(1f).Within(Eps));
-            Assert.That(inst.BrushParams.z, Is.EqualTo(0f).Within(Eps));
+            // CSS Images 3 3.1: 0deg points to top and the angle increases
+            // clockwise, so in box-local UV (y-down) the direction vector is
+            // (sin, -cos) -- 0deg is (0, -1), straight up. The old expectation
+            // here was (cos, sin), the maths convention, which is what the
+            // shipped code was corrected away from: it rotated every gradient
+            // 90 degrees counter-clockwise.
+            Assert.That(inst.BrushParams.y, Is.EqualTo(0f).Within(Eps));
+            Assert.That(inst.BrushParams.z, Is.EqualTo(-1f).Within(Eps));
             // Stop count packed in .w; sign carries default sRGB interpolation.
             Assert.That(System.Math.Abs(inst.BrushParams.w), Is.EqualTo(2f).Within(Eps));
             Assert.That(inst.BrushParams.w, Is.LessThan(0f));
@@ -81,8 +86,12 @@ namespace Weva.Tests.Rendering.URP {
             var inst = b.Batcher.Batches[0].Instances[0];
             Assert.That(b.Batcher.Batches[0].Key.Brush, Is.EqualTo(UIQuadBrush.ConicGradient));
             Assert.That(inst.BrushParams.x, Is.EqualTo((float)UIQuadBrush.ConicGradient).Within(Eps));
-            Assert.That(inst.BrushParams.y, Is.EqualTo(50f).Within(Eps));
-            Assert.That(inst.BrushParams.z, Is.EqualTo(60f).Within(Eps));
+            // The centre is normalised from gradient-tile pixels into the
+            // [0,1] uv space the shader samples in: 50/100 and 60/100. Packing
+            // raw pixels made the shader compute `uv - center` against numbers
+            // in the hundreds and collapse the gradient to its end colours.
+            Assert.That(inst.BrushParams.y, Is.EqualTo(0.5f).Within(Eps));
+            Assert.That(inst.BrushParams.z, Is.EqualTo(0.6f).Within(Eps));
             Assert.That(inst.BrushParams.w, Is.EqualTo(45f).Within(Eps));
         }
 
@@ -98,7 +107,12 @@ namespace Weva.Tests.Rendering.URP {
         }
 
         [Test]
-        public void Different_brush_kinds_break_the_batch() {
+        // Renamed from Different_brush_kinds_break_the_batch. Solid, text, all
+        // three gradients and both shadow brushes were deliberately collapsed
+        // into one batch class (149e8a7b: 141 -> 80 draws; 15ac451d: 151 -> 50)
+        // because the uber-shader distinguishes them per instance. Batches now
+        // split on state the shader cannot vary per quad, not on brush kind.
+        public void Different_brush_kinds_share_one_batch_class() {
             var b = NewBackend();
             b.Submit(new FillRectCommand(new Rect(0, 0, 10, 10), Brush.SolidColor(LinearColor.White)));
             var stops = new List<GradientStop> {
@@ -108,10 +122,15 @@ namespace Weva.Tests.Rendering.URP {
             b.Submit(new FillRectCommand(new Rect(20, 0, 10, 10), Brush.Gradient(new LinearGradient(0, stops))));
             b.Submit(new FillRectCommand(new Rect(40, 0, 10, 10), Brush.SolidColor(LinearColor.White)));
             b.EndFrame();
-            Assert.That(b.Batcher.Batches.Count, Is.EqualTo(3));
-            Assert.That(b.Batcher.Batches[0].Key.Brush, Is.EqualTo(UIQuadBrush.Solid));
-            Assert.That(b.Batcher.Batches[1].Key.Brush, Is.EqualTo(UIQuadBrush.LinearGradient));
-            Assert.That(b.Batcher.Batches[2].Key.Brush, Is.EqualTo(UIQuadBrush.Solid));
+            Assert.That(b.Batcher.Batches.Count, Is.EqualTo(1),
+                "solid and gradient share a batch class; the kind rides per instance");
+            Assert.That(b.Batcher.Batches[0].InstanceCount, Is.EqualTo(3));
+            Assert.That(b.Batcher.Batches[0].Instances[0].BrushParams.x,
+                Is.EqualTo((float)UIQuadBrush.Solid).Within(Eps));
+            Assert.That(b.Batcher.Batches[0].Instances[1].BrushParams.x,
+                Is.EqualTo((float)UIQuadBrush.LinearGradient).Within(Eps));
+            Assert.That(b.Batcher.Batches[0].Instances[2].BrushParams.x,
+                Is.EqualTo((float)UIQuadBrush.Solid).Within(Eps));
         }
 
         [Test]
@@ -238,17 +257,23 @@ namespace Weva.Tests.Rendering.URP {
         }
 
         [Test]
-        public void Clip_change_breaks_batch_even_with_same_brush() {
+        // Renamed from Clip_change_breaks_batch_even_with_same_brush. With
+        // UIBatcher.UseAabbClipping the clip rect travels per instance and
+        // distinct clip depths no longer need distinct stencil state, so they
+        // collapse into one batch. The stencil path still exists for clips an
+        // AABB cannot express; this test covers the AABB case it now takes.
+        public void Clip_change_keeps_one_batch_under_aabb_clipping() {
             var b = NewBackend();
             b.Submit(new FillRectCommand(new Rect(0, 0, 10, 10), Brush.SolidColor(LinearColor.White)));
             b.Submit(new PushClipCommand(new Rect(0, 0, 100, 100)));
             b.Submit(new FillRectCommand(new Rect(20, 20, 10, 10), Brush.SolidColor(LinearColor.White)));
             b.Submit(new PopClipCommand());
             b.EndFrame();
-            // Two batches with different stencil refs.
-            Assert.That(b.Batcher.Batches.Count, Is.EqualTo(2));
-            Assert.That(b.Batcher.Batches[0].Key.StencilRef, Is.EqualTo(0));
-            Assert.That(b.Batcher.Batches[1].Key.StencilRef, Is.EqualTo(1));
+            Assert.That(UIBatcher.UseAabbClipping, Is.True, "this test describes the AABB path");
+            Assert.That(b.Batcher.Batches.Count, Is.EqualTo(1));
+            Assert.That(b.Batcher.Batches[0].Key.StencilRef, Is.EqualTo(0),
+                "AABB clipping keeps every quad on stencil ref 0");
+            Assert.That(b.Batcher.Batches[0].InstanceCount, Is.EqualTo(2));
         }
 
         [Test]

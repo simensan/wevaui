@@ -58,6 +58,19 @@ namespace Weva.Tests.Layout.Snapshot {
             return (managedRoot, snapRoot, stylesS);
         }
 
+        // Depth-first search for the box of the element carrying this id. Names
+        // a box by what it is rather than by where it sits, so a change to the
+        // wrapper the parser synthesizes cannot silently redirect the test.
+        static Box FindBoxById(Box root, string id) {
+            if (root == null) return null;
+            if (root.Element != null && root.Element.GetAttribute("id") == id) return root;
+            foreach (var child in root.Children) {
+                var found = FindBoxById(child, id);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
         static void AssertTreesEqual(Box a, Box b, string path = "root") {
             Assert.That(b, Is.Not.Null, $"{path}: snap is null but managed is not");
             Assert.That(a, Is.Not.Null, $"{path}: managed is null but snap is not");
@@ -284,12 +297,16 @@ namespace Weva.Tests.Layout.Snapshot {
 
             var (m2, s2, _) = RunBoth(html, css2);
             AssertTreesEqual(m2, s2);
-            // Confirm the second pass actually changed something. The root
-            // box is the anonymous Document wrapper; HtmlParser now wraps
-            // the fragment in synthetic `<html><body>`, so the chain down
-            // to a <div> is: root → html → body → section → div.
-            var div1 = s1.Children[0].Children[0].Children[0].Children[0];
-            var div2 = s2.Children[0].Children[0].Children[0].Children[0];
+            // Confirm the second pass actually changed something. Found by id
+            // rather than by a fixed Children[0] chain: that chain encoded the
+            // tree's exact depth and broke when e3dcac05 made HtmlParser always
+            // synthesize <head>, walking into it and indexing off the end. The
+            // parser is allowed to reshape the wrapper; #a is what this test
+            // actually means.
+            var div1 = FindBoxById(s1, "a");
+            var div2 = FindBoxById(s2, "a");
+            Assert.That(div1, Is.Not.Null, "the #a box exists in the first layout");
+            Assert.That(div2, Is.Not.Null, "the #a box exists in the second layout");
             Assert.That(div2.PaddingLeft, Is.Not.EqualTo(div1.PaddingLeft));
         }
 

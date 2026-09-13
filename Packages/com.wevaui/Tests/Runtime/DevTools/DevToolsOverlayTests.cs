@@ -19,7 +19,7 @@ namespace Weva.Tests.DevTools {
             try {
                 var overlay = go.AddComponent<DevToolsOverlay>();
                 Assert.That(overlay.ToggleKey, Is.EqualTo(KeyCode.F12));
-                Assert.That(overlay.Enabled, Is.True);
+                Assert.That(overlay.Enabled, Is.False, "off by default since c4cfc89a; opt in per component");
                 Assert.That(overlay.Mode, Is.EqualTo(OverlayMode.All));
             } finally {
                 Object.DestroyImmediate(go);

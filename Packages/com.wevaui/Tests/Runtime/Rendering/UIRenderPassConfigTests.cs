@@ -33,26 +33,20 @@ namespace Weva.Tests.Rendering {
             Assert.That(UIRenderGraphPass.OverlayRenderPassEvent, Is.EqualTo(RenderPassEvent.AfterRendering));
         }
 
+        // Was two tests asserting that a legacy Execute existed and carried
+        // [Obsolete]. bef1c39a removed it: URP 17.2 / Unity 6 deleted the
+        // compatibility-mode methods from the base class, so Execute is not
+        // deprecated, it is gone. RecordRenderGraph is the only entry point,
+        // and that is what is worth pinning.
         [Test]
-        public void Both_record_render_graph_and_execute_methods_exist() {
+        public void Record_render_graph_is_the_only_entry_point() {
             var t = typeof(UIRenderPass);
-            var execute = FindDeclaredMethod(t, "Execute");
-            Assert.That(execute, Is.Not.Null, "Legacy Execute must remain for compatibility mode");
-
 #if UNITY_2023_3_OR_NEWER
-            var rg = FindDeclaredMethod(t, "RecordRenderGraph");
-            Assert.That(rg, Is.Not.Null, "RecordRenderGraph must be implemented for URP 17+");
+            Assert.That(FindDeclaredMethod(t, "RecordRenderGraph"), Is.Not.Null,
+                "RecordRenderGraph must be implemented for URP 17+");
 #endif
-        }
-
-        [Test]
-        public void Legacy_execute_is_marked_obsolete() {
-            var execute = FindDeclaredMethod(typeof(UIRenderPass), "Execute");
-            Assert.That(execute, Is.Not.Null);
-            var attrs = execute.GetCustomAttributes(typeof(ObsoleteAttribute), false);
-            Assert.That(attrs.Length, Is.EqualTo(1), "Execute should be marked [Obsolete] to track URP deprecation");
-            var obs = (ObsoleteAttribute)attrs[0];
-            Assert.That(obs.IsError, Is.False, "Obsolete should be a warning so compatibility mode still compiles");
+            Assert.That(FindDeclaredMethod(t, "Execute"), Is.Null,
+                "URP 17.2 removed the legacy compatibility-mode entry point");
         }
 
         static MethodInfo FindDeclaredMethod(Type t, string name) {

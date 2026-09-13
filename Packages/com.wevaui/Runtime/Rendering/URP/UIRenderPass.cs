@@ -13,15 +13,15 @@ namespace Weva.Rendering.URP {
     // target. Per PLAN §9 #12 there is no intermediate RT — we issue draws directly into
     // the active camera target.
     //
-    // Two entry points are implemented:
-    //   - Legacy `Execute(ScriptableRenderContext, ref RenderingData)` for URP compatibility
-    //     mode (RenderGraph disabled). Marked obsolete to mirror Unity's own deprecation
-    //     of the API; we keep it so projects that haven't enabled RenderGraph still work.
-    //   - `RecordRenderGraph(RenderGraph, ContextContainer)` for URP 17+/Unity 6 RenderGraph
-    //     mode. Uses AddRasterRenderPass against UniversalResourceData.activeColorTexture.
+    // One entry point: `RecordRenderGraph(RenderGraph, ContextContainer)` for URP
+    // 17+/Unity 6 RenderGraph mode, using AddRasterRenderPass against
+    // UniversalResourceData.activeColorTexture.
     //
-    // Both paths run the same backend code (URPRenderBackend.BeginFrame/EndFrame) so behavior
-    // is identical aside from the command-buffer adapter type.
+    // There used to be a legacy `Execute(ScriptableRenderContext, ref RenderingData)`
+    // beside it for compatibility mode. URP 17.2 / Unity 6 removed the
+    // compatibility-mode methods from the base class entirely — not deprecated,
+    // absent — so it went with them in bef1c39a. This comment kept describing it
+    // for four months afterwards.
     //
     // Multiple UIDocuments per camera: we enumerate UIPaintSourceRegistry by Order; each
     // source gets EmitPaint exactly once per camera per frame.

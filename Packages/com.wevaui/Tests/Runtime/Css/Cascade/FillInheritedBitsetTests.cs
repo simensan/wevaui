@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using NUnit.Framework;
 using Weva.Css;
 using Weva.Css.Cascade;
@@ -130,9 +131,14 @@ namespace Weva.Tests.Css.Cascade {
         public void Inherited_property_flows_from_parent() {
             var doc = HtmlParser.Parse("<section><div><span>x</span></div></section>");
             var engine = new CascadeEngine(new[] { Author("section { color: green; }") });
-            var section = (Element)doc.Children[0];
-            var div = (Element)section.Children[0];
-            var span = (Element)div.Children[0];
+            // Resolved by tag, not by position. These were Children[0] chains
+            // and broke when e3dcac05 made HtmlParser always synthesize <head>:
+            // the chain silently walked doc -> html -> head and indexed off the
+            // end. A fixed index into a tree the parser is allowed to reshape
+            // is not a stable way to name an element.
+            var section = doc.GetElementsByTagName("section").First();
+            var div = doc.GetElementsByTagName("div").First();
+            var span = doc.GetElementsByTagName("span").First();
             engine.Compute(section);
             engine.Compute(div);
             var spanStyle = engine.Compute(span);

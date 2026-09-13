@@ -22,7 +22,7 @@ namespace Weva.Tests.Designer
         [Test]
         public void Kit_lists_components_and_installs_theme()
         {
-            Assert.That(DesignComponentKit.All(), Has.Count.GreaterThanOrEqualTo(6));
+            Assert.That(DesignComponentKit.All().Count, Is.GreaterThanOrEqualTo(6));
             var doc = new DesignDocument(new DesignNode("r"));
             DesignComponentKit.Install(doc);
             Assert.That(doc.Tokens.Colors.ContainsKey("primary"), Is.True);

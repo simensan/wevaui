@@ -34,7 +34,7 @@ namespace Weva.Tests.Designer
         [Test]
         public void Catalog_lists_the_starter_templates()
         {
-            Assert.That(DesignTemplates.Catalog(), Has.Count.GreaterThanOrEqualTo(4));
+            Assert.That(DesignTemplates.Catalog().Count, Is.GreaterThanOrEqualTo(4));
             foreach (DesignTemplate t in Catalog)
             {
                 Assert.That(t.Name, Is.Not.Null.And.Not.Empty);

@@ -234,7 +234,10 @@ namespace Weva.Tests.Rendering {
             Assert.That(UIRenderGraphPass.IdImageTexture, Is.EqualTo(Shader.PropertyToID("_WevaImage")));
             Assert.That(renderGraphPass, Does.Contain("st.Mpb.SetTexture(IdImageTexture, batchImageTex);"));
             Assert.That(renderGraphPass, Does.Contain("resources.GetQuadMaterial(batch.Key.StencilRef, batchImageTex);"));
-            Assert.That(renderGraphPass, Does.Contain("readonly System.Collections.Generic.Dictionary<long, Material> imageMaterials"));
+            // Keyed by stencil ref alone since fe26299e ("stop leaking a
+            // Material per image texture"), which narrowed the key from long
+            // to int. This assertion still read long for three months.
+            Assert.That(renderGraphPass, Does.Contain("readonly System.Collections.Generic.Dictionary<int, Material> imageMaterials"));
             Assert.That(renderGraphPass, Does.Contain("AreCachedImageBindingsValid(batcher)"));
             Assert.That(renderGraphPass, Does.Contain("AreCachedTextAtlasBindingsValid(batcher)"));
             Assert.That(renderGraphPass, Does.Not.Contain("cmd.SetGlobalTexture(IdImageTexture"));
