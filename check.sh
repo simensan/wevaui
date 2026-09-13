@@ -172,7 +172,12 @@ if command -v python3 > /dev/null && [ -x "$GCC/Tools/weva_dump/weva_dump" ]; th
     chrome_oracle() {
         local corpus="$1" width="$2" height="$3"
         local log="/tmp/weva-chrome-$(basename "$corpus").log"
-        if ! (cd "$REPO" && python3 "$ROOT/Tools/oracle/chrome_sweep.py" "$corpus"                 --width "$width" --height "$height" --weva-dump "$GCC/Tools/weva_dump/weva_dump"                 --out-dir "/tmp/weva-chrome-$(basename "$corpus")" --show 2                 --max-worst 1.5 --known-gaps "$ROOT/Tools/oracle/known-gaps/chrome-sweep.txt") > "$log" 2>&1; then
+        if ! (cd "$REPO" && python3 "$ROOT/Tools/oracle/chrome_sweep.py" "$corpus" \
+                --width "$width" --height "$height" \
+                --weva-dump "$GCC/Tools/weva_dump/weva_dump" \
+                --out-dir "/tmp/weva-chrome-$(basename "$corpus")" --show 2 --chrome-metrics \
+                --max-worst 1.5 --known-gaps "$ROOT/Tools/oracle/known-gaps/chrome-sweep.txt") \
+                > "$log" 2>&1; then
             fail "chrome oracle ($(basename "$corpus")); see $log"
         fi
     }
@@ -195,7 +200,8 @@ step "chrome behaviour checks"
 if [ -n "${WEVA_NO_CHROME:-}" ]; then
     skip "chrome behaviour checks (WEVA_NO_CHROME set)"
 elif command -v node > /dev/null && command -v python3 > /dev/null; then
-    if ! python3 "$ROOT/Tools/oracle/run_chrome_checks.py" --out /tmp/weva-chrome-checks             > /tmp/weva-chrome-checks.log 2>&1; then
+    if ! python3 "$ROOT/Tools/oracle/run_chrome_checks.py" --out /tmp/weva-chrome-checks \
+            > /tmp/weva-chrome-checks.log 2>&1; then
         fail "chrome behaviour checks; see /tmp/weva-chrome-checks.log"
     fi
 else

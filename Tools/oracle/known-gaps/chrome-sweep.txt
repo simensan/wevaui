@@ -4,31 +4,15 @@
 # that is not listed here, and reports listed cases that no longer need it.
 # A reason must name WHY, so an entry is a finding on record, not an excuse.
 #
-# Classes as of 2026-09-13 (Chrome 152, --metrics=mono, samples at 1280x720):
+# The gate runs weva_dump with --chrome-metrics: the browser-semantics walk
+# that applies the full transform to every corner and unions an inline's line
+# fragments, the way getBoundingClientRect does. Without that flag the dump
+# reports the C# reference's box semantics and nine more samples land here for
+# reasons that are the dump mode, not the engine — which is what the first
+# version of this file recorded, wrongly, on 2026-09-13.
 #
-#   tool/transform   Chrome's getBoundingClientRect returns the transformed
-#                    axis-aligned box; weva_dump applies only the translation.
-#                    A rotated 8px square reads 8 against Chrome's 11.31. Fix
-#                    belongs in weva_dump (emit the transformed AABB), after
-#                    which these become real comparisons.
-#   tool/inline      Chrome unions every line fragment of an inline (and the
-#                    anonymous block continuations of an inline that contains
-#                    blocks); the dump reports the inline's own first box.
-#   tool/images      weva_dump runs with no asset reader, so an <img> with no
-#                    intrinsic size stays at its placeholder while Chrome loads
-#                    the file.
-#   gap/<feature>    Both engines lack the feature; PRODUCT_READINESS.md and
+#   gap/<feature>    The core lacks the feature; PRODUCT_READINESS.md and
 #                    PORT_PLAN.md already list it.
 
-level-select: tool/transform — rotated .line spans; worst 318px is the AABB of a rotated 9px-tall span
-neon: tool/transform — .rain layers are rotated and blurred; every value is the transformed AABB
-map: tool/transform — .compass-needle is rotated
-randhtml: tool/transform — .road and .player are rotated (8 vs 11.31 = 8·√2)
-match3: tool/transform — .tile.selected is scaled 1.08 (56 vs 60.48)
-load-game: tool/transform — .brush is rotated (7 vs 10.77)
-card-component: tool/inline — <card> is an unknown element, so display:inline wrapping blocks; Chrome reports the union (1280x89.78), the dump reports the empty inline box
-episode-stats: tool/inline — <strong> wraps across lines inside the column; Chrome unions the fragments (w 376.88), the dump reports the first (33.75)
-weva-landing: tool/inline — .c-prop spans wrap and repeat; fragment union plus same-identity siblings paired out of order (repair_runs handles consecutive runs only)
-cov-image: tool/images — <img> without width/height reads 2x2 in the dump against Chrome's 18x18 loaded bitmap; page height follows
 cov-logical: gap/vertical-writing — writing-mode: vertical-* is not implemented in the core (PRODUCT_READINESS.md "vertical writing"); .page 496 vs 961
 cov-multicol: gap/multicol — column widths/balancing; multicol_is_fully_ported() is false and test_multicol.cpp asserts it; p .w 326 vs 682

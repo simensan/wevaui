@@ -453,9 +453,11 @@ of the two bugs above, and it is worth paying.
 The C# engine is frozen and Chrome is the only oracle. `run_oracle.py`'s
 three-way — C# reference against the core, Chrome arbitrating where they
 disagree — is retired from `check.sh` and CI; the reference leg goes with the
-engine. What gates now is `chrome_sweep.py` in gate mode:
+engine. What gates now is `chrome_sweep.py` in gate mode, with the dump in its
+browser-semantics walk (`--chrome-metrics`: full transforms on every corner
+and inline fragments unioned, as `getBoundingClientRect` does):
 
-    python3 Tools/oracle/chrome_sweep.py Tools/oracle/corpus/harvest         --weva-dump <build>/Tools/weva_dump/weva_dump --width 800 --height 600         --max-worst 1.5 --known-gaps Tools/oracle/known-gaps/chrome-sweep.txt
+    python3 Tools/oracle/chrome_sweep.py Tools/oracle/corpus/harvest         --weva-dump <build>/Tools/weva_dump/weva_dump --width 800 --height 600         --chrome-metrics --max-worst 1.5 --known-gaps Tools/oracle/known-gaps/chrome-sweep.txt
 
 A case passes when its worst value is within the ceiling of Chrome and every
 element pairs. Anything over must be named in `known-gaps/chrome-sweep.txt`
@@ -471,21 +473,24 @@ gate uses) carry a `.chrome-layout.json` beside every case, captured with
 with the browser version inside the file. Regenerate deliberately, the way
 `docs/verification/` receipts are treated, never as a side effect of a run.
 
-**The ceiling is measured.** Harvest's worst disagreement is 1.0px and every
-one of its 22 differing cases is the rounding class (`18.288` vs `19` line
-height, inline `y` 0 vs −1); the samples' text-baseline rounding tops out at
-1.3px at 1280 wide; the first genuine divergence in any corpus is 3.8px. So
-1.5px separates the classes with margin on both sides.
+**The ceiling is measured.** In the browser walk, hand agrees on 52 of 52,
+harvest on 220 of 225 with the five differing cases inside 1.0px, and the
+samples' text-baseline rounding tops out at 1.3px at 1280 wide; the first
+genuine divergence in any corpus is hundreds of pixels (the two known gaps).
+So 1.5px separates the classes with margin on both sides.
 
-**What the two-way surfaced that the three-way hid.** Against the same
-captures, 12 samples exceed the ceiling by up to 1,280px — and they exceed it
-identically against the captures that were already on disk. The three-way
-passed them because the C# reference agreed with the core, which is the
-`known-gaps/` definition of a gap. Each is classified with its cause in
-`chrome-sweep.txt`: six are the transformed-AABB tool artefact below, three
-are Chrome's inline-fragment union, one is `weva_dump` not loading images, and
-two are real unported features (vertical writing mode, multicol). That file
-is the backlog.
+**What the two-way surfaced that the three-way hid.** Two samples exceed the
+ceiling, by 356 and 465px, and they exceed it identically against the captures
+that were already on disk. The three-way passed them because the C# reference
+agreed with the core, which is the `known-gaps/` definition of a gap. Both are
+real unported features — multicol and vertical writing mode — and are in
+`chrome-sweep.txt` with their cause. That file is the backlog.
+
+A note against repeating a mistake: run without `--chrome-metrics`, the dump
+reports the C# reference's box semantics and nine more samples fail for
+reasons that are the mode, not the engine — rotated boxes read untransformed,
+inline fragments unreported. The first version of the known-gaps file recorded
+those as tool limits. They were not.
 
 Baseline receipt: `docs/verification/chrome-oracle-baseline.json`.
 
