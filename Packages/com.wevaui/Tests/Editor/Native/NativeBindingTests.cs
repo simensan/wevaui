@@ -149,13 +149,13 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         [Test]
-        public void Resolver_ServesPathsInsteadOfTheDictionary()
+        public void Resolver_ServesPathsBeforeTheDictionary_AndUnknownOnesFallThrough()
         {
             _bindings.Resolver = path => path == "Player.Name" ? "Resolver" : path == "Quests" ? (object)new List<object>() : null;
             _bindings.Refresh();
             _doc.Update(0);
             Assert.That(Text("#title"), Is.EqualTo("Resolver"));
-            Assert.That(Text("#hp"), Is.EqualTo("HP /100"), "an unknown path shows nothing");
+            Assert.That(Text("#hp"), Is.EqualTo("HP 72/100"), "a path the resolver does not know reads from the dictionary");
             Assert.That(_doc.QueryAll("#quests > li").Length, Is.EqualTo(0), "an empty list makes no rows");
         }
 

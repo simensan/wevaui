@@ -102,7 +102,9 @@ namespace Weva.Native
             _doc.LoadHtml(Html != null ? Html.text : InlineHtml);
             _doc.SetCss(Css != null ? Css.text : InlineCss);
             _fonts.SyncCssFontFaces(_doc);
-            _bindings?.Refresh();
+            // A reload replaces the tree the binding source was installed on,
+            // and a controller set before the core existed still applies.
+            if (_bindings != null || _controller != null) SetController(_controller);
             _doc.Update(0);
         }
 
@@ -199,13 +201,24 @@ namespace Weva.Native
                 // for the same reason.
                 float dt = Application.isPlaying ? Time.deltaTime : 0;
                 float inputDt = Application.isPlaying ? Mathf.Max(Time.unscaledDeltaTime, 1e-6f) : 0;
-                _doc.Update(dt, inputDt);
-                PumpEvents();
+                Step(dt, inputDt);
             }
             catch (NativeException ex)
             {
                 LastError = ex.Message;
             }
+        }
+
+        /// <summary>One frame without the input feed: poll the controller, refresh what moved, update, pump. Tests drive the component with this.</summary>
+        internal void Step(float dt = 0, float inputDt = 0)
+        {
+            if (_doc == null) return;
+            // The controller is read AFTER the frame's events are pumped: a
+            // control's VALUE_CHANGED writes into the controller first, so the
+            // poll that follows pushes nothing stale back over what was typed.
+            PollController();
+            _doc.Update(dt, inputDt);
+            PumpEvents();
         }
 
         /// <summary>Drains the core's event queue into the C# events. Called after every update.</summary>
@@ -247,7 +260,11 @@ namespace Weva.Native
         // ---- data binding and the controller ----------------------------------
 
         private NativeBindings _bindings;
+        private System.Collections.Generic.IDictionary<string, object> _model = new System.Collections.Generic.Dictionary<string, object>();
         private object _controller;
+        private UIBindResolver _uiBind;
+        private Weva.Binding.IBindingVersion _versioned;
+        private int _lastVersion;
         private bool _refreshPending;
 
         /// <summary>The bound data, or null before Bind.</summary>
@@ -264,29 +281,70 @@ namespace Weva.Native
         /// </summary>
         public void Bind(System.Collections.Generic.IDictionary<string, object> model, object controller = null)
         {
-            _controller = controller;
+            _model = model ?? new System.Collections.Generic.Dictionary<string, object>();
+            SetController(controller);
+        }
+
+        /// <summary>
+        /// Attach (or replace) the controller whose <c>[UIBind]</c> fields and
+        /// properties feed <c>{{ }}</c>, data-class, data-each and data-model,
+        /// and whose public methods answer <c>on-&lt;event&gt;="Name"</c>. A
+        /// <see cref="Weva.Binding.IBindingVersion"/> controller is re-read only
+        /// when its version moves; any other controller is polled every frame,
+        /// so mutating a <c>[UIBind]</c> field anywhere is enough. Null detaches.
+        /// </summary>
+        public void SetController(object newController)
+        {
+            _controller = newController;
+            _uiBind = newController != null ? new UIBindResolver(newController) : null;
+            _versioned = newController as Weva.Binding.IBindingVersion;
+            _lastVersion = _versioned != null ? _versioned.BindingVersion : 0;
             if (_doc == null) return;
             if (_bindings == null)
             {
                 _bindings = new NativeBindings();
                 _bindings.DataChanged += (path, text) => DataChanged?.Invoke(path, text);
             }
-            _bindings.Data = model ?? new System.Collections.Generic.Dictionary<string, object>();
+            _bindings.Data = _model;
+            _bindings.Resolver = _uiBind != null && _uiBind.RootCount > 0 ? _uiBind.Resolve : (Func<string, object>)null;
+            _bindings.Writer = _uiBind != null && _uiBind.RootCount > 0 ? _uiBind.TryWrite : (Func<string, string, bool>)null;
             _bindings.Install(_doc);
             _refreshPending = false;
+        }
+
+        /// <summary>The controller attached via <see cref="SetController"/>, cast to <typeparamref name="T"/> (null if none or the cast fails).</summary>
+        public T GetController<T>() where T : class
+        {
+            return _controller as T;
         }
 
         public object Controller
         {
             get => _controller;
-            set => _controller = value;
+            set => SetController(value);
         }
 
         /// <summary>Re-reads every binding now. Returns how many nodes changed.</summary>
         public int Refresh()
         {
             _refreshPending = false;
+            if (_versioned != null) _lastVersion = _versioned.BindingVersion;
             return _bindings?.Refresh() ?? 0;
+        }
+
+        // The C# engine polled [UIBind] members once a frame; a controller
+        // that implements IBindingVersion promised to bump instead. Both
+        // contracts hold here: the version gate skips the read, and a
+        // controller without one is read every frame the way it always was.
+        private void PollController()
+        {
+            if (_bindings == null || _uiBind == null) return;
+            if (_versioned != null)
+            {
+                if (_versioned.BindingVersion == _lastVersion) return;
+                _lastVersion = _versioned.BindingVersion;
+            }
+            _refreshPending = true;
         }
 
         /// <summary>Refreshes on the next update, once, however many times the model moved.</summary>

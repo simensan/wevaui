@@ -28,11 +28,20 @@ namespace Weva.Native
         public IDictionary<string, object> Data { get; set; } = new Dictionary<string, object>();
 
         /// <summary>
-        /// Optional resolver consulted instead of Data: returns the value at
-        /// a path, or null for a path it does not know (a list answers
-        /// data-each through its IList count).
+        /// Optional resolver consulted before Data: returns the value at a
+        /// path, or null for a path it does not know (a list answers
+        /// data-each through its IList count). A null falls through to Data,
+        /// so a controller's [UIBind] members and a model dictionary can be
+        /// bound side by side.
         /// </summary>
         public Func<string, object> Resolver { get; set; }
+
+        /// <summary>
+        /// Optional writer tried before Data when a data-model control commits:
+        /// returns true when it took the path (the controller owns it). A false
+        /// falls through to Data.
+        /// </summary>
+        public Func<string, string, bool> Writer { get; set; }
 
         /// <summary>Raised when a data-model control wrote a value into Data: the path and the text.</summary>
         public event Action<string, string> DataChanged;
@@ -111,11 +120,13 @@ namespace Weva.Native
         /// </summary>
         public bool WriteBack(uint element)
         {
-            if (_doc == null || Resolver != null) return false;
+            if (_doc == null) return false;
             string path = ModelPathOf(element);
             if (path.Length == 0) return false;
             string text = _doc.ElementValue(element);
-            if (!WritePath(path, text)) return false;
+            bool written = Writer != null && Writer(path, text);
+            if (!written && Resolver != null && Resolver(path) != null) return false;   // the resolver's, read-only
+            if (!written && !WritePath(path, text)) return false;
             DataChanged?.Invoke(path, text);
             return true;
         }
@@ -136,7 +147,11 @@ namespace Weva.Native
 
         private object ResolveObject(string path)
         {
-            if (Resolver != null) return Resolver(path);
+            if (Resolver != null)
+            {
+                object resolved = Resolver(path);
+                if (resolved != null) return resolved;
+            }
             object current = Data;
             foreach (string part in path.Split('.'))
             {
@@ -182,6 +197,35 @@ namespace Weva.Native
             }
         }
 
+        /// <summary>A control's text as the type of the value already at its path (a bool stays a bool, an int an int); the text itself for anything else.</summary>
+        public static object Convert(object existing, string text)
+        {
+            return existing == null ? text : ConvertTo(existing.GetType(), text) ?? text;
+        }
+
+        /// <summary>A control's text as <paramref name="type"/>, or null when the type is not one a control can hold.</summary>
+        public static object ConvertTo(Type type, string text)
+        {
+            if (type == typeof(string)) return text;
+            if (type == typeof(bool))
+            {
+                string lower = text.ToLowerInvariant();
+                return lower == "true" || lower == "1" || lower == "on";
+            }
+            if (type == typeof(int))
+                return int.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out int iv) ? iv
+                     : double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double idv) ? (int)idv : 0;
+            if (type == typeof(long))
+                return long.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out long lv) ? lv
+                     : double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double ldv) ? (long)ldv : 0L;
+            if (type == typeof(float))
+                return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float fv) ? fv : 0f;
+            if (type == typeof(double))
+                return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double dv) ? dv : 0.0;
+            if (type == typeof(object)) return text;
+            return null;
+        }
+
         private int Count(string path)
         {
             object value = ResolveObject(path);
@@ -209,27 +253,7 @@ namespace Weva.Native
             object value = text;
             if (Step(current, leaf, out object existing))
             {
-                switch (existing)
-                {
-                    case bool _:
-                        string lower = text.ToLowerInvariant();
-                        value = lower == "true" || lower == "1" || lower == "on";
-                        break;
-                    case int _:
-                        value = int.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out int iv) ? iv
-                              : double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double idv) ? (int)idv : 0;
-                        break;
-                    case long _:
-                        value = long.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out long lv) ? lv
-                              : double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double ldv) ? (long)ldv : 0L;
-                        break;
-                    case float _:
-                        value = float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float fv) ? fv : 0f;
-                        break;
-                    case double _:
-                        value = double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double dv) ? dv : 0.0;
-                        break;
-                }
+                value = Convert(existing, text);
                 // A control's own live value coming back (or a spelling of the
                 // same value) is not a change and must not fan out again.
                 if (Equals(existing, value)) return false;
