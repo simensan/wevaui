@@ -15,7 +15,7 @@ using System.Text;
 
 namespace Weva.Native
 {
-    public static class NativeLayoutDump
+    internal static class NativeLayoutDump
     {
         public struct Entry
         {

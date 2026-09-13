@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Weva.Native
 {
-    public enum weva_status : int
+    internal enum weva_status : int
     {
         WEVA_OK = 0,
         WEVA_ERR_INVALID_ARGUMENT = 1,
@@ -17,14 +17,14 @@ namespace Weva.Native
         WEVA_ERR_INVALID_STATE = 6,
     }
 
-    public enum weva_draw_kind : int
+    internal enum weva_draw_kind : int
     {
         WEVA_DRAW_GEOMETRY = 0,
         WEVA_DRAW_BACKDROP_FILTER = 1,
         WEVA_DRAW_ROUNDED_RECT = 2,
     }
 
-    public enum weva_blend_mode : int
+    internal enum weva_blend_mode : int
     {
         WEVA_BLEND_NORMAL = 0,
         WEVA_BLEND_MULTIPLY = 1,
@@ -44,7 +44,7 @@ namespace Weva.Native
         WEVA_BLEND_LUMINOSITY = 15,
     }
 
-    public enum weva_event_kind : int
+    internal enum weva_event_kind : int
     {
         WEVA_EVENT_NONE = 0,
         WEVA_EVENT_POINTER_DOWN = 1,
@@ -73,7 +73,7 @@ namespace Weva.Native
         WEVA_EVENT_BEFORE_TOGGLE = 24,
     }
 
-    [Flags] public enum weva_key_modifier : uint
+    [Flags] internal enum weva_key_modifier : uint
     {
         WEVA_MOD_SHIFT = 1 << 0,
         WEVA_MOD_CTRL = 1 << 1,
@@ -81,7 +81,7 @@ namespace Weva.Native
         WEVA_MOD_META = 1 << 3,
     }
 
-    public enum weva_key : int
+    internal enum weva_key : int
     {
         WEVA_KEY_OTHER = 0,
         WEVA_KEY_TAB = 1,
@@ -100,7 +100,7 @@ namespace Weva.Native
         WEVA_KEY_PAGE_DOWN = 14,
     }
 
-    public enum weva_box_kind : int
+    internal enum weva_box_kind : int
     {
         WEVA_BOX_BLOCK = 0,
         WEVA_BOX_ANONYMOUS_BLOCK = 1,
@@ -110,14 +110,14 @@ namespace Weva.Native
         WEVA_BOX_TEXT = 5,
     }
 
-    [Flags] public enum weva_pointer_button : uint
+    [Flags] internal enum weva_pointer_button : uint
     {
         WEVA_BUTTON_PRIMARY = 1 << 0,
         WEVA_BUTTON_SECONDARY = 1 << 1,
         WEVA_BUTTON_MIDDLE = 1 << 2,
     }
 
-    [Flags] public enum weva_validity_error : uint
+    [Flags] internal enum weva_validity_error : uint
     {
         WEVA_VALIDITY_VALUE_MISSING = 1 << 0,
         WEVA_VALIDITY_TYPE_MISMATCH = 1 << 1,
@@ -131,7 +131,7 @@ namespace Weva.Native
         WEVA_VALIDITY_CUSTOM_ERROR = 1 << 9,
     }
 
-    public enum weva_change_kind : int
+    internal enum weva_change_kind : int
     {
         WEVA_CHANGE_PAINT = 1,
         WEVA_CHANGE_LAYOUT = 2,
@@ -139,7 +139,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_config
+    internal unsafe struct weva_config
     {
         public int viewport_width;
         public int viewport_height;
@@ -149,7 +149,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_vertex
+    internal unsafe struct weva_vertex
     {
         public float x;
         public float y;
@@ -162,7 +162,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_rounded_rect
+    internal unsafe struct weva_rounded_rect
     {
         public double x;
         public double y;
@@ -176,7 +176,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_backdrop_effect
+    internal unsafe struct weva_backdrop_effect
     {
         public double blur_radius;
         public fixed float color_matrix[9]; // float color_matrix[9]
@@ -185,7 +185,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_draw
+    internal unsafe struct weva_draw
     {
         public weva_vertex* vertices;
         public nuint vertex_count;
@@ -204,7 +204,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_texture
+    internal unsafe struct weva_texture
     {
         public ulong id;
         public byte* rgba;
@@ -213,7 +213,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_render_backend
+    internal unsafe struct weva_render_backend
     {
         public void* user_data;
         public delegate* unmanaged[Cdecl]<void*, weva_vertex*, nuint, uint*, nuint, ulong> compile_geometry;
@@ -226,7 +226,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_glyph_bitmap
+    internal unsafe struct weva_glyph_bitmap
     {
         public byte* alpha;
         public int width;
@@ -235,7 +235,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_font_backend
+    internal unsafe struct weva_font_backend
     {
         public void* user_data;
         public delegate* unmanaged[Cdecl]<void*, byte*, nuint, int, ulong> load_face;
@@ -248,7 +248,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_shaped_glyph
+    internal unsafe struct weva_shaped_glyph
     {
         public uint glyph;
         public uint cluster;
@@ -259,7 +259,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_event
+    internal unsafe struct weva_event
     {
         public int kind;
         public uint target;
@@ -273,7 +273,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_stats
+    internal unsafe struct weva_stats
     {
         public double update_ms;
         public double cascade_ms;
@@ -293,7 +293,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_box
+    internal unsafe struct weva_box
     {
         public uint parent;
         public uint kind;
@@ -321,7 +321,7 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_binding_source
+    internal unsafe struct weva_binding_source
     {
         public void* user;
         public delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, int*, nuint> value;
@@ -329,13 +329,13 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct weva_element_change
+    internal unsafe struct weva_element_change
     {
         public uint element;
         public int kind;
     }
 
-    public static unsafe partial class WevaNative
+    internal static unsafe partial class WevaNative
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;

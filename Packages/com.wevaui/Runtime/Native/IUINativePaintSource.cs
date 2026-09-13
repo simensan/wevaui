@@ -8,7 +8,7 @@ namespace Weva.Native
     /// URP pass calls EmitNative with its command buffer and the meshes go
     /// straight to the GPU.
     /// </summary>
-    public interface IUINativePaintSource : IUIPaintSource
+    internal interface IUINativePaintSource : IUIPaintSource
     {
         /// <summary>
         /// UIRenderGraphPass calls this with a Unity command buffer bound to

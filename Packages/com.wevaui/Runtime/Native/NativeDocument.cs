@@ -11,7 +11,7 @@ using System.Text;
 namespace Weva.Native
 {
     /// <summary>A failed call into the core, with the status the core returned.</summary>
-    public sealed class NativeException : Exception
+    internal sealed class NativeException : Exception
     {
         public int Status { get; }
 
@@ -23,13 +23,13 @@ namespace Weva.Native
     }
 
     /// <summary>Layout bounds of an element in CSS pixels, as the core reports them.</summary>
-    public struct NativeBounds
+    internal struct NativeBounds
     {
         public double X, Y, Width, Height;
     }
 
     /// <summary>One queued document event, as weva_event with its full text read back.</summary>
-    public struct NativeEvent
+    internal struct NativeEvent
     {
         public weva_event_kind Kind;
         public uint Target;
@@ -43,7 +43,7 @@ namespace Weva.Native
         public string Handler;
     }
 
-    public sealed unsafe class NativeDocument : IDisposable
+    internal sealed unsafe class NativeDocument : IDisposable
     {
         private IntPtr _handle;
 

@@ -19,7 +19,7 @@ using AOT;
 
 namespace Weva.Native
 {
-    public sealed unsafe class NativeBindings : IDisposable
+    internal sealed unsafe class NativeBindings : IDisposable
     {
         private GCHandle _self;
         private NativeDocument _doc;

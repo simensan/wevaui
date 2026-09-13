@@ -183,7 +183,7 @@ def generate(headers):
     # header does (weva_status, weva_draw); the static class holds the externs.
     for name, entries in enums.items():
         flags = any('<<' in v for _, v in entries)
-        out.append('    ' + ('[Flags] ' if flags else '') + f'public enum {name} : ' + ('uint' if flags else 'int'))
+        out.append('    ' + ('[Flags] ' if flags else '') + f'internal enum {name} : ' + ('uint' if flags else 'int'))
         out.append('    {')
         for key, value in entries:
             out.append(f'        {key} = {value},')
@@ -191,13 +191,13 @@ def generate(headers):
         out.append('')
     for name, body in structs.items():
         out.append('    [StructLayout(LayoutKind.Sequential)]')
-        out.append(f'    public unsafe struct {name}')
+        out.append(f'    internal unsafe struct {name}')
         out.append('    {')
         for line, note in struct_fields(body, enums, structs, cb_types):
             out.append('        ' + line + (f' // {note}' if note else ''))
         out.append('    }')
         out.append('')
-    out.extend(['    public static unsafe partial class WevaNative', '    {',
+    out.extend(['    internal static unsafe partial class WevaNative', '    {',
                 '        public const string Library = "weva_core";'])
     for name, value in defines.items():
         if 'VERSION' in name:

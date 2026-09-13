@@ -11,7 +11,7 @@ using AOT;
 
 namespace Weva.Native
 {
-    public sealed unsafe class SyntheticFontBackend : IDisposable
+    internal sealed unsafe class SyntheticFontBackend : IDisposable
     {
         public const ulong SansFace = 1;
         public const ulong MonospaceFace = 2;

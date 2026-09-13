@@ -66,22 +66,21 @@ namespace Weva.Tests.RenderGoldens {
                     + " lastError=" + doc.LastError);
 
                 // Block 1 with insets, as a notched device would supply them.
-                doc.Document.SetSafeAreaInsets(44, 0, 0, 8);
+                doc.SetSafeAreaInsets(44, 0, 0, 8);
                 for (int i = 0; i < SettleFrames; i++) yield return null;
                 Capture(cam, rt, tex, "native-check-insets");
 
                 // Block 7 mid-way through a smooth scroll: the list eases, so a
                 // frame taken shortly after the call shows it between rows.
-                uint list = doc.Document.Query("#list");
-                Assert.That(list, Is.Not.EqualTo(0u), "#list exists");
-                doc.Document.SetElementScroll(list, 0, 100);
+                WevaElement list = doc.Query("#list");
+                Assert.That(list.IsValid, "#list exists");
+                list.ScrollTo(0, 100);
                 yield return null;
                 Assert.That(doc.Document.IsAnimating, Is.True, "a smooth scroll reports the document animating");
                 yield return null;
                 Capture(cam, rt, tex, "native-check-scrolling");
                 yield return new WaitForSeconds(0.6f);
-                doc.Document.TryGetElementScroll(list, out double sx, out double sy, out double mx, out double my);
-                Assert.That(sy, Is.EqualTo(100).Within(0.01), "and settles on the target");
+                Assert.That(list.Scroll.y, Is.EqualTo(100).Within(0.01), "and settles on the target");
             } finally {
                 Object.Destroy(tex);
                 Object.Destroy(rt);

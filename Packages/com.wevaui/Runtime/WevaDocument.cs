@@ -78,10 +78,71 @@ namespace Weva
         private ulong _drawnSerial;
         private int _width, _height;
 
-        public NativeDocument Document => _doc;
-        public UnityFontBackend Fonts => _fonts;
-        public NativeDocumentRenderer Renderer => _renderer;
+        internal NativeDocument Document => _doc;
+        internal UnityFontBackend Fonts => _fonts;
+        internal NativeDocumentRenderer Renderer => _renderer;
         public string LastError { get; private set; }
+
+        /// <summary>Bumped whenever the tree is replaced (Reload, enable): an element handle from an earlier generation is stale.</summary>
+        internal int Generation { get; private set; }
+
+        // ---- elements ----------------------------------------------------------
+
+        /// <summary>The first element a CSS selector matches, or WevaElement.None.</summary>
+        public WevaElement Query(string selector)
+        {
+            if (_doc == null || string.IsNullOrEmpty(selector)) return WevaElement.None;
+            return new WevaElement(this, _doc.Query(selector), Generation);
+        }
+
+        /// <summary>Every element a CSS selector matches, in document order.</summary>
+        public WevaElement[] QueryAll(string selector)
+        {
+            if (_doc == null || string.IsNullOrEmpty(selector)) return Array.Empty<WevaElement>();
+            uint[] handles = _doc.QueryAll(selector);
+            var result = new WevaElement[handles.Length];
+            for (int i = 0; i < handles.Length; i++) result[i] = new WevaElement(this, handles[i], Generation);
+            return result;
+        }
+
+        /// <summary>The element that has keyboard focus, or None.</summary>
+        public WevaElement FocusedElement => _doc != null ? new WevaElement(this, _doc.Focus, Generation) : WevaElement.None;
+
+        /// <summary>The CSS <c>cursor</c> keyword under the pointer (<c>pointer</c>, <c>text</c>, <c>not-allowed</c>, ... or <c>default</c>), for a game to map to its own cursor textures.</summary>
+        public string Cursor => _doc != null ? _doc.Cursor : "default";
+
+        /// <summary>What <c>env(safe-area-inset-*)</c> resolves to, in document pixels. FollowScreenSafeArea sets this from Screen.safeArea.</summary>
+        public void SetSafeAreaInsets(float top, float right, float bottom, float left)
+        {
+            _doc?.SetSafeAreaInsets(top, right, bottom, left);
+        }
+
+        private Func<string, byte[]> _assetReader;
+        private readonly System.Collections.Generic.Dictionary<string, Font> _fontFamilies = new System.Collections.Generic.Dictionary<string, Font>();
+
+        /// <summary>
+        /// How the document obtains an asset's bytes (images, @font-face files):
+        /// a path as written in the markup, resolved by you; null for one you do
+        /// not have. Unset, the document reads files relative to BasePath.
+        /// </summary>
+        public Func<string, byte[]> AssetReader
+        {
+            get => _assetReader;
+            set
+            {
+                _assetReader = value;
+                if (_doc != null) _doc.AssetReader = value;
+            }
+        }
+
+        /// <summary>Names a Unity font for CSS <c>font-family</c>, the way an @font-face would. Survives a reload and a disable.</summary>
+        public void RegisterFontFamily(string family, Font font)
+        {
+            if (string.IsNullOrEmpty(family)) throw new ArgumentException("a family name is required", nameof(family));
+            if (font == null) throw new ArgumentNullException(nameof(font));
+            _fontFamilies[family] = font;
+            if (_doc != null && _fonts != null) _doc.RegisterFontFamily(family, _fonts.Adopt(font));
+        }
 
         private void OnEnable()
         {
@@ -136,6 +197,8 @@ namespace Weva
             foreach (Font f in fallbacks) if (f != null) fallbackFaces.Add(_fonts.Adopt(f));
             if (fallbackFaces.Count > 0) _fonts.SetFallbacks(face, fallbackFaces.ToArray());
             _fonts.Install(_doc, face);
+            foreach (var family in _fontFamilies) _doc.RegisterFontFamily(family.Key, _fonts.Adopt(family.Value));
+            if (_assetReader != null) _doc.AssetReader = _assetReader;
             _renderer = new NativeDocumentRenderer();
             Reload();
         }
@@ -154,6 +217,7 @@ namespace Weva
             string html = documentAsset != null ? documentAsset.text : InlineHtml;
             _linkedHrefs.Clear();
             _linkedHrefs.AddRange(LinkedHrefs(html));
+            Generation++;
             _doc.LoadHtml(html);
             _doc.SetCss(StylesheetText());
             _doc.SetColorScheme(prefersDarkColorScheme);
@@ -311,8 +375,8 @@ namespace Weva
 
         // ---- events, the way the Godot addon exposes its signals ---------------
 
-        /// <summary>Every polled event, in order.</summary>
-        public event Action<NativeEvent> Event;
+        /// <summary>Every core event, in order, with its kind, target, position and text.</summary>
+        public event Action<WevaEvent> Event;
         /// <summary>A click (pointer or keyboard activation): the element's id.</summary>
         public event Action<string> ElementClicked;
         /// <summary>The value of the named on-&lt;event&gt; attribute and the element's id.</summary>
@@ -332,15 +396,67 @@ namespace Weva
         public bool InputConsumed { get; private set; }
 
         private readonly System.Collections.Generic.List<NativeEvent> _events = new System.Collections.Generic.List<NativeEvent>(16);
+        private bool _wrapTab = true;
+        private bool _gamepadTextEntry;
+        private bool _acceptsKeyboard = true;
+
+        /// <summary>Tab and Shift+Tab wrap inside the document (true), or leave it and raise TabbedOut so the host continues its own focus chain.</summary>
+        public bool WrapTab
+        {
+            get => _wrapTab;
+            set { _wrapTab = value; ApplyInputKnobs(); }
+        }
+
+        /// <summary>Tab left the document (only with WrapTab off): true when backwards.</summary>
+        public event Action<bool> TabbedOut;
+
+        /// <summary>A gamepad's accept button on a text field raises TextEntryRequested (open your on-screen keyboard) instead of pressing Enter.</summary>
+        public bool GamepadTextEntry
+        {
+            get => _gamepadTextEntry;
+            set { _gamepadTextEntry = value; ApplyInputKnobs(); }
+        }
+
+        /// <summary>The focused text control asked for text entry from a gamepad: its id. Set its Value when the player is done.</summary>
+        public event Action<string> TextEntryRequested;
+
+        /// <summary>Whether keys and text reach the document; the pointer always does. Off keeps the keyboard for the game.</summary>
+        public bool AcceptsKeyboard
+        {
+            get => _acceptsKeyboard;
+            set { _acceptsKeyboard = value; ApplyInputKnobs(); }
+        }
+
 #if WEVA_INPUTSYSTEM
         private NativeInputFeed _input;
 
-        /// <summary>
-        /// The Input System feed (created on the first playing frame with
-        /// AutoInput on): its knobs -- WrapTab and TabbedOut, GamepadTextEntry
-        /// and TextEntryRequested, AcceptsKeyboard, HasFocus, WheelLine.
-        /// </summary>
-        public NativeInputFeed Input => _input ??= (_doc != null ? new NativeInputFeed(_doc) : null);
+        /// <summary>The Input System feed, created on demand (the first playing frame with AutoInput on, or here).</summary>
+        internal NativeInputFeed Input
+        {
+            get
+            {
+                if (_input == null && _doc != null) CreateInputFeed();
+                return _input;
+            }
+        }
+
+        private void CreateInputFeed()
+        {
+            _input = new NativeInputFeed(_doc);
+            _input.TabbedOut += backwards => TabbedOut?.Invoke(backwards);
+            _input.TextEntryRequested += id => TextEntryRequested?.Invoke(id);
+            ApplyInputKnobs();
+        }
+
+        private void ApplyInputKnobs()
+        {
+            if (_input == null) return;
+            _input.WrapTab = _wrapTab;
+            _input.GamepadTextEntry = _gamepadTextEntry;
+            _input.AcceptsKeyboard = _acceptsKeyboard;
+        }
+#else
+        private void ApplyInputKnobs() { }
 #endif
 
         /// <summary>
@@ -381,7 +497,7 @@ namespace Weva
 #if WEVA_INPUTSYSTEM
                 if (AutoInput && Application.isPlaying)
                 {
-                    _input ??= new NativeInputFeed(_doc);
+                    if (_input == null) CreateInputFeed();
                     _input.Tick(_width, _height);
                     InputConsumed = _input.Consumed;
                 }
@@ -426,7 +542,11 @@ namespace Weva
             _doc.PollEvents(_events);
             foreach (NativeEvent e in _events)
             {
-                Event?.Invoke(e);
+                if (Event != null)
+                {
+                    Event.Invoke(new WevaEvent((WevaEventKind)(int)e.Kind, new WevaElement(this, e.Target, Generation),
+                        new Vector2((float)e.X, (float)e.Y), e.Buttons, e.Modifiers, e.Text, e.Handler));
+                }
                 string id = e.Target == WevaNative.WEVA_ELEMENT_NONE ? string.Empty : _doc.ElementId(e.Target);
                 if (e.Handler.Length > 0)
                 {
@@ -551,7 +671,7 @@ namespace Weva
         }
 
         /// <summary>The data-each row an element sits in (index and key), for a handler that needs its item.</summary>
-        public bool TryGetRow(uint element, out int index, out string key)
+        internal bool TryGetRow(uint element, out int index, out string key)
         {
             index = -1;
             key = string.Empty;

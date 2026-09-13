@@ -24,7 +24,7 @@ using UnityEngine.InputSystem.Controls;
 
 namespace Weva.Native
 {
-    public sealed class NativeInputFeed
+    internal sealed class NativeInputFeed
     {
         private struct EngineKey
         {

@@ -191,22 +191,22 @@ namespace Weva.Tests.EditorTests.Native
 
         public void use_item(string id)
         {
-            uint element = _ui.Document.Query("#" + id);
-            if (_ui.TryGetRow(element, out _, out string key)) State.UseItem(key);
+            string key = _ui.Query("#" + id).RowKey;
+            if (key.Length > 0) State.UseItem(key);
         }
 
         public void open_settings(string id)
         {
             SettingsOpen = true;
-            _ui.Document.ShowDialog(_ui.Document.Query("#settings"), true);
-            _ui.Document.SetFocus("#player-name");
+            _ui.Query("#settings").ShowDialog(modal: true);
+            _ui.Query("#player-name").Focus();
         }
 
         public void close_settings(string id)
         {
             SettingsOpen = false;
-            _ui.Document.CloseDialog(_ui.Document.Query("#settings"));
-            _ui.Document.SetFocus("#settings-button");
+            _ui.Query("#settings").CloseDialog();
+            _ui.Query("#settings-button").Focus();
         }
 
         private void OnDataChanged(string path, string text)

@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Weva.Native
 {
-    public sealed class NativeInspectorModel
+    internal sealed class NativeInspectorModel
     {
         public sealed class Node
         {

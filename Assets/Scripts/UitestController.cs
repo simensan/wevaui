@@ -51,24 +51,14 @@ public sealed class UitestController : MonoBehaviour, IBindingVersion {
         Debug.Log($"Weva: clicked. ClickCount={ClickCount}");
     }
 
-    public void OpenDialog() {
-        if (doc == null || doc.Document == null) return;
-        uint d = doc.Document.Query("#info-dialog");
-        if (d != Weva.Native.WevaNative.WEVA_ELEMENT_NONE) doc.Document.ShowDialog(d, true);
-    }
+    public void OpenDialog() => doc?.Query("#info-dialog").ShowDialog(modal: true);
 
-    public void CloseDialog() {
-        if (doc == null || doc.Document == null) return;
-        uint d = doc.Document.Query("#info-dialog");
-        if (d != Weva.Native.WevaNative.WEVA_ELEMENT_NONE) doc.Document.CloseDialog(d);
-    }
+    public void CloseDialog() => doc?.Query("#info-dialog").CloseDialog();
 
     // "Jump to bottom" in the smooth-scroll card: the container has
     // `scroll-behavior: smooth`, so the core eases there.
     public void ScrollBottom() {
-        if (doc == null || doc.Document == null) return;
-        foreach (uint area in doc.Document.QueryAll(".smooth-area")) {
-            if (doc.Document.TryGetElementScroll(area, out double x, out _, out _, out double maxY)) doc.Document.SetElementScroll(area, x, maxY);
-        }
+        if (doc == null) return;
+        foreach (WevaElement area in doc.QueryAll(".smooth-area")) area.ScrollTo(area.Scroll.x, area.MaxScroll.y);
     }
 }

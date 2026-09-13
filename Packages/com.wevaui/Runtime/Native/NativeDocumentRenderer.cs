@@ -21,7 +21,7 @@ using Weva.Rendering;
 
 namespace Weva.Native
 {
-    public sealed unsafe class NativeDocumentRenderer : IDisposable
+    internal sealed unsafe class NativeDocumentRenderer : IDisposable
     {
         private static readonly int IdViewport = Shader.PropertyToID("_WevaNativeViewport");
         private static readonly int IdFlip = Shader.PropertyToID("_WevaNativeFlip");

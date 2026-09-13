@@ -39,7 +39,7 @@ using UnityEngine.TextCore.LowLevel;
 
 namespace Weva.Native
 {
-    public sealed unsafe class UnityFontBackend : IDisposable
+    internal sealed unsafe class UnityFontBackend : IDisposable
     {
         // A glyph id names the face slot it came from and the glyph index
         // within that face: slot 0 is the primary, later slots its fallbacks.

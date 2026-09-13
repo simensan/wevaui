@@ -201,23 +201,23 @@ namespace GameMenu.UI.WevaMenu {
         }
 
         public void OnEditName() {
-            uint input = NameInput();
-            if (input != Weva.Native.WevaNative.WEVA_ELEMENT_NONE) doc.Document.SetElementValue(input, PlayerName ?? "");
+            WevaElement input = NameInput();
+            if (input.IsValid) input.Value = PlayerName ?? "";
             ShowNameModal = true;
             BumpBindings();
         }
 
         public void OnConfirmName() {
-            uint input = NameInput();
-            if (input != Weva.Native.WevaNative.WEVA_ELEMENT_NONE) {
-                var v = doc.Document.ElementValue(input);
+            WevaElement input = NameInput();
+            if (input.IsValid) {
+                var v = input.Value;
                 if (!string.IsNullOrWhiteSpace(v)) PlayerName = v.Trim();
             }
             ShowNameModal = false;
             BumpBindings();
         }
 
-        uint NameInput() => doc != null && doc.Document != null ? doc.Document.Query("#name-input") : Weva.Native.WevaNative.WEVA_ELEMENT_NONE;
+        WevaElement NameInput() => doc != null ? doc.Query("#name-input") : WevaElement.None;
 
         public void OnCancelName() { ShowNameModal = false; BumpBindings(); }
 
@@ -231,9 +231,8 @@ namespace GameMenu.UI.WevaMenu {
 
         bool TryReadRow(string id, out int index) {
             index = -1;
-            if (doc == null || doc.Document == null || string.IsNullOrEmpty(id)) return false;
-            uint element = doc.Document.Query("#" + id);
-            return element != Weva.Native.WevaNative.WEVA_ELEMENT_NONE && doc.TryGetRow(element, out index, out _);
+            if (doc == null || string.IsNullOrEmpty(id)) return false;
+            return doc.Query("#" + id).TryGetRow(out index, out _);
         }
 
         int CountUnlockedMasteryNodes() {
