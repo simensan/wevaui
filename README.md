@@ -16,7 +16,11 @@ the root build and gate it; [`docs/`](./docs/) holds its architecture notes
 and verification receipts.
 
 The C# engine in `Packages/com.wevaui/Runtime/` is still what you get by
-default, and remains the reference the differential oracle compares against.
+default in 0.1.x, but as of 2026-09-13 it is **frozen**: the C++ core is the
+single source of truth, every cross-check is against Chrome, and 1.0 replaces
+it with the native plugin. Going forward the C# in the package is the Unity
+host layer — the counterpart of the Godot addon's GDScript layer — not an
+engine.
 
 ## Install
 

@@ -295,10 +295,14 @@ events, reactivity propagation, and golden-image rasterization.
 
 ## Status
 
-0.1.1 (preview). Headless layers (parser → cascade → layout → paint) are
-production-quality; the URP renderer feature, IMGUI fallback, TextCore
-bootstrap, hot reload watcher, and DevTools overlay are all wired up but
-need real-Unity validation gating before v1.0.
+0.1.1 (preview). The C# engine in `Runtime/` (parser → cascade → layout →
+paint) is what this version ships and is **frozen as of 2026-09-13**: the C++
+core in the repository's `libweva/` is now the single source of truth, checked
+against Chrome, and 1.0 replaces the C# engine with the native plugin
+(`Runtime/Native/`, Windows x64 first). 1.0 is an API break — `WevaDocument`,
+`[UIBind]` and the event surface are redesigned around the core. Until then the
+URP renderer feature, IMGUI fallback, TextCore bootstrap, hot reload watcher and
+DevTools overlay continue to work on the C# engine as before.
 
 ## License
 

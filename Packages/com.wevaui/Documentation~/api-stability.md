@@ -60,6 +60,13 @@ mentions it, because nothing is meant to call it.
 
 Treat it as unsupported. It may become `internal`.
 
+**Direction, decided 2026-09-13.** The C# engine is frozen and the C++ core
+is the single source of truth. 1.0 is a breaking release: the supported
+surface above is redesigned around the native document, the engine
+namespaces listed as unsupported are deleted, and Chrome — not the C# engine —
+is what conformance is measured against. Nothing in the unsupported list is
+worth building on now.
+
 ## Why not simply mark it all `internal`
 
 Because the cost is not zero and the benefit of the policy is nearly all of

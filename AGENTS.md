@@ -212,6 +212,17 @@ touching anything cache-adjacent will save you hours.
 
 ## 4. Things to NOT do
 
+* **Do not add features, ports or fixes to the C# engine** (`Runtime/Css`,
+  `Layout`, `Paint`, `Text`, `Parsing`, `Forms`, `Compiled`, `Animation`,
+  `ViewTransitions`, `Components`, `Reactive`, `HotReload`, `Testing`). It is
+  **frozen as of 2026-09-13** and scheduled for deletion: the C++ core in
+  `libweva/` is the single source of truth, and any cross-check is against
+  Chrome, never against the C# engine. A missing CSS feature goes into
+  `libweva/` with a core test and reaches Unity through the C ABI. The only
+  C# that is the product going forward is the Unity host layer: `Runtime/Native`,
+  the native half of `Rendering`, `Binding`, `Events`, `Document`, `DevTools`,
+  `Designer` and `Editor`. Plan: `../unityui-internal-docs/WEVA_SHARED_CORE_PLAN.md`
+  Phase 4.
 * Do not add `display: -unity-foo`, `-unity-text-align`, or any
   Unity-prefixed CSS property. We're modeling the web subset, not extending
   it.

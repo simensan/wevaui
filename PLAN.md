@@ -4,6 +4,13 @@ A new UI layer for Unity that is *more* faithful to HTML and CSS than UI Toolkit
 
 This is a planning document. Nothing is built yet.
 
+> **Locked 2026-09-13.** The engine described below was built in C# and then
+> ported to a C++ core (`libweva/`). The C++ core is now the single source of
+> truth; the C# engine is frozen and will be deleted once the native Unity
+> host reaches parity. Every conformance check is against Chrome. The C# that
+> remains is the Unity host layer. Plan and gates:
+> `../unityui-internal-docs/WEVA_SHARED_CORE_PLAN.md`, Phase 4.
+
 ---
 
 ## 1. Goals and non-goals
