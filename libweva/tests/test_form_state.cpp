@@ -4,6 +4,7 @@
 #include "weva/temporal_value.h"
 #include "weva/html.h"
 #include "weva_c.h"
+#include <algorithm>
 #include <cstring>
 #include <string>
 #include <vector>

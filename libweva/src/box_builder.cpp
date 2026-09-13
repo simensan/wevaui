@@ -5,6 +5,7 @@
 #include "weva/form_state.h"
 #include "weva/inline_layout.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <optional>

@@ -132,17 +132,17 @@ def main():
     def run(label, command, run_env=env, timeout_seconds=180):
         command = list(map(str, command))
         command[1:1] = ['--audio-driver', 'Dummy', '--log-file', str(out / (label + '.engine.log'))]
-        (out / (label + '.command.json')).write_text(json.dumps(command, indent=2))
+        (out / (label + '.command.json')).write_text(json.dumps(command, indent=2), encoding='utf-8')
         try:
             result = subprocess.run(command, env=run_env, cwd=out, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                     encoding='utf-8', errors='replace', timeout=timeout_seconds)
         except subprocess.TimeoutExpired as error:
             partial = error.stdout or b''
-            (out / (label + '.log')).write_text(partial.decode('utf-8', errors='replace') if isinstance(partial, bytes) else partial)
-            (out / (label + '.exit.json')).write_text(json.dumps({'timed_out': True, 'timeout_seconds': timeout_seconds}))
+            (out / (label + '.log')).write_text(partial.decode('utf-8', errors='replace') if isinstance(partial, bytes) else partial, encoding='utf-8')
+            (out / (label + '.exit.json')).write_text(json.dumps({'timed_out': True, 'timeout_seconds': timeout_seconds}), encoding='utf-8')
             raise
         (out / (label + '.log')).write_text(result.stdout, encoding='utf-8')
-        (out / (label + '.exit.json')).write_text(json.dumps({'timed_out': False, 'returncode': result.returncode}))
+        (out / (label + '.exit.json')).write_text(json.dumps({'timed_out': False, 'returncode': result.returncode}), encoding='utf-8')
         if result.returncode or 'ERROR:' in result.stdout or 'FAIL ' in result.stdout:
             raise RuntimeError(label + ' failed; see ' + str(out / (label + '.log')))
         print(label + ': process completed; timing budget evaluated after all runs', flush=True)
@@ -204,7 +204,7 @@ def main():
                 record_failed_run(report, out, renderer, index + 1, error)
                 raise
             report['runs'].append({'renderer': renderer, 'index': index + 1, 'result': result})
-            (out / 'summary.json').write_text(json.dumps(report, indent=2) + '\n')
+            (out / 'summary.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     metrics = ['api_cpu', 'changed_api_cpu', 'whole_frame', 'changed_whole_frame', 'binding_cpu', 'core_cpu', 'changed_core_cpu', 'core_update_count', 'viewport_render_cpu', 'viewport_render_gpu']
     report['medians'] = {}
     for renderer in args.renderers:
@@ -224,7 +224,7 @@ def main():
         if report['pixel_checks']:
             report['direct_pixels_match_binding'] = all(item['identical'] for item in report['pixel_checks'])
             if not report['direct_pixels_match_binding']:
-                (out / 'summary.json').write_text(json.dumps(report, indent=2) + '\n')
+                (out / 'summary.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
                 raise RuntimeError('Direct and bound UI screenshots differ')
     report['functional_passed'] = True
     if budget is not None:
@@ -233,7 +233,7 @@ def main():
         report['timing_budget']['definition'] = budget
         report['timing_passed'] = report['timing_budget']['passed']
     report['passed'] = report['functional_passed'] and report['timing_passed'] is not False
-    (out / 'summary.json').write_text(json.dumps(report, indent=2) + '\n')
+    (out / 'summary.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print('Functional checks: PASS; timing budget: ' + ('NOT CHECKED' if budget is None else 'PASS' if report['timing_passed'] else 'FAIL'), flush=True)
     print(out / 'summary.json', flush=True)
     if report['timing_passed'] is False:

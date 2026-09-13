@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <system_error>
 #include <iterator>
 
 namespace {
@@ -997,6 +998,12 @@ void test_abi_incremental_grid_animation() {
 void test_abi_incremental_corpus() {
     const char* corpus = std::getenv("WEVA_INCREMENTAL_CORPUS");
     if (!corpus) return;
+    // The corpus is generated (Tools/oracle/harvest.py), not tracked, so the
+    // path can be set and still not exist -- which is exactly what CI does.
+    // directory_iterator throws, and this build has exceptions off, so an
+    // absent corpus has to be checked rather than caught.
+    std::error_code corpus_ec;
+    if (!std::filesystem::is_directory(corpus, corpus_ec)) return;
     const auto read = [](const std::filesystem::path& p) {
         std::ifstream f(p, std::ios::binary);
         return std::string(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
