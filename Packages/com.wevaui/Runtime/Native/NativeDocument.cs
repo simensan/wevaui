@@ -518,6 +518,39 @@ namespace Weva.Native
             WevaNative.weva_document_clear_pointer(Handle);
         }
 
+        /// <summary>
+        /// Lays out whatever changed since the last update without publishing
+        /// paint, so a hit test that follows sees this frame's geometry. The
+        /// Godot host does this before every input event; the feed does it
+        /// once per tick.
+        /// </summary>
+        public void UpdateGeometry()
+        {
+            Check(WevaNative.weva_document_update_geometry(Handle), "weva_document_update_geometry");
+        }
+
+        /// <summary>
+        /// Key auto-repeat owned by the document (ABI minor 39): a held
+        /// navigation or editing key is re-sent as the input clock advances,
+        /// first after <paramref name="delaySeconds"/> and then every
+        /// <paramref name="intervalSeconds"/>. Delay 0 turns it off, which is
+        /// the default; a host whose input reports edges only turns it on.
+        /// </summary>
+        public void SetKeyRepeat(double delaySeconds, double intervalSeconds)
+        {
+            WevaNative.weva_document_set_key_repeat(Handle, delaySeconds, intervalSeconds);
+        }
+
+        /// <summary>
+        /// Double-click detection owned by the document (ABI minor 39): two
+        /// primary presses within the window and distance select the word
+        /// under them. Window 0 turns it off, which is the default.
+        /// </summary>
+        public void SetDoubleClick(double windowSeconds, double distancePx)
+        {
+            WevaNative.weva_document_set_double_click(Handle, windowSeconds, distancePx);
+        }
+
         /// <summary>A key edge. Returns true when the document consumed it (a host then keeps it from gameplay).</summary>
         public bool Key(weva_key key, bool down, uint modifiers = 0)
         {

@@ -143,8 +143,18 @@ or the comparison measures two fonts, not two hosts.
 makes (pointer state, key edges, text input, paste, wheel, focus stepping,
 IME composition) and drains the core's event queue into `NativeEvent`
 records. `NativeInputFeed` reads the Input System each frame and applies the
-same rules as the Godot host (a Space the button took is not also text; Ctrl
-shortcuts go to selection, clipboard and history). `NativeBindings` serves
+rules the Godot host's `_gui_input` applies, each pinned by
+`NativeInputFeedTests` through the Input System's test fixture: the pointer's
+y flipped by the viewport height; the wheel as 40px per notch; a Space the
+button took not also arriving as text; the command chord being Ctrl, or Cmd
+on macOS, for selection, clipboard and history; the pointer cleared when it
+leaves the surface or the application loses focus; keys gated by
+`AcceptsKeyboard` and by application focus; a touch tap as a click and a
+touch drag as a pan; geometry flushed before each frame's hit tests. What
+the Input System cannot supply because it reports edges only -- key
+auto-repeat and double-click detection -- the feed turns on in the core
+(ABI minor 39), where it is tested once for both hosts. Still absent on this
+host: gamepad navigation and OS IME composition. `NativeBindings` serves
 `{{ path }}`, `data-class`, `data-each` and `data-model` from a C# dictionary
 graph (or a resolver) and writes control edits back keeping the model's
 types; `WevaNativeDocument.Bind(model, controller)` dispatches `on-<event>`

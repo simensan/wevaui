@@ -183,7 +183,7 @@ namespace Weva.Native
                 if (AutoInput && Application.isPlaying)
                 {
                     _input ??= new NativeInputFeed(_doc);
-                    _input.Tick(_height);
+                    _input.Tick(_width, _height);
                     InputConsumed = _input.Consumed;
                 }
 #endif
