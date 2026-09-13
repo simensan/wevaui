@@ -339,7 +339,7 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 38;
+        public const int WEVA_ABI_VERSION_MINOR = 39;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
@@ -463,6 +463,10 @@ namespace Weva.Native
         public static extern uint weva_document_focus(System.IntPtr doc);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern void weva_document_set_tooltip_delay(System.IntPtr doc, double seconds);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void weva_document_set_key_repeat(System.IntPtr doc, double delay_seconds, double interval_seconds);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void weva_document_set_double_click(System.IntPtr doc, double window_seconds, double distance_px);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_open_select(System.IntPtr doc, uint element);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

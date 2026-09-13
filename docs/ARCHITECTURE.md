@@ -966,3 +966,16 @@ entries separated by `|`, and lists a rule with only `local()` sources (its
 source field empty). Both hosts try the entries first to last, a `local()`
 name being an installed font (Godot `OS.get_system_font_path`, Unity
 `Font.GetOSInstalledFontNames` + `CreateDynamicFontFromOSFont`).
+
+ABI minor 38 changes `weva_document_missing_assets` to return the byte length of
+its newline-joined output, like every other sizing function, instead of the
+number of assets (2026-09-13); both shipped callers had guessed a buffer size.
+
+ABI minor 39 adds `weva_document_set_key_repeat(doc, delay, interval)` and
+`weva_document_set_double_click(doc, window, distance)`: key auto-repeat and
+double-click-to-select-word owned by the document, on its input clock, both
+off by default. A host whose platform supplies them (Godot: key echo and
+`is_double_click`) leaves them off; one that only sees edges (Unity's Input
+System) turns them on with the browser's numbers. Tested in
+`test_c_abi_input_repeat.cpp`; `weva_document_needs_input_tick` reports an armed
+repeat (2026-09-13).

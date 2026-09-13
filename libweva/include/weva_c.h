@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 38
+#define WEVA_ABI_VERSION_MINOR 39
 
 uint32_t weva_abi_version(void);
 
@@ -834,6 +834,29 @@ weva_element_t weva_document_focus(weva_document_t doc);
  * a game with its own tooltip presentation wants the `title` attribute as
  * data, not as a <div> the engine draws. Zero shows one on the next update. */
 void weva_document_set_tooltip_delay(weva_document_t doc, double seconds);
+
+/* Key auto-repeat, owned by the document so both hosts behave the same and
+ * the timing is tested once, in the core suite. Off by default (delay 0): a
+ * host whose platform already delivers repeated key-down events (Godot's
+ * echo) leaves it off; one that only reports edges (Unity's Input System)
+ * turns it on with the browser's numbers, 0.5 s then every 0.03 s. A held
+ * navigation or editing key -- arrows, Home, End, Page Up/Down, Backspace,
+ * Delete -- is re-sent as further key-down calls as the input clock
+ * (weva_document_update_with_input_time) advances; its key-up, any other
+ * key-down, or a new focus stops it. Space and Enter never repeat: a button
+ * activates on the edge. weva_document_needs_input_tick reports 1 while a
+ * repeat is armed. Available since ABI minor 39. */
+void weva_document_set_key_repeat(weva_document_t doc, double delay_seconds,
+                                  double interval_seconds);
+/* Double-click selects the word under the pointer in a text field, what
+ * weva_document_select_word_at does when a host detects the double click
+ * itself. Off by default (window 0): a host with a platform notion of a
+ * double click (Godot) keeps its own; one without (Unity) turns it on with
+ * the browser's numbers, 0.5 s within 4 px. Two primary presses inside the
+ * window and the distance count, measured on the same input clock as
+ * auto-repeat. Available since ABI minor 39. */
+void weva_document_set_double_click(weva_document_t doc, double window_seconds,
+                                    double distance_px);
 
 /* ---- Dropdowns --------------------------------------------------------
  *

@@ -537,6 +537,8 @@ void test_abi_text_field_editing();
 void test_abi_set_value_round_trips();
 void test_abi_tab_navigation();
 void test_abi_embedded_focus_and_text();
+void test_abi_key_repeat();
+void test_abi_double_click();
 void test_abi_keyboard_activation();
 void test_abi_ime_composition();
 void test_abi_ime_external_mutation();
@@ -1116,6 +1118,8 @@ int main() {
     test_abi_set_value_round_trips();
     test_abi_tab_navigation();
     test_abi_embedded_focus_and_text();
+    test_abi_key_repeat();
+    test_abi_double_click();
     test_abi_keyboard_activation();
     test_abi_ime_composition();
     test_abi_ime_external_mutation();

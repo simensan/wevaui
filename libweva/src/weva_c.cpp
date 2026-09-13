@@ -2072,6 +2072,19 @@ struct weva_document {
         double y = 0;
     } tooltip;
     double tooltip_delay = 0.6;
+    // Input-clock accumulator, in seconds of weva_document_update_with_input_time's
+    // input_seconds: the clock timed gestures run on, and what a test controls.
+    double input_clock = 0;
+    // Key auto-repeat (ABI minor 39). delay 0 = off.
+    double key_repeat_delay = 0, key_repeat_interval = 0;
+    int repeat_key = -1;
+    uint32_t repeat_modifiers = 0;
+    double repeat_countdown = 0;
+    bool in_key_repeat = false;
+    // Double click (ABI minor 39). window 0 = off.
+    double double_click_window = 0, double_click_distance = 0;
+    double last_press_clock = -1e300, last_press_x = 0, last_press_y = 0;
+    bool double_click_pending = false;
     // What was held at the last set_pointer, so the SECONDARY button's press
     // edge can be told from it being kept down while the pointer moves.
     uint32_t buttons_last = 0;
@@ -4063,8 +4076,44 @@ int weva_document_is_animating(weva_document_t doc) {
     if (doc->snap_settle.armed || doc->snap_animation.active || !doc->smooth_scrolls.empty()) return 1;
     return doc->styles.animating() ? 1 : 0;
 }
+namespace {
+// Re-sends the held key as the input clock passes the delay and then each
+// interval, catching up if a frame was long. The focus moving disarms it, so a
+// held arrow that leaves a field does not keep firing into the next one.
+void advance_key_repeat(weva_document* doc, double input_seconds) {
+    if (doc->repeat_key < 0 || doc->key_repeat_delay <= 0 || input_seconds <= 0) return;
+    const Element* focused_at_arm = doc->styles.state.focused;
+    const double interval = doc->key_repeat_interval > 0 ? doc->key_repeat_interval : doc->key_repeat_delay;
+    doc->repeat_countdown -= input_seconds;
+    int guard = 0;
+    while (doc->repeat_countdown <= 0 && doc->repeat_key >= 0 && guard++ < 1000) {
+        doc->in_key_repeat = true;
+        weva_document_key(doc, doc->repeat_key, doc->repeat_modifiers, 1);
+        doc->in_key_repeat = false;
+        if (doc->styles.state.focused != focused_at_arm) { doc->repeat_key = -1; break; }
+        doc->repeat_countdown += interval;
+    }
+}
+} // namespace
+
+void weva_document_set_key_repeat(weva_document_t doc, double delay_seconds, double interval_seconds) {
+    if (!doc) return;
+    doc->key_repeat_delay = delay_seconds > 0 ? delay_seconds : 0;
+    doc->key_repeat_interval = interval_seconds > 0 ? interval_seconds : 0;
+    if (doc->key_repeat_delay <= 0) doc->repeat_key = -1;
+}
+
+void weva_document_set_double_click(weva_document_t doc, double window_seconds, double distance_px) {
+    if (!doc) return;
+    doc->double_click_window = window_seconds > 0 ? window_seconds : 0;
+    doc->double_click_distance = distance_px > 0 ? distance_px : 0;
+    doc->last_press_clock = -1e300;
+}
+
 int weva_document_needs_input_tick(weva_document_t doc) {
-    return doc && ((doc->list_drag && doc->list_scroll_armed) || (doc->text_drag && doc->text_scroll_armed)) ? 1 : 0;
+    if (!doc) return 0;
+    if (doc->repeat_key >= 0 && doc->key_repeat_delay > 0) return 1;
+    return ((doc->list_drag && doc->list_scroll_armed) || (doc->text_drag && doc->text_scroll_armed)) ? 1 : 0;
 }
 
 namespace {
@@ -4464,6 +4513,8 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     // reveal finish before the held gesture advances the viewport.
     const bool defer_input_scroll = doc->pending >= Invalidation::Layout ||
         doc->styles.pending >= Invalidation::Layout || doc->list_follow || doc->caret_follow;
+    if (input_seconds > 0) doc->input_clock += input_seconds;
+    advance_key_repeat(doc, input_seconds);
     BoxId input_scroll_change = defer_input_scroll ? kNoBox : advance_input_autoscroll(doc,input_seconds);
     if (input_scroll_change != kNoBox) caret = caret_for(doc->styles.state);
     Invalidation pending = doc->styles.pending;
@@ -5524,6 +5575,21 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
         doc->popover_press_active = false;
         doc->popover_press_target = nullptr;
         weva_document_commit_composition(doc, nullptr);
+        // Double click (ABI minor 39): two primary presses inside the window and
+        // distance, on the input clock. Applied at the end of this call, after
+        // the press has placed the caret, so the selection survives it.
+        if (doc->double_click_window > 0) {
+            const bool near = std::abs(x - doc->last_press_x) <= doc->double_click_distance &&
+                std::abs(y - doc->last_press_y) <= doc->double_click_distance;
+            if (near && doc->input_clock - doc->last_press_clock <= doc->double_click_window) {
+                doc->double_click_pending = true;
+                doc->last_press_clock = -1e300;
+            } else {
+                doc->last_press_clock = doc->input_clock;
+                doc->last_press_x = x;
+                doc->last_press_y = y;
+            }
+        }
     }
 
     if (doc->open_select && input_blocked(doc, doc->open_select)) {
@@ -5792,6 +5858,10 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
     st.active_chain = active;
     note_state_change(doc, old_hover, hover, &doc->styles.engine.hover_reach());
     note_state_change(doc, old_active, active, &doc->styles.engine.active_reach());
+    if (doc->double_click_pending) {
+        doc->double_click_pending = false;
+        weva_document_select_word_at(doc, x, y);
+    }
 }
 
 void weva_document_clear_pointer(weva_document_t doc) {
@@ -6077,6 +6147,25 @@ int weva_document_key(weva_document_t doc, int key, uint32_t modifiers, int down
         else if (down && key == WEVA_KEY_TAB) weva_document_commit_composition(doc, nullptr);
         else return 1;
         if (key != WEVA_KEY_TAB) return 1;
+    }
+    // Auto-repeat (ABI minor 39): a fresh key-down arms the held key, its
+    // key-up or any other key-down disarms. Re-sent downs come through
+    // advance_key_repeat with in_key_repeat set and leave the arm alone.
+    if (!doc->in_key_repeat) {
+        if (down) {
+            const bool repeatable = key == WEVA_KEY_LEFT || key == WEVA_KEY_RIGHT || key == WEVA_KEY_UP ||
+                key == WEVA_KEY_DOWN || key == WEVA_KEY_HOME || key == WEVA_KEY_END || key == WEVA_KEY_PAGE_UP ||
+                key == WEVA_KEY_PAGE_DOWN || key == WEVA_KEY_BACKSPACE || key == WEVA_KEY_DELETE;
+            if (repeatable && doc->key_repeat_delay > 0) {
+                doc->repeat_key = key;
+                doc->repeat_modifiers = modifiers;
+                doc->repeat_countdown = doc->key_repeat_delay;
+            } else {
+                doc->repeat_key = -1;
+            }
+        } else if (key == doc->repeat_key) {
+            doc->repeat_key = -1;
+        }
     }
     weva_event e{};
     e.kind = down ? WEVA_EVENT_KEY_DOWN : WEVA_EVENT_KEY_UP;
