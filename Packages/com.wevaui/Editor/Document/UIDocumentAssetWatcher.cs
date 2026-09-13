@@ -57,7 +57,8 @@ namespace Weva.EditorTools.Documents {
                 var doc = docs[i];
                 if (doc == null) continue;
                 if (!ReferencesAny(doc.DocumentAsset, doc.StylesheetAssets, importedAssets)
-                    && !ReferencesAny(doc.DocumentAsset, doc.StylesheetAssets, movedAssets)) continue;
+                    && !ReferencesAny(doc.DocumentAsset, doc.StylesheetAssets, movedAssets)
+                    && !LinksAny(doc, importedAssets) && !LinksAny(doc, movedAssets)) continue;
                 if (Application.isPlaying) {
                     SafeReload(doc);
                 } else {
@@ -65,6 +66,20 @@ namespace Weva.EditorTools.Documents {
                     EditorApplication.delayCall += () => SafeReload(captured);
                 }
             }
+        }
+
+        // A <link rel="stylesheet"> resolves next to the document asset.
+        static bool LinksAny(WevaDocument doc, string[] paths) {
+            if (paths == null || paths.Length == 0) return false;
+            var hrefs = doc.LinkedStylesheetHrefs;
+            if (hrefs == null || hrefs.Count == 0) return false;
+            string dir = doc.DocumentAssetDirectory();
+            if (dir == null) return false;
+            for (int i = 0; i < hrefs.Count; i++) {
+                string p = System.IO.Path.Combine(dir, hrefs[i]).Replace('\\', '/');
+                if (PathArrayContains(paths, p)) return true;
+            }
+            return false;
         }
 
         static void SafeReload(WevaDocument doc) {

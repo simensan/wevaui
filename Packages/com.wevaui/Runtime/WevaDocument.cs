@@ -144,8 +144,17 @@ namespace Weva
         public void Reload()
         {
             if (_doc == null) return;
-            if (!string.IsNullOrEmpty(BasePath)) _doc.SetBasePath(BasePath);
-            _doc.LoadHtml(documentAsset != null ? documentAsset.text : InlineHtml);
+            string basePath = BasePath;
+#if UNITY_EDITOR
+            // url(), @import and @font-face resolve next to the document
+            // asset unless the author points elsewhere.
+            if (string.IsNullOrEmpty(basePath)) basePath = DocumentAssetDirectory();
+#endif
+            if (!string.IsNullOrEmpty(basePath)) _doc.SetBasePath(basePath);
+            string html = documentAsset != null ? documentAsset.text : InlineHtml;
+            _linkedHrefs.Clear();
+            _linkedHrefs.AddRange(LinkedHrefs(html));
+            _doc.LoadHtml(html);
             _doc.SetCss(StylesheetText());
             _doc.SetColorScheme(prefersDarkColorScheme);
             _fonts.SyncCssFontFaces(_doc);
@@ -155,19 +164,134 @@ namespace Weva
             _doc.Update(0);
         }
 
-        // The assets in order, one sheet after another the way <link>s
-        // cascade; the inline text only when no asset is set.
+        // The page's <link rel="stylesheet"> sheets in document order, then
+        // the inspector's assets (a later sheet wins, as in a browser); the
+        // inline text only when the page links nothing and no asset is set.
         private string StylesheetText()
         {
-            if (stylesheetAssets == null || stylesheetAssets.Length == 0) return InlineCss;
             var sb = new System.Text.StringBuilder();
-            foreach (TextAsset sheet in stylesheetAssets)
+            foreach (string href in _linkedHrefs)
             {
-                if (sheet == null) continue;
-                sb.Append(sheet.text).Append('\n');
+                string css = ResolveLinkedStylesheet(href);
+                if (css == null)
+                {
+                    Debug.LogWarning($"WevaDocument on '{name}': linked stylesheet '{href}' not found (next to the document asset, baked, or under BasePath).", this);
+                    continue;
+                }
+                sb.Append(css).Append('\n');
             }
+            if (stylesheetAssets != null)
+            {
+                foreach (TextAsset sheet in stylesheetAssets)
+                {
+                    if (sheet == null) continue;
+                    sb.Append(sheet.text).Append('\n');
+                }
+            }
+            if (sb.Length == 0) return InlineCss;
             return sb.ToString();
         }
+
+        // ---- <link rel="stylesheet"> -------------------------------------------
+        //
+        // The core reads <style> elements and @import; a <link> is the host's
+        // to fetch. In the editor the sheet is the TextAsset next to the
+        // document asset (the live file, so an edit is never shadowed); a
+        // player has no files, so the scene-processing hook bakes every
+        // linked sheet's text into the component (WevaDocumentLinkBaker);
+        // the core's asset reader under BasePath is the last resort, for a
+        // desktop build shipping its UI as files.
+
+        [SerializeField, HideInInspector] string[] bakedLinkedStylesheetHrefs;
+        [SerializeField, HideInInspector] string[] bakedLinkedStylesheetCss;
+        private readonly System.Collections.Generic.List<string> _linkedHrefs = new System.Collections.Generic.List<string>();
+
+        private static readonly System.Text.RegularExpressions.Regex s_linkTag = new System.Text.RegularExpressions.Regex(
+            @"<link\b[^>]*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex s_attribute = new System.Text.RegularExpressions.Regex(
+            @"\b(rel|href)\s*=\s*(?:""([^""]*)""|'([^']*)'|([^\s>]+))", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        /// <summary>The href of every <c>&lt;link rel="stylesheet"&gt;</c> in the markup, in document order.</summary>
+        public static System.Collections.Generic.List<string> LinkedHrefs(string html)
+        {
+            var hrefs = new System.Collections.Generic.List<string>();
+            if (string.IsNullOrEmpty(html)) return hrefs;
+            foreach (System.Text.RegularExpressions.Match tag in s_linkTag.Matches(html))
+            {
+                string rel = null, href = null;
+                foreach (System.Text.RegularExpressions.Match attr in s_attribute.Matches(tag.Value))
+                {
+                    string value = attr.Groups[2].Success ? attr.Groups[2].Value : attr.Groups[3].Success ? attr.Groups[3].Value : attr.Groups[4].Value;
+                    if (attr.Groups[1].Value.Equals("rel", StringComparison.OrdinalIgnoreCase)) rel = value;
+                    else href = value;
+                }
+                if (rel == null || href == null || href.Length == 0) continue;
+                foreach (string token in rel.Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (token.Equals("stylesheet", StringComparison.OrdinalIgnoreCase)) { hrefs.Add(href); break; }
+                }
+            }
+            return hrefs;
+        }
+
+        /// <summary>The hrefs the current markup links, after a Reload.</summary>
+        public System.Collections.Generic.IReadOnlyList<string> LinkedStylesheetHrefs => _linkedHrefs;
+
+        /// <summary>
+        /// Stores the text of every linked stylesheet on the component for a
+        /// player, which has no files to read; <paramref name="read"/> returns
+        /// a sheet's text for an href, or null. Returns how many were baked.
+        /// The editor's scene-processing hook calls this at build time.
+        /// </summary>
+        public int BakeLinkedStylesheets(Func<string, string> read)
+        {
+            if (read == null) throw new ArgumentNullException(nameof(read));
+            var hrefs = LinkedHrefs(documentAsset != null ? documentAsset.text : InlineHtml);
+            var keptHrefs = new System.Collections.Generic.List<string>();
+            var keptCss = new System.Collections.Generic.List<string>();
+            foreach (string href in hrefs)
+            {
+                string css = read(href);
+                if (css == null) continue;
+                keptHrefs.Add(href);
+                keptCss.Add(css);
+            }
+            bakedLinkedStylesheetHrefs = keptHrefs.ToArray();
+            bakedLinkedStylesheetCss = keptCss.ToArray();
+            return keptHrefs.Count;
+        }
+
+        private string ResolveLinkedStylesheet(string href)
+        {
+#if UNITY_EDITOR
+            string path = DocumentAssetDirectory();
+            if (path != null)
+            {
+                var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(System.IO.Path.Combine(path, href).Replace('\\', '/'));
+                if (asset != null) return asset.text;
+            }
+#endif
+            if (bakedLinkedStylesheetHrefs != null && bakedLinkedStylesheetCss != null)
+            {
+                for (int i = 0; i < bakedLinkedStylesheetHrefs.Length && i < bakedLinkedStylesheetCss.Length; i++)
+                {
+                    if (bakedLinkedStylesheetHrefs[i] == href) return bakedLinkedStylesheetCss[i];
+                }
+            }
+            byte[] bytes = _doc?.AssetReader?.Invoke(href);
+            return bytes != null ? System.Text.Encoding.UTF8.GetString(bytes) : null;
+        }
+
+#if UNITY_EDITOR
+        /// <summary>The asset-database directory of the document asset (editor only), or null for an in-memory asset.</summary>
+        public string DocumentAssetDirectory()
+        {
+            if (documentAsset == null) return null;
+            string assetPath = UnityEditor.AssetDatabase.GetAssetPath(documentAsset);
+            if (string.IsNullOrEmpty(assetPath)) return null;
+            return System.IO.Path.GetDirectoryName(assetPath)?.Replace('\\', '/');
+        }
+#endif
 
         private void Release()
         {
@@ -210,6 +334,13 @@ namespace Weva
         private readonly System.Collections.Generic.List<NativeEvent> _events = new System.Collections.Generic.List<NativeEvent>(16);
 #if WEVA_INPUTSYSTEM
         private NativeInputFeed _input;
+
+        /// <summary>
+        /// The Input System feed (created on the first playing frame with
+        /// AutoInput on): its knobs -- WrapTab and TabbedOut, GamepadTextEntry
+        /// and TextEntryRequested, AcceptsKeyboard, HasFocus, WheelLine.
+        /// </summary>
+        public NativeInputFeed Input => _input ??= (_doc != null ? new NativeInputFeed(_doc) : null);
 #endif
 
         /// <summary>
