@@ -77,6 +77,10 @@ namespace Weva.Css.Cascade {
             count = n;
         }
 
-        public ComputedStyle[] UnsafeBuffer => data;
+        // internal, like AlignTo above: this is the NodeId-indexed backing
+        // store, and handing it out lets a caller break the layout invariant
+        // documented at the top of this file. Nothing outside the package
+        // referenced it.
+        internal ComputedStyle[] UnsafeBuffer => data;
     }
 }

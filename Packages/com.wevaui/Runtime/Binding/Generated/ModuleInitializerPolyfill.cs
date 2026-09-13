@@ -7,7 +7,12 @@
 #if !NET5_0_OR_GREATER
 namespace System.Runtime.CompilerServices {
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false)]
-    public sealed class ModuleInitializerAttribute : System.Attribute {
+    // internal, not public: this injects a BCL type name into a System.*
+    // namespace from an assembly with autoReferenced: true, so a consumer
+    // who polyfills the same attribute -- a common pattern -- would get
+    // CS0433 ambiguity. The compiler recognises a module initializer
+    // through an internal attribute just as well, within this assembly.
+    internal sealed class ModuleInitializerAttribute : System.Attribute {
     }
 }
 #endif

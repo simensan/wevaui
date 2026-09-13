@@ -71,9 +71,12 @@ namespace Weva.EditorTools {
 
             try {
                 HtmlParser.Parse(doc.DocumentAsset.text);
-                if (doc.StylesheetAssets != null) {
-                    for (int i = 0; i < doc.StylesheetAssets.Length; i++) {
-                        var sheet = doc.StylesheetAssets[i];
+                // Read once: the property clones, so indexing it in the loop
+                // condition and body would allocate an array per iteration.
+                var sheets = doc.StylesheetAssets;
+                if (sheets != null) {
+                    for (int i = 0; i < sheets.Length; i++) {
+                        var sheet = sheets[i];
                         if (sheet == null) continue;
                         Weva.Css.CssParser.Parse(sheet.text);
                     }

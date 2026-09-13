@@ -203,7 +203,7 @@ boxes / paint commands.
 Numbers from `Tools/PerfBench/` against the v0.7 dev-machine baseline
 (Apple M1-tier laptop, single fresh `dotnet run -c Release -- all`). Note:
 `v0.x` labels in this section refer to internal development milestones, not
-the package version (currently 0.1.0):
+the package version (currently 0.1.1):
 
 | Bench | Scale | Median ms | p95 ms |
 |---|---|---:|---:|
@@ -295,7 +295,7 @@ events, reactivity propagation, and golden-image rasterization.
 
 ## Status
 
-0.1.0 (preview). Headless layers (parser → cascade → layout → paint) are
+0.1.1 (preview). Headless layers (parser → cascade → layout → paint) are
 production-quality; the URP renderer feature, IMGUI fallback, TextCore
 bootstrap, hot reload watcher, and DevTools overlay are all wired up but
 need real-Unity validation gating before v1.0.

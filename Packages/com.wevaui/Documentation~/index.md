@@ -50,4 +50,7 @@ when you build something real.
 
 - [`CSS_FEATURES.md`](../CSS_FEATURES.md) — the full supported / partial /
   parse-only / missing CSS matrix.
-- `LICENSE.md` — MIT.
+- [`api-stability.md`](api-stability.md) — which types are covered by semantic
+  versioning and which are engine internals that happen to be `public`.
+- `LICENSE.md` — MIT, and `Third Party Notices.md` for the components the
+  native plugin statically links.

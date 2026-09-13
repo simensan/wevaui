@@ -5,10 +5,19 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-07-05
+
+Packaging only: no Runtime code changed between the two tags.
+
+### Changed
+- Minimum Unity lowered from 6000.4 to 6000.3, and the `unityRelease` pin
+  dropped, so the package installs on any 6000.3 patch.
+
 ## [0.1.0] - 2026-06-10
 
-Preview release for external evaluation. (Version held at 0.1.0 across iterations
-so test projects pick up updates without manifest edits.)
+Preview release for external evaluation. (The version was held at 0.1.0 across
+many iterations so test projects picked up updates without manifest edits; the
+0.1.1 tag above is the first bump since.)
 
 ### Added
 - HTML/CSS-compatible UI layer for Unity: standard HTML elements, real CSS

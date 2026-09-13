@@ -101,8 +101,15 @@ namespace Weva {
             set { documentAsset = value; if (autoRebuildOnChange && isActiveAndEnabled) Rebuild(); }
         }
 
+        /// <summary>
+        /// The stylesheets this document compiles, in order. The getter returns
+        /// a copy: it used to hand back the backing array, so
+        /// <c>doc.StylesheetAssets[0] = other</c> mutated the document and
+        /// silently skipped the <see cref="Rebuild"/> the setter performs.
+        /// Assign the whole array to change them.
+        /// </summary>
         public TextAsset[] StylesheetAssets {
-            get => stylesheetAssets;
+            get => stylesheetAssets == null ? null : (TextAsset[])stylesheetAssets.Clone();
             set { stylesheetAssets = value; if (autoRebuildOnChange && isActiveAndEnabled) Rebuild(); }
         }
 
