@@ -149,6 +149,8 @@ jobs:
         run: build-unity/weva_core_load_test build-unity/bin/weva_core.so
       - name: Generated P/Invoke layer matches the headers
         run: python hosts/unity/gen_bindings.py --header libweva/include/weva_c.h --header hosts/unity/src/weva_unity.h --out Packages/com.wevaui/Runtime/Native/WevaNative.g.cs --check
+      - name: Third-party notices bundled with the plugin
+        run: python hosts/unity/bundle_notices.py --check
       - uses: actions/upload-artifact@v4
         with:
           name: unity-plugin-${{ matrix.os }}

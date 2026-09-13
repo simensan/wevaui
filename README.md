@@ -92,3 +92,9 @@ weva/
 ## License
 
 MIT — see [`LICENSE.md`](./LICENSE.md).
+
+Third-party components and their licences are listed in
+[`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md). The engine's native
+libraries statically link ICU, the generated Unicode tables, Blink's WTF
+Decimal and the ada URL parser; the UPM package ships those notices in its
+own `Third Party Notices.md`, and the Godot addon bundles them in its zip.

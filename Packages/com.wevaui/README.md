@@ -303,3 +303,8 @@ need real-Unity validation gating before v1.0.
 ## License
 
 MIT — see [`LICENSE.md`](LICENSE.md).
+
+The native plugin (`weva_core`) statically links ICU, the generated Unicode
+tables, Blink's WTF Decimal and the ada URL parser; their licences ship with
+the package in [`Third Party Notices.md`](Third%20Party%20Notices.md). The
+bundled fonts each carry their own OFL text beside the `.ttf`.
