@@ -1463,10 +1463,13 @@ void WevaDocument::_gui_input(const Ref<InputEvent>& event) {
     // The wheel, before the pointer bookkeeping: a wheel event carries no
     // movement, so the "nothing moved" early return below would swallow it.
     if (button.is_valid() && button->is_pressed()) {
-        // Godot reports a wheel notch as a button press with a factor; a line
-        // is the 40px a browser scrolls per notch.
+        // Godot reports a wheel notch as a button press with a factor. Chrome on
+        // Windows scrolls 100 CSS px for one notch (WHEEL_DELTA 120), and Chrome
+        // is the reference; both hosts used 40 -- a shared deviation, changed
+        // together on 2026-09-13 and pinned by input_integration_tests.gd and
+        // the Unity feed's NativeInputFeedTests.
         const double factor = button->get_factor() > 0 ? button->get_factor() : 1.0;
-        const double step = 40.0 * factor;
+        const double step = 100.0 * factor;
         double dx = 0, dy = 0;
         switch (button->get_button_index()) {
             case MOUSE_BUTTON_WHEEL_UP: dy = -step; break;

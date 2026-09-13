@@ -145,7 +145,7 @@ IME composition) and drains the core's event queue into `NativeEvent`
 records. `NativeInputFeed` reads the Input System each frame and applies the
 rules the Godot host's `_gui_input` applies, each pinned by
 `NativeInputFeedTests` through the Input System's test fixture: the pointer's
-y flipped by the viewport height; the wheel as 40px per notch; a Space the
+y flipped by the viewport height; the wheel as Chrome's 100px per notch; a Space the
 button took not also arriving as text; the command chord being Ctrl, or Cmd
 on macOS, for selection, clipboard and history; the pointer cleared when it
 leaves the surface or the application loses focus; keys gated by

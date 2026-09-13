@@ -224,6 +224,29 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(Clicks(), Is.EqualTo(0), "a drag is not a click");
         }
 
+        [Test]
+        public void WheelNotchScrollsWhatChromeScrolls()
+        {
+            // Chrome on Windows scrolls 100 CSS px for one wheel notch. Both
+            // hosts scrolled 40 -- a shared deviation from the reference --
+            // until 2026-09-13; this and input_integration_tests.gd pin 100.
+            Load("<div id=list><div id=tall></div></div>", "#list{height:100px;overflow:auto;width:200px} #tall{height:1000px}");
+            Set(_mouse.position, Middle("#list"));
+            Tick();
+            Set(_mouse.scroll, new Vector2(0, -1));                 // one notch, down
+            Assert.That(_mouse.scroll.ReadValue(), Is.EqualTo(new Vector2(0, -1)), "the fixture delivered the notch");
+            Tick();
+            Assert.That(_feed.Consumed, Is.True, "the feed scrolled something");
+            _doc.Update(0);                                         // Boxes() reports the last published layout
+            double scrolled = -1;
+            uint list = _doc.Query("#list");
+            foreach (weva_box box in _doc.Boxes())
+                if (box.element == list && box.kind == (uint)weva_box_kind.WEVA_BOX_BLOCK) scrolled = box.scroll_y;
+            Assert.That(scrolled, Is.EqualTo(100).Within(0.01), "one notch is Chrome's 100px, not 40");
+            Set(_mouse.scroll, Vector2.zero);
+            Tick();
+        }
+
         private const string Column =
             "<button id=a>A</button><button id=b>B</button><button id=c>C</button>";
         private const string ColumnCss = "button{display:block;width:100px;height:40px;margin:0}";

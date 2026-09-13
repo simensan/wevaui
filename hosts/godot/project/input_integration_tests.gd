@@ -53,6 +53,23 @@ func click(at: Vector2) -> void:
 		event.pressed = pressed
 		viewport.push_input(event, true)
 
+func wheel(at: Vector2, notches := 1) -> void:
+	motion(at)
+	for i in notches:
+		var event := InputEventMouseButton.new()
+		event.position = at
+		event.global_position = at
+		event.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		event.factor = 1.0
+		event.pressed = true
+		viewport.push_input(event, true)
+		event = InputEventMouseButton.new()
+		event.position = at
+		event.global_position = at
+		event.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		event.pressed = false
+		viewport.push_input(event, true)
+
 func _ready() -> void:
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(640, 480)
@@ -257,6 +274,22 @@ func _ready() -> void:
 		check(anchored.document_size == Vector2(700, 500) and anchored.query_bounds("body").size.x == 700, "an unsized document follows its parent's anchors on resize")
 	else:
 		check(false, "the document participates in native Control layout")
+
+	# One wheel notch is Chrome's 100 CSS px (WHEEL_DELTA 120 on Windows). Both
+	# hosts scrolled 40 until 2026-09-13 -- a shared deviation from the reference;
+	# the Unity feed's NativeInputFeedTests pins the same number.
+	var wheeled := WevaDocument.new()
+	wheeled.position = Vector2(0, 0)
+	wheeled.document_size = Vector2(200, 100)
+	wheeled.use_engine_font = false
+	wheeled.css = "html,body{margin:0}#list{height:100px;overflow:auto;width:200px}#tall{height:1000px}"
+	wheeled.html = '<div id="list"><div id="tall"></div></div>'
+	surface.add_child(wheeled)
+	wheeled.update_document(0)
+	wheel(Vector2(100, 50))
+	wheeled.update_document(0)
+	check(is_equal_approx(wheeled.get_element_scroll("#list").y, 100.0), "one wheel notch scrolls Chrome's 100px, not 40")
+	wheeled.free()
 
 	viewport.free()
 	print("godot input integration: %d checks, %d failures" % [checks, failures])

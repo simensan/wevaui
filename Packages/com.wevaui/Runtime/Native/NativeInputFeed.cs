@@ -97,8 +97,12 @@ namespace Weva.Native
         /// <summary>A pad pressed accept on a text field: the field's id. The host supplies the keyboard.</summary>
         public event Action<string> TextEntryRequested;
 
-        /// <summary>Pixels per wheel notch, what a browser scrolls per line.</summary>
-        public float WheelLine = 40f;
+        /// <summary>
+        /// Pixels per wheel notch. Chrome on Windows scrolls 100 CSS px for one
+        /// notch (WHEEL_DELTA 120), and Chrome is the reference; both hosts used
+        /// 40 -- a shared deviation, changed together on 2026-09-13.
+        /// </summary>
+        public float WheelLine = 100f;
         /// <summary>Whether the last fed input was consumed by the document (a host keeps it from gameplay then).</summary>
         public bool Consumed { get; private set; }
         /// <summary>
@@ -237,7 +241,7 @@ namespace Weva.Native
                     if (wheel != Vector2.zero)
                     {
                         // Input System reports notches (sign: up is positive); a
-                        // browser scrolls 40px per notch, down being positive.
+                        // browser scrolls WheelLine px per notch, down being positive.
                         float dx = wheel.x / 120f;
                         float dy = -wheel.y / 120f;
                         if (Mathf.Abs(wheel.y) <= 1f && Mathf.Abs(wheel.x) <= 1f) { dx = wheel.x; dy = -wheel.y; }
