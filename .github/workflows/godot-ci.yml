@@ -1,4 +1,4 @@
-name: Godot core and package checks
+name: Core and hosts
 
 on:
   push:
