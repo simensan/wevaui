@@ -204,8 +204,8 @@
     "passed": true,
     "checks": 28127
   },
-  "sample_log": "import: passed\nheadless: frontier integration: 95 checks, 0 failures\ngl_compatibility: frontier integration: 101 checks, 0 failures\nmobile: frontier integration: 101 checks, 0 failures\nexport: passed\nexport-headless: frontier integration: 95 checks, 0 failures\nexport-render: frontier integration: 101 checks, 0 failures\nVerified project: C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\frontier-rounded183\\project\n",
-  "exports_log": "Fixture: C:\\Users\\simen\\AppData\\Local\\Temp\\weva-export-skn7mlja\ngodot export smoke (project): 8 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot export smoke (pack): 10 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot export smoke (native-debug): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: debug matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: debug library, relocation and startup PASS\ngodot export smoke (native-release): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: release matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: release library, relocation and startup PASS\ngodot export smoke (native-release): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: release-embedded matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: release-embedded library, relocation and startup PASS\n",
+  "sample_log": "import: passed\nheadless: frontier integration: 95 checks, 0 failures\ngl_compatibility: frontier integration: 101 checks, 0 failures\nmobile: frontier integration: 101 checks, 0 failures\nexport: passed\nexport-headless: frontier integration: 95 checks, 0 failures\nexport-render: frontier integration: 101 checks, 0 failures\nVerified project: <repo>\\.utmp\\safe-engine71\\frontier-rounded183\\project\n",
+  "exports_log": "Fixture: <temp> export smoke (project): 8 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot export smoke (pack): 10 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot export smoke (native-debug): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: debug matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: debug library, relocation and startup PASS\ngodot export smoke (native-release): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: release matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: release library, relocation and startup PASS\ngodot export smoke (native-release): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: release-embedded matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: release-embedded library, relocation and startup PASS\n",
   "performance_status": "complete; 72/72 manual desktop timing checks pass",
   "sanitizer_status": "complete; all 16 gates pass",
   "performance": {
@@ -889,10 +889,10 @@
     "qualification_scope": "Full Release core, full 16-gate ASAN/UBSAN sweep, native and sample/render/export checks, 72 manual desktop timing gates.",
     "timing_profiles": "Manual desktop 72/72 pass; automatic 3D and 4K not requalified. Historical failures retained; no causal speedup claim.",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed183-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed183-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

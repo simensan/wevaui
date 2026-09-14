@@ -26,9 +26,9 @@
       "texture_bytes_constant": true,
       "command": {
         "command": [
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
           "--path",
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
           "--audio-driver",
           "Dummy",
           "--rendering-method",
@@ -39,7 +39,7 @@
           "--lifecycle"
         ],
         "env": {
-          "WEVA_FRONTIER_PERF_OUT": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218\\all-r3",
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\all-r3",
           "WEVA_FRONTIER_CYCLES": "5",
           "WEVA_FRONTIER_SECONDS": "2",
           "WEVA_FRONTIER_RESOLUTION": "1920x1080",
@@ -70,9 +70,9 @@
       "texture_bytes_constant": true,
       "command": {
         "command": [
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
           "--path",
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
           "--audio-driver",
           "Dummy",
           "--rendering-method",
@@ -83,7 +83,7 @@
           "--lifecycle"
         ],
         "env": {
-          "WEVA_FRONTIER_PERF_OUT": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218\\nonames-r3",
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\nonames-r3",
           "WEVA_FRONTIER_CYCLES": "5",
           "WEVA_FRONTIER_SECONDS": "2",
           "WEVA_FRONTIER_RESOLUTION": "1920x1080",
@@ -115,9 +115,9 @@
       "texture_bytes_constant": true,
       "command": {
         "command": [
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
           "--path",
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
           "--audio-driver",
           "Dummy",
           "--rendering-method",
@@ -128,7 +128,7 @@
           "--lifecycle"
         ],
         "env": {
-          "WEVA_FRONTIER_PERF_OUT": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218\\nosettings-r3",
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\nosettings-r3",
           "WEVA_FRONTIER_CYCLES": "5",
           "WEVA_FRONTIER_SECONDS": "2",
           "WEVA_FRONTIER_RESOLUTION": "1920x1080",
@@ -160,9 +160,9 @@
       "texture_bytes_constant": true,
       "command": {
         "command": [
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
           "--path",
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
           "--audio-driver",
           "Dummy",
           "--rendering-method",
@@ -173,7 +173,7 @@
           "--lifecycle"
         ],
         "env": {
-          "WEVA_FRONTIER_PERF_OUT": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218\\nosort-r3",
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\nosort-r3",
           "WEVA_FRONTIER_CYCLES": "5",
           "WEVA_FRONTIER_SECONDS": "2",
           "WEVA_FRONTIER_RESOLUTION": "1920x1080",
@@ -205,9 +205,9 @@
       "texture_bytes_constant": true,
       "command": {
         "command": [
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
           "--path",
-          "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
           "--audio-driver",
           "Dummy",
           "--rendering-method",
@@ -218,7 +218,7 @@
           "--lifecycle"
         ],
         "env": {
-          "WEVA_FRONTIER_PERF_OUT": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership218\\withoutui-r3",
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\withoutui-r3",
           "WEVA_FRONTIER_CYCLES": "5",
           "WEVA_FRONTIER_SECONDS": "2",
           "WEVA_FRONTIER_RESOLUTION": "1920x1080",

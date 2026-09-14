@@ -592,10 +592,10 @@
     "library_sha256": "0bf8888c46bb27dbafad86f680048ebb52eb08ba2e4f45b3036c73dc963ecaf9",
     "version": "0.1.0-preview.104",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed104-backup"
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed104-backup"
   },
   "timing_budget": {
     "profile": "Frontier development desktop CPU targets",

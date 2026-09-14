@@ -1341,7 +1341,7 @@
       "passed": true,
       "entries": 52,
       "checks": 35610,
-      "godot": "C:/Users/simen/Downloads/Godot_v4.7.1-stable_mono_win64/Godot_v4.7.1-stable_mono_win64_console.exe",
+      "godot": "<home>/...",
       "receipt": ".utmp/safe-engine71/shaping-checks/host-suite-stock/receipt.json"
     },
     "note": "Every host scene and the sample pass on the stock editor with build220; exports were produced with the patched templates and stock templates are not installed here."

@@ -2,11 +2,11 @@
   "source": ".utmp/safe-engine71/stack208-ui-disabled",
   "invocation": {
     "child": [
-      "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\frontier-animation-composition208\\playable\\FrontierCamp.exe",
+      "<repo>\\.utmp\\safe-engine71\\frontier-animation-composition208\\playable\\FrontierCamp.exe",
       "--audio-driver",
       "Dummy",
       "--log-file",
-      "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\stack208-ui-disabled\\engine.log",
+      "<repo>\\.utmp\\safe-engine71\\stack208-ui-disabled\\engine.log",
       "--rendering-method",
       "gl_compatibility",
       "--fixed-fps",
@@ -17,7 +17,7 @@
       "--perf"
     ],
     "environment": {
-      "WEVA_FRONTIER_PERF_OUT": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\stack208-ui-disabled",
+      "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\stack208-ui-disabled",
       "WEVA_FRONTIER_FRAMES": "18000",
       "WEVA_FRONTIER_WARMUPS": "120",
       "WEVA_FRONTIER_AUTO": "1",

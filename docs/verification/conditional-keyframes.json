@@ -1006,10 +1006,10 @@
     "qualification_scope": "Development installation of conditional keyframes and animation timing fixes. Core, sanitizer, exact-library host/rendered, sample/export and desktop timing checks pass. Broader browser parity and readiness requirements remain open.",
     "timing_profiles": "Current candidate desktop and automatic 1080p 3D timing pass. Current 4K, longer lifecycle and lower-end hardware qualification remain open. Development install only.",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed205-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed205-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

@@ -257,10 +257,10 @@
     "qualification_scope": "Development installation of automatic closed-select sizing; 120 shared-font Chrome comparisons, core, sanitizer, native host, sample and export checks pass.",
     "timing_profiles": "Desktop timing is from build 199; load/lifecycle observations are from build 198. These do not requalify this binary. Development install only.",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed200-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed200-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

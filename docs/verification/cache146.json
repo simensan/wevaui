@@ -3,10 +3,10 @@
     "library_sha256": "1c1a780e3eccfb492b1e7579961900d57dcc2b3fdc205287cc97f7fc4d9fbb65",
     "version": "0.1.0-preview.146",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed146-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed146-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",
@@ -262,11 +262,11 @@
     "addon_sha256": "78d79b588beeaf1967cab4565d5c850b033b12e8c4cad62ce0ade675c0972483",
     "templates": {
       "debug": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
         "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
       },
       "release": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
         "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
       }
     },

@@ -9,7 +9,7 @@
       "executable_sha256": "18fa5b9a3bfd8b5360a418ed6f7bf6376afd4d2f19c8bf4a1242439b39c7678c",
       "release_template": {
         "selection": "explicit",
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
         "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
       },
       "library_sha256": "1495f736aee56a3f8168257c08c28526c311d392a0cd598b66830fb1aa8effaf",

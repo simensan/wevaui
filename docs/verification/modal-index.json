@@ -1767,11 +1767,11 @@
     "addon_sha256": "a62d37272fb08b8f9e17322ebe181098891f4dae52f6353c4ff7055a4f3b8767",
     "templates": {
       "debug": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
         "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
       },
       "release": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
         "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
       }
     },
@@ -1824,7 +1824,7 @@
     "suites": 16,
     "seconds": 197.68,
     "symbolization": false,
-    "command": "ASAN_OPTIONS=symbolize=0 ctest --test-dir /root/weva/build-clang --output-on-failure"
+    "command": "ASAN_OPTIONS=symbolize=0 ctest --test-dir <build-clang> --output-on-failure"
   },
   "initial_long_run": {
     "passed": false,
@@ -1834,7 +1834,7 @@
     "executable_sha256": "71327682a139a44453f510d15dbb9216fa376495cd4b8569f0be6ac2b1e2803b",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "1e64a657b2ffbc9ee3aa13e54a8e380acb716952eaba8f14c89b9dd0c8cea8bb",
@@ -1926,7 +1926,7 @@
       {
         "renderer": "gl_compatibility",
         "index": 1,
-        "error": "Command '['C:\\\\Users\\\\simen\\\\Documents\\\\GitHub\\\\unityui\\\\.utmp\\\\safe-engine71\\\\modal-index194-desktop-long\\\\export\\\\FrontierCamp.exe', '--audio-driver', 'Dummy', '--log-file', 'C:\\\\Users\\\\simen\\\\Documents\\\\GitHub\\\\unityui\\\\.utmp\\\\safe-engine71\\\\modal-index194-desktop-long\\\\gl_compatibility-1.engine.log', '--rendering-method', 'gl_compatibility', '--fixed-fps', '60', '--position', '-10000,-10000', '--', '--perf']' timed out after 180 seconds",
+        "error": "Command '['<repo>\\\\.utmp\\\\safe-engine71\\\\modal-index194-desktop-long\\\\export\\\\FrontierCamp.exe', '--audio-driver', 'Dummy', '--log-file', '<repo>\\\\.utmp\\\\safe-engine71\\\\modal-index194-desktop-long\\\\gl_compatibility-1.engine.log', '--rendering-method', 'gl_compatibility', '--fixed-fps', '60', '--position', '-10000,-10000', '--', '--perf']' timed out after 180 seconds",
         "log": "gl_compatibility-1.log"
       }
     ]
@@ -1954,7 +1954,7 @@
     "executable_sha256": "71327682a139a44453f510d15dbb9216fa376495cd4b8569f0be6ac2b1e2803b",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "1e64a657b2ffbc9ee3aa13e54a8e380acb716952eaba8f14c89b9dd0c8cea8bb",
@@ -2047,7 +2047,7 @@
       {
         "renderer": "gl_compatibility",
         "index": 1,
-        "error": "gl_compatibility-1 failed; see C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\modal-index194-desktop-long-extended\\gl_compatibility-1.log",
+        "error": "gl_compatibility-1 failed; see <repo>\\.utmp\\safe-engine71\\modal-index194-desktop-long-extended\\gl_compatibility-1.log",
         "log": "gl_compatibility-1.log"
       }
     ]
@@ -2061,7 +2061,7 @@
     "executable_sha256": "88c11adc5cbfa3e2646f9d76d4e2cb091e8d532458c8a14dfd7a76cc66e1f9f5",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "1e64a657b2ffbc9ee3aa13e54a8e380acb716952eaba8f14c89b9dd0c8cea8bb",
@@ -8286,7 +8286,7 @@
     "executable_sha256": "88c11adc5cbfa3e2646f9d76d4e2cb091e8d532458c8a14dfd7a76cc66e1f9f5",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "1e64a657b2ffbc9ee3aa13e54a8e380acb716952eaba8f14c89b9dd0c8cea8bb",

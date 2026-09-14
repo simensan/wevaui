@@ -162,7 +162,7 @@ and places the loader shim before ASan with `verify_asan_link_order=0`.
 No loader shim or engine modification is included in the addon.
 
 Evidence: `.utmp/parity68/check-font70-sanitized5.log` and
-`/root/weva/font70-sanitized2/{cached5,uncached5}`. The same direct-loading harness
+`<build>/font70-sanitized2/{cached5,uncached5}`. The same direct-loading harness
 passes 19,682 Windows checks (`.utmp/parity68/adapter-direct`).
 
 ## Positioned glyphs and automatic fallbacks

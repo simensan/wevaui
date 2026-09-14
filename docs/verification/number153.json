@@ -207,12 +207,12 @@
   "core": {
     "suites": 14,
     "main_checks": 485452,
-    "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-core.log"
+    "log": "<repo>\\.utmp\\safe-engine71\\number153-core.log"
   },
   "sanitizer": {
     "suites": 16,
     "passed": true,
-    "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-asan-tests.log"
+    "log": "<repo>\\.utmp\\safe-engine71\\number153-asan-tests.log"
   },
   "package_sha256": "49d13ebb8d75b0d9237c672ca0296aeb5463794763baee801b962311ab43e807",
   "sample": {
@@ -221,11 +221,11 @@
     "addon_sha256": "49d13ebb8d75b0d9237c672ca0296aeb5463794763baee801b962311ab43e807",
     "templates": {
       "debug": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
         "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
       },
       "release": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
         "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
       }
     },
@@ -269,7 +269,7 @@
     ],
     "export_pixels_match_project": true
   },
-  "exports_log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-exports.log",
+  "exports_log": "<repo>\\.utmp\\safe-engine71\\number153-exports.log",
   "desktop": {
     "passed": false,
     "passed_checks": 70,
@@ -292,38 +292,38 @@
         "passed": false
       }
     ],
-    "summary": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-budget\\summary.json"
+    "summary": "<repo>\\.utmp\\safe-engine71\\number153-budget\\summary.json"
   },
   "high_resolution": {
     "passed": true,
     "passed_checks": 276,
-    "summary": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-4k-budget\\summary.json"
+    "summary": "<repo>\\.utmp\\safe-engine71\\number153-4k-budget\\summary.json"
   },
   "load_1080p": {
     "passed": false,
-    "summary": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-3d-budget\\summary.json",
+    "summary": "<repo>\\.utmp\\safe-engine71\\number153-3d-budget\\summary.json",
     "reason": "ui_disabled gameplay action and binding refresh without benchmark input; cause not captured"
   },
   "focused_comparisons": [
     {
       "build": "range152",
       "order": 0,
-      "summary": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-compare-0-range152\\summary.json"
+      "summary": "<repo>\\.utmp\\safe-engine71\\number153-compare-0-range152\\summary.json"
     },
     {
       "build": "number153",
       "order": 0,
-      "summary": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-compare-0-number153\\summary.json"
+      "summary": "<repo>\\.utmp\\safe-engine71\\number153-compare-0-number153\\summary.json"
     },
     {
       "build": "range152",
       "order": 1,
-      "summary": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-compare-1-range152\\summary.json"
+      "summary": "<repo>\\.utmp\\safe-engine71\\number153-compare-1-range152\\summary.json"
     },
     {
       "build": "number153",
       "order": 1,
-      "summary": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\number153-compare-1-number153\\summary.json"
+      "summary": "<repo>\\.utmp\\safe-engine71\\number153-compare-1-number153\\summary.json"
     }
   ],
   "diagnostic": {

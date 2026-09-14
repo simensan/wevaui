@@ -4,7 +4,7 @@
       "executable_sha256": "40d0b829cbdfc6884cccba27875bb144bdc0cedd292bdc2e914e4935fe18a689",
       "library_sha256": "268b13335427a832c6b069d9e86231d79e1c2a86c7f93d2c349737c75e5714a9",
       "command": [
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\frontier-opacity193\\playable\\FrontierCamp.exe",
+        "<repo>\\.utmp\\safe-engine71\\frontier-opacity193\\playable\\FrontierCamp.exe",
         "--rendering-method",
         "gl_compatibility",
         "--fixed-fps",
@@ -247,7 +247,7 @@
       "executable_sha256": "40d0b829cbdfc6884cccba27875bb144bdc0cedd292bdc2e914e4935fe18a689",
       "library_sha256": "268b13335427a832c6b069d9e86231d79e1c2a86c7f93d2c349737c75e5714a9",
       "command": [
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\frontier-opacity193\\playable\\FrontierCamp.exe",
+        "<repo>\\.utmp\\safe-engine71\\frontier-opacity193\\playable\\FrontierCamp.exe",
         "--rendering-method",
         "gl_compatibility",
         "--fixed-fps",

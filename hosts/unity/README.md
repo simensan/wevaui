@@ -293,7 +293,7 @@ EditMode test `Manifest_DumpsEveryCaseForTheOracle` reads
 
 ```
 python hosts/unity/oracle_from_unity.py Tools/oracle/corpus/samples \
-    --weva-dump wsl:/root/weva/build-gcc/tools/weva_dump/weva_dump --out .utmp/oracle-unity
+    --weva-dump wsl:<build-gcc>/Tools/weva_dump/weva_dump --out .utmp/oracle-unity
 ```
 
 ## Tests

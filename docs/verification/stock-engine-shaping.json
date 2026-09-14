@@ -15,7 +15,7 @@
     "reason": "ICU 70+ serves UCHAR_EMOJI*/UCHAR_EXTENDED_PICTOGRAPHIC from uemoji data; without it every emoji lookup is false and no split happens."
   },
   "engines": {
-    "stock": "C:/Users/simen/Downloads/Godot_v4.7.1-stable_mono_win64 (official 4.7.1.stable.mono)",
+    "stock": "<home>/... (official 4.7.1.stable.mono)",
     "patched": ".utmp/safe-engine71/weva-godot-4.7.2-scriptfix71-windows-x86_64/editor"
   },
   "standalone_probe_on_stock": {

@@ -257,11 +257,11 @@
     "addon_sha256": "a041741ecdf188b3ecd34491fc95d89e4449e843007fd0b960597afe94d318fe",
     "templates": {
       "debug": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
         "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
       },
       "release": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
         "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
       }
     },
@@ -338,7 +338,7 @@
     "executable_sha256": "7e9022f9774a30c45cee3c3d94e97d36561553e1b635a01a0e721780e45a0477",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "1495f736aee56a3f8168257c08c28526c311d392a0cd598b66830fb1aa8effaf",
@@ -16033,7 +16033,7 @@
     "executable_sha256": "7e9022f9774a30c45cee3c3d94e97d36561553e1b635a01a0e721780e45a0477",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "1495f736aee56a3f8168257c08c28526c311d392a0cd598b66830fb1aa8effaf",
@@ -34047,7 +34047,7 @@
     "executable_sha256": "7e9022f9774a30c45cee3c3d94e97d36561553e1b635a01a0e721780e45a0477",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "1495f736aee56a3f8168257c08c28526c311d392a0cd598b66830fb1aa8effaf",
@@ -60811,10 +60811,10 @@
     "qualification_scope": "Development installation of modal index reuse and duplicate binding notification fix; native/sample/export and five-minute lifecycle checks pass.",
     "timing_profiles": "Focused 1080p and 4K profiles pass; full desktop remains 71/72 with one clock overrun. Supplemental 100-change clock measurement passes. Development install only; no release certification or regrading of failures.",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed195-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed195-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

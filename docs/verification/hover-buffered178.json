@@ -5,11 +5,11 @@
   "source_sha256": "7f0ac4d7217b1de12ffc7256034af99660e20f66cbdf7019b61637e4a62bff30",
   "invocation": {
     "command": [
-      "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\trace178-export\\FrontierCamp.exe",
+      "<repo>\\.utmp\\safe-engine71\\trace178-export\\FrontierCamp.exe",
       "--audio-driver",
       "Dummy",
       "--log-file",
-      "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\hover178-buffered\\engine.log",
+      "<repo>\\.utmp\\safe-engine71\\hover178-buffered\\engine.log",
       "--rendering-method",
       "mobile",
       "--fixed-fps",
@@ -21,7 +21,7 @@
     ],
     "environment": {
       "WEVA_STAGE_TRACE": "1",
-      "WEVA_FRONTIER_PERF_OUT": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\hover178-buffered",
+      "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\hover178-buffered",
       "WEVA_FRONTIER_FRAMES": "4800",
       "WEVA_FRONTIER_WARMUPS": "120",
       "WEVA_FRONTIER_CASES": "hover",

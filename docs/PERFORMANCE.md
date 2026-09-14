@@ -1195,7 +1195,7 @@ Artifact: `weva-godot-preview-20260906-40.zip`, 20 files, 5,392,882 bytes;
 SHA-256 `1c6951bdbbe117029f5f8031a45556edae6f18febacfa6e930bb253e7c4afb23`.
 Final logs use `product-shaped-runs-final-*` under the external Windows build
 directory; native checks and export logs use `product-shaped-runs-*` there
-and under `/root/weva` on Linux. Cold startup, rendered stalls and the earlier
+and under `<build>` on Linux. Cold startup, rendered stalls and the earlier
 preformatted-newline intrinsic-sizing issue remain open.
 
 ## Default font array ownership (2026-09-06)

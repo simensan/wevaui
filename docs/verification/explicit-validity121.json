@@ -471,11 +471,11 @@
     "addon_sha256": "2e1c98b3e7fb60abd3eb1b268826fcbaa8116015d950e3cbc09a0103486c75a0",
     "templates": {
       "debug": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
         "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
       },
       "release": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
         "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
       }
     },
@@ -521,7 +521,7 @@
   },
   "exports": {
     "passed": true,
-    "log": "Fixture: C:\\Users\\simen\\AppData\\Local\\Temp\\weva-export-e6rl43v6\ngodot export smoke (project): 8 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot export smoke (pack): 10 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot export smoke (native-debug): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: debug matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: debug library, relocation and startup PASS\ngodot export smoke (native-release): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: release matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: release library, relocation and startup PASS\ngodot export smoke (native-release): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: release-embedded matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: release-embedded library, relocation and startup PASS\n"
+    "log": "Fixture: <temp> export smoke (project): 8 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot export smoke (pack): 10 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot export smoke (native-debug): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: debug matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: debug library, relocation and startup PASS\ngodot export smoke (native-release): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: release matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: release library, relocation and startup PASS\ngodot export smoke (native-release): 13 checks, 0 failures\nweva addon example: 17 checks, 0 failures\ngodot native render: release-embedded matches project pixels (e515931c2c5455c1a4c8d83878f4f81bfae5c116e316ba4e9615cf599874059d)\ngodot native export: release-embedded library, relocation and startup PASS\n"
   },
   "coverage": [
     "24 Chrome comparisons: check/report, form/control, cancellation and later-control repair/disable/removal/reassociation.",
@@ -9977,10 +9977,10 @@
     "library_sha256": "afd8d58ffc435ebf9c4740322e4f387be8e70d74a16c30acdb2a122acfd8e675",
     "version": "0.1.0-preview.121",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed121-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed121-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

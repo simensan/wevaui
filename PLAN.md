@@ -10,7 +10,7 @@ This is a planning document. Nothing is built yet.
 > check is against Chrome; the C# in the package is the Unity host layer.
 > This document is the design history the core implements — read
 > `docs/ARCHITECTURE.md` for the core as built. Plan and gates:
-> `../unityui-internal-docs/WEVA_SHARED_CORE_PLAN.md`, Phase 4.
+> the maintainers' internal plan (not in this repository), Phase 4.
 
 ---
 

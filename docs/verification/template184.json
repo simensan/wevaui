@@ -1,7 +1,7 @@
 {
   "release_template": {
     "selection": "explicit",
-    "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+    "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
     "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
   },
   "export_smoke": {
@@ -19,7 +19,7 @@
     "executable_sha256": "8f793393dc2ada32843cf88cbcbc36a4cbece2bf7170534e01bf3da54f711d87",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "90515814b2b518ef038d249f64c3f30cfe87db3d0fa0bbacb33d6755543db2b0",
@@ -2673,7 +2673,7 @@
     "executable_sha256": "8f793393dc2ada32843cf88cbcbc36a4cbece2bf7170534e01bf3da54f711d87",
     "release_template": {
       "selection": "explicit",
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+      "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
       "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
     },
     "library_sha256": "90515814b2b518ef038d249f64c3f30cfe87db3d0fa0bbacb33d6755543db2b0",

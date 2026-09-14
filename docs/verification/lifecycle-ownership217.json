@@ -40,7 +40,7 @@
           "time_usec": 4076938
         }
       ],
-      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership217-fixed-ui\\run.log"
+      "log": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership217-fixed-ui\\run.log"
     },
     {
       "without_ui": true,
@@ -74,7 +74,7 @@
           "time_usec": 4122760
         }
       ],
-      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\lifecycle-ownership217-fixed-without\\run.log"
+      "log": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership217-fixed-without\\run.log"
     }
   ],
   "findings": [

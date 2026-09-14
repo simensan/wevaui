@@ -303,10 +303,10 @@
     "qualification_scope": "Development installation of direct column spanners; 216 Chrome cases, core, sanitizer, native host/rendered, sample and export checks pass. Nested spanners and paragraph fragmentation remain incomplete.",
     "timing_profiles": "Desktop timing is from build 200; load/lifecycle observations are from build 198. These do not requalify this binary. Development install only.",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed201-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed201-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

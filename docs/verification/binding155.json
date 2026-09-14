@@ -11,14 +11,14 @@
       "1080p typing after sample audio correction"
     ],
     "original_1080p_profile_passed": false,
-    "original_1080p_profile": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\binding155-3d-budget\\summary.json",
-    "focused_typing_after_correction": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\audio156-typing\\summary.json",
+    "original_1080p_profile": "<repo>\\.utmp\\safe-engine71\\binding155-3d-budget\\summary.json",
+    "focused_typing_after_correction": "<repo>\\.utmp\\safe-engine71\\audio156-typing\\summary.json",
     "current_4k_profile": "not-repeated",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed155-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed155-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",
@@ -124,19 +124,19 @@
     "after": 0,
     "resolver_reads": 3000,
     "scope": "C++ unchanged long HUD text and attribute fixture; not all host/UI allocations",
-    "baseline_log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\binding155-baseline.log",
-    "candidate_log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\binding155-core.log"
+    "baseline_log": "<repo>\\.utmp\\safe-engine71\\binding155-baseline.log",
+    "candidate_log": "<repo>\\.utmp\\safe-engine71\\binding155-core.log"
   },
   "core": {
     "suites": 14,
     "main_checks": 485498,
     "passed": true,
-    "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\binding155-core.log"
+    "log": "<repo>\\.utmp\\safe-engine71\\binding155-core.log"
   },
   "sanitizer": {
     "suites": 16,
     "passed": true,
-    "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\binding155-asan-tests.log"
+    "log": "<repo>\\.utmp\\safe-engine71\\binding155-asan-tests.log"
   },
   "native": {
     "binary_sha256": "36aea785653235da986eead1d14ee584f458f8f0ad63e97c63d8693058462f33",
@@ -346,11 +346,11 @@
     "addon_sha256": "a0589040a3e5d68972117e01f659f7c2fd65595726289706bf72ad54e2f4c809",
     "templates": {
       "debug": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
         "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
       },
       "release": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
         "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
       }
     },
@@ -394,7 +394,7 @@
     ],
     "export_pixels_match_project": true
   },
-  "exports_log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\binding155-exports.log",
+  "exports_log": "<repo>\\.utmp\\safe-engine71\\binding155-exports.log",
   "desktop": {
     "passed": true,
     "functional_passed": true,
@@ -22320,8 +22320,8 @@
     "baseline_failures": 2,
     "fixed_checks": 95,
     "fixed_failures": 0,
-    "baseline_log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\audio156-baseline.log",
-    "fixed_log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\audio156-fixed.log"
+    "baseline_log": "<repo>\\.utmp\\safe-engine71\\audio156-baseline.log",
+    "fixed_log": "<repo>\\.utmp\\safe-engine71\\audio156-fixed.log"
   },
   "limits": [
     "Original 1080p run failed one typing API limit (1.207 ms > 1 ms). It is retained.",

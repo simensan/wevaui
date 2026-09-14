@@ -341,10 +341,10 @@
     "qualification_scope": "Development installation of incremental shared-font warmup and sample loading integration. Current exact-library host, rendered fallback parity, sample/export and three timing profiles pass. Core and core-sanitizer evidence is inherited from unchanged core source in build210; the changed Godot host is tested natively. Broader readiness remains open.",
     "timing_profiles": "Current candidate desktop and automatic 1080p 3D timing pass. Previous build207 hover, build208 whole-frame and build209 desktop failures remain historical evidence with unproven causes. Current 4K timing passes. The ten-minute lifecycle result belongs to build210; current-candidate lifecycle and lower-end hardware qualification remain open. Development install only.",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed211-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed211-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

@@ -1,8 +1,8 @@
 # weva-godot
 
 HTML and CSS UI for Godot. A portable C++ core (`libweva`) behind a stable C
-ABI, with a GDExtension host — and a path to serving the Unity package from the
-same core rather than forking it.
+ABI, with a GDExtension host; the Unity package (`Packages/com.wevaui`) is a
+second host over the same core.
 
 > **Status: development preview.** The C++ engine and GDScript host run today,
 > with layout, rendering, forms, animations and data binding. Desktop builds

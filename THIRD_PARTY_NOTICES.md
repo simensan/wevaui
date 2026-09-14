@@ -11,7 +11,6 @@ permitted by those licenses.
 | Font | Upstream | License | Notice |
 |------|----------|---------|--------|
 | **Weva-Default** (`Weva-Default*.ttf`) | [Inter](https://github.com/rsms/inter) by The Inter Project Authors | SIL OFL 1.1 | `Weva-Default-LICENSE.txt` |
-| **Noto Color Emoji** (`NotoColorEmoji.ttf`) | [Noto](https://github.com/googlefonts/noto-emoji) by Google Inc. | SIL OFL 1.1 | `NotoColorEmoji-LICENSE.txt` |
 | **Noto Sans Symbols 2** (`NotoSansSymbols2-Regular.ttf`) | [Noto](https://github.com/notofonts/symbols) by The Noto Project Authors | SIL OFL 1.1 | `NotoSansSymbols2-LICENSE.txt` |
 
 Inter declares **no Reserved Font Name**, so its redistribution under the

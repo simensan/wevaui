@@ -476,11 +476,11 @@
       "addon_sha256": "ed5c88eac45fcd90fb276834f5b27b0b97ad40651542953f8f1863ad24fa6f47",
       "templates": {
         "debug": {
-          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+          "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
           "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
         },
         "release": {
-          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+          "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
           "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
         }
       },
@@ -1410,10 +1410,10 @@
     "qualification_scope": "Development installation of unsupported at-rule diagnostics. Core, sanitizer, exact-library host/rendered, sample/export and desktop timing checks pass. Broader browser parity and readiness requirements remain open.",
     "timing_profiles": "Current candidate desktop timing passes. Busy-scene and lifecycle results are historical and do not qualify this binary. Development install only.",
     "targets": {
-      "host": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
     },
-    "backup": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\safe-engine71\\installed204-backup",
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed204-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

@@ -1,5 +1,11 @@
 # Godot port feasibility
 
+> **Historical (written before the port; kept as the record of the decision).**
+> The port happened: `libweva/` is the engine, the Godot addon and the Unity
+> package are both hosts over its C ABI, and the C# engine this document
+> weighs against was deleted on 2026-09-13. Read `README.md` and
+> `docs/ARCHITECTURE.md` for the state of things.
+
 **Target:** pure C++ GDExtension, usable from any Godot project and callable
 from GDScript. No C#, no .NET dependency.
 
