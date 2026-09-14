@@ -26,7 +26,8 @@ Add via **Package Manager ▸ + ▸ Add package from git URL…**:
 https://github.com/simensan/wevaui.git?path=Packages/com.wevaui
 ```
 
-Pin a release with a `#v*` tag suffix. Then read the package
+That tracks `main` (1.0.0); pin a release with a `#v*` tag suffix once one
+is tagged. Then read the package
 [`README.md`](./Packages/com.wevaui/README.md) and
 [`Documentation~/getting-started.md`](./Packages/com.wevaui/Documentation~/getting-started.md).
 

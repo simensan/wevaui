@@ -32,10 +32,11 @@ and fails in surprising ways.
      sample; the NUnit test suite is omitted.)
    - **From Git** (recommended): add to `Packages/manifest.json`:
      ```json
-     "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui#v0.1.1"
+     "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui"
      ```
      or Package Manager → **+** → "Add package from git URL…" with the same
-     URL. Pin a release with the `#v*` tag suffix, or drop it to track `main`.
+     URL. That tracks `main` (1.0.0); pin a release with a `#v*` tag suffix
+     once one is tagged.
    - **From disk:** clone the repo and add via Package Manager → "Add package
      from disk" → pick `Packages/com.wevaui/package.json`.
 
@@ -69,16 +70,18 @@ and fails in surprising ways.
    `OnStart(string id)`).
 
 4. **Press play.** Hot reload picks up `.html` / `.css` edits without a
-   domain reload. Press `F12` for the in-game DevTools overlay (box outlines,
-   dirty highlighter, perf readout).
+   domain reload. **Window → Weva → Elements** shows the live tree, the
+   matched rules and the box model of whatever you pick.
 
 The `Phase One Demo` sample (Package Manager → Weva → Samples) is a
 complete scene exercising the pipeline end-to-end.
 
 ## Supported subset
 
-Everything below is implemented and tested. Anything *not* listed fails loudly
-rather than silently miscomputing.
+Everything below is implemented in the core and checked against Chrome (the
+sample pages and ~270 harvested cases, layout within 1.5 px; 57 scripted
+behaviour checks for what geometry cannot pin). Anything *not* listed fails
+loudly rather than silently miscomputing.
 
 ### HTML elements
 
@@ -145,25 +148,23 @@ rather than silently miscomputing.
 For the full supported / partial / parse-only / missing CSS matrix, see
 [`CSS_FEATURES.md`](CSS_FEATURES.md).
 
-### Deliberately out of v1
+### Known gaps
 
-Multi-column, vertical writing-mode text layout, dictionary hyphenation, full
-multi-layer masking/compositing, full bidi/complex text shaping, and typed
-custom properties via `@property`. Logical axes/RTL remapping, floats, tables,
-basic clip paths, masks, and backdrop filters exist as partial engine support;
-prefer flex/grid for new UI where exact browser parity matters.
+What the core does not do yet, with where it shows:
 
-### v1 simplifications worth knowing
+- **Multi-column layout** and **vertical writing modes** — the two sample
+  pages the Chrome gate excuses (`Tools/oracle/known-gaps/`).
+- **`@property`** (typed custom properties), **View Transitions**, dictionary
+  hyphenation (`hyphens: manual` with soft hyphens works).
+- **On the Unity host:** text is shaped by Unity's `FontEngine`, one glyph per
+  code point — the core orders bidi runs, but Arabic contextual forms and
+  in-word RTL glyph order are not produced, and colour emoji are not
+  rasterised (monochrome symbols are). The native plugin ships for Windows
+  x64; other platforms follow their CI jobs.
 
-A short list of where we differ from the spec by design or by phase scoping.
-These are the known v1 simplifications:
-
-- `position: sticky` is single-axis (top OR bottom — top wins on conflict).
-  No `scroll-snap-type`, no smooth scrolling, no overscroll-behavior.
-- `position: absolute` containing block is the nearest positioned ancestor's
-  *border*-box, not its padding-box.
-- `min-content` / `max-content` keywords are treated as `auto` in flex.
-- `revert` keyword is treated as `initial`.
+Prefer flex and grid for new UI where exact browser parity matters; the
+per-property record, including what parses but does not render, is
+[`Documentation~/supported-css.md`](Documentation~/supported-css.md).
 
 ## Architecture
 
@@ -195,33 +196,12 @@ against another implementation.
 
 ## Performance
 
-Numbers from `Tools/PerfBench/` against the v0.7 dev-machine baseline
-(Apple M1-tier laptop, single fresh `dotnet run -c Release -- all`). Note:
-`v0.x` labels in this section refer to internal development milestones, not
-the package version (currently 0.1.1):
-
-| Bench | Scale | Median ms | p95 ms |
-|---|---|---:|---:|
-| Cascade.ComputeAll | 1001 elements (forms) | 8.3 | 29.1 |
-| Cascade.ComputeAll | 1001 elements (deep nested) | 9.3 | 12.2 |
-| Cascade.IncrementalApply (attribute change) | 1001 elements | 0.21 | 0.28 |
-| Cascade.IncrementalApply (`:hover` flip) | 1001 elements | 0.08 | 0.13 |
-| Layout.LayoutAll | 1001 elements (forms) | 10.8 | 12.8 |
-| Layout.LayoutAll | 1001 elements (deep) | 4.4 | 5.5 |
-| Paint.Convert | 500 boxes | 0.85 | 1.18 |
-| Paint.Convert | 1000 boxes | 0.99 | 1.38 |
-| Paint.Convert (gradient-heavy) | 500 boxes | 1.27 | 1.65 |
-| Paint.Convert (shadow-heavy) | 500 boxes | 2.36 | 3.25 |
-| EndToEnd.HoverToggle | 1000 elements | 2.7 | 6.9 |
-
-Per-element-state-digest `:hover` flips dropped from 7.5 ms (v0.4) to
-0.083 ms (v0.5+) — a 90× win — once the cascade keyed cache misses on the
-specific element whose state flipped instead of invalidating globally.
-
-Steady-state allocations: paint converter ~1.1 MB/call at 500 boxes (target
-0); layout ~1.4 MB/call at 1000 elements (target 50 KB). Both above the
-target but already well inside frame budgets at typical UI sizes; the gap
-is on the v0.8+ roadmap.
+The core is measured on the Godot host (`docs/PERFORMANCE.md`,
+`docs/RUNTIME_PERFORMANCE.md`: per-API CPU budgets, whole-frame limits at 1080p
+and 4K, lifecycle soaks) and by its own `weva_bench`. The Unity host has no
+published numbers yet: the pass uploads the core's triangle lists and draws
+one mesh per texture run, and a document that has not changed uploads nothing.
+Numbers for the Unity host land here when they are measured, not before.
 
 ## API surface
 

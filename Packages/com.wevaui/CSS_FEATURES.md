@@ -1,6 +1,12 @@
 # Weva — CSS Feature Support Matrix
 
-This document lists every CSS feature the engine recognises and the v1 simplifications / known unsupported sub-features. It is the canonical reference for what authors can rely on, and what to avoid.
+> **Written against the C# engine, deleted 2026-09-13.** The engine is the C++
+> core; what it supports is gated by the Chrome captures in `Tools/oracle`
+> and summarised for authors in `Documentation~/supported-css.md`. Kept as the
+> record of the feature set the core ported; the file references below are
+> historical.
+
+This document lists every CSS feature the engine recognises and the v1 simplifications / known unsupported sub-features.
 
 Three support levels:
 
