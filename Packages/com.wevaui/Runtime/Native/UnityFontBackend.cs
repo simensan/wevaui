@@ -336,6 +336,26 @@ namespace Weva.Native
             return 0;
         }
 
+        /// <summary>
+        /// The installed fonts a document appends after its bundled fallbacks
+        /// so a symbol none of them carries (⚔, ☥) still draws, as a browser
+        /// reaches the platform's symbol font. Names only: a platform without
+        /// the font, or a player whose OS font list is closed, skips it.
+        /// </summary>
+        public static readonly string[] SystemSymbolFonts =
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            { "Segoe UI Symbol" };
+#elif UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            { "Apple Symbols" };
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+            { "DejaVu Sans" };
+#else
+            new string[0];
+#endif
+
+        /// <summary>An installed font by family name; 0 when the OS does not have it.</summary>
+        public ulong AdoptInstalled(string name) => AdoptLocalFont(name);
+
         private ulong AdoptLocalFont(string name)
         {
             if (string.IsNullOrEmpty(name)) return 0;

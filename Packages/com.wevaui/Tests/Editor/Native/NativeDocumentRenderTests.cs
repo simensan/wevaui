@@ -2,6 +2,7 @@
 // becomes meshes and textures, and drawing them offscreen puts the page's
 // pixels where the core laid them out. These tests need a graphics device
 // (run the editor without -nographics).
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
@@ -229,7 +230,16 @@ namespace Weva.Tests.EditorTests.Native
                 using (var renderer = new NativeDocumentRenderer())
                 {
                     ulong face = fonts.Adopt(font);
-                    if (symbols != null) fonts.SetFallbacks(face, fonts.Adopt(symbols));
+                    // The chain a WevaDocument builds: the bundled symbol face,
+                    // then the platform's symbol font.
+                    var chain = new List<ulong>();
+                    if (symbols != null) chain.Add(fonts.Adopt(symbols));
+                    foreach (string family in UnityFontBackend.SystemSymbolFonts)
+                    {
+                        ulong installed = fonts.AdoptInstalled(family);
+                        if (installed != 0) chain.Add(installed);
+                    }
+                    if (chain.Count > 0) fonts.SetFallbacks(face, chain.ToArray());
                     fonts.Install(doc, face);
                     doc.SetBasePath(Path.GetFullPath(dir));
                     doc.LoadHtml(File.ReadAllText(html));

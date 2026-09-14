@@ -37,6 +37,10 @@ checked against Chrome), which the Godot addon also runs on.
   dropped).
 
 ### Added
+- `SystemSymbolFallback` (on by default): after the `Fallbacks`, the
+  platform's symbol font (Segoe UI Symbol, Apple Symbols, DejaVu Sans)
+  answers for a glyph none of the faces carry, as a browser reaches a system
+  font. The HUD sample's ⚔ and ☥ drew as nothing before.
 - Input through the Input System: mouse, keyboard with held-key repeat,
   touch, gamepad navigation, IME composition; Chrome's 100 px wheel notch.
   Overlapping documents arbitrate the pointer by `SortingOrder`: the one on

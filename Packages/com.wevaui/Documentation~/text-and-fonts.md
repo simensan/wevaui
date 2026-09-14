@@ -17,7 +17,11 @@ standard, no engine changes:
 real weights to **Bold** / **Italic**) on the `WevaDocument`. It becomes the
 UI face: what unstyled text and the generic families (`sans-serif`, `serif`,
 `monospace`, `system-ui`) resolve to. **Fallbacks** are faces tried, in order,
-for code points the UI face lacks (CJK, Hebrew, symbols).
+for code points the UI face lacks (CJK, Hebrew, symbols). After them, with
+**SystemSymbolFallback** on (the default), the platform's symbol font (Segoe
+UI Symbol, Apple Symbols, DejaVu Sans) answers for a glyph none of the faces
+carry, as a browser reaches a system font; turn it off for output identical
+on every machine.
 
 **2. `@font-face` in your stylesheet.** `url()` resolves relative to
 `BasePath` (the document asset's folder in the editor); `local("Name")` is a

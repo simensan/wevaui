@@ -231,6 +231,38 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(inked, Is.GreaterThan(w * h / 5), "a cloud is mostly ink");
         }
 
+        // A symbol none of the bundled faces carries reaches the platform's
+        // symbol font, as a browser falls back to a system font: the HUD
+        // sample's ⚔ and ☥ drew as boxes before this. The font is the OS's,
+        // so a machine without it goes inconclusive rather than red.
+        [Test]
+        public void SystemSymbolFont_ServesWhatTheBundledFacesLack()
+        {
+            const uint swords = 0x2694;   // CROSSED SWORDS: not in Inter, not in Noto Sans Symbols 2
+            Assume.That(UnityFontBackend.SystemSymbolFonts.Length, Is.GreaterThan(0), "a platform with a named symbol font");
+            ulong system = 0;
+            foreach (string name in UnityFontBackend.SystemSymbolFonts)
+            {
+                system = _backend.AdoptInstalled(name);
+                if (system != 0) break;
+            }
+            Assume.That(system, Is.Not.EqualTo(0), "the platform's symbol font is installed");
+            Assert.That(_backend.GlyphFor(_face, swords), Is.EqualTo(0), "fixture: the bundled faces lack U+2694");
+
+            ulong face = _backend.Adopt(_regular);
+            _backend.SetFallbacks(face, _symbolsFace, system);
+            uint id = _backend.GlyphFor(face, swords);
+            Assert.That(UnityFontBackend.IndexOf(id), Is.Not.EqualTo(0), "the system face has U+2694");
+            Assert.That(UnityFontBackend.SlotOf(id), Is.EqualTo(2), "served after the bundled fallback");
+            Assert.That(UnityFontBackend.SlotOf(_backend.GlyphFor(face, 0x2601)), Is.EqualTo(1), "the bundled fallback still answers first");
+
+            Assume.That(UnityFontBackend.RasterizerAvailable);
+            Assert.That(_backend.TryRasterize(face, id, 24, out byte[] coverage, out int w, out int h));
+            int inked = 0;
+            foreach (byte b in coverage) if (b > 0) inked++;
+            Assert.That(inked, Is.GreaterThan(w * h / 10), "the system face's bitmap carries ink");
+        }
+
         [Test]
         public void Shape_ClustersAreUtf8ByteOffsets_AndFallbackIsPerCodePoint()
         {
