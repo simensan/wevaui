@@ -180,8 +180,8 @@ BoxId BoxBuilder::new_block_box_for(DisplayKind display, const Element* e,
     // they lay out their contents as a block/flex/grid/table but participate in
     // the parent's inline formatting context.
     b.is_inline_block = is_inline_level_block(display);
-    if ((display == DisplayKind::Block || display == DisplayKind::FlowRoot ||
-         display == DisplayKind::ListItem) &&
+    if ((display == DisplayKind::Block || display == DisplayKind::InlineBlock ||
+         display == DisplayKind::FlowRoot || display == DisplayKind::ListItem) &&
         is_multicol_container(style)) {
         b.is_multicol = true;
     }
@@ -1191,14 +1191,24 @@ void BoxBuilder::finalize_block_children(BoxId parent) {
 
     if (!any_block) {
         // CSS Flexbox §4 / Grid §6: text directly inside a flex or grid
-        // container is wrapped in an anonymous item. Element children were
-        // blockified on the way in; raw text bypasses that branch, and without
-        // the wrap the container sees zero items and collapses to its padding.
-        if (any_inline && blockifies_children((*tree_)[parent].display)) {
+        // container is wrapped in an anonymous item. A multicol container also
+        // needs an anonymous block: its inline content must flow at the column
+        // width and pass through fragmentation, rather than taking the normal
+        // full-width inline layout shortcut.
+        if (any_inline && (blockifies_children((*tree_)[parent].display) ||
+                           (*tree_)[parent].is_multicol)) {
             existing_.clear();
             for (BoxId c : tree_->children(parent)) existing_.push_back(c);
             tree_->clear_children(parent);
-            flush_anonymous(parent, &existing_);
+            if ((*tree_)[parent].is_multicol) {
+                // Unlike anonymous flex/grid items, a column's text may consist
+                // entirely of preserved whitespace (e.g. white-space: pre).
+                const BoxId anon = tree_->create(BoxKind::AnonymousBlock, nullptr, nullptr);
+                for (BoxId c : existing_) tree_->append_child(anon, c);
+                tree_->append_child(parent, anon);
+            } else {
+                flush_anonymous(parent, &existing_);
+            }
             existing_.clear();
             (*tree_)[parent].contains_inlines = false;
             return;

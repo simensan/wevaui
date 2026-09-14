@@ -109,6 +109,46 @@ struct Fixture {
 } // namespace
 
 void test_multicol() {
+    // Chrome receipt: multicol-direct-inline. Direct text and inline elements
+    // use the same balanced columns as text inside a paragraph, including an
+    // inline-block multicol and inherited text metrics/direction.
+    for (const char* display : {"block", "inline-block"}) {
+        for (const char* direction : {"ltr", "rtl"}) {
+            for (bool span : {false, true}) {
+                Fixture f;
+                CHECK(f.css(std::string("body{font-size:24px;line-height:30px}#columns{display:") +
+                    display + ";direction:" + direction + ";width:300px;columns:2;column-gap:20px}"));
+                std::string content = "one<br>two<br>three<br>four<br>five<br>six";
+                if (span) content = "<span>" + content + "</span>";
+                CHECK(f.layout("<body><div id=columns>" + content + "</div></body>"));
+                CHECK(near(f.box("columns").height, 90));
+                std::vector<std::pair<double, double>> lines;
+                const auto collect = [&](const auto& self, BoxId id, double x, double y) -> void {
+                    for (BoxId c : f.tree.children(id)) {
+                        const Box& b = f.tree[c];
+                        if (b.kind == BoxKind::Line) lines.emplace_back(x + b.x, y + b.y);
+                        else self(self, c, x + b.x, y + b.y);
+                    }
+                };
+                collect(collect, f.find("columns"), 0, 0);
+                CHECK(lines.size() == 6);
+                if (lines.size() == 6) {
+                    for (size_t i = 0; i < lines.size(); ++i) {
+                        const bool right = (i >= 3) != (std::string_view(direction) == "rtl");
+                        CHECK(near(lines[i].first, right ? 160 : 0));
+                        CHECK(near(lines[i].second, static_cast<double>(i % 3) * 30));
+                    }
+                }
+            }
+        }
+    }
+    for (const char* whitespace : {"normal", "pre"}) {
+        Fixture f;
+        CHECK(f.css(std::string("#columns{width:300px;columns:2;line-height:30px;white-space:") +
+            whitespace + "}"));
+        CHECK(f.layout("<div id=columns>\n \n \n </div>"));
+        CHECK(near(f.box("columns").height, std::string_view(whitespace) == "pre" ? 60 : 0));
+    }
     {
         Fixture f;
         CHECK(f.css("#columns{width:300px;column-count:2}.span{column-span:all;height:0;margin:-5px 0}"));

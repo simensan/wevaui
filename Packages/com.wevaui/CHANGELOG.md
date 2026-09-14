@@ -12,6 +12,8 @@ package is the Unity host for the Weva core (`libweva`, C++, behind a C ABI,
 checked against Chrome), which the Godot addon also runs on.
 
 ### Fixed
+- Multi-column layout now fragments direct text and inline elements, and
+  honors column settings on inline-block containers in the shared core.
 - Installed fonts retain their file identity in FontEngine's cache across
   document lifetimes. Twelve warmed backend recreations previously retained
   about 211 MB with Segoe UI; the regression test now shows no growth.

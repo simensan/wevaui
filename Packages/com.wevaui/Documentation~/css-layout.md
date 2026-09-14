@@ -112,13 +112,16 @@ clamp hard.
 
 `column-count`, `column-width`, the `columns` shorthand, `column-gap`
 (`normal` = 1em, Chrome's default), and `column-rule` (painted centered in
-each gap; dashed/dotted render solid in v1) on block containers. Auto-height
-containers balance column heights; explicit heights fill sequentially.
-A block child taller than the column height is sliced across columns
-(paint-level fragmentation, matching Chrome). Remaining divergences: a
-child taller than the whole multi-column span overflows the last column
-downward; margin collapsing across column boundaries isn't performed.
-`column-span` and forced breaks parse but are ignored.
+each gap) on block and inline-block containers. Text, inline elements and
+block children flow into balanced columns; `direction: rtl` reverses the
+column order. Lines can fragment across columns, while `break-inside: avoid`
+keeps a block together. `break-before: column` forces a new column.
+Direct children with `column-span: all` separate independently balanced sets.
+
+Limitations: `column-fill: auto`, nested spanner extraction, authored
+`orphans`/`widows`, and per-fragment backgrounds/borders are not implemented.
+A fragmented block's decorations cover the union of its fragments. Explicit
+container heights do not switch to sequential column filling.
 
 ## Containment & content-visibility
 

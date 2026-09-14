@@ -16,9 +16,10 @@ property surface is split across three sub-pages:
 - [CSS Text](css-text.md) — fonts, `line-height`, alignment, decoration,
   `white-space`, wrapping, ellipsis.
 
-For the authoritative supported / partial / parse-only / missing matrix, see
-[`CSS_FEATURES.md`](../CSS_FEATURES.md). This page is a
-readable overview, not a line-by-line conformance table.
+These pages describe the current core's authoring surface, including
+[balanced multi-column layout](css-layout.md#multi-column).
+[`CSS_FEATURES.md`](../CSS_FEATURES.md) is a historical matrix for the retired
+C# engine; its implementation references and status rows are not current.
 
 ## Selectors
 

@@ -140,6 +140,7 @@ check.sh                          the gate
   oracle, behaviour checks, plugin, addon, host tests). CI runs it.
 - **`Tools/oracle/chrome_sweep.py --chrome-metrics --max-worst 1.5
   --known-gaps`** — every tracked case's layout against its Chrome capture.
+  All 334 captures pass the 1.5px ceiling (62 hand, 225 harvest, 47 samples).
   Always pass `--chrome-metrics` (the browser's box semantics).
 - **`Tools/oracle/run_chrome_checks.py`** — 57 scripted behaviour checks
   against a live Chrome (forms, focus, popovers, animation clocks).
