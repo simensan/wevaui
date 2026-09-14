@@ -87,6 +87,12 @@ if [ "$clean" -eq 1 ]; then
 fi
 
 # ---- build ---------------------------------------------------------------
+step "release and text-safety verification tools"
+python3 -m unittest discover -s "$ROOT/Tools/tests" \
+    || fail "release verification tools"
+python3 -m unittest discover -s "$ROOT/Tools/godot-text-shaping-repro" -p 'test_*.py' \
+    || fail "text-safety verification tools"
+
 step "performance verification tools"
 python3 -m unittest discover -s "$ROOT/hosts/godot" -p 'test_frontier_perf*.py' \
     || fail "performance verification tools"

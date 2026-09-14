@@ -35,11 +35,15 @@ def tree_hash(root, paths):
     return digest.hexdigest()
 
 
-def source_hash(root):
-    return tree_hash(root, ['CMakeLists.txt', 'libweva/CMakeLists.txt',
-                           'libweva/include', 'libweva/src', 'third_party',
-                           'hosts/godot/CMakeLists.txt', 'hosts/godot/src',
-                           'hosts/godot/build_metadata.py'])
+def source_hash(root, host='godot'):
+    if host not in ('godot', 'unity'):
+        raise ValueError(f'Unknown native host: {host}')
+    paths = ['CMakeLists.txt', 'libweva/CMakeLists.txt', 'libweva/include',
+             'libweva/src', 'third_party', 'hosts/godot/build_metadata.py',
+             f'hosts/{host}/CMakeLists.txt', f'hosts/{host}/src']
+    if host == 'unity':
+        paths += ['hosts/unity/build_metadata.py', 'hosts/unity/gen_exports.py']
+    return tree_hash(root, paths)
 
 
 def godot_cpp_hash(root):
@@ -99,7 +103,7 @@ def main():
     data = {
         'schema': 1,
         'library_sha256': sha256(args.library),
-        'source': dict(git_state(root.parent), sha256=source_hash(root)),
+        'source': dict(git_state(root), sha256=source_hash(root)),
         'godot_cpp': dict(git_state(args.godot_cpp_dir), sha256=godot_cpp_hash(args.godot_cpp_dir)),
         'configuration': args.configuration,
         'compiler': {'id': args.compiler, 'version': args.compiler_version},

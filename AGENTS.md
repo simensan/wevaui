@@ -88,6 +88,8 @@ The 2026-09-14 review passes 14 gcc suites (506,310 core checks),
 16 sanitizer suites, and all 334 Chrome layout captures at the 1.5px ceiling.
 Unity Native EditMode passes 191 tests with 2 environment-gated inconclusive;
 the full EditMode suite passes 192 with the same 2 inconclusive.
+Tooling suites pass 21 release checks, 9 text-safety runner checks, and
+32 Frontier performance-runner checks; `check.sh` runs all three.
 
 ## 4. Workflow recipes
 

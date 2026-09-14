@@ -68,8 +68,7 @@ target_link_libraries(weva_godot PRIVATE weva godot-cpp weva_icu_common)
 # Stamp the linked binary, not a developer-supplied label. Packaging checks
 # both this binary digest and the current source/dependency content digests.
 find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter)
-add_custom_command(TARGET weva_godot POST_BUILD
-    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/build_metadata.py"
+set(weva_metadata_command "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/build_metadata.py"
         --library "$<TARGET_FILE:weva_godot>"
         --source-dir "${CMAKE_CURRENT_SOURCE_DIR}/../.."
         --godot-cpp-dir "${GODOT_CPP_DIR}"
@@ -79,9 +78,12 @@ add_custom_command(TARGET weva_godot POST_BUILD
         --cmake-version "${CMAKE_VERSION}"
         --godot-api "${GODOTCPP_API_VERSION}"
         --precision "${GODOTCPP_PRECISION}"
-        --custom-api "${GODOTCPP_CUSTOM_API_FILE}"
-        --sanitizers "${WEVA_SANITIZERS}"
-    VERBATIM)
+        "--custom-api=${GODOTCPP_CUSTOM_API_FILE}"
+        --sanitizers "${WEVA_SANITIZERS}")
+add_custom_command(TARGET weva_godot POST_BUILD COMMAND ${weva_metadata_command} VERBATIM)
+# Re-stamp an up-to-date binary when metadata helpers or checkout state change.
+add_custom_target(weva_godot_metadata ALL COMMAND ${weva_metadata_command}
+    DEPENDS weva_godot VERBATIM)
 if(MSVC)
     # godot-cpp checks __cplusplus, which MSVC reports as 199711L unless told
     # to be truthful; the sources are UTF-8; no unwinding, as in the core

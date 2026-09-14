@@ -136,7 +136,8 @@ check.sh                          the gate
 
 ## 5. Tooling & verification
 
-- **`check.sh`** — the whole gate (build, core tests, sanitizers, Chrome
+- **`check.sh`** — the whole gate (release/text-safety/performance tooling
+  suites: 21/9/32 checks; build, core tests, sanitizers, Chrome
   oracle, behaviour checks, plugin, addon, host tests). CI runs it.
 - **`Tools/oracle/chrome_sweep.py --chrome-metrics --max-worst 1.5
   --known-gaps`** — every tracked case's layout against its Chrome capture.

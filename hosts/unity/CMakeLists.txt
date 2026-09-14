@@ -82,16 +82,20 @@ endif()
 
 # The same fingerprint the Godot packager verifies: library digest, source
 # tree digest, git state and compiler, written beside the plugin.
-add_custom_command(TARGET weva_core POST_BUILD
-    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/build_metadata.py"
+set(weva_metadata_command "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/build_metadata.py"
         --library "$<TARGET_FILE:weva_core>"
         --source-dir "${CMAKE_CURRENT_SOURCE_DIR}/../.."
         --configuration "$<CONFIG>"
         --compiler "${CMAKE_CXX_COMPILER_ID}"
         --compiler-version "${CMAKE_CXX_COMPILER_VERSION}"
         --cmake-version "${CMAKE_VERSION}"
-        --sanitizers "${WEVA_SANITIZERS}"
-    VERBATIM)
+        --sanitizers "${WEVA_SANITIZERS}")
+add_custom_command(TARGET weva_core POST_BUILD COMMAND ${weva_metadata_command} VERBATIM)
+# Metadata helpers and Git state can change without relinking the library.
+# Refresh on ordinary builds too, including Visual Studio where LINK_DEPENDS
+# cannot make a Python helper trigger the post-link command.
+add_custom_target(weva_core_metadata ALL COMMAND ${weva_metadata_command}
+    DEPENDS weva_core VERBATIM)
 
 # A host-free check that the plugin loads, reports its ABI and can run a
 # document end to end through the exported entry points alone. Only where it

@@ -37,7 +37,7 @@ def main():
         'schema': 1,
         'host': 'unity',
         'library_sha256': sha256(args.library),
-        'source': dict(git_state(root.parent), sha256=source_hash(root)),
+        'source': dict(git_state(root), sha256=source_hash(root, host='unity')),
         'abi': abi_version(root / 'libweva' / 'include' / 'weva_c.h'),
         'configuration': args.configuration,
         'compiler': {'id': args.compiler, 'version': args.compiler_version},

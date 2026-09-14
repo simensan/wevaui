@@ -21,7 +21,7 @@ the package is this host.
 cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release \
     -DWEVA_UNITY_BIN=<repo>/Packages/com.wevaui/Runtime/Native/Plugins/x86_64
 cmake --build build-unity
-build-unity/weva_core_load_test build-unity/bin/weva_core.dll   # or .so
+build-unity/weva_core_load_test Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll   # .exe on Windows; .so on Linux
 ```
 
 `WEVA_UNITY_BIN` is where the plugin lands; pointing it at the package's
@@ -29,6 +29,9 @@ build-unity/weva_core_load_test build-unity/bin/weva_core.dll   # or .so
 gitignored, its `.meta` is tracked). The build stamps `weva_core.dll.build.json`
 beside it with the library digest, source digest, git state, compiler and ABI
 version, the same fingerprint the Godot packager verifies.
+The fingerprint includes Unity's native sources and export generator. A normal
+build refreshes the receipt even when the binary does not relink; a targeted
+build can request `weva_core_metadata` to do both.
 
 The plugin statically links the C runtime and ICU (with the filtered data the
 Godot extension uses, `uemoji.icu` included), so it carries no dependency.
