@@ -3482,9 +3482,74 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
     }
 
+    // A run in a vertical writing mode (writing_mode.h): the line was laid
+    // out on its side, so its glyphs are built along a horizontal pen and
+    // turned a quarter turn clockwise into the line's physical rect. The
+    // line's over side is its right edge in both vertical modes (Writing
+    // Modes §6.1), so the rotated baseline -- measured from the line's
+    // rotated top -- is measured from that edge. Shadows offset physically
+    // after the turn. Decorations, selection and the caret are not drawn
+    // on a vertical run.
+    if (b.kind == BoxKind::Text && b.vertical_text && !b.preserved_tab && !b.text.empty() &&
+        paint.font && paint.atlas && !hidden) {
+        const BoxId line = b.parent;
+        const bool in_line = line != kNoBox && tree[line].kind == BoxKind::Line;
+        const double line_right = in_line ? origin_x + tree[line].width : x + b.width;
+        const double rotated_baseline = in_line ? tree[line].baseline : b.width;
+        const double spacing =
+            letter_spacing_of(b.style, ctx, b.font_size) + b.justify_letter_spacing;
+        const LinearColor text_color = resolve_color(b.style, "color");
+        const FaceHandle run_face = face_for_run(b, ctx, paint);
+        const auto turn = [&](Mesh* m, double dx, double dy) {
+            for (Vertex& v : m->vertices) {
+                const double along = v.position.x, across = v.position.y;
+                v.position.x = static_cast<float>(line_right - across + dx);
+                v.position.y = static_cast<float>(y + along + dy);
+            }
+        };
+        for (const TextShadow& sh : parse_text_shadows(b.style, ctx, b.font_size, text_color)) {
+            if (sh.blur <= 0) {
+                Mesh shadow;
+                build_text_geometry(b.text, 0, rotated_baseline, b.font_size, sh.color, paint,
+                                    &shadow, spacing, &run_face);
+                turn(&shadow, sh.x, sh.y);
+                draw_mesh(std::move(shadow), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+                continue;
+            }
+            // The stack of copies, as the horizontal fallback below draws it.
+            const double sigma = sh.blur * 0.5;
+            double weights[5][5];
+            double total = 0;
+            for (int i = -2; i <= 2; ++i) {
+                for (int j = -2; j <= 2; ++j) {
+                    weights[i + 2][j + 2] = std::exp(-(i * i + j * j) / 2.0);
+                    total += weights[i + 2][j + 2];
+                }
+            }
+            for (int i = -2; i <= 2; ++i) {
+                for (int j = -2; j <= 2; ++j) {
+                    LinearColor c = sh.color;
+                    c.a = static_cast<float>(sh.color.a * weights[i + 2][j + 2] / total * 1.6);
+                    if (c.a > 1) c.a = 1;
+                    Mesh shadow;
+                    build_text_geometry(b.text, 0, rotated_baseline, b.font_size, c, paint, &shadow,
+                                        spacing, &run_face);
+                    turn(&shadow, sh.x + i * sigma, sh.y + j * sigma);
+                    draw_mesh(std::move(shadow), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+                }
+            }
+        }
+        Mesh text;
+        build_text_geometry(b.text, 0, rotated_baseline, b.font_size, text_color, paint, &text,
+                            spacing, &run_face);
+        turn(&text, 0, 0);
+        draw_mesh(std::move(text), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
+    }
+
     // A text run's own y is its top; the baseline is where the glyphs sit, and
     // the line box put it there.
-    if (b.kind == BoxKind::Text && !b.preserved_tab && !b.text.empty() && paint.font && paint.atlas && !hidden) {
+    if (b.kind == BoxKind::Text && !b.vertical_text && !b.preserved_tab && !b.text.empty() &&
+        paint.font && paint.atlas && !hidden) {
         const BoxId line = b.parent;
         const double baseline =
             line != kNoBox && tree[line].kind == BoxKind::Line ? origin_y + tree[line].baseline

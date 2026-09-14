@@ -196,6 +196,15 @@ struct Box {
     // coordinates: a `column-span: all` block separates one set from the
     // next, and a rule runs the height of each set, not through the spanner.
     std::vector<std::pair<double, double>> column_sets;
+    // CSS Writing Modes §7.3: a `writing-mode: vertical-*` box in a
+    // horizontal flow. Laid out on rotated styles and transposed back
+    // (writing_mode.h); it is an independent formatting context, so its
+    // children's margins never collapse through it.
+    bool orthogonal_root = false;
+    // Set on every box of a vertical subtree (VerticalMode as an integer:
+    // 1 rl, 2 lr). Paint rotates a text run's glyphs a quarter turn
+    // clockwise when this is set; the run's rect is already physical.
+    uint8_t vertical_text = 0;
     bool contains_inlines = false;
     // display: inline-block / inline-flex / inline-grid. The inner formatting
     // context is unchanged; only participation in the parent IFC differs, and

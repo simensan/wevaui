@@ -95,8 +95,12 @@ Details and the exact supported set: [`api-stability.md`](Packages/com.wevaui/Do
   from the bundled symbol face.
 - **RTL shaping on Unity.** The core reorders bidi runs; `FontEngine` shapes
   one glyph per code point, so Arabic contextual forms and in-word RTL glyph
-  order are not produced. Vertical writing modes are not implemented.
-- **Vertical writing** is the one excused Chrome gap
+  order are not produced.
+- **Vertical writing, partly.** `vertical-rl` / `vertical-lr` lay out as
+  orthogonal flows and paint runs turned a quarter turn
+  (`libweva/src/writing_mode.cpp`); `sideways-*`, upright CJK, a horizontal
+  box inside a vertical one, and decorations / selection / caret on a
+  vertical run are not done. The Chrome gate excuses no case
   (`Tools/oracle/known-gaps/chrome-sweep.txt`). Multi-column layout is
   implemented and balanced the way Blink balances (`libweva/src/multicol.cpp`).
 - **No script.** No JavaScript, no DOM mutation API beyond attributes,

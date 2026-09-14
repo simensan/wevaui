@@ -42,14 +42,16 @@ div, section, article, header, footer, nav, main, aside,
 form, fieldset, ul, ol, hr, blockquote { display: block; }
 li { display: list-item; }
 
-p { display: block; margin-top: 1em; margin-bottom: 1em; }
+/* Block margins are flow-relative, as in Chrome's own sheet: in a vertical
+   writing mode a paragraph's margins sit on its left and right. */
+p { display: block; margin-block-start: 1em; margin-block-end: 1em; }
 
-h1 { display: block; font-size: 2em;    font-weight: bold; margin-top: 0.67em; margin-bottom: 0.67em; }
-h2 { display: block; font-size: 1.5em;  font-weight: bold; margin-top: 0.83em; margin-bottom: 0.83em; }
-h3 { display: block; font-size: 1.17em; font-weight: bold; margin-top: 1em;    margin-bottom: 1em; }
-h4 { display: block;                    font-weight: bold; margin-top: 1.33em; margin-bottom: 1.33em; }
-h5 { display: block; font-size: 0.83em; font-weight: bold; margin-top: 1.67em; margin-bottom: 1.67em; }
-h6 { display: block; font-size: 0.67em; font-weight: bold; margin-top: 2.33em; margin-bottom: 2.33em; }
+h1 { display: block; font-size: 2em;    font-weight: bold; margin-block-start: 0.67em; margin-block-end: 0.67em; }
+h2 { display: block; font-size: 1.5em;  font-weight: bold; margin-block-start: 0.83em; margin-block-end: 0.83em; }
+h3 { display: block; font-size: 1.17em; font-weight: bold; margin-block-start: 1em;    margin-block-end: 1em; }
+h4 { display: block;                    font-weight: bold; margin-block-start: 1.33em; margin-block-end: 1.33em; }
+h5 { display: block; font-size: 0.83em; font-weight: bold; margin-block-start: 1.67em; margin-block-end: 1.67em; }
+h6 { display: block; font-size: 0.67em; font-weight: bold; margin-block-start: 2.33em; margin-block-end: 2.33em; }
 
 a, span, strong, em, b, i, u, code, small, br, label { display: inline; }
 
@@ -58,11 +60,11 @@ i, em     { font-style: italic; }
 u         { text-decoration: underline; }
 code, kbd, samp { font-family: monospace; }
 small     { font-size: 0.83em; }
-pre       { display: block; font-family: monospace; white-space: pre; margin-top: 1em; margin-bottom: 1em; }
+pre       { display: block; font-family: monospace; white-space: pre; margin-block-start: 1em; margin-block-end: 1em; }
 
 a { color: #0066cc; text-decoration: underline; }
 
-ul, ol { padding-left: 40px; margin-top: 1em; margin-bottom: 1em; }
+ul, ol { padding-inline-start: 40px; margin-block-start: 1em; margin-block-end: 1em; }
 ul { list-style-type: disc; }
 ol { list-style-type: decimal; }
 

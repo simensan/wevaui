@@ -62,6 +62,19 @@ checked against Chrome), which the Godot addon also runs on.
   the columns run out; a paragraph split across columns is where its lines
   are, as `getBoundingClientRect` reports it. Measured against Chrome on
   the multicol sample and nine probes (`Tools/oracle/corpus/hand/61-69`).
+- Vertical writing modes, in the core for both hosts: `writing-mode:
+  vertical-rl` and `vertical-lr`. A vertical box in a horizontal page is
+  an orthogonal flow: its subtree is laid out on its side (block, inline,
+  flex, grid and table alike), its inline size fitted against the block
+  size available to it, and turned back into place; each text run paints a
+  quarter turn clockwise with the line's over side on the right, as
+  `text-orientation: mixed` does for Latin. Physical padding, borders and
+  insets stay where the author put them; the user-agent sheet's paragraph
+  and heading margins are flow-relative now (`margin-block`), as Chrome's
+  are, so they sit left and right of a vertical paragraph. Measured against
+  Chrome on the logical-properties sample. Not done: `sideways-*`, upright
+  CJK, a horizontal box nested inside a vertical one, decorations,
+  selection and the caret on a vertical run.
 - A family the page names resolves to the installed font of that name:
   `font-family: "Segoe UI"` draws with Segoe UI where the machine has it,
   with its bold and italic files, as in a browser (the core lists the

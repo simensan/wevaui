@@ -1913,6 +1913,13 @@ IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutCont
         const double width=std::max(0.0,contain_intrinsic_width(self.style,resolved,fs));
         return {width,width};
     }
+    // A vertical box's inline contribution to the horizontal flow around it
+    // is its block size, which its last layout put in its width; its runs
+    // are laid out on their side and would measure as heights.
+    if (self.kind == BoxKind::Block && vertical_mode_of(self.style) != VerticalMode::None) {
+        const double width = std::max(0.0, self.content_width());
+        return {width, width};
+    }
     if (self.intrinsic_height > 0) return {self.intrinsic_width, self.intrinsic_width};
     // A closed select has no option boxes: its label is painted by the form
     // control path. Its options must nevertheless contribute to natural size,

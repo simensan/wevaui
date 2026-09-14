@@ -14,4 +14,3 @@
 #   gap/<feature>    The core lacks the feature; PRODUCT_READINESS.md and
 #                    PORT_PLAN.md already list it.
 
-cov-logical: gap/vertical-writing — writing-mode: vertical-* is not implemented in the core (PRODUCT_READINESS.md "vertical writing"); .page 496 vs 961

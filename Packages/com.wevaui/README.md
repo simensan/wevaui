@@ -152,8 +152,12 @@ For the full supported / partial / parse-only / missing CSS matrix, see
 
 What the core does not do yet, with where it shows:
 
-- **Vertical writing modes** — the one sample page the Chrome gate excuses
-  (`Tools/oracle/known-gaps/`).
+- **Vertical writing, partly** — `writing-mode: vertical-rl` / `vertical-lr`
+  lay out as orthogonal flows and paint text turned a quarter turn (Latin on
+  its side), as Chrome does with `text-orientation: mixed`. Not done:
+  `sideways-*`, upright CJK (`text-orientation: upright`), a horizontal box
+  nested inside a vertical one, decorations, selection and the caret on a
+  vertical run. The Chrome gate excuses nothing (`Tools/oracle/known-gaps/`).
 - **`@property`** (typed custom properties), **View Transitions**, dictionary
   hyphenation (`hyphens: manual` with soft hyphens works).
 - **On the Unity host:** the shaper is the package's own, over the font's

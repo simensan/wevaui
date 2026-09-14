@@ -77,6 +77,7 @@ add_library(weva STATIC
     src/grid.cpp
     src/table_layout.cpp
     src/multicol.cpp
+    src/writing_mode.cpp
     src/font_interface.cpp
     src/glyph_atlas.cpp
     src/weva_c.cpp

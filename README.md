@@ -119,8 +119,9 @@ public sealed class MainMenu : MonoBehaviour {
 
 [`docs/PRODUCT_READINESS.md`](./docs/PRODUCT_READINESS.md) says, per host,
 what is verified and what evidence is still missing. In short: a development
-preview on both. Known gaps shared by both hosts: vertical writing modes,
-`@property`, View Transitions. The Unity host shapes
+preview on both. Known gaps shared by both hosts: `sideways-*` writing modes
+and upright CJK in vertical text (`vertical-rl` / `vertical-lr` lay out and
+paint rotated), `@property`, View Transitions. The Unity host shapes
 with its own OpenType layer (right-to-left order, Arabic joining, cursive
 attachment, marks, the nine main Indic scripts by syllable; not Sinhala,
 Khmer, Myanmar or Tibetan) and does not

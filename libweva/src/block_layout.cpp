@@ -585,6 +585,9 @@ bool is_flex_grid_item(const BoxTree& tree, const Box& b) {
 
 bool establishes_new_bfc(const Box& b) {
     if (!b.style) return false;
+    // CSS Writing Modes §7.3: an orthogonal flow root is an independent
+    // formatting context.
+    if (b.orthogonal_root) return true;
     const auto container_type=get(b.style, kId_container_type);
     if (iequals(container_type,"size") || iequals(container_type,"inline-size")) return true;
     // The `overflow` shorthand expands to overflow-x / overflow-y, so the
@@ -1156,6 +1159,13 @@ bool BlockLayout::has_intrinsic_width_keyword(BoxId id) const {
 
 double BlockLayout::shrink_to_fit(BoxId id, double available_width,
                                   const ComputedStyle* parent_style) {
+    // A vertical float or inline-block hugs its content on its own axes:
+    // the orthogonal layout fits it against the block size available to it
+    // and its physical width is its content's block size.
+    if (vertical_mode_of((*tree_)[id].style) != VerticalMode::None) {
+        layout_orthogonal(id, parent_style, std::nullopt, std::nullopt);
+        return font_size_px((*tree_)[id].style, parent_style, ctx_);
+    }
     const double fs = apply_box_model(tree_, id, available_width, parent_style, ctx_);
     const ComputedStyle* style = (*tree_)[id].style;
     const ResolvedLength w =
@@ -1314,6 +1324,10 @@ void BlockLayout::relayout_at(BoxId id, double width) {
     (*tree_)[id].cross_size_imposed = false;
     const BoxId parent = (*tree_)[id].parent;
     const ComputedStyle* parent_style = parent == kNoBox ? nullptr : (*tree_)[parent].style;
+    if (vertical_mode_of((*tree_)[id].style) != VerticalMode::None) {
+        layout_orthogonal(id, parent_style, width, std::nullopt);
+        return;
+    }
     const double fs = font_size_px((*tree_)[id].style, parent_style, ctx_);
     relayout_content_at(id, width, fs, parent_style);
 }
@@ -1321,6 +1335,10 @@ void BlockLayout::relayout_at(BoxId id, double width) {
 void BlockLayout::relayout_at_size(BoxId id, double width, double height) {
     const BoxId parent = (*tree_)[id].parent;
     const ComputedStyle* parent_style = parent == kNoBox ? nullptr : (*tree_)[parent].style;
+    if (vertical_mode_of((*tree_)[id].style) != VerticalMode::None) {
+        layout_orthogonal(id, parent_style, width, height);
+        return;
+    }
     const double fs = font_size_px((*tree_)[id].style, parent_style, ctx_);
     (*tree_)[id].height = height;
     (*tree_)[id].cross_size_imposed = true;
@@ -1352,6 +1370,47 @@ void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
     layout_content(id, font_size, width, parent_style);
 }
 
+void BlockLayout::layout_orthogonal(BoxId id, const ComputedStyle* parent_style,
+                                    std::optional<double> imposed_width,
+                                    std::optional<double> imposed_height) {
+    const VerticalMode mode = vertical_mode_of((*tree_)[id].style);
+    // CSS Writing Modes §7.3.2: the space available to the orthogonal flow's
+    // inline axis is the containing block's block size when that is
+    // definite, else the initial containing block's. `html, body { height:
+    // 100% }` makes body definite; an auto-height div is not, so a vertical
+    // section in one fits against the viewport height, as it does in Chrome.
+    double available = ctx_.viewport_height_px;
+    const BoxId parent = (*tree_)[id].parent;
+    if (parent != kNoBox && (*tree_)[parent].style) {
+        const Box& p = (*tree_)[parent];
+        const BoxId grandparent = p.parent;
+        const ComputedStyle* gp_style = grandparent == kNoBox ? nullptr : (*tree_)[grandparent].style;
+        const double pfs = font_size_px(p.style, gp_style, ctx_);
+        const double definite = definite_flow_content_height(*tree_, p, ctx_, pfs);
+        if (definite >= 0) available = definite;
+    }
+
+    if (!orthogonal_) orthogonal_ = std::make_unique<OrthogonalFlowStyles>();
+    orthogonal_->rotate(tree_, id, mode);
+    (*tree_)[id].orthogonal_root = true;
+    if (imposed_width && imposed_height) {
+        // Both axes from outside, as a flex line stretches an item: the
+        // physical width is the rotated block size, the physical height the
+        // rotated inline size.
+        const double fs = apply_box_model(tree_, id, available, parent_style, ctx_);
+        (*tree_)[id].height = *imposed_width;
+        (*tree_)[id].cross_size_imposed = true;
+        relayout_content_at(id, *imposed_height, fs, parent_style);
+        (*tree_)[id].height = *imposed_width;
+    } else {
+        (*tree_)[id].cross_size_imposed = false;
+        shrink_to_fit(id, available, parent_style);
+        if (imposed_width) (*tree_)[id].height = *imposed_width;
+    }
+    transpose_orthogonal_flow(tree_, id, mode);
+    orthogonal_->restore(tree_, id);
+}
+
 void BlockLayout::layout_root(BoxId root, double viewport_width, double viewport_height) {
     LayoutProfileRoot profile;
     Box& b = (*tree_)[root];
@@ -1373,6 +1432,17 @@ void BlockLayout::layout_block(BoxId id, double available_width,
     // stale height. A square item in a grid inside a column flex was 199.85
     // tall — its provisional first-pass height — instead of 80.
     (*tree_)[id].cross_size_imposed = false;
+    // A vertical box in this horizontal flow is laid out on its side and
+    // turned back (writing_mode.h). Inside that layout every style is a
+    // horizontal copy, so this never recurses. A box laid out in an earlier
+    // pass as part of a vertical flow starts clean: the transposition marks
+    // the subtree again if it still is one.
+    (*tree_)[id].orthogonal_root = false;
+    (*tree_)[id].vertical_text = 0;
+    if (vertical_mode_of((*tree_)[id].style) != VerticalMode::None) {
+        layout_orthogonal(id, parent_style, std::nullopt, std::nullopt);
+        return;
+    }
     double fs;
     if ((*tree_)[id].style) {
         fs = apply_box_model(tree_, id, available_width, parent_style, ctx_);

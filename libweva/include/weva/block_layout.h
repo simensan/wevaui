@@ -4,9 +4,12 @@
 #include "weva/css_properties.h"
 #include "weva/font_metrics.h"
 #include "weva/inline_layout.h"
+#include "weva/writing_mode.h"
 
 #include <map>
 #include <array>
+#include <memory>
+#include <optional>
 #include "weva/style_resolver.h"
 
 #include <string_view>
@@ -227,8 +230,17 @@ private:
     double layout_inline_content(BoxId id, double content_width,
                                  const ComputedStyle* parent_style);
     void place_float(BoxId container, BoxId float_box, double top_y, double content_w);
+    // Lays out a `writing-mode: vertical-*` box (writing_mode.h): the
+    // subtree's styles are rotated, the box is laid out horizontally with
+    // its inline size fitted against the containing block's block size, and
+    // the geometry is transposed back. A physical width imposed from
+    // outside (a flex line's main size) is the rotated block size; an
+    // imposed physical height is the rotated inline size.
+    void layout_orthogonal(BoxId id, const ComputedStyle* parent_style,
+                           std::optional<double> imposed_width, std::optional<double> imposed_height);
 
     BoxTree* tree_;
+    std::unique_ptr<OrthogonalFlowStyles> orthogonal_;
     LayoutContext ctx_;
     const FontMetrics* metrics_ = nullptr;
     LayoutReuse* reuse_ = nullptr;

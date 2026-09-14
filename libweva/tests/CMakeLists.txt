@@ -47,6 +47,7 @@ add_executable(weva_tests
     test_grid.cpp
     test_containment.cpp
     test_multicol.cpp
+    test_writing_mode.cpp
     test_paint.cpp
     test_software_renderer.cpp
     test_text_render.cpp
