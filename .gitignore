@@ -113,6 +113,7 @@ Assets/UI/Fonts/Source/SegoeUI.ttf.meta
 # README); the .meta beside it is tracked so the import settings are.
 Packages/com.wevaui/Runtime/Native/Plugins/**/weva_core.dll
 Packages/com.wevaui/Runtime/Native/Plugins/**/weva_core.dll.build.json
+Packages/com.wevaui/Runtime/Native/Plugins/**/weva_core.dll.build.json.meta
 Packages/com.wevaui/Runtime/Native/Plugins/**/libweva_core.so
 
 # ---- Engine (was godot-port/, collapsed into the root) --------------------

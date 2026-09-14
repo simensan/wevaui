@@ -101,6 +101,9 @@ def main():
     ap.add_argument("--known-failing", default=os.path.join(HERE, "known-gaps", "chrome-checks.txt"),
                     help="`script-name: reason` lines allowed to fail")
     a = ap.parse_args()
+    # Children run in the receipt directory. Resolve the CLI path before
+    # changing their cwd, so --out .utmp/checks is not joined to itself.
+    a.out = os.path.abspath(a.out)
 
     scripts = sorted(glob.glob(os.path.join(HERE, "check_*_chrome.cjs"))
                      + glob.glob(os.path.join(HERE, "check_*_chrome.py")))
