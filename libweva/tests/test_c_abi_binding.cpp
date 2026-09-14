@@ -342,6 +342,48 @@ void test_abi_binding_without_a_source() {
     CHECK(plain.text("#t") == "Nothing to fill in");
 }
 
+// A <template>'s body is inert, as in the DOM: Chrome keeps it in
+// template.content, where querySelector, textContent and children never see
+// it, and nothing of it gets a box (check_template_inert_chrome.cjs). The
+// core keeps the body in its tree -- data-each clones rows out of it -- so its
+// readers hide it instead: the template is found, what it holds is not, bound
+// or unbound.
+void test_abi_template_content_is_inert() {
+    Doc doc("html, body, ul, p { margin: 0; padding: 0 } li { height: 10px }",
+            "<ul id=list>"
+            "<template data-each='Items as item' data-key='Id'>"
+            "<li class=row id='item-{{ item.Id }}'>{{ item.Name }}</li>"
+            "</template>"
+            "</ul><p id=after>after</p>");
+    // Unbound: an empty list, not the template's body.
+    CHECK(weva_document_query(doc.d, "li") == WEVA_ELEMENT_NONE);
+    CHECK(weva_document_query_all(doc.d, ".row", nullptr, 0) == 0);
+    CHECK(weva_document_query_all(doc.d, "#list li", nullptr, 0) == 0);
+    const weva_element_t tmpl = weva_document_query(doc.d, "template");
+    CHECK(tmpl != WEVA_ELEMENT_NONE);
+    CHECK(weva_element_children(doc.d, tmpl, nullptr, 0) == 0);
+    CHECK(doc.text("#list") == "");
+    CHECK(doc.height("#list") == 0);
+    double x = 0, y = 0, w = 0, h = 0;
+    CHECK(weva_element_bounds(doc.d, weva_document_query(doc.d, "#after"), &x, &y, &w, &h) == WEVA_OK);
+    CHECK(y == 0);
+
+    // Bound: the rows are real, the template's own body still is not.
+    doc.data.lists["Items"] = 2;
+    doc.data.values["Items.0.Id"] = "a";
+    doc.data.values["Items.0.Name"] = "A";
+    doc.data.values["Items.1.Id"] = "b";
+    doc.data.values["Items.1.Name"] = "B";
+    CHECK(doc.refresh() > 0);
+    CHECK(weva_document_query_all(doc.d, ".row", nullptr, 0) == 2);
+    CHECK(weva_document_query_all(doc.d, "#list li", nullptr, 0) == 2);
+    CHECK(weva_document_query_all(doc.d, "template li", nullptr, 0) == 0);
+    CHECK(doc.attribute("li", "id") == "item-a");
+    CHECK(doc.text("#list") == "AB");
+    CHECK(weva_element_children(doc.d, tmpl, nullptr, 0) == 0);
+    CHECK(doc.height("#list") == 20);
+}
+
 // A value longer than the resolver's first buffer still arrives whole: the
 // two-call pattern the rest of the ABI uses.
 void test_abi_binding_long_values() {

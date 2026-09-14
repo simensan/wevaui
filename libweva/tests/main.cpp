@@ -379,6 +379,7 @@ void test_abi_binding_attributes();
 void test_c_abi_binding_boolean_attributes();
 void test_abi_binding_classes();
 void test_abi_binding_without_a_source();
+void test_abi_template_content_is_inert();
 void test_abi_binding_long_values();
 void test_abi_binding_value_changes_during_read();
 void test_abi_binding_repeat();
@@ -960,6 +961,7 @@ int main() {
     test_c_abi_binding_boolean_attributes();
     test_abi_binding_classes();
     test_abi_binding_without_a_source();
+    test_abi_template_content_is_inert();
     test_abi_binding_long_values();
     test_abi_binding_value_changes_during_read();
     test_abi_binding_repeat();

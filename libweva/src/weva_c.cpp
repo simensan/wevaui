@@ -2263,8 +2263,14 @@ struct weva_document {
         query_order.clear();
         const auto visit = [&](const auto& self, const Node& node) -> void {
             if (node.is_element()) {
-                const auto handle = handle_of(static_cast<const Element*>(&node));
+                const auto* element = static_cast<const Element*>(&node);
+                const auto handle = handle_of(element);
                 if (handle != WEVA_ELEMENT_NONE) query_order.push_back(handle);
+                // A template's body is inert, as in the DOM (Chrome keeps it
+                // in template.content, where querySelector never looks): the
+                // template itself is found, what it holds is not. The tree
+                // keeps the body because data-each clones rows out of it.
+                if (element->tag_name() == "template") return;
             }
             for (const auto& child : node.children()) self(self, *child);
         };
@@ -8844,6 +8850,9 @@ size_t weva_element_text(weva_document_t doc, weva_element_t element, char* buff
                 if (c->node_type() == NodeType::Text) {
                     *out += static_cast<const TextNode&>(*c).data();
                 } else if (c->node_type() == NodeType::Element) {
+                    // A template's body is not the element's text, as
+                    // textContent does not include template.content.
+                    if (static_cast<const Element&>(*c).tag_name() == "template") continue;
                     go(*c, out);
                 }
             }
@@ -8910,6 +8919,9 @@ size_t weva_element_children(weva_document_t doc, weva_element_t element, weva_e
     if (!doc) return 0;
     const Element* e = doc->element_at(element);
     if (!e) return 0;
+    // A template has no children of its own in the DOM (its body is
+    // template.content), and none here.
+    if (e->tag_name() == "template") return 0;
     size_t count = 0;
     for (const Ref<Node>& child : e->children()) {
         if (child->node_type() != NodeType::Element) continue;

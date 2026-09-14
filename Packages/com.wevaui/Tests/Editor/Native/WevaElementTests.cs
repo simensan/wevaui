@@ -83,6 +83,12 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(_host.Query(""), Is.EqualTo(WevaElement.None));
             Assert.That(_host.QueryAll(".nothing"), Is.Empty);
             Assert.That(_host.QueryAll(""), Is.Empty);
+            // A <template>'s body is inert, as in Chrome: the template is
+            // found, what it holds is not, until data-each clones rows from it.
+            Assert.That(_host.Query("template").IsValid, Is.True);
+            Assert.That(_host.Query("li"), Is.EqualTo(WevaElement.None), "no rows without a controller");
+            Assert.That(_host.Query("template").Children, Is.Empty);
+            Assert.That(_host.Query("#quests").Text, Is.EqualTo(""));
         }
 
         [Test]

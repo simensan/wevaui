@@ -42,10 +42,11 @@ v1. `<details>`/`<summary>` get the UA-stylesheet `[open]` toggle visuals;
 
 ### Deliberately omitted
 
-`iframe`, `script`, top-level `<style>` blocks (inline `<style>` inside a
-`<template>` is parsed but not yet wired into the cascade), `canvas`, `svg`,
-`audio`, `video`. There is no JavaScript engine; interactivity comes from C#
-controller binding, not DOM script.
+`iframe`, `script`, `canvas`, `svg`, `audio`, `video`. There is no JavaScript
+engine; interactivity comes from C# controller binding, not DOM script.
+A `<template>`'s content is inert, as in a browser: it renders nothing, and
+`Query`, an element's text and its children never see it -- until `data-each`
+clones rows from it, or a custom element instantiates it.
 
 ## Attributes
 

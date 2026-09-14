@@ -783,7 +783,11 @@ object is.
 `data-each` / `data-key` row repetition, `data-model`, and handler dispatch. That
 is markup semantics, not language reflection, and leaving it to each host meant
 writing it twice and having it drift. It lives in `libweva/src/binding.cpp`
-(~500 lines).
+(~500 lines). A `<template>`'s body stays in the tree (rows are cloned from
+it) but is inert to the ABI's readers -- `query`, `query_all`, `element_text`,
+`element_children` -- the way Chrome keeps it in `template.content` where
+`querySelector` and `textContent` never look (2026-09-14, no ABI change;
+`test_abi_template_content_is_inert`, `check_template_inert_chrome.cjs`).
 
 The seam is `weva_binding_source` (ABI, `weva_c.h`): a callback table the host
 fills with "read this path", "count this collection". The core walks the
