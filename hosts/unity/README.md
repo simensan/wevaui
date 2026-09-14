@@ -85,8 +85,10 @@ What FontEngine gives and does not give:
   a run (direction, mirroring, joining types, scripts -- ABI minor 40), the
   font's GSUB is read from its own bytes (single, multiple, ligature,
   contextual and chaining contextual lookups in every format; extensions
-  resolved) and so are its GPOS cursive attachments; FontEngine answers the
-  rest of the positioning. Pair kerning is read once per adjacent pair through
+  resolved) and so are its GPOS cursive and mark attachments; an Indic run
+  goes through `UnityFontBackend.Indic.cs` (syllables, base, the gated
+  basic features, matra and reph reordering, two-part vowels decomposed);
+  FontEngine answers the rest of the positioning. Pair kerning is read once per adjacent pair through
   `GetPairAdjustmentRecords` with a two-glyph list (the call TextMeshPro fills
   a font asset with; values are design units, and a pair covered by more than
   one subtable is listed once per subtable, the first being the one OpenType

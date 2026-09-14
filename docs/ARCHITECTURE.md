@@ -1003,3 +1003,10 @@ UI; the Unity host asks here after each stylesheet and registers the
 installed fonts it finds (`UnityFontBackend.SyncInstalledFamilies`), leaving
 @font-face and game-registered families alone. Tested in
 `test_c_abi_font_families.cpp` (2026-09-14).
+
+ABI minor 42 adds `weva_char_indic_category(cp, out_position)`: the Unicode
+Indic syllabic category (consonant, dependent vowel, virama, nukta, bindu,
+...) and positional category (left, right, top, bottom, ...) of a code point,
+from ICU, for a host shaper that segments Indic syllables, finds the base
+consonant and reorders a left matra before it. Tested in
+`test_c_abi_text_props.cpp` (2026-09-14).

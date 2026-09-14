@@ -442,9 +442,9 @@ namespace Weva.Native
         /// </summary>
         public static readonly string[] SystemFallbackFonts =
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-            { "Segoe UI", "Segoe UI Symbol" };
+            { "Segoe UI", "Nirmala UI", "Segoe UI Symbol" };
 #elif UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
-            { "Arial", "Apple Symbols" };
+            { "Arial", "Kohinoor Devanagari", "Apple Symbols" };
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
             { "DejaVu Sans" };
 #else

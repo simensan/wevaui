@@ -68,4 +68,40 @@ void test_abi_text_properties() {
     CHECK(weva_char_script(0x0300) == tag("Zinh"));
     CHECK(weva_char_script(0x064E) == tag("Zinh"));   // FATHA is inherited, not Arab
     CHECK(weva_char_script(0x10FFFF) == tag("Zzzz"));
+
+    // Indic categories (ABI minor 42), from IndicSyllabicCategory.txt and
+    // IndicPositionalCategory.txt: what a syllable is made of and where a
+    // matra sits.
+    int32_t position = -1;
+    CHECK(weva_char_indic_category(0x0915, &position) == 1 && position == 0);   // KA: consonant
+    CHECK(weva_char_indic_category(0x0930, nullptr) == 1);                      // RA
+    CHECK(weva_char_indic_category(0x0905, &position) == 2);                    // A: vowel independent
+    CHECK(weva_char_indic_category(0x093F, &position) == 3 && position == 1);   // I matra: dependent, LEFT
+    CHECK(weva_char_indic_category(0x093E, &position) == 3 && position == 2);   // AA matra: right
+    CHECK(weva_char_indic_category(0x0940, &position) == 3 && position == 2);   // II matra: right
+    CHECK(weva_char_indic_category(0x0941, &position) == 3 && position == 4);   // U matra: bottom
+    CHECK(weva_char_indic_category(0x0947, &position) == 3 && position == 3);   // E matra: top
+    CHECK(weva_char_indic_category(0x094B, &position) == 3 && position != 1);   // O matra: dependent, not left
+    CHECK(weva_char_indic_category(0x094D, &position) == 5 && position == 4);   // virama: bottom
+    CHECK(weva_char_indic_category(0x093C, &position) == 4 && position == 4);   // nukta
+    CHECK(weva_char_indic_category(0x0902, &position) == 6 && position == 3);   // anusvara: bindu, top
+    CHECK(weva_char_indic_category(0x0903, &position) == 7 && position == 2);   // visarga: right
+    CHECK(weva_char_indic_category(0x200D, nullptr) == 12);                     // ZWJ: joiner
+    CHECK(weva_char_indic_category(0x200C, nullptr) == 13);                     // ZWNJ: non-joiner
+    CHECK(weva_char_indic_category(0x09BF, &position) == 3 && position == 1);   // Bengali I matra: left
+    CHECK(weva_char_indic_category(0x0BC6, &position) == 3 && position == 1);   // Tamil E matra: left
+    CHECK(weva_char_indic_category('a', &position) == 0 && position == 0);
+    CHECK(weva_char_indic_category(0x0628, nullptr) == 0);                      // Arabic BEH: not Indic
+
+    // Canonical decomposition, one level.
+    uint32_t parts[4] = {};
+    CHECK(weva_char_decompose(0x0BCA, parts, 4) == 2 && parts[0] == 0x0BC6 && parts[1] == 0x0BBE);   // Tamil O = E + AA
+    CHECK(weva_char_decompose(0x09CB, parts, 4) == 2 && parts[0] == 0x09C7 && parts[1] == 0x09BE);   // Bengali O
+    CHECK(weva_char_decompose(0x0D4C, parts, 4) == 2 && parts[0] == 0x0D46 && parts[1] == 0x0D57);   // Malayalam AU
+    CHECK(weva_char_decompose(0x00E9, parts, 4) == 2 && parts[0] == 'e' && parts[1] == 0x0301);      // é
+    CHECK(weva_char_decompose(0x1E09, parts, 4) == 2 && parts[0] == 0x00E7 && parts[1] == 0x0301);   // one level: ḉ = ç + acute
+    CHECK(weva_char_decompose('a', parts, 4) == 0);
+    CHECK(weva_char_decompose(0x0915, parts, 4) == 0);                                              // KA
+    CHECK(weva_char_decompose(0x00BD, parts, 4) == 0);                                              // ½: compatibility only
+    CHECK(weva_char_decompose(0x0BCA, nullptr, 0) == 2);                                            // sizing call
 }

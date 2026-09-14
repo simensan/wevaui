@@ -68,7 +68,7 @@ namespace Weva
         public Font Italic;
         [Tooltip("Faces tried for code points the UI face lacks; the package's symbol face when empty.")]
         public Font[] Fallbacks;
-        [Tooltip("The machine's installed fonts: a family the page names in font-family (with its bold and italic files) as a browser resolves it, and after the fallbacks the platform's fonts (Segoe UI and Segoe UI Symbol; Arial and Apple Symbols; DejaVu Sans) for scripts and symbols none of the faces carry. Off for output identical on every machine.")]
+        [Tooltip("The machine's installed fonts: a family the page names in font-family (with its bold and italic files) as a browser resolves it, and after the fallbacks the platform's fonts (Segoe UI, Nirmala UI and Segoe UI Symbol; Arial, Kohinoor Devanagari and Apple Symbols; DejaVu Sans) for scripts and symbols none of the faces carry. Off for output identical on every machine.")]
         public bool SystemFontFallback = true;
         [Tooltip("Directory that relative url() and @font-face sources resolve against (editor and desktop file paths).")]
         public string BasePath = "";

@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 41
+#define WEVA_ABI_VERSION_MINOR 42
 
 uint32_t weva_abi_version(void);
 
@@ -1520,6 +1520,31 @@ int32_t weva_char_joining_type(uint32_t codepoint);
  * `Zinh` for inherited (combining marks), `Zzzz` for unknown. Lower-cased it
  * is the OpenType script tag for most scripts. */
 uint32_t weva_char_script(uint32_t codepoint);
+
+/* The Unicode Indic_Syllabic_Category of a code point (IndicSyllabicCategory.txt),
+ * which an Indic shaper segments syllables and picks the base consonant with:
+ * 0 other, 1 consonant, 2 vowel independent, 3 vowel dependent (a matra),
+ * 4 nukta, 5 virama, 6 bindu (anusvara, candrabindu), 7 visarga, 8 avagraha,
+ * 9 consonant dead, 10 consonant with stacker, 11 number, 12 joiner (ZWJ),
+ * 13 non-joiner (ZWNJ), 14 consonant medial, 15 consonant subjoined,
+ * 16 consonant final, 17 pure killer, 18 vowel, 19 syllable modifier,
+ * 20 tone mark or letter, 21 another Indic category. `out_position`, when
+ * given, receives the Indic_Positional_Category: 0 none, 1 left, 2 right,
+ * 3 top, 4 bottom, 5 top and bottom, 6 top and right, 7 left and right,
+ * 8 top and left, 9 bottom and right, 10 visual order left, 11 overstruck,
+ * 12 top and left and right, 13 bottom and left, 14 top and bottom and left,
+ * 15 top and bottom and right. A left matra is what reorders before its
+ * consonant. Available since ABI minor 42. */
+int32_t weva_char_indic_category(uint32_t codepoint, int32_t* out_position);
+
+/* The canonical decomposition of a code point, one level (UnicodeData.txt's
+ * mapping, not a compatibility one): the code points are written to `out`
+ * (up to `capacity`) and their count returned, 0 when the character does not
+ * decompose. A two-part Indic vowel sign (Tamil o = e-sign + aa-sign) has to
+ * be shaped as its parts, one before the consonant and one after; a
+ * precomposed Latin letter a font lacks can draw as its base plus mark.
+ * Available since ABI minor 42. */
+int32_t weva_char_decompose(uint32_t codepoint, uint32_t* out, int32_t capacity);
 
 /* Every family name the document's author styles ask for -- `font-family`
  * (and expanded `font`) declarations in its stylesheets and in elements'

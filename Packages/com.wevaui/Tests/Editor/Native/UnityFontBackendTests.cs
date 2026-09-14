@@ -448,6 +448,75 @@ namespace Weva.Tests.EditorTests.Native
             foreach (weva_shaped_glyph g in behBeh) Assert.That(g.y_offset, Is.EqualTo(0).Within(0.001), "no anchors, no lift");
         }
 
+        // Devanagari through Nirmala UI's dev2 tables (Windows' Indic UI
+        // font): the i-matra is written before its consonant, a
+        // syllable-initial ra + virama becomes the reph over the syllable's
+        // end, ka + virama + ssa is one akhand glyph, and a ra after a virama
+        // takes its below-base form (a contextual rule in this font, not a
+        // ligature).
+        [Test]
+        public void Shape_DevanagariReordersAndForms()
+        {
+            ulong face = FaceWithInstalled("Nirmala UI");
+            Assume.That(UnityFontBackend.IndexOf(_backend.GlyphFor(face, 0x0915)), Is.Not.EqualTo(0), "Nirmala UI has Devanagari");
+            Debug.Log(_backend.DescribeLayout(face, 0x0915, "rphf"));
+
+            // हि: ha (bytes 0-2) + i-matra (bytes 3-5) -> the matra is drawn first.
+            List<weva_shaped_glyph> hi = _backend.ShapePositionedText(face, "हि", 16, out int total);
+            Assert.That(total, Is.EqualTo(2));
+            Assert.That(hi[0].cluster, Is.EqualTo(3), "the left matra comes first");
+            Assert.That(hi[1].cluster, Is.EqualTo(0), "then the consonant");
+            Assert.That(hi[0].glyph, Is.EqualTo(_backend.GlyphFor(face, 0x093F)));
+
+            // कर्म: ka, ra, virama, ma -> ka, ma, reph (the reph keeps ra's cluster).
+            List<weva_shaped_glyph> karma = _backend.ShapePositionedText(face, "कर्म", 16, out total);
+            // कर्म, with a comma: the syllable ends before the comma, so the
+            // reph stays on the ma (it once slipped after the comma, because
+            // the syllable's end was read off the run after rphf had
+            // shortened it). HarfBuzz: ka, ma, reph at -0.445, comma.
+            List<weva_shaped_glyph> karmaComma = _backend.ShapePositionedText(face, "कर्म,", 16, out int totalWithComma);
+            Assert.That(totalWithComma, Is.EqualTo(4));
+            Assert.That(karmaComma[2].cluster, Is.EqualTo(3), "the reph comes before the comma");
+            Assert.That(karmaComma[2].x_offset, Is.EqualTo(-0.445).Within(0.01), "attached to the ma at its abvm anchor (HarfBuzz's number)");
+            Assert.That(karmaComma[3].cluster, Is.EqualTo(12), "the comma is last");
+            Assert.That(total, Is.EqualTo(3), "ra + virama became the reph");
+            Assert.That(karma[0].cluster, Is.EqualTo(0), "ka first");
+            Assert.That(karma[1].cluster, Is.EqualTo(9), "ma next");
+            Assert.That(karma[2].cluster, Is.EqualTo(3), "the reph last, over the ma");
+            Assert.That(karma[2].x_advance, Is.EqualTo(0).Within(0.01), "the reph is a mark on the ma");
+            Assert.That(karma[2].glyph, Is.Not.EqualTo(_backend.GlyphFor(face, 0x0930)), "and not the plain ra");
+
+            // क्ष: ka + virama + ssa -> one akhand glyph.
+            List<weva_shaped_glyph> ksha = _backend.ShapePositionedText(face, "क्ष", 16, out total);
+            Assert.That(total, Is.EqualTo(1), "akhn: one glyph");
+            Assert.That(ksha[0].cluster, Is.EqualTo(0));
+
+            // प्र: pa + virama + ra -> pa with a below-base ra: two glyphs
+            // (pa, ra.blwf) or, as Nirmala UI has it, one presentation
+            // ligature. Never the plain pa + virama + ra, nor a half pa.
+            List<weva_shaped_glyph> pra = _backend.ShapePositionedText(face, "प्र", 16, out total);
+            Assert.That(total, Is.EqualTo(1).Or.EqualTo(2), "blwf: the virama and the ra became a below-base form");
+            if (total == 2)
+            {
+                Assert.That(pra[0].glyph, Is.EqualTo(_backend.GlyphFor(face, 0x092A)), "pa stays whole (the ra is below it, pa is the base)");
+                Assert.That(pra[1].glyph, Is.Not.EqualTo(_backend.GlyphFor(face, 0x0930)), "the ra is its below-base form");
+            }
+            else
+            {
+                Assert.That(pra[0].glyph, Is.Not.EqualTo(_backend.GlyphFor(face, 0x092A)), "one glyph for the whole conjunct");
+            }
+
+            // A plain word keeps text order: नमस्ते -> na, ma, then sa + virama
+            // + ta as a half form and a ta (5 glyphs) or as one conjunct
+            // ligature (4, Nirmala UI), then the e-matra on top.
+            List<weva_shaped_glyph> namaste = _backend.ShapePositionedText(face, "नमस्ते", 16, out total);
+            Assert.That(namaste[0].cluster, Is.EqualTo(0));
+            Assert.That(namaste[1].cluster, Is.EqualTo(3));
+            Assert.That(total, Is.EqualTo(4).Or.EqualTo(5), "sa + virama joined the ta as a half form or a conjunct");
+            Assert.That(namaste[total - 1].cluster, Is.EqualTo(15), "the e-matra stays last");
+            Assert.That(namaste[total - 1].x_advance, Is.EqualTo(0).Within(0.01), "and is a mark on the ta");
+        }
+
         [Test]
         public void Shape_CombiningMarkSitsOnItsBase()
         {

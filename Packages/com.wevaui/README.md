@@ -160,8 +160,10 @@ What the core does not do yet, with where it shows:
   OpenType tables — right-to-left runs come back in visual order with
   mirrored brackets, Arabic joins (`isol`/`init`/`medi`/`fina`, `rlig`,
   `calt`, `liga`, `ccmp`; single, multiple, ligature and contextual lookups
-  in every format), cursive scripts join at their anchors (`curs`) and marks
-  sit on their base — but Indic syllable reordering is not done, a face
+  in every format), cursive scripts join at their anchors (`curs`), marks
+  sit on their base, and the nine main Indic scripts shape by syllable
+  (base consonant, half and below-base forms, the reph, a left matra before
+  its consonant) — but Sinhala, Khmer, Myanmar and Tibetan do not, a face
   given as a `Font` asset gets no substitutions (its bytes are not
   readable; a file or `@font-face` is), and
   colour emoji are not rasterised (monochrome symbols are). The native plugin

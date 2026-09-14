@@ -45,9 +45,14 @@ checked against Chrome), which the Godot addon also runs on.
   `fina` forms and ligatures (`ccmp`, `rlig`, `calt`, `liga`; single,
   multiple, ligature, contextual and chaining contextual lookups in every
   format), a cursive script joins at its `curs` anchors, combining marks
-  sit on their base and stack. Before, every run was one glyph per code
-  point in logical order. Not done: Indic syllable reordering; a face
-  given as a `Font` asset gets no substitutions (no bytes to read).
+  sit on their base and stack (anchors read from the font's GPOS), and the
+  nine main Indic scripts shape by syllable — base consonant, half and
+  below-base forms, the reph, a left matra before its consonant, a
+  two-part vowel sign as its parts (ABI minor 42: Indic categories and
+  canonical decomposition from the core). Before, every run was one glyph
+  per code point in logical order. Not done: Sinhala, Khmer, Myanmar,
+  Tibetan; a face given as a `Font` asset gets no substitutions (no bytes
+  to read).
 - A family the page names resolves to the installed font of that name:
   `font-family: "Segoe UI"` draws with Segoe UI where the machine has it,
   with its bold and italic files, as in a browser (the core lists the
@@ -55,8 +60,9 @@ checked against Chrome), which the Godot addon also runs on.
   never over a `@font-face` or a game-registered family). Under
   `SystemFontFallback`.
 - `SystemFontFallback` (on by default): after the `Fallbacks`, the
-  platform's UI and symbol fonts (Segoe UI and Segoe UI Symbol; Arial and
-  Apple Symbols; DejaVu Sans) answer for a script or glyph none of the faces
+  platform's UI, Indic and symbol fonts (Segoe UI, Nirmala UI and Segoe UI
+  Symbol; Arial, Kohinoor Devanagari and Apple Symbols; DejaVu Sans)
+  answer for a script or glyph none of the faces
   carry, as a browser reaches a system font. Hebrew and Arabic drew as
   nothing before, and so did the HUD sample's ⚔ and ☥.
 - Input through the Input System: mouse, keyboard with held-key repeat,

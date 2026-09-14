@@ -27,9 +27,13 @@
 //   5. a right-to-left run is reversed into VISUAL order, which is what the
 //      core expects back (TextServer returns the same on the Godot host).
 //
-// Not run: reverse chaining substitution, alternates, and the Indic
-// syllable reordering (a shaper of its own); a font that needs them shapes
-// as it would in a renderer without them. A face adopted as a Font asset has no bytes to read, so it
+// An Indic run (Devanagari, Bengali, Gurmukhi, Gujarati, Oriya, Tamil,
+// Telugu, Kannada, Malayalam) takes its own path through step 3
+// (UnityFontBackend.Indic.cs): syllables, the base consonant, the
+// role-gated basic features, the matra and reph reordering. Not run:
+// reverse chaining substitution, alternates, and the syllable models of
+// Sinhala, Khmer, Myanmar and Tibetan; a font that needs them shapes as it
+// would in a renderer without them. A face adopted as a Font asset has no bytes to read, so it
 // gets no substitutions: the bundled UI face has no joining script anyway,
 // and a font that does arrives as a file or as @font-face data, which both
 // carry their bytes.
@@ -435,12 +439,20 @@ namespace Weva.Native
             return true;
         }
 
+        // The script the run's marks are positioned under: the run's tag, or
+        // the Indic table tag its pass chose.
+        private string _positioningScriptTag;
+
         // The mark's origin relative to the base's, in design units: the
-        // base's anchor minus the mark's own anchor, which is what the
-        // record's "position adjustment" holds. FontEngine reports both
-        // scaled to the ACTIVE face size (measured: Segoe UI's beh/fatha
-        // anchors came back as their font-file values times 16/2048 at
-        // 16px), so they are taken back to design units for the cache.
+        // base's anchor minus the mark's own anchor. Read from the font's
+        // GPOS when its bytes are there (the `mark`, `mkmk`, `abvm` and
+        // `blwm` lookups of the run's script, in lookup order); else from
+        // FontEngine, whose record holds the mark anchor as its "position
+        // adjustment" and reports both scaled to the ACTIVE face size
+        // (measured: Segoe UI's beh/fatha anchors came back as their
+        // font-file values times 16/2048 at 16px), so they are taken back to
+        // design units. FontEngine's answer is a single record per pair and
+        // misses a font that positions the same pair in a later lookup.
         private Anchor AnchorOf(Source source, uint baseGlyph, uint mark, int size, bool markToMark)
         {
             if (!_anchors.TryGetValue(source, out AnchorCache anchors))
@@ -452,6 +464,11 @@ namespace Weva.Native
             long key = ((long)baseGlyph << 32) | mark;
             if (cache.TryGetValue(key, out Anchor anchor)) return anchor;
             anchor = default;
+            if (AnchorFromBytes(source, baseGlyph, mark, markToMark, out anchor))
+            {
+                cache[key] = anchor;
+                return anchor;
+            }
             BindAnchorQueries();
             MethodInfo query = markToMark ? s_getMarkToMark : s_getMarkToBase;
             if (query != null && ActivateAt(source, size) && source.UnitsPerEm > 0 && size > 0)
@@ -475,6 +492,57 @@ namespace Weva.Native
             }
             cache[key] = anchor;
             return anchor;
+        }
+
+        private static readonly string[] MarkFeatures = { "mark", "mkmk", "abvm", "blwm" };
+
+        // Mark-to-base (GPOS 4) and mark-to-mark (GPOS 6) attachment read
+        // from the font: the first lookup, in lookup order, whose coverages
+        // hold both glyphs and whose base record has an anchor for the
+        // mark's class. Both formats share one layout: mark coverage, base
+        // (or second mark) coverage, class count, mark array, base array.
+        private bool AnchorFromBytes(Source source, uint baseGlyph, uint mark, bool markToMark, out Anchor anchor)
+        {
+            anchor = default;
+            GsubTable gpos = GposOf(source);
+            if (!gpos.Present) return false;
+            Dictionary<string, List<int>> byFeature = FeaturesFor(gpos, _positioningScriptTag);
+            if (byFeature == null) return false;
+            var lookups = new SortedSet<int>();
+            foreach (string feature in MarkFeatures)
+                if (byFeature.TryGetValue(feature, out List<int> list)) foreach (int li in list) lookups.Add(li);
+            byte[] b = gpos.Bytes;
+            int wantedType = markToMark ? 6 : 4;
+            foreach (int li in lookups)
+            {
+                if (li < 0 || li >= gpos.Lookups.Count) continue;
+                GsubLookup lookup = gpos.Lookups[li];
+                if (lookup.Type != wantedType) continue;
+                foreach (int subtable in lookup.Subtables)
+                {
+                    if (U16(b, subtable) != 1) continue;
+                    int markIndex = CoverageIndex(b, subtable + U16(b, subtable + 2), mark);
+                    if (markIndex < 0) continue;
+                    int baseIndex = CoverageIndex(b, subtable + U16(b, subtable + 4), baseGlyph);
+                    if (baseIndex < 0) continue;
+                    int classCount = U16(b, subtable + 6);
+                    int markArray = subtable + U16(b, subtable + 8);
+                    int baseArray = subtable + U16(b, subtable + 10);
+                    if (markIndex >= U16(b, markArray) || baseIndex >= U16(b, baseArray)) continue;
+                    int markRecord = markArray + 2 + 4 * markIndex;
+                    int markClass = U16(b, markRecord);
+                    int markAnchor = U16(b, markRecord + 2);
+                    if (markClass >= classCount || markAnchor == 0) continue;
+                    int baseAnchor = U16(b, baseArray + 2 + 2 * (classCount * baseIndex + markClass));
+                    if (baseAnchor == 0) continue;
+                    int ma = markArray + markAnchor, ba = baseArray + baseAnchor;
+                    anchor.Present = true;
+                    anchor.X = (short)U16(b, ba + 2) - (short)U16(b, ma + 2);
+                    anchor.Y = (short)U16(b, ba + 4) - (short)U16(b, ma + 4);
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -618,6 +686,8 @@ namespace Weva.Native
             public double Advance, XOffset, YOffset;
             public int AttachedTo;     // cursive: the glyph this one is lifted with, or -1
             public double AttachY;     // cursive: this glyph's lift above AttachedTo's, pixels
+            public uint Codepoint;     // the character this glyph came from
+            public int Indic, IndicPos, Role;   // Indic: its categories and its role in the syllable
         }
 
         private readonly List<RunGlyph> _run = new List<RunGlyph>(64);
@@ -646,37 +716,62 @@ namespace Weva.Native
             }
 
             // 2. Every code point to a glyph in a face; 3a. joining forms.
+            // A character is shaped as its canonical parts when it is an
+            // Indic dependent vowel (a two-part sign has a half before the
+            // consonant and a half after) or when no face has its glyph but
+            // the parts (é as e + acute); the parts share its cluster.
+            string scriptTag = RunScriptTag(_codepoints);
+            _positioningScriptTag = scriptTag;
+            bool indic = IsIndicScript(scriptTag);
             ResolveForms(_codepoints);
             _run.Clear();
             _runSources.Clear();
+            uint* parts = stackalloc uint[4];
             for (int i = 0; i < count; i++)
             {
                 uint cp = _codepoints[i];
-                var g = new RunGlyph { Cluster = _offsets[i], Base = -1, AttachedTo = -1 };
-                // Control characters have no glyph and take no space; the core
-                // has already turned meaningful ones into breaks.
-                if (HasGlyph(cp))
+                int partCount = 0;
+                if (HasGlyph(cp) && (Lookup(face, cp) == 0 || (indic && IndicCategoryOf(cp).Category == IndicMatra)))
                 {
-                    g.Id = Lookup(face, cp);
-                    if (g.Id != 0)
-                    {
-                        g.Src = face.Sources[SlotOf(g.Id)];
-                        g.Index = IndexOf(g.Id);
-                        g.Form = _forms[i];
-                        g.Mark = JoiningTypeOf(cp) == JoinTransparent;
-                        if (!_runSources.Contains(g.Src)) _runSources.Add(g.Src);
-                    }
+                    partCount = WevaNative.weva_char_decompose(cp, parts, 4);
+                    if (partCount < 1 || partCount > 4) partCount = 0;
+                    for (int p = 0; p < partCount; p++) if (Lookup(face, parts[p]) == 0) { partCount = 0; break; }
                 }
-                _run.Add(g);
+                for (int p = 0; p < Math.Max(1, partCount); p++)
+                {
+                    uint part = partCount > 0 ? parts[p] : cp;
+                    var g = new RunGlyph { Cluster = _offsets[i], Base = -1, AttachedTo = -1, Codepoint = part };
+                    // Control characters have no glyph and take no space; the core
+                    // has already turned meaningful ones into breaks.
+                    if (HasGlyph(part))
+                    {
+                        g.Id = Lookup(face, part);
+                        if (g.Id != 0)
+                        {
+                            g.Src = face.Sources[SlotOf(g.Id)];
+                            g.Index = IndexOf(g.Id);
+                            g.Form = _forms[i];
+                            g.Mark = JoiningTypeOf(part) == JoinTransparent;
+                            if (!_runSources.Contains(g.Src)) _runSources.Add(g.Src);
+                        }
+                    }
+                    _run.Add(g);
+                }
             }
 
             // 3b. The font's substitutions, one face at a time: a run that
             // fell back mid-word shapes each face's part with that face's GSUB.
-            string scriptTag = RunScriptTag(_codepoints);
             foreach (Source src in _runSources)
             {
                 GsubTable table = GsubOf(src);
                 if (!table.Present) continue;
+                // An Indic script reorders its syllables: its own pass
+                // (UnityFontBackend.Indic.cs).
+                if (IsIndicScript(scriptTag))
+                {
+                    ApplyIndic(face, src, scriptTag);
+                    continue;
+                }
                 foreach (EnabledLookup enabled in EnabledFor(table, scriptTag))
                 {
                     for (int i = 0; i < _run.Count; i++)

@@ -5,7 +5,9 @@
 #include "weva_c.h"
 #include "weva/grapheme.h"
 #include "unicode/uchar.h"
+#include "unicode/unorm2.h"
 #include "unicode/uscript.h"
+#include "unicode/utf16.h"
 #include "unicode/utf8.h"
 #include "weva/typeahead.h"
 
@@ -3569,6 +3571,76 @@ int32_t weva_char_joining_type(uint32_t codepoint) {
         case U_JT_TRANSPARENT: return 5;
         default: return 0;
     }
+}
+
+int32_t weva_char_indic_category(uint32_t codepoint, int32_t* out_position) {
+    const UChar32 c = static_cast<UChar32>(codepoint);
+    if (out_position) {
+        int32_t position = 0;
+        switch (u_getIntPropertyValue(c, UCHAR_INDIC_POSITIONAL_CATEGORY)) {
+            case U_INPC_LEFT: position = 1; break;
+            case U_INPC_RIGHT: position = 2; break;
+            case U_INPC_TOP: position = 3; break;
+            case U_INPC_BOTTOM: position = 4; break;
+            case U_INPC_TOP_AND_BOTTOM: position = 5; break;
+            case U_INPC_TOP_AND_RIGHT: position = 6; break;
+            case U_INPC_LEFT_AND_RIGHT: position = 7; break;
+            case U_INPC_TOP_AND_LEFT: position = 8; break;
+            case U_INPC_BOTTOM_AND_RIGHT: position = 9; break;
+            case U_INPC_VISUAL_ORDER_LEFT: position = 10; break;
+            case U_INPC_OVERSTRUCK: position = 11; break;
+            case U_INPC_TOP_AND_LEFT_AND_RIGHT: position = 12; break;
+            case U_INPC_BOTTOM_AND_LEFT: position = 13; break;
+            case U_INPC_TOP_AND_BOTTOM_AND_LEFT: position = 14; break;
+            case U_INPC_TOP_AND_BOTTOM_AND_RIGHT: position = 15; break;
+            default: break;
+        }
+        *out_position = position;
+    }
+    switch (u_getIntPropertyValue(c, UCHAR_INDIC_SYLLABIC_CATEGORY)) {
+        case U_INSC_OTHER: return 0;
+        case U_INSC_CONSONANT: return 1;
+        case U_INSC_VOWEL_INDEPENDENT: return 2;
+        case U_INSC_VOWEL_DEPENDENT: return 3;
+        case U_INSC_NUKTA: return 4;
+        case U_INSC_VIRAMA: return 5;
+        case U_INSC_BINDU: return 6;
+        case U_INSC_VISARGA: return 7;
+        case U_INSC_AVAGRAHA: return 8;
+        case U_INSC_CONSONANT_DEAD: return 9;
+        case U_INSC_CONSONANT_WITH_STACKER: return 10;
+        case U_INSC_NUMBER: return 11;
+        case U_INSC_JOINER: return 12;
+        case U_INSC_NON_JOINER: return 13;
+        case U_INSC_CONSONANT_MEDIAL: return 14;
+        case U_INSC_CONSONANT_SUBJOINED: return 15;
+        case U_INSC_CONSONANT_FINAL: return 16;
+        case U_INSC_PURE_KILLER: return 17;
+        case U_INSC_VOWEL: return 18;
+        case U_INSC_SYLLABLE_MODIFIER: return 19;
+        case U_INSC_TONE_MARK:
+        case U_INSC_TONE_LETTER: return 20;
+        default: return 21;
+    }
+}
+
+int32_t weva_char_decompose(uint32_t codepoint, uint32_t* out, int32_t capacity) {
+    UErrorCode error = U_ZERO_ERROR;
+    const UNormalizer2* nfc = unorm2_getNFCInstance(&error);
+    if (U_FAILURE(error) || !nfc) return 0;
+    UChar buffer[8];
+    error = U_ZERO_ERROR;
+    const int32_t length = unorm2_getRawDecomposition(nfc, static_cast<UChar32>(codepoint), buffer, 8, &error);
+    if (U_FAILURE(error) || length <= 0) return 0;
+    int32_t count = 0;
+    int32_t i = 0;
+    while (i < length) {
+        UChar32 c;
+        U16_NEXT(buffer, i, length, c);
+        if (out && count < capacity) out[count] = static_cast<uint32_t>(c);
+        ++count;
+    }
+    return count;
 }
 
 uint32_t weva_char_script(uint32_t codepoint) {
