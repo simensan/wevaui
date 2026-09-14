@@ -1189,10 +1189,16 @@ void WevaDocument::sync_ime() {
         // X11 may transfer keyboard focus back from its IME child window
         // without changing the HTML target. Refresh on a painted caret,
         // as Godot's LineEdit does, including after a window activation.
+        const auto active_start = profile ? DrawClock::now() : DrawClock::time_point{};
         display->window_set_ime_active(true, id);
         ime_draw_serial_ = serial;
         ime_position_ = position;
         display->window_set_ime_position(position, id);
+        // The same profile line as Windows, so an IME stall on X11 has the
+        // same breakdown to read.
+        if (profile && opening)
+            std::fprintf(stderr, "godot ime opening: update %.6f close %.6f caret %.6f active+position %.6f ms\n",
+                update_ms, close_ms, caret_ms, draw_elapsed(active_start));
     }
 #endif
 }

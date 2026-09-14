@@ -3897,11 +3897,15 @@ static void rebuild_engine_sheets(weva_document* doc) {
 
 // Every `<style>` outside a `<template>`, in document order, unless its
 // `media` attribute does not match. Nested templates are source, not sheets.
+// A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
+// it C linkage and a C++ return type at once.
+extern "C++" {
 static std::string ascii_lower(std::string_view v) {
     std::string out(v);
     for (char& c : out) if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
     return out;
 }
+}  // extern "C++"
 
 static void collect_inline_sheets(weva_document* doc) {
     doc->inline_sheets.clear();
@@ -5045,6 +5049,9 @@ namespace {
 // keyword; `auto` the way a browser settles it -- text over text and text
 // fields, pointer over a link, default elsewhere -- and a url() list reduced
 // to the keyword after its last comma, since the core hands over no images.
+// A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
+// it C linkage and a C++ return type at once.
+extern "C++" {
 static std::string cursor_keyword_at(weva_document* doc, double x, double y) {
     const Element* e = input_element_at(doc, x, y);
     if (!e || form_is_inert(*e)) return "default";
@@ -5073,6 +5080,7 @@ static std::string cursor_keyword_at(weva_document* doc, double x, double y) {
     if (b != kNoBox && doc->tree[b].kind == BoxKind::Text) return "text";
     return "default";
 }
+}  // extern "C++"
 
 static size_t copy_out(const std::string& text, char* buffer, size_t capacity) {
     if (buffer && capacity) {
@@ -5241,6 +5249,9 @@ static const Element* title_host_at(const Element* target) {
 
 // Where a tooltip sits: beside the cursor, not under it, or the pointer would
 // be inside the thing it just summoned.
+// A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
+// it C linkage and a C++ return type at once.
+extern "C++" {
 static std::string tooltip_style(double x, double y) {
     char buf[160];
     std::snprintf(buf, sizeof(buf),
@@ -5248,6 +5259,7 @@ static std::string tooltip_style(double x, double y) {
                   y + 18);
     return buf;
 }
+}  // extern "C++"
 
 static void tooltip_hide(weva_document* doc) {
     if (!doc->tooltip.shown) return;
@@ -7897,6 +7909,9 @@ void weva_internal_forget_subtree(weva_document* doc, const Element& e) {
 // Parses a fragment and hands back the nodes to put in the document. The
 // parser builds a whole document, html and body included, so the fragment is
 // what ends up under the body it made.
+// A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
+// it C linkage and a C++ return type at once.
+extern "C++" {
 static std::vector<Ref<Node>> parse_fragment(weva_document* doc, const char* html, size_t length) {
     std::vector<Ref<Node>> out;
     if (!html && length > 0) return out;
@@ -7938,6 +7953,7 @@ static std::vector<Ref<Node>> parse_fragment(weva_document* doc, const char* htm
     }
     return out;
 }
+}  // extern "C++"
 
 // Indexes what was just added and marks the document structurally changed.
 static weva_element_t adopt(weva_document* doc, const std::vector<Ref<Node>>& added) {
@@ -7963,6 +7979,9 @@ namespace {
 
 // HotReload/DomDiffer.cs: reconcile the live tree onto a freshly parsed one,
 // keeping every live node the fresh order can be matched to.
+// A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
+// it C linkage and a C++ return type at once.
+extern "C++" {
 static std::string key_of(const Element& e) {
     const std::string_view id = e.get_attribute("id");
     if (!id.empty()) return "#" + std::string(id);
@@ -7970,6 +7989,7 @@ static std::string key_of(const Element& e) {
     if (!key.empty()) return "k:" + std::string(key);
     return std::string();
 }
+}  // extern "C++"
 
 static bool same_kind(const Node& live, const Node& fresh) {
     if (live.node_type() == NodeType::Element && fresh.node_type() == NodeType::Element) {
@@ -8580,6 +8600,9 @@ namespace {
 // url(...) or inside a quoted string is part of a value, not a separator, and
 // cutting there would truncate the value and leave a fragment behind as a
 // declaration of its own.
+// A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
+// it C linkage and a C++ return type at once.
+extern "C++" {
 static std::vector<std::string> split_declarations(std::string_view style) {
     std::vector<std::string> out;
     int depth = 0;
@@ -8603,15 +8626,23 @@ static std::vector<std::string> split_declarations(std::string_view style) {
     out.emplace_back(style.substr(start));
     return out;
 }
+}  // extern "C++"
 
+// A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
+// it C linkage and a C++ return type at once.
+extern "C++" {
 static std::string_view trim_decl(std::string_view s) {
     const auto ws = [](char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; };
     while (!s.empty() && ws(s.front())) s.remove_prefix(1);
     while (!s.empty() && ws(s.back())) s.remove_suffix(1);
     return s;
 }
+}  // extern "C++"
 
 // The property a declaration sets, lowercased, or empty when it is not one.
+// A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
+// it C linkage and a C++ return type at once.
+extern "C++" {
 static std::string declaration_property(std::string_view decl) {
     const size_t colon = decl.find(':');
     if (colon == std::string_view::npos) return {};
@@ -8621,6 +8652,7 @@ static std::string declaration_property(std::string_view decl) {
     }
     return name;
 }
+}  // extern "C++"
 
 } // namespace
 

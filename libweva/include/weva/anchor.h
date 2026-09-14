@@ -110,8 +110,14 @@ bool resolve_anchor_offset(const BoxTree& tree, const AnchorRegistry& anchors, B
 // property. Six call sites inside `apply_absolute` cost 2 per cent on the
 // samples with out-of-flow content even with every one of them disabled --
 // their presence alone was enough to change how that function was compiled.
-// Marked cold so it stays out of the caller's hot path.
-[[gnu::cold]] bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb,
+// Marked cold so it stays out of the caller's hot path (GCC and Clang; MSVC
+// has no such attribute and warns about the unknown one, C5030).
+#if defined(__GNUC__) || defined(__clang__)
+#define WEVA_COLD [[gnu::cold]]
+#else
+#define WEVA_COLD
+#endif
+WEVA_COLD bool apply_anchor_overrides(BoxTree* tree, BoxId box, const ContainingBlock& cb,
                             bool* width_auto = nullptr);
 
 // The same for `anchor-size(<name>? width|height)`, which resolves to that

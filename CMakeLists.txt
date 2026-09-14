@@ -42,7 +42,10 @@ target_link_libraries(weva_flags INTERFACE weva_sanitizers)
 if(MSVC)
     # The same two rules in MSVC's dialect: no exception unwinding, and the
     # standard library told so; warnings at /W4. /utf-8 because the sources
-    # hold UTF-8 literals (the UA sheet, test strings).
+    # hold UTF-8 literals (the UA sheet, test strings). CMake's default flags
+    # carry /EHsc; dropped here rather than overridden, which cl reports
+    # (D9025) on every translation unit.
+    string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     target_compile_options(weva_flags INTERFACE /EHs-c- /W4 /utf-8 /wd4100 /wd4127 /wd4244 /wd4267 /wd4456 /wd4457 /wd4458 /wd4459 /wd4702)
     target_compile_definitions(weva_flags INTERFACE _HAS_EXCEPTIONS=0 _CRT_SECURE_NO_WARNINGS NOMINMAX)
 else()

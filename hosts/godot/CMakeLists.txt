@@ -31,6 +31,12 @@ endif()
 # prebuilt archive without these requirements crashed fresh Windows imports.
 set(GODOTCPP_API_VERSION "4.7" CACHE STRING "Godot API version for the bindings")
 add_subdirectory("${GODOT_CPP_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/godot-cpp" EXCLUDE_FROM_ALL)
+# Its headers are third-party: seen as system headers by the host's
+# translation units, so -Wextra reports the host's own code, not the ~700
+# unused-parameter warnings godot-cpp's bindings carry.
+if(NOT CMAKE_VERSION VERSION_LESS 3.25)
+    set_target_properties(godot-cpp PROPERTIES SYSTEM ON)
+endif()
 if(DEFINED GODOT_CPP_BUILD_DIR)
     message(STATUS "GODOT_CPP_BUILD_DIR is obsolete; godot-cpp builds alongside the host.")
 endif()
@@ -78,7 +84,9 @@ add_custom_command(TARGET weva_godot POST_BUILD
     VERBATIM)
 if(MSVC)
     # godot-cpp checks __cplusplus, which MSVC reports as 199711L unless told
-    # to be truthful; the sources are UTF-8; no unwinding, as in the core.
+    # to be truthful; the sources are UTF-8; no unwinding, as in the core
+    # (CMake's default /EHsc dropped rather than overridden, D9025).
+    string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     target_compile_options(weva_godot PRIVATE /Zc:__cplusplus /vmg /utf-8 /EHs-c- /W3)
     target_compile_definitions(weva_godot PRIVATE _HAS_EXCEPTIONS=0 NOMINMAX)
 endif()

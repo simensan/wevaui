@@ -271,7 +271,8 @@ std::shared_ptr<SharedFontVariant> synthetic_font(TextServer* ts, const PackedBy
     position_fractionally(ts, font);
     if (strength) result->metrics = synthetic_font(ts, data, 0, false);
     if (strength) ts->font_set_embolden(font, strength == 2 ? 0.9 : 0.6);
-    if (oblique) ts->font_set_transform(font, Transform2D(1.0, 0.0, 0.2, 1.0, 0.0, 0.0));
+    // real_t literals: Godot's single-precision build narrows a double here (C4305).
+    if (oblique) ts->font_set_transform(font, Transform2D(1.0f, 0.0f, 0.2f, 1.0f, 0.0f, 0.0f));
     if (!disabled) {
         // Active backends also hold a reference: evicting the oldest idle
         // cache slot cannot free a font still used by a published document.
