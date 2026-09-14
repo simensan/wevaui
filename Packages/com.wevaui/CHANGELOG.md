@@ -12,6 +12,9 @@ package is the Unity host for the Weva core (`libweva`, C++, behind a C ABI,
 checked against Chrome), which the Godot addon also runs on.
 
 ### Fixed
+- Installed fonts retain their file identity in FontEngine's cache across
+  document lifetimes. Twelve warmed backend recreations previously retained
+  about 211 MB with Segoe UI; the regression test now shows no growth.
 - Event callbacks can reload or disable a document safely: dispatch stops for
   the old tree, and recursive `PumpEvents()` calls defer to the next pump.
 - Two-way controller bindings write through nested lists and dictionaries.

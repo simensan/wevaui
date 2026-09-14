@@ -106,6 +106,9 @@ What FontEngine gives and does not give:
   SMOOTH mode; colour glyphs are not rasterized yet.
 - FontEngine is one state machine for the process, so the adapter forgets its
   active face before every document update (`NativeDocument.BeforeUpdate`).
+- Installed fonts keep their file path when loaded into FontEngine, including
+  after the shaper reads their bytes. Recreating a document then reuses the
+  native font and kerning cache instead of retaining another copy per enable.
 
 ## Rendering: `NativeDocumentRenderer` and `WevaDocument`
 

@@ -699,6 +699,34 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(_backend.FaceLoads, Is.GreaterThan(loads), "after another FontEngine user, the face is loaded again");
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void RepeatedBackendLifetime_KeepsNativeMemoryBounded(bool installed)
+        {
+            if (installed) Assume.That(UnityFontBackend.SystemFallbackFonts, Is.Not.Empty);
+            long before = 0;
+            // Warm native font/kerning caches once before measuring new backend
+            // lifetimes. The installed face must retain its file identity even
+            // after the shaper has read its bytes for OpenType lookups.
+            for (int i = -1; i < 12; i++)
+            {
+                using (var backend = new UnityFontBackend())
+                {
+                    ulong face = installed ? backend.AdoptInstalled(UnityFontBackend.SystemFallbackFonts[0]) : backend.Adopt(_regular);
+                    Assume.That(face, Is.Not.Zero);
+                    Assert.That(backend.TryFaceMetrics(face, 16, out _, out _, out _));
+                    backend.ShapePositionedText(face, "Hello Weva", 16, out _);
+                }
+                System.GC.Collect();
+                System.GC.WaitForPendingFinalizers();
+                System.GC.Collect();
+                if (i == -1) before = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong();
+            }
+            long retained = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() - before;
+            TestContext.WriteLine("12 backend lifetimes retained " + retained + " bytes (installed=" + installed + ")");
+            Assert.That(retained, Is.LessThan(16 * 1024 * 1024));
+        }
+
         [Test]
         public void Document_LaysOutWithTheAdapter()
         {

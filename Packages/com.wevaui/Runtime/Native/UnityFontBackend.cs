@@ -7,16 +7,16 @@
 //
 // FontEngine facts this adapter is built around:
 //   - It is a state machine: one loaded face and one face size at a time.
-//     Every callback activates the face it needs; a second FontEngine user
-//     in the process (the C# engine's own text path) is why NativeDocument
+//     Every callback activates the face it needs; other FontEngine users
+//     in the process (including TextMeshPro) are why NativeDocument
 //     invalidates the active face before each update.
 //   - LoadFontFace accepts a Font asset, a file path, or the font's bytes,
 //     which is how @font-face data from the core's asset reader gets in.
 //   - GetFaceInfo() right after LoadFontFace, before any SetFaceSize, reports
 //     design units, and pointSize is the units-per-em in that state.
-//   - There is no public shaper. Shaping here is one glyph per code point
-//     with GPOS/kern pair adjustments, the same as the C# engine's
-//     TextShaper; clusters are UTF-8 byte offsets as the core requires.
+//   - There is no public shaper. The Shaping and Indic partials apply the
+//     font's OpenType substitutions and positioning; clusters are UTF-8
+//     byte offsets as the core requires.
 //     Fallback is per code point across the faces adopted behind the
 //     primary, and a glyph id carries which face it came from.
 //   - TryAddGlyphToTexture rasterizes into a Texture2D; its visibility
@@ -393,9 +393,7 @@ namespace Weva.Native
                 {
                     try
                     {
-                        byte[] bytes = System.IO.File.ReadAllBytes(path);
-                        if (bytes.Length == 0) continue;
-                        variant = Adopt(bytes, index, name + " " + style);
+                        variant = AdoptPath(path, index);
                     }
                     catch (Exception ex)
                     {
@@ -468,18 +466,22 @@ namespace Weva.Native
                 if (string.Equals(candidate, name, StringComparison.OrdinalIgnoreCase)) { present = true; break; }
             }
             if (!present) return 0;
-            // TextCore knows where the OS keeps the file (what TMP's
-            // CreateFontAsset(familyName, styleName) uses); its bytes go through
-            // the same path a url() source takes. The dynamic-font route is the
-            // fallback for a reference the engine cannot give.
+            // Keep the file's identity in FontEngine's cache. Fresh byte arrays
+            // create distinct native faces on every document lifetime, each
+            // with its own expanded kerning tables. The shaper reads the file's
+            // bytes lazily through BytesOf without changing how it is loaded.
             ulong face = 0;
             if (TrySystemFontFile(name, "Regular", out string filePath, out int faceIndex) ||
                 TrySystemFontFile(name, null, out filePath, out faceIndex))
             {
                 try
                 {
-                    byte[] bytes = System.IO.File.ReadAllBytes(filePath);
-                    if (bytes.Length > 0) face = Adopt(bytes, faceIndex, name);
+                    face = AdoptPath(filePath, faceIndex);
+                    if (!Activate(_faces[face].Sources[0]))
+                    {
+                        _faces.Remove(face);
+                        face = 0;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -766,8 +768,8 @@ namespace Weva.Native
             if (source.Index != 0) LastError = "font collections are not supported; face index " + source.Index + " ignored";
             FontEngineError error;
             if (source.Asset != null) error = FontEngine.LoadFontFace(source.Asset);
-            else if (source.Bytes != null) error = FontEngine.LoadFontFace(source.Bytes);
-            else error = FontEngine.LoadFontFace(source.Path);
+            else if (!string.IsNullOrEmpty(source.Path)) error = FontEngine.LoadFontFace(source.Path);
+            else error = FontEngine.LoadFontFace(source.Bytes);
             if (error != FontEngineError.Success)
             {
                 LastError = "LoadFontFace(" + source.Name + "): " + error;
