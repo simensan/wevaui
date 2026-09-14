@@ -198,7 +198,11 @@ def generate(headers):
         out.append('    }')
         out.append('')
     out.extend(['    internal static unsafe partial class WevaNative', '    {',
-                '        public const string Library = "weva_core";'])
+                '#if UNITY_IOS && !UNITY_EDITOR',
+                '        public const string Library = "__Internal";',
+                '#else',
+                '        public const string Library = "weva_core";',
+                '#endif'])
     for name, value in defines.items():
         if 'VERSION' in name:
             out.append(f'        public const int {name} = {value};')

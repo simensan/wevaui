@@ -337,7 +337,11 @@ namespace Weva.Native
 
     internal static unsafe partial class WevaNative
     {
+#if UNITY_IOS && !UNITY_EDITOR
+        public const string Library = "__Internal";
+#else
         public const string Library = "weva_core";
+#endif
         public const int WEVA_ABI_VERSION_MAJOR = 0;
         public const int WEVA_ABI_VERSION_MINOR = 42;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;

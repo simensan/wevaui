@@ -43,6 +43,21 @@ cannot find out by itself. Today that is `weva_unity_sizeof`, which reports a
 struct's native size so the C# tests can catch a layout drift between the
 header and the generated mirrors.
 
+## iOS static plugins
+
+On macOS, configure with `-DCMAKE_SYSTEM_NAME=iOS
+-DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0
+-DWEVA_UNITY_STATIC=ON`, then build `weva_core`. The output directory
+(`WEVA_UNITY_BIN`, or `build-unity/bin` by default for static builds) contains
+four required archives: `weva_core.a`, `libweva.a`, `libweva_icu_i18n.a`, and
+`libweva_icu_common.a`. Import all four into Unity with only iOS enabled in
+their plugin settings. The generated P/Invoke declarations use `__Internal`
+in the iOS player and `weva_core` in the editor.
+
+CI links an independent consumer against these four artifact files on iOS
+and runs the same consumer on Linux. This checks archive completeness and
+native linking; a Unity IL2CPP player still needs validation on an iOS device.
+
 ## Bindings
 
 ```

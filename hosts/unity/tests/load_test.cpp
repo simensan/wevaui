@@ -8,7 +8,10 @@
 #include <cstring>
 #include <string>
 
-#ifdef _WIN32
+#if defined(WEVA_STATIC_PLUGIN)
+// The standalone static consumer links only the archives in the artifact
+// directory, without the plugin build's transitive CMake target dependencies.
+#elif defined(_WIN32)
 #include <windows.h>
 static void* open_library(const char* path) { return LoadLibraryA(path); }
 static void* resolve(void* library, const char* name) {
@@ -28,14 +31,21 @@ static void check(bool ok, const char* message) {
     }
 }
 
+#ifndef WEVA_STATIC_PLUGIN
 template <typename F>
 static F symbol(void* library, const char* name) {
     void* address = resolve(library, name);
     check(address != nullptr, name);
     return reinterpret_cast<F>(address);
 }
+#endif
 
 int main(int argc, char** argv) {
+#ifdef WEVA_STATIC_PLUGIN
+    (void)argc;
+    (void)argv;
+#define WEVA_SYMBOL(name) &name
+#else
     if (argc < 2) {
         std::fprintf(stderr, "usage: weva_core_load_test <path to weva_core plugin>\n");
         return 2;
@@ -43,18 +53,21 @@ int main(int argc, char** argv) {
     void* library = open_library(argv[1]);
     check(library != nullptr, "plugin loads through the dynamic loader");
     if (!library) return 1;
+#define WEVA_SYMBOL(name) symbol<decltype(&name)>(library, #name)
+#endif
 
-    auto abi_version = symbol<decltype(&weva_abi_version)>(library, "weva_abi_version");
-    auto create = symbol<decltype(&weva_document_create)>(library, "weva_document_create");
-    auto load_html = symbol<decltype(&weva_document_load_html)>(library, "weva_document_load_html");
-    auto set_css = symbol<decltype(&weva_document_set_css)>(library, "weva_document_set_css");
-    auto update = symbol<decltype(&weva_document_update)>(library, "weva_document_update");
-    auto focus_next = symbol<decltype(&weva_document_focus_next)>(library, "weva_document_focus_next");
-    auto bounds = symbol<decltype(&weva_element_bounds)>(library, "weva_element_bounds");
-    auto tag_name = symbol<decltype(&weva_element_tag_name)>(library, "weva_element_tag_name");
-    auto draws = symbol<decltype(&weva_document_draws)>(library, "weva_document_draws");
-    auto destroy = symbol<decltype(&weva_document_destroy)>(library, "weva_document_destroy");
-    auto size_of = symbol<decltype(&weva_unity_sizeof)>(library, "weva_unity_sizeof");
+    auto abi_version = WEVA_SYMBOL(weva_abi_version);
+    auto create = WEVA_SYMBOL(weva_document_create);
+    auto load_html = WEVA_SYMBOL(weva_document_load_html);
+    auto set_css = WEVA_SYMBOL(weva_document_set_css);
+    auto update = WEVA_SYMBOL(weva_document_update);
+    auto focus_next = WEVA_SYMBOL(weva_document_focus_next);
+    auto bounds = WEVA_SYMBOL(weva_element_bounds);
+    auto tag_name = WEVA_SYMBOL(weva_element_tag_name);
+    auto draws = WEVA_SYMBOL(weva_document_draws);
+    auto destroy = WEVA_SYMBOL(weva_document_destroy);
+    auto size_of = WEVA_SYMBOL(weva_unity_sizeof);
+#undef WEVA_SYMBOL
     if (failures) return 1;
 
     const uint32_t version = abi_version();

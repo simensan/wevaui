@@ -159,6 +159,14 @@ jobs:
         run: build-unity/weva_core_load_test build-unity/bin/weva_core.so
       - name: Generated P/Invoke layer matches the headers
         run: python hosts/unity/gen_bindings.py --header libweva/include/weva_c.h --header hosts/unity/src/weva_unity.h --out Packages/com.wevaui/Runtime/Native/WevaNative.g.cs --check
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Compile native imports for desktop, iOS player and iOS editor
+        run: |
+          dotnet run --project hosts/unity/tests/bindings -c Release -- weva_core
+          dotnet run --project hosts/unity/tests/bindings -c IosPlayer -- __Internal
+          dotnet run --project hosts/unity/tests/bindings -c IosEditor -- weva_core
       - name: Third-party notices bundled with the plugin
         run: python hosts/unity/bundle_notices.py --check
       - uses: actions/upload-artifact@v4
@@ -170,12 +178,19 @@ jobs:
   # The same plugin for the platforms Unity ships to: macOS (a dylib, loaded
   # by the load test on the runner), Android arm64 (Unity's NDK line; the
   # library is verified on a device, not here) and iOS (static archives that
-  # Xcode links into the player). Cross builds stop at the archive.
+  # Xcode links into the player). Static builds also link a separate consumer
+  # against only the packaged archives; Linux runs that consumer as well.
   unity-plugin-platforms:
     strategy:
       fail-fast: false
       matrix:
         include:
+          - os: ubuntu-24.04
+            name: linux-static
+            configure: -DWEVA_UNITY_STATIC=ON
+            consumer_configure: ''
+            targets: weva_core
+            load_test: build-consumer/weva_core_static_test
           - os: macos-14
             name: macos
             configure: "\"-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64\""
@@ -189,8 +204,9 @@ jobs:
           - os: macos-14
             name: ios-arm64
             configure: -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 -DWEVA_UNITY_STATIC=ON
+            consumer_configure: -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
             targets: weva_core
-            load_test: test -s build-unity/bin/weva_core.a && file build-unity/bin/weva_core.a
+            load_test: test -s build-consumer/weva_core_static_test && file build-consumer/weva_core_static_test | grep -q arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -205,6 +221,11 @@ jobs:
         run: cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_UNITY_BIN="${GITHUB_WORKSPACE//\\//}/build-unity/bin" ${{ matrix.configure }}
       - name: Build plugin
         run: cmake --build build-unity --target ${{ matrix.targets }} --parallel 4
+      - name: Link using only the static plugin artifact directory
+        if: matrix.name == 'linux-static' || matrix.name == 'ios-arm64'
+        run: |
+          cmake -S hosts/unity/tests/static -B build-consumer -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_PLUGIN_DIR="${GITHUB_WORKSPACE//\\//}/build-unity/bin" ${{ matrix.consumer_configure }}
+          cmake --build build-consumer --parallel 4
       - name: Check the result
         run: ${{ matrix.load_test }}
       - uses: actions/upload-artifact@v4

@@ -72,8 +72,17 @@ else()
 endif()
 target_include_directories(weva_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../libweva/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_target_properties(weva_core PROPERTIES PREFIX "" OUTPUT_NAME "weva_core")
+set(weva_output_targets weva_core)
+if(WEVA_UNITY_STATIC)
+    # Static target_link_libraries records a consumer link interface; it does
+    # not merge dependency objects into weva_core.a. Ship all four archives.
+    list(APPEND weva_output_targets weva weva_icu_i18n weva_icu_common)
+    if(NOT DEFINED WEVA_UNITY_BIN)
+        set(WEVA_UNITY_BIN "${CMAKE_CURRENT_BINARY_DIR}/bin")
+    endif()
+endif()
 if(DEFINED WEVA_UNITY_BIN)
-    set_target_properties(weva_core PROPERTIES
+    set_target_properties(${weva_output_targets} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${WEVA_UNITY_BIN}" RUNTIME_OUTPUT_DIRECTORY "${WEVA_UNITY_BIN}"
         ARCHIVE_OUTPUT_DIRECTORY "${WEVA_UNITY_BIN}"
         LIBRARY_OUTPUT_DIRECTORY_RELEASE "${WEVA_UNITY_BIN}" RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WEVA_UNITY_BIN}"
