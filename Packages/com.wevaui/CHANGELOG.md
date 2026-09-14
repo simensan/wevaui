@@ -39,12 +39,26 @@ checked against Chrome), which the Godot addon also runs on.
 ### Added
 - Input through the Input System: mouse, keyboard with held-key repeat,
   touch, gamepad navigation, IME composition; Chrome's 100 px wheel notch.
+  Overlapping documents arbitrate the pointer by `SortingOrder`: the one on
+  top takes it where it accepts it (everywhere, as in a browser); a HUD
+  passes clicks through with `html, body { pointer-events: none }` and
+  `pointer-events: auto` on its controls.
+- `backdrop-filter` renders: the target is copied before each filtered
+  element and its shape drawn through the blur and the colour matrix the
+  core composed (`Hidden/Weva/NativeBackdrop`, also always-included).
 - `<link rel="stylesheet">` resolved next to the document asset and baked
   for player builds; `BasePath` defaults to the asset's folder.
 - `WevaElement` and `WevaEvent`; `PrefersDarkColorScheme`,
   `FollowScreenSafeArea`, `SetSafeAreaInsets`, `Cursor`, `AssetReader`,
   `InputConsumed`, `AcceptsKeyboard`, `WrapTab` / `TabbedOut`,
   `GamepadTextEntry` / `TextEntryRequested`.
+
+### Fixed
+- A `<template>`'s content is inert as in a browser: `Query`, an element's
+  text and its children no longer see a `data-each` template's body before
+  its rows are cloned.
+- The inspector's "renderer feature missing" warning no longer fires in a
+  fresh play session when the feature is present.
 
 ### Platforms
 - Native plugin for Windows x64. Other platforms follow as their CI jobs go
