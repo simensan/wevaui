@@ -76,7 +76,7 @@ def main():
             .replace(b'(LICENSE-APACHE)', b'(ADA_LICENSE_APACHE.txt)'),
         'UNICODE_DATA.md': (host.parents[1] / 'third_party/unicode/README.md').read_bytes()
             .replace(b'(LICENSE.txt)', b'(UNICODE_LICENSE.txt)'),
-        'LICENSE.md': (host.parents[2] / 'LICENSE.md').read_bytes(),
+        'LICENSE.md': (host.parents[1] / 'LICENSE.md').read_bytes(),
         'GODOT_CPP_LICENSE.md': (args.godot_cpp_dir / 'LICENSE.md').read_bytes(),
         'weva_view.gd': (host / 'addon' / 'weva_view.gd').read_bytes(),
     }

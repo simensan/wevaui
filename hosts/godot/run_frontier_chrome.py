@@ -20,7 +20,7 @@ def main():
     parser.add_argument('--node', default='node')
     parser.add_argument('--dll', help='Candidate addon binary; copied only into the isolated project')
     args = parser.parse_args()
-    repo = Path(__file__).resolve().parents[3]
+    repo = Path(__file__).resolve().parents[2]
     host = Path(__file__).resolve().parent
     out = Path(args.out).resolve()
     if out.exists():
