@@ -4,18 +4,22 @@ namespace weva {
 
 std::string_view user_agent_stylesheet_source() {
     static constexpr std::string_view kSource = R"CSS(
-/* Game-UI default differs from browser default: in Unity the runtime always
-   paints into a fixed viewport, so the natural shape for the root box is
-   "fill the viewport, no margin". Authors writing `.hud { width: 100%;
-   height: 100% }` expect 100% to mean "the full viewport" — but the
-   browser default (`body { margin: 8px }`, body auto-sizing to content
-   height) makes that collapse to 0. We set width/height/margin on both
-   html and body so 100% bottoms out at the viewport without authors having
-   to remember the html/body reset boilerplate. `overflow: hidden` matches
-   the runtime's fixed viewport: anything outside it is invisible in a
-   Unity Camera anyway, and explicitly setting it here prevents accidental
-   scroll-affordance creation on the root. */
-html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+/* Game-UI default differs from browser default: the runtime always paints
+   into a fixed viewport, so the natural shape for the root box is "fill the
+   viewport, no margin". Authors writing `.hud { width: 100%; height: 100% }`
+   expect 100% to mean "the full viewport" — but the browser default
+   (`body { margin: 8px }`, body auto-sizing to content height) makes the
+   height collapse to 0. We set height and margin on both html and body so
+   100% bottoms out at the viewport without authors having to remember the
+   html/body reset boilerplate. Width is left `auto`, as in a browser: a
+   block fills its container anyway, and `auto` is what lets
+   `body { padding: 32px }` shrink the content the way it does in Chrome
+   (`width: 100%` plus padding overflowed the viewport by the padding, and
+   every right-to-left line ran off the right edge). `overflow: hidden`
+   matches the runtime's fixed viewport: anything outside it is invisible
+   in a game camera anyway, and explicitly setting it here prevents
+   accidental scroll-affordance creation on the root. */
+html, body { height: 100%; margin: 0; overflow: hidden; }
 /* CSS Values L4 §6.2: the html UA line-height is `normal`, which resolves
    to the font's own metric line-height. Chrome and every other browser
    uses this — we match. The previous explicit `1.36` was inherited into

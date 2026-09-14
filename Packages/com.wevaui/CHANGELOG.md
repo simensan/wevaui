@@ -75,6 +75,11 @@ checked against Chrome), which the Godot addon also runs on.
   its rows are cloned.
 - The inspector's "renderer feature missing" warning no longer fires in a
   fresh play session when the feature is present.
+- `body { padding }` shrinks the content as in a browser. The user-agent
+  sheet gave `html` and `body` `width: 100%`, so padding on either
+  overflowed the viewport by the padding and every right-to-left line ran
+  off the right edge; width is `auto` now (a block fills its container
+  anyway), `height: 100%; margin: 0; overflow: hidden` stay.
 - `backdrop-filter` in a player: the pass drew after URP's final blit, on
   the back buffer, which cannot be sampled for the copy. A frame with a
   backdrop draw now runs the pass after post-processing with an
