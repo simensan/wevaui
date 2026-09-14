@@ -300,6 +300,78 @@ void WevaDocument::sync_css_font_faces() {
     }
 }
 
+// A family the page names with no @font-face rule or register_font_family
+// behind it resolves to the installed font of that name -- what a browser
+// does with `font-family: "Segoe UI"`, and what the Unity host does since
+// the same ABI (weva_document_font_family_names, minor 41). The OS answers
+// once per name; its bold, italic and bold-italic files become real
+// variants. A family the page stops naming, or the game has since
+// registered itself, is released.
+void WevaDocument::sync_installed_families() {
+    if (!doc_) return;
+    std::map<String, String> wanted;   // key -> the name as the author wrote it
+    if (use_system_families_) {
+        const size_t bytes = weva_document_font_family_names(doc_, nullptr, 0);
+        std::vector<char> text(bytes + 1);
+        weva_document_font_family_names(doc_, text.data(), text.size());
+        for (const String& line : String::utf8(text.data()).split("\n", false)) {
+            const String name = line.strip_edges();
+            const String key = name.to_lower();
+            if (key.is_empty() || wanted.count(key) || css_font_faces_.count(key)) continue;
+            const auto owned = family_fonts_.find(key);
+            const auto mine = installed_families_.find(key);
+            // The game's own registration wins.
+            if (owned != family_fonts_.end() && (mine == installed_families_.end() || owned->second != mine->second)) continue;
+            wanted.emplace(key, name);
+        }
+    }
+    for (auto it = installed_families_.begin(); it != installed_families_.end();) {
+        const auto current = family_fonts_.find(it->first);
+        const bool ours = current != family_fonts_.end() && current->second == it->second;
+        if (ours && wanted.count(it->first)) {
+            ++it;
+            continue;
+        }
+        if (ours) {
+            register_font_face(it->first, Ref<Font>(), 700, false);
+            register_font_face(it->first, Ref<Font>(), 400, true);
+            register_font_face(it->first, Ref<Font>(), 700, true);
+            register_font_family(it->first, Ref<Font>());
+        }
+        it = installed_families_.erase(it);
+    }
+    OS* os = OS::get_singleton();
+    if (!os) return;
+    for (const auto& entry : wanted) {
+        if (installed_families_.count(entry.first) || missing_installed_.count(entry.first)) continue;
+        const String path = os->get_system_font_path(entry.second);
+        const Ref<Font> font = path.is_empty() ? Ref<Font>() : load_css_font(path);
+        if (font.is_null()) {
+            missing_installed_[entry.first] = true;
+            continue;
+        }
+        if (!register_font_family(entry.first, font)) continue;
+        installed_families_[entry.first] = font;
+        struct StyleFile { int weight; bool italic; };
+        static const StyleFile variants[] = {{700, false}, {400, true}, {700, true}};
+        for (const StyleFile& v : variants) {
+            const String variant_path = os->get_system_font_path(entry.second, v.weight, 100, v.italic);
+            if (variant_path.is_empty() || variant_path == path) continue;
+            const Ref<Font> variant_font = load_css_font(variant_path);
+            if (variant_font.is_valid()) register_font_face(entry.first, variant_font, v.weight, v.italic);
+        }
+    }
+}
+
+void WevaDocument::set_use_system_families(bool use) {
+    if (use == use_system_families_) return;
+    use_system_families_ = use;
+    if (!doc_) return;
+    sync_installed_families();
+    dirty_ = true;
+    queue_redraw();
+}
+
 void WevaDocument::set_base_path(const String& path) {
     base_path_ = path;
     if (doc_) {
@@ -793,6 +865,9 @@ void WevaDocument::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_use_engine_font", "use"),
                          &WevaDocument::set_use_engine_font);
     ClassDB::bind_method(D_METHOD("get_use_engine_font"), &WevaDocument::get_use_engine_font);
+    ClassDB::bind_method(D_METHOD("set_use_system_families", "use"),
+                         &WevaDocument::set_use_system_families);
+    ClassDB::bind_method(D_METHOD("get_use_system_families"), &WevaDocument::get_use_system_families);
     ClassDB::bind_method(D_METHOD("set_use_sdf_rects", "use"), &WevaDocument::set_use_sdf_rects);
     ClassDB::bind_method(D_METHOD("get_use_sdf_rects"), &WevaDocument::get_use_sdf_rects);
     ClassDB::bind_method(D_METHOD("has_engine_font"), &WevaDocument::has_engine_font);
@@ -1007,6 +1082,8 @@ void WevaDocument::_bind_methods() {
                  "get_document_size");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_engine_font"), "set_use_engine_font",
                  "get_use_engine_font");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_system_families"), "set_use_system_families",
+                 "get_use_system_families");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_sdf_rects"), "set_use_sdf_rects",
                  "get_use_sdf_rects");
 }
@@ -1064,6 +1141,7 @@ void WevaDocument::set_css(const String& css) {
     }
     css_ = css;
     sync_css_font_faces();
+    sync_installed_families();
     for (const String& diagnostic : get_css_diagnostics()) {
         UtilityFunctions::push_warning("Weva CSS: ", diagnostic);
     }

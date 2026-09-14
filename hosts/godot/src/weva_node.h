@@ -332,6 +332,11 @@ public:
     bool register_font_face(const godot::String& family, const godot::Ref<godot::Font>& font, int weight, bool italic);
     void set_use_engine_font(bool use);
     bool get_use_engine_font() const { return use_engine_font_; }
+    // Whether a family the page names in `font-family`, with no @font-face
+    // or register_font_family behind it, resolves to the installed font of
+    // that name (as in a browser). Off for output identical on every machine.
+    void set_use_system_families(bool use);
+    bool get_use_system_families() const { return use_system_families_; }
 
     // Whether to evaluate rounded rectangles in a shader instead of uploading
     // the core's tessellation.
@@ -622,6 +627,13 @@ private:
     };
     std::map<godot::String, CssFontFace> css_font_faces_;
     void sync_css_font_faces();
+    // Families the page names that no @font-face or game registration
+    // serves, resolved to the installed font of that name (ABI minor 41),
+    // keyed like family_fonts_; and the names the OS answered nothing for.
+    std::map<godot::String, godot::Ref<godot::Font>> installed_families_;
+    std::map<godot::String, bool> missing_installed_;
+    bool use_system_families_ = true;
+    void sync_installed_families();
     godot::Callable family_font_changed_;
     void family_font_resource_changed();
     void disconnect_family_fonts();

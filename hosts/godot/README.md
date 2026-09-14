@@ -1223,6 +1223,15 @@ through the asset path and a `local("Name")` as an installed font found the
 way Godot's `SystemFont` finds one (ABI minor 37); the game's own
 `register_font_family` wins over a rule for the same family.
 
+A family the page names with nothing behind it -- `font-family: "Segoe UI"`
+and no `@font-face` or registration for it -- resolves to the installed font
+of that name, as in a browser (ABI minor 41: the core lists the families the
+styles name; the node loads the installed ones through
+`OS.get_system_font_path`, with their bold and italic files as real
+variants). The Unity host does the same, so a page draws with the same face
+on both. `use_system_families` (default `true`) turns it off for output
+identical on every machine; a name nobody has falls through the stack.
+
 
 ### Cancelable dialog close requests (current source)
 

@@ -144,5 +144,30 @@ func _ready() -> void:
 		var local_doc := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: local("' + local_name + '"); } #a { font-family: "Camp Mono"; }')
 		_check(width(local_doc, "#a") == width(reference, "#a"), "local() loads the installed font by name: " + local_name)
 
+		# ABI minor 41: a family the page names with no @font-face behind it
+		# resolves to the installed font of that name, as in a browser; the
+		# game's own registration of that name wins; the property turns it off.
+		var named := make_doc(SIZES + ' #a { font-family: "' + local_name + '", sans-serif; }')
+		_check(width(named, "#a") == width(reference, "#a"), "a family the page names resolves to the installed font: " + local_name)
+		var owned := WevaDocument.new()
+		owned.size = Vector2(600, 200)
+		add_child(owned)
+		owned.register_font_family(local_name, mono)
+		owned.css = SIZES + ' #a { font-family: "' + local_name + '"; }'
+		owned.html = HTML
+		owned.update_document()
+		_check(width(owned, "#a") == mono_width, "the game's registration of that name wins over the installed font")
+		var off := WevaDocument.new()
+		off.size = Vector2(600, 200)
+		off.use_system_families = false
+		add_child(off)
+		off.css = SIZES + ' #a { font-family: "' + local_name + '"; }'
+		off.html = HTML
+		off.update_document()
+		_check(width(off, "#a") == theme_width, "with use_system_families off the name falls through to the theme font")
+		off.use_system_families = true
+		off.update_document()
+		_check(width(off, "#a") == width(reference, "#a"), "and turning it on resolves the name")
+
 	print("godot font face: %d checks, %d failures" % [checks, failures])
 	get_tree().quit(1 if failures > 0 else 0)
