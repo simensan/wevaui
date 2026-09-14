@@ -983,11 +983,18 @@ namespace Weva.Native
                 for (int x = 0; x < w; x++) dst[y * w + x] = raw[srcRow * stride + rect.x + x];
             }
             // The bitmap's own edge is what the atlas packs, so the bearings
-            // recorded for this glyph must describe this bitmap.
+            // recorded for this glyph must describe this bitmap. The packed
+            // glyph's metrics are still the unhinted outline's fractional
+            // extents; FreeType rendered that outline into a bitmap whose left
+            // column is floor(bearingX) and whose top row is ceil(bearingY)
+            // (the same numbers TextServer reports as a glyph's offset on the
+            // Godot host). The core snaps the quad to whole pixels, so a
+            // fraction here rounded the other way put a glyph one pixel off
+            // inside its word.
             info.Width = w;
             info.Height = h;
-            info.BearingX = packed.metrics.horizontalBearingX;
-            info.BearingY = packed.metrics.horizontalBearingY;
+            info.BearingX = Math.Floor(packed.metrics.horizontalBearingX);
+            info.BearingY = Math.Ceiling(packed.metrics.horizontalBearingY);
             source.Glyphs[GlyphKey(size, index)] = info;
             bitmap->alpha = dst;
             bitmap->width = w;

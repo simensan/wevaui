@@ -192,6 +192,32 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(bottom, Is.GreaterThan(top * 2), "row 0 is the top of the glyph");
         }
 
+        // The core snaps each glyph quad to a whole pixel and spans exactly
+        // the bitmap's texels, so the bearings it places the quad with must
+        // name the bitmap's edge. FreeType rasterises an unhinted outline
+        // into a bitmap whose left column is floor(bearingX) and whose top
+        // row is ceil(bearingY); the outline's own fractional extents, which
+        // is what FontEngine keeps in the packed glyph's metrics, rounded the
+        // other way for about half of the glyphs and put them one pixel up or
+        // down inside a word (the stock dashboard's 11px labels).
+        [Test]
+        public void Rasterize_BearingsNameTheBitmapEdge()
+        {
+            Assume.That(UnityFontBackend.RasterizerAvailable);
+            foreach (int size in new[] { 11, 12, 13, 14, 26 })
+            foreach (char c in "NASDQEquityMetaPlform")
+            {
+                uint id = _backend.GlyphFor(_face, c);
+                Assert.That(_backend.TryRasterize(_face, id, size, out _, out int w, out int h), $"'{c}' at {size}px rasterizes");
+                Assert.That(_backend.TryGlyphMetrics(_face, id, size, out _, out double bx, out double by, out int mw, out int mh));
+                Debug.Log($"glyph '{c}' {size}px: bx={bx:0.###} by={by:0.###} w={w} h={h}");
+                Assert.That(bx, Is.EqualTo(Math.Floor(bx)), $"'{c}' at {size}px: bearing x is the bitmap's left column");
+                Assert.That(by, Is.EqualTo(Math.Ceiling(by)), $"'{c}' at {size}px: bearing y is the bitmap's top row");
+                Assert.That(mw, Is.EqualTo(w), "metrics describe the rasterized bitmap");
+                Assert.That(mh, Is.EqualTo(h));
+            }
+        }
+
         [Test]
         public void Rasterize_FallbackGlyphComesFromItsOwnFace()
         {

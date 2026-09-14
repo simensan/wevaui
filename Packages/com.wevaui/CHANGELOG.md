@@ -59,6 +59,10 @@ checked against Chrome), which the Godot addon also runs on.
   its rows are cloned.
 - The inspector's "renderer feature missing" warning no longer fires in a
   fresh play session when the feature is present.
+- Small text no longer has glyphs sitting a pixel above or below their
+  neighbours: the font backend reports a rasterised glyph's bearings as the
+  bitmap's edge (the outline's fractional extents rounded the other way for
+  about half the glyphs at 11–13 px).
 
 ### Platforms
 - Native plugin for Windows x64. Other platforms follow as their CI jobs go
