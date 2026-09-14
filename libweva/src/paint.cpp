@@ -2913,6 +2913,45 @@ void paint_resolved_decorations(const Box& b, const Rect& border_box, const Bord
         tessellate_border(border_box, radii, b.border_top, b.border_right, b.border_bottom,
                           b.border_left, colors, out);
     }
+
+    // CSS Multi-column §7: the column rule, drawn in the middle of each gap
+    // for the height of each balanced set, taking no space of its own. Its
+    // width and style are the border's kinds; `none` and `hidden` draw
+    // nothing, and a width wider than the gap is clipped to it.
+    if (b.is_multicol && b.column_count_used > 1 && !b.column_sets.empty() && b.style) {
+        const std::string_view rule_style = get(b.style, "column-rule-style");
+        if (!rule_style.empty() && !border_keyword(rule_style, "none") && !border_keyword(rule_style, "hidden")) {
+            double width = std::min(b.column_rule_width_used, b.column_gap_used);
+            if (width > 0) {
+                const std::string_view raw_color = get(b.style, "column-rule-color");
+                const LinearColor color = resolve_color(b.style, raw_color.empty() || border_keyword(raw_color, "currentcolor") ? "color" : "column-rule-color");
+                const bool rtl = ci_equal(get(b.style, "direction"), "rtl");
+                const double content_left = border_box.x + b.border_left + b.padding_left;
+                const double content_width = b.content_width();
+                const double stride = (content_width + b.column_gap_used) / b.column_count_used;
+                for (int k = 1; k < b.column_count_used; ++k) {
+                    // The gap before column k, from the previous column's right edge.
+                    const double gap_start = rtl ? content_width - k * stride + (stride - b.column_width_used) - b.column_gap_used
+                                                 : k * stride - b.column_gap_used;
+                    const double x = content_left + gap_start + (b.column_gap_used - width) * 0.5;
+                    for (const auto& set : b.column_sets) {
+                        const Rect rule(x, border_box.y + set.first, width, set.second);
+                        if (border_keyword(rule_style, "double") && width >= 3) {
+                            const double stripe = width / 3;
+                            tessellate_rect(Rect(rule.x, rule.y, stripe, rule.height), color, out, false);
+                            tessellate_rect(Rect(rule.x + width - stripe, rule.y, stripe, rule.height), color, out, false);
+                        } else if (border_keyword(rule_style, "dotted") || border_keyword(rule_style, "dashed")) {
+                            const double dash = border_keyword(rule_style, "dotted") ? width : 3 * width;
+                            for (double at = 0; at < rule.height; at += dash * 2)
+                                tessellate_rect(Rect(rule.x, rule.y + at, width, std::min(dash, rule.height - at)), color, out, false);
+                        } else {
+                            tessellate_rect(rule, color, out, false);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // The element a box belongs to: itself if it has one, otherwise the nearest

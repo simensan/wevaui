@@ -519,7 +519,7 @@ Logical sizes, insets, margins, padding, borders, and corner radii are remapped 
 
 ### Deliberately omitted
 
-`columns`, `column-count`, `column-width`, `column-gap` (the multi-column kind; flex/grid `column-gap` is supported), `column-rule`, vertical text shaping, full bidi reordering, dictionary hyphenation, `text-orientation`, `clip`, `mix-blend-mode`, `background-blend-mode`, `content-visibility`, `touch-action`, `resize`, `appearance`, `quotes`, counters, and full generated-content semantics. `direction` / logical properties exist for cascade and horizontal layout; `writing-mode` remaps logical axes but does not rotate or vertically shape text. `clip-path` is limited to basic shapes; `mask` URL source-pixel sampling remains partial.
+`column-fill: auto`, `orphans`/`widows` values other than the initial 2 (multi-column layout itself -- `column-count`, `column-width`, `column-gap`, `column-rule`, `column-span: all`, `break-inside: avoid`, `break-before: column`, balanced fragmentation between lines and blocks -- landed 2026-09-14, balanced the way Blink balances; a fragmented block's background and border paint over the union of its fragments), vertical text shaping, full bidi reordering, dictionary hyphenation, `text-orientation`, `clip`, `mix-blend-mode`, `background-blend-mode`, `content-visibility`, `touch-action`, `resize`, `appearance`, `quotes`, counters, and full generated-content semantics. `direction` / logical properties exist for cascade and horizontal layout; `writing-mode` remaps logical axes but does not rotate or vertically shape text. `clip-path` is limited to basic shapes; `mask` URL source-pixel sampling remains partial.
 
 ---
 

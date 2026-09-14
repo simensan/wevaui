@@ -15,4 +15,3 @@
 #                    PORT_PLAN.md already list it.
 
 cov-logical: gap/vertical-writing — writing-mode: vertical-* is not implemented in the core (PRODUCT_READINESS.md "vertical writing"); .page 496 vs 961
-cov-multicol: gap/multicol — column widths/balancing; multicol_is_fully_ported() is false and test_multicol.cpp asserts it; p .w 326 vs 682

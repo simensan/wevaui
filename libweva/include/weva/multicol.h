@@ -2,23 +2,25 @@
 #include "weva/box.h"
 #include "weva/style_resolver.h"
 
-// CSS Multi-column Layout L1 — the BALANCED-COLUMNS subset.
+// CSS Multi-column Layout L1 — balanced columns with fragmentation.
 //
 //   Ported     `column-count`, `column-width` (and the used count derived from
-//              it), `column-gap`, and balancing: in-flow block children are
-//              distributed column-major so the tallest column is as short as
-//              the content allows. Direct `column-span: all` blocks separate
-//              independently balanced sets; adjacent spanner margins collapse.
+//              it), `column-gap`, `column-rule` (painted in the gaps, no space
+//              of its own), `column-span: all` (separates independently
+//              balanced sets; adjacent spanner margins collapse),
+//              `break-inside: avoid`, `break-before: column`, and balancing
+//              with fragmentation: the content of a set is flowed as one tall
+//              column and cut between lines and whole blocks at the smallest
+//              height that holds it in the count, `orphans`/`widows` at the
+//              browser's initial 2. A block whose lines went to several
+//              columns is where its lines are: its rect is the union of its
+//              fragments, as getBoundingClientRect reports it.
 //
-//   NOT ported nested spanner extraction, `column-rule`, `column-fill: auto`, breaking a
-//              single child across a column boundary (a child taller than the
-//              balanced height takes a column to itself and overflows rather
-//              than fragmenting), orphans/widows, and fragmenting inline
-//              content mid-line.
-//
-// The fragmentation gap is the significant one and is why
-// `multicol_is_fully_ported()` returns false: real column layout can split a
-// paragraph across columns, and this cannot.
+//   NOT ported nested spanner extraction, `column-fill: auto`, breaking
+//              inside a line (a line taller than a column overflows it),
+//              authored `orphans`/`widows` values, and per-fragment box
+//              decorations (a fragmented block's background and border are
+//              painted over the union of its fragments, not per column).
 
 namespace weva {
 
@@ -29,6 +31,6 @@ class BlockLayout;
 double layout_multicol(BoxTree* tree, BoxId container, double content_width, double font_size,
                        const LayoutContext& ctx, BlockLayout* block);
 
-constexpr bool multicol_is_fully_ported() { return false; }
+constexpr bool multicol_is_fully_ported() { return true; }
 
 } // namespace weva

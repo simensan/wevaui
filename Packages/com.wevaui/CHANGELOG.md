@@ -53,6 +53,15 @@ checked against Chrome), which the Godot addon also runs on.
   per code point in logical order. Not done: Sinhala, Khmer, Myanmar,
   Tibetan; a face given as a `Font` asset gets no substitutions (no bytes
   to read).
+- Multi-column layout, in the core for both hosts: `column-count`,
+  `column-width`, `column-gap`, `column-rule` (drawn in the gaps),
+  `column-span: all`, `break-inside: avoid`, `break-before: column`, and
+  balanced fragmentation between lines and whole blocks the way Blink
+  balances — the height starts at the flow over the count, never below a
+  paragraph's first two lines, and grows by the smallest shortage while
+  the columns run out; a paragraph split across columns is where its lines
+  are, as `getBoundingClientRect` reports it. Measured against Chrome on
+  the multicol sample and nine probes (`Tools/oracle/corpus/hand/61-69`).
 - A family the page names resolves to the installed font of that name:
   `font-family: "Segoe UI"` draws with Segoe UI where the machine has it,
   with its bold and italic files, as in a browser (the core lists the

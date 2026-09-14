@@ -88,6 +88,13 @@ def compare(case, corpus, weva_dump, width, height, out_dir, chrome_metrics=Fals
     with open(out) as f:
         ours = json.load(f).get("elements", [])
     theirs = chrome.get("elements", [])
+    # A <br> has no layout of its own to arbitrate, and Blink reports one
+    # that sits in a later column of a multicol container at the x of the
+    # paragraph's FIRST fragment (the 61-69 multicol probes in the hand
+    # corpus): its rect is a quirk of getBoundingClientRect, not a
+    # measurement, so it is left out on both sides.
+    ours = [e for e in ours if e.get("tag") != "br"]
+    theirs = [e for e in theirs if e.get("tag") != "br"]
     if chrome_metrics and all(e.get("path") for e in ours) and all(e.get("path") for e in theirs):
         paths = {e["path"]: j for j, e in enumerate(theirs)}
         pairs = {i: paths[e["path"]] for i, e in enumerate(ours) if e["path"] in paths}

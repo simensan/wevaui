@@ -271,6 +271,62 @@ void test_multicol() {
         CHECK(f.layout("<body><div id=m><div id=a></div><div id=b></div></div></body>"));
         CHECK(near(f.box("a").x, 0) && near(f.box("a").height, 100));
         CHECK(near(f.box("b").x, 100));
-        CHECK(!multicol_is_fully_ported());
+        CHECK(multicol_is_fully_ported());
+    }
+
+    // Fragmentation: a paragraph's lines flow down one column and into the
+    // next, and its box is where its lines are -- the union of its
+    // fragments, as getBoundingClientRect reports it. Twelve lines of 10px
+    // in two 140px columns balance to six lines each; the paragraph then
+    // spans both columns and stands six lines tall.
+    {
+        Fixture f;
+        CHECK(f.css("#columns{width:300px;column-count:2;column-gap:20px;font-size:10px;line-height:10px}p{margin:0}"));
+        std::string words;
+        for (int i = 0; i < 60; ++i) words += "word ";
+        CHECK(f.layout("<div id=columns><p id=p>" + words + "</p></div>"));
+        const Box& p = f.box("p");
+        const Box& columns = f.box("columns");
+        // The container is as tall as its tallest column, which is at most
+        // half the flow plus one line; the paragraph spans both columns.
+        CHECK(near(p.x, 0));
+        CHECK(near(p.width, 300));
+        CHECK(near(columns.height, p.height));
+        CHECK(columns.height <= 70 + 1e-6);   // twelve or thirteen lines of 10px, balanced
+        CHECK(columns.height >= 30);
+    }
+
+    // `break-inside: avoid` keeps a block whole: three 30px cards in two
+    // columns balance to 60 (two and one, filled in order), and no card
+    // straddles the column boundary. Cards of 46, 30 and 30 with 8px margins
+    // -- the cov-multicol sample -- balance to 68: one, then two, as Chrome.
+    {
+        Fixture f;
+        CHECK(f.css("#columns{width:300px;column-count:2;column-gap:20px}.card{break-inside:avoid;height:30px}"));
+        CHECK(f.layout("<div id=columns><div id=a class=card></div><div id=b class=card></div><div id=c class=card></div></div>"));
+        CHECK(near(f.box("columns").height, 60));
+        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
+        CHECK(near(f.box("b").x, 0) && near(f.box("b").y, 30));
+        CHECK(near(f.box("c").x, 160) && near(f.box("c").y, 0));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#columns{width:300px;column-count:2;column-gap:20px}.card{break-inside:avoid;margin-bottom:8px}#a{height:46px}#b,#c{height:30px}"));
+        CHECK(f.layout("<div id=columns><div id=a class=card></div><div id=b class=card></div><div id=c class=card></div></div>"));
+        CHECK(near(f.box("columns").height, 68));
+        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
+        CHECK(near(f.box("b").x, 160) && near(f.box("b").y, 0));
+        CHECK(near(f.box("c").x, 160) && near(f.box("c").y, 38));
+    }
+
+    // A forced break: `break-before: column` starts a new column even when
+    // the content would have fit.
+    {
+        Fixture f;
+        CHECK(f.css("#columns{width:300px;column-count:2;column-gap:20px}.b{height:10px}#c{break-before:column}"));
+        CHECK(f.layout("<div id=columns><div id=a class=b></div><div id=c class=b></div></div>"));
+        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
+        CHECK(near(f.box("c").x, 160) && near(f.box("c").y, 0));
+        CHECK(near(f.box("columns").height, 10));
     }
 }

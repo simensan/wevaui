@@ -183,6 +183,19 @@ struct Box {
     // column-width. Flex, grid and table containers ignore the column
     // properties, so this is only ever set on a block container.
     bool is_multicol = false;
+    // What layout_multicol used, for the column rules paint draws between
+    // the columns of a balanced set: the count, the width of a column, the
+    // gap, and the height of the set (the tallest column). Zero count when
+    // the box laid out no columns.
+    int column_count_used = 0;
+    double column_width_used = 0, column_gap_used = 0, column_height_used = 0;
+    // `column-rule-width` resolved (thin/medium/thick or a length), for
+    // paint, which has no layout context of its own.
+    double column_rule_width_used = 0;
+    // Where the sets sit, as (top, height) pairs in the box's own
+    // coordinates: a `column-span: all` block separates one set from the
+    // next, and a rule runs the height of each set, not through the spanner.
+    std::vector<std::pair<double, double>> column_sets;
     bool contains_inlines = false;
     // display: inline-block / inline-flex / inline-grid. The inner formatting
     // context is unchanged; only participation in the parent IFC differs, and

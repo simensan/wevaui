@@ -152,8 +152,8 @@ For the full supported / partial / parse-only / missing CSS matrix, see
 
 What the core does not do yet, with where it shows:
 
-- **Multi-column layout** and **vertical writing modes** — the two sample
-  pages the Chrome gate excuses (`Tools/oracle/known-gaps/`).
+- **Vertical writing modes** — the one sample page the Chrome gate excuses
+  (`Tools/oracle/known-gaps/`).
 - **`@property`** (typed custom properties), **View Transitions**, dictionary
   hyphenation (`hyphens: manual` with soft hyphens works).
 - **On the Unity host:** the shaper is the package's own, over the font's

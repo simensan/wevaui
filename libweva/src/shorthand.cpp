@@ -485,6 +485,16 @@ bool expand_shorthand(std::string_view name, std::string_view value,
         return true;
     }
     if (name == "border-radius") return expand_border_radius(t, out);
+    // CSS Multi-column §7.3: `column-rule` is `<width> || <style> || <color>`,
+    // a border's triplet in any order.
+    if (name == "column-rule") {
+        std::string_view w, s, c;
+        if (!parse_border_triplet(t, &w, &s, &c)) return true;
+        emit(out, "column-rule-width", w);
+        emit(out, "column-rule-style", s);
+        emit(out, "column-rule-color", c);
+        return true;
+    }
 
     // CSS Text Decoration L4 §2.5: `text-decoration` is
     // `<line> || <style> || <color>`, and the line part is itself a
