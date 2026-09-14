@@ -79,10 +79,12 @@ siblings. Use a more specific selector instead.
   Nested imports resolve from the importing stylesheet's directory; cycles
   are stopped and missing files appear in CSS diagnostics. Named/anonymous
   `layer`, `supports()` and media qualifiers wrap the imported rules.
-- `@font-face` — full descriptor parsing (`font-family`, `src` with
-  `local()`/`format()`, weight/style/stretch ranges, `unicode-range`,
-  `font-display`). Runtime font-matching honors family + first `url()`; the
-  finer descriptors are parse-only pending a font-selector pipeline.
+  Imported image/font URLs retain that stylesheet's origin, including image
+  URLs substituted from variables at their use site.
+- `@font-face` — family, ordered `url()`/`local()` sources, weight and style
+  are exposed to the host's font loader. URLs resolve from the declaring
+  stylesheet. Stretch, Unicode ranges and font-display do not currently
+  influence font selection or loading.
 - `@media` — full feature set: `width`/`height`, `orientation`,
   `aspect-ratio`, `resolution`, `prefers-color-scheme`,
   `prefers-reduced-motion`, `hover`, `pointer`, with `and`/`or`/`not`.

@@ -24,6 +24,13 @@ namespace weva {
 // browser does with a sheet that fails to load.
 using StylesheetLoader = std::function<bool(std::string_view url, std::string* css)>;
 
+// Establishes a parsed sheet's origin before expanding its imports.
+void set_stylesheet_source(Stylesheet* sheet, std::string_view source_url);
+
+// Resolves URL tokens in a non-custom declaration's value. Call after variable
+// substitution: URLs inside custom properties resolve at the consuming rule.
+void resolve_stylesheet_value_urls(std::string* value, std::string_view source_url);
+
 // Expands every top-level `@import` in `sheet` in place. Returns how many
 // imports were resolved; the ones that failed to load are listed in
 // `missing` when it is given.

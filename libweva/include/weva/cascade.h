@@ -65,6 +65,7 @@ struct MatchedDeclaration {
     int in_rule_index = 0;   // declaration order within one rule
     int layer_ordinal = kUnlayeredOrdinal;
     std::string selector_text;
+    const std::string* source_url = nullptr;
 };
 
 // The ordering fields of a MatchedDeclaration without the borrowed Declaration
@@ -83,6 +84,7 @@ struct CascadeKey {
     bool is_inline = false;
     bool important = false;
     uint64_t generation = 0;
+    const std::string* source_url = nullptr;
 
     static CascadeKey of(const MatchedDeclaration& m, uint64_t generation);
 };

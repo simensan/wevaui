@@ -261,7 +261,7 @@ namespace Weva
                     Debug.LogWarning($"WevaDocument on '{name}': linked stylesheet '{href}' not found (next to the document asset, baked, or under BasePath).", this);
                     continue;
                 }
-                _doc.AddCss(css);
+                _doc.AddCss(css, href);
                 hasSheet = true;
             }
             if (stylesheetAssets != null)

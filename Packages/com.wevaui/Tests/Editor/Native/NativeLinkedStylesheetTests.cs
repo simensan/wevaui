@@ -100,6 +100,32 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(_host.Document.BasePath, Is.Empty);
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void LinkedSheets_KeepTheirAssetAndImportOrigins(bool baked)
+        {
+            const string css = "@import 'nested/layout.css'; #box{background-image:var(--icon);height:20px}";
+            _host.SystemFontFallback = false;
+            _host.BasePath = "bundle://ui";
+            _host.InlineHtml = "<link rel=stylesheet href='styles/theme.css'>" +
+                "<style>:root{--icon:url(icon.png)}</style><div id=box></div>";
+            var paths = new List<string>();
+            _host.AssetReader = path =>
+            {
+                paths.Add(path);
+                string content = path == "bundle://ui/styles/theme.css" ? css :
+                    path == "bundle://ui/styles/nested/layout.css" ? "#box{width:87px}" : null;
+                return content == null ? null : System.Text.Encoding.UTF8.GetBytes(content);
+            };
+            if (baked) _host.BakeLinkedStylesheets(href => css);
+            _go.SetActive(true);
+            Assert.That(_host.Document, Is.Not.Null, _host.LastError);
+            Assert.That(BoxWidth(), Is.EqualTo(87));
+            Assert.That(paths, Does.Contain("bundle://ui/styles/nested/layout.css"));
+            Assert.That(paths, Does.Contain("bundle://ui/styles/icon.png"));
+            Assert.That(paths, Does.Not.Contain("bundle://ui/icon.png"));
+        }
+
         [TestCase(false, false)]
         [TestCase(true, false)]
         [TestCase(false, true)]

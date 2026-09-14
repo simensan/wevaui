@@ -1,6 +1,7 @@
 #include "weva/cascade.h"
 
 #include "weva/css_value.h"
+#include "weva/at_import.h"
 #include "weva/env_attr.h"
 #include "weva/keyword_resolver.h"
 #include "weva/shorthand.h"
@@ -192,7 +193,8 @@ void expand_substituted_shorthands(const std::vector<std::pair<int, std::string>
     }
 }
 
-std::vector<Declaration> expand_declarations(const std::vector<Declaration>& source) {
+std::vector<Declaration> expand_declarations(const std::vector<Declaration>& source,
+                                            std::string_view source_url = {}) {
     bool any = false;
     for (const Declaration& d : source) {
         if (is_shorthand(d.property) && !contains_substitution(d.value_text)) {
@@ -200,12 +202,21 @@ std::vector<Declaration> expand_declarations(const std::vector<Declaration>& sou
             break;
         }
     }
-    if (!any) return source;
+    if (!any && source_url.empty()) return source;
 
     std::vector<Declaration> out;
     out.reserve(source.size() + 8);
     std::vector<ShorthandLonghand> longhands;
-    for (const Declaration& d : source) {
+    for (const Declaration& original : source) {
+        Declaration rebased;
+        const Declaration* input = &original;
+        if (!source_url.empty() && original.property.compare(0, 2, "--") != 0 &&
+            !contains_substitution(original.value_text)) {
+            rebased = original;
+            resolve_stylesheet_value_urls(&rebased.value_text, source_url);
+            input = &rebased;
+        }
+        const Declaration& d = *input;
         if (contains_substitution(d.value_text)) {
             out.push_back(d);
             continue;
@@ -233,6 +244,7 @@ std::vector<Declaration> expand_declarations(const std::vector<Declaration>& sou
 
 CascadeKey CascadeKey::of(const MatchedDeclaration& m, uint64_t generation) {
     CascadeKey k;
+    k.source_url = m.source_url;
     k.specificity = m.specificity;
     k.source_index = m.source_index;
     k.in_rule_index = m.in_rule_index;
@@ -718,7 +730,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 cr.layer_ordinal = layer_ordinal;
                 cr.container_conditions = compiling_containers_;
                 cr.scopes = compiling_scopes_;
-                cr.declarations = expand_declarations(sr->declarations);
+                cr.declarations = expand_declarations(sr->declarations, sr->source_url);
                 if (!pseudo_name.empty()) {
                     pseudo_rules_[pseudo_name].push_back(std::move(cr));
                 } else {
@@ -771,7 +783,9 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 if (ar->has_block && origin != DeclarationOrigin::UserAgent) {
                     FontFace face;
                     for (const Declaration& d : ar->declarations) {
-                        const std::string_view value = descriptor_trim(d.value_text);
+                        std::string resolved = d.value_text;
+                        resolve_stylesheet_value_urls(&resolved, ar->source_url);
+                        const std::string_view value = descriptor_trim(resolved);
                         if (d.property == "font-family") {
                             if (face.family.empty()) face.family = std::string(unquote_family(value));
                         } else if (d.property == "src") {
@@ -978,6 +992,7 @@ const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
         for (const Declaration& d : cr.declarations) {
             MatchedDeclaration m;
             m.declaration = &d;
+            m.source_url = &cr.rule->source_url;
             m.origin = cr.origin;
             m.specificity = spec;
             m.source_index = cr.source_index;
@@ -1109,6 +1124,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
             is_shorthand(name)) {
             std::string resolved;
             if (resolve_variables(value, *out, &resolved)) {
+                if (m.source_url) resolve_stylesheet_value_urls(&resolved, *m.source_url);
                 early_longhands.clear();
                 if (expand_shorthand(name, resolved, &early_longhands) && !early_longhands.empty()) {
                     // The shorthand slot keeps the substituted text as well:
@@ -1217,7 +1233,12 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                 raw = std::move(resolved);
                 changed = true;
             }
-            if (changed) rewrites.emplace_back(id, std::move(raw));
+            if (changed) {
+                const auto& winner = winner_keys_[static_cast<size_t>(id)];
+                if (!contains_substitution(raw) && winner.generation == gen && winner.source_url)
+                    resolve_stylesheet_value_urls(&raw, *winner.source_url);
+                rewrites.emplace_back(id, std::move(raw));
+            }
         }
         for (auto& r : rewrites) out->set(r.first, r.second);
         // An env() with no usable fallback taints its declaration, same as var().
@@ -1236,6 +1257,9 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
             }
             std::string resolved;
             if (resolve_variables(raw, *out, &resolved)) {
+                const auto& winner = winner_keys_[static_cast<size_t>(id)];
+                if (winner.generation == gen && winner.source_url)
+                    resolve_stylesheet_value_urls(&resolved, *winner.source_url);
                 rewrites.emplace_back(id, std::move(resolved));
             } else {
                 // §3: invalid at computed-value time. The declaration is
@@ -1402,6 +1426,7 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
         for (const Declaration& d : cr.declarations) {
             MatchedDeclaration m;
             m.declaration = &d;
+            m.source_url = &cr.rule->source_url;
             m.origin = cr.origin;
             m.specificity = spec;
             m.source_index = cr.source_index;
@@ -1449,7 +1474,14 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
                 continue;
             }
             std::string resolved;
-            if (resolve_variables(raw, *out, &resolved)) rewrites.emplace_back(id, std::move(resolved));
+            if (resolve_variables(raw, *out, &resolved)) {
+                for (auto m = matches.rbegin(); m != matches.rend(); ++m) {
+                    if (m->declaration->property != reg.name_of(id)) continue;
+                    if (m->source_url) resolve_stylesheet_value_urls(&resolved, *m->source_url);
+                    break;
+                }
+                rewrites.emplace_back(id, std::move(resolved));
+            }
             else drops.push_back(id);
         }
         for (auto& r : rewrites) out->set(r.first, r.second);

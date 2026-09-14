@@ -343,7 +343,7 @@ namespace Weva.Native
         public const string Library = "weva_core";
 #endif
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 43;
+        public const int WEVA_ABI_VERSION_MINOR = 44;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
@@ -367,6 +367,8 @@ namespace Weva.Native
         public static extern int weva_document_load_html(System.IntPtr doc, byte* html, nuint length);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_add_css(System.IntPtr doc, byte* css, nuint length);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int weva_document_add_css_from(System.IntPtr doc, byte* css, nuint length, byte* source_url);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_set_css(System.IntPtr doc, byte* css, nuint length);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

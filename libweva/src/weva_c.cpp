@@ -4082,12 +4082,18 @@ static void take_component_sheets(weva_document* doc, std::vector<ComponentStyle
 }
 
 weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t length) {
+    return weva_document_add_css_from(doc, css, length, nullptr);
+}
+
+weva_status weva_document_add_css_from(weva_document_t doc, const char* css, size_t length,
+                                      const char* source_url) {
     if (!doc || (!css && length > 0)) return WEVA_ERR_INVALID_ARGUMENT;
     auto sheet = std::make_unique<Stylesheet>();
     CssParseError err;
     if (!parse_stylesheet(std::string_view(css ? css : "", length), false, sheet.get(), &err)) {
         return WEVA_ERR_PARSE;
     }
+    set_stylesheet_source(sheet.get(), source_url ? source_url : "");
     expand_document_imports(doc, sheet.get());
     doc->sheets.push_back(std::move(sheet));
     // Host sheets always precede markup/component sheets, including when

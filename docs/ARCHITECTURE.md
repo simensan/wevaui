@@ -1021,3 +1021,16 @@ stylesheets, which are now submitted as separate sheets so parser recovery and
 markup/component sheets, including after `add_css` and viewport recompilation.
 Tested in `test_c_abi.cpp`, `test_c_abi_forms.cpp` and Unity's
 `NativeLinkedStylesheetTests` (2026-09-15).
+
+ABI minor 44 adds `weva_document_add_css_from(doc, css, length, source_url)`.
+The supplied source URL belongs to the stylesheet, relative to the document
+reader or absolute. Parsed rules retain it when imports are expanded; compiled
+matches carry it through the cascade. Literal image/font URLs resolve at
+compilation, and URLs introduced through variables resolve at the consuming
+declaration (including shorthands and pseudo-elements). Custom-property token
+values keep their original URLs. Literal keyframe URLs retain their sheet too.
+Unity supplies each linked sheet's href, including when its text was baked;
+unnamed inspector/inline CSS continues to use the document base. The existing
+`add_css` is the same operation with no source URL. Core ABI regressions and
+`check_stylesheet_asset_origins_chrome.cjs` cover nested imports, image/font
+sources, variable use sites, viewport recompilation, and URL reference forms.

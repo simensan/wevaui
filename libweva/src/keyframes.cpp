@@ -1,4 +1,6 @@
 #include "weva/keyframes.h"
+#include "weva/at_import.h"
+#include "weva/shorthand.h"
 
 #include "weva/animation.h"
 
@@ -67,6 +69,10 @@ bool parse_keyframes_rule(const GenericAtRule& at, KeyframeAnimation* out) {
             Keyframe frame;
             frame.offset = std::clamp(offset, 0.0, 1.0);
             frame.declarations = frame_rule.declarations;
+            for (auto& declaration : frame.declarations) {
+                if (declaration.property.compare(0, 2, "--") != 0 && !contains_substitution(declaration.value_text))
+                    resolve_stylesheet_value_urls(&declaration.value_text, frame_rule.source_url);
+            }
             animation.frames.push_back(std::move(frame));
         }
     }

@@ -117,6 +117,16 @@ std::string import_url(std::string_view parent, std::string_view url) {
         return colon != std::string_view::npos && colon < path.find_first_of("/\\?#");
     };
     std::string joined;
+    if (!url.empty() && (url.front() == '#' || url.front() == '?')) {
+        const size_t end = url.front() == '?' ? parent.find_first_of("?#") : parent.find('#');
+        return std::string(parent.substr(0, end)) + std::string(url);
+    }
+    if (!url.empty() && url.front() == '/' &&
+        (istarts_with(parent, "http://") || istarts_with(parent, "https://"))) {
+        const size_t scheme = parent.find(':');
+        if (url.size() > 1 && url[1] == '/') joined.assign(parent.substr(0, scheme + 1));
+        else joined.assign(parent.substr(0, parent.find('/', scheme + 3)));
+    }
     if (!url.empty() && url.front() != '/' && url.front() != '\\' && !has_scheme(url)) {
         const std::string_view file = parent.substr(0, parent.find_first_of("?#"));
         const size_t slash = file.find_last_of('/');
@@ -198,6 +208,7 @@ void expand(Stylesheet* sheet, const StylesheetLoader& load, std::vector<std::st
         auto imported = std::make_unique<Stylesheet>();
         CssParseError err;
         if (!parse_stylesheet(css, false, imported.get(), &err)) continue;
+        set_stylesheet_source(imported.get(), spec.url);
         loading->push_back(spec.url);
         expand(imported.get(), load, missing, loading, depth + 1, resolved, spec.url);
         loading->pop_back();
@@ -228,11 +239,50 @@ void expand(Stylesheet* sheet, const StylesheetLoader& load, std::vector<std::st
 
 } // namespace
 
+void set_stylesheet_source(Stylesheet* sheet, std::string_view source_url) {
+    if (!sheet) return;
+    sheet->source_url = std::string(source_url);
+    const std::function<void(std::vector<RulePtr>&)> assign = [&](std::vector<RulePtr>& rules) {
+        for (auto& rule : rules) {
+            rule->source_url = sheet->source_url;
+            if (rule->kind() == RuleKind::Style) assign(static_cast<StyleRule&>(*rule).nested_rules);
+            else assign(static_cast<GenericAtRule&>(*rule).nested_rules);
+        }
+    };
+    assign(sheet->rules);
+}
+
+void resolve_stylesheet_value_urls(std::string* value, std::string_view source_url) {
+    if (!value || source_url.empty() || value->find('(') == std::string::npos) return;
+    std::vector<CssToken> tokens;
+    CssParseError error;
+    if (!CssTokenizer(*value, false).tokenize(&tokens, &error)) return;
+    bool changed = false;
+    const auto resolve = [&](CssToken& token) {
+        if (token.text.empty()) return;
+        std::string resolved = import_url(source_url, token.text);
+        if (resolved != token.text) { token.text = std::move(resolved); changed = true; }
+    };
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        if (tokens[i].kind == CssTokenKind::Url) resolve(tokens[i]);
+        else if (tokens[i].kind == CssTokenKind::Function && tokens[i].text.size() == 3 &&
+                 istarts_with(tokens[i].text, "url")) {
+            size_t content = i + 1;
+            while (content < tokens.size() && tokens[content].kind == CssTokenKind::Whitespace) ++content;
+            if (content < tokens.size() && tokens[content].kind == CssTokenKind::String) resolve(tokens[content]);
+        }
+    }
+    if (!changed) return;
+    value->clear();
+    for (const auto& token : tokens) *value += css_token_source(token);
+}
+
 int expand_imports(Stylesheet* sheet, const StylesheetLoader& load, std::vector<std::string>* missing) {
     if (!sheet || !load) return 0;
     int resolved = 0;
     std::vector<std::string> loading;
-    expand(sheet, load, missing, &loading, 0, &resolved, {});
+    if (!sheet->source_url.empty()) loading.push_back(import_url({}, sheet->source_url));
+    expand(sheet, load, missing, &loading, 0, &resolved, sheet->source_url);
     return resolved;
 }
 

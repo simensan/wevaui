@@ -138,12 +138,14 @@ namespace Weva.Native
         }
 
         /// <summary>Adds a separate host stylesheet after the previous host sheets.</summary>
-        public void AddCss(string css)
+        public void AddCss(string css, string sourceUrl = null)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(css ?? string.Empty);
+            byte[] source = NullTerminated(sourceUrl);
             fixed (byte* p = bytes)
+            fixed (byte* url = source)
             {
-                Check(WevaNative.weva_document_add_css(Handle, p, (nuint)bytes.Length), "weva_document_add_css");
+                Check(WevaNative.weva_document_add_css_from(Handle, p, (nuint)bytes.Length, url), "weva_document_add_css_from");
             }
         }
 

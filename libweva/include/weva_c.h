@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 43
+#define WEVA_ABI_VERSION_MINOR 44
 
 uint32_t weva_abi_version(void);
 
@@ -328,6 +328,12 @@ void weva_document_destroy(weva_document_t doc);
  * weva_document_reload_html and weva_element_append_html. */
 weva_status weva_document_load_html(weva_document_t doc, const char* html, size_t length);
 weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t length);
+/* Like add_css, with the stylesheet's own URL for relative imports, images
+ * and font sources. The URL is relative to the document's base path or is
+ * already absolute; null/empty uses the document base, as add_css does.
+ * Available since ABI minor 44. */
+weva_status weva_document_add_css_from(weva_document_t doc, const char* css, size_t length,
+                                      const char* source_url);
 /* Replaces the host's stylesheets; markup/component sheets, the UA sheet,
  * live DOM, form values, focus, bindings and animation clocks remain. An
  * empty string removes host CSS. Both this and add_css schedule a restyle

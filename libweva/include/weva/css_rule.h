@@ -27,6 +27,9 @@ enum class RuleKind { Style, At };
 struct Rule {
     virtual ~Rule() = default;
     virtual RuleKind kind() const = 0;
+    // Source stylesheet URL, relative to the document reader when appropriate.
+    // Imports retain this even after their rules are spliced into another sheet.
+    std::string source_url;
 };
 
 using RulePtr = std::unique_ptr<Rule>;
@@ -56,6 +59,7 @@ struct GenericAtRule : Rule {
 
 struct Stylesheet {
     std::vector<RulePtr> rules;
+    std::string source_url;
 };
 
 // Mirrors CssParser.Parse. In strict mode a malformed construct fails the

@@ -354,9 +354,11 @@ directly (§6). `PrefersDarkColorScheme` on the component answers
 
 ## 9. Images and files
 
-`url()` in CSS and `<img src>` resolve relative to `BasePath` — the document
-asset's folder in the editor — through the core's asset reader, which reads
-files. A player that does not ship its UI as files hands the core its own
+`<img src>` and URLs in inline/inspector CSS resolve relative to `BasePath` —
+the document asset's folder in the editor. Linked and imported stylesheets
+resolve image/font URLs next to the stylesheet that uses them, including URLs
+supplied through CSS variables. The core's default asset reader reads files.
+A player that does not ship its UI as files hands the core its own
 reader: `doc.AssetReader = path => bytes` (Addressables, bundles,
 `Resources`), returning `null` for an asset it does not have. The reader
 receives paths already resolved against `BasePath`; do not prepend it again.
@@ -368,7 +370,7 @@ frames are CSS `border-image`.
 
 `Font`, `Bold`, `Italic` and `Fallbacks` on the component are the UI face
 (the package's Inter and a symbol face when empty). `@font-face` with
-`url()` (relative to `BasePath`) or `local("Installed Name")` adds families
+`url()` (resolved as described above) or `local("Installed Name")` adds families
 from a stylesheet, matched by weight and style the way a browser does;
 `doc.RegisterFontFamily("MyFont", font)` names a Unity `Font` from code.
 See [Text & Fonts](text-and-fonts.md).

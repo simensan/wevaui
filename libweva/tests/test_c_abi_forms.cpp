@@ -895,6 +895,93 @@ void test_abi_at_import_paths() {
     }
 }
 
+// Mirrors check_stylesheet_asset_origins_chrome.cjs. Imported sheets keep
+// their image/font origins, including URLs substituted from another sheet.
+void test_abi_stylesheet_asset_origins() {
+    static const char* theme = R"CSS(@import 'nested/child.css'; @import './theme.css';
+        :root{--external:url(shared.png)}
+        #direct{background-image:url(tile.png)}
+        #variable{background-image:var(--inline)}
+        #shorthand{background:var(--inline)}
+        #fallback{background-image:var(--missing,url(fallback.png))}
+        @keyframes origin{from,to{background-image:url(animated.png)}}
+        #animation{animation:origin 1s paused both}
+        #pseudo::before{content:'';display:block;width:80px;height:20px;background-image:var(--inline)}
+        @font-face{font-family:Origin;src:local(NoSuchOriginFont),url(font.woff2)})CSS";
+    std::vector<std::string> reads;
+    const auto reader = [](void* user, const char* path, uint8_t* out, size_t capacity) -> size_t {
+        if (!out) static_cast<std::vector<std::string>*>(user)->emplace_back(path);
+        const char* css = std::strcmp(path, "ui/styles/theme.css") == 0 ? theme :
+            std::strcmp(path, "ui/styles/nested/child.css") == 0 ? "#nested{background-image:url(tile.png)}" : nullptr;
+        if (!css) return 0;
+        const size_t size = std::strlen(css);
+        if (out && capacity >= size) std::memcpy(out, css, size);
+        return size;
+    };
+    const char* css = ":root{--inline:url(inline.png)}"
+        "html,body{margin:0}div{width:80px;height:20px} #document{background-image:var(--external)}";
+    const char* html = "<div id=direct></div><div id=variable></div><div id=shorthand></div>"
+        "<div id=fallback></div><div id=nested></div><div id=document></div><div id=pseudo></div><div id=animation></div>";
+    CHECK(weva_document_add_css_from(nullptr, theme, std::strlen(theme), "styles/theme.css") == WEVA_ERR_INVALID_ARGUMENT);
+    for (bool linked : {false, true}) {
+        reads.clear();
+        weva_config c = config();
+        weva_document_t d = weva_document_create(&c);
+        CHECK(weva_document_set_base_path(d, "ui") == WEVA_OK);
+        CHECK(weva_document_set_asset_reader(d, reader, &reads) == WEVA_OK);
+        CHECK(weva_document_load_html(d, html, std::strlen(html)) == WEVA_OK);
+        const std::string input = (linked ? std::string() : "@import 'styles/theme.css';") + css;
+        CHECK(weva_document_set_css(d, input.data(), input.size()) == WEVA_OK);
+        if (linked) CHECK(weva_document_add_css_from(d, theme, std::strlen(theme), "styles/theme.css") == WEVA_OK);
+        CHECK(weva_document_add_css_from(d, nullptr, 1, nullptr) == WEVA_ERR_INVALID_ARGUMENT);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        CHECK(std::count(reads.begin(), reads.end(), "ui/styles/theme.css") == (linked ? 0 : 1));
+        const char* expected[] = {"ui/styles/tile.png", "ui/styles/inline.png", "ui/styles/fallback.png",
+            "ui/styles/nested/tile.png", "ui/shared.png", "ui/styles/animated.png"};
+        for (const char* path : expected)
+            CHECK(std::find(reads.begin(), reads.end(), path) != reads.end());
+        CHECK(std::find(reads.begin(), reads.end(), "ui/tile.png") == reads.end());
+        CHECK(std::find(reads.begin(), reads.end(), "ui/inline.png") == reads.end());
+        std::vector<char> faces(weva_document_font_faces(d, nullptr, 0) + 1);
+        weva_document_font_faces(d, faces.data(), faces.size());
+        CHECK(std::string(faces.data()) == "Origin\tui/styles/font.woff2\t\t\tlocal:NoSuchOriginFont|url:ui/styles/font.woff2");
+        const char* computed[][2] = {{"#direct", "styles/tile.png"}, {"#variable", "styles/inline.png"},
+            {"#shorthand", "styles/inline.png"}, {"#fallback", "styles/fallback.png"},
+            {"#nested", "styles/nested/tile.png"}, {"#document", "shared.png"}, {"#animation", "styles/animated.png"}};
+        for (int width : {800, 1200}) {
+            weva_document_set_viewport(d, width, 600);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            for (const auto& item : computed) {
+                char value[128];
+                weva_element_computed_style(d, weva_document_query(d, item[0]), "background-image", value, sizeof(value));
+                CHECK(std::string(value).find(item[1]) != std::string::npos);
+            }
+        }
+        weva_document_destroy(d);
+    }
+    {
+        // Source URLs with an authority, query or fragment keep URL semantics.
+        reads.clear();
+        weva_config c = config();
+        weva_document_t d = weva_document_create(&c);
+        weva_document_set_asset_reader(d, reader, &reads);
+        const char* source = "https://example.test/ui/styles/theme.css?v=1#top";
+        const char* references = R"CSS(div{width:20px;height:20px}
+            #a{background-image:url('?v=2')} #b{background-image:url('#icon')}
+            #c{background-image:url('/shared.png')} #d{background-image:url('//cdn.test/icon.png')}
+            #e{background-image:url('../media/a).png')})CSS";
+        const char* nodes = "<div id=a></div><div id=b></div><div id=c></div><div id=d></div><div id=e></div>";
+        CHECK(weva_document_load_html(d, nodes, std::strlen(nodes)) == WEVA_OK);
+        CHECK(weva_document_add_css_from(d, references, std::strlen(references), source) == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        const char* expected[] = {"https://example.test/ui/styles/theme.css?v=2",
+            "https://example.test/ui/styles/theme.css?v=1#icon", "https://example.test/shared.png",
+            "https://cdn.test/icon.png", "https://example.test/ui/media/a).png"};
+        for (const char* path : expected) CHECK(std::find(reads.begin(), reads.end(), path) != reads.end());
+        weva_document_destroy(d);
+    }
+}
+
 // CSS Scroll Snap L1: a programmatic scroll lands on a snap position at
 // once; a wheel scroll moves freely, then settles onto one once the wheel is
 // quiet, animated; `scroll-snap-stop: always` is not skipped; `proximity`

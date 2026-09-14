@@ -12,6 +12,9 @@ package is the Unity host for the Weva core (`libweva`, C++, behind a C ABI,
 checked against Chrome), which the Godot addon also runs on.
 
 ### Fixed
+- Linked and imported stylesheets retain their own image/font paths. URLs
+  introduced by CSS variables resolve next to the stylesheet that uses them;
+  baked linked sheets preserve the same origins.
 - Separate linked and inspector stylesheets retain their own `@import` and
   parser boundaries. Appending CSS preserves markup stylesheet precedence
   before and after resizing. Asset readers receive core-resolved paths;
