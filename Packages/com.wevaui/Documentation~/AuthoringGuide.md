@@ -257,7 +257,12 @@ every playing frame:
   and positioned at the caret only over a text control.
 
 `doc.InputConsumed` says whether the last frame's input was taken by the
-document, so gameplay can ignore a click that landed on the UI.
+document, so gameplay can ignore a click that landed on the UI. With several
+documents on screen the one painted on top (`SortingOrder`) takes the
+pointer where it accepts it — everywhere, as in a browser, transparent or
+not; a HUD that should let clicks reach the document beneath (or the game)
+through its empty areas says `html, body { pointer-events: none }` and
+`pointer-events: auto` on its controls.
 `doc.AcceptsKeyboard = false` keeps the keyboard for the game while the
 pointer still works.
 

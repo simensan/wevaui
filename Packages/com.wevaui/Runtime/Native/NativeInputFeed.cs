@@ -24,7 +24,7 @@ using UnityEngine.InputSystem.Controls;
 
 namespace Weva.Native
 {
-    internal sealed class NativeInputFeed
+    internal sealed class NativeInputFeed : IDisposable
     {
         private struct EngineKey
         {
@@ -67,7 +67,7 @@ namespace Weva.Native
         private uint _buttons;
         private Vector2 _pointer = new Vector2(float.NaN, float.NaN);
         private bool _pointerCleared = true;
-        private bool _touchDown, _touchPanning;
+        private bool _touchDown, _touchPanning, _touchCovered;
         private Vector2 _touchStart, _touchLast;
         // Gamepad: a held direction repeats after the delay, then at the interval,
         // the way Godot's repeat_navigation steps a held pad through a list.
@@ -133,6 +133,17 @@ namespace Weva.Native
         /// </summary>
         public Func<bool> HasFocus = () => Application.isFocused;
 
+        // Every live feed, in creation order: documents share the screen, and
+        // where one that paints later (a higher Order, or the same Order and
+        // a later registration -- the paint order) accepts the pointer, the
+        // one beneath treats the pointer as outside, the way a browser gives
+        // a click to the topmost hit. Only pointers are arbitrated: keys go
+        // to whichever document has focus.
+        private static readonly List<NativeInputFeed> s_feeds = new List<NativeInputFeed>();
+
+        /// <summary>The document's paint order (WevaDocument.SortingOrder): a higher one covers a lower one where it accepts the pointer.</summary>
+        public Func<int> Order = () => 0;
+
         public NativeInputFeed(NativeDocument doc)
         {
             _doc = doc;
@@ -141,10 +152,28 @@ namespace Weva.Native
             // once told to (ABI minor 39).
             _doc.SetKeyRepeat(KeyRepeatDelay, KeyRepeatInterval);
             _doc.SetDoubleClick(DoubleClickWindow, DoubleClickDistance);
+            s_feeds.Add(this);
+        }
+
+        /// <summary>Whether a document painted over this one accepts the pointer at a document-space point.</summary>
+        public bool CoveredAt(float x, float y)
+        {
+            int mine = Order();
+            int index = s_feeds.IndexOf(this);
+            for (int i = 0; i < s_feeds.Count; i++)
+            {
+                NativeInputFeed other = s_feeds[i];
+                if (other == this || other._doc == null || !other._doc.IsAlive) continue;
+                int theirs = other.Order();
+                bool above = theirs > mine || (theirs == mine && i > index);
+                if (above && other._doc.AcceptsPointer(x, y)) return true;
+            }
+            return false;
         }
 
         public void Dispose()
         {
+            s_feeds.Remove(this);
             if (_subscribed != null)
             {
                 _subscribed.onTextInput -= OnTextInput;
@@ -217,7 +246,10 @@ namespace Weva.Native
             {
                 Vector2 at = mouse.position.ReadValue();
                 var p = new Vector2(at.x, viewportHeight - at.y);
-                bool inside = focused && p.x >= 0 && p.y >= 0 && p.x < viewportWidth && p.y < viewportHeight;
+                // Covered by a document painted over this one: outside, as far
+                // as this document is concerned (a drag that started here
+                // keeps the pointer, as one that leaves the surface does).
+                bool inside = focused && p.x >= 0 && p.y >= 0 && p.x < viewportWidth && p.y < viewportHeight && !CoveredAt(p.x, p.y);
                 uint buttons = 0;
                 if (mouse.leftButton.isPressed) buttons |= (uint)weva_pointer_button.WEVA_BUTTON_PRIMARY;
                 if (mouse.rightButton.isPressed) buttons |= (uint)weva_pointer_button.WEVA_BUTTON_SECONDARY;
@@ -503,6 +535,10 @@ namespace Weva.Native
                 _touchDown = true;
                 _touchPanning = false;
                 _touchStart = _touchLast = p;
+                // A finger that landed on a document painted over this one is
+                // that document's for as long as it is down.
+                _touchCovered = CoveredAt(p.x, p.y);
+                if (_touchCovered) return true;
                 _doc.SetPointer(p.x, p.y, 0, modifiers);
                 _pointerCleared = false;
                 _pointer = p;
@@ -510,6 +546,7 @@ namespace Weva.Native
             }
             if (down)
             {
+                if (_touchCovered) return true;
                 Vector2 delta = p - _touchLast;
                 _touchLast = p;
                 if (!_touchPanning && (p - _touchStart).sqrMagnitude >= TouchPanThreshold * TouchPanThreshold)
@@ -527,6 +564,11 @@ namespace Weva.Native
             if (_touchDown)
             {
                 _touchDown = false;
+                if (_touchCovered)
+                {
+                    _touchCovered = false;
+                    return true;
+                }
                 if (!_touchPanning)
                 {
                     // A tap: press and release where the finger landed, this frame.

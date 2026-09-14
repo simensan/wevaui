@@ -224,6 +224,68 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(Clicks(), Is.EqualTo(0), "a drag is not a click");
         }
 
+        // Two documents on one screen: the pointer belongs to the one painted
+        // on top where it accepts the pointer. A document accepts the pointer
+        // everywhere, as in a browser, transparent or not -- a HUD that lets
+        // clicks through its empty areas says `html, body { pointer-events:
+        // none }` and `pointer-events: auto` on its controls (the Godot host's
+        // rule too). Both a mouse and a finger.
+        [Test]
+        public void OnlyTheTopDocumentTakesThePointer_WhereItAcceptsIt()
+        {
+            Load("<button id=low on-click=Low>Low</button><button id=shared on-click=Shared>Shared</button>",
+                 "#low{position:absolute;left:0;top:0;width:100px;height:50px}#shared{position:absolute;left:150px;top:0;width:100px;height:50px}");
+            using (var upperDoc = new NativeDocument(W, H))
+            using (var upper = new NativeInputFeed(upperDoc) { HasFocus = () => true, Order = () => 1 })
+            {
+                upperDoc.LoadHtml("<button id=up on-click=Up>Up</button>");
+                upperDoc.SetCss("html,body{margin:0;pointer-events:none}#up{pointer-events:auto;position:absolute;left:150px;top:0;width:100px;height:50px}");
+                upperDoc.Update(0);
+                var upperEvents = new List<NativeEvent>();
+                int UpperClicks() { upperEvents.Clear(); upperDoc.PollEvents(upperEvents); int n = 0; foreach (NativeEvent e in upperEvents) if (e.Kind == weva_event_kind.WEVA_EVENT_CLICK) n++; return n; }
+                Clicks(); UpperClicks();
+
+                // Over the lower document's own button (the upper one is transparent there).
+                Set(_mouse.position, Middle("#low"));
+                Press(_mouse.leftButton); Tick(); upper.Tick(W, H);
+                Release(_mouse.leftButton); Tick(); upper.Tick(W, H);
+                Assert.That(Clicks(), Is.EqualTo(1), "where the upper document passes the pointer (pointer-events: none), the lower one is clicked");
+                Assert.That(UpperClicks(), Is.EqualTo(0));
+
+                // Over the overlap: the upper document's button covers the lower one's.
+                Set(_mouse.position, Middle("#shared"));
+                Tick(); upper.Tick(W, H);
+                Assert.That(_doc.Query("#shared:hover"), Is.EqualTo(WevaNative.WEVA_ELEMENT_NONE), "the covered button is not hovered");
+                Assert.That(upperDoc.Query("#up:hover"), Is.Not.EqualTo(WevaNative.WEVA_ELEMENT_NONE), "the covering one is");
+                Press(_mouse.leftButton); Tick(); upper.Tick(W, H);
+                Assert.That(_feed.Consumed, Is.False, "the lower document did not take the press");
+                Assert.That(upper.Consumed, Is.True, "the upper one did");
+                Release(_mouse.leftButton); Tick(); upper.Tick(W, H);
+                Assert.That(Clicks(), Is.EqualTo(0), "the covered button is not clicked");
+                Assert.That(UpperClicks(), Is.EqualTo(1), "the covering one is");
+
+                // A finger follows the same rule.
+                Vector2 shared = Middle("#shared");
+                BeginTouch(1, shared); Tick(); upper.Tick(W, H);
+                EndTouch(1, shared); Tick(); upper.Tick(W, H);
+                Assert.That(Clicks(), Is.EqualTo(0), "a tap on the overlap misses the covered button");
+                Assert.That(UpperClicks(), Is.EqualTo(1), "and hits the covering one");
+                Vector2 low = Middle("#low");
+                BeginTouch(1, low); Tick(); upper.Tick(W, H);
+                EndTouch(1, low); Tick(); upper.Tick(W, H);
+                Assert.That(Clicks(), Is.EqualTo(1), "a tap where the upper document passes the pointer reaches the lower one");
+                Assert.That(UpperClicks(), Is.EqualTo(0));
+
+                // Equal orders: the later-created document paints on top.
+                upper.Order = () => 0;
+                Set(_mouse.position, shared);
+                Press(_mouse.leftButton); Tick(); upper.Tick(W, H);
+                Release(_mouse.leftButton); Tick(); upper.Tick(W, H);
+                Assert.That(Clicks(), Is.EqualTo(0), "equal orders: the later document is on top");
+                Assert.That(UpperClicks(), Is.EqualTo(1));
+            }
+        }
+
         [Test]
         public void WheelNotchScrollsWhatChromeScrolls()
         {

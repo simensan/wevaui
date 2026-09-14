@@ -443,6 +443,7 @@ namespace Weva
         private void CreateInputFeed()
         {
             _input = new NativeInputFeed(_doc);
+            _input.Order = () => sortingOrder;
             _input.TabbedOut += backwards => TabbedOut?.Invoke(backwards);
             _input.TextEntryRequested += id => TextEntryRequested?.Invoke(id);
             ApplyInputKnobs();

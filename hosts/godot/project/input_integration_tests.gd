@@ -289,6 +289,22 @@ func _ready() -> void:
 	wheel(Vector2(100, 50))
 	wheeled.update_document(0)
 	check(is_equal_approx(wheeled.get_element_scroll("#list").y, 100.0), "one wheel notch scrolls Chrome's 100px, not 40")
+
+	# A finger dragging pans what is under it: the content follows the finger,
+	# so dragging UP moves the list down through the view. The Unity feed's
+	# TouchTapClicksAndTouchDragPans pins the same rule.
+	var drag := InputEventScreenDrag.new()
+	drag.position = Vector2(100, 50)
+	drag.relative = Vector2(0, -60)
+	viewport.push_input(drag, true)
+	wheeled.update_document(0)
+	check(is_equal_approx(wheeled.get_element_scroll("#list").y, 160.0), "a finger dragging up 60px pans the list down 60px")
+	var sideways := InputEventScreenDrag.new()
+	sideways.position = Vector2(100, 50)
+	sideways.relative = Vector2(-30, 0)
+	viewport.push_input(sideways, true)
+	wheeled.update_document(0)
+	check(is_equal_approx(wheeled.get_element_scroll("#list").y, 160.0), "a sideways drag on a list that only scrolls vertically changes nothing")
 	wheeled.free()
 
 	viewport.free()

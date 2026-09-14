@@ -22,7 +22,7 @@ covered by `libweva/tests`; the host tests there show the host opted in.
 | Keyboard can be kept for the game while the pointer works | host | `noninteractive` / `input_integration_tests.gd` "noninteractive documents let input reach the UI beneath" | `NativeInputFeed.AcceptsKeyboard`; `NativeInputFeedTests.AcceptsKeyboardGatesKeysAndTextButNotThePointer` |
 | Consumed input is reported so gameplay can ignore it | host | `set_input_as_handled`; `input_integration_tests.gd` "accepted typing stays out of game input handlers" | `NativeInputFeed.Consumed` / `WevaDocument.InputConsumed`; every `NativeInputFeedTests` case asserts it |
 | Tab order wraps inside the document unless the host lets it out | core (`focus_step(wrap)`) + host | `input_integration_tests.gd` "Tab continues into the next document", "Shift+Tab enters a document at its last control" | `NativeInputFeed.WrapTab` / `TabbedOut`; `NativeInputTests.Focus_TabOrderWrapsOnlyWhenAsked` |
-| Touch: tap clicks, drag past a threshold pans | host | `weva_node.cpp` `InputEventScreenDrag` (no scene test) | `NativeInputFeed.TouchPanThreshold = 8`; `NativeInputFeedTests.TouchTapClicksAndTouchDragPans` |
+| Touch: tap clicks, drag past a threshold pans | host | `weva_node.cpp` `InputEventScreenDrag` (a tap is Godot's emulated mouse click); `input_integration_tests.gd` "a finger dragging up 60px pans the list down 60px" | `NativeInputFeed.TouchPanThreshold = 8`; `NativeInputFeedTests.TouchTapClicksAndTouchDragPans` |
 | Gamepad: d-pad / left stick move focus by geometry | core (`focus_move`) + host mapping | `gamepad_navigation_tests.gd` "D-pad right moves focus to the button beside it", "… down moves to the button below, not the next in source order", "the left stick moves focus through ui_right" | `NativeInputFeed.Directions`; `NativeInputFeedTests.GamepadMovesFocusByGeometryAndRepeatsWhileHeld` |
 | Gamepad: a direction a control owns is its key first (slider, caret, select) | core | `gamepad_navigation_tests.gd` "right on a slider steps its value", "right in a text field moves the caret, not the focus", "down on a closed select changes its option" | same test (`Left`/`Right` land on the slider) |
 | Gamepad: held direction repeats (0.4 s, then 0.1 s) | host | `gamepad_navigation_tests.gd` "no repeat before the delay", "holding the pad repeats after the delay", "release stops the repeat" | `NavigationRepeatDelay/Interval`; `NativeInputFeedTests.GamepadMovesFocusByGeometryAndRepeatsWhileHeld` |
@@ -34,9 +34,10 @@ covered by `libweva/tests`; the host tests there show the host opted in.
 | Enter activates a button on key down and repeats; Space on release | core | `dialog_cancel_tests.gd`, `form_state_tests.gd` | `NativeInputTests.Enter_ActivatesAButtonOnKeyDown_AndRepeats`, `Space_ActivatesAButtonOnRelease_AndTheKeyIsConsumed` |
 | Secondary button raises `contextmenu` | core | `input_integration_tests.gd` (dropdown/popover routing) | `NativeInputTests.Pointer_ContextMenuOnSecondaryPress` |
 | `pointer-events: none` lets hit testing pass | core | `input_integration_tests.gd` "CSS pointer-events:none lets native GUI hit testing continue beneath" | `NativeInputTests.PointerEventsNone_LetsHitTestingPass` |
-| Only the top overlapping document takes the pointer | host | `input_integration_tests.gd` "only the top overlapping document activates" | `SortingOrder`; not pinned by a Unity test (one document per feed; the URP registry orders paint, the feed asks `AcceptsPointer` per document) |
+| Only the top overlapping document takes the pointer where it accepts it -- everywhere by default, as in a browser; a HUD lets clicks through with `html, body { pointer-events: none }` and `auto` on its controls | host | `input_integration_tests.gd` "only the top overlapping document activates", "noninteractive documents let input reach the UI beneath" | `NativeInputFeed.CoveredAt` over every live feed by `Order` (= `SortingOrder`, then creation order), mouse and touch; `NativeInputFeedTests.OnlyTheTopDocumentTakesThePointer_WhereItAcceptsIt` |
 | Timed gestures run on unscaled time so a paused game's menu works | host | monotonic clock in `weva_node.cpp` | `WevaDocument.Update` feeds `Time.unscaledDeltaTime` as the input clock |
 
-**Open rows.** Godot's touch handling has no scene test; Unity's multi-document
-pointer arbitration has no test. Neither is a behavioural gap — both are
-implemented — and both are on the list to pin.
+Every row is pinned on both hosts (the last two were pinned 2026-09-14:
+Godot's touch pan by a scene check, Unity's multi-document pointer
+arbitration by implementing it -- a feed had fed the pointer to its document
+regardless of what was painted over it -- and testing it).
