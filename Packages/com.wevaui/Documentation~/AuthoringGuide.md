@@ -426,10 +426,15 @@ a `[UIBind]` property.
 **RTL.** `direction: rtl`, logical properties and `text-align: start | end`
 resolve per direction, and the core reorders mixed-direction lines with ICU's
 bidi algorithm (`unicode-bidi` honoured). Glyph *shaping* is the host's: on
-Unity, TextCore shapes one glyph per code point, so Arabic contextual forms
-and RTL reordering *inside* a word are not produced; Hebrew and Arabic also
-need a face that has them (`Fallbacks`, or `@font-face { src: local(…) }`).
-Vertical writing modes are not implemented.
+Unity the package shapes each run itself over the font's OpenType tables —
+a right-to-left run is drawn in visual order with mirrored brackets, Arabic
+letters take their joining forms and ligatures, combining marks sit on their
+base. Hebrew and Arabic need a face that has them: with `SystemFontFallback`
+on (the default) the platform's UI font answers (Segoe UI, Arial, DejaVu
+Sans); a face of your own comes in through `@font-face` (`url()` or
+`local(…)`), which carries the bytes the shaper reads — a `Font` asset in
+`Fallbacks` draws its glyphs but gets no substitutions. Vertical writing modes
+are not implemented.
 
 ## 16. Where to look next
 

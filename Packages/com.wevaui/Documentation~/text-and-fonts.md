@@ -18,10 +18,22 @@ real weights to **Bold** / **Italic**) on the `WevaDocument`. It becomes the
 UI face: what unstyled text and the generic families (`sans-serif`, `serif`,
 `monospace`, `system-ui`) resolve to. **Fallbacks** are faces tried, in order,
 for code points the UI face lacks (CJK, Hebrew, symbols). After them, with
-**SystemSymbolFallback** on (the default), the platform's symbol font (Segoe
-UI Symbol, Apple Symbols, DejaVu Sans) answers for a glyph none of the faces
-carry, as a browser reaches a system font; turn it off for output identical
-on every machine.
+**SystemFontFallback** on (the default), the platform's UI and symbol fonts
+(Segoe UI and Segoe UI Symbol; Arial and Apple Symbols; DejaVu Sans) answer
+for a script or glyph none of the faces carry, as a browser reaches a system
+font; turn it off for output identical on every machine.
+
+**Shaping.** The package shapes each run itself: the core resolves the
+line's bidi levels and hands the host one run at a time; the host asks the
+core which way it reads and mirrors its brackets, resolves Arabic joining,
+runs the font's `ccmp`, `isol`/`init`/`medi`/`fina`, `rlig`, `calt` and
+`liga` lookups from the font's own GSUB (single, multiple, ligature and
+coverage-based chaining lookups), positions combining marks through
+FontEngine's anchors, kerns pairs, and returns a right-to-left run in visual
+order. The GSUB is read from the font's bytes, so a face that arrives as a
+file, as `@font-face` data or as an installed font gets its substitutions; a
+`Font` asset draws its glyphs one per code point. Not run: glyph- and
+class-based contextual lookups, Indic reordering, cursive attachment.
 
 **2. `@font-face` in your stylesheet.** `url()` resolves relative to
 `BasePath` (the document asset's folder in the editor); `local("Name")` is a

@@ -68,8 +68,8 @@ namespace Weva
         public Font Italic;
         [Tooltip("Faces tried for code points the UI face lacks; the package's symbol face when empty.")]
         public Font[] Fallbacks;
-        [Tooltip("After the fallbacks, the platform's symbol font (Segoe UI Symbol, Apple Symbols, DejaVu Sans) for glyphs none of the faces carry. Off for output identical on every machine.")]
-        public bool SystemSymbolFallback = true;
+        [Tooltip("After the fallbacks, the platform's fonts (Segoe UI and Segoe UI Symbol; Arial and Apple Symbols; DejaVu Sans) for scripts and symbols none of the faces carry. Off for output identical on every machine.")]
+        public bool SystemFontFallback = true;
         [Tooltip("Directory that relative url() and @font-face sources resolve against (editor and desktop file paths).")]
         public string BasePath = "";
         public bool UseUserAgentStylesheet = true;
@@ -197,11 +197,11 @@ namespace Weva
             Font[] fallbacks = Fallbacks != null && Fallbacks.Length > 0 ? Fallbacks : new[] { Resources.Load<Font>("Fonts/NotoSansSymbols2-Regular") };
             var fallbackFaces = new System.Collections.Generic.List<ulong>();
             foreach (Font f in fallbacks) if (f != null) fallbackFaces.Add(_fonts.Adopt(f));
-            // Last, the platform's symbol font, as a browser falls back to a
-            // system font for a glyph the page's fonts lack.
-            if (SystemSymbolFallback)
+            // Last, the platform's fonts, as a browser falls back to a system
+            // font for a script or glyph the page's fonts lack.
+            if (SystemFontFallback)
             {
-                foreach (string name in UnityFontBackend.SystemSymbolFonts)
+                foreach (string name in UnityFontBackend.SystemFallbackFonts)
                 {
                     ulong installed = _fonts.AdoptInstalled(name);
                     if (installed != 0) fallbackFaces.Add(installed);

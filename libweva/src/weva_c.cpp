@@ -4,6 +4,9 @@
 #include "weva/shorthand.h"
 #include "weva_c.h"
 #include "weva/grapheme.h"
+#include "unicode/uchar.h"
+#include "unicode/uscript.h"
+#include "unicode/utf8.h"
 #include "weva/typeahead.h"
 
 #include "weva/components.h"
@@ -3527,6 +3530,56 @@ extern "C" {
 
 uint32_t weva_abi_version(void) {
     return (static_cast<uint32_t>(WEVA_ABI_VERSION_MAJOR) << 16) | WEVA_ABI_VERSION_MINOR;
+}
+
+// ---- Unicode facts for a host's shaper (ABI minor 40) ----------------------
+//
+// The same ICU tables bidi.cpp resolves levels with, so a host that asks
+// here agrees with the core about what is right-to-left. The Godot host's
+// strong_direction() is this rule verbatim.
+
+int32_t weva_text_direction(const char* utf8, size_t length) {
+    if (!utf8) return 0;
+    const int32_t n = static_cast<int32_t>(length);
+    int32_t i = 0;
+    while (i < n) {
+        UChar32 c;
+        U8_NEXT(utf8, i, n, c);
+        if (c < 0) continue;   // malformed byte: no direction
+        switch (u_charDirection(c)) {
+            case U_LEFT_TO_RIGHT: return 0;
+            case U_RIGHT_TO_LEFT:
+            case U_RIGHT_TO_LEFT_ARABIC: return 1;
+            default: break;
+        }
+    }
+    return 0;
+}
+
+uint32_t weva_char_mirror(uint32_t codepoint) {
+    return static_cast<uint32_t>(u_charMirror(static_cast<UChar32>(codepoint)));
+}
+
+int32_t weva_char_joining_type(uint32_t codepoint) {
+    switch (u_getIntPropertyValue(static_cast<UChar32>(codepoint), UCHAR_JOINING_TYPE)) {
+        case U_JT_RIGHT_JOINING: return 1;
+        case U_JT_LEFT_JOINING: return 2;
+        case U_JT_DUAL_JOINING: return 3;
+        case U_JT_JOIN_CAUSING: return 4;
+        case U_JT_TRANSPARENT: return 5;
+        default: return 0;
+    }
+}
+
+uint32_t weva_char_script(uint32_t codepoint) {
+    UErrorCode error = U_ZERO_ERROR;
+    const UScriptCode script = uscript_getScript(static_cast<UChar32>(codepoint), &error);
+    const char* name = U_FAILURE(error) ? nullptr : uscript_getShortName(script);
+    if (!name || std::strlen(name) != 4) name = "Zzzz";
+    return (static_cast<uint32_t>(static_cast<unsigned char>(name[0])) << 24) |
+           (static_cast<uint32_t>(static_cast<unsigned char>(name[1])) << 16) |
+           (static_cast<uint32_t>(static_cast<unsigned char>(name[2])) << 8) |
+           static_cast<uint32_t>(static_cast<unsigned char>(name[3]));
 }
 
 void weva_document_set_render_backend(weva_document_t doc, const weva_render_backend* backend) {

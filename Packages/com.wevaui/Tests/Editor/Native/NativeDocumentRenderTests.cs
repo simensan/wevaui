@@ -231,10 +231,10 @@ namespace Weva.Tests.EditorTests.Native
                 {
                     ulong face = fonts.Adopt(font);
                     // The chain a WevaDocument builds: the bundled symbol face,
-                    // then the platform's symbol font.
+                    // then the platform's fonts.
                     var chain = new List<ulong>();
                     if (symbols != null) chain.Add(fonts.Adopt(symbols));
-                    foreach (string family in UnityFontBackend.SystemSymbolFonts)
+                    foreach (string family in UnityFontBackend.SystemFallbackFonts)
                     {
                         ulong installed = fonts.AdoptInstalled(family);
                         if (installed != 0) chain.Add(installed);

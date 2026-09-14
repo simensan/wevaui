@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 39
+#define WEVA_ABI_VERSION_MINOR 40
 
 uint32_t weva_abi_version(void);
 
@@ -1491,6 +1491,35 @@ int weva_element_has_attribute(weva_document_t doc, weva_element_t element, cons
  * with a second. */
 size_t weva_element_text(weva_document_t doc, weva_element_t element, char* buffer,
                          size_t capacity);
+
+/* Unicode facts a host's shaper needs, answered from the core's own tables
+ * (ABI minor 40). The core hands a host one bidi run at a time to shape, and
+ * expects the glyphs back in VISUAL order: a shaper with its own Unicode
+ * data (the Godot host's TextServer) decides direction, mirroring and Arabic
+ * joining itself; one without (the Unity host's FontEngine, which only
+ * substitutes and positions glyphs) asks here, so the two hosts agree with
+ * each other and with the core's bidi resolution.
+ *
+ * weva_text_direction: 1 when the first strong character of the UTF-8 text
+ * is right-to-left (bidi class R or AL), 0 otherwise -- the direction an
+ * auto-detecting shaper would pick for the run. */
+int32_t weva_text_direction(const char* utf8, size_t length);
+
+/* The Bidi_Mirroring_Glyph of a code point (`(` for `)`), or the code point
+ * itself when it has none. A right-to-left run draws the mirrored character
+ * (UAX #9 L4). */
+uint32_t weva_char_mirror(uint32_t codepoint);
+
+/* The Unicode Joining_Type of a code point (ArabicShaping.txt): 0 non-joining,
+ * 1 right-joining, 2 left-joining, 3 dual-joining, 4 join-causing (ZWJ,
+ * tatweel), 5 transparent (a combining mark, which joins through). */
+int32_t weva_char_joining_type(uint32_t codepoint);
+
+/* The ISO 15924 code of a code point's script, four ASCII letters packed
+ * big-endian (`Arab` is 0x41726162): `Zyyy` for common (punctuation, digits),
+ * `Zinh` for inherited (combining marks), `Zzzz` for unknown. Lower-cased it
+ * is the OpenType script tag for most scripts. */
+uint32_t weva_char_script(uint32_t codepoint);
 
 #ifdef __cplusplus
 }

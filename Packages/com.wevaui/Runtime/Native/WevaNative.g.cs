@@ -339,7 +339,7 @@ namespace Weva.Native
     {
         public const string Library = "weva_core";
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 39;
+        public const int WEVA_ABI_VERSION_MINOR = 40;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
@@ -607,6 +607,14 @@ namespace Weva.Native
         public static extern int weva_element_has_attribute(System.IntPtr doc, uint element, byte* name);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_element_text(System.IntPtr doc, uint element, byte* buffer, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int weva_text_direction(byte* utf8, nuint length);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint weva_char_mirror(uint codepoint);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int weva_char_joining_type(uint codepoint);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint weva_char_script(uint codepoint);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_unity_sizeof(byte* struct_name);
     }

@@ -80,16 +80,25 @@ What FontEngine gives and does not give:
 
 - Metrics come from the face at a whole-pixel size (the same rounding the
   Godot adapter uses), unhinted, so advances are the engine's own.
-- There is no public shaper. Shaping is one glyph per code point plus GPOS
-  pair positioning, read once per adjacent pair through
+- There is no public shaper, so the backend carries one
+  (`UnityFontBackend.Shaping.cs`): the core answers what Unicode says about
+  a run (direction, mirroring, joining types, scripts -- ABI minor 40), the
+  font's GSUB is read from its own bytes (single, multiple, ligature and
+  coverage-based chaining lookups; extensions resolved), FontEngine answers
+  the positioning. Pair kerning is read once per adjacent pair through
   `GetPairAdjustmentRecords` with a two-glyph list (the call TextMeshPro fills
   a font asset with; values are design units, and a pair covered by more than
   one subtable is listed once per subtable, the first being the one OpenType
   applies; a long glyph list answered the same pair in a different order,
-  which is why the query is per pair). `GetPairAdjustmentRecord(first,
-  second)` is NOT used: on 6000.4 it returns an uninitialised record for a
-  pair the face does not kern and crashed the editor. No ligatures or mark
-  positioning until a real shaper is bound.
+  which is why the query is per pair); mark anchors through
+  `GetMarkToBaseAdjustmentRecord` / `GetMarkToMarkAdjustmentRecord` (values
+  scaled to the active face size -- measured -- and taken back to design
+  units). NOT used: `GetPairAdjustmentRecord(first, second)`, which on 6000.4
+  returns an uninitialised record for a pair the face does not kern and
+  crashed the editor; and every GSUB record query -- `GetOpenTypeLayoutTable`
+  lists no lookups and `GetSingleSubstitutionRecords` crashes the editor on
+  an extension lookup, which is every Arabic lookup in Segoe UI. A face
+  adopted as a `Font` asset has no bytes to read and gets no substitutions.
 - Coverage bitmaps come from `TryAddGlyphToTexture` (reflection-bound) in
   SMOOTH mode; colour glyphs are not rasterized yet.
 - FontEngine is one state machine for the process, so the adapter forgets its

@@ -235,32 +235,187 @@ namespace Weva.Tests.EditorTests.Native
         // symbol font, as a browser falls back to a system font: the HUD
         // sample's ⚔ and ☥ drew as boxes before this. The font is the OS's,
         // so a machine without it goes inconclusive rather than red.
+        // The chain a WevaDocument builds: the UI face, the bundled symbol
+        // face, then the platform's fonts. Inconclusive where none is installed.
+        private ulong FaceWithSystemFallbacks()
+        {
+            Assume.That(UnityFontBackend.SystemFallbackFonts.Length, Is.GreaterThan(0), "a platform with named fallback fonts");
+            ulong face = _backend.Adopt(_regular);
+            var chain = new List<ulong> { _symbolsFace };
+            foreach (string name in UnityFontBackend.SystemFallbackFonts)
+            {
+                ulong installed = _backend.AdoptInstalled(name);
+                if (installed != 0) chain.Add(installed);
+            }
+            Assume.That(chain.Count, Is.GreaterThan(1), "the platform's fonts are installed");
+            _backend.SetFallbacks(face, chain.ToArray());
+            return face;
+        }
+
         [Test]
-        public void SystemSymbolFont_ServesWhatTheBundledFacesLack()
+        public void SystemFonts_ServeWhatTheBundledFacesLack()
         {
             const uint swords = 0x2694;   // CROSSED SWORDS: not in Inter, not in Noto Sans Symbols 2
-            Assume.That(UnityFontBackend.SystemSymbolFonts.Length, Is.GreaterThan(0), "a platform with a named symbol font");
-            ulong system = 0;
-            foreach (string name in UnityFontBackend.SystemSymbolFonts)
-            {
-                system = _backend.AdoptInstalled(name);
-                if (system != 0) break;
-            }
-            Assume.That(system, Is.Not.EqualTo(0), "the platform's symbol font is installed");
             Assert.That(_backend.GlyphFor(_face, swords), Is.EqualTo(0), "fixture: the bundled faces lack U+2694");
-
-            ulong face = _backend.Adopt(_regular);
-            _backend.SetFallbacks(face, _symbolsFace, system);
+            ulong face = FaceWithSystemFallbacks();
             uint id = _backend.GlyphFor(face, swords);
-            Assert.That(UnityFontBackend.IndexOf(id), Is.Not.EqualTo(0), "the system face has U+2694");
-            Assert.That(UnityFontBackend.SlotOf(id), Is.EqualTo(2), "served after the bundled fallback");
+            Assert.That(UnityFontBackend.IndexOf(id), Is.Not.EqualTo(0), "a system face has U+2694");
+            Assert.That(UnityFontBackend.SlotOf(id), Is.GreaterThanOrEqualTo(2), "served after the bundled fallback");
             Assert.That(UnityFontBackend.SlotOf(_backend.GlyphFor(face, 0x2601)), Is.EqualTo(1), "the bundled fallback still answers first");
+            Assert.That(UnityFontBackend.IndexOf(_backend.GlyphFor(face, 0x05D0)), Is.Not.EqualTo(0), "and a script none of the bundled faces have (Hebrew)");
+            Assert.That(UnityFontBackend.IndexOf(_backend.GlyphFor(face, 0x0628)), Is.Not.EqualTo(0), "(Arabic)");
 
             Assume.That(UnityFontBackend.RasterizerAvailable);
             Assert.That(_backend.TryRasterize(face, id, 24, out byte[] coverage, out int w, out int h));
             int inked = 0;
             foreach (byte b in coverage) if (b > 0) inked++;
             Assert.That(inked, Is.GreaterThan(w * h / 10), "the system face's bitmap carries ink");
+        }
+
+        // ---- shaping: the core expects a run's glyphs back in VISUAL order,
+        // with brackets mirrored and Arabic joined, as TextServer returns them
+        // on the Godot host. FontEngine has none of that; the backend does it
+        // over the font's layout tables, asking the core about Unicode.
+
+        [Test]
+        public void Shape_HebrewRunComesBackInVisualOrder()
+        {
+            ulong face = FaceWithSystemFallbacks();
+            List<weva_shaped_glyph> shaped = _backend.ShapePositionedText(face, "אבג", 16, out int total);
+            Assert.That(total, Is.EqualTo(3));
+            Assert.That(shaped[0].cluster, Is.EqualTo(4), "the logically last letter is drawn first (leftmost)");
+            Assert.That(shaped[1].cluster, Is.EqualTo(2));
+            Assert.That(shaped[2].cluster, Is.EqualTo(0), "the logically first letter is drawn last (rightmost)");
+            Assert.That(shaped[2].glyph, Is.EqualTo(_backend.GlyphFor(face, 0x05D0)));
+            Assert.That(shaped[0].x_advance, Is.GreaterThan(0));
+
+            List<weva_shaped_glyph> latin = _backend.ShapePositionedText(face, "abc", 16, out _);
+            Assert.That(latin[0].cluster, Is.EqualTo(0), "a left-to-right run keeps logical order");
+            Assert.That(latin[2].cluster, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Shape_RightToLeftRunMirrorsBrackets()
+        {
+            ulong face = FaceWithSystemFallbacks();
+            uint open = _backend.GlyphFor(face, '('), close = _backend.GlyphFor(face, ')');
+            Assert.That(open, Is.Not.EqualTo(close));
+            List<weva_shaped_glyph> shaped = _backend.ShapePositionedText(face, "(אב)", 16, out int total);
+            Assert.That(total, Is.EqualTo(4));
+            Assert.That(shaped[3].cluster, Is.EqualTo(0), "the logical '(' is visually last");
+            Assert.That(shaped[3].glyph, Is.EqualTo(close), "and draws as ')'");
+            Assert.That(shaped[0].cluster, Is.EqualTo(5), "the logical ')' is visually first");
+            Assert.That(shaped[0].glyph, Is.EqualTo(open), "and draws as '('");
+
+            List<weva_shaped_glyph> ltr = _backend.ShapePositionedText(face, "(ab)", 16, out _);
+            Assert.That(ltr[0].glyph, Is.EqualTo(open), "left-to-right brackets are themselves");
+            Assert.That(ltr[3].glyph, Is.EqualTo(close));
+        }
+
+        [Test]
+        public void Shape_ArabicLettersTakeTheirJoiningForms()
+        {
+            ulong face = FaceWithSystemFallbacks();
+            uint isolated = _backend.GlyphFor(face, 0x0628);   // BEH, the isolated glyph the cmap gives
+            Assume.That(UnityFontBackend.IndexOf(isolated), Is.Not.EqualTo(0), "a face has Arabic");
+
+            List<weva_shaped_glyph> one = _backend.ShapePositionedText(face, "ب", 16, out int total);
+            Assert.That(total, Is.EqualTo(1));
+            Assert.That(one[0].glyph, Is.EqualTo(isolated), "alone, BEH is its isolated form");
+
+            // بب: the first joins forward (init), the second joins back (fina).
+            List<weva_shaped_glyph> two = _backend.ShapePositionedText(face, "بب", 16, out total);
+            Assert.That(total, Is.EqualTo(2));
+            Assert.That(two[0].cluster, Is.EqualTo(2), "visual order: the final form is drawn first (leftmost)");
+            Assert.That(two[1].cluster, Is.EqualTo(0));
+            Assert.That(two[0].glyph, Is.Not.EqualTo(isolated), "the final form is a different glyph");
+            Assert.That(two[1].glyph, Is.Not.EqualTo(isolated), "so is the initial form");
+            Assert.That(two[0].glyph, Is.Not.EqualTo(two[1].glyph), "and they differ from each other");
+
+            // ببب: the middle one is medial, a fourth glyph.
+            List<weva_shaped_glyph> three = _backend.ShapePositionedText(face, "ببب", 16, out total);
+            Assert.That(total, Is.EqualTo(3));
+            Assert.That(three[1].glyph, Is.Not.EqualTo(three[0].glyph));
+            Assert.That(three[1].glyph, Is.Not.EqualTo(three[2].glyph));
+            Assert.That(three[1].glyph, Is.Not.EqualTo(isolated));
+
+            // ب ب: a space breaks the join; both are isolated again.
+            List<weva_shaped_glyph> apart = _backend.ShapePositionedText(face, "ب ب", 16, out total);
+            Assert.That(total, Is.EqualTo(3));
+            Assert.That(apart[0].glyph, Is.EqualTo(isolated));
+            Assert.That(apart[2].glyph, Is.EqualTo(isolated));
+
+            // Hebrew has no joining: the same letter twice is the same glyph twice.
+            List<weva_shaped_glyph> hebrew = _backend.ShapePositionedText(face, "בב", 16, out _);
+            Assert.That(hebrew[0].glyph, Is.EqualTo(hebrew[1].glyph));
+        }
+
+        // What FontEngine reports of the system face's GSUB: logged, so a
+        // shaping regression on another Unity version is diagnosable from
+        // the run's log rather than a debugger.
+        [Test]
+        public void Shape_LayoutTablesAreReadable()
+        {
+            ulong face = FaceWithSystemFallbacks();
+            Assume.That(UnityFontBackend.IndexOf(_backend.GlyphFor(face, 0x0628)), Is.Not.EqualTo(0), "a face has Arabic");
+            string beh = _backend.DescribeLayout(face, 0x0628, "fina");
+            string lam = _backend.DescribeLayout(face, 0x0644, "rlig");
+            Debug.Log(beh);
+            Debug.Log(lam);
+            Assert.That(beh, Does.Contain("present=True"), "the face's GSUB was read");
+            Assert.That(beh, Does.Contain("script 'arab'"), "with an Arabic script");
+        }
+
+        // Lam + alef is the required ligature every Arabic font carries, in
+        // one of two shapes: one ligature glyph (Arial: a `rlig` ligature
+        // lookup), or two halves substituted by chaining contextual rules
+        // (Segoe UI: lam.init becomes a lam-alef head when an alef.fina
+        // follows, and the alef its tail). Either way the lam that precedes
+        // an alef is not the lam that precedes a beh.
+        [Test]
+        public void Shape_LamAlefIsTheRequiredLigature()
+        {
+            ulong face = FaceWithSystemFallbacks();
+            Assume.That(UnityFontBackend.IndexOf(_backend.GlyphFor(face, 0x0644)), Is.Not.EqualTo(0), "a face has Arabic");
+            List<weva_shaped_glyph> lamAlef = _backend.ShapePositionedText(face, "لا", 16, out int total);   // لا
+            Assert.That(total, Is.EqualTo(1).Or.EqualTo(2), "one ligature glyph, or a head and a tail");
+            List<weva_shaped_glyph> lamBeh = _backend.ShapePositionedText(face, "لب", 16, out _);   // لب: lam.init, beh.fina
+            // Visual order: the lam is the LAST glyph of each run (rightmost).
+            uint lamBeforeAlef = lamAlef[lamAlef.Count - 1].glyph, lamBeforeBeh = lamBeh[lamBeh.Count - 1].glyph;
+            Assert.That(lamAlef[lamAlef.Count - 1].cluster, Is.EqualTo(0), "the lam keeps its cluster");
+            Assert.That(lamBeforeAlef, Is.Not.EqualTo(lamBeforeBeh), "the lam before an alef is the ligature's, not the plain initial lam");
+            Assert.That(lamBeforeAlef, Is.Not.EqualTo(_backend.GlyphFor(face, 0x0644)), "nor the isolated lam");
+            if (total == 2)
+            {
+                List<weva_shaped_glyph> behAlef = _backend.ShapePositionedText(face, "با", 16, out _);   // با: beh.init, alef.fina
+                Assert.That(lamAlef[0].glyph, Is.Not.EqualTo(behAlef[0].glyph), "the alef after a lam is the ligature's tail, not the plain final alef");
+            }
+            double width = 0;
+            foreach (weva_shaped_glyph g in lamAlef) width += g.x_advance;
+            Assert.That(width, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void Shape_CombiningMarkSitsOnItsBase()
+        {
+            Assume.That(UnityFontBackend.MarkPositioningAvailable, "FontEngine's mark attachment query is bound");
+            ulong face = FaceWithSystemFallbacks();
+            Assume.That(UnityFontBackend.IndexOf(_backend.GlyphFor(face, 0x064E)), Is.Not.EqualTo(0), "a face has the fatha");
+            List<weva_shaped_glyph> shaped = _backend.ShapePositionedText(face, "بَ", 16, out int total);   // بَ
+            Assert.That(total, Is.EqualTo(2));
+            int mark = shaped[0].cluster == 2 ? 0 : 1, baseAt = 1 - mark;
+            Debug.Log($"fatha on beh: mark x_offset={shaped[mark].x_offset:0.##} y_offset={shaped[mark].y_offset:0.##}, beh advance={shaped[baseAt].x_advance:0.##}");
+            Assert.That(shaped[mark].x_advance, Is.EqualTo(0), "a mark takes no space");
+            Assert.That(shaped[baseAt].x_advance, Is.GreaterThan(0));
+            // The fatha's outline already sits high in its own glyph space;
+            // the attachment moves it from there onto the beh's anchor, a
+            // real shift of some pixels (Segoe UI at 16px: x 2.4, y -5.1),
+            // never a whole em.
+            Assert.That(Math.Abs(shaped[mark].y_offset), Is.GreaterThan(0.5).And.LessThan(16.0), "the mark is moved onto the base's anchor");
+            // The mark and the base share a pen (the mark advances nothing),
+            // so its x offset places it within the base's own advance.
+            Assert.That(shaped[mark].x_offset, Is.GreaterThanOrEqualTo(-1.0));
+            Assert.That(shaped[mark].x_offset, Is.LessThanOrEqualTo(shaped[baseAt].x_advance + 1.0));
         }
 
         [Test]

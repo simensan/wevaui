@@ -37,10 +37,22 @@ checked against Chrome), which the Godot addon also runs on.
   dropped).
 
 ### Added
-- `SystemSymbolFallback` (on by default): after the `Fallbacks`, the
-  platform's symbol font (Segoe UI Symbol, Apple Symbols, DejaVu Sans)
-  answers for a glyph none of the faces carry, as a browser reaches a system
-  font. The HUD sample's ⚔ and ☥ drew as nothing before.
+- A shaper. The package shapes each run over the font's own OpenType
+  tables (its GSUB read from the font bytes, GPOS anchors through
+  FontEngine), asking the core for direction, mirroring, joining types and
+  scripts (ABI minor 40): a right-to-left run comes back in visual order
+  with mirrored brackets, Arabic letters take their `isol`/`init`/`medi`/
+  `fina` forms and ligatures (`ccmp`, `rlig`, `calt`, `liga`; single,
+  multiple, ligature and coverage-based chaining lookups), combining marks
+  sit on their base and stack. Before, every run was one glyph per code
+  point in logical order. Not run: glyph- and class-based contextual
+  lookups, Indic reordering, cursive attachment; a face given as a `Font`
+  asset gets no substitutions (no bytes to read).
+- `SystemFontFallback` (on by default): after the `Fallbacks`, the
+  platform's UI and symbol fonts (Segoe UI and Segoe UI Symbol; Arial and
+  Apple Symbols; DejaVu Sans) answer for a script or glyph none of the faces
+  carry, as a browser reaches a system font. Hebrew and Arabic drew as
+  nothing before, and so did the HUD sample's ⚔ and ☥.
 - Input through the Input System: mouse, keyboard with held-key repeat,
   touch, gamepad navigation, IME composition; Chrome's 100 px wheel notch.
   Overlapping documents arbitrate the pointer by `SortingOrder`: the one on

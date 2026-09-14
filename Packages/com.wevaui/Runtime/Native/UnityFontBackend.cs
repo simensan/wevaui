@@ -39,7 +39,7 @@ using UnityEngine.TextCore.LowLevel;
 
 namespace Weva.Native
 {
-    internal sealed unsafe class UnityFontBackend : IDisposable
+    internal sealed unsafe partial class UnityFontBackend : IDisposable
     {
         // A glyph id names the face slot it came from and the glyph index
         // within that face: slot 0 is the primary, later slots its fallbacks.
@@ -89,8 +89,6 @@ namespace Weva.Native
         private readonly List<GlyphRect> _usedRects = new List<GlyphRect>(2);
         private readonly List<uint> _codepoints = new List<uint>(64);
         private readonly List<uint> _offsets = new List<uint>(64);
-        private readonly List<uint> _ids = new List<uint>(64);
-        private readonly List<Source> _sources = new List<Source>(64);
         private readonly List<uint> _pairQuery = new List<uint>(2);
 
         public int FaceLoads { get; private set; }
@@ -338,15 +336,17 @@ namespace Weva.Native
 
         /// <summary>
         /// The installed fonts a document appends after its bundled fallbacks
-        /// so a symbol none of them carries (⚔, ☥) still draws, as a browser
-        /// reaches the platform's symbol font. Names only: a platform without
-        /// the font, or a player whose OS font list is closed, skips it.
+        /// so a script or symbol none of them carries (Arabic, Hebrew, Thai;
+        /// ⚔, ☥) still draws, as a browser reaches the platform's fonts. The
+        /// platform's UI face first (it covers the world's scripts), its
+        /// symbol face after it. Names only: a platform without the font, or a
+        /// player whose OS font list is closed, skips it.
         /// </summary>
-        public static readonly string[] SystemSymbolFonts =
+        public static readonly string[] SystemFallbackFonts =
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-            { "Segoe UI Symbol" };
+            { "Segoe UI", "Segoe UI Symbol" };
 #elif UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
-            { "Apple Symbols" };
+            { "Arial", "Apple Symbols" };
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
             { "DejaVu Sans" };
 #else
@@ -798,69 +798,27 @@ namespace Weva.Native
 
         private static bool HasGlyph(uint cp) => cp >= 0x20 && cp != 0x7F && !(cp >= 0x80 && cp < 0xA0);
 
+        // Shapes the run (UnityFontBackend.Shaping.cs) and copies it out in
+        // visual order. The legacy table callback carries no offsets, so a
+        // combining mark through it sits at its pen with no advance; the
+        // positioned callback, which the core prefers, carries them.
         private nuint ShapeRun(Face face, byte* utf8, int length, int size, uint* glyphs, double* advances, uint* clusters, weva_shaped_glyph* positioned, int capacity)
         {
-            Decode(utf8, length);
-            int count = _codepoints.Count;
-            // Pass one resolves every code point to a face and glyph.
-            _ids.Clear();
-            _sources.Clear();
-            for (int i = 0; i < count; i++)
+            int count = ShapeInto(face, utf8, length, size);
+            for (int v = 0; v < count && v < capacity; v++)
             {
-                uint cp = _codepoints[i];
-                uint id = 0;
-                Source source = null;
-                // Control characters have no glyph and take no space; the core
-                // has already turned meaningful ones into breaks.
-                if (HasGlyph(cp))
-                {
-                    id = Lookup(face, cp);
-                    source = face.Sources[SlotOf(id)];
-                }
-                _ids.Add(id);
-                _sources.Add(source);
-            }
-
-            Source previousSource = null;
-            uint previousIndex = 0;
-            for (int i = 0; i < count; i++)
-            {
-                uint id = _ids[i];
-                Source source = _sources[i];
-                uint index = IndexOf(id);
-                double advance = 0;
-                if (source != null)
-                {
-                    if (Metrics(source, index, size, out GlyphInfo info)) advance = info.Advance;
-                    if (ReferenceEquals(source, previousSource) && previousIndex != 0 && index != 0)
-                    {
-                        // A pair adjustment belongs to the pair's first glyph.
-                        double kern = KernOf(source, size, previousIndex, index);
-                        if (kern != 0 && i - 1 < capacity)
-                        {
-                            if (advances != null) advances[i - 1] += kern;
-                            if (positioned != null) positioned[i - 1].x_advance += kern;
-                        }
-                    }
-                    previousIndex = index;
-                }
-                else
-                {
-                    previousIndex = 0;
-                }
-                previousSource = source;
-                if (i >= capacity) continue;
-                if (glyphs != null) glyphs[i] = id;
-                if (advances != null) advances[i] = advance;
-                if (clusters != null) clusters[i] = _offsets[i];
+                RunGlyph g = _run[_order[v]];
+                if (glyphs != null) glyphs[v] = g.Id;
+                if (advances != null) advances[v] = g.Advance;
+                if (clusters != null) clusters[v] = g.Cluster;
                 if (positioned != null)
                 {
-                    positioned[i].glyph = id;
-                    positioned[i].cluster = _offsets[i];
-                    positioned[i].x_advance = advance;
-                    positioned[i].y_advance = 0;
-                    positioned[i].x_offset = 0;
-                    positioned[i].y_offset = 0;
+                    positioned[v].glyph = g.Id;
+                    positioned[v].cluster = g.Cluster;
+                    positioned[v].x_advance = g.Advance;
+                    positioned[v].y_advance = 0;
+                    positioned[v].x_offset = g.XOffset;
+                    positioned[v].y_offset = g.YOffset;
                 }
             }
             return (nuint)count;

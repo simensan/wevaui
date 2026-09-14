@@ -983,3 +983,13 @@ off by default. A host whose platform supplies them (Godot: key echo and
 System) turns them on with the browser's numbers. Tested in
 `test_c_abi_input_repeat.cpp`; `weva_document_needs_input_tick` reports an armed
 repeat (2026-09-13).
+
+ABI minor 40 adds four pure functions for a host whose shaper has no Unicode
+data of its own: `weva_text_direction(utf8, length)` (the first strong
+character's direction, the rule the Godot host's `strong_direction()` already
+applies), `weva_char_mirror(cp)`, `weva_char_joining_type(cp)` and
+`weva_char_script(cp)` (ISO 15924, packed). The core hands a host one bidi run
+at a time and expects its glyphs back in visual order; TextServer decides
+these itself, the Unity host's FontEngine asks here, so both hosts and the
+core's bidi resolution agree. Tested in `test_c_abi_text_props.cpp`
+(2026-09-14).

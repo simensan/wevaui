@@ -120,9 +120,10 @@ public sealed class MainMenu : MonoBehaviour {
 [`docs/PRODUCT_READINESS.md`](./docs/PRODUCT_READINESS.md) says, per host,
 what is verified and what evidence is still missing. In short: a development
 preview on both. Known gaps shared by both hosts: multi-column layout,
-vertical writing modes, `@property`, View Transitions. The Unity host does not
-shape complex scripts or rasterise colour emoji (its font backend shapes one
-glyph per code point); the Godot host's text is TextServer's.
+vertical writing modes, `@property`, View Transitions. The Unity host shapes
+with its own OpenType layer (right-to-left order, Arabic joining, marks;
+not Indic reordering or class-based contextual lookups) and does not
+rasterise colour emoji; the Godot host's text is TextServer's.
 
 ## For engineers and AI agents
 
