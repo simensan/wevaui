@@ -12,6 +12,10 @@ package is the Unity host for the Weva core (`libweva`, C++, behind a C ABI,
 checked against Chrome), which the Godot addon also runs on.
 
 ### Fixed
+- Unity input preserves emoji and other characters outside the BMP as whole
+  Unicode characters. Focus and gamepad text-entry callbacks can disable or
+  reload the document safely; remaining input stops after the handoff, with
+  pending key releases delivered so auto-repeat cannot remain stuck.
 - Linked stylesheets use the shared HTML parser for live documents and baked
   assets. Comments, raw text and template contents no longer produce spurious
   links; character references and quoted attributes resolve consistently.

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using Weva.Native;
 
 namespace Weva.Tests.EditorTests.Native
@@ -55,6 +56,144 @@ namespace Weva.Tests.EditorTests.Native
         // feed reads it. A second update here would move past it -- which is
         // exactly what an earlier version of this helper did.
         private void Tick() => _feed.Tick(W, H);
+
+        [Test]
+        public void AstralTextCrossesTheInputSystemAsWholeCharacters()
+        {
+            Load("<input id=f>");
+            _doc.SetFocus(_doc.Query("#f"));
+            Tick();
+            Clicks(); // drain focus events
+            foreach (int scalar in new[] { (int)'A', 0x1F41F, 0x10400, (int)'B' })
+            {
+                var ev = UnityEngine.InputSystem.LowLevel.TextEvent.Create(_keyboard.deviceId, scalar);
+                InputSystem.QueueEvent(ref ev);
+            }
+            InputSystem.Update(); Tick();
+            Assert.That(Value("#f"), Is.EqualTo("A\U0001F41F\U00010400B"));
+            _events.Clear();
+            _doc.PollEvents(_events);
+            Assert.That(_events.FindAll(e => e.Kind == weva_event_kind.WEVA_EVENT_TEXT_INPUT).Count,
+                Is.EqualTo(4), "one input event per Unicode character");
+        }
+
+        private void QueueHandoff(bool gamepad)
+        {
+            if (gamepad)
+            {
+                var pad = InputSystem.AddDevice<Gamepad>();
+                InputSystem.QueueStateEvent(pad, new UnityEngine.InputSystem.LowLevel.GamepadState()
+                    .WithButton(GamepadButton.South).WithButton(GamepadButton.RightShoulder));
+            }
+            else InputSystem.QueueStateEvent(_keyboard, new UnityEngine.InputSystem.LowLevel.KeyboardState(Key.Tab));
+            InputSystem.QueueTextEvent(_keyboard, 'x');
+            InputSystem.Update();
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void InputHandoffCanDisposeTheDocument(bool gamepad)
+        {
+            Load("<input id=f>");
+            _doc.SetFocus(_doc.Query("#f"));
+            _feed.WrapTab = false;
+            _feed.GamepadTextEntry = true;
+            int calls = 0;
+            void DisposeDocument() { calls++; _feed.Dispose(); _doc.Dispose(); }
+            _feed.TabbedOut += _ => DisposeDocument();
+            _feed.TextEntryRequested += _ => DisposeDocument();
+            Tick();
+            QueueHandoff(gamepad);
+            Assert.DoesNotThrow(Tick);
+            Assert.That(calls, Is.EqualTo(1));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void InputHandoffDoesNotTypeIntoAReplacementDocument(bool gamepad)
+        {
+            Load("<input id=f>");
+            _doc.SetFocus(_doc.Query("#f"));
+            _feed.WrapTab = false;
+            _feed.GamepadTextEntry = true;
+            void Reload()
+            {
+                _doc.LoadHtml("<input id=new value=untouched>");
+                _doc.Update(0);
+                _doc.SetFocus(_doc.Query("#new"));
+            }
+            _feed.TabbedOut += _ => Reload();
+            _feed.TextEntryRequested += _ => Reload();
+            Tick();
+            QueueHandoff(gamepad);
+            Tick();
+            Assert.That(Value("#new"), Is.EqualTo("untouched"));
+        }
+
+        [TestCase(false, false)]
+        [TestCase(false, true)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void HostStopsTheFrameAfterAHandoffChangesTheDocument(bool gamepad, bool reload)
+        {
+            var go = new GameObject("input-handoff-host");
+            go.SetActive(false);
+            var host = go.AddComponent<WevaDocument>();
+            host.AutoInput = false;
+            host.SystemFontFallback = false;
+            host.InlineHtml = "<input id=f>";
+            host.WrapTab = false;
+            host.GamepadTextEntry = true;
+            try
+            {
+                go.SetActive(true);
+                _doc = host.Document;
+                Assert.That(_doc, Is.Not.Null, host.LastError);
+                _doc.SetFocus(_doc.Query("#f"));
+                _feed = host.Input;
+                _feed.HasFocus = () => true;
+                void Handoff()
+                {
+                    if (!reload) go.SetActive(false);
+                    else
+                    {
+                        host.InlineHtml = "<input id=new value=untouched>";
+                        host.Reload();
+                        host.Document.SetFocus(host.Document.Query("#new"));
+                    }
+                }
+                host.TabbedOut += _ => Handoff();
+                host.TextEntryRequested += _ => Handoff();
+                Assert.That(host.TickInput(), Is.True);
+                QueueHandoff(gamepad);
+                Assert.That(host.TickInput(), Is.False, "Update must stop after the callback changed its document");
+                Assert.That(host.InputConsumed, Is.EqualTo(gamepad));
+                if (reload) Assert.That(Value("#new"), Is.EqualTo("untouched"));
+                else Assert.That(host.Document, Is.Null);
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void InputHandoffStillReleasesKeysFromThePreviousFrame(bool gamepad)
+        {
+            Load("<input id=f value=abcdef>");
+            _doc.SetFocus(_doc.Query("#f"));
+            _doc.Key(weva_key.WEVA_KEY_END, true); _doc.Key(weva_key.WEVA_KEY_END, false);
+            _feed.WrapTab = false;
+            _feed.GamepadTextEntry = true;
+            Tick();
+            Press(_keyboard.backspaceKey); Tick();
+            Assert.That(Value("#f"), Is.EqualTo("abcde"));
+            // Backspace is released in the same input update as the handoff.
+            if (gamepad) InputSystem.QueueStateEvent(_keyboard, new KeyboardState());
+            QueueHandoff(gamepad);
+            Tick();
+            _doc.SetFocus(_doc.Query("#f"));
+            _doc.Update(0, 0.55);
+            Assert.That(Value("#f"), Is.EqualTo("abcde"), "a released key must not keep repeating after a handoff");
+        }
 
         private string Value(string selector) => _doc.ElementValue(_doc.Query(selector));
 

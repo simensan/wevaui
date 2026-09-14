@@ -474,6 +474,20 @@ namespace Weva
             _input.GamepadTextEntry = _gamepadTextEntry;
             _input.AcceptsKeyboard = _acceptsKeyboard;
         }
+
+        // A handoff callback may dispose/recreate the component or replace its
+        // markup. Finish this frame only if it still belongs to the same tree.
+        internal bool TickInput()
+        {
+            if (_doc == null) return false;
+            if (_input == null) CreateInputFeed();
+            NativeInputFeed input = _input;
+            NativeDocument document = _doc;
+            int generation = Generation;
+            input.Tick(_width, _height);
+            InputConsumed = input.Consumed;
+            return ReferenceEquals(_input, input) && ReferenceEquals(_doc, document) && Generation == generation;
+        }
 #else
         private void ApplyInputKnobs() { }
 #endif
@@ -516,9 +530,7 @@ namespace Weva
 #if WEVA_INPUTSYSTEM
                 if (AutoInput && Application.isPlaying)
                 {
-                    if (_input == null) CreateInputFeed();
-                    _input.Tick(_width, _height);
-                    InputConsumed = _input.Consumed;
+                    if (!TickInput()) return;
                 }
 #endif
                 // Two clocks, deliberately different. Animations run on scaled

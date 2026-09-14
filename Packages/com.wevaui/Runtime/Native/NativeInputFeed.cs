@@ -290,7 +290,10 @@ namespace Weva.Native
                 }
             }
 
-            if (focused && AcceptsKeyboard) FeedGamepad(Gamepad.current);
+            if (focused && AcceptsKeyboard)
+            {
+                if (FeedGamepad(Gamepad.current, keyboard, modifiers)) return;
+            }
             else _heldDirection = -1;
 
             if (keyboard == null || !AcceptsKeyboard || !focused)
@@ -315,7 +318,14 @@ namespace Weva.Native
                     {
                         bool backwards = keyboard.shiftKey.isPressed;
                         consumed = _doc.FocusStep(backwards, WrapTab) != WevaNative.WEVA_ELEMENT_NONE;
-                        if (!consumed && !WrapTab) TabbedOut?.Invoke(backwards);
+                        if (!consumed && !WrapTab)
+                        {
+                            // The host may move focus, reload, or dispose this
+                            // document. Remaining frame input belongs to it.
+                            PrepareInputHandoff(keyboard, modifiers);
+                            TabbedOut?.Invoke(backwards);
+                            return;
+                        }
                     }
                     else
                     {
@@ -357,11 +367,18 @@ namespace Weva.Native
             }
             if (_typed.Count > 0)
             {
-                foreach (char c in _typed)
+                for (int i = 0; i < _typed.Count; i++)
                 {
+                    char c = _typed[i];
+                    // Input System delivers a UTF-32 event as two UTF-16 chars
+                    // for an astral character. Encode the pair together, or
+                    // each half becomes a replacement character in UTF-8.
+                    string text = char.IsHighSurrogate(c) && i + 1 < _typed.Count && char.IsLowSurrogate(_typed[i + 1])
+                        ? char.ConvertFromUtf32(char.ConvertToUtf32(c, _typed[++i]))
+                        : c.ToString();
                     // A space on a button is the button's key, not text; the core
                     // rejects text a control does not take, which is the answer.
-                    Consumed |= _doc.TryTextInput(c.ToString(), modifiers);
+                    Consumed |= _doc.TryTextInput(text, modifiers);
                 }
                 _typed.Clear();
             }
@@ -482,15 +499,34 @@ namespace Weva.Native
             Consumed = true;
         }
 
-        private void FeedGamepad(Gamepad pad)
+        private void PrepareInputHandoff(Keyboard keyboard, uint modifiers)
         {
-            if (pad == null) { _heldDirection = -1; return; }
+            _typed.Clear();
+            if (keyboard == null) return;
+            // Handoffs occur before the ordinary key loop (Tab is its first
+            // key). Preserve releases of previously held keys before the
+            // callback can replace the tree; otherwise auto-repeat stays armed.
+            foreach (EngineKey key in EngineKeys)
+                if (keyboard[key.Unity].wasReleasedThisFrame)
+                    Consumed |= _doc.Key(key.Weva, false, modifiers);
+        }
+
+        // True when a host callback took over this frame's input.
+        private bool FeedGamepad(Gamepad pad, Keyboard keyboard, uint modifiers)
+        {
+            if (pad == null) { _heldDirection = -1; return false; }
             if (pad.buttonSouth.wasPressedThisFrame)
             {
                 string tag = FocusedTag(out string type);
                 bool textField = tag == "textarea" || (tag == "input" && (type == "" || type == "text" || type == "search" ||
                     type == "password" || type == "email" || type == "url" || type == "tel" || type == "number"));
-                if (textField && GamepadTextEntry) TextEntryRequested?.Invoke(_doc.ElementId(_doc.Focus) ?? "");
+                if (textField && GamepadTextEntry)
+                {
+                    Consumed = true;
+                    PrepareInputHandoff(keyboard, modifiers);
+                    TextEntryRequested?.Invoke(_doc.ElementId(_doc.Focus) ?? "");
+                    return true;
+                }
                 else if (textField) Tap(weva_key.WEVA_KEY_ENTER);
                 else if (!Tap(weva_key.WEVA_KEY_SPACE)) Tap(weva_key.WEVA_KEY_ENTER);
                 Consumed = true;
@@ -517,6 +553,7 @@ namespace Weva.Native
                 _repeatAt = now + NavigationRepeatInterval;
                 NavigateDirection(_heldDirection);
             }
+            return false;
         }
 
         // A finger is a pointer until it moves: a tap presses and releases where
