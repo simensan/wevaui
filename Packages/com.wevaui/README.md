@@ -79,7 +79,7 @@ complete scene exercising the pipeline end-to-end.
 ## Supported subset
 
 Everything below is implemented in the core and checked against Chrome (the
-sample pages and ~270 harvested cases, layout within 1.5 px; 57 scripted
+sample pages and hand/harvested cases, layout within 1.5 px; scripted
 behaviour checks for what geometry cannot pin). Anything *not* listed fails
 loudly rather than silently miscomputing.
 

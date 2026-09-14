@@ -23,6 +23,10 @@ ignored or fails loudly rather than silently miscomputing.
 
 `<head>`, `<title>`, `<meta>`, and `<link>` are recognized in the document
 head; `<link rel="stylesheet">` pulls in a stylesheet by relative path.
+Link discovery uses the core DOM: comments and template contents are ignored,
+and quoted attributes and character references are parsed as HTML. Duplicate
+attributes keep their first value. Markup inside `textarea` and `title` stays
+text, with character references decoded; `style` contents remain literal CSS.
 
 ### Form controls
 

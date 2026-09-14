@@ -84,7 +84,7 @@ Per chunk, the local recipe is:
   `check.sh` uses.
 
 Numbers to expect are in `docs/PRODUCT_READINESS.md`; any red is new.
-The 2026-09-14 multicol review passes 14 gcc suites (506,255 core checks),
+The 2026-09-14 review passes 14 gcc suites (506,310 core checks),
 16 sanitizer suites, and all 334 Chrome layout captures at the 1.5px ceiling.
 
 ## 4. Workflow recipes

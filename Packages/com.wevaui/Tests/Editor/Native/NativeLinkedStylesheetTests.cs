@@ -68,6 +68,44 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(_host.Document.BasePath, Is.EqualTo(FixtureDir), "url() and @import resolve next to the asset by default");
         }
 
+        // Expectations recorded by check_linked_stylesheets_chrome.cjs. Link
+        // discovery must share HTML parsing with the document, including inert
+        // template contents, raw text, character references and real attributes.
+        [TestCase("<!-- <link rel=stylesheet href=comment.css> -->", null)]
+        [TestCase("<script>'<link rel=stylesheet href=script.css>'</script>", null)]
+        [TestCase("<textarea><link rel=stylesheet href=textarea.css></textarea>", null)]
+        [TestCase("<template><link rel=stylesheet href=template.css></template>", null)]
+        [TestCase("<link rel=stylesheet data-href=data.css>", null)]
+        [TestCase("<link data-rel=stylesheet href=data.css>", null)]
+        [TestCase("<link title='a>b' rel=stylesheet href=real.css>", "real.css")]
+        [TestCase("<link rel='style&#x73;heet' href='theme&amp;mode.css'>", "theme&mode.css")]
+        [TestCase("<link rel='alternate\fSTYLESHEET' href=real.css>", "real.css")]
+        [TestCase("<link rel=stylesheet href=first.css href=second.css>", "first.css")]
+        public void LinkedHrefs_UsesTheParsedDocument(string html, string expected)
+        {
+            Assert.That(WevaDocument.LinkedHrefs(html),
+                Is.EqualTo(expected == null ? new string[0] : new[] { expected }));
+        }
+
+        [Test]
+        public void ReloadAndBake_UseTheSameParsedLinks()
+        {
+            _host.InlineHtml = "<!-- <link rel=stylesheet href=missing.css> -->" +
+                "<template><link rel=stylesheet href=unused.css></template>" +
+                "<link rel=stylesheet href='theme&amp;mode.css'><div id=box></div>";
+            var requested = new List<string>();
+            Assert.That(_host.BakeLinkedStylesheets(href =>
+            {
+                requested.Add(href);
+                return "#box{width:73px}";
+            }), Is.EqualTo(1));
+            Assert.That(requested, Is.EqualTo(new[] { "theme&mode.css" }));
+            _go.SetActive(true);
+            Assert.That(_host.Document, Is.Not.Null, _host.LastError);
+            Assert.That(_host.LinkedStylesheetHrefs, Is.EqualTo(requested));
+            Assert.That(BoxWidth(), Is.EqualTo(73).Within(0.01));
+        }
+
         [Test]
         public void Player_UsesTheBakedSheet_WhenThereIsNoAssetPath()
         {

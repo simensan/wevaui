@@ -178,7 +178,41 @@ bool HtmlTokenizer::consume_start_tag(std::vector<HtmlToken>* out) {
     }
     if (at_end() || peek() != '>') return fail("Unterminated start tag");
     advance();
+    const std::string_view tag = symbols_->text(t.name);
+    const bool self_closing = t.self_closing;
     out->push_back(std::move(t));
+    if (!self_closing) {
+        const bool rcdata = tag == "textarea" || tag == "title";
+        const bool rawtext = tag == "script" || tag == "style" || tag == "xmp" ||
+                             tag == "iframe" || tag == "noembed" || tag == "noframes";
+        if (rcdata || rawtext) {
+            // HTML ignores the first LF immediately after a textarea start tag.
+            if (tag == "textarea" && peek() == '\n') advance();
+            return consume_raw_text(tag, rcdata);
+        }
+    }
+    return true;
+}
+
+bool HtmlTokenizer::consume_raw_text(std::string_view tag, bool decode_entities) {
+    // Markup inside these elements is text. Only the matching end tag returns
+    // to normal tokenization; a name prefix such as </textarea-other> does not.
+    const std::string closing = "</" + std::string(tag);
+    while (!at_end()) {
+        if (starts_with_ignore_case(closing)) {
+            const size_t after = pos_ + closing.size();
+            const char c = after < src_.size() ? src_[after] : '\0';
+            if (c == '>' || c == '/' || c == ' ' || c == '\t' ||
+                c == '\n' || c == '\r' || c == '\f') break;
+        }
+        if (decode_entities) {
+            if (!consume_text()) return false;
+        } else {
+            if (buf_.empty()) mark_token_start();
+            buf_.push_back(peek());
+            advance();
+        }
+    }
     return true;
 }
 

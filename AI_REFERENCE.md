@@ -10,8 +10,8 @@ disagree, the code wins — tell the user.
 > - **Change the engine or a host** → [`AGENTS.md`](AGENTS.md) (the engineering contract) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (the core as built).
 > - **Check if something is supported** → [`supported-css.md`](Packages/com.wevaui/Documentation~/supported-css.md) / [`supported-html.md`](Packages/com.wevaui/Documentation~/supported-html.md), and `Tools/oracle/known-gaps/` for what the Chrome gate excuses.
 
-_Last verified: 2026-09-14 (1.0.0); Native EditMode 169 pass / 2 environment-gated
-inconclusive, full EditMode 170 pass / 2 inconclusive._
+_Last verified: 2026-09-14 (1.0.0); Native EditMode 180 pass / 2 environment-gated
+inconclusive, full EditMode 181 pass / 2 inconclusive._
 
 ---
 
@@ -142,7 +142,7 @@ check.sh                          the gate
   --known-gaps`** — every tracked case's layout against its Chrome capture.
   All 334 captures pass the 1.5px ceiling (62 hand, 225 harvest, 47 samples).
   Always pass `--chrome-metrics` (the browser's box semantics).
-- **`Tools/oracle/run_chrome_checks.py`** — 57 scripted behaviour checks
+- **`Tools/oracle/run_chrome_checks.py`** — scripted behaviour checks
   against a live Chrome (forms, focus, popovers, animation clocks).
 - **Unity EditMode**: `Unity -batchmode -projectPath <repo> -runTests
   -testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native

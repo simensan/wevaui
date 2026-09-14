@@ -393,7 +393,10 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
 
                 auto elem = make_ref<Element>(name);
                 for (const auto& a : t.attributes) {
-                    elem->set_attribute(symbols->text(a.name), a.value);
+                    // Duplicate HTML attributes keep their first value. A
+                    // scripted set_attribute still replaces an existing one.
+                    const std::string_view attribute = symbols->text(a.name);
+                    if (!elem->has_attribute(attribute)) elem->set_attribute(attribute, a.value);
                 }
                 stack.back()->append_child(elem.get());
 

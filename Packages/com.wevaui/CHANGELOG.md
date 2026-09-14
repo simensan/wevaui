@@ -12,6 +12,10 @@ package is the Unity host for the Weva core (`libweva`, C++, behind a C ABI,
 checked against Chrome), which the Godot addon also runs on.
 
 ### Fixed
+- Linked stylesheets use the shared HTML parser for live documents and baked
+  assets. Comments, raw text and template contents no longer produce spurious
+  links; character references and quoted attributes resolve consistently.
+  The core preserves raw-text/RCDATA contents and the first duplicate attribute.
 - Multi-column layout now fragments direct text and inline elements, and
   honors column settings on inline-block containers in the shared core.
 - Installed fonts retain their file identity in FontEngine's cache across

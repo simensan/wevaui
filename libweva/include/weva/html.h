@@ -73,6 +73,7 @@ private:
     void flush_text(std::vector<HtmlToken>* out);
     bool consume_tag(std::vector<HtmlToken>* out);
     bool consume_start_tag(std::vector<HtmlToken>* out);
+    bool consume_raw_text(std::string_view tag, bool decode_entities);
     bool consume_end_tag(std::vector<HtmlToken>* out);
     bool read_attribute(HtmlAttribute* out);
     bool read_attribute_value(std::string* out);

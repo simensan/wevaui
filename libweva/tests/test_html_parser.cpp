@@ -192,6 +192,37 @@ void test_html_parser() {
     }
 
     // ---- attributes reach the DOM, ids are queryable
+    for (const char* tag : {"script", "style", "textarea", "title", "xmp", "iframe", "noembed", "noframes"}) {
+        P p;
+        const std::string text = "<link id=fake rel=stylesheet href=fake.css><2</" +
+            std::string(tag) + "-other>&amp;";
+        CHECK(p.run("<" + std::string(tag) + " id=source>" + text + "</" + tag +
+            "><div id=after></div>"));
+        CHECK(p.doc->get_element_by_id("fake") == nullptr);
+        CHECK(p.doc->get_element_by_id("after") != nullptr);
+        const auto* source = p.doc->get_element_by_id("source");
+        CHECK(source != nullptr);
+        CHECK(source->children().size() == 1);
+        const bool decode = std::string_view(tag) == "textarea" || std::string_view(tag) == "title";
+        const std::string expected = decode ? text.substr(0, text.size() - 5) + "&" : text;
+        CHECK(static_cast<TextNode*>(source->children().front().get())->data() == expected);
+    }
+    {
+        P p;
+        CHECK(p.run("<textarea id=f>\n\n&lt;b&gt;</TEXTAREA ><div id=after></div>"));
+        CHECK(static_cast<TextNode*>(p.doc->get_element_by_id("f")->children().front().get())->data() == "\n<b>");
+        CHECK(p.doc->get_element_by_id("after") != nullptr);
+    }
+    {
+        // Chrome keeps the first occurrence, including an empty value. Attribute
+        // names are ASCII case-insensitive; a later spelling cannot replace it.
+        P p;
+        CHECK(p.run("<link id=sheet rel=stylesheet href='' HREF=second.css>"));
+        auto* sheet = p.doc->get_element_by_id("sheet");
+        CHECK(sheet != nullptr);
+        CHECK(sheet->has_attribute("href"));
+        CHECK(sheet->get_attribute("href").empty());
+    }
     {
         P p;
         CHECK(p.run("<div id=root data-n=\"3\"><span id=inner>t</span></div>"));

@@ -230,10 +230,10 @@ namespace Weva
 #endif
             if (!string.IsNullOrEmpty(basePath)) _doc.SetBasePath(basePath);
             string html = documentAsset != null ? documentAsset.text : InlineHtml;
-            _linkedHrefs.Clear();
-            _linkedHrefs.AddRange(LinkedHrefs(html));
             Generation++;
             _doc.LoadHtml(html);
+            _linkedHrefs.Clear();
+            _linkedHrefs.AddRange(LinkedHrefs(_doc));
             _doc.SetCss(StylesheetText());
             _doc.SetColorScheme(prefersDarkColorScheme);
             _fonts.SyncCssFontFaces(_doc);
@@ -288,30 +288,26 @@ namespace Weva
         [SerializeField, HideInInspector] string[] bakedLinkedStylesheetCss;
         private readonly System.Collections.Generic.List<string> _linkedHrefs = new System.Collections.Generic.List<string>();
 
-        private static readonly System.Text.RegularExpressions.Regex s_linkTag = new System.Text.RegularExpressions.Regex(
-            @"<link\b[^>]*>", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
-        private static readonly System.Text.RegularExpressions.Regex s_attribute = new System.Text.RegularExpressions.Regex(
-            @"\b(rel|href)\s*=\s*(?:""([^""]*)""|'([^']*)'|([^\s>]+))", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
-
         /// <summary>The href of every <c>&lt;link rel="stylesheet"&gt;</c> in the markup, in document order.</summary>
         public static System.Collections.Generic.List<string> LinkedHrefs(string html)
         {
-            var hrefs = new System.Collections.Generic.List<string>();
-            if (string.IsNullOrEmpty(html)) return hrefs;
-            foreach (System.Text.RegularExpressions.Match tag in s_linkTag.Matches(html))
+            if (string.IsNullOrEmpty(html)) return new System.Collections.Generic.List<string>();
+            // Baking runs without a live document. Use the same parser and DOM
+            // queries as Reload; no fonts or layout are needed to discover links.
+            using (var parsed = new NativeDocument(1, 1, useUserAgentStylesheet: false))
             {
-                string rel = null, href = null;
-                foreach (System.Text.RegularExpressions.Match attr in s_attribute.Matches(tag.Value))
-                {
-                    string value = attr.Groups[2].Success ? attr.Groups[2].Value : attr.Groups[3].Success ? attr.Groups[3].Value : attr.Groups[4].Value;
-                    if (attr.Groups[1].Value.Equals("rel", StringComparison.OrdinalIgnoreCase)) rel = value;
-                    else href = value;
-                }
-                if (rel == null || href == null || href.Length == 0) continue;
-                foreach (string token in rel.Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    if (token.Equals("stylesheet", StringComparison.OrdinalIgnoreCase)) { hrefs.Add(href); break; }
-                }
+                parsed.LoadHtml(html);
+                return LinkedHrefs(parsed);
+            }
+        }
+
+        private static System.Collections.Generic.List<string> LinkedHrefs(NativeDocument parsed)
+        {
+            var hrefs = new System.Collections.Generic.List<string>();
+            foreach (uint link in parsed.QueryAll("link[rel~=\"stylesheet\" i][href]"))
+            {
+                string href = parsed.ElementAttribute(link, "href");
+                if (!string.IsNullOrEmpty(href)) hrefs.Add(href);
             }
             return hrefs;
         }
