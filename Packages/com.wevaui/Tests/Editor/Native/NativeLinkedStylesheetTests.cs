@@ -94,6 +94,35 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(BoxWidth(), Is.EqualTo(55).Within(0.01), "the core's asset reader served the sheet");
         }
 
+        // A document on a prefab never passes through the scene hook; the
+        // build's preprocess step bakes every prefab document instead, and only
+        // saves a prefab whose bake changed.
+        [Test]
+        public void Prefab_IsBakedBeforeABuild_AndOnlyWhenItChanged()
+        {
+            const string path = FixtureDir + "/tmp-linked.prefab";
+            var html = AssetDatabase.LoadAssetAtPath<TextAsset>(FixtureDir + "/linked.html");
+            Assume.That(html, Is.Not.Null);
+            _host.DocumentAsset = html;
+            var prefab = PrefabUtility.SaveAsPrefabAsset(_go, path);
+            try
+            {
+                Assume.That(prefab, Is.Not.Null, "the fixture prefab saved");
+                Assert.That(prefab.GetComponent<WevaDocument>().BakedLinkedStylesheets.Hrefs, Is.Null.Or.Empty, "nothing baked yet");
+                int baked = Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs();
+                Assert.That(baked, Is.GreaterThanOrEqualTo(1), "the prefab document was baked");
+                var reloaded = AssetDatabase.LoadAssetAtPath<GameObject>(path).GetComponent<WevaDocument>();
+                var bake = reloaded.BakedLinkedStylesheets;
+                Assert.That(bake.Hrefs, Is.EqualTo(new[] { "linked.css" }));
+                Assert.That(bake.Css[0], Does.Contain("width: 123px"));
+                Assert.That(Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs(), Is.EqualTo(0), "a bake that is already current changes nothing");
+            }
+            finally
+            {
+                AssetDatabase.DeleteAsset(path);
+            }
+        }
+
         [Test]
         public void InspectorSheets_ComeAfterThePagesOwn_SoTheyWin()
         {

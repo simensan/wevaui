@@ -1,6 +1,34 @@
-# Godot product readiness
+# Product readiness
 
-This is a development preview. The game-UI goal is not complete.
+This is a development preview. The game-UI goal is not complete. One core
+(`libweva`, ABI minor 39 at this writing) drives two hosts; the Unity host's
+standing is first, the Godot host's -- the longer record -- follows.
+
+## Unity host readiness (2026-09-14)
+
+**Where things stand.** `com.wevaui` 1.0.0 is the Unity host for the core,
+on Windows x64. The C# engine that 0.1.x shipped was deleted on 2026-09-13;
+what remains in C# is the component, the `[UIBind]` controller layer, the URP
+pass that draws the core's draw list, `FontEngine` as the font backend, the
+Input System feed and the editor tooling. Nothing has been pushed or tagged;
+no consumer project has yet been opened on 1.0.
+
+| Requirement | Current assessment and next evidence needed |
+|---|---|
+| The component and the controller model | `WevaDocument` keeps its 0.1.x name, script GUID and serialized fields, so a scene carries over; `[UIBind]`, `data-each`/`data-model`, `on-<event>`, `SetController` carry over. Verified by the Native EditMode suite (146 pass, 2 env-gated inconclusive) -- bindings, rows, typed write-back, dispatch, reload. Not yet verified: a real consumer project (TestWeva, Wavebound) opened on 1.0. |
+| The element API | `WevaElement` / `WevaEvent` are the supported surface (`api-stability.md`); `Weva.Native` is internal. 12 `WevaElementTests`. |
+| Rendering | `UIRenderGraphPass` draws the draw list into the camera target; `NativeRenderPassTests` (PlayMode, 5 cases) check the pixels: drawn, stacked by `SortingOrder`, gone when disabled, repainted on change, text, backdrop-filter. Not verified: the back buffer as the camera target (a player without an intermediate) for backdrop-filter's copy orientation; any platform but Windows. |
+| Layout conformance | The core's, measured against headless Chrome by `check.sh` (hand 52/52, harvest 220/225 within 1.5 px, samples 29/47 with multicol and vertical writing excused); `goldens_from_unity.py` renders the sample pages through the core on Unity for the same comparison. Text metrics are the host's (`FontEngine`), so line heights agree with Chrome's Inter, not Chrome's Arial. |
+| Input | Mouse, keyboard with core-owned repeat and double-click, touch, gamepad navigation, IME; every row of `INPUT_PARITY.md` pinned by `NativeInputFeedTests` / `NativeInputTests` through the Input System's test fixture. Not verified: a physical touchscreen, a physical gamepad, a physical IME. |
+| Fonts and text | The package's Inter with real bold/italic, `@font-face` `url()`/`local()`, `RegisterFontFamily`. `FontEngine` shapes one glyph per code point: no Arabic contextual forms, no in-word RTL glyph order, no colour emoji. These are gaps, not open questions. |
+| Stylesheets and assets | `<link rel="stylesheet">` next to the asset in the editor, baked for players for scene documents (scene hook) and prefab documents (build preprocess); `BasePath` defaults to the asset's folder; `AssetReader` for a player without files. Verified by `NativeLinkedStylesheetTests`. Not verified: an actual player build's images and fonts end to end. |
+| Editor tooling | Inspector with the URP-feature check and fix, HTML diagnostics and Reload; Elements window over the inspector ABI; hot reload of the document, its links and its sheets. The Designer / in-place editor is shelved from 1.0. |
+| Build hygiene | Core, plugin and Godot extension at 0 warnings on gcc, clang and MSVC; `gen_bindings.py --check` in CI; the plugin's load test in `check.sh`. |
+| Platforms | Windows x64 only. macOS, Linux, Android and iOS have CI jobs that have never run (nothing pushed); each is bundled when its load test passes. |
+| Release verification | The 1.0.0 CHANGELOG carries the migration notes. Blocked on the push (first CI run), a consumer opened on 1.0, and platform binaries. |
+
+
+## Godot host readiness
 
 **Where things stand (2026-09-11).** Both local addons hold build222 (ABI
 minor25), build221 plus quarter-pixel text positioning. For a game developer it adds, on top of build211: document text with

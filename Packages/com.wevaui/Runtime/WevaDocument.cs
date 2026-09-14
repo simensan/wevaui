@@ -301,6 +301,9 @@ namespace Weva
         /// <summary>The hrefs the current markup links, after a Reload.</summary>
         public System.Collections.Generic.IReadOnlyList<string> LinkedStylesheetHrefs => _linkedHrefs;
 
+        /// <summary>What the last bake stored (for the baker to tell a changed bake from a repeated one).</summary>
+        internal (string[] Hrefs, string[] Css) BakedLinkedStylesheets => (bakedLinkedStylesheetHrefs, bakedLinkedStylesheetCss);
+
         /// <summary>
         /// Stores the text of every linked stylesheet on the component for a
         /// player, which has no files to read; <paramref name="read"/> returns
