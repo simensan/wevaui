@@ -10,9 +10,8 @@
 #   sanitizers          the same tests again under ASan and UBSan, which have
 #                       caught a double free, a premature free and a
 #                       use-after-free in the element table this session alone
-#   layout oracle       our layout against the C# reference, with Chrome
-#                       arbitrating the disagreements, over all THREE corpora --
-#                       samples, hand and harvest
+#   layout oracle       core layout against tracked Chrome captures over all
+#                       three corpora: samples, hand and harvest
 #   backend gate        the software renderer against Godot's, on the IDENTICAL
 #                       draw list, so a difference is the two rasterisers and
 #                       nothing else

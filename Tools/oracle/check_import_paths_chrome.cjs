@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const http = require('node:http');
-const puppeteer = require('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 
 const css = String.raw`@import "styles/theme.css";
     @import url("styles/close).css");
@@ -42,7 +42,7 @@ const sheets = {
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     let browser;
     try {
-        browser = await puppeteer.launch({headless: true, executablePath: process.argv[3], args: ['--no-sandbox']});
+        browser = await launch({headless: true, executablePath: process.argv[3], args: ['--no-sandbox']});
         const page = await browser.newPage();
         await page.goto(`http://127.0.0.1:${server.address().port}/ui/index.html`, {waitUntil: 'networkidle0'});
         const widths = await page.evaluate(ids => ids.map(id => document.getElementById(id).getBoundingClientRect().width), ids);

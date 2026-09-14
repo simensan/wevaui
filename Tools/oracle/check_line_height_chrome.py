@@ -10,7 +10,6 @@ import json
 from pathlib import Path
 import re
 import subprocess
-import tempfile
 
 SCRIPT = r"""
 const rows = [];
@@ -84,17 +83,16 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     fixture = output / 'chrome.html'
     fixture.write_text('<!doctype html><body><script>' + SCRIPT + '</script>', encoding='utf-8')
-    with tempfile.TemporaryDirectory(prefix='line-height-', dir=output) as profile:
-        command = [args.chrome, '--headless', '--disable-gpu', '--no-first-run',
-                   '--user-data-dir=' + profile, '--dump-dom', fixture.as_uri()]
-        if args.no_sandbox:
-            command.insert(1, '--no-sandbox')
-        result = subprocess.run(command, capture_output=True, text=True, timeout=45)
-        (output / 'chrome-raw.log').write_text(result.stdout + result.stderr, encoding='utf-8')
-        match = re.search(r'<body>(.*?)</body>', result.stdout, re.S)
-        if result.returncode or not match:
-            raise RuntimeError('Chrome did not produce a result; see chrome-raw.log')
-        data = json.loads(html.unescape(match.group(1)))
+    command = ['node', str(Path(__file__).with_name('chrome_test_browser.cjs')),
+               args.chrome, fixture.as_uri()]
+    if args.no_sandbox:
+        command.append('--no-sandbox')
+    result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=45)
+    (output / 'chrome-raw.log').write_text(result.stdout + result.stderr, encoding='utf-8')
+    match = re.search(r'<body>(.*?)</body>', result.stdout, re.S)
+    if result.returncode or not match:
+        raise RuntimeError('Chrome did not produce a result; see chrome-raw.log')
+    data = json.loads(html.unescape(match.group(1)))
     (output / 'chrome.json').write_text(json.dumps(data, indent=2), encoding='utf-8')
     failed = [row for row in data['rows'] if not row['pass']]
     for row in failed:

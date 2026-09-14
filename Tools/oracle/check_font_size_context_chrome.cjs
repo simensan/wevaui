@@ -1,10 +1,10 @@
 // Browser control for the empty-box live-resize cases in font_size_tests.gd.
-const puppeteer = require('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 (async () => {
-    const browser = await puppeteer.launch({headless: true, executablePath: process.argv[2]});
+    const browser = await launch({headless: true, executablePath: process.argv[2]});
     let checks = 0;
     const rows = [];
     try {

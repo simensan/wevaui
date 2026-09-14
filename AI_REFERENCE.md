@@ -138,7 +138,9 @@ check.sh                          the gate
 
 - **`check.sh`** — the whole gate (release/text-safety/performance tooling
   suites: 21/9/32 checks; build, core tests, sanitizers, Chrome
-  oracle, behaviour checks, plugin, addon, host tests). CI runs it.
+  oracle, behaviour checks, plugin, addon, host tests). CI covers tooling,
+  core/sanitizers, Chrome and native builds/package checks; local engine
+  installations are still required for Unity suites and live Godot gates.
 - **`Tools/oracle/chrome_sweep.py --chrome-metrics --max-worst 1.5
   --known-gaps`** — every tracked case's layout against its Chrome capture.
   All 334 captures pass the 1.5px ceiling (62 hand, 225 harvest, 47 samples).
@@ -146,6 +148,8 @@ check.sh                          the gate
 - **`Tools/oracle/run_chrome_checks.py`** — scripted behaviour checks
   against a live Chrome (forms, focus, popovers, animation clocks, stylesheet
   discovery/imports). Review: 60 scripts, 59 pass and 1 documented Chrome IME failure.
+  CI pins Windows Chrome 152; numeric-editing and CR fixtures depend on the
+  reference OS/browser version. Set `WEVA_CHROME` to choose the executable.
 - **Unity EditMode**: `Unity -batchmode -projectPath <repo> -runTests
   -testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native
   -testResults <path>` (no `-quit`, no `-nographics`). Also the compile check.

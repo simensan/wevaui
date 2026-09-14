@@ -2,7 +2,7 @@
 // and live host. Mirrors NativeLinkedStylesheetTests.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const puppeteer = require('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 
 const cases = [
     ["<!-- <link rel=stylesheet href=comment.css> -->", []],
@@ -19,7 +19,7 @@ const cases = [
 ];
 
 (async () => {
-    const browser = await puppeteer.launch({headless: true, executablePath: process.argv[3], args: ['--no-sandbox']});
+    const browser = await launch({headless: true, executablePath: process.argv[3], args: ['--no-sandbox']});
     try {
         const page = await browser.newPage();
         const receipts = [];

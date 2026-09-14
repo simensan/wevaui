@@ -1,10 +1,10 @@
 // Browser evidence for test_c_abi_keyboard.cpp. Uses the repository's
 // Puppeteer dependency; pass a Chrome executable as the optional argument.
-const puppeteer = require('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 const assert = require('node:assert/strict');
 
 (async () => {
-    const browser = await puppeteer.launch({headless: true, executablePath: process.argv[2]});
+    const browser = await launch({headless: true, executablePath: process.argv[2]});
     let checks = 0;
     const check = (got, want) => { assert.deepEqual(got, want); ++checks; };
     try {

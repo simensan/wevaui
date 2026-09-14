@@ -1,5 +1,5 @@
-const fs=require('node:fs');const puppeteer=require('puppeteer');
-(async()=>{const browser=await puppeteer.launch({headless:true,executablePath:process.argv[3]||'C:/Program Files/Google/Chrome/Application/chrome.exe'});try{
+const fs=require('node:fs');const {launch} = require('./chrome_test_browser.cjs');
+(async()=>{const browser=await launch({headless:true,executablePath:process.argv[3]||undefined});try{
  const page=await browser.newPage();const inputs=[];
  for(const type of ['text','number','email','url','checkbox','radio','range','date','time','month','week','datetime-local','hidden','button','submit','reset','file','color'])for(const mode of ['plain','required','disabled','readonly','custom']){
   inputs.push({name:type+'/'+mode,html:`<form id=f><fieldset id=s><input id=c type="${type}" ${mode==='required'?'required':''} ${mode==='disabled'?'required disabled':''} ${mode==='readonly'?'required readonly':''}></fieldset></form>`,custom:mode==='custom'?'c':null});

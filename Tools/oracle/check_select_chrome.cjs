@@ -1,8 +1,8 @@
 // Native Chrome evidence for the matching test_select_controls.cpp sequence.
-const puppeteer = require('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 const assert = require('node:assert/strict');
 (async () => {
-    const browser = await puppeteer.launch({headless:true, executablePath:process.argv[2]});
+    const browser = await launch({headless:true, executablePath:process.argv[2]});
     let checks = 0;
     const check = (got, want) => { assert.deepEqual(got, want); ++checks; };
     try {

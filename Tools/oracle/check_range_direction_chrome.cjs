@@ -1,9 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { createRequire } = require('module');
-const puppeteer = createRequire(path.resolve('Tools/Layout/package.json'))('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 (async () => {
-  const browser = await puppeteer.launch({headless:true, executablePath:process.env.PUPPETEER_EXECUTABLE_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+  const browser = await launch({headless:true, executablePath:process.env.PUPPETEER_EXECUTABLE_PATH || undefined});
   try {
     const page=await browser.newPage();
     await page.setViewport({width:500,height:400});

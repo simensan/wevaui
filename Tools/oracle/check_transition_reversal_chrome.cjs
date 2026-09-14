@@ -1,11 +1,9 @@
 const fs = require('node:fs');
-const path = require('node:path');
-const {createRequire} = require('node:module');
-const puppeteer = createRequire(path.resolve(__dirname, '../../Tools/Layout/package.json'))('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 (async () => {
   const output = process.argv[2];
   if (!output || fs.existsSync(output)) throw new Error('Expected new output JSON path');
-  const browser = await puppeteer.launch({headless:true, executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+  const browser = await launch({headless:true, executablePath:undefined});
   try {
     const page = await browser.newPage();
     const rows=[];

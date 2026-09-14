@@ -1,10 +1,10 @@
 // Browser counterparts of test_c_abi_text_editing.cpp. Selection offsets in
 // Chrome are UTF-16 code units; the core API uses UTF-8 bytes.
-const puppeteer = require('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 const assert = require('node:assert/strict');
 
 (async () => {
-    const browser = await puppeteer.launch({headless: true, executablePath: process.argv[2]});
+    const browser = await launch({headless: true, executablePath: process.argv[2]});
     let checks = 0;
     const check = (got, want) => { assert.deepEqual(got, want); ++checks; };
     try {

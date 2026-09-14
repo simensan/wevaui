@@ -1,7 +1,7 @@
 const fs = require('node:fs');
-const puppeteer = require('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 (async () => {
-  const browser = await puppeteer.launch({headless:true, executablePath:process.argv[3] || 'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+  const browser = await launch({headless:true, executablePath:process.argv[3] || undefined});
   try {
     const page = await browser.newPage();
     await page.setViewport({width:1280,height:720});

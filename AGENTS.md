@@ -62,13 +62,19 @@ The C# engine that once lived in the package was frozen and deleted on
 ## 3. The gate
 
 `check.sh` (run from WSL or Linux; `WEVA_NO_CHROME=1` skips the browser
-steps) is the full gate and what CI runs: build, core tests and the
+steps) is the full local gate: build, core tests and the
 incremental corpus, sanitizers, the Chrome oracle
 (`Tools/oracle/chrome_sweep.py --chrome-metrics --max-worst 1.5 --known-gaps`
 over every tracked capture — `known-gaps/` is the only allowed excuse), the
 Chrome behaviour checks (`Tools/oracle/run_chrome_checks.py`), cached ids,
 assets, the Unity plugin, the Godot extension and its font/Unicode safety,
 the addon install, the backend gate and the host scene tests.
+
+CI runs tooling, core/sanitizer tests, the tracked Chrome layout oracle,
+live Chrome behavior checks on pinned Windows Chrome 152, native
+host/platform builds and package checks.
+The Unity editor suites and live Godot scene, rendering, Unicode and export
+checks still require the local gate and its engine installations.
 
 Per chunk, the local recipe is:
 

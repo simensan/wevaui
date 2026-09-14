@@ -141,9 +141,11 @@ rasterise colour emoji; the Godot host's text is TextServer's.
 - [`PLAN.md`](./PLAN.md) — the design the core implements (history);
   [`CONFORMANCE.md`](./CONFORMANCE.md) — spec deltas, property by property.
 
-`check.sh` is the gate — build, the core suite, sanitizers, the Chrome oracle,
-the Unity plugin, the Godot extension, the host scenes — and what CI runs on
-Ubuntu, Windows and macOS.
+`check.sh` is the full local gate: build, the core suite, sanitizers, Chrome,
+the Unity plugin, the Godot extension and live host scenes. CI runs tooling,
+core/sanitizer suites, Chrome layout and behavior checks, and native builds
+and packaging on Ubuntu, Windows and macOS. Unity editor tests and live Godot
+scene, rendering, Unicode and export checks need local engine installations.
 
 ## Layout
 

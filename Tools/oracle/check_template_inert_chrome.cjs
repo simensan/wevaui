@@ -6,10 +6,9 @@
 // text, children -- must hide that body the way Chrome's DOM does
 // (test_abi_template_content_is_inert).
 const fs = require('node:fs'), path = require('node:path');
-const {createRequire} = require('node:module');
-const puppeteer = createRequire(path.resolve(__dirname, '../../Tools/Layout/package.json'))('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 (async () => {
-  const browser = await puppeteer.launch({headless: true, executablePath: process.argv[3] || 'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+  const browser = await launch({headless: true, executablePath: process.argv[3] || undefined});
   try {
     const page = await browser.newPage();
     await page.setContent('<body style="margin:0"><ul id="quests" style="margin:0;padding:0"><template data-each="Quests as quest" data-key="Id"><li id="quest-{{ quest.Id }}" class="row">{{ quest.Title }}</li></template></ul><p id="after" style="margin:0">after</p></body>');

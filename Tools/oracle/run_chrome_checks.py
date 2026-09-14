@@ -8,13 +8,11 @@ animation clocks. They exist because layout geometry from a capture cannot
 pin behaviour, and each one has a matching test_*.cpp sequence in the core
 suite whose expectations came from it.
 
-Nothing ran them. 57 scripts, referenced by neither check.sh nor CI, run by
-hand when someone remembered. This runs all of them and turns the result into
-one exit code:
+Both check.sh and CI invoke this runner. It runs every matching script and
+turns the results into one exit code:
 
-  * 33 of them exit nonzero on a mismatch (29 .cjs, all 4 .py). Those are
-    gates here.
-  * 24 .cjs only print what Chrome did. They are evidence, not verdicts; a
+  * Scripts that exit nonzero on a mismatch are gates here.
+  * Some .cjs only print what Chrome did. They are evidence, not verdicts; a
     human read them into a C++ test once. Here they must at least run to
     completion, and their output is kept as a receipt so a Chrome upgrade that
     changes an answer is visible.
@@ -29,6 +27,12 @@ Needs node with puppeteer resolvable from Tools/oracle and a Chrome. One
 Chrome is used for every script so receipts do not mix browser versions:
 WEVA_CHROME, else the first installed candidate below, else puppeteer's
 bundled build. Exit 1 on any unexcused failure.
+
+Install the root package-lock.json with npm ci. Every .cjs uses the shared
+chrome_test_browser.cjs launcher and that root Puppeteer dependency. CI pins
+Windows Chrome 152 to match the retained editing receipts: older Chrome's
+CR handling and Linux's decimal-comma handling differ. --no-sandbox (or
+WEVA_CHROME_NO_SANDBOX=1) applies to both the CJS and Python checks.
 """
 import argparse
 import glob
@@ -55,10 +59,17 @@ def find_chrome():
     for c in CHROME_CANDIDATES:
         if os.path.exists(c):
             return c
+    try:
+        bundled = subprocess.run(['node', '-p', "require('puppeteer').executablePath()"],
+                                 cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
+        if os.path.exists(bundled):
+            return bundled
+    except (OSError, subprocess.CalledProcessError):
+        pass
     return None
 
 
-def argv_for(path, chrome, out_dir):
+def argv_for(path, chrome, out_dir, no_sandbox=False):
     """The scripts grew one at a time and disagree about argv. Two shapes exist
     for the .cjs: `argv[2]` is the Chrome path, or `argv[2]` is an output file
     with the Chrome path optional in `argv[3]`. Which one is read off the
@@ -69,6 +80,8 @@ def argv_for(path, chrome, out_dir):
         cmd = [sys.executable, path, "--output", os.path.join(out_dir, stem + ".json")]
         if chrome:
             cmd += ["--chrome", chrome]
+        if no_sandbox:
+            cmd.append("--no-sandbox")
         return cmd
     with open(path, encoding="utf-8", errors="replace") as f:
         src = f.read()
@@ -76,8 +89,8 @@ def argv_for(path, chrome, out_dir):
     if chrome_first:
         return ["node", path] + ([chrome] if chrome else [])
     cmd = ["node", path, os.path.join(out_dir, stem + ".json")]
-    if chrome and "process.argv[3]" in src:
-        cmd.append(chrome)
+    # The shared launcher reads WEVA_CHROME. argv[3] is not universally a
+    # browser path (the intrinsic-select probe uses it for a font file).
     return cmd
 
 
@@ -100,6 +113,9 @@ def main():
                     help="directory for per-script output receipts")
     ap.add_argument("--known-failing", default=os.path.join(HERE, "known-gaps", "chrome-checks.txt"),
                     help="`script-name: reason` lines allowed to fail")
+    ap.add_argument("--no-sandbox", action="store_true",
+                    default=os.environ.get('WEVA_CHROME_NO_SANDBOX') == '1',
+                    help="disable the Chrome sandbox for isolated CI/root environments")
     a = ap.parse_args()
     # Children run in the receipt directory. Resolve the CLI path before
     # changing their cwd, so --out .utmp/checks is not joined to itself.
@@ -117,12 +133,17 @@ def main():
 
     chrome = find_chrome()
     print("chrome:", chrome or "(puppeteer's bundled build)")
+    child_env = os.environ.copy()
+    if chrome:
+        child_env['WEVA_CHROME'] = chrome
+    if a.no_sandbox:
+        child_env['WEVA_CHROME_NO_SANDBOX'] = '1'
     failed, excused, passed = [], [], 0
     for path in scripts:
         name = os.path.basename(path)
-        cmd = argv_for(path, chrome, a.out)
+        cmd = argv_for(path, chrome, a.out, a.no_sandbox)
         t0 = time.time()
-        r = subprocess.run(cmd, cwd=a.out, capture_output=True, text=True,
+        r = subprocess.run(cmd, cwd=a.out, env=child_env, capture_output=True, text=True,
                            encoding="utf-8", errors="replace")
         dt = time.time() - t0
         with open(os.path.join(a.out, name + ".log"), "w", encoding="utf-8", newline="\n") as f:

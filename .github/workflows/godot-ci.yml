@@ -2,9 +2,9 @@ name: Core and hosts
 
 on:
   push:
-    paths: ['libweva/**', 'hosts/**', 'Tools/**', 'third_party/**', 'Packages/**', 'examples/**', 'CMakeLists.txt', 'check.sh', '.github/workflows/godot-ci.yml']
+    paths: ['libweva/**', 'hosts/**', 'Tools/**', 'third_party/**', 'Packages/**', 'examples/**', 'CMakeLists.txt', 'package.json', 'package-lock.json', 'check.sh', '.github/workflows/godot-ci.yml']
   pull_request:
-    paths: ['libweva/**', 'hosts/**', 'Tools/**', 'third_party/**', 'Packages/**', 'examples/**', 'CMakeLists.txt', 'check.sh', '.github/workflows/godot-ci.yml']
+    paths: ['libweva/**', 'hosts/**', 'Tools/**', 'third_party/**', 'Packages/**', 'examples/**', 'CMakeLists.txt', 'package.json', 'package-lock.json', 'check.sh', '.github/workflows/godot-ci.yml']
   workflow_dispatch:
 
 permissions:
@@ -36,6 +36,38 @@ jobs:
         run: python -m unittest discover -s Tools/godot-text-shaping-repro -p 'test_*.py' -v
       - name: Frontier sample gates
         run: python -m unittest discover -s hosts/godot -p 'test_frontier_perf*.py' -v
+
+  chrome-behaviour:
+    # Editing receipts were recorded on Windows Chrome 152. OS-native number
+    # editing and older Chrome's CR handling differ; keep the reference fixed.
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      PUPPETEER_CACHE_DIR: ${{ github.workspace }}/.cache/puppeteer
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+      WEVA_CHROME_VERSION: '152.0.7977.82'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install the locked driver and pinned Chrome reference
+        run: |
+          npm ci
+          npx puppeteer browsers install "chrome@$WEVA_CHROME_VERSION"
+      - name: Live Chrome behaviour checks
+        run: |
+          export WEVA_CHROME="$(node -p "require('@puppeteer/browsers').computeExecutablePath({cacheDir:process.env.PUPPETEER_CACHE_DIR,browser:'chrome',buildId:process.env.WEVA_CHROME_VERSION})")"
+          python Tools/oracle/run_chrome_checks.py --out chrome-checks
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chrome-behaviour
+          path: chrome-checks/
 
   core:
     strategy:

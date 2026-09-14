@@ -3,11 +3,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
-const puppeteer = require('puppeteer');
+const {launch} = require('./chrome_test_browser.cjs');
 (async () => {
     const fixture = JSON.parse(fs.readFileSync(path.join(__dirname,
         '../../hosts/godot/project/form_validation_numbers.json'), 'utf8'));
-    const browser = await puppeteer.launch({headless: true, executablePath: process.argv[2]});
+    const browser = await launch({headless: true, executablePath: process.argv[2]});
     const results = [];
     try {
         const page = await browser.newPage();
