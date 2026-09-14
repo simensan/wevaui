@@ -107,7 +107,7 @@ jobs:
         with:
           arch: x64
       - name: Configure extension with pinned Godot bindings
-        run: cmake -S hosts/godot -B build-host -G Ninja -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR=${{ github.workspace }}/.deps/godot-cpp -DGODOTCPP_API_VERSION=4.7 -DGODOTCPP_PRECISION=single -DWEVA_GODOT_BIN=${{ github.workspace }}/build-host/bin
+        run: cmake -S hosts/godot -B build-host -G Ninja -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="${GITHUB_WORKSPACE//\\//}/.deps/godot-cpp" -DGODOTCPP_API_VERSION=4.7 -DGODOTCPP_PRECISION=single -DWEVA_GODOT_BIN="${GITHUB_WORKSPACE//\\//}/build-host/bin"
       - name: Build extension and metadata
         run: cmake --build build-host --target weva_godot --parallel 4
       - name: Verify Windows packaging
@@ -148,7 +148,7 @@ jobs:
         with:
           arch: x64
       - name: Configure plugin
-        run: cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_UNITY_BIN=${{ github.workspace }}/build-unity/bin
+        run: cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_UNITY_BIN="${GITHUB_WORKSPACE//\\//}/build-unity/bin"
       - name: Build plugin and load test
         run: cmake --build build-unity --parallel 4
       - name: Load the plugin through the dynamic loader (Windows)
@@ -178,7 +178,7 @@ jobs:
         include:
           - os: macos-14
             name: macos
-            configure: "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+            configure: "\"-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64\""
             targets: weva_core weva_core_load_test
             load_test: build-unity/weva_core_load_test build-unity/bin/weva_core.dylib
           - os: ubuntu-24.04
@@ -190,7 +190,7 @@ jobs:
             name: ios-arm64
             configure: -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 -DWEVA_UNITY_STATIC=ON
             targets: weva_core
-            load_test: test -s build-unity/bin/libweva_core.a && file build-unity/bin/libweva_core.a
+            load_test: test -s build-unity/bin/weva_core.a && file build-unity/bin/weva_core.a
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -202,7 +202,7 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install ninja
       - name: Configure plugin (${{ matrix.name }})
-        run: cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_UNITY_BIN=${{ github.workspace }}/build-unity/bin ${{ matrix.configure }}
+        run: cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_UNITY_BIN="${GITHUB_WORKSPACE//\\//}/build-unity/bin" ${{ matrix.configure }}
       - name: Build plugin
         run: cmake --build build-unity --target ${{ matrix.targets }} --parallel 4
       - name: Check the result
