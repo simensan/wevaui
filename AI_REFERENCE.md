@@ -143,9 +143,12 @@ check.sh                          the gate
   -testResults <path>` (no `-quit`, no `-nographics`). Also the compile check.
 - **`hosts/unity/goldens_from_unity.py`** — the sample pages through the core
   on Unity, compared with the Chrome captures.
-- **`NativeGameViewCaptureTests`** (PlayMode, `[Explicit]`) — renders a page
-  through the real URP pass to `.utmp/native-gameview/*.png` for a person to
-  look at.
+- **`NativeRenderPassTests`** (PlayMode, automated) — renders documents
+  through the real URP pass into a RenderTexture and asserts the pixels:
+  drawn, stacked by `SortingOrder`, gone when disabled, repainted on a
+  change, text present. **`NativeGameViewCaptureTests`** (PlayMode,
+  `[Explicit]`) renders a page to `.utmp/native-gameview/*.png` for a person
+  to look at.
 
 Expected numbers live in `docs/PRODUCT_READINESS.md`; any red is new.
 

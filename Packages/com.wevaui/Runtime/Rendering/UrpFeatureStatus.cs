@@ -16,13 +16,16 @@ namespace Weva.Rendering {
         }
 
         // True when a UIBatchedRendererFeature has been created by a URP
-        // renderer asset. Reflection keeps this file WEVA_URP-independent.
+        // renderer asset, or enqueued its pass within the last frames (the
+        // creation count does not survive a domain reload the way the asset
+        // does). Reflection keeps this file WEVA_URP-independent.
         public static bool BatchedFeatureRegistered {
             get {
                 var t = System.Type.GetType("Weva.Rendering.URP.UIBatchedRendererFeature, Weva.Runtime");
                 if (t == null) return false;
-                var p = t.GetProperty("ActiveCount", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                return p != null && p.GetValue(null) is int n && n > 0;
+                const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
+                if (t.GetProperty("ActiveCount", flags)?.GetValue(null) is int n && n > 0) return true;
+                return t.GetProperty("LastEnqueuedFrame", flags)?.GetValue(null) is int frame && frame >= 0 && Time.frameCount - frame <= 2;
             }
         }
 

@@ -13,9 +13,14 @@ namespace Weva.Rendering.URP {
     public sealed class UIBatchedRendererFeature : ScriptableRendererFeature {
         readonly Dictionary<ScriptableRenderer, UIRenderGraphPass> passesByRenderer = new();
 
-        // How many features are alive: UrpFeatureStatus reads it by
-        // reflection to tell an author the feature is missing.
+        // How many features are alive, and the last frame one enqueued its
+        // pass: UrpFeatureStatus reads both by reflection to tell an author
+        // the feature is missing. Two signals because Create() runs at
+        // pipeline creation, which a domain reload can separate from the
+        // static counter's reset, while a frame stamp is true whenever a
+        // camera has just rendered.
         public static int ActiveCount { get; private set; }
+        public static int LastEnqueuedFrame { get; private set; } = -1;
         bool counted;
 
         public override void Create() {
@@ -25,6 +30,7 @@ namespace Weva.Rendering.URP {
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
             if (!ShouldRenderForCamera(renderingData.cameraData)) return;
+            LastEnqueuedFrame = Time.frameCount;
             if (!passesByRenderer.TryGetValue(renderer, out var pass) || pass == null) {
                 pass = new UIRenderGraphPass();
                 passesByRenderer[renderer] = pass;
