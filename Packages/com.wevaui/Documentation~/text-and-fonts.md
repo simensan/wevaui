@@ -36,13 +36,15 @@ through the stack to the next family, then the UI face.
 line's bidi levels and hands the host one run at a time; the host asks the
 core which way it reads and mirrors its brackets, resolves Arabic joining,
 runs the font's `ccmp`, `isol`/`init`/`medi`/`fina`, `rlig`, `calt` and
-`liga` lookups from the font's own GSUB (single, multiple, ligature and
-coverage-based chaining lookups), positions combining marks through
-FontEngine's anchors, kerns pairs, and returns a right-to-left run in visual
-order. The GSUB is read from the font's bytes, so a face that arrives as a
-file, as `@font-face` data or as an installed font gets its substitutions; a
-`Font` asset draws its glyphs one per code point. Not run: glyph- and
-class-based contextual lookups, Indic reordering, cursive attachment.
+`liga` lookups from the font's own GSUB (single, multiple, ligature,
+contextual and chaining contextual lookups in every format), joins a
+cursive script at its `curs` anchors (Nastaliq, swash forms), positions
+combining marks through FontEngine's anchors, kerns pairs, and returns a
+right-to-left run in visual order. The layout tables are read from the
+font's bytes, so a face that arrives as a file, as `@font-face` data or as
+an installed font gets its substitutions; a `Font` asset draws its glyphs
+one per code point. Not done: Indic syllable reordering (a shaper of its
+own), reverse chaining and alternate substitutions.
 
 **2. `@font-face` in your stylesheet.** `url()` resolves relative to
 `BasePath` (the document asset's folder in the editor); `local("Name")` is a

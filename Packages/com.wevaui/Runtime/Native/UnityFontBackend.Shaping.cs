@@ -8,9 +8,10 @@
 // on Unity 6000.4 `GetSingleSubstitutionRecords` crashes the editor on an
 // extension lookup (which is every Arabic lookup in Segoe UI) and the
 // layout table it returns lists no lookups, so the substitutions are read
-// from the font's own bytes here: a small GSUB engine for the lookup kinds
-// the fonts a game ships actually use for these features (single, multiple,
-// ligature, and chaining contextual in its coverage form).
+// from the font's own bytes here: a GSUB engine for the lookup kinds these
+// features use (single, multiple, ligature, contextual and chaining
+// contextual in all three formats), and from GPOS the cursive attachments
+// that join a Nastaliq or swash script at anchors.
 //
 // What a run goes through, in logical order:
 //   1. direction (the first strong character); in a right-to-left run,
@@ -26,10 +27,9 @@
 //   5. a right-to-left run is reversed into VISUAL order, which is what the
 //      core expects back (TextServer returns the same on the Godot host).
 //
-// Not run: contextual lookups in their glyph- and class-based formats (1
-// and 2), reverse chaining, alternates, cursive attachment, Indic
-// reordering; a font that needs them shapes as it would in a renderer
-// without them. A face adopted as a Font asset has no bytes to read, so it
+// Not run: reverse chaining substitution, alternates, and the Indic
+// syllable reordering (a shaper of its own); a font that needs them shapes
+// as it would in a renderer without them. A face adopted as a Font asset has no bytes to read, so it
 // gets no substitutions: the bundled UI face has no joining script anyway,
 // and a font that does arrives as a file or as @font-face data, which both
 // carry their bytes.
@@ -168,6 +168,10 @@ namespace Weva.Native
         }
 
         private readonly Dictionary<Source, GsubTable> _gsub = new Dictionary<Source, GsubTable>();
+        private readonly Dictionary<Source, GsubTable> _gpos = new Dictionary<Source, GsubTable>();
+
+        private GsubTable GsubOf(Source source) => TableOf(source, "GSUB", 7, _gsub);
+        private GsubTable GposOf(Source source) => TableOf(source, "GPOS", 9, _gpos);
 
         private static ushort U16(byte[] b, int at) => at >= 0 && at + 1 < b.Length ? (ushort)((b[at] << 8) | b[at + 1]) : (ushort)0;
         private static uint U32(byte[] b, int at) => at >= 0 && at + 3 < b.Length ? ((uint)b[at] << 24) | ((uint)b[at + 1] << 16) | ((uint)b[at + 2] << 8) | b[at + 3] : 0u;
@@ -184,15 +188,16 @@ namespace Weva.Native
             return source.Bytes;
         }
 
-        // The GSUB table of the face's font (or of the face `Index` names in
-        // a collection): its scripts with each one's default language
-        // system's features, and every lookup with its real type.
-        private GsubTable GsubOf(Source source)
+        // A layout table (GSUB or GPOS; they share their script, feature and
+        // lookup lists) of the face's font (or of the face `Index` names in a
+        // collection): its scripts with each one's default language system's
+        // features, and every lookup with its real type, extensions resolved.
+        private GsubTable TableOf(Source source, string tag, int extensionType, Dictionary<Source, GsubTable> cache)
         {
-            if (!_gsub.TryGetValue(source, out GsubTable table))
+            if (!cache.TryGetValue(source, out GsubTable table))
             {
                 table = new GsubTable();
-                _gsub[source] = table;
+                cache[source] = table;
             }
             if (table.Loaded) return table;
             table.Loaded = true;
@@ -211,7 +216,7 @@ namespace Weva.Native
             for (int i = 0; i < tableCount; i++)
             {
                 int record = sfnt + 12 + 16 * i;
-                if (Tag4(b, record) != "GSUB") continue;
+                if (Tag4(b, record) != tag) continue;
                 gsub = (int)U32(b, record + 8);
                 break;
             }
@@ -227,14 +232,15 @@ namespace Weva.Native
                 int lookup = lookupList + U16(b, lookupList + 2 + 2 * i);
                 var entry = new GsubLookup { Type = U16(b, lookup), Flag = U16(b, lookup + 2) };
                 int subtableCount = U16(b, lookup + 4);
+                bool extension = entry.Type == extensionType;
                 for (int s = 0; s < subtableCount; s++)
                 {
                     int subtable = lookup + U16(b, lookup + 6 + 2 * s);
-                    if (entry.Type == 7)
+                    if (extension)
                     {
-                        // An extension: format, the real type, a 32-bit offset
-                        // to the real subtable. Every subtable of the lookup
-                        // wraps the same type.
+                        // An extension (GSUB 7, GPOS 9): format, the real
+                        // type, a 32-bit offset to the real subtable. Every
+                        // subtable of the lookup wraps the same type.
                         int realType = U16(b, subtable + 2);
                         subtable += (int)U32(b, subtable + 4);
                         if (s == 0) entry.Type = realType;
@@ -510,7 +516,90 @@ namespace Weva.Native
             }
             sb.Append(" enabled for script: ");
             foreach (EnabledLookup e in EnabledFor(t, scriptTag)) sb.Append(e.Index).Append(e.FormMask != 0 ? "g " : " ");
+            GsubTable p = GposOf(src);
+            sb.Append("\n GPOS present=").Append(p.Present).Append(" lookups=").Append(p.Lookups.Count).Append(" types=");
+            foreach (GsubLookup lk in p.Lookups) sb.Append(lk.Type).Append(',');
+            Dictionary<string, List<int>> gposFeatures = FeaturesFor(p, scriptTag);
+            if (gposFeatures != null)
+            {
+                sb.Append(" features:");
+                foreach (KeyValuePair<string, List<int>> f in gposFeatures) sb.Append(' ').Append(f.Key).Append('[').Append(string.Join(",", f.Value)).Append(']');
+            }
             sb.Append("\n lastError=").Append(LastError ?? "(none)");
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Diagnostics: the chaining-contextual subtables of a feature's
+        /// lookups in the face serving <paramref name="codepoint"/>, and which
+        /// of <paramref name="glyphs"/> each coverage table contains.
+        /// </summary>
+        public string DescribeContextual(ulong faceId, uint codepoint, string feature, params uint[] glyphs)
+        {
+            var sb = new System.Text.StringBuilder();
+            Face face = Require(faceId);
+            uint id = Lookup(face, codepoint);
+            if (id == 0) return "no glyph";
+            Source src = face.Sources[SlotOf(id)];
+            GsubTable t = GsubOf(src);
+            byte[] b = t.Bytes;
+            string scriptTag = RunScriptTag(new List<uint> { codepoint });
+            Dictionary<string, List<int>> byFeature = FeaturesFor(t, scriptTag);
+            if (byFeature == null || !byFeature.TryGetValue(feature, out List<int> lookups)) return "no " + feature;
+            foreach (int li in lookups)
+            {
+                GsubLookup lk = t.Lookups[li];
+                sb.Append("lookup ").Append(li).Append(" type ").Append(lk.Type).Append(" flag ").Append(lk.Flag).Append('\n');
+                foreach (int subtable in lk.Subtables)
+                {
+                    int format = U16(b, subtable);
+                    sb.Append("  subtable@").Append(subtable).Append(" format ").Append(format);
+                    if (lk.Type == 6 && format == 3)
+                    {
+                        int p = subtable + 2;
+                        int bc = U16(b, p); int back = p + 2; p += 2 + 2 * bc;
+                        int ic = U16(b, p); int input = p + 2; p += 2 + 2 * ic;
+                        int lc = U16(b, p); int ahead = p + 2; p += 2 + 2 * lc;
+                        int sc = U16(b, p);
+                        sb.Append(" back ").Append(bc).Append(" input ").Append(ic).Append(" ahead ").Append(lc).Append(" records ").Append(sc);
+                        for (int k = 0; k < bc; k++) { sb.Append(" back[").Append(k).Append("]:"); foreach (uint g in glyphs) sb.Append(' ').Append(g).Append('=').Append(CoverageIndex(b, subtable + U16(b, back + 2 * k), g)); }
+                        for (int k = 0; k < ic; k++) { sb.Append(" input[").Append(k).Append("]:"); foreach (uint g in glyphs) sb.Append(' ').Append(g).Append('=').Append(CoverageIndex(b, subtable + U16(b, input + 2 * k), g)); }
+                        for (int k = 0; k < lc; k++) { sb.Append(" ahead[").Append(k).Append("]:"); foreach (uint g in glyphs) sb.Append(' ').Append(g).Append('=').Append(CoverageIndex(b, subtable + U16(b, ahead + 2 * k), g)); }
+                        for (int r = 0; r < sc; r++) sb.Append(" rec(").Append(U16(b, p + 2 + 4 * r)).Append(',').Append(U16(b, p + 4 + 4 * r)).Append(')');
+                    }
+                    else if (lk.Type == 6 && format == 1)
+                    {
+                        int coverage = subtable + U16(b, subtable + 2);
+                        int setCount = U16(b, subtable + 4);
+                        sb.Append(" coverage:");
+                        foreach (uint g in glyphs) sb.Append(' ').Append(g).Append('=').Append(CoverageIndex(b, coverage, g));
+                        sb.Append(" sets ").Append(setCount);
+                        for (int s = 0; s < setCount && s < 4; s++)
+                        {
+                            int setOffset = U16(b, subtable + 6 + 2 * s);
+                            if (setOffset == 0) { sb.Append(" set").Append(s).Append(":null"); continue; }
+                            int set = subtable + setOffset;
+                            int ruleCount = U16(b, set);
+                            sb.Append(" set").Append(s).Append(" rules ").Append(ruleCount);
+                            for (int r = 0; r < ruleCount && r < 3; r++)
+                            {
+                                int rule = set + U16(b, set + 2 + 2 * r);
+                                int p = rule;
+                                int bc = U16(b, p); p += 2; sb.Append(" [back");
+                                for (int k = 0; k < bc; k++) { sb.Append(' ').Append(U16(b, p)); p += 2; }
+                                int ic = U16(b, p); p += 2; sb.Append(" input(").Append(ic).Append(')');
+                                for (int k = 1; k < ic; k++) { sb.Append(' ').Append(U16(b, p)); p += 2; }
+                                int lc = U16(b, p); p += 2; sb.Append(" ahead");
+                                for (int k = 0; k < lc; k++) { sb.Append(' ').Append(U16(b, p)); p += 2; }
+                                int sc = U16(b, p); p += 2; sb.Append(" recs");
+                                for (int k = 0; k < sc; k++) { sb.Append(" (").Append(U16(b, p)).Append(',').Append(U16(b, p + 2)).Append(')'); p += 4; }
+                                sb.Append(']');
+                            }
+                        }
+                    }
+                    sb.Append('\n');
+                }
+            }
             return sb.ToString();
         }
 
@@ -527,6 +616,8 @@ namespace Weva.Native
             public int Base;           // logical index of the glyph this mark sits on, or -1
             public float AnchorX, AnchorY;   // design units, relative to Base's origin
             public double Advance, XOffset, YOffset;
+            public int AttachedTo;     // cursive: the glyph this one is lifted with, or -1
+            public double AttachY;     // cursive: this glyph's lift above AttachedTo's, pixels
         }
 
         private readonly List<RunGlyph> _run = new List<RunGlyph>(64);
@@ -561,7 +652,7 @@ namespace Weva.Native
             for (int i = 0; i < count; i++)
             {
                 uint cp = _codepoints[i];
-                var g = new RunGlyph { Cluster = _offsets[i], Base = -1 };
+                var g = new RunGlyph { Cluster = _offsets[i], Base = -1, AttachedTo = -1 };
                 // Control characters have no glyph and take no space; the core
                 // has already turned meaningful ones into breaks.
                 if (HasGlyph(cp))
@@ -660,6 +751,13 @@ namespace Weva.Native
                 _run[i] = g;
             }
 
+            // 4b. Cursive attachment (`curs`): a joined script whose letters
+            // meet at anchors rather than on the baseline (Nastaliq, and the
+            // swash forms of Dubai). Before the marks, which sit on the
+            // lifted base.
+            foreach (Source src in _runSources) ApplyCursive(src, scriptTag, rtl, size);
+            ResolveAttachments();
+
             // 5. Visual order, and the marks placed against their base's
             // origin in that order (a mark's own pen position is wherever the
             // sequence put it; its offset makes up the difference).
@@ -690,6 +788,123 @@ namespace Weva.Native
                 _run[logical] = g;
             }
             return _run.Count;
+        }
+
+        // ---- cursive attachment (GPOS lookup type 3) ----------------------------
+
+        // The entry and exit anchors a cursive lookup gives a glyph, in design
+        // units; false when the glyph is not in the lookup's coverage.
+        private static bool CursiveAnchors(byte[] b, GsubLookup lookup, uint glyph, out bool hasEntry, out float entryX, out float entryY,
+                                           out bool hasExit, out float exitX, out float exitY)
+        {
+            hasEntry = hasExit = false;
+            entryX = entryY = exitX = exitY = 0;
+            foreach (int subtable in lookup.Subtables)
+            {
+                if (U16(b, subtable) != 1) continue;
+                int index = CoverageIndex(b, subtable + U16(b, subtable + 2), glyph);
+                if (index < 0 || index >= U16(b, subtable + 4)) continue;
+                int record = subtable + 6 + 4 * index;
+                int entry = U16(b, record), exit = U16(b, record + 2);
+                if (entry != 0)
+                {
+                    hasEntry = true;
+                    entryX = (short)U16(b, subtable + entry + 2);
+                    entryY = (short)U16(b, subtable + entry + 4);
+                }
+                if (exit != 0)
+                {
+                    hasExit = true;
+                    exitX = (short)U16(b, subtable + exit + 2);
+                    exitY = (short)U16(b, subtable + exit + 4);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // The `curs` lookups of one face over the run: where a glyph's exit
+        // anchor meets the next glyph's entry anchor, HarfBuzz's arithmetic.
+        // Along the run the first glyph's advance ends at its exit and the
+        // second starts at its entry (mirrored for a right-to-left run);
+        // across it the child glyph -- the second, or the first when the
+        // lookup is flagged right-to-left -- is lifted so the anchors
+        // coincide, and a child carries its parent's lift (ResolveAttachments).
+        private void ApplyCursive(Source src, string scriptTag, bool rtl, int size)
+        {
+            GsubTable gpos = GposOf(src);
+            if (!gpos.Present) return;
+            Dictionary<string, List<int>> byFeature = FeaturesFor(gpos, scriptTag);
+            if (byFeature == null || !byFeature.TryGetValue("curs", out List<int> lookups)) return;
+            double scale = src.UnitsPerEm > 0 ? size / src.UnitsPerEm : 0;
+            byte[] b = gpos.Bytes;
+            foreach (int lookupIndex in lookups)
+            {
+                if (lookupIndex < 0 || lookupIndex >= gpos.Lookups.Count) continue;
+                GsubLookup lookup = gpos.Lookups[lookupIndex];
+                if (lookup.Type != 3) continue;
+                bool childIsFirst = (lookup.Flag & 0x0001) != 0;   // LookupFlag RightToLeft
+                int previous = -1;
+                for (int i = 0; i < _run.Count; i++)
+                {
+                    RunGlyph g = _run[i];
+                    if (!ReferenceEquals(g.Src, src) || g.Id == 0 || g.Mark) continue;
+                    if (previous >= 0 &&
+                        CursiveAnchors(b, lookup, _run[previous].Index, out _, out _, out _, out bool hasExit, out float exitX, out float exitY) && hasExit &&
+                        CursiveAnchors(b, lookup, g.Index, out bool hasEntry, out float entryX, out float entryY, out _, out _, out _) && hasEntry)
+                    {
+                        RunGlyph first = _run[previous], second = g;
+                        double ex = exitX * scale, ey = exitY * scale, nx = entryX * scale, ny = entryY * scale;
+                        if (!rtl)
+                        {
+                            first.Advance = ex + first.XOffset;
+                            double d = nx + second.XOffset;
+                            second.Advance -= d;
+                            second.XOffset -= d;
+                        }
+                        else
+                        {
+                            double d = ex + first.XOffset;
+                            first.Advance -= d;
+                            first.XOffset -= d;
+                            second.Advance = nx + second.XOffset;
+                        }
+                        if (childIsFirst)
+                        {
+                            first.AttachedTo = i;
+                            first.AttachY = ny - ey;
+                        }
+                        else
+                        {
+                            second.AttachedTo = previous;
+                            second.AttachY = ey - ny;
+                        }
+                        _run[previous] = first;
+                        _run[i] = second;
+                    }
+                    previous = i;
+                }
+            }
+        }
+
+        // A cursively attached glyph's lift is its own plus its parent's, up
+        // the chain (which can run either way through the run).
+        private void ResolveAttachments()
+        {
+            for (int i = 0; i < _run.Count; i++)
+            {
+                if (_run[i].AttachedTo < 0) continue;
+                double lift = 0;
+                int at = i, guard = 0;
+                while (at >= 0 && at < _run.Count && _run[at].AttachedTo >= 0 && guard++ < 64)
+                {
+                    lift += _run[at].AttachY;
+                    at = _run[at].AttachedTo;
+                }
+                RunGlyph g = _run[i];
+                g.YOffset += lift;
+                _run[i] = g;
+            }
         }
 
         // ---- applying lookups ----------------------------------------------------
@@ -830,73 +1045,220 @@ namespace Weva.Native
             }
         }
 
-        // Contextual (5) and chaining contextual (6) substitution in the
-        // coverage-based format (3): a sequence of coverage tables for the
-        // input, and for a chain the glyphs before and after it, then the
-        // lookups to apply at positions within the input.
+        // A glyph's class in a ClassDef table (0 when unlisted).
+        private static int ClassOf(byte[] b, int classDef, uint glyph)
+        {
+            if (classDef <= 0) return 0;
+            int format = U16(b, classDef);
+            if (format == 1)
+            {
+                uint start = U16(b, classDef + 2);
+                int count = U16(b, classDef + 4);
+                if (glyph < start || glyph >= start + count) return 0;
+                return U16(b, classDef + 6 + 2 * (int)(glyph - start));
+            }
+            if (format == 2)
+            {
+                int count = U16(b, classDef + 2);
+                for (int i = 0; i < count; i++)
+                {
+                    int range = classDef + 4 + 6 * i;
+                    uint start = U16(b, range), end = U16(b, range + 2);
+                    if (glyph < start) return 0;
+                    if (glyph <= end) return U16(b, range + 4);
+                }
+            }
+            return 0;
+        }
+
+        // How a contextual rule names the glyphs it wants: a coverage table
+        // per position (format 3), a glyph id (format 1), or a class in a
+        // ClassDef (format 2).
+        private enum RuleMode { Coverage, Glyph, Class }
+
+        // Whether the glyphs at `positions` satisfy `count` rule elements
+        // read from `elements` (u16 each: a coverage offset relative to
+        // `subtable`, a glyph id, or a class value under `classDef`).
+        private bool RuleMatches(byte[] b, int subtable, RuleMode mode, int classDef, int elements, int count, List<int> positions)
+        {
+            for (int k = 0; k < count; k++)
+            {
+                uint want = U16(b, elements + 2 * k);
+                uint glyph = _run[positions[k]].Index;
+                bool ok = mode == RuleMode.Coverage ? CoverageIndex(b, subtable + (int)want, glyph) >= 0
+                        : mode == RuleMode.Glyph ? glyph == want
+                        : ClassOf(b, classDef, glyph) == (int)want;
+                if (!ok) return false;
+            }
+            return true;
+        }
+
+        // One rule of a contextual (5) or chaining contextual (6) lookup,
+        // matched at `at` and applied: `backtrackCount`/`inputCount`/
+        // `lookaheadCount` elements at the three `elements` offsets (the
+        // input's first element is the glyph at `at` itself, already matched
+        // by the coverage, so its elements start at the second glyph), then
+        // the nested lookups at positions within the input.
+        private bool ApplyRuleAt(GsubTable table, Source src, GsubLookup lookup, int subtable, RuleMode mode, int at, int depth,
+                                 int backtrackCount, int backtrackElements, int backtrackClassDef,
+                                 int inputCount, int inputElements, int inputClassDef,
+                                 int lookaheadCount, int lookaheadElements, int lookaheadClassDef,
+                                 int substCount, int records)
+        {
+            byte[] b = table.Bytes;
+            if (inputCount == 0) return false;
+            var inputs = new List<int>(inputCount);
+            if (!Sequence(src, lookup.Flag, at, inputCount, false, inputs)) return false;
+            // The first input glyph is `at` for every format: the coverage
+            // (format 3) or the rule set's coverage (formats 1 and 2) already
+            // matched it, and formats 1 and 2 list the rest only.
+            if (mode == RuleMode.Coverage)
+            {
+                if (!RuleMatches(b, subtable, mode, inputClassDef, inputElements, inputCount, inputs)) return false;
+            }
+            else
+            {
+                var rest = new List<int>(inputCount);
+                for (int k = 1; k < inputCount; k++) rest.Add(inputs[k]);
+                if (!RuleMatches(b, subtable, mode, inputClassDef, inputElements, inputCount - 1, rest)) return false;
+            }
+            if (backtrackCount > 0)
+            {
+                var backs = new List<int>(backtrackCount);
+                if (!Sequence(src, lookup.Flag, at - 1, backtrackCount, true, backs)) return false;
+                if (!RuleMatches(b, subtable, mode, backtrackClassDef, backtrackElements, backtrackCount, backs)) return false;
+            }
+            if (lookaheadCount > 0)
+            {
+                var aheads = new List<int>(lookaheadCount);
+                if (!Sequence(src, lookup.Flag, inputs[inputCount - 1] + 1, lookaheadCount, false, aheads)) return false;
+                if (!RuleMatches(b, subtable, mode, lookaheadClassDef, lookaheadElements, lookaheadCount, aheads)) return false;
+            }
+
+            // The nested lookups, in the record order; one that shortens
+            // the run (a ligature) shifts the input positions after it.
+            bool any = false;
+            for (int r = 0; r < substCount; r++)
+            {
+                int sequenceIndex = U16(b, records + 4 * r);
+                int nested = U16(b, records + 4 * r + 2);
+                if (sequenceIndex >= inputs.Count) continue;
+                int position = inputs[sequenceIndex];
+                int before = _run.Count;
+                if (ApplyLookupAt(table, src, nested, position, depth + 1)) any = true;
+                int change = _run.Count - before;
+                if (change != 0) for (int k = 0; k < inputs.Count; k++) if (inputs[k] > position) inputs[k] += change;
+            }
+            return any;
+        }
+
+        // Contextual (5) and chaining contextual (6) substitution in all
+        // three formats: rules by glyph sequence (1), by glyph class (2),
+        // by a coverage table per position (3). The first matching rule of
+        // the first matching subtable applies.
         private bool ApplyContextualAt(GsubTable table, Source src, GsubLookup lookup, int at, int depth)
         {
             byte[] b = table.Bytes;
+            bool chain = lookup.Type == 6;
+            uint glyph = _run[at].Index;
             foreach (int subtable in lookup.Subtables)
             {
-                if (U16(b, subtable) != 3) continue;
-                int p = subtable + 2;
-                int backtrackCount = 0, backtrack = 0;
-                if (lookup.Type == 6)
+                int format = U16(b, subtable);
+                if (format == 3)
                 {
-                    backtrackCount = U16(b, p);
-                    backtrack = p + 2;
-                    p += 2 + 2 * backtrackCount;
+                    int p = subtable + 2;
+                    int backtrackCount = 0, backtrack = 0;
+                    if (chain)
+                    {
+                        backtrackCount = U16(b, p);
+                        backtrack = p + 2;
+                        p += 2 + 2 * backtrackCount;
+                    }
+                    int inputCount = U16(b, p);
+                    int input = p + 2;
+                    p += 2 + 2 * inputCount;
+                    int lookaheadCount = 0, lookahead = 0;
+                    if (chain)
+                    {
+                        lookaheadCount = U16(b, p);
+                        lookahead = p + 2;
+                        p += 2 + 2 * lookaheadCount;
+                    }
+                    int substCount = U16(b, p);
+                    if (ApplyRuleAt(table, src, lookup, subtable, RuleMode.Coverage, at, depth,
+                                    backtrackCount, backtrack, 0, inputCount, input, 0, lookaheadCount, lookahead, 0, substCount, p + 2))
+                        return true;
+                    continue;
                 }
-                int inputCount = U16(b, p);
-                int input = p + 2;
-                p += 2 + 2 * inputCount;
-                int lookaheadCount = 0, lookahead = 0;
-                if (lookup.Type == 6)
+                if (format != 1 && format != 2) continue;
+                // Formats 1 and 2: a coverage picks the rule set (by the
+                // glyph itself, or by its class under the input ClassDef),
+                // and each rule lists the rest of the sequence.
+                int coverageIndex = CoverageIndex(b, subtable + U16(b, subtable + 2), glyph);
+                if (coverageIndex < 0) continue;
+                RuleMode mode = format == 1 ? RuleMode.Glyph : RuleMode.Class;
+                int backtrackClassDef = 0, inputClassDef = 0, lookaheadClassDef = 0;
+                int setCountAt, setsAt;
+                if (format == 1)
                 {
-                    lookaheadCount = U16(b, p);
-                    lookahead = p + 2;
-                    p += 2 + 2 * lookaheadCount;
+                    setCountAt = subtable + 4;
                 }
-                int substCount = U16(b, p);
-                int records = p + 2;
-                if (inputCount == 0) continue;
-
-                var inputs = new List<int>(inputCount);
-                if (!Sequence(src, lookup.Flag, at, inputCount, false, inputs)) continue;
-                bool match = true;
-                for (int k = 0; k < inputCount && match; k++) match = CoverageIndex(b, subtable + U16(b, input + 2 * k), _run[inputs[k]].Index) >= 0;
-                if (!match) continue;
-                if (backtrackCount > 0)
+                else if (chain)
                 {
-                    var backs = new List<int>(backtrackCount);
-                    if (!Sequence(src, lookup.Flag, at - 1, backtrackCount, true, backs)) continue;
-                    for (int k = 0; k < backtrackCount && match; k++) match = CoverageIndex(b, subtable + U16(b, backtrack + 2 * k), _run[backs[k]].Index) >= 0;
-                    if (!match) continue;
+                    backtrackClassDef = subtable + U16(b, subtable + 4);
+                    inputClassDef = subtable + U16(b, subtable + 6);
+                    lookaheadClassDef = subtable + U16(b, subtable + 8);
+                    setCountAt = subtable + 10;
                 }
-                if (lookaheadCount > 0)
+                else
                 {
-                    var aheads = new List<int>(lookaheadCount);
-                    if (!Sequence(src, lookup.Flag, inputs[inputCount - 1] + 1, lookaheadCount, false, aheads)) continue;
-                    for (int k = 0; k < lookaheadCount && match; k++) match = CoverageIndex(b, subtable + U16(b, lookahead + 2 * k), _run[aheads[k]].Index) >= 0;
-                    if (!match) continue;
+                    inputClassDef = subtable + U16(b, subtable + 4);
+                    setCountAt = subtable + 6;
                 }
-
-                // The nested lookups, in the record order; one that shortens
-                // the run (a ligature) shifts the input positions after it.
-                bool any = false;
-                for (int r = 0; r < substCount; r++)
+                setsAt = setCountAt + 2;
+                int setCount = U16(b, setCountAt);
+                int setIndex = format == 1 ? coverageIndex : ClassOf(b, inputClassDef, glyph);
+                if (setIndex < 0 || setIndex >= setCount) continue;
+                int setOffset = U16(b, setsAt + 2 * setIndex);
+                if (setOffset == 0) continue;
+                int set = subtable + setOffset;
+                int ruleCount = U16(b, set);
+                for (int r = 0; r < ruleCount; r++)
                 {
-                    int sequenceIndex = U16(b, records + 4 * r);
-                    int nested = U16(b, records + 4 * r + 2);
-                    if (sequenceIndex >= inputs.Count) continue;
-                    int position = inputs[sequenceIndex];
-                    int before = _run.Count;
-                    if (ApplyLookupAt(table, src, nested, position, depth + 1)) any = true;
-                    int change = _run.Count - before;
-                    if (change != 0) for (int k = 0; k < inputs.Count; k++) if (inputs[k] > position) inputs[k] += change;
+                    int rule = set + U16(b, set + 2 + 2 * r);
+                    int p = rule;
+                    int backtrackCount = 0, backtrack = 0;
+                    if (chain)
+                    {
+                        backtrackCount = U16(b, p);
+                        backtrack = p + 2;
+                        p += 2 + 2 * backtrackCount;
+                    }
+                    int inputCount = U16(b, p);
+                    p += 2;
+                    int substCount = 0, input, lookaheadCount = 0, lookahead = 0;
+                    if (chain)
+                    {
+                        input = p;
+                        p += 2 * Math.Max(0, inputCount - 1);
+                        lookaheadCount = U16(b, p);
+                        lookahead = p + 2;
+                        p += 2 + 2 * lookaheadCount;
+                        substCount = U16(b, p);
+                        p += 2;
+                    }
+                    else
+                    {
+                        substCount = U16(b, p);
+                        p += 2;
+                        input = p;
+                        p += 2 * Math.Max(0, inputCount - 1);
+                    }
+                    if (ApplyRuleAt(table, src, lookup, subtable, mode, at, depth,
+                                    backtrackCount, backtrack, backtrackClassDef, inputCount, input, inputClassDef,
+                                    lookaheadCount, lookahead, lookaheadClassDef, substCount, p))
+                        return true;
                 }
-                return any;
             }
             return false;
         }

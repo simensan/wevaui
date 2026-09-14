@@ -395,6 +395,59 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(width, Is.GreaterThan(0));
         }
 
+        // An installed font as the face itself (the UI face carries combining
+        // marks and would answer for them first), or inconclusive where the
+        // machine lacks it.
+        private ulong FaceWithInstalled(string name)
+        {
+            ulong installed = _backend.AdoptInstalled(name);
+            Assume.That(installed, Is.Not.EqualTo(0), name + " is installed");
+            return installed;
+        }
+
+        // A class-based chaining contextual rule (GSUB type 6, format 2):
+        // Bahnschrift's `ccmp` swaps a combining mark for a stacking form
+        // when another mark follows it. The mark alone keeps its glyph.
+        [Test]
+        public void Shape_ClassBasedContextualRuleApplies()
+        {
+            ulong face = FaceWithInstalled("Bahnschrift");
+            const string oneMark = "ä", twoMarks = "ä́";   // a + diaeresis (+ acute)
+            Assume.That(UnityFontBackend.IndexOf(_backend.GlyphFor(face, 0x0308)), Is.Not.EqualTo(0), "Bahnschrift has the combining diaeresis");
+            List<weva_shaped_glyph> one = _backend.ShapePositionedText(face, oneMark, 16, out int total1);
+            List<weva_shaped_glyph> two = _backend.ShapePositionedText(face, twoMarks, 16, out int total2);
+            Assert.That(total1, Is.EqualTo(2));
+            Assert.That(total2, Is.EqualTo(3));
+            Assert.That(one[0].glyph, Is.EqualTo(two[0].glyph), "the base is the same");
+            Assert.That(two[1].glyph, Is.Not.EqualTo(one[1].glyph), "the diaeresis before another mark is the rule's stacking form");
+            Assert.That(two[1].cluster, Is.EqualTo(1));
+            Assert.That(two[2].cluster, Is.EqualTo(3));
+        }
+
+        // Cursive attachment (GPOS type 3, `curs`): Dubai joins a letter to a
+        // following final yeh through swash forms whose exit and entry anchors
+        // meet (exit (0, 23) on the beh, entry (483, 134) on the yeh, in a
+        // 1000-unit em). The lookup is flagged right-to-left, so the beh is
+        // the child: it rises by 134 - 23 units, and the yeh's advance becomes
+        // its entry x. The plain "بب" pair has no anchors and stays put.
+        [Test]
+        public void Shape_CursiveAttachmentLiftsTheAttachedGlyph()
+        {
+            ulong face = FaceWithInstalled("Dubai");
+            Assume.That(UnityFontBackend.IndexOf(_backend.GlyphFor(face, 0x0628)), Is.Not.EqualTo(0), "Dubai has Arabic");
+            List<weva_shaped_glyph> behYeh = _backend.ShapePositionedText(face, "بي", 16, out int total);
+            Assert.That(total, Is.EqualTo(2));
+            weva_shaped_glyph yeh = behYeh[0], beh = behYeh[1];   // visual order: the yeh (logically last) first
+            Assert.That(beh.cluster, Is.EqualTo(0));
+            List<weva_shaped_glyph> behBeh = _backend.ShapePositionedText(face, "بب", 16, out _);
+            Assert.That(beh.glyph, Is.Not.EqualTo(behBeh[1].glyph), "before a yeh the beh takes its swash form");
+            Debug.Log($"Dubai cursive: beh glyph={UnityFontBackend.IndexOf(beh.glyph)} y_offset={beh.y_offset:0.##} x_offset={beh.x_offset:0.##} advance={beh.x_advance:0.##}; yeh glyph={UnityFontBackend.IndexOf(yeh.glyph)} y_offset={yeh.y_offset:0.##} advance={yeh.x_advance:0.##}\n" + _backend.DescribeLayout(face, 0x0628, "calt") + "\n" + _backend.DescribeContextual(face, 0x0628, "calt", 160, 161, 324, 325));
+            Assert.That(beh.y_offset, Is.EqualTo((134 - 23) * 16.0 / 1000).Within(0.05), "the beh is lifted to the yeh's entry anchor");
+            Assert.That(yeh.y_offset, Is.EqualTo(0).Within(0.001), "the yeh, the parent, stays on the baseline");
+            Assert.That(yeh.x_advance, Is.EqualTo(483 * 16.0 / 1000).Within(0.05), "the yeh's advance ends at its entry anchor");
+            foreach (weva_shaped_glyph g in behBeh) Assert.That(g.y_offset, Is.EqualTo(0).Within(0.001), "no anchors, no lift");
+        }
+
         [Test]
         public void Shape_CombiningMarkSitsOnItsBase()
         {

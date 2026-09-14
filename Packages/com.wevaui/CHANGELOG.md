@@ -43,11 +43,11 @@ checked against Chrome), which the Godot addon also runs on.
   scripts (ABI minor 40): a right-to-left run comes back in visual order
   with mirrored brackets, Arabic letters take their `isol`/`init`/`medi`/
   `fina` forms and ligatures (`ccmp`, `rlig`, `calt`, `liga`; single,
-  multiple, ligature and coverage-based chaining lookups), combining marks
+  multiple, ligature, contextual and chaining contextual lookups in every
+  format), a cursive script joins at its `curs` anchors, combining marks
   sit on their base and stack. Before, every run was one glyph per code
-  point in logical order. Not run: glyph- and class-based contextual
-  lookups, Indic reordering, cursive attachment; a face given as a `Font`
-  asset gets no substitutions (no bytes to read).
+  point in logical order. Not done: Indic syllable reordering; a face
+  given as a `Font` asset gets no substitutions (no bytes to read).
 - A family the page names resolves to the installed font of that name:
   `font-family: "Segoe UI"` draws with Segoe UI where the machine has it,
   with its bold and italic files, as in a browser (the core lists the

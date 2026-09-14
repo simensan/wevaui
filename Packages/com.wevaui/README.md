@@ -159,11 +159,11 @@ What the core does not do yet, with where it shows:
 - **On the Unity host:** the shaper is the package's own, over the font's
   OpenType tables — right-to-left runs come back in visual order with
   mirrored brackets, Arabic joins (`isol`/`init`/`medi`/`fina`, `rlig`,
-  `calt`, `liga`, `ccmp`, single, multiple, ligature and coverage-based
-  chaining lookups) and marks sit on their base — but contextual lookups in
-  their glyph- and class-based formats, Indic reordering and cursive
-  attachment are not run, a face given as a `Font` asset gets no
-  substitutions (its bytes are not readable; a file or `@font-face` is), and
+  `calt`, `liga`, `ccmp`; single, multiple, ligature and contextual lookups
+  in every format), cursive scripts join at their anchors (`curs`) and marks
+  sit on their base — but Indic syllable reordering is not done, a face
+  given as a `Font` asset gets no substitutions (its bytes are not
+  readable; a file or `@font-face` is), and
   colour emoji are not rasterised (monochrome symbols are). The native plugin
   ships for Windows x64; other platforms follow their CI jobs.
 

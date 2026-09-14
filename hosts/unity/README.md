@@ -83,9 +83,10 @@ What FontEngine gives and does not give:
 - There is no public shaper, so the backend carries one
   (`UnityFontBackend.Shaping.cs`): the core answers what Unicode says about
   a run (direction, mirroring, joining types, scripts -- ABI minor 40), the
-  font's GSUB is read from its own bytes (single, multiple, ligature and
-  coverage-based chaining lookups; extensions resolved), FontEngine answers
-  the positioning. Pair kerning is read once per adjacent pair through
+  font's GSUB is read from its own bytes (single, multiple, ligature,
+  contextual and chaining contextual lookups in every format; extensions
+  resolved) and so are its GPOS cursive attachments; FontEngine answers the
+  rest of the positioning. Pair kerning is read once per adjacent pair through
   `GetPairAdjustmentRecords` with a two-glyph list (the call TextMeshPro fills
   a font asset with; values are design units, and a pair covered by more than
   one subtable is listed once per subtable, the first being the one OpenType
