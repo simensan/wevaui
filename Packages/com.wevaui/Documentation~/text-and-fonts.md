@@ -52,9 +52,9 @@ matra moves before its consonant and the reph to the syllable's end, then
 the presentation features run. Not done: Sinhala, Khmer, Myanmar and
 Tibetan, reverse chaining and alternate substitutions.
 
-**2. `@font-face` in your stylesheet.** `url()` resolves relative to
-`BasePath` (the document asset's folder in the editor); `local("Name")` is a
-font installed on the machine:
+**2. `@font-face` in your stylesheet.** `url()` resolves next to a linked or
+imported stylesheet; inline/inspector CSS uses `BasePath` (the document asset's
+folder in the editor). `local("Name")` is a font installed on the machine:
 
 ```css
 @font-face { font-family: "MyFont"; src: url("Fonts/MyFont.ttf"); }
@@ -69,6 +69,12 @@ and synthesises nothing). A `local()` that is not installed falls through to
 the `url()` after it. Replacing the stylesheet releases the families it no
 longer declares.
 
+Identical font bytes share one private buffer within the current Unity script
+domain. This prevents repeated document loads from creating duplicate native
+kerning caches. FontEngine's caches and one buffer per unique supplied font
+remain alive after a document is disposed; this is not a per-document memory
+release guarantee.
+
 **3. From code.** `doc.RegisterFontFamily("MyFont", font)` names a Unity
 `Font` for CSS — for a settings screen or a mod loader; it survives a reload
 and a disable. A family a game registered is not taken over by a later
@@ -76,13 +82,11 @@ and a disable. A family a game registered is not taken over by a later
 
 ## Shaping and scripts
 
-The host answers the core's font callbacks with Unity's `FontEngine`: one
-glyph per code point, with kerning. That covers Latin, Cyrillic, Greek, CJK
-and symbols. It does **not** produce Arabic contextual forms or reorder
-glyphs inside a word — the core's bidi (ICU) orders the runs of a line, the
-host draws each run's code points as they are. Colour emoji are not
-rasterised on the Unity host yet; symbols and monochrome emoji render from
-the bundled **Noto Sans Symbols 2** fallback as CSS-colourable outlines.
+File and byte-backed fonts use the OpenType shaping described above, including
+Arabic contextual forms and the listed Indic scripts. A Unity `Font` asset
+currently supplies glyphs and kerning without those substitutions because its
+font bytes are unavailable to the shaper. Colour emoji are not rasterised on
+the Unity host yet; available symbol outlines use the CSS text colour.
 
 ## Default-face policy
 

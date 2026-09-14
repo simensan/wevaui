@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using AOT;
 using UnityEngine;
@@ -45,6 +46,28 @@ namespace Weva.Native
         // within that face: slot 0 is the primary, later slots its fallbacks.
         private const int SlotShift = 24;
         private const uint IndexMask = (1u << SlotShift) - 1;
+
+        // FontEngine caches byte-backed faces by buffer identity. Reloading
+        // identical font data into fresh arrays otherwise expands another set
+        // of native kerning tables for every document. Keep one private buffer
+        // per content for the Unity domain's lifetime, including after backend
+        // disposal: evicting it would give the next load a fresh native identity.
+        private static readonly Dictionary<string, byte[]> s_fontBytes = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+
+        private static byte[] SharedFontBytes(byte[] data)
+        {
+            string key;
+            using (var hash = SHA256.Create()) key = Convert.ToBase64String(hash.ComputeHash(data));
+            lock (s_fontBytes)
+            {
+                if (s_fontBytes.TryGetValue(key, out byte[] shared)) return shared;
+                // A caller retaining its input must not be able to corrupt a
+                // buffer now shared by unrelated documents or their shapers.
+                shared = (byte[])data.Clone();
+                s_fontBytes.Add(key, shared);
+                return shared;
+            }
+        }
 
         /// <summary>One loaded font: an asset, a file, or bytes, plus its design metrics.</summary>
         private sealed class Source
@@ -107,7 +130,7 @@ namespace Weva.Native
         public ulong Adopt(byte[] data, int index = 0, string name = null)
         {
             if (data == null || data.Length == 0) throw new ArgumentException("font data is empty", nameof(data));
-            return Register(new Source { Bytes = data, Index = index, Name = name ?? "bytes" });
+            return Register(new Source { Bytes = SharedFontBytes(data), Index = index, Name = name ?? "bytes" });
         }
 
         /// <summary>Adopts a font file by path.</summary>

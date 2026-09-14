@@ -699,20 +699,25 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(_backend.FaceLoads, Is.GreaterThan(loads), "after another FontEngine user, the face is loaded again");
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void RepeatedBackendLifetime_KeepsNativeMemoryBounded(bool installed)
+        [TestCase("asset")]
+        [TestCase("installed")]
+        [TestCase("bytes")]
+        [TestCase("shared-bytes")]
+        public void RepeatedBackendLifetime_KeepsNativeMemoryBounded(string source)
         {
-            if (installed) Assume.That(UnityFontBackend.SystemFallbackFonts, Is.Not.Empty);
+            if (source == "installed") Assume.That(UnityFontBackend.SystemFallbackFonts, Is.Not.Empty);
+            byte[] sharedBytes = source == "shared-bytes" ? File.ReadAllBytes(FontDir + "Weva-Default.ttf") : null;
             long before = 0;
             // Warm native font/kerning caches once before measuring new backend
-            // lifetimes. The installed face must retain its file identity even
-            // after the shaper has read its bytes for OpenType lookups.
+            // lifetimes. File and byte sources must retain native identity even
+            // after the shaper has read their OpenType tables.
             for (int i = -1; i < 12; i++)
             {
                 using (var backend = new UnityFontBackend())
                 {
-                    ulong face = installed ? backend.AdoptInstalled(UnityFontBackend.SystemFallbackFonts[0]) : backend.Adopt(_regular);
+                    ulong face = source == "installed" ? backend.AdoptInstalled(UnityFontBackend.SystemFallbackFonts[0]) :
+                        source == "bytes" ? backend.Adopt(File.ReadAllBytes(FontDir + "Weva-Default.ttf")) :
+                        source == "shared-bytes" ? backend.Adopt(sharedBytes) : backend.Adopt(_regular);
                     Assume.That(face, Is.Not.Zero);
                     Assert.That(backend.TryFaceMetrics(face, 16, out _, out _, out _));
                     backend.ShapePositionedText(face, "Hello Weva", 16, out _);
@@ -723,8 +728,22 @@ namespace Weva.Tests.EditorTests.Native
                 if (i == -1) before = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong();
             }
             long retained = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() - before;
-            TestContext.WriteLine("12 backend lifetimes retained " + retained + " bytes (installed=" + installed + ")");
+            TestContext.WriteLine("12 backend lifetimes retained " + retained + " bytes (source=" + source + ")");
             Assert.That(retained, Is.LessThan(16 * 1024 * 1024));
+        }
+
+        [Test]
+        public void ByteFace_IsIndependentOfTheCallersBuffer()
+        {
+            byte[] bytes = File.ReadAllBytes(FontDir + "Weva-Default.ttf");
+            using (var backend = new UnityFontBackend())
+            {
+                ulong face = backend.Adopt(bytes);
+                Array.Clear(bytes, 0, bytes.Length);
+                Assert.That(backend.TryFaceMetrics(face, 16, out double ascent, out _, out _), Is.True, backend.LastError);
+                Assert.That(ascent, Is.GreaterThan(0));
+                Assert.That(backend.GlyphFor(face, 'A'), Is.Not.Zero);
+            }
         }
 
         [Test]
