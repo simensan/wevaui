@@ -48,6 +48,12 @@ checked against Chrome), which the Godot addon also runs on.
   point in logical order. Not run: glyph- and class-based contextual
   lookups, Indic reordering, cursive attachment; a face given as a `Font`
   asset gets no substitutions (no bytes to read).
+- A family the page names resolves to the installed font of that name:
+  `font-family: "Segoe UI"` draws with Segoe UI where the machine has it,
+  with its bold and italic files, as in a browser (the core lists the
+  named families, ABI minor 41; the host registers the installed ones,
+  never over a `@font-face` or a game-registered family). Under
+  `SystemFontFallback`.
 - `SystemFontFallback` (on by default): after the `Fallbacks`, the
   platform's UI and symbol fonts (Segoe UI and Segoe UI Symbol; Arial and
   Apple Symbols; DejaVu Sans) answer for a script or glyph none of the faces

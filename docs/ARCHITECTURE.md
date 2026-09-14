@@ -993,3 +993,13 @@ at a time and expects its glyphs back in visual order; TextServer decides
 these itself, the Unity host's FontEngine asks here, so both hosts and the
 core's bidi resolution agree. Tested in `test_c_abi_text_props.cpp`
 (2026-09-14).
+
+ABI minor 41 adds `weva_document_font_family_names(doc, buffer, capacity)`:
+every family name the author styles ask for (`font-family` and expanded
+`font` declarations in the stylesheets and in inline `style` attributes),
+first-seen order, quotes stripped, generic families and CSS-wide keywords
+left out. A browser draws `font-family: "Segoe UI"` with the installed Segoe
+UI; the Unity host asks here after each stylesheet and registers the
+installed fonts it finds (`UnityFontBackend.SyncInstalledFamilies`), leaving
+@font-face and game-registered families alone. Tested in
+`test_c_abi_font_families.cpp` (2026-09-14).

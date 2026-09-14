@@ -245,6 +245,7 @@ namespace Weva.Tests.EditorTests.Native
                     doc.LoadHtml(File.ReadAllText(html));
                     doc.SetCss(File.Exists(css) ? File.ReadAllText(css) : "");
                     int families = fonts.SyncCssFontFaces(doc);
+                    fonts.SyncInstalledFamilies(doc);
                     doc.Update(0);
                     Texture2D image = renderer.RenderToTexture(doc, 1280, 720, Color.white);
                     try

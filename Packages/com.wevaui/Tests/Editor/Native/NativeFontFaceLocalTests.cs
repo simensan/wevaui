@@ -35,6 +35,48 @@ namespace Weva.Tests.EditorTests.Native
             }
         }
 
+        // ABI minor 41: a family a page names in `font-family`, with no
+        // @font-face behind it, resolves to the installed font of that name,
+        // as in a browser -- unless the game registered the name itself.
+        [Test]
+        public void PageFamily_ResolvesToAnInstalledFont()
+        {
+            string[] installed;
+            try { installed = Font.GetOSInstalledFontNames(); }
+            catch (Exception) { Assert.Inconclusive("no OS font enumeration here"); return; }
+            Assume.That(installed, Is.Not.Null.And.Not.Empty);
+            string name = Array.IndexOf(installed, "Arial") >= 0 ? "Arial" : installed[0];
+            Font font = Resources.Load<Font>("Fonts/Weva-Default");
+            Assume.That(font, Is.Not.Null);
+            using (var doc = new NativeDocument(400, 100))
+            using (var fonts = new UnityFontBackend())
+            {
+                fonts.Install(doc, fonts.Adopt(font));
+                doc.LoadHtml("<body><span id=t>Heavy words</span></body>");
+                doc.SetCss("body{margin:0}#t{font-family:\"" + name + "\", sans-serif}");
+                Assert.That(doc.FontFamilyNames(), Is.EqualTo(new[] { name }), "the core lists the named family, not the generic");
+                doc.Update(0);
+                Assert.That(doc.TryGetBounds(doc.Query("#t"), out NativeBounds before));
+
+                Assert.That(fonts.SyncInstalledFamilies(doc), Is.EqualTo(1), "the page's family is an installed font: " + name + " (" + fonts.LastError + ")");
+                doc.Update(0);
+                Assert.That(doc.TryGetBounds(doc.Query("#t"), out NativeBounds after));
+                Assert.That(Math.Abs(after.Width - before.Width), Is.GreaterThan(0.01), "the text is measured with the installed face now, not the UI face");
+                Assert.That(fonts.SyncInstalledFamilies(doc), Is.EqualTo(1), "a second sync keeps it");
+
+                doc.SetCss("body{margin:0}#t{font-family:sans-serif}");
+                Assert.That(fonts.SyncInstalledFamilies(doc), Is.EqualTo(0), "no named family: the installed one is released");
+                Assert.That(fonts.InstalledFamilyCount, Is.EqualTo(0));
+
+                fonts.RegisterFontFamily(doc, name, fonts.Adopt(font));
+                doc.SetCss("body{margin:0}#t{font-family:\"" + name + "\"}");
+                Assert.That(fonts.SyncInstalledFamilies(doc), Is.EqualTo(0), "the game's registration of that name wins");
+
+                doc.SetCss("body{margin:0}#t{font-family:\"Weva No Such Font 9f3\"}");
+                Assert.That(fonts.SyncInstalledFamilies(doc), Is.EqualTo(0), "a name nobody has is simply not served");
+            }
+        }
+
         [Test]
         public void Local_LoadsAnInstalledFontByName()
         {

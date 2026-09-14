@@ -460,6 +460,28 @@ namespace Weva.Native
         /// entries separated by '|'). The host loads and registers them; the core
         /// never loads fonts.
         /// </summary>
+        /// <summary>
+        /// Every family name the author styles ask for (stylesheets and inline
+        /// styles), first-seen order, quotes stripped, generic families left
+        /// out (ABI minor 41). What a host resolves to installed fonts.
+        /// </summary>
+        public List<string> FontFamilyNames()
+        {
+            var result = new List<string>();
+            nuint needed = WevaNative.weva_document_font_family_names(Handle, null, 0);
+            if (needed == 0) return result;
+            byte[] buffer = new byte[(int)needed + 1];
+            fixed (byte* p = buffer)
+            {
+                WevaNative.weva_document_font_family_names(Handle, p, (nuint)buffer.Length);
+            }
+            foreach (string line in Encoding.UTF8.GetString(buffer, 0, (int)needed).Split('\n'))
+            {
+                if (line.Length > 0) result.Add(line);
+            }
+            return result;
+        }
+
         public List<(string Family, string Source, string Weight, string Style, string Sources)> FontFaces()
         {
             var result = new List<(string, string, string, string, string)>();

@@ -9145,4 +9145,29 @@ size_t weva_element_computed_style_all(weva_document_t doc, weva_element_t eleme
     return write_text_out(text, buffer, capacity);
 }
 
+size_t weva_document_font_family_names(weva_document_t doc, char* buffer, size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc) return 0;
+    // The stylesheets' names first, then what inline styles add: an element
+    // with `style="font-family: Papyrus"` names a font as much as a rule.
+    std::vector<std::string> names = doc->styles.engine.font_family_names();
+    for (weva_element_t i : doc->document_order()) {
+        const Element& e = *doc->elements[i];
+        if (!e.has_attribute("style")) continue;
+        for (const std::string& decl : split_declarations(e.get_attribute("style"))) {
+            const std::string_view trimmed = trim_decl(decl);
+            if (trimmed.empty() || declaration_property(trimmed) != "font-family") continue;
+            const size_t colon = trimmed.find(':');
+            if (colon == std::string_view::npos) continue;
+            append_font_family_names(trimmed.substr(colon + 1), &names);
+        }
+    }
+    std::string text;
+    for (const std::string& name : names) {
+        if (!text.empty()) text += '\n';
+        text += name;
+    }
+    return write_text_out(text, buffer, capacity);
+}
+
 } // extern "C"

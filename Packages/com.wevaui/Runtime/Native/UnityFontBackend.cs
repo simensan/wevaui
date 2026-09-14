@@ -315,6 +315,104 @@ namespace Weva.Native
             return served;
         }
 
+        // ---- installed families a page names --------------------------------
+
+        private readonly Dictionary<string, (string Family, ulong Face)> _installedFamilies = new Dictionary<string, (string, ulong)>();
+        private readonly HashSet<string> _missingInstalled = new HashSet<string>();
+
+        /// <summary>
+        /// Registers, for every family the page's styles name that no
+        /// @font-face rule or game registration claims, the installed font of
+        /// that name, with its bold and italic files where the OS has them:
+        /// what a browser does with <c>font-family: "Segoe UI"</c>. A family
+        /// the page stopped naming is released. Returns how many families are
+        /// served this way. Call after <see cref="SyncCssFontFaces"/>.
+        /// </summary>
+        public int SyncInstalledFamilies(NativeDocument doc)
+        {
+            if (doc == null) throw new ArgumentNullException(nameof(doc));
+            var wanted = new Dictionary<string, string>();
+            foreach (string name in doc.FontFamilyNames())
+            {
+                string key = name.ToLowerInvariant();
+                if (key.Length == 0 || wanted.ContainsKey(key) || _cssFamilies.ContainsKey(key) || _hostFamilies.Contains(key)) continue;
+                wanted[key] = name;
+            }
+            if (_installedFamilies.Count > 0)
+            {
+                var stale = new List<string>();
+                foreach (KeyValuePair<string, (string Family, ulong Face)> kv in _installedFamilies)
+                    if (!wanted.ContainsKey(kv.Key)) stale.Add(kv.Key);
+                foreach (string key in stale)
+                {
+                    doc.RegisterFontFamily(_installedFamilies[key].Family, 0);
+                    _installedFamilies.Remove(key);
+                }
+            }
+            int served = 0;
+            foreach (KeyValuePair<string, string> kv in wanted)
+            {
+                if (_installedFamilies.ContainsKey(kv.Key))
+                {
+                    served++;
+                    continue;
+                }
+                // Asked of the OS once per name: the font list does not change
+                // while the backend lives.
+                if (_missingInstalled.Contains(kv.Key)) continue;
+                ulong face = AdoptLocalFont(kv.Value);
+                if (face == 0)
+                {
+                    _missingInstalled.Add(kv.Key);
+                    continue;
+                }
+                AdoptInstalledVariants(kv.Value, face);
+                doc.RegisterFontFamily(kv.Value, face);
+                _installedFamilies[kv.Key] = (kv.Value, face);
+                served++;
+            }
+            return served;
+        }
+
+        /// <summary>How many of the page's named families are served by installed fonts.</summary>
+        public int InstalledFamilyCount => _installedFamilies.Count;
+
+        // The family's bold, italic and bold-italic files where the OS has
+        // them, as real variants of the regular face; a style the OS answers
+        // with the regular file itself is not a variant.
+        private void AdoptInstalledVariants(string name, ulong face)
+        {
+            string regularPath = null;
+            if (!TrySystemFontFile(name, "Regular", out regularPath, out _)) TrySystemFontFile(name, null, out regularPath, out _);
+            foreach ((string style, int weight, bool italic) in new[] { ("Bold", 700, false), ("Italic", 400, true), ("Bold Italic", 700, true) })
+            {
+                if (!TrySystemFontFile(name, style, out string path, out int index) || string.IsNullOrEmpty(path)) continue;
+                if (regularPath != null && string.Equals(path, regularPath, StringComparison.OrdinalIgnoreCase)) continue;
+                string key = "local:" + name + ":" + style;
+                if (!_cssFaces.TryGetValue(key, out ulong variant))
+                {
+                    try
+                    {
+                        byte[] bytes = System.IO.File.ReadAllBytes(path);
+                        if (bytes.Length == 0) continue;
+                        variant = Adopt(bytes, index, name + " " + style);
+                    }
+                    catch (Exception ex)
+                    {
+                        LastError = ex.Message;
+                        continue;
+                    }
+                    if (!Activate(_faces[variant].Sources[0]))
+                    {
+                        _faces.Remove(variant);
+                        continue;
+                    }
+                    _cssFaces[key] = variant;
+                }
+                if (variant != face) SetRealVariant(face, weight, italic, variant);
+            }
+        }
+
         /// <summary>
         /// The ordered src list of a rule ("url:&lt;path&gt;|local:&lt;name&gt;"): the
         /// first entry that loads wins. A local() name is an installed font,

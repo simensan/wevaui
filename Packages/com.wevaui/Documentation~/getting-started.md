@@ -92,7 +92,7 @@ Inspector fields map to these properties:
 | `SortingOrder` | Paint order across multiple documents. |
 | `PrefersDarkColorScheme` | Answers `@media (prefers-color-scheme: dark)` / `light-dark()`. |
 | `Font` / `Bold` / `Italic` / `Fallbacks` | The UI face and its real bold/italic files; faces tried for code points it lacks. The package's Inter and symbol face when empty. |
-| `SystemFontFallback` | After the fallbacks, the platform's UI and symbol fonts for a script or glyph none of the faces carry (on by default; off for machine-independent output). |
+| `SystemFontFallback` | The machine's fonts: a family the page names in `font-family` resolves to the installed font of that name, and after the fallbacks the platform's UI and symbol fonts serve a script or glyph none of the faces carry (on by default; off for machine-independent output). |
 | `BasePath` | Directory that `url()`, `@import` and `@font-face` sources resolve against. Defaults to the document asset's folder in the editor. |
 | `UseUserAgentStylesheet` | The browser defaults (`<h1>` size, `<button>` look, …). On. |
 | `AutoInput` | Read the Input System every frame and feed the document. On. |

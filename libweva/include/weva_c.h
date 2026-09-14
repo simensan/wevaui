@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 40
+#define WEVA_ABI_VERSION_MINOR 41
 
 uint32_t weva_abi_version(void);
 
@@ -1520,6 +1520,18 @@ int32_t weva_char_joining_type(uint32_t codepoint);
  * `Zinh` for inherited (combining marks), `Zzzz` for unknown. Lower-cased it
  * is the OpenType script tag for most scripts. */
 uint32_t weva_char_script(uint32_t codepoint);
+
+/* Every family name the document's author styles ask for -- `font-family`
+ * (and expanded `font`) declarations in its stylesheets and in elements'
+ * inline `style` attributes -- one per line, first-seen order, as the author
+ * wrote it with the quotes stripped; generic families (`sans-serif`,
+ * `system-ui`, ...) and CSS-wide keywords are left out. A browser draws
+ * `font-family: "Segoe UI"` with the installed Segoe UI; a host that can
+ * reach installed fonts by name asks here after set_css and registers the
+ * ones it has (weva_document_register_font_family), leaving families a
+ * @font-face rule or the game already claimed alone. Two-call convention.
+ * Available since ABI minor 41. */
+size_t weva_document_font_family_names(weva_document_t doc, char* buffer, size_t capacity);
 
 #ifdef __cplusplus
 }

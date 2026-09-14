@@ -63,6 +63,7 @@ add_executable(weva_tests
     test_c_abi_keyboard.cpp
     test_c_abi_input_repeat.cpp
     test_c_abi_text_props.cpp
+    test_c_abi_font_families.cpp
     test_c_abi_interaction.cpp
     test_c_abi_transitions.cpp
     test_table.cpp

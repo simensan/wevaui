@@ -1625,4 +1625,64 @@ bool CascadeEngine::resolve_pseudo_content(const ComputedStyle& pseudo_style, co
     return true;
 }
 
+namespace {
+
+// CSS Fonts 4 §2.1's generic families (and the `ui-*` and `emoji`/`math`/
+// `fangsong` ones), plus the CSS-wide keywords: none names a font.
+bool is_generic_or_keyword(std::string_view name) {
+    static constexpr std::string_view kSkip[] = {
+        "serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif",
+        "ui-sans-serif", "ui-monospace", "ui-rounded", "emoji", "math", "fangsong",
+        "inherit", "initial", "unset", "revert", "revert-layer",
+    };
+    for (std::string_view s : kSkip) if (iequals_ascii(name, s)) return true;
+    return false;
+}
+
+}   // namespace
+
+void append_font_family_names(std::string_view stack, std::vector<std::string>* out) {
+    if (!out) return;
+    // Split at top-level commas: a comma inside quotes or parentheses
+    // (`var(--a, b)`) is part of the entry.
+    size_t start = 0;
+    int depth = 0;
+    char quote = 0;
+    for (size_t i = 0; i <= stack.size(); ++i) {
+        const bool end = i == stack.size();
+        const char c = end ? ',' : stack[i];
+        if (!end && quote) {
+            if (c == '\\' && i + 1 < stack.size()) ++i;
+            else if (c == quote) quote = 0;
+            continue;
+        }
+        if (!end && (c == '"' || c == '\'')) { quote = c; continue; }
+        if (!end && c == '(') { ++depth; continue; }
+        if (!end && c == ')') { if (depth > 0) --depth; continue; }
+        if (c != ',' || depth != 0) continue;
+        std::string_view entry = stack.substr(start, i - start);
+        start = i + 1;
+        while (!entry.empty() && (entry.front() == ' ' || entry.front() == '\t' || entry.front() == '\n' || entry.front() == '\r')) entry.remove_prefix(1);
+        while (!entry.empty() && (entry.back() == ' ' || entry.back() == '\t' || entry.back() == '\n' || entry.back() == '\r')) entry.remove_suffix(1);
+        if (entry.size() >= 2 && (entry.front() == '"' || entry.front() == '\'') && entry.back() == entry.front()) {
+            entry = entry.substr(1, entry.size() - 2);
+        }
+        if (entry.empty() || entry.find("var(") != std::string_view::npos || is_generic_or_keyword(entry)) continue;
+        bool seen = false;
+        for (const std::string& have : *out) if (iequals_ascii(have, entry)) { seen = true; break; }
+        if (!seen) out->emplace_back(entry);
+    }
+}
+
+std::vector<std::string> CascadeEngine::font_family_names() const {
+    std::vector<std::string> names;
+    for (const CompiledRule& rule : rules_) {
+        if (rule.origin != DeclarationOrigin::Author) continue;
+        for (const Declaration& d : rule.declarations) {
+            if (d.property == "font-family") append_font_family_names(d.value_text, &names);
+        }
+    }
+    return names;
+}
+
 } // namespace weva

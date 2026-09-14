@@ -29,6 +29,12 @@ namespace weva {
 
 enum class DeclarationOrigin { UserAgent = 0, User = 1, Author = 2 };
 
+// The named families in one `font-family` value ("Segoe UI", Inter,
+// sans-serif -> Segoe UI, Inter), appended to `out` unless already there
+// (compared case-insensitively). Generic families, CSS-wide keywords and
+// `var()` references are not names a host can look up and are skipped.
+void append_font_family_names(std::string_view stack, std::vector<std::string>* out);
+
 // What a `:hover` or `:active` in the compiled sheets can reach: the keys of
 // every compound one of them sits on. `everything` is the honest answer when a
 // compound gives no key to go on.
@@ -145,6 +151,14 @@ public:
         std::vector<std::string> sources;
     };
     const std::vector<FontFace>& font_faces() const { return font_faces_; }
+
+    // Every family name the compiled author rules ask for in a `font-family`
+    // (or expanded `font`) declaration, first-seen order, as the author wrote
+    // it with the quotes stripped; generic families and CSS-wide keywords are
+    // left out, and a name is listed once whatever its case. A host that can
+    // reach installed fonts by name (a browser can) registers the ones it
+    // has, so `font-family: "Segoe UI"` draws with Segoe UI where it exists.
+    std::vector<std::string> font_family_names() const;
 
     // Typed custom properties declared by `@property` in the compiled sheets.
     const AtPropertyRegistry& property_registry() const { return property_registry_; }

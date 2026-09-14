@@ -68,7 +68,7 @@ namespace Weva
         public Font Italic;
         [Tooltip("Faces tried for code points the UI face lacks; the package's symbol face when empty.")]
         public Font[] Fallbacks;
-        [Tooltip("After the fallbacks, the platform's fonts (Segoe UI and Segoe UI Symbol; Arial and Apple Symbols; DejaVu Sans) for scripts and symbols none of the faces carry. Off for output identical on every machine.")]
+        [Tooltip("The machine's installed fonts: a family the page names in font-family (with its bold and italic files) as a browser resolves it, and after the fallbacks the platform's fonts (Segoe UI and Segoe UI Symbol; Arial and Apple Symbols; DejaVu Sans) for scripts and symbols none of the faces carry. Off for output identical on every machine.")]
         public bool SystemFontFallback = true;
         [Tooltip("Directory that relative url() and @font-face sources resolve against (editor and desktop file paths).")]
         public string BasePath = "";
@@ -143,7 +143,10 @@ namespace Weva
             if (string.IsNullOrEmpty(family)) throw new ArgumentException("a family name is required", nameof(family));
             if (font == null) throw new ArgumentNullException(nameof(font));
             _fontFamilies[family] = font;
-            if (_doc != null && _fonts != null) _doc.RegisterFontFamily(family, _fonts.Adopt(font));
+            // Through the backend, which records the family as the game's so a
+            // page's @font-face or an installed font of the same name never
+            // takes it over.
+            if (_doc != null && _fonts != null) _fonts.RegisterFontFamily(_doc, family, _fonts.Adopt(font));
         }
 
         private void OnEnable()
@@ -209,7 +212,7 @@ namespace Weva
             }
             if (fallbackFaces.Count > 0) _fonts.SetFallbacks(face, fallbackFaces.ToArray());
             _fonts.Install(_doc, face);
-            foreach (var family in _fontFamilies) _doc.RegisterFontFamily(family.Key, _fonts.Adopt(family.Value));
+            foreach (var family in _fontFamilies) _fonts.RegisterFontFamily(_doc, family.Key, _fonts.Adopt(family.Value));
             if (_assetReader != null) _doc.AssetReader = _assetReader;
             _renderer = new NativeDocumentRenderer();
             Reload();
@@ -234,6 +237,9 @@ namespace Weva
             _doc.SetCss(StylesheetText());
             _doc.SetColorScheme(prefersDarkColorScheme);
             _fonts.SyncCssFontFaces(_doc);
+            // Then the families the page names that nothing else serves, from
+            // the installed fonts, as a browser resolves `font-family`.
+            if (SystemFontFallback) _fonts.SyncInstalledFamilies(_doc);
             // A reload replaces the tree the binding source was installed on,
             // and a controller set before the core existed still applies.
             if (_bindings != null || _controller != null) SetController(_controller);

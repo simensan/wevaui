@@ -23,6 +23,15 @@ for code points the UI face lacks (CJK, Hebrew, symbols). After them, with
 for a script or glyph none of the faces carry, as a browser reaches a system
 font; turn it off for output identical on every machine.
 
+**A family the page names.** `font-family: "Segoe UI", sans-serif` with no
+`@font-face` for Segoe UI draws with the installed Segoe UI where the
+machine has it, as it would in a browser: after each stylesheet the host
+asks the core which families the styles name (`FontFamilyNames`), and with
+**SystemFontFallback** on registers the installed fonts among them, with
+their bold and italic files. A family your `@font-face` declares or your
+`RegisterFontFamily` claims is never taken over; a name nobody has falls
+through the stack to the next family, then the UI face.
+
 **Shaping.** The package shapes each run itself: the core resolves the
 line's bidi levels and hands the host one run at a time; the host asks the
 core which way it reads and mirrors its brackets, resolves Arabic joining,

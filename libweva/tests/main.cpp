@@ -541,6 +541,7 @@ void test_abi_embedded_focus_and_text();
 void test_abi_key_repeat();
 void test_abi_double_click();
 void test_abi_text_properties();
+void test_abi_font_family_names();
 void test_abi_keyboard_activation();
 void test_abi_ime_composition();
 void test_abi_ime_external_mutation();
@@ -1124,6 +1125,7 @@ int main() {
     test_abi_key_repeat();
     test_abi_double_click();
     test_abi_text_properties();
+    test_abi_font_family_names();
     test_abi_keyboard_activation();
     test_abi_ime_composition();
     test_abi_ime_external_mutation();
