@@ -730,6 +730,18 @@ namespace Weva
             _renderer.Draw(cmd, viewportWidth > 0 ? viewportWidth : _width, viewportHeight > 0 ? viewportHeight : _height, 0, false, target);
             _drawnSerial = _doc.DrawSerial;
         }
+
+        // Asked by the renderer feature before the pass is enqueued; the sync
+        // here is the one EmitNative would do (it is keyed on the draw serial).
+        bool IUINativePaintSource.NeedsBackdropCopy
+        {
+            get
+            {
+                if (_doc == null || _renderer == null) return false;
+                _renderer.Sync(_doc);
+                return _renderer.BackdropDraws > 0;
+            }
+        }
 #endif
     }
 }

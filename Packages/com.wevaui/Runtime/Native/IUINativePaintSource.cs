@@ -16,6 +16,14 @@ namespace Weva.Native
         /// SortingOrder, and one with a backdrop-filter reads the target back.
         /// </summary>
         void EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight, in NativeRenderTarget target);
+
+        /// <summary>
+        /// Whether the next EmitNative has a backdrop-filter draw, which
+        /// reads the target back. Asked when the pass is enqueued, so the
+        /// renderer can put the frame through an intermediate texture: the
+        /// back buffer cannot be sampled.
+        /// </summary>
+        bool NeedsBackdropCopy { get; }
     }
 }
 #endif

@@ -14,6 +14,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Weva.Rendering;
+using Weva.Rendering.URP;
 
 namespace Weva.Tests.Rendering {
     public class NativeRenderPassTests {
@@ -107,6 +108,10 @@ namespace Weva.Tests.Rendering {
             for (int i = 0; i < SettleFrames; i++) yield return null;
             Capture();
             Assert.That(UrpFeatureStatus.BatchedFeatureRegistered, "after a render, the status says the feature is there");
+            // Not asserted: whether a plain document goes straight to the
+            // target is URP's call (the renderer asset, HDR, post-processing).
+            // Logged so a reader knows which path the backdrop test contrasts.
+            Debug.Log("Weva pass, plain document: back buffer target = " + UIRenderGraphPass.LastTargetWasBackBuffer);
             AssertColour(Band(20, 140), 1f, 0f, 0f, "the left half is the document's red");
             AssertColour(Band(180, 300), 0f, 0f, 0f, "the right half is the camera's clear colour");
 
@@ -177,6 +182,11 @@ namespace Weva.Tests.Rendering {
                 "#top{top:0;background:#ff0000}#bottom{top:50%;background:#0000ff}#glass{top:0;backdrop-filter:invert(1)}");
             for (int i = 0; i < SettleFrames; i++) yield return null;
             Capture();
+            // The copy is a sample of the target, and the back buffer cannot
+            // be sampled: with a backdrop draw due, the feature must have put
+            // the frame through URP's intermediate texture.
+            Assert.That(UIRenderGraphPass.LastRecordedFrame, Is.EqualTo(Time.frameCount), "the pass recorded this frame");
+            Assert.That(UIRenderGraphPass.LastTargetWasBackBuffer, Is.False, "a backdrop-filter frame draws into the intermediate texture, not the back buffer");
             Color upper = Rows(Height * 6 / 10, Height), lower = Rows(0, Height * 4 / 10);
             bool upperCyan = IsColour(upper, 0, 1, 1), lowerCyan = IsColour(lower, 0, 1, 1);
             bool upperBlue = IsColour(upper, 0, 0, 1), lowerBlue = IsColour(lower, 0, 0, 1);

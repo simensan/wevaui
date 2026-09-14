@@ -24,6 +24,10 @@ namespace Weva.Rendering.URP {
         // next frame, carrying the copied frame with it.
         RTHandle backdropCopy;
 
+        /// <summary>Diagnostics: what the last recorded pass drew into, and when.</summary>
+        public static bool LastTargetWasBackBuffer { get; private set; }
+        public static int LastRecordedFrame { get; private set; } = -1;
+
         public UIRenderGraphPass() {
             renderPassEvent = OverlayRenderPassEvent;
         }
@@ -76,6 +80,13 @@ namespace Weva.Rendering.URP {
             var color = resourceData.activeColorTexture;
             var depth = resourceData.activeDepthTexture;
             if (!color.IsValid()) return;
+            // Whether this frame's draw lands on the back buffer (or the
+            // camera's own render texture) rather than URP's intermediate. A
+            // backdrop-filter draw must never see the former: the feature
+            // asks for the intermediate when one is due, and the PlayMode
+            // test reads this back.
+            LastTargetWasBackBuffer = resourceData.isActiveTargetBackBuffer;
+            LastRecordedFrame = Time.frameCount;
 
             // The copy a backdrop-filter draw reads: the target's shape, single-
             // sampled, no depth. Kept by the pass (re-made when the target

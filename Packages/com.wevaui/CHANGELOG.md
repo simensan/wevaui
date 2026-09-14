@@ -63,6 +63,11 @@ checked against Chrome), which the Godot addon also runs on.
   its rows are cloned.
 - The inspector's "renderer feature missing" warning no longer fires in a
   fresh play session when the feature is present.
+- `backdrop-filter` in a player: the pass drew after URP's final blit, on
+  the back buffer, which cannot be sampled for the copy. A frame with a
+  backdrop draw now runs the pass after post-processing with an
+  intermediate texture requested, so the copy has a texture to read; a
+  frame without one still draws straight to the target.
 - Small text no longer has glyphs sitting a pixel above or below their
   neighbours: the font backend reports a rasterised glyph's bearings as the
   bitmap's edge (the outline's fractional extents rounded the other way for

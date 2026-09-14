@@ -14,9 +14,10 @@
 // texture in Unity 6's RenderGraph) -- measured, not derived: with the
 // other rule a top-half element filtered the bottom half
 // (NativeRenderPassTests.Pass_AppliesABackdropFilter_ToTheRightPixels).
-// The back buffer as the target (a player without an intermediate) is the
-// case that test cannot reach. Offscreen (an explicit _WevaNativeFlip)
-// nothing is inverted.
+// The back buffer is never the target of this shader: it cannot be sampled,
+// so UIBatchedRendererFeature asks URP for an intermediate texture on any
+// frame with a backdrop draw (the same test checks that it got one).
+// Offscreen (an explicit _WevaNativeFlip) nothing is inverted.
 Shader "Hidden/Weva/NativeBackdrop" {
     Properties {
         _WevaBackdropSigma ("Sigma", Float) = 0
