@@ -332,6 +332,40 @@ void test_abi_stylesheet_replacement() {
         weva_document_destroy(document);
     }
     {
+        // Host-fetched assets use exactly the core's image/font path rules.
+        const auto config = default_config();
+        auto document = weva_document_create(&config);
+        const auto resolves = [&](const char* url, const std::string& expected) {
+            CHECK(weva_document_resolve_asset_path(document, url, nullptr, 0) == expected.size());
+            std::vector<char> text(expected.size() + 1, 'x');
+            CHECK(weva_document_resolve_asset_path(document, url, text.data(), text.size()) == expected.size());
+            CHECK(std::string(text.data()) == expected);
+        };
+        resolves("theme.css", "theme.css");
+        CHECK(weva_document_set_base_path(document, "ui/") == WEVA_OK);
+        resolves("theme.css", "ui/theme.css");
+        resolves("../theme.css", "ui/../theme.css");
+        resolves("/shared/theme.css", "/shared/theme.css");
+        resolves("C:/shared/theme.css", "C:/shared/theme.css");
+        resolves("res://theme.css", "res://theme.css");
+        resolves("", "");
+        CHECK(weva_document_set_base_path(document, "bundle://ui") == WEVA_OK);
+        resolves("theme.css", "bundle://ui/theme.css");
+        char small[4] = {'x', 'x', 'x', 'x'};
+        CHECK(weva_document_resolve_asset_path(document, "theme.css", small, sizeof(small)) == 21);
+        CHECK(std::string(small) == "bun");
+        CHECK(weva_document_resolve_asset_path(document, "theme.css", small, 0) == 21);
+        CHECK(std::string(small) == "bun");
+        CHECK(weva_document_resolve_asset_path(document, nullptr, small, sizeof(small)) == 0);
+        CHECK(small[0] == '\0');
+        small[0] = 'x';
+        CHECK(weva_document_resolve_asset_path(nullptr, "theme.css", small, sizeof(small)) == 0);
+        CHECK(small[0] == '\0');
+        CHECK(weva_document_set_base_path(document, nullptr) == WEVA_OK);
+        resolves("theme.css", "theme.css");
+        weva_document_destroy(document);
+    }
+    {
         // @font-face is parsed, not ignored: the host loads what it lists.
         const auto config = default_config();
         auto document = weva_document_create(&config);

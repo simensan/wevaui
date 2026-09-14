@@ -40,6 +40,111 @@ namespace Weva.Tests.EditorTests.Native
             return b.Width;
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void SeparateSheets_KeepTheirOwnImports(bool linked)
+        {
+            const string first = "#other{width:1px}";
+            const string second = "@import 'imported.css'; #markup{width:55px}";
+            _host.SystemFontFallback = false;
+            _host.InlineHtml = (linked ? "<link rel=stylesheet href=first.css><link rel=stylesheet href=second.css>" : "") +
+                "<style>#markup{width:99px}</style><div id=box></div><div id=markup></div>";
+            _host.AssetReader = path => path == "imported.css" ? System.Text.Encoding.UTF8.GetBytes("#box{width:73px}") : null;
+            if (linked) _host.BakeLinkedStylesheets(href => href == "first.css" ? first : second);
+            else _host.StylesheetAssets = new[] { new TextAsset(first), new TextAsset(second) };
+            _go.SetActive(true);
+            Assert.That(_host.Document, Is.Not.Null, _host.LastError);
+            Assert.That(BoxWidth(), Is.EqualTo(73).Within(0.01));
+            Assert.That(_host.Document.TryGetBounds(_host.Document.Query("#markup"), out NativeBounds markup));
+            Assert.That(markup.Width, Is.EqualTo(99), "markup sheets remain after the host's sheets");
+        }
+
+        [Test]
+        public void SeparateSheets_AnUnfinishedCommentCannotSwallowTheNextSheet()
+        {
+            _host.SystemFontFallback = false;
+            _host.InlineHtml = "<div id=box></div>";
+            _host.StylesheetAssets = new[] { new TextAsset("/* unfinished"), new TextAsset("#box{width:83px}") };
+            _go.SetActive(true);
+            Assert.That(_host.Document, Is.Not.Null, _host.LastError);
+            Assert.That(BoxWidth(), Is.EqualTo(83).Within(0.01));
+        }
+
+        [Test]
+        public void LinkedReader_ReceivesTheCoreResolvedPath()
+        {
+            _host.SystemFontFallback = false;
+            _host.BasePath = "bundle://ui";
+            _host.InlineHtml = "<link rel=stylesheet href=theme.css><div id=box></div>";
+            var paths = new List<string>();
+            _host.AssetReader = path =>
+            {
+                paths.Add(path);
+                return System.Text.Encoding.UTF8.GetBytes("#box{width:87px}");
+            };
+            _go.SetActive(true);
+            Assert.That(BoxWidth(), Is.EqualTo(87).Within(0.01));
+            Assert.That(paths, Does.Contain("bundle://ui/theme.css"));
+            Assert.That(paths, Does.Not.Contain("theme.css"));
+        }
+
+        [Test]
+        public void Reload_ClearsAnEarlierBasePath()
+        {
+            _host.SystemFontFallback = false;
+            _host.InlineHtml = "<div id=box></div>";
+            _host.BasePath = "old/path";
+            _go.SetActive(true);
+            _host.BasePath = "";
+            _host.Reload();
+            Assert.That(_host.Document.BasePath, Is.Empty);
+        }
+
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        [TestCase(true, true)]
+        public void RelativeFileBase_IsAppliedOnce(bool fontSource, bool resetReader)
+        {
+            string directory = ".utmp/stylesheet-reader-å海-" + System.Guid.NewGuid().ToString("N");
+            System.IO.Directory.CreateDirectory(directory);
+            string cssFile = directory + "/theme.css", fontFile = directory + "/font.bin";
+            byte[] fontBytes = { 1, 2, 3, 4 };
+            System.IO.File.WriteAllText(cssFile, "#box{width:89px}");
+            System.IO.File.WriteAllBytes(fontFile, fontBytes);
+            try
+            {
+                using (var doc = new NativeDocument(300, 100))
+                {
+                    doc.SetBasePath(directory);
+                    if (resetReader)
+                    {
+                        doc.AssetReader = path => null;
+                        doc.AssetReader = null;
+                    }
+                    doc.LoadHtml("<div id=box></div>");
+                    doc.SetCss("@import 'theme.css'; @font-face{font-family:Probe;src:url(font.bin)}");
+                    if (fontSource)
+                    {
+                        var face = doc.FontFaces()[0];
+                        Assert.That(doc.AssetReader(face.Item2), Is.EqualTo(fontBytes), "font paths from the ABI are already resolved");
+                    }
+                    else
+                    {
+                        doc.Update(0);
+                        Assert.That(doc.TryGetBounds(doc.Query("#box"), out NativeBounds bounds));
+                        Assert.That(bounds.Width, Is.EqualTo(89), "the core resolved the import before calling the reader");
+                    }
+                }
+            }
+            finally
+            {
+                System.IO.File.Delete(cssFile);
+                System.IO.File.Delete(fontFile);
+                System.IO.Directory.Delete(directory);
+            }
+        }
+
         [Test]
         public void LinkedHrefs_ReadsEveryStylesheetLink_InDocumentOrder()
         {

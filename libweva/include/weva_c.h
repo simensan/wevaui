@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 42
+#define WEVA_ABI_VERSION_MINOR 43
 
 uint32_t weva_abi_version(void);
 
@@ -328,9 +328,10 @@ void weva_document_destroy(weva_document_t doc);
  * weva_document_reload_html and weva_element_append_html. */
 weva_status weva_document_load_html(weva_document_t doc, const char* html, size_t length);
 weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t length);
-/* Replaces all author stylesheets; the UA sheet and live DOM, form values,
- * focus, bindings and animation clocks remain. An empty string removes author
- * CSS. Both this and add_css schedule a restyle on the next update. */
+/* Replaces the host's stylesheets; markup/component sheets, the UA sheet,
+ * live DOM, form values, focus, bindings and animation clocks remain. An
+ * empty string removes host CSS. Both this and add_css schedule a restyle
+ * on the next update. */
 weva_status weva_document_set_css(weva_document_t doc, const char* css, size_t length);
 
 /* Loads new markup INTO the live document instead of replacing it: the new
@@ -1297,11 +1298,22 @@ weva_status weva_element_toggle_popover(weva_document_t doc, weva_element_t elem
  * open. Changing this drops every decoded image, so set it before the first
  * update rather than per frame.
  *
- * Without it, only absolute paths load. With it, the built-in reader opens
- * ordinary files; a host whose assets are not files -- Godot's `res://` inside
+ * Without a base, relative paths use the reader's working directory. The
+ * built-in reader opens ordinary files; a host whose assets are not files --
+ * Godot's `res://` inside
  * an exported .pck -- wants weva_document_set_asset_reader instead, and still
  * gets the core's decoder, so both backends see identical pixels. */
 weva_status weva_document_set_base_path(weva_document_t doc, const char* path);
+
+/* Resolves a URL with the same base-path rules used for images, imports and
+ * font sources, without reading or decoding anything. Hosts fetching their
+ * own assets (such as linked stylesheets) pass this result to their reader;
+ * the core's asset-reader callback already receives resolved paths.
+ * Returns required UTF-8 bytes excluding NUL; a provided nonempty buffer is
+ * always terminated, including for a null document or URL (which returns 0).
+ * Available since ABI minor 43. */
+size_t weva_document_resolve_asset_path(weva_document_t doc, const char* url,
+                                       char* buffer, size_t capacity);
 
 /* Every asset the document asked for and could not load, newline-separated.
  *

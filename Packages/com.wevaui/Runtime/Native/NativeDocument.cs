@@ -137,6 +137,16 @@ namespace Weva.Native
             }
         }
 
+        /// <summary>Adds a separate host stylesheet after the previous host sheets.</summary>
+        public void AddCss(string css)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(css ?? string.Empty);
+            fixed (byte* p = bytes)
+            {
+                Check(WevaNative.weva_document_add_css(Handle, p, (nuint)bytes.Length), "weva_document_add_css");
+            }
+        }
+
         /// <summary>
         /// A hot reload: the new markup is diffed onto the live document, so an
         /// element the diff can match (same tag at the same position, or the same
@@ -380,24 +390,40 @@ namespace Weva.Native
             {
                 Check(WevaNative.weva_document_set_base_path(Handle, p), "weva_document_set_base_path");
             }
-            BasePath = path;
-            if (_assetReader == null) AssetReader = null;   // the default file reader, resolving against BasePath
+            BasePath = path ?? string.Empty;
+            // Use the managed file API for native Windows Unicode paths too.
+            if (!_self.IsAllocated) AssetReader = _assetReader;
         }
 
         public string BasePath { get; private set; }
 
+        /// <summary>Resolves an asset URL using the core's base-path rules, without loading it.</summary>
+        public string ResolveAssetPath(string url)
+        {
+            byte[] text = NullTerminated(url);
+            fixed (byte* source = text)
+            {
+                nuint needed = WevaNative.weva_document_resolve_asset_path(Handle, source, null, 0);
+                if (needed == 0) return string.Empty;
+                byte[] buffer = new byte[(int)needed + 1];
+                fixed (byte* target = buffer)
+                    WevaNative.weva_document_resolve_asset_path(Handle, source, target, (nuint)buffer.Length);
+                return Encoding.UTF8.GetString(buffer, 0, (int)needed);
+            }
+        }
+
         /// <summary>
         /// How the core obtains an asset's bytes (images, @font-face files). The
-        /// default reads files from disk, resolving a relative path against
-        /// BasePath; a game supplies its own to serve Addressables or bundles.
+        /// core resolves paths against BasePath before calling the reader. The
+        /// default reads that path from disk; a game can serve bundles instead.
         /// Null bytes mean "no such asset".
         /// </summary>
         public Func<string, byte[]> AssetReader
         {
-            get => _assetReader;
+            get => _assetReader ?? ReadFile;
             set
             {
-                _assetReader = value ?? ReadFile;
+                _assetReader = value;
                 if (!_self.IsAllocated) _self = GCHandle.Alloc(this);
                 var reader = (delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, nuint>)Marshal.GetFunctionPointerForDelegate(s_readAsset);
                 Check(WevaNative.weva_document_set_asset_reader(Handle, reader, (void*)GCHandle.ToIntPtr(_self)), "weva_document_set_asset_reader");
@@ -428,7 +454,7 @@ namespace Weva.Native
                 doc._lastAssetPath = name;
                 try
                 {
-                    doc._lastAssetBytes = doc._assetReader?.Invoke(name);
+                    doc._lastAssetBytes = doc.AssetReader(name);
                 }
                 catch (Exception)
                 {
@@ -445,11 +471,9 @@ namespace Weva.Native
             return (nuint)bytes.Length;
         }
 
-        private byte[] ReadFile(string path)
+        private static byte[] ReadFile(string path)
         {
-            string full = path;
-            if (!System.IO.Path.IsPathRooted(full) && !string.IsNullOrEmpty(BasePath)) full = System.IO.Path.Combine(BasePath, path);
-            return System.IO.File.Exists(full) ? System.IO.File.ReadAllBytes(full) : null;
+            return System.IO.File.Exists(path) ? System.IO.File.ReadAllBytes(path) : null;
         }
 
         /// <summary>

@@ -358,8 +358,10 @@ directly (§6). `PrefersDarkColorScheme` on the component answers
 asset's folder in the editor — through the core's asset reader, which reads
 files. A player that does not ship its UI as files hands the core its own
 reader: `doc.AssetReader = path => bytes` (Addressables, bundles,
-`Resources`), returning `null` for an asset it does not have; set it any
-time, it survives a reload. 9-slice
+`Resources`), returning `null` for an asset it does not have. The reader
+receives paths already resolved against `BasePath`; do not prepend it again.
+This also applies to imports and linked stylesheets. Set the reader any
+time; it survives a reload. 9-slice
 frames are CSS `border-image`.
 
 ## 10. Fonts

@@ -4089,12 +4089,10 @@ weva_status weva_document_add_css(weva_document_t doc, const char* css, size_t l
         return WEVA_ERR_PARSE;
     }
     expand_document_imports(doc, sheet.get());
-    doc->styles.engine.add_stylesheet(sheet.get(), DeclarationOrigin::Author);
     doc->sheets.push_back(std::move(sheet));
-    // The cascade caches selector matches by element shape, and the shapes did
-    // not change -- the rules did.
-    doc->styles.engine.invalidate_cache();
-    doc->styles.keyframes = doc->styles.engine.keyframes();
+    // Host sheets always precede markup/component sheets, including when
+    // added after load_html. Use the same order as viewport recompilation.
+    rebuild_engine_sheets(doc);
     // New selectors can create/remove pseudo boxes even without a DOM
     // mutation. The lifecycle must observe the changed stylesheet input.
     doc->pending = Invalidation::Boxes;
@@ -8603,6 +8601,13 @@ weva_status weva_document_set_base_path(weva_document_t doc, const char* path) {
     doc->images.set_base_path(path ? path : "");
     if (before != doc->images.content_version()) doc->pending = Invalidation::Boxes;
     return WEVA_OK;
+}
+
+size_t weva_document_resolve_asset_path(weva_document_t doc, const char* url,
+                                       char* buffer, size_t capacity) {
+    if (buffer && capacity) buffer[0] = '\0';
+    if (!doc || !url) return 0;
+    return copy_out(doc->images.resolve(url), buffer, capacity);
 }
 
 size_t weva_document_changed_elements(weva_document_t doc, weva_element_change* out, size_t capacity) {

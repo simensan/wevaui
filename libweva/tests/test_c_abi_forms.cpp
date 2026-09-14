@@ -1296,6 +1296,13 @@ void test_abi_style_elements_and_component_styles() {
     const char* css = "html, body { margin: 0 } #a { height: 10px }";
     CHECK(weva_document_set_css(doc.d, css, std::strlen(css)) == WEVA_OK);
     CHECK(width("#a") == 99);
+    // Appending a host sheet preserves this order too, including after the
+    // engine recompiles the same sheets for a viewport change.
+    const char* appended = "#a { width: 61px }";
+    CHECK(weva_document_add_css(doc.d, appended, std::strlen(appended)) == WEVA_OK);
+    CHECK(width("#a") == 99);
+    weva_document_set_viewport(doc.d, 800, 600);
+    CHECK(width("#a") == 99);
 }
 
 // The individual transform properties move the hit target with the box.

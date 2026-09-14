@@ -1010,3 +1010,14 @@ Indic syllabic category (consonant, dependent vowel, virama, nukta, bindu,
 from ICU, for a host shaper that segments Indic syllables, finds the base
 consonant and reorders a left matra before it. Tested in
 `test_c_abi_text_props.cpp` (2026-09-14).
+
+ABI minor 43 adds `weva_document_resolve_asset_path(doc, url, buffer, capacity)`:
+hosts can resolve a linked asset with the core's base-path rules before passing
+it to their asset reader. Core callbacks and reported font sources already
+carry resolved paths; readers must not prepend the base again. The query does
+no I/O and uses the standard UTF-8 size/fill protocol. Unity uses it for linked
+stylesheets, which are now submitted as separate sheets so parser recovery and
+`@import` rules cannot cross file boundaries. Host sheets consistently precede
+markup/component sheets, including after `add_css` and viewport recompilation.
+Tested in `test_c_abi.cpp`, `test_c_abi_forms.cpp` and Unity's
+`NativeLinkedStylesheetTests` (2026-09-15).

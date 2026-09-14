@@ -123,9 +123,9 @@ namespace Weva
         private readonly System.Collections.Generic.Dictionary<string, Font> _fontFamilies = new System.Collections.Generic.Dictionary<string, Font>();
 
         /// <summary>
-        /// How the document obtains an asset's bytes (images, @font-face files):
-        /// a path as written in the markup, resolved by you; null for one you do
-        /// not have. Unset, the document reads files relative to BasePath.
+        /// How the document obtains an asset's bytes (images, @font-face files,
+        /// imports and linked stylesheets). Paths are already resolved against
+        /// BasePath; return null for an asset you do not have. Unset, reads files.
         /// </summary>
         public Func<string, byte[]> AssetReader
         {
@@ -228,13 +228,13 @@ namespace Weva
             // asset unless the author points elsewhere.
             if (string.IsNullOrEmpty(basePath)) basePath = DocumentAssetDirectory();
 #endif
-            if (!string.IsNullOrEmpty(basePath)) _doc.SetBasePath(basePath);
+            _doc.SetBasePath(basePath);
             string html = documentAsset != null ? documentAsset.text : InlineHtml;
             Generation++;
             _doc.LoadHtml(html);
             _linkedHrefs.Clear();
             _linkedHrefs.AddRange(LinkedHrefs(_doc));
-            _doc.SetCss(StylesheetText());
+            LoadStylesheets();
             _doc.SetColorScheme(prefersDarkColorScheme);
             _fonts.SyncCssFontFaces(_doc);
             // Then the families the page names that nothing else serves, from
@@ -249,9 +249,10 @@ namespace Weva
         // The page's <link rel="stylesheet"> sheets in document order, then
         // the inspector's assets (a later sheet wins, as in a browser); the
         // inline text only when the page links nothing and no asset is set.
-        private string StylesheetText()
+        private void LoadStylesheets()
         {
-            var sb = new System.Text.StringBuilder();
+            _doc.SetCss(string.Empty);
+            bool hasSheet = false;
             foreach (string href in _linkedHrefs)
             {
                 string css = ResolveLinkedStylesheet(href);
@@ -260,18 +261,19 @@ namespace Weva
                     Debug.LogWarning($"WevaDocument on '{name}': linked stylesheet '{href}' not found (next to the document asset, baked, or under BasePath).", this);
                     continue;
                 }
-                sb.Append(css).Append('\n');
+                _doc.AddCss(css);
+                hasSheet = true;
             }
             if (stylesheetAssets != null)
             {
                 foreach (TextAsset sheet in stylesheetAssets)
                 {
                     if (sheet == null) continue;
-                    sb.Append(sheet.text).Append('\n');
+                    _doc.AddCss(sheet.text);
+                    hasSheet = true;
                 }
             }
-            if (sb.Length == 0) return InlineCss;
-            return sb.ToString();
+            if (!hasSheet) _doc.AddCss(InlineCss);
         }
 
         // ---- <link rel="stylesheet"> -------------------------------------------
@@ -359,7 +361,7 @@ namespace Weva
                     if (bakedLinkedStylesheetHrefs[i] == href) return bakedLinkedStylesheetCss[i];
                 }
             }
-            byte[] bytes = _doc?.AssetReader?.Invoke(href);
+            byte[] bytes = _doc?.AssetReader?.Invoke(_doc.ResolveAssetPath(href));
             return bytes != null ? System.Text.Encoding.UTF8.GetString(bytes) : null;
         }
 

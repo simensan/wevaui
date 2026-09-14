@@ -343,7 +343,7 @@ namespace Weva.Native
         public const string Library = "weva_core";
 #endif
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 42;
+        public const int WEVA_ABI_VERSION_MINOR = 43;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
@@ -575,6 +575,8 @@ namespace Weva.Native
         public static extern int weva_element_toggle_popover(System.IntPtr doc, uint element);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern int weva_document_set_base_path(System.IntPtr doc, byte* path);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern nuint weva_document_resolve_asset_path(System.IntPtr doc, byte* url, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_document_missing_assets(System.IntPtr doc, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
