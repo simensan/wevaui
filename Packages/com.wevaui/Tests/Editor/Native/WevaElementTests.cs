@@ -239,6 +239,65 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(Enum.GetValues(typeof(WevaEventKind)).Length, Is.EqualTo(Enum.GetValues(typeof(weva_event_kind)).Length), "no extra kinds on the C# side");
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void EventCallback_ReplacingOrDisablingDocument_StopsTheOldBatch(bool reload)
+        {
+            Enable();
+            var controller = new Controller();
+            _host.SetController(controller);
+            _host.Query("#go").Focus();
+            _host.Step();
+            int clicks = 0;
+            _host.ElementClicked += _ => clicks++;
+            _host.Event += e =>
+            {
+                if (e.Kind != WevaEventKind.Click) return;
+                if (reload) _host.Reload();
+                else _go.SetActive(false);
+            };
+            _host.Document.Key(weva_key.WEVA_KEY_ENTER, true);
+            Assert.DoesNotThrow(() => _host.Step());
+            Assert.That(controller.Used, Is.Empty, "handlers from the old tree must not reach a replacement or disabled document");
+            Assert.That(clicks, Is.Zero);
+        }
+
+        [Test]
+        public void HandlerNotification_DisablingDocument_DoesNotDispatchToController()
+        {
+            Enable();
+            var controller = new Controller();
+            _host.SetController(controller);
+            _host.Query("#go").Focus();
+            _host.Step();
+            _host.HandlerInvoked += (_, __) => _go.SetActive(false);
+            _host.Document.Key(weva_key.WEVA_KEY_ENTER, true);
+            Assert.DoesNotThrow(() => _host.Step());
+            Assert.That(controller.Used, Is.Empty);
+        }
+
+        [Test]
+        public void PumpEvents_FromCallback_LeavesNewEventsForTheNextPump()
+        {
+            Enable();
+            _host.Query("#go").Focus();
+            _host.Step();
+            var seen = new List<WevaEventKind>();
+            _host.Event += e =>
+            {
+                seen.Add(e.Kind);
+                if (e.Kind != WevaEventKind.Click) return;
+                _host.Query("#name").Focus();
+                _host.PumpEvents();
+            };
+            _host.Document.Key(weva_key.WEVA_KEY_ENTER, true);
+            Assert.DoesNotThrow(() => _host.Step());
+            Assert.That(seen.FindAll(kind => kind == WevaEventKind.Click).Count, Is.EqualTo(1));
+            Assert.That(seen, Has.No.Member(WevaEventKind.Focus));
+            _host.Step();
+            Assert.That(seen.FindAll(kind => kind == WevaEventKind.Focus).Count, Is.EqualTo(1));
+        }
+
         private static string ToPascal(string upperSnake)
         {
             var sb = new System.Text.StringBuilder();

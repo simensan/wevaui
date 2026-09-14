@@ -112,7 +112,7 @@ Numbers to expect are in `docs/PRODUCT_READINESS.md`; any red is new.
 
 `WevaDocument`'s supported surface is listed in
 `Packages/com.wevaui/Documentation~/api-stability.md`; a change to it is a
-major bump with a CHANGELOG entry. `Weva.Native` is public but unsupported —
+major bump with a CHANGELOG entry. `Weva.Native` is internal and unsupported —
 it follows the ABI.
 
 ## 5. Conventions that bite

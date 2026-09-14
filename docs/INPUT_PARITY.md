@@ -36,6 +36,7 @@ covered by `libweva/tests`; the host tests there show the host opted in.
 | `pointer-events: none` lets hit testing pass | core | `input_integration_tests.gd` "CSS pointer-events:none lets native GUI hit testing continue beneath" | `NativeInputTests.PointerEventsNone_LetsHitTestingPass` |
 | Only the top overlapping document takes the pointer where it accepts it -- everywhere by default, as in a browser; a HUD lets clicks through with `html, body { pointer-events: none }` and `auto` on its controls | host | `input_integration_tests.gd` "only the top overlapping document activates", "noninteractive documents let input reach the UI beneath" | `NativeInputFeed.CoveredAt` over every live feed by `Order` (= `SortingOrder`, then creation order), mouse and touch; `NativeInputFeedTests.OnlyTheTopDocumentTakesThePointer_WhereItAcceptsIt` |
 | Timed gestures run on unscaled time so a paused game's menu works | host | monotonic clock in `weva_node.cpp` | `WevaDocument.Update` feeds `Time.unscaledDeltaTime` as the input clock |
+| Recursive event pumping waits for the current handler to finish | host | `WevaDocument::pump_events` guards `pumping_events_`; dialog cancel handlers can flush layout before vetoing the default | `WevaDocument.PumpEvents` guards `_pumpingEvents`; `WevaElementTests.PumpEvents_FromCallback_LeavesNewEventsForTheNextPump`. Reload/disable callbacks also stop dispatch from the old tree. |
 
 Every row is pinned on both hosts (the last two were pinned 2026-09-14:
 Godot's touch pan by a scene check, Unity's multi-document pointer

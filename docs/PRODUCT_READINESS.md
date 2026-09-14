@@ -1,7 +1,7 @@
 # Product readiness
 
 This is a development preview. The game-UI goal is not complete. One core
-(`libweva`, ABI minor 39 at this writing) drives two hosts; the Unity host's
+(`libweva`, ABI minor 42 at this writing) drives two hosts; the Unity host's
 standing is first, the Godot host's -- the longer record -- follows.
 
 ## Unity host readiness (2026-09-14)
@@ -15,8 +15,8 @@ no consumer project has yet been opened on 1.0.
 
 | Requirement | Current assessment and next evidence needed |
 |---|---|
-| The component and the controller model | `WevaDocument` keeps its 0.1.x name, script GUID and serialized fields, so a scene carries over; `[UIBind]`, `data-each`/`data-model`, `on-<event>`, `SetController` carry over. Verified by the Native EditMode suite (146 pass, 2 env-gated inconclusive) -- bindings, rows, typed write-back, dispatch, reload. Not yet verified: a real consumer project (TestWeva, Wavebound) opened on 1.0. |
-| The element API | `WevaElement` / `WevaEvent` are the supported surface (`api-stability.md`); `Weva.Native` is internal. 12 `WevaElementTests`. |
+| The component and the controller model | `WevaDocument` keeps its 0.1.x name, script GUID and serialized fields, so a scene carries over; `[UIBind]`, `data-each`/`data-model`, `on-<event>`, `SetController` carry over. Verified by the Native EditMode suite (167 pass, 2 env-gated inconclusive; full EditMode 168 pass, 2 inconclusive) -- bindings, rows, typed write-back through nested collections, dictionary binding across disable/enable, dispatch, reload. Not yet verified: a real consumer project (TestWeva, Wavebound) opened on 1.0. |
+| The element API | `WevaElement` / `WevaEvent` are the supported surface (`api-stability.md`); `Weva.Native` is internal. 17 `WevaElementTests`, including callbacks that disable/reload the document and recursive event pumping. Programmatic `Value` assignment raises no input/change events; bound values are changed through their model. |
 | Rendering | `UIRenderGraphPass` draws the draw list into the camera target; `NativeRenderPassTests` (PlayMode, 5 cases) check the pixels: drawn, stacked by `SortingOrder`, gone when disabled, repainted on change, text, backdrop-filter (the frame is routed through URP's intermediate texture when a backdrop draw is due, asserted by the test; at `AfterRendering` the target is always the back buffer, which cannot be sampled). Not verified: any platform but Windows. |
 | Layout conformance | The core's, measured against headless Chrome by `check.sh` (hand 61/61, harvest 220/225 within 1.5 px, samples 31/47, no case excused); `goldens_from_unity.py` renders the sample pages through the core on Unity for the same comparison. Text metrics are the host's (`FontEngine`), so line heights agree with Chrome's Inter, not Chrome's Arial. |
 | Input | Mouse, keyboard with core-owned repeat and double-click, touch, gamepad navigation, IME; every row of `INPUT_PARITY.md` pinned by `NativeInputFeedTests` / `NativeInputTests` through the Input System's test fixture. Not verified: a physical touchscreen, a physical gamepad, a physical IME. |

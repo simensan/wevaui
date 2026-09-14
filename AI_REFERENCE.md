@@ -10,7 +10,8 @@ disagree, the code wins — tell the user.
 > - **Change the engine or a host** → [`AGENTS.md`](AGENTS.md) (the engineering contract) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (the core as built).
 > - **Check if something is supported** → [`supported-css.md`](Packages/com.wevaui/Documentation~/supported-css.md) / [`supported-html.md`](Packages/com.wevaui/Documentation~/supported-html.md), and `Tools/oracle/known-gaps/` for what the Chrome gate excuses.
 
-_Last verified: 2026-09-13 (1.0.0)._
+_Last verified: 2026-09-14 (1.0.0); Native EditMode 167 pass / 2 environment-gated
+inconclusive, full EditMode 168 pass / 2 inconclusive._
 
 ---
 
@@ -93,9 +94,10 @@ Details and the exact supported set: [`api-stability.md`](Packages/com.wevaui/Do
   rendering the pass to a RenderTexture yourself.
 - **Colour emoji on Unity.** Not rasterised yet; monochrome symbols render
   from the bundled symbol face.
-- **RTL shaping on Unity.** The core reorders bidi runs; `FontEngine` shapes
-  one glyph per code point, so Arabic contextual forms and in-word RTL glyph
-  order are not produced.
+- **Shaping limits on Unity.** The host shapes Arabic and the nine main Indic
+  scripts from font bytes, with the core supplying Unicode properties. A
+  `Font` asset has no bytes for substitutions. Sinhala, Khmer, Myanmar and
+  Tibetan shaping are not implemented.
 - **Vertical writing, partly.** `vertical-rl` / `vertical-lr` lay out as
   orthogonal flows and paint runs turned a quarter turn
   (`libweva/src/writing_mode.cpp`); `sideways-*`, upright CJK, a horizontal

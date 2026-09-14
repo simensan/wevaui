@@ -68,6 +68,16 @@ namespace Weva.Tests.EditorTests.Native
             public void Bump() => BindingVersion++;
         }
 
+        public sealed class CollectionController
+        {
+            [UIBind] public List<Quest> Quests = new List<Quest> { new Quest { Id = "wood", Title = "Gather wood" } };
+            [UIBind] public Dictionary<string, object> Settings = new Dictionary<string, object>
+            {
+                ["audio"] = new Settings(),
+                ["levels"] = new List<Dictionary<string, object>> { new Dictionary<string, object> { ["volume"] = 65 } },
+            };
+        }
+
         private GameObject _go;
         private WevaDocument _host;
 
@@ -190,6 +200,50 @@ namespace Weva.Tests.EditorTests.Native
             _host.Step();
             Assert.That(c.PlayerName, Is.EqualTo("Morgan!"), "a root [UIBind] string field takes the typed text");
             Assert.That(Text("#title"), Is.EqualTo("Morgan!"), "and everything bound to it follows on the same frame");
+        }
+
+        [TestCase("Quests.0.Title", "Cut wood")]
+        [TestCase("Settings.audio.Volume", "80")]
+        [TestCase("Settings.levels.0.volume", "90")]
+        public void DataModel_WritesThroughNestedCollections(string path, string value)
+        {
+            var controller = new CollectionController();
+            _host.InlineHtml = "<input id='edit' data-model='" + path + "'><p id='mirror'>{{ " + path + " }}</p>";
+            _host.Reload();
+            _host.SetController(controller);
+            _host.Step();
+            var resolver = new UIBindResolver(controller);
+            System.Type originalType = resolver.Resolve(path).GetType();
+            _host.Query("#edit").Focus();
+            _host.Document.SelectAll();
+            _host.Document.TryTextInput(value);
+            _host.Step();
+            Assert.That(NativeBindings.Format(resolver.Resolve(path)), Is.EqualTo(value));
+            Assert.That(resolver.Resolve(path).GetType(), Is.EqualTo(originalType));
+            Assert.That(Text("#mirror"), Is.EqualTo(value));
+        }
+
+        [Test]
+        public void DictionaryBinding_SurvivesBindingWhileDisabled_AndReenable()
+        {
+            _go.SetActive(false);
+            _host.InlineHtml = "<p id='label'>{{ Name }}</p><input id='edit' data-model='Name'>";
+            var model = new Dictionary<string, object> { ["Name"] = "Morgan" };
+            _host.Bind(model);
+            _go.SetActive(true);
+            _host.Step();
+            Assert.That(Text("#label"), Is.EqualTo("Morgan"));
+            Assert.That(_host.Data, Is.SameAs(model));
+            _go.SetActive(false);
+            model["Name"] = "Sam";
+            _go.SetActive(true);
+            _host.Step();
+            Assert.That(Text("#label"), Is.EqualTo("Sam"));
+            _host.Query("#edit").Focus();
+            _host.Document.SelectAll();
+            _host.Document.TryTextInput("Alex");
+            _host.Step();
+            Assert.That(model["Name"], Is.EqualTo("Alex"));
         }
 
         [Test]

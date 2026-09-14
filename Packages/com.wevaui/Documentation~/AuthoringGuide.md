@@ -229,8 +229,11 @@ button.
 | `<details>` / `<summary>` | Opens and closes; `on-toggle` fires. |
 | `title="…"` | A tooltip after the browser's hover delay. |
 
-A control's live value is `doc.Query("#name").Value`; setting it is what
-the user typing it would do — events and bindings follow.
+A control's live value is `doc.Query("#name").Value`. Assignment is a
+programmatic write, like a browser's `element.value`: it raises no input/change
+events and does not write back to `data-model`. For a bound control, update the
+controller or model and call `RequestRefresh()`; this also updates other bound
+elements.
 
 ## 5. Input
 

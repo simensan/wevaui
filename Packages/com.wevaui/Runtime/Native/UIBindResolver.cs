@@ -68,35 +68,34 @@ namespace Weva.Native
             if (string.IsNullOrEmpty(path)) return false;
             string[] segments = path.Split('.');
             if (!_roots.TryGetValue(segments[0].Trim(), out MemberInfo root)) return false;
-            object target = _controller;
-            MemberInfo leaf = root;
-            for (int i = 1; i < segments.Length; i++)
+            if (segments.Length == 1) return WriteMember(root, _controller, text);
+
+            // Resolve the parent with the same walk used by reads. A collection
+            // entry is already a value, not a MemberInfo to read on the next
+            // iteration (data-each paths commonly contain both kinds).
+            object target = Read(root, _controller);
+            for (int i = 1; i < segments.Length - 1 && target != null; i++)
+                target = Step(target, segments[i].Trim());
+            if (target == null) return false;
+            string segment = segments[segments.Length - 1].Trim();
+            if (target is IDictionary dict)
             {
-                target = Read(leaf, target);
-                if (target == null) return false;
-                string segment = segments[i].Trim();
-                if (target is IDictionary dict)
-                {
-                    if (i != segments.Length - 1) { target = dict.Contains(segment) ? dict[segment] : null; if (target == null) return false; leaf = null; continue; }
-                    object existing = dict.Contains(segment) ? dict[segment] : null;
-                    object value = NativeBindings.Convert(existing, text);
-                    if (existing != null && Equals(existing, value)) return false;
-                    dict[segment] = value;
-                    return true;
-                }
-                if (target is IList list && int.TryParse(segment, out int index))
-                {
-                    if (index < 0 || index >= list.Count) return false;
-                    if (i != segments.Length - 1) { target = list[index]; if (target == null) return false; leaf = null; continue; }
-                    object value = NativeBindings.Convert(list[index], text);
-                    if (Equals(list[index], value)) return false;
-                    list[index] = value;
-                    return true;
-                }
-                leaf = MemberOf(target.GetType(), segment);
-                if (leaf == null) return false;
+                if (dict.IsReadOnly) return false;
+                object existing = dict.Contains(segment) ? dict[segment] : null;
+                object value = NativeBindings.Convert(existing, text);
+                if (existing != null && Equals(existing, value)) return false;
+                dict[segment] = value;
+                return true;
             }
-            return WriteMember(leaf, target, text);
+            if (target is IList list && int.TryParse(segment, out int index))
+            {
+                if (list.IsReadOnly || index < 0 || index >= list.Count) return false;
+                object value = NativeBindings.Convert(list[index], text);
+                if (Equals(list[index], value)) return false;
+                list[index] = value;
+                return true;
+            }
+            return WriteMember(MemberOf(target.GetType(), segment), target, text);
         }
 
         private static bool WriteMember(MemberInfo member, object target, string text)

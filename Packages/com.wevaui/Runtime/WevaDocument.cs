@@ -242,7 +242,7 @@ namespace Weva
             if (SystemFontFallback) _fonts.SyncInstalledFamilies(_doc);
             // A reload replaces the tree the binding source was installed on,
             // and a controller set before the core existed still applies.
-            if (_bindings != null || _controller != null) SetController(_controller);
+            if (_bindingRequested) SetController(_controller);
             _doc.Update(0);
         }
 
@@ -417,6 +417,7 @@ namespace Weva
         public bool InputConsumed { get; private set; }
 
         private readonly System.Collections.Generic.List<NativeEvent> _events = new System.Collections.Generic.List<NativeEvent>(16);
+        private bool _pumpingEvents;
         private bool _wrapTab = true;
         private bool _gamepadTextEntry;
         private bool _acceptsKeyboard = true;
@@ -438,7 +439,7 @@ namespace Weva
             set { _gamepadTextEntry = value; ApplyInputKnobs(); }
         }
 
-        /// <summary>The focused text control asked for text entry from a gamepad: its id. Set its Value when the player is done.</summary>
+        /// <summary>The focused text control asked for text entry from a gamepad: its id. Update its bound model when the player is done, or its Value if unbound.</summary>
         public event Action<string> TextEntryRequested;
 
         /// <summary>Whether keys and text reach the document; the pointer always does. Off keeps the keyboard for the game.</summary>
@@ -556,44 +557,62 @@ namespace Weva
             PumpEvents();
         }
 
-        /// <summary>Drains the core's event queue into the C# events. Called after every update.</summary>
+        /// <summary>Drains the core's event queue into the C# events. A callback that reloads or disables the document ends this batch; recursive calls defer to the next pump.</summary>
         public void PumpEvents()
         {
-            if (_doc == null) return;
-            _events.Clear();
-            _doc.PollEvents(_events);
-            foreach (NativeEvent e in _events)
+            if (_doc == null || _pumpingEvents) return;
+            NativeDocument document = _doc;
+            int generation = Generation;
+            bool IsCurrent() => ReferenceEquals(_doc, document) && Generation == generation;
+            _pumpingEvents = true;
+            try
             {
-                if (Event != null)
+                _events.Clear();
+                document.PollEvents(_events);
+                foreach (NativeEvent e in _events)
                 {
-                    Event.Invoke(new WevaEvent((WevaEventKind)(int)e.Kind, new WevaElement(this, e.Target, Generation),
+                    // Every notification can run game code (including closing
+                    // this menu). Never interpret an old target in a new tree,
+                    // or continue dispatching after the native document dies.
+                    if (!IsCurrent()) return;
+                    string id = e.Target == WevaNative.WEVA_ELEMENT_NONE ? string.Empty : document.ElementId(e.Target);
+                    Event?.Invoke(new WevaEvent((WevaEventKind)(int)e.Kind, new WevaElement(this, e.Target, generation),
                         new Vector2((float)e.X, (float)e.Y), e.Buttons, e.Modifiers, e.Text, e.Handler));
+                    if (!IsCurrent()) return;
+                    if (e.Handler.Length > 0)
+                    {
+                        HandlerInvoked?.Invoke(e.Handler, id);
+                        if (!IsCurrent()) return;
+                        Dispatch(e.Handler, id);
+                        if (!IsCurrent()) return;
+                    }
+                    switch (e.Kind)
+                    {
+                        case weva_event_kind.WEVA_EVENT_CLICK: ElementClicked?.Invoke(id); break;
+                        case weva_event_kind.WEVA_EVENT_VALUE_CHANGED:
+                            ValueChanged?.Invoke(id, document.ElementValue(e.Target));
+                            if (!IsCurrent()) return;
+                            // A control wrote into the model: everything else
+                            // bound to that path follows on this pump.
+                            if (_bindings != null && _bindings.WriteBack(e.Target)) _refreshPending = true;
+                            break;
+                        case weva_event_kind.WEVA_EVENT_CHANGE:
+                            Changed?.Invoke(id, document.ElementValue(e.Target));
+                            if (!IsCurrent()) return;
+                            if (_bindings != null && _bindings.WriteBack(e.Target)) _refreshPending = true;
+                            break;
+                        case weva_event_kind.WEVA_EVENT_SUBMIT: FormSubmitted?.Invoke(id); break;
+                        case weva_event_kind.WEVA_EVENT_FOCUS: Focused?.Invoke(id); break;
+                        case weva_event_kind.WEVA_EVENT_BLUR: Focused?.Invoke(string.Empty); break;
+                    }
                 }
-                string id = e.Target == WevaNative.WEVA_ELEMENT_NONE ? string.Empty : _doc.ElementId(e.Target);
-                if (e.Handler.Length > 0)
-                {
-                    HandlerInvoked?.Invoke(e.Handler, id);
-                    Dispatch(e.Handler, id);
-                }
-                switch (e.Kind)
-                {
-                    case weva_event_kind.WEVA_EVENT_CLICK: ElementClicked?.Invoke(id); break;
-                    case weva_event_kind.WEVA_EVENT_VALUE_CHANGED:
-                        ValueChanged?.Invoke(id, _doc.ElementValue(e.Target));
-                        // A control wrote into the model: everything else bound
-                        // to that path (a HUD label) follows on this pump.
-                        if (_bindings != null && _bindings.WriteBack(e.Target)) _refreshPending = true;
-                        break;
-                    case weva_event_kind.WEVA_EVENT_CHANGE:
-                        Changed?.Invoke(id, _doc.ElementValue(e.Target));
-                        if (_bindings != null && _bindings.WriteBack(e.Target)) _refreshPending = true;
-                        break;
-                    case weva_event_kind.WEVA_EVENT_SUBMIT: FormSubmitted?.Invoke(id); break;
-                    case weva_event_kind.WEVA_EVENT_FOCUS: Focused?.Invoke(id); break;
-                    case weva_event_kind.WEVA_EVENT_BLUR: Focused?.Invoke(string.Empty); break;
-                }
+                if (IsCurrent() && _refreshPending) Refresh();
             }
-            if (_refreshPending) Refresh();
+            finally
+            {
+                _events.Clear();
+                _pumpingEvents = false;
+            }
         }
 
         // ---- data binding and the controller ----------------------------------
@@ -605,6 +624,7 @@ namespace Weva
         private Weva.Binding.IBindingVersion _versioned;
         private int _lastVersion;
         private bool _refreshPending;
+        private bool _bindingRequested;
 
         /// <summary>The bound data, or null before Bind.</summary>
         public System.Collections.Generic.IDictionary<string, object> Data => _bindings?.Data;
@@ -634,6 +654,10 @@ namespace Weva
         /// </summary>
         public void SetController(object newController)
         {
+            // Remember the request independently of the native adapter, which
+            // does not exist while disabled. Bind(model) also uses this path
+            // when there is no controller.
+            _bindingRequested = true;
             _controller = newController;
             _uiBind = newController != null ? new UIBindResolver(newController) : null;
             _versioned = newController as Weva.Binding.IBindingVersion;

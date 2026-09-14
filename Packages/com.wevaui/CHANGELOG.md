@@ -11,6 +11,14 @@ One engine. The C# HTML/CSS engine that 0.1.x shipped is deleted; the
 package is the Unity host for the Weva core (`libweva`, C++, behind a C ABI,
 checked against Chrome), which the Godot addon also runs on.
 
+### Fixed
+- Event callbacks can reload or disable a document safely: dispatch stops for
+  the old tree, and recursive `PumpEvents()` calls defer to the next pump.
+- Two-way controller bindings write through nested lists and dictionaries.
+  `Bind(model)` persists when called while disabled and across disable/enable.
+- Documented that assigning `WevaElement.Value` is programmatic and raises no
+  input/change events; bound controls should be changed through their model.
+
 ### Migrating from 0.1.x
 - `WevaDocument` keeps its name, its script GUID and its serialized fields
   (`documentAsset`, `stylesheetAssets`, `sortingOrder`,

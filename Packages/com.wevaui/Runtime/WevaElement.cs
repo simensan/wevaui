@@ -40,7 +40,7 @@ namespace Weva
         /// <summary>The element's text content.</summary>
         public string Text => Doc?.ElementText(Handle) ?? string.Empty;
 
-        /// <summary>A form control's live value; setting it is what the user typing it would do (events, bindings and all).</summary>
+        /// <summary>A form control's live value. Assignment is programmatic: it raises no input/change events and does not write back to data-model. Update the bound model for a bound control.</summary>
         public string Value
         {
             get => Doc?.ElementValue(Handle) ?? string.Empty;
