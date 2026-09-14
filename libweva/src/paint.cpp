@@ -3457,8 +3457,10 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     }
 
     // The selection band uses the run's source mapping, including styled
-    // display buffers that no longer view the editable value directly.
-    if (b.kind == BoxKind::Text && !b.text.empty() && !hidden && paint.font && paint.atlas &&
+    // display buffers that no longer view the editable value directly. Not
+    // on a vertical run: the band is a horizontal advance, which would land
+    // as a sliver across the column.
+    if (b.kind == BoxKind::Text && !b.vertical_text && !b.text.empty() && !hidden && paint.font && paint.atlas &&
         (paint.caret.selection_to > paint.caret.selection_from ||
          paint.caret.composition_to > paint.caret.composition_from) && !paint.caret.source.empty()) {
         const auto source_at = text_source_offset(b, paint.caret.source);
@@ -3642,7 +3644,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     }
 
     // A preserved tab has no glyph ink, but text decoration spans its advance.
-    if (b.kind == BoxKind::Text && b.preserved_tab && !hidden && paint.font && paint.atlas) {
+    if (b.kind == BoxKind::Text && !b.vertical_text && b.preserved_tab && !hidden && paint.font && paint.atlas) {
         if (const int deco = decoration_flags_of(b.style)) {
             const BoxId line = b.parent;
             const double baseline = line != kNoBox && tree[line].kind == BoxKind::Line
@@ -3659,8 +3661,10 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // into it, was settled after layout: paint cannot work that out per run
     // without missing the cursor at a line end, where the newline belongs to
     // no run at all.
-    if (b.kind == BoxKind::Text && id == paint.caret.run && paint.caret.visible && !hidden &&
-        paint.font && paint.atlas) {
+    // Not on a vertical run either: the caret is placed by a horizontal
+    // advance, and a bar at the wrong spot is worse than none.
+    if (b.kind == BoxKind::Text && !b.vertical_text && id == paint.caret.run && paint.caret.visible &&
+        !hidden && paint.font && paint.atlas) {
         const LinearColor caret_color = caret_color_of(b.style);
         const FaceHandle caret_face = face_for_run(b, ctx, paint);
         const double caret_spacing =

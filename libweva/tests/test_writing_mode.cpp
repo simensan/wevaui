@@ -288,6 +288,17 @@ void test_writing_mode() {
         CHECK(near(f.box("a").y, 5));
         CHECK(near(f.box("a").width, 10) && near(f.box("a").height, 10));
     }
+    // An absolutely positioned vertical box fits its inline size against its
+    // CONTAINING block's height -- the positioned ancestor's, through a
+    // wrapper that is not positioned -- not the viewport's. Five 32px words
+    // want 200px and get 100, two words a line, so three lines.
+    {
+        Fixture f;
+        CHECK(f.css("#cb{position:relative;height:100px}#v{position:absolute;writing-mode:vertical-rl}"));
+        CHECK(f.layout("<div id=cb><div id=mid><div id=v>abcd abcd abcd abcd abcd</div></div></div>", 1000, 600));
+        CHECK(near(f.box("v").height, 100));
+        CHECK(near(f.box("v").width, 3 * kLine));
+    }
     // The horizontal flow around the vertical box goes on below it, and the
     // box's own physical margins collapse with its siblings' as any block's.
     {

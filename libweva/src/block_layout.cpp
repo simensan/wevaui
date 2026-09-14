@@ -5,6 +5,7 @@
 #include "weva/grid.h"
 #include "weva/table_layout.h"
 #include "weva/multicol.h"
+#include "weva/positioning.h"
 
 #include "weva/css_properties.h"
 #include "weva/inline_layout.h"
@@ -1381,7 +1382,17 @@ void BlockLayout::layout_orthogonal(BoxId id, const ComputedStyle* parent_style,
     // section in one fits against the viewport height, as it does in Chrome.
     double available = ctx_.viewport_height_px;
     const BoxId parent = (*tree_)[id].parent;
-    if (parent != kNoBox && (*tree_)[parent].style) {
+    static const int kPosition = CssPropertyRegistry::instance().id_of("position");
+    const PositionType position = parse_position_type(get((*tree_)[id].style, kPosition));
+    if (position == PositionType::Absolute || position == PositionType::Fixed) {
+        // An out-of-flow box's containing block is its nearest positioned
+        // ancestor's padding box, not its parent; a wrapper in between must
+        // not send it to the viewport.
+        const ContainingBlock cb = position == PositionType::Absolute
+            ? resolve_absolute_containing_block(*tree_, id, ctx_)
+            : resolve_fixed_containing_block(*tree_, id, ctx_);
+        if (cb.box != kNoBox && !cb.is_viewport && cb.height > 0) available = cb.height;
+    } else if (parent != kNoBox && (*tree_)[parent].style) {
         const Box& p = (*tree_)[parent];
         const BoxId grandparent = p.parent;
         const ComputedStyle* gp_style = grandparent == kNoBox ? nullptr : (*tree_)[grandparent].style;
