@@ -75,9 +75,10 @@ siblings. Use a more specific selector instead.
 
 ## At-rules
 
-- `@import "path.css"` — relative and Unity asset paths. The
-  `layer(name)` / `supports(cond)` qualifiers parse but the spliced rules are
-  not wrapped/gated (move those into the importing sheet).
+- `@import "path.css"` — fetched through the document's asset reader.
+  Nested imports resolve from the importing stylesheet's directory; cycles
+  are stopped and missing files appear in CSS diagnostics. Named/anonymous
+  `layer`, `supports()` and media qualifiers wrap the imported rules.
 - `@font-face` — full descriptor parsing (`font-family`, `src` with
   `local()`/`format()`, weight/style/stretch ranges, `unicode-range`,
   `font-display`). Runtime font-matching honors family + first `url()`; the

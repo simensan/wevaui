@@ -410,7 +410,13 @@ std::string css_token_source(const CssToken& t) {
         case CssTokenKind::Number:     return t.text;
         case CssTokenKind::Percentage: return t.text;
         case CssTokenKind::Dimension:  return t.text;
-        case CssTokenKind::Url:        return "url(" + t.text + ")";
+        case CssTokenKind::Url:
+            // The tokenizer has decoded escapes. Re-emitting a literal '(',
+            // quote or space unquoted would turn a valid URL into a bad URL
+            // when the declaration or @import prelude is parsed again.
+            if (t.text.find_first_of(" \t\r\n\f()\"'\\") != std::string::npos)
+                return "url(\"" + escape_string(t.text) + "\")";
+            return "url(" + t.text + ")";
         case CssTokenKind::Delim:      return t.text;
         case CssTokenKind::Comma:      return ",";
         case CssTokenKind::Colon:      return ":";

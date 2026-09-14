@@ -418,6 +418,7 @@ void test_abi_color_scheme();
 void test_abi_placeholder_and_selection_pseudos();
 void test_abi_position_sticky();
 void test_abi_at_import();
+void test_abi_at_import_paths();
 void test_abi_scroll_snap();
 void test_abi_cursor();
 void test_abi_range_click_at_edge();
@@ -1003,6 +1004,7 @@ int main() {
     test_abi_placeholder_and_selection_pseudos();
     test_abi_position_sticky();
     test_abi_at_import();
+    test_abi_at_import_paths();
     test_abi_scroll_snap();
     test_abi_cursor();
     test_abi_range_click_at_edge();

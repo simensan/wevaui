@@ -17,7 +17,9 @@
 
 namespace weva {
 
-// Loads the CSS text at `url` (as written in the sheet, unresolved). False
+// Loads the CSS text at `url`, with nested references resolved against their
+// importing stylesheet and dot segments removed. A relative result still
+// belongs to the document's base path (the asset reader's convention). False
 // when the sheet cannot be read; the import is then dropped, which is what a
 // browser does with a sheet that fails to load.
 using StylesheetLoader = std::function<bool(std::string_view url, std::string* css)>;

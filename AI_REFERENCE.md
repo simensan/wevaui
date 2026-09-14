@@ -144,7 +144,8 @@ check.sh                          the gate
   All 334 captures pass the 1.5px ceiling (62 hand, 225 harvest, 47 samples).
   Always pass `--chrome-metrics` (the browser's box semantics).
 - **`Tools/oracle/run_chrome_checks.py`** — scripted behaviour checks
-  against a live Chrome (forms, focus, popovers, animation clocks).
+  against a live Chrome (forms, focus, popovers, animation clocks, stylesheet
+  discovery/imports). Review: 60 scripts, 59 pass and 1 documented Chrome IME failure.
 - **Unity EditMode**: `Unity -batchmode -projectPath <repo> -runTests
   -testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native
   -testResults <path>` (no `-quit`, no `-nographics`). Also the compile check.

@@ -825,6 +825,76 @@ void test_abi_at_import() {
     weva_document_destroy(d);
 }
 
+// Mirrors check_import_paths_chrome.cjs: each nested import belongs to the
+// importing stylesheet's directory. Quoted punctuation remains URL content,
+// aliases do not defeat cycle detection, and anonymous layers cannot reopen.
+void test_abi_at_import_paths() {
+    static const char* sheets[][2] = {
+        {"styles/theme.css", "@import '../palette.css'; @import 'nested/child.css';"
+                             " @import '../styles/./theme.css'; #theme { width: 101px }"},
+        {"palette.css", "#palette { width: 102px }"},
+        {"styles/nested/child.css", "@import '../../shared/base.css'; #child { width: 103px }"},
+        {"shared/base.css", "#base { width: 104px }"},
+        {"styles/close).css", "#close { width: 105px }"},
+        {"styles/quoted\".css", "#quote { width: 106px }"},
+        {"styles/paren(.css", "#paren { width: 107px }"},
+        {"layer.css", "#layer { width: 108px }"},
+    };
+    struct Reads { std::vector<std::string> paths; std::string prefix; } reads;
+    const auto reader = [](void* user, const char* path, uint8_t* out, size_t capacity) -> size_t {
+        auto& state = *static_cast<Reads*>(user);
+        if (!out) state.paths.emplace_back(path);
+        for (const auto& sheet : sheets) {
+            if (state.prefix + sheet[0] != path) continue;
+            const size_t size = std::strlen(sheet[1]);
+            if (out && capacity >= size) std::memcpy(out, sheet[1], size);
+            return size;
+        }
+        return 0;
+    };
+    const char* css = R"CSS(@import "styles/theme.css";
+        @import url("styles/close).css");
+        @import "styles/quoted\".css";
+        @import url(styles/paren\(.css);
+        @import "layer.css" layer;
+        @layer weva-anonymous-import-1 { .layer { width: 109px } }
+        html, body { margin: 0 }
+        div { height: 20px; background: #37a66f })CSS";
+    const char* html = "<div id=theme></div><div id=palette></div><div id=child></div>"
+                       "<div id=base></div><div id=close></div><div id=quote></div>"
+                       "<div id=paren></div><div id=layer class=layer></div>";
+    // The default reader is a filesystem reader; Godot uses virtual paths.
+    // Exercise both through the same ABI, without suffix-matching filenames.
+    const std::pair<const char*, bool> locations[] = {
+        {"", false}, {"/ui/", false}, {"res://ui/", false}, {"https://example.test/ui/", false},
+        {"res://ui/", true}, {"https://example.test/ui/", true},
+    };
+    for (const auto& location : locations) {
+        reads = {{}, location.first};
+        std::string input(css);
+        if (location.second) {
+            const std::string name = "styles/theme.css";
+            input.replace(input.find(name), name.size(), reads.prefix + name);
+        }
+        weva_config c = config();
+        weva_document_t d = weva_document_create(&c);
+        CHECK(weva_document_set_base_path(d, location.first) == WEVA_OK);
+        CHECK(weva_document_set_asset_reader(d, reader, &reads) == WEVA_OK);
+        CHECK(weva_document_load_html(d, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_add_css(d, input.data(), input.size()) == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        const char* ids[] = {"#theme", "#palette", "#child", "#base", "#close", "#quote", "#paren", "#layer"};
+        for (size_t i = 0; i < 8; ++i) {
+            double x = 0, y = 0, w = 0, h = 0;
+            CHECK(weva_element_bounds(d, weva_document_query(d, ids[i]), &x, &y, &w, &h) == WEVA_OK);
+            CHECK(w == (i == 7 ? 109 : 101 + static_cast<double>(i)));
+        }
+        CHECK(reads.paths.size() == 8);
+        CHECK(std::count(reads.paths.begin(), reads.paths.end(), reads.prefix + "styles/theme.css") == 1);
+        weva_document_destroy(d);
+    }
+}
+
 // CSS Scroll Snap L1: a programmatic scroll lands on a snap position at
 // once; a wheel scroll moves freely, then settles onto one once the wheel is
 // quiet, animated; `scroll-snap-stop: always` is not skipped; `proximity`

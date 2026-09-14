@@ -41,7 +41,11 @@ struct ImportSpec {
 // the closing one; npos when unbalanced.
 size_t balanced(std::string_view s, size_t open, std::string_view* inner) {
     int depth = 0;
+    char quote = 0;
     for (size_t i = open; i < s.size(); ++i) {
+        if (s[i] == '\\') { if (i + 1 < s.size()) ++i; continue; }
+        if (quote) { if (s[i] == quote) quote = 0; continue; }
+        if (s[i] == '\'' || s[i] == '"') { quote = s[i]; continue; }
         if (s[i] == '(') ++depth;
         else if (s[i] == ')' && --depth == 0) {
             *inner = s.substr(open + 1, i - open - 1);
@@ -52,30 +56,35 @@ size_t balanced(std::string_view s, size_t open, std::string_view* inner) {
 }
 
 bool parse_prelude(std::string_view prelude, ImportSpec* out) {
-    std::string_view s = trim(prelude);
-    if (s.empty()) return false;
-    // The URL: "x", 'x', url(x), url("x").
-    if (s.front() == '"' || s.front() == '\'') {
-        const size_t close = s.find(s.front(), 1);
-        if (close == std::string_view::npos) return false;
-        out->url = std::string(s.substr(1, close - 1));
-        s = trim(s.substr(close + 1));
-    } else if (istarts_with(s, "url(")) {
-        std::string_view inner;
-        const size_t after = balanced(s, 3, &inner);
-        if (after == std::string_view::npos) return false;
-        inner = trim(inner);
-        if (!inner.empty() && (inner.front() == '"' || inner.front() == '\'')) {
-            const size_t close = inner.find(inner.front(), 1);
-            if (close == std::string_view::npos) return false;
-            inner = inner.substr(1, close - 1);
-        }
-        out->url = std::string(inner);
-        s = trim(s.substr(after));
+    // Let the CSS tokenizer decode strings/escapes. A ')' inside a quoted
+    // filename is content, not the end of url(), and an escaped quote is not
+    // the end of a bare string URL.
+    std::vector<CssToken> tokens;
+    CssParseError error;
+    if (!CssTokenizer(prelude, true).tokenize(&tokens, &error)) return false;
+    size_t i = 0;
+    const auto skip_space = [&]() {
+        while (i < tokens.size() && tokens[i].kind == CssTokenKind::Whitespace) ++i;
+    };
+    skip_space();
+    if (i >= tokens.size()) return false;
+    if (tokens[i].kind == CssTokenKind::String || tokens[i].kind == CssTokenKind::Url) {
+        out->url = tokens[i++].text;
+    } else if (tokens[i].kind == CssTokenKind::Function &&
+               tokens[i].text.size() == 3 && istarts_with(tokens[i].text, "url")) {
+        ++i;
+        skip_space();
+        if (i >= tokens.size() || tokens[i].kind != CssTokenKind::String) return false;
+        out->url = tokens[i++].text;
+        skip_space();
+        if (i >= tokens.size() || tokens[i++].kind != CssTokenKind::RParen) return false;
     } else {
         return false;
     }
     if (out->url.empty()) return false;
+    std::string tail;
+    for (; i < tokens.size(); ++i) tail += css_token_source(tokens[i]);
+    std::string_view s = trim(tail);
 
     // Then, in order: layer | layer(name), supports(...), media queries.
     if (istarts_with(s, "layer(")) {
@@ -99,14 +108,71 @@ bool parse_prelude(std::string_view prelude, ImportSpec* out) {
     return true;
 }
 
+// Import identifiers stay relative to the document reader, but each nested
+// reference first resolves against the importing file. Normalize dot segments
+// so aliases also share the cycle guard. Preserve host schemes such as res://.
+std::string import_url(std::string_view parent, std::string_view url) {
+    const auto has_scheme = [](std::string_view path) {
+        const size_t colon = path.find(':');
+        return colon != std::string_view::npos && colon < path.find_first_of("/\\?#");
+    };
+    std::string joined;
+    if (!url.empty() && url.front() != '/' && url.front() != '\\' && !has_scheme(url)) {
+        const std::string_view file = parent.substr(0, parent.find_first_of("?#"));
+        const size_t slash = file.find_last_of('/');
+        if (slash != std::string_view::npos) joined.assign(file.substr(0, slash + 1));
+    }
+    joined.append(url);
+    std::string_view path(joined);
+    std::string prefix;
+    const size_t scheme = path.find("://");
+    if (scheme != std::string_view::npos) {
+        size_t start = scheme + 3;
+        if (!istarts_with(path, "res://") && !istarts_with(path, "user://")) {
+            // URL authorities are not directories that '..' can climb above.
+            start = path.find('/', start);
+            if (start == std::string_view::npos) return joined;
+        }
+        prefix.assign(path.substr(0, start));
+        path.remove_prefix(start);
+    } else if (has_scheme(path)) {
+        // Drive-letter paths and opaque host URLs are already absolute.
+        return joined;
+    }
+    const size_t suffix_at = path.find_first_of("?#");
+    const std::string suffix(suffix_at == std::string_view::npos ? std::string_view{} : path.substr(suffix_at));
+    path = path.substr(0, suffix_at);
+    const bool rooted = !prefix.empty() || (!path.empty() && path.front() == '/');
+    const bool leading_slash = !path.empty() && path.front() == '/';
+    std::vector<std::string_view> parts;
+    while (!path.empty()) {
+        const size_t slash = path.find('/');
+        const std::string_view part = path.substr(0, slash);
+        if (part == "..") {
+            if (!parts.empty() && parts.back() != "..") parts.pop_back();
+            else if (!rooted) parts.push_back(part);
+        } else if (!part.empty() && part != ".") {
+            parts.push_back(part);
+        }
+        if (slash == std::string_view::npos) break;
+        path.remove_prefix(slash + 1);
+    }
+    std::string result = prefix;
+    if (leading_slash) result.push_back('/');
+    for (size_t i = 0; i < parts.size(); ++i) {
+        if (i) result.push_back('/');
+        result.append(parts[i]);
+    }
+    return result + suffix;
+}
+
 void expand(Stylesheet* sheet, const StylesheetLoader& load, std::vector<std::string>* missing,
-            std::vector<std::string>* loading, int depth, int* resolved) {
+            std::vector<std::string>* loading, int depth, int* resolved, std::string_view parent) {
     std::vector<RulePtr> out;
     out.reserve(sheet->rules.size());
     // §4: an @import after any other rule (but @charset and a @layer
     // statement) is invalid and ignored, as browsers ignore it.
     bool seen_rule = false;
-    static int anonymous_layers = 0;
     for (RulePtr& r : sheet->rules) {
         if (!r) continue;
         if (r->kind() != RuleKind::At) { seen_rule = true; out.push_back(std::move(r)); continue; }
@@ -119,6 +185,7 @@ void expand(Stylesheet* sheet, const StylesheetLoader& load, std::vector<std::st
         if (seen_rule) continue;
         ImportSpec spec;
         if (!parse_prelude(ar->prelude, &spec)) continue;   // malformed: dropped, as a browser does
+        spec.url = import_url(parent, spec.url);
         // A sheet already on the way in is a cycle; it contributes nothing
         // twice.
         if (std::find(loading->begin(), loading->end(), spec.url) != loading->end()) continue;
@@ -132,7 +199,7 @@ void expand(Stylesheet* sheet, const StylesheetLoader& load, std::vector<std::st
         CssParseError err;
         if (!parse_stylesheet(css, false, imported.get(), &err)) continue;
         loading->push_back(spec.url);
-        expand(imported.get(), load, missing, loading, depth + 1, resolved);
+        expand(imported.get(), load, missing, loading, depth + 1, resolved, spec.url);
         loading->pop_back();
         ++*resolved;
 
@@ -149,10 +216,9 @@ void expand(Stylesheet* sheet, const StylesheetLoader& load, std::vector<std::st
             rules.clear();
             rules.push_back(std::move(w));
         };
-        if (spec.anonymous_layer && spec.layer.empty()) {
-            spec.layer = "weva-anonymous-import-" + std::to_string(++anonymous_layers);
-        }
-        if (!spec.layer.empty()) wrap("layer", spec.layer);
+        // The cascade already owns anonymous layer identities. Inventing a
+        // global author-visible name here both races and lets CSS reopen it.
+        if (spec.anonymous_layer || !spec.layer.empty()) wrap("layer", spec.layer);
         if (!spec.supports.empty()) wrap("supports", "(" + spec.supports + ")");
         if (!trim(spec.media).empty()) wrap("media", spec.media);
         for (RulePtr& imported_rule : rules) out.push_back(std::move(imported_rule));
@@ -166,7 +232,7 @@ int expand_imports(Stylesheet* sheet, const StylesheetLoader& load, std::vector<
     if (!sheet || !load) return 0;
     int resolved = 0;
     std::vector<std::string> loading;
-    expand(sheet, load, missing, &loading, 0, &resolved);
+    expand(sheet, load, missing, &loading, 0, &resolved, {});
     return resolved;
 }
 
