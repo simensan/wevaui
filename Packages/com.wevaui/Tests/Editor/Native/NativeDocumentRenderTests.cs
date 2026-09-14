@@ -82,6 +82,62 @@ namespace Weva.Tests.EditorTests.Native
             }
         }
 
+        // backdrop-filter reads the target: the core hands the host the shape and
+        // the composed colour matrix, the host copies the target and draws the
+        // shape over the copy. Orientation is exact on the offscreen path, so
+        // the top half of the page is what the top-half element filters.
+        [Test]
+        public void Render_AppliesABackdropFilter_ToWhatIsBeneathIt()
+        {
+            Assume.That(HasGraphics, "a graphics device is required");
+            using (var doc = new NativeDocument(200, 100))
+            using (var renderer = new NativeDocumentRenderer())
+            {
+                doc.LoadHtml("<body><div id=top></div><div id=bottom></div><div id=glass></div></body>");
+                doc.SetCss("body{margin:0}#top,#bottom,#glass{position:absolute;left:0;width:100%;height:50%}" +
+                           "#top{top:0;background:#ff0000}#bottom{top:50%;background:#0000ff}#glass{top:0;backdrop-filter:invert(1)}");
+                doc.Update(0);
+                renderer.Sync(doc);
+                Assert.That(renderer.BackdropDraws, Is.EqualTo(1), "the core published one backdrop-filter draw");
+                Texture2D image = renderer.RenderToTexture(doc, 200, 100, Color.white);
+                try
+                {
+                    Assert.That(Near(PageTopDown(image, 100, 25), new Color32(0, 255, 255, 255)), "the top half is the red beneath, inverted: " + PageTopDown(image, 100, 25));
+                    Assert.That(Near(PageTopDown(image, 100, 75), new Color32(0, 0, 255, 255)), "the bottom half is untouched: " + PageTopDown(image, 100, 75));
+                }
+                finally
+                {
+                    Object.DestroyImmediate(image);
+                }
+            }
+        }
+
+        [Test]
+        public void Render_BlursTheBackdrop_AcrossAnEdge()
+        {
+            Assume.That(HasGraphics, "a graphics device is required");
+            using (var doc = new NativeDocument(200, 100))
+            using (var renderer = new NativeDocumentRenderer())
+            {
+                doc.LoadHtml("<body><div id=left></div><div id=right></div><div id=glass></div></body>");
+                doc.SetCss("body{margin:0}#left,#right,#glass{position:absolute;top:0;height:100%}" +
+                           "#left{left:0;width:50%;background:#ff0000}#right{left:50%;width:50%;background:#0000ff}#glass{left:0;width:100%;backdrop-filter:blur(10px)}");
+                doc.Update(0);
+                Texture2D image = renderer.RenderToTexture(doc, 200, 100, Color.white);
+                try
+                {
+                    Color32 nearLeft = PageTopDown(image, 96, 50), nearRight = PageTopDown(image, 104, 50), far = PageTopDown(image, 10, 50);
+                    Assert.That(nearLeft.b, Is.GreaterThan(30), "blue bled into the red side of the edge: " + nearLeft);
+                    Assert.That(nearRight.r, Is.GreaterThan(30), "red bled into the blue side: " + nearRight);
+                    Assert.That(Near(far, new Color32(255, 0, 0, 255)), "far from the edge the red is untouched: " + far);
+                }
+                finally
+                {
+                    Object.DestroyImmediate(image);
+                }
+            }
+        }
+
         [Test]
         public void Render_DrawsTextThroughTheAtlas()
         {

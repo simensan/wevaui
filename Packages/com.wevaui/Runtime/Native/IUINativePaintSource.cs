@@ -12,9 +12,10 @@ namespace Weva.Native
     {
         /// <summary>
         /// UIRenderGraphPass calls this with a Unity command buffer bound to
-        /// the camera target; sources draw in SortingOrder.
+        /// <paramref name="target"/> (the camera target); sources draw in
+        /// SortingOrder, and one with a backdrop-filter reads the target back.
         /// </summary>
-        void EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight);
+        void EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight, in NativeRenderTarget target);
     }
 }
 #endif

@@ -106,7 +106,13 @@ colours are linear, its texels are sRGB bytes (white plus coverage for the
 glyph atlas), and a page composites in gamma space, so the offscreen path
 encodes vertex colours to sRGB and blends into a raw target; the in-pass path
 into URP's linear colour buffer blends in linear space instead (edges differ
-slightly from the gamma composite).
+slightly from the gamma composite). `backdrop-filter` draws (the shape plus
+the colour matrix the core composed) copy the target just before them --
+into a texture the pass owns and imports, filled by the shader's own copy
+pass with the target bound by identifier -- and draw the shape through
+`Hidden/Weva/NativeBackdrop` (a 7x7 Gaussian, the same kernel as the Godot
+host's, then the matrix in sRGB), replacing what is behind; runs of geometry
+split around them so each sees what was drawn beneath.
 
 `WevaDocument` (`Weva.WevaDocument`, at `Runtime/WevaDocument.cs`; it was
 `Weva.Native.WevaNativeDocument` until 2026-09-13, when it took the name, the

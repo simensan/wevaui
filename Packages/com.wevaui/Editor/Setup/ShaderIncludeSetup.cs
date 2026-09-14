@@ -20,10 +20,12 @@ namespace Weva.EditorTools.Setup {
         const string MenuPath = "Window/Weva/Setup/Add Shaders to Always Included";
 
         // The shaders the runtime loads by Shader.Find: the one that draws the
-        // core's draw list (Runtime/Native/Resources/Weva-NativeMesh.shader).
-        // The name is the `Shader "..."` declaration, not the file name.
+        // core's draw list and the one behind backdrop-filter
+        // (Runtime/Native/Resources/Weva-Native*.shader). The name is the
+        // `Shader "..."` declaration, not the file name.
         static readonly string[] RequiredShaderNames = {
             "Hidden/Weva/NativeMesh",
+            "Hidden/Weva/NativeBackdrop",
         };
 
         // Auto-configure on editor load so consumers don't have to discover the

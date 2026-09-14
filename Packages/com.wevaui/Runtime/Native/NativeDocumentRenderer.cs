@@ -5,8 +5,11 @@
 // is published, as the Godot host relies on), so the host's job is upload:
 // mirror the document's textures by id, merge consecutive draws that share a
 // texture into one mesh, and issue one DrawMesh per merged run through
-// Hidden/Weva/NativeMesh. Backdrop-filter draws carry a transparent shape and
-// are skipped; rounded rectangles arrive tessellated and draw as geometry.
+// Hidden/Weva/NativeMesh. A backdrop-filter draw is the one thing that is
+// not geometry: its shape is drawn with Hidden/Weva/NativeBackdrop over a
+// copy of the target taken just before it, so it sees everything drawn
+// beneath (runs split around it); rounded rectangles arrive tessellated
+// and draw as geometry.
 //
 // Two entry points: Draw(CommandBuffer) for the URP pass, and
 // RenderToTexture for tests and screenshots (a legacy CommandBuffer executed
@@ -35,7 +38,22 @@ namespace Weva.Native
             public ulong Texture;
             public int Triangles;
             public int Blend;   // weva_blend_mode
+            public bool Backdrop;
+            public weva_backdrop_effect Effect;
         }
+
+        private static readonly int IdBackdropCopy = Shader.PropertyToID("_WevaBackdropCopy");
+        private static readonly int IdBackdropSource = Shader.PropertyToID("_WevaBackdropSource");
+        private static readonly int IdBackdropSigma = Shader.PropertyToID("_WevaBackdropSigma");
+        private static readonly int IdBackdropRow0 = Shader.PropertyToID("_WevaBackdropRow0");
+        private static readonly int IdBackdropRow1 = Shader.PropertyToID("_WevaBackdropRow1");
+        private static readonly int IdBackdropRow2 = Shader.PropertyToID("_WevaBackdropRow2");
+        private static readonly int IdBackdropOffset = Shader.PropertyToID("_WevaBackdropOffset");
+        private Material _backdrop;
+        private readonly MaterialPropertyBlock _backdropProps = new MaterialPropertyBlock();
+
+        /// <summary>How many backdrop-filter draws the last sync produced.</summary>
+        public int BackdropDraws { get; private set; }
 
         private static readonly int IdBlend = Shader.PropertyToID("_WevaBlend");
         private static readonly int IdSrcBlend = Shader.PropertyToID("_WevaSrcBlend");
@@ -173,14 +191,34 @@ namespace Weva.Native
             _batches.Clear();
             DrawsSkipped = 0;
             TrianglesUploaded = 0;
+            BackdropDraws = 0;
             ReadOnlySpan<weva_draw> draws = doc.Draws();
             int i = 0;
             while (i < draws.Length)
             {
                 weva_draw first = draws[i];
-                if (first.kind == (int)weva_draw_kind.WEVA_DRAW_BACKDROP_FILTER || first.vertex_count == 0 || first.index_count == 0)
+                if (first.vertex_count == 0 || first.index_count == 0)
                 {
                     DrawsSkipped++;
+                    i++;
+                    continue;
+                }
+                if (first.kind == (int)weva_draw_kind.WEVA_DRAW_BACKDROP_FILTER)
+                {
+                    // The shape, on its own: what is beneath it must already be
+                    // in the target when it draws, so it neither joins the run
+                    // before it nor lets the run after it start early.
+                    _positions.Clear();
+                    _indices.Clear();
+                    for (nuint v = 0; v < first.vertex_count; v++) _positions.Add(new Vector3(first.vertices[v].x, first.vertices[v].y, 0));
+                    for (nuint k = 0; k < first.index_count; k++) _indices.Add((int)first.indices[k]);
+                    Mesh shape = RentMesh();
+                    shape.indexFormat = _positions.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16;
+                    shape.SetVertices(_positions);
+                    shape.SetIndices(_indices, MeshTopology.Triangles, 0, false);
+                    shape.bounds = new Bounds(Vector3.zero, new Vector3(1e6f, 1e6f, 1f));
+                    _batches.Add(new Batch { Mesh = shape, Triangles = _indices.Count / 3, Backdrop = true, Effect = first.backdrop });
+                    BackdropDraws++;
                     i++;
                     continue;
                 }
@@ -193,9 +231,10 @@ namespace Weva.Native
                 while (j < draws.Length)
                 {
                     weva_draw d = draws[j];
-                    if (d.kind == (int)weva_draw_kind.WEVA_DRAW_BACKDROP_FILTER || d.vertex_count == 0 || d.index_count == 0)
+                    if (d.kind == (int)weva_draw_kind.WEVA_DRAW_BACKDROP_FILTER) break;
+                    if (d.vertex_count == 0 || d.index_count == 0)
                     {
-                        // A skipped draw between two runs does not split them.
+                        // An empty draw between two runs does not split them.
                         DrawsSkipped++;
                         j++;
                         continue;
@@ -284,11 +323,13 @@ namespace Weva.Native
         }
 
         /// <summary>
-        /// Issues the batches into a legacy command buffer. flip = 0 follows
-        /// _ProjectionParams.x; gamma composites sRGB-encoded into a raw target
-        /// the way a browser and the Godot host do (see the shader).
+        /// Issues the batches into a command buffer bound to <paramref name="target"/>.
+        /// flip = 0 follows _ProjectionParams.x; gamma composites sRGB-encoded
+        /// into a raw target the way a browser and the Godot host do (see the
+        /// shader). A backdrop-filter draw copies the target first and draws
+        /// its shape over the copy; with no target given it is skipped.
         /// </summary>
-        public void Draw(CommandBuffer cmd, int width, int height, int flip = 0, bool gamma = false)
+        public void Draw(CommandBuffer cmd, int width, int height, int flip, bool gamma, in NativeRenderTarget target)
         {
             if (cmd == null) throw new ArgumentNullException(nameof(cmd));
             cmd.SetGlobalVector(IdViewport, Viewport(width, height));
@@ -296,9 +337,73 @@ namespace Weva.Native
             cmd.SetGlobalInt(IdGamma, gamma ? 1 : 0);
             foreach (Batch b in _batches)
             {
+                if (b.Backdrop)
+                {
+                    if (!target.IsSet) continue;
+                    DrawBackdrop(cmd, b, target);
+                    continue;
+                }
                 Material m = MaterialFor(b.Texture, b.Blend);
                 if (m != null) cmd.DrawMesh(b.Mesh, Matrix4x4.identity, m);
             }
+        }
+
+        public void Draw(CommandBuffer cmd, int width, int height, int flip = 0, bool gamma = false)
+        {
+            Draw(cmd, width, height, flip, gamma, default);
+        }
+
+        // Copy what is in the target (a resolve, when it is multisampled),
+        // rebind the target, and draw the shape through the backdrop shader
+        // with the copy bound. Inside the URP pass the copy is a RenderGraph
+        // texture the pass declared, filled by the shader's own copy pass
+        // with the target bound by identifier: a legacy CommandBuffer.Blit
+        // in a RenderGraph pass left the camera target uncleared on the
+        // frames after, and the Blitter wants a Texture behind the handle,
+        // which the camera colour is not. Offscreen, with no graph, a
+        // temporary RT and a Blit do.
+        private void DrawBackdrop(CommandBuffer cmd, Batch b, in NativeRenderTarget target)
+        {
+            EnsureShader();
+            if (_backdrop == null)
+            {
+                Shader shader = Resources.Load<Shader>("Weva-NativeBackdrop");
+                if (shader == null) shader = Shader.Find("Hidden/Weva/NativeBackdrop");
+                if (shader == null) return;
+                _backdrop = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+            }
+            bool graph = target.ColorHandle != null && target.CopyHandle != null;
+            if (graph)
+            {
+                cmd.SetRenderTarget(target.CopyHandle);
+                cmd.SetGlobalTexture(IdBackdropSource, target.Color);
+                cmd.DrawProcedural(Matrix4x4.identity, _backdrop, 1, MeshTopology.Triangles, 3);
+                if (target.HasDepth) cmd.SetRenderTarget(target.ColorHandle, target.DepthHandle);
+                else cmd.SetRenderTarget(target.ColorHandle);
+                cmd.SetGlobalTexture(IdBackdropCopy, target.CopyHandle);
+            }
+            else
+            {
+                RenderTextureDescriptor copy = target.Descriptor;
+                copy.depthBufferBits = 0;
+                copy.msaaSamples = 1;
+                copy.bindMS = false;
+                copy.useMipMap = false;
+                cmd.GetTemporaryRT(IdBackdropCopy, copy, FilterMode.Bilinear);
+                cmd.Blit(target.Color, IdBackdropCopy);
+                if (target.HasDepth) cmd.SetRenderTarget(target.Color, target.Depth);
+                else cmd.SetRenderTarget(target.Color);
+                cmd.SetGlobalTexture(IdBackdropCopy, IdBackdropCopy);
+            }
+            weva_backdrop_effect e = b.Effect;
+            _backdropProps.Clear();
+            _backdropProps.SetFloat(IdBackdropSigma, (float)(e.blur_radius / 2.0));
+            _backdropProps.SetVector(IdBackdropRow0, new Vector4(e.color_matrix[0], e.color_matrix[1], e.color_matrix[2], 0));
+            _backdropProps.SetVector(IdBackdropRow1, new Vector4(e.color_matrix[3], e.color_matrix[4], e.color_matrix[5], 0));
+            _backdropProps.SetVector(IdBackdropRow2, new Vector4(e.color_matrix[6], e.color_matrix[7], e.color_matrix[8], 0));
+            _backdropProps.SetVector(IdBackdropOffset, new Vector4(e.color_offset[0], e.color_offset[1], e.color_offset[2], e.color_alpha));
+            cmd.DrawMesh(b.Mesh, Matrix4x4.identity, _backdrop, 0, 0, _backdropProps);
+            if (!graph) cmd.ReleaseTemporaryRT(IdBackdropCopy);
         }
 
 
@@ -328,7 +433,7 @@ namespace Weva.Native
             // not set for it: apply the flip Unity would (its projection into a
             // texture is inverted where UVs start at the top, D3D/Metal/Vulkan,
             // and not on OpenGL) so the page's top lands at the texture's top.
-            Draw(cmd, width, height, SystemInfo.graphicsUVStartsAtTop ? 1 : -1, gamma: true);
+            Draw(cmd, width, height, SystemInfo.graphicsUVStartsAtTop ? 1 : -1, true, NativeRenderTarget.Of(rt));
             Graphics.ExecuteCommandBuffer(cmd);
             cmd.Release();
 
@@ -357,6 +462,8 @@ namespace Weva.Native
             _materials.Clear();
             if (_untextured != null) Destroy(_untextured);
             _untextured = null;
+            if (_backdrop != null) Destroy(_backdrop);
+            _backdrop = null;
             _synced = false;
         }
 
@@ -366,5 +473,49 @@ namespace Weva.Native
             if (Application.isPlaying) UnityEngine.Object.Destroy(o);
             else UnityEngine.Object.DestroyImmediate(o);
         }
+    }
+
+    /// <summary>
+    /// The target a draw list is issued into, for the draws that need to read
+    /// it back (backdrop-filter). Inside the URP pass the handles are set and
+    /// the copy is a texture the pass declared; offscreen only the identifiers
+    /// and the descriptor are, and the renderer makes its own copy.
+    /// </summary>
+    internal readonly struct NativeRenderTarget
+    {
+        public readonly RenderTargetIdentifier Color;
+        public readonly RenderTargetIdentifier Depth;
+        public readonly bool HasDepth;
+        public readonly RenderTextureDescriptor Descriptor;
+        public readonly RTHandle ColorHandle;
+        public readonly RTHandle DepthHandle;
+        public readonly RTHandle CopyHandle;
+        public readonly bool IsSet;
+
+        public NativeRenderTarget(RTHandle color, RTHandle depth, RTHandle copy, RenderTextureDescriptor descriptor)
+        {
+            ColorHandle = color;
+            DepthHandle = depth;
+            CopyHandle = copy;
+            Color = color;
+            Depth = depth != null ? (RenderTargetIdentifier)depth : default;
+            HasDepth = depth != null;
+            Descriptor = descriptor;
+            IsSet = true;
+        }
+
+        public NativeRenderTarget(RenderTargetIdentifier color, RenderTextureDescriptor descriptor)
+        {
+            Color = color;
+            Depth = default;
+            HasDepth = false;
+            Descriptor = descriptor;
+            ColorHandle = null;
+            DepthHandle = null;
+            CopyHandle = null;
+            IsSet = true;
+        }
+
+        public static NativeRenderTarget Of(RenderTexture rt) => new NativeRenderTarget(rt, rt.descriptor);
     }
 }

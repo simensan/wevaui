@@ -24,6 +24,7 @@ namespace Weva.Rendering.URP {
         bool counted;
 
         public override void Create() {
+            foreach (var kv in passesByRenderer) kv.Value?.Dispose();
             passesByRenderer.Clear();
             if (!counted) { ActiveCount++; counted = true; }
         }
@@ -48,6 +49,7 @@ namespace Weva.Rendering.URP {
 
         protected override void Dispose(bool disposing) {
             if (disposing) {
+                foreach (var kv in passesByRenderer) kv.Value?.Dispose();
                 passesByRenderer.Clear();
                 if (counted) { ActiveCount--; counted = false; }
             }

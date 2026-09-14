@@ -98,8 +98,6 @@ Details and the exact supported set: [`api-stability.md`](Packages/com.wevaui/Do
   order are not produced. Vertical writing modes are not implemented.
 - **Multi-column layout** and **vertical writing** are the two excused Chrome
   gaps (`Tools/oracle/known-gaps/chrome-sweep.txt`).
-- **`backdrop-filter` on Unity** draws a transparent shape (the core cannot
-  turn it into triangles; the Godot host degrades the same way).
 - **No script.** No JavaScript, no DOM mutation API beyond attributes,
   values and reload; a list changes through `data-each`.
 - **Not UI Toolkit.** No USS, no `-unity-*` properties, no uGUI interop.

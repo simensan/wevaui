@@ -369,8 +369,10 @@ See [Text & Fonts](text-and-fonts.md).
   `IBindingVersion` so a quiet frame reads nothing.
 * Avoid setting attributes every frame from `Update()`; drive visuals from
   `[UIBind]` values so an unchanged frame changes no node.
-* `box-shadow`, `filter: blur()`, `backdrop-filter` and `text-shadow` are the
-  costliest painters — keep them off elements that change every frame.
+* `box-shadow`, `filter: blur()` and `text-shadow` are the costliest painters
+  — keep them off elements that change every frame. `backdrop-filter` copies
+  the frame once per filtered element: fine for a few panels, not for a list
+  of fifty.
 
 ## 12. DevTools
 

@@ -704,13 +704,14 @@ namespace Weva
             _doc.Update(0);
         }
 
-        public void EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight)
+        // Explicit: the target type is the host's (internal), the class is not.
+        void IUINativePaintSource.EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight, in NativeRenderTarget target)
         {
             if (_doc == null || _renderer == null || cmd == null) return;
             _renderer.Sync(_doc);
             // A camera pass into the camera's colour buffer: the shader takes
             // the flip from _ProjectionParams.x and blends in linear space.
-            _renderer.Draw(cmd, viewportWidth > 0 ? viewportWidth : _width, viewportHeight > 0 ? viewportHeight : _height, 0, false);
+            _renderer.Draw(cmd, viewportWidth > 0 ? viewportWidth : _width, viewportHeight > 0 ? viewportHeight : _height, 0, false, target);
             _drawnSerial = _doc.DrawSerial;
         }
 #endif
