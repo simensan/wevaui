@@ -309,8 +309,17 @@ then the custom properties in scope) wrap the tooling calls the core gained
 for editor panels. `NativeInspectorModel` turns them into what an Elements
 panel shows (tree, search, rule blocks winners-first, computed style, box
 model) and `Window/Weva/Elements` renders it for a `WevaDocument`
-in the scene. `goldens_from_unity.py` renders the sample pages through the
-core for the layout comparison against the Chrome captures.
+in the scene. `goldens_from_unity.py` renders the current sample pages through
+Unity and captures fresh Chrome PNGs at matching viewports for visual review.
+It uses the bundled fonts and freezes motion, preserving tracked layout captures.
+The generated `report.json` links image pairs; it does not grade pixel equality.
+
+```
+python hosts/unity/goldens_from_unity.py --only 9slice-demo --out .utmp/visual-review
+```
+
+Omit `--only` to capture all sample pages. Set `WEVA_CHROME` to the reference
+browser executable. CSS layout conformance remains the Chrome sweep below.
 
 ## Layout dump and the oracle
 

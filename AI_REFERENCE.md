@@ -155,8 +155,9 @@ check.sh                          the gate
 - **Unity EditMode**: `Unity -batchmode -projectPath <repo> -runTests
   -testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native
   -testResults <path>` (no `-quit`, no `-nographics`). Also the compile check.
-- **`hosts/unity/goldens_from_unity.py`** — the sample pages through the core
-  on Unity, compared with the Chrome captures.
+- **`hosts/unity/goldens_from_unity.py`** — fresh Unity/Chrome PNG pairs of the
+  current sample pages for visual review (`--only <name>` selects a case).
+  It preserves tracked captures; image generation is not a pixel-conformance pass.
 - **`NativeRenderPassTests`** (PlayMode, automated) — renders documents
   through the real URP pass into a RenderTexture and asserts the pixels:
   drawn, stacked by `SortingOrder`, gone when disabled, repainted on a

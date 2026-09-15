@@ -1,24 +1,18 @@
-// Drives extract-chrome-layout.mjs against every demo/snippet HTML in the
-// repo. Reuses a single Chrome instance for speed (~5x faster than spawning
-// one per file).
+// Capture an explicit corpus with one Chrome instance.
 //
 // Usage:
-//   node Tools/Layout/capture-all-chrome-layouts.mjs
-//
-// Snippet sources are hard-coded to keep the script free of YAML/JSON config.
-// Default viewport is 800x600 to match GoldenAssert.Match's default and the
-// Unity LayoutDiffTests fixture. match3 uses its native 1280x720 viewport.
+//   node Tools/Layout/capture-all-chrome-layouts.mjs <dir> [width] [height] --metrics=mono
+// Use --screenshot --no-layout --metrics=inter for visual review with real fonts.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer';
+import chromeBrowser from '../oracle/chrome_test_browser.cjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO = path.resolve(__dirname, '..', '..');
-
-const SNIPPET_DIR = path.join(REPO, 'Packages', 'com.wevaui', 'Tests', 'Runtime', 'Goldens', 'Snippets');
 
 // W1 font determinism: load the engine's bundled Inter (Weva-Default*.ttf)
 // via @font-face and default the body to it, so the Chrome reference
@@ -57,17 +51,9 @@ function wevaUaCss() {
     return m ? m[1] : '';
 }
 
-function listSnippets() {
-    return fs.readdirSync(SNIPPET_DIR)
-        .filter(f => f.endsWith('.html'))
-        .sort()
-        .map(f => ({ html: path.join(SNIPPET_DIR, f), width: 800, height: 600 }));
-}
-
 // Directory mode: `node capture-all-chrome-layouts.mjs <dir> [w] [h]`
-// captures every .html in <dir> (with its sibling .css) instead of the
-// hard-coded demo list. The oracle's harvested corpus is generated, not
-// versioned, so it cannot be a hard-coded target.
+// captures every .html in <dir> with its sibling .css. The tracked corpora
+// have different viewports.
 function listDir(dir, width, height) {
     return fs.readdirSync(dir)
         .filter(f => f.endsWith('.html'))
@@ -124,24 +110,12 @@ function targets() {
         return listDir(path.resolve(argv[0]),
                        parseInt(argv[1] || '800', 10), parseInt(argv[2] || '600', 10));
     }
-    const out = listSnippets();
-    out.push({
-        html: path.join(REPO, 'Assets', 'UI', 'match3.html'),
-        width: 1280, height: 720,
-    });
-    // match3-endgame is captured at the viewport LayoutDiff_match3_endgame
-    // runs (its original JSON was a one-off manual extract at an
-    // uncontrolled window size — 1434x781 — which made every viewport-
-    // anchored element drift).
-    out.push({
-        html: path.join(REPO, 'Assets', 'UI', 'match3-endgame.html'),
-        width: 1729, height: 1080,
-    });
-    return out;
+    throw new Error('Specify a corpus directory, width and height; see the usage at the top of this file.');
 }
 
 export async function captureOne(browser, target, {
     metrics = METRICS, screenshot = SCREENSHOT, noLayout = NO_LAYOUT,
+    screenshotPath = null,
 } = {}) {
     const { html: htmlPath, width, height } = target;
     if (!fs.existsSync(htmlPath)) {
@@ -267,7 +241,7 @@ export async function captureOne(browser, target, {
         await page.evaluate(() => document.fonts.ready);
         await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
         if (screenshot) {
-            await page.screenshot({ path: htmlPath + '.chrome.png', clip: { x: 0, y: 0, width, height } });
+            await page.screenshot({ path: screenshotPath || htmlPath + '.chrome.png', clip: { x: 0, y: 0, width, height } });
         }
         elements = await page.evaluate(() => {
             const out = [];
@@ -371,7 +345,7 @@ async function main() {
         args: ['--hide-scrollbars'],
     };
     if (executablePath) launchOpts.executablePath = executablePath;
-    const browser = await puppeteer.launch(launchOpts);
+    const browser = await chromeBrowser.launch(launchOpts);
     try {
         let okCount = 0;
         for (const t of list) {
