@@ -8,6 +8,13 @@ measures the current core and a freshly rebuilt Windows Godot extension. All
 mean in the slowest sample. This is an unpaired standalone measurement, with
 the exact scope, variation and machine conditions recorded in the report.
 
+The [same-binary repeat](verification/performance-20260915-pass2.md) also
+completes 47 core samples and 27 native workload runs; all 24 corresponding
+captures match the first pass. Runtime CPU p95 measures 0.547 ms for the active
+HUD, 0.748 ms for the bound HUD and 1.251 ms for inventory scrolling. The
+slowest cold-creation mean is 51.857 ms. These are repeated measurements of
+unchanged binaries, not a code speedup; both passes remain recorded.
+
 A five-minute lifecycle follow-up passes 200 recreations and 161,306 Unicode
 soak frames. Private-memory medians settle near 862.11 MB in the last two
 minutes; node/object counts stay constant. Prepared reuse CPU p95 is 0.404 ms,
