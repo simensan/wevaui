@@ -1320,6 +1320,48 @@ void test_abi_reload_html() {
     weva_element_bounds(doc.d, s, &ssx, &ssy, &sw, &sh);
     CHECK(ssy < ay);
     CHECK(doc.value("#i") == "xy");
+
+    // Every keyed permutation must have exactly the requested DOM and layout
+    // order. Moving only the currently misplaced children fails for c,b,a.
+    std::string permutation = "abcd";
+    do {
+        Doc ordered("body{margin:0} input{display:block;width:100px;height:20px}",
+                    "<div id=list><input id=a><input id=b><input id=c><input id=d></div>");
+        const weva_element_t list = weva_document_query(ordered.d, "#list");
+        std::vector<weva_element_t> original(4);
+        weva_element_children(ordered.d, list, original.data(), original.size());
+        weva_document_set_focus(ordered.d, original[1]);
+        weva_element_set_value(ordered.d, original[1], "edited");
+        std::string markup = "<div id=list>";
+        for (char key : permutation) markup += std::string("<input id=") + key + ">";
+        markup += "</div>";
+        CHECK(weva_document_reload_html(ordered.d, markup.data(), markup.size()) == WEVA_OK);
+        weva_document_update(ordered.d, 0);
+        std::vector<weva_element_t> children(4);
+        CHECK(weva_element_children(ordered.d, list, children.data(), children.size()) == 4);
+        for (size_t j = 0; j < children.size(); ++j) {
+            CHECK(children[j] == original[static_cast<size_t>(permutation[j] - 'a')]);
+            double x = 0, y = 0, w = 0, h = 0;
+            weva_element_bounds(ordered.d, original[static_cast<size_t>(permutation[j] - 'a')], &x, &y, &w, &h);
+            CHECK(y == static_cast<double>(j) * 20);
+        }
+        CHECK(weva_document_focus(ordered.d) == original[1]);
+        CHECK(ordered.value("#b") == "edited");
+    } while (std::next_permutation(permutation.begin(), permutation.end()));
+
+    // A retained prefix plus inserted and removed nodes must also finish in
+    // fresh order, without recreating the keyed nodes that survive.
+    Doc mixed("", "<div id=list><i id=a>A</i><i id=b>B</i><i id=c>C</i><i id=d>D</i></div>");
+    const weva_element_t mixed_list = weva_document_query(mixed.d, "#list");
+    const weva_element_t kept_a = weva_document_query(mixed.d, "#a");
+    const weva_element_t kept_b = weva_document_query(mixed.d, "#b");
+    const weva_element_t kept_d = weva_document_query(mixed.d, "#d");
+    const char* inserted = "<div id=list><i id=a>A</i><i id=d>D</i><i id=x>X</i><i id=b>B</i></div>";
+    CHECK(weva_document_reload_html(mixed.d, inserted, std::strlen(inserted)) == WEVA_OK);
+    std::vector<weva_element_t> mixed_children(4);
+    CHECK(weva_element_children(mixed.d, mixed_list, mixed_children.data(), mixed_children.size()) == 4);
+    CHECK((mixed_children == std::vector<weva_element_t>{kept_a, kept_d, weva_document_query(mixed.d, "#x"), kept_b}));
+    CHECK(weva_document_query(mixed.d, "#c") == WEVA_ELEMENT_NONE);
 }
 
 // Minor 33: `mix-blend-mode` rides on every draw of the element's subtree,

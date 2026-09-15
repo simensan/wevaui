@@ -29,6 +29,19 @@ func settle(view: WevaView) -> void:
 	view.update_document(0)
 
 func _ready() -> void:
+	var reordered := WevaDocument.new()
+	reordered.use_engine_font = false
+	reordered.html = "<div id=a>A</div><div id=b>B</div><div id=c>C</div>"
+	reordered.css = "body{margin:0} div{height:20px}"
+	add_child(reordered)
+	reordered.update_document(0)
+	reordered.reload_html("<div id=c>C</div><div id=b>B</div><div id=a>A</div>")
+	reordered.update_document(0)
+	check(reordered.query_all_ids("body > div") == PackedStringArray(["c", "b", "a"]), "reload reverses three keyed siblings")
+	check(is_equal_approx(reordered.query_bounds("#c").position.y, 0.0), "first reversed sibling is at the top")
+	check(is_equal_approx(reordered.query_bounds("#a").position.y, 40.0), "last reversed sibling is at the bottom")
+	reordered.free()
+
 	DirAccess.make_dir_recursive_absolute(DIR)
 	write(DIR + "/screen.html", '<div id="a">one</div><span id="name">{{ Name }}</span>')
 	write(DIR + "/screen.css", "#a { color: rgb(1, 2, 3); }")

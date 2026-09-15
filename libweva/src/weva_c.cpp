@@ -8237,12 +8237,15 @@ static bool diff_children(weva_document* doc, Node* live_parent, Node* fresh_par
         mutated = true;
     }
 
-    // The fresh order, appending what is out of place (append_child moves a
-    // node already attached, here or in the fresh tree).
+    // Keep an unchanged prefix, then append the entire remaining sequence.
+    // Skipping a child at its current index after moving an earlier child
+    // can leave the final order wrong (a,b,c -> c,b,a becomes b,c,a).
+    bool reorder = false;
     for (size_t i = 0; i < order.size(); ++i) {
         Node* want = const_cast<Node*>(order[i].get());
         const Node* current = i < live_parent->children().size() ? live_parent->children()[i].get() : nullptr;
-        if (current == want) continue;
+        if (!reorder && current == want) continue;
+        reorder = true;
         const bool from_fresh = want->parent() != live_parent;
         live_parent->append_child(want);
         if (from_fresh) adopted->push_back(Ref<Node>::retain(want));
