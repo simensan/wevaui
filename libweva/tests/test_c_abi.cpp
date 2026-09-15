@@ -408,6 +408,55 @@ void test_abi_stylesheet_replacement() {
         CHECK(weva_document_font_faces(document, small, sizeof(small)) == 0);
         weva_document_destroy(document);
     }
+    {
+        // Request order and descriptor replacement match
+        // check_font_sources_chrome.cjs; strings/escapes survive both raw and
+        // stylesheet-relative source URLs before reaching either host.
+        struct SourceCase {
+            const char* declarations;
+            const char* first;
+            std::vector<std::string> sources;
+        };
+        const SourceCase cases[] = {
+            {R"CSS(src:url("round)font.ttf"))CSS", "round)font.ttf", {"url:round)font.ttf"}},
+            {R"CSS(src:u\72 l(escaped\29 font.ttf))CSS", "escaped)font.ttf", {"url:escaped)font.ttf"}},
+            {R"CSS(src:url("quote\"font.ttf"))CSS", "quote\"font.ttf", {"url:quote\"font.ttf"}},
+            {R"CSS(src:url("\new\t\r.ttf"))CSS", "newtr.ttf", {"url:newtr.ttf"}},
+            {R"CSS(src:local(No\ Such\,Review\ Face),url(ok.ttf))CSS", "ok.ttf", {"local:No Such,Review Face", "url:ok.ttf"}},
+            {R"CSS(src:url(\01f41f.ttf))CSS", "\xF0\x9F\x90\x9F.ttf", {"url:\xF0\x9F\x90\x9F.ttf"}},
+            {"src:url(\"a\\\r\nb.ttf\")", "ab.ttf", {"url:ab.ttf"}},
+            {R"CSS(src:local("No Such (Review Face)"),url(fallback.ttf))CSS", "fallback.ttf", {"local:No Such (Review Face)", "url:fallback.ttf"}},
+            {R"CSS(src:url("missing,a.ttf") format("truetype"),url(ok.ttf))CSS", "missing,a.ttf", {"url:missing,a.ttf", "url:ok.ttf"}},
+            {R"CSS(src:url(old.ttf);src:local("No Such Review Face"),url(new.ttf))CSS", "new.ttf", {"local:No Such Review Face", "url:new.ttf"}},
+            {"src:url(old.ttf);src:bogus", "old.ttf", {"url:old.ttf"}},
+            {R"CSS(src:local("No Such Review Face");src:url(new.ttf))CSS", "new.ttf", {"url:new.ttf"}},
+            {R"CSS(src:url(old.ttf);src:local("No Such Review Face"))CSS", "", {"local:No Such Review Face"}},
+        };
+        for (bool named : {false, true}) for (const auto& source : cases) {
+            const auto config = default_config();
+            auto document = weva_document_create(&config);
+            CHECK(weva_document_set_base_path(document, "ui") == WEVA_OK);
+            const std::string css = std::string("@font-face{font-family:Test;") + source.declarations + "}";
+            CHECK(weva_document_add_css_from(document, css.data(), css.size(), named ? "styles/theme.css" : nullptr) == WEVA_OK);
+            const std::string prefix = named ? "ui/styles/" : "ui/";
+            std::string expected = "Test\t";
+            if (*source.first) expected += prefix + source.first;
+            expected += "\t\t\t";
+            for (size_t i = 0; i < source.sources.size(); ++i) {
+                if (i != 0) expected += '|';
+                const auto& value = source.sources[i];
+                expected += value.compare(0, 4, "url:") == 0 ? "url:" + prefix + value.substr(4) : value;
+            }
+            const size_t size = weva_document_font_faces(document, nullptr, 0);
+            std::vector<char> text(size + 1);
+            CHECK(weva_document_font_faces(document, text.data(), text.size()) == size);
+            if (std::string(text.data()) != expected)
+                std::fprintf(stderr, "font source %s (named=%d): got [%s], expected [%s]\n",
+                             source.declarations, named ? 1 : 0, text.data(), expected.c_str());
+            CHECK(std::string(text.data()) == expected);
+            weva_document_destroy(document);
+        }
+    }
     const auto cfg = default_config();
     auto d = weva_document_create(&cfg);
     const auto set_css = [&](const char* css) {

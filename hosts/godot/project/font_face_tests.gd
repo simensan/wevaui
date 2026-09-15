@@ -55,6 +55,13 @@ func _ready() -> void:
 	var relative := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(WevaMonoMonospace.ttf); } #a { font-family: "Camp Mono"; }', "res://fonts")
 	_check(width(relative, "#a") == mono_width, "src resolves against base_path like an image url()")
 
+	var replaced := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); src: url(fonts/WevaMonoMonospace.ttf); } #a { font-family: "Camp Mono"; }')
+	_check(width(replaced, "#a") == mono_width, "the later valid src descriptor replaces the first")
+	var escaped := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: u\\72 l(fonts/WevaMono\\4d onospace.ttf); } #a { font-family: "Camp Mono"; }')
+	_check(width(escaped, "#a") == mono_width, "CSS escapes in the URL and function name load the intended font")
+	var replaced_local := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); src: local("Weva No Such Font 9f3"); } #a { font-family: "Camp Mono"; }')
+	_check(width(replaced_local, "#a") == theme_width, "a later local-only source removes the previous URL")
+
 	var missing := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url("fonts/missing.ttf"); } #a { font-family: "Camp Mono"; }')
 	_check(width(missing, "#a") == theme_width, "a missing source warns and falls back instead of failing")
 

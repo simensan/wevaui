@@ -69,6 +69,10 @@ and synthesises nothing). A `local()` that is not installed falls through to
 the `url()` after it. Replacing the stylesheet releases the families it no
 longer declares.
 
+Font source strings honor CSS escapes, quoted commas and parentheses. If a
+rule declares `src` more than once, the last valid descriptor replaces the
+earlier list, including when it contains only `local()` sources.
+
 Identical font bytes share one private buffer within the current Unity script
 domain. Kerning tables are read once per font and kept as compact arrays, so
 switching between regular and bold text does not repeatedly expand native

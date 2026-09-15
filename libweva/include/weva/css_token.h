@@ -59,6 +59,7 @@ public:
 private:
     bool skip_comment();
     bool consume_string(char quote);
+    void consume_escape(std::string* out);
     void consume_numeric();
     double read_number(std::string* raw);
     void consume_ident_like();

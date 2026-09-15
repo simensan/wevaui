@@ -24,13 +24,36 @@ std::string trim(std::string_view s) {
     return std::string(s.substr(b, e - b));
 }
 
+void escape_control(unsigned char c, std::string* out) {
+    constexpr char hex[] = "0123456789abcdef";
+    *out += '\\';
+    *out += hex[c >> 4];
+    *out += hex[c & 15];
+    *out += ' ';
+}
+
+std::string escape_ident(std::string_view s, bool hash = false) {
+    std::string out;
+    for (size_t i = 0; i < s.size(); ++i) {
+        const auto c = static_cast<unsigned char>(s[i]);
+        const bool digit = c >= '0' && c <= '9';
+        if (c < 0x20 || c == 0x7F || (!hash && digit && (i == 0 || (i == 1 && s[0] == '-'))))
+            escape_control(c, &out);
+        else if (c >= 0x80 || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                 digit || c == '_' || (c == '-' && (hash || s.size() > 1))) out += static_cast<char>(c);
+        else { out += '\\'; out += static_cast<char>(c); }
+    }
+    return out;
+}
+
 std::string escape_string(std::string_view s) {
     std::string out;
     out.reserve(s.size());
     for (char c : s) {
         if (c == '"') out += "\\\"";
         else if (c == '\\') out += "\\\\";
-        else if (c == '\n') out += "\\n";
+        else if (static_cast<unsigned char>(c) < 0x20 || c == 0x7F)
+            escape_control(static_cast<unsigned char>(c), &out);
         else out += c;
     }
     return out;
@@ -402,14 +425,14 @@ RulePtr parse_rule(Ctx& ctx, bool at_rule) {
 std::string css_token_source(const CssToken& t) {
     switch (t.kind) {
         case CssTokenKind::Whitespace: return " ";
-        case CssTokenKind::Ident:      return t.text;
-        case CssTokenKind::Function:   return t.text + "(";
-        case CssTokenKind::AtKeyword:  return "@" + t.text;
-        case CssTokenKind::Hash:       return "#" + t.text;
+        case CssTokenKind::Ident:      return escape_ident(t.text);
+        case CssTokenKind::Function:   return escape_ident(t.text) + "(";
+        case CssTokenKind::AtKeyword:  return "@" + escape_ident(t.text);
+        case CssTokenKind::Hash:       return "#" + escape_ident(t.text, true);
         case CssTokenKind::String:     return "\"" + escape_string(t.text) + "\"";
         case CssTokenKind::Number:     return t.text;
         case CssTokenKind::Percentage: return t.text;
-        case CssTokenKind::Dimension:  return t.text;
+        case CssTokenKind::Dimension:  return t.text.substr(0, t.text.size() - t.unit.size()) + escape_ident(t.unit);
         case CssTokenKind::Url:
             // The tokenizer has decoded escapes. Re-emitting a literal '(',
             // quote or space unquoted would turn a valid URL into a bad URL

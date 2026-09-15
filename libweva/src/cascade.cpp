@@ -1,6 +1,7 @@
 #include "weva/cascade.h"
 
 #include "weva/css_value.h"
+#include "weva/css_token.h"
 #include "weva/at_import.h"
 #include "weva/env_attr.h"
 #include "weva/keyword_resolver.h"
@@ -19,8 +20,7 @@ namespace weva {
 
 namespace {
 // `@font-face` descriptor values. A family is one quoted or unquoted name;
-// `src` is a comma list of url()/local() entries and the first url() wins,
-// mirroring the Unity package (FontFaceRule: first usable url()).
+// `src` is an ordered list of url()/local() entries for the host to try.
 std::string_view descriptor_trim(std::string_view value) {
     while (!value.empty() && (value.front() == ' ' || value.front() == '\t' || value.front() == '\n')) value.remove_prefix(1);
     while (!value.empty() && (value.back() == ' ' || value.back() == '\t' || value.back() == '\n')) value.remove_suffix(1);
@@ -34,68 +34,68 @@ std::string_view unquote_family(std::string_view value) {
     return value;
 }
 
-// Comma entries outside parentheses and quotes: `url("a,b.ttf") format("x"), local(y)`.
-std::vector<std::string_view> split_src_entries(std::string_view value) {
-    std::vector<std::string_view> entries;
-    int depth = 0;
-    char quote = 0;
-    size_t start = 0;
-    for (size_t i = 0; i < value.size(); ++i) {
-        const char c = value[i];
-        if (quote) {
-            if (c == quote) quote = 0;
-        } else if (c == '"' || c == '\'') {
-            quote = c;
-        } else if (c == '(') {
-            ++depth;
-        } else if (c == ')') {
-            if (depth > 0) --depth;
-        } else if (c == ',' && depth == 0) {
-            entries.push_back(value.substr(start, i - start));
-            start = i + 1;
-        }
-    }
-    entries.push_back(value.substr(start));
-    return entries;
-}
+bool iequals_ascii(std::string_view a, std::string_view b);
 
 // Every src entry in order: "url:<path>" or "local:<name>", unquoted.
 std::vector<std::string> font_sources(std::string_view value) {
+    std::vector<CssToken> tokens;
+    CssParseError error;
+    if (!CssTokenizer(value, false).tokenize(&tokens, &error)) return {};
     std::vector<std::string> out;
-    for (std::string_view entry : split_src_entries(value)) {
-        entry = descriptor_trim(entry);
-        std::string head(entry.substr(0, std::min<size_t>(6, entry.size())));
-        for (char& c : head) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-        const bool url = head.compare(0, 4, "url(") == 0;
-        const bool local = head.compare(0, 6, "local(") == 0;
-        if (!url && !local) continue;
-        const size_t open = url ? 3 : 5;
-        const size_t close = entry.find(')', open);
-        if (close == std::string_view::npos) continue;
-        std::string_view inner = descriptor_trim(entry.substr(open + 1, close - open - 1));
-        if (inner.size() >= 2 && (inner.front() == '"' || inner.front() == '\'') && inner.back() == inner.front())
-            inner = descriptor_trim(inner.substr(1, inner.size() - 2));
-        if (inner.empty()) continue;
-        out.push_back((url ? "url:" : "local:") + std::string(inner));
+    size_t i = 0;
+    const auto kind = [&] { return i < tokens.size() ? tokens[i].kind : CssTokenKind::Eof; };
+    const auto whitespace = [&] { while (kind() == CssTokenKind::Whitespace) ++i; };
+    whitespace();
+    while (kind() != CssTokenKind::Eof) {
+        std::string argument;
+        bool url = kind() == CssTokenKind::Url;
+        if (url) {
+            argument = tokens[i++].text;
+        } else if (kind() == CssTokenKind::Function &&
+                   (iequals_ascii(tokens[i].text, "url") || iequals_ascii(tokens[i].text, "local"))) {
+            url = iequals_ascii(tokens[i++].text, "url");
+            whitespace();
+            if (kind() == CssTokenKind::String) {
+                // Tokenization already handles escaped quotes, commas and
+                // closing parentheses inside strings.
+                argument = tokens[i++].text;
+                whitespace();
+            } else if (!url) {
+                while (kind() == CssTokenKind::Ident) {
+                    if (!argument.empty()) argument += ' ';
+                    argument += tokens[i++].text;
+                    whitespace();
+                }
+            } else return {};
+            if (kind() != CssTokenKind::RParen) return {};
+            ++i;
+        } else return {};
+        if (url) argument = std::string(descriptor_trim(argument));
+        if (!argument.empty()) out.push_back((url ? "url:" : "local:") + argument);
+        whitespace();
+        // Keep the existing format/technology-hint behavior: the host tries
+        // the source bytes. Consume whole functions so their punctuation
+        // cannot become another source entry.
+        while (kind() == CssTokenKind::Function &&
+               (iequals_ascii(tokens[i].text, "format") || iequals_ascii(tokens[i].text, "tech"))) {
+            ++i;
+            int depth = 1;
+            while (depth > 0 && kind() != CssTokenKind::Eof) {
+                if (kind() == CssTokenKind::Function || kind() == CssTokenKind::LParen) ++depth;
+                else if (kind() == CssTokenKind::RParen) --depth;
+                else if (kind() == CssTokenKind::BadString || kind() == CssTokenKind::BadUrl) return {};
+                ++i;
+            }
+            if (depth != 0) return {};
+            whitespace();
+        }
+        if (kind() == CssTokenKind::Eof) break;
+        if (kind() != CssTokenKind::Comma) return {};
+        ++i;
+        whitespace();
+        if (kind() == CssTokenKind::Eof) return {};
     }
     return out;
-}
-
-std::string first_font_url(std::string_view value) {
-    for (std::string_view entry : split_src_entries(value)) {
-        entry = descriptor_trim(entry);
-        if (entry.size() < 5) continue;
-        std::string head(entry.substr(0, 4));
-        for (char& c : head) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-        if (head != "url(") continue;
-        const size_t close = entry.find(')');
-        if (close == std::string_view::npos) continue;
-        std::string_view inner = descriptor_trim(entry.substr(4, close - 4));
-        if (inner.size() >= 2 && (inner.front() == '"' || inner.front() == '\'') && inner.back() == inner.front())
-            inner = inner.substr(1, inner.size() - 2);
-        if (!inner.empty()) return std::string(inner);
-    }
-    return {};
 }
 } // namespace
 
@@ -789,8 +789,14 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                         if (d.property == "font-family") {
                             if (face.family.empty()) face.family = std::string(unquote_family(value));
                         } else if (d.property == "src") {
-                            if (face.src.empty()) face.src = first_font_url(value);
-                            if (face.sources.empty()) face.sources = font_sources(value);
+                            auto sources = font_sources(value);
+                            if (!sources.empty()) {
+                                face.sources = std::move(sources);
+                                face.src.clear();
+                                for (const auto& source : face.sources) {
+                                    if (source.compare(0, 4, "url:") == 0) { face.src = source.substr(4); break; }
+                                }
+                            }
                         } else if (d.property == "font-weight") {
                             if (face.weight.empty()) face.weight = std::string(value);
                         } else if (d.property == "font-style") {

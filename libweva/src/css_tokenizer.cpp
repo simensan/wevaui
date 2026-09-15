@@ -27,10 +27,12 @@ bool is_letter(char c) {
 bool is_name_char(char c) {
     return is_letter(c) || is_digit(c) || c == '-' || c == '_';
 }
-bool is_ident_start(char a, char b, char /*c*/) {
+bool is_newline(char c) { return c == '\n' || c == '\r' || c == '\f'; }
+bool valid_escape(char a, char b) { return a == '\\' && !is_newline(b); }
+bool is_ident_start(char a, char b, char c) {
     if (is_letter(a) || a == '_') return true;
-    if (a == '-') return is_letter(b) || b == '_' || b == '-';
-    return false;
+    if (a == '-') return is_letter(b) || b == '_' || b == '-' || valid_escape(b, c);
+    return valid_escape(a, b);
 }
 bool is_hex(char c) {
     return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
@@ -39,15 +41,6 @@ int hex_value(char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'a' && c <= 'f') return 10 + (c - 'a');
     return 10 + (c - 'A');
-}
-char map_escape(char c) {
-    switch (c) {
-        case 'n': return '\n';
-        case 'r': return '\r';
-        case 't': return '\t';
-        case 'f': return '\f';
-        default: return c;
-    }
 }
 
 } // namespace
@@ -135,10 +128,8 @@ bool CssTokenizer::tokenize(std::vector<CssToken>* out, CssParseError* error) {
         }
         if (c == '#') {
             advance();
-            if (!at_end() && is_name_char(peek())) {
-                std::string name;
-                while (!at_end() && is_name_char(peek())) { name.push_back(peek()); advance(); }
-                emit(CssTokenKind::Hash, std::move(name));
+            if (!at_end() && (is_name_char(peek()) || valid_escape(peek(), peek_at(1)))) {
+                emit(CssTokenKind::Hash, read_ident());
             } else {
                 emit(CssTokenKind::Delim, "#");
             }
@@ -197,6 +188,29 @@ bool CssTokenizer::skip_comment() {
     return true;
 }
 
+// CSS Syntax §4.3.7, entered after the backslash. Strings, names and URLs
+// share hex decoding; a non-hex escape is literal, never a C-style \n or \t.
+void CssTokenizer::consume_escape(std::string* out) {
+    if (at_end()) { append_utf8(0xFFFD, out); return; }
+    if (!is_hex(peek())) {
+        out->push_back(peek());
+        advance();
+        return;
+    }
+    uint32_t code = 0;
+    for (int digits = 0; !at_end() && digits < 6 && is_hex(peek()); ++digits) {
+        code = code * 16 + static_cast<uint32_t>(hex_value(peek()));
+        advance();
+    }
+    if (!at_end() && is_ws(peek())) {
+        const bool cr = peek() == '\r';
+        advance();
+        if (cr && peek() == '\n') advance();  // CRLF is one CSS newline
+    }
+    if (code == 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) code = 0xFFFD;
+    append_utf8(code, out);
+}
+
 bool CssTokenizer::consume_string(char quote) {
     advance();
     std::string sb;
@@ -207,7 +221,7 @@ bool CssTokenizer::consume_string(char quote) {
             emit(CssTokenKind::String, std::move(sb));
             return true;
         }
-        if (c == '\n') {
+        if (is_newline(c)) {
             if (strict_) return fail("Unterminated string");
             // §4.3.5: an unescaped newline is a parse error producing a
             // <bad-string-token>; the newline is NOT consumed, so it still
@@ -219,29 +233,12 @@ bool CssTokenizer::consume_string(char quote) {
             advance();
             if (at_end()) break;
             char e = peek();
-            if (e == '\n') { advance(); continue; }   // line continuation
-            if (is_hex(e)) {
-                uint32_t code = 0;
-                int digits = 0;
-                while (!at_end() && digits < 6 && is_hex(peek())) {
-                    code = code * 16 + static_cast<uint32_t>(hex_value(peek()));
-                    advance();
-                    ++digits;
-                }
-                if (!at_end() && is_ws(peek())) advance();
-                // §4.3.7: zero, surrogates and >U+10FFFF are all invalid escape
-                // results and must produce U+FFFD. Without the surrogate guard
-                // the C# char.ConvertFromUtf32 threw and aborted the whole
-                // stylesheet.
-                if (code == 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
-                    sb += "\xEF\xBF\xBD";   // U+FFFD
-                } else {
-                    append_utf8(code, &sb);
-                }
+            if (is_newline(e)) {
+                advance();
+                if (e == '\r' && peek() == '\n') advance();
                 continue;
             }
-            sb.push_back(map_escape(e));
-            advance();
+            consume_escape(&sb);
             continue;
         }
         sb.push_back(c);
@@ -374,14 +371,14 @@ bool CssTokenizer::consume_url(const std::string& fn_name) {
             return true;
         }
         if (c == '\\') {
-            advance();
-            if (at_end()) {
+            if (!valid_escape(c, peek_at(1))) {
                 if (strict_) return fail("Bad escape in url()");
+                consume_bad_url_remnants();
                 emit(CssTokenKind::BadUrl, std::move(sb));
                 return true;
             }
-            sb.push_back(peek());
             advance();
+            consume_escape(&sb);
             continue;
         }
         sb.push_back(c);
@@ -416,12 +413,11 @@ void CssTokenizer::consume_bad_url_remnants() {
 
 std::string CssTokenizer::read_ident() {
     std::string sb;
-    if (!at_end() && peek() == '-') {
-        sb.push_back('-');
-        advance();
-        if (!at_end() && peek() == '-') { sb.push_back('-'); advance(); }
+    while (!at_end()) {
+        if (is_name_char(peek())) { sb.push_back(peek()); advance(); }
+        else if (valid_escape(peek(), peek_at(1))) { advance(); consume_escape(&sb); }
+        else break;
     }
-    while (!at_end() && is_name_char(peek())) { sb.push_back(peek()); advance(); }
     return sb;
 }
 

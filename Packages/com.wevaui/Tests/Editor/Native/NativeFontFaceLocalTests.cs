@@ -10,6 +10,46 @@ namespace Weva.Tests.EditorTests.Native
 {
     public class NativeFontFaceLocalTests
     {
+        [TestCase("src:url(old.ttf);src:url(\"round)font.ttf\")")]
+        [TestCase(@"src:u\72 l(round\29 font.ttf)")]
+        public void Sources_LoadDecodedUrlAndReplaceEarlierDescriptor(string source)
+        {
+            Font font = Resources.Load<Font>("Fonts/Weva-Default");
+            byte[] bold = File.ReadAllBytes("Packages/com.wevaui/Runtime/Resources/Fonts/Weva-Default-Bold.ttf");
+            using (var doc = new NativeDocument(400, 100))
+            using (var fonts = new UnityFontBackend())
+            {
+                fonts.Install(doc, fonts.Adopt(font));
+                var requests = new System.Collections.Generic.List<string>();
+                doc.AssetReader = path => { requests.Add(path); return path == "fonts/round)font.ttf" ? bold : null; };
+                doc.SetBasePath("fonts");
+                doc.LoadHtml("<body><span id=t>Heavy AV words</span></body>");
+                doc.SetCss("body{margin:0}#t{font:24px ReviewFace}@font-face{font-family:ReviewFace;" + source + "}");
+                doc.Update(0);
+                Assert.That(doc.TryGetBounds(doc.Query("#t"), out NativeBounds before));
+                requests.Clear();
+                Assert.That(fonts.SyncCssFontFaces(doc), Is.EqualTo(1), fonts.LastError);
+                Assert.That(requests, Is.EqualTo(new[] { "fonts/round)font.ttf" }));
+                doc.Update(0);
+                Assert.That(doc.TryGetBounds(doc.Query("#t"), out NativeBounds after));
+                Assert.That(Math.Abs(after.Width - before.Width), Is.GreaterThan(0.1));
+                string dump = Environment.GetEnvironmentVariable("WEVA_FONT_SOURCE_DUMP");
+                if (!string.IsNullOrEmpty(dump))
+                {
+                    using (var renderer = new NativeDocumentRenderer())
+                    {
+                        Texture2D image = renderer.RenderToTexture(doc, 400, 100, Color.white);
+                        try
+                        {
+                            Directory.CreateDirectory(dump);
+                            File.WriteAllBytes(Path.Combine(dump, source.IndexOf('\\') >= 0 ? "escaped.png" : "replaced.png"), image.EncodeToPNG());
+                        }
+                        finally { UnityEngine.Object.DestroyImmediate(image); }
+                    }
+                }
+            }
+        }
+
         [Test]
         public void Local_FallsThroughToTheUrlAfterIt()
         {

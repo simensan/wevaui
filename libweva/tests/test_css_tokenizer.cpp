@@ -130,7 +130,30 @@ void test_css_tokenizer() {
         T t;
         CHECK(t.run("\"a\\41 b\" 'x\\ny'"));
         CHECK(t.kind(0) == CssTokenKind::String && t.text(0) == "aAb");
-        CHECK(t.kind(2) == CssTokenKind::String && t.text(2) == "x\ny");
+        CHECK(t.kind(2) == CssTokenKind::String && t.text(2) == "xny");
+    }
+
+    // Escapes are shared across strings, function names, URLs and names.
+    // Chrome reference: check_font_sources_chrome.cjs.
+    {
+        T t;
+        CHECK(t.run(R"CSS(u\72 l(escaped\29 font.ttf) \66 oo -\31 x #\31 23 @\6d edia 10\70 x)CSS"));
+        CHECK(t.kind(0) == CssTokenKind::Url && t.text(0) == "escaped)font.ttf");
+        CHECK(t.kind(2) == CssTokenKind::Ident && t.text(2) == "foo");
+        CHECK(t.kind(4) == CssTokenKind::Ident && t.text(4) == "-1x");
+        CHECK(t.kind(6) == CssTokenKind::Hash && t.text(6) == "123");
+        CHECK(t.kind(8) == CssTokenKind::AtKeyword && t.text(8) == "media");
+        CHECK(t.kind(10) == CssTokenKind::Dimension && t.toks[10].unit == "px");
+        CHECK(t.run(R"CSS(\0 \d800 \110000 \01f41f)CSS"));
+        CHECK(t.kind(0) == CssTokenKind::Ident && t.text(0) == "\xEF\xBF\xBD\xEF\xBF\xBD\xEF\xBF\xBD\xF0\x9F\x90\x9F");
+        CHECK(t.run("url(a\\\nb) trailing", false));
+        CHECK(t.kind(0) == CssTokenKind::BadUrl && t.text(2) == "trailing");
+        CHECK(t.run("url(a\\", false));
+        CHECK(t.kind(0) == CssTokenKind::Url && t.text(0) == "a\xEF\xBF\xBD");
+        CHECK(t.run("\"a\\\r\nb\" \"\\41\r\nb\""));
+        CHECK(t.text(0) == "ab" && t.text(2) == "Ab");
+        CHECK(t.run("\"bad\rstring", false));
+        CHECK(t.kind(0) == CssTokenKind::BadString);
     }
 
     // ---- invalid escapes become U+FFFD rather than aborting the sheet.

@@ -215,6 +215,32 @@ void test_css_parser() {
         CHECK(d[1].property == "margin" && d[1].value_text == "0 auto");
     }
 
+    // Reconstructing a declaration must preserve decoded punctuation, digits
+    // and control characters when its value is tokenized again by a consumer.
+    {
+        for (const char* source : {R"CSS(local(No\ Such\,Face))CSS", R"CSS(\31 x -\32 x \- \: \01f41f)CSS",
+                                   R"CSS("a\a b\9 c" url(a\29 b) @\31 rule #\31 23 10\31 x)CSS"}) {
+            std::vector<CssToken> before, after;
+            CssParseError error;
+            CHECK(CssTokenizer(source).tokenize(&before, &error));
+            std::string serialized;
+            for (const auto& token : before) serialized += css_token_source(token);
+            CHECK(CssTokenizer(serialized).tokenize(&after, &error));
+            // URL serialization may legitimately become a quoted function;
+            // after one pass its representation must remain stable.
+            std::string repeated;
+            for (const auto& token : after) repeated += css_token_source(token);
+            CHECK(serialized == repeated);
+            if (std::string_view(source).find("url(") == std::string_view::npos) {
+                CHECK(before.size() == after.size());
+                if (before.size() == after.size()) for (size_t i = 0; i < before.size(); ++i) {
+                    CHECK(before[i].kind == after[i].kind);
+                    CHECK(before[i].text == after[i].text);
+                }
+            }
+        }
+    }
+
     // ---- empty and whitespace-only sheets
     {
         P p;
