@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
-"""Compares the C++ engine against Chrome ALONE, with no C# reference.
+"""Compare core layout with tracked Chrome captures.
 
-The gate (run_oracle.py) is a three-way: reference versus candidate, with
-Chrome arbitrating. That needs BaselineGen, and it therefore only ever runs
-over the 47 cases in corpus/samples. corpus/harvest holds 210 more, each with
-a Chrome capture already beside it, and nothing looks at them.
+--chrome-metrics uses browser box semantics and synthetic font extents.
+--max-worst enables the gate: every case needs a capture, no unmatched visible
+elements, and geometry within the ceiling (or an explicit known-gaps entry).
+Without a ceiling this prints investigation leads. Chrome is the only reference.
 
-This does the cheap two-way instead: lay the case out and see whether Chrome
-agrees. It cannot tell a port bug from a place where the C# reference and
-Chrome differ by design -- only the three-way can -- so its output is a list
-of LEADS, not a gate. It is for finding cases worth promoting into samples.
-
-    python3 chrome_sweep.py corpus/harvest --weva-dump <path> --width 1280
+    python3 chrome_sweep.py corpus/harvest --weva-dump <path> \
+        --width 800 --height 600 --chrome-metrics --max-worst 1.5
 """
 
 import argparse
@@ -42,8 +38,8 @@ def repair_runs(ours, theirs, pairs):
 
     That is not a subtle effect. Two <code> siblings in 9slice-demo read as
     `ours 971 vs chrome 231` and `ours 231 vs chrome 971` -- an 826px
-    disagreement that is entirely the pairing. run_oracle.py has refine_runs
-    for the same reason; this is the two-way version.
+    disagreement that is entirely the pairing. Re-pair the matching sibling
+    runs before measuring geometry differences.
     """
     runs = []
     start = 0
@@ -138,7 +134,7 @@ def compare(case, corpus, weva_dump, width, height, out_dir, chrome_metrics=Fals
     return (case, "DIFF" if bad else "ok", bad, unpaired)
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("corpus")
     ap.add_argument("--weva-dump", required=True)
@@ -157,12 +153,15 @@ def main():
                     help="per-case ceiling in px on the largest disagreement; enables the gate")
     ap.add_argument("--known-gaps", default=None,
                     help="text file of `case-name: reason` lines allowed to exceed the ceiling")
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
     os.makedirs(a.out_dir, exist_ok=True)
 
     cases = sorted(f[:-5] for f in os.listdir(a.corpus) if f.endswith(".html"))
     if a.only:
         cases = [c for c in cases if a.only in c]
+    if not cases:
+        print("FAIL no matching HTML cases in", a.corpus)
+        return 2
 
     diffs, crashes, clean, skipped = [], [], 0, 0
     for case in cases:
@@ -200,7 +199,7 @@ def main():
           % (len(cases), clean, len(diffs), len(crashes), skipped))
 
     if a.max_worst is None:
-        return
+        return 0
     known = {}
     if a.known_gaps and os.path.exists(a.known_gaps):
         with open(a.known_gaps) as f:
@@ -230,8 +229,9 @@ def main():
     if failed:
         for f in failed:
             print("FAIL", f)
-        sys.exit(1)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,4 +1,18 @@
-# The oracle: how the C# engine guards the C++ one
+# The oracle
+
+## Current workflow (2026-09-15)
+
+Chrome is the only CSS/HTML reference. `check.sh` runs the tracked corpora through
+`chrome_sweep.py --chrome-metrics --max-worst 1.5`, with explicit known-gap reasons.
+`run_oracle.py` and `Tools/oracle/run.sh` now invoke that same gate. BaselineGen and
+the C# engine were deleted; their generation and arbitration commands are retired.
+See the [working commands](../Tools/oracle/README.md) and
+[current evidence](PRODUCT_READINESS.md).
+
+The records below describe the earlier migration and explain past decisions.
+They are historical evidence, not instructions for the current checkout.
+
+## Historical design and findings
 
 **Build this before writing engine C++.** It is the single highest-leverage
 thing in the plan.
