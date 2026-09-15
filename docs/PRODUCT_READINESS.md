@@ -23,7 +23,7 @@ no consumer project has yet been opened on 1.0.
 | Fonts and text | The package's Inter with real bold/italic, `@font-face` `url()`/`local()`, `RegisterFontFamily`. The package's own shaper over the font's OpenType tables (`UnityFontBackend.Shaping.cs`): visual order and mirrored brackets for right-to-left runs, Arabic joining forms and ligatures, contextual lookups in every format, cursive attachment, marks on their base, the nine main Indic scripts by syllable (`UnityFontBackend.Indic.cs`), pinned by `UnityFontBackendTests` against Segoe UI, Bahnschrift, Dubai and Nirmala UI and rendered against Chrome by eye (`.utmp/showcase/rtl`, `.utmp/showcase/indic`). Not done: Sinhala, Khmer, Myanmar, Tibetan; a `Font` asset gets no substitutions (no bytes); no colour emoji. These are gaps, not open questions. |
 | Stylesheets and assets | Linked CSS resolves under `BasePath` (the asset's folder by default). Scene and prefab bakes include nested imports from links, markup, inspector sheets and inline CSS; the core discovers them with conditions, cycles and origins preserved. Imported edits update saved prefab bakes, and a serialized prefab was rendered in a fileless instance. Readers receive core-resolved paths; live editor files take precedence over stale bakes. Verified by 35 `NativeLinkedStylesheetTests`. Images/fonts still need files or `AssetReader`; an actual player build remains unverified. |
 | Editor tooling | Inspector with the URP-feature check and fix, HTML diagnostics and Reload; Elements window over the inspector ABI. Hot reload follows assigned assets and actual reader dependencies, including nested imports and missing files, after import/delete/move events. Nine asset-reload tests cover coalescing, unrelated-file exclusion, changed image pixels and font metrics, font deletion and host-font ownership. The Designer / in-place editor is shelved from 1.0. |
-| Build hygiene | Core, plugin and Godot extension at 0 warnings on gcc, clang and MSVC; `gen_bindings.py --check` in CI; the plugin's load test in `check.sh`. Build receipts identify the root checkout and the chosen host's native inputs, and refresh on ordinary builds even without relinking. Tooling suites pass 25 release/sample, 9 text-safety runner and 32 Frontier runner checks. |
+| Build hygiene | Core, plugin and Godot extension at 0 warnings on gcc, clang and MSVC; `gen_bindings.py --check` in CI; the plugin's load test in `check.sh`. Build receipts identify the root checkout and the chosen host's native inputs, and refresh on ordinary builds even without relinking. Tooling suites pass 33 release/oracle, 9 text-safety runner and 32 Frontier runner checks. |
 | Platforms | Windows x64 only. macOS, Linux, Android and iOS have CI jobs that have never run (nothing pushed); each is bundled when its load test passes. |
 | Release verification | The 1.0.0 CHANGELOG carries the migration notes. Blocked on the push (first CI run), a consumer opened on 1.0, and platform binaries. |
 
@@ -63,6 +63,13 @@ were inspected. The collector preserves their images with rewritten URLs
 and collision-safe asset names; missing local images fail collection. All
 47 sample layouts pass and every sample asset loads. Missing assets now fail
 the full gate instead of being waived for the retired Sprite demo.
+
+The repaired Unity layout-oracle runner passes all 47 sample pages against
+the standalone core using identical synthetic metrics and frozen animations.
+It now uses this checkout, supplies the manifest environment and rejects stale,
+failed or inconclusive Unity results. Eight tooling regressions cover the process
+handoff, preserved evidence, paths containing shell characters and static inputs.
+This verifies host translation; the 334 Chrome captures remain the CSS reference.
 
 ## Godot host readiness
 

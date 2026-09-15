@@ -5,8 +5,9 @@ Step 7 of the shared-core plan: the same core hosted by Unity must lay every
 page out exactly as the weva_dump tool does (it is the same core; any
 difference is the Unity adapter's). Both sides use the oracle's synthetic
 face (SyntheticFontBackend in Unity, MonoFontMetrics in weva_dump).
+Animations and transitions are disabled on both sides for a stable snapshot.
 
-    python oracle_from_unity.py <corpus> --weva-dump <path or "wsl:~/weva/build-gcc/tools/weva_dump/weva_dump">
+    python oracle_from_unity.py <corpus> --weva-dump <path or "wsl:~/weva/build-gcc/Tools/weva_dump/weva_dump">
         [--unity <Unity.exe>] [--project <repo>] [--width 1280 --height 720] [--out .utmp/oracle-unity]
 
 The Unity side runs once for the whole corpus: a manifest lists the cases
@@ -14,20 +15,19 @@ and the EditMode test NativeLayoutDumpTests.Manifest_DumpsEveryCaseForTheOracle
 dumps each one. weva_dump runs per case (through WSL when the path starts
 with "wsl:"). The comparison is run_oracle.py's own compare(): identity
 first (depth, tag, id, class), then geometry at four decimals.
+This checks host translation only. Chrome conformance is checked separately by
+Tools/oracle/chrome_sweep.py --chrome-metrics --max-worst 1.5.
 """
 import argparse
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
+from oracle_support import (DEFAULT_UNITY, REPO, frozen_stylesheet, hidden_process_options,
+                            preserve_previous, run_unity_manifest)
 
-HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent.parent / 'tools' / 'oracle'))
+sys.path.insert(0, str(REPO / 'Tools' / 'oracle'))
 from run_oracle import compare, cases_in  # noqa: E402
-
-DEFAULT_UNITY = r'C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Unity.exe'
-
 
 def to_wsl(path: Path) -> str:
     p = str(path.resolve()).replace('\\', '/')
@@ -37,34 +37,42 @@ def to_wsl(path: Path) -> str:
 
 
 def run_weva_dump(tool: str, html: Path, css, width, height, out: Path):
+    preserve_previous(out)
     if tool.startswith('wsl:'):
         binary = tool[4:]
-        cmd = [binary, to_wsl(html), str(width), str(height), to_wsl(out)]
+        if binary.startswith('~/'):
+            home_dir = subprocess.check_output(['wsl', '--exec', 'printenv', 'HOME'],
+                                               text=True, **hidden_process_options()).strip()
+            binary = home_dir + binary[1:]
+        cmd = ['wsl', '--exec', binary, to_wsl(html), str(width), str(height), to_wsl(out)]
         if css:
             cmd.append(to_wsl(Path(css)))
-        return subprocess.run(['wsl', '-e', 'bash', '-lc', ' '.join(f"'{c}'" for c in cmd)], capture_output=True, text=True)
-    cmd = [tool, str(html), str(width), str(height), str(out)]
-    if css:
-        cmd.append(str(css))
-    return subprocess.run(cmd, capture_output=True, text=True)
+    else:
+        cmd = [tool, str(html), str(width), str(height), str(out)]
+        if css:
+            cmd.append(str(css))
+    return subprocess.run(cmd, capture_output=True, text=True, **hidden_process_options())
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('corpus')
     ap.add_argument('--weva-dump', required=True)
     ap.add_argument('--unity', default=DEFAULT_UNITY)
-    ap.add_argument('--project', default=str(HERE.parent.parent.parent))
+    ap.add_argument('--project', default=str(REPO))
     ap.add_argument('--width', type=int, default=1280)
     ap.add_argument('--height', type=int, default=720)
     ap.add_argument('--out', default='.utmp/oracle-unity')
     ap.add_argument('--skip-unity', action='store_true', help='reuse the Unity dumps already in --out')
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
+    if args.width <= 0 or args.height <= 0:
+        ap.error('viewport dimensions must be positive')
 
     corpus = Path(args.corpus).resolve()
     out = Path(args.out).resolve()
     (out / 'unity').mkdir(parents=True, exist_ok=True)
     (out / 'core').mkdir(parents=True, exist_ok=True)
+    (out / 'inputs').mkdir(parents=True, exist_ok=True)
     cases = cases_in(str(corpus))
     if not cases:
         print('no cases in', corpus)
@@ -72,20 +80,38 @@ def main():
 
     manifest = out / 'manifest.tsv'
     lines = []
+    staged_cases = []
     for name, html, css in cases:
-        lines.append('\t'.join([str(html), str(css or ''), str(args.width), str(args.height), str(out / 'unity' / (name + '.json'))]))
-    manifest.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        staged_css = out / 'inputs' / (name + '.css')
+        css_text = frozen_stylesheet(css)
+        if args.skip_unity:
+            if not staged_css.exists() or staged_css.read_text(encoding='utf-8') != css_text:
+                print('FAIL --skip-unity requires unchanged stylesheets:', name)
+                return 1
+        else:
+            preserve_previous(staged_css)
+            staged_css.write_text(css_text, encoding='utf-8')
+        staged_cases.append((name, html, staged_css))
+        lines.append('\t'.join([str(html), str(staged_css), str(args.width), str(args.height), str(out / 'unity' / (name + '.json'))]))
+    cases = staged_cases
+    manifest_text = '\n'.join(lines) + '\n'
+    if args.skip_unity:
+        if not manifest.exists() or manifest.read_text(encoding='utf-8') != manifest_text:
+            print('FAIL --skip-unity requires the same saved corpus, viewport and output paths')
+            return 1
+        print('reusing the saved Unity dumps (--skip-unity); inputs must be unchanged')
+    else:
+        preserve_previous(manifest)
+        manifest.write_text(manifest_text, encoding='utf-8')
 
     if not args.skip_unity:
-        env = dict(os.environ, WEVA_NATIVE_DUMP_MANIFEST=str(manifest))
         results = out / 'unity-results.xml'
-        cmd = [args.unity, '-batchmode', '-nographics', '-projectPath', args.project, '-runTests', '-testPlatform', 'EditMode',
-               '-testFilter', 'Weva.Tests.EditorTests.Native.NativeLayoutDumpTests.Manifest_DumpsEveryCaseForTheOracle',
-               '-testResults', str(results), '-logFile', str(out / 'unity.log')]
         print('running Unity for', len(cases), 'cases ...')
-        subprocess.run(cmd)
-        if not results.exists():
-            print('FAIL  Unity produced no results (see', out / 'unity.log', ')')
+        try:
+            run_unity_manifest(args.unity, Path(args.project).resolve(), manifest,
+                               results, out / 'unity.log')
+        except (OSError, RuntimeError) as error:
+            print('FAIL', error)
             return 1
 
     agreeing, differing, missing = 0, 0, 0

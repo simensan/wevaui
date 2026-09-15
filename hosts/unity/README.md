@@ -329,6 +329,13 @@ python hosts/unity/oracle_from_unity.py Tools/oracle/corpus/samples \
     --weva-dump wsl:<build-gcc>/Tools/weva_dump/weva_dump --out .utmp/oracle-unity
 ```
 
+This checks the Unity adapter against the standalone core. Chrome remains the
+conformance reference (`Tools/oracle/chrome_sweep.py --chrome-metrics`). Both
+host-check inputs disable animation and transitions, matching the static browser
+capture. The runner supplies the manifest to Unity and requires its fresh passing
+test result; earlier XML, logs and dumps are preserved with `.previous-*` suffixes.
+`--skip-unity` is for inspecting a saved run with unchanged inputs.
+
 ## Tests
 
 The C++ load test (`tests/load_test.cpp`) opens the plugin through the dynamic
