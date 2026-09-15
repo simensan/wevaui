@@ -10,7 +10,7 @@ import struct
 import zlib
 
 # The corpus, relative to this file, so the tools work from any directory.
-SAMPLES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "corpus", "samples")
+SAMPLES = os.environ.get("WEVA_CORPUS", os.path.join(os.path.dirname(os.path.abspath(__file__)), "corpus", "samples"))
 # Where the render comparison leaves its images (see hosts/godot/compare_render.py
 # --out-dir); override with WEVA_DIAG.
 DIAG = os.environ.get("WEVA_DIAG", os.path.expanduser("~/weva/diag"))

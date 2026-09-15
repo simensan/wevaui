@@ -83,6 +83,12 @@ hide geometry and text differences, so its numbers are not a conformance score.
 Font selection, sampling, antialiasing and animation state matter when comparing
 screenshots; review the actual pictures.
 
+The benchmark and renderer shell wrappers use `WEVA_BUILD_GCC` to locate the
+current build, with `WEVA_BENCH` / `WEVA_RENDER` executable overrides.
+`layoutbench.sh` and `flipbench.sh` fail on incomplete measurements and report
+where failed-run logs were preserved. `survey_all.sh` uses the corpus supplied
+on its command line, also exposed to the image tools as `WEVA_CORPUS`.
+
 Chrome PNG pixels are sRGB bytes. For numerical software-renderer comparisons,
 use `SoftwareRenderer::to_srgb_rgba()` rather than multiplying linear `pixel()`
 channels by 255. The focused opacity checks cover this conversion.

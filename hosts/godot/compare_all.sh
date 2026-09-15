@@ -19,7 +19,7 @@ failures=0
 CORPUS="${1:?usage: compare_all.sh <corpus-dir> [size]}"
 SIZE="${2:-1280x720}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-RENDER="${WEVA_RENDER:-$HOME/weva/build-gcc/tools/weva_render/weva_render}"
+RENDER="${WEVA_RENDER:-${WEVA_BUILD_GCC:-$HOME/weva/build-gcc}/Tools/weva_render/weva_render}"
 GODOT="${GODOT_BIN:-$HOME/godot/godot}"
 shopt -s nullglob
 pages=("$CORPUS"/*.html)

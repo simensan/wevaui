@@ -31,7 +31,7 @@
 # The same median-of-sweeps discipline as layoutbench.sh, and for the same
 # reason: a single sweep carries a spread wide enough to invent a regression.
 # Use --ab for anything under about ten per cent.
-set -u
+set -euo pipefail
 
 if [ "${1:-}" = "--ab" ]; then
     AB_A="${2:?usage: --ab <bench-a> <bench-b> [sweeps] [flips]}"
@@ -45,22 +45,34 @@ else
 fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BENCH="${WEVA_BENCH:-$HOME/weva/build-gcc/tools/weva_bench/weva_bench}"
+BENCH="${WEVA_BENCH:-${WEVA_BUILD_GCC:-$HOME/weva/build-gcc}/Tools/weva_bench/weva_bench}"
 CORPUS="${WEVA_CORPUS:-$ROOT/Tools/oracle/corpus/samples}"
 
+if ! [[ "$SWEEPS" =~ ^[1-9][0-9]*$ && "$FLIPS" =~ ^[1-9][0-9]*$ ]]; then
+    echo "sweeps and iterations must be positive integers" >&2
+    exit 2
+fi
+shopt -s nullglob
+pages=("$CORPUS"/*.html)
+[ "${#pages[@]}" -gt 0 ] || { echo "no HTML pages in $CORPUS" >&2; exit 1; }
+binaries=("$BENCH")
+if [ -n "$AB_A" ]; then binaries=("$AB_A" "$AB_B"); fi
+for binary in "${binaries[@]}"; do
+    [ -x "$binary" ] || { echo "no executable benchmark at $binary" >&2; exit 1; }
+done
 tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
+trap 'status=$?; if [ "$status" -eq 0 ]; then rm -rf "$tmp"; else printf "benchmark failed; evidence in %s\n" "$tmp" >&2; fi' EXIT
 
 # One flip mode through one binary, in milliseconds. `best` rather than mean:
 # a flip allocates, and the mean carries whatever the allocator was doing.
 run_flip() {   # binary, html, css, mode
-    "$1" "$2" "$3" "$FLIPS" --full --dt=0 "--mutate=$4" "--target=${WEVA_FLIP_TARGET:-last}" 2>/dev/null |
+    "$1" "$2" "$3" "$FLIPS" --full --dt=0 "--mutate=$4" "--target=${WEVA_FLIP_TARGET:-last}" 2>>"$tmp/errors.log" |
         sed -n 's/.*best *\([0-9.]*\) ms.*/\1/p'
 }
 
 if [ -n "$AB_A" ]; then
     for sweep in $(seq 1 "$SWEEPS"); do
-        for html in "$CORPUS"/*.html; do
+        for html in "${pages[@]}"; do
             base="$(basename "$html" .html)"
             css="${html%.html}.css"
             [ -f "$css" ] || css=""
@@ -77,7 +89,7 @@ if [ -n "$AB_A" ]; then
                 al=$(run_flip "$AB_A" "$html" "$css" layout)
                 ap=$(run_flip "$AB_A" "$html" "$css" paint)
             fi
-            [ -n "$al" ] && [ -n "$ap" ] && [ -n "$bl" ] && [ -n "$bp" ] || continue
+            [ -n "$al" ] && [ -n "$ap" ] && [ -n "$bl" ] && [ -n "$bp" ] || { echo "missing benchmark metric for $base" >&2; exit 1; }
             echo "$base $(awk -v l="$al" -v p="$ap" 'BEGIN{print l-p}') $(awk -v l="$bl" -v p="$bp" 'BEGIN{print l-p}')" >> "$tmp/ab"
         done
     done
@@ -100,19 +112,14 @@ if [ -n "$AB_A" ]; then
     exit 0
 fi
 
-if [ ! -x "$BENCH" ]; then
-    echo "no weva_bench at $BENCH (set WEVA_BENCH)" >&2
-    exit 1
-fi
-
 for sweep in $(seq 1 "$SWEEPS"); do
-    for html in "$CORPUS"/*.html; do
+    for html in "${pages[@]}"; do
         base="$(basename "$html" .html)"
         css="${html%.html}.css"
         [ -f "$css" ] || css=""
         l=$(run_flip "$BENCH" "$html" "$css" layout)
         p=$(run_flip "$BENCH" "$html" "$css" paint)
-        [ -n "$l" ] && [ -n "$p" ] || continue
+        [ -n "$l" ] && [ -n "$p" ] || { echo "missing benchmark metric for $base" >&2; exit 1; }
         echo "$base $l $p" >> "$tmp/all"
     done
 done

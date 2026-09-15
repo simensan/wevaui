@@ -166,7 +166,7 @@ def main():
     ap.add_argument("html")
     ap.add_argument("css", nargs="?", default="-", help="'-' for no author stylesheet")
     ap.add_argument("--size", default="300x200")
-    ap.add_argument("--weva-render", default="build/tools/weva_render/weva_render")
+    ap.add_argument("--weva-render", default="build/Tools/weva_render/weva_render")
     ap.add_argument("--godot", default="godot")
     ap.add_argument("--project", default="hosts/godot/project")
     ap.add_argument("--out-dir", default=None, help="keep the images here instead of a temp dir")

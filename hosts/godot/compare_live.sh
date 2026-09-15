@@ -15,7 +15,7 @@ set -uo pipefail
 failures=0
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 S=$ROOT/Tools/oracle/corpus/samples
-R=${WEVA_RENDER:-$HOME/weva/build-gcc/tools/weva_render/weva_render}
+R=${WEVA_RENDER:-${WEVA_BUILD_GCC:-$HOME/weva/build-gcc}/Tools/weva_render/weva_render}
 G=${GODOT_BIN:-$HOME/godot/godot}
 run() {
     local label="$1"; shift
