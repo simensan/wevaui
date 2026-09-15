@@ -67,9 +67,12 @@ siblings. Use a more specific selector instead.
   including inside `calc()`, through `var()` indirection, and in shorthands),
   `env()` (safe-area names pre-registered; host can register more via
   `EnvironmentVariables.Register`).
-- **Colors:** `#hex`, `rgb()`/`rgba()`, `hsl()`/`hsla()`, named colors,
-  `currentColor`, `color-mix()`, `light-dark()`. Color math runs in linear
-  space.
+- **Colors:** `#hex`, `rgb()`/`rgba()`, `hsl()`/`hsla()`, `hwb()`, `lab()`,
+  `lch()`, `oklab()`, `oklch()`, `color()`, named colors, `currentColor`,
+  `color-mix()`, and `light-dark()`. Modern RGB syntax permits mixed numbers
+  and percentages; comma syntax requires a consistent channel type.
+  `color-mix()` uses the requested interpolation space. Output is reduced
+  to sRGB bytes; wide-gamut colors are clipped rather than gamut-mapped.
 - **Container query units** (`cqw`, `cqi`, …) are *not* registered — use
   viewport units or explicit lengths.
 

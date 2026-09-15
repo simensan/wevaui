@@ -147,7 +147,7 @@ check.sh                          the gate
   Always pass `--chrome-metrics` (the browser's box semantics).
 - **`Tools/oracle/run_chrome_checks.py`** — scripted behaviour checks
   against a live Chrome (forms, focus, popovers, animation clocks, stylesheet
-  discovery/imports/font sources). Review: 63 scripts, 62 pass and 1 documented Chrome IME failure.
+  discovery/imports/font sources/colors). Review: 64 scripts, 63 pass and 1 documented Chrome IME failure.
   CI pins Windows Chrome 152; numeric-editing and CR fixtures depend on the
   reference OS/browser version. Set `WEVA_CHROME` to choose the executable.
 - **Unity EditMode**: `Unity -batchmode -projectPath <repo> -runTests

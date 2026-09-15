@@ -361,6 +361,7 @@ struct ColourArg {
     double v = 0;
     bool pct = false;
     bool none = false;
+    bool angle = false;
 };
 
 bool colour_arg(const CssValue& v, ColourArg* out) {
@@ -375,6 +376,7 @@ bool colour_arg(const CssValue& v, ColourArg* out) {
             return true;
         case CssValueKind::Angle:
             out->v = static_cast<const CssAngle&>(v).to_degrees();
+            out->angle = true;
             return true;
         case CssValueKind::Identifier:
         case CssValueKind::Keyword: {
@@ -396,10 +398,13 @@ bool colour_arg(const CssValue& v, ColourArg* out) {
 // space first; that comes back in `leading`.
 bool colour_channels(const CssFunctionCall& call, bool leading_ident, std::string* leading,
                      ColourArg ch[3], ColourArg* alpha, bool* has_alpha) {
+    const bool legacy = call.arguments.size() > 1;
+    if (legacy && (leading_ident || call.arguments.size() < 3 || call.arguments.size() > 4)) return false;
     std::vector<const CssValue*> flat;
     for (const CssValuePtr& a : call.arguments) {
         if (!a) return false;
         if (a->kind() == CssValueKind::List) {
+            if (legacy) return false;  // comma/space syntax cannot be mixed
             for (const CssValuePtr& i : static_cast<const CssValueList&>(*a).items) {
                 if (!i) return false;
                 flat.push_back(i.get());
@@ -418,27 +423,18 @@ bool colour_channels(const CssFunctionCall& call, bool leading_ident, std::strin
         if (flat.empty() || !ident(*flat[0], leading)) return false;
         i = 1;
     }
-    int n = 0;
     *has_alpha = false;
-    bool after_slash = false;
-    for (; i < flat.size(); ++i) {
-        std::string name;
-        if (ident(*flat[i], &name) && name == "/") {
-            if (after_slash || n != 3) return false;
-            after_slash = true;
-            continue;
-        }
-        ColourArg a;
-        if (!colour_arg(*flat[i], &a)) return false;
-        if (after_slash || n == 3) {
-            if (*has_alpha) return false;
-            *alpha = a;
-            *has_alpha = true;
-        } else {
-            ch[n++] = a;
-        }
+    for (int channel = 0; channel < 3; ++channel) {
+        if (i == flat.size() || !colour_arg(*flat[i++], &ch[channel])) return false;
     }
-    return n == 3;
+    if (i == flat.size()) return true;
+    if (!legacy) {
+        std::string name;
+        if (!ident(*flat[i++], &name) || name != "/") return false;
+    }
+    if (i == flat.size() || !colour_arg(*flat[i++], alpha)) return false;
+    *has_alpha = true;
+    return i == flat.size();
 }
 
 // rgb()/rgba()/hsl()/hsla()/hwb()/lab()/lch()/oklab()/oklch()/color() collapse
@@ -460,6 +456,15 @@ CssValuePtr eval_colour_function(const CssFunctionCall& call) {
     bool has_alpha = false;
     std::string space_name;
     if (!colour_channels(call, is_color, &space_name, ch, &al, &has_alpha)) return nullptr;
+    const bool legacy = call.arguments.size() > 1;
+    if (legacy && !is_rgb && !is_hsl) return nullptr;
+    if (has_alpha && (al.angle || (legacy && al.none))) return nullptr;
+    for (int i = 0; i < 3; ++i) {
+        const bool hue = ((is_hsl || is_hwb) && i == 0) || ((is_lch || is_oklch) && i == 2);
+        if ((hue && ch[i].pct) || (!hue && ch[i].angle) || (legacy && ch[i].none)) return nullptr;
+    }
+    if (legacy && is_rgb && (ch[0].pct != ch[1].pct || ch[0].pct != ch[2].pct)) return nullptr;
+    if (legacy && is_hsl && (!ch[1].pct || !ch[2].pct)) return nullptr;
     double alpha = 1.0;
     if (has_alpha) {
         // CSS Color 4: an alpha percentage is 0-100, a number is 0-1.
@@ -472,10 +477,9 @@ CssValuePtr eval_colour_function(const CssFunctionCall& call) {
 
     auto out = std::make_unique<CssColor>();
     if (is_rgb) {
-        // C#'s FromRgb takes ONE rgbPercent flag for all three channels, so a
-        // mixed `rgb(255, 50%, 0)` follows the first channel. Reproduced.
-        css_color_from_rgb(ch[0].none ? 0 : ch[0].v, ch[1].none ? 0 : ch[1].v, ch[2].none ? 0 : ch[2].v,
-                           alpha, ch[0].pct, out.get());
+        // Modern RGB permits percentages and numbers in the same call.
+        // Scale each channel independently before converting to byte values.
+        css_color_from_rgb(val(ch[0], 255), val(ch[1], 255), val(ch[2], 255), alpha, false, out.get());
     } else if (is_hsl) {
         // The modern form takes plain numbers for saturation and lightness,
         // which mean the same as percentages.
@@ -728,6 +732,7 @@ CssValuePtr parse_function(Reader& r) {
     // Arguments are comma-separated groups; a group with several values
     // becomes a space-separated list, matching ParseTopLevel's shape.
     std::vector<CssValuePtr> group;
+    bool saw_comma = false, empty_argument = false;
     auto flush = [&] {
         if (group.empty()) return;
         if (group.size() == 1) {
@@ -744,6 +749,8 @@ CssValuePtr parse_function(Reader& r) {
     r.skip_ws();
     while (!r.at_end() && r.peek().kind != CssTokenKind::RParen) {
         if (r.peek().kind == CssTokenKind::Comma) {
+            saw_comma = true;
+            if (group.empty()) empty_argument = true;
             r.advance();
             r.skip_ws();
             flush();
@@ -754,10 +761,13 @@ CssValuePtr parse_function(Reader& r) {
         if (v) group.push_back(std::move(v));
         r.skip_ws();
     }
+    if (saw_comma && group.empty()) empty_argument = true;
     flush();
     if (!r.at_end() && r.peek().kind == CssTokenKind::RParen) r.advance();
 
-    if (CssValuePtr colour = eval_colour_function(*call)) return colour;
+    if (!empty_argument) {
+        if (CssValuePtr colour = eval_colour_function(*call)) return colour;
+    }
     return call;
 }
 

@@ -78,10 +78,17 @@ void test_modern_colours() {
     col("rgb(255 0 0 / 50%)", 255, 0, 0, 0.5f);
     col("rgb(255 0 0 / .25)", 255, 0, 0, 0.25f);
     col("rgba(100% 0% 0%)", 255, 0, 0, 1);
+    // Channel scales and grammar pinned by check_color_channels_chrome.cjs.
+    col("rgb(255 50% 0)", 255, 127, 0, 1);
+    col("rgb(50% 64 20%)", 127, 64, 51, 1);
+    col("rgba(none 50% 255 / 50%)", 0, 128, 255, 0.5f);
+    col("rgb(100%,50%,0%)", 255, 128, 0, 1);
+    col("rgb(-10 110% 0)", 0, 255, 0, 1);
     col("hsl(120 100% 50% / 0.5)", 0, 255, 0, 0.5f);
     col("hsl(120 100 50)", 0, 255, 0, 1);
     col("hsl(120deg 100% 50%)", 0, 255, 0, 1);
     col("hwb(0 0% 0%)", 255, 0, 0, 1);
+    col("hwb(120 0 0)", 0, 255, 0, 1);
     col("rgb(none 255 0)", 0, 255, 0, 1);
     col("rgb(255 0 0 / none)", 255, 0, 0, 0);
     // The Lab family: sRGB red and the greys.
@@ -112,7 +119,14 @@ void test_modern_colours() {
     col("color(display-p3 0.5 0.5 0.5)", 128, 128, 128, 1);
     // Malformed calls stay function calls rather than becoming a wrong colour.
     for (const char* bad : {"color(bogus 1 0 0)", "lab(1 2)", "oklch(0.5 0.1 200 / 1 / 2)",
-                            "color(lab 50 0 0)", "rgb(1 2 3 4 5)"}) {
+                            "color(lab 50 0 0)", "rgb(1 2 3 4 5)",
+                            "rgb(255,50%,0)", "rgb(1 2 3 .5)", "rgb(1 2 3 /)",
+                            "rgb(1,2,3 / .5)", "rgb(,1,2,3)", "rgb(1,2,3,)", "rgb(1,,2,3)",
+                            "rgb(none,0,0)", "rgb(10deg 0 0)", "rgb(1 2 3 / 1deg)",
+                            "hsl(20% 100% 50%)", "hsl(120,100,50)", "hsl(120 30deg 50%)",
+                            "hwb(120,0%,0%)", "lab(50,0,0)", "lab(50 10deg 0)",
+                            "lch(50 10 50%)", "oklch(.5 .1 50%)", "color(srgb,1,0,0)",
+                            "color(srgb 1deg 0 0)"}) {
         CssParseError err;
         CssValuePtr v = parse_css_value(bad, &err);
         CHECK(!v || v->kind() != CssValueKind::Color);
