@@ -62,7 +62,8 @@ namespace Weva.Native
             uint html = _doc.Query("html");
             NodeCount = 0;
             Root = html == WevaNative.WEVA_ELEMENT_NONE ? null : Build(html, 0);
-            if (Selected != WevaNative.WEVA_ELEMENT_NONE) Select(Selected);
+            if (Selected != WevaNative.WEVA_ELEMENT_NONE)
+                Select(Find(Selected) != null ? Selected : WevaNative.WEVA_ELEMENT_NONE);
         }
 
         private Node Build(uint element, int depth)

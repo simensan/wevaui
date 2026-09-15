@@ -17,6 +17,9 @@ namespace Weva.EditorTools.DevTools
     {
         private WevaDocument _target;
         private NativeInspectorModel _model;
+        private NativeDocument _document;
+        private int _generation;
+        private ulong _structureVersion;
         private TreeView _tree;
         private ScrollView _rules;
         private ScrollView _computed;
@@ -90,23 +93,38 @@ namespace Weva.EditorTools.DevTools
         private void Attach(WevaDocument target)
         {
             _target = target;
-            _model = target != null && target.Document != null ? new NativeInspectorModel(target.Document) : null;
+            _document = null;
+            _model = null;
             Rebuild();
+        }
+
+        private bool SyncDocument()
+        {
+            NativeDocument current = _target != null ? _target.Document : null;
+            int generation = _target != null ? _target.Generation : 0;
+            if (ReferenceEquals(current, _document) && generation == _generation) return false;
+            _tree?.ClearSelection();
+            _document = current;
+            _generation = generation;
+            _model = current != null ? new NativeInspectorModel(current) : null;
+            return true;
         }
 
         private void Rebuild()
         {
-            if (_model == null || _target == null || _target.Document == null)
+            SyncDocument();
+            if (_model == null)
             {
                 _tree.SetRootItems(new List<TreeViewItemData<NativeInspectorModel.Node>>());
                 _tree.Rebuild();
                 _status.text = "no document";
+                RenderSelection();
                 return;
             }
             _model.Rebuild();
+            _structureVersion = _document.StructureVersion;
             var items = new List<TreeViewItemData<NativeInspectorModel.Node>>();
-            int nextId = 0;
-            if (_model.Root != null) items.Add(ToItem(_model.Root, ref nextId));
+            if (_model.Root != null) items.Add(ToItem(_model.Root));
             _tree.SetRootItems(items);
             _tree.Rebuild();
             _tree.ExpandAll();
@@ -114,11 +132,12 @@ namespace Weva.EditorTools.DevTools
             RenderSelection();
         }
 
-        private static TreeViewItemData<NativeInspectorModel.Node> ToItem(NativeInspectorModel.Node node, ref int nextId)
+        private static TreeViewItemData<NativeInspectorModel.Node> ToItem(NativeInspectorModel.Node node)
         {
-            int id = nextId++;
+            // The handle survives insertion and reordering; a row index does not.
+            int id = unchecked((int)node.Element);
             var children = new List<TreeViewItemData<NativeInspectorModel.Node>>();
-            foreach (NativeInspectorModel.Node child in node.Children) children.Add(ToItem(child, ref nextId));
+            foreach (NativeInspectorModel.Node child in node.Children) children.Add(ToItem(child));
             return new TreeViewItemData<NativeInspectorModel.Node>(id, node, children);
         }
 
@@ -188,9 +207,15 @@ namespace Weva.EditorTools.DevTools
         {
             // The document moves on its own (animations, input); re-read the
             // selection a few times a second the way the Elements window does.
-            if (_model == null || _target == null || _target.Document == null) return;
+            if (_tree == null) return; // CreateGUI has not run yet.
             if (EditorApplication.timeSinceStartup < _nextPoll) return;
             _nextPoll = EditorApplication.timeSinceStartup + 0.25;
+            if (SyncDocument() || (_document != null && _document.StructureVersion != _structureVersion))
+            {
+                Rebuild();
+                return;
+            }
+            if (_model == null) return;
             if (_model.Selected != WevaNative.WEVA_ELEMENT_NONE)
             {
                 _model.Select(_model.Selected);

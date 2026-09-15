@@ -99,5 +99,19 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(_model.Box.PaddingTop, Is.EqualTo(9), "the selection was re-read");
             Assert.That(_model.NodeCount, Is.EqualTo(7));
         }
+
+        [Test]
+        public void Rebuild_ClearsRemovedSelection()
+        {
+            uint a = _doc.Query("#a");
+            _model.Select(a);
+            _doc.ReloadHtml("<div id=b></div>");
+            _doc.Update(0);
+            _model.Rebuild();
+            Assert.That(_model.Selected, Is.EqualTo(WevaNative.WEVA_ELEMENT_NONE));
+            Assert.That(_model.Rules, Is.Empty);
+            Assert.That(_model.Computed, Is.Empty);
+            Assert.That(_model.HasBox, Is.False);
+        }
     }
 }
