@@ -1,0 +1,252 @@
+{
+  "date": "2026-09-15",
+  "revision": "1cb34072a7f2cba8794a3a665ab71b86cbd6d6d0",
+  "scope": "Shared core microbenchmarks and standalone Windows Godot UI workloads; no game or Unity host measurement.",
+  "cpu": "AMD Ryzen 7 9800X3D",
+  "native": {
+    "passed": true,
+    "functional_workload_runs": 27,
+    "runs": 3,
+    "warmups": 120,
+    "frames": 600,
+    "platform": "Windows x64",
+    "renderer": "Vulkan Forward Mobile",
+    "gpu": "NVIDIA GeForce RTX 5080",
+    "viewport": [
+      1280,
+      720
+    ],
+    "vsync": false,
+    "simulated_dt": 0.016666666666666666,
+    "runtime": "Godot 4.7.2 script-iterator-patched editor executable, standalone fixture; Release Weva extension.",
+    "engine_sha256": "a54a92298c1084987f3ac42fef0231c02ddc53906b9efc118a7c84e258cf4aed",
+    "library_sha256": "f0157175cb6643915b65da9b134552e9dd12629ba26942100a84222bebbb125a",
+    "source_sha256": "cabbf066917dd5c810498e9d83e7f442db0742b845d3c4bb18ae9d9e66f4c868",
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35222.0"
+    },
+    "aggregation": "Median of three per-run means/p95s; maximum is largest individual sample in any run.",
+    "measurements": {
+      "empty": {
+        "api_mean_ms": 0.000395,
+        "api_p95_ms": 0.001,
+        "api_p95_range_ms": [
+          0.001,
+          0.001
+        ],
+        "api_max_ms": 0.04,
+        "whole_frame_p95_ms": 4.86
+      },
+      "hud_idle": {
+        "api_mean_ms": 0.00959833333333333,
+        "api_p95_ms": 0.011,
+        "api_p95_range_ms": [
+          0.011,
+          0.011
+        ],
+        "api_max_ms": 0.554,
+        "whole_frame_p95_ms": 4.831
+      },
+      "hud_active": {
+        "api_mean_ms": 0.29684,
+        "api_p95_ms": 0.788,
+        "api_p95_range_ms": [
+          0.583,
+          0.812
+        ],
+        "api_max_ms": 1.426,
+        "whole_frame_p95_ms": 3.825,
+        "change_frame_api_p95_ms": 1.205
+      },
+      "hud_redundant": {
+        "api_mean_ms": 0.0288199999999999,
+        "api_p95_ms": 0.052,
+        "api_p95_range_ms": [
+          0.038,
+          0.052
+        ],
+        "api_max_ms": 0.679,
+        "whole_frame_p95_ms": 4.55
+      },
+      "hud_bound": {
+        "api_mean_ms": 0.69621,
+        "api_p95_ms": 1.23,
+        "api_p95_range_ms": [
+          0.917,
+          1.255
+        ],
+        "api_max_ms": 1.763,
+        "whole_frame_p95_ms": 2.891
+      },
+      "menu_hover": {
+        "api_mean_ms": 0.0414466666666665,
+        "api_p95_ms": 0.13,
+        "api_p95_range_ms": [
+          0.117,
+          0.163
+        ],
+        "api_max_ms": 0.821,
+        "whole_frame_p95_ms": 4.746,
+        "change_frame_api_p95_ms": 0.383
+      },
+      "menu_animation": {
+        "api_mean_ms": 0.134835,
+        "api_p95_ms": 0.436,
+        "api_p95_range_ms": [
+          0.187,
+          0.453
+        ],
+        "api_max_ms": 0.897,
+        "whole_frame_p95_ms": 4.539
+      },
+      "inventory_scroll": {
+        "api_mean_ms": 1.12714833333333,
+        "api_p95_ms": 1.517,
+        "api_p95_range_ms": [
+          1.252,
+          1.627
+        ],
+        "api_max_ms": 2.022,
+        "whole_frame_p95_ms": 2.873
+      },
+      "chat_typing": {
+        "api_mean_ms": 0.0260749999999999,
+        "api_p95_ms": 0.111,
+        "api_p95_range_ms": [
+          0.109,
+          0.116
+        ],
+        "api_max_ms": 0.231,
+        "whole_frame_p95_ms": 4.819,
+        "change_frame_api_p95_ms": 0.185
+      }
+    },
+    "screenshots": 24,
+    "inspected_captures": [
+      "candidate-2/hud_active.png",
+      "candidate-2/inventory_scroll.png"
+    ]
+  },
+  "limits": [
+    "No paired baseline: no speedup or regression claim.",
+    "No Unity host, complete game, release-export, GPU-duration or memory-lifecycle qualification.",
+    "Other desktop/game processes were active. Our builds and benchmarks did not overlap each other.",
+    "Whole-frame intervals include scheduling/presentation; the empty-window p95 is a background reference, not a quantity to subtract across unrelated workloads.",
+    "This runner checks workload correctness, not a performance-budget threshold."
+  ],
+  "evidence": ".utmp/performance-20260915",
+  "raw_native_summary_sha256": "0fd4d7d8508590e3ba0eea88b2a6b7650e4327b3a11976bf00f512b69c7dd6d9",
+  "core": {
+    "platform": "WSL Linux x86_64",
+    "sweeps": 3,
+    "iterations_per_sweep": 40,
+    "samples": 47,
+    "binary_sha256": "f4c0c96e3366fc6ff1ed957e32f6b46126eac52a9fcdb6672ff9f72ff44b08a0",
+    "layout_metric": "Median of each sweep best; box construction and layout only, precomputed styles.",
+    "incremental_metric": "Median of each sweep best; full update after alternating padding or background changes to the last element.",
+    "cold_metric": "Median run mean and best; document creation, parsing and first update. Built-in font; excludes native host rendering and host font/asset I/O.",
+    "slowest_layout": [
+      {
+        "sample": "layout-stress",
+        "layout_ms": 2.287,
+        "boxes": 2878,
+        "allocations": 3841
+      },
+      {
+        "sample": "randhtml",
+        "layout_ms": 1.69,
+        "boxes": 4163,
+        "allocations": 8032
+      },
+      {
+        "sample": "vendor",
+        "layout_ms": 1.533,
+        "boxes": 2980,
+        "allocations": 3149
+      },
+      {
+        "sample": "flex-playground",
+        "layout_ms": 1.165,
+        "boxes": 2812,
+        "allocations": 2038
+      },
+      {
+        "sample": "stats",
+        "layout_ms": 0.877,
+        "boxes": 1375,
+        "allocations": 4049
+      }
+    ],
+    "slowest_incremental": [
+      {
+        "sample": "glass",
+        "layout_update_ms": 3.171,
+        "paint_update_ms": 0.046,
+        "difference_ms": 3.125
+      },
+      {
+        "sample": "randhtml",
+        "layout_update_ms": 2.623,
+        "paint_update_ms": 0.029,
+        "difference_ms": 2.594
+      },
+      {
+        "sample": "match3",
+        "layout_update_ms": 2.147,
+        "paint_update_ms": 0.053,
+        "difference_ms": 2.094
+      },
+      {
+        "sample": "vendor",
+        "layout_update_ms": 2.034,
+        "paint_update_ms": 0.036,
+        "difference_ms": 1.998
+      },
+      {
+        "sample": "flex-playground",
+        "layout_update_ms": 2.019,
+        "paint_update_ms": 0.03,
+        "difference_ms": 1.989
+      }
+    ],
+    "slowest_cold": [
+      {
+        "sample": "hud",
+        "best_ms": 51.247,
+        "mean_ms": 56.067,
+        "allocations": 20920,
+        "requested_bytes": 46604942
+      },
+      {
+        "sample": "randhtml",
+        "best_ms": 50.586,
+        "mean_ms": 55.667,
+        "allocations": 91419,
+        "requested_bytes": 41784628
+      },
+      {
+        "sample": "glass",
+        "best_ms": 51.972,
+        "mean_ms": 55.595,
+        "allocations": 26267,
+        "requested_bytes": 61552080
+      },
+      {
+        "sample": "neon",
+        "best_ms": 41.189,
+        "mean_ms": 46.226,
+        "allocations": 14387,
+        "requested_bytes": 119463378
+      },
+      {
+        "sample": "episode-stats",
+        "best_ms": 41.477,
+        "mean_ms": 46.121,
+        "allocations": 15913,
+        "requested_bytes": 22525485
+      }
+    ]
+  },
+  "complete_summary_sha256": "53ea8dd1902b3f47142a12cdd856477c0b960ca0ec24ebcd5f532bbc4c2c94f3"
+}

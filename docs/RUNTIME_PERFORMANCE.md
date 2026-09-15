@@ -1,5 +1,13 @@
 # In-game UI performance
 
+The September 15 [performance baseline](verification/performance-20260915.md)
+measures the current core and a freshly rebuilt Windows Godot extension. All
+47 core samples and 27 native workload runs complete. Median run CPU p95 is
+0.788 ms for active HUD updates, 1.230 ms for bound HUD updates and 1.517 ms for
+96-slot inventory scrolling. Complete core document creation reaches 56.067 ms
+mean in the slowest sample. This is an unpaired standalone measurement, with
+the exact scope, variation and machine conditions recorded in the report.
+
 A five-minute lifecycle follow-up passes 200 recreations and 161,306 Unicode
 soak frames. Private-memory medians settle near 862.11 MB in the last two
 minutes; node/object counts stay constant. Prepared reuse CPU p95 is 0.404 ms,
