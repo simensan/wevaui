@@ -110,5 +110,41 @@ namespace Weva.Tests.EditorTests.Native
                 finally { UnityEngine.Object.DestroyImmediate(image); }
             }
         }
+
+        [Test]
+        public void NestedComponentStyles_KeepTheirParentAndSlotBoundaries()
+        {
+            _doc.SetCss("body,p{margin:0}.target{height:20px;background:lime}");
+            _doc.LoadHtml("<template id=card><style>:host{display:block;width:180px;padding:8px;"
+                + "&.hot{background:blue}}.frame{.target{background:red}}</style>"
+                + "<div class=frame><p class=target></p><slot></slot></div><p class='target spare'></p></template>"
+                + "<card id=host class=hot><p id=light class=target></p></card><p id=outside class=target></p>");
+            _doc.Update(0);
+            string Background(string selector) => _doc.ComputedStyle(_doc.Query(selector))
+                .Find(pair => pair.Key == "background-color").Value;
+            Assert.That(Background("#host"), Is.EqualTo("blue"));
+            Assert.That(Background("#host .frame > .target"), Is.EqualTo("red"));
+            Assert.That(Background("#host .spare"), Is.EqualTo("lime"));
+            Assert.That(Background("#light"), Is.EqualTo("lime"));
+            Assert.That(Background("#outside"), Is.EqualTo("lime"));
+            using (var renderer = new NativeDocumentRenderer())
+            {
+                Texture2D image = renderer.RenderToTexture(_doc, 200, 120, Color.white);
+                try
+                {
+                    Assert.That(image.GetPixel(20, 116).b, Is.GreaterThan(0.95f));
+                    Assert.That(image.GetPixel(20, 102).r, Is.GreaterThan(0.95f));
+                    Assert.That(image.GetPixel(20, 102).g, Is.LessThan(0.05f));
+                    Assert.That(image.GetPixel(20, 34).g, Is.GreaterThan(0.95f));
+                    string dump = Environment.GetEnvironmentVariable("WEVA_NESTING_DUMP");
+                    if (!string.IsNullOrEmpty(dump))
+                    {
+                        Directory.CreateDirectory(dump);
+                        File.WriteAllBytes(Path.Combine(dump, "nested-component.png"), image.EncodeToPNG());
+                    }
+                }
+                finally { UnityEngine.Object.DestroyImmediate(image); }
+            }
+        }
     }
 }

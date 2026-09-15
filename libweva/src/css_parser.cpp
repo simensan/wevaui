@@ -357,9 +357,23 @@ void parse_rule_body(Ctx& ctx, std::vector<Declaration>* decls,
             ctx.skip_whitespace();
             continue;
         }
-        if (!try_parse_declaration(ctx, decls)) {
+        std::vector<Declaration> tail;
+        if (!try_parse_declaration(ctx, nested->empty() ? decls : &tail)) {
             if (ctx.strict) { ctx.fail("Invalid declaration", decl_start); return; }
             skip_declaration(ctx);
+        } else if (!tail.empty()) {
+            StyleRule* run = nullptr;
+            if (nested->back()->kind() == RuleKind::Style) {
+                auto* last = static_cast<StyleRule*>(nested->back().get());
+                if (last->nested_declarations) run = last;
+            }
+            if (!run) {
+                auto child = std::make_unique<StyleRule>();
+                child->nested_declarations = true;
+                run = child.get();
+                nested->push_back(std::move(child));
+            }
+            for (auto& declaration : tail) run->declarations.push_back(std::move(declaration));
         }
         ctx.skip_whitespace();
     }

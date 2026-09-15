@@ -304,6 +304,7 @@ int compare_for_cascade(const CascadeKey& x, const CascadeKey& y) {
 void CascadeEngine::clear() {
     ++container_generation_;
     rules_.clear();
+    next_source_index_ = 0;
     container_queries_.clear();
     compiling_containers_.clear();
     compiling_scopes_.clear();
@@ -488,8 +489,13 @@ void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
             *unsafe_sibling = true;
         }
     }
-    for (const auto& c : seq.compounds) {
-        classify_compound(c, unsafe_sibling, has_has, folds_index, hover, active, inside_has);
+    for (size_t i = 0; i < seq.compounds.size(); ++i) {
+        bool positional = false;
+        classify_compound(seq.compounds[i], unsafe_sibling, has_has, &positional, hover, active, inside_has);
+        *folds_index = *folds_index || positional;
+        // Only the subject's rank is in a shape key. A positional parent,
+        // including one inside the :is() used for nesting, needs its own rank.
+        if (positional && i + 1 < seq.compounds.size()) *unsafe_sibling = true;
     }
 }
 
@@ -641,14 +647,38 @@ std::string_view trim_ascii(std::string_view s) {
     return s.substr(b, e - b);
 }
 
-// Scoped style selectors are relative to their scope root. The implicit
-// descendant anchor (and the explicit nesting selector &) adds no specificity.
+// Nested style selectors use their parent list as an :is() anchor. Scoped
+// selectors without a style parent use a zero-specificity scope-root anchor.
 // Tokenize so quoted attributes and escaped identifiers cannot look like & or
 // :scope, and keep authored text for cascade inspection.
-bool parse_scoped_selector(std::string_view text, bool relative, CompiledSelector* out) {
+bool parse_scoped_selector(std::string_view text, bool relative, CompiledSelector* out,
+                           const std::vector<std::string>* nesting = nullptr,
+                           std::string* resolved = nullptr) {
     if (trim_ascii(text).empty()) return false;
     SelectorParseError error;
-    if (!relative) return parse_selector(text, out, &error);
+    if (!relative && !nesting && text.find('&') == std::string_view::npos) {
+        if (resolved) *resolved = text;
+        return parse_selector(text, out, &error);
+    }
+    // Repeated & references can multiply an already expanded selector. Bound
+    // generated text, like the parser's rule-depth bound, before allocating it.
+    constexpr size_t kMaxExpandedSelector = 65536;
+    std::string anchor = ":where(:scope)";
+    if (nesting) {
+        anchor = ":is(";
+        for (const auto& parent : *nesting) {
+            CompiledSelector selector;
+            SelectorParseError parse_error;
+            // & cannot represent pseudo-elements, including their specificity.
+            // Declaration runs use the original list and retain those pseudos.
+            if (!parse_selector(parent, &selector, &parse_error) || selector.sequence.pseudo_element()) continue;
+            if (anchor.size() + parent.size() + 2 > kMaxExpandedSelector) return false;
+            if (anchor.size() > 4) anchor += ',';
+            anchor += parent;
+        }
+        if (anchor.size() == 4) anchor = ":not(*)";
+        else anchor += ')';
+    }
     std::vector<CssToken> tokens;
     CssParseError token_error;
     if (!CssTokenizer(text).tokenize(&tokens, &token_error)) return false;
@@ -660,10 +690,11 @@ bool parse_scoped_selector(std::string_view text, bool relative, CompiledSelecto
         if (token.kind == CssTokenKind::LBracket) ++brackets;
         if (token.kind == CssTokenKind::RBracket) --brackets;
         if (brackets == 0 && token.kind == CssTokenKind::Delim && token.text == "&") {
-            rewritten += ":where(:scope)";
+            if (rewritten.size() + anchor.size() > kMaxExpandedSelector) return false;
+            rewritten += anchor;
             anchored = true;
         } else {
-            if (brackets == 0 && token.kind == CssTokenKind::Colon && i + 1 < tokens.size() &&
+            if (!nesting && brackets == 0 && token.kind == CssTokenKind::Colon && i + 1 < tokens.size() &&
                 tokens[i + 1].kind == CssTokenKind::Ident) {
                 std::string name = tokens[i + 1].text;
                 for (char& c : name) if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
@@ -671,9 +702,16 @@ bool parse_scoped_selector(std::string_view text, bool relative, CompiledSelecto
             }
             rewritten += css_token_source(token);
         }
+        if (rewritten.size() > kMaxExpandedSelector) return false;
     }
-    if (!anchored) rewritten.insert(0, ":where(:scope) ");
+    const char first = trim_ascii(text).front();
+    const bool leading_combinator = first == '>' || first == '+' || first == '~';
+    if ((relative || nesting) && (!anchored || leading_combinator)) {
+        if (rewritten.size() + anchor.size() + 1 > kMaxExpandedSelector) return false;
+        rewritten.insert(0, anchor + " ");
+    }
     if (!parse_selector(rewritten, out, &error)) return false;
+    if (resolved) *resolved = rewritten;
     out->source_text = std::string(trim_ascii(text));
     return true;
 }
@@ -681,7 +719,8 @@ bool parse_scoped_selector(std::string_view text, bool relative, CompiledSelecto
 // Unlike :is(), scope-start and scope-end are unforgiving lists. A malformed
 // group must discard the whole @scope, never turn it into an unbounded scope.
 bool parse_scope_group(const std::vector<CssToken>& tokens, size_t* at, bool relative,
-                       std::vector<CompiledSelector>* selectors) {
+                       std::vector<CompiledSelector>* selectors,
+                       const std::vector<std::string>* nesting = nullptr) {
     if (tokens[*at].kind != CssTokenKind::LParen) return false;
     ++*at;
     int depth = 0;
@@ -692,7 +731,7 @@ bool parse_scope_group(const std::vector<CssToken>& tokens, size_t* at, bool rel
         const bool end = depth == 0 && token.kind == CssTokenKind::RParen;
         if (end || (depth == 0 && token.kind == CssTokenKind::Comma)) {
             CompiledSelector compiled;
-            if (!parse_scoped_selector(selector, relative, &compiled) ||
+            if (!parse_scoped_selector(selector, relative, &compiled, nesting) ||
                 compiled.sequence.pseudo_element()) return false;
             selectors->push_back(std::move(compiled));
             selector.clear();
@@ -710,7 +749,8 @@ bool parse_scope_group(const std::vector<CssToken>& tokens, size_t* at, bool rel
 
 bool parse_scope_prelude(std::string_view text, bool nested,
                          std::vector<CompiledSelector>* roots,
-                         std::vector<CompiledSelector>* limits) {
+                         std::vector<CompiledSelector>* limits,
+                         const std::vector<std::string>* nesting) {
     std::vector<CssToken> tokens;
     CssParseError error;
     if (!CssTokenizer(text).tokenize(&tokens, &error)) return false;
@@ -720,7 +760,7 @@ bool parse_scope_prelude(std::string_view text, bool nested,
     };
     skip();
     if (tokens[at].kind == CssTokenKind::LParen) {
-        if (!parse_scope_group(tokens, &at, nested, roots)) return false;
+        if (!parse_scope_group(tokens, &at, nested, roots, nesting)) return false;
         skip();
     }
     if (tokens[at].kind == CssTokenKind::Eof) return true;
@@ -795,49 +835,103 @@ bool CascadeEngine::state_observable(const StateReach& reach, const Element& e) 
     return false;
 }
 
+void CascadeEngine::compile_declarations(const Rule& rule,
+                                          const std::vector<Declaration>& declarations,
+                                          std::vector<CompiledSelector> selectors,
+                                          DeclarationOrigin origin, int* source_index,
+                                          int layer_ordinal) {
+    for (auto& cs : selectors) {
+        // Classify BEFORE moving: the shape cache's soundness depends
+        // on spotting sibling-composition and :has() selectors anywhere
+        // in the sheet.
+        bool selector_has = false;
+        classify_selector(cs.sequence, &cache_unsafe_sibling_composition_,
+                          &selector_has, &shape_key_folds_sibling_index_,
+                          &hover_reach_, &active_reach_, false);
+        cache_unsafe_has_ = cache_unsafe_has_ || selector_has;
+        if (selector_has && !cs.sequence.compounds.empty())
+            collect_keys(cs.sequence.compounds.back(), &has_subject_reach_);
+        shape_key_folds_range_ = shape_key_folds_range_ || uses_range(cs.sequence);
+        shape_key_folds_validity_ = shape_key_folds_validity_ || uses_validity(cs.sequence);
+        shape_key_folds_default_ = shape_key_folds_default_ || uses_default(cs.sequence);
+        const std::string* pseudo = cs.sequence.pseudo_element();
+        std::string pseudo_name = pseudo ? *pseudo : std::string();
+        CompiledRule cr;
+        cr.selector = std::move(cs);
+        cr.rule = &rule;
+        cr.origin = origin;
+        cr.source_index = (*source_index)++;
+        cr.layer_ordinal = layer_ordinal;
+        cr.container_conditions = compiling_containers_;
+        cr.scopes = compiling_scopes_;
+        cr.declarations = expand_declarations(declarations, rule.source_url);
+        if (!pseudo_name.empty()) {
+            pseudo_rules_[pseudo_name].push_back(std::move(cr));
+        } else {
+            rules_.push_back(std::move(cr));
+        }
+    }
+}
+
+void CascadeEngine::compile_group(const GenericAtRule& rule, DeclarationOrigin origin,
+                                  int* source_index, int layer_ordinal,
+                                  const std::vector<std::string>* nesting) {
+    // Group declarations match the nearest style parent exactly. Within
+    // @scope, declarations without a style parent match :where(:scope).
+    const std::vector<std::string> scope_selector{":where(:scope)"};
+    const auto* parent = nesting ? nesting : (rule.name == "scope" ? &scope_selector : nullptr);
+    if (parent && !rule.declarations.empty()) {
+        std::vector<CompiledSelector> selectors;
+        for (const auto& text : *parent) {
+            CompiledSelector selector;
+            SelectorParseError error;
+            if (parse_selector(text, &selector, &error)) selectors.push_back(std::move(selector));
+        }
+        compile_declarations(rule, rule.declarations, std::move(selectors), origin, source_index, layer_ordinal);
+    }
+    compile_rules(rule.nested_rules, origin, source_index, layer_ordinal, nesting, rule.name == "scope");
+}
+
 void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
-                                  int* source_index, int layer_ordinal) {
+                                  int* source_index, int layer_ordinal,
+                                  const std::vector<std::string>* nesting, bool scope_declarations) {
     for (const auto& r : rules) {
         if (r->kind() == RuleKind::Style) {
             const auto* sr = static_cast<const StyleRule*>(r.get());
-            for (const auto& sel_text : sr->selectors) {
-                CompiledSelector cs;
-                // A selector that fails to parse drops its rule rather than the
-                // sheet, matching the C#'s per-rule error containment.
-                if (!parse_scoped_selector(sel_text, !compiling_scopes_.empty(), &cs)) continue;
-                // Classify BEFORE moving: the shape cache's soundness depends
-                // on spotting sibling-composition and :has() selectors anywhere
-                // in the sheet.
-                bool selector_has = false;
-                classify_selector(cs.sequence, &cache_unsafe_sibling_composition_,
-                                  &selector_has, &shape_key_folds_sibling_index_,
-                                  &hover_reach_, &active_reach_, false);
-                cache_unsafe_has_ = cache_unsafe_has_ || selector_has;
-                if (selector_has && !cs.sequence.compounds.empty())
-                    collect_keys(cs.sequence.compounds.back(), &has_subject_reach_);
-                shape_key_folds_range_ = shape_key_folds_range_ || uses_range(cs.sequence);
-                shape_key_folds_validity_ = shape_key_folds_validity_ || uses_validity(cs.sequence);
-                shape_key_folds_default_ = shape_key_folds_default_ || uses_default(cs.sequence);
-                const std::string* pseudo = cs.sequence.pseudo_element();
-                std::string pseudo_name = pseudo ? *pseudo : std::string();
-                CompiledRule cr;
-                cr.selector = std::move(cs);
-                cr.rule = sr;
-                cr.origin = origin;
-                cr.source_index = (*source_index)++;
-                cr.layer_ordinal = layer_ordinal;
-                cr.container_conditions = compiling_containers_;
-                cr.scopes = compiling_scopes_;
-                cr.declarations = expand_declarations(sr->declarations, sr->source_url);
-                if (!pseudo_name.empty()) {
-                    pseudo_rules_[pseudo_name].push_back(std::move(cr));
-                } else {
-                    rules_.push_back(std::move(cr));
+            std::vector<std::string> resolved;
+            std::vector<CompiledSelector> selectors;
+            bool valid = true;
+            if (sr->nested_declarations) {
+                if (nesting) resolved = *nesting;
+                else if (scope_declarations) resolved.push_back(":where(:scope)");
+                for (const auto& text : resolved) {
+                    CompiledSelector selector;
+                    SelectorParseError error;
+                    if (!parse_selector(text, &selector, &error)) { valid = false; break; }
+                    selectors.push_back(std::move(selector));
+                }
+            } else {
+                for (const auto& text : sr->selectors) {
+                    CompiledSelector selector;
+                    std::string expanded;
+                    if (!parse_scoped_selector(text, !compiling_scopes_.empty(), &selector, nesting, &expanded)) {
+                        valid = false;
+                        break;
+                    }
+                    resolved.push_back(std::move(expanded));
+                    selectors.push_back(std::move(selector));
                 }
             }
-            compile_rules(sr->nested_rules, origin, source_index, layer_ordinal);
+            // An invalid selector list discards its children too. Compiling
+            // them independently would leak styles outside the parent rule.
+            if (!valid || selectors.empty()) continue;
+            compile_declarations(*sr, sr->declarations, std::move(selectors), origin, source_index, layer_ordinal);
+            compile_rules(sr->nested_rules, origin, source_index, layer_ordinal, &resolved);
         } else {
             const auto* ar = static_cast<const GenericAtRule*>(r.get());
+            // Only grouping rules may be nested inside a style rule.
+            if (nesting && ar->name != "media" && ar->name != "supports" && ar->name != "layer" &&
+                ar->name != "container" && ar->name != "scope") continue;
             // Conditional at-rules gate their body. A false condition
             // contributes no rules at all, rather than contributing rules that
             // silently apply.
@@ -847,7 +941,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 // `(<root list>)? [to (<limit list>)]?`: both lists optional.
                 auto spec = std::make_shared<ScopeSpec>();
                 if (!ar->has_block || !parse_scope_prelude(ar->prelude, !compiling_scopes_.empty(),
-                                                          &spec->roots, &spec->limits)) continue;
+                                                          &spec->roots, &spec->limits, nesting)) continue;
                 spec->implicit_root = compiling_scope_root_;
                 if (spec->roots.empty() && spec->implicit_root) cache_unsafe_scope_ = true;
                 const auto classify_boundary = [&](const CompiledSelector& selector) {
@@ -865,7 +959,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 for (const auto& root : spec->roots) classify_boundary(root);
                 for (const auto& limit : spec->limits) classify_boundary(limit);
                 compiling_scopes_.push_back(std::move(spec));
-                compile_rules(ar->nested_rules, origin, source_index, layer_ordinal);
+                compile_group(*ar, origin, source_index, layer_ordinal, nullptr);
                 compiling_scopes_.pop_back();
                 continue;
             } else if (ar->name == "supports") {
@@ -971,7 +1065,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 const int ordinal = layer_ordinal_for(full);
                 const std::string saved_prefix = layer_prefix_;
                 layer_prefix_ = full;
-                compile_rules(ar->nested_rules, origin, source_index, ordinal);
+                compile_group(*ar, origin, source_index, ordinal, nesting);
                 layer_prefix_ = saved_prefix;
                 continue;
             } else if (ar->name == "container") {
@@ -988,7 +1082,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 const size_t index = container_queries_.size();
                 container_queries_.push_back(std::move(query));
                 compiling_containers_.push_back(index);
-                compile_rules(ar->nested_rules, origin, source_index, layer_ordinal);
+                compile_group(*ar, origin, source_index, layer_ordinal, nesting);
                 compiling_containers_.pop_back();
                 continue;
             } else {
@@ -1003,7 +1097,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 }
                 continue;
             }
-            compile_rules(ar->nested_rules, origin, source_index, layer_ordinal);
+            compile_group(*ar, origin, source_index, layer_ordinal, nesting);
         }
     }
 }
@@ -1011,9 +1105,8 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
 void CascadeEngine::add_stylesheet(const Stylesheet* sheet, DeclarationOrigin origin) {
     if (!sheet) return;
     ++container_generation_;
-    int source_index = static_cast<int>(rules_.size());
     compiling_scope_root_ = sheet->scope_root;
-    compile_rules(sheet->rules, origin, &source_index, kUnlayeredOrdinal);
+    compile_rules(sheet->rules, origin, &next_source_index_, kUnlayeredOrdinal);
     compiling_scope_root_ = nullptr;
     // Cached match lists were computed against the previous rule set. Without
     // this, a sheet added after the first compute() applies only to elements

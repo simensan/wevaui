@@ -267,6 +267,52 @@ void test_cascade_scope() {
     }
 }
 
+void test_cascade_nesting() {
+    // Nested declarations copy each parent selector, including pseudos, while
+    // an explicit & matches only the parent's real-element alternatives.
+    for (const auto& test : std::vector<std::tuple<const char*, const char*, const char*>>{
+             {".target,.target::before{content:'x';color:blue;@media all{color:red}}", "red", "red"},
+             {".target,.target::before{content:'x';color:blue;&{color:red}}", "red", "blue"},
+             {".target,.target::before{content:'x';color:blue;@media all{&{color:red}}color:lime}", "lime", "lime"},
+             {".target::before{content:'x';color:blue;@media all{color:red}color:lime}", "black", "lime"},
+             {"#absent::before,.target{&{color:red}}.target.target{color:blue}", "blue", nullptr}}) {
+        Fixture f;
+        CHECK(f.html("<p id=target class=target></p>"));
+        CHECK(f.css(std::string(".target{color:black}") + std::get<0>(test)));
+        ComputedStyle host, pseudo;
+        f.engine.compute(*f.id("target"), f.state, nullptr, &host);
+        CHECK_EQ(std::string(host.get("color")), std::get<1>(test));
+        if (std::get<2>(test)) {
+            CHECK(f.engine.compute_pseudo_element(*f.id("target"), "before", f.state, host, &pseudo));
+            CHECK_EQ(std::string(pseudo.get("color")), std::get<2>(test));
+        }
+    }
+    // A sheet containing only pseudos still advances document source order.
+    {
+        Fixture f;
+        CHECK(f.html("<p id=target></p>"));
+        CHECK(f.css("p::before{content:'x';color:blue;@media all{color:red}}"));
+        CHECK(f.css("p::before{color:lime}"));
+        ComputedStyle host, pseudo;
+        f.engine.compute(*f.id("target"), f.state, nullptr, &host);
+        CHECK(f.engine.compute_pseudo_element(*f.id("target"), "before", f.state, host, &pseudo));
+        CHECK(pseudo.get("color") == "lime");
+    }
+    // Repeated parent references must not create unbounded generated text.
+    // A following independent rule still compiles after the bounded subtree.
+    {
+        Fixture f;
+        CHECK(f.html("<p id=target></p>"));
+        std::string css = ".absent{";
+        for (int i = 0; i < 24; ++i) css += "&&{";
+        css += "color:red;";
+        for (int i = 0; i < 25; ++i) css += '}';
+        css += "#target{color:blue}";
+        CHECK(f.css(css));
+        CHECK(f.value("target", "color") == "blue");
+    }
+}
+
 void test_cascade_compute() {
     {
         Fixture f;

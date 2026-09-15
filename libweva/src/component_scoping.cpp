@@ -189,20 +189,36 @@ std::string with_scope_attribute(std::string_view compound, std::string_view sco
     return std::string(compound.substr(0, at)) + attr + std::string(compound.substr(at));
 }
 
-std::string emit(const std::vector<Compound>& compounds, std::string_view scope_id) {
+bool has_direct_nesting(std::string_view compound) {
+    for (size_t i = 0; i < compound.size();) {
+        const char c = compound[i];
+        if (c == '\\' && i + 1 < compound.size()) { i += 2; continue; }
+        if (c == '(' || c == '[') { i = skip_balanced(compound, i); continue; }
+        if (c == '&') return true;
+        ++i;
+    }
+    return false;
+}
+
+std::string emit(const std::vector<Compound>& compounds, std::string_view scope_id, bool nested) {
     std::string out;
     const size_t last = compounds.size() - 1;
     for (size_t i = 0; i < compounds.size(); ++i) {
         if (i > 0) out += compounds[i].leading;
         std::string host;
         if (rewrite_host(compounds[i].text, scope_id, &host)) out += host;
+        // A direct & already requires the scoped parent. Adding an internal
+        // scope marker would make :host { &.active {...} } unable to match
+        // its host, which carries the host marker instead.
+        else if (nested && has_direct_nesting(compounds[i].text)) out += compounds[i].text;
         else if (i == last) out += with_scope_attribute(compounds[i].text, scope_id);
         else out += compounds[i].text;
     }
     return out;
 }
 
-void scope_single(std::string_view selector, std::string_view scope_id, std::vector<std::string>* out) {
+void scope_single(std::string_view selector, std::string_view scope_id, std::vector<std::string>* out,
+                  bool nested) {
     std::vector<std::vector<Compound>> variants{split_compounds(selector)};
     const size_t count = variants[0].size();
     for (size_t i = 0; i < count; ++i) {
@@ -218,24 +234,53 @@ void scope_single(std::string_view selector, std::string_view scope_id, std::vec
         }
         variants = std::move(expanded);
     }
-    for (const std::vector<Compound>& v : variants) out->push_back(emit(v, scope_id));
+    for (const std::vector<Compound>& v : variants) out->push_back(emit(v, scope_id, nested));
 }
 
-void scope_rules(std::vector<RulePtr>& rules, std::string_view scope_id) {
+std::vector<std::string> scope_selectors(std::string_view selector_list, std::string_view scope_id, bool nested) {
+    std::vector<std::string> out;
+    for (const std::string_view single : split_top_level_commas(selector_list)) {
+        const std::string_view s = trim(single);
+        if (!s.empty()) scope_single(s, scope_id, &out, nested);
+    }
+    return out;
+}
+
+void scope_rules(std::vector<RulePtr>& rules, std::string_view scope_id, bool nested = false,
+                 bool scope_declarations = false) {
     for (RulePtr& r : rules) {
         if (r->kind() == RuleKind::Style) {
             auto* sr = static_cast<StyleRule*>(r.get());
+            if (sr->nested_declarations && scope_declarations) {
+                // @scope's own declarations target its root, which can be an
+                // internal element or this component's host. Keep that root
+                // inside the component even when its prelude matches outside.
+                sr->nested_declarations = false;
+                sr->selectors = {":where(:scope):is([" + std::string(kComponentScopeAttribute) +
+                    "=\"" + std::string(scope_id) + "\"],[" + kComponentHostAttribute +
+                    "=\"" + std::string(scope_id) + "\"])"};
+                continue;
+            }
             std::vector<std::string> scoped;
             for (const std::string& sel : sr->selectors) {
-                for (std::string& s : scope_selector_list(sel, scope_id)) scoped.push_back(std::move(s));
+                for (std::string& s : scope_selectors(sel, scope_id, nested)) scoped.push_back(std::move(s));
             }
             sr->selectors = std::move(scoped);
+            scope_rules(sr->nested_rules, scope_id, true);
             continue;
         }
         auto* at = static_cast<GenericAtRule*>(r.get());
         if (at->name == "media" || at->name == "supports" || at->name == "layer" ||
             at->name == "container" || at->name == "scope") {
-            scope_rules(at->nested_rules, scope_id);
+            if (at->name == "scope" && !at->declarations.empty()) {
+                auto run = std::make_unique<StyleRule>();
+                run->nested_declarations = true;
+                run->source_url = at->source_url;
+                run->declarations = std::move(at->declarations);
+                at->nested_rules.insert(at->nested_rules.begin(), std::move(run));
+            }
+            scope_rules(at->nested_rules, scope_id, at->name == "scope" ? false : nested,
+                        at->name == "scope");
         }
     }
 }
@@ -243,13 +288,7 @@ void scope_rules(std::vector<RulePtr>& rules, std::string_view scope_id) {
 } // namespace
 
 std::vector<std::string> scope_selector_list(std::string_view selector_list, std::string_view scope_id) {
-    std::vector<std::string> out;
-    for (const std::string_view single : split_top_level_commas(selector_list)) {
-        const std::string_view s = trim(single);
-        if (s.empty()) continue;
-        scope_single(s, scope_id, &out);
-    }
-    return out;
+    return scope_selectors(selector_list, scope_id, false);
 }
 
 void scope_stylesheet(Stylesheet* sheet, std::string_view scope_id) {

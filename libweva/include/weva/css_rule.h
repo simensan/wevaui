@@ -41,10 +41,12 @@ struct StyleRule : Rule {
 
     std::vector<std::string> selectors;
     std::vector<Declaration> declarations;
-    // CSS Nesting Module: a rule inside another rule body lands here. The C#
-    // flattens these into top-level rules in a post-parse NestingExpander pass,
-    // which is not yet ported — the tree is preserved as parsed.
+    // Nested style/group rules and intervening declaration runs, in order.
+    // The cascade resolves selectors against their nearest style-rule parent.
     std::vector<RulePtr> nested_rules;
+    // A declaration run after a nested rule copies its parent's selectors
+    // exactly, including pseudo-elements and each selector's specificity.
+    bool nested_declarations = false;
 };
 
 struct GenericAtRule : Rule {

@@ -260,7 +260,7 @@ private:
         // The @scope blocks the rule sits in, outermost first; every one has
         // to hold, and the innermost root is the rule's `:scope`.
         std::vector<std::shared_ptr<const ScopeSpec>> scopes;
-        const StyleRule* rule = nullptr;
+        const Rule* rule = nullptr;
         DeclarationOrigin origin = DeclarationOrigin::Author;
         int source_index = 0;
         int layer_ordinal = kUnlayeredOrdinal;
@@ -277,7 +277,15 @@ private:
         std::vector<Declaration> declarations;
     };
     void compile_rules(const std::vector<RulePtr>& rules, DeclarationOrigin origin,
-                       int* source_index, int layer_ordinal);
+                       int* source_index, int layer_ordinal,
+                       const std::vector<std::string>* nesting = nullptr,
+                       bool scope_declarations = false);
+    void compile_group(const GenericAtRule& rule, DeclarationOrigin origin,
+                       int* source_index, int layer_ordinal,
+                       const std::vector<std::string>* nesting);
+    void compile_declarations(const Rule& rule, const std::vector<Declaration>& declarations,
+                              std::vector<CompiledSelector> selectors, DeclarationOrigin origin,
+                              int* source_index, int layer_ordinal);
 
     // CSS Cascade 5 §6.4.4. Cascade layers, in the order they were first named
     // — by an `@layer a, b, c;` statement or by the first `@layer a { ... }`
@@ -306,6 +314,7 @@ private:
     uint64_t try_compute_shape_key(const Element& e, const ElementStateProvider& state) const;
 
     std::vector<CompiledRule> rules_;
+    int next_source_index_ = 0;
     std::vector<CompiledContainerQuery> container_queries_;
     uint64_t container_generation_ = 1;
     std::vector<size_t> compiling_containers_;

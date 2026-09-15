@@ -6,9 +6,8 @@
 // the host with the host attribute (before slot projection, so slotted
 // light-dom keeps its own attributes), and this module rewrites the sheet's
 // selectors so the rightmost compound demands the scope attribute and
-// `:host` / `:host(...)` become the host attribute. Byte-identical to the
-// reference's SelectorScoper / StylesheetScoper output, so a sheet scoped on
-// either side reads the same.
+// `:host` / `:host(...)` become the host attribute. Both hosts use this
+// core rewrite, including the boundaries of nested style rules.
 
 #include "weva/css_rule.h"
 
@@ -33,7 +32,8 @@ std::vector<std::string> scope_selector_list(std::string_view selector_list,
 // Rewrites every style rule's selectors in place, descending through @media,
 // @supports, @layer, @container and @scope blocks. @keyframes, @font-face,
 // @import and @property are left alone. Rules nested inside a style rule are
-// relative to their (now scoped) parent and stay as parsed.
+// relative to their scoped parent. Nested child subjects get their own scope
+// marker; a direct & keeps the parent's identity (which may be the host).
 void scope_stylesheet(Stylesheet* sheet, std::string_view scope_id);
 
 } // namespace weva

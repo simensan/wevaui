@@ -51,7 +51,13 @@ siblings. Use a more specific selector instead.
   honored in v1).
 - `var(--name, fallback)` with cycle detection; a cycle member refuses its own
   definition-level fallback (consumer-side fallback still rescues).
-- **Cascade layers** (`@layer`) and **nested rules** (`& > .child`).
+- **Cascade layers** (`@layer`) and **nested rules** (`& > .child`, `.child`,
+  `&.active`, `.ancestor &`). Nested selectors use their parent's selector
+  list and its maximum specificity, as `:is(...)` does. Declarations may
+  appear between nested rules and inside nested media/supports/layer/container
+  groups. Declaration runs retain their parent's pseudo-elements and individual
+  specificities. Expanded selector text is bounded to 64 KiB per selector;
+  rules beyond that bound are dropped, as with the parser's 128-rule depth cap.
 - **Shorthand expansion** for `font`, `background`, `border`, `border-radius`,
   `flex`, `flex-flow`, `gap`, `inset`, `margin`/`padding`, `list-style`,
   `animation`, the logical box/border shorthands, and `all`.

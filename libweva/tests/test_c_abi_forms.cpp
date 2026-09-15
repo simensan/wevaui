@@ -5246,3 +5246,181 @@ void test_abi_scopes() {
         CHECK_EQ(background(doc.d, "#second .target"), "red");
     }
 }
+
+// Expectations captured by Tools/oracle/check_nesting_chrome.cjs in Chrome 152.
+void test_abi_nesting() {
+    struct Case {
+        const char* name;
+        const char* html;
+        const char* css;
+        std::vector<std::string> colors;
+    };
+    const Case cases[] = {
+        {"implicit descendant",
+         "<div class=parent><p class=target></p></div><p class=target></p>",
+         ".parent{.target{background:red}}", {"red", "lime"}},
+        {"child combinator",
+         "<div class=parent><p class=target></p><div><p class=target></p></div></div><p class=target></p>",
+         ".parent{> .target{background:red}}", {"red", "lime", "lime"}},
+        {"explicit self",
+         "<p class=\"parent target\"></p><p class=target></p>",
+         ".parent{&.target{background:red}}", {"red", "lime"}},
+        {"ancestor ampersand",
+         "<div class=outer><p class=\"parent target\"></p></div><p class=\"parent target\"></p>",
+         ".parent{.outer &{background:red}}", {"red", "lime"}},
+        {"sibling ampersand",
+         "<div class=parent></div><p class=target></p><p class=target></p>",
+         ".parent{+ .target{background:red}}", {"red", "lime"}},
+        {"multiple levels",
+         "<div class=parent><div class=middle><p class=target></p></div><p class=target></p></div><div class=middle><p class=target></p></div>",
+         ".parent{.middle{.target{background:red}}}", {"red", "lime", "lime"}},
+        {"list specificity",
+         "<div class=parent><p class=target></p></div>",
+         "#absent,.parent{.target{background:red}}.parent.parent .target{background:blue}", {"red"}},
+        {"where ampersand",
+         "<p class=\"parent target\"></p>",
+         ".parent{background:blue;:where(&){background:red}}", {"blue"}},
+        {"declarations after nested rule",
+         "<p class=\"parent target\"></p>",
+         ".parent{background:blue;&{background:red}background:lime}", {"lime"}},
+        {"nested media declarations",
+         "<p class=\"parent target\"></p><p class=target></p>",
+         ".parent{@media all{background:red}}", {"red", "lime"}},
+        {"nested media child",
+         "<div class=parent><p class=target></p></div><p class=target></p>",
+         ".parent{@media all{.target{background:red}}}", {"red", "lime"}},
+        {"nested media order",
+         "<p class=\"parent target\"></p>",
+         ".parent{@media all{background:blue;&{background:red}background:lime}}", {"lime"}},
+        {"nested scope explicit root",
+         "<div class=parent><p class=target></p></div><p class=target></p>",
+         ".parent{@scope (&){.target{background:red}}}", {"red", "lime"}},
+        {"nested scope implicit root",
+         "<div class=parent><p class=target></p></div><p class=target></p>",
+         ".parent{@scope{.target{background:red}}}", {"lime", "lime"}},
+        {"nested scope unbound root",
+         "<div class=parent><div class=sub><p class=target></p></div></div><div class=sub><p class=target></p></div>",
+         ".parent{@scope (.sub){.target{background:red}}}", {"red", "lime"}},
+        {"nested scope declarations",
+         "<div class=\"parent target\"></div><p class=target></p>",
+         ".parent{@scope (&){background:red}}", {"lime", "lime"}},
+        {"scope and style nesting",
+         "<div class=parent><div class=middle><p class=target></p></div><p class=target></p></div>",
+         "@scope (.parent){.middle{.target{background:red}}}", {"red", "lime"}},
+        {"scope nested not ampersand",
+         "<div class=\"parent target\"><p class=\"middle target\"></p><p class=target></p></div>",
+         "@scope (.parent){.middle{.target:not(&){background:red}}}", {"red", "lime", "red"}},
+        {"quoted ampersand",
+         "<div class=parent><p class=target data-key=\"&\"></p></div><p class=target data-key=\"&\"></p>",
+         ".parent{[data-key=\"&\"]{background:red}}", {"red", "lime"}},
+        {"invalid parent",
+         "<div class=parent><p class=target></p></div>",
+         ".parent:bogus{.target{background:red}}", {"lime"}},
+        {"invalid nested rule",
+         "<div class=parent><p class=target></p></div>",
+         ".parent{.bad:bogus{.target{background:red}}}", {"lime"}},
+        {"relative contains ampersand",
+         "<p class=\"parent target\"></p><i></i><p class=\"parent target\"></p>",
+         ".parent{+ i + &{background:red}}", {"lime", "red"}},
+        {"parent positional dependency",
+         "<div class=parent><p class=target></p></div><div class=parent><p class=target></p></div>",
+         ".parent:nth-child(2){.target{background:red}}", {"lime", "red"}},
+        {"parent has dependency",
+         "<div class=parent><i class=on></i><p class=target></p></div><div class=parent><i></i><p class=target></p></div>",
+         ".parent:has(.on){.target{background:red}}", {"red", "lime"}},
+        {"nested supports declarations",
+         "<p class=\"parent target\"></p><p class=target></p>",
+         ".parent{@supports (display:block){background:red}}", {"red", "lime"}},
+        {"nested supports false",
+         "<div class=parent><p class=target></p></div><p class=target></p>",
+         ".parent{@supports (display:bogus){.target{background:red}}}", {"lime", "lime"}},
+        {"nested layer declarations",
+         "<p class=\"parent target\"></p><p class=target></p>",
+         ".parent{@layer theme{background:red!important}}", {"red", "lime"}},
+        {"repeated ampersand specificity",
+         "<p class=\"parent target\"></p>",
+         ".parent{&&{background:red}}.target{background:blue}", {"red"}},
+        {"declaration run specificity",
+         "<p class=\"parent target\"></p>",
+         "#absent,.parent{&{background:red}background:blue}", {"red"}},
+        {"declarations among group rules",
+         "<p class=\"parent target\"></p>",
+         ".parent{background:red;@media all{background:blue}background:lime;@supports (display:block){background:red}background:blue}", {"blue"}},
+        {"invalid parent list",
+         "<div class=parent><p class=target></p></div>",
+         ".parent,:bogus{.target{background:red}}", {"lime"}},
+        {"invalid nested list",
+         "<div class=parent><p class=target></p></div>",
+         ".parent{.target,:bogus{background:red}}", {"lime"}},
+        {"invalid suffix concatenation",
+         "<p class=\"parent target\"></p>",
+         ".parent{&p{background:red}}", {"lime"}},
+        {"nested scope root and limit",
+         "<div class=parent><div class=sub><p class=target></p><div class=cut><p class=target></p></div></div></div><div class=sub><p class=target></p></div>",
+         ".parent{@scope (& > .sub) to (& .cut){& .target{background:red}}}", {"red", "lime", "lime"}},
+        {"scope declarations root",
+         "<div class=\"parent target\"><p class=target></p></div><p class=target></p>",
+         "@scope (.target){background:red!important}", {"red", "red", "red"}},
+        {"nested scope declarations root",
+         "<div class=\"parent target\"><p class=target></p></div><p class=target></p>",
+         ".parent{@scope (&){background:red!important}}", {"red", "lime", "lime"}},
+        {"scope group has no style parent",
+         "<div class=\"parent target\"><p class=target></p></div><p class=target></p>",
+         ".parent{@scope (&){@media all{background:red!important}}}", {"lime", "lime", "lime"}},
+        {"scope group declarations without parent",
+         "<div class=\"parent target\"><p class=target></p></div><p class=target></p>",
+         "@scope (.target){@media all{background:red!important}}", {"lime", "lime", "lime"}},
+        {"scope unbound declarations root",
+         "<div class=\"parent target\"><p class=target></p></div><p class=target></p>",
+         ".parent{@scope (.target){background:red!important}}", {"lime", "red", "lime"}},
+    };
+    for (const auto& test : cases) {
+        const std::string markup = std::string("<style>.target{background:lime}") +
+            test.css + "</style>" + test.html;
+        Doc doc("", markup.c_str());
+        weva_element_t targets[8]{};
+        const size_t count = weva_document_query_all(doc.d, ".target", targets, 8);
+        CHECK(count == test.colors.size());
+        for (size_t i = 0; i < std::min(count, test.colors.size()); ++i) {
+            char value[128]{};
+            weva_element_computed_style(doc.d, targets[i], "background-color", value, sizeof(value));
+            CHECK_EQ(std::string(test.name) + ": " + value,
+                     std::string(test.name) + ": " + test.colors[i]);
+        }
+    }
+    // The parent's component boundary survives nesting, including :host and
+    // light DOM projected through a slot.
+    {
+        Doc doc(".target{background:lime}",
+                "<template id=card><style>:host{&.hot{background:blue}}"
+                ".frame{.target{background:red}}</style>"
+                "<div class=frame><p class=target></p><slot></slot></div>"
+                "<p class='target spare'></p></template>"
+                "<card id=host class=hot><p id=light class=target></p></card>"
+                "<p id=outside class=target></p>");
+        for (const auto& item : std::vector<std::pair<const char*, const char*>>{
+                 {"#host", "blue"}, {"#host .frame > .target", "red"},
+                 {"#host .spare", "lime"}, {"#light", "lime"}, {"#outside", "lime"}}) {
+            char value[128]{};
+            weva_element_computed_style(doc.d, weva_document_query(doc.d, item.first),
+                                        "background-color", value, sizeof(value));
+            CHECK_EQ(std::string(item.first) + ": " + value, std::string(item.first) + ": " + item.second);
+        }
+    }
+    {
+        Doc doc(".target{background:lime}",
+                "<template id=card><style>@scope (.target){background:red!important;"
+                "&{outline:0}border-color:blue}</style><p class=target></p></template>"
+                "<card id=host></card><p id=outside class=target></p>");
+        char value[128]{};
+        weva_element_computed_style(doc.d, weva_document_query(doc.d, "#host .target"),
+                                    "background-color", value, sizeof(value));
+        CHECK_EQ(std::string(value), "red");
+        weva_element_computed_style(doc.d, weva_document_query(doc.d, "#outside"),
+                                    "background-color", value, sizeof(value));
+        CHECK_EQ(std::string(value), "lime");
+        weva_element_computed_style(doc.d, weva_document_query(doc.d, "#outside"),
+                                    "border-top-color", value, sizeof(value));
+        CHECK(std::string(value) != "blue");
+    }
+}

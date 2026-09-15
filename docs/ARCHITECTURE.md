@@ -814,9 +814,23 @@ selectors so the rightmost compound demands `[data-uui-scope="<id>"]` and
 clone's elements with the scope before slot projection (slotted light-dom
 keeps its own attributes) and the host with the host marker, and the sheet
 itself is not cloned into instances. A reload or an appended fragment that
-carries a template replaces that component's sheet. The attribute names and
-the rewritten selector text are byte-identical to the C# `ScopeMarkers` /
-`SelectorScoper`, so a scoped sheet reads the same on either side.
+carries a template replaces that component's sheet. Nested child subjects
+also receive a scope marker; a direct nesting `&` keeps its parent's identity,
+including a host which carries only the host marker. Direct `@scope`
+declarations are constrained to the component's own internal elements or host.
+
+Nested style rules compile against their nearest style-rule parent. Parent
+alternatives are wrapped in `:is(...)`, with pseudo-element alternatives
+excluded from `&` matching and specificity. The parser stores declaration
+runs after nested rules as `StyleRule::nested_declarations`; these copy the
+parent's exact selector list, retaining pseudo-elements and each alternative's
+specificity. Grouping rules retain the parent context; `@scope` resolves its
+start against that context and establishes a fresh scope for its body.
+Document source order advances across all compiled selectors, including
+pseudo-only sheets. Expanded selector text is capped at 64 KiB to prevent
+repeated parent references from causing unbounded allocation. Positional
+ancestor selectors disable shape sharing because the key folds only the
+subject's sibling rank.
 
 CSS `@scope` compiles root and limit selectors alongside each enclosed rule.
 Invalid preludes discard the block. Relative selectors receive a zero-specificity

@@ -10,8 +10,8 @@ disagree, the code wins — tell the user.
 > - **Change the engine or a host** → [`AGENTS.md`](AGENTS.md) (the engineering contract) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (the core as built).
 > - **Check if something is supported** → [`supported-css.md`](Packages/com.wevaui/Documentation~/supported-css.md) / [`supported-html.md`](Packages/com.wevaui/Documentation~/supported-html.md), and `Tools/oracle/known-gaps/` for what the Chrome gate excuses.
 
-_Last verified: 2026-09-15 (1.0.0); Native EditMode 235 pass / 2 environment-gated
-inconclusive, full EditMode 236 pass / 2 inconclusive._
+_Last verified: 2026-09-15 (1.0.0); Native EditMode 236 pass / 2 environment-gated
+inconclusive, full EditMode 237 pass / 2 inconclusive._
 
 ---
 
@@ -148,8 +148,8 @@ check.sh                          the gate
 - **`Tools/oracle/run_chrome_checks.py`** — scripted behaviour checks
   against a live Chrome (forms, focus, popovers, animation clocks, stylesheet
   discovery/imports/font sources/colors/scroll containers/scopes). Review:
-  66 scripts, 65 pass and 1 documented Chrome IME failure, including the
-  41-case scope oracle added after the full gate.
+  67 scripts, 66 pass and 1 documented Chrome IME failure, including the
+  41-case scope and 46-case nesting oracles added after the full gate.
   CI pins Windows Chrome 152; numeric-editing and CR fixtures depend on the
   reference OS/browser version. Set `WEVA_CHROME` to choose the executable.
 - **Unity EditMode**: `Unity -batchmode -projectPath <repo> -runTests

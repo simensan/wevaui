@@ -56,6 +56,19 @@ func _ready() -> void:
 	check(scoped.get_computed_style("#second .target", "background-color") == "red", "reloaded scope uses new owner")
 	scoped.free()
 
+	var nested := WevaDocument.new()
+	nested.use_engine_font = false
+	nested.css = ".target{background:lime}"
+	nested.html = "<template id=card><style>:host{&.hot{background:blue}}.frame{.target{background:red}}</style><div class=frame><p class=target></p><slot></slot></div><p class='target spare'></p></template><card id=host class=hot><p id=light class=target></p></card><p id=outside class=target></p>"
+	add_child(nested)
+	nested.update_document(0)
+	check(nested.get_computed_style("#host", "background-color") == "blue", "nested ampersand keeps host identity")
+	check(nested.get_computed_style("#host .frame > .target", "background-color") == "red", "nested child matches its parent")
+	check(nested.get_computed_style("#host .spare", "background-color") == "lime", "nested child excludes other component descendants")
+	check(nested.get_computed_style("#light", "background-color") == "lime", "nested component rule excludes slotted light DOM")
+	check(nested.get_computed_style("#outside", "background-color") == "lime", "nested component rule excludes the page")
+	nested.free()
+
 	DirAccess.make_dir_recursive_absolute(DIR)
 	write(DIR + "/screen.html", '<div id="a">one</div><span id="name">{{ Name }}</span>')
 	write(DIR + "/screen.css", "#a { color: rgb(1, 2, 3); }")
