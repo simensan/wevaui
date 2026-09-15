@@ -132,7 +132,7 @@ int walk(BoxTree* tree, BoxId id, double ax, double ay, const Scroller& scroller
     // still the same one, and its natural position is what the offsets
     // above are measured from, so nothing changes for it here.
     Scroller next = scroller;
-    if (id != scroller.id && clips_overflow(b)) next = Scroller{id, ax, ay};
+    if (id != scroller.id && establishes_scroll_container(b)) next = Scroller{id, ax, ay};
     for (BoxId c = b.first_child; c != kNoBox; c = (*tree)[c].next_sibling) {
         const Box& cb = (*tree)[c];
         count += walk(tree, c, ax + cb.x, ay + cb.y, next, ctx);

@@ -80,9 +80,12 @@ v1 simplifications:
 ## Overflow & scrolling
 
 `overflow`, `overflow-x`, `overflow-y`: `visible`, `hidden`, `scroll`, `auto`,
-`clip`. Scroll containers, scrollbars, `position: sticky` integration, scroll
-snap, and smooth scrolling exist (`Layout/Scrolling/`). No overscroll chaining
-or scroll anchoring.
+`clip`. Scroll containers, scrollbars, sticky positioning, scroll snap, and
+smooth scrolling run in the shared core. `clip` clips painting without
+establishing a scroll container: it cannot be scrolled by code, and sticky
+elements and snap areas inside it still use an outer scroll container.
+`hidden` permits scripted scrolling and establishes a scroll container.
+Scroll anchoring is not implemented.
 
 **Scrollbar styling** (CSS Scrollbars L1): `scrollbar-color: <thumb> <track>`
 (inherited; `currentColor` and full color syntax) and `scrollbar-width:

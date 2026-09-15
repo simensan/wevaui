@@ -154,7 +154,7 @@ void collect(const BoxTree& tree, BoxId container, const LayoutContext& ctx, boo
                 }
             }
             // A nested scroll container's areas snap in IT, not here.
-            if (ch != container && clips_overflow(b)) continue;
+            if (ch != container && establishes_scroll_container(b)) continue;
             self(self, ch);
         }
     };
@@ -172,6 +172,7 @@ bool snap_target(const BoxTree& tree, BoxId container, const LayoutContext& ctx,
                  double start, double current, double* out) {
     if (!tree.valid(container)) return false;
     const Box& c = tree[container];
+    if (!establishes_scroll_container(c)) return false;
     const SnapType type = snap_type_of(c.style);
     if (!(vertical ? type.y : type.x)) return false;
     std::vector<Point> points;

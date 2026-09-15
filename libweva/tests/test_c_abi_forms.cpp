@@ -750,6 +750,44 @@ void test_abi_position_sticky() {
     CHECK(weva_document_element_at(doc.d, 100, 10) == h);
     weva_element_set_scroll(doc.d, sc, 0, 0);
     CHECK(top_of(h) == 50);
+
+    // Chrome reference: check_clip_scrollers_chrome.cjs. Clipping does not
+    // establish a scroll container; hidden does, even without scrollbars.
+    for (const char* overflow : {"visible", "clip", "hidden", "auto"}) {
+        const bool scroll_container = std::strcmp(overflow, "hidden") == 0 || std::strcmp(overflow, "auto") == 0;
+        {
+            const std::string css = std::string("html,body{margin:0}#s{overflow:auto;height:100px;width:200px}") +
+                "#clip{overflow:" + overflow + ";height:300px}#pre{height:50px}" +
+                "#h{position:sticky;top:0;height:20px;background:red}#tail{height:400px}";
+            Doc probe(css.c_str(), "<div id=s><div id=clip><div id=pre></div><div id=h></div></div><div id=tail></div></div>");
+            weva_element_set_scroll(probe.d, weva_document_query(probe.d, "#s"), 0, 100);
+            weva_document_update(probe.d, 0);
+            double y = 0;
+            weva_element_bounds(probe.d, weva_document_query(probe.d, "#h"), nullptr, &y, nullptr, nullptr);
+            CHECK(y == (scroll_container ? -50 : 0));
+        }
+        {
+            const std::string css = std::string("html,body{margin:0}#s{overflow:auto;height:100px;width:200px;scroll-snap-type:y mandatory}") +
+                "#clip{overflow:" + overflow + ";height:400px}.row{height:100px;scroll-snap-align:start}";
+            Doc probe(css.c_str(), "<div id=s><div id=clip><div class=row></div><div class=row></div><div class=row></div><div class=row></div></div></div>");
+            const auto s = weva_document_query(probe.d, "#s");
+            weva_element_set_scroll(probe.d, s, 0, 130);
+            weva_document_update(probe.d, 0);
+            double y = 0;
+            weva_element_scroll(probe.d, s, nullptr, &y, nullptr, nullptr);
+            CHECK(y == (scroll_container ? 130 : 100));
+        }
+        {
+            const std::string css = std::string("html,body{margin:0}#s{height:100px;width:200px;overflow:") + overflow + "}#t{height:400px}";
+            Doc probe(css.c_str(), "<div id=s><div id=t></div></div>");
+            const auto s = weva_document_query(probe.d, "#s");
+            weva_element_set_scroll(probe.d, s, 0, 100);
+            weva_document_update(probe.d, 0);
+            double y = 0;
+            weva_element_scroll(probe.d, s, nullptr, &y, nullptr, nullptr);
+            CHECK(y == (scroll_container ? 100 : 0));
+        }
+    }
 }
 
 // CSS Cascade 5 §4: @import loads through the asset reader and splices the

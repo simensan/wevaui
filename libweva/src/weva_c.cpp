@@ -2600,7 +2600,7 @@ void bring_box_into_view(weva_document* doc, BoxId target) {
     const BoxTree& tree = doc->tree;
     if (!tree.valid(target)) return;
     for (BoxId p = tree[target].parent; p != kNoBox; p = tree[p].parent) {
-        if (!tree[p].element || !clips_overflow(tree[p])) continue;
+        if (!tree[p].element || !establishes_scroll_container(tree[p])) continue;
         // Where the target sits in this container's padding box, with the
         // container's own scroll left out -- that is the thing being solved
         // for -- but with every scroll BETWEEN them taken off, since those
@@ -4797,11 +4797,9 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
             if (!b.element || box_of(doc, b.element) != i) continue;
             const auto it = doc->scroll.find(b.element);
             if (it == doc->scroll.end()) continue;
-            // Only a box that CLIPS can be scrolled: moving the contents of
-            // one that does not would slide them out from under it in plain
-            // view. A host that scrolls the wrong element gets nothing, which
-            // is the honest answer.
-            if (!clips_overflow(b)) {
+            // Visible and clip overflow cannot scroll, even when a host
+            // explicitly supplies an offset. Hidden still permits scripts.
+            if (!establishes_scroll_container(b)) {
                 b.scroll_x = b.scroll_y = 0;
                 it->second = {0, 0};
                 continue;
@@ -5652,7 +5650,7 @@ static bool scrollbar_under(const weva_document* doc, double x, double y, Scroll
     for (BoxId id = box_at_point(doc->tree, doc->root, x, y, &doc->ctx); id != kNoBox;
          id = doc->tree[id].parent) {
         if (doc->tree[id].element && input_blocked(doc, doc->tree[id].element)) break;
-        if (!doc->tree[id].element || !clips_overflow(doc->tree[id])) continue;
+        if (!doc->tree[id].element || !establishes_scroll_container(doc->tree[id])) continue;
         double ox = 0, oy = 0;
         visual_position(doc->tree, id, &ox, &oy);
         double local_x = x, local_y = y;
@@ -7895,7 +7893,7 @@ weva_status weva_element_set_scroll(weva_document_t doc, weva_element_t element,
     }
     // `scroll-behavior: smooth` on a laid-out container animates there
     // instead; the target is clamped now, since the animation needs it.
-    if (i != kNoBox && scroll_behavior_smooth(doc->tree[i].style)) {
+    if (i != kNoBox && establishes_scroll_container(doc->tree[i]) && scroll_behavior_smooth(doc->tree[i].style)) {
         double mx = 0, my = 0;
         max_scroll(doc->tree, i, &mx, &my);
         start_smooth_scroll(doc, i, std::min(sx, mx), std::min(sy, my));
@@ -7924,7 +7922,7 @@ weva_status weva_element_scroll(weva_document_t doc, weva_element_t element, dou
         const Box& b = doc->tree[i];
         if (out_x) *out_x = b.scroll_x;
         if (out_y) *out_y = b.scroll_y;
-        if (clips_overflow(b)) max_scroll(doc->tree, i, out_max_x, out_max_y);
+        if (establishes_scroll_container(b)) max_scroll(doc->tree, i, out_max_x, out_max_y);
         return WEVA_OK;
     }
     return WEVA_ERR_NOT_FOUND;

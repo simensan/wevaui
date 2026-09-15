@@ -234,6 +234,15 @@ bool scrollable_on_axis(const Box& b, bool vertical) {
     return v == "auto" || v == "scroll";
 }
 
+bool establishes_scroll_container(const Box& b) {
+    if (!clips_overflow(b)) return false;
+    for (const char* prop : {"overflow-x", "overflow-y"}) {
+        const auto value = get(b.style, prop);
+        if (value == "hidden" || value == "auto" || value == "scroll") return true;
+    }
+    return false;
+}
+
 namespace {
 
 // Every descendant's border box, in coordinates relative to `ox`/`oy`.

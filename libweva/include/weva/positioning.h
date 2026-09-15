@@ -71,9 +71,12 @@ void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y);
 void content_size(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
                   double* out_width, double* out_height);
 
-// True when this box clips what overflows it, and so can be scrolled: any
-// `overflow` other than `visible`.
+// True when this box clips what overflows it, including `overflow: clip`.
 bool clips_overflow(const Box& b);
+
+// A scroll container uses hidden/auto/scroll overflow. `clip` alone clips
+// paint but cannot scroll or capture a descendant's sticky/snap positioning.
+bool establishes_scroll_container(const Box& b);
 
 // True when this axis is `auto` or `scroll` -- the two that a wheel drives and
 // that grow a scrollbar. `hidden` clips and can still be scrolled by a script
