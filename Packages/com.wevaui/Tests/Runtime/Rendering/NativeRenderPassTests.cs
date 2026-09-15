@@ -232,8 +232,10 @@ namespace Weva.Tests.Rendering {
         public IEnumerator Pass_DrawsText() {
             // White text on the left, nothing on the right: glyph coverage makes
             // the left band brighter than black, the right band stays black.
+            // Alternate real faces and kerned pairs to exercise cached tables
+            // together with the glyph atlas and render pass.
             var doc = NewDocument("doc-text",
-                "<body><p>MMMMMMMM<br>MMMMMMMM<br>MMMMMMMM<br>MMMMMMMM</p></body>",
+                "<body><p>L-AV To<br><span style='font-weight:400'>L-AV To</span><br>L-AV To<br><span style='font-weight:400'>L-AV To</span></p></body>",
                 "html,body{margin:0;background:transparent}p{margin:0;width:50%;color:#fff;font-size:40px;line-height:1;font-weight:700;overflow:hidden;white-space:nowrap}");
             for (int i = 0; i < SettleFrames; i++) yield return null;
             Capture();

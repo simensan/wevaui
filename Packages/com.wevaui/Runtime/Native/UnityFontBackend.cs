@@ -74,6 +74,9 @@ namespace Weva.Native
         {
             public Font Asset;
             public byte[] Bytes;
+#if UNITY_EDITOR
+            public byte[] EditorAssetBytes;
+#endif
             public string Path;
             public int Index;
             public string Name;
@@ -81,9 +84,7 @@ namespace Weva.Native
             public double UnitsPerEm, Ascent, Descent, LineGap;
             public readonly Dictionary<long, GlyphInfo> Glyphs = new Dictionary<long, GlyphInfo>();
             public readonly Dictionary<uint, uint> Indices = new Dictionary<uint, uint>();
-            // Pair positioning in em units, keyed (first << 32 | second), read
-            // from the engine once per adjacent pair the face has shaped.
-            public readonly Dictionary<long, double> Kerning = new Dictionary<long, double>();
+            public PairTable Kerning;
         }
 
         private struct GlyphInfo
@@ -112,7 +113,6 @@ namespace Weva.Native
         private readonly List<GlyphRect> _usedRects = new List<GlyphRect>(2);
         private readonly List<uint> _codepoints = new List<uint>(64);
         private readonly List<uint> _offsets = new List<uint>(64);
-        private readonly List<uint> _pairQuery = new List<uint>(2);
 
         public int FaceLoads { get; private set; }
         public string LastError { get; private set; }
@@ -123,7 +123,11 @@ namespace Weva.Native
         public ulong Adopt(Font font, int index = 0)
         {
             if (font == null) throw new ArgumentNullException(nameof(font));
-            return Register(new Source { Asset = font, Index = index, Name = font.name });
+            var source = new Source { Asset = font, Index = index, Name = font.name };
+#if UNITY_EDITOR
+            source.EditorAssetBytes = BytesForEditorAsset(font);
+#endif
+            return Register(source);
         }
 
         /// <summary>Adopts a font from its bytes (a TTF/OTF, index selecting a face in a collection).</summary>
@@ -790,6 +794,10 @@ namespace Weva.Native
             // index is recorded as an error and the first face is used.
             if (source.Index != 0) LastError = "font collections are not supported; face index " + source.Index + " ignored";
             FontEngineError error;
+#if UNITY_EDITOR
+            if (source.EditorAssetBytes != null) error = FontEngine.LoadFontFace(source.EditorAssetBytes);
+            else
+#endif
             if (source.Asset != null) error = FontEngine.LoadFontFace(source.Asset);
             else if (!string.IsNullOrEmpty(source.Path)) error = FontEngine.LoadFontFace(source.Path);
             else error = FontEngine.LoadFontFace(source.Bytes);
@@ -869,54 +877,6 @@ namespace Weva.Native
             }
             source.Glyphs[key] = info;
             return info.Present;
-        }
-
-        private double KernOf(Source source, int size, uint left, uint right)
-        {
-            long key = ((long)left << 32) | right;
-            if (!source.Kerning.TryGetValue(key, out double em))
-            {
-                em = QueryPair(source, size, left, right);
-                source.Kerning[key] = em;
-            }
-            return em * size;
-        }
-
-        // The engine's pair positioning for one adjacent pair, asked for once
-        // per pair through FontEngine.GetPairAdjustmentRecords with a two-glyph
-        // list (the query TextMeshPro fills a font asset's feature table with).
-        // Records are design units, one per subtable covering the pair in the
-        // font's order, and OpenType applies the first match, so the first
-        // record wins. Asking per pair keeps that order reliable: a long glyph
-        // list answered the same pair with its class subtable first.
-        // FontEngine.GetPairAdjustmentRecord(first, second) is NOT used: on
-        // Unity 6000.4 it returns an uninitialised record for a pair the face
-        // does not kern and segfaulted inside the engine on an ordinary pair.
-        private double QueryPair(Source source, int size, uint left, uint right)
-        {
-            MethodInfo query = PairRecordsMethod();
-            if (query == null || !ActivateAt(source, size) || source.UnitsPerEm <= 0) return 0;
-            _pairQuery.Clear();
-            _pairQuery.Add(left);
-            _pairQuery.Add(right);
-            try
-            {
-                if (!(query.Invoke(null, new object[] { _pairQuery }) is GlyphPairAdjustmentRecord[] records)) return 0;
-                foreach (GlyphPairAdjustmentRecord r in records)
-                {
-                    uint a = r.firstAdjustmentRecord.glyphIndex, b = r.secondAdjustmentRecord.glyphIndex;
-                    if (a == 0 && b == 0) break;   // the array's unused tail
-                    if (a != left || b != right) continue;
-                    double units = r.firstAdjustmentRecord.glyphValueRecord.xAdvance +
-                                   r.secondAdjustmentRecord.glyphValueRecord.xAdvance;
-                    return units / source.UnitsPerEm;
-                }
-            }
-            catch (Exception ex)
-            {
-                LastError = "GetPairAdjustmentRecords: " + ex.Message;
-            }
-            return 0;
         }
 
         private static bool HasGlyph(uint cp) => cp >= 0x20 && cp != 0x7F && !(cp >= 0x80 && cp < 0xA0);
@@ -1024,15 +984,14 @@ namespace Weva.Native
         private static MethodInfo s_pairRecords;
         private static bool s_pairLookedUp;
 
-        // FontEngine.GetPairAdjustmentRecords(List<uint> glyphIndexes): every
-        // pair record among the listed glyphs, in the font's subtable order,
-        // in design units. (The two-list overload threw on 6000.4.)
+        // The complete table preserves subtable order without repeating the
+        // native expansion each time a different face shapes a new pair.
         private static MethodInfo PairRecordsMethod()
         {
             if (s_pairLookedUp) return s_pairRecords;
             s_pairLookedUp = true;
             const BindingFlags any = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static;
-            s_pairRecords = typeof(FontEngine).GetMethod("GetPairAdjustmentRecords", any, null, new[] { typeof(List<uint>) }, null);
+            s_pairRecords = typeof(FontEngine).GetMethod("GetAllPairAdjustmentRecords", any, null, Type.EmptyTypes, null);
             return s_pairRecords;
         }
 

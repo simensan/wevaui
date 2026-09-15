@@ -92,8 +92,8 @@ Per chunk, the local recipe is:
 Numbers to expect are in `docs/PRODUCT_READINESS.md`; any red is new.
 The 2026-09-15 review passes 14 gcc suites (506,563 core checks),
 16 sanitizer suites, and all 334 Chrome layout captures at the 1.5px ceiling.
-Unity Native EditMode passes 205 tests with 2 environment-gated inconclusive;
-the full EditMode suite passes 206 with the same 2 inconclusive.
+Unity Native EditMode passes 211 tests with 2 environment-gated inconclusive;
+the full EditMode suite passes 212 with the same 2 inconclusive.
 Tooling suites pass 21 release checks, 9 text-safety runner checks, and
 32 Frontier performance-runner checks; `check.sh` runs all three.
 

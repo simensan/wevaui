@@ -15,7 +15,7 @@ no consumer project has yet been opened on 1.0.
 
 | Requirement | Current assessment and next evidence needed |
 |---|---|
-| The component and the controller model | `WevaDocument` keeps its 0.1.x name, script GUID and serialized fields, so a scene carries over; `[UIBind]`, `data-each`/`data-model`, `on-<event>`, `SetController` carry over. Verified by the Native EditMode suite (205 pass, 2 env-gated inconclusive; full EditMode 206 pass, 2 inconclusive) -- bindings, rows, typed write-back through nested collections, dictionary binding across disable/enable, dispatch, reload. Not yet verified: a real consumer project (TestWeva, Wavebound) opened on 1.0. |
+| The component and the controller model | `WevaDocument` keeps its 0.1.x name, script GUID and serialized fields, so a scene carries over; `[UIBind]`, `data-each`/`data-model`, `on-<event>`, `SetController` carry over. Verified by the Native EditMode suite (211 pass, 2 env-gated inconclusive; full EditMode 212 pass, 2 inconclusive) -- bindings, rows, typed write-back through nested collections, dictionary binding across disable/enable, dispatch, reload. Not yet verified: a real consumer project (TestWeva, Wavebound) opened on 1.0. |
 | The element API | `WevaElement` / `WevaEvent` are the supported surface (`api-stability.md`); `Weva.Native` is internal. 17 `WevaElementTests`, including callbacks that disable/reload the document and recursive event pumping. Programmatic `Value` assignment raises no input/change events; bound values are changed through their model. |
 | Rendering | `UIRenderGraphPass` draws the draw list into the camera target; `NativeRenderPassTests` (PlayMode, 5 cases) check the pixels: drawn, stacked by `SortingOrder`, gone when disabled, repainted on change, text, backdrop-filter (the frame is routed through URP's intermediate texture when a backdrop draw is due, asserted by the test; at `AfterRendering` the target is always the back buffer, which cannot be sampled). Not verified: any platform but Windows. |
 | Layout conformance | All 334 Chrome captures pass the 1.5px ceiling (62 hand, 225 harvest, 47 samples; no case excused). Direct inline content and inline-block multi-column containers are covered by the new capture and core regressions. The core passes 14 gcc suites (506,563 checks) and 16 sanitizer suites. `goldens_from_unity.py` renders sample pages through the core on Unity; real text metrics remain the host font backend's. |
@@ -26,6 +26,16 @@ no consumer project has yet been opened on 1.0.
 | Build hygiene | Core, plugin and Godot extension at 0 warnings on gcc, clang and MSVC; `gen_bindings.py --check` in CI; the plugin's load test in `check.sh`. Build receipts identify the root checkout and the chosen host's native inputs, and refresh on ordinary builds even without relinking. Tooling suites pass 21 release, 9 text-safety runner and 32 Frontier runner checks. |
 | Platforms | Windows x64 only. macOS, Linux, Android and iOS have CI jobs that have never run (nothing pushed); each is bundled when its load test passes. |
 | Release verification | The 1.0.0 CHANGELOG carries the migration notes. Blocked on the push (first CI run), a consumer opened on 1.0, and platform binaries. |
+
+The September 15 font review passes 40 backend tests, including changing
+text across regular/bold faces, document lifetimes and active-font reimport.
+The former pair-at-a-time query retained 318–487 MB over four updates;
+shared complete tables show no retained growth in those warmed cases.
+The full EditMode run's sampled peak private memory fell from 11.63 GB to
+2.49 GB, and FontEngine's shutdown allocation from 9.38 GB to 378 MB.
+These are local Windows editor measurements; font buffers and compact pair
+tables remain cached for the script domain. The five PlayMode render checks
+also pass, with mixed regular/bold text inspected in the captured frame.
 
 
 ## Godot host readiness

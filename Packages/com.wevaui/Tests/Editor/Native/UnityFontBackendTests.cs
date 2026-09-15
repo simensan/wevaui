@@ -598,7 +598,7 @@ namespace Weva.Tests.EditorTests.Native
         {
             // Inter kerns "L-" (a negative pair adjustment). Read the engine's own
             // records for the pair at 32px through the single-list query (the
-            // adapter uses the two-list one); the shaped advance of L must carry
+            // adapter caches the complete table); the shaped advance of L must carry
             // exactly that, and half of it at 16px.
             Assume.That(UnityFontBackend.KerningAvailable, "FontEngine.GetPairAdjustmentRecords is reachable");
             FaceInfo design = EngineDesignInfo(_regular);
@@ -743,6 +743,102 @@ namespace Weva.Tests.EditorTests.Native
                 Assert.That(backend.TryFaceMetrics(face, 16, out double ascent, out _, out _), Is.True, backend.LastError);
                 Assert.That(ascent, Is.GreaterThan(0));
                 Assert.That(backend.GlyphFor(face, 'A'), Is.Not.Zero);
+            }
+        }
+
+        [TestCase("asset")]
+        [TestCase("bytes")]
+        [TestCase("installed")]
+        public void ChangingTextAcrossFaces_DoesNotRetainNewNativeTables(string source)
+        {
+            long before = 0;
+            for (int i = -1; i < 4; ++i)
+            {
+                using (var backend = new UnityFontBackend())
+                {
+                    ulong regular = source == "installed" ? backend.AdoptInstalled(UnityFontBackend.SystemFallbackFonts[0]) :
+                        source == "bytes" ? backend.Adopt(File.ReadAllBytes(FontDir + "Weva-Default.ttf")) : backend.Adopt(_regular);
+                    ulong bold = source == "bytes" ? backend.Adopt(File.ReadAllBytes(FontDir + "Weva-Default-Bold.ttf")) : backend.Adopt(_bold);
+                    Assume.That(regular, Is.Not.Zero);
+                    string text = "L-" + (char)('A' + i);
+                    Assert.That(backend.ShapeText(regular, text, 16, out _).Count, Is.EqualTo(3));
+                    Assert.That(backend.ShapeText(bold, text, 32, out _).Count, Is.EqualTo(3));
+                }
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                if (i == -1) before = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong();
+            }
+            long retained = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() - before;
+            TestContext.WriteLine("Changing text across " + source + " faces retained " + retained + " bytes");
+            Assert.That(retained, Is.LessThan(16 * 1024 * 1024));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CachedPairTable_MatchesIndividualEngineQueries(bool bold)
+        {
+            Font font = bold ? _bold : _regular;
+            ulong face = bold ? _boldFace : _face;
+            double unitsPerEm = EngineDesignInfo(font).pointSize;
+            var query = typeof(FontEngine).GetMethod("GetPairAdjustmentRecords",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+                null, new[] { typeof(List<uint>) }, null);
+            Assert.That(query, Is.Not.Null);
+            var expected = new Dictionary<string, double>();
+            var pairs = new List<string> { "L-", "AV", "VA", "To", "Ta", "Yo", "oo", "HH", "..", "a?", "1/", "aV", "{A", "@T", "W," };
+            for (int i = 0; i < 94; ++i) pairs.Add(new string(new[] { (char)('!' + i), (char)('!' + i * 37 % 94) }));
+            foreach (string pair in pairs)
+            {
+                Assert.That(FontEngine.TryGetGlyphIndex(pair[0], out uint left));
+                Assert.That(FontEngine.TryGetGlyphIndex(pair[1], out uint right));
+                var records = query.Invoke(null, new object[] { new List<uint> { left, right } }) as GlyphPairAdjustmentRecord[];
+                double units = 0;
+                foreach (var record in records ?? Array.Empty<GlyphPairAdjustmentRecord>())
+                {
+                    if (record.firstAdjustmentRecord.glyphIndex != left || record.secondAdjustmentRecord.glyphIndex != right) continue;
+                    units = record.firstAdjustmentRecord.glyphValueRecord.xAdvance + record.secondAdjustmentRecord.glyphValueRecord.xAdvance;
+                    break;
+                }
+                expected[pair] = units * 32 / unitsPerEm;
+            }
+            _backend.Invalidate();
+            foreach (var pair in expected)
+            {
+                var shaped = _backend.ShapeText(face, pair.Key, 32, out _);
+                var alone = _backend.ShapeText(face, pair.Key.Substring(0, 1), 32, out _);
+                Assert.That(shaped[0].Advance - alone[0].Advance, Is.EqualTo(pair.Value).Within(1e-6), pair.Key);
+            }
+        }
+
+        [Test]
+        public void ReimportedFont_DoesNotReuseThePreviousPairTable()
+        {
+            string path = "Assets/WevaKerningReview-" + Guid.NewGuid().ToString("N") + ".ttf";
+            double Adjustment(Font font)
+            {
+                using (var backend = new UnityFontBackend())
+                {
+                    ulong face = backend.Adopt(font);
+                    return backend.ShapeText(face, "AV", 32, out _)[0].Advance - backend.ShapeText(face, "A", 32, out _)[0].Advance;
+                }
+            }
+            try
+            {
+                double expected = Adjustment(_bold);
+                File.Copy(FontDir + "Weva-Default.ttf", path);
+                UnityEditor.AssetDatabase.ImportAsset(path, UnityEditor.ImportAssetOptions.ForceUpdate);
+                Font font = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(path);
+                double initial = Adjustment(font);
+                Assert.That(initial, Is.Not.EqualTo(expected).Within(1e-6), "fixture: regular and bold kern AV differently");
+                File.Copy(FontDir + "Weva-Default-Bold.ttf", path, true);
+                UnityEditor.AssetDatabase.ImportAsset(path, UnityEditor.ImportAssetOptions.ForceUpdate);
+                font = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(path);
+                Assert.That(Adjustment(font), Is.EqualTo(expected).Within(1e-6));
+            }
+            finally
+            {
+                UnityEditor.AssetDatabase.DeleteAsset(path);
             }
         }
 

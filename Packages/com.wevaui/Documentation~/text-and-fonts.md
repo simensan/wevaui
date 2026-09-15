@@ -70,10 +70,12 @@ the `url()` after it. Replacing the stylesheet releases the families it no
 longer declares.
 
 Identical font bytes share one private buffer within the current Unity script
-domain. This prevents repeated document loads from creating duplicate native
-kerning caches. FontEngine's caches and one buffer per unique supplied font
-remain alive after a document is disposed; this is not a per-document memory
-release guarantee.
+domain. Kerning tables are read once per font and kept as compact arrays, so
+switching between regular and bold text does not repeatedly expand native
+tables. In the editor, imported font assets also use private buffers so a
+reimport cannot invalidate a face still held by FontEngine. These tables,
+buffers and FontEngine's own caches remain alive after a document is disposed;
+this is not a per-document memory release guarantee.
 
 **3. From code.** `doc.RegisterFontFamily("MyFont", font)` names a Unity
 `Font` for CSS — for a settings screen or a mod loader; it survives a reload
