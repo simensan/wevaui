@@ -229,6 +229,7 @@ namespace Weva
             if (string.IsNullOrEmpty(basePath)) basePath = DocumentAssetDirectory();
 #endif
             _doc.SetBasePath(basePath);
+            PrepareBakedStylesheets();
             string html = documentAsset != null ? documentAsset.text : InlineHtml;
             Generation++;
             _doc.LoadHtml(html);
@@ -294,6 +295,9 @@ namespace Weva
 
         [SerializeField, HideInInspector] string[] bakedLinkedStylesheetHrefs;
         [SerializeField, HideInInspector] string[] bakedLinkedStylesheetCss;
+        [SerializeField, HideInInspector] string[] bakedImportedStylesheetUrls;
+        [SerializeField, HideInInspector] string[] bakedImportedStylesheetCss;
+        private readonly System.Collections.Generic.Dictionary<string, byte[]> _bakedStylesheetBytes = new System.Collections.Generic.Dictionary<string, byte[]>(StringComparer.Ordinal);
         private readonly System.Collections.Generic.List<string> _linkedHrefs = new System.Collections.Generic.List<string>();
 
         /// <summary>The href of every <c>&lt;link rel="stylesheet"&gt;</c> in the markup, in document order.</summary>
@@ -325,50 +329,104 @@ namespace Weva
 
         /// <summary>What the last bake stored (for the baker to tell a changed bake from a repeated one).</summary>
         internal (string[] Hrefs, string[] Css) BakedLinkedStylesheets => (bakedLinkedStylesheetHrefs, bakedLinkedStylesheetCss);
+        internal (string[] Urls, string[] Css) BakedStylesheetImports => (bakedImportedStylesheetUrls, bakedImportedStylesheetCss);
+
+        private void PrepareBakedStylesheets()
+        {
+            _bakedStylesheetBytes.Clear();
+            void Add(string[] urls, string[] sheets)
+            {
+                if (urls == null || sheets == null) return;
+                for (int i = 0; i < urls.Length && i < sheets.Length; ++i)
+                {
+                    if (urls[i] == null || sheets[i] == null) continue;
+                    _bakedStylesheetBytes[_doc.ResolveAssetPath(urls[i])] = System.Text.Encoding.UTF8.GetBytes(sheets[i]);
+                }
+            }
+            Add(bakedLinkedStylesheetHrefs, bakedLinkedStylesheetCss);
+            Add(bakedImportedStylesheetUrls, bakedImportedStylesheetCss);
+            _doc.AssetFallback = path => _bakedStylesheetBytes.TryGetValue(path, out byte[] bytes) ? bytes : null;
+        }
 
         /// <summary>
-        /// Stores the text of every linked stylesheet on the component for a
-        /// player, which has no files to read; <paramref name="read"/> returns
-        /// a sheet's text for an href, or null. Returns how many were baked.
+        /// Stores linked stylesheets and imports on the component for a
+        /// player without files; <paramref name="read"/> returns a sheet's
+        /// text for a document-relative URL, or null. Returns the number of
+        /// direct linked sheets baked. Imports from markup and inspector
+        /// sheets are collected by the core parser too.
         /// The editor's scene-processing hook calls this at build time.
         /// </summary>
         public int BakeLinkedStylesheets(Func<string, string> read)
         {
             if (read == null) throw new ArgumentNullException(nameof(read));
-            var hrefs = LinkedHrefs(documentAsset != null ? documentAsset.text : InlineHtml);
             var keptHrefs = new System.Collections.Generic.List<string>();
             var keptCss = new System.Collections.Generic.List<string>();
-            foreach (string href in hrefs)
+            var importedUrls = new System.Collections.Generic.List<string>();
+            var importedCss = new System.Collections.Generic.List<string>();
+            var imports = new System.Collections.Generic.Dictionary<string, byte[]>(StringComparer.Ordinal);
+            using (var parsed = new NativeDocument(1, 1, useUserAgentStylesheet: false))
             {
-                string css = read(href);
-                if (css == null) continue;
-                keptHrefs.Add(href);
-                keptCss.Add(css);
+                parsed.AssetReader = url =>
+                {
+                    if (imports.TryGetValue(url, out byte[] cached)) return cached;
+                    string css = read(url);
+                    byte[] bytes = css == null ? null : System.Text.Encoding.UTF8.GetBytes(css);
+                    imports[url] = bytes;
+                    if (css != null) { importedUrls.Add(url); importedCss.Add(css); }
+                    return bytes;
+                };
+                // Parsing expands imports before applying media/supports, so
+                // the bake includes sheets needed by other player viewports.
+                // No update or font backend: image/font URLs are not fetched.
+                parsed.LoadHtml(documentAsset != null ? documentAsset.text : InlineHtml);
+                bool hasSheet = false;
+                foreach (string href in LinkedHrefs(parsed))
+                {
+                    string css = read(href);
+                    if (css == null) continue;
+                    keptHrefs.Add(href);
+                    keptCss.Add(css);
+                    parsed.AddCss(css, href);
+                    hasSheet = true;
+                }
+                if (stylesheetAssets != null)
+                {
+                    foreach (TextAsset sheet in stylesheetAssets)
+                    {
+                        if (sheet == null) continue;
+                        parsed.AddCss(sheet.text);
+                        hasSheet = true;
+                    }
+                }
+                if (!hasSheet) parsed.AddCss(InlineCss);
             }
             bakedLinkedStylesheetHrefs = keptHrefs.ToArray();
             bakedLinkedStylesheetCss = keptCss.ToArray();
+            bakedImportedStylesheetUrls = importedUrls.ToArray();
+            bakedImportedStylesheetCss = importedCss.ToArray();
             return keptHrefs.Count;
         }
 
         private string ResolveLinkedStylesheet(string href)
         {
 #if UNITY_EDITOR
-            string path = DocumentAssetDirectory();
-            if (path != null)
+            string path = _doc.ResolveAssetPath(href);
+            string live = ReadEditorStylesheet(path);
+            if (live != null)
             {
-                var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(System.IO.Path.Combine(path, href).Replace('\\', '/'));
-                if (asset != null)
-                {
-                    _doc.TrackAssetDependency(UnityEditor.AssetDatabase.GetAssetPath(asset));
-                    return asset.text;
-                }
+                _doc.TrackAssetDependency(path);
+                return live;
             }
 #endif
             if (bakedLinkedStylesheetHrefs != null && bakedLinkedStylesheetCss != null)
             {
                 for (int i = 0; i < bakedLinkedStylesheetHrefs.Length && i < bakedLinkedStylesheetCss.Length; i++)
                 {
-                    if (bakedLinkedStylesheetHrefs[i] == href) return bakedLinkedStylesheetCss[i];
+                    if (bakedLinkedStylesheetHrefs[i] == href)
+                    {
+                        _doc.TrackAssetDependency(_doc.ResolveAssetPath(href));
+                        return bakedLinkedStylesheetCss[i];
+                    }
                 }
             }
             byte[] bytes = _doc?.AssetReader?.Invoke(_doc.ResolveAssetPath(href));
@@ -376,6 +434,26 @@ namespace Weva
         }
 
 #if UNITY_EDITOR
+        // AssetDatabase expects project-relative paths without dot segments;
+        // the core may resolve an absolute BasePath or a virtual bundle URL.
+        // Both live loading and the build baker use this translation.
+        internal static string ReadEditorStylesheet(string path)
+        {
+            if (Uri.TryCreate(path, UriKind.Absolute, out _) && !System.IO.Path.IsPathRooted(path)) return null;
+            string full;
+            try { full = System.IO.Path.GetFullPath(path).Replace('\\', '/'); }
+            catch (ArgumentException) { return null; }
+            catch (NotSupportedException) { return null; }
+            catch (System.IO.PathTooLongException) { return null; }
+            string project = System.IO.Path.GetFullPath(".").Replace('\\', '/').TrimEnd('/') + "/";
+            if (full.StartsWith(project, StringComparison.OrdinalIgnoreCase))
+            {
+                var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(full.Substring(project.Length));
+                if (asset != null) return asset.text;
+            }
+            return System.IO.File.Exists(full) ? System.IO.File.ReadAllText(full) : null;
+        }
+
         /// <summary>The asset-database directory of the document asset (editor only), or null for an in-memory asset.</summary>
         public string DocumentAssetDirectory()
         {

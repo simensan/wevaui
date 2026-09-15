@@ -183,13 +183,17 @@ survive. From code, `doc.Reload()` also refreshes images and `@font-face` URL da
 
 ## Player builds
 
-A player has no files, so every `<link rel="stylesheet">` a scene-placed
-`WevaDocument` references is baked into the component at build time (an
-`IProcessSceneWithReport` hook); the editor always prefers the live file, so
-a stale bake can never shadow an edit. A `WevaDocument` on a prefab
-**instantiated at runtime** never passes through the scene hook: call
-`doc.BakeLinkedStylesheets(...)` from a custom build step, or assign
-`StylesheetAssets` explicitly.
+Linked stylesheets and their nested imports are baked into scene documents
+and prefab assets automatically before a build. Imports from `<style>`,
+inspector sheets and `InlineCss` are included too. The core parser discovers
+them, preserving source paths, conditions and cycle handling. The editor
+prefers live files under `BasePath` (the document asset's folder by default).
+
+Custom build steps can call `doc.BakeLinkedStylesheets(read)`, where `read`
+serves document-relative CSS URLs; its return value counts direct links.
+Editor tooling can use `WevaDocumentLinkBaker.BakePrefabs(paths)` to bake
+selected prefab assets. An edit to an imported sheet updates the bake even
+when the linked root has not changed.
 
 `url()` images and `@font-face` files resolve through the core's asset
 reader, which reads files relative to `BasePath`. A player that does not ship

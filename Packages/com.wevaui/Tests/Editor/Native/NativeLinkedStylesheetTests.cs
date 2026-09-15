@@ -249,6 +249,133 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(BoxWidth(), Is.EqualTo(77).Within(0.01), "the baked text applied: an in-memory asset has no editor path");
         }
 
+        [TestCase("linked")]
+        [TestCase("markup")]
+        [TestCase("inspector")]
+        [TestCase("inline")]
+        public void Player_BakesNestedImports_WithConditionsCyclesAndRebasedPaths(string source)
+        {
+            _host.SystemFontFallback = false;
+            _host.BasePath = "bundle://ui";
+            _host.InlineHtml = (source == "markup" ? "<style>@import 'styles/theme.css';</style>" :
+                source == "linked" ? "<link rel=stylesheet href='styles/theme.css'>" : "") +
+                "<div id=box></div>";
+            if (source == "inspector") _host.StylesheetAssets = new[] { new TextAsset("@import 'styles/theme.css';") };
+            if (source == "inline") _host.InlineCss = "@import 'styles/theme.css';";
+            var files = new Dictionary<string, string>
+            {
+                ["styles/theme.css"] = "@import '../shared/part.css' screen and (min-width:200px);",
+                ["shared/part.css"] = "@import 'deep.css'; @import '../styles/theme.css';",
+                ["shared/deep.css"] = "#box{width:177px;background-image:url(icon.png)}"
+            };
+            var reads = new List<string>();
+            Assert.That(_host.BakeLinkedStylesheets(href =>
+            {
+                reads.Add(href);
+                return files.TryGetValue(href, out string css) ? css : null;
+            }), Is.EqualTo(source == "linked" ? 1 : 0), "the return value still counts direct links");
+            _host.AssetReader = path => null; // a player with no external files
+            _go.SetActive(true);
+            _host.PrepareForRenderViewport(640, 480);
+            Assert.That(BoxWidth(), Is.EqualTo(177).Within(0.01));
+            Assert.That(reads, Is.EquivalentTo(files.Keys), "only CSS imports are read during baking");
+            _host.BasePath = "another-bundle://ui";
+            _host.Reload();
+            Assert.That(BoxWidth(), Is.EqualTo(177).Within(0.01), "baked dependencies resolve under the current base");
+        }
+
+        [Test]
+        public void Player_RebakeUpdatesAnImportedSheet_WhenTheLinkedRootIsUnchanged()
+        {
+            _host.SystemFontFallback = false;
+            _host.InlineHtml = "<link rel=stylesheet href=theme.css><div id=box></div>";
+            string imported = "#box{width:77px}";
+            string Read(string href) => href == "theme.css" ? "@import 'child.css';" : href == "child.css" ? imported : null;
+            _host.BakeLinkedStylesheets(Read);
+            _host.AssetReader = path => null;
+            _go.SetActive(true);
+            Assert.That(BoxWidth(), Is.EqualTo(77).Within(0.01));
+            imported = "#box{width:123px}";
+            _host.BakeLinkedStylesheets(Read);
+            _host.Reload();
+            Assert.That(BoxWidth(), Is.EqualTo(123).Within(0.01));
+        }
+
+        [Test]
+        public void Editor_UsesAndBakesLiveCssUnderAnAbsoluteBasePath()
+        {
+            _host.SystemFontFallback = false;
+            _host.BasePath = System.IO.Path.GetFullPath(FixtureDir);
+            _host.InlineHtml = "<link rel=stylesheet href='./nested/../linked.css'><div id=box></div>";
+            _host.BakeLinkedStylesheets(href => "#box{width:77px}");
+            _host.AssetReader = path => null;
+            _go.SetActive(true);
+            Assert.That(BoxWidth(), Is.EqualTo(123).Within(0.01), "the live file takes precedence over an old bake");
+            Assert.That(Weva.EditorTools.Documents.WevaDocumentLinkBaker.Bake(_host), Is.EqualTo(1));
+            Assert.That(_host.BakedLinkedStylesheets.Css[0], Does.Contain("width: 123px"));
+        }
+
+        [Test]
+        public void Prefab_RebakesAnImportedEdit_AndCarriesItWithoutFiles()
+        {
+            string stem = "WevaBakeReview-" + System.Guid.NewGuid().ToString("N");
+            string htmlPath = "Assets/" + stem + ".html", cssPath = "Assets/" + stem + ".css";
+            string childPath = "Assets/" + stem + "-child.css", prefabPath = "Assets/" + stem + ".prefab";
+            string html = "<link rel=stylesheet href='" + stem + ".css'><div id=box></div>";
+            GameObject instance = null;
+            TextAsset memoryHtml = null;
+            try
+            {
+                System.IO.File.WriteAllText(htmlPath, html);
+                System.IO.File.WriteAllText(cssPath, "@import './" + stem + "-child.css';");
+                System.IO.File.WriteAllText(childPath, "body{margin:0}#box{width:77px;height:20px;background:#0f0}");
+                foreach (string path in new[] { htmlPath, cssPath, childPath }) AssetDatabase.ImportAsset(path);
+                _host.DocumentAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(htmlPath);
+                _host.SystemFontFallback = false;
+                PrefabUtility.SaveAsPrefabAsset(_go, prefabPath);
+                string[] prefabs = { prefabPath };
+                Assert.That(Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs(prefabs), Is.EqualTo(1));
+                Assert.That(Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs(prefabs), Is.EqualTo(0));
+                System.IO.File.WriteAllText(childPath, "body{margin:0}#box{width:123px;height:20px;background:#0f0}");
+                AssetDatabase.ImportAsset(childPath, ImportAssetOptions.ForceUpdate);
+                Assert.That(Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs(prefabs), Is.EqualTo(1), "only the imported file changed");
+                Assert.That(Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs(prefabs), Is.EqualTo(0));
+                instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath));
+                var host = instance.GetComponent<WevaDocument>();
+                memoryHtml = new TextAsset(html);
+                host.DocumentAsset = memoryHtml;
+                host.AssetReader = path => null;
+                instance.SetActive(true);
+                host.PrepareForRenderViewport(256, 64);
+                Assert.That(host.Document.TryGetBounds(host.Document.Query("#box"), out var bounds));
+                Assert.That(bounds.Width, Is.EqualTo(123).Within(0.01), "the serialized prefab imports reach a fileless instance");
+                using (var renderer = new NativeDocumentRenderer())
+                {
+                    Texture2D image = renderer.RenderToTexture(host.Document, 256, 64, Color.black);
+                    try
+                    {
+                        Color32 inside = image.GetPixel(10, 53), outside = image.GetPixel(140, 53);
+                        Assert.That(inside.g, Is.GreaterThan(245));
+                        Assert.That(outside.g, Is.LessThan(10));
+                        string dump = System.Environment.GetEnvironmentVariable("WEVA_BAKED_IMPORTS_DUMP");
+                        if (!string.IsNullOrEmpty(dump))
+                        {
+                            System.IO.Directory.CreateDirectory(dump);
+                            System.IO.File.WriteAllBytes(System.IO.Path.Combine(dump, "prefab.png"), image.EncodeToPNG());
+                        }
+                    }
+                    finally { Object.DestroyImmediate(image); }
+                }
+            }
+            finally
+            {
+                if (instance != null) Object.DestroyImmediate(instance);
+                if (memoryHtml != null) Object.DestroyImmediate(memoryHtml);
+                foreach (string path in new[] { prefabPath, htmlPath, cssPath, childPath })
+                    if (!AssetDatabase.DeleteAsset(path) && System.IO.File.Exists(path)) System.IO.File.Delete(path);
+            }
+        }
+
         [Test]
         public void AssetReader_IsTheLastResort_AndAMissingLinkWarnsOnce()
         {
@@ -278,13 +405,13 @@ namespace Weva.Tests.EditorTests.Native
             {
                 Assume.That(prefab, Is.Not.Null, "the fixture prefab saved");
                 Assert.That(prefab.GetComponent<WevaDocument>().BakedLinkedStylesheets.Hrefs, Is.Null.Or.Empty, "nothing baked yet");
-                int baked = Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs();
+                int baked = Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs(new[] { path });
                 Assert.That(baked, Is.GreaterThanOrEqualTo(1), "the prefab document was baked");
                 var reloaded = AssetDatabase.LoadAssetAtPath<GameObject>(path).GetComponent<WevaDocument>();
                 var bake = reloaded.BakedLinkedStylesheets;
                 Assert.That(bake.Hrefs, Is.EqualTo(new[] { "linked.css" }));
                 Assert.That(bake.Css[0], Does.Contain("width: 123px"));
-                Assert.That(Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs(), Is.EqualTo(0), "a bake that is already current changes nothing");
+                Assert.That(Weva.EditorTools.Documents.WevaDocumentLinkBaker.BakePrefabs(new[] { path }), Is.EqualTo(0), "a bake that is already current changes nothing");
             }
             finally
             {

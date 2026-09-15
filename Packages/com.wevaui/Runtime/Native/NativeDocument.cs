@@ -440,6 +440,9 @@ namespace Weva.Native
         }
 
         private Func<string, byte[]> _assetReader;
+        // Serialized host assets can supply a resource the primary reader
+        // does not have. All requests still pass through dependency tracking.
+        internal Func<string, byte[]> AssetFallback { get; set; }
         private Func<string, byte[]> _trackedAssetReader;
         private readonly HashSet<string> _assetDependencies = new HashSet<string>(StringComparer.Ordinal);
 
@@ -458,7 +461,8 @@ namespace Weva.Native
             return path =>
             {
                 TrackAssetDependency(path);
-                return read != null ? read(path) : ReadFile(path);
+                byte[] bytes = read != null ? read(path) : ReadFile(path);
+                return bytes ?? AssetFallback?.Invoke(path);
             };
         }
 

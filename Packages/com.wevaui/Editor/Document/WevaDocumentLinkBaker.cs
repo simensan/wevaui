@@ -1,18 +1,18 @@
-using System.IO;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Weva.Native;
 
 namespace Weva.EditorTools.Documents {
-    // A player has no files, so every <link rel="stylesheet"> a WevaDocument
-    // references is baked into the component before a build: scene-placed
+    // Linked stylesheets and imports are baked before a build: scene-placed
     // documents as each scene is processed (and on entering play mode,
     // harmlessly: the editor path prefers the live file), documents on
     // prefab assets once at the start of the build, so one instantiated at
-    // runtime carries its sheets too. The editor always prefers the file
-    // next to the document asset, so a stale bake never shadows an edit.
+    // runtime carries its sheets too. The editor prefers live files under
+    // BasePath (the document asset's folder by default).
     public sealed class WevaDocumentLinkBaker : IProcessSceneWithReport, IPreprocessBuildWithReport {
         public int callbackOrder => 0;
 
@@ -44,9 +44,16 @@ namespace Weva.EditorTools.Documents {
         /// does not dirty the project.
         /// </summary>
         public static int BakePrefabs() {
+            var paths = new List<string>();
+            foreach (string guid in AssetDatabase.FindAssets("t:Prefab")) paths.Add(AssetDatabase.GUIDToAssetPath(guid));
+            return BakePrefabs(paths);
+        }
+
+        /// <summary>Bakes only the supplied prefab paths, for targeted tooling and isolated tests.</summary>
+        public static int BakePrefabs(IEnumerable<string> paths) {
+            if (paths == null) throw new System.ArgumentNullException(nameof(paths));
             int changed = 0;
-            foreach (string guid in AssetDatabase.FindAssets("t:Prefab")) {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
+            foreach (string path in paths) {
                 if (string.IsNullOrEmpty(path) || !path.EndsWith(".prefab")) continue;
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 if (prefab == null || prefab.GetComponentInChildren<WevaDocument>(true) == null) continue;
@@ -55,9 +62,12 @@ namespace Weva.EditorTools.Documents {
                     bool dirty = false;
                     foreach (WevaDocument doc in contents.GetComponentsInChildren<WevaDocument>(true)) {
                         var before = doc.BakedLinkedStylesheets;
+                        var beforeImports = doc.BakedStylesheetImports;
                         Bake(doc);
                         var after = doc.BakedLinkedStylesheets;
-                        if (!Same(before.Hrefs, after.Hrefs) || !Same(before.Css, after.Css)) {
+                        var afterImports = doc.BakedStylesheetImports;
+                        if (!Same(before.Hrefs, after.Hrefs) || !Same(before.Css, after.Css) ||
+                            !Same(beforeImports.Urls, afterImports.Urls) || !Same(beforeImports.Css, afterImports.Css)) {
                             dirty = true;
                             changed++;
                         }
@@ -77,15 +87,14 @@ namespace Weva.EditorTools.Documents {
             return true;
         }
 
-        /// <summary>Bakes one document's linked sheets from the files next to its document asset. Returns how many.</summary>
+        /// <summary>Bakes one document's linked sheets and imports under its asset base. Returns the direct link count.</summary>
         public static int Bake(WevaDocument doc) {
             if (doc == null) return 0;
-            string dir = doc.DocumentAssetDirectory();
-            if (dir == null) return 0;
-            return doc.BakeLinkedStylesheets(href => {
-                var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(Path.Combine(dir, href).Replace('\\', '/'));
-                return asset != null ? asset.text : null;
-            });
+            string dir = string.IsNullOrEmpty(doc.BasePath) ? doc.DocumentAssetDirectory() : doc.BasePath;
+            using (var resolver = new NativeDocument(1, 1, useUserAgentStylesheet: false)) {
+                resolver.SetBasePath(dir);
+                return doc.BakeLinkedStylesheets(href => WevaDocument.ReadEditorStylesheet(resolver.ResolveAssetPath(href)));
+            }
         }
     }
 }
