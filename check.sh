@@ -86,9 +86,9 @@ if [ "$clean" -eq 1 ]; then
 fi
 
 # ---- build ---------------------------------------------------------------
-step "release and text-safety verification tools"
+step "release, sample and text-safety verification tools"
 python3 -m unittest discover -s "$ROOT/Tools/tests" \
-    || fail "release verification tools"
+    || fail "release/sample verification tools"
 python3 -m unittest discover -s "$ROOT/Tools/godot-text-shaping-repro" -p 'test_*.py' \
     || fail "text-safety verification tools"
 
@@ -242,24 +242,25 @@ fi
 # same way. That is how three separate tools shipped without a base path, each
 # found only when somebody eventually looked at a picture.
 #
-# Reported rather than failed, because 9slice-demo legitimately names sprites
-# that live in a Unity project rather than in this corpus. A NEW name in this
-# list is a case that is not testing what it looks like it is testing.
+# Every image in the sample corpus must be present and decodable. Otherwise
+# matching empty boxes can conceal a broken sample on both sides of the oracle.
 step "assets"
 if [ -x "$GCC/Tools/weva_render/weva_render" ]; then
     missed=0
     for html in "$SAMPLES"/*.html; do
         css="${html%.html}.css"
         [ -f "$css" ] || css="-"
-        names=$("$GCC/Tools/weva_render/weva_render" "$html" "$css" 1280 720 /dev/null 2>&1                 >/dev/null | grep -v "did not load" || true)
-        if [ -n "$names" ]; then
-            printf '  %-22s %s
-' "$(basename "$html" .html)"                 "$(printf '%s' "$names" | tr '
-' ' ')"
-            missed=$((missed + 1))
+        if names=$("$GCC/Tools/weva_render/weva_render" "$html" "$css" 1280 720 /dev/null 2>&1 >/dev/null); then
+            [ -z "$names" ] && continue
         fi
+        printf '  %s: %s\n' "$(basename "$html" .html)" "$names"
+        missed=$((missed + 1))
     done
-    echo "$missed sample(s) reference an asset that did not load"
+    if [ "$missed" -eq 0 ]; then
+        echo "all sample assets loaded"
+    else
+        fail "$missed sample(s) failed to render or reference missing assets"
+    fi
 else
     skip "assets (needs weva_render)"
 fi

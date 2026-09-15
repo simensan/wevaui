@@ -12,7 +12,7 @@ body { margin: 0; font-family: sans-serif; font-size: 12px; background: #f0f0f2;
   width: 120px;
   height: 90px;
   border: 8px solid transparent;
-  border-image-source: url(cov-border-image-frame.png);
+  border-image-source: url(assets/cov-border-image/b75d1aee6fda7d6e-cov-border-image-frame.png);
   border-image-slice: 8;
   color: #333;
 }

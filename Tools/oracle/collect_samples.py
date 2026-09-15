@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
-"""Collects the Unity samples into an oracle corpus: the pages a Godot host has
-to render before the port can be said to run the same UIs Unity does.
+"""Collect development demos, package samples and oracle cases for Chrome checks.
 
-Sources are the dev demos under Assets/UI and the shipped package samples under
-Packages/com.wevaui/Samples~. Each is a full document with a
-`<link rel="stylesheet">` to a sibling .css, which is the contract both
-BaselineGen and weva_dump already follow (sibling .css by basename; <link> is
-ignored). A page that carries its stylesheet inline in a <style> element gets
-that extracted to the sibling file, because neither dumper reads <style> —
-the real engine does, in UIDocumentBuilder — and a page laid out unstyled on
-both sides would agree for a worthless reason.
+The corpus uses unique page names and sibling CSS files for the layout tools.
+Inline styles remain in the HTML and are also mirrored to that CSS file. Local
+images travel in a per-page assets directory, with references rewritten in both
+HTML and CSS. A missing local image fails collection instead of silently making
+the browser and native renderer agree on an empty box.
 
 Usage: collect_samples.py <wevaui-root> --out <corpus-dir>
 """
 
 import argparse
+import hashlib
 import os
 import re
 import io
-import shutil
 import sys
+from pathlib import Path
+from urllib.parse import quote, unquote, urlsplit
 
 STYLE = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
 
@@ -35,7 +33,8 @@ def sources(root):
             # package because nobody wants them in Samples~.
             os.path.join(root, "Tools", "oracle", "cases")]
     for d in dirs:
-        for dirpath, _, names in os.walk(d):
+        for dirpath, subdirs, names in os.walk(d):
+            subdirs.sort()
             for name in sorted(names):
                 if name.endswith(".html"):
                     yield os.path.join(dirpath, name)
@@ -43,13 +42,36 @@ def sources(root):
 
 # An image a document points at, from `url(...)` in CSS or `src="..."` in the
 # markup. Deliberately loose: it only has to find files worth copying.
-ASSET = re.compile(r'''url\(\s*['"]?([^)'"]+\.(?:png|jpg|jpeg|webp))['"]?\s*\)'''
-                   r'''|src\s*=\s*["']([^"']+\.(?:png|jpg|jpeg|webp))["']''',
+ASSET = re.compile(r'''url\(\s*['"]?([^)'"]+\.(?:png|jpg|jpeg|webp)(?:[?#][^)'"\s]*)?)['"]?\s*\)'''
+                   r'''|\bsrc\s*=\s*["']([^"']+\.(?:png|jpg|jpeg|webp)(?:[?#][^"']*)?)["']''',
                    re.IGNORECASE)
 
 
-def _asset_names(text):
-    return [a or b for a, b in ASSET.findall(text)]
+def copy_assets(text, source_dir, out, stem):
+    def replace(match):
+        group = 1 if match.group(1) is not None else 2
+        url = urlsplit(match.group(group))
+        if url.scheme or url.netloc:
+            return match.group(0)
+        src = (Path(source_dir) / unquote(url.path)).resolve()
+        data = src.read_bytes()  # Missing local assets are errors.
+        # Content names prevent collisions between a/icon.png and b/icon.png,
+        # and contain all writes even for references reaching outside the page.
+        digest = hashlib.sha256(data).hexdigest()[:16]
+        relative = Path("assets") / stem / (digest + "-" + src.name)
+        dst = Path(out) / relative
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(data)
+        name = quote(relative.as_posix())
+        if url.query:
+            name += "?" + url.query
+        if url.fragment:
+            name += "#" + url.fragment
+        start, end = match.span(group)
+        original = match.group(0)
+        return original[:start - match.start()] + name + original[end - match.start():]
+
+    return ASSET.sub(replace, text)
 
 
 # Any stylesheet link at all — used to decide whether a copied sample needs one
@@ -71,7 +93,7 @@ def main():
         stem = os.path.splitext(os.path.basename(html))[0]
         # Two samples share a name (Assets/UI/menu.html and the package's
         # menu.html); the package one is prefixed so both survive.
-        if stem in seen:
+        while stem in seen:
             stem = "sample-" + stem
         seen.add(stem)
         dst = os.path.join(args.out, stem + ".html")
@@ -103,35 +125,20 @@ def main():
                 markup = markup.replace(source_stem + ".css", stem + ".css")
             if not STYLESHEET_LINK.search(markup):
                 markup = '<link rel="stylesheet" href="%s.css" />\n' % stem + markup
+        if os.path.exists(css_src):
+            with open(css_src, encoding="utf-8", errors="replace") as f:
+                css = f.read()
+        else:
+            css = "\n".join(STYLE.findall(markup))
+        markup = copy_assets(markup, os.path.dirname(html), args.out, stem)
+        css = copy_assets(css, os.path.dirname(html), args.out, stem)
         with io.open(dst, "w", encoding="utf-8", newline="\n") as f:
             f.write(markup)
-
-        if os.path.exists(css_src):
-            shutil.copyfile(css_src, css_dst)
-        else:
-            with open(html, encoding="utf-8", errors="replace") as f:
-                blocks = STYLE.findall(f.read())
-            if blocks:
-                with open(css_dst, "w", encoding="utf-8") as f:
-                    f.write("\n".join(blocks))
-            elif os.path.exists(css_dst):
-                os.remove(css_dst)
-        # Any image the pair references travels with it. The corpus is FLAT
-        # and the engines resolve a relative url() against the document, so an
-        # asset left behind is not a broken link that shows up as a warning --
-        # it is an image that silently draws nothing, in every engine at once,
-        # which is exactly the kind of agreement the oracle cannot see through.
-        referenced = set()
-        for text in (markup, open(css_dst, encoding="utf-8", errors="replace").read()
-                     if os.path.exists(css_dst) else ""):
-            referenced.update(_asset_names(text))
-        for name in sorted(referenced):
-            if "://" in name or name.startswith("data:"):
-                continue
-            src = os.path.join(os.path.dirname(html), name)
-            if not os.path.exists(src):
-                continue
-            shutil.copyfile(src, os.path.join(args.out, os.path.basename(name)))
+        if css:
+            with open(css_dst, "w", encoding="utf-8", newline="\n") as f:
+                f.write(css)
+        elif os.path.exists(css_dst):
+            os.remove(css_dst)
 
         count += 1
     print(f"collected {count} samples into {args.out}")

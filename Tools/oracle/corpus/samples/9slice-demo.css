@@ -1,9 +1,5 @@
 
-            * {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-            }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
             body {
                 background: #0a0e16;
                 color: #f3f4f6;
@@ -11,128 +7,44 @@
                 font-size: 14px;
                 padding: 32px;
             }
-            h1 {
-                font-size: 18px;
-                font-weight: 700;
-                margin-bottom: 24px;
-                color: #fbbf24;
-            }
-            h2 {
-                font-size: 12px;
-                font-weight: 800;
-                letter-spacing: 1.5px;
-                color: #6b7280;
-                text-transform: uppercase;
-                margin-bottom: 12px;
-                margin-top: 24px;
-            }
-            p {
-                font-size: 12px;
-                color: #9ca3af;
-                margin-bottom: 16px;
-                line-height: 1.5;
-            }
-            code {
-                font-family: monospace;
-                background: #1c2435;
-                padding: 2px 6px;
-                border-radius: 3px;
-                color: #fbbf24;
-            }
-
+            h1 { font-size: 22px; color: #fbbf24; margin-bottom: 12px; }
+            h2 { font-size: 16px; margin: 24px 0 12px; }
+            p { color: #b4becd; line-height: 1.5; margin-bottom: 12px; }
+            code { font-family: monospace; color: #fbbf24; }
             .grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
                 gap: 24px;
-                margin-bottom: 32px;
             }
-
-            .demo {
-                padding: 20px;
-                background: #11151f;
-                border-radius: 6px;
-            }
-            .demo-label {
-                font-size: 11px;
-                font-weight: 600;
-                color: #6b7280;
-                margin-bottom: 12px;
-            }
-
-            /*
-  ── Method A: <img> with auto 9-slice ──
-
-  When the image source carries native 9-slice metadata (Unity sprites
-  configured with border values in the importer), <img> automatically
-  paints as 9 sub-quads. Corners stay at source-pixel size, edges and
-  center stretch to fill. No CSS required.
-
-  Replace src="UI/PanelFrame" with any sprite in your project that has
-  borders set in the Sprite Editor.
-*/
-            .frame-img {
-                display: block;
-                width: 100%;
-                height: 120px;
-            }
-            .frame-img-large {
-                width: 100%;
-                height: 200px;
-            }
-
-            /*
-  ── Method B: CSS border-image ──
-
-  The CSS-standard way to do 9-slice. Works on any element (not just
-  <img>). Note: the element needs an explicit border-width — border-
-  image uses those widths as the edge thickness.
-
-  When border-image-slice is omitted (or just `fill`), the sprite's
-  native border is used. Otherwise you can specify it in source pixels:
-    border-image-slice: 16 fill;        // square 16px insets, center on
-    border-image-slice: 8 16 fill;      // 8 top/bottom, 16 left/right
-*/
-            .frame-css {
-                height: 120px;
+            .demo { padding: 16px; background: #11151f; }
+            .label { color: #b4becd; font-size: 12px; margin-bottom: 12px; }
+            /* Slices are source-image pixels. Border widths set their drawn size. */
+            .frame {
                 border: 16px solid transparent;
-                border-image-source: url(Settings_Flyout_9slice.png);
+                border-image-source: url(assets/9slice-demo/19dd881d5c38d58e-PanelFrame.png);
+                border-image-slice: 16 fill;
                 border-image-repeat: stretch;
+                color: #142333;
+                font-weight: 700;
+            }
+            .panel {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                color: #f3f4f6;
+                height: 96px;
+            }
+            .tall { height: 152px; }
+            .outline { border-image-slice: 16; color: #f3f4f6; }
+            .row { display: flex; align-items: center; gap: 20px; }
+            button.frame {
+                font: inherit;
                 font-weight: 700;
-            }
-
-            .frame-css-tight {
-                height: 60px;
-                border: 8px solid transparent;
-                border-image-source: url(UI/Sprites/PanelFrame.png);
-            }
-
-            /*
-  ── Method C: nested content inside a 9-sliced background ──
-
-  Same as Method B but with content inside.
-*/
-            .button {
-                display: inline-block;
-                padding: 16px 32px;
-                border: 12px solid transparent;
-                border-image-source: url(UI/Sprites/ButtonFrame);
-                border-image-repeat: stretch;
-                color: #fbbf24;
-                font-weight: 900;
+                background: transparent;
+                padding: 8px 24px;
                 cursor: pointer;
             }
-            .button:hover {
-                border-image-source: url(UI/Sprites/ButtonFrameHover);
-            }
-
-            .row {
-                display: flex;
-                gap: 16px;
-                align-items: center;
-                margin-bottom: 16px;
-            }
+            button.frame:hover { color: #006a96; }
+            button.frame:focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
+            .source { display: block; width: 192px; height: 64px; }
+            .setup { margin-top: 24px; max-width: 1050px; }
         

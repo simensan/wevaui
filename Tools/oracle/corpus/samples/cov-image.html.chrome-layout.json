@@ -1,7 +1,7 @@
 {
   "source": "cov-image.html",
   "metrics": "mono",
-  "browser": "Chrome/152.0.7977.83",
+  "browser": "Chrome/152.0.7977.82",
   "userAgentStylesheet": "weva overlay on browser",
   "lineHeightNormalization": "computed normal to 1.143",
   "width": 1280,

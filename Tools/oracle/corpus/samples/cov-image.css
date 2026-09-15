@@ -13,7 +13,7 @@ body { margin: 0; font-family: sans-serif; font-size: 13px; }
   width: 120px;
   height: 90px;
   border: 1px solid #999;
-  background-image: url(cov-image-corners.png);
+  background-image: url(assets/cov-image/efb5d520a89b7489-cov-image-corners.png);
   background-repeat: no-repeat;
 }
 .fill    { background-size: 100% 100%; }
