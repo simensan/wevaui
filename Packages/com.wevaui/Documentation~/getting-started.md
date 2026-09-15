@@ -175,10 +175,11 @@ scaled to the document's viewport.
 
 ## Hot reload
 
-Editing a `.html` or `.css` the document references — its asset, a linked
-sheet, or an inspector sheet — reloads it on reimport, in play mode and in
-edit mode; the controller stays attached and `[UIBind]` values survive because
-they live on your controller. From code, `doc.Reload()` does the same.
+Changes to referenced HTML, assigned or linked CSS, imported sheets, and
+requested image/font URLs reload the document after asset import completes,
+in play mode and edit mode. Deletions, moves, and creating a previously missing
+dependency count too. The controller stays attached and its `[UIBind]` values
+survive. From code, `doc.Reload()` also refreshes images and `@font-face` URL data.
 
 ## Player builds
 

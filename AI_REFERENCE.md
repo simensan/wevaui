@@ -10,8 +10,8 @@ disagree, the code wins — tell the user.
 > - **Change the engine or a host** → [`AGENTS.md`](AGENTS.md) (the engineering contract) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (the core as built).
 > - **Check if something is supported** → [`supported-css.md`](Packages/com.wevaui/Documentation~/supported-css.md) / [`supported-html.md`](Packages/com.wevaui/Documentation~/supported-html.md), and `Tools/oracle/known-gaps/` for what the Chrome gate excuses.
 
-_Last verified: 2026-09-15 (1.0.0); Native EditMode 211 pass / 2 environment-gated
-inconclusive, full EditMode 212 pass / 2 inconclusive._
+_Last verified: 2026-09-15 (1.0.0); Native EditMode 220 pass / 2 environment-gated
+inconclusive, full EditMode 221 pass / 2 inconclusive._
 
 ---
 

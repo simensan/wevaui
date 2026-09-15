@@ -232,6 +232,9 @@ namespace Weva
             string html = documentAsset != null ? documentAsset.text : InlineHtml;
             Generation++;
             _doc.LoadHtml(html);
+#if UNITY_EDITOR
+            if (documentAsset != null) _doc.TrackAssetDependency(UnityEditor.AssetDatabase.GetAssetPath(documentAsset));
+#endif
             _linkedHrefs.Clear();
             _linkedHrefs.AddRange(LinkedHrefs(_doc));
             LoadStylesheets();
@@ -269,6 +272,9 @@ namespace Weva
                 foreach (TextAsset sheet in stylesheetAssets)
                 {
                     if (sheet == null) continue;
+#if UNITY_EDITOR
+                    _doc.TrackAssetDependency(UnityEditor.AssetDatabase.GetAssetPath(sheet));
+#endif
                     _doc.AddCss(sheet.text);
                     hasSheet = true;
                 }
@@ -351,7 +357,11 @@ namespace Weva
             if (path != null)
             {
                 var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(System.IO.Path.Combine(path, href).Replace('\\', '/'));
-                if (asset != null) return asset.text;
+                if (asset != null)
+                {
+                    _doc.TrackAssetDependency(UnityEditor.AssetDatabase.GetAssetPath(asset));
+                    return asset.text;
+                }
             }
 #endif
             if (bakedLinkedStylesheetHrefs != null && bakedLinkedStylesheetCss != null)

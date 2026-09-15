@@ -121,6 +121,12 @@ namespace Weva.Native
 
         public void LoadHtml(string html)
         {
+            // A full reload refreshes decoded images and cached misses through
+            // the core's existing reader invalidation. Incremental ReloadHtml
+            // keeps its asset cache. Install the managed reader for default
+            // file loads too, so tooling observes the same requests.
+            AssetReader = _assetReader;
+            _assetDependencies.Clear();
             byte[] bytes = Encoding.UTF8.GetBytes(html ?? string.Empty);
             fixed (byte* p = bytes)
             {
@@ -422,10 +428,11 @@ namespace Weva.Native
         /// </summary>
         public Func<string, byte[]> AssetReader
         {
-            get => _assetReader ?? ReadFile;
+            get => _trackedAssetReader ?? (_trackedAssetReader = TrackReader(_assetReader));
             set
             {
                 _assetReader = value;
+                _trackedAssetReader = TrackReader(value);
                 if (!_self.IsAllocated) _self = GCHandle.Alloc(this);
                 var reader = (delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, nuint>)Marshal.GetFunctionPointerForDelegate(s_readAsset);
                 Check(WevaNative.weva_document_set_asset_reader(Handle, reader, (void*)GCHandle.ToIntPtr(_self)), "weva_document_set_asset_reader");
@@ -433,6 +440,28 @@ namespace Weva.Native
         }
 
         private Func<string, byte[]> _assetReader;
+        private Func<string, byte[]> _trackedAssetReader;
+        private readonly HashSet<string> _assetDependencies = new HashSet<string>(StringComparer.Ordinal);
+
+        // Host tooling watches the paths the loader actually requested,
+        // including missing files that might be added after the first load.
+        internal IReadOnlyCollection<string> AssetDependencies => _assetDependencies;
+        internal void TrackAssetDependency(string path)
+        {
+            if (!string.IsNullOrEmpty(path)) _assetDependencies.Add(path);
+        }
+
+        private Func<string, byte[]> TrackReader(Func<string, byte[]> read)
+        {
+            // Capture this reader, so a decorator can retain the previous
+            // getter result without calling back into its own replacement.
+            return path =>
+            {
+                TrackAssetDependency(path);
+                return read != null ? read(path) : ReadFile(path);
+            };
+        }
+
         private GCHandle _self;
         private string _lastAssetPath;
         private byte[] _lastAssetBytes;

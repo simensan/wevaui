@@ -238,7 +238,11 @@ namespace Weva.Native
             if (family == null) throw new ArgumentNullException(nameof(family));
             doc.RegisterFontFamily(family, face);
             string key = family.ToLowerInvariant();
-            if (face != 0) _hostFamilies.Add(key);
+            if (face != 0)
+            {
+                _hostFamilies.Add(key);
+                _cssFamilies.Remove(key);
+            }
             else _hostFamilies.Remove(key);
         }
 
@@ -311,7 +315,7 @@ namespace Weva.Native
             foreach (KeyValuePair<string, (string Family, string Normal, string NearNormal, Dictionary<int, string> Variants)> kv in wanted)
             {
                 // The game's own registration wins over @font-face, as on Godot.
-                if (_hostFamilies.Contains(kv.Key) && !_cssFamilies.ContainsKey(kv.Key)) continue;
+                if (_hostFamilies.Contains(kv.Key)) continue;
                 string normalSource = kv.Value.Normal ?? kv.Value.NearNormal;
                 if (normalSource == null)
                 {
@@ -322,6 +326,11 @@ namespace Weva.Native
                 ulong face = AdoptCssSource(doc, normalSource);
                 if (face == 0)
                 {
+                    if (_cssFamilies.TryGetValue(kv.Key, out var previous))
+                    {
+                        doc.RegisterFontFamily(previous.Family, 0);
+                        _cssFamilies.Remove(kv.Key);
+                    }
                     LastError = "@font-face " + kv.Value.Family + " could not load " + normalSource +
                         (LastError != null && LastError != inner ? " (" + LastError + ")" : "");
                     continue;
@@ -573,7 +582,6 @@ namespace Weva.Native
         private ulong AdoptCssUrl(NativeDocument doc, string source)
         {
             if (string.IsNullOrEmpty(source)) return 0;
-            if (_cssFaces.TryGetValue(source, out ulong face)) return face;
             byte[] bytes = null;
             try
             {
@@ -584,6 +592,10 @@ namespace Weva.Native
                 LastError = ex.Message;
             }
             if (bytes == null || bytes.Length == 0) return 0;
+            // A stylesheet reload must observe both changed and missing font
+            // data. Reuse the face only when the reader returned the same bytes.
+            if (_cssFaces.TryGetValue(source, out ulong face) && _faces.TryGetValue(face, out Face cached) &&
+                cached.Sources[0].Bytes != null && cached.Sources[0].Bytes.AsSpan().SequenceEqual(bytes)) return face;
             face = Adopt(bytes, 0, source);
             if (!Activate(_faces[face].Sources[0]))
             {
