@@ -108,6 +108,74 @@ These options build a private diagnostic executable. The patch has not been
 submitted upstream and does not modify or ship with the addon libraries.
 Godot's license accompanies the patch in [GODOT_LICENSE.txt](GODOT_LICENSE.txt).
 
+### Full Linux editor and matching exports
+
+For the complete host gate, build the editor and both normal export templates
+from a clean copy of `ed1daf0bf001b61586d9930840f2f1394092c079`, applying
+`godot-script-iterator.patch` and `godot-editor-help-shutdown.patch`.
+The source archive used for this qualification has
+SHA-256 `e607e9985e1c201bc9cdc1aec8a120f0c3f53b9603f1f828e2b748534a2471ef`.
+Use a separate source/build directory so the stock installation stays available
+for a negative control. From that source directory:
+
+```sh
+git apply /path/to/unityui/Tools/godot-text-shaping-repro/godot-script-iterator.patch
+git apply /path/to/unityui/Tools/godot-text-shaping-repro/godot-editor-help-shutdown.patch
+for target in editor template_debug template_release; do
+    scons -j8 platform=linuxbsd target="$target" arch=x86_64 optimize=speed \
+        debug_symbols=no use_lto=no module_mono_enabled=no
+done
+```
+
+These retain normal 3D/rendering features and template path restrictions;
+they are not the stripped diagnostic build above. Qualify the editor with
+`check.py` and both templates together with `check_exports.py`. The latter
+embeds ICU data in the exported game and verifies it is loaded, rather than
+supplying an external file that would hide a packaging failure.
+
+Select all three binaries when running the repository gate:
+
+```sh
+export GODOT_BIN=/path/to/patched-source/bin/godot.linuxbsd.editor.x86_64
+export WEVA_GODOT_DEBUG_TEMPLATE=/path/to/patched-source/bin/godot.linuxbsd.template_debug.x86_64
+export WEVA_GODOT_RELEASE_TEMPLATE=/path/to/patched-source/bin/godot.linuxbsd.template_release.x86_64
+export WEVA_EXPORT_RENDER=1
+bash check.sh --release
+```
+
+This needs a working display for the rendered export comparison, the native
+builds required by `check.sh`, and the configured Chrome reference. WSL can run
+the same Windows Chrome reference as CI via the
+[oracle runner's Windows settings](../oracle/README.md#live-browser-reference-from-wsl).
+Stock Godot remains affected; selecting a patched editor alone does not make
+stock export templates safe.
+
+### Import/shutdown regression
+
+The second patch fixes a separate editor lifetime defect exposed while
+qualifying exports. A help cache from another engine build queues deferred
+documentation work. A short `--import` can destroy `EditorNode` and the help
+data before that work runs, producing a null-singleton error and an abort.
+The patch marks help cleanup before joining its worker, and makes the four
+deferred entry points stop once cleanup has started. Normal documentation
+generation, including the project manager, remains available before cleanup.
+
+```sh
+python3 Tools/godot-text-shaping-repro/check_import_shutdown.py \
+    --godot /path/to/patched-editor --reference-editor /path/to/stock-editor \
+    --logs /new/import-shutdown-results
+```
+
+The Linux probe isolates all XDG directories and runs four rounds with cold,
+warm and different-version help caches. The reference editor must report a
+different version; it seeds the incompatible cache in a private fixture.
+Every import must exit successfully, complete its scan, create the help cache
+and report no engine errors. Logs and both executable identities are retained.
+The editor with only the script-iterator patch fails all four different-version
+cases; the editor with both patches passes all twelve imports and the seed run.
+This patch changes editor cleanup, so the debug/release templates still contain
+only the script-iterator runtime change.
+
 ## Verification, 2026-09-06
 
 | Engine | 32 runs | Remaining five cases |
