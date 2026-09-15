@@ -96,10 +96,12 @@ Unity Native EditMode passes 236 tests with 2 environment-gated inconclusive;
 the full EditMode suite passes 237 with the same 2 inconclusive.
 Tooling suites pass 54 release/oracle checks, 9 text-safety runner checks, and
 32 Frontier performance-runner checks; `check.sh` runs all three.
-The full local gate still fails stock Godot's native and exported Unicode
-probes and Linux Chrome's decimal-comma reference check. See the
-[review audit](docs/verification/review-three-days-20260915.md) for coverage,
-current evidence and the unresolved verification requirements.
+The complete local gate passes with the qualified patched Linux Godot editor
+and both templates, pinned Windows Chrome 152 run through the WSL bridge, and
+a private Xvfb display. Stock Godot and Linux Chrome retain the documented
+Unicode/reference failures; use the qualified configuration in the
+[review audit](docs/verification/review-three-days-20260915.md), which records
+coverage, exact runtime hashes and the passing full-gate evidence.
 
 ## 4. Workflow recipes
 

@@ -38,10 +38,10 @@ tables remain cached for the script domain. The five PlayMode render checks
 also pass, with mixed regular/bold text inspected in the captured frame.
 
 
-The September 15 full gate completed with no skipped steps. Core and
+The first September 15 full gate completed with no skipped steps. Core and
 sanitizer suites, all 334 layout captures, both host plugin builds, Godot's
 19,833 font checks, addon exports, renderer comparisons and host scenes pass.
-The gate remains red on stock Godot's native-control and exported Unicode
+That run remained red on stock Godot's native-control and exported Unicode
 safety probes, and Linux Chrome's decimal-comma input differs from the pinned
 Windows reference. A one-byte Chrome color-rounding assertion was corrected
 and passes on both platforms. The subsequent `@scope` fix corrects containment,
@@ -54,14 +54,25 @@ declaration order, pseudo-element behavior and component boundaries; all 46
 new Chrome checks pass on Windows and Linux. Its compiler/sanitizer/layout
 and plugin checks pass, Godot's reload suite passes 23 checks, and full Unity
 EditMode passes 237 with 2 environment-gated inconclusive. The component
-render was inspected. The earlier full gate failures remain open.
+render was inspected. These affected-suite runs preceded the complete
+qualified run recorded below.
 [Full gate receipt](verification/review-full-gate-20260915.json).
 
 The final [three-day review audit](verification/review-three-days-20260915.md)
 records coverage of the original 135 commits and the subsequent fixes. The final
 Windows Chrome run passes 66 of 67 scripts with one existing documented IME
-failure. Source review is finished; full-gate verification remains blocked by
-the three failures above. No failure waiver was added.
+failure. Source review and full-gate verification are finished with the qualified
+configuration: the normal Linux Godot editor and matching debug/release templates
+with script-iterator and editor-help shutdown patches, Windows Chrome 152 through
+the WSL bridge, and a private Xvfb display. `check.sh --release` exits 0 with no
+skipped steps, including 6 native and 12 exported Unicode cases, all 12 interactive
+states and three addon export modes matching project pixels. The stale-help-cache
+regression changes four import aborts into 12 passing imports plus the reference
+cache seed. Exact hashes and evidence are in the
+[verification-fix receipt](verification/review-gate-fixes-20260915.json).
+Stock Godot and Linux Chrome retain their documented failures; no failure waiver
+or render-threshold change was added. Consumer and other-platform release
+qualification remains separate.
 
 The 9-slice demo now uses the bundled PNG with explicit CSS border-image
 slices. Chrome and Unity renders of all three image-bearing sample cases

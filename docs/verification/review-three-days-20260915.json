@@ -15,7 +15,7 @@
     }
   },
   "reviewed_through": "e274350ef5ec1b92423ebc126ee284407e6ebfa9",
-  "source_review": "Original change areas reviewed; major findings fixed in the listed commits. Verification remains blocked by the unchanged full-gate failures below.",
+  "source_review": "Original change areas reviewed; major findings fixed in the listed commits. The complete full gate now passes with the qualified Godot/browser/private-display configuration recorded in review-gate-fixes-20260915.json.",
   "scope_note": "Directory flattening was normalized using before/after Git blobs. Deleted C# implementation, tests and captures were reviewed as a migration/removal, not treated as new native code. Supporting docs, build metadata and HTML/image corpus changes were included alongside this surviving-code inventory.",
   "scope_change_records": {
     "modified": 227,
@@ -54,7 +54,7 @@
     },
     "godot_tests": {
       "paths": 11,
-      "basis": "Full-gate host scene and font checks; subsequent diagnostics/font/reload scenes rerun for changed behavior. Stock-engine Unicode probes are separately reported blockers."
+      "basis": "Full-gate host scene and font checks; subsequent diagnostics/font/reload scenes rerun for changed behavior. The qualified editor and both export templates pass the independent Unicode probes; stock-engine failures are retained as negative controls."
     },
     "samples_and_editor_helpers": {
       "paths": 5,
@@ -149,8 +149,8 @@
       "structural_gate_failures": 0
     },
     "tools": {
-      "release_oracle_tests_linux": 50,
-      "release_oracle_tests_windows_passed": 41,
+      "release_oracle_tests_linux": 54,
+      "release_oracle_tests_windows_passed": 45,
       "windows_linux_only_skips": 9,
       "text_safety_runner_tests": 9,
       "frontier_runner_tests": 32
@@ -162,29 +162,15 @@
     },
     "plugins": "Windows and Linux Unity plugins build/load; Godot extension builds. ABI/source changes were rebuilt for both hosts in each affected chunk.",
     "full_gate": {
-      "status": "blocked",
-      "exit_code": 1,
+      "status": "passed with qualified Godot, Windows Chrome and private display",
+      "exit_code": 0,
       "skipped_steps": 0,
+      "code_revision": "c635df2b2e99478c81d718ec6ba3ae28e05a2c88",
+      "receipt": "review-gate-fixes-20260915.json",
       "historical_receipt": "review-full-gate-20260915.json"
     }
   },
-  "remaining_verification_blockers": [
-    {
-      "item": "Stock Godot 4.7.2 native-control Unicode safety",
-      "result": "5 of 6 isolated cases fail",
-      "disposition": "Do not waive; needs a runtime in which these probes pass."
-    },
-    {
-      "item": "Stock Godot exported Unicode safety",
-      "result": "5 of 6 cases fail in both debug and release",
-      "disposition": "Do not waive; export templates/runtime must pass independently."
-    },
-    {
-      "item": "Linux Chrome numeric editing",
-      "result": "Decimal-comma input differs from the pinned Windows Chrome reference",
-      "disposition": "Reported without relaxing engine editing behavior or Windows expectations."
-    }
-  ],
+  "remaining_verification_blockers": [],
   "deferred_limits": [
     "Documented web-subset limits: whole-element/group masks and filters, nonseparable blending and richer ordinary border painting.",
     "Lower-priority soft-hyphen wrapping, scroll-snap logical-axis/padding details, and comprehensive OpenType/GSUB feature coverage.",
@@ -1466,5 +1452,30 @@
       "path": "third_party/icu/filter_data.py",
       "category": "unicode_data_tools"
     }
-  ]
+  ],
+  "resolved_verification_requirements": [
+    {
+      "item": "Godot native-control Unicode safety",
+      "resolution": "Use the qualified Linux editor with the script-iterator patch; all six isolated cases pass."
+    },
+    {
+      "item": "Godot exported Unicode safety",
+      "resolution": "Use both matching patched templates; all twelve relocated export cases pass with embedded ICU data. The editor shutdown patch also removes stale-help-cache import aborts."
+    },
+    {
+      "item": "Chrome numeric editing reference",
+      "resolution": "Run the same pinned Windows Chrome reference as CI through the new WSL bridge. All retained assertions run unchanged; process failures propagate."
+    }
+  ],
+  "qualified_configuration_conditions": [
+    "Stock Godot still fails five of six Unicode cases; the qualified editor and both templates must be selected together.",
+    "Linux Chrome still handles decimal commas differently; the qualified gate explicitly executes the Windows reference.",
+    "Render checks run on a private Xvfb display. The preceding shared-desktop run lost pressed/hover appearance in one capture (1.06% color difference); the unchanged private-display run passes all twelve states at 0.00%. Desktop focus interference is the inferred cause; render thresholds and input behavior were not changed.",
+    "No new conformance waiver was added. Consumer projects, other player platforms and physical input remain separate product-readiness follow-ups."
+  ],
+  "verification_fix_commits": [
+    "11c6d2fc",
+    "c635df2b"
+  ],
+  "verification_fix_evidence_root": ".utmp/review-fixes-20260915"
 }

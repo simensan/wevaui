@@ -202,6 +202,23 @@ selection still need separate work. Font availability remains platform-specific.
 
 ## Stock Godot 4.7.2 limitation
 
+### Linux editor and templates, 2026-09-15
+
+A normal Linux x64 build from `ed1daf0bf001b61586d9930840f2f1394092c079`
+with the script-iterator and editor-help shutdown patches passes the complete
+local gate, including all six native-control and all twelve debug/release export
+Unicode probes. Exported ICU data, relocation and normal template restrictions
+are checked. The editor shutdown patch prevents stale help-cache callbacks from
+running after documentation teardown; four reproducible import aborts become
+12 passing imports plus the reference cache seed.
+
+The [build recipe](../Tools/godot-text-shaping-repro/README.md) and
+[qualification receipt](verification/review-gate-fixes-20260915.json) record the
+patches, normal build arguments, exact hashes and evidence. Select this editor
+and both matching templates together. Stock installations are untouched and
+still fail the independent Unicode probes. This Linux qualification does not
+replace the earlier Windows bundle's separate evidence.
+
 ### Windows patched-engine bundle, 2026-09-08
 
 A clean Windows editor built from `ed1daf0bf001b61586d9930840f2f1394092c079`

@@ -364,7 +364,10 @@ tests: it is the only thing that can tell you the render interface is at the
 right altitude, because a wrong altitude shows up as one side being unable to
 reproduce the other.
 
-On a machine with no GPU, Mesa's software path works:
+Use a private Xvfb display for automated comparisons on Linux, including on
+an active desktop: window focus changes can clear a held pointer during readback
+and compare different interaction states. Mesa's software path works without
+a GPU:
 
 ```sh
 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 800x600x24" \
@@ -372,10 +375,11 @@ LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 800x600x24" \
     --godot /path/to/godot
 ```
 
-Blocks, borders, rounded corners and text currently come out **pixel-identical**
-between the two. Exact equality is not the standing bar — two rasterisers are
-entitled to disagree at edges — so only ink coverage gates, and channel
-differences are reported rather than enforced.
+The rasterizers may differ slightly at edges and in color rounding. The full
+gate requires less than 1% structural disagreement across the static corpus.
+For interactive states, it also requires less than 1% of pixels to exceed the
+ordinary per-channel tolerance, so a missing hover or pressed fill fails even
+when the geometry still matches.
 
 This comparison has already earned its keep twice: it found that Godot's
 default linear texture filtering both softens glyphs the core drew crisply and
