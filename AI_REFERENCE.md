@@ -136,11 +136,13 @@ check.sh                          the gate
 
 ## 5. Tooling & verification
 
-- **`check.sh`** — the whole gate (release/text-safety/performance tooling
-  suites: 21/9/32 checks; build, core tests, sanitizers, Chrome
+- **`check.sh`** — the whole gate (release-oracle/text-safety/performance tooling
+  suites: 50/9/32 checks; build, core tests, sanitizers, Chrome
   oracle, behaviour checks, plugin, addon, host tests). CI covers tooling,
   core/sanitizers, Chrome and native builds/package checks; local engine
   installations are still required for Unity suites and live Godot gates.
+  The [September 15 review audit](docs/verification/review-three-days-20260915.md)
+  records the three unresolved full-gate failures alongside the passing suites.
 - **`Tools/oracle/chrome_sweep.py --chrome-metrics --max-worst 1.5
   --known-gaps`** — every tracked case's layout against its Chrome capture.
   All 334 captures pass the 1.5px ceiling (62 hand, 225 harvest, 47 samples).

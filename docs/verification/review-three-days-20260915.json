@@ -1,0 +1,1470 @@
+{
+  "date": "2026-09-15",
+  "objective": "review and improve all work done last 3 days",
+  "review_window": {
+    "from": "2026-09-11",
+    "through": "2026-09-14",
+    "base": "e6903caae84e342ae3414e195430388870778fe2",
+    "original_head": "3e6f145d",
+    "commits": 135,
+    "ancestry_range_commits": 136,
+    "additional_ancestor": {
+      "revision": "4a679790",
+      "date": "2026-09-01",
+      "note": "Older setup change brought in by the merge; its resulting changes are included in the normalized source inventory."
+    }
+  },
+  "reviewed_through": "e274350ef5ec1b92423ebc126ee284407e6ebfa9",
+  "source_review": "Original change areas reviewed; major findings fixed in the listed commits. Verification remains blocked by the unchanged full-gate failures below.",
+  "scope_note": "Directory flattening was normalized using before/after Git blobs. Deleted C# implementation, tests and captures were reviewed as a migration/removal, not treated as new native code. Supporting docs, build metadata and HTML/image corpus changes were included alongside this surviving-code inventory.",
+  "scope_change_records": {
+    "modified": 227,
+    "removed": 3947,
+    "added": 1394
+  },
+  "surviving_code_and_tool_paths": 281,
+  "coverage": {
+    "build_release_and_benchmark_tools": {
+      "paths": 22,
+      "basis": "Flattening/path, packaging and provenance review; build/release/safety runner regressions, actual benchmark samples, backend wrappers and full gate evidence."
+    },
+    "chrome_oracle_tools": {
+      "paths": 71,
+      "basis": "Source/launcher/path and fixture review; 334 layout captures, final 67-script Windows run, focused Linux oracles and tool regression suites."
+    },
+    "core_implementation": {
+      "paths": 32,
+      "basis": "Normalized implementation diffs reviewed across parsing/cascade, components, fonts/bidi, layout, painting and ABI; targeted Chrome regressions plus full core/sanitizer/corpus suites."
+    },
+    "core_interfaces": {
+      "paths": 31,
+      "basis": "Reviewed with their implementations; both compilers, ABI generation, both host builds and dynamic-load checks."
+    },
+    "core_tests": {
+      "paths": 25,
+      "basis": "Reviewed with feature changes and run in full GCC and sanitizer suites, including allocation and incremental corpus checks."
+    },
+    "diagnostic_tools": {
+      "paths": 7,
+      "basis": "Source review and applicable render/survey smoke checks. Investigation-only tools and unbuilt frame/scroll probes are not treated as correctness gates; low-priority limitations are recorded."
+    },
+    "godot_runtime": {
+      "paths": 4,
+      "basis": "Font/input/node integration diffs reviewed; core-owned behavior remains behind ABI. Font adapter, affected scene suites, backend comparisons and addon exports executed."
+    },
+    "godot_tests": {
+      "paths": 11,
+      "basis": "Full-gate host scene and font checks; subsequent diagnostics/font/reload scenes rerun for changed behavior. Stock-engine Unicode probes are separately reported blockers."
+    },
+    "samples_and_editor_helpers": {
+      "paths": 5,
+      "basis": "Migration diff review, whole-project compilation, three image sample renders, 47 layout and host parity cases; user scenes were not edited."
+    },
+    "unicode_data_tools": {
+      "paths": 2,
+      "basis": "Checksum-pinned Unicode 17.0 and ICU 78.3 generation/packaging source reviewed; resulting native Unicode/font safety and core suites exercised."
+    },
+    "unity_abi_and_tools": {
+      "paths": 10,
+      "basis": "Build metadata, exports/static archives, generated ABI and host oracle scripts reviewed; Windows/Linux build/load, tool regressions, 47 host layout cases and 47 visual pairs."
+    },
+    "unity_editor": {
+      "paths": 8,
+      "basis": "Lifecycle and watcher source review; inspector reconnect, stable row identity, asset dependency reload and prefab/link baking regressions; full EditMode suite."
+    },
+    "unity_runtime": {
+      "paths": 23,
+      "basis": "Native wrapper, bindings, input, font/shaping, renderer and component/API review; full EditMode, PlayMode pixel checks and inspected renders."
+    },
+    "unity_tests": {
+      "paths": 30,
+      "basis": "Test changes reviewed with corresponding features; full EditMode and affected PlayMode suites executed. Two explicit environment-gated tests remain inconclusive in ordinary runs."
+    }
+  },
+  "verification": {
+    "abi": {
+      "version": "0.44",
+      "generated_imports": 142,
+      "structs": 15,
+      "enums": 10,
+      "generated_check": "current"
+    },
+    "core": {
+      "checks": 507328,
+      "failures": 0,
+      "gcc_suites": 14,
+      "sanitizer_suites": 16,
+      "compiler_warnings": 0
+    },
+    "chrome_layout": {
+      "captures": 334,
+      "ceiling_px": 1.5,
+      "over_ceiling": 0,
+      "excused": 0
+    },
+    "chrome_behaviour_windows": {
+      "scripts": 67,
+      "passed": 66,
+      "failed": 0,
+      "known_ime_failure": 1,
+      "browser": "Chrome/152.0.7977.82"
+    },
+    "unity_editmode": {
+      "total": 239,
+      "passed": 237,
+      "failed": 0,
+      "inconclusive": 2
+    },
+    "unity_native_editmode": {
+      "passed": 236,
+      "failed": 0,
+      "inconclusive": 2
+    },
+    "unity_playmode_render_checks": {
+      "passed": 5,
+      "failed": 0
+    },
+    "unity_core_layout_parity": {
+      "samples": 47,
+      "differing": 0,
+      "missing": 0
+    },
+    "unity_chrome_visual_pairs": {
+      "generated": 47,
+      "pixel_conformance_claim": false,
+      "inspected_latest": [
+        "9slice-demo",
+        "match3-endgame"
+      ]
+    },
+    "godot": {
+      "font_adapter_checks": 19833,
+      "latest_scene_checks": {
+        "diagnostics": 26,
+        "font_face": 34,
+        "reload": 23
+      },
+      "backend_samples": 47,
+      "interactive_states": 12,
+      "structural_gate_failures": 0
+    },
+    "tools": {
+      "release_oracle_tests_linux": 50,
+      "release_oracle_tests_windows_passed": 41,
+      "windows_linux_only_skips": 9,
+      "text_safety_runner_tests": 9,
+      "frontier_runner_tests": 32
+    },
+    "samples": {
+      "assets_loaded": 47,
+      "layout_benchmark_completed": 47,
+      "flip_benchmark_completed": 47
+    },
+    "plugins": "Windows and Linux Unity plugins build/load; Godot extension builds. ABI/source changes were rebuilt for both hosts in each affected chunk.",
+    "full_gate": {
+      "status": "blocked",
+      "exit_code": 1,
+      "skipped_steps": 0,
+      "historical_receipt": "review-full-gate-20260915.json"
+    }
+  },
+  "remaining_verification_blockers": [
+    {
+      "item": "Stock Godot 4.7.2 native-control Unicode safety",
+      "result": "5 of 6 isolated cases fail",
+      "disposition": "Do not waive; needs a runtime in which these probes pass."
+    },
+    {
+      "item": "Stock Godot exported Unicode safety",
+      "result": "5 of 6 cases fail in both debug and release",
+      "disposition": "Do not waive; export templates/runtime must pass independently."
+    },
+    {
+      "item": "Linux Chrome numeric editing",
+      "result": "Decimal-comma input differs from the pinned Windows Chrome reference",
+      "disposition": "Reported without relaxing engine editing behavior or Windows expectations."
+    }
+  ],
+  "deferred_limits": [
+    "Documented web-subset limits: whole-element/group masks and filters, nonseparable blending and richer ordinary border painting.",
+    "Lower-priority soft-hyphen wrapping, scroll-snap logical-axis/padding details, and comprehensive OpenType/GSUB feature coverage.",
+    "Diagnostic-only hygiene: unbuilt framebench/scrollbench argument/base-path handling and grayscale/malformed-image support in investigation decoders; use the built benchmark and current capture workflows.",
+    "Inactive legacy renderer subasset emits an existing editor warning; the active renderer feature is valid. User scene/assets were not altered for this cosmetic cleanup.",
+    "Consumer-project migration, additional player platforms and physical touch/gamepad/IME testing remain product-readiness follow-ups, not claims of this source review."
+  ],
+  "invariants": {
+    "pushed": false,
+    "user_unity_scenes_edited": false,
+    "core_remains_source_of_truth": true,
+    "new_non_web_css": false,
+    "new_failure_waivers": false,
+    "failed_evidence_preserved": true
+  },
+  "local_evidence_root": ".utmp/review-20260915",
+  "key_evidence": [
+    "full-gate-final/check.log",
+    "nesting/final",
+    "nesting/full.xml",
+    "final-audit/chrome-windows.log",
+    "final-audit/bindings.log",
+    "unity-oracle/chrome-gate.log",
+    "unity-oracle/frozen.log",
+    "unity-oracle/visual/report.json",
+    "benchmarks/tools-linux.log",
+    "benchmarks/tools-windows.log",
+    "benchmarks/compare-live.log",
+    "samples/asset-gate.log"
+  ],
+  "commits": [
+    {
+      "revision": "e6c59d65bd0c257e74f46f81f00b3bba4b923b87",
+      "subject": "fix(unity): preserve bindings and stop stale event dispatch"
+    },
+    {
+      "revision": "8a674d27c8623fa7dd96f8d7bce986c131f95f1b",
+      "subject": "fix(tools): resolve Chrome receipt paths before changing directory"
+    },
+    {
+      "revision": "94356e705557641b689649538455ce31ec62776d",
+      "subject": "fix(unity): reuse installed font faces across document lifetimes"
+    },
+    {
+      "revision": "ea0abb66005483a365bcd50a59da71e47cc451f4",
+      "subject": "fix(layout): fragment direct inline content into columns"
+    },
+    {
+      "revision": "48052af54f097fe8d80ae02ae9b4ba182f9764c7",
+      "subject": "fix(html): share parsed stylesheet links and preserve raw text"
+    },
+    {
+      "revision": "779eaca43f80aecf8cf5bdbde81581327ea89aa9",
+      "subject": "fix(unity): preserve Unicode input and stop stale input frames"
+    },
+    {
+      "revision": "c552e96fe0eb86de28b9baffef5ac0979dc1ea03",
+      "subject": "fix(build): fingerprint the correct checkout and native host"
+    },
+    {
+      "revision": "c6bc353860d2fe5ad4c0d00aab950340b42f288b",
+      "subject": "fix(unity): package complete static plugins and select iOS imports"
+    },
+    {
+      "revision": "2e521165b913315c56a46c74197689c83b87fe41",
+      "subject": "fix(css): resolve nested imports and preserve quoted URLs"
+    },
+    {
+      "revision": "58626589aceec22d1a102b0c05cddf5b11ab6bb1",
+      "subject": "fix(ci): run Chrome behavior checks with a pinned shared launcher"
+    },
+    {
+      "revision": "5f7b3c7ea43e747c7786a7dfbcf63dc319bcdd94",
+      "subject": "fix(stylesheets): preserve file boundaries and resolve asset paths once"
+    },
+    {
+      "revision": "7f40a6bcd3c2c91454fb2b08c3625265ff5c6af1",
+      "subject": "fix(css): preserve stylesheet origins for image and font URLs"
+    },
+    {
+      "revision": "c8b701bd7e137b03017b19ce7ff2668ff4ab82aa",
+      "subject": "fix(unity): share identical font bytes across document lifetimes"
+    },
+    {
+      "revision": "47f30aa868374c170a927df7a751021f31c24958",
+      "subject": "fix(unity): cache complete kerning tables across font switches"
+    },
+    {
+      "revision": "871ecb5572aa8875b753fb7d0ffc86f07fcd6cb8",
+      "subject": "fix(unity): reload actual asset dependencies and refresh cached content"
+    },
+    {
+      "revision": "bfabed5d20479c29fd7485e653da470aaf73fdaf",
+      "subject": "fix(unity): bake nested stylesheet imports for scene and prefab documents"
+    },
+    {
+      "revision": "8329c9c146f14b93fce07fa8763f2679771014a8",
+      "subject": "fix(core): parse font source descriptors with shared CSS escapes"
+    },
+    {
+      "revision": "d7b74bb742e9bf19cee2475cf64d1c805a613b18",
+      "subject": "fix(core): respect CSS color channel units and argument grammar"
+    },
+    {
+      "revision": "ff6e328b44fcfb2a60a03595d9591b9c2daadac4",
+      "subject": "fix(core): distinguish clipping from scroll containers"
+    },
+    {
+      "revision": "7c450018640e64f77e6e088486aefaa3a4e2d31b",
+      "subject": "docs: align authoring guidance with the native engine"
+    },
+    {
+      "revision": "b6c88b75d4d55c6a60015f9c6689b9f031e7cf8d",
+      "subject": "fix(core): preserve requested sibling order during hot reload"
+    },
+    {
+      "revision": "5945944451fb970b467169b8f90d21b6a348f9fb",
+      "subject": "fix(editor): reconnect Elements inspector after document changes"
+    },
+    {
+      "revision": "cb4a936159907a6c6957c1840b1732feaf52d433",
+      "subject": "fix(oracle): allow Chrome platform rounding at half-byte channels"
+    },
+    {
+      "revision": "a225c2fbed543fff5940dc5ab83a179ea28516c0",
+      "subject": "docs: record full review gate results and remaining failures"
+    },
+    {
+      "revision": "4c67b50df1aa9c3d5bdcecf4a0950a84f30db67d",
+      "subject": "fix(core): enforce CSS scope boundaries and proximity"
+    },
+    {
+      "revision": "32a6b6409f472dd26c9361c482f14ca59ce87ac9",
+      "subject": "fix(core): resolve nested CSS against its parent rules"
+    },
+    {
+      "revision": "3c70be1bc11569e4ac4ae4560c89070b5ca6833a",
+      "subject": "fix(samples): migrate nine-slice demo and preserve oracle images"
+    },
+    {
+      "revision": "482d45ee36c87facf24e463bd583dc82e37810c4",
+      "subject": "fix(unity): restore reliable host layout oracle runs"
+    },
+    {
+      "revision": "de9fe9d7b126fed4c6bd4f9fa40349010166f07a",
+      "subject": "fix(tools): replace retired goldens with fresh Chrome render pairs"
+    },
+    {
+      "revision": "3dec927c1efb282d865b826fe4bd4312836eb713",
+      "subject": "fix(oracle): route legacy commands through the Chrome gate"
+    },
+    {
+      "revision": "e274350ef5ec1b92423ebc126ee284407e6ebfa9",
+      "subject": "fix(tools): reject incomplete benchmarks and restore renderer paths"
+    }
+  ],
+  "source_inventory": [
+    {
+      "path": "Assets/Editor/SampleCyclerWindow.cs",
+      "category": "samples_and_editor_helpers"
+    },
+    {
+      "path": "Assets/Editor/UitestSceneSetup.cs",
+      "category": "samples_and_editor_helpers"
+    },
+    {
+      "path": "Assets/Scripts/MainMenuWevaController.cs",
+      "category": "samples_and_editor_helpers"
+    },
+    {
+      "path": "Assets/Scripts/UitestController.cs",
+      "category": "samples_and_editor_helpers"
+    },
+    {
+      "path": "Packages/com.wevaui/Editor/DevTools/NativeElementsWindow.cs",
+      "category": "unity_editor"
+    },
+    {
+      "path": "Packages/com.wevaui/Editor/Document/UIDocumentAssetWatcher.cs",
+      "category": "unity_editor"
+    },
+    {
+      "path": "Packages/com.wevaui/Editor/Document/WevaDocumentLinkBaker.cs",
+      "category": "unity_editor"
+    },
+    {
+      "path": "Packages/com.wevaui/Editor/Importers/TextAssetExtensionImporter.cs",
+      "category": "unity_editor"
+    },
+    {
+      "path": "Packages/com.wevaui/Editor/Setup/ShaderIncludeSetup.cs",
+      "category": "unity_editor"
+    },
+    {
+      "path": "Packages/com.wevaui/Editor/Setup/UrpFeatureSetup.cs",
+      "category": "unity_editor"
+    },
+    {
+      "path": "Packages/com.wevaui/Editor/Templates/MenuTemplate.cs",
+      "category": "unity_editor"
+    },
+    {
+      "path": "Packages/com.wevaui/Editor/WevaDocumentEditor.cs",
+      "category": "unity_editor"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/AssemblyInfo.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/IUINativePaintSource.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/NativeBindings.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/NativeDocument.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/NativeDocumentRenderer.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/NativeInputFeed.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/NativeInspectorModel.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/NativeLayoutDump.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/Resources/Weva-NativeBackdrop.shader",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/Resources/Weva-NativeMesh.shader",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/SyntheticFontBackend.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/UIBindResolver.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/UnityFontBackend.Indic.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/UnityFontBackend.Shaping.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/UnityFontBackend.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/WevaNative.g.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Rendering/Backend/IUIPaintSource.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Rendering/URP/UIBatchedRendererFeature.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Rendering/URP/UIRenderGraphPass.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/Rendering/UrpFeatureStatus.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/WevaDocument.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/WevaElement.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Runtime/WevaEvent.cs",
+      "category": "unity_runtime"
+    },
+    {
+      "path": "Packages/com.wevaui/Samples~/PhaseOneDemo/Scripts/PhaseOneDemoController.cs",
+      "category": "samples_and_editor_helpers"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/EditorSmokeTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/FrontierCampNativeTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/FrontierCampState.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeBidiTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeBindingTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeBlendTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeBoxTreeTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeChangeTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeColorSchemeTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeControllerBindingTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeCursorTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeDocumentRenderTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeDocumentRoundTripTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeElementsWindowTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeFontFaceLocalTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeFontFaceWeightTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeHtmlDiagnosticsTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeInputFeedTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeInputTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeInspectorModelTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeInspectorTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeLayoutDumpTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeLinkedStylesheetTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeReloadTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeSafeAreaTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/NativeStatsTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/UnityFontBackendTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Editor/Native/WevaElementTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Runtime/RenderGoldens/NativeGameViewCaptureTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Packages/com.wevaui/Tests/Runtime/Rendering/NativeRenderPassTests.cs",
+      "category": "unity_tests"
+    },
+    {
+      "path": "Tools/Layout/capture-all-chrome-layouts.mjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/Layout/check-form-baseline.mjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/check_cached_ids.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/check_oracle_summary.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/flipbench.sh",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/framebench.cpp",
+      "category": "diagnostic_tools"
+    },
+    {
+      "path": "Tools/generate_graphemes.py",
+      "category": "unicode_data_tools"
+    },
+    {
+      "path": "Tools/godot-ime-repro/ime_native_probe.gd",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/godot-text-shaping-repro/check.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/godot-text-shaping-repro/check_exports.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/godot-text-shaping-repro/probe.gd",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/godot-text-shaping-repro/test_check.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/godot-text-shaping-repro/test_exports.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/gradsize/main.cpp",
+      "category": "diagnostic_tools"
+    },
+    {
+      "path": "Tools/layoutbench.sh",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/oracle/check_animation_clocks_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_animation_composition_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_animation_endpoints_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_block_margins_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_column_span_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_conditional_keyframes_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_corner_radius_chrome.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_delayed_transitions_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_dialog_focus_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_dialog_popover_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_eased_reversal_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_font_inheritance_chrome.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_font_size_context_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_form_state_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_hidden_transitions_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_ime_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_item_context_chrome.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_keyboard_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_line_height_chrome.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_long_transitions_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_maxlength_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_multicol_sizing_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_number_editing_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_number_steps_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_popover_beforetoggle_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_popover_chains_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_popover_focus_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_popover_outside_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_popover_pointer_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_popover_transition_order_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_positioned_overflow_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_range_direction_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_range_selectors_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_select_autoscroll_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_select_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_select_intrinsic_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_select_width_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_border_alpha_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_border_junctions_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_borders_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_box_sizing_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_caption_paint_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_captions_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_content_order_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_narrow_sizing_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_opacity_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_row_groups_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_sizing_constraints_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_table_stacking_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_template_inert_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_text_autoscroll_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_text_editing_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_transformed_input_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_transition_cancellation_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_transition_reversal_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_typeahead_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_unknown_at_rules_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/check_validity_selectors_chrome.cjs",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/chrome_survey.py",
+      "category": "diagnostic_tools"
+    },
+    {
+      "path": "Tools/oracle/chrome_sweep.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/collect_samples.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/diff.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/generate_number_step_fixture.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/harvest.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/harvest_corpus.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/imgio.py",
+      "category": "diagnostic_tools"
+    },
+    {
+      "path": "Tools/oracle/make_mono_font.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/run.sh",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/run_chrome_checks.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/run_oracle.py",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/survey_all.sh",
+      "category": "chrome_oracle_tools"
+    },
+    {
+      "path": "Tools/oracle/visual_rank.py",
+      "category": "diagnostic_tools"
+    },
+    {
+      "path": "Tools/oracle/visual_rank_soft.py",
+      "category": "diagnostic_tools"
+    },
+    {
+      "path": "Tools/sanitizer_probe.cpp",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/scrollbench.cpp",
+      "category": "diagnostic_tools"
+    },
+    {
+      "path": "Tools/tests/test_release_gates.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/weva_bench/main.cpp",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/weva_dump/main.cpp",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "Tools/weva_render/main.cpp",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "check.sh",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "hosts/godot/check_font_shaping.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "hosts/godot/compare_live.sh",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "hosts/godot/frontier_chrome.gd",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "hosts/godot/package_addon.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "hosts/godot/project/bidi_tests.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/dialog_cancel_tests.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/font_face_tests.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/frameprobe.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/gallery.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/hover_tests.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/incremental_probe.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/input_integration_tests.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/statprobe.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/project/text_autoscroll_tests.gd",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/godot/run_frontier_chrome.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "hosts/godot/run_frontier_perf.py",
+      "category": "build_release_and_benchmark_tools"
+    },
+    {
+      "path": "hosts/godot/src/godot_font.cpp",
+      "category": "godot_runtime"
+    },
+    {
+      "path": "hosts/godot/src/godot_font.h",
+      "category": "godot_runtime"
+    },
+    {
+      "path": "hosts/godot/src/weva_node.cpp",
+      "category": "godot_runtime"
+    },
+    {
+      "path": "hosts/godot/src/weva_node.h",
+      "category": "godot_runtime"
+    },
+    {
+      "path": "hosts/godot/tests/font_backend_tests.cpp",
+      "category": "godot_tests"
+    },
+    {
+      "path": "hosts/unity/build_metadata.py",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/bundle_notices.py",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/compare_hosts.py",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/gen_bindings.py",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/gen_exports.py",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/goldens_from_unity.py",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/oracle_from_unity.py",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/src/plugin.cpp",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/src/weva_unity.h",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "hosts/unity/tests/load_test.cpp",
+      "category": "unity_abi_and_tools"
+    },
+    {
+      "path": "libweva/include/weva/anchor.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/at_import.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/background.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/bidi.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/block_layout.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/box.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/box_builder.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/cascade.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/charconv_compat.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/color_space.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/component_scoping.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/components.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/computed_style.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/env_attr.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/flex.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/form_values.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/grid.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/hit_test.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/html.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/image_store.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/inline_layout.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/layout_dump.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/multicol.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/paint.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/render_interface.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/scroll_snap.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/sticky.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/style_resolver.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/variable_resolver.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva/writing_mode.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/include/weva_c.h",
+      "category": "core_interfaces"
+    },
+    {
+      "path": "libweva/src/at_import.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/background.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/bidi.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/block_layout.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/box_builder.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/cascade.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/color_space.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/component_scoping.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/components.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/computed_style.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/css_tokenizer.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/css_value.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/env_attr.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/flex.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/grid.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/hit_test.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/html_parser.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/image_store.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/inline_layout.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/layout_dump.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/media.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/multicol.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/paint.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/positioning.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/scroll_snap.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/shorthand.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/sticky.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/style_resolver.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/user_agent_stylesheet.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/variable_resolver.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/weva_c.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/src/writing_mode.cpp",
+      "category": "core_implementation"
+    },
+    {
+      "path": "libweva/tests/blur_portable_reference.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/main.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_backdrop_filter.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_background.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_c_abi.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_c_abi_binding.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_c_abi_font_families.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_c_abi_forms.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_c_abi_incremental.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_c_abi_input_repeat.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_c_abi_scroll.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_c_abi_text_props.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_cascade.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_cascade_store.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_clip_allocations.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_components.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_css_value.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_env_attr.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_flex.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_form_state.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_inline_layout.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_multicol.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_select_controls.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_table.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "libweva/tests/test_writing_mode.cpp",
+      "category": "core_tests"
+    },
+    {
+      "path": "third_party/icu/filter_data.py",
+      "category": "unicode_data_tools"
+    }
+  ]
+}

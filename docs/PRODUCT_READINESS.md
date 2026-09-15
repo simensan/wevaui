@@ -16,7 +16,7 @@ no consumer project has yet been opened on 1.0.
 | Requirement | Current assessment and next evidence needed |
 |---|---|
 | The component and the controller model | `WevaDocument` keeps its 0.1.x name, script GUID and serialized fields, so a scene carries over; `[UIBind]`, `data-each`/`data-model`, `on-<event>`, `SetController` carry over. Verified by the Native EditMode suite (236 pass, 2 env-gated inconclusive; full EditMode 237 pass, 2 inconclusive) -- bindings, rows, typed write-back through nested collections, dictionary binding across disable/enable, dispatch, reload. Not yet verified: a real consumer project (TestWeva, Wavebound) opened on 1.0. |
-| The element API | `WevaElement` / `WevaEvent` are the supported surface (`api-stability.md`); `Weva.Native` is public but unsupported. 17 `WevaElementTests`, including callbacks that disable/reload the document and recursive event pumping. Programmatic `Value` assignment raises no input/change events; bound values are changed through their model. |
+| The element API | `WevaElement` / `WevaEvent` are the supported surface (`api-stability.md`); `Weva.Native` is internal and unsupported. 17 `WevaElementTests`, including callbacks that disable/reload the document and recursive event pumping. Programmatic `Value` assignment raises no input/change events; bound values are changed through their model. |
 | Rendering | `UIRenderGraphPass` draws the draw list into the camera target; `NativeRenderPassTests` (PlayMode, 5 cases) check the pixels: drawn, stacked by `SortingOrder`, gone when disabled, repainted on change, text, backdrop-filter (the frame is routed through URP's intermediate texture when a backdrop draw is due, asserted by the test; at `AfterRendering` the target is always the back buffer, which cannot be sampled). Not verified: any platform but Windows. |
 | Layout conformance | All 334 Chrome captures pass the 1.5px ceiling (62 hand, 225 harvest, 47 samples; no case excused). Direct inline content and inline-block multi-column containers are covered by the new capture and core regressions. The core passes 14 gcc suites (507,328 checks) and 16 sanitizer suites. `goldens_from_unity.py` produces fresh Unity/Chrome image pairs for visual review; real text metrics remain the host font backend's. |
 | Input | Mouse, keyboard with core-owned repeat and double-click, touch, gamepad navigation, IME; every row of `INPUT_PARITY.md` pinned by `NativeInputFeedTests` / `NativeInputTests` through the Input System's test fixture, including astral text, disposal/reload during input handoffs, and pending key releases. Not verified: a physical touchscreen, a physical gamepad, a physical IME. |
@@ -56,6 +56,12 @@ and plugin checks pass, Godot's reload suite passes 23 checks, and full Unity
 EditMode passes 237 with 2 environment-gated inconclusive. The component
 render was inspected. The earlier full gate failures remain open.
 [Full gate receipt](verification/review-full-gate-20260915.json).
+
+The final [three-day review audit](verification/review-three-days-20260915.md)
+records coverage of the original 135 commits and the subsequent fixes. The final
+Windows Chrome run passes 66 of 67 scripts with one existing documented IME
+failure. Source review is finished; full-gate verification remains blocked by
+the three failures above. No failure waiver was added.
 
 The 9-slice demo now uses the bundled PNG with explicit CSS border-image
 slices. Chrome and Unity renders of all three image-bearing sample cases
