@@ -65,8 +65,8 @@ siblings. Use a more specific selector instead.
   lengths, percentages, and numbers. `attr()` typed forms work in any
   property-value context (substituted at computed-value time like `var()`,
   including inside `calc()`, through `var()` indirection, and in shorthands),
-  `env()` (safe-area names pre-registered; host can register more via
-  `EnvironmentVariables.Register`).
+  `env()` (the host supplies per-document safe-area inset values through the
+  native API; the retired `EnvironmentVariables.Register` C# API is unavailable).
 - **Colors:** `#hex`, `rgb()`/`rgba()`, `hsl()`/`hsla()`, `hwb()`, `lab()`,
   `lch()`, `oklab()`, `oklch()`, `color()`, named colors, `currentColor`,
   `color-mix()`, and `light-dark()`. Modern RGB syntax permits mixed numbers

@@ -91,18 +91,19 @@ Work down this list — it's ordered by how often each one is the cause:
 
 ## Text looks wrong
 
-- **Everything sits a few px lower than Chrome.** That's the intentional
-  default-face metric divergence (bundled Inter vs Chrome's Arial), not a bug —
-  see [Text & Fonts](text-and-fonts.md). Assign your own face to match a
-  target exactly.
+- **Everything sits a few px lower than Chrome.** Check that both pages use
+  the same font file, size and line height. Bundled Inter and Chrome's default
+  Arial have different metrics; see [Text & Fonts](text-and-fonts.md).
 - **My font doesn't load.** Assign it on the component (`Font` / `Bold` /
-  `Italic`), or declare `@font-face` with a `url()` relative to `BasePath` or
-  a `local("Installed Name")`. Missing faces fall back to the default face
+  `Italic`), or declare `@font-face` with a `url()` relative to its linked
+  stylesheet (or `BasePath` for inline CSS), or a `local("Installed Name")`.
+  Missing faces fall back to the default face
   rather than failing invisibly.
 - **Arabic letters don't join / a word's letters are reversed.** The core
-  reorders bidi runs; glyph shaping on Unity is one glyph per code point, so
-  contextual forms are not produced. See "Localization & RTL" in
-  [AuthoringGuide §15](AuthoringGuide.md).
+  reorders bidi runs and Unity can shape contextual Arabic forms from font
+  bytes. A Unity Font asset uses a more limited substitution path. Try an
+  appropriate font loaded through `@font-face` or an installed family, and
+  check the current script coverage in [Text & Fonts](text-and-fonts.md).
 
 ## Performance / stutter
 

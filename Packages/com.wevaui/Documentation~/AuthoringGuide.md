@@ -441,8 +441,9 @@ base. Hebrew and Arabic need a face that has them: with `SystemFontFallback`
 on (the default) the platform's UI font answers (Segoe UI, Arial, DejaVu
 Sans); a face of your own comes in through `@font-face` (`url()` or
 `local(…)`), which carries the bytes the shaper reads — a `Font` asset in
-`Fallbacks` draws its glyphs but gets no substitutions. Vertical writing modes
-are not implemented.
+`Fallbacks` draws its glyphs but gets no substitutions. `vertical-rl` and
+`vertical-lr` support orthogonal flow with rotated glyph geometry; full mixed
+upright/sideways orientation is not implemented. See [CSS Layout](css-layout.md).
 
 ## 16. Where to look next
 
