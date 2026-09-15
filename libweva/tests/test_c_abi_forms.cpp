@@ -5066,3 +5066,183 @@ void test_abi_interaction_version() {
     CHECK(weva_document_interaction_version(doc.d) != focused);
     CHECK(weva_document_focus(doc.d) == a);
 }
+
+// Expectations captured by Tools/oracle/check_scope_chrome.cjs in Chrome 152.
+void test_abi_scopes() {
+    struct Case {
+        const char* name;
+        const char* html;
+        const char* css;
+        std::vector<std::string> colors;
+    };
+    const Case cases[] = {
+        {"default root match",
+         "<p class=target></p>",
+         "@scope (.target){.target{background:red}}", {"lime"}},
+        {"outside ancestor without scope",
+         "<div class=outer><section class=card><p class=target></p></section></div>",
+         "@scope (.card){.outer .target{background:red}}", {"lime"}},
+        {"relative child",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer){> .target{background:red}}", {"red"}},
+        {"ampersand root",
+         "<p class=target></p>",
+         "@scope (.target){&{background:red}}", {"lime"}},
+        {"nested explicit same root",
+         "<div class=\"target outer\"></div>",
+         "@scope (.outer){@scope (:scope){:scope{background:red}}}", {"red"}},
+        {"nested root instances",
+         "<div class=card><div class=card><p class=target></p></div></div>",
+         "@scope (.card){@scope (.card){.target{background:red}}}", {"red"}},
+        {"nearest root wins",
+         "<div class=outer><div class=inner><p class=target></p></div></div>",
+         "@scope (.inner){.target{background:red}} @scope (.outer){.target{background:blue}}", {"red"}},
+        {"nested root cannot escape",
+         "<div class=outer><div class=inner><p class=target></p></div></div>",
+         "@scope (.inner){@scope (.outer){.target{background:red}}}", {"lime"}},
+        {"unknown root pseudo",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (:bogus){.target{background:red}}", {"lime"}},
+        {"empty explicit root",
+         "<p class=target></p>",
+         "@scope (){.target{background:red}}", {"lime"}},
+        {"trailing garbage",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer) junk {.target{background:red}}", {"lime"}},
+        {"quoted parenthesis",
+         "<div data-key=\")\"><p class=target></p></div>",
+         "@scope ([data-key=\")\"]){.target{background:red}}", {"red"}},
+        {"scope has dependency",
+         "<div class=card><i class=on></i><p class=target></p></div><div class=card><i></i><p class=target></p></div>",
+         "@scope (.card:has(.on)){.target{background:red}}", {"red", "lime"}},
+        {"scope sibling dependency",
+         "<div class=card><p class=target></p></div><div class=card><p class=target></p></div>",
+         "@scope (.card:nth-child(2)){.target{background:red}}", {"lime", "red"}},
+        {"limit has dependency",
+         "<div class=outer><div class=card><i class=on></i><p class=target></p></div><div class=card><i></i><p class=target></p></div></div>",
+         "@scope (.outer) to (.card:has(.on)){.target{background:red}}", {"lime", "red"}},
+        {"outer scope fallback",
+         "<div class=\"outer card\"><div class=card><p class=target></p></div></div>",
+         "@scope (.card){@scope (.outer){.target{background:red}}}", {"lime"}},
+        {"body scope fallback",
+         "<div class=\"outer card\"><div class=card><p class=target></p></div></div>",
+         "@scope (.card){.outer:scope .target{background:red}}", {"red"}},
+        {"nested implicit root",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer){@scope{:scope > .target{background:red}}}", {"lime"}},
+        {"invalid root list",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer, :bogus){.target{background:red}}", {"lime"}},
+        {"invalid limit",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer) to (:bogus){.target{background:red}}", {"lime"}},
+        {"invalid limit list",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer) to (.cut, :bogus){.target{background:red}}", {"lime"}},
+        {"empty limit",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer) to (){.target{background:red}}", {"lime"}},
+        {"quoted parenthesis boundary",
+         "<div data-key=\")\"><p class=target></p></div><div><p class=target></p></div>",
+         "@scope ([data-key=\")\"]){.target{background:red}}", {"red", "lime"}},
+        {"scope specificity before proximity",
+         "<div class=outer><div class=inner><p class=target></p></div></div>",
+         "@scope (.outer){.target.target{background:red}}@scope (.inner){.target{background:blue}}", {"red"}},
+        {"scope before source order",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer){.target{background:red}}.target{background:blue}", {"red"}},
+        {"same distance source order",
+         "<div class=outer><p class=target></p></div>",
+         "@scope (.outer){.target{background:red}}@scope (.outer){.target{background:blue}}", {"blue"}},
+        {"explicit root specificity",
+         "<p class=target></p>",
+         "@scope (.target){:scope{background:red}}", {"red"}},
+        {"ampersand root matching",
+         "<p class=target></p>",
+         "@scope (.target){&.target{background:red}}", {"red"}},
+        {"explicit ancestor outside boundary",
+         "<div class=outer><div class=card><p class=target></p></div></div>",
+         "@scope (.card){.outer :scope .target{background:red}}", {"red"}},
+        {"limit relative child",
+         "<div class=outer><div class=cut><p class=target></p></div><div><div class=cut><p class=target></p></div></div></div>",
+         "@scope (.outer) to (> .cut){.target{background:red}}", {"lime", "red"}},
+        {"implicit owned root",
+         "<div><style>@scope{:scope > .target{background:red}}</style><p class=target></p></div><div><p class=target></p></div>",
+         "", {"red", "lime"}},
+        {"implicit head root",
+         "<p class=target></p>",
+         "@scope{.target{background:red}}", {"lime"}},
+        {"nested limit excludes inner",
+         "<div class=outer><div class=cut><div class=inner><p class=target></p></div></div><div class=inner><p class=target></p></div></div>",
+         "@scope (.outer) to (.cut){@scope (.inner){.target{background:red}}}", {"lime", "red"}},
+    };
+    for (const auto& test : cases) {
+        const std::string markup = std::string("<style>.target{background:lime}") +
+            test.css + "</style>" + test.html;
+        Doc doc("", markup.c_str());
+        weva_element_t targets[8]{};
+        const size_t count = weva_document_query_all(doc.d, ".target", targets, 8);
+        CHECK(count == test.colors.size());
+        for (size_t i = 0; i < std::min(count, test.colors.size()); ++i) {
+            char value[128]{};
+            weva_element_computed_style(doc.d, targets[i], "background-color", value, sizeof(value));
+            CHECK_EQ(std::string(test.name) + ": " + value,
+                     std::string(test.name) + ": " + test.colors[i]);
+        }
+    }
+    const auto background = [](weva_document_t doc, const char* selector) {
+        char value[128]{};
+        weva_element_computed_style(doc, weva_document_query(doc, selector),
+                                    "background-color", value, sizeof(value));
+        return std::string(value);
+    };
+    // Boundary dependencies must participate in incremental invalidation as
+    // well as initial cache classification: a sibling toggles the scope.
+    for (bool limit : {false, true}) {
+        const std::string css = std::string(".target{background:lime}") +
+            (limit ? "@scope (.outer) to (.card:has(.on))" : "@scope (.card:has(.on))") +
+            "{.target{background:red}}";
+        Doc doc(css.c_str(), "<div class=outer><div class=card><i id=flag></i>"
+                             "<p class=target></p></div></div>");
+        CHECK_EQ(background(doc.d, ".target"), limit ? "red" : "lime");
+        const auto flag = weva_document_query(doc.d, "#flag");
+        CHECK(weva_element_set_attribute(doc.d, flag, "class", "on") == WEVA_OK);
+        CHECK(weva_document_update(doc.d, 0) == WEVA_OK);
+        CHECK_EQ(background(doc.d, ".target"), limit ? "lime" : "red");
+        CHECK(weva_element_set_attribute(doc.d, flag, "class", "") == WEVA_OK);
+        CHECK(weva_document_update(doc.d, 0) == WEVA_OK);
+        CHECK_EQ(background(doc.d, ".target"), limit ? "red" : "lime");
+    }
+    for (const char* state : {"hover", "active"}) for (bool limit : {false, true}) {
+        const std::string css = std::string(".target{background:lime;width:80px;height:30px}") +
+            (limit ? "@scope (.outer) to (.card:" : "@scope (.card:") + state +
+            "){.target{background:red}}";
+        Doc doc(css.c_str(), "<div class=outer><div class=card><p class=target></p></div></div>");
+        CHECK_EQ(background(doc.d, ".target"), limit ? "red" : "lime");
+        double x = 0, y = 0, width = 0, height = 0;
+        CHECK(weva_element_bounds(doc.d, weva_document_query(doc.d, ".target"),
+                                  &x, &y, &width, &height) == WEVA_OK);
+        weva_document_set_pointer(doc.d, x + 2, y + 2, std::strcmp(state, "active") == 0 ? 1 : 0);
+        CHECK(weva_document_update(doc.d, 0) == WEVA_OK);
+        CHECK_EQ(background(doc.d, ".target"), limit ? "lime" : "red");
+        weva_document_set_pointer(doc.d, 390, 290, 0);
+        CHECK(weva_document_update(doc.d, 0) == WEVA_OK);
+        CHECK_EQ(background(doc.d, ".target"), limit ? "red" : "lime");
+    }
+    // An inline sheet's owner is rebuilt with the document after hot reload.
+    {
+        const char* html = "<style>.target{background:lime}</style><div id=first>"
+            "<style>@scope{.target{background:red}}</style><p class=target></p></div>"
+            "<div id=second><p class=target></p></div>";
+        Doc doc("", html);
+        CHECK_EQ(background(doc.d, "#first .target"), "red");
+        CHECK_EQ(background(doc.d, "#second .target"), "lime");
+        const char* reloaded = "<style>.target{background:lime}</style><div id=first>"
+            "<p class=target></p></div><div id=second>"
+            "<style>@scope{.target{background:red}}</style><p class=target></p></div>";
+        CHECK(weva_document_reload_html(doc.d, reloaded, std::strlen(reloaded)) == WEVA_OK);
+        CHECK(weva_document_update(doc.d, 0) == WEVA_OK);
+        CHECK_EQ(background(doc.d, "#first .target"), "lime");
+        CHECK_EQ(background(doc.d, "#second .target"), "red");
+    }
+}

@@ -818,6 +818,21 @@ carries a template replaces that component's sheet. The attribute names and
 the rewritten selector text are byte-identical to the C# `ScopeMarkers` /
 `SelectorScoper`, so a scoped sheet reads the same on either side.
 
+CSS `@scope` compiles root and limit selectors alongside each enclosed rule.
+Invalid preludes discard the block. Relative selectors receive a zero-specificity
+descendant anchor unless they explicitly contain `:scope` or `&`; `&` itself
+acts as `:where(:scope)`. Matching retains all valid nested root instances and
+uses the closest instance whose body selector matches. Its distance breaks
+specificity ties before source order, for ordinary and pseudo-element rules.
+Boundary selectors also participate in state reach and cache dependency
+classification. Ancestor positional boundaries and implicit owner identity
+disable shape sharing; simple explicit class/id scopes retain it.
+
+An inline `Stylesheet` borrows its owning `<style>` parent's element pointer
+for an omitted scope root. Markup reload rebuilds these sheets and pointers;
+host-supplied sheets have no owner and use the document element. These are
+internal core fields, with no additional host or ABI scope machinery.
+
 ## The C ABI
 
 Narrow by construction. Sketch, not final:

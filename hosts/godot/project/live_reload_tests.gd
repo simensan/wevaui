@@ -42,6 +42,20 @@ func _ready() -> void:
 	check(is_equal_approx(reordered.query_bounds("#a").position.y, 40.0), "last reversed sibling is at the bottom")
 	reordered.free()
 
+	var scoped := WevaDocument.new()
+	scoped.use_engine_font = false
+	scoped.css = ".target{background:lime}"
+	scoped.html = "<div id=first><style>@scope{.target{background:red}}</style><p class=target></p></div><div id=second><p class=target></p></div>"
+	add_child(scoped)
+	scoped.update_document(0)
+	check(scoped.get_computed_style("#first .target", "background-color") == "red", "implicit scope starts at style owner")
+	check(scoped.get_computed_style("#second .target", "background-color") == "lime", "implicit scope excludes other owners")
+	scoped.reload_html("<div id=first><p class=target></p></div><div id=second><style>@scope{.target{background:red}}</style><p class=target></p></div>")
+	scoped.update_document(0)
+	check(scoped.get_computed_style("#first .target", "background-color") == "lime", "reloaded scope leaves previous owner")
+	check(scoped.get_computed_style("#second .target", "background-color") == "red", "reloaded scope uses new owner")
+	scoped.free()
+
 	DirAccess.make_dir_recursive_absolute(DIR)
 	write(DIR + "/screen.html", '<div id="a">one</div><span id="name">{{ Name }}</span>')
 	write(DIR + "/screen.css", "#a { color: rgb(1, 2, 3); }")

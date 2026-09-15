@@ -433,6 +433,7 @@ void test_abi_bidi_nested_spans();
 void test_abi_safe_area_insets();
 void test_abi_scroll_behavior_smooth();
 void test_abi_individual_transform_hit_test();
+void test_abi_scopes();
 void test_abi_style_elements_and_component_styles();
 void test_abi_textarea_edits_its_content();
 void test_abi_textarea_newlines();
@@ -1020,6 +1021,7 @@ int main() {
     test_abi_safe_area_insets();
     test_abi_scroll_behavior_smooth();
     test_abi_individual_transform_hit_test();
+    test_abi_scopes();
     test_abi_style_elements_and_component_styles();
     test_abi_textarea_edits_its_content();
     test_abi_textarea_newlines();

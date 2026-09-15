@@ -16,6 +16,8 @@
 
 namespace weva {
 
+class Element;
+
 struct Declaration {
     std::string property;    // ASCII-lowercased
     std::string value_text;  // reconstructed source text, trimmed
@@ -60,6 +62,9 @@ struct GenericAtRule : Rule {
 struct Stylesheet {
     std::vector<RulePtr> rules;
     std::string source_url;
+    // Borrowed parent of an inline <style>, for @scope with no explicit root.
+    // Unowned sheets use the document element. The owner outlives the sheet.
+    const Element* scope_root = nullptr;
 };
 
 // Mirrors CssParser.Parse. In strict mode a malformed construct fails the

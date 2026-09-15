@@ -55,6 +55,7 @@ struct StateReach {
 // Unlayered rules outrank every layered rule for normal declarations, and LOSE
 // to them for !important. A large sentinel gives that ordering for free.
 constexpr int kUnlayeredOrdinal = 0x7FFFFFFF;
+constexpr int kUnscopedDistance = 0x7FFFFFFF;
 
 struct MatchedDeclaration {
     const Declaration* declaration = nullptr;
@@ -66,6 +67,7 @@ struct MatchedDeclaration {
     int layer_ordinal = kUnlayeredOrdinal;
     std::string selector_text;
     const std::string* source_url = nullptr;
+    int scope_distance = kUnscopedDistance;
 };
 
 // The ordering fields of a MatchedDeclaration without the borrowed Declaration
@@ -85,6 +87,7 @@ struct CascadeKey {
     bool important = false;
     uint64_t generation = 0;
     const std::string* source_url = nullptr;
+    int scope_distance = kUnscopedDistance;
 
     static CascadeKey of(const MatchedDeclaration& m, uint64_t generation);
 };
@@ -244,10 +247,12 @@ private:
     // CSS Cascade 6 §2.5 `@scope (<root>) to (<limit>)`: a rule inside it
     // matches only elements under an element the root selectors match and
     // not at or under one the limit selectors match; `:scope` in the rule is
-    // that root. No root selectors means the document element.
+    // that root. An omitted root uses the stylesheet owner's parent, or the
+    // document element for a stylesheet without an owner.
     struct ScopeSpec {
         std::vector<CompiledSelector> roots;
         std::vector<CompiledSelector> limits;
+        const Element* implicit_root = nullptr;
     };
 
     struct CompiledRule {
@@ -305,12 +310,13 @@ private:
     uint64_t container_generation_ = 1;
     std::vector<size_t> compiling_containers_;
     std::vector<std::shared_ptr<const ScopeSpec>> compiling_scopes_;
+    const Element* compiling_scope_root_ = nullptr;
     const ContainerQueryProvider* container_provider_ = nullptr;
     bool container_matches(const CompiledRule& rule, const Element& element) const;
-    // Whether every @scope the rule sits in holds for `e`; the innermost root
-    // comes back as the `:scope` to match the selector against.
-    bool scopes_hold(const CompiledRule& rule, const Element& e, const ElementStateProvider& state,
-                     const Element** scope_root) const;
+    // Match against every valid scope instance, keeping the closest matching
+    // innermost root for the proximity axis of the cascade.
+    bool rule_matches(const CompiledRule& rule, const Element& e,
+                      const ElementStateProvider& state, bool pseudo, int* distance) const;
     mutable std::map<uint64_t, std::vector<MatchedDeclaration>> shape_cache_;
     // Where an UNCACHEABLE element's matches live: an element with an inline
     // style, or any element at all when the sheets use sibling combinators or
@@ -321,6 +327,7 @@ private:
     // Sheet-wide opt-outs, computed once at rule-compile time.
     bool cache_unsafe_sibling_composition_ = false;  // `p + p`, :nth-of-type, ...
     bool cache_unsafe_has_ = false;                  // :has() depends on descendants
+    bool cache_unsafe_scope_ = false;                // ancestor rank or owner identity
     StateReach has_subject_reach_; // Possible rightmost subjects of :has-dependent rules.
     StateReach hover_reach_;                         // what :hover can match
     StateReach active_reach_;                        // what :active can match

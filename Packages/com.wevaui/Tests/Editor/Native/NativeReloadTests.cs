@@ -72,5 +72,43 @@ namespace Weva.Tests.EditorTests.Native
                 }
             }
         }
+
+        [Test]
+        public void ReloadHtml_RebindsImplicitScopeToItsStylesheetOwner()
+        {
+            const string first = "<div id=first><style>@scope{.target{background:red}}</style>"
+                + "<p class=target></p></div><div id=second><p class=target></p></div>";
+            const string second = "<div id=first><p class=target></p></div><div id=second>"
+                + "<style>@scope{.target{background:red}}</style><p class=target></p></div>";
+            _doc.SetCss("body,p{margin:0}.target{width:180px;height:40px;background:lime}");
+            _doc.LoadHtml(first);
+            _doc.Update(0);
+            string Background(string selector) => _doc.ComputedStyle(_doc.Query(selector))
+                .Find(pair => pair.Key == "background-color").Value;
+            Assert.That(Background("#first .target"), Is.EqualTo("red"));
+            Assert.That(Background("#second .target"), Is.EqualTo("lime"));
+            _doc.ReloadHtml(second);
+            _doc.Update(0);
+            Assert.That(Background("#first .target"), Is.EqualTo("lime"));
+            Assert.That(Background("#second .target"), Is.EqualTo("red"));
+            using (var renderer = new NativeDocumentRenderer())
+            {
+                Texture2D image = renderer.RenderToTexture(_doc, 180, 80, Color.white);
+                try
+                {
+                    Assert.That(image.GetPixel(20, 60).g, Is.GreaterThan(0.95f));
+                    Assert.That(image.GetPixel(20, 60).r, Is.LessThan(0.05f));
+                    Assert.That(image.GetPixel(20, 20).r, Is.GreaterThan(0.95f));
+                    Assert.That(image.GetPixel(20, 20).g, Is.LessThan(0.05f));
+                    string dump = Environment.GetEnvironmentVariable("WEVA_SCOPE_DUMP");
+                    if (!string.IsNullOrEmpty(dump))
+                    {
+                        Directory.CreateDirectory(dump);
+                        File.WriteAllBytes(Path.Combine(dump, "scope-owner.png"), image.EncodeToPNG());
+                    }
+                }
+                finally { UnityEngine.Object.DestroyImmediate(image); }
+            }
+        }
     }
 }

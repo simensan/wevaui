@@ -4056,6 +4056,7 @@ static void collect_inline_sheets(weva_document* doc) {
             auto sheet = std::make_unique<Stylesheet>();
             CssParseError err;
             if (!parse_stylesheet(css, false, sheet.get(), &err)) continue;
+            sheet->scope_root = node->is_element() ? static_cast<const Element*>(node) : nullptr;
             expand_document_imports(doc, sheet.get());
             doc->inline_sheets.push_back(std::move(sheet));
         }

@@ -253,6 +253,18 @@ void test_cascade_scope() {
     bool listed = false;
     for (const auto& n : f.engine.unsupported_at_rules()) if (n == "scope") listed = true;
     CHECK(!listed);
+    // Pseudo-element rules use the same scope boundary and proximity ordering.
+    {
+        Fixture p;
+        CHECK(p.html("<div class=outer><div class=inner><p id=target></p></div></div>"));
+        CHECK(p.css("@scope (.inner){p::before{content:'inner';color:red}}"
+                    "@scope (.outer){p::before{content:'outer';color:blue}}"));
+        ComputedStyle host, pseudo;
+        p.engine.compute(*p.id("target"), p.state, nullptr, &host);
+        CHECK(p.engine.compute_pseudo_element(*p.id("target"), "before", p.state, host, &pseudo));
+        CHECK(pseudo.get("color") == "red");
+        CHECK(pseudo.get("content") == "\"inner\"");
+    }
 }
 
 void test_cascade_compute() {

@@ -99,7 +99,10 @@ siblings. Use a more specific selector instead.
   settle (the v1 chicken-and-egg: it reads layout-after-previous-cascade size).
 - `@keyframes` — see [Animations & Transitions](animations-transitions.md).
 - `@supports` — reports Weva's actual support.
-- `@scope` (CSS Cascade Level 6) — including nested scope chains.
+- `@scope` (CSS Cascade Level 6) — root/limit lists, nested scope chains,
+  relative selectors, `:scope`/`&`, and proximity after specificity. An
+  omitted root uses the inline `<style>` parent's subtree; host-supplied
+  stylesheets without an owner use the document element.
 - `@property` — descriptor parsing with `inherits` / `initial-value` /
   `syntax`; `initial-value` containing `var()`/`env()` is rejected per spec.
 - `@layer` — cascade layers.
