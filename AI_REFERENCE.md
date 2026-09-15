@@ -137,7 +137,7 @@ check.sh                          the gate
 ## 5. Tooling & verification
 
 - **`check.sh`** — the whole gate (release-oracle/text-safety/performance tooling
-  suites: 50/9/32 checks; build, core tests, sanitizers, Chrome
+  suites: 54/9/32 checks; build, core tests, sanitizers, Chrome
   oracle, behaviour checks, plugin, addon, host tests). CI covers tooling,
   core/sanitizers, Chrome and native builds/package checks; local engine
   installations are still required for Unity suites and live Godot gates.

@@ -32,6 +32,32 @@ are retired. The shared exact comparison helper remains for host translation
 checks. [Current readiness](../../docs/PRODUCT_READINESS.md) records the counts;
 [ORACLE.md](../../docs/ORACLE.md) preserves the historical design and findings.
 
+## Live browser reference from WSL
+
+The retained numeric-editing fixture and CI use Windows Chrome 152. Linux
+Chrome handles decimal commas differently; changing the page's language or
+the emulated locale does not make it the same reference. A WSL gate can invoke
+the Windows runner directly, with Windows Python, Node and the root npm
+dependencies installed:
+
+```sh
+python3 Tools/oracle/run_chrome_checks.py \
+    --windows-python /mnt/c/path/to/python.exe \
+    --chrome C:/path/to/pinned/chrome.exe --out .utmp/chrome-windows
+```
+
+The checkout and output must be on a Windows-mounted drive. Paths are passed
+as separate arguments, including spaces. Every selected script runs afresh;
+the Windows runner's failure code propagates to WSL. `--only` can select one
+script for diagnosis. Native Windows/Linux runs can also use `--chrome` to
+override browser discovery explicitly.
+
+For `check.sh`, set both `WEVA_CHROME_WINDOWS_PYTHON` and `WEVA_CHROME_WINDOWS`
+to those executable paths. `WEVA_CHROME_CHECKS_OUT` selects the receipt directory
+(default `.utmp/chrome-checks` in the checkout). Without the Windows settings,
+the runner continues to use the local browser. This does not change numeric
+editing in either host or weaken the retained fixture.
+
 ## Capturing and adding cases
 
 Install the root Node dependencies and select Chrome with `WEVA_CHROME` (CI uses

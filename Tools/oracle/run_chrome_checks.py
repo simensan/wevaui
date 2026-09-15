@@ -31,11 +31,16 @@ bundled build. Exit 1 on any unexcused failure.
 Install the root package-lock.json with npm ci. Every .cjs uses the shared
 chrome_test_browser.cjs launcher and that root Puppeteer dependency. CI pins
 Windows Chrome 152 to match the retained editing receipts: older Chrome's
-CR handling and Linux's decimal-comma handling differ. --no-sandbox (or
+CR handling and Linux's decimal-comma handling differ. WSL can run that same
+reference with --windows-python /mnt/c/path/to/python.exe --chrome C:/path/to/chrome.exe;
+--out must be on a Windows-mounted drive. This executes every selected check
+on Windows and propagates its exit code; it never substitutes saved receipts.
+--no-sandbox (or
 WEVA_CHROME_NO_SANDBOX=1) applies to both the CJS and Python checks.
 """
 import argparse
 import glob
+import ntpath
 import os
 import subprocess
 import sys
@@ -106,6 +111,36 @@ def read_known(path):
     return known
 
 
+def windows_path(path):
+    """Translate one filesystem argument through WSL, without a shell."""
+    if ntpath.splitdrive(path)[0]:
+        return path
+    return subprocess.check_output(['wslpath', '-w', os.path.abspath(path)],
+                                   text=True).strip()
+
+
+def run_windows_reference(args):
+    if sys.platform != 'linux':
+        raise ValueError('--windows-python is only for launching Windows from WSL')
+    if not args.chrome:
+        raise ValueError('--windows-python requires an explicit --chrome Windows executable')
+    output = windows_path(args.out)
+    # Chrome cannot consistently load the Python fixtures' file URLs on UNC
+    # paths. Keep receipts and fixtures on the shared Windows drive.
+    drive = ntpath.splitdrive(output)[0]
+    if len(drive) != 2 or drive[1] != ':':
+        raise ValueError('--out must be on a Windows-mounted drive for the Windows reference')
+    command = [args.windows_python, windows_path(__file__), '--chrome',
+               windows_path(args.chrome), '--out', output,
+               '--known-failing', windows_path(args.known_failing) if args.known_failing else '']
+    if args.only:
+        command += ['--only', args.only]
+    # The Windows child makes its own sandbox choice; Linux root's environment
+    # flag does not require disabling the sandbox on the Windows reference.
+    print('Running fresh Windows Chrome reference from WSL', flush=True)
+    return subprocess.run(command, cwd=ROOT).returncode
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", help="run only scripts whose name contains this")
@@ -116,10 +151,19 @@ def main():
     ap.add_argument("--no-sandbox", action="store_true",
                     default=os.environ.get('WEVA_CHROME_NO_SANDBOX') == '1',
                     help="disable the Chrome sandbox for isolated CI/root environments")
+    ap.add_argument('--chrome', help='Explicit Chrome executable (overrides WEVA_CHROME)')
+    ap.add_argument('--windows-python',
+                    help='WSL path to Windows python.exe; runs the pinned Windows reference')
     a = ap.parse_args()
     # Children run in the receipt directory. Resolve the CLI path before
     # changing their cwd, so --out .utmp/checks is not joined to itself.
     a.out = os.path.abspath(a.out)
+    if a.windows_python:
+        try:
+            return run_windows_reference(a)
+        except (OSError, ValueError, subprocess.CalledProcessError) as error:
+            print(f'Windows Chrome reference failed to launch: {error}', file=sys.stderr)
+            return 2
 
     scripts = sorted(glob.glob(os.path.join(HERE, "check_*_chrome.cjs"))
                      + glob.glob(os.path.join(HERE, "check_*_chrome.py")))
@@ -131,7 +175,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     known = read_known(a.known_failing)
 
-    chrome = find_chrome()
+    chrome = a.chrome or find_chrome()
     print("chrome:", chrome or "(puppeteer's bundled build)")
     child_env = os.environ.copy()
     if chrome:

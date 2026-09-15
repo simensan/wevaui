@@ -62,6 +62,14 @@ for argument in "$@"; do
 done
 
 template_args=()
+chrome_check_args=()
+if [ -n "${WEVA_CHROME_WINDOWS_PYTHON:-}" ] || [ -n "${WEVA_CHROME_WINDOWS:-}" ]; then
+    if [ -z "${WEVA_CHROME_WINDOWS_PYTHON:-}" ] || [ -z "${WEVA_CHROME_WINDOWS:-}" ]; then
+        printf 'Set both WEVA_CHROME_WINDOWS_PYTHON and WEVA_CHROME_WINDOWS for the Windows reference.\n' >&2
+        exit 2
+    fi
+    chrome_check_args=(--windows-python "$WEVA_CHROME_WINDOWS_PYTHON" --chrome "$WEVA_CHROME_WINDOWS")
+fi
 if [ -n "${WEVA_GODOT_DEBUG_TEMPLATE:-}" ] || [ -n "${WEVA_GODOT_RELEASE_TEMPLATE:-}" ]; then
     if [ -z "${WEVA_GODOT_DEBUG_TEMPLATE:-}" ] || [ -z "${WEVA_GODOT_RELEASE_TEMPLATE:-}" ]; then
         printf 'Set WEVA_GODOT_DEBUG_TEMPLATE and WEVA_GODOT_RELEASE_TEMPLATE together.\n' >&2
@@ -195,7 +203,7 @@ fi
 
 step "chrome behaviour checks"
 # What a capture cannot pin -- focus order, popover chains, number stepping,
-# table border junctions, selection, animation clocks -- 57 scripts drive a
+# table border junctions, selection, animation clocks -- the scripts drive a
 # real Chrome through puppeteer and compare. Their answers are already frozen
 # into the core suite; running them says whether Chrome still gives them.
 # Needs node, puppeteer (repo-root node_modules) and a launchable Chrome.
@@ -205,7 +213,10 @@ step "chrome behaviour checks"
 if [ -n "${WEVA_NO_CHROME:-}" ]; then
     skip "chrome behaviour checks (WEVA_NO_CHROME set)"
 elif command -v node > /dev/null && command -v python3 > /dev/null; then
-    if ! python3 "$ROOT/Tools/oracle/run_chrome_checks.py" --out /tmp/weva-chrome-checks \
+    # A Windows-mounted output also lets WSL launch the canonical Windows
+    # reference. Keep receipts in the checkout instead of ephemeral /tmp.
+    if ! python3 "$ROOT/Tools/oracle/run_chrome_checks.py" \
+            --out "${WEVA_CHROME_CHECKS_OUT:-$ROOT/.utmp/chrome-checks}" "${chrome_check_args[@]}" \
             > /tmp/weva-chrome-checks.log 2>&1; then
         fail "chrome behaviour checks; see /tmp/weva-chrome-checks.log"
     fi
