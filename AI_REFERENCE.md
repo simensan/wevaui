@@ -169,7 +169,8 @@ check.sh                          the gate
   `[Explicit]`) renders a page to `.utmp/native-gameview/*.png` for a person
   to look at.
 
-Expected numbers live in `docs/PRODUCT_READINESS.md`; any red is new.
+Expected numbers live in `docs/verification/review-three-days-20260915.md`;
+any red is new.
 
 ## 6. Where to look — quick index
 
@@ -181,5 +182,6 @@ Expected numbers live in `docs/PRODUCT_READINESS.md`; any red is new.
 | How to author a page and a controller | `Packages/com.wevaui/Documentation~/AuthoringGuide.md` |
 | Which CSS works, and how it differs from Chrome | `Packages/com.wevaui/Documentation~/supported-css.md` |
 | Input decisions on both hosts, with tests | `docs/INPUT_PARITY.md` |
-| Where each host stands, and the numbers | `docs/PRODUCT_READINESS.md` |
+| Readiness, requirements and limitations for users | `docs/PRODUCT_READINESS.md` |
+| Verification counts, configuration and evidence | `docs/verification/review-three-days-20260915.md` |
 | What changed for 1.0 and how to migrate | `Packages/com.wevaui/CHANGELOG.md` |

@@ -89,7 +89,8 @@ Per chunk, the local recipe is:
 * Godot: the affected scenes in `hosts/godot/project` through the runner
   `check.sh` uses.
 
-Numbers to expect are in `docs/PRODUCT_READINESS.md`; any red is new.
+Numbers to expect are in `docs/verification/review-three-days-20260915.md`;
+any red is new.
 The 2026-09-15 review passes 14 gcc suites (507,328 core checks),
 16 sanitizer suites, and all 334 Chrome layout captures at the 1.5px ceiling.
 Unity Native EditMode passes 236 tests with 2 environment-gated inconclusive;
@@ -145,5 +146,6 @@ it follows the ABI.
   linear space, the offscreen path composites in gamma like the Godot host.
 * A full Unity EditMode run may recreate `Tests/Runtime/Goldens/Out/`; do not
   commit it.
-* `AGENTS.md`, `AI_REFERENCE.md` and `docs/PRODUCT_READINESS.md` are read by
-  the next agent cold: when a gate's numbers move, move them here too.
+* Keep gate counts and evidence links current in `AGENTS.md`, `AI_REFERENCE.md`
+  and the verification reports. `docs/PRODUCT_READINESS.md` is the concise
+  user-facing status: update it when supported use or limitations change.

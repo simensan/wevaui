@@ -29,7 +29,8 @@ DUMP=/path/to/weva_dump bash Tools/oracle/run.sh samples
 `--chrome-metrics --max-worst 1.5` by default. The C# engine and BaselineGen were
 deleted; `--reuse-reference`, C# baseline generation and three-way arbitration
 are retired. The shared exact comparison helper remains for host translation
-checks. [Current readiness](../../docs/PRODUCT_READINESS.md) records the counts;
+checks. The [verification report](../../docs/verification/review-three-days-20260915.md)
+records the counts;
 [ORACLE.md](../../docs/ORACLE.md) preserves the historical design and findings.
 
 ## Live browser reference from WSL

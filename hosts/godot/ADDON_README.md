@@ -251,7 +251,7 @@ and constraints, and accessibility still need work.
 The HTML/CSS engine implements a web subset, not a browser runtime: there is
 no JavaScript engine or network resource loader. Form and font metrics still
 have documented browser differences. See the source repository's
-`docs/PRODUCT_READINESS.md` for the complete release ledger.
+`docs/PRODUCT_READINESS.md` for current readiness, requirements and limitations.
 
 ## Licenses
 
