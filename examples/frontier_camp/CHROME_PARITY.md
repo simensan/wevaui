@@ -1,6 +1,11 @@
 # Frontier Camp Chrome parity
 
-## Current broad layout audit
+> **Historical sample checks.** “Current” and “installed” below refer to the
+> named preview at the time. The latest shared-core gate passes all 334 tracked
+> Chrome captures; see the [review report](../../docs/verification/review-three-days-20260915.md).
+> Current authoring limits are in the [CSS reference](../../Packages/com.wevaui/Documentation~/supported-css.md).
+
+## Broad layout audit at preview98
 
 The latest broad audit (preview98) agrees with 287/309 Chrome152 layout captures, with 22 differences,
 zero crashes and no new differing fixtures. The float coverage fixture now agrees;

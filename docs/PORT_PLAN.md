@@ -1,5 +1,11 @@
 # Port plan
 
+> **Historical port log.** The C++ engine and both hosts are implemented.
+> This file preserves the original plan and checkpoint results; its pending
+> work, C# paths and old oracle commands are not current instructions. Start
+> with [architecture](ARCHITECTURE.md), [readiness](PRODUCT_READINESS.md) or
+> the [documentation index](README.md).
+
 Bottom-up, oracle-gated. Each phase ends with a diff-clean corpus subset; no
 phase starts before the previous one is green.
 

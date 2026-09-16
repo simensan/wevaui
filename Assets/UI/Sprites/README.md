@@ -11,30 +11,20 @@ License: **CC0 1.0 Universal** (public domain — no attribution required, but a
 | `ButtonFrame.png`       | 64×64   | 16,16,16,16      | `Blue/Default/button_square_border`          |
 | `ButtonFrameHover.png`  | 192×64  | 16,16,16,16      | `Green/Default/button_rectangle_depth_border`|
 
-Borders are set in the `.meta` files via `spriteBorder`; Unity reads them
-in the Sprite Editor and `SpriteImageSource` propagates them to the
-engine's 9-slice resolver.
+## Use in Weva
 
-## Usage
+The native engine uses CSS `border-image` slices. Unity Sprite border metadata
+is not read by this path. From a stylesheet in `Assets/UI/`:
 
-Register at runtime:
-
-```csharp
-var sprite = Resources.Load<Sprite>("UI/Sprites/PanelFrame");
-registry.Register("UI/PanelFrame", new SpriteImageSource(sprite));
+```css
+.panel {
+  border: 16px solid transparent;
+  border-image-source: url("Sprites/PanelFrame.png");
+  border-image-slice: 16 fill;
+  border-image-width: 16px;
+}
 ```
 
-Then in HTML/CSS:
-
-```html
-<!-- Method A: <img> with auto 9-slice -->
-<img src="UI/PanelFrame" style="width:300px;height:120px" />
-
-<!-- Method B: CSS border-image -->
-<div style="border: 16px solid transparent;
-            border-image-source: url(UI/PanelFrame);">
-  Panel content
-</div>
-```
-
-See `Assets/UI/9slice-demo.html` for a full demo.
+See [the demo](../9slice-demo.html) and the
+[image-loading guide](../../../Packages/com.wevaui/Documentation~/AuthoringGuide.md#9-images-and-files).
+Player builds need the image bytes through files or `AssetReader`.

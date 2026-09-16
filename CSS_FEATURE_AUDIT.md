@@ -4,12 +4,11 @@ Updated: 2026-05-29 (font-kerning + image-set + font-stretch wdth)
 
 > **Written against the C# engine, deleted 2026-09-13.** The engine is
 > `libweva/`; what it supports is gated by the Chrome captures in
-> `Tools/oracle` (`known-gaps/` lists the excused cases: multicol and
-> vertical writing) and summarised for authors in
+> `Tools/oracle` and summarised for authors in
 > `Packages/com.wevaui/Documentation~/supported-css.md`. Kept as the record
 > of the feature set the core ported.
 
-This is the current engine-facing CSS support map. It distinguishes parser/cascade
+This is the historical C# engine-facing CSS support map. It distinguishes parser/cascade
 coverage from actual layout/paint/render behavior; a registered property is not
 automatically considered visually supported.
 

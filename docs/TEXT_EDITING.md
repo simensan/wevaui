@@ -1,31 +1,9 @@
 # Text editing
 
-Preview77 added Windows Chrome-style Ctrl+Up/Down navigation:
-move to the previous paragraph's last line or next paragraph's first line, retaining the
-horizontal caret position, including wrapped and empty paragraphs. Ctrl+Shift
-extends the selection from its original anchor. Ten Release suites, 177 Chrome
-editing checks and 8,675 native checks pass (302 editing checks across both
-font backends). Source evidence: `.utmp/safe-engine71/paragraph-tests.log`,
-`paragraph-chrome.log` and `paragraph-host-checks/verification.json`.
-All twelve sanitizer gates, packaged debug/release/embedded exports, the
-survival consumer and all twelve normal performance workloads on OpenGL and
-Vulkan pass. Nine survival captures match preview76; installed editing passes
-302 checks without warnings. That build used library SHA-256
-`97732f3c92f3f7c18493f1d7d8eae4e7c235b8b8c25ece65631bfc12edd7a182`.
-
-The preceding preview76 removed the unused expanded-tab map from each
-layout box. Current tab fragments and styled text use explicit byte-preserving
-offsets, so the shared map and its dead search path are unnecessary. A Linux
-x64 size probe measures `sizeof(Box)` falling from 608 to 592 bytes. Ten Release
-suites, twelve sanitizer gates and 8,659 native checks pass; packaged exports
-and the survival consumer also pass. Three paired performance runs pass with
-72 identical captures; focused clock timings are nearly unchanged. Both
-projects use library SHA-256
-`ba31d5140fb34a03e08d7bb1d48cd06fa3d443957037b6a804ca8e011483f66a`.
-The installed native editing gate passes 286 checks without warnings.
-Evidence: `.utmp/safe-engine71/box-map-tests.log`,
-`box-map-asan-tests.log`, `box-map-host-checks/verification.json`, and
-`box-map-exports.log`.
+Text fields support caret movement, selection, undo/redo, paste and Unicode
+editing. This page describes the shared behavior and Godot integration;
+physical-device and language limits remain as documented in the relevant sections.
+Dated preview results below are historical evidence, not current test totals.
 
 Single-line inputs keep the insertion caret visible as their text grows,
 selection moves or width changes. Painting, selection, click placement and the
@@ -272,3 +250,32 @@ advances; it is not a bidi implementation.
 Unicode data and conformance fixtures use Unicode License V3; source hashes
 and regeneration instructions are in `third_party/unicode/README.md` in the
 source tree. The addon includes `UNICODE_LICENSE.txt` and `UNICODE_DATA.md`.
+
+## Historical paragraph-navigation and storage checks
+
+Preview77 added Windows Chrome-style Ctrl+Up/Down navigation:
+move to the previous paragraph's last line or next paragraph's first line, retaining the
+horizontal caret position, including wrapped and empty paragraphs. Ctrl+Shift
+extends the selection from its original anchor. Ten Release suites, 177 Chrome
+editing checks and 8,675 native checks pass (302 editing checks across both
+font backends). Source evidence: `.utmp/safe-engine71/paragraph-tests.log`,
+`paragraph-chrome.log` and `paragraph-host-checks/verification.json`.
+All twelve sanitizer gates, packaged debug/release/embedded exports, the
+survival consumer and all twelve normal performance workloads on OpenGL and
+Vulkan pass. Nine survival captures match preview76; installed editing passes
+302 checks without warnings. That build used library SHA-256
+`97732f3c92f3f7c18493f1d7d8eae4e7c235b8b8c25ece65631bfc12edd7a182`.
+
+The preceding preview76 removed the unused expanded-tab map from each
+layout box. Current tab fragments and styled text use explicit byte-preserving
+offsets, so the shared map and its dead search path are unnecessary. A Linux
+x64 size probe measures `sizeof(Box)` falling from 608 to 592 bytes. Ten Release
+suites, twelve sanitizer gates and 8,659 native checks pass; packaged exports
+and the survival consumer also pass. Three paired performance runs pass with
+72 identical captures; focused clock timings are nearly unchanged. Both
+projects use library SHA-256
+`ba31d5140fb34a03e08d7bb1d48cd06fa3d443957037b6a804ca8e011483f66a`.
+The installed native editing gate passes 286 checks without warnings.
+Evidence: `.utmp/safe-engine71/box-map-tests.log`,
+`box-map-asan-tests.log`, `box-map-host-checks/verification.json`, and
+`box-map-exports.log`.

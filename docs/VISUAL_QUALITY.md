@@ -1,5 +1,9 @@
 # Visual quality
 
+> **Historical visual investigation.** The rankings below describe an older
+> 35-page corpus. Use the [current image-check workflow](../Tools/oracle/README.md#host-and-image-checks)
+> for new comparisons. These rankings do not certify current visual parity.
+
 How close the render is to a browser, and — more useful — how to tell a real
 difference from an artefact of the comparison. Every number here came from
 

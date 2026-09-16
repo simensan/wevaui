@@ -1,51 +1,7 @@
 # Form values and reset
 
-## Popover transition handlers
-
-This API is included in build202 and requires ABI minor 23. Build201 and
-earlier do not provide these handlers.
-
-Connect `WevaDocument.element_before_toggled(id, opening)` or use an
-`on-beforetoggle="handler_name"` markup handler. Opening handlers run before
-focus changes or replacement of existing menus. Call `prevent_default()` from
-the handler to veto opening. Closing handlers see the still-open menu, but
-closing cannot be vetoed. Both explicit methods and button activation use these
-handlers, as do Escape, outside clicks and popover mode changes.
-
-```gdscript
-@onready var ui: WevaDocument = $UI
-var inventory_locked := false
-
-func _ready() -> void:
-    ui.element_before_toggled.connect(_before_menu_toggle)
-
-func _before_menu_toggle(id: String, opening: bool) -> void:
-    if id == "inventory" and opening and inventory_locked:
-        ui.prevent_default()
-```
-
-`show_popover()` returning `true` means the request was accepted; the handler
-can still cancel it. Calls made inside another event handler are queued until
-that handler returns. Browser task coalescing, nested synchronous dispatch and
-synchronous DOM exception propagation are not provided by this event queue.
-A mouse click outside an existing automatic menu dismisses it before attempting
-the new opening, so vetoing the new opening does not undo that dismissal.
-
-## Sizing a select
-
-The themed default is 218px wide. Set `width` directly for a compact control,
-or use `width:auto` to fit the longest option label:
-
-```css
-select.quality { width: auto; max-width: 100%; }
-select.compact { width: 120px; }
-```
-
-Automatic closed-select width includes unselected, hidden and disabled options,
-option `label` attributes, grouped-option indentation and text spacing. Changing
-a label recomputes the width. `appearance:none` removes the arrow allowance;
-normal minimum and maximum width constraints still apply. This behavior is
-verified in the installed automatic-sizing build (200).
+Bind editable controls with `data-model`; reset restores markup defaults.
+The examples use the Godot `WevaView` helper.
 
 ## Authoring a settings panel
 
@@ -128,6 +84,59 @@ cover click callbacks, typed model updates, name edits without audio updates,
 and resetting settings. The detailed sections below preserve implementation
 history and verification scope; old build numbers are not release guarantees.
 
+## Popover transition handlers
+
+Popover transition handlers require ABI minor 23 or newer.
+
+Connect `WevaDocument.element_before_toggled(id, opening)` or use an
+`on-beforetoggle="handler_name"` markup handler. Opening handlers run before
+focus changes or replacement of existing menus. Call `prevent_default()` from
+the handler to veto opening. Closing handlers see the still-open menu, but
+closing cannot be vetoed. Both explicit methods and button activation use these
+handlers, as do Escape, outside clicks and popover mode changes.
+
+```gdscript
+@onready var ui: WevaDocument = $UI
+var inventory_locked := false
+
+func _ready() -> void:
+    ui.element_before_toggled.connect(_before_menu_toggle)
+
+func _before_menu_toggle(id: String, opening: bool) -> void:
+    if id == "inventory" and opening and inventory_locked:
+        ui.prevent_default()
+```
+
+`show_popover()` returning `true` means the request was accepted; the handler
+can still cancel it. Calls made inside another event handler are queued until
+that handler returns. Browser task coalescing, nested synchronous dispatch and
+synchronous DOM exception propagation are not provided by this event queue.
+A mouse click outside an existing automatic menu dismisses it before attempting
+the new opening, so vetoing the new opening does not undo that dismissal.
+
+## Sizing a select
+
+Set `width` directly for a compact control, or use `width:auto` to fit the
+longest option label instead of a theme-supplied width:
+
+```css
+select.quality { width: auto; max-width: 100%; }
+select.compact { width: 120px; }
+```
+
+Automatic closed-select width includes unselected, hidden and disabled options,
+option `label` attributes, grouped-option indentation and text spacing. Changing
+a label recomputes the width. `appearance:none` removes the arrow allowance;
+normal minimum and maximum width constraints still apply. See the [automatic-sizing evidence](verification/select-intrinsic.json) for the
+original verification scope.
+
+<details>
+<summary>Detailed control reference and historical verification</summary>
+
+The sections below retain checkpoint-specific results and implementation notes.
+Build numbers and installation claims describe those checkpoints, not the
+current package. Use the [readiness summary](PRODUCT_READINESS.md) for current scope.
+
 ## Numeric arrow keys — installed development build
 
 Up/down now step number inputs using decimal arithmetic, min/max and the step
@@ -192,7 +201,7 @@ Changing only the spelling/case of the same canonical input type no longer
 sanitizes away an unfinished edit. Numeric public conversion also rejects `+-1`
 and retains the different treatment of scientific notation observed in Chrome.
 
-The [browser oracle](../tools/oracle/check_number_editing_chrome.cjs) verifies
+The [browser oracle](../Tools/oracle/check_number_editing_chrome.cjs) verifies
 580 cases with the [retained fixture](../hosts/godot/project/form_validation_numbers.json):
 start/end/middle insertion and full replacement around decimals, signs, and
 exponents. Core tests compare both visible buffers and public values; the Godot
@@ -2140,3 +2149,5 @@ Resolver calls and changed-token application remain in order.
 
 `WEVA_GODOT_BINDING_PROFILE=1` optionally logs core binding and model-update time.
 It is off by default and diagnostic runs include its measurement/logging overhead.
+
+</details>

@@ -44,11 +44,11 @@ Work down this list — it's ordered by how often each one is the cause:
   `linked stylesheet 'menu.css' not found` when it is not there. Keep the
   `.css` beside the `.html`, or assign the sheet in the **Stylesheet Assets**
   inspector list instead of using `<link>`.
-- **Player build can't find the sheet.** Linked sheets are baked into the
-  component at build time — but a `WevaDocument` on a prefab **instantiated
-  at runtime** skips that hook. Assign `StylesheetAssets` explicitly, or call
-  `doc.BakeLinkedStylesheets(...)` from a build step. See
-  [Getting Started → Player builds](getting-started.md).
+- **Player build can't find the sheet.** Linked sheets and nested imports are
+  baked for both scenes and prefab assets. Check the asset assignment and base
+  path; custom build pipelines can call `BakeLinkedStylesheets` or
+  `WevaDocumentLinkBaker.BakePrefabs`. Images/fonts still need files or an
+  `AssetReader`. See [player builds](getting-started.md#player-builds).
 - **A property silently does nothing.** Check the
   [Supported CSS](supported-css.md) matrix and its known divergences from
   Chrome.
@@ -120,9 +120,9 @@ Work down this list — it's ordered by how often each one is the cause:
 - **Edit-mode preview differs from play.** Controller-side work only reaches
   the edit-mode document if the controller is also `[ExecuteAlways]` and
   registers in `OnEnable`; gate gameplay work on `Application.isPlaying`.
-- **Hot reload didn't pick up my edit.** The edited file must be the
-  document's asset, one of its `<link>`ed sheets (next to the asset), or an
-  inspector sheet. For markup built in code, call `doc.Reload()`.
+- **Hot reload didn't pick up my edit.** Reload follows referenced HTML,
+  assigned/linked/imported CSS and requested image/font dependencies after
+  asset import completes. For markup built in code, call `doc.Reload()`.
 
 ## Still stuck?
 

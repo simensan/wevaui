@@ -1,37 +1,27 @@
 # Frontier Camp — standalone Godot integration
 
-Installed Windows addon: **preview222 (ABI minor25)**; `addons/weva/build.json` records the
-installed version. Sample, exports and desktop performance checks pass;
-[qualification and remaining scope](../../docs/PRODUCT_READINESS.md).
+A sample game using the packaged addon: signal-driven HUD updates, keyed lists,
+two-way settings and dialog/input routing. Use Godot 4.7 and an addon containing
+`weva_view.gd` plus your platform's native library.
 
+## Install and run
 
-Open `project.godot` in Godot 4.7 and press **F5**. With build222 the sample's
-own checks pass on the official stock 4.7.1 editor, headless and rendered,
-including the long-Unicode name churn, and the official 4.7.1 export templates
-produce a passing export; the verified patched **Godot 4.7.2** editor described
-in the [engine guide](../../docs/GODOT_TEXT_SHAPING.md#windows-patched-engine-bundle-2026-09-08)
-remains the choice only for text in native Godot controls.
-The prepared local project has the Windows addon installed. This is independent
-of the host gallery.
-
-The Windows export preset works with the official templates; the patched
-bundle's debug and release binaries can be set as its **Custom Template** paths
-instead. The project already includes ICU support data in
-exports (`internationalization/locale/include_text_server_data=true`). The
-addon shapes long emoji-heavy text in pieces, so this sample's long-Unicode
-name churn also completes on the official stock 4.7.1 editor; the engine's own
-defect still affects native Godot controls, see
-[text shaping](../../docs/GODOT_TEXT_SHAPING.md).
-
-For a fresh checkout, extract a current addon ZIP here, or run:
+From this directory:
 
 ```sh
 python install_addon.py /path/to/weva-preview.zip
 ```
 
-Open the editor once to discover the extension and import artwork. `addons/`
-and `.godot/` are local/generated. No files outside the project are used at
-runtime. The addon must contain `weva_view.gd` and your platform's library.
+Open `project.godot` once to import resources, then press **F5**. `addons/`
+and `.godot/` are generated locally; a fresh checkout has no installed addon.
+Check `addons/weva/build.json` for the actual build instead of relying on old
+preview numbers in benchmark reports.
+
+Use matching editor/export templates. Weva works around the tested stock
+engine's long-text defect in its documents; native Godot controls need the
+[patched configuration](../../docs/GODOT_TEXT_SHAPING.md#stock-godot-472-limitation).
+This project includes TextServer data in exports. See
+[product readiness](../../docs/PRODUCT_READINESS.md) for current verification scope.
 
 ## Try it
 

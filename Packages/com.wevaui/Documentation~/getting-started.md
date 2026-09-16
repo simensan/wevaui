@@ -11,23 +11,25 @@ document on screen.
 - **URP** — the package's render pass is a URP `ScriptableRendererFeature`.
 - **Input System** — the document reads the mouse, keyboard, touch, gamepad
   and IME through it (pulled in as a package dependency).
-- The native plugin ships for **Windows x64**; other platforms are added as
-  their CI jobs go green.
+- The native plugin ships for **Windows x64**; other platforms are unverified.
 - Scripting backend: IL2CPP-compatible. Binding is reflection over public
   members (no `Reflection.Emit`); keep `[UIBind]` members and handler methods
   out of managed code stripping (they are looked up by name).
 
 ## Install
 
-Add the package to `Packages/manifest.json`:
+For this checkout, use Package Manager → **Add package from disk** → select
+`Packages/com.wevaui/package.json`.
+
+To install a remote revision instead, add the package to `Packages/manifest.json`:
 
 ```json
 "com.wevaui": "https://github.com/simensan/wevaui.git?path=Packages/com.wevaui"
 ```
 
-(Pin a release with a `#v*` tag suffix, or drop it to track `main`.)
-Or import locally: clone the repo, then Package Manager → **Add package from
-disk** → pick `Packages/com.wevaui/package.json`.
+This follows the remote default branch, which may differ from your local
+checkout. Use an existing tag or commit suffix to pin a revision; the package's
+version number alone does not establish that a matching release tag exists.
 
 The **Phase One Demo** sample (Package Manager → Weva → Samples) is a complete
 scene that exercises the whole pipeline end-to-end; import it to confirm the
@@ -43,8 +45,9 @@ your AI model of choice:
 > one `.html` and one `.css` file."**
 
 Drop whatever it produces into `Assets/UI/` and mount it (next two sections).
-Anything the model writes for a browser is either supported or fails loudly —
-that's the design rule. For an AI coding agent working inside your project
+Check generated markup against the [HTML](supported-html.md) and
+[CSS](supported-css.md) references; unsupported features are not all diagnosed.
+For an AI coding agent working inside your project
 (Claude Code, Cursor, Copilot), point it at the repo's
 [`AI_REFERENCE.md`](https://github.com/simensan/wevaui/blob/main/AI_REFERENCE.md)
 so it knows the exact capability envelope and integration API.
@@ -109,6 +112,7 @@ Attach a controller script next to the `WevaDocument` and register it:
 
 ```csharp
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Weva;
 using Weva.Binding;
 
@@ -136,8 +140,9 @@ form story.
 
 The renderer is a `ScriptableRendererFeature`. Add `UIBatchedRendererFeature`
 to your URP Renderer asset's **Renderer Features** list. It injects a render
-pass after `RenderPassEvent.AfterRendering` and draws every document's
-triangle list directly into the camera colour target.
+pass at `AfterRendering` for ordinary documents. Documents using backdrop
+effects run at `AfterRenderingPostProcessing` with an intermediate color target
+so the pass can sample the background.
 
 Three equivalent ways to set it up — all idempotent, and all also add the
 Weva shaders to **Always Included Shaders** (required for player builds):
@@ -165,8 +170,9 @@ in.
 
 ## Viewport sizing
 
-Weva uses a **logical pixel** model: `1px` = 1 logical pixel, `rem`/`em` derive
-from a 16px base font size (matching CSS). The layout viewport — what `vw`/`vh`
+Weva uses a **logical pixel** model: `1px` = 1 logical pixel. `em` follows the
+element's font size and `rem` the root's; the default root size is 16px.
+The layout viewport — what `vw`/`vh`
 and `@media (width)` resolve against — is the render target the URP pass
 draws into: the document starts at `Screen.width × Screen.height` and follows
 the pass's target size (`PrepareForRenderViewport`) when the Game view resizes.
@@ -182,6 +188,9 @@ dependency count too. The controller stays attached and its `[UIBind]` values
 survive. From code, `doc.Reload()` also refreshes images and `@font-face` URL data.
 
 ## Player builds
+
+An actual Unity player build remains unverified. Check asset loading and UI
+behavior in your exported game before relying on editor results.
 
 Linked stylesheets and their nested imports are baked into scene documents
 and prefab assets automatically before a build. Imports from `<style>`,

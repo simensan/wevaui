@@ -1,20 +1,15 @@
 # Godot release verification
 
-The addon is a development preview. Stock Godot 4.7 still corrupts long emoji
-runs and crashes on mixed-script inputs when TextServer receives them directly;
-the addon's adapter now shapes document text in pieces the engine handles, and
-the sample's long-Unicode checks pass on the official stock 4.7.1 editor. A local
-patched Windows editor/template bundle remains the safe choice for text in
-native Godot controls. See
-[text shaping](GODOT_TEXT_SHAPING.md) and the full
-[product requirements](PRODUCT_READINESS.md).
+The addon remains a development preview. The
+[September 15 full gate](verification/review-three-days-20260915.md) passes with
+the qualified patched Linux Godot editor, matching debug/release templates,
+Windows Chrome reference and a private display. That configuration is recorded
+with exact hashes; it does not qualify every platform or a published release.
 
-As checked on 2026-09-07, the [official release archive](https://godotengine.org/download/archive/)
-still lists 4.7.2 as the latest stable 4.x release. Both the
-[4.7 source](https://github.com/godotengine/godot/blob/4.7/modules/text_server_adv/script_iterator.cpp)
-and [development source](https://github.com/godotengine/godot/blob/master/modules/text_server_adv/script_iterator.cpp)
-retain the missing stack copies and emoji buffer free inside the script loop.
-No official fixed configuration was established in this verification.
+Use the [text-safety configuration](GODOT_TEXT_SHAPING.md#stock-godot-472-limitation)
+and matching templates when testing native Godot text. Weva's document-text
+workaround does not fix the engine's native controls. Broader adoption limits
+are in [product readiness](PRODUCT_READINESS.md).
 
 ## Build and package
 
@@ -34,7 +29,8 @@ GitHub. Workflow build artifacts are previews, with no publication or release
 approval step. Running this workflow remotely still requires committing/pushing
 the changes through the normal repository workflow.
 
-CMake emits a `.build.json` sidecar after linking the extension. Package only
+A normal CMake build refreshes a `.build.json` sidecar, including when the
+extension does not relink. Package only
 libraries whose sidecars match the actual binary and current source/dependency
 inputs. `package_addon.py` requires an explicit preview version, verifies those
 hashes and the native shared-library format, and embeds the metadata in the ZIP.
@@ -48,7 +44,7 @@ Run from the repository root, configuring the build paths and matching engine
 and export templates for the selected platform:
 
 ```sh
-WEVA_EXPORT_RENDER=1 WEVA_PACKAGE_VERSION=0.1.0-preview.59 \
+WEVA_EXPORT_RENDER=1 WEVA_PACKAGE_VERSION=0.1.0-preview.0 \
   bash check.sh --release
 ```
 
@@ -82,7 +78,7 @@ Performance re-exports also need the matching template. Pass
 with the chosen output and timing profile. The runner records the template hash
 and restores project presets after export. An editor hash alone does not identify
 the engine in an exported game. The explicit-template desktop and 1080p 3D
-qualification is recorded in [the current receipt](verification/template184.json),
+qualification is recorded in [the checkpoint184 receipt](verification/template184.json),
 alongside the retained default-template Unicode lifecycle failure.
 
 Release mode rejects skipped checks, any layout-oracle findings and missing
@@ -101,44 +97,4 @@ comparisons for every claimed platform. Current gates cover substantial behavior
 but the product requirements also include real-device input and game integration
 checks that this script does not implement.
 
-## Local verification, 2026-09-07
-
-Evidence is retained in `.utmp/release59/` in the development workspace.
-
-- Linux Release: all nine CTest targets pass, including 636,031 main-suite
-  checks with mutations of all 47 sample pages.
-- The first current Linux sanitizer run exposed mismatched allocation hooks
-  in `weva_bench` and the paint-order reference test. Both used a replacement
-  `delete` with libstdc++'s original nothrow `new`. Their nothrow/array allocation
-  and deletion paths now use the same allocator. Sanitizer diagnostics remain
-  enabled. The benchmark now counts these previously missed allocation paths;
-  historical measurements are not silently rewritten.
-- After that fix, all 11 Linux ASan/UBSan CTest targets pass, including
-  636,031 main-suite checks and both sanitizer activation controls. The two
-  changed allocation/benchmark targets also pass Windows MSVC ASan with
-  allocation/deallocation mismatch detection enabled.
-- Nineteen release-tool regressions pass on Linux, including process-crash,
-  empty-run, stale-source, dependency and binary-mismatch controls. Three shell
-  integration cases run on Linux rather than Windows.
-- Windows and Linux previews `0.1.0-preview.59`: fresh project, PCK and relocated native
-  debug/release/embedded exports pass. All 17 example assertions pass in each
-  configuration; exported example pixels exactly match the project. These runs
-  have no certificate-store error and the error checks were not weakened.
-  Each rebuilt binary also passes all 25 current host suites / 8,319 checks.
-- The combined 20-file desktop ZIP passes Windows and Linux export checks.
-  The first additional Linux run aborted during editor import (exit `-6`);
-  five controlled fresh imports and the subsequent full check passed. This
-  remains an unresolved intermittent failure, not a claimed fix. The earlier
-  [Godot headless-import issue](https://github.com/godotengine/godot/issues/111645)
-  is relevant background, but the new abort has no backtrace establishing the
-  same cause. No automatic retry or longer wait was added to the acceptance gate.
-- Stock Windows/Linux Godot 4.7.2 passes the 32-run text control but fails
-  the other five cases. Both mixed-script cases exit with heap-corruption code
-  `3221226356` on Windows and abort signal `-6` on Linux. Engine/probe hashes
-  and logs are retained. This is a
-  failed release gate, not a supported Unicode-input configuration.
-
-The existing requirements for broader IME behavior, font-family/bidi and form
-semantics, touch/gamepad/accessibility, remaining browser findings and game
-latency/lifecycle verification remain open. This document adds reproducible
-release checks; it does not narrow those requirements or authorize publication.
+Historical [September 7 release checks](RELEASE_HISTORY.md) remain available.

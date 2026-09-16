@@ -4,15 +4,15 @@ Write a game's UI in HTML and CSS and connect it to GDScript with data bindings
 and controller methods. This preview targets Godot 4.7 desktop builds. The
 archive's `build.json` lists the platform libraries actually included.
 
-**What has been tested.** Godot 4.7.1 and 4.7.2 on Windows (the official
-editor and a patched one), Linux headless for the test suites, and one desktop
-GPU (an RTX 5080) for the timing and lifecycle profiles. macOS is not built.
+**What has been tested.** Windows/Linux desktop builds, including sample
+rendering and exports with recorded editor/template configurations, and one
+desktop GPU (an RTX 5080) for timing profiles. macOS is not built.
 Mouse, keyboard and gamepad input are verified with synthetic events; a
-physical controller, touch screen and system IME have not been used. Lower-end
-hardware is unmeasured. The official 4.7.1 editor with its official export
-templates imports, runs and exports the sample project. Text in Weva documents
-is safe on the stock engine; text in native Godot controls still needs the
-patched engine for very long emoji-heavy strings (see `GODOT_TEXT_SHAPING.md`).
+physical controller and touch screen still need acceptance testing. Linux IME
+has limited physical evidence; Windows IME and lower-end hardware are unverified.
+Weva documents work around the tested stock engine's long-text defect. Native
+Godot controls require the patched editor and matching export templates for
+that fix (see `GODOT_TEXT_SHAPING.md`).
 
 ## Install and run
 
@@ -123,15 +123,16 @@ Stylesheets can also declare fonts the standard way:
 h1 { font-family: "Camp Display", sans-serif; }
 ```
 
-The `src` url resolves like an image url, against `base_path` (the markup's
-directory when loaded through `WevaView`), through the importer when the font
+Linked/imported stylesheets resolve `src` URLs beside the stylesheet; inline
+CSS uses `base_path` (the markup's directory in `WevaView`). Loading uses the importer when the font
 is an imported resource and from the raw file otherwise. The rule with normal
 weight and style is the family's regular face; a rule with `font-weight: 700`
 (or 800 and above) or `font-style: italic` is a real file for that weight or
 slant, and text at that weight or slant draws it. The nearest file serves a
 weight no rule covers, and one axis is synthesized over the other's file when
 only that file exists; with no such rules bold and italic are synthesized.
-`local()` sources are skipped. The same files can be supplied from a script
+`local()` tries an installed font; ordered sources fall through when unavailable.
+The same files can be supplied from a script
 with `ui.register_font_face("Camp", bold_font, 700, false)`. A family or face
 the game registered itself keeps its font. A source that cannot load warns and
 the family falls back. See `GODOT_TEXT_SHAPING.md` for details.
@@ -145,11 +146,12 @@ Use `res://` and relative paths for shipped artwork. The example sets
 from exported packs; `ui.get_missing_assets()` reports unresolved image paths.
 
 Only export to platforms whose native library is present in `build.json`.
-Install Godot's export templates matching your editor version. Native x86_64
-debug, release and embedded-pack exports pass on Windows and Linux with the
-standard Godot 4.7.2 build, including the example's rendering, controller
-actions and bindings. Godot copies the extension library into the export;
-distribute the complete exported directory. This is a development preview.
+Install templates matching the chosen editor build. The latest complete native
+text/export checks use a patched Linux editor and matching debug/release
+templates; older stock-engine sample passes cover only their recorded fixtures.
+See `GODOT_TEXT_SHAPING.md` for tested configurations. Godot copies the extension
+library into the export; distribute the complete exported directory and verify
+it on the target platform. This is a development preview.
 
 ## Current integration limits
 
@@ -227,7 +229,7 @@ above 128 open brackets) that can corrupt positions or crash, including without
 this addon. This addon shapes such text in pieces the engine handles, so
 document text with unrestricted Unicode works on the stock editor and templates;
 text in native Godot controls still goes through the engine unchanged. A
-separate patched Windows editor/template bundle remains available for that.
+patched editor and matching export templates provide the verified fix for that.
 Enable `internationalization/locale/include_text_server_data` in your project.
 Godot's TextServer data is separate from Weva's embedded select-search ICU data.
 Read `GODOT_TEXT_SHAPING.md` before using unrestricted Unicode text in a release.

@@ -1845,7 +1845,7 @@ RelWithDebInfo. This tooling change leaves preview41 as the runtime artifact;
 
 the POSIX sampling path still needs its own validation. See the
 
-[benchmark guide](../tools/weva_bench/README.md).
+[benchmark guide](../Tools/weva_bench/README.md).
 
 
 
@@ -2131,7 +2131,7 @@ the remaining product requirements still need their own work and evidence.
 
 | Text length limits and paste | `maxlength` counts UTF-16 units for supported text inputs and textarea, including selection replacement, normalized pasted line endings and composition commit/blur. Number inputs ignore it; existing script values and undo are not length-truncated. Rejected typing creates no edit signal or undo step and stays consumed. Added `paste_text` (C ABI minor 6) so native clipboard insertion accepts leading whitespace and forms its own undo step. Fixed textarea Enter inserting beside selected text. Chrome passes 150 checks, Windows/Linux Godot pass 44 new checks, and the installed/exported example verifies Unicode limits and binding undo. Full form validation and the remaining picker/number editing behavior remain work. |
 
-| Native IME comparison | Isolated the intermittent loss to Godot 4.7.2's X11 key handler suppressing an XIM commit before preedit completion. A standalone LineEdit reproduces it without Weva; matched unpatched builds fail 3/3 delayed sessions, while a local engine patch passes 3/3 for each control. Synchronous IBus 1.5.29 also lacks preedit hide/show handlers; a private backport of the upstream fix makes both controls pass commit, cancel and undo. The stock engine remains affected. Patches, traces and reproduction instructions are in [the standalone fixture](../tools/godot-ime-repro/README.md); these are diagnostic builds, not a shipped engine fix. |
+| Native IME comparison | Isolated the intermittent loss to Godot 4.7.2's X11 key handler suppressing an XIM commit before preedit completion. A standalone LineEdit reproduces it without Weva; matched unpatched builds fail 3/3 delayed sessions, while a local engine patch passes 3/3 for each control. Synchronous IBus 1.5.29 also lacks preedit hide/show handlers; a private backport of the upstream fix makes both controls pass commit, cancel and undo. The stock engine remains affected. Patches, traces and reproduction instructions are in [the standalone fixture](../Tools/godot-ime-repro/README.md); these are diagnostic builds, not a shipped engine fix. |
 
 | Select interaction | Native listbox click/drag, Ctrl/Meta toggling, Shift ranges, navigation and select-all are implemented. Parsed `size`/`multiple` changes invalidate child boxes independently of selectedness; `size=1` uses a dropdown. Disabled rows are skipped and no-op pointer choices emit no value event. Unicode typeahead follows the documented English ICU profile and Chrome event timing. Labels and group headings render and update through input versions. Held listbox drags autoscroll beyond the Control, including while CSS time is paused, with selection extended by real pointer movement and committed on release. Language tailoring and arbitrary popup row layout remain work. |
 

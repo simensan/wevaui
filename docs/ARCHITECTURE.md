@@ -1,5 +1,14 @@
 # Architecture
 
+The C++ core in `libweva/` parses HTML/CSS, cascades styles, lays out the page
+and emits draw lists. Unity and Godot supply fonts, input and rendering through
+the [C ABI](#the-c-abi). See [the documentation index](README.md) for setup.
+
+This is an engineering reference. Start with [input parity](INPUT_PARITY.md),
+[stylesheet loading](#stylesheets-in-the-markup), [retained updates](#retained-subtree-updates)
+or the ABI section. The port-design sections retain the rationale for the
+shared engine; dated implementation receipts describe their own checkpoints.
+
 ## Positioned content in collapsed tables
 
 The table paint pass retains ordinary content, cell backgrounds and shared borders
@@ -14,8 +23,8 @@ those incomplete ancestor ranges, while preserving unaffected cell ranges and
 the outer table's complete range. It reads the current box/style inputs and
 does not create persistent dirty flags or globally invalidate paint caches.
 The ordinary no-change document path still skips painting and allocates nothing.
-The clipping correction is installed; remaining table stacking defects are
-recorded in [the current reproduction](verification/table-stacking190.json).
+The [original reproduction](verification/table-stacking190.json) records the
+clipping defect before the later stacking correction below.
 
 Overflow clips retain their owning box, rectangle and scroll offset in an
 immutable ancestry chain. Absolute and fixed descendants remove only clips
@@ -44,8 +53,9 @@ passes do not overwrite a complete box capture with partial output.
 Pointer routing reverses these layers and considers negative layers only after
 ordinary content and the table itself. Internal row/group/column boxes contribute
 table backgrounds but are not direct pointer targets; cell events still bubble
-through their DOM ancestors. This source correction is awaiting native runtime
-qualification. [Evidence](verification/table-stacking191.json).
+through their DOM ancestors. [Change evidence](verification/table-stacking191.json)
+records this correction; the [latest review](verification/review-three-days-20260915.md)
+records subsequent full-gate verification.
 
 ## Godot binding path reads
 
@@ -665,11 +675,14 @@ font and the document root's font; viewport lengths keep the viewport basis.
 The size-query subset includes named/unnamed selection, physical/logical size
 features, orientation/ratio, ranges, boolean expressions and supported length math.
 Style queries, scroll-state queries and container-relative units remain outside
-this implementation. See `examples/frontier_camp/CHROME_PARITY.md` for current
-browser findings and `test_container_query_allocations.cpp` for the focused
+this implementation. See the [CSS reference](../Packages/com.wevaui/Documentation~/supported-css.md)
+for current support and `test_container_query_allocations.cpp` for the focused
 allocation/performance guard.
 
 ## What carries over unchanged
+
+The following port-design sections preserve the rationale for the shared core.
+Comparisons with the deleted C# engine and their timings are historical.
 
 These are the parts of the C# design worth preserving verbatim:
 

@@ -1,5 +1,10 @@
 # Performance
 
+> **Historical benchmark log.** Build-specific numbers and “installed” claims
+> below describe earlier checkpoints. For current measurements, interpretation
+> and reproduction, use [runtime performance](RUNTIME_PERFORMANCE.md) and the
+> [September 15 repeat](verification/performance-20260915-pass2.md).
+
 ## Runtime60: ordinary in-game UI (2026-09-07)
 
 The Windows development project now uses the verified runtime60 DLL. This pass
@@ -1039,7 +1044,7 @@ locates the temporary `std::string(property)` lookup on every custom-property
 ancestor. These counts identify a candidate for measurement, not a time saving.
 This work changes the tool, not the runtime addon.
 
-See [benchmark usage](../tools/weva_bench/README.md). Evidence includes
+See [benchmark usage](../Tools/weva_bench/README.md). Evidence includes
 `.utmp/windows-tools-before.log`, `.utmp/windows-tools-after.log`,
 `.utmp/windows-bench-symbol-build.log`, and
 `.utmp/windows-bench-named-profile-final.log`.

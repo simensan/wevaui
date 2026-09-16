@@ -1,5 +1,10 @@
 # Frontier Camp performance verification
 
+> **Historical Frontier Camp qualifications.** Preview numbers and “installed”
+> status below refer to the recorded runs. Current standalone measurements are
+> in [runtime performance](../../docs/RUNTIME_PERFORMANCE.md); they do not rerun
+> or supersede these sample-specific 3D, lifecycle or budget profiles.
+
 Both local addons now contain build222 (ABI minor25): build221 plus
 quarter-pixel text positioning on every adapter-owned font; its host suite,
 sample, exports and desktop timing are in

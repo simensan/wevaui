@@ -196,9 +196,11 @@ sizes. The synthetic C ABI regression also checks runtime callback changes,
 legacy restoration and re-registration. Tests run in isolated projects and
 are not packaged with the addon.
 
-This fixes horizontal glyph placement and fallback identity. Full paragraph
-bidi layout, bidi caret navigation, vertical text and project font-family
-selection still need separate work. Font availability remains platform-specific.
+This fixes horizontal glyph placement and fallback identity. The shared core
+now reorders mixed-direction lines, and the host supports registered families
+and `@font-face` sources, including `local()`. Mixed-direction caret navigation
+and complete vertical text orientation remain limited. Font availability is
+platform-specific.
 
 ## Stock Godot 4.7.2 limitation
 

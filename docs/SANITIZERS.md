@@ -76,7 +76,13 @@ safety under the exercised workloads; they are not performance measurements
 or a proof that no unexercised defect exists. Native Godot/font integration,
 exported games and each supported platform still need their own checks.
 
-## Current evidence — 2026-09-07
+## Latest verification
+
+The [September 15 review](verification/review-three-days-20260915.md) records
+16 passing sanitizer suites with the complete tracked mutation corpus. The
+earlier results below retain their original counts and toolchain scope.
+
+## Historical evidence — 2026-09-07
 
 The current-source Linux rerun in `.utmp/release59/linux/` now passes all
 11 CTest targets with ASan/UBSan, including 636,031 core checks and mutations

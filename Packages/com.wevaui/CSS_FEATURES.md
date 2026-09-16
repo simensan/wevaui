@@ -6,7 +6,8 @@
 > record of the feature set the core ported; the file references below are
 > historical.
 
-This document lists every CSS feature the engine recognises and the v1 simplifications / known unsupported sub-features.
+This historical ledger describes the retired C# engine. Use the current
+[CSS reference](Documentation~/supported-css.md) for authoring.
 
 Three support levels:
 

@@ -1,25 +1,18 @@
 # Known gaps
 
-The conformance target is now **Chrome** when the reference disagrees (see
-[`docs/ORACLE.md`](../../../docs/ORACLE.md), 2026-09-05). Historical notes below
-that describe a pending choice of target are superseded by that decision.
-Their measurements still need calibration with matching font and stylesheet
-inputs; neither a smaller error nor a policy decision turns a failure green.
+Only the machine-readable lists authorize exceptions in the current gate:
 
-Cases that do **not** gate, because they fail for a reason no amount of
-porting fixes: the C++ engine and the C# reference agree with each other and
-both differ from a browser. The oracle's job is parity, and on these two the
-parity is already there — what is missing is the feature, in both engines at
-once.
+- [chrome-sweep.txt](chrome-sweep.txt): no excused layout cases at this review.
+- [chrome-checks.txt](chrome-checks.txt): the documented Chrome IME behavior case.
 
-They live here so the finding is not lost. Run one the same way as any other
-case; the numbers below say what to expect.
+The [oracle guide](../README.md) has current commands. The deleted C# reference
+and `--reuse-reference` workflow are retired. New exceptions need a concrete
+reason and matching evidence; historical findings below do not waive a failure.
 
-    cp known-gaps/cov-table.* corpus/samples/       # or any case here
-    (cd ../../../Tools/Layout && node capture-all-chrome-layouts.mjs \
-        ../../Tools/oracle/corpus/samples 1280 720 --metrics=mono)
-    python3 run_oracle.py corpus/samples --width 1280 --height 720 \
-        --weva-dump <build>/tools/weva_dump/weva_dump --reuse-reference
+## Historical investigations
+
+The remaining notes describe earlier builds and comparisons. Their measurements
+are retained for diagnosis; they are not a list of current missing features.
 
 ## The first line box of a block gets no strut
 

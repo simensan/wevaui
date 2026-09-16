@@ -1,5 +1,9 @@
 # Unity host: the native plugin
 
+For installing or authoring UI, use the [Unity guide](../../Packages/com.wevaui/Documentation~/getting-started.md).
+This page covers native builds and host internals. Platform build recipes are
+not player qualification; [readiness](../../docs/PRODUCT_READINESS.md) records tested scope.
+
 The Unity host runs the same C++ core as the Godot host. This directory builds
 that core as `weva_core` (a shared library with nothing but the C ABI exported)
 and generates the C# P/Invoke layer the Unity package calls it through. The

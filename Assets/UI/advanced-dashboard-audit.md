@@ -1,5 +1,9 @@
 # Advanced dashboard CSS audit — Weva vs Chrome
 
+> **Historical C# render audit.** These June 2026 observations predate the
+> native engine. Use the current [CSS reference](../../Packages/com.wevaui/Documentation~/supported-css.md)
+> and [verification report](../../docs/verification/review-three-days-20260915.md).
+
 Date: 2026-06-01
 Probe: `Assets/UI/advanced-dashboard.{html,css}` (1280×800 viewport)
 Suite: 6435 tests passing

@@ -1,5 +1,9 @@
 # Modal layout performance
 
+> **Recorded modal-performance experiment.** The comparisons below apply to
+> the named binaries and workload. For current adoption/performance limits, see
+> [product readiness](../../docs/PRODUCT_READINESS.md).
+
 Runtime66 adds automatic retained layout for ordinary modal opening/closing.
 There is no authoring API change: `show_modal_dialog`, `close_dialog`, focus
 and `bind_state` continue to work as before. The current supported CSS/top-layer

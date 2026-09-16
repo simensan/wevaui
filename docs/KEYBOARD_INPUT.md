@@ -16,6 +16,7 @@ both key edges and avoid inserting text for a consumed key.
 | Checkbox | Space toggles on release, then emits input and change. Enter can activate its form's default submit button. |
 | Radio | Space selects. Arrows select the next enabled member, wrapping within the same named group and form owner. Unnamed radios are independent. Tab visits one member per group, preferring its checked or last visited member. |
 | Horizontal range | Arrows step; Home/End select the endpoints; PageUp/PageDown move by a page. Values clamp and align to the permitted step. `step=any` uses one percent of the range for arrows. Painting, reads and edits share value normalization. |
+| Number input | Up/Down steps with min/max and step constraints; disabled/readonly fields reject editing. |
 | Select listbox | Arrows, Home/End and PageUp/PageDown navigate enabled rows. Shift extends a multiple-selection range. Ctrl/Meta+arrows move the visible keyboard row; Ctrl/Meta+Space toggles it. Ctrl+A selects enabled options. Typing searches labels; Space continues an active prefix. Enter and otherwise plain Space preserve selection. |
 | Select dropdown | Enter/Space opens, Up/Down skip disabled options, Enter/Space commits the highlighted option and Escape cancels. Typing searches labels, with Space continuing an active prefix. `size=1` uses this behavior. |
 | First summary in details | Enter or Space toggles the details element. It participates in native HTML tab order. Activating a nested button does not toggle the details. |
@@ -40,10 +41,10 @@ ownership and Tab navigation, and 40 range-key cases against captured Chrome
 values. `keyboard_integration_tests.tscn` exercises actual Godot GUI events,
 including controller handlers and two-way bindings. `check.sh` runs it.
 
-Known remaining work includes number
-stepping, picker controls, range direction and
-orientation coverage, form constraints, broader [IME compatibility](IME.md),
-and accessibility.
+Known remaining work includes picker controls, complete form constraints,
+broader [IME compatibility](IME.md), physical-device acceptance and accessibility.
+Horizontal RTL and vertical-rl/lr range direction are covered; sideways writing
+modes remain incomplete.
 These are release work; the implemented controls do not establish complete
 browser form behavior.
 

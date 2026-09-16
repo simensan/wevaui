@@ -17,14 +17,14 @@ the distributed package — clone the repo if you want to browse them.
 
 ## Repo sample pages (`Assets/UI/`, repo checkout only)
 
-The repo ships ~30 sample pages under `Assets/UI/` (each an `.html` + `.css`
+The repo ships sample pages under `Assets/UI/` (each an `.html` + `.css`
 pair). They double as the corpus for the layout-vs-Chrome audit and the
 golden/perf calibration, and are game-UI themed — mostly a fictional RPG
 ("Halcyon"/"Ravenmoor") and a match-3 ("Sweet Cascade").
 
 Many are real exercises of specific subsystems; the one-liners below note what
-each primarily stresses. Per-sample layout deviation vs. headless Chrome is
-tracked in the project's sample-audit.
+each primarily stresses. Current layout checks use the tracked Chrome corpus
+in `Tools/oracle/`.
 
 ## Reference / playground
 
@@ -32,7 +32,7 @@ tracked in the project's sample-audit.
 |---|---|
 | `flex-playground.html` | Flexbox: nested columns, grow/shrink, cross-stretch reflow, auto margins. |
 | `grid-playground.html` | Grid: templates, named areas, auto-placement, `align-content`, `min-height` floors. |
-| `9slice-demo.html` | 9-slice `<img>` and CSS `border-image` from sprite borders. |
+| `9slice-demo.html` | CSS `border-image` using explicit slices of the bundled PNG. |
 | `inputtest.html` | Form controls + focus/keyboard nav (paired with `inputtest.unity`). |
 | `randhtml.html` | The dev demo the golden tests + perf benches calibrate against — HUD / quest log / chat / map widgets in one page. |
 | `weva-landing.html` | Marketing-style landing page (gradient text, code blocks, flex layout). |
@@ -73,13 +73,11 @@ tracked in the project's sample-audit.
 
 ## Notes
 
-- Several samples render with a uniform vertical offset vs. Chrome — that is the
-  **intentional default-face** divergence (the bundled Inter face's metrics
-  differ slightly from Chrome's Arial; `font-drift` in the audit), not a layout
-  bug. See [Text & Fonts](text-and-fonts.md).
-- Samples whose layout still diverges structurally are the ranked backlog in
-  the project's sample-audit (grid height containment, message-bubble
-  shrink-to-fit, inline transforms, etc.).
+- Compare the same font, viewport and animation time when reviewing browser
+  and host captures. Different default fonts do not establish a layout defect;
+  see [Text & Fonts](text-and-fonts.md).
+- Current layout checks pass for all 47 tracked sample captures. This measures
+  geometry within the configured tolerance, not pixel-identical host rendering.
 
 ---
 

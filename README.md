@@ -1,16 +1,48 @@
 # Weva
 
-![CI](https://github.com/simensan/wevaui/actions/workflows/godot-ci.yml/badge.svg)
+HTML and CSS for game UI in **Unity** and **Godot**. Build HUDs, menus and
+settings screens, then connect them to C# or GDScript controllers. Both hosts
+use the same C++ layout engine, checked against Chrome.
 
-HTML and CSS as a game UI layer, for **Godot** and **Unity**. You write the
-standard `.html` and `.css` that browsers — and the AI models trained on the
-web — already know; one engine lays it out and paints it, and each game engine
-draws the result through its own renderer. No UXML or USS dialect, no
-`-unity-` or `-godot-` prefixes.
+**Development preview.** See [product readiness](docs/PRODUCT_READINESS.md)
+for tested configurations, remaining limits and performance evidence.
 
-The rule the project is built on: **if a feature has a well-known web
-behaviour, Weva matches it or does not ship it.** Conformance is measured
-against headless Chrome, not against another implementation.
+## Get started
+
+| Host | Requirements | Guide |
+|---|---|---|
+| Unity | Unity 6000.3+, URP 17, Input System 1.7; Windows x64 native plugin | [Unity setup](Packages/com.wevaui/Documentation~/getting-started.md) |
+| Godot | Godot 4.7; Windows/Linux x64 builds | [Addon setup](hosts/godot/ADDON_README.md) |
+
+**Unity:** in Package Manager, choose **Add package from disk** and select
+`Packages/com.wevaui/package.json` from this checkout. Follow the setup guide
+to enable the URP renderer feature and import the Phase One Demo.
+The package's version is 1.0.0; [0.1.x migration notes](Packages/com.wevaui/CHANGELOG.md#migrating-from-01x)
+cover its breaking API changes.
+
+**Godot:** extract a packaged addon into your project's root and run
+`addons/weva/example/example.tscn`. Check its `build.json` for the included
+platforms. To build from source or run the gallery in this checkout, use the
+[host build guide](hosts/godot/README.md#building). The
+[Frontier Camp example](examples/frontier_camp/README.md) demonstrates a
+standalone game integration. Native Godot controls have a
+[known text-shaping issue](docs/GODOT_TEXT_SHAPING.md#stock-godot-472-limitation);
+the verified configuration uses a patched editor and matching export templates.
+
+## Author UI
+
+Write `.html` and `.css`, bind values with `{{ Name }}` and `data-model`, and
+connect actions with attributes such as `on-click="OnStart"`. Hot reload
+updates the page while you work.
+
+Weva implements a web subset. Check the [HTML](Packages/com.wevaui/Documentation~/supported-html.md)
+and [CSS](Packages/com.wevaui/Documentation~/supported-css.md) references for
+supported features and limitations; there is no JavaScript runtime.
+
+- [Unity authoring guide](Packages/com.wevaui/Documentation~/AuthoringGuide.md)
+  and [troubleshooting](Packages/com.wevaui/Documentation~/troubleshooting.md).
+- [Godot bindings and actions](hosts/godot/ADDON_README.md#connect-a-game-in-three-steps).
+- [Documentation index](docs/README.md) for fonts, input, exports and verification.
 
 ## Showcase
 
@@ -30,149 +62,21 @@ addon through a `Control` on top of the scene.
 
 ![The Godot host: a survival game's HUD drawn over the 3D scene](./docs/images/western-survival-hud.png)
 
-## One engine, two hosts
+## Contribute
 
-- **[`libweva/`](./libweva/)** — the engine. C++17 behind a C ABI
-  ([`weva_c.h`](./libweva/include/weva_c.h)): HTML and CSS parsing, the
-  cascade, block / inline / flex / grid / positioned layout, forms and text
-  editing, animation, data binding, and painting to textured triangle lists.
-  Text is left to the host. Every sample page is checked against Chrome
-  ([`Tools/oracle/`](./Tools/oracle/)); the core suite runs ~500,000 checks.
-- **[`hosts/godot/`](./hosts/godot/)** — the Godot addon. A GDExtension
-  (`WevaDocument` is a `Control`) with TextServer as the font backend, native
-  GUI routing, gamepad navigation, IME, live reload. Windows and Linux; a
-  standalone game integration lives in
-  [`examples/frontier_camp/`](./examples/frontier_camp/).
-- **[`Packages/com.wevaui/`](./Packages/com.wevaui/)** — the Unity package
-  (UPM). The same core as a native plugin, `WevaDocument` as a MonoBehaviour,
-  `[UIBind]` controllers, a URP render pass, `FontEngine` as the font backend,
-  the Input System for input. Windows x64 in the package; macOS, Android and
-  iOS binaries build in CI.
+The engine is in `libweva/`; hosts translate fonts, input and draw calls.
+Unity's package is in `Packages/com.wevaui/`, and the Godot extension is in
+`hosts/godot/`.
 
-The C# in the Unity package and the GDScript-facing layer in the Godot addon
-are hosts, not engines: they upload triangles, answer font callbacks and feed
-input. The C# engine that the Unity package shipped as 0.1.x was deleted on
-2026-09-13.
-
-## Godot
-
-Open `hosts/godot/project/project.godot` in Godot 4.7 for the sample gallery,
-or install the packaged addon into your own project: extract a
-`weva-<platform>.zip` (built by `hosts/godot/package_addon.py`, or the
-`extension-build-*` artifact of a CI run) into the project root and run
-`addons/weva/example/example.tscn`. No C# runtime is required.
-
-```gdscript
-var ui := WevaDocument.new()
-ui.document_size = Vector2(640, 360)
-ui.css = "body { color: white; background: #18202c } button { padding: 12px }"
-ui.html = '<h1>{{ Player.Name }}</h1><button on-click="start_game">Start</button>'
-ui.data = {"Player": {"Name": "Ada"}}
-ui.set_controller(self)
-add_child(ui)
-```
-
-Define `start_game(_id: String)` on the controller to handle the button.
-Native anchors and Containers size the HTML viewport; native GUI routing owns
-focus and overlapping controls; Tab traverses HTML and then native Controls;
-the standard controls answer keyboard, gamepad and IME input.
-
-- [Godot host guide](./hosts/godot/README.md) — build, package, integrate,
-  drive a document from GDScript.
-- [Keyboard behaviour](./docs/KEYBOARD_INPUT.md), [IME evidence and
-  limits](./docs/IME.md), [text shaping on the stock
-  engine](./docs/GODOT_TEXT_SHAPING.md).
-- [Release verification](./docs/RELEASE.md) — pinned builds, versioned
-  packaging, acceptance commands.
-
-## Unity
-
-Add via **Package Manager ▸ + ▸ Add package from git URL…**:
-
-```
-https://github.com/simensan/wevaui.git?path=Packages/com.wevaui
-```
-
-That tracks `main` (1.0.0); pin a release with a `#v*` tag suffix once one is
-tagged. Unity 6000.3+, URP, the Input System.
-
-```csharp
-public sealed class MainMenu : MonoBehaviour {
-    [UIBind] public int CoinCount;                                   // {{ CoinCount }}
-    void Awake() => GetComponent<WevaDocument>().SetController(this);
-    public void OnStart() => CoinCount++;                            // on-click="OnStart"
-}
-```
-
-- [Package README](./Packages/com.wevaui/README.md) — quick start, supported
-  subset, API surface.
-- [Getting started](./Packages/com.wevaui/Documentation~/getting-started.md),
-  the [authoring guide](./Packages/com.wevaui/Documentation~/AuthoringGuide.md),
-  [supported HTML](./Packages/com.wevaui/Documentation~/supported-html.md) and
-  [CSS](./Packages/com.wevaui/Documentation~/supported-css.md),
-  [troubleshooting](./Packages/com.wevaui/Documentation~/troubleshooting.md),
-  [API stability](./Packages/com.wevaui/Documentation~/api-stability.md).
-- [Unity host notes](./hosts/unity/README.md) — the plugin build, the font
-  backend, the renderer, the input feed.
-
-## Where things stand
-
-[`docs/PRODUCT_READINESS.md`](./docs/PRODUCT_READINESS.md) says, per host,
-what is verified and what evidence is still missing. In short: a development
-preview on both. Known gaps shared by both hosts: `sideways-*` writing modes
-and upright CJK in vertical text (`vertical-rl` / `vertical-lr` lay out and
-paint rotated), `@property`, View Transitions. The Unity host shapes
-with its own OpenType layer (right-to-left order, Arabic joining, cursive
-attachment, marks, the nine main Indic scripts by syllable; not Sinhala,
-Khmer, Myanmar or Tibetan) and does not
-rasterise colour emoji; the Godot host's text is TextServer's.
-
-## For engineers and AI agents
-
-- [`AGENTS.md`](./AGENTS.md) — the contract for changing the engine or a
-  host: the rules, the gate, the recipes.
-- [`AI_REFERENCE.md`](./AI_REFERENCE.md) — orientation for an agent asked to
-  use, integrate or reason about Weva.
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — the core as built and the
-  ABI's history; [`docs/CONVENTIONS.md`](./docs/CONVENTIONS.md) — the C++ rules;
-  [`docs/ORACLE.md`](./docs/ORACLE.md) — how Chrome guards the engine;
-  [`docs/INPUT_PARITY.md`](./docs/INPUT_PARITY.md) — the two hosts' input
-  decisions, each pinned by a test on both.
-- [`PLAN.md`](./PLAN.md) — the design the core implements (history);
-  [`CONFORMANCE.md`](./CONFORMANCE.md) — spec deltas, property by property.
-
-`check.sh` is the full local gate: build, the core suite, sanitizers, Chrome,
-the Unity plugin, the Godot extension and live host scenes. CI runs tooling,
-core/sanitizer suites, Chrome layout and behavior checks, and native builds
-and packaging on Ubuntu, Windows and macOS. Unity editor tests and live Godot
-scene, rendering, Unicode and export checks need local engine installations.
-
-## Layout
-
-```
-weva/
-├── libweva/                     The engine: C++ core, C ABI (include/weva_c.h), tests
-├── hosts/
-│   ├── godot/                   GDExtension addon, sample gallery, scene tests, packaging
-│   └── unity/                   Unity plugin build, binding generator, notices
-├── Packages/com.wevaui/         The Unity package (UPM)
-├── examples/frontier_camp/      A standalone Godot game integration
-├── Assets/                      The Unity dev project: sample pages (UI/), scenes
-├── Tools/
-│   ├── oracle/                  Chrome captures, chrome_sweep gate, behaviour checks
-│   ├── Layout/                  Chrome capture tooling (puppeteer)
-│   ├── weva_dump / weva_render / weva_bench   Core CLIs
-│   └── RenderGoldens/           GPU golden harness
-├── third_party/                 ICU, Unicode tables, WTF Decimal, ada
-├── docs/                        Architecture, readiness, receipts
-├── CMakeLists.txt, check.sh     Build and the gate
-└── AGENTS.md, AI_REFERENCE.md   For engineers and agents
-```
+Read [AGENTS.md](AGENTS.md) before changing the engine or a host.
+[AI_REFERENCE.md](AI_REFERENCE.md) orients coding agents;
+[architecture](docs/ARCHITECTURE.md) documents the implementation.
+`check.sh` runs the local verification gate; the
+[latest review](docs/verification/review-three-days-20260915.md) records its
+configuration and results. CI configuration alone does not establish platform
+or release readiness.
 
 ## License
 
-MIT — see [`LICENSE.md`](./LICENSE.md). Third-party components and their
-licences are in [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md): the
-engine statically links ICU, the generated Unicode tables, Blink's WTF Decimal
-and the ada URL parser; the Unity package ships those notices in its own
-`Third Party Notices.md`, the Godot addon bundles them in its zip.
+MIT — see [LICENSE.md](LICENSE.md) and
+[third-party notices](THIRD_PARTY_NOTICES.md).

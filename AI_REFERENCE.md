@@ -20,10 +20,9 @@ inconclusive, full EditMode 237 pass / 2 inconclusive._
 A **runtime HTML/CSS UI engine** — `libweva`, C++ behind a C ABI — hosted by a
 Unity package (`com.wevaui`) that renders through **URP RenderGraph**, and by
 a Godot addon. It is deliberately **not** Unity UI Toolkit (UXML/USS): the
-design rule is "real-web HTML/CSS or nothing", so LLM-trained and
-browser-trained UI knowledge transfers unchanged. A subtly divergent behaviour
-is considered worse than a missing one, and conformance is measured against
-headless Chrome captures, not against another implementation.
+design target is standard web HTML/CSS. The implemented subset has documented
+limits; consult the support tables before promising browser behavior.
+Conformance is measured against headless Chrome captures.
 
 - Own HTML + CSS parsers; cascade with `var()`, `calc()`, `@media`,
   `@container`, `@scope`, `@property`, layers, nesting, `:has()`.
@@ -107,6 +106,9 @@ Details and the exact supported set: [`api-stability.md`](Packages/com.wevaui/Do
   implemented and balanced the way Blink balances (`libweva/src/multicol.cpp`).
 - **No script.** No JavaScript, no DOM mutation API beyond attributes,
   values and reload; a list changes through `data-each`.
+- **Motion.** Opacity, same-unit numeric values and colors interpolate.
+  Transform/gradient/filter function values switch discretely; multi-point
+  `linear(...)` easing is not implemented. See the animation reference.
 - **Not UI Toolkit.** No USS, no `-unity-*` properties, no uGUI interop.
 
 ## 4. Architecture map
@@ -183,5 +185,6 @@ any red is new.
 | Which CSS works, and how it differs from Chrome | `Packages/com.wevaui/Documentation~/supported-css.md` |
 | Input decisions on both hosts, with tests | `docs/INPUT_PARITY.md` |
 | Readiness, requirements and limitations for users | `docs/PRODUCT_READINESS.md` |
+| User guides, engineering references and historical records | `docs/README.md` |
 | Verification counts, configuration and evidence | `docs/verification/review-three-days-20260915.md` |
 | What changed for 1.0 and how to migrate | `Packages/com.wevaui/CHANGELOG.md` |

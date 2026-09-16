@@ -1,5 +1,10 @@
 # native-check.html: looking at the core's recent work in Unity
 
+> **Historical render review, September 11.** The missing Unity font fallback
+> and shaping described below were subsequently changed. Use the current
+> [font guide](../../Packages/com.wevaui/Documentation~/text-and-fonts.md) for setup
+> and the [review report](../../docs/verification/review-three-days-20260915.md) for later evidence.
+
 `native-check.html` + `native-check.css` (this folder) exercise, one block each:
 safe-area insets, `direction`/`unicode-bidi`, a `local()` font source, the
 individual transform properties, the intrinsic sizing keywords, component-scoped

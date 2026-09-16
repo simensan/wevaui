@@ -34,21 +34,18 @@ C# engine; its implementation references and status rows are not current.
 
 Specificity follows the spec; `!important` is honored. State pseudo-classes
 flip automatically off event-driven interaction state — no controller code.
-`:visited` parses but never matches (`IsVisited` is hard-coded `false` — there
-is no browsing-history store).
+`:visited` parses but never matches; there is no browsing-history store.
 
-**Known divergence:** the `of <selector>` filter is honored for `:nth-child` /
-`:nth-last-child` (via `SelectorParser` + `FilteredChildIndex`) but dropped for
-`:nth-of-type` / `:nth-last-of-type` — there the index counts all matching-type
-siblings. Use a more specific selector instead.
+Use `of <selector>` with `:nth-child` / `:nth-last-child` to count a filtered
+sibling list. `:nth-of-type` / `:nth-last-of-type` count matching element types;
+do not use an `of` filter with those forms.
 
 ## Cascade & inheritance
 
 - Real selector matching, specificity sorting, and source order.
 - `inherit`, `initial`, `unset` resolve per spec.
-- `revert` / `revert-layer` roll back to the appropriate lower-priority match
-  across origin and layer (up to 4 chained hops; `!important` inversion is not
-  honored in v1).
+- `revert` / `revert-layer` roll back across origin and layer. Important
+  declarations reverse the normal origin and layer order.
 - `var(--name, fallback)` with cycle detection; a cycle member refuses its own
   definition-level fallback (consumer-side fallback still rescues).
 - **Cascade layers** (`@layer`) and **nested rules** (`& > .child`, `.child`,
@@ -66,13 +63,13 @@ siblings. Use a more specific selector instead.
 
 - **Lengths:** `px`, `em`, `rem`, `%`, `vw`, `vh`, `vmin`, `vmax`, and the
   other standard absolute/relative units. `1px` = 1 logical pixel; `rem`/`em`
-  derive from a 16px base.
+  follow the element/root font size; the default root size is 16px.
 - **Functions:** `calc()`, `min()`, `max()`, `clamp()` — full arithmetic over
   lengths, percentages, and numbers. `attr()` typed forms work in any
   property-value context (substituted at computed-value time like `var()`,
   including inside `calc()`, through `var()` indirection, and in shorthands),
   `env()` (the host supplies per-document safe-area inset values through the
-  native API; the retired `EnvironmentVariables.Register` C# API is unavailable).
+  native API).
 - **Colors:** `#hex`, `rgb()`/`rgba()`, `hsl()`/`hsla()`, `hwb()`, `lab()`,
   `lch()`, `oklab()`, `oklch()`, `color()`, named colors, `currentColor`,
   `color-mix()`, and `light-dark()`. Modern RGB syntax permits mixed numbers
@@ -94,15 +91,15 @@ siblings. Use a more specific selector instead.
   are exposed to the host's font loader. URLs resolve from the declaring
   stylesheet. Stretch, Unicode ranges and font-display do not currently
   influence font selection or loading.
-- `@media` — full feature set: `width`/`height`, `orientation`,
+- `@media` — supported features include `width`/`height`, `orientation`,
   `aspect-ratio`, `resolution`, `prefers-color-scheme`,
   `prefers-reduced-motion`, `hover`, `pointer`, with `and`/`or`/`not`.
   Evaluated against the UI surface, not the OS window.
 - `@container` — `container-type: inline-size | size`, named and unnamed,
   width/height/inline-size/block-size/orientation/aspect-ratio features, range
-  form (`width >= 320px`), `style(--prop)` queries, nested conditions, and
-  `and`/`or`/`not`. A fresh `container-type` assignment may take 1–2 frames to
-  settle (the v1 chicken-and-egg: it reads layout-after-previous-cascade size).
+  form (`width >= 320px`), nested conditions, and `and`/`or`/`not`. Size queries
+  settle before the update publishes its frame. Style queries, scroll-state
+  queries and container-relative units are not implemented.
 - `@keyframes` — see [Animations & Transitions](animations-transitions.md).
 - `@supports` — reports Weva's actual support.
 - `@scope` (CSS Cascade Level 6) — root/limit lists, nested scope chains,
@@ -110,14 +107,16 @@ siblings. Use a more specific selector instead.
   omitted root uses the inline `<style>` parent's subtree; host-supplied
   stylesheets without an owner use the document element.
 - `@property` — descriptor parsing with `inherits` / `initial-value` /
-  `syntax`; `initial-value` containing `var()`/`env()` is rejected per spec.
+  `syntax`, inheritance control and initial-value fallback. Syntax validation
+  is partial: `+`/`#` multipliers are not enforced and unknown syntax components
+  are permissive. `initial-value` containing `var()`/`env()` is rejected.
 - `@layer` — cascade layers.
 - `@namespace` — parses but no XML namespace map (prefixed selectors match on
   the local name).
 
 ## Known divergences from Chrome
 
-These are intentional or phase-scoped known v1 simplifications.
+These are known limits of the current implementation.
 
 - **Bundled default font is Inter (SIL OFL), not Arial — intentional.** Bare
   `sans-serif` resolves to it (Segoe UI is proprietary and can't ship); on
@@ -127,19 +126,18 @@ These are intentional or phase-scoped known v1 simplifications.
   [Text & Fonts](text-and-fonts.md).
 - **`box-sizing` default is `content-box`** (the CSS initial value). Use
   `* { box-sizing: border-box }` for the common reset.
-- **`line-height: normal`** resolves taller than Chrome for the same font-size
-  (≈1.21× for bundled Inter's actual `normal` vs. Chrome's ≈1.143× for Inter —
-  a consequence of the default-face metrics above).
+- **`line-height: normal`** uses the selected font's host-provided metrics.
+  Compare the same font and size before diagnosing a layout difference.
 - Layout-specific simplifications (`position: sticky` single-axis,
-  `min-content`/`max-content` treated as `auto` in flex, etc.) are listed on
+  incomplete flex aspect-ratio transfer, etc.) are listed on
   [CSS Layout](css-layout.md).
 - A set of properties parse cleanly but are intentionally inert or reduced —
   `isolation: isolate` (mix-blend always blends against everything painted
   so far; isolated groups aren't bounded yet), `animation-composition: add`,
   3D-transform properties, `font-feature-settings`, `font-variant-numeric`,
   `font-size-adjust`, `font-synthesis-*`, container-query units, and others.
-  See [`AuthoringGuide.md`](AuthoringGuide.md) §17 for the full
-  "parses-but-inert" and "partial-support" lists.
+  See [CSS Visual](css-visual.md), [CSS Text](css-text.md) and
+  [Animations](animations-transitions.md) for the behavior of these features.
 
 ---
 

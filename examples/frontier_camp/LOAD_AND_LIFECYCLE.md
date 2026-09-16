@@ -1,6 +1,11 @@
 # Frontier Camp: load, cold opening and lifecycle
 
-## Current installed addon: five-minute lifecycle verification
+> **Historical lifecycle measurements.** Results below apply to their recorded
+> binaries, workloads and machine. They do not qualify the current checkout or
+> establish leak-free behavior. See [current performance scope](../../docs/RUNTIME_PERFORMANCE.md)
+> and the [sample guide](README.md) for preparation/reuse and reproduction.
+
+## Checkpoint193: five-minute lifecycle verification
 
 The opacity/stacking-corrected addon passes 200 recreations and 300 seconds of
 Unicode updates in the 1080p Vulkan 3D scene: 208,642 frames and 35,214 name

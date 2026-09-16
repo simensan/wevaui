@@ -70,6 +70,7 @@ public class HUDController : MonoBehaviour {
     [UIBind] public Stats Stats;                              // {{ Stats.Health }}
     [UIBind] public int    MaxHP = 100;
     [UIBind] public bool   IsCriticalHP => Stats.Health < MaxHP / 4;
+    [UIBind] public string PartyLeader = "Aerith";
     [UIBind] public string HpPctStyle => $"--pct:{(Stats.Health * 100.0 / MaxHP):F0}%";
     [UIBind] public List<Quest> Quests;                       // data-each
 }
@@ -78,6 +79,7 @@ public class HUDController : MonoBehaviour {
 ```html
 <div class="hud">
   <div class="bar hp" style="{{ HpPctStyle }}">
+    <div class="fill"></div>
     <span class="num">{{ Stats.Health }} / {{ MaxHP }}</span>
   </div>
   <div class="leader" data-class-critical="IsCriticalHP">{{ PartyLeader }}</div>
@@ -171,7 +173,7 @@ with the element's `id` if the method takes a `string`:
 
 ```html
 <button on-click="OnStart">Start</button>
-<input type="text" on-input="OnSearch" on-change="OnSearchCommitted" />
+<input id="search" type="text" on-input="OnSearch" on-change="OnSearchCommitted" />
 <form on-submit="OnLogin">…</form>
 <details on-toggle="OnSectionToggled">…</details>
 ```
@@ -447,11 +449,10 @@ upright/sideways orientation is not implemented. See [CSS Layout](css-layout.md)
 
 ## 16. Where to look next
 
-* **Package [`README.md`](../README.md)** — supported HTML/CSS subset,
-  architecture overview.
+* **Package [`README.md`](../README.md)** — setup and adoption limits.
 * **[Supported CSS](supported-css.md)** — the property matrix and the known
   divergences from Chrome; **[Supported HTML](supported-html.md)**.
 * **`Samples~/PhaseOneDemo/`** — the end-to-end demo scene that ships in the
   package; import via Package Manager → Weva → Samples.
-* **`Assets/UI/`** *(repo checkout only)* — ~30 sample pages, each also a
+* **`Assets/UI/`** *(repo checkout only)* — sample pages, also used as
   Chrome-checked layout fixture.

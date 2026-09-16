@@ -1,13 +1,5 @@
 # Incremental font warmup
 
-This API is included in the installed preview211 addon. All 44 host entries
-(35,468 checks), sample and export
-checks pass. Cold, partial and full warmup produce byte-identical multilingual
-text captures to preview210 on OpenGL and Vulkan. All 72 desktop, 276 automatic
-1080p and 276 automatic 4K timing checks pass, along with 20 installed smoke
-suites. Lower-end and longer lifecycle qualification remain open.
-[Verification](verification/font-warmup.json).
-
 Call the static method from a loading screen on Godot's main thread, before
 constructing a WevaDocument:
 
@@ -37,3 +29,14 @@ performed earlier. These single-run diagnostics are not Frontier HUD timings.
 
 `WEVA_STAGE_LOG=1` now also reports theme, compatibility-font, backend and family
 setup times. Existing update-stage timing starts after lazy font setup.
+
+## Recorded verification
+
+This API was verified in preview211. The following counts and timings describe
+that checkpoint. All 44 host entries
+(35,468 checks), sample and export
+checks pass. Cold, partial and full warmup produce byte-identical multilingual
+text captures to preview210 on OpenGL and Vulkan. All 72 desktop, 276 automatic
+1080p and 276 automatic 4K timing checks pass, along with 20 installed smoke
+suites. Lower-end and longer lifecycle qualification remain open.
+[Verification](verification/font-warmup.json).

@@ -1,6 +1,11 @@
 # Layout audit
 
-## Current installed corrections
+> **Historical layout investigations.** The old failing totals below are not
+> the current gate result. The [September 15 review](verification/review-three-days-20260915.md)
+> passes all 334 tracked Chrome captures within 1.5 px, with no excused cases.
+> Use the [current oracle guide](../Tools/oracle/README.md) to reproduce checks.
+
+## Recorded corrections at build200
 
 Direct child headings with `column-span:all` now separate independently balanced
 column groups. Consecutive heading margins collapse, and empty headings with

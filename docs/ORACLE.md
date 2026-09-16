@@ -7,7 +7,7 @@ Chrome is the only CSS/HTML reference. `check.sh` runs the tracked corpora throu
 `run_oracle.py` and `Tools/oracle/run.sh` now invoke that same gate. BaselineGen and
 the C# engine were deleted; their generation and arbitration commands are retired.
 See the [working commands](../Tools/oracle/README.md) and
-[current evidence](PRODUCT_READINESS.md).
+[current evidence](verification/review-three-days-20260915.md).
 
 The records below describe the earlier migration and explain past decisions.
 They are historical evidence, not instructions for the current checkout.
@@ -21,7 +21,7 @@ thing in the plan.
 
 The in-progress candidate corrects aspect-ratio border feedback, named grid
 placement, stretch constraints and implicit/dense auto placement. The grid showcase agrees with the browser;
-inventory's accumulating position error is removed. Versioned [regression cases 48–56](../tools/oracle/regressions/grid/)
+inventory's accumulating position error is removed. Versioned [regression cases 48–56](../Tools/oracle/regressions/grid/)
 cover these fixes; all nine match fresh Chrome captures. See the [current work and validation](../examples/frontier_camp/CHROME_PARITY.md).
 Size container queries now settle in the same update. Combat HUD geometry agrees
 with Chrome; the container corpus now has 15/15 agreements. Seven additional
