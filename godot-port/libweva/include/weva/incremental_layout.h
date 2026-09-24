@@ -34,6 +34,10 @@ private:
     std::unordered_map<const Element*, BoxId> by_element_;
     std::vector<int> sizes_;
     std::vector<bool> local_;
+    // Per box: the outermost containing block, above the box, of an absolute
+    // box inside its subtree -- kNoBox when every one is placed inside it.
+    std::vector<BoxId> escapes_;
+    std::vector<bool> contained_;
     std::vector<std::pair<double, double>> contributions_;
     std::vector<BoxId> replaced_;
     std::vector<BoxId> retained_;

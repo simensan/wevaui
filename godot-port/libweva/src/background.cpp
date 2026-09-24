@@ -1280,6 +1280,9 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         std::fprintf(stderr, "  [grad] %dx%d tex, %zu tiles, %d^2 samples, flat_x %d flat_y %d\n",
                      tex_w, tex_h, tiles.size(), samples, flat_x ? 1 : 0, flat_y ? 1 : 0);
     }
+    // Loop invariants the compiler did not hoist past the stores to out_rgba.
+    const float base_r = base.r * base.a, base_g = base.g * base.a, base_b = base.b * base.a;
+    const double samples_inv = 1.0 / samples;
     for (int py = 0; py < tex_h; ++py) {
         if (flat_y && py > 0) {
             // Every row is the row above it.
@@ -1324,13 +1327,13 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                 }
             }
             if (gradient_log && texel_samples > 1) ++supersampled;
-            const double tinv = 1.0 / texel_samples;
+            const double tinv = texel_samples == samples ? samples_inv : 1.0;
             for (int oy = 0; oy < texel_samples; ++oy) {
                 const double y = (py + (oy + 0.5) * tinv) * sy;
                 for (int ox = 0; ox < texel_samples; ++ox) {
                     const double x = (px + (ox + 0.5) * tinv) * sx;
                     // Premultiplied source-over, bottom layer (the last) first.
-                    float r = base.r * base.a, g = base.g * base.a, b = base.b * base.a;
+                    float r = base_r, g = base_g, b = base_b;
                     float a = base.a;
                     for (size_t i = tiles.size(); i-- > 0;) {
                         const Tile& t = tiles[i];
@@ -1356,9 +1359,14 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                     aa += a;
                 }
             }
-            const float n = static_cast<float>(texel_samples * texel_samples);
-            float r = ar / n, g = ag / n, b = ab / n;
-            const float a = aa / n;
+            // One sample needs no average: dividing by 1 is exact, and it was
+            // four of the ten divides a single-sample texel paid.
+            float r = ar, g = ag, b = ab, a = aa;
+            if (texel_samples > 1) {
+                const float n = static_cast<float>(texel_samples * texel_samples);
+                r = ar / n; g = ag / n; b = ab / n;
+                a = aa / n;
+            }
             uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
             if (a > 0) { r /= a; g /= a; b /= a; }
             // std::lround is a libm CALL, and this runs four times for every

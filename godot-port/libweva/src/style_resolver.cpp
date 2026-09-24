@@ -777,7 +777,8 @@ namespace weva {
 
 int resolve_font_weight(const ComputedStyle* style) {
     if (!style) return 400;
-    std::string_view v = style->get("font-weight");
+    static const int id = CssPropertyRegistry::instance().id_of("font-weight");
+    std::string_view v = style->get(id);
     while (!v.empty() && v.front() == ' ') v.remove_prefix(1);
     while (!v.empty() && v.back() == ' ') v.remove_suffix(1);
     if (v.empty() || v == "normal") return 400;
@@ -793,7 +794,8 @@ int resolve_font_weight(const ComputedStyle* style) {
 
 bool resolve_font_italic(const ComputedStyle* style) {
     if (!style) return false;
-    std::string_view v = style->get("font-style");
+    static const int id = CssPropertyRegistry::instance().id_of("font-style");
+    std::string_view v = style->get(id);
     while (!v.empty() && v.front() == ' ') v.remove_prefix(1);
     return v.size() >= 6 && (v.substr(0, 6) == "italic" || v.substr(0, 7) == "oblique");
 }

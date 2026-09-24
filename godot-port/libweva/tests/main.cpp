@@ -1,5 +1,6 @@
 void test_abi_incremental_block_margins();
 void test_abi_hidden_subtree_restyle();
+void test_abi_incremental_positioned_subtree();
 void test_abi_incremental_multicol_sizing();
 void test_abi_incremental_collapsed_table_borders();
 void test_abi_incremental_has_range_scopes();
@@ -589,6 +590,7 @@ int main() {
     test_abi_incremental_select_autoscroll();
     test_abi_incremental_block_margins();
     test_abi_hidden_subtree_restyle();
+    test_abi_incremental_positioned_subtree();
     test_abi_incremental_multicol_sizing();
     test_abi_incremental_collapsed_table_borders();
     test_abi_incremental_has_range_scopes();

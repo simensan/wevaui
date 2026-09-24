@@ -1,5 +1,6 @@
 #include "weva/incremental_layout.h"
 #include "weva/positioning.h"
+#include "weva/anchor.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -80,7 +81,10 @@ std::pair<double, double> baselines(const BoxTree& tree, BoxId id) {
 bool independent_height(const BoxTree& tree, BoxId id, const LayoutContext& ctx) {
     const Box& b = tree[id];
     if (!b.style || b.kind != BoxKind::Block) return true;
-    for (const char* property : {"height", "min-height", "max-height"}) {
+    static const int kHeights[3] = {CssPropertyRegistry::instance().id_of("height"),
+                                    CssPropertyRegistry::instance().id_of("min-height"),
+                                    CssPropertyRegistry::instance().id_of("max-height")};
+    for (const int property : kHeights) {
         if (b.style->get(property).find('%') == std::string_view::npos) continue;
         // Percentages below a definite local parent (a 100%-high bar inside
         // a 6px track) are independent of the retained grid's incoming height.
@@ -175,15 +179,44 @@ int IncrementalLayout::index_subtree(const BoxTree& tree, BoxId id, const Layout
     }
     if (b.is_float() || b.position == PositionType::Sticky || names_anchor(b.style))
         global_dependencies_ = true;
+    // A relatively positioned box moves only itself, after flow, and an
+    // absolute one is placed against its containing block: update() runs that
+    // placement inside a replacement, so both are local to any subtree that
+    // holds the containing block too. Fixed boxes, anchor functions and
+    // absolute boxes placed against the viewport stay nonlocal.
     bool local = !b.pseudo_host && b.display != DisplayKind::ListItem && !b.is_multicol &&
-                 !is_table_display(b.display) && b.position == PositionType::Static && !b.is_float();
+                 !is_table_display(b.display) && !b.is_float() &&
+                 b.position != PositionType::Fixed && b.position != PositionType::Sticky;
+    // The outermost containing block an absolute box in this subtree is placed
+    // against, while that block is still above this box.
+    BoxId escapes = kNoBox;
+    const auto escape_to = [&](BoxId cb) {
+        if (escapes == kNoBox || within(tree, escapes, cb)) escapes = cb;
+    };
+    if (b.position == PositionType::Absolute) {
+        BoxId cb = kNoBox;
+        for (BoxId p = b.parent; p != kNoBox; p = tree[p].parent)
+            if (establishes_absolute_containing_block(tree[p])) { cb = p; break; }
+        bool anchored = false;
+        for (const char* property : {"left", "right", "top", "bottom", "width", "height"})
+            if (b.style && looks_like_anchor_function(b.style->get(property))) anchored = true;
+        if (cb == kNoBox || anchored) local = false;
+        else escape_to(cb);
+    }
     int size = 1;
     bool independent = independent_height(tree, id, ctx);
     for (BoxId c : tree.children(id)) {
         size += index_subtree(tree, c, ctx);
-        local = local && local_[c];
+        local = local && contained_[c];
+        if (escapes_[c] != kNoBox && escapes_[c] != id) escape_to(escapes_[c]);
         independent = independent && height_independent_[c];
     }
+    // Contained: nothing inside needs the full pass except, possibly, boxes
+    // placed against a containing block further up. Local: not even those, so
+    // the subtree can be replaced on its own.
+    contained_[id] = local;
+    escapes_[id] = escapes;
+    if (escapes != kNoBox) local = false;
     sizes_[id] = size;
     local_[id] = local;
     height_independent_[id] = independent;
@@ -208,6 +241,8 @@ void IncrementalLayout::index(const BoxTree& tree, BoxId root, const LayoutConte
     }
     sizes_.assign(tree.size(), 0);
     local_.assign(tree.size(), false);
+    escapes_.assign(tree.size(), kNoBox);
+    contained_.assign(tree.size(), false);
     contributions_.resize(tree.size());
     height_independent_.assign(tree.size(), false);
     input_versions_.assign(tree.size(), ++input_serial_);
@@ -323,6 +358,9 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                         own_change = true;
                 if (own_change) continue;
             }
+            // Placed against a containing block further up: that ancestor can
+            // still be replaced, with this box inside it.
+            if (!local_[id] && contained_[id]) continue;
             if (!local_[id]) return reject("nonlocal subtree", id);
             int work_size = sizes_[id];
             for (const auto& item : eligible)
@@ -386,9 +424,24 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 }
             }
             if (!safe) continue;
+            stamp_offsets(&r.tree, r.from, ctx);
+            // The retained position already includes the root's own relative
+            // offset. Recovering its in-flow position by subtracting that
+            // offset would round differently from a full layout, so a root
+            // whose offset changed is promoted instead.
+            double old_dx, old_dy, new_dx, new_dy;
+            relative_offset(old, &old_dx, &old_dy);
+            relative_offset(r.tree[r.from], &new_dx, &new_dy);
+            if (old_dx != new_dx || old_dy != new_dy) { reject("relative offset", id); continue; }
             r.tree[r.from].x = old.x;
             r.tree[r.from].y = old.y;
-            stamp_offsets(&r.tree, r.from, ctx);
+            // What run_positioning does to the rest of the subtree: relative
+            // offsets, and absolute boxes placed against containing blocks that
+            // locality guarantees are inside it. The copied ancestor chain gives
+            // those blocks the same root-relative origin as the retained tree.
+            // A retained grid has no children here; its own position is the
+            // scratch one.
+            position_descendants(&r.tree, r.from, ctx, &block);
             compute_visual_overflow(&r.tree, r.from);
             const auto collect_retained = [&](const auto& self, BoxId b) -> void {
                 if (r.tree[b].retained_from != kNoBox) r.retained.push_back(r.tree[b].retained_from);
@@ -410,6 +463,8 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
         tree->replace_subtree(r.into, r.tree, r.from);
         sizes_.resize(tree->size());
         local_.resize(tree->size());
+        escapes_.resize(tree->size(), kNoBox);
+        contained_.resize(tree->size());
         contributions_.resize(tree->size());
         height_independent_.resize(tree->size());
         paint_root_flags_.resize(tree->size(), false);
@@ -592,6 +647,8 @@ bool IncrementalLayout::update_modal(BoxTree* tree, BoxId root, const Document& 
     sample.lap(6);
     sizes_.resize(tree->size());
     local_.resize(tree->size());
+    escapes_.resize(tree->size(), kNoBox);
+    contained_.resize(tree->size());
     contributions_.resize(tree->size());
     height_independent_.resize(tree->size());
     paint_root_flags_.resize(tree->size(), false);

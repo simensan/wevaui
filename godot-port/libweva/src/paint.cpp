@@ -666,7 +666,10 @@ float srgb_to_linear_f(float v) {
 }
 
 bool clips_background_to_text(const ComputedStyle* style) {
-    return get(style, "-webkit-background-clip") == "text" || get(style, "background-clip") == "text";
+    // The prefixed name is not a registered property, so it is found among
+    // the custom ones by name; only the standard one can be read by id.
+    static const int standard = CssPropertyRegistry::instance().id_of("background-clip");
+    return (style && style->get(standard) == "text") || get(style, "-webkit-background-clip") == "text";
 }
 
 // `filter: blur(<length>)` — the one filter painted; the rest pass through.
@@ -1032,8 +1035,11 @@ void paint_inset_shadows(const std::vector<Shadow>& shadows, const Rect& padding
 }
 
 bool clips_children(const ComputedStyle* style) {
-    for (const char* prop : {"overflow-x", "overflow-y"}) {
-        const std::string_view v = get(style, prop);
+    static const int overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
+    static const int overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
+    if (!style) return false;
+    for (const int prop : {overflow_x, overflow_y}) {
+        const std::string_view v = style->get(prop);
         if (v == "hidden" || v == "clip" || v == "auto" || v == "scroll") return true;
     }
     return false;
@@ -2880,7 +2886,8 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     if (decorated && b.style) state.opacity *= resolve_opacity(b.style);
     // `visibility: hidden` paints nothing of the box itself; its children
     // inherit the value and paint nothing either unless they override it.
-    const bool hidden = descendants_only || (b.style && get(b.style, "visibility") == "hidden");
+    static const int kVisibility = CssPropertyRegistry::instance().id_of("visibility");
+    const bool hidden = descendants_only || (b.style && b.style->get(kVisibility) == "hidden");
 
     const BoxId parent = b.parent;
     const ComputedStyle* ps = parent == kNoBox ? nullptr : tree[parent].style;

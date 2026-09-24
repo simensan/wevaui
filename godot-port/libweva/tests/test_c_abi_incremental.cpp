@@ -1020,27 +1020,42 @@ void test_abi_incremental_corpus() {
         if (count == 0 || count > elements.size()) {
             weva_document_destroy(live); weva_document_destroy(full); continue;
         }
-        for (int step = 0; step < 9; ++step) {
-            const weva_element_t target = elements[step < 6 ? count - 1 : count / 2];
-            const char* style = step < 3 ? (step % 2 ? "background:#123456" : "background:#123457")
-                                       : (step % 2 ? "padding-left:11px" : "padding-left:12px");
+        // WEVA_INCREMENTAL_TARGETS=N adds N evenly spaced elements, each given
+        // layout edits that reach relative and absolute boxes as well: insets
+        // move a positioned box, a width resizes it, padding reflows it.
+        std::vector<std::pair<weva_element_t, const char*>> steps;
+        for (int step = 0; step < 9; ++step)
+            steps.emplace_back(elements[step < 6 ? count - 1 : count / 2],
+                               step < 3 ? (step % 2 ? "background:#123456" : "background:#123457")
+                                        : (step % 2 ? "padding-left:11px" : "padding-left:12px"));
+        const char* extra = std::getenv("WEVA_INCREMENTAL_TARGETS");
+        const size_t targets = extra ? std::min(count, static_cast<size_t>(std::atoi(extra))) : 0;
+        for (size_t t = 0; t < targets; ++t) {
+            const weva_element_t target = elements[t * count / targets];
+            for (const char* style : {"padding-left:11px", "top:3px;left:2px", "width:37px",
+                                      "padding-left:12px;top:4px", ""})
+                steps.emplace_back(target, style);
+        }
+        for (size_t step = 0; step < steps.size(); ++step) {
+            const weva_element_t target = steps[step].first;
+            const char* style = steps[step].second;
             for (weva_document_t doc : {live, full})
                 CHECK(weva_element_set_attribute(doc, target, "style", style) == WEVA_OK);
             weva_document_set_viewport(full, 1281, 720);
             weva_document_set_viewport(full, 1280, 720);
-            const double dt = step < 6 ? 0 : 1.0 / 60;
+            const double dt = step < 6 || step >= 9 ? 0 : 1.0 / 60;
             CHECK(weva_document_update(live, dt) == WEVA_OK);
             CHECK(weva_document_update(full, dt) == WEVA_OK);
             const Frame a = capture(live), b = capture(full);
-            if (a != b) std::printf("  corpus %s step %d: %s\n", entry.path().stem().string().c_str(),
-                                    step, a.diff(b).c_str());
+            if (a != b) std::printf("  corpus %s step %zu (%s): %s\n", entry.path().stem().string().c_str(),
+                                    step, style, a.diff(b).c_str());
             CHECK(a == b);
             for (size_t i = 0; i < count; ++i) {
                 double av[4] = {}, bv[4] = {};
                 CHECK(weva_element_bounds(live, elements[i], &av[0], &av[1], &av[2], &av[3]) ==
                       weva_element_bounds(full, elements[i], &bv[0], &bv[1], &bv[2], &bv[3]));
                 for (int k = 0; k < 4; ++k) {
-                    if (av[k] != bv[k]) std::printf("  corpus %s step %d element %zu axis %d: %.17g vs %.17g\n",
+                    if (av[k] != bv[k]) std::printf("  corpus %s step %zu element %zu axis %d: %.17g vs %.17g\n",
                         entry.path().stem().string().c_str(), step, i, k, av[k], bv[k]);
                     CHECK(av[k] == bv[k]);
                 }
@@ -2233,4 +2248,71 @@ void test_abi_hidden_subtree_restyle() {
     CHECK(weva_document_update(d, 0) == WEVA_OK);
     CHECK(weva_document_draw_serial(d) == serial + 2);
     weva_document_destroy(d);
+}
+
+void test_abi_incremental_positioned_subtree() {
+    // A relatively positioned card holding an absolutely positioned badge is
+    // the everyday shape of a HUD slot. Incremental layout used to treat any
+    // positioned box as nonlocal, so an edit inside one rebuilt, re-laid and
+    // repainted the whole page. The replacement now re-applies the relative
+    // offsets and places absolute boxes whose containing block it holds; one
+    // placed against a block outside it still takes the full path.
+    const char* html =
+        "<header id=top>unchanged header text</header>"
+        "<div id=bar><div class=slot id=s1><i class=icon>A</i><span class=key>1</span></div>"
+        "<div class=slot id=s2><i class=icon>B</i><span class=key>2</span></div>"
+        "<div class=slot id=s3 style='top:2px'><i class=icon id=leaf>C</i>"
+        "<span class=key>3</span><b class=nested><em class=deep>x</em></b></div></div>"
+        "<div id=outer><div id=inner><span id=escaped>out</span></div></div>"
+        // The rest of the page. A replacement may cover at most half of it,
+        // and a slot's content edit is promoted to the whole bar.
+        "<ul id=log><li>one</li><li>two</li><li>three</li><li>four</li><li>five</li>"
+        "<li>six</li><li>seven</li><li>eight</li><li>nine</li><li>ten</li><li>eleven</li>"
+        "<li>twelve</li><li>thirteen</li><li>fourteen</li><li>fifteen</li><li>sixteen</li></ul>";
+    const char* css =
+        "body{margin:0;font-size:14px}#top{height:30px;background:#123}li{padding:1px}"
+        "#bar{display:flex;gap:6px;padding:4px;background:#222}"
+        ".slot{position:relative;left:1px;width:48px;height:48px;display:grid;place-items:center;"
+        "      background:#345;border:1px solid #567}"
+        ".key{position:absolute;top:2px;left:3px;font-size:9px;color:#ccc}"
+        ".nested{position:relative;top:-3px}.deep{position:absolute;right:0;bottom:0}"
+        "#outer{position:relative;height:40px}#inner{padding:3px}"
+        "#escaped{position:absolute;right:4px;top:0}";
+    struct Case { const char* target; const char* style; bool retains_header; };
+    const Case cases[] = {
+        {"#leaf", "padding-left:5px", true},        // inside a slot: local
+        {"#leaf", "padding-left:7px", true},
+        {".deep", "right:6px", true},               // absolute, placed inside the slot
+        {"#s3 .nested", "top:-5px", true},          // nested relative offset changes
+        {"#s3", "top:5px", true},                   // the replaced root's own offset
+        {"#inner", "padding:6px", false},           // escaped box: full path
+    };
+    auto c = config(400, 300);
+    auto live = weva_document_create(&c);
+    weva_document_add_css(live, css, std::strlen(css));
+    weva_document_load_html(live, html, std::strlen(html));
+    weva_document_update(live, 0);
+    std::vector<std::pair<const char*, const char*>> applied;
+    for (const Case& k : cases) {
+        size_t n = 0;
+        const uint64_t* before = weva_document_draw_versions(live, &n);
+        const uint64_t header_version = n ? before[1] : 0;   // [0] is the page, [1] the header
+        CHECK(weva_element_set_attribute(live, weva_document_query(live, k.target), "style", k.style) ==
+              WEVA_OK);
+        applied.emplace_back(k.target, k.style);
+        CHECK(weva_document_update(live, 0) == WEVA_OK);
+        const Frame expected = build(html, css, [&](weva_document_t fresh) {
+            for (const auto& a : applied)
+                weva_element_set_attribute(fresh, weva_document_query(fresh, a.first), "style", a.second);
+        });
+        // build() uses the default 400x300 viewport too.
+        const Frame actual = capture(live);
+        if (actual != expected)
+            std::printf("positioned subtree %s {%s}: %s\n", k.target, k.style, actual.diff(expected).c_str());
+        CHECK(actual == expected);
+        const uint64_t* after = weva_document_draw_versions(live, &n);
+        if (k.retains_header) CHECK(n > 1 && after[1] == header_version);
+        else CHECK(n > 1 && after[1] != header_version);
+    }
+    weva_document_destroy(live);
 }

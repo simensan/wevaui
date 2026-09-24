@@ -1,5 +1,67 @@
 # Performance
 
+## Incremental layout through positioned boxes (2026-09-24)
+
+A follow-up to the section below. Incremental layout treated every positioned
+box as nonlocal, so an edit anywhere inside a `position: relative` card rebuilt,
+re-laid and repainted the whole page. Nearly every HUD slot or badge anchor is
+one. A replacement may now contain relative boxes and absolute boxes whose
+containing block it also contains. After re-laying the replacement it runs the
+ordinary positioning pass over the replacement's descendants
+(`position_descendants`). A copy of the ancestor chain gives containing blocks
+the same root-relative origin. `IncrementalLayout` tracks, per box, the
+outermost containing block that an absolute descendant is placed against
+(`escapes_`). A box is local only when no such block lies above it, so an edit
+to an absolute box moves up to the ancestor that holds its block. Fixed boxes,
+anchor functions and viewport-placed absolute boxes stay on the full path. A
+replacement whose root's own relative offset changed is promoted rather than
+recovering its in-flow position by subtraction, which could round differently
+from a full layout.
+
+Also: `resolve_offset`, the containing-block property test,
+`decoration_reach`, the paint clip/visibility checks, font weight/style and
+`independent_height` read properties by id instead of by name.
+`-webkit-background-clip` stays by name, because it is not a registered
+property; `check_cached_ids.py` caught that. The gradient rasterizer hoists its
+premultiplied base colour and skips the average for one-sample texels (dividing
+by 1 is exact).
+
+randhtml, medians of five alternating three-way runs (original `28bb9fe` /
+previous section / this one):
+
+| Workload | Original best | Previous best | This best |
+|---|---:|---:|---:|
+| `--full --mutate=layout --target='.slot:last-child > div'` | 8.516 ms | 4.876 ms | **0.737 ms** |
+| `--cold` | 127.28 ms | 65.98 ms | 64.54 ms |
+| default | 5.113 ms | 1.881 ms | 1.871 ms |
+| `--full --mutate=layout --target=body` | 32.00 ms | 27.91 ms | 27.87 ms |
+| `--full --mutate=paint` (same leaf) | 0.172 ms | 0.167 ms | 0.163 ms |
+
+The visible leaf edit now replaces the action-bar panel (1 subtree, 9 paint
+subtrees reused): allocations 6,531 -> 1,057. `layoutbench.sh --ab` against the
+previous binary over `Assets/UI`: all but four pages faster, by up to 12.6%. Of
+the four, episode-stats (+32% in that sweep) and map (+6%) run 3.7% fewer
+instructions under callgrind and are faster in direct pairs; the other two are
+within 1.3%. Hand corpus unchanged.
+
+Verification: 505,265 checks, 0 failures (also under clang, and ASan+UBSan apart
+from the probe control noted below); `WEVA_INCREMENTAL_CORPUS` over
+`Assets/UI` passes; 1,206 layout dumps identical; renders as before. The
+corpus gate gains `WEVA_INCREMENTAL_TARGETS=N`: N evenly spaced elements per
+page, each given padding, inset, width and cleared edits, compared frame and
+bounds against a full rebuild. With N=40 the 47-page hand corpus passes
+(637,540 checks). `Assets/UI` fails 340 checks on six steps in match3 and
+glass, identically with this change, with the previous incremental code, and
+at `28bb9fe` built with only the harness change. That is a **pre-existing
+incremental bug, not fixed here**. For example, in match3 a padding edit on a
+`width: 10px` dot inside `.score-pill` is accepted at the pill level. The
+check measures the pill at `.center`'s old, content-sized width, where flex
+shrinking squeezes the dots back; an explicit-width item contributes its used
+width (`block_child_contribution`), so the growth is invisible. New test
+`test_abi_incremental_positioned_subtree` checks the frame against a fresh
+document and that the untouched header's draw version is kept (the incremental
+path was taken). It fails with the previous locality rule.
+
 ## Core layout: deferred out-of-flow layout, hidden restyles, tile edges (2026-09-24)
 
 Four core changes, measured on the committed demo document

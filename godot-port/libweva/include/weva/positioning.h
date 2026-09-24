@@ -58,6 +58,11 @@ bool is_promoted_inline_fragment(const Box& box, const Element* element);
 void promoted_inline_rect(const BoxTree& tree, BoxId box,
                           double* x, double* y, double* width, double* height);
 
+// The offset `position: relative` moves a box by, from its stamped insets:
+// zero for any other position. An `auto` inset is zero, and when both edges
+// of an axis are given the start edge wins in LTR (CSS 2.1 §9.4.3).
+void relative_offset(const Box& box, double* dx, double* dy);
+
 // Root-relative origin, summing local offsets up the tree.
 void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y);
 
@@ -111,6 +116,12 @@ bool positioning_replaces_layout(const BoxTree& tree, BoxId id, const LayoutCont
 // The style half of that test, for a caller that knows the box is out of
 // flow but has not stamped its position yet.
 bool insets_replace_layout(const ComputedStyle* style, const LayoutContext& ctx);
+
+// run_positioning's placement pass over `root`'s descendants only, for a
+// subtree re-laid on its own whose root and ancestors are already placed and
+// whose offsets are stamped. It opens no anchor pass, so a caller must not
+// pass a subtree that uses anchor functions.
+void position_descendants(BoxTree* tree, BoxId root, const LayoutContext& ctx, BlockLayout* block);
 
 // Places every positioned box in the tree. `block` is used to re-lay an
 // out-of-flow box's content once its width is known.
