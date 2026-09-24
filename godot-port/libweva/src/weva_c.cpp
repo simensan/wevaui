@@ -775,7 +775,13 @@ struct StyleMap : StyleProvider {
     Invalidation pending = Invalidation::Boxes;
     int visited = 0;
     std::vector<std::pair<const ComputedStyle*, Invalidation>> changes;
+    // Set while walk() merges an element under a `display: none` ancestor.
+    // That element has no box before the change and none after it, so its
+    // style diff cannot reach layout or paint. The ancestor's own display
+    // change is noted as usual when it happens, and rebuilds the subtree then.
+    bool inert_subtree = false;
     void note_change(const ComputedStyle* style, Invalidation kind) {
+        if (inert_subtree) return;
         pending = worst(pending, kind);
         for (auto& change : changes) {
             if (change.first == style) { change.second = worst(change.second, kind); return; }
@@ -1423,6 +1429,10 @@ struct StyleMap : StyleProvider {
             // Before the diff, not after: see unwind_animated.
             unwind_animated(e, raw);
             engine.compute(e, state, parent, &scratch);
+            // A binding that keeps a closed panel's contents current restyled
+            // the whole page: the demo's hidden `.rotate` leaf cost a full box
+            // rebuild, layout and repaint (8.4 ms) for no visible change.
+            inert_subtree = transition_ancestor_hidden(e);
             merge(raw, &scratch, &e);
         }
         if (raw->get("display") == "none" || transition_ancestor_hidden(e))
@@ -1476,6 +1486,7 @@ struct StyleMap : StyleProvider {
             }
             merge(pit->second, &scratch);
         }
+        inert_subtree = false;
         for (const Ref<Node>& c : e.children()) {
             if (c->node_type() == NodeType::Element) {
                 walk(static_cast<const Element&>(*c), raw);

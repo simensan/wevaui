@@ -224,7 +224,24 @@ private:
                                  const ComputedStyle* parent_style);
     void place_float(BoxId container, BoxId float_box, double top_y, double content_w);
 
+public:
+    // An out-of-flow box whose content the positioning pass will lay out again
+    // from scratch (see positioning_replaces_layout). In-flow layout stops at
+    // its box model. Off for a tree with any anchor-positioned box, which
+    // reads other boxes' geometry in an order the deferral would change.
+    bool defers_to_positioning(BoxId id);
+    // The same decision for an out-of-flow box whose box model has not been
+    // applied yet. When it defers, it applies the box model (as shrink_to_fit
+    // would first) and the caller stops there; otherwise it touches nothing.
+    bool defers_to_positioning_before_box_model(BoxId id, double available_width,
+                                                const ComputedStyle* parent_style);
+
+private:
+    bool tree_has_anchored_boxes();
+
     BoxTree* tree_;
+    int anchored_ = -1;   // unknown until the first deferral candidate
+    std::vector<int8_t> defers_;   // per box: -1 unknown, else the answer
     LayoutContext ctx_;
     const FontMetrics* metrics_ = nullptr;
     LayoutReuse* reuse_ = nullptr;

@@ -2182,3 +2182,55 @@ void test_abi_incremental_collapsed_table_borders() {
     }
     weva_document_destroy(live);weva_document_destroy(full);
 }
+
+void test_abi_hidden_subtree_restyle() {
+    // A binding that keeps a closed panel current writes styles and attributes
+    // into a `display: none` subtree. Nothing there has a box before or after,
+    // so the frame is unchanged -- and publishing a new one rebuilt, laid out
+    // and repainted the whole page for nothing. The writes must still land:
+    // opening the panel shows exactly what a document born that way shows.
+    const char* html =
+        "<div id=hud class=card>HUD</div>"
+        "<div id=panel class=gone><div id=row><span id=hp>100</span><i id=bar></i></div></div>";
+    const char* css =
+        ".card { background: #234; padding: 8px }"
+        ".gone { display: none }"
+        "#bar { display: block; height: 4px; background: #c33 }";
+    const auto mutate = [](weva_document_t d) {
+        weva_element_set_style(d, weva_document_query(d, "#bar"), "width", "37px");
+        weva_element_set_attribute(d, weva_document_query(d, "#row"), "style", "padding-left: 9px");
+        weva_element_set_attribute(d, weva_document_query(d, "#hp"), "class", "low");
+    };
+    auto c = config();
+    auto d = weva_document_create(&c);
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+    const Frame before = capture(d);
+    const auto serial = weva_document_draw_serial(d);
+    for (int i = 0; i < 3; ++i) {
+        mutate(d);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        CHECK(weva_document_draw_serial(d) == serial);
+    }
+    CHECK(capture(d) == before);
+
+    // Opening it is the panel's own display change, which rebuilds as usual.
+    weva_element_set_attribute(d, weva_document_query(d, "#panel"), "class", "");
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(weva_document_draw_serial(d) == serial + 1);
+    const Frame expected = build(html, css, [&](weva_document_t fresh) {
+        mutate(fresh);
+        weva_element_set_attribute(fresh, weva_document_query(fresh, "#panel"), "class", "");
+    });
+    const Frame opened = capture(d);
+    if (opened != expected) std::printf("hidden subtree: %s\n", opened.diff(expected).c_str());
+    CHECK(opened == expected);
+    CHECK(opened != before);
+
+    // A visible element's restyle still publishes.
+    weva_element_set_style(d, weva_document_query(d, "#hud"), "padding", "12px");
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(weva_document_draw_serial(d) == serial + 2);
+    weva_document_destroy(d);
+}

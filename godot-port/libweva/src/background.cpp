@@ -1204,10 +1204,9 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
             adaptive = false;
             break;
         }
-        // A tile that stops short of the area has a hard edge at its own
-        // boundary, which this test does not model.
-        if (!t.repeat_x && (t.ox > 0 || t.ox + t.tw < width)) { adaptive = false; break; }
-        if (!t.repeat_y && (t.oy > 0 || t.oy + t.th < height)) { adaptive = false; break; }
+        // A tile that stops short of the area, or repeats inside it, has a hard
+        // edge at its own boundary; the per-texel test below finds the texels
+        // whose footprint crosses one.
         EdgeTest e;
         e.half_width = 0.5 * (std::abs(g.dx) * (width / tex_w) + std::abs(g.dy) * (height / tex_h)) /
                        g.line_length;
@@ -1243,6 +1242,37 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         return false;
     };
 
+    // True when tile i is not one straight ramp across texel (px, py): the
+    // texel straddles the tile's own boundary or a repeat seam, or its t-range
+    // reaches a stop. A texel wholly outside a non-repeating tile gets nothing
+    // from it at any sample, so that tile cannot make it step.
+    //
+    // The tile boundary is what `.world::before`'s three `no-repeat` wedges
+    // need: this test used to give up on any tile short of the area, and the
+    // demo's first update spent 84 ms nine-sampling every texel of a 1024x324
+    // texture whose edges cover a few percent of it.
+    const double sx = width / tex_w, sy = height / tex_h;
+    const auto texel_crosses_edge = [&](size_t i, int px, int py) {
+        const Tile& t = tiles[i];
+        double lx = px * sx - t.ox, ly = py * sy - t.oy;
+        if (t.wrap_x) {
+            lx = wrap_positive(lx, t.tw);
+            if (lx + sx > t.tw) return true;
+        } else if (!t.repeat_x) {
+            if (lx + sx <= 0 || lx >= t.tw) return false;
+            if (lx < 0 || lx + sx > t.tw) return true;
+        }
+        if (t.wrap_y) {
+            ly = wrap_positive(ly, t.th);
+            if (ly + sy > t.th) return true;
+        } else if (!t.repeat_y) {
+            if (ly + sy <= 0 || ly >= t.th) return false;
+            if (ly < 0 || ly + sy > t.th) return true;
+        }
+        // The same tile-local centre the samples below wrap into.
+        return steps_here(i, gradient_t(t.prepared, lx + 0.5 * sx, ly + 0.5 * sy));
+    };
+
     // How much of the adaptive path actually pays off, which the sample count
     // alone does not say: `3^2 samples` is the ceiling, not the bill.
     long supersampled = 0;
@@ -1250,7 +1280,6 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         std::fprintf(stderr, "  [grad] %dx%d tex, %zu tiles, %d^2 samples, flat_x %d flat_y %d\n",
                      tex_w, tex_h, tiles.size(), samples, flat_x ? 1 : 0, flat_y ? 1 : 0);
     }
-    const double sx = width / tex_w, sy = height / tex_h;
     for (int py = 0; py < tex_h; ++py) {
         if (flat_y && py > 0) {
             // Every row is the row above it.
@@ -1286,11 +1315,9 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
             float ar = 0, ag = 0, ab = 0, aa = 0;
             int texel_samples = samples;
             if (!edges.empty()) {
-                const double cx = (px + 0.5) * sx, cy = (py + 0.5) * sy;
                 texel_samples = 1;
                 for (size_t i = 0; i < edges.size(); ++i) {
-                    if (steps_here(i, gradient_t(tiles[i].prepared, cx - tiles[i].ox,
-                                                 cy - tiles[i].oy))) {
+                    if (texel_crosses_edge(i, px, py)) {
                         texel_samples = samples;
                         break;
                     }

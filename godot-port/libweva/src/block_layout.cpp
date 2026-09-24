@@ -5,6 +5,8 @@
 #include "weva/grid.h"
 #include "weva/table_layout.h"
 #include "weva/multicol.h"
+#include "weva/positioning.h"
+#include "weva/anchor.h"
 
 #include "weva/css_properties.h"
 #include "weva/inline_layout.h"
@@ -99,6 +101,11 @@ const int kId_contain_intrinsic_width = CssPropertyRegistry::instance().id_of("c
 const int kId_content_visibility = CssPropertyRegistry::instance().id_of("content-visibility");
 const int kId_float = CssPropertyRegistry::instance().id_of("float");
 const int kId_height = CssPropertyRegistry::instance().id_of("height");
+const int kId_position = CssPropertyRegistry::instance().id_of("position");
+const int kId_left = CssPropertyRegistry::instance().id_of("left");
+const int kId_right = CssPropertyRegistry::instance().id_of("right");
+const int kId_top = CssPropertyRegistry::instance().id_of("top");
+const int kId_bottom = CssPropertyRegistry::instance().id_of("bottom");
 const int kId_overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
 const int kId_overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
 const int kId_border_top_style = CssPropertyRegistry::instance().id_of("border-top-style");
@@ -1190,12 +1197,18 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
 
     relayout_content_at(id, 1e6, fs, parent_style);
     double max_content = max_content_width(*tree_, id, &ctx_) + frame;
-    relayout_content_at(id, 1, fs, parent_style);
-    double min_content = min_content_width(*tree_, id, &ctx_) + frame;
     if (max_content < frame) max_content = frame;
-    if (min_content < frame) min_content = frame;
-
-    double fitted = std::min(max_content, std::max(min_content, avail));
+    // min(max-content, max(min-content, available)) is max-content whenever
+    // max-content fits, since min-content never exceeds it -- so the
+    // min-content probe, a whole layout of the subtree, is only needed when
+    // the content has to wrap. Most labels, pills and panels fit.
+    double fitted = max_content;
+    if (max_content > avail) {
+        relayout_content_at(id, 1, fs, parent_style);
+        double min_content = min_content_width(*tree_, id, &ctx_) + frame;
+        if (min_content < frame) min_content = frame;
+        fitted = std::min(max_content, std::max(min_content, avail));
+    }
     if (fitted < 0) fitted = 0;
 
     // §10.3.5: the shrink-to-fit result is still clamped by min- and max-width,
@@ -1298,6 +1311,11 @@ void BlockLayout::layout_block(BoxId id, double available_width,
 
     if (reuse_ && reuse_->reuse_layout(tree_, id)) return;
 
+    // Positioning lays this box out again at its final size and reads nothing
+    // this pass would produce. On the demo's HUD, whose panels are inset on
+    // every side, that was a second full layout of most of the page.
+    if (defers_to_positioning(id)) return;
+
     // A replaced element has no contents to lay out; its size comes from the
     // image. This is the path a FLEX ITEM takes -- flex measures its items
     // through layout_block, never through shrink_to_fit.
@@ -1319,6 +1337,51 @@ void BlockLayout::layout_block(BoxId id, double available_width,
         return;
     }
     layout_content(id, fs, available_width, parent_style);
+}
+
+bool BlockLayout::defers_to_positioning_before_box_model(BoxId id, double available_width,
+                                                         const ComputedStyle* parent_style) {
+    // Only called for a box whose style is absolute or fixed, which stamping
+    // the position cannot make in-flow; so the style test is the whole answer,
+    // cached where defers_to_positioning caches it.
+    if (reuse_) return false;
+    if (static_cast<size_t>(id) >= defers_.size()) defers_.resize(tree_->size(), -1);
+    int8_t& known = defers_[id];
+    if (known < 0) known = insets_replace_layout((*tree_)[id].style, ctx_) && !tree_has_anchored_boxes();
+    if (known != 1) return false;
+    apply_box_model(tree_, id, available_width, parent_style, ctx_);
+    return true;
+}
+
+bool BlockLayout::defers_to_positioning(BoxId id) {
+    // A retained-layout probe materializes children on a miss; deferring would
+    // ask it twice. Its callers are the incremental paths, not the full pass.
+    if (reuse_) return false;
+    const PositionType position = (*tree_)[id].position;
+    if (position != PositionType::Absolute && position != PositionType::Fixed) return false;
+    // The answer depends on the style alone, and a grid or flex container that
+    // measures its items asks it once per measurement: match3's tile markers
+    // are asked dozens of times a pass. Resolving the insets each time cost
+    // more than the deferral saved there.
+    if (static_cast<size_t>(id) >= defers_.size()) defers_.resize(tree_->size(), -1);
+    int8_t& known = defers_[id];
+    if (known < 0) known = positioning_replaces_layout(*tree_, id, ctx_) && !tree_has_anchored_boxes();
+    return known == 1;
+}
+
+bool BlockLayout::tree_has_anchored_boxes() {
+    if (anchored_ < 0) {
+        anchored_ = 0;
+        for (BoxId b = 0; b < tree_->size() && !anchored_; ++b) {
+            const ComputedStyle* style = (*tree_)[b].style;
+            if (!style || !(*tree_)[b].element) continue;
+            const PositionType pos = parse_position_type(get(style, kId_position));
+            if (pos != PositionType::Absolute && pos != PositionType::Fixed) continue;
+            for (const int property : {kId_left, kId_right, kId_top, kId_bottom, kId_width, kId_height})
+                if (looks_like_anchor_function(get(style, property))) anchored_ = 1;
+        }
+    }
+    return anchored_ == 1;
 }
 
 void BlockLayout::layout_content(BoxId id, double font_size, double containing_block_width,

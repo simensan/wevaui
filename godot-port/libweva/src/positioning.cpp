@@ -150,6 +150,66 @@ bool has_used_size(const ComputedStyle* style, std::string_view property) {
 
 } // namespace
 
+bool positioning_replaces_layout(const BoxTree& tree, BoxId id, const LayoutContext& ctx) {
+    const Box& b = tree[id];
+    if (b.position != PositionType::Absolute && b.position != PositionType::Fixed) return false;
+    return insets_replace_layout(b.style, ctx);
+}
+
+namespace {
+bool compute_insets_replace_layout(const ComputedStyle* style, const LayoutContext& ctx);
+}
+
+bool insets_replace_layout(const ComputedStyle* style, const LayoutContext& ctx) {
+    if (!style) return false;
+    if (style->insets_memo_version != style->version()) {
+        style->insets_memo = compute_insets_replace_layout(style, ctx);
+        style->insets_memo_version = style->version();
+    }
+    return style->insets_memo;
+}
+
+namespace {
+bool compute_insets_replace_layout(const ComputedStyle* style, const LayoutContext& ctx) {
+    // By id: this runs for every out-of-flow box on every layout of its
+    // container, which inside a grid that measures its items is many times a
+    // pass. Looking the six properties up by name cost match3 a fifth of its
+    // layout.
+    static const int kIds[6] = {
+        CssPropertyRegistry::instance().id_of("left"), CssPropertyRegistry::instance().id_of("right"),
+        CssPropertyRegistry::instance().id_of("top"), CssPropertyRegistry::instance().id_of("bottom"),
+        CssPropertyRegistry::instance().id_of("width"), kId_height};
+    std::string_view raw[6];
+    const auto declared = [&](int i) { return !raw[i].empty() && !iequals(raw[i], "auto"); };
+    // A declared inset can still fail to resolve, so declarations bound the
+    // answer from above. Most out-of-flow boxes -- a static position on one
+    // axis, or a stated width with no bottom inset -- are settled here from
+    // the first few declarations, without resolving a length.
+    for (int i = 0; i < 4; ++i) raw[i] = style->get(kIds[i]);
+    if (!(declared(0) || declared(1)) || !(declared(2) || declared(3))) return false;
+    raw[4] = style->get(kIds[4]);
+    raw[5] = style->get(kIds[5]);
+    if (declared(4) && !(declared(2) && declared(3) && !declared(5))) return false;
+    for (const std::string_view value : raw)
+        if (looks_like_anchor_function(value)) return false;
+    // Mirrors resolve_offset: present unless empty, `auto`, or not a length or
+    // percentage. Which of those it is depends on neither the font size nor
+    // the basis, so neither is computed here.
+    const auto inset = [&](int i) {
+        if (!declared(i)) return false;
+        const LengthKind kind = resolve_length(style, kIds[i], ctx, ctx.root_font_size_px, 0.0).kind;
+        return kind == LengthKind::Length || kind == LengthKind::Percent;
+    };
+    const bool left = inset(0), right = inset(1);
+    if (!(left || right)) return false;
+    const bool top = inset(2), bottom = inset(3);
+    if (!(top || bottom)) return false;
+    const bool shrinks = !(left && right) && !declared(4);
+    const bool stretches = top && bottom && !declared(5);
+    return shrinks || stretches;
+}
+}  // namespace
+
 void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y) {
     double ax = 0, ay = 0;
     for (BoxId b = box; b != kNoBox; b = tree[b].parent) {

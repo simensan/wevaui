@@ -1,5 +1,79 @@
 # Performance
 
+## Core layout: deferred out-of-flow layout, hidden restyles, tile edges (2026-09-24)
+
+Four core changes, measured on the committed demo document
+`Assets/UI/randhtml.html` + `.css` (4,163 boxes, flex/grid HUD panels):
+
+1. **Out-of-flow content is laid out once.** An absolutely positioned or
+   fixed box with an inset on each axis, and either an auto width with at most
+   one horizontal inset or both vertical insets with an auto height, is laid
+   out again from scratch by the positioning pass at its final size. In-flow
+   layout now stops at its box model (`positioning_replaces_layout`). The
+   demo's panels are inset on every side, so most of the page was laid out
+   twice: flow drops from 2.69 to 0.05 ms. Off under a `LayoutReuse` probe
+   (the incremental paths) and in any tree with an anchor-positioned box. The
+   answer is memoised on the style's version, because grid and flex ask it on
+   every measurement of their items.
+2. **Shrink-to-fit skips the min-content probe when max-content fits**, since
+   `min(max, max(min, available))` is then max-content whatever min-content
+   is. That probe is a whole layout of the subtree.
+3. **Restyles under `display: none` invalidate nothing.** Such an element has
+   no box before or after the change; the ancestor's own display change still
+   rebuilds when the panel opens. The benchmark's `--target=last` element is
+   inside the demo's hidden `.rotate` overlay and cost a full rebuild, layout
+   and repaint per edit.
+4. **Adaptive gradient supersampling handles tiles that stop short of the
+   area.** It used to fall back to 3x3 samples on every texel whenever a tile
+   was `no-repeat` and smaller than the box. It now supersamples only texels
+   whose footprint crosses the tile's edge, a repeat seam or a stop.
+   `.world::before` (four layers, 1024x324) went from 331,776 supersampled
+   texels and 84 ms to 3,306 texels and 23 ms.
+
+Linux container, 4 cores, GCC 13 Release, `weva_bench` (fixed metrics). Each
+row is the median over five alternating pairs, order reversed on alternate
+pairs, against a copy of the binary built from `28bb9fe`:
+
+| randhtml workload | Before best | After best | Before mean | After mean |
+|---|---:|---:|---:|---:|
+| `--cold` (10 passes) | 129.70 ms | **67.27 ms** (-48%) | 139.07 ms | 72.28 ms (-48%) |
+| default: boxes + layout + positioning | 5.658 ms | **2.023 ms** (-64%) | 6.184 ms | 2.678 ms (-57%) |
+| `--full --mutate=layout --target='.slot:last-child > div'` | 8.985 ms | **5.286 ms** (-41%) | 9.918 ms | 6.394 ms (-36%) |
+| `--full --mutate=layout --target=last` (hidden leaf) | 8.895 ms | **0.048 ms** | 10.061 ms | 0.055 ms |
+| `--full --mutate=paint --target='.slot:last-child > div'` | 0.173 ms | 0.166 ms | 0.204 ms | 0.198 ms |
+
+Final-pass allocations: cold 84,247 -> 80,344 (39.4 -> 31.7 MB requested),
+default 7,523 -> 3,614, visible layout edit 10,440 -> 6,531, hidden edit
+10,387 -> 49.
+
+`tools/layoutbench.sh --ab` (3 sweeps x 20 passes) over the 33 `Assets/UI`
+pages: 31 faster, e.g. map -51%, settings -46%, glass -46%, stats -45%,
+leaderboard -44%, vendor -36%, layout-stress -2.5%. flex-playground reads
++0.2%, and grid-playground read +20% in that sweep but is 2.4% fewer
+instructions under callgrind and 4-7% faster in three direct pairs. Over the
+47-sample hand corpus, 46 pages are equal or faster; the remaining one is 1 us.
+Pages with positioned boxes that do not defer pay the memoised test: under
+callgrind, neon and level-select layout are +0.5% and +0.7% instructions,
+match3 -0.5%.
+
+Outputs: `weva_dump` layout dumps of 402 pages (Assets/UI, the golden
+snippets, oracle cases and regressions, the hand and harvested corpora,
+examples) at 1280x720, 600x900 and 1920x1080 are byte-identical before and
+after: 1,206 dumps. `weva_render` of 87 pages is identical except randhtml,
+where 213 pixels in `.world::before` move by 1/255 (single-sample centres of
+affine ramps rather than their 3x3 average). Release GCC: 505,241 checks, 0
+failures; clang Release 14/14 CTest targets; ASan+UBSan RelWithDebInfo 15/16.
+The failing one is the `weva_asan_active` control. `sanitizer_probe` is not
+linked to libweva, and on this GCC 13 UBSan's object-size check reports its
+planted overflow before ASan does. New tests: deferred layout matches the
+non-deferred path box for box; hidden-subtree edits publish no frame and
+opening the panel matches a fresh document; a no-repeat tile edge that
+falls mid-texel keeps its exact 3x3 coverage. The hidden-subtree and tile-edge
+tests fail with their change removed. Loosening the deferral to boxes whose
+static position is used fails the new predicate check and an existing flex
+static-position test. The Godot host and the Windows native A/B were not rerun
+for this change.
+
 ## Runtime60: ordinary in-game UI (2026-09-07)
 
 The Windows development project now uses the verified runtime60 DLL. This pass

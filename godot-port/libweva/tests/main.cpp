@@ -1,4 +1,5 @@
 void test_abi_incremental_block_margins();
+void test_abi_hidden_subtree_restyle();
 void test_abi_incremental_multicol_sizing();
 void test_abi_incremental_collapsed_table_borders();
 void test_abi_incremental_has_range_scopes();
@@ -257,6 +258,7 @@ void test_focus_move();
 void test_background_image();
 void test_replaced_image_cache();
 void test_background_size_independence();
+void test_background_no_repeat_tile_edge_supersampled();
 void test_blur_flat_matches_full();
 void test_blur_matches_scalar();
 void test_replaced_img();
@@ -317,6 +319,7 @@ void test_absolute_containing_block();
 void test_absolute_placement();
 void test_offsets_and_zindex();
 void test_out_of_flow_relayout();
+void test_deferred_out_of_flow_layout_matches_full();
 void test_tessellate_rect();
 void test_tessellate_rounded();
 void test_radii_clamping();
@@ -585,6 +588,7 @@ int main() {
     test_select_autoscroll_lifecycle();
     test_abi_incremental_select_autoscroll();
     test_abi_incremental_block_margins();
+    test_abi_hidden_subtree_restyle();
     test_abi_incremental_multicol_sizing();
     test_abi_incremental_collapsed_table_borders();
     test_abi_incremental_has_range_scopes();
@@ -800,6 +804,7 @@ int main() {
     test_background_image();
     test_replaced_image_cache();
     test_background_size_independence();
+    test_background_no_repeat_tile_edge_supersampled();
     test_blur_flat_matches_full();
     test_blur_matches_scalar();
     test_replaced_img();
@@ -860,6 +865,7 @@ int main() {
     test_absolute_placement();
     test_offsets_and_zindex();
     test_out_of_flow_relayout();
+    test_deferred_out_of_flow_layout_matches_full();
     test_tessellate_rect();
     test_tessellate_rounded();
     test_radii_clamping();

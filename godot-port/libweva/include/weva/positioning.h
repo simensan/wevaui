@@ -99,6 +99,19 @@ void max_scroll(const BoxTree& tree, BoxId box, double* out_x, double* out_y);
 // placement.
 void stamp_offsets(BoxTree* tree, BoxId root, const LayoutContext& ctx);
 
+// True when the positioning pass is certain to lay this out-of-flow box's
+// content out again from scratch at its final size, and reads nothing of its
+// in-flow placement: an inset on each axis replaces the static position, and
+// either an auto width with at most one horizontal inset (shrink-to-fit) or
+// both vertical insets with an auto height (stretched) forces the relayout.
+// In-flow layout can then stop after the box model -- the content it would
+// lay out is discarded unread. Anchor functions are excluded; their overrides
+// decide the size later. The box's position must already be stamped.
+bool positioning_replaces_layout(const BoxTree& tree, BoxId id, const LayoutContext& ctx);
+// The style half of that test, for a caller that knows the box is out of
+// flow but has not stamped its position yet.
+bool insets_replace_layout(const ComputedStyle* style, const LayoutContext& ctx);
+
 // Places every positioned box in the tree. `block` is used to re-lay an
 // out-of-flow box's content once its width is known.
 void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx,

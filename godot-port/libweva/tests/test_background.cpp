@@ -1869,3 +1869,38 @@ void test_blur_matches_scalar() {
         }
     }
 }
+
+void test_background_no_repeat_tile_edge_supersampled() {
+    // A hard-edged gradient in a `no-repeat` tile that stops short of the box:
+    // the adaptive sampler takes one sample where the layers are one straight
+    // ramp and nine where a texel straddles an edge. The tile's OWN boundary is
+    // such an edge, and here it falls mid-texel -- 10.5px across a 1px texel
+    // grid -- so texel 10 must come out one-third covered, exactly as a full
+    // 3x3 supersample says, rather than whatever its centre alone would say.
+    LayoutContext ctx;
+    ctx.viewport_width_px = 400;
+    ctx.viewport_height_px = 300;
+    BackgroundLayer layer;
+    layer.is_gradient = true;
+    CHECK(parse_gradient("linear-gradient(90deg, red 50%, blue 50%)", LinearColor::black(),
+                         &layer.gradient));
+    layer.size_x = "10.5px";
+    layer.size_y = "20px";
+    layer.repeat_x = layer.repeat_y = false;
+    std::vector<uint8_t> rgba;
+    rasterize_background({layer}, LinearColor{0, 0, 0, 0}, 20, 20, 20, 20, ctx, 16, &rgba);
+    for (int y : {0, 9, 19}) {
+        // Inside, away from both edges: one sample, the stop colour exactly.
+        const Texel red = texel_at(rgba, 20, 2, y);
+        CHECK(red.r == 255 && red.g == 0 && red.b == 0 && red.a == 255);
+        // The stop at 5.25px: samples at 5 1/6 (red), 5 1/2 and 5 5/6 (blue).
+        const Texel stop = texel_at(rgba, 20, 5, y);
+        CHECK(stop.r == 85 && stop.g == 0 && stop.b == 170 && stop.a == 255);
+        // The tile boundary: one column of three samples is inside it.
+        const Texel boundary = texel_at(rgba, 20, 10, y);
+        CHECK(boundary.a == 85 && boundary.b == 255 && boundary.r == 0);
+        // Past the tile, nothing.
+        CHECK(texel_at(rgba, 20, 11, y).a == 0);
+        CHECK(texel_at(rgba, 20, 19, y).a == 0);
+    }
+}

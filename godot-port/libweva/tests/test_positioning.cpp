@@ -8,9 +8,11 @@
 #include "weva/positioning.h"
 #include "weva/user_agent_stylesheet.h"
 #include <cmath>
+#include <cstdio>
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace weva;
 
@@ -65,7 +67,8 @@ struct Fixture {
         sheets.push_back(std::move(s));
         return true;
     }
-    bool layout(std::string_view html, double vw = 1000, double vh = 600) {
+    bool layout(std::string_view html, double vw = 1000, double vh = 600,
+                LayoutReuse* reuse = nullptr) {
         HtmlParseError he;
         ParseOptions o;
         o.strict = false;
@@ -81,7 +84,7 @@ struct Fixture {
         if (root == kNoBox) return false;
         ctx.viewport_width_px = vw;
         ctx.viewport_height_px = vh;
-        BlockLayout bl(&tree, ctx, &metrics);
+        BlockLayout bl(&tree, ctx, &metrics, reuse);
         bl.layout_root(root, vw, vh);
         run_positioning(&tree, root, ctx, &bl);
         return true;
@@ -343,4 +346,98 @@ void test_absolute_descendant_keeps_its_size_after_the_ancestor() {
     const double w = f.box("pill").width;
     CHECK(w > 52 && w < 200);
     CHECK(near(f.box("pill").x, 46));
+}
+
+namespace {
+// Reuses nothing. A LayoutReuse probe turns off the deferral of out-of-flow
+// content to the positioning pass, so this lays a document out the long way:
+// every positioned box in flow first, and again in positioning.
+struct NoReuse : LayoutReuse {
+    bool reuse_layout(BoxTree*, BoxId) override { return false; }
+};
+
+bool same_boxes(const BoxTree& a, BoxId x, const BoxTree& b, BoxId y, std::string* where) {
+    const Box& p = a[x];
+    const Box& q = b[y];
+    // Two fixtures parse two DOMs, so elements are compared by tag.
+    const std::string_view tp = p.element ? p.element->tag_name() : std::string_view();
+    const std::string_view tq = q.element ? q.element->tag_name() : std::string_view();
+    if (p.kind != q.kind || tp != tq || p.x != q.x || p.y != q.y ||
+        p.width != q.width || p.height != q.height) {
+        char buf[200];
+        std::snprintf(buf, sizeof(buf), "<%.*s> %g,%g %gx%g vs %g,%g %gx%g",
+                      p.element ? static_cast<int>(p.element->tag_name().size()) : 0,
+                      p.element ? p.element->tag_name().data() : "", p.x, p.y, p.width, p.height,
+                      q.x, q.y, q.width, q.height);
+        *where = buf;
+        return false;
+    }
+    std::vector<BoxId> ca, cb;
+    for (BoxId c : a.children(x)) ca.push_back(c);
+    for (BoxId c : b.children(y)) cb.push_back(c);
+    if (ca.size() != cb.size()) { *where = "child count"; return false; }
+    for (size_t i = 0; i < ca.size(); ++i)
+        if (!same_boxes(a, ca[i], b, cb[i], where)) return false;
+    return true;
+}
+} // namespace
+
+void test_deferred_out_of_flow_layout_matches_full() {
+    // An out-of-flow box that the positioning pass will lay out again at its
+    // final size -- inset on each axis, and either shrink-to-fit or stretched
+    // between top and bottom -- is not laid out in flow at all. That must be
+    // invisible: every box ends where laying it out twice puts it.
+    const char* css =
+        "body { margin: 0; font-size: 16px }"
+        "#stage { position: relative; width: 600px; height: 400px; display: flex }"
+        "#overlay { position: fixed; inset: 0; display: flex; align-items: center;"
+        "           justify-content: center; padding: 8px }"
+        "#card { width: 50%; display: grid; grid-template-columns: 1fr 2fr; gap: 4px }"
+        "#pill { position: absolute; top: -10px; left: 12px; padding: 2px 6px }"
+        "#flexabs { position: absolute; top: 5px; left: 10px; padding: 3px }"
+        "#narrow { position: relative; width: 100px; height: 50px }"
+        "#wraps { position: absolute; bottom: 0; right: 0 }"
+        "#column { position: absolute; top: 40px; bottom: 40px; left: 0; width: 120px;"
+        "          display: flex; flex-direction: column; justify-content: space-between }"
+        "#grid { display: grid; grid-template-columns: 100px 100px; position: relative }"
+        "#gridabs { position: absolute; inset: 0 auto auto 0 }";
+    const char* html =
+        "<body><div id=stage>"
+        "<div id=flexabs>flex item text</div>"
+        "<div id=narrow><div id=wraps>several words that cannot fit on one short line</div></div>"
+        "<div id=column><span>top</span><span>bottom</span></div>"
+        "<div id=grid><div>a</div><div>b</div><div id=gridabs>over the grid</div></div>"
+        "</div>"
+        "<div id=overlay><div id=card><div id=pill>Title pill</div>"
+        "<p>left</p><p>right column text that wraps across lines</p></div></div>"
+        "</body>";
+    Fixture deferred;
+    CHECK(deferred.css(css));
+    CHECK(deferred.layout(html));
+    NoReuse none;
+    Fixture full;
+    CHECK(full.css(css));
+    CHECK(full.layout(html, 1000, 600, &none));
+
+    // Each of these takes the deferred path; a change to the predicate that
+    // quietly turned it off would leave the comparison below vacuous.
+    for (const char* id : {"overlay", "pill", "flexabs", "wraps", "column", "gridabs"})
+        CHECK(positioning_replaces_layout(deferred.tree, deferred.find(id), deferred.ctx));
+    // A static position on one axis keeps the in-flow layout.
+    Fixture kept;
+    CHECK(kept.css("#a { position: absolute; left: 0 }"));
+    CHECK(kept.layout("<body><div id=a>x</div></body>"));
+    CHECK(!positioning_replaces_layout(kept.tree, kept.find("a"), kept.ctx));
+
+    std::string where;
+    const bool same = same_boxes(deferred.tree, deferred.root, full.tree, full.root, &where);
+    if (!same) std::printf("deferred out-of-flow layout differs: %s\n", where.c_str());
+    CHECK(same);
+    // Its max-content is wider than the 100px it has, so this one took the
+    // min-content probe too, and wrapped at the available width.
+    CHECK(near(deferred.box("wraps").width, 100));
+    int lines = 0;
+    for (BoxId c : deferred.tree.children(deferred.find("wraps")))
+        if (deferred.tree[c].kind == BoxKind::Line) ++lines;
+    CHECK(lines > 1);
 }
