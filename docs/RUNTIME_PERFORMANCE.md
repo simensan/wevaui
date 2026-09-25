@@ -24,6 +24,15 @@ a new Windows or host baseline. The follow-up spreads cold paint across up to
 four threads with byte-identical output: hud 139.8 → 55.3 ms, and
 episode-stats 107.4 → 37.6 ms, on a 4-core machine.
 
+The [screen-opening pass](verification/screen-open-20260925.md) runs a
+paint pass's textures side by side and draws wide blurs on a coarser grid,
+within 4 of 255 levels. First opens: glass 86.6 → 42.3 ms, neon 53.3 → 20.9 ms,
+hud 54.9 → 42.2 ms. Rasterized textures are also kept across documents, so a
+screen created again skips most of its paint: glass reopens in 11.3 ms,
+neon in 6.6 ms and hud in 8.3 ms. That is Unity's case when a disabled
+`WevaDocument` is enabled again. These are the same Linux core measurements
+and are not a Windows or host baseline.
+
 ## What the measurements cover
 
 The native runs use standalone Godot fixtures on Windows, a Ryzen 7 9800X3D

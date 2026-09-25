@@ -95,8 +95,10 @@ The 2026-09-15 review passes 14 gcc suites (507,328 core checks),
 16 sanitizer suites, and all 334 Chrome layout captures at the 1.5px ceiling.
 The 2026-09-25 [technical audit](docs/verification/tech-audit-20260925.md)
 and its follow-up add lifetime, hostile-input, nested-layout and threaded-raster
-regressions: 507,732 core checks on gcc and clang, 507,726 under the 16
-sanitizer suites (the small-stack test skips there).
+regressions, and the [screen-opening pass](docs/verification/screen-open-20260925.md)
+adds raster-job, coarse-blur and shared-texture tests: 507,885 core checks on
+gcc, clang and ThreadSanitizer, 507,879 under the 16 sanitizer suites (the
+small-stack test skips there).
 Its Unity changes still need the editor suites; see the report.
 Unity Native EditMode passes 236 tests with 2 environment-gated inconclusive;
 the full EditMode suite passes 237 with the same 2 inconclusive.

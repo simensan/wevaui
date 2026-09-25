@@ -1,6 +1,6 @@
 # Product readiness
 
-Updated September 16, 2026 · Verification through September 15.
+Updated September 25, 2026 · Verification through September 15.
 
 **Weva is a development preview** for building game UI with HTML/CSS in Unity
 and Godot. HUDs, menus, settings screens and data-bound lists are ready to try.
@@ -49,8 +49,13 @@ and browser-level visual/text fidelity remain incomplete.
   latest runs, the slowest core-only cold-creation samples averaged 52–56 ms,
   before host rendering or asset loading. Preparing and reusing screens may help.
   Since the [September 25 audit](verification/tech-audit-20260925.md), cold paint
-  uses up to four threads for large rasters, which is 1.7–2.9× faster on a
-  4-core machine. `WEVA_RASTER_THREADS=1` keeps everything on the calling thread.
+  uses up to four threads, and wide blurs are drawn at the resolution they need.
+  The [screen-opening pass](verification/screen-open-20260925.md) measured
+  first opens up to 2.5× faster. A screen created again, such as a Unity menu
+  re-enabled, was up to 8× faster on paint-heavy pages, because rasterized
+  textures are kept across documents. `weva_set_raster_cache_limit` bounds
+  that cache (32 MiB by default). `WEVA_RASTER_THREADS=1` keeps everything on
+  the calling thread.
   The [two performance passes](verification/performance-20260915-pass2.md) cover
   standalone Godot fixtures on a Ryzen 7 9800X3D/RTX 5080; they do not establish
   Unity performance, full-game FPS or lower-end hardware suitability.

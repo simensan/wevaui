@@ -251,7 +251,8 @@ G2 (headless).
   difference is inert: whitespace after `</body>`, or `<link>` placement
   between head and body.
 - **Glass** still has 23 small shadow textures that are each too small to
-  split. Rasterizing independent textures concurrently would help.
+  split. Rasterizing independent textures concurrently would help. (Since
+  done: see [screen opening](screen-open-20260925.md).)
 - **Two cameras of different sizes** still lay a Unity document out twice per
   frame. Which camera should own the viewport is a product decision.
 
