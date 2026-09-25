@@ -134,6 +134,49 @@ std::optional<double> definite_content_height(const BoxTree& tree, BoxId id) {
 
 } // namespace
 
+// Whether laying out `id`'s subtree against a DEFINITE height could differ
+// from the layout it got with that height left auto, when the two heights
+// are equal. The auto layout already produced exactly that height, so only
+// content that reads the height as definite can move: a percentage (or
+// `fr`) against it, a column flex line, an aspect ratio, an out-of-flow
+// box. Conservative: anything it does not recognise as inert is sensitive.
+static std::string_view get_by_name(const ComputedStyle* st, std::string_view name) {
+    return st ? st->get(name) : std::string_view();
+}
+
+bool subtree_reads_definite_height(const BoxTree& tree, BoxId id) {
+    const auto container_sensitive = [](const ComputedStyle* st) {
+        const std::string_view rows = get_by_name(st, "grid-template-rows");
+        if (rows.find('%') != std::string_view::npos || rows.find("fr") != std::string_view::npos)
+            return true;
+        const std::string_view display = get_by_name(st, "display");
+        if (display.find("flex") != std::string_view::npos &&
+            get_by_name(st, "flex-direction").find("column") != std::string_view::npos) return true;
+        return false;
+    };
+    const Box& root = tree[id];
+    if (!root.style || container_sensitive(root.style)) return true;
+    std::vector<BoxId> stack;
+    for (BoxId c = root.first_child; c != kNoBox; c = tree[c].next_sibling) stack.push_back(c);
+    while (!stack.empty()) {
+        const Box& b = tree[stack.back()];
+        stack.pop_back();
+        if (b.style) {
+            if (container_sensitive(b.style)) return true;
+            if (b.position == PositionType::Absolute || b.position == PositionType::Fixed ||
+                b.position == PositionType::Sticky) return true;
+            for (const char* property : {"height", "min-height", "max-height", "top", "bottom",
+                                         "flex-basis", "row-gap", "inset"}) {
+                if (get_by_name(b.style, property).find('%') != std::string_view::npos) return true;
+            }
+            const std::string_view ratio = get_by_name(b.style, "aspect-ratio");
+            if (!ratio.empty() && ratio != "auto") return true;
+        }
+        for (BoxId c = b.first_child; c != kNoBox; c = tree[c].next_sibling) stack.push_back(c);
+    }
+    return false;
+}
+
 ResolvedSides resolve_box_sides_px(const ComputedStyle* style, std::string_view shorthand,
                                    const LayoutContext& ctx, double font_size,
                                    double containing_block_width, double line_height) {
@@ -1238,10 +1281,37 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     double avail = available_width - margin_x;
     if (avail < 0) avail = 0;
 
-    relayout_content_at(id, 1e6, fs, parent_style);
-    double max_content = max_content_width(*tree_, id, &ctx_) + frame;
-    relayout_content_at(id, 1, fs, parent_style);
-    double min_content = min_content_width(*tree_, id, &ctx_) + frame;
+    double max_content = 0, min_content = 0;
+    const ProbeResult* known = nullptr;
+    if (b.element) {
+        const auto found = probes_.find({b.element, style});
+        if (found != probes_.end() && found->second.font_size == fs &&
+            found->second.frame == frame && found->second.imposed == b.cross_size_imposed &&
+            (!found->second.reads_height || found->second.height == b.height))
+            known = &found->second;
+    }
+    if (known) {
+        max_content = known->max_content + frame;
+        min_content = known->min_content + frame;
+    } else {
+        ProbeResult probe;
+        probe.font_size = fs;
+        probe.frame = frame;
+        probe.height = b.height;
+        probe.imposed = b.cross_size_imposed;
+        // definite_content_height reads ANY positive height as definite, a
+        // stale auto height included, so the probes depend on the height
+        // exactly when something in the subtree reads one.
+        probe.reads_height = b.element && subtree_reads_definite_height(*tree_, id);
+        const Element* element = b.element;
+        relayout_content_at(id, 1e6, fs, parent_style);
+        probe.max_content = max_content_width(*tree_, id, &ctx_);
+        relayout_content_at(id, 1, fs, parent_style);
+        probe.min_content = min_content_width(*tree_, id, &ctx_);
+        max_content = probe.max_content + frame;
+        min_content = probe.min_content + frame;
+        if (element) probes_[{element, style}] = probe;
+    }
     if (max_content < frame) max_content = frame;
     if (min_content < frame) min_content = frame;
 

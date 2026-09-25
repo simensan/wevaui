@@ -188,8 +188,17 @@ BoxId BoxBuilder::new_block_box_for(DisplayKind display, const Element* e,
     return id;
 }
 
+int BoxBuilder::element_depth_of(const Element& e) {
+    int depth = 0;
+    for (const Node* n = &e; n; n = n->parent()) {
+        if (n->is_element()) ++depth;
+    }
+    return depth;
+}
+
 BoxId BoxBuilder::build(const Element& root, const ComputedStyle* root_style) {
     document_root_ = kNoBox;
+    depth_base_ = element_depth_of(root) - 1;
     emitted_top_layers_.clear();
     const DisplayKind display = parse_display(get(root_style, kId_display));
     if (display == DisplayKind::None) return kNoBox;
@@ -204,6 +213,7 @@ BoxId BoxBuilder::build_document(const Document& doc) {
     // block, not for `<html>`.
     const BoxId root = tree_->create(BoxKind::Block, nullptr, nullptr);
     document_root_ = root;
+    depth_base_ = 0;
     emitted_top_layers_.clear();
     for (const Ref<Node>& child : doc.children()) {
         append_node_as_block_child(*child, nullptr, root);
@@ -395,6 +405,10 @@ void BoxBuilder::build_children(const Element& element, const ComputedStyle* sty
             if ((*tree_)[text].text.size() == value.size()) (*tree_)[text].control_source_offset = 0;
             tree_->append_child(parent, text);
         }
+        finalize_block_children(parent);
+        return;
+    }
+    if (depth_base_ + element_depth_ >= kMaxBoxDepth) {
         finalize_block_children(parent);
         return;
     }
@@ -605,6 +619,7 @@ void BoxBuilder::build_inline_children(const Element& element, const ComputedSty
         }
         return;
     }
+    if (depth_base_ + element_depth_ >= kMaxBoxDepth) return;
     ++element_depth_;
     apply_counters(style, element_depth_);
     inject_pseudo(element, style, parent, "before");

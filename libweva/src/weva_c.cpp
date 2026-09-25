@@ -473,7 +473,7 @@ std::string input_type_of(const Element& e) {
 // new text goes back WHERE THE OLD TEXT WAS, not at the end: for
 // `<div>label<span>*</span></div>` appending would put the label after the
 // icon and quietly reorder the row.
-bool replace_text(Element& e, std::string_view text) {
+bool replace_text(Element& e, std::string_view text, std::vector<Ref<Node>>* retired) {
     // Games often push a HUD model every frame, including unchanged labels.
     // Match the direct text this API replaces, not descendant text (icons and
     // other element children must stay intact). A binding source is different
@@ -500,7 +500,12 @@ bool replace_text(Element& e, std::string_view text) {
             anchor = c.get();
         }
     }
-    for (Node* n : stale) e.remove_child(n);
+    for (Node* n : stale) {
+        // Text boxes view these nodes' strings until the next update rebuilds
+        // them, and weva_document_boxes hands those views to the host.
+        if (retired) retired->push_back(Ref<Node>::retain(n));
+        e.remove_child(n);
+    }
     if (text.empty()) return true;
     Ref<TextNode> node = make_ref<TextNode>(text);
     if (anchor) e.insert_before(node.get(), anchor);
@@ -1953,6 +1958,10 @@ struct weva_document {
     StyleMap styles;
     ContainerQueryState container_queries;
     BoxTree tree;
+    // Text nodes weva_element_set_text replaced, kept until the update that
+    // rebuilds the boxes viewing them: Box::text is a view, and the ABI
+    // promises weva_box.text until the next update.
+    std::vector<Ref<Node>> retired_text;
     IncrementalLayout incremental_layout;
     LayoutContext ctx;
     MonoFontMetrics metrics;
@@ -3553,22 +3562,43 @@ uint32_t weva_abi_version(void) {
 // here agrees with the core about what is right-to-left. The Godot host's
 // strong_direction() is this rule verbatim.
 
-int32_t weva_text_direction(const char* utf8, size_t length) {
-    if (!utf8) return 0;
-    const int32_t n = static_cast<int32_t>(length);
-    int32_t i = 0;
-    while (i < n) {
-        UChar32 c;
-        U8_NEXT(utf8, i, n, c);
-        if (c < 0) continue;   // malformed byte: no direction
-        switch (u_charDirection(c)) {
-            case U_LEFT_TO_RIGHT: return 0;
-            case U_RIGHT_TO_LEFT:
-            case U_RIGHT_TO_LEFT_ARABIC: return 1;
-            default: break;
+// ICU walks UTF-8 with int32_t offsets. Casting a longer length made it
+// negative (no scan at all) or wrapped it (a scan of the low bits' worth), so
+// the text goes through in chunks that end on a character boundary. Exposed
+// with the chunk size as a parameter for the test that covers the seams.
+extern "C++" int32_t weva_internal_text_direction(const char* utf8, size_t length,
+                                                   size_t chunk_limit) {
+    if (!utf8 || chunk_limit < 4) return 0;
+    size_t base = 0;
+    while (base < length) {
+        size_t chunk = std::min(length - base, chunk_limit);
+        if (base + chunk < length) {
+            // Back up to the lead byte of the character the cut would split.
+            size_t cut = chunk;
+            while (cut > chunk - 3 &&
+                   (static_cast<unsigned char>(utf8[base + cut]) & 0xC0) == 0x80) --cut;
+            if ((static_cast<unsigned char>(utf8[base + cut]) & 0xC0) != 0x80) chunk = cut;
         }
+        const int32_t n = static_cast<int32_t>(chunk);
+        int32_t i = 0;
+        while (i < n) {
+            UChar32 c;
+            U8_NEXT(utf8 + base, i, n, c);
+            if (c < 0) continue;   // malformed byte: no direction
+            switch (u_charDirection(c)) {
+                case U_LEFT_TO_RIGHT: return 0;
+                case U_RIGHT_TO_LEFT:
+                case U_RIGHT_TO_LEFT_ARABIC: return 1;
+                default: break;
+            }
+        }
+        base += chunk;
     }
     return 0;
+}
+
+int32_t weva_text_direction(const char* utf8, size_t length) {
+    return weva_internal_text_direction(utf8, length, static_cast<size_t>(INT32_MAX));
 }
 
 uint32_t weva_char_mirror(uint32_t codepoint) {
@@ -3840,6 +3870,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     // rebuilds it, so it goes now; the published draws do not depend on it.
     doc->tree.reset();
     doc->root = kNoBox;
+    doc->retired_text.clear();
     doc->incremental_layout.index(doc->tree, kNoBox, doc->ctx, true);
     doc->snap_settle = weva_document::SnapSettle{};
     doc->snap_animation = weva_document::SnapAnimation{};
@@ -4300,14 +4331,18 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
                                    double input_seconds, bool publish_paint);
 
 weva_status weva_document_update_geometry(weva_document_t doc) {
-    return update_document(doc, 0, 0, false);
+    const weva_status status = update_document(doc, 0, 0, false);
+    if (doc && status == WEVA_OK) doc->retired_text.clear();
+    return status;
 }
 
 weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     return weva_document_update_with_input_time(doc,dt_seconds,dt_seconds);
 }
 weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_seconds, double input_seconds) {
-    return update_document(doc, dt_seconds, input_seconds, true);
+    const weva_status status = update_document(doc, dt_seconds, input_seconds, true);
+    if (doc && status == WEVA_OK) doc->retired_text.clear();
+    return status;
 }
 
 namespace {
@@ -8377,6 +8412,9 @@ weva_status weva_element_set_html(weva_document_t doc, weva_element_t element, c
     for (const Ref<Node>& c : old) {
         if (c->node_type() == NodeType::Element) {
             weva_internal_forget_subtree(doc, static_cast<const Element&>(*c));
+        } else {
+            // The element's own text boxes still view this until the update.
+            doc->retired_text.push_back(c);
         }
         e->remove_child(c.get());
     }
@@ -8471,7 +8509,7 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
-    if (!replace_text(*e, text ? text : "")) {
+    if (!replace_text(*e, text ? text : "", &doc->retired_text)) {
         // Setting textarea default text replaces its selection even when the
         // text is equal. Keep ordinary HUD text no-ops allocation-free.
         if (e->tag_name() == "textarea") form_children_changed(*e);
@@ -8849,6 +8887,35 @@ static std::vector<std::string> split_declarations(std::string_view style) {
     out.emplace_back(style.substr(start));
     return out;
 }
+
+// Whether `value` is the value of exactly ONE declaration, with any trailing
+// semicolons and whitespace removed into `*clean`. The value is spliced into
+// the style attribute as text, so `red; display: none` wrote two
+// declarations, and an unclosed quote, parenthesis or a brace swallowed or
+// broke every declaration after it.
+static bool single_declaration_value(std::string_view value, std::string* clean) {
+    while (!value.empty() && (value.back() == ';' || value.back() == ' ' || value.back() == '\t' ||
+                              value.back() == '\n' || value.back() == '\r'))
+        value.remove_suffix(1);
+    int depth = 0;
+    char quote = 0;
+    for (size_t i = 0; i < value.size(); ++i) {
+        const char c = value[i];
+        if (quote) {
+            if (c == '\\' && i + 1 < value.size()) ++i;
+            else if (c == quote) quote = 0;
+            continue;
+        }
+        if (c == '"' || c == '\'') { quote = c; continue; }
+        if (c == '{' || c == '}') return false;
+        if (c == '(') ++depth;
+        else if (c == ')') { if (--depth < 0) return false; }
+        else if (c == ';' && depth == 0) return false;
+    }
+    if (quote || depth != 0) return false;
+    clean->assign(value);
+    return true;
+}
 }  // extern "C++"
 
 // A C++ helper inside the extern "C" region: MSVC (C4190) otherwise gives
@@ -8888,8 +8955,17 @@ weva_status weva_element_set_style(weva_document_t doc, weva_element_t element,
     std::string wanted(property);
     for (char& c : wanted) {
         if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+        // A name is one identifier; these would start or end a declaration.
+        if (c == ':' || c == ';' || c == '{' || c == '}' || c == ' ' || c == '\t' ||
+            c == '\n' || c == '\r' || c == '"' || c == '\'') return WEVA_ERR_INVALID_ARGUMENT;
     }
-    const bool removing = !value || !*value;
+    bool removing = !value || !*value;
+    std::string single;
+    if (!removing) {
+        if (!single_declaration_value(value, &single)) return WEVA_ERR_INVALID_ARGUMENT;
+        removing = single.empty();
+        value = single.c_str();
+    }
 
     std::string rebuilt;
     bool replaced = false;
@@ -8944,10 +9020,12 @@ size_t weva_element_style(weva_document_t doc, weva_element_t element, const cha
     for (char& c : wanted) {
         if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
     }
+    if (wanted.empty()) return 0;
     for (const std::string& decl : split_declarations(e->get_attribute("style"))) {
         const std::string_view trimmed = trim_decl(decl);
-        if (declaration_property(trimmed) != wanted) continue;
-        const std::string_view v = trim_decl(trimmed.substr(trimmed.find(':') + 1));
+        const size_t colon = trimmed.find(':');
+        if (colon == std::string_view::npos || declaration_property(trimmed) != wanted) continue;
+        const std::string_view v = trim_decl(trimmed.substr(colon + 1));
         if (buffer && capacity > 0) {
             const size_t n = v.size() < capacity - 1 ? v.size() : capacity - 1;
             if (n > 0) std::memcpy(buffer, v.data(), n);

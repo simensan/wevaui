@@ -1087,7 +1087,10 @@ weva_status weva_element_scroll_into_view(weva_document_t doc, weva_element_t el
  * property back under the stylesheet's control rather than having to guess
  * what the stylesheet said. The declaration list is split at top level, so a
  * semicolon inside `url(...)` or a quoted string does not cut a value in
- * half. */
+ * half. A value that is not exactly one declaration's -- a top-level
+ * semicolon before other text, a brace, an unclosed quote or parenthesis --
+ * and a property name holding a separator return WEVA_ERR_INVALID_ARGUMENT
+ * and change nothing; trailing semicolons are ignored. */
 weva_status weva_element_set_style(weva_document_t doc, weva_element_t element,
                                    const char* property, const char* value);
 

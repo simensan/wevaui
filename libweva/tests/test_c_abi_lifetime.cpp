@@ -225,3 +225,86 @@ void test_abi_asset_reader_impossible_size() {
     CHECK(weva_document_update(d, 0) == WEVA_OK);
     weva_document_destroy(d);
 }
+
+// weva_box.text is valid until the next update, even when set_text or set_html
+// replaced the text node it views in between.
+void test_abi_box_text_survives_text_replacement() {
+    weva_document_t d = make();
+    const char* html = "<div id=a>first label</div><div id=b>second <i>x</i></div>";
+    CHECK(weva_document_load_html(d, html, std::strlen(html)) == WEVA_OK);
+    weva_document_update(d, 0);
+    const size_t count = weva_document_boxes(d, nullptr, 0);
+    std::vector<weva_box> boxes(count);
+    CHECK(weva_document_boxes(d, boxes.data(), boxes.size()) == count);
+    CHECK(weva_element_set_text(d, weva_document_query(d, "#a"), "replaced") == WEVA_OK);
+    CHECK(weva_element_set_html(d, weva_document_query(d, "#b"), "<b>new</b>", 10) == WEVA_OK);
+    // The old views, and a fresh walk of the not-yet-rebuilt tree, still read
+    // the text that was laid out.
+    std::string seen;
+    for (const weva_box& b : boxes) if (b.text) seen.append(b.text, b.text_length);
+    CHECK(seen.find("first label") != std::string::npos);
+    CHECK(seen.find("second") != std::string::npos);
+    std::vector<weva_box> again(weva_document_boxes(d, nullptr, 0));
+    weva_document_boxes(d, again.data(), again.size());
+    for (const weva_box& b : again) if (b.text) seen.append(b.text, b.text_length);
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    char buf[32] = {};
+    weva_element_text(d, weva_document_query(d, "#a"), buf, sizeof(buf));
+    CHECK(std::string(buf) == "replaced");
+    weva_document_destroy(d);
+}
+
+// set_style writes exactly one declaration or nothing.
+void test_abi_set_style_is_one_declaration() {
+    weva_document_t d = make();
+    CHECK(weva_document_load_html(d, "<div id=a style='color: red'>x</div>", 36) == WEVA_OK);
+    weva_document_update(d, 0);
+    const weva_element_t a = weva_document_query(d, "#a");
+    char buf[64] = {};
+    const auto style_attr = [&] {
+        weva_element_attribute(d, a, "style", buf, sizeof(buf));
+        return std::string(buf);
+    };
+    CHECK(weva_element_set_style(d, a, "color", "blue; display: none") == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_element_set_style(d, a, "color", "blue } p { color: red") == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_element_set_style(d, a, "color", "url(\"a") == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_element_set_style(d, a, "color", "rgb(1, 2") == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(weva_element_set_style(d, a, "color: red; display", "none") == WEVA_ERR_INVALID_ARGUMENT);
+    CHECK(style_attr() == "color: red");
+    // What a value may legitimately hold: semicolons inside url() and
+    // strings, and a trailing semicolon.
+    CHECK(weva_element_set_style(d, a, "background-image", "url(\"a;b.png\")") == WEVA_OK);
+    CHECK(weva_element_set_style(d, a, "color", "blue;") == WEVA_OK);
+    CHECK(style_attr() == "color: blue; background-image: url(\"a;b.png\")");
+    CHECK(weva_element_style(d, a, "color", buf, sizeof(buf)) == 4);
+    CHECK(std::string(buf) == "blue");
+    // A property that is not in the list, including the empty name, is 0.
+    CHECK(weva_element_style(d, a, "", buf, sizeof(buf)) == 0);
+    CHECK(weva_element_set_style(d, a, "color", " ; ") == WEVA_OK);
+    CHECK(weva_element_style(d, a, "color", buf, sizeof(buf)) == 0);
+    weva_document_destroy(d);
+}
+
+extern "C++" int32_t weva_internal_text_direction(const char* utf8, size_t length,
+                                                   size_t chunk_limit);
+
+// Direction is found across chunk seams, including one that would split a
+// character, and a length past INT32_MAX no longer wraps (covered by the
+// chunking these seams exercise).
+void test_abi_text_direction_chunks() {
+    const std::string hebrew = "\xD7\x90";          // U+05D0, two bytes
+    const std::string arabic = "\xD8\xA7";          // U+0627
+    const std::string emoji = "\xF0\x9F\x98\x80";   // four bytes, neutral
+    for (size_t chunk : {4u, 5u, 6u, 7u, 64u}) {
+        for (size_t pad = 0; pad < 9; ++pad) {
+            const std::string neutral(pad, ' ');
+            CHECK(weva_internal_text_direction((neutral + hebrew).data(), pad + 2, chunk) == 1);
+            CHECK(weva_internal_text_direction((neutral + emoji + arabic).data(), pad + 6, chunk) == 1);
+            CHECK(weva_internal_text_direction((neutral + emoji + "a").data(), pad + 5, chunk) == 0);
+            CHECK(weva_internal_text_direction((neutral + emoji).data(), pad + 4, chunk) == 0);
+        }
+    }
+    CHECK(weva_text_direction("\xD7\x90", 2) == 1);
+    CHECK(weva_text_direction("abc", 3) == 0);
+    CHECK(weva_text_direction(nullptr, 5) == 0);
+}

@@ -250,3 +250,81 @@ void test_hostile_null_character_reference() {
     CHECK(std::string(buf) == "a\xEF\xBF\xBD" "b");
     weva_document_destroy(d);
 }
+
+// Shrink-to-fit probed every nested inline-block three times per level, and a
+// grid re-laid every nested stretched item twice: 3^depth and 2^depth. Twelve
+// inline-blocks took 0.8 s and sixteen did not finish.
+void test_hostile_nested_intrinsic_layout() {
+    for (const char* css : {"div{display:inline-block}", "div{display:grid}",
+                            "div{display:inline-block;padding:1px}",
+                            "div{display:grid;padding:2%}", "div{float:left}",
+                            "div{display:inline-grid}"}) {
+        std::string html;
+        for (int i = 0; i < 40; ++i) html += "<div>";
+        html += "leaf text";
+        weva_document_t d = load(css, html);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        // Height, not width: nested floats measure 0 wide here, a separate
+        // divergence from Chrome recorded in the audit.
+        double h = 0;
+        CHECK(weva_element_bounds(d, weva_document_query(d, "div"), nullptr, nullptr, nullptr, &h) == WEVA_OK);
+        CHECK(h > 0);
+        weva_document_destroy(d);
+    }
+}
+
+// Content nested at the parser's 512-level limit lays out, paints and hit
+// tests on a 512 KB stack: half the 1 MB a Windows main thread gets. Nested
+// inline-blocks use about 3.3 KB a level, so boxes stop at kMaxBoxDepth.
+namespace {
+struct DeepJob {
+    const char* css;
+    bool finished = false;
+};
+void run_deep_job(DeepJob* job) {
+    std::string html;
+    for (int i = 0; i < 600; ++i) html += "<div>";
+    html += "deep text here";
+    weva_document_t d = load(job->css, html);
+    job->finished = weva_document_update(d, 0) == WEVA_OK;
+    weva_document_set_pointer(d, 5, 5, 0);
+    job->finished = job->finished && weva_document_update(d, 0) == WEVA_OK;
+    weva_document_destroy(d);
+}
+} // namespace
+#ifdef _WIN32
+#include <windows.h>
+static DWORD WINAPI deep_thread(LPVOID p) { run_deep_job(static_cast<DeepJob*>(p)); return 0; }
+static void run_on_small_stack(DeepJob* job) {
+    HANDLE t = CreateThread(nullptr, 512 * 1024, deep_thread, job, STACK_SIZE_PARAM_IS_A_RESERVATION, nullptr);
+    if (!t) return;
+    WaitForSingleObject(t, INFINITE);
+    CloseHandle(t);
+}
+#else
+#include <pthread.h>
+static void* deep_thread(void* p) { run_deep_job(static_cast<DeepJob*>(p)); return nullptr; }
+static void run_on_small_stack(DeepJob* job) {
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, 512 * 1024);
+    pthread_t t;
+    if (pthread_create(&t, &attr, deep_thread, job) == 0) pthread_join(t, nullptr);
+    pthread_attr_destroy(&attr);
+}
+#endif
+void test_hostile_depth_fits_small_stack() {
+#if defined(__SANITIZE_ADDRESS__)
+    return;   // sanitizer frames are several times larger; the release build pins this
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+    return;
+#endif
+#endif
+    for (const char* css : {"", "div{display:inline-block}", "div{display:inline-flex}",
+                            "div{display:grid}", "div{display:table}", "div{float:left}"}) {
+        DeepJob job{css};
+        run_on_small_stack(&job);
+        CHECK(job.finished);
+    }
+}

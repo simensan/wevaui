@@ -13,6 +13,7 @@
 #include "weva/style_resolver.h"
 
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 // Ports the box-model half of Runtime/Layout/BlockLayout.cs — resolving an
@@ -181,6 +182,12 @@ public:
     virtual bool reuse_layout(BoxTree* tree, BoxId id) = 0;
 };
 
+// Whether laying out `id`'s subtree against a definite height could differ
+// from laying it out against an auto one of the same value: a percentage or
+// `fr` against it, a column flex line, an aspect ratio, an out-of-flow box.
+// Conservative, and O(subtree).
+bool subtree_reads_definite_height(const BoxTree& tree, BoxId id);
+
 class BlockLayout {
 public:
     // `metrics` may be null, in which case a container of inline content
@@ -240,6 +247,31 @@ private:
                            std::optional<double> imposed_width, std::optional<double> imposed_height);
 
     BoxTree* tree_;
+    // Shrink-to-fit's two probe results for this pass, per (element, style).
+    //
+    // Each probe lays the whole subtree out, and a shrink-to-fit box inside
+    // another's probe is itself asked again at every probe: three layouts
+    // per level, so twelve nested inline-blocks took 0.8 s and sixteen did
+    // not finish. The probes are a function of the subtree alone -- they
+    // run at fixed widths -- given the same font size, frame and height,
+    // which the entry records; a mismatch probes again.
+    struct ProbeKey {
+        const Element* element;
+        const ComputedStyle* style;
+        bool operator==(const ProbeKey& o) const { return element == o.element && style == o.style; }
+    };
+    struct ProbeKeyHash {
+        size_t operator()(const ProbeKey& k) const {
+            return std::hash<const void*>()(k.element) * 31u ^ std::hash<const void*>()(k.style);
+        }
+    };
+    struct ProbeResult {
+        double font_size = 0, frame = 0, height = 0;
+        bool imposed = false;
+        bool reads_height = false;                 // height is part of the key
+        double max_content = 0, min_content = 0;   // content box, before the frame
+    };
+    std::unordered_map<ProbeKey, ProbeResult, ProbeKeyHash> probes_;
     std::unique_ptr<OrthogonalFlowStyles> orthogonal_;
     LayoutContext ctx_;
     const FontMetrics* metrics_ = nullptr;
